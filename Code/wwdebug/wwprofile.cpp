@@ -50,10 +50,11 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
+#include "renegade_build_config.h"
 #include "wwprofile.h"
-#include "fastallocator.h"
+#include "FastAllocator.h"
 #include "wwdebug.h"
-#include <windows.h>
+#include "win.h"
 //#include "systimer.h"
 #include "systimer.h"
 #include "rawfile.h"
@@ -84,7 +85,7 @@ unsigned WWProfile_Get_System_Time()
  *=============================================================================================*/
 inline void WWProfile_Get_Ticks(_int64 * ticks)
 {
-#ifdef _UNIX
+#if !RENEGADE_WITH_X86_ASM || !defined(_MSC_VER) || !defined(_M_IX86)
        *ticks = TIMEGETTIME();
 #else
 	__asm

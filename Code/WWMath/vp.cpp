@@ -62,7 +62,7 @@
 
 void VectorProcessorClass::Prefetch(void* address)
 {
-#if defined (__ICL)    // Detect Intel compiler
+#if RENEGADE_WITH_X86_ASM && defined(__ICL) && defined(_M_IX86)    // Detect Intel compiler
 	if (CPUDetectClass::_Has_SSE_Instruction_Set()) {
 		__asm {
 //			mov edx,address
@@ -78,7 +78,7 @@ void VectorProcessorClass::Transform (Vector3* dst,const Vector3 *src, const Mat
 {
 	if (count<=0) return;
 
-#if defined (__ICL)    // Detect Intel compiler
+#if RENEGADE_WITH_X86_ASM && defined(__ICL) && defined(_M_IX86)    // Detect Intel compiler
 	if (CPUDetectClass::_Has_SSE_Instruction_Set()) {
 
 		__asm	{

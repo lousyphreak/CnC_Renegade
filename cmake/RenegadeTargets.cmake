@@ -12,6 +12,8 @@ target_include_directories(renegade_project_options
 
 if(MSVC)
     target_compile_options(renegade_project_options INTERFACE /W4 /permissive- /EHsc /bigobj)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(renegade_project_options INTERFACE -Wall -Wextra -Wpedantic -fpermissive)
 else()
     target_compile_options(renegade_project_options INTERFACE -Wall -Wextra -Wpedantic)
 endif()

@@ -40,6 +40,8 @@
 #ifndef WIN_H
 #define WIN_H
 
+#ifdef _WIN32
+
 /*
 **	This header file includes the Windows headers. If there are any special pragmas that need
 **	to occur around this process, they are performed here. Typically, certain warnings will need
@@ -59,7 +61,7 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 
-#include	<windows.h>
+#include <windows.h>
 //#include <mmsystem.h>
 //#include	<windowsx.h>
 //#include	<winnt.h>
@@ -87,5 +89,11 @@ void __cdecl Print_Win32Error(unsigned long win32Error);
 #else // _WINDOWS
 //#include <unistd.h>
 #endif // _WINDOWS
+
+#else
+
+#include "osdep.h"
+
+#endif // _WIN32
 
 #endif // WIN_H

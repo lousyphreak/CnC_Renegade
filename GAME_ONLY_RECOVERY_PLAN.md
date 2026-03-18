@@ -252,7 +252,7 @@ Get everyone building the same thing first.
 - [x] Scope frozen to **game only**; tools, installer, launcher, and tests remain off the critical path.
 - [x] SDL3 selected as the portable platform layer and vendored at `external/SDL` from the official upstream repo.
 - [x] SDL3 pin recorded at `release-3.4.2`.
-- [ ] Foundation library targets (`wwdebug`, `wwlib`, `WWMath`, `wwutil`) are not yet online in CMake.
+- [x] Foundation library targets (`wwdebug`, `wwlib`, `WWMath`, `wwutil`) are online in CMake.
 
 ## Phase 1 — Introduce the CMake skeleton
 
@@ -314,7 +314,8 @@ At minimum:
 - [x] `cmake -S . -B build` succeeds on the Linux x64 bootstrap target.
 - [x] `cmake --build build --target renegade_bootstrap` succeeds.
 - [x] `renegade_bootstrap --headless-smoke` succeeds with dummy SDL video/audio drivers.
-- [ ] Historical runtime libraries are not yet migrated into the CMake graph.
+- [x] The first-wave foundation targets (`wwdebug`, `wwlib`, `WWMath`, `wwutil`) are migrated into the CMake graph.
+- [ ] Historical runtime libraries beyond the Phase 2 foundation set are not yet migrated into the CMake graph.
 
 ## Phase 2 — Make the foundation libraries compile first
 
@@ -385,6 +386,16 @@ Actions:
 
 - first real modern-compiler library builds succeed
 - bootstrap no longer depends on legacy VC6-only behavior for the lowest layers
+
+### Phase 2 implementation status (2026-03-18)
+
+- [x] `wwdebug`, `wwlib`, `WWMath`, and `wwutil` build in the active Linux x64 bootstrap CMake configuration.
+- [x] `RENEGADE_WITH_X86_ASM=OFF` is wired through the active foundation build, with audited fallback paths in `WWMath` and `wwdebug`.
+- [x] `RENEGADE_WITH_WIN32_STACKTRACE=OFF` is wired through the active foundation build, with stubbed stack-dump / exception paths selected outside the supported legacy Win32 stacktrace configuration.
+- [x] asm-heavy CPU detection is replaced by the active `cpudetect_stub.cpp` path in the bootstrap build, so the foundation no longer requires CPUID / RDTSC asm to compile.
+- [x] the active build no longer depends on ImageHlp or x86 asm just to compile the Phase 2 foundation targets.
+- [ ] the full historical `wwlib` project is not yet migrated into CMake; the current target is still a bootstrap subset with stubbed exception / CPU-detect pieces.
+- [ ] Phase 2 is not yet closed against its full completion criteria because the modern MSVC validation pass is still pending.
 
 ## Phase 3 — Bring up utility/runtime support libraries
 
@@ -829,18 +840,17 @@ Do **not** block the game-only plan on any of the following:
 
 ## Immediate next implementation actions
 
-The first concrete implementation steps after approving this plan should be:
+The next concrete implementation steps from the current repository state are:
 
-1. finish validating the root CMake skeleton, generated config header, SDL3 submodule, and `renegade_bootstrap`
-2. add CMake targets for `wwdebug`, `wwlib`, `WWMath`, and `wwutil`
-3. introduce the first-wave feature flags everywhere those foundation libraries need them
-4. make the foundation libraries compile with asm/stacktrace disabled
-5. add support/runtime libs in dependency order
-6. add stub Bink/Miles/Umbra/GameSpy/WOL implementations
-7. add `Combat`, `Scripts`, and finally `Commando`
-8. get a linkable/null-feature executable
-9. restore renderer and input for first visible progress
-10. iterate until first playable offline build exists
+1. keep the root CMake skeleton, generated config header, SDL3 submodule, and `renegade_bootstrap` healthy while expanding the runtime graph
+2. continue broadening the Phase 2 foundation targets — especially `wwlib` — from bootstrap subsets toward the historical runtime surface without reintroducing unconditional x86 asm or Win32 stacktrace dependencies
+3. validate the Phase 2 foundation targets on modern MSVC / Windows so the Phase 2 completion criteria are met on more than the Linux bootstrap target
+4. add the Phase 3 support/runtime libraries in dependency order: `wwsaveload`, `wwbitpack`, `wwtranslatedb`, `wwui`, and `wwnet`
+5. add stub Bink / Miles / Umbra / GameSpy / WOL implementations for the later runtime layers
+6. add `Combat`, `Scripts`, and finally `Commando`
+7. get a linkable null-feature executable
+8. restore renderer and input for first visible progress
+9. iterate until the first playable offline build exists
 
 ## Bottom line
 

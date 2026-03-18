@@ -45,9 +45,10 @@
 
 #include "wwstring.h"
 
-#ifdef _UNIX
+#if defined(_UNIX) && !defined(RENEGADE_HAS_MS_INT64_TYPEDEFS)
 typedef signed long long __int64;
 typedef signed long long _int64;
+#define RENEGADE_HAS_MS_INT64_TYPEDEFS 1
 #endif
 
 // enable profiling by default in debug mode.

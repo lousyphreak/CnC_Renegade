@@ -46,6 +46,12 @@
 #include "always.h"
 #include "wwstring.h"
 
+#if defined(_UNIX) && !defined(RENEGADE_HAS_MS_INT64_TYPEDEFS)
+typedef signed long long __int64;
+typedef signed long long _int64;
+#define RENEGADE_HAS_MS_INT64_TYPEDEFS 1
+#endif
+
 class CPUDetectInitClass;
 
 class CPUDetectClass

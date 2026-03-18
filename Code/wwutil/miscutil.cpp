@@ -26,6 +26,8 @@
 //-----------------------------------------------------------------------------
 #include "miscutil.h" // I WANNA BE FIRST!
 
+#include <cstring>
+#include <filesystem>
 #include <time.h>
 
 #include "rawfile.h"
@@ -119,8 +121,18 @@ bool cMiscUtil::File_Is_Read_Only(LPCSTR filename)
 {
    WWASSERT(filename != NULL);
 
+	#ifdef _WIN32
 	DWORD attributes = ::GetFileAttributes(filename);
 	return ((attributes != 0xFFFFFFFF) && (attributes & FILE_ATTRIBUTE_READONLY));
+	#else
+	std::error_code error;
+	const auto status = std::filesystem::status(filename, error);
+	if (error) {
+		return false;
+	}
+	const auto perms = status.permissions();
+	return (perms & std::filesystem::perms::owner_write) == std::filesystem::perms::none;
+	#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -182,6 +194,8 @@ void cMiscUtil::Get_File_Id_String(LPCSTR filename, StringClass & str)
 	//
 	// Note... this timedatestamp is not present for all file types...
 	//
+	int time_date_stamp = 0;
+	#ifdef _WIN32
 	IMAGE_FILE_HEADER header = {0};
 	extern bool Get_Image_File_Header(LPCSTR filename, IMAGE_FILE_HEADER *file_header);
 	/*
@@ -190,11 +204,12 @@ void cMiscUtil::Get_File_Id_String(LPCSTR filename, StringClass & str)
 	WWASSERT(success);
 	*/
 	Get_Image_File_Header(filename, &header);
-	int time_date_stamp = header.TimeDateStamp;
+	time_date_stamp = header.TimeDateStamp;
+	#endif
 
 	char working_filename[500];
 	strcpy(working_filename, filename);
-	::strupr(working_filename);
+	strupr(working_filename);
 
    //
    // Strip path off filename
@@ -220,7 +235,13 @@ void cMiscUtil::Remove_File(LPCSTR filename)
 {
    WWASSERT(filename != NULL);
 
+	#ifdef _WIN32
 	::DeleteFile(filename);
+	#else
+	std::error_code error;
+	std::filesystem::remove(filename, error);
+	(void)error;
+	#endif
 }
 
 

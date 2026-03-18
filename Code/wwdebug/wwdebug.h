@@ -40,6 +40,9 @@
 
 #ifndef WWDEBUG_H
 #define WWDEBUG_H
+
+#include "renegade_build_config.h"
+#include <signal.h>
 				
 // The macro MESSAGE allows user to put:
 // #pragma MESSAGE("Hello world")
@@ -139,9 +142,17 @@ void					WWDebug_DBWin32_Message_Handler( const char * message);
 ** the debugger...
 */
 #ifdef WWDEBUG
+#if RENEGADE_WITH_X86_ASM && defined(_MSC_VER) && defined(_M_IX86)
 #define WWDEBUG_BREAK							_asm int 0x03
 #else
+#define WWDEBUG_BREAK							raise(SIGTRAP)
+#endif
+#else
+#if RENEGADE_WITH_X86_ASM && defined(_MSC_VER) && defined(_M_IX86)
 #define WWDEBUG_BREAK							_asm int 0x03
+#else
+#define WWDEBUG_BREAK							raise(SIGTRAP)
+#endif
 #endif
 
 /*

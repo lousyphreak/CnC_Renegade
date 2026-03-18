@@ -44,6 +44,8 @@
 #ifndef WWMEMLOG_H
 #define WWMEMLOG_H
 
+#include <cstddef>
+
 class MemLogClass;
 
 /**

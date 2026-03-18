@@ -43,15 +43,15 @@
 
 
 #include "wwdebug.h"
-#include <windows.h>
-//#include "win.h" can use this if allowed to see wwlib
+#include "win.h"
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
 #include <signal.h>
-#include "except.h"
+#include <errno.h>
+#include "Except.h"
 
 
 static PrintFunc			_CurMessageHandler = NULL;
@@ -79,7 +79,11 @@ void Convert_System_Error_To_String(int id, char* buffer, int buf_len)
 
 int Get_Last_System_Error()
 {
+	#ifdef _WIN32
 	return GetLastError();
+	#else
+	return errno;
+	#endif
 }
 
 /***********************************************************************************************
@@ -299,9 +303,14 @@ void WWDebug_Assert_Fail(const char * expr,const char * file, int line)
 		// If the exception handler is try to quit the game then don't show an assert.
 		*/
 		if (Is_Trying_To_Exit()) {
+			#ifdef _WIN32
 			ExitProcess(0);
+			#else
+			_exit(0);
+			#endif
 		}
 
+		#ifdef _WIN32
       char assertbuf[4096];
 		sprintf(assertbuf, "Assert failed\n\n. File %s Line %d", file, line);
 
@@ -313,9 +322,13 @@ void WWDebug_Assert_Fail(const char * expr,const char * file, int line)
       }
 
 		if (code == IDRETRY) {
-			_asm int 3;
+			WWDEBUG_BREAK;
       	return;
 		}
+		#else
+		fprintf(stderr, "Assert failed: %s (%d): %s\n", file, line, expr);
+		WWDEBUG_BREAK;
+		#endif
    }
 }
 #endif

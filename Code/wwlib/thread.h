@@ -22,12 +22,14 @@
 #if defined(_MSC_VER)
 #pragma once
 #endif
+
+#include <cstdint>
+
 #ifdef _UNIX
 #include "osdep.h"
 #endif
 
 #include "always.h"
-#include "vector.h"
 
 struct _EXCEPTION_POINTERS;
 
@@ -99,7 +101,7 @@ protected:
 
 private:
 	static void __cdecl Internal_Thread_Function(void*);
-	volatile unsigned long handle;
+	volatile std::uintptr_t handle;
 	int thread_priority;
 };
 

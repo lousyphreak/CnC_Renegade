@@ -358,7 +358,7 @@ int PacketManagerClass::Build_Delta_Packet_Patch(unsigned char *base_packet, uns
 		*/
 		read_bit_pos = 0;
 		num_diff_bytes = 0;
-		for (i=0 ; i<base_packet_size ; i+= 8) {
+		for (int i=0 ; i<base_packet_size ; i+= 8) {
 
 			/*
 			** If we have chunk info, then use it to skip matching chunks.
@@ -898,13 +898,7 @@ WWPROFILE("PMgr Flush");
 			/*
 			** Reverse byte order to prevent the demo from having the same CRC as the game.
 			*/
-			_asm {
-				push	eax;
-				mov	eax,crc;
-				bswap	eax;
-				mov	crc,eax;
-				pop	eax;
-			};
+			crc = _byteswap_ulong(crc);
 #endif //(0)
 			char *crc_and_buffer = (char*)_alloca(SendBuffers[i].PacketSendLength + sizeof(crc));
 			*((unsigned long*) crc_and_buffer) = crc;
@@ -1167,13 +1161,7 @@ WWPROFILE("Pmgr Get");
 				/*
 				** Reverse byte order to prevent the demo from having the same CRC as the game.
 				*/
-				_asm {
-					push	eax;
-					mov	eax,crc;
-					bswap	eax;
-					mov	crc,eax;
-					pop	eax;
-				};
+				crc = _byteswap_ulong(crc);
 #endif //(0)
 				if (crc != *((unsigned long*)packet_buffer)) {
 					WWDEBUG_SAY(("PMC::Get_Packet: Socket %d, received packet %d bytes long from %s\n", socket, bytes, Addr_As_String(&addr)));

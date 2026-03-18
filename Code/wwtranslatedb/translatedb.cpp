@@ -37,15 +37,13 @@
 
 #include "translatedb.h"
 
-#include <windows.h>
+#include <fstream>
 #include <string.h>
 
 #include "persist.h"
 #include "persistfactory.h"
 #include "chunkio.h"
 #include "translatedbids.h"
-#include "rawfile.h"
-#include "textfile.h"
 #include "tdbcategories.h"
 #include "definition.h"
 #include "definitionmgr.h"
@@ -237,7 +235,7 @@ TranslateDBClass::Save (ChunkSaveClass &csave)
 		//
 		//	Loop over and save all the translation objects
 		//
-		for (index = 0; index < m_ObjectList.Count (); index ++) {			
+		for (int index = 0; index < m_ObjectList.Count (); index ++) {			
 			TDBObjClass *translate_obj = m_ObjectList[index];
 
 			//
@@ -419,22 +417,9 @@ TranslateDBClass::Validate_Data (void)
 void
 TranslateDBClass::Export_Table (const char *filename)
 {
-	//
-	//	Create the file
-	//
-	HANDLE file = ::CreateFile (filename,
-										  GENERIC_WRITE,
-										  0,
-										  NULL,
-										  CREATE_ALWAYS,
-										  0L,
-										  NULL);
-
-	WWASSERT (file != INVALID_HANDLE_VALUE);
-	if (file != INVALID_HANDLE_VALUE) {
-
-		TextFileClass file_obj;
-		file_obj.Attach (file);
+	std::ofstream file(filename, std::ios::out | std::ios::trunc);
+	WWASSERT(file.is_open());
+	if (file.is_open()) {
 
 		//
 		//	Loop over all the translation objects and write a tab delimited
@@ -482,15 +467,9 @@ TranslateDBClass::Export_Table (const char *filename)
 				text_entry += english_string;
 				text_entry += "\t";
 				text_entry += sound_preset_name;
-				file_obj.Write_Line (text_entry);
+				file << static_cast<const char *>(text_entry) << '\n';
 			}
 		}
-
-		//
-		//	Close the file
-		//
-		file_obj.Detach ();
-		::CloseHandle (file);
 	}
 	
 	return ;
@@ -505,41 +484,31 @@ TranslateDBClass::Export_Table (const char *filename)
 void
 TranslateDBClass::Export_C_Header (const char *filename)
 {
-	//
-	//	Create the file
-	//
-	HANDLE file = ::CreateFile (filename,
-										  GENERIC_WRITE,
-										  0,
-										  NULL,
-										  CREATE_ALWAYS,
-										  0L,
-										  NULL);
-
-	WWASSERT (file != INVALID_HANDLE_VALUE);
-	if (file != INVALID_HANDLE_VALUE) {
-
-		TextFileClass file_obj;
-		file_obj.Attach (file);
+	std::ofstream file(filename, std::ios::out | std::ios::trunc);
+	WWASSERT(file.is_open());
+	if (file.is_open()) {
+		auto write_line = [&file](const char *text) {
+			file << text << '\n';
+		};
 
 		//
 		//	Wtite the 'C' style header framework
 		//
-		file_obj.Write_Line ("#if defined(_MSC_VER)");
-		file_obj.Write_Line ("#pragma once");
-		file_obj.Write_Line ("#endif");
-		file_obj.Write_Line ("");
+		write_line ("#if defined(_MSC_VER)");
+		write_line ("#pragma once");
+		write_line ("#endif");
+		write_line ("");
 
-		file_obj.Write_Line ("#ifndef __STRING_IDS_H");
-		file_obj.Write_Line ("#define __STRING_IDS_H");
-		file_obj.Write_Line ("");
+		write_line ("#ifndef __STRING_IDS_H");
+		write_line ("#define __STRING_IDS_H");
+		write_line ("");
 
 		StringClass version_line;
 		version_line.Format ("#define STRINGS_VER		%d", m_VersionNumber);
-		file_obj.Write_Line (version_line);
+		file << static_cast<const char *>(version_line) << '\n';
 
-		file_obj.Write_Line ("");
-		file_obj.Write_Line ("// TRANSLATEDB: Begin ID Block");
+		write_line ("");
+		write_line ("// TRANSLATEDB: Begin ID Block");
 
 		//
 		//	Loop over all the translation objects and write a #define to the
@@ -554,19 +523,13 @@ TranslateDBClass::Export_C_Header (const char *filename)
 				//
 				StringClass id_entry;
 				id_entry.Format ("#define %s		%d", (const char *)object->Get_ID_Desc (), object->Get_ID ());				
-				file_obj.Write_Line (id_entry);
+				file << static_cast<const char *>(id_entry) << '\n';
 			}
 		}
 
-		file_obj.Write_Line ("// TRANSLATEDB: End ID Block");
-		file_obj.Write_Line ("");
-		file_obj.Write_Line ("#endif //__STRING_IDS_H");
-
-		//
-		//	Close the file
-		//
-		file_obj.Detach ();
-		::CloseHandle (file);
+		write_line ("// TRANSLATEDB: End ID Block");
+		write_line ("");
+		write_line ("#endif //__STRING_IDS_H");
 	}
 	
 	return ;
@@ -581,30 +544,19 @@ TranslateDBClass::Export_C_Header (const char *filename)
 void
 TranslateDBClass::Import_C_Header (const char *filename)
 {
-	//
-	//	Create the file
-	//
-	HANDLE file = ::CreateFile (filename,
-										  GENERIC_READ,
-										  FILE_SHARE_READ,
-										  NULL,
-										  OPEN_EXISTING,
-										  0L,
-										  NULL);
-
-	WWASSERT (file != INVALID_HANDLE_VALUE);
-	if (file != INVALID_HANDLE_VALUE) {
-
-		TextFileClass file_obj;
-		file_obj.Attach (file);
+	std::ifstream file(filename);
+	WWASSERT(file.is_open());
+	if (file.is_open()) {
 
 		StringClass line;
 		bool found_id_block = false;
+		std::string line_buffer;
 
 		//
 		//	Look for the start of the ID block
 		//
-		while (found_id_block == false && file_obj.Read_Line (line)) {
+		while (found_id_block == false && std::getline(file, line_buffer)) {
+			line = line_buffer.c_str();
 			found_id_block = (line.Compare_No_Case ("// TRANSLATEDB: Begin ID Block") == 0);
 		}
 
@@ -614,7 +566,8 @@ TranslateDBClass::Import_C_Header (const char *filename)
 			//	Read each ID define from the header file
 			//
 			bool found_end_block = false;
-			while (found_end_block == false && file_obj.Read_Line (line)) {
+			while (found_end_block == false && std::getline(file, line_buffer)) {
+				line = line_buffer.c_str();
 
 				if (::strnicmp (line, "#define ", 8) == 0) {
 					
@@ -683,12 +636,6 @@ TranslateDBClass::Import_C_Header (const char *filename)
 				}
 			}
 		}
-
-		//
-		//	Close the file
-		//
-		file_obj.Detach ();
-		::CloseHandle (file);
 	}
 	
 	return ;
@@ -1176,25 +1123,9 @@ Convert_Chars_To_Newline (StringClass &string)
 void
 TranslateDBClass::Import_Strings (const char *filename)
 {
-	//
-	//	Open the file
-	//
-	HANDLE file = ::CreateFile (	filename,
-											GENERIC_READ,
-											FILE_SHARE_READ,
-											NULL,
-											OPEN_EXISTING,
-											0L,
-											NULL);
-
-	WWASSERT (file != INVALID_HANDLE_VALUE);
-	if (file != INVALID_HANDLE_VALUE) {
-
-		//
-		//	Attach this file to a text file class for easier parsing
-		//
-		TextFileClass file_obj;
-		file_obj.Attach (file);
+	std::ifstream file(filename);
+	WWASSERT(file.is_open());
+	if (file.is_open()) {
 
 		//
 		//	Keep reading data from the file until we've reached the end
@@ -1202,7 +1133,9 @@ TranslateDBClass::Import_Strings (const char *filename)
 		//
 		bool keep_going = true;
 		StringClass line;
-		while (keep_going && file_obj.Read_Line (line)) {
+		std::string line_buffer;
+		while (keep_going && std::getline(file, line_buffer)) {
+			line = line_buffer.c_str();
 			
 			//
 			//	Convert the string to an array of values
@@ -1318,7 +1251,7 @@ int Build_List_From_String
 			// Parse the string and pull out its entries.
 			//
 			count = 0;
-			for (entry = buffer;
+			for (const char *entry = buffer;
 				  (entry != NULL) && (entry[1] != 0);
 				  entry = ::strstr (entry, delimiter))
 			{
@@ -1334,7 +1267,7 @@ int Build_List_From_String
 				// Copy this entry into its own string
 				//
 				StringClass entry_string = entry;
-				char *delim_start = ::strstr (entry_string, delimiter);				
+				char *delim_start = ::strstr (entry_string.Peek_Buffer (), delimiter);				
 				if (delim_start != NULL) {
 					delim_start[0] = 0;
 				}

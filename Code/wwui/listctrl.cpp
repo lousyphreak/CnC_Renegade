@@ -43,7 +43,6 @@
 #include "dialogmgr.h"
 #include "dialogbase.h"
 #include "stylemgr.h"
-#include <commctrl.h>
 
 
 ////////////////////////////////////////////////////////////////

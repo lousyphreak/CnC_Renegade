@@ -37,6 +37,8 @@
 
 #include "Notify.h"
 #include "win.h"
+
+#if defined(_WIN32)
 #include <imm.h>
 
 #pragma warning(disable : 4514)
@@ -123,6 +125,51 @@ typedef TypedActionPtr<CandidateAction, IMECandidate> CandidateEvent;
 typedef std::vector<IMECandidate> IMECandidateCollection;
 
 } // namespace IME
+
+#else
+
+#include <vector>
+
+namespace IME {
+
+class IMECandidate
+	{
+	public:
+		IMECandidate() = default;
+		~IMECandidate() = default;
+
+		void Open(int, HWND, UINT, bool, bool) {}
+		void Read(void) {}
+		void Close(void) {}
+
+		bool IsValid(void) const { return false; }
+		int GetIndex(void) const { return -1; }
+		unsigned long GetStyle(void) const { return 0; }
+		unsigned long GetPageStart(void) const { return 0; }
+		void SetPageStart(unsigned long) {}
+		unsigned long GetPageSize(void) const { return 0; }
+		unsigned long GetCount(void) const { return 0; }
+		unsigned long GetSelection(void) const { return 0; }
+		const wchar_t* GetCandidate(unsigned long) { return L""; }
+		void SelectCandidate(unsigned long) {}
+		void SetView(unsigned long, unsigned long) {}
+		bool IsStartFrom1(void) const { return true; }
+	};
+
+typedef enum
+	{
+	CANDIDATE_OPEN = 1,
+	CANDIDATE_CHANGE,
+	CANDIDATE_CLOSE
+	} CandidateAction;
+
+typedef TypedActionPtr<CandidateAction, IMECandidate> CandidateEvent;
+
+typedef std::vector<IMECandidate> IMECandidateCollection;
+
+} // namespace IME
+
+#endif
 
 #endif // __IMECANDIDATE_H__
 

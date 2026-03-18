@@ -126,12 +126,12 @@ void cBitPacker::Add_Bits(ULONG value, UINT num_bits)
 	// Write the rest of the data as bytes
 	if (num_bits>8) {
 		for (unsigned a=0;a<num_bits;a+=8) {
-			Buffer[byte_num++]=unsigned char(value>>24);
+			Buffer[byte_num++] = static_cast<unsigned char>(value >> 24);
 			value<<=8;
 		}
 	}
 	else {
-		Buffer[byte_num]=unsigned char(value>>24);
+		Buffer[byte_num] = static_cast<unsigned char>(value >> 24);
 	}
 #endif
 }
@@ -177,7 +177,8 @@ void cBitPacker::Get_Bits(ULONG & value, UINT num_bits)
 	value = (ULONG(Buffer[byte_num++]) << (bit_offset+24));
 	num_bits-=bit_count;
 
-	for (int shift=24-bit_count;shift>0;shift-=8,num_bits-=8) value|=unsigned(Buffer[byte_num++]) << shift;
+	int shift = 24 - bit_count;
+	for (; shift>0; shift-=8, num_bits-=8) value |= static_cast<unsigned long>(Buffer[byte_num++]) << shift;
 	if (num_bits>0) value|=Buffer[byte_num++]>>(-shift);
 
 	value >>= 32-read_len;

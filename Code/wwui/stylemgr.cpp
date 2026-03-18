@@ -45,7 +45,9 @@
 #include "render2dsentence.h"
 #include "ini.h"
 #include "ffactory.h"
+#if RENEGADE_WITH_MILES
 #include "wwaudio.h"
+#endif
 
 
 ////////////////////////////////////////////////////////////////
@@ -232,7 +234,7 @@ StyleMgrClass::Initialize_From_INI (const char *filename)
 		//
 		//	Read information about each font and load it into the system
 		//
-		for (index = 0; index < FONT_MAX; index ++) {
+		for (int index = 0; index < FONT_MAX; index ++) {
 			
 			//
 			//	Read information about this font
@@ -315,7 +317,7 @@ StyleMgrClass::Shutdown (void)
 	//
 	//	Unregister this font with windows
 	//
-	for (index = 0; index < FontFileList.Count (); index ++) {
+	for (int index = 0; index < FontFileList.Count (); index ++) {
 		::RemoveFontResource (FontFileList[index]);
 	}
 
@@ -1121,6 +1123,10 @@ StyleMgrClass::Configure_Renderer (Render2DClass *renderer)
 void
 StyleMgrClass::Play_Sound (EVENT_AUDIO event)
 {
+	#if !RENEGADE_WITH_MILES
+	(void)event;
+	return ;
+	#else
 	if (	WWAudioClass::Get_Instance () == NULL ||
 			EventAudioList[event].Get_Length () == 0)
 	{
@@ -1139,5 +1145,6 @@ StyleMgrClass::Play_Sound (EVENT_AUDIO event)
 	//	Play the sound effect
 	//
 	WWAudioClass::Get_Instance ()->Simple_Play_2D_Sound_Effect (filename, 1.0F, volume);
+	#endif
 	return ;
 }

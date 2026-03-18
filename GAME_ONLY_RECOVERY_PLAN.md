@@ -428,6 +428,16 @@ Get the middle layer of game-support code compiling before the renderer and exec
 - all support/runtime libraries above compile
 - the remaining blockers are primarily renderer, audio, gameplay, scripts, and app startup
 
+### Phase 3 implementation status (2026-03-18)
+
+- [x] `wwsaveload`, `wwbitpack`, `wwtranslatedb`, `wwui`, and `wwnet` are present in the active CMake graph.
+- [x] `cmake --build build --target wwsaveload wwbitpack wwtranslatedb wwui wwnet -j1` succeeds in the Linux x64 bootstrap configuration.
+- [x] `wwsaveload`, `wwbitpack`, and `wwtranslatedb` build from their broad historical source sets with Linux portability fixes applied in shared compatibility layers and targeted source cleanups.
+- [x] `wwui` builds on non-Windows in a bootstrap subset configuration with Win32 IME/resource-parser and later-phase-heavy control sources fenced out until renderer/input-adjacent phases land.
+- [x] `wwnet` builds on non-Windows in a bootstrap subset configuration with the lower-level socket/runtime/object layers online and the gameplay/session-heavy connection layer deferred.
+- [x] Phase 3 no longer requires GameSpy, WOL, COM, or other legacy service integrations just to compile the support/runtime library slice.
+- [ ] The full historical non-Windows source sets for `wwui` and `wwnet` are not restored yet; their deferred files remain later-phase work tied to renderer, input, or higher-level gameplay/network bring-up.
+
 ## Phase 4 — Stub the missing middleware before trying to link the game
 
 ### Phase 4 objective

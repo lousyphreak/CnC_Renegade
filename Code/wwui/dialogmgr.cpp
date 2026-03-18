@@ -38,7 +38,6 @@
 #include "dialogmgr.h"
 #include "dialogbase.h"
 #include "childdialog.h"
-#include "dx8wrapper.h"
 #include "assetmgr.h"
 #include "rinfo.h"
 #include "camera.h"

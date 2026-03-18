@@ -344,7 +344,7 @@ void EditCtrlClass::Get_Display_Text(WideStringClass &text)
 			buffer[index] = L'*';
 		}
 
-		buffer[index] = 0;
+		buffer[len] = 0;
 	} else {
 		text = Title;
 	}

@@ -41,6 +41,8 @@
 #include "Notify.h"
 #include "WideString.h"
 #include "win.h"
+
+#if defined(_WIN32)
 #include <imm.h>
 
 namespace IME {
@@ -214,4 +216,89 @@ class IMEManager :
 
 } // namespace IME
 
-#endif __IMEMANAGER_H__
+#else
+
+namespace IME {
+
+#define IME_MAX_STRING_LEN 255
+#define IME_MAX_TYPING_LEN 80
+
+class IMEManager;
+
+typedef enum
+	{
+	IME_ACTIVATED = 1,
+	IME_DEACTIVATED,
+	IME_LANGUAGECHANGED,
+	IME_GUIDELINE,
+	IME_ENABLED,
+	IME_DISABLED,
+	} IMEAction;
+
+typedef TypedActionPtr<IMEAction, IMEManager> IMEEvent;
+
+typedef enum
+	{
+	COMPOSITION_INVALID = 0,
+	COMPOSITION_TYPING,
+	COMPOSITION_START,
+	COMPOSITION_CHANGE,
+	COMPOSITION_FULL,
+	COMPOSITION_END,
+	COMPOSITION_CANCEL,
+	COMPOSITION_RESULT
+	} CompositionAction;
+
+typedef TypedActionPtr<CompositionAction, IMEManager> CompositionEvent;
+
+class UnicodeType;
+typedef TypedEvent<UnicodeType, wchar_t> UnicodeChar;
+
+class IMEManager :
+		public RefCountClass,
+		public Notifier<IMEEvent>,
+		public Notifier<UnicodeChar>,
+		public Notifier<CompositionEvent>,
+		public Notifier<CandidateEvent>
+	{
+	public:
+		static IMEManager* Create(HWND) { return NULL; }
+
+		void Activate(void) {}
+		void Deactivate(void) {}
+		bool IsActive(void) const { return false; }
+
+		void Disable(void) {}
+		void Enable(void) {}
+		bool IsDisabled(void) const { return true; }
+
+		const wchar_t* GetDescription(void) const { return L""; }
+		WORD GetLanguageID(void) const { return 0; }
+		UINT GetCodePage(void) const { return CP_ACP; }
+		const wchar_t* GetResultString(void) const { return L""; }
+		const wchar_t* GetCompositionString(void) const { return L""; }
+		long GetCompositionCursorPos(void) const { return 0; }
+		const wchar_t* GetReadingString(void) const { return L""; }
+
+		#ifdef SHOW_IME_TYPING
+		const wchar_t* GetTypingString(void) const { return L""; }
+		#endif
+
+		void GetTargetClause(unsigned long& start, unsigned long& end) { start = 0; end = 0; }
+		bool GetCompositionFont(LPLOGFONT) { return false; }
+		const IMECandidateCollection GetCandidateColl(void) const { return IMECandidateCollection(); }
+		unsigned long GetGuideline(wchar_t* outString, int length)
+		{
+			if (outString != NULL && length > 0) {
+				outString[0] = 0;
+			}
+			return GL_LEVEL_NOGUIDELINE;
+		}
+		bool ProcessMessage(HWND, UINT, WPARAM, LPARAM, LRESULT&) { return false; }
+	};
+
+} // namespace IME
+
+#endif
+
+#endif // __IMEMANAGER_H__

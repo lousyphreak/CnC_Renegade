@@ -19,8 +19,9 @@ Move the repository from:
 
 To:
 
-- a modern **CMake** build
-- a game executable that can be built with a modern compiler
+- a modern, **cross-platform CMake** build (Windows + Linux/macOS supported)
+- a game executable that can be built with a modern compiler on all supported platforms
+- a portable foundation that uses **SDL3** where applicable for windowing, input, audio, and timing
 - missing functionality hidden behind controlled feature flags during bring-up
 - incremental restoration of game features until the game is fully functional
 
@@ -60,8 +61,8 @@ To:
 
 The recovery effort should target these milestones in order:
 
-1. **CMake configure succeeds** for a minimal Windows x86 bootstrap.
-2. **Core runtime libraries compile** with modern MSVC.
+1. **CMake configure succeeds** for a minimal bootstrap on a supported platform (initially Linux x64) and the build system is structured to support Windows and macOS targets from day one.
+2. **Core runtime libraries compile** with a modern compiler.
 3. **The game executable links** with stubs for missing middleware.
 4. **The executable starts and enters the main loop** with null/stubbed renderer/audio/online paths.
 5. **The executable renders a window / first frame**.
@@ -115,23 +116,26 @@ The recommended order is based on the current audits and the source tree itself.
 - `wwdebug/wwprofile.cpp` and `wwdebug/wwmemlog.cpp` contain x86-only asm.
 - `wwutil/stackdump.cpp`, `wwlib/Except.cpp`, and `Combat/debug.cpp` load `IMAGEHLP.DLL` and depend on Win32 stack walking.
 
-### Why Windows x86 first
+### Why Linux x64 is the initial runtime target (but the build must be cross-platform)
 
-Because the code contains pervasive x86 asm and Win32 assumptions, the first successful modern build target should be:
+Because the code contains pervasive x86 asm and Win32 assumptions, the first successful modern runtime target should be:
 
-- **Windows**
-- **32-bit / Win32**
-- **modern MSVC first**
+- **Linux x64** (modern compiler toolchain, portable runtime)
+- **Windows x86/x64** (secondary runtime targets that must remain supported)
+- **SRD-driven cross-platform compatibility** using SDL3 where applicable (windowing, input, audio, timing)
+
+However, the build system and codebase should be structured from the very beginning to support **macOS** (and other platforms) as first-class targets. This means:
+
+- using CMake and cross-platform abstractions from day one
+- gating Win32/x86-only code behind clear feature/platform flags
+- keeping platform-agnostic code compilable on all platforms (with stubs where necessary)
 
 Do **not** start with:
 
-- Linux
-- macOS
 - ARM64
-- x64
 - a brand-new renderer rewrite before first boot
 
-That can come later. First recover a modern build and a working game on the platform the code was actually written for.
+Those can come later after we establish a portable build baseline and confirm the game boots on the initial target.
 
 ## High-level strategy
 
@@ -218,9 +222,9 @@ Get everyone building the same thing first.
 
 ### Required decisions
 
-- Platform: **Windows only**
-- Architecture: **Win32 / x86 only**
-- Compiler: **modern MSVC first**
+- Platform: **Linux x64** as the initial bootstrap target (with Windows x86/x64 and macOS supported as first-class follow-on targets)
+- Architecture: **x64 (primary), with x86/x64 support for Windows**
+- Compiler: **modern GCC/Clang on Linux**, and **MSVC on Windows**
 - Scope: **game only**, no editor/installer/launcher/tool restoration on the critical path
 
 ### Phase 0 actions

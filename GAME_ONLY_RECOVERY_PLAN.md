@@ -1,0 +1,826 @@
+# Game-Only Recovery Plan
+
+Last updated: 2026-03-17
+
+This document is the **implementation reference** for getting the repository from its current archival state to a **fully working game build**.
+
+This plan is intentionally **game-only**.
+
+It does **not** include restoring the editor/toolchain as part of the critical path. Tools are documented elsewhere under `docs/investigation/`, but they are explicitly **out of scope for the first working game**.
+
+## Goal
+
+Move the repository from:
+
+- VC6-era workspaces and project files
+- missing SDKs and internal dependencies
+- no reproducible build
+- extensive Win32 / DirectX 8 / x86 assumptions
+
+To:
+
+- a modern **CMake** build
+- a game executable that can be built with a modern compiler
+- missing functionality hidden behind controlled feature flags during bring-up
+- incremental restoration of game features until the game is fully functional
+
+## Scope and non-goals
+
+## In scope
+
+- `Code/Commando/`
+- `Code/Combat/`
+- `Code/ww3d2/`
+- `Code/wwphys/`
+- `Code/wwlib/`
+- `Code/WWMath/`
+- `Code/wwutil/`
+- `Code/wwdebug/`
+- `Code/WWAudio/`
+- `Code/wwui/`
+- `Code/wwnet/`
+- `Code/wwsaveload/`
+- `Code/wwbitpack/`
+- `Code/wwtranslatedb/`
+- `Code/BinkMovie/`
+- `Code/Scripts/`
+- any runtime-side online pieces needed for final game parity (`WWOnline`, `wolapi`, `WOLBrowser`) — **but only after offline/LAN play works**
+
+## Out of scope for the critical path
+
+- `Code/Tools/`
+- `Code/Installer/`
+- `Code/Launcher/`
+- `Code/Tests/`
+- `Code/BandTest/`
+- `Code/SControl/` unless later proven to be a hard runtime dependency
+- historical exporter/plugin ecosystem (`max2w3d`, `Clipbord`, `Blender2`, etc.)
+
+## Working definition of “working”
+
+The recovery effort should target these milestones in order:
+
+1. **CMake configure succeeds** for a minimal Windows x86 bootstrap.
+2. **Core runtime libraries compile** with modern MSVC.
+3. **The game executable links** with stubs for missing middleware.
+4. **The executable starts and enters the main loop** with null/stubbed renderer/audio/online paths.
+5. **The executable renders a window / first frame**.
+6. **Offline single-player / local gameplay becomes playable**.
+7. **Audio, movies, and remaining UX features are restored**.
+8. **LAN / non-service-dependent multiplayer works**.
+9. **Legacy online features are either restored via replacement backends or deliberately replaced with modern equivalents**.
+
+Do **not** try to jump directly from step 0 to step 9.
+
+## Evidence that drives this order
+
+The recommended order is based on the current audits and the source tree itself.
+
+### Build graph evidence
+
+- `Code/commando.dsw` shows the main game historically depended on:
+  - `Scripts`
+  - `wwdebug`
+  - `wwlib`
+  - `wwmath`
+  - `wwnet`
+  - `wwphys`
+  - `wwutil`
+  - `WWAudio`
+  - `wwsaveload`
+  - `Combat`
+  - `wwtranslatedb`
+  - `wwbitpack`
+  - `ww3d2`
+  - `wwui`
+  - `BinkMovie`
+  - `BandTest`
+  - `SControl`
+  - `GameSpy`
+- `Commando/commando.dsp` links missing middleware directly: `mss32.lib`, `binkw32.lib`, `gamespy.lib`, DirectX 8 libs, Umbra library paths.
+
+### Missing middleware evidence
+
+- `BinkMovie/BINKMovie.cpp` includes `Bink.h`.
+- `WWAudio` project metadata references `..\miles6\include` and `mss32.lib`.
+- `Commando/CDKeyAuth.cpp` includes multiple `GameSpy\...` headers.
+- `wwphys/dynamicphys.cpp` includes Umbra code under `#if (UMBRASUPPORT)`.
+- `ww3d2/dx8wrapper.cpp` loads `D3D8.DLL`.
+- `Combat/directinput.cpp` loads `DINPUT8.DLL`.
+
+### Compiler and architecture blocker evidence
+
+- `WWMath/wwmath.h` contains `__asm`, `__declspec(naked)`, `__fastcall`.
+- `WWMath/vp.cpp`, `WWMath/matrix3d.cpp`, `WWMath/quat.cpp` contain x86 asm.
+- `wwdebug/wwprofile.cpp` and `wwdebug/wwmemlog.cpp` contain x86-only asm.
+- `wwutil/stackdump.cpp`, `wwlib/Except.cpp`, and `Combat/debug.cpp` load `IMAGEHLP.DLL` and depend on Win32 stack walking.
+
+### Why Windows x86 first
+
+Because the code contains pervasive x86 asm and Win32 assumptions, the first successful modern build target should be:
+
+- **Windows**
+- **32-bit / Win32**
+- **modern MSVC first**
+
+Do **not** start with:
+
+- Linux
+- macOS
+- ARM64
+- x64
+- a brand-new renderer rewrite before first boot
+
+That can come later. First recover a modern build and a working game on the platform the code was actually written for.
+
+## High-level strategy
+
+The implementation sequence should be:
+
+1. add CMake without changing behavior
+2. compile the lowest-level libraries first
+3. introduce a **single central feature-flag system**
+4. hide missing middleware behind `#if`/generated config defines
+5. get a **linkable headless/null-feature executable**
+6. restore visible functionality in the order that gives the fastest feedback
+7. restore the remaining runtime features until the game is complete
+
+## Central rule: use a generated feature-config header
+
+Do **not** scatter ad-hoc `#ifdef SOME_RANDOM_TEMP_HACK` across the codebase.
+
+Create a single generated build configuration header, for example:
+
+- `Code/renegade_build_config.h.in`
+- generated to something like `build/generated/renegade_build_config.h`
+
+Every missing subsystem gate should be driven from that header and corresponding CMake options.
+
+## Required first-wave feature flags
+
+The first implementation step must introduce explicit feature flags for the missing or high-risk systems.
+
+Suggested initial flags:
+
+| Flag | Initial state | Purpose | Primary evidence / touchpoints |
+| --- | --- | --- | --- |
+| `RENEGADE_WITH_X86_ASM` | `OFF` | Disable fragile x86 asm during bring-up | `WWMath/wwmath.h`, `WWMath/vp.cpp`, `wwdebug/wwprofile.cpp`, `wwdebug/wwmemlog.cpp` |
+| `RENEGADE_WITH_WIN32_STACKTRACE` | `OFF` | Disable ImageHlp stack walking / SEH extras | `wwutil/stackdump.cpp`, `wwlib/Except.cpp`, `Combat/debug.cpp` |
+| `RENEGADE_WITH_UMBRA` | `OFF` | Remove missing Umbra dependency early | `wwphys/dynamicphys.cpp`, `Commando/console.cpp`, `Commando/consolefunction.cpp` |
+| `RENEGADE_WITH_BINK` | `OFF` | Hide missing Bink codec during bootstrap | `BinkMovie/BINKMovie.cpp`, `Commando/commando.dsp` |
+| `RENEGADE_WITH_MILES` | `OFF` | Hide missing Miles dependency and allow null audio | `WWAudio.dsp`, `Commando/commando.dsp` |
+| `RENEGADE_WITH_GAMESPY` | `OFF` | Disable missing GameSpy SDK and internet-server integration | `Commando/CDKeyAuth.cpp`, `gamespyadmin.*`, `GameSpy_QnR.*`, `commando.dsp` |
+| `RENEGADE_WITH_LEGACY_WOL` | `OFF` | Disable COM/browser/WOL service paths until late | `Commando/WebBrowser.cpp`, `WWOnline/*`, `wolapi/*`, `WOLBrowser/*` |
+| `RENEGADE_WITH_DX8_RENDERER` | `OFF` initially | Allow null renderer / compile-first strategy | `ww3d2/dx8wrapper.cpp`, `ww3d2/dx8renderer.cpp`, `Commando/WINMAIN.CPP` |
+| `RENEGADE_WITH_DIRECTINPUT` | `OFF` initially | Allow null input path until rendering exists | `Combat/directinput.cpp` |
+| `RENEGADE_WITH_SCRIPT_DLL` | `ON`, but allow stub implementation | Preserve runtime script loading contract while bootstrapping | `Combat/scripts.cpp` |
+| `RENEGADE_WITH_BANDTEST` | `OFF` | Remove non-game audio test dependency from early builds | `commando.dsw` dependency list |
+| `RENEGADE_WITH_SCONTROL` | `OFF` | Remove remote server control from early game-only builds | `commando.dsw` dependency list |
+
+These flags are not the final architecture; they are the **bootstrap survival kit**.
+
+## Target order for the first CMake build
+
+The first CMake milestone should only target what is needed to build the game executable.
+
+Recommended initial target order:
+
+1. `wwdebug`
+2. `wwlib`
+3. `WWMath`
+4. `wwutil`
+5. `wwsaveload`
+6. `wwbitpack`
+7. `wwtranslatedb`
+8. `wwui`
+9. `wwnet`
+10. `WWAudio` (null/stub backend first)
+11. `wwphys` (Umbra off)
+12. `ww3d2` (null or compatibility renderer first)
+13. `Combat`
+14. `Scripts`
+15. `BinkMovie` (stub first)
+16. `Commando`
+
+Reasoning:
+
+- this follows the historical dependency direction from `commando.dsw`
+- it puts the compiler- and platform-problem libraries first
+- it avoids wasting time on tools, installer, launcher, and side utilities
+
+## Detailed implementation phases
+
+## Phase 0 — Choose the bootstrap platform and freeze the scope
+
+### Objective
+
+Get everyone building the same thing first.
+
+### Required decisions
+
+- Platform: **Windows only**
+- Architecture: **Win32 / x86 only**
+- Compiler: **modern MSVC first**
+- Scope: **game only**, no editor/installer/launcher/tool restoration on the critical path
+
+### Phase 0 actions
+
+1. Treat all tool, installer, and launcher projects as **out of scope** for the initial CMake graph.
+2. Define the bootstrap deliverable as:
+   - `Renegade.exe` equivalent, or a temporary renamed bootstrap executable
+3. Define a separate list of **deferred directories**:
+   - `Code/Tools`
+   - `Code/Installer`
+   - `Code/Launcher`
+   - `Code/Tests`
+
+### Phase 0 completion criteria
+
+- there is no ambiguity about the first supported compiler/platform combination
+- implementors are not trying to solve Linux/macOS/editor problems before the game builds
+
+## Phase 1 — Introduce the CMake skeleton
+
+### Phase 1 objective
+
+Replace VC6 project orchestration with a modern build system **without** trying to solve every code problem at once.
+
+### Phase 1 files to create
+
+At minimum:
+
+- `CMakeLists.txt` at repo root
+- `cmake/RenegadeOptions.cmake`
+- `cmake/RenegadeCompilerSettings.cmake`
+- `cmake/RenegadeTargets.cmake` or equivalent shared helper file
+- `Code/CMakeLists.txt`
+- one `CMakeLists.txt` per runtime library directory as they are brought online
+- `Code/renegade_build_config.h.in`
+
+### Phase 1 concrete steps
+
+1. Add a root `CMakeLists.txt` that:
+   - requires a modern CMake version
+   - declares the project
+   - enforces Win32/x86 bootstrap assumptions
+   - includes the options/config modules
+   - adds `Code/` as the main source tree
+2. Add CMake options for every first-wave feature flag listed above.
+3. Generate the build config header from CMake.
+4. Start with **empty or placeholder** subdirectory CMake files and add targets in dependency order.
+5. Make the first configure target succeed even if many targets are not yet enabled.
+
+### Phase 1 rules
+
+- Do not copy VC6 flags blindly.
+- Do not try to model every old configuration (`DebugE`, `ProfileE`, etc.) initially.
+- Start with just:
+  - `Debug`
+  - `RelWithDebInfo`
+
+### Phase 1 completion criteria
+
+- `cmake -S . -B build` succeeds
+- feature options can be toggled centrally
+- target scaffolding exists for the core runtime graph
+
+## Phase 2 — Make the foundation libraries compile first
+
+### Phase 2 objective
+
+Remove the biggest compiler and architecture blockers before touching the game executable.
+
+### Phase 2 targets
+
+- `wwdebug`
+- `wwlib`
+- `WWMath`
+- `wwutil`
+
+### Phase 2 concrete tasks
+
+#### 2.1 `WWMath`
+
+Touchpoints:
+
+- `WWMath/wwmath.h`
+- `WWMath/vp.cpp`
+- `WWMath/matrix3d.cpp`
+- `WWMath/quat.cpp`
+
+Actions:
+
+1. Gate all x86 asm behind `RENEGADE_WITH_X86_ASM`.
+2. Add portable C++ fallback implementations for every gated routine.
+3. Preserve public APIs and signatures; only swap implementation paths.
+4. Do **not** try to optimize first — correctness first, speed later.
+
+#### 2.2 `wwdebug`
+
+Touchpoints:
+
+- `wwdebug/wwprofile.cpp`
+- `wwdebug/wwmemlog.cpp`
+
+Actions:
+
+1. Disable asm-based profiling/memlog code behind `RENEGADE_WITH_X86_ASM`.
+2. Provide simpler mutex/atomic or no-op fallbacks where appropriate.
+3. Treat profiling as optional during bootstrap.
+
+#### 2.3 `wwutil` / `wwlib`
+
+Touchpoints:
+
+- `wwutil/stackdump.cpp`
+- `wwlib/Except.cpp`
+- `wwlib/cpudetect.cpp`
+- any other ImageHlp or asm-based helpers
+
+Actions:
+
+1. Gate ImageHlp stack walking and advanced exception tracing behind `RENEGADE_WITH_WIN32_STACKTRACE`.
+2. Provide reduced crash-reporting / plain logging fallback.
+3. Gate or replace asm-heavy CPU detection paths.
+4. Normalize headers/includes enough for modern compilation.
+
+### Phase 2 completion criteria
+
+- these four libraries compile under modern MSVC in the CMake build
+- no required target depends on x86 asm or ImageHlp just to compile
+
+### Phase 2 visible progress
+
+- first real modern-compiler library builds succeed
+- bootstrap no longer depends on legacy VC6-only behavior for the lowest layers
+
+## Phase 3 — Bring up utility/runtime support libraries
+
+### Phase 3 objective
+
+Get the middle layer of game-support code compiling before the renderer and executable.
+
+### Phase 3 targets
+
+- `wwsaveload`
+- `wwbitpack`
+- `wwtranslatedb`
+- `wwui`
+- `wwnet`
+
+### Phase 3 concrete tasks
+
+1. Add each target to CMake with clear include paths and public/private dependencies.
+2. Fix compile-only issues caused by modern headers, stricter type checking, and path normalization.
+3. Keep online-service-specific code disabled if it requires missing middleware.
+4. Treat registry- or COM-heavy helpers as opt-in late paths where possible.
+
+### Phase 3 special note on `wwnet`
+
+- keep the basic socket/runtime code building
+- do not make GameSpy or WOL service code a prerequisite for this phase
+
+### Phase 3 completion criteria
+
+- all support/runtime libraries above compile
+- the remaining blockers are primarily renderer, audio, gameplay, scripts, and app startup
+
+## Phase 4 — Stub the missing middleware before trying to link the game
+
+### Phase 4 objective
+
+Make every missing external dependency non-fatal to the build.
+
+### 4.1 Bink
+
+Evidence:
+
+- `BinkMovie/BINKMovie.cpp` includes `Bink.h`
+- `commando.dsp` links `binkw32.lib`
+
+Actions:
+
+1. Create a `RENEGADE_WITH_BINK` gate around the real Bink path.
+2. Add a stub BinkMovie implementation that:
+   - compiles without `Bink.h`
+   - returns failure or “movie unsupported” cleanly
+   - lets the game skip cinematics rather than fail to link
+3. Keep the public `BinkMovie` API intact.
+
+### 4.2 Miles / audio
+
+Evidence:
+
+- `WWAudio` and `commando.dsp` reference `mss32.lib` and `Miles6`
+
+Actions:
+
+1. Add `RENEGADE_WITH_MILES` gates around Miles-specific code.
+2. Implement a **NullAudio backend** first.
+3. Make `WWAudio` compile and link even when all sound creation calls become harmless no-ops.
+4. Preserve API shape so the rest of the game can compile unchanged.
+
+### 4.3 Umbra
+
+Evidence:
+
+- `wwphys/dynamicphys.cpp` uses `#if (UMBRASUPPORT)` and includes Umbra code
+- `Commando/consolefunction.cpp` already has an “Umbra support not compiled into this build” path
+
+Actions:
+
+1. Drive Umbra entirely from `RENEGADE_WITH_UMBRA`.
+2. Make the build default to `OFF`.
+3. Prefer compile-time omission over elaborate fake implementations.
+4. Keep memory/stat console code returning sensible zero/disabled values.
+
+### 4.4 GameSpy / legacy internet services
+
+Evidence:
+
+- `Commando/CDKeyAuth.cpp` includes multiple `GameSpy\...` headers
+- `commando.dsp` links `gamespy.lib`
+- `gamespyadmin.*`, `GameSpy_QnR.*`, `gamespyauthmgr.*`, `GameSpyBanList.*` are integrated into `Commando`
+
+Actions:
+
+1. Add `RENEGADE_WITH_GAMESPY` and default it `OFF`.
+2. Stub the GameSpy service/admin/auth layers behind the same public interfaces.
+3. Force internet-server listing/authentication paths into disabled/unavailable mode while keeping LAN and offline paths buildable.
+4. Do **not** delete the code; wall it off cleanly.
+
+### 4.5 Legacy WOL / browser / COM online UI
+
+Evidence:
+
+- `Commando/WebBrowser.cpp`
+- `WWOnline/WOLSession.cpp`
+- `wolapi/WOLAPI.h`
+- `WOLBrowser/WOLBrowser.h`
+
+Actions:
+
+1. Add `RENEGADE_WITH_LEGACY_WOL` and default it `OFF`.
+2. Stub browser/login/matchmaking UI integration.
+3. Keep offline and local-network gameplay decoupled from WOL/COM pieces.
+
+### Phase 4 completion criteria
+
+- every missing third-party runtime dependency is hidden behind a controlled flag
+- the game can be linked without Bink, Miles, Umbra, GameSpy, or WOL
+
+## Phase 5 — Get gameplay and script loading online
+
+### Phase 5 objective
+
+Compile the real gameplay layer and preserve the script loading contract.
+
+### Phase 5 targets
+
+- `Combat`
+- `Scripts`
+
+### 5.1 `Combat`
+
+Actions:
+
+1. Add `Combat` to CMake after all prerequisite runtime libs compile.
+2. Keep editor-only defines (`PARAM_EDITING_ON`) out of the game-only bootstrap build.
+3. Gate DirectInput-specific files so `Combat` can build with null input first.
+4. Preserve gameplay logic; do not start rewriting game systems while the build is still unstable.
+
+### 5.2 `Scripts`
+
+Evidence:
+
+- `Combat/scripts.cpp` loads a DLL and resolves script entry points dynamically
+
+Actions:
+
+1. Build `Scripts` as a DLL early, even if functionality is initially reduced.
+2. If needed, provide a temporary minimal script DLL that exports the required entry points and allows the engine to continue.
+3. Once the bootstrap executable links and starts, restore the real script contents incrementally.
+
+### Phase 5 completion criteria
+
+- `Combat` compiles and links
+- a `Scripts` DLL exists that satisfies the runtime loader contract
+
+### Phase 5 visible progress
+
+- major gameplay code is now in the build graph
+- the future executable can boot further without dying on missing DLL exports
+
+## Phase 6 — Bring up the renderer and input in two stages
+
+### Phase 6 objective
+
+Get from “the game links” to “the game produces visible output and accepts input” with the least risk.
+
+### Stage 6A — null renderer / null input bootstrap
+
+#### Renderer
+
+Evidence:
+
+- `ww3d2/dx8wrapper.cpp` loads `D3D8.DLL`
+- `ww3d2/dx8renderer.cpp` is central to rendering
+- `Commando/WINMAIN.CPP` also loads `D3D8.DLL`
+
+Actions:
+
+1. Add `RENEGADE_WITH_DX8_RENDERER` and default it `OFF` for the first linkable bootstrap.
+2. Provide a null renderer path sufficient to let the app initialize, log, and advance the main loop.
+3. If necessary, compile out DX8-specific source files and replace them with temporary stub translation units that satisfy the same interfaces.
+
+#### Input
+
+Evidence:
+
+- `Combat/directinput.cpp` loads `DINPUT8.DLL`
+
+Actions:
+
+1. Add `RENEGADE_WITH_DIRECTINPUT` and default it `OFF` initially.
+2. Provide a null input backend that reports “no input” but keeps the app stable.
+
+### Stage 6B — first real frame / first real input
+
+#### Recommended short-term strategy
+
+For fastest visible progress, **do not** start by rewriting the entire renderer to Vulkan/OpenGL.
+
+Instead:
+
+1. Keep the existing `ww3d2` API shape.
+2. Restore a **Windows-only compatibility rendering path first**.
+3. Make the existing DX8-oriented code compile and run via the least invasive compatibility approach possible.
+
+Only after the game is visibly running should a deeper render-backend refactor become a priority.
+
+#### Input re-enable order
+
+1. Restore enough input for menu navigation and quitting.
+2. Restore gameplay input after the first frame exists.
+3. Only then revisit deeper abstraction if desired.
+
+### Phase 6 completion criteria
+
+- the game opens a window
+- the main loop runs stably
+- the first frame is visible
+- basic input works
+
+### Phase 6 visible progress
+
+- this is the first “it is obviously alive” milestone
+
+## Phase 7 — Link and boot `Commando`
+
+### Phase 7 objective
+
+Get the real game executable online with the stubbed subsystems above.
+
+### Phase 7 primary targets/files
+
+- `Commando/WINMAIN.CPP`
+- `Commando/init.cpp`
+- `Commando/cnetwork.cpp`
+- `Commando/combatgmode.cpp`
+- `Commando/console.cpp`
+- `Commando/consolefunction.cpp`
+- any startup/config/resource files needed for the base shell
+
+### Phase 7 concrete tasks
+
+1. Add the `Commando` target last, after all prerequisite libraries exist.
+2. Remove non-essential historical dependencies from the first bootstrap link if they are not truly required for runtime:
+   - `BandTest`
+   - `SControl`
+   - `GameSpy`
+3. Keep internet-service-dependent menus/features hidden or disabled when `RENEGADE_WITH_GAMESPY=OFF` and `RENEGADE_WITH_LEGACY_WOL=OFF`.
+4. Keep movie/audio startup paths tolerant of `RENEGADE_WITH_BINK=OFF` and `RENEGADE_WITH_MILES=OFF`.
+5. Prefer runtime-visible “feature unavailable” behavior over link-time breakage.
+
+### Phase 7 completion criteria
+
+- the CMake build produces a real game executable
+- the executable starts and reaches the idle/main loop path
+
+## Phase 8 — Reach a first playable offline build
+
+### Phase 8 objective
+
+Move from “the exe starts” to “you can actually play the game offline.”
+
+### Phase 8 priorities
+
+1. rendering stable enough for menus/world display
+2. input stable enough for real gameplay
+3. script DLL integration stable
+4. required data/package loading stable
+5. audio still optional if needed
+6. movies still optional if needed
+
+### Phase 8 concrete steps
+
+1. Verify the game can boot without internet-service features.
+2. Make sure missing GameSpy/WOL code does not block local/offline game modes.
+3. Fix whatever runtime asset/package assumptions are required to load the title screen / main menu / first mission.
+4. Keep all non-critical features behind clear disable paths rather than restoring them prematurely.
+
+### Phase 8 completion criteria
+
+- the user can launch into at least one offline playable path
+- the core game loop is usable
+- crashes are now primarily feature-specific, not architectural
+
+### Phase 8 visible progress
+
+- **first playable build**
+
+## Phase 9 — Restore audio, movies, and remaining player-facing runtime features
+
+### Phase 9 objective
+
+Turn the offline playable build into a reasonably complete single-player/local build.
+
+### 9.1 Audio restoration
+
+Recommended order:
+
+1. keep NullAudio until first playable build exists
+2. replace Miles with a modern backend
+3. re-enable 2D/UI audio first
+4. then 3D positional sound, streaming, and advanced behavior
+
+Touchpoints:
+
+- `WWAudio/*`
+- any game-side creation/use sites revealed during testing
+
+### 9.2 Movie restoration
+
+Recommended order:
+
+1. keep cinematics skippable while Bink is stubbed
+2. replace Bink playback later with a modern decoder path
+3. re-enable intro/cutscene playback after core gameplay is stable
+
+Touchpoints:
+
+- `BinkMovie/*`
+- `Commando` movie call sites
+
+### Phase 9 completion criteria
+
+- the game is enjoyable offline without obvious missing player-facing systems
+- missing multimedia is no longer a blocker for normal play
+
+## Phase 10 — Restore LAN and non-service-dependent multiplayer
+
+### Phase 10 objective
+
+Recover networked play without depending on dead proprietary internet services.
+
+### Phase 10 why this is not earlier
+
+Because the runtime/game loop must already be stable before debugging multiplayer behavior is worth the cost.
+
+### Phase 10 concrete steps
+
+1. Keep `wwnet` in the build from earlier phases.
+2. Ensure LAN or direct-connect-style flows work without GameSpy/WOL.
+3. Separate service discovery/authentication from the actual game networking path.
+4. Make service integration optional rather than central.
+
+### Phase 10 completion criteria
+
+- LAN / direct local multiplayer is functional without GameSpy/WOL
+
+## Phase 11 — Restore or replace legacy online services
+
+### Phase 11 objective
+
+Only after offline and LAN play work should the project attempt full online parity.
+
+### Phase 11 subsystems involved
+
+- `Commando` GameSpy integration files
+- `WWOnline/*`
+- `wolapi/*`
+- `WOLBrowser/*`
+- any UI/login/browser/auth code that depends on them
+
+### Phase 11 concrete strategy
+
+1. Do **not** try to rebuild against the original proprietary GameSpy stack if it remains unavailable.
+2. Replace old service assumptions with project-controlled interfaces.
+3. Preserve old in-game flow where practical, but substitute modern/community-owned backends.
+4. Make sure the final architecture never again requires unavailable SDKs just to build.
+
+### Phase 11 completion criteria
+
+- the project has a fully working online path appropriate for current infrastructure
+- or the legacy internet path is deliberately replaced and documented as such
+
+## Phase 12 — Cleanup and hardening
+
+### Phase 12 objective
+
+Remove bring-up debt once the game works.
+
+### Phase 12 required tasks
+
+1. Audit every bootstrap feature flag.
+2. Remove temporary stubs that are no longer needed.
+3. Keep permanent optional features only where they represent real product choices.
+4. Collapse duplicate code paths created only for bring-up.
+5. Add automated build/test smoke checks for:
+   - configure
+   - core libs
+   - executable link
+   - basic startup
+   - at least one offline playable path
+
+## What to stub first, in exact order
+
+This is the concrete stub order that should be followed.
+
+1. `RENEGADE_WITH_X86_ASM=OFF`
+   - because `WWMath`, `wwdebug`, and low-level code otherwise block modern compilation immediately
+2. `RENEGADE_WITH_WIN32_STACKTRACE=OFF`
+   - because `IMAGEHLP.DLL`/stack walking is not needed for first boot
+3. `RENEGADE_WITH_UMBRA=OFF`
+   - because the code already contains optional-style Umbra behavior and it is not required for correctness
+4. `RENEGADE_WITH_BINK=OFF`
+   - because movies are non-critical for first playable build
+5. `RENEGADE_WITH_MILES=OFF`
+   - because NullAudio is acceptable during bring-up
+6. `RENEGADE_WITH_GAMESPY=OFF`
+   - because missing GameSpy SDK blocks build and is not needed for offline bring-up
+7. `RENEGADE_WITH_LEGACY_WOL=OFF`
+   - because COM/browser/internet login is not needed for offline bring-up
+8. `RENEGADE_WITH_DX8_RENDERER=OFF` temporarily
+   - only until the executable links and boots; then re-enable visible rendering as the next major milestone
+9. `RENEGADE_WITH_DIRECTINPUT=OFF` temporarily
+   - only until the renderer/main loop is stable enough to support real input restoration
+
+## What to re-enable first, in exact order
+
+Once the game links and boots, re-enable missing functionality in this order:
+
+1. **Renderer / first frame**
+2. **Basic input**
+3. **Script DLL real implementation**
+4. **Offline single-player path**
+5. **UI audio / basic sound**
+6. **3D / positional audio**
+7. **Movies / cinematics**
+8. **LAN multiplayer**
+9. **Legacy online replacement path**
+
+This order maximizes visible progress and minimizes time spent restoring features that do not help prove the game is alive.
+
+## Things that must not be put on the critical path
+
+Do **not** block the game-only plan on any of the following:
+
+- restoring `LevelEdit`
+- restoring SourceSafe/VSS integration
+- restoring `Launcher` / `Installer`
+- resurrecting SafeDisk
+- resurrecting RTPatch
+- rebuilding the 3ds Max exporter plugin ecosystem
+- porting to Linux/macOS/x64 before Win32 works
+- writing a brand-new renderer before the first working boot
+
+## Immediate next implementation actions
+
+The first concrete implementation steps after approving this plan should be:
+
+1. create the root CMake skeleton and generated config header
+2. add CMake targets for `wwdebug`, `wwlib`, `WWMath`, and `wwutil`
+3. introduce the first-wave feature flags
+4. make the foundation libraries compile with asm/stacktrace disabled
+5. add support/runtime libs in dependency order
+6. add stub Bink/Miles/Umbra/GameSpy/WOL implementations
+7. add `Combat`, `Scripts`, and finally `Commando`
+8. get a linkable/null-feature executable
+9. restore renderer and input for first visible progress
+10. iterate until first playable offline build exists
+
+## Bottom line
+
+The shortest path to a fully working game is **not** “solve every missing dependency immediately.”
+
+The shortest path is:
+
+- modernize the build first
+- isolate all missing functionality behind controlled feature flags
+- compile the foundation first
+- link the game with stubs
+- restore visible runtime behavior in the order that proves progress fastest
+- continue re-enabling systems until the game is complete
+
+That gives implementors a concrete path from today’s archive snapshot to a real, buildable, testable game.

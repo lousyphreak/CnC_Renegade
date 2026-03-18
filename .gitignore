@@ -1,6 +1,7 @@
 
 # Ignore RUNable folder
 [Rr]un
+.cache/
 
 # Dependencies
 [Ll]ibs/
@@ -13,6 +14,7 @@ GameSpy/
 DirectX/
 
 # Output build folders
+[Bb]uild/
 [Rr]elease*
 [Pp]rofile*
 [Dd]ebug*

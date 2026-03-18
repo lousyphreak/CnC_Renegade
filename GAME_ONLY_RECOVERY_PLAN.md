@@ -1,6 +1,6 @@
 # Game-Only Recovery Plan
 
-Last updated: 2026-03-17
+Last updated: 2026-03-18
 
 This document is the **implementation reference** for getting the repository from its current archival state to a **fully working game build**.
 
@@ -231,17 +231,28 @@ Get everyone building the same thing first.
 
 1. Treat all tool, installer, and launcher projects as **out of scope** for the initial CMake graph.
 2. Define the bootstrap deliverable as:
-   - `Renegade.exe` equivalent, or a temporary renamed bootstrap executable
+   - `Renegade.exe` equivalent, or a temporary renamed bootstrap executable (`renegade_bootstrap` during initial bring-up)
 3. Define a separate list of **deferred directories**:
    - `Code/Tools`
    - `Code/Installer`
    - `Code/Launcher`
    - `Code/Tests`
+4. Vendor **SDL3** from the official upstream repository as a pinned git submodule at `external/SDL` so windowing, input, audio, and timing all share a single cross-platform baseline during bring-up.
 
 ### Phase 0 completion criteria
 
 - there is no ambiguity about the first supported compiler/platform combination
 - implementors are not trying to solve Linux/macOS/editor problems before the game builds
+- the repository contains a pinned SDL3 submodule and a bootstrap target that can prove the cross-platform foundation builds
+
+### Phase 0 implementation status (2026-03-18)
+
+- [x] Bootstrap platform frozen to **Linux x64**.
+- [x] Follow-on platform structure kept ready for **Windows x86/x64** and **macOS**.
+- [x] Scope frozen to **game only**; tools, installer, launcher, and tests remain off the critical path.
+- [x] SDL3 selected as the portable platform layer and vendored at `external/SDL` from the official upstream repo.
+- [x] SDL3 pin recorded at `release-3.4.2`.
+- [ ] Foundation library targets (`wwdebug`, `wwlib`, `WWMath`, `wwutil`) are not yet online in CMake.
 
 ## Phase 1 — Introduce the CMake skeleton
 
@@ -254,10 +265,14 @@ Replace VC6 project orchestration with a modern build system **without** trying 
 At minimum:
 
 - `CMakeLists.txt` at repo root
+- `.gitmodules`
+- `external/SDL/`
 - `cmake/RenegadeOptions.cmake`
 - `cmake/RenegadeCompilerSettings.cmake`
 - `cmake/RenegadeTargets.cmake` or equivalent shared helper file
 - `Code/CMakeLists.txt`
+- `Code/bootstrap/CMakeLists.txt`
+- `Code/bootstrap/sdl_bootstrap_main.cpp`
 - one `CMakeLists.txt` per runtime library directory as they are brought online
 - `Code/renegade_build_config.h.in`
 
@@ -266,13 +281,15 @@ At minimum:
 1. Add a root `CMakeLists.txt` that:
    - requires a modern CMake version
    - declares the project
-   - enforces Win32/x86 bootstrap assumptions
+   - documents and enforces the **Linux x64** bootstrap assumptions while keeping Windows/macOS structurally supported
    - includes the options/config modules
+   - vendors SDL3 from `external/SDL`
    - adds `Code/` as the main source tree
 2. Add CMake options for every first-wave feature flag listed above.
 3. Generate the build config header from CMake.
-4. Start with **empty or placeholder** subdirectory CMake files and add targets in dependency order.
-5. Make the first configure target succeed even if many targets are not yet enabled.
+4. Add a temporary `renegade_bootstrap` target that links SDL3 and proves the configure/build path before the historical game targets are migrated.
+5. Start with **empty or placeholder** subdirectory CMake files and add targets in dependency order.
+6. Make the first configure target succeed even if many targets are not yet enabled.
 
 ### Phase 1 rules
 
@@ -285,8 +302,19 @@ At minimum:
 ### Phase 1 completion criteria
 
 - `cmake -S . -B build` succeeds
+- `cmake --build build --target renegade_bootstrap` succeeds
 - feature options can be toggled centrally
+- SDL3 is integrated as the portable platform layer for windowing/input/audio/timing
 - target scaffolding exists for the core runtime graph
+
+### Phase 1 implementation status (2026-03-18)
+
+- [x] Root `CMakeLists.txt`, shared CMake modules, and generated build-config plumbing are in place.
+- [x] The official SDL3 repository is vendored as a git submodule at `external/SDL` and pinned to `release-3.4.2`.
+- [x] `cmake -S . -B build` succeeds on the Linux x64 bootstrap target.
+- [x] `cmake --build build --target renegade_bootstrap` succeeds.
+- [x] `renegade_bootstrap --headless-smoke` succeeds with dummy SDL video/audio drivers.
+- [ ] Historical runtime libraries are not yet migrated into the CMake graph.
 
 ## Phase 2 — Make the foundation libraries compile first
 
@@ -803,9 +831,9 @@ Do **not** block the game-only plan on any of the following:
 
 The first concrete implementation steps after approving this plan should be:
 
-1. create the root CMake skeleton and generated config header
+1. finish validating the root CMake skeleton, generated config header, SDL3 submodule, and `renegade_bootstrap`
 2. add CMake targets for `wwdebug`, `wwlib`, `WWMath`, and `wwutil`
-3. introduce the first-wave feature flags
+3. introduce the first-wave feature flags everywhere those foundation libraries need them
 4. make the foundation libraries compile with asm/stacktrace disabled
 5. add support/runtime libs in dependency order
 6. add stub Bink/Miles/Umbra/GameSpy/WOL implementations

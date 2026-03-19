@@ -48,7 +48,7 @@
 #include "combat.h"
 #include "backgroundmgr.h"
 #include "conversationmgr.h"
-#include "weathermgr.h"
+#include "WeatherMgr.h"
 #include "wwmemlog.h"
 #include "translatedb.h"
 #include "mapmgr.h"

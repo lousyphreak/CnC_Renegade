@@ -38,7 +38,7 @@
 #include "scripts.h"
 #include "groupcontrol.h"
 #include "group.h"
-#include "customevents.h"
+#include "CustomEvents.h"
 #include "dprint.h"
 
 

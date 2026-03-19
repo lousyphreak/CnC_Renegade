@@ -26,6 +26,9 @@ using D3DCOLOR = uint32;
 #ifndef D3DRS_FILLMODE
 #define D3DRS_FILLMODE 8
 #endif
+#ifndef D3DRS_ZBIAS
+#define D3DRS_ZBIAS 47
+#endif
 #ifndef D3DFILL_POINT
 #define D3DFILL_POINT 1
 #endif
@@ -110,6 +113,12 @@ public:
 	template <typename... Args>
 	static void Set_DX8_Render_State(Args&&...)
 	{
+	}
+
+	static void Set_Alpha(const float alpha, unsigned int & color)
+	{
+		unsigned char * component = reinterpret_cast<unsigned char *>(&color);
+		component[3] = static_cast<unsigned char>(255.0f * alpha);
 	}
 
 	static void Set_World_Identity()

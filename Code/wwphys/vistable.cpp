@@ -44,6 +44,7 @@
 #include "lzo1x.h"
 #include "phys.h"
 #include "wwmemlog.h"
+#include <cstdio>
 #include <windows.h>
 
 /*
@@ -478,6 +479,21 @@ void CompressedVisTableClass::Load (void* hfile)
 		BufferSize = 0L;
 	}
 
+	#ifdef _UNIX
+	if (hfile != NULL) {
+
+		FILE * file = static_cast<FILE *>(hfile);
+
+		if (::fread(&BufferSize, sizeof(BufferSize), 1, file) != 1) {
+			BufferSize = 0;
+			return;
+		}
+
+		Buffer = new uint8[BufferSize];
+		const size_t bytes_read = ::fread(Buffer, sizeof(uint8), BufferSize, file);
+		WWASSERT(bytes_read == static_cast<size_t>(BufferSize));
+	}
+	#else
 	if ((HANDLE)hfile != INVALID_HANDLE_VALUE) {
 
 		/*
@@ -492,12 +508,24 @@ void CompressedVisTableClass::Load (void* hfile)
 		Buffer = new uint8[BufferSize];
 		::ReadFile ((HANDLE)hfile, Buffer, sizeof (uint8) * BufferSize, &dwbytes_read, NULL);
 	}
+	#endif
 	
 	return;
 }
 
 void CompressedVisTableClass::Save (void* hfile)
 {
+	#ifdef _UNIX
+	if (hfile != NULL) {
+
+		FILE * file = static_cast<FILE *>(hfile);
+		const size_t size_written = ::fwrite(&BufferSize, sizeof(BufferSize), 1, file);
+		WWASSERT(size_written == 1);
+
+		const size_t bytes_written = ::fwrite(Buffer, sizeof(uint8), BufferSize, file);
+		WWASSERT(bytes_written == static_cast<size_t>(BufferSize));
+	}
+	#else
 	if ((HANDLE)hfile != INVALID_HANDLE_VALUE) {
 
 		/*
@@ -511,6 +539,7 @@ void CompressedVisTableClass::Save (void* hfile)
 		*/
 		::WriteFile ((HANDLE)hfile, Buffer, sizeof (uint8) * BufferSize, &dwbytes_written, NULL);		
 	}
+	#endif
 	
 	return;
 }

@@ -49,7 +49,7 @@
 #include "random.h"
 #include	"rendobj.h"
 #include "saveloadsubsystem.h"
-#include "soundenvironment.h"
+#include "SoundEnvironment.h"
 #include "texture.h"
 #include "vector.h"
 #include "vector2.h"
@@ -152,6 +152,8 @@ class WeatherSystemClass : public RenderObjClass
 			MAX_AGE					 = 1000000
 		};
 
+	public:
+
 		struct RayStruct : public AutoPoolClass <RayStruct, GROWTH_STEP>
 		{
 			public:
@@ -185,6 +187,8 @@ class WeatherSystemClass : public RenderObjClass
 				unsigned char	 RenderMode;
 				unsigned char	 Pad [2];				// Pad structure to 4-byte multiple.
 		};
+
+	protected:
 
 		// Utility functions.
 		float Spawn_Count (float time) {return (ParticleDensity * EmitterSize * EmitterSize * time);}

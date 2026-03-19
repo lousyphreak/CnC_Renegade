@@ -1,40 +1,114 @@
 #pragma once
 
+#include "dx8fvf.h"
 #include "refcount.h"
 
 #include <vector>
 
-#ifndef DX8_FVF_XYZNDUV1
-#define DX8_FVF_XYZNDUV1 0
-#endif
-
-#ifndef DX8_FVF_XYZNDUV2
-#define DX8_FVF_XYZNDUV2 1
-#endif
-
 const unsigned dynamic_fvf_type = DX8_FVF_XYZNDUV2;
 
-struct VertexFormatXYZNDUV1
+class VertexBufferClass;
+
+class VertexBufferLockClass
 {
-	float x, y, z;
-	float nx, ny, nz;
-	unsigned diffuse;
-	float u1, v1;
+protected:
+	VertexBufferClass * VertexBuffer;
+	void * Vertices;
+
+	VertexBufferLockClass(VertexBufferClass * vertex_buffer)
+		: VertexBuffer(vertex_buffer),
+		  Vertices(NULL)
+	{
+	}
+
+public:
+	void * Get_Vertex_Array()
+	{
+		return Vertices;
+	}
 };
 
-struct VertexFormatXYZNDUV2
+class VertexBufferClass : public RefCountClass
 {
-	float x, y, z;
-	float nx, ny, nz;
-	unsigned diffuse;
-	float u1, v1;
-	float u2, v2;
+protected:
+	VertexBufferClass(unsigned buffer_type, unsigned fvf, unsigned short vertex_count)
+		: type(buffer_type),
+		  VertexCount(vertex_count),
+		  engine_refs(0),
+		  fvf_info(fvf),
+		  Storage(static_cast<size_t>(vertex_count) * static_cast<size_t>(fvf_info.Get_FVF_Size()), 0)
+	{
+	}
+
+public:
+	const FVFInfoClass & FVF_Info() const
+	{
+		return fvf_info;
+	}
+
+	unsigned short Get_Vertex_Count() const
+	{
+		return VertexCount;
+	}
+
+	unsigned Type() const
+	{
+		return type;
+	}
+
+	void Add_Engine_Ref() const
+	{
+		++engine_refs;
+	}
+
+	void Release_Engine_Ref() const
+	{
+		if (engine_refs > 0) {
+			--engine_refs;
+		}
+	}
+
+	unsigned Engine_Refs() const
+	{
+		return engine_refs;
+	}
+
+	class WriteLockClass : public VertexBufferLockClass
+	{
+	public:
+		explicit WriteLockClass(VertexBufferClass * vertex_buffer)
+			: VertexBufferLockClass(vertex_buffer)
+		{
+			Vertices = vertex_buffer != NULL ? vertex_buffer->Storage.data() : NULL;
+		}
+	};
+
+	class AppendLockClass : public VertexBufferLockClass
+	{
+	public:
+		AppendLockClass(VertexBufferClass * vertex_buffer, unsigned start_index, unsigned)
+			: VertexBufferLockClass(vertex_buffer)
+		{
+			if (vertex_buffer != NULL) {
+				const size_t offset = static_cast<size_t>(start_index) * static_cast<size_t>(vertex_buffer->FVF_Info().Get_FVF_Size());
+				Vertices = vertex_buffer->Storage.data() + offset;
+			}
+		}
+	};
+
+protected:
+	unsigned type;
+	unsigned short VertexCount;
+	mutable unsigned engine_refs;
+	FVFInfoClass fvf_info;
+	std::vector<unsigned char> Storage;
 };
 
-class DX8VertexBufferClass : public RefCountClass
+class DX8VertexBufferClass : public VertexBufferClass
 {
 public:
-	DX8VertexBufferClass(int = 0, int = 0)
+	DX8VertexBufferClass(unsigned fvf = 0, unsigned short vertex_count = 0)
+		: VertexBufferClass(0, fvf, vertex_count)
 	{
 	}
 };
@@ -43,13 +117,34 @@ class DynamicVBAccessClass
 {
 public:
 	DynamicVBAccessClass(int, int vertex_count)
-		: Storage(static_cast<size_t>(vertex_count) * 64U, 0)
+		: FVFInfo(dynamic_fvf_type),
+		  Type(0),
+		  VertexCount(static_cast<unsigned short>(vertex_count)),
+		  Storage(static_cast<size_t>(vertex_count) * static_cast<size_t>(FVFInfo.Get_FVF_Size()), 0)
 	{
 	}
 
 	DynamicVBAccessClass(int, int, int vertex_count)
-		: Storage(static_cast<size_t>(vertex_count) * 64U, 0)
+		: FVFInfo(dynamic_fvf_type),
+		  Type(0),
+		  VertexCount(static_cast<unsigned short>(vertex_count)),
+		  Storage(static_cast<size_t>(vertex_count) * static_cast<size_t>(FVFInfo.Get_FVF_Size()), 0)
 	{
+	}
+
+	const FVFInfoClass & FVF_Info() const
+	{
+		return FVFInfo;
+	}
+
+	unsigned Get_Type() const
+	{
+		return Type;
+	}
+
+	unsigned short Get_Vertex_Count() const
+	{
+		return VertexCount;
 	}
 
 	class WriteLockClass
@@ -75,5 +170,8 @@ public:
 	};
 
 private:
+	FVFInfoClass FVFInfo;
+	unsigned Type;
+	unsigned short VertexCount;
 	std::vector<unsigned char> Storage;
 };

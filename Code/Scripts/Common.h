@@ -38,7 +38,7 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
-#include "customevents.h"
+#include "CustomEvents.h"
 #include "scripts.h"
 #include "dprint.h"
 #include "groupcontrol.h"

@@ -529,7 +529,7 @@ Actions:
 - [x] Umbra is now driven from the central feature configuration instead of a hardcoded local define; `wwphys/umbrasupport.h` and `Code/wwphys/CMakeLists.txt` both honor `RENEGADE_WITH_UMBRA`.
 - [x] The Linux/bootstrap compatibility layer now covers the legacy Win32, Miles, DirectInput, ImageHlp, and several DX8-adjacent include surfaces needed to compile deeper into the runtime graph.
 - [ ] GameSpy and legacy WOL service layers are still untouched on the `Commando` side; they remain later Phase 4 work after the gameplay/runtime libraries build cleanly.
-- [ ] Phase 4 is not yet closed: the renderer-adjacent null-DX8 compatibility work is still incomplete inside `wwphys`, so there is not yet a linkable game executable.
+- [ ] Phase 4 is not yet closed: `wwphys` is now green, but the game executable is still not linkable because the downstream gameplay/script targets are still being stabilized and the GameSpy/WOL service layers remain deferred.
 
 ## Phase 5 — Get gameplay and script loading online
 
@@ -580,7 +580,8 @@ Actions:
 - [x] `Scripts` is now built as a shared library target with the historical runtime-facing name `Scripts`.
 - [x] `Combat/scripts.cpp` preserves the legacy DLL-loading contract while adding non-Windows `.so` fallback candidates (`Scripts.so`, `libScripts.so`, etc.) so the bootstrap runtime can keep the old call sites.
 - [x] `RENEGADE_WITH_SCRIPT_DLL` now gates script-module loading cleanly instead of forcing unconditional runtime failure.
-- [ ] Full `Combat` and `Scripts` compile validation is still pending because the current bring-up is blocked one layer earlier in `wwphys`.
+- [ ] Full `Combat` compile validation is still pending because `Code/Combat/ccamera.cpp` currently fails on `soundscene.h`.
+- [ ] Full `Scripts` compile validation is still pending because `Code/Scripts/Common.h` currently fails on `dprint.h`.
 - [ ] The real script implementation path has not been validated end-to-end yet; only the target wiring and loader compatibility work are in place.
 
 ## Phase 6 — Bring up the renderer and input in two stages
@@ -620,9 +621,9 @@ Actions:
 
 - [x] `RENEGADE_WITH_DX8_RENDERER=OFF` is now exercised by a real stub branch in `ww3d2/dx8wrapper.h` plus bootstrap compatibility headers for `dx8renderer`, `dx8vertexbuffer`, `dx8indexbuffer`, `dx8caps`, and `targa`.
 - [x] `RENEGADE_WITH_DIRECTINPUT=OFF` is now respected in `Code/Combat/CMakeLists.txt`, and a non-Windows `dinput.h` shim exists for compile-time DirectInput keycode dependencies.
-- [x] `wwphys` now compiles far enough into the renderer-adjacent runtime slice that most remaining failures are true DX8-surface gaps rather than generic Linux/VC6 portability fallout.
-- [ ] The null-renderer bootstrap is still incomplete: the current stopping point is `cmake --build build --target wwphys -j1` failing in `Code/wwphys/renegadeterrainpatch.cpp` because it includes the real `ww3d2/dx8fvf.h`, which still requires `<d3d8.h>`.
-- [ ] Before `Combat`, `Scripts`, or `Commando` can be validated downstream, the remaining direct DX8 include paths that bypass the current stubs need to be fenced or shadowed, starting with `dx8fvf.h`.
+- [x] `wwphys` now builds cleanly in the Linux x64 bootstrap configuration, so the remaining bring-up failures have moved downstream into gameplay-layer portability gaps rather than renderer-adjacent `wwphys` fallout.
+- [ ] The null-renderer bootstrap is still incomplete: the current stop point has moved into `Combat` and `Scripts`, which are now reaching for portability-only headers such as `soundscene.h` and `dprint.h`.
+- [ ] Before `Commando` can be validated downstream, the remaining `Combat`/`Scripts` header surfaces need to be normalized so those targets can finish compiling cleanly.
 
 ### Stage 6B — first real frame / first real input
 
@@ -880,10 +881,10 @@ Do **not** block the game-only plan on any of the following:
 The next concrete implementation steps from the current repository state are:
 
 1. keep the root CMake skeleton, generated config header, SDL3 submodule, and `renegade_bootstrap` healthy while expanding the runtime graph
-2. resume from `cmake --build build --target wwphys -j1` and finish the remaining null-renderer compatibility work inside `wwphys`
-3. start with `Code/wwphys/renegadeterrainpatch.cpp` and any neighboring files that include the real `ww3d2/dx8fvf.h` / other direct DX8 headers that bypass the current stubbed `dx8wrapper` path
-4. once `wwphys` builds, immediately validate `Combat` and then `Scripts` in the same Linux x64 bootstrap configuration
-5. after the gameplay/runtime slice is compiling, finish the still-missing Phase 4 service stubs for GameSpy and legacy WOL before attempting `Commando`
+2. normalize the remaining `Combat` portability headers, starting with `Code/Combat/ccamera.cpp` and its `soundscene.h` include
+3. normalize the remaining `Scripts` portability headers, starting with `Code/Scripts/Common.h` and its `dprint.h` include
+4. rerun `cmake --build build --target Combat -j1` and then `cmake --build build --target Scripts -j1` until both targets are green
+5. once `Combat` and `Scripts` are compiling, finish the still-missing Phase 4 service stubs for GameSpy and legacy WOL before attempting `Commando`
 6. add `Commando`, get a linkable null-feature executable, and only then continue into first-frame / real-input restoration
 7. keep Phase 2 MSVC validation and broader historical-source restoration on the backlog, but do not let them distract from the current Linux game-only critical path
 
@@ -891,20 +892,24 @@ The next concrete implementation steps from the current repository state are:
 
 This is the handoff state for the current bring-up pass.
 
-- Last attempted command: `cmake --build build --target wwphys -j1`
-- Current failure: `Code/wwphys/renegadeterrainpatch.cpp` reaches `#include "dx8fvf.h"`, which still resolves to the real `ww3d2/dx8fvf.h` and fails on `<d3d8.h>` when `RENEGADE_WITH_DX8_RENDERER=OFF`
-- Current meaning: the null-DX8 compatibility layer is far enough along that `wwphys` now compiles deep into runtime/projector/terrain code; the main blocker is no longer generic portability churn but remaining direct DX8 header escape hatches
+- Last attempted `Combat` command: `cmake --build build --target Combat -j1`
+- Current `Combat` failure: `Code/Combat/ccamera.cpp` includes `soundscene.h`, which still does not resolve on Linux/bootstrap
+- Last attempted `Scripts` command: `cmake --build build --target Scripts -j1`
+- Current `Scripts` failure: `Code/Scripts/Common.h` includes `dprint.h`, which still does not resolve on Linux/bootstrap
+- Current meaning: `wwphys` is now green; the remaining bring-up work has moved into portability cleanup in `Combat` and `Scripts` rather than renderer-adjacent `wwphys` fallout
 - Already verified in this pass:
    - `cmake -S . -B build` still succeeds
    - `cmake --build build --target WWAudio -j1` succeeds
    - `cmake --build build --target BinkMovie -j1` succeeds
-   - `wwphys` now builds substantially farther than before and only stops in renderer-adjacent terrain code
+   - `cmake --build build --target wwphys -j1` succeeds
+   - `cmake --build build --target Combat -j1` now gets past the `wwphys` layer and fails later in `ccamera.cpp`
+   - `cmake --build build --target Scripts -j1` now gets past the `CustomEvents`/`ScriptFactory` casing issues and fails later in `Common.h`
 - Recommended resume order:
-   1. add or gate a bootstrap-safe `dx8fvf` surface
-   2. rerun `cmake --build build --target wwphys -j1`
-   3. once `wwphys` is green, build `Combat`
-   4. then build `Scripts`
-   5. only after those succeed, return to the service-layer stubs and `Commando`
+   1. fix `soundscene.h` in `Combat`
+   2. fix `dprint.h` in `Scripts`
+   3. rerun `cmake --build build --target Combat -j1`
+   4. rerun `cmake --build build --target Scripts -j1`
+   5. once those are green, return to the service-layer stubs and `Commando`
 
 ## Bottom line
 

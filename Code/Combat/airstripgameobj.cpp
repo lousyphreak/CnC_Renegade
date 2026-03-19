@@ -41,11 +41,11 @@
 #include "definitionmgr.h"
 #include "combatchunkid.h"
 #include "debug.h"
+#include "objlibrary.h"
 #include "scriptzone.h"
 #include "wwprofile.h"
 #include "basecontroller.h"
 #include "combatchunkid.h"
-#include "objlibrary.h"
 #include "cinematicgameobj.h"
 #include "combat.h"
 
@@ -95,7 +95,6 @@ enum
 ////////////////////////////////////////////////////////////////
 //
 //	AirStripGameObjDef
-//
 ////////////////////////////////////////////////////////////////
 AirStripGameObjDef::AirStripGameObjDef (void)	:	
 	CinematicLengthToDropOff (0),
@@ -552,7 +551,7 @@ AirStripGameObj::Start_Cinematic (void)
 			const GameObjObserverList &script_list = CinematicObject->Get_Observers ();
 			for (int index = 0; index < script_list.Count (); index ++) {
 				GameObjObserverClass *script = script_list[index];
-				if (::lstrcmpi (script->Get_Name (), "Test_Cinematic") == 0) {
+				if (::stricmp (script->Get_Name (), "Test_Cinematic") == 0) {
 					
 					//
 					//	Attach the vehicle to the given slot in the cinematic

@@ -46,6 +46,7 @@
 #include "vector2i.h"
 #include "terrainmaterial.h"
 #include "renegadeterrainmaterialpass.h"
+#include "vertmaterial.h"
 #include "persistfactory.h"
 #include "ww3dids.h"
 #include "wwhack.h"
@@ -359,7 +360,7 @@ RenegadeTerrainPatchClass::Render (RenderInfoClass &rinfo)
 		//
 		//	Next render the alpha passes
 		//
-		for (index = 0; index < MaterialPassList.Count (); index ++) {
+		for (int index = 0; index < MaterialPassList.Count (); index ++) {
 			Render_By_Texture (index, RenegadeTerrainMaterialPassClass::PASS_ALPHA);
 		}
 	}
@@ -1802,7 +1803,7 @@ RenegadeTerrainPatchClass::Save (ChunkSaveClass &csave)
 	//
 	csave.Begin_Chunk (CHUNKID_NORMALS);
 
-		for (index = 0; index < GridPointCount; index ++) {
+		for (int index = 0; index < GridPointCount; index ++) {
 			csave.Write (&GridNormals[index].X, sizeof (float) * 3);
 		}
 				
@@ -1813,7 +1814,7 @@ RenegadeTerrainPatchClass::Save (ChunkSaveClass &csave)
 	//
 	csave.Begin_Chunk (CHUNKID_VERTEX_COLORS);
 
-		for (index = 0; index < GridPointCount; index ++) {
+		for (int index = 0; index < GridPointCount; index ++) {
 			csave.Write (&VertexColors[index].X, sizeof (float) * 3);
 		}
 				
@@ -1834,7 +1835,7 @@ RenegadeTerrainPatchClass::Save (ChunkSaveClass &csave)
 	//
 	csave.Begin_Chunk (CHUNKID_MATERIAL_LAYERS);
 
-		for (index = 0; index < MaterialPassList.Count (); index ++) {
+		for (int index = 0; index < MaterialPassList.Count (); index ++) {
 			
 			//
 			//	Don't save the material information if there' no material configured...

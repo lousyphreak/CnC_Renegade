@@ -77,7 +77,7 @@
 #include "scriptzone.h"
 #include "hud.h"
 #include "backgroundmgr.h"
-#include "weathermgr.h"
+#include "WeatherMgr.h"
 #include "mapmgr.h"
 #include "heightdb.h"
 #include "weaponbag.h"

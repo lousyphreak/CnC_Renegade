@@ -69,7 +69,7 @@
 
 #define MAX3( a, b, c ) (WWMath::Max(WWMath::Max(a, b), WWMath::Max(b, c)))
 
-#include "customevents.h"
+#include "CustomEvents.h"
 #include "scripts.h"
 #include "dprint.h"
 #include "vector3.h"

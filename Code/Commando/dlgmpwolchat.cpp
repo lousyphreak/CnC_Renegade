@@ -40,13 +40,13 @@
 #include "DlgMessageBox.h"
 #include <WOLAPI\ChatDefs.h>
 #include <WWOnline\WOLChannel.h>
-#include <WWUI\StyleMgr.h>
+#include <wwui/stylemgr.h>
 #include <WWUI\DialogMgr.h>
-#include <WWUI\EditCtrl.h>
+#include <wwui/editctrl.h>
 #include <WWUI\Listctrl.h>
 #include <WWUI\MenuEntryCtrl.h>
 #include <WWUI\ShortcutBarCtrl.h>
-#include <WW3D2\Render2D.h>
+#include <ww3d2/render2d.h>
 #include "String_IDs.h"
 #include <WWTranslateDB\TranslateDB.h>
 

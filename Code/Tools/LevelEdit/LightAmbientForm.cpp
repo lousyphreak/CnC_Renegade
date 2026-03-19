@@ -23,7 +23,7 @@
 #include "LevelEdit.H"
 #include "LightAmbientForm.H"
 #include "Vector3.H"
-#include "Utils.H"
+#include "Utils.h"
 #include "SceneEditor.H"
 #include "rendobj.h"
 #include "phys.h"

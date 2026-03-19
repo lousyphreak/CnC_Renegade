@@ -36,7 +36,7 @@
 
 
 #include "filteredsound.h"
-#include "wwaudio.h"
+#include "WWAudio.h"
 #include "soundscene.h"
 #include "soundchunkids.h"
 #include "persistfactory.h"

@@ -43,7 +43,7 @@
 #include "renegadedialogmgr.h"
 #include "wwmemlog.h"
 #include "gameinitmgr.h"
-#include "wwaudio.h"
+#include "WWAudio.h"
 #include "specialbuilds.h"
 #include "stylemgr.h"
 #include "render2dsentence.h"

@@ -23,7 +23,7 @@
 #include "leveledit.h"
 #include "VisStatsDialog.h"
 #include "cameramgr.h"
-#include "utils.h"
+#include "Utils.h"
 #include "pscene.h"
 #include "staticphys.h"
 

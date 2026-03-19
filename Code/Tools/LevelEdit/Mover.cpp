@@ -36,7 +36,7 @@
 
 #include "stdafx.h"
 #include "mover.h"
-#include "utils.h"
+#include "Utils.h"
 #include "cameramgr.h"
 #include "leveleditdoc.h"
 #include "leveleditview.h"

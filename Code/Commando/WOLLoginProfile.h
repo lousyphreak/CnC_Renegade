@@ -36,9 +36,9 @@
 #ifndef __WOLLOGINPROFILE_H__
 #define __WOLLOGINPROFILE_H__
 
-#include <WWLib\RefCount.h>
-#include <WWLib\WWString.h>
-#include <WWLib\WideString.h>
+#include <wwlib/refcount.h>
+#include <wwlib/wwstring.h>
+#include <wwlib/widestring.h>
 #include <WWOnline\WOLLadder.h>
 
 class LoginProfile :

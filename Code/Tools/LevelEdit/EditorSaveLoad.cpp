@@ -41,7 +41,7 @@
 #include "persist.h"
 #include "persistfactory.h"
 #include "preset.h"
-#include "utils.h"
+#include "Utils.h"
 #include "definition.h"
 #include "editorchunkids.h"
 #include "physstaticsavesystem.h"
@@ -60,7 +60,7 @@
 #include "weathermgr.h"
 #include "combat.h"
 #include "mapmgr.h"
-#include "pathfind.h"
+#include "Pathfind.h"
 #include "lightsolvesavesystem.h"
 #include "heightfieldmgr.h"
 

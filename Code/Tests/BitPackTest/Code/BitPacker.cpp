@@ -35,7 +35,7 @@
 *
 ****************************************************************************/
 
-#include "bitpacker.h"
+#include "BitPacker.h"
 #include "utypes.h"
 #include <assert.h>
 

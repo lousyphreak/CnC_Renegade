@@ -22,7 +22,7 @@
 #include "stdafx.h"
 #include "leveledit.h"
 #include "gotoobjectdialog.h"
-#include "utils.h"
+#include "Utils.h"
 #include "node.h"
 #include "cameramgr.h"
 

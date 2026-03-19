@@ -63,7 +63,7 @@
 #include "rendobj.h"
 #include "weaponbag.h"
 #include "multihud.h"
-#include "wwaudio.h"
+#include "WWAudio.h"
 #include "textdisplay.h"
 #include "render2d.h"
 #include "render2dsentence.h"

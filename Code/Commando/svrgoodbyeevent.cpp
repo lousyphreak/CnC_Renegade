@@ -45,7 +45,7 @@
 #include "translatedb.h"
 #include "string_ids.h"
 #include "textdisplay.h"
-#include "wwaudio.h"
+#include "WWAudio.h"
 #include "devoptions.h"
 //#include "helptext.h"
 #include "dlgmessagebox.h"

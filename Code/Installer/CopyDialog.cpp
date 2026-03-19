@@ -38,7 +38,7 @@
 #include "CopyDialog.h"
 #include "AssetMgr.h"
 #include "Camera.h"
-#include "DialogControl.h"
+#include "dialogcontrol.h"
 #include "DialogMgr.h"
 #include "DialogText.h"
 #include "ErrorHandler.h"

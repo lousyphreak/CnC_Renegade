@@ -39,7 +39,7 @@
 #include "gameobjmanager.h"
 #include "playermanager.h"
 #include "cnetwork.h"
-#include "WWAudio.H"
+#include "WWAudio.h"
 #include "ccamera.h"
 #include "gametype.h"
 #include "textdisplay.h"

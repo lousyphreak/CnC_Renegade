@@ -25,7 +25,7 @@
 #include "leveledit.h"
 #include "sceneeditor.h"
 #include "phys.h"
-#include "utils.h"
+#include "Utils.h"
 #include "weathermgr.h"
 #include "colorpickerdialogclass.h"
 

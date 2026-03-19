@@ -35,10 +35,10 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include "soundpseudo3d.h"
-#include "wwaudio.h"
+#include "SoundPseudo3D.h"
+#include "WWAudio.h"
 #include "soundscene.h"
-#include "utils.h"
+#include "Utils.h"
 #include "soundchunkids.h"
 #include "persistfactory.h"
 #include "soundhandle.h"

@@ -33,7 +33,7 @@
 *
 ******************************************************************************/
 
-#include "Windows.H"
+#include "windows.h"
 #include "scripts.h"
 #include "scriptregistrar.h"
 //#include "missioncontrol.h"

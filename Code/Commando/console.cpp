@@ -48,8 +48,8 @@
 #include "scene.h"
 #include "ww3d.h"
 #include <stdio.h>
-#include "wwaudio.h"
-#include "audiblesound.H"
+#include "WWAudio.h"
+#include "AudibleSound.h"
 //#include "gamesettings.h"
 #include "gamedata.h"
 #include "overlay.h"

@@ -36,7 +36,7 @@
 #ifndef __WOLQUICKMATCH_H__
 #define __WOLQUICKMATCH_H__
 
-#include <WWLib\RefCount.h>
+#include <wwlib/refcount.h>
 #include <WWOnline\RefPtr.h>
 #include <WWOnline\WOLSession.h>
 #include <WWLib\Notify.h>

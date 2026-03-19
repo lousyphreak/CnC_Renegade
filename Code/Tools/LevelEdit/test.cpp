@@ -37,7 +37,7 @@
 //#define _CATCH_MEM_LEAKS
 #if (defined(_CATCH_MEM_LEAKS) && defined (_DEBUG))
 
-#include "Windows.H"
+#include "windows.h"
 #include "Winnt.H"
 #include "ImageHlp.H"
 

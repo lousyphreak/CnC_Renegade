@@ -43,7 +43,7 @@
 #include "playertype.h"
 #include "translateobj.h"
 #include "translatedb.h"
-#include "wwaudio.h"
+#include "WWAudio.h"
 #include "messagewindow.h"
 #include <wwlib\widestring.h>
 #include "cncmodesettings.h"

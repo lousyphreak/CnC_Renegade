@@ -22,7 +22,7 @@
 #include "StdAfx.H"
 #include "LevelEdit.H"
 #include "VisErrorReportDialog.H"
-#include "Utils.H"
+#include "Utils.h"
 #include "VisLog.H"
 #include "SceneEditor.H"
 #include "CameraMgr.H"

@@ -41,7 +41,7 @@
 #include "translatedb.h"
 #include "_globals.h"
 #include "string_ids.h"
-#include "wwaudio.h"
+#include "WWAudio.h"
 
 ////////////////////////////////////////////////////////////////
 //

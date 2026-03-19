@@ -39,8 +39,8 @@
 #include "WOLErrorUtil.h"
 #include "WOLString.h"
 #include <WOLAPI\DownloadDefs.h>
-#include <WWLib\WWString.h>
-#include <WWDebug\WWDebug.h>
+#include <wwlib/wwstring.h>
+#include <wwdebug/wwdebug.h>
 
 namespace WWOnline {
 

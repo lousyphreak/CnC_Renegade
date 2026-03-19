@@ -21,8 +21,8 @@
 
 #include "stdafx.h"
 #include "playsounddialog.h"
-#include "utils.h"
-#include "audiblesound.h"
+#include "Utils.h"
+#include "AudibleSound.h"
 
 
 #ifdef _DEBUG

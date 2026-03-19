@@ -39,7 +39,7 @@
 #include "leveledit.h"
 #include "generatingedgesampledvisdialog.h"
 #include "visgenprogress.h"
-#include "utils.h"
+#include "Utils.h"
 
 
 #ifdef _DEBUG

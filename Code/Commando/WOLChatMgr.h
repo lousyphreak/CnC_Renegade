@@ -36,9 +36,9 @@
 #ifndef __WOLCHATMGR_H__
 #define __WOLCHATMGR_H__
 
-#include <WWLib\RefCount.h>
+#include <wwlib/refcount.h>
 #include <WWLib\Notify.h>
-#include <WWLib\WideString.h>
+#include <wwlib/widestring.h>
 #include <WWOnline\RefPtr.h>
 #include <WWOnline\WOLSession.h>
 #include <WWOnline\WOLChatMsg.h>

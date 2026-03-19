@@ -37,7 +37,7 @@
 #include "stdafx.h"
 #include "modelutils.h"
 #include "rendobj.h"
-#include "utils.h"
+#include "Utils.h"
 
 
 /////////////////////////////////////////////////////////////////////////

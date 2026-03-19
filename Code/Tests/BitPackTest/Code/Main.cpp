@@ -36,7 +36,7 @@
 ****************************************************************************/
 
 #include "typeencoder.h"
-#include "bitpacker.h"
+#include "BitPacker.h"
 #include <stdio.h>
 #include <assert.h>
 

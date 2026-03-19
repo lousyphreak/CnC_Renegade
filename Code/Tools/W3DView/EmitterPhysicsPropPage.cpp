@@ -22,7 +22,7 @@
 #include "StdAfx.H"
 #include "W3DView.H"
 #include "EmitterPhysicsPropPage.H"
-#include "Utils.H"
+#include "Utils.h"
 #include "Part_Emt.H"
 #include "VolumeRandomDialog.H"
 #include "EmitterInstanceList.H"

@@ -53,7 +53,7 @@
 #include <WWOnline\PingProfile.h>
 #include "string_ids.h"
 #include <WWTranslateDB\TranslateDB.h>
-#include <WWDebug\WWDebug.h>
+#include <wwdebug/wwdebug.h>
 #include "UserOptions.h"
 #include "autostart.h"
 #include "consolemode.h"

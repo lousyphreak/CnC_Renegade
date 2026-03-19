@@ -49,7 +49,7 @@
 #include "commando\nat.h"
 #include "commando\natter.h"
 #include "packetmgr.h"
-#include "bwbalance.h"
+#include "BWBalance.h"
 
 #ifdef WWDEBUG
 #include "combat\crandom.h"

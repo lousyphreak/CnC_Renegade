@@ -56,7 +56,7 @@
 #include "nat.h"
 #include "consolemode.h"
 #include "wwonline\wolserver.h"
-#include "notify.h"
+#include "Notify.h"
 #include "serversettings.h"
 #include "wolbuddymgr.h"
 #include "bandwidthcheck.h"

@@ -40,7 +40,7 @@
 #include "sceneeditor.h"
 #include "node.h"
 #include "hittestinfo.h"
-#include "utils.h"
+#include "Utils.h"
 #include "mousemgr.h"
 
 

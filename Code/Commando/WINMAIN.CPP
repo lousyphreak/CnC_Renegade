@@ -52,7 +52,7 @@
 #include "input.h"
 #include "useroptions.h"
 
-#include "WWAudio.H"
+#include "WWAudio.h"
 #include "FFactory.H"
 
 #include "debug.h"

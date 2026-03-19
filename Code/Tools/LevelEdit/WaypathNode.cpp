@@ -48,11 +48,11 @@
 #include "waypointnode.h"
 #include "waypath.h"
 #include "waypoint.h"
-#include "pathfind.h"
+#include "Pathfind.h"
 #include "nodeinfopage.h"
 #include "positionpage.h"
 #include "editorpropsheet.h"
-#include "pathfindportal.h"
+#include "PathfindPortal.h"
 
 
 //////////////////////////////////////////////////////////////////////////////

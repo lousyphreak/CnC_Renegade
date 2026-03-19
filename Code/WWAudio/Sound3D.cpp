@@ -35,11 +35,11 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include "sound3d.h"
-#include "soundbuffer.h"
-#include "wwaudio.h"
+#include "Sound3D.h"
+#include "SoundBuffer.h"
+#include "WWAudio.h"
 #include "soundscene.h"
-#include "utils.h"
+#include "Utils.h"
 #include "soundchunkids.h"
 #include "persistfactory.h"
 #include "chunkio.h"

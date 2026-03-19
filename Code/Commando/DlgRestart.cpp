@@ -39,7 +39,7 @@
 #include "MainLoop.h"
 #include "String_IDs.h"
 #include <WWTranslateDB\TranslateDB.h>
-#include <WWDebug\WWDebug.h>
+#include <wwdebug/wwdebug.h>
 
 /******************************************************************************
 *

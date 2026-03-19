@@ -22,7 +22,7 @@
 #include "stdafx.h"
 #include "leveledit.h"
 #include "editfilenamelistdialog.h"
-#include "utils.h"
+#include "Utils.h"
 #include "filemgr.h"
 
 

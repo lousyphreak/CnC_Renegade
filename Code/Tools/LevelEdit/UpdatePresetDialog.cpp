@@ -34,7 +34,7 @@
 #include "stdafx.h"
 #include "leveledit.h"
 #include "updatepresetdialog.h"
-#include "utils.h"
+#include "Utils.h"
 #include "filemgr.h"
 #include "filelocations.h"
 #include "editorini.h"

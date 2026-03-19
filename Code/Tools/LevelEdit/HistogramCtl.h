@@ -39,7 +39,7 @@
 #ifndef __HISTOGRAM_CTL_H
 #define __HISTOGRAM_CTL_H
 
-#include "Vector.H"
+#include "vector.h"
 #include "Vector3.H"
 
 

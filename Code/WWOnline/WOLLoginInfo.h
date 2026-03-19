@@ -39,7 +39,7 @@
 
 #include "RefCounted.h"
 #include "RefPtr.h"
-#include <WWLib\WideString.h>
+#include <wwlib/widestring.h>
 
 namespace WOL
 {

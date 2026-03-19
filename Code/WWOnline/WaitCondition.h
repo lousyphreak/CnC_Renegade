@@ -46,7 +46,7 @@
 #include "RefPtr.h"
 #include <WWLib\Notify.h>
 #include <WWLib\CallbackHook.h>
-#include <WWLib\WideString.h>
+#include <wwlib/widestring.h>
 
 #if defined(_MSC_VER)
 #pragma warning(push, 3)

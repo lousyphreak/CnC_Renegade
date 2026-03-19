@@ -38,7 +38,7 @@
 #include "level.h"
 #include "input.h"
 #include "cnetwork.h"
-#include "AudibleSound.H"
+#include "AudibleSound.h"
 #include "debug.h"
 #include "registry.h"
 #include "_globals.h"

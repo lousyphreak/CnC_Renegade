@@ -46,7 +46,7 @@
 #include "ini.h"
 #include "ffactory.h"
 #if RENEGADE_WITH_MILES
-#include "wwaudio.h"
+#include "WWAudio.h"
 #endif
 
 

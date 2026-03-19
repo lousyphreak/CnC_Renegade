@@ -47,7 +47,7 @@
 #include "langmode.h"
 #include "wolgmode.h"
 #include "playermanager.h"
-#include "wwaudio.h"
+#include "WWAudio.h"
 #include "saveloadstatus.h"
 #include "combatgmode.h"
 #include "useroptions.h"

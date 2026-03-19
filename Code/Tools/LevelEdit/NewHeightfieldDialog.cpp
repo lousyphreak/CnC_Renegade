@@ -23,7 +23,7 @@
 #include "leveledit.h"
 #include "newheightfielddialog.h"
 #include "heightfieldmgr.h"
-#include "utils.h"
+#include "Utils.h"
 #include "refcount.h"
 #include "wwstring.h"
 #include "heightfieldeditor.h"

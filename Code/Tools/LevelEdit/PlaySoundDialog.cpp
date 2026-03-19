@@ -22,8 +22,8 @@
 #include "stdafx.h"
 #include "leveledit.h"
 #include "PlaySoundDialog.h"
-#include "Utils.H"
-#include "AudibleSound.H"
+#include "Utils.h"
+#include "AudibleSound.h"
 #include "FileMgr.H"
 
 #ifdef _DEBUG

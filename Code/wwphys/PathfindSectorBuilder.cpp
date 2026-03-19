@@ -29,18 +29,18 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "stdafx.h"
-#include "pathfindsectorbuilder.h"
+#include "PathfindSectorBuilder.h"
 #include "phys3.h"
 #include "filemgr.h"
 #include "editorassetmgr.h"
 #include "_assetmgr.h"
 #include "humanphys.h"
-#include "utils.h"
+#include "Utils.h"
 #include "editorphys.h"
 #include "collisiongroups.h"
 #include "sceneeditor.h"
 #include "boxrobj.h"
-#include "pathfind.h"
+#include "Pathfind.h"
 #include "systimer.h"
 
 //////////////////////////////////////////////////////////////////////////

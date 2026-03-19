@@ -36,7 +36,7 @@
 #include "nodescriptsproppage.h"
 #include "editscript.h"
 #include "scriptmgr.h"
-#include "utils.h"
+#include "Utils.h"
 #include "scripteditdialog.h"
 #include "parameter.h"
 

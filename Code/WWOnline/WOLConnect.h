@@ -40,7 +40,7 @@
 #include "WaitCondition.h"
 #include "WOLChatMsg.h"
 #include <WWLib\Notify.h>
-#include <WWLib\WideString.h>
+#include <wwlib/widestring.h>
 #include "RefPtr.h"
 
 namespace WWOnline {

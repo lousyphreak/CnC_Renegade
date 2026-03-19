@@ -38,9 +38,9 @@
 #include "Resource.h"
 #include "String_ids.h"
 #include <WWOnline\WOLSession.h>
-#include <WWUI\MouseMgr.h>
+#include <wwui/mousemgr.h>
 #include <WWTranslateDB\TranslateDB.h>
-#include <WWDebug\WWDebug.h>
+#include <wwdebug/wwdebug.h>
 #include "gamespyadmin.h"
 
 #ifdef _MSC_VER

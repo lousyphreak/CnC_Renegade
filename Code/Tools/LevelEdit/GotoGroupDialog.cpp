@@ -22,7 +22,7 @@
 #include "stdafx.h"
 #include "leveledit.h"
 #include "GotoGroupDialog.h"
-#include "Utils.H"
+#include "Utils.h"
 #include "GroupMgr.H"
 #include "CameraMgr.H"
 

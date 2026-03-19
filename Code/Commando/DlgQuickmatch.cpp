@@ -46,7 +46,7 @@
 #include <WWTranslateDB\TranslateDB.h>
 #include <WWOnline\WaitCondition.h>
 #include <WWUI\ListCtrl.h>
-#include <WWDebug\WWDebug.h>
+#include <wwdebug/wwdebug.h>
 
 
 #ifdef _MSC_VER

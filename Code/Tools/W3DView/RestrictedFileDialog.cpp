@@ -22,7 +22,7 @@
 #include "StdAfx.H"
 #include "W3DView.H"
 #include "RestrictedFileDialog.H"
-#include "Utils.H"
+#include "Utils.h"
 
 
 #ifdef _DEBUG

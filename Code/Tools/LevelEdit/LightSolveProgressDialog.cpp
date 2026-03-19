@@ -22,7 +22,7 @@
 #include "stdafx.h"
 #include "leveledit.h"
 #include "LightSolveProgressDialog.h"
-#include "utils.h"
+#include "Utils.h"
 #include "sceneeditor.h"
 #include "lightsolvecontext.h"
 #include "lightsolveprogress.h"

@@ -22,7 +22,7 @@
 #include "stdafx.h"
 #include "w3dview.h"
 #include "cameradistancedialog.h"
-#include "utils.h"
+#include "Utils.h"
 #include "graphicview.h"
 
 

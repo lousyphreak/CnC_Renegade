@@ -40,8 +40,8 @@
 // Includes
 #include "String_ids.h"
 #include "Translatedb.h"
-#include "WWString.h"
-#include "WideString.h"
+#include "wwstring.h"
+#include "widestring.h"
 
 
 class RxStringClass : public StringClass

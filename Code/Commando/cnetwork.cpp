@@ -47,7 +47,7 @@
 #include "textdisplay.h"
 #include "gameobjmanager.h"
 #include "multihud.h"
-#include "WWAudio.H"
+#include "WWAudio.h"
 #include "useroptions.h"
 #include "devoptions.h"
 #include "translatedb.h"

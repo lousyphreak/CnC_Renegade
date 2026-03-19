@@ -36,7 +36,7 @@
 
 #include "stdafx.h"
 #include "mousemgr.h"
-#include "utils.h"
+#include "Utils.h"
 #include "leveleditview.h"
 #include "cameramgr.h"
 #include "node.h"

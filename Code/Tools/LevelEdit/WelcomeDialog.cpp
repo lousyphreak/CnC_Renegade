@@ -22,7 +22,7 @@
 #include "StdAfx.H"
 #include "LevelEdit.H"
 #include "WelcomeDialog.H"
-#include "Utils.H"
+#include "Utils.h"
 #include "FileMgr.H"
 #include "RegKeys.H"
 

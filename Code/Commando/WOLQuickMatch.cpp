@@ -40,7 +40,7 @@
 #include <WWOnline\WOLServer.h>
 #include <WWOnline\WOLLadder.h>
 #include <WWLib\CPUDetect.h>
-#include <WWDebug\WWDebug.h>
+#include <wwdebug/wwdebug.h>
 #include "cnetwork.h"
 #include "translatedb.h"
 #include "string_ids.h"

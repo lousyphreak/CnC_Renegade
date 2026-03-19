@@ -79,7 +79,7 @@
 #include <WWLib\RealCRC.h>
 #include "String_IDs.h"
 #include <WWTranslateDB\TranslateDB.h>
-#include <WWDebug\WWDebug.h>
+#include <wwdebug/wwdebug.h>
 #include <WWDebug\WWProfile.h>
 #include "specialbuilds.h"
 #include "slavemaster.h"

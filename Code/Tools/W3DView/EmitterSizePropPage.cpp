@@ -22,7 +22,7 @@
 #include "Stdafx.H"
 #include "W3dview.H"
 #include "EmitterSizePropPage.H"
-#include "Utils.H"
+#include "Utils.h"
 #include "ParticleSizeDialog.H"
 #include "EmitterInstanceList.H"
 

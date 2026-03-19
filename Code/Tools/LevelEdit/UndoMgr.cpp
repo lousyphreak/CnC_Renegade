@@ -37,7 +37,7 @@
 
 #include "stdafx.h"
 #include "undomgr.h"
-#include "utils.h"
+#include "Utils.h"
 #include "nodemgr.h"
 #include "node.h"
 #include "leveleditdoc.h"

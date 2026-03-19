@@ -24,7 +24,7 @@
 INCLUDES
 ********/
 #include <GameSpy\gqueryreporting.h>
-#include <WWLib\WideString.h>
+#include <wwlib/widestring.h>
 #include "trim.h"
 
 /********

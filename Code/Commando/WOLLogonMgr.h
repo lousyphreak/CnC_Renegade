@@ -37,7 +37,7 @@
 #define __WOLLOGONMGR_H__
 
 #include "DlgWOLLogon.h"
-#include <WWLib\RefCount.h>
+#include <wwlib/refcount.h>
 #include <WWLib\Notify.h>
 #include <WWOnline\RefPtr.h>
 #include <WWOnline\WOLSession.h>

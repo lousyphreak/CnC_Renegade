@@ -38,7 +38,7 @@
 #include "weathermgr.h"
 #include "apppackettypes.h"
 #include "assetmgr.h"
-#include "audiblesound.h"
+#include "AudibleSound.h"
 #include "camera.h"
 #include "chunkio.h"
 #include "combat.h"
@@ -54,7 +54,7 @@
 #include "scene.h"
 #include "sortingrenderer.h"
 #include "soundenvironment.h"
-#include "wwaudio.h"
+#include "WWAudio.h"
 #include "wwmemlog.h"
 
 

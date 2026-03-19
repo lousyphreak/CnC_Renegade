@@ -46,7 +46,7 @@
 #include "cnetwork.h"
 #include "miscutil.h"
 //#include "gamesettings.h"
-#include "WWAudio.H"
+#include "WWAudio.h"
 #include "devoptions.h"
 #include "multihud.h"
 #include "gamedata.h"

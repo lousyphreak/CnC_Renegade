@@ -29,7 +29,7 @@
 #include "leveleditdoc.h"
 #include "leveleditview.h"
 #include "leveledit.h"
-#include "utils.h"
+#include "Utils.h"
 #include "outputform.h"
 #include "sceneeditor.h"
 #include "nodemgr.h"

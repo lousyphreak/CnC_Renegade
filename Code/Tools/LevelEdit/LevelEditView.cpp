@@ -35,7 +35,7 @@
 #include "dynamesh.h"
 #include "vertmaterial.h"
 #include "win.h"
-#include "wwaudio.h"
+#include "WWAudio.h"
 #include "combat.h"
 #include "timemgr.h"
 #include "gameobjmanager.h"

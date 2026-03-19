@@ -22,7 +22,7 @@
 #include "stdafx.h"
 #include "leveledit.h"
 #include "leveleditdoc.h"
-#include "utils.h"
+#include "Utils.h"
 #include "physcoltest.h"
 #include "gridcull.h"
 #include "aabtreecull.h"

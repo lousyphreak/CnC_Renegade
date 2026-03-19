@@ -335,7 +335,8 @@ void DynamicShadowTexMgrClass::Set_Max_Simultaneous_Shadows(unsigned int max)
 	ShadowTextures.Resize(max);
 
 	if (curlen>ShadowTextures.Length()) curlen=ShadowTextures.Length();
-	for (i=0; i<curlen; i++) {
+	int i = 0;
+	for (; i<curlen; i++) {
 		if (!ShadowTextures[i]) {
 			ShadowTextures[i] = Allocate_Render_Target_Texture();
 		}

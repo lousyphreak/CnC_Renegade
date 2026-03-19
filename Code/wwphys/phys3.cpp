@@ -2055,13 +2055,15 @@ void Phys3Class::Clip_Move(const Vector3 * contacts,int contact_count,Vector3 * 
 			//WWASSERT(Vector3::Dot_Product(*move,contacts[i]) >= 0.0f);
 		}
 		
+		bool all_contacts_happy = true;
 		for (int j=0; j<contact_count; j++) {
 			float check = Vector3::Dot_Product(*move,contacts[j]);
 			if (check < 0.0f) {
+				all_contacts_happy = false;
 				break;	// this contact isn't happy yet... keep choppin.
 			}
 		}
-		if (j == contact_count) {
+		if (all_contacts_happy) {
 			break;	// all contacts are happy!
 		}
 	}

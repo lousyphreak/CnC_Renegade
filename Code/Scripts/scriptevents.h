@@ -39,6 +39,12 @@
 
 #include	"gameobjobserver.h"
 
+#ifndef _WIN32
+#ifndef _declspec
+#define _declspec(x)
+#endif
+#endif
+
 
 /*
 ** Types

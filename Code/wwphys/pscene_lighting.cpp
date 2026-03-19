@@ -58,6 +58,7 @@
 #include "lightphys.h"
 #include "light.h"
 #include "lightcull.h"
+#include "lightenvironment.h"
 
 
 /***********************************************************************************************

@@ -39,7 +39,9 @@
 #ifndef UMBRASUPPORT_H
 #define UMBRASUPPORT_H
 
-#define UMBRASUPPORT		0
+#ifndef UMBRASUPPORT
+#define UMBRASUPPORT		RENEGADE_WITH_UMBRA
+#endif
 
 #include "always.h"
 #include "physlist.h"

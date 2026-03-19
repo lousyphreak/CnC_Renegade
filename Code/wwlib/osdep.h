@@ -18,6 +18,7 @@
 #include <errno.h>
 #include <filesystem>
 #include <limits.h>
+#include <mutex>
 #include <strings.h>
 #include <string>
 #include <thread>
@@ -40,6 +41,18 @@
 #define __stdcall
 #endif
 
+#ifndef _stdcall
+#define _stdcall __stdcall
+#endif
+
+#ifndef WINAPI
+#define WINAPI __stdcall
+#endif
+
+#ifndef APIENTRY
+#define APIENTRY WINAPI
+#endif
+
 #ifndef CALLBACK
 #define CALLBACK __stdcall
 #endif
@@ -50,6 +63,14 @@
 
 #ifndef __forceinline
 #define __forceinline inline __attribute__((always_inline))
+#endif
+
+#ifndef __declspec
+#define __declspec(x)
+#endif
+
+#ifndef _declspec
+#define _declspec(x)
 #endif
 
 #ifndef _alloca
@@ -64,6 +85,9 @@ using HIMC = void *;
 using LPVOID = void *;
 using LPCVOID = const void *;
 using LPSTR = char *;
+using LPTSTR = char *;
+using LPCTSTR = const char *;
+using TCHAR = char;
 using WCHAR = wchar_t;
 using LPWSTR = WCHAR *;
 using LPCWSTR = const WCHAR *;
@@ -74,11 +98,17 @@ using HCURSOR = void *;
 using HBRUSH = void *;
 using HICON = void *;
 using HDC = void *;
+using LARGE_INTEGER = long long;
+using FARPROC = void *;
 using LONG = long;
 using LPARAM = std::intptr_t;
 using WPARAM = std::uintptr_t;
 using LRESULT = std::intptr_t;
 using LPLOGFONT = void *;
+
+struct CRITICAL_SECTION {
+    std::recursive_mutex mutex;
+};
 
 struct POINT {
     LONG x;
@@ -419,6 +449,50 @@ inline int GetKeyboardState(unsigned char * state)
 inline void ZeroMemory(void * destination, std::size_t size)
 {
     std::memset(destination, 0, size);
+}
+
+inline BOOL QueryPerformanceFrequency(LARGE_INTEGER * frequency)
+{
+    if (frequency != nullptr) {
+        *frequency = 1000000;
+    }
+    return TRUE;
+}
+
+inline BOOL QueryPerformanceCounter(LARGE_INTEGER * counter)
+{
+    if (counter != nullptr) {
+        *counter = std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::steady_clock::now().time_since_epoch()).count();
+    }
+    return TRUE;
+}
+
+inline void InitializeCriticalSection(CRITICAL_SECTION *)
+{
+}
+
+inline void DeleteCriticalSection(CRITICAL_SECTION *)
+{
+}
+
+inline void EnterCriticalSection(CRITICAL_SECTION * critical_section)
+{
+    if (critical_section != nullptr) {
+        critical_section->mutex.lock();
+    }
+}
+
+inline void LeaveCriticalSection(CRITICAL_SECTION * critical_section)
+{
+    if (critical_section != nullptr) {
+        critical_section->mutex.unlock();
+    }
+}
+
+inline BOOL TryEnterCriticalSection(CRITICAL_SECTION * critical_section)
+{
+    return (critical_section != nullptr && critical_section->mutex.try_lock()) ? TRUE : FALSE;
 }
 
 inline int DeleteFile(const char * filename)

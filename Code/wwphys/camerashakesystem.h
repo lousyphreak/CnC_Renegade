@@ -72,7 +72,7 @@ public:
 	void		Timestep(float dt);
 	void		Update_Camera(CameraClass & camera);
 
-protected:
+public:
 
 	/**
 	** CameraShakerClass 
@@ -100,6 +100,8 @@ protected:
 		Vector3				Omega;
 		Vector3				Phi;
 	};
+
+	protected:
 
 	MultiListClass<CameraShakerClass>	CameraShakerList;
 

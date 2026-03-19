@@ -43,6 +43,12 @@
 #ifndef DX8_WRAPPER_H
 #define DX8_WRAPPER_H
 
+#if !RENEGADE_WITH_DX8_RENDERER
+
+#include "dx8wrapper_stub.h"
+
+#else
+
 #include "always.h"
 #include "dllist.h"
 #include "d3d8.h"
@@ -1216,5 +1222,7 @@ WWINLINE RenderStateStruct& RenderStateStruct::operator= (const RenderStateStruc
 	return *this;
 }
 
+
+#endif
 
 #endif

@@ -1,6 +1,6 @@
 # Game-Only Recovery Plan
 
-Last updated: 2026-03-18
+Last updated: 2026-03-19
 
 This document is the **implementation reference** for getting the repository from its current archival state to a **fully working game build**.
 
@@ -522,6 +522,15 @@ Actions:
 - every missing third-party runtime dependency is hidden behind a controlled flag
 - the game can be linked without Bink, Miles, Umbra, GameSpy, or WOL
 
+### Phase 4 implementation status (2026-03-19)
+
+- [x] `WWAudio` is now present in the active CMake graph with a bootstrap null backend (`wwaudio_null.cpp`), and `cmake --build build --target WWAudio -j1` succeeds in the Linux x64 bring-up configuration.
+- [x] `BinkMovie` is now present in the active CMake graph with a `RENEGADE_WITH_BINK=OFF` stub implementation (`binkmovie_stub.cpp`), and `cmake --build build --target BinkMovie -j1` succeeds.
+- [x] Umbra is now driven from the central feature configuration instead of a hardcoded local define; `wwphys/umbrasupport.h` and `Code/wwphys/CMakeLists.txt` both honor `RENEGADE_WITH_UMBRA`.
+- [x] The Linux/bootstrap compatibility layer now covers the legacy Win32, Miles, DirectInput, ImageHlp, and several DX8-adjacent include surfaces needed to compile deeper into the runtime graph.
+- [ ] GameSpy and legacy WOL service layers are still untouched on the `Commando` side; they remain later Phase 4 work after the gameplay/runtime libraries build cleanly.
+- [ ] Phase 4 is not yet closed: the renderer-adjacent null-DX8 compatibility work is still incomplete inside `wwphys`, so there is not yet a linkable game executable.
+
 ## Phase 5 — Get gameplay and script loading online
 
 ### Phase 5 objective
@@ -564,6 +573,16 @@ Actions:
 - major gameplay code is now in the build graph
 - the future executable can boot further without dying on missing DLL exports
 
+### Phase 5 implementation status (2026-03-19)
+
+- [x] `Combat` and `Scripts` now exist as real CMake targets in the active runtime graph.
+- [x] `Combat` excludes `directinput.cpp` when `RENEGADE_WITH_DIRECTINPUT=OFF` or on non-Windows bootstrap builds.
+- [x] `Scripts` is now built as a shared library target with the historical runtime-facing name `Scripts`.
+- [x] `Combat/scripts.cpp` preserves the legacy DLL-loading contract while adding non-Windows `.so` fallback candidates (`Scripts.so`, `libScripts.so`, etc.) so the bootstrap runtime can keep the old call sites.
+- [x] `RENEGADE_WITH_SCRIPT_DLL` now gates script-module loading cleanly instead of forcing unconditional runtime failure.
+- [ ] Full `Combat` and `Scripts` compile validation is still pending because the current bring-up is blocked one layer earlier in `wwphys`.
+- [ ] The real script implementation path has not been validated end-to-end yet; only the target wiring and loader compatibility work are in place.
+
 ## Phase 6 — Bring up the renderer and input in two stages
 
 ### Phase 6 objective
@@ -596,6 +615,14 @@ Actions:
 
 1. Add `RENEGADE_WITH_DIRECTINPUT` and default it `OFF` initially.
 2. Provide a null input backend that reports “no input” but keeps the app stable.
+
+### Phase 6A implementation status (2026-03-19)
+
+- [x] `RENEGADE_WITH_DX8_RENDERER=OFF` is now exercised by a real stub branch in `ww3d2/dx8wrapper.h` plus bootstrap compatibility headers for `dx8renderer`, `dx8vertexbuffer`, `dx8indexbuffer`, `dx8caps`, and `targa`.
+- [x] `RENEGADE_WITH_DIRECTINPUT=OFF` is now respected in `Code/Combat/CMakeLists.txt`, and a non-Windows `dinput.h` shim exists for compile-time DirectInput keycode dependencies.
+- [x] `wwphys` now compiles far enough into the renderer-adjacent runtime slice that most remaining failures are true DX8-surface gaps rather than generic Linux/VC6 portability fallout.
+- [ ] The null-renderer bootstrap is still incomplete: the current stopping point is `cmake --build build --target wwphys -j1` failing in `Code/wwphys/renegadeterrainpatch.cpp` because it includes the real `ww3d2/dx8fvf.h`, which still requires `<d3d8.h>`.
+- [ ] Before `Combat`, `Scripts`, or `Commando` can be validated downstream, the remaining direct DX8 include paths that bypass the current stubs need to be fenced or shadowed, starting with `dx8fvf.h`.
 
 ### Stage 6B — first real frame / first real input
 
@@ -853,14 +880,31 @@ Do **not** block the game-only plan on any of the following:
 The next concrete implementation steps from the current repository state are:
 
 1. keep the root CMake skeleton, generated config header, SDL3 submodule, and `renegade_bootstrap` healthy while expanding the runtime graph
-2. continue broadening the Phase 2 foundation targets — especially `wwlib` — from bootstrap subsets toward the historical runtime surface without reintroducing unconditional x86 asm or Win32 stacktrace dependencies
-3. validate the Phase 2 foundation targets on modern MSVC / Windows so the Phase 2 completion criteria are met on more than the Linux bootstrap target
-4. add the Phase 3 support/runtime libraries in dependency order: `wwsaveload`, `wwbitpack`, `wwtranslatedb`, `wwui`, and `wwnet`
-5. add stub Bink / Miles / Umbra / GameSpy / WOL implementations for the later runtime layers
-6. add `Combat`, `Scripts`, and finally `Commando`
-7. get a linkable null-feature executable
-8. restore renderer and input for first visible progress
-9. iterate until the first playable offline build exists
+2. resume from `cmake --build build --target wwphys -j1` and finish the remaining null-renderer compatibility work inside `wwphys`
+3. start with `Code/wwphys/renegadeterrainpatch.cpp` and any neighboring files that include the real `ww3d2/dx8fvf.h` / other direct DX8 headers that bypass the current stubbed `dx8wrapper` path
+4. once `wwphys` builds, immediately validate `Combat` and then `Scripts` in the same Linux x64 bootstrap configuration
+5. after the gameplay/runtime slice is compiling, finish the still-missing Phase 4 service stubs for GameSpy and legacy WOL before attempting `Commando`
+6. add `Commando`, get a linkable null-feature executable, and only then continue into first-frame / real-input restoration
+7. keep Phase 2 MSVC validation and broader historical-source restoration on the backlog, but do not let them distract from the current Linux game-only critical path
+
+## Current stopping point (2026-03-19)
+
+This is the handoff state for the current bring-up pass.
+
+- Last attempted command: `cmake --build build --target wwphys -j1`
+- Current failure: `Code/wwphys/renegadeterrainpatch.cpp` reaches `#include "dx8fvf.h"`, which still resolves to the real `ww3d2/dx8fvf.h` and fails on `<d3d8.h>` when `RENEGADE_WITH_DX8_RENDERER=OFF`
+- Current meaning: the null-DX8 compatibility layer is far enough along that `wwphys` now compiles deep into runtime/projector/terrain code; the main blocker is no longer generic portability churn but remaining direct DX8 header escape hatches
+- Already verified in this pass:
+   - `cmake -S . -B build` still succeeds
+   - `cmake --build build --target WWAudio -j1` succeeds
+   - `cmake --build build --target BinkMovie -j1` succeeds
+   - `wwphys` now builds substantially farther than before and only stops in renderer-adjacent terrain code
+- Recommended resume order:
+   1. add or gate a bootstrap-safe `dx8fvf` surface
+   2. rerun `cmake --build build --target wwphys -j1`
+   3. once `wwphys` is green, build `Combat`
+   4. then build `Scripts`
+   5. only after those succeed, return to the service-layer stubs and `Commando`
 
 ## Bottom line
 

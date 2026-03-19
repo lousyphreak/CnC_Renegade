@@ -47,7 +47,109 @@
 #include <stdio.h>
 #include <win.h>
 
+#ifndef _WIN32
+#include <dlfcn.h>
+#endif
+
 ScriptCommands* EngineCommands = NULL;
+
+namespace {
+
+#ifndef _WIN32
+
+HINSTANCE Load_Script_Module(const char * module_name)
+{
+	const char *candidates[5] = { 0 };
+	char stem[_MAX_PATH] = { 0 };
+	char candidate_so[_MAX_PATH] = { 0 };
+	char candidate_lib_so[_MAX_PATH] = { 0 };
+	int candidate_count = 0;
+
+	if (module_name != NULL && module_name[0] != '\0') {
+		candidates[candidate_count++] = module_name;
+
+		::strncpy(stem, module_name, sizeof(stem) - 1);
+		char *dot = ::strrchr(stem, '.');
+		if (dot != NULL) {
+			(*dot) = '\0';
+		}
+
+		if (stem[0] != '\0') {
+			::snprintf(candidate_so, sizeof(candidate_so), "%s.so", stem);
+			::snprintf(candidate_lib_so, sizeof(candidate_lib_so), "lib%s.so", stem);
+			candidates[candidate_count++] = candidate_so;
+			candidates[candidate_count++] = candidate_lib_so;
+		}
+
+		if (_stricmp(stem, "SCRIPTS") == 0 || _stricmp(stem, "SCRIPTSD") == 0 || _stricmp(stem, "SCRIPTSP") == 0) {
+			candidates[candidate_count++] = "Scripts.so";
+			candidates[candidate_count++] = "libScripts.so";
+		}
+	}
+
+	for (int index = 0; index < candidate_count; ++index) {
+		const char *candidate = candidates[index];
+		if (candidate == NULL || candidate[0] == '\0') {
+			continue;
+		}
+
+		void *handle = dlopen(candidate, RTLD_NOW | RTLD_LOCAL);
+		if (handle != NULL) {
+			if (module_name != NULL && _stricmp(candidate, module_name) != 0) {
+				Debug_Say(("Loaded script module %s via compatibility fallback %s\n", module_name, candidate));
+			}
+			return (HINSTANCE)handle;
+		}
+	}
+
+	const char *error_text = dlerror();
+	Debug_Say(("Could not load script module %s (%s)\n", module_name, error_text != NULL ? error_text : "unknown error"));
+	return NULL;
+}
+
+void Unload_Script_Module(HINSTANCE module)
+{
+	if (module != NULL) {
+		dlclose(module);
+	}
+}
+
+void *Resolve_Script_Symbol(HINSTANCE module, const char * symbol_name)
+{
+	if (module == NULL) {
+		return NULL;
+	}
+
+	dlerror();
+	return dlsym(module, symbol_name);
+}
+
+#else
+
+HINSTANCE Load_Script_Module(const char * module_name)
+{
+	return LoadLibrary(module_name);
+}
+
+void Unload_Script_Module(HINSTANCE module)
+{
+	if (module != NULL) {
+		FreeLibrary(module);
+	}
+}
+
+void *Resolve_Script_Symbol(HINSTANCE module, const char * symbol_name)
+{
+	if (module == NULL) {
+		return NULL;
+	}
+
+	return GetProcAddress(module, symbol_name);
+}
+
+#endif
+
+}
 
 #if 1
 #define	SCRIPT_PROFILE_START( x )	WWProfileManager::Profile_Start( "Scripts" );
@@ -114,7 +216,7 @@ void ScriptManager::Shutdown(void)
 	}
 
 	if (hDLL != NULL) {
-		FreeLibrary(hDLL);
+		Unload_Script_Module(hDLL);
 		hDLL = NULL;
 	}
 }
@@ -149,6 +251,11 @@ void ScriptManager::Destroy_Pending(void)
 void ScriptManager::Load_Scripts(const char* dll_filename)
 {
 	Debug_Say(("Script Manager Loading Script File %s\n", dll_filename));
+
+#if !RENEGADE_WITH_SCRIPT_DLL
+	Debug_Say(("Script DLL loading disabled in this build\n"));
+	return;
+#endif
 
 
 	// If we're in multiplay and not the server, just bail
@@ -199,7 +306,7 @@ void ScriptManager::Load_Scripts(const char* dll_filename)
 	}
 #endif
 
-	hDLL = LoadLibrary(dll_filename);
+	hDLL = Load_Script_Module(dll_filename);
 
 	if (hDLL == NULL) {
 		Debug_Say(("Cound not load DLL file %s\n", dll_filename));
@@ -207,7 +314,7 @@ void ScriptManager::Load_Scripts(const char* dll_filename)
 	}
 
 	// Get create script function
-	ScriptCreateFunct = (LPFN_CREATE_SCRIPT)GetProcAddress(hDLL, LPSTR_CREATE_SCRIPT);
+	ScriptCreateFunct = (LPFN_CREATE_SCRIPT)Resolve_Script_Symbol(hDLL, LPSTR_CREATE_SCRIPT);
 	assert(ScriptCreateFunct != NULL);
 
 	if (!ScriptCreateFunct) {
@@ -215,7 +322,7 @@ void ScriptManager::Load_Scripts(const char* dll_filename)
 	}
 
 	// Get destroy script function
-	ScriptDestroyFunct = (LPFN_DESTROY_SCRIPT)GetProcAddress(hDLL, LPSTR_DESTROY_SCRIPT);
+	ScriptDestroyFunct = (LPFN_DESTROY_SCRIPT)Resolve_Script_Symbol(hDLL, LPSTR_DESTROY_SCRIPT);
 	assert(ScriptDestroyFunct != NULL);
 
 	if (!ScriptDestroyFunct) {
@@ -224,7 +331,7 @@ void ScriptManager::Load_Scripts(const char* dll_filename)
 
 	// Initialize request script destroy function
 	LPFN_SET_REQUEST_DESTROY_FUNC set_request_destroy_func = 
-		(LPFN_SET_REQUEST_DESTROY_FUNC)GetProcAddress(hDLL, LPSTR_SET_REQUEST_DESTROY_FUNC);
+		(LPFN_SET_REQUEST_DESTROY_FUNC)Resolve_Script_Symbol(hDLL, LPSTR_SET_REQUEST_DESTROY_FUNC);
 	assert(set_request_destroy_func != NULL);
 
 	if (set_request_destroy_func != NULL) {
@@ -236,7 +343,7 @@ void ScriptManager::Load_Scripts(const char* dll_filename)
 	// Initialize script commands if not being run from the editor
 	if (CombatManager::Are_Observers_Active()) {
 		LPFN_SET_SCRIPT_COMMANDS set_commands_func =
-			(LPFN_SET_SCRIPT_COMMANDS)GetProcAddress(hDLL, LPSTR_SET_SCRIPT_COMMANDS);
+			(LPFN_SET_SCRIPT_COMMANDS)Resolve_Script_Symbol(hDLL, LPSTR_SET_SCRIPT_COMMANDS);
 		assert(set_commands_func != NULL);
 
 		if (set_commands_func != NULL) {

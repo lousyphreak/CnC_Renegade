@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.25)
 
 project(Renegade VERSION 0.1.0 LANGUAGES C CXX)
 
+# temporary disable all warnings until the code is cleaned up
+add_definitions(-w)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(RenegadeOptions)

@@ -40,7 +40,6 @@
 #include "persistfactory.h"
 #include "translatedbids.h"
 #include "translatedb.h"
-#include "tdbcategories.h"
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -218,6 +217,23 @@ StringTwiddlerClass::Load_Variables (ChunkLoadClass &cload)
 
 /////////////////////////////////////////////////////////////////
 //
+//	Lookup_String
+//
+/////////////////////////////////////////////////////////////////
+TDBObjClass *
+StringTwiddlerClass::Lookup_String (int index)
+{
+	WWASSERT (index >= 0 && index < StringList.Count ());
+	if (index < 0 || index >= StringList.Count ()) {
+		return NULL;
+	}
+
+	return TranslateDBClass::Find_Object (StringList[index]);
+}
+
+
+/////////////////////////////////////////////////////////////////
+//
 //	Get_String
 //
 /////////////////////////////////////////////////////////////////
@@ -252,7 +268,7 @@ StringTwiddlerClass::Randomize (int lang_id)
 		//	Randomly pick a string from our list
 		//
 		int index = (rand () % count);
-		TDBObjClass *object = TranslateDBClass::Find_Object (StringList[index]);
+		TDBObjClass *object = Lookup_String (index);
 		if (object != NULL && object->As_StringTwiddlerClass () == NULL) {
 			
 			//

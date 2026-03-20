@@ -35,10 +35,6 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#if defined(_MSC_VER)
-#pragma once
-#endif
-
 #ifndef __TDB_CATEGORIES_H
 #define __TDB_CATEGORIES_H
 

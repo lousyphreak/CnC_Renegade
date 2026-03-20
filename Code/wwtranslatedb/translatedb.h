@@ -35,10 +35,6 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#if defined(_MSC_VER)
-#pragma once
-#endif
-
 #ifndef __TRANSLATE_DB_H
 #define __TRANSLATE_DB_H
 
@@ -143,7 +139,7 @@ public:
 	static const WCHAR *			Get_String (const char *id_desc);
 	static const char *			Get_English_String (uint32 id);
 	WWINLINE static TDBObjClass *	Find_Object (uint32 id);
-	WWINLINE static TDBObjClass * Find_Object (const char *id_desc);
+	static TDBObjClass * 		Find_Object (const char *id_desc);
 
 
 	//
@@ -364,19 +360,6 @@ TranslateDBClass::Get_English_String (uint32 id)
 	return string;
 }
 
-
-//////////////////////////////////////////////////////////////
-//
-//	Find_Object
-//
-//////////////////////////////////////////////////////////////
-WWINLINE TDBObjClass *	
-TranslateDBClass::Find_Object (const char *id_desc)
-{
-	StringClass lower_case_name(id_desc,true);
-	_strlwr(lower_case_name.Peek_Buffer());
-	return m_ObjectHash.Get(lower_case_name);
-}
 
 //////////////////////////////////////////////////////////////
 //	Find_Object

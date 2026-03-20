@@ -12,10 +12,6 @@ target_include_directories(wwtranslatedb
         "${PROJECT_SOURCE_DIR}/Code/WWMath"
         "${PROJECT_SOURCE_DIR}/Code/wwutil"
         "${PROJECT_SOURCE_DIR}/Code/wwsaveload"
+    PRIVATE
+        "${RENEGADE_SDL3_SUBMODULE_PATH}/include"
 )
-
-target_link_libraries(wwtranslatedb PRIVATE wwlib wwdebug WWMath wwutil wwsaveload)
-
-if(NOT WIN32)
-    target_compile_definitions(wwtranslatedb PUBLIC _UNIX)
-endif()

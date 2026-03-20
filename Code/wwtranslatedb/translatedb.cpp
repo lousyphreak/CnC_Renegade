@@ -37,7 +37,9 @@
 
 #include "translatedb.h"
 
+#include <algorithm>
 #include <fstream>
+#include <SDL3/SDL_stdinc.h>
 #include <string.h>
 
 #include "persist.h"
@@ -53,7 +55,40 @@
 ///////////////////////////////////////////////////////////////////////
 // Local prototypes
 ///////////////////////////////////////////////////////////////////////
+static void Make_String_Lower_Case (char *text);
+static StringClass Build_Object_Hash_Key (const char *id_desc);
 static int Build_List_From_String (const char *buffer, const char *delimiter, StringClass **string_list);
+
+
+///////////////////////////////////////////////////////////////////////
+// Local helpers
+///////////////////////////////////////////////////////////////////////
+static void
+Make_String_Lower_Case (char *text)
+{
+	if (text == NULL) {
+		return ;
+	}
+
+	for (; *text != 0; ++text) {
+		*text = static_cast<char>(SDL_tolower (static_cast<unsigned char>(*text)));
+	}
+
+	return ;
+}
+
+
+static StringClass
+Build_Object_Hash_Key (const char *id_desc)
+{
+	StringClass lower_case_name;
+	if (id_desc != NULL) {
+		lower_case_name = id_desc;
+		Make_String_Lower_Case (lower_case_name.Peek_Buffer ());
+	}
+
+	return lower_case_name;
+}
 
 
 ///////////////////////////////////////////////////////////////////////
@@ -494,11 +529,6 @@ TranslateDBClass::Export_C_Header (const char *filename)
 		//
 		//	Wtite the 'C' style header framework
 		//
-		write_line ("#if defined(_MSC_VER)");
-		write_line ("#pragma once");
-		write_line ("#endif");
-		write_line ("");
-
 		write_line ("#ifndef __STRING_IDS_H");
 		write_line ("#define __STRING_IDS_H");
 		write_line ("");
@@ -569,7 +599,7 @@ TranslateDBClass::Import_C_Header (const char *filename)
 			while (found_end_block == false && std::getline(file, line_buffer)) {
 				line = line_buffer.c_str();
 
-				if (::strnicmp (line, "#define ", 8) == 0) {
+				if (SDL_strncasecmp (line, "#define ", 8) == 0) {
 					
 					//
 					//	Break the #define into its parts
@@ -739,7 +769,7 @@ TranslateDBClass::Add_Category (TDBCategoryClass *new_category, bool assign_id)
 			uint32 new_id = 1;
 			for (int index = 0; index < m_CategoryList.Count (); index ++) {
 				uint32 curr_id = m_CategoryList[index]->Get_ID ();
-				new_id = max (curr_id + 1, new_id);
+				new_id = std::max (curr_id + 1, new_id);
 			}
 			new_category->Set_ID (new_id);
 		}
@@ -842,8 +872,7 @@ TranslateDBClass::Add_Object (TDBObjClass *new_obj)
 		m_ObjectList[obj_index] = new_obj;
 
 		// Insert object to the hash table as well...
-		StringClass lower_case_name(new_obj->Get_ID_Desc(),true);
-		_strlwr(lower_case_name.Peek_Buffer());
+		StringClass lower_case_name = Build_Object_Hash_Key (new_obj->Get_ID_Desc ());
 		m_ObjectHash.Insert(lower_case_name,new_obj);
 
 		retval = true;
@@ -875,8 +904,7 @@ TranslateDBClass::Remove_Object (int index)
 		TDBObjClass *object = m_ObjectList[index];
 		if (object != NULL) {
 			// Remove the object from the hash table
-			StringClass lower_case_name(object->Get_ID_Desc(),true);
-			_strlwr(lower_case_name.Peek_Buffer());
+			StringClass lower_case_name = Build_Object_Hash_Key (object->Get_ID_Desc ());
 			m_ObjectHash.Remove(lower_case_name);
 			delete object;
 		}
@@ -1006,6 +1034,19 @@ TranslateDBClass::Find_Category (const char *name)
 	}
 
 	return category;
+}
+
+
+///////////////////////////////////////////////////////////////////////
+//
+//	Find_Object
+//
+///////////////////////////////////////////////////////////////////////
+TDBObjClass *
+TranslateDBClass::Find_Object (const char *id_desc)
+{
+	StringClass lower_case_name = Build_Object_Hash_Key (id_desc);
+	return m_ObjectHash.Get (lower_case_name);
 }
 
 
@@ -1232,7 +1273,7 @@ int Build_List_From_String
 			//
 			// Move past the current delimiter (if necessary)
 			//
-			if ((::strnicmp (entry, delimiter, delim_len) == 0) && (count > 0)) {
+			if ((SDL_strncasecmp (entry, delimiter, delim_len) == 0) && (count > 0)) {
 				entry += delim_len;
 			}
 
@@ -1259,7 +1300,7 @@ int Build_List_From_String
 				//
 				// Move past the current delimiter (if necessary)
 				//
-				if ((::strnicmp (entry, delimiter, delim_len) == 0) && (count > 0)) {
+				if ((SDL_strncasecmp (entry, delimiter, delim_len) == 0) && (count > 0)) {
 					entry += delim_len;
 				}
 

@@ -35,16 +35,11 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#if defined(_MSC_VER)
-#pragma once
-#endif
-
 #ifndef __TDB_CATEGORY_H
 #define __TDB_CATEGORY_H
 
 #include "persist.h"
 #include "wwstring.h"
-#include "vector.h"
 #include "bittype.h"
 
 

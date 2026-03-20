@@ -35,10 +35,6 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#if defined(_MSC_VER)
-#pragma once
-#endif
-
 #ifndef __TRANSLATE_OBJ_H
 #define __TRANSLATE_OBJ_H
 

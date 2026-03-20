@@ -1,20 +1,9 @@
 file(GLOB COMBAT_SOURCES CONFIGURE_DEPENDS "*.cpp")
 file(GLOB COMBAT_HEADERS CONFIGURE_DEPENDS "*.h")
 
-if(NOT WIN32 OR NOT RENEGADE_WITH_DIRECTINPUT)
-    list(REMOVE_ITEM COMBAT_SOURCES
-        "${CMAKE_CURRENT_SOURCE_DIR}/directinput.cpp"
-    )
-endif()
-
-if(NOT WIN32)
-    list(REMOVE_ITEM COMBAT_SOURCES
-        "${CMAKE_CURRENT_SOURCE_DIR}/debug.cpp"
-    )
-    list(APPEND COMBAT_SOURCES
-        "${CMAKE_CURRENT_SOURCE_DIR}/debug_bootstrap_stub.cpp"
-    )
-endif()
+list(REMOVE_ITEM COMBAT_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/debug_bootstrap_stub.cpp"
+)
 
 add_library(Combat STATIC ${COMBAT_SOURCES} ${COMBAT_HEADERS})
 renegade_configure_target(Combat)

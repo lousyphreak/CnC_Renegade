@@ -26,6 +26,7 @@
 #include "objectives.h"
 #include "ffactory.h"
 #include "savegame.h"
+#include <stdio.h>
 //#pragma warning (disable : 4201) // nonstandard extension - nameless struct
 //#include "systimer.h"
 #include "systimer.h"
@@ -144,12 +145,12 @@ void SystemInfoLog::Get_Final_String(StringClass& string)
 	avgfps.Format("%d.%1.1d",AvgFPS/10,AvgFPS%10);
 	string.Format(
 		"%5s %16s %6s %6d %6d %6s %8d ",
-		vnum,
-		CurrentLevel,
-		ptime,
+		vnum.Peek_Buffer(),
+		CurrentLevel.Peek_Buffer(),
+		ptime.Peek_Buffer(),
 		MinFPS!=1000 ? MinFPS : 0,
 		MaxFPS,
-		avgfps,
+		avgfps.Peek_Buffer(),
 		CurrentLoadingTime);
 }
 
@@ -296,13 +297,10 @@ void PlayerInfoLog::Append_To_Log(PlayerDataClass* data)
 
 	tmp+="\r\n";
 
-	DWORD written;
-	HANDLE file = CreateFile("history.txt", GENERIC_WRITE, 0, NULL, OPEN_ALWAYS,
-			FILE_ATTRIBUTE_NORMAL, NULL);
-	if (INVALID_HANDLE_VALUE != file) {
-		SetFilePointer(file, 0, NULL, FILE_END);
-		WriteFile(file, tmp, strlen(tmp), &written, NULL);
-		CloseHandle(file);
+	FILE *file = fopen("history.txt", "at");
+	if (file != NULL) {
+		fwrite(tmp.Peek_Buffer(), 1, strlen(tmp.Peek_Buffer()), file);
+		fclose(file);
 	}
 #endif // WWDEBUG
 }
@@ -318,7 +316,7 @@ void PlayerInfoLog::Get_Compact_Log(StringClass& string)
 		team1size=10*Team1TotalSizes/Team1SizeReported;
 	}
 
-	string.Format("%s\t%d.%d\t%d.%d\t",CurrentMapName,team0size/10,team0size%10,team1size/10,team1size%10);
+	string.Format("%s\t%d.%d\t%d.%d\t",CurrentMapName.Peek_Buffer(),team0size/10,team0size%10,team1size/10,team1size%10);
 
 	Team0SizeReported=0;
 	Team1SizeReported=0;

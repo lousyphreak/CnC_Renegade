@@ -50,9 +50,7 @@
 #include "combat.h"
 #include "ccamera.h"
 
-
-#define DIRECTINPUT_VERSION 0x0800
-#include <dinput.h>
+#include "dinput.h"
 
 #include <stdio.h>
 
@@ -701,31 +699,27 @@ void	Input::Free_Mappings( void )
 
 void	Input::Load_Registry( const char * key )
 {
-	/*RegistryClass * registry = new RegistryClass( key );
-	WWASSERT( registry );
-	if ( registry->Is_Valid() ) {
-		MouseSensitivity	= registry->Get_Float( "MouseSensitivity",	MouseSensitivity );
-		MouseScale			= registry->Get_Float( "MouseScale",	MouseScale );
-		MouseInvert			= registry->Get_Bool( "MouseInvert",	MouseInvert );
-		Mouse2DInvert		= registry->Get_Bool( "Mouse2DInvert",	Mouse2DInvert );
+	RegistryClass registry( key );
+	if ( registry.Is_Valid() ) {
+		MouseSensitivity	= registry.Get_Float( "MouseSensitivity",	MouseSensitivity );
+		MouseScale			= registry.Get_Float( "MouseScale",	MouseScale );
+		MouseInvert			= registry.Get_Bool( "MouseInvert",	MouseInvert );
+		Mouse2DInvert		= registry.Get_Bool( "Mouse2DInvert",	Mouse2DInvert );
 	}
-	delete registry;*/
 
-	//Input::Set_Mouse_Sensitivity( MouseSensitivity );
+	Input::Set_Mouse_Sensitivity( MouseSensitivity );
 
 }
 
 void	Input::Save_Registry( const char * key )
 {
-	/*RegistryClass * registry = new RegistryClass( key );
-	WWASSERT( registry );
-	if ( registry->Is_Valid() ) {
-		registry->Set_Float( "MouseSensitivity",	MouseSensitivity );
-		registry->Set_Float( "MouseScale",	MouseScale );
-		registry->Set_Bool( "MouseInvert",	MouseInvert );
-		registry->Set_Bool( "Mouse2DInvert",	Mouse2DInvert );
+	RegistryClass registry( key );
+	if ( registry.Is_Valid() ) {
+		registry.Set_Float( "MouseSensitivity",	MouseSensitivity );
+		registry.Set_Float( "MouseScale",	MouseScale );
+		registry.Set_Bool( "MouseInvert",	MouseInvert );
+		registry.Set_Bool( "Mouse2DInvert",	Mouse2DInvert );
 	}
-	delete registry;*/
 }
 
 
@@ -1302,7 +1296,7 @@ Input::Save_Configuration (const char *filename)
 	//	Save the data to a file
 	//
 	StringClass	config_filename;
-	config_filename.Format( "config\\%s", filename );
+	config_filename.Format( "config/%s", filename );
 	FileClass *ini_file = _TheWritingFileFactory->Get_File (config_filename);
 	if (ini_file != NULL) {
 		ini_file->Open (FileClass::WRITE);

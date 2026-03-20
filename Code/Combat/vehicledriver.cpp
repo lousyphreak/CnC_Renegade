@@ -45,7 +45,6 @@
 #include "soldier.h"
 #include "combat.h"
 #include "chunkio.h"
-#include <windows.h>
 
 #include "vehiclecurve.h"
 

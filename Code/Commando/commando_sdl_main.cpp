@@ -29,7 +29,7 @@ void PrintCommandoBanner()
         << "  x86 asm enabled: " << RENEGADE_WITH_X86_ASM << '\n'
         << "  stacktrace backend: std::stacktrace with log fallback\n"
         << "  renderer enabled: " << RENEGADE_WITH_DX8_RENDERER << '\n'
-        << "  directinput enabled: " << RENEGADE_WITH_DIRECTINPUT << '\n'
+        << "  combat input backend: SDL3\n"
         << "  commando slice: " << Renegade_Commando_Bootstrap_Summary() << '\n';
 }
 

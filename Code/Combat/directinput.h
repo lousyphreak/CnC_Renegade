@@ -128,7 +128,7 @@ public:
 	//
 	//	Cursor support
 	//
-	static void		Reset_Cursor_Pos (const Vector2 &pos)	{ CursorPos.X = pos.X; CursorPos.Y = pos.Y; }
+	static void		Reset_Cursor_Pos (const Vector2 &pos);
 	static void		Get_Cursor_Pos (Vector3 *pos)				{ *pos = CursorPos; }
 
 	//
@@ -154,13 +154,12 @@ private:
 	static	char						DIKeyboardButtons[NUM_KEYBOARD_BUTTONS];
 	static	char						DIMouseButtons[NUM_MOUSE_BUTTONS];
 	static	long						DIMouseAxis[NUM_MOUSE_AXIS];
-	static	char						DIJoystickButtons[NUM_MOUSE_BUTTONS];
+	static	char					DIJoystickButtons[NUM_JOYSTICK_BUTTONS];
+	static	long					DIJoystickAxis[2];
 	static	float						ButtonLastHitTime[NUM_KEYBOARD_BUTTONS];
 
 	static	Vector3					CursorPos;
 	static	bool						EatMouseHeld;
-
-	static	void *					DirectInputLibrary;
 
 	static	int						LastKeyPressed;
 
@@ -189,6 +188,12 @@ DirectInput::Get_Button_Value (int button_id)
 	}
 
 	return retval;
+}
+
+WWINLINE long
+DirectInput::Get_Joystick_Axis_State( JoystickAxis axis )
+{
+	return DIJoystickAxis[axis];
 }
 
 #endif

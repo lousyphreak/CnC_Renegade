@@ -26,11 +26,12 @@
 //-----------------------------------------------------------------------------
 #include "mathutil.h" // I WANNA BE FIRST!
 
-#include <math.h>
-#include <stdlib.h>
-#include "wwmath.h"
+#include <SDL3/SDL_assert.h>
+
+#include <cmath>
+#include <cstdlib>
+
 #include "miscutil.h"
-#include "wwdebug.h"
 
 const double cMathUtil::PI   = 3.1415927;
 const double cMathUtil::PI_2 = 1.5707963;
@@ -41,31 +42,31 @@ const double cMathUtil::PI_2 = 1.5707963;
 //
 void cMathUtil::Angle_To_Vector(double angle, double & dx, double & dy)
 {
-	WWASSERT(angle > -WWMATH_EPSILON && angle < 360.0 + WWMATH_EPSILON);
+	SDL_assert(angle > -MISCUTIL_EPSILON && angle < 360.0 + MISCUTIL_EPSILON);
 
 	double angleRadians;
 
 	if (angle >= 0 && angle < 90) {
 		angleRadians = angle * PI / 180.0;
-		dx = WWMath::Sin(angleRadians);
-		dy = WWMath::Cos(angleRadians);
+		dx = std::sin(angleRadians);
+		dy = std::cos(angleRadians);
 	} else if (angle >= 90 && angle < 180) {
 		angleRadians = (angle - 90) * PI / 180.0;
-		dx = WWMath::Cos(angleRadians);
-		dy = -WWMath::Sin(angleRadians);
+		dx = std::cos(angleRadians);
+		dy = -std::sin(angleRadians);
 	} else if (angle >= 180 && angle < 270) {
 		angleRadians = (angle - 180) * PI / 180.0;
-		dx = -WWMath::Sin(angleRadians);
-		dy = -WWMath::Cos(angleRadians);
+		dx = -std::sin(angleRadians);
+		dy = -std::cos(angleRadians);
 	} else {
 		angleRadians = (angle - 270) * PI / 180.0;
-		dx = -WWMath::Cos(angleRadians);
-		dy = WWMath::Sin(angleRadians);
+		dx = -std::cos(angleRadians);
+		dy = std::sin(angleRadians);
 	}
 
    double len;
-	len = ::sqrt(dx * dx + dy * dy); 
-   WWASSERT(::fabs(len - 1) < 0.0005);
+	len = std::sqrt(dx * dx + dy * dy); 
+   SDL_assert(std::fabs(len - 1) < 0.0005);
 
 	//
    // Correction for Irish nature of windows y coords
@@ -89,7 +90,7 @@ void cMathUtil::Vector_To_Angle(double dx, double dy, double & angle)
 			theta = PI;
 		}
 	} else {
-		theta = WWMath::Atan(-dy / dx);
+		theta = std::atan(-dy / dx);
 		if (dx < 0) {
 			theta += PI;
 		}
@@ -111,7 +112,7 @@ double cMathUtil::Simple_Distance(double x1, double y1, double x2, double y2)
 {
 	double dx = x2 - x1;
 	double dy = y2 - y1;
-	return(::sqrt(dx * dx + dy * dy));
+	return(std::sqrt(dx * dx + dy * dy));
 }
 
 //-----------------------------------------------------------------------------
@@ -136,8 +137,8 @@ void cMathUtil::Rotate_Vector(double & vx, double & vy, double angle)
    double vx1 = vx;
    double vy1 = vy;
 
-   vx = vx1 * ::WWMath::Cos(angle_radians) - vy1 * ::WWMath::Sin(angle_radians);
-   vy = vx1 * ::WWMath::Sin(angle_radians) + vy1 * ::WWMath::Cos(angle_radians);
+	vx = vx1 * std::cos(angle_radians) - vy1 * std::sin(angle_radians);
+	vy = vx1 * std::sin(angle_radians) + vy1 * std::cos(angle_radians);
 }
 
 
@@ -145,11 +146,11 @@ void cMathUtil::Rotate_Vector(double & vx, double & vy, double angle)
 //-----------------------------------------------------------------------------
 double cMathUtil::Get_Uniform_Pdf_Double(double lower, double upper)
 {
-   WWASSERT(upper - lower > -MISCUTIL_EPSILON);
+	SDL_assert(upper - lower > -MISCUTIL_EPSILON);
 
-   double x = lower + ::rand() / (double) RAND_MAX * (upper - lower);
+	double x = lower + std::rand() / (double) RAND_MAX * (upper - lower);
 
-   WWASSERT(x - lower > -MISCUTIL_EPSILON && upper - x > -MISCUTIL_EPSILON);
+	SDL_assert(x - lower > -MISCUTIL_EPSILON && upper - x > -MISCUTIL_EPSILON);
    
    return x;
 }
@@ -163,10 +164,10 @@ double cMathUtil::Get_Normalized_Uniform_Pdf_Double()
 //-----------------------------------------------------------------------------
 int cMathUtil::Get_Uniform_Pdf_Int(int lower, int upper)
 {
-   WWASSERT(lower <= upper);
-   int x = lower + ::rand() % (upper - lower + 1);
+	SDL_assert(lower <= upper);
+	int x = lower + std::rand() % (upper - lower + 1);
 
-   WWASSERT(x >= lower && upper >= x);
+	SDL_assert(x >= lower && upper >= x);
    
    return x;
 }
@@ -174,11 +175,11 @@ int cMathUtil::Get_Uniform_Pdf_Int(int lower, int upper)
 //-----------------------------------------------------------------------------
 double cMathUtil::Get_Hat_Pdf_Double(double lower, double upper)
 {
-   WWASSERT(upper - lower > -MISCUTIL_EPSILON);
+	SDL_assert(upper - lower > -MISCUTIL_EPSILON);
 
    double x;
    
-   if (::fabs(upper - lower) < MISCUTIL_EPSILON) {
+	if (std::fabs(upper - lower) < MISCUTIL_EPSILON) {
       x = lower;
    } else {
 
@@ -195,7 +196,7 @@ double cMathUtil::Get_Hat_Pdf_Double(double lower, double upper)
       }
    }
 
-   WWASSERT(x - lower > -MISCUTIL_EPSILON && upper - x > -MISCUTIL_EPSILON);
+	SDL_assert(x - lower > -MISCUTIL_EPSILON && upper - x > -MISCUTIL_EPSILON);
 
    return x;
 }

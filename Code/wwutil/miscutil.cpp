@@ -21,327 +21,143 @@
 // Project:      wwutil
 // Author:       Tom Spencer-Smith
 // Date:         June 1998
-// Description:  
+// Description:
 //
 //-----------------------------------------------------------------------------
 #include "miscutil.h" // I WANNA BE FIRST!
 
 #include <cstring>
-#include <filesystem>
-#include <time.h>
 
-#include "rawfile.h"
-#include "wwdebug.h"
-#include "win.h"
-#include "mmsys.h"
-#include "ffactory.h"
-
-//
-// cMiscUtil statics 
-//
+#include <SDL3/SDL_assert.h>
+#include <SDL3/SDL_filesystem.h>
+#include <SDL3/SDL_stdinc.h>
+#include <SDL3/SDL_time.h>
 
 //---------------------------------------------------------------------------
-LPCSTR cMiscUtil::Get_Text_Time(void)
+const char * cMiscUtil::Get_Text_Time(void)
 {
-   //
-   // Returns a pointer to an internal statically allocated buffer...
-   // Subsequent time operations will destroy the contents of that buffer.
-   // Note: BoundsChecker reports 2 memory leaks in ctime here.
-	//
+	static char time_str[64];
+	static constexpr const char * kWeekdays[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+	static constexpr const char * kMonths[] = {
+		"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+		"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+	};
 
-	long time_now = ::time(NULL);
-   char * time_str = ::ctime(&time_now);
-   time_str[::strlen(time_str) - 1] = 0; // remove \n
-   return time_str; 
+	SDL_Time ticks = 0;
+	SDL_DateTime date_time = {};
+	if (!SDL_GetCurrentTime(&ticks) || !SDL_TimeToDateTime(ticks, &date_time, true)) {
+		SDL_snprintf(time_str, sizeof(time_str), "Unknown time");
+		return time_str;
+	}
+
+	const char * weekday = "???";
+	if (date_time.day_of_week >= 0 && date_time.day_of_week < static_cast<int>(SDL_arraysize(kWeekdays))) {
+		weekday = kWeekdays[date_time.day_of_week];
+	}
+
+	const char * month = "???";
+	if (date_time.month >= 1 && date_time.month <= static_cast<int>(SDL_arraysize(kMonths))) {
+		month = kMonths[date_time.month - 1];
+	}
+
+	SDL_snprintf(
+		time_str,
+		sizeof(time_str),
+		"%s %s %2d %02d:%02d:%02d %04d",
+		weekday,
+		month,
+		date_time.day,
+		date_time.hour,
+		date_time.minute,
+		date_time.second,
+		date_time.year
+	);
+
+	return time_str;
 }
 
 //---------------------------------------------------------------------------
 void cMiscUtil::Seconds_To_Hms(float seconds, int & h, int & m, int & s)
 {
-   WWASSERT(seconds >= 0);
+	SDL_assert(seconds >= 0);
 
-   h = (int) (seconds / 3600);
-   seconds -= h * 3600;
-   m = (int) (seconds / 60);
-   seconds -= m * 60;
-   s = (int) seconds;
+	h = static_cast<int>(seconds / 3600);
+	seconds -= h * 3600;
+	m = static_cast<int>(seconds / 60);
+	seconds -= m * 60;
+	s = static_cast<int>(seconds);
 
-   WWASSERT(h >= 0);
-   WWASSERT(m >= 0 && m < 60);
-   WWASSERT(s >= 0 && s < 60);
-
-   //WWASSERT(fabs((h * 3600 + m * 60 + s) / 60) - mins < WWMATH_EPSILON);
+	SDL_assert(h >= 0);
+	SDL_assert(m >= 0 && m < 60);
+	SDL_assert(s >= 0 && s < 60);
 }
 
 //-----------------------------------------------------------------------------
-bool cMiscUtil::Is_String_Same(LPCSTR str1, LPCSTR str2)
+bool cMiscUtil::Is_String_Same(const char * str1, const char * str2)
 {
-   WWASSERT(str1 != NULL);
-   WWASSERT(str2 != NULL);
+	SDL_assert(str1 != nullptr);
+	SDL_assert(str2 != nullptr);
 
-   return(::stricmp(str1, str2) == 0);
+	return SDL_strcasecmp(str1, str2) == 0;
 }
 
 //-----------------------------------------------------------------------------
-bool cMiscUtil::Is_String_Different(LPCSTR str1, LPCSTR str2)
+bool cMiscUtil::Is_String_Different(const char * str1, const char * str2)
 {
-   WWASSERT(str1 != NULL);
-   WWASSERT(str2 != NULL);
+	SDL_assert(str1 != nullptr);
+	SDL_assert(str2 != nullptr);
 
-   return(::stricmp(str1, str2) != 0);
+	return SDL_strcasecmp(str1, str2) != 0;
 }
 
 //-----------------------------------------------------------------------------
-bool cMiscUtil::File_Exists(LPCSTR filename)
+bool cMiscUtil::File_Exists(const char * filename)
 {
-#if 0
-   WWASSERT(filename != NULL);
+	SDL_assert(filename != nullptr);
 
-	WIN32_FIND_DATA find_info;
-   HANDLE file_handle = ::FindFirstFile(filename, &find_info);
-	
-	if (file_handle != INVALID_HANDLE_VALUE) {
-		::FindClose(file_handle);
-		return true;
-	} else {
-		return false;
-	}
-#else
-	FileClass * file = _TheFileFactory->Get_File( filename );
-	if ( file && file->Is_Available() ) {
-		return true;
-	}
-	_TheFileFactory->Return_File( file );
-	return false;
-#endif
-}
-
-//-----------------------------------------------------------------------------
-bool cMiscUtil::File_Is_Read_Only(LPCSTR filename)
-{
-   WWASSERT(filename != NULL);
-
-	#ifdef _WIN32
-	DWORD attributes = ::GetFileAttributes(filename);
-	return ((attributes != 0xFFFFFFFF) && (attributes & FILE_ATTRIBUTE_READONLY));
-	#else
-	std::error_code error;
-	const auto status = std::filesystem::status(filename, error);
-	if (error) {
-		return false;
-	}
-	const auto perms = status.permissions();
-	return (perms & std::filesystem::perms::owner_write) == std::filesystem::perms::none;
-	#endif
+	SDL_PathInfo info = {};
+	return SDL_GetPathInfo(filename, &info) && info.type != SDL_PATHTYPE_NONE;
 }
 
 //-----------------------------------------------------------------------------
 bool cMiscUtil::Is_Alphabetic(char c)
 {
-   return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
 //-----------------------------------------------------------------------------
 bool cMiscUtil::Is_Numeric(char c)
 {
-   return (c >= '0' && c <= '9');
+	return (c >= '0' && c <= '9');
 }
 
 //-----------------------------------------------------------------------------
 bool cMiscUtil::Is_Alphanumeric(char c)
 {
-   return Is_Alphabetic(c) || Is_Numeric(c);
+	return Is_Alphabetic(c) || Is_Numeric(c);
 }
 
 //-----------------------------------------------------------------------------
 bool cMiscUtil::Is_Whitespace(char c)
 {
-   return c == ' ' || c == '\t';
+	return c == ' ' || c == '\t';
 }
 
 //-----------------------------------------------------------------------------
 void cMiscUtil::Trim_Trailing_Whitespace(char * text)
-{	
-   WWASSERT(text != NULL);
+{
+	SDL_assert(text != nullptr);
 
-	int length = ::strlen(text);
+	int length = static_cast<int>(std::strlen(text));
 	while (length > 0 && Is_Whitespace(text[length - 1])) {
 		text[--length] = 0;
 	}
 }
 
 //-----------------------------------------------------------------------------
-void cMiscUtil::Get_File_Id_String(LPCSTR filename, StringClass & str)
+void cMiscUtil::Remove_File(const char * filename)
 {
-	WWASSERT(filename != NULL);
+	SDL_assert(filename != nullptr);
 
-//	WWDEBUG_SAY(("cMiscUtil::Get_File_Id_String for %s\n", filename));
-
-   //
-   // Get size
-   //
-   RawFileClass file(filename);
-   int filesize = file.Size();
-	//WWASSERT(filesize > 0);
-	if (filesize <= 0)
-	{
-		WWDEBUG_SAY(("Error: cMiscUtil::Get_File_Id_String for %s: filesize = %d\n", 
-			filename, filesize));
-		DIE;
-	}
-   file.Close();
-
-	//
-	// Note... this timedatestamp is not present for all file types...
-	//
-	int time_date_stamp = 0;
-	#ifdef _WIN32
-	IMAGE_FILE_HEADER header = {0};
-	extern bool Get_Image_File_Header(LPCSTR filename, IMAGE_FILE_HEADER *file_header);
-	/*
-	bool success;
-	success = Get_Image_File_Header(filename, &header);
-	WWASSERT(success);
-	*/
-	Get_Image_File_Header(filename, &header);
-	time_date_stamp = header.TimeDateStamp;
-	#endif
-
-	char working_filename[500];
-	strcpy(working_filename, filename);
-	strupr(working_filename);
-
-   //
-   // Strip path off filename
-   //
-   char * p_start = &working_filename[strlen(working_filename)];
-   int num_chars = 1;
-   while (p_start > working_filename && *(p_start - 1) != '\\') {
-      p_start--;
-      num_chars++;
-   }
-   ::memmove(working_filename, p_start, num_chars);
-
-	//
-	// Put all this data into a string
-	//
-	str.Format("%s %d %d", working_filename, filesize, time_date_stamp);
-
-	//WWDEBUG_SAY(("File id string: %s\n", str));
+	SDL_RemovePath(filename);
 }
-
-//-----------------------------------------------------------------------------
-void cMiscUtil::Remove_File(LPCSTR filename)
-{
-   WWASSERT(filename != NULL);
-
-	#ifdef _WIN32
-	::DeleteFile(filename);
-	#else
-	std::error_code error;
-	std::filesystem::remove(filename, error);
-	(void)error;
-	#endif
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-#define SIZE_OF_NT_SIGNATURE   sizeof(DWORD)
-#define PEFHDROFFSET(a) ((LPVOID)((BYTE *)a +  \
-    ((PIMAGE_DOS_HEADER)a)->e_lfanew + SIZE_OF_NT_SIGNATURE))
-*/
-
-/*
-int cMiscUtil::Get_Exe_Key(void)
-{
-   //
-   // Get exe name
-   //
-	char filename[500];
-   int succeeded;
-	succeeded = ::GetModuleFileName(NULL, filename, sizeof(filename));
-	::strupr(filename);
-	WWASSERT(succeeded);
-      
-   //
-   // Get size
-   //
-   RawFileClass file(filename);
-   int filesize = file.Size();
-	WWASSERT(filesize > 0);
-   file.Close();
-
-   //
-   // Strip path off filename
-   //
-   char * p_start = &filename[strlen(filename)];
-   int num_chars = 1;
-   while (*(p_start - 1) != '\\') {
-      p_start--;
-      num_chars++;
-   }
-   ::memmove(filename, p_start, num_chars);
-
-	//
-	// Pull a time/date stamp out of the exe header
-	//
-	PIMAGE_FILE_HEADER p_header = (PIMAGE_FILE_HEADER) PEFHDROFFSET(ProgramInstance);
-	WWASSERT(p_header != NULL);
-	int time_date_stamp = p_header->TimeDateStamp;
-
-	//
-	// Put all this data into a string
-	//
-	char id_string[500];
-	::sprintf(id_string, "%s %d %d", filename, filesize, time_date_stamp);
-	WWDEBUG_SAY(("File id string: %s\n", id_string));
-
-	//
-	// return the crc of that string as the key
-	//
-	return CRCEngine()(id_string, strlen(id_string));
-}
-*/
-
-//#include <stdio.h>
-//#include "verchk.h"
-
-/*
-//-----------------------------------------------------------------------------
-int cMiscUtil::Get_Exe_Key(void)
-{
-   //
-   // Get exe name
-   //
-	char filename[500];
-   int succeeded;
-	succeeded = ::GetModuleFileName(NULL, filename, sizeof(filename));
-	::strupr(filename);
-	WWASSERT(succeeded);
-      
-	StringClass string;
-	Get_File_Id_String(filename, string);
-
-	//
-	// return the crc of that string as the key
-	//
-	return CRCEngine()(string, strlen(string));
-}
-*/
-
-//#include "crc.h"

@@ -27,7 +27,7 @@ void PrintCommandoBanner()
         << "  platform target: " << RENEGADE_BOOTSTRAP_PLATFORM << '\n'
         << "  SDL version pin: " << RENEGADE_SDL3_VERSION << '\n'
         << "  x86 asm enabled: " << RENEGADE_WITH_X86_ASM << '\n'
-        << "  Win32 stacktrace enabled: " << RENEGADE_WITH_WIN32_STACKTRACE << '\n'
+        << "  stacktrace backend: std::stacktrace with log fallback\n"
         << "  renderer enabled: " << RENEGADE_WITH_DX8_RENDERER << '\n'
         << "  directinput enabled: " << RENEGADE_WITH_DIRECTINPUT << '\n'
         << "  commando slice: " << Renegade_Commando_Bootstrap_Summary() << '\n';

@@ -24,7 +24,7 @@
 // Description:  static
 //
 //-----------------------------------------------------------------------------
-#if defined(_MSV_VER)
+#if defined(_MSC_VER)
 #pragma once
 #endif
 

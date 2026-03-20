@@ -13,7 +13,6 @@ endif()
 
 option(RENEGADE_WITH_SDL3 "Use vendored SDL3 for platform abstractions" ON)
 option(RENEGADE_WITH_X86_ASM "Enable legacy x86 assembly implementations" OFF)
-option(RENEGADE_WITH_WIN32_STACKTRACE "Enable Win32 ImageHlp-based stack tracing" OFF)
 option(RENEGADE_WITH_UMBRA "Enable Umbra integration" OFF)
 option(RENEGADE_WITH_BINK "Enable Bink movie playback" OFF)
 option(RENEGADE_WITH_MILES "Enable Miles audio integration" OFF)

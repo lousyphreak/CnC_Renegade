@@ -39,7 +39,7 @@
 
 #include "netevent.h"
 #include "netclassids.h"
-#include "wwstring.h"
+#include "widestring.h"
 
 #include "sctextobj.h"
 

@@ -39,12 +39,9 @@
 
 #include "bitstream.h"
 
-#include <string.h>	// for strlen
-#include <math.h>		// for ceil
-
-#include "wwdebug.h"
-#include "mathutil.h"
-#include "widestring.h"
+#include <cstring>
+#include <cwchar>
+#include <limits>
 
 
 //-----------------------------------------------------------------------------
@@ -73,20 +70,20 @@ void BitStreamClass::Add(bool value)
 	if (cEncoderList::Is_Compression_Enabled()) {
 		Add_Bits(value, 1);
 	} else {
-		Add_Bits(value, BIT_DEPTH(bool));
+		Add_Bits(wwbitpack::Encode_Uncompressed(value), wwbitpack::Bit_Depth<bool>());
 	}
 
-	UncompressedSizeBytes += BYTE_DEPTH(bool);
+	UncompressedSizeBytes += static_cast<unsigned int>(sizeof(bool));
 }
 
 //-----------------------------------------------------------------------------
 bool BitStreamClass::Get(bool & value)
 {
-	ULONG u_value;
+	std::uint32_t u_value = 0;
 	if (cEncoderList::Is_Compression_Enabled()) {
 		Get_Bits(u_value, 1);
 	} else {
-		Get_Bits(u_value, BIT_DEPTH(bool));
+		Get_Bits(u_value, wwbitpack::Bit_Depth<bool>());
 	}
 
 	value = (u_value == 1);
@@ -94,62 +91,62 @@ bool BitStreamClass::Get(bool & value)
 }
 
 //-----------------------------------------------------------------------------
-void BitStreamClass::Add_Raw_Data(LPCSTR data, USHORT data_size)
+void BitStreamClass::Add_Raw_Data(const char * data, std::uint16_t data_size)
 {
-	WWASSERT(data != NULL);
-	WWASSERT(data_size >= 0);
+	WWBITPACK_ASSERT(data != NULL);
 
-	for (int i = 0; i < data_size; i++) {
+	for (std::uint16_t i = 0; i < data_size; ++i) {
 		Add(data[i]);
 	}
 }
 
 //-----------------------------------------------------------------------------
-void BitStreamClass::Get_Raw_Data(char * buffer, USHORT buffer_size, USHORT data_size)
+void BitStreamClass::Get_Raw_Data(char * buffer, std::uint16_t buffer_size, std::uint16_t data_size)
 {
-	WWASSERT(buffer != NULL);
-	WWASSERT(data_size >= 0);
-   WWASSERT(buffer_size >= data_size);
+	WWBITPACK_ASSERT(buffer != NULL);
+   WWBITPACK_ASSERT(buffer_size >= data_size);
 
-	for (int i = 0; i < data_size; i++) {
+	for (std::uint16_t i = 0; i < data_size; ++i) {
 		Get(buffer[i]);
 	}
 }
 
 //-----------------------------------------------------------------------------
-void BitStreamClass::Add_Terminated_String(LPCSTR string, bool permit_empty)
+void BitStreamClass::Add_Terminated_String(const char * string, bool permit_empty)
 {
-	WWASSERT(string != NULL);
+	WWBITPACK_ASSERT(string != NULL);
 
 	//
 	// The terminating null is not transmitted.
 	//
-	USHORT len = (USHORT) strlen(string);
+	const std::size_t raw_len = std::strlen(string);
+	WWBITPACK_ASSERT(raw_len <= std::numeric_limits<std::uint16_t>::max());
+	const std::uint16_t len = static_cast<std::uint16_t>(raw_len);
 	if (!permit_empty) {
-		WWASSERT(len > 0);
+		WWBITPACK_ASSERT(len > 0);
 	}
 
 	Add(len);
-	for (int i = 0; i < len; i++) {
+	for (std::uint16_t i = 0; i < len; ++i) {
 		Add(string[i]);
 	}
 }
 
 //-----------------------------------------------------------------------------
-void BitStreamClass::Get_Terminated_String(char * buffer, USHORT buffer_size, bool permit_empty)
+void BitStreamClass::Get_Terminated_String(char * buffer, std::uint16_t buffer_size, bool permit_empty)
 {
-	WWASSERT(buffer != NULL);
-	WWASSERT(buffer_size > 0);
+	WWBITPACK_ASSERT(buffer != NULL);
+	WWBITPACK_ASSERT(buffer_size > 0);
 
-	USHORT len;
+	std::uint16_t len = 0;
 	Get(len);
-	WWASSERT(len < buffer_size);
+	WWBITPACK_ASSERT(len < buffer_size);
 	if (!permit_empty) {
-		WWASSERT(len > 0);
+		WWBITPACK_ASSERT(len > 0);
 	}
 
 	char temp = '?';
-	int i = 0;
+	std::uint16_t i = 0;
 	for (i = 0; i < len; i++) {
 		Get(temp);
 		if (i < buffer_size - 1) {
@@ -167,39 +164,41 @@ void BitStreamClass::Get_Terminated_String(char * buffer, USHORT buffer_size, bo
 
 
 //-----------------------------------------------------------------------------
-void BitStreamClass::Add_Wide_Terminated_String(const WCHAR *string, bool permit_empty)
+void BitStreamClass::Add_Wide_Terminated_String(const wchar_t * string, bool permit_empty)
 {
-	WWASSERT(string != NULL);
+	WWBITPACK_ASSERT(string != NULL);
 
 	//
 	// The terminating null is not transmitted.
 	//
-	USHORT len = (USHORT)wcslen (string);
+	const std::size_t raw_len = std::wcslen(string);
+	WWBITPACK_ASSERT(raw_len <= std::numeric_limits<std::uint16_t>::max());
+	const std::uint16_t len = static_cast<std::uint16_t>(raw_len);
 	if (!permit_empty) {
-		WWASSERT(len > 0 && "Empty string not permitted");
+		WWBITPACK_ASSERT(len > 0 && "Empty string not permitted");
 	}
 
 	Add(len);
-	for (int i = 0; i < len; i++) {
+	for (std::uint16_t i = 0; i < len; ++i) {
 		Add(string[i]);
 	}
 }
 
 //-----------------------------------------------------------------------------
-void BitStreamClass::Get_Wide_Terminated_String(WCHAR *buffer, USHORT buffer_len, bool permit_empty)
+void BitStreamClass::Get_Wide_Terminated_String(wchar_t * buffer, std::uint16_t buffer_len, bool permit_empty)
 {
-	WWASSERT(buffer != NULL);
-	WWASSERT(buffer_len > 0);
+	WWBITPACK_ASSERT(buffer != NULL);
+	WWBITPACK_ASSERT(buffer_len > 0);
 
-	USHORT len;
+	std::uint16_t len = 0;
 	Get(len);
-	WWASSERT(len < buffer_len && "String length exceeds provided buffer");
+	WWBITPACK_ASSERT(len < buffer_len && "String length exceeds provided buffer");
 	if (!permit_empty) {
-		WWASSERT(len > 0 && "Empty string not permitted");
+		WWBITPACK_ASSERT(len > 0 && "Empty string not permitted");
 	}
 
-	WCHAR temp = L'?';
-	int i = 0;
+	wchar_t temp = L'?';
+	std::uint16_t i = 0;
 	for (i = 0; i < len; i++) {
 		Get(temp);
 		if (i < buffer_len - 1) {
@@ -216,27 +215,28 @@ void BitStreamClass::Get_Wide_Terminated_String(WCHAR *buffer, USHORT buffer_len
 
 
 //-----------------------------------------------------------------------------
-UINT BitStreamClass::Get_Compressed_Size_Bytes() const
+unsigned int BitStreamClass::Get_Compressed_Size_Bytes() const
 {
-	return (UINT) ceil(Get_Bit_Write_Position() / 8.0f);
+	return cBitPacker::Get_Compressed_Size_Bytes();
 }
 
 //-----------------------------------------------------------------------------
-UINT BitStreamClass::Get_Compression_Pc() const
+unsigned int BitStreamClass::Get_Compression_Pc() const
 {
-	UINT c_size = Get_Compressed_Size_Bytes();
-	UINT u_size = Get_Uncompressed_Size_Bytes();
+	const unsigned int c_size = Get_Compressed_Size_Bytes();
+	const unsigned int u_size = Get_Uncompressed_Size_Bytes();
 
 	if (cEncoderList::Is_Compression_Enabled()) {
-		WWASSERT(c_size <= u_size);
+		WWBITPACK_ASSERT(c_size <= u_size);
 	} else {
-		WWASSERT(c_size == u_size);
+		WWBITPACK_ASSERT(c_size == u_size);
 	}
 
-	WWASSERT(u_size > 0);
+	WWBITPACK_ASSERT(u_size > 0);
 
-	UINT compression_pc = (UINT) cMathUtil::Round(100 * c_size / (float) u_size);
-	WWASSERT(compression_pc >= 0 && compression_pc <= 100);
+	const unsigned int compression_pc = static_cast<unsigned int>(
+		wwbitpack::Round_To_Nearest(100.0 * c_size / static_cast<double>(u_size)));
+	WWBITPACK_ASSERT(compression_pc <= 100);
 
 	return compression_pc;
 }

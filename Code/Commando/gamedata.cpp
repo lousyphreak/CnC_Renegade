@@ -41,6 +41,7 @@
 
 #include "win.h"
 #include "miscutil.h"
+#include "mathutil.h"
 #include "cnetwork.h"
 #include "chatshre.h"
 #include "wwdebug.h"

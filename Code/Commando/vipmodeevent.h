@@ -39,6 +39,7 @@
 
 #include "netevent.h"
 #include "netclassids.h"
+#include "wwstring.h"
 
 //-----------------------------------------------------------------------------
 //

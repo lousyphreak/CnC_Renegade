@@ -78,6 +78,7 @@
 #include "clientpingmanager.h"
 #include "priority.h"
 #include "crandom.h"
+#include "mathutil.h"
 #include "wwmath.h"
 #include "clienthintmanager.h"
 #include "packetmgr.h"

@@ -39,16 +39,12 @@
 #ifndef BITSTREAM_H
 #define BITSTREAM_H
 
+#include <cmath>
+#include <cstdint>
 
 #include "BitPacker.h"
-#include "wwdebug.h"
 #include "encoderlist.h"
-#include "mathutil.h"
-#include "math.h"
-#include "widestring.h"
-
-#define BYTE_DEPTH(x)		(sizeof(x))
-#define BIT_DEPTH(x)			(8 * sizeof(x))
+#include "wwbitpack_platform.h"
 
 
 /**
@@ -77,32 +73,32 @@ class BitStreamClass : public cBitPacker
 		BitStreamClass();
       BitStreamClass& operator=(const BitStreamClass& rhs);
 
-		UINT Get_Uncompressed_Size_Bytes() const {return UncompressedSizeBytes;}
-		UINT Get_Compressed_Size_Bytes() const;
-		UINT Get_Compression_Pc() const;
+		unsigned int Get_Uncompressed_Size_Bytes() const {return UncompressedSizeBytes;}
+		unsigned int Get_Compressed_Size_Bytes() const;
+		unsigned int Get_Compression_Pc() const;
 
       //
       // For data which may include NULL's.
 		// Data will not be compressed.
       //
-      void Add_Raw_Data(LPCSTR data, USHORT data_size);
-		void Get_Raw_Data(char * buffer, USHORT buffer_size, USHORT data_size);
+      void Add_Raw_Data(const char * data, std::uint16_t data_size);
+		void Get_Raw_Data(char * buffer, std::uint16_t buffer_size, std::uint16_t data_size);
 
       //
       // For data terminated with NULL.
 		// Data will not be compressed.
 		// You may permit or disallow empty strings to be passed.
       //
-      void Add_Terminated_String(LPCSTR string, bool permit_empty = false);
-		void Get_Terminated_String(char * buffer, USHORT buffer_size, bool permit_empty = false);
+      void Add_Terminated_String(const char * string, bool permit_empty = false);
+		void Get_Terminated_String(char * buffer, std::uint16_t buffer_size, bool permit_empty = false);
 
       //
       // For data terminated with NULL.
 		// Data will not be compressed.
 		// You may permit or disallow empty strings to be passed.
       //
-      void Add_Wide_Terminated_String(const WCHAR *string, bool permit_empty = false);
-		void Get_Wide_Terminated_String (WCHAR *buffer, USHORT buffer_len, bool permit_empty = false);		
+      void Add_Wide_Terminated_String(const wchar_t * string, bool permit_empty = false);
+		void Get_Wide_Terminated_String(wchar_t * buffer, std::uint16_t buffer_len, bool permit_empty = false);
 
 		//
 		// Bool is special-cased because we know that we can always 
@@ -117,21 +113,21 @@ class BitStreamClass : public cBitPacker
 		//
 		enum {NO_ENCODER = -1};
 
-		void		Add(BYTE val,int type = NO_ENCODER)							{ Internal_Add(val,type); }
-		void		Add(USHORT val,int type = NO_ENCODER)						{ Internal_Add(val,type); }
-		void		Add(UINT val,int type = NO_ENCODER)							{ Internal_Add(val,type); }
-		void		Add(ULONG val,int type = NO_ENCODER)						{ Internal_Add(val,type); }
+		void		Add(std::uint8_t val,int type = NO_ENCODER)					{ Internal_Add(val,type); }
+		void		Add(std::uint16_t val,int type = NO_ENCODER)				{ Internal_Add(val,type); }
+		void		Add(unsigned int val,int type = NO_ENCODER)				{ Internal_Add(val,type); }
+		void		Add(unsigned long val,int type = NO_ENCODER)				{ Internal_Add_Wire32(static_cast<std::uint32_t>(val),type); }
 		void		Add(char val,int type = NO_ENCODER)							{ Internal_Add(val,type); }
-		void		Add(WCHAR val,int type = NO_ENCODER)						{ Internal_Add(val,type); }
+		void		Add(wchar_t val,int type = NO_ENCODER)					{ Internal_Add(val,type); }
 		void		Add(int val,int type = NO_ENCODER)							{ Internal_Add(val,type); }
 		void		Add(float val,int type = NO_ENCODER)						{ Internal_Add(val,type); }
 
-		BYTE		Get(BYTE & set_val,int type = NO_ENCODER)					{ return Internal_Get(set_val,type); }
-		USHORT	Get(USHORT & set_val,int type = NO_ENCODER)				{ return Internal_Get(set_val,type); }
-		ULONG		Get(ULONG & set_val,int type = NO_ENCODER)				{ return Internal_Get(set_val,type); }
-		UINT		Get(UINT & set_val,int type = NO_ENCODER)					{ return Internal_Get(set_val,type); }
+		std::uint8_t		Get(std::uint8_t & set_val,int type = NO_ENCODER)		{ return Internal_Get(set_val,type); }
+		std::uint16_t	Get(std::uint16_t & set_val,int type = NO_ENCODER)	{ return Internal_Get(set_val,type); }
+		unsigned long	Get(unsigned long & set_val,int type = NO_ENCODER)	{ return Internal_Get_Wire32(set_val,type); }
+		unsigned int	Get(unsigned int & set_val,int type = NO_ENCODER)	{ return Internal_Get(set_val,type); }
 		char		Get(char & set_val,int type = NO_ENCODER)					{ return Internal_Get(set_val,type); }
-		WCHAR		Get(WCHAR & set_val,int type = NO_ENCODER)				{ return Internal_Get(set_val,type); }
+		wchar_t		Get(wchar_t & set_val,int type = NO_ENCODER)			{ return Internal_Get(set_val,type); }
 		int		Get(int & set_val,int type = NO_ENCODER)					{ return Internal_Get(set_val,type); }
 		float		Get(float & set_val,int type = NO_ENCODER)				{ return Internal_Get(set_val,type); }
 
@@ -139,15 +135,11 @@ class BitStreamClass : public cBitPacker
 		
 		//
 		// Add/Get for remaining atomic data types.
-		// I really wish the following 3 methods were in the source file, but
-		// the compiler won't accept this. Hopefully the pragma and MSVC
-		// will prevent inlining.
-		//
-#pragma auto_inline(off)
-      //------------------------------------------------------------------------------------
 		template<class T> void Internal_Add(T value, int type = NO_ENCODER) {
+			static_assert(sizeof(T) <= sizeof(std::uint32_t), "wwbitpack atomics must fit in 32 bits");
+
 			if (cEncoderList::Is_Compression_Enabled() && type != NO_ENCODER) {
-				WWASSERT(type >= 0 && type < MAX_ENCODERTYPES);
+				WWBITPACK_ASSERT(type >= 0 && type < MAX_ENCODERTYPES);
 
 				cEncoderTypeEntry & entry = cEncoderList::Get_Encoder_Type_Entry(type);
 
@@ -155,30 +147,26 @@ class BitStreamClass : public cBitPacker
 				// If the following assert hits then the value of the type 
 				// parameter is unknown.
 				//
-				WWASSERT(entry.Is_Valid());
+				WWBITPACK_ASSERT(entry.Is_Valid());
 
-				ULONG scaled_value;
+				std::uint32_t scaled_value = 0;
 				bool is_in_range = entry.Scale(value, scaled_value);
-				if (!is_in_range) {
-					//WWDEBUG_SAY(("BitStreamClass::Add : Warning: out-of-range value clamped (type %d).\n",
-					//	type));
-					//DIE;
-				}
+				(void)is_in_range;
 
 				Add_Bits(scaled_value, entry.Get_Bit_Precision());
 
 			} else {
-				Add_Bits(*(reinterpret_cast<ULONG *>(&value)), BIT_DEPTH(T));
+				Add_Bits(wwbitpack::Encode_Uncompressed(value), wwbitpack::Bit_Depth<T>());
 			}
 
-			UncompressedSizeBytes += BYTE_DEPTH(T);
+			UncompressedSizeBytes += static_cast<unsigned int>(sizeof(T));
 		}
 		
-		//------------------------------------------------------------------------------------
       template<class T> T Internal_Get(T & value, int type = NO_ENCODER) {
+			static_assert(sizeof(T) <= sizeof(std::uint32_t), "wwbitpack atomics must fit in 32 bits");
 
 			if (cEncoderList::Is_Compression_Enabled() && type != NO_ENCODER) {
-				WWASSERT(type >= 0 && type < MAX_ENCODERTYPES);
+				WWBITPACK_ASSERT(type >= 0 && type < MAX_ENCODERTYPES);
 
 				cEncoderTypeEntry & entry = cEncoderList::Get_Encoder_Type_Entry(type);
 
@@ -186,37 +174,42 @@ class BitStreamClass : public cBitPacker
 				// If the following assert hits then the value of the type 
 				// parameter is unknown.
 				//
-				WWASSERT(entry.Is_Valid());
+				WWBITPACK_ASSERT(entry.Is_Valid());
 
-				ULONG u_value;
+				std::uint32_t u_value = 0;
 				Get_Bits(u_value, entry.Get_Bit_Precision());
 
 				double f_value = entry.Unscale(u_value);
 
-				if ((::fabs(f_value - static_cast<T>(f_value)) < MISCUTIL_EPSILON)) {
+				if (std::fabs(f_value - static_cast<double>(static_cast<T>(f_value))) < wwbitpack::kEpsilon) {
 					//
 					// N.B. More error may be introduced here
 					//
 					value = static_cast<T>(f_value);
 				} else {
-					value = static_cast<T>(cMathUtil::Round(f_value));
+					value = static_cast<T>(wwbitpack::Round_To_Nearest(f_value));
 				}
 
-				WWASSERT(entry.Is_Value_In_Range(value));
+				WWBITPACK_ASSERT(entry.Is_Value_In_Range(value));
 
 			} else {
-				ULONG u_value;
-				Get_Bits(u_value, BIT_DEPTH(T));
+				std::uint32_t u_value = 0;
+				Get_Bits(u_value, wwbitpack::Bit_Depth<T>());
 
-				value = *(reinterpret_cast<T *>(&u_value));
+				value = wwbitpack::Decode_Uncompressed<T>(u_value);
 			}
 			return value;
 		}
 
-		//------------------------------------------------------------------------------------
-#pragma auto_inline(on)
+		void Internal_Add_Wire32(std::uint32_t value, int type = NO_ENCODER) { Internal_Add(value, type); }
+		unsigned long Internal_Get_Wire32(unsigned long & value, int type = NO_ENCODER) {
+			std::uint32_t raw_value = 0;
+			Internal_Get(raw_value, type);
+			value = static_cast<unsigned long>(raw_value);
+			return value;
+		}
 
-		UINT UncompressedSizeBytes; // for statistics only
+		unsigned int UncompressedSizeBytes; // for statistics only
 };
 
 #endif // TYPEENCODER_H

@@ -57,6 +57,7 @@
 #include "bitpackids.h"
 #include "gametype.h"
 #include "csdamageevent.h"
+#include "mathutil.h"
 
 #ifdef WWDEBUG
 bool	DefenseObjectClass::OneShotKills	= false;

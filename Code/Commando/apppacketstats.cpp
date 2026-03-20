@@ -40,6 +40,7 @@
 #include <string.h>
 
 #include "wwdebug.h"
+#include "wwstring.h"
 #include "mathutil.h"
 #include "networkobjectmgr.h"
 #include "wwprofile.h"

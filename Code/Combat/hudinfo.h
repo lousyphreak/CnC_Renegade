@@ -50,6 +50,10 @@
 	#include "vector3.h"
 #endif
 
+#ifndef __WIDESTRING_H
+	#include "widestring.h"
+#endif
+
 /*
 **
 */

@@ -38,6 +38,7 @@
 
 #include <stdio.h>
 #include "miscutil.h"
+#include "mathutil.h"
 #include "_globals.h"
 #include "assets.h"
 #include "cnetwork.h"

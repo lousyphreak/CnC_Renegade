@@ -7,14 +7,5 @@ renegade_configure_target(wwbitpack)
 target_include_directories(wwbitpack
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}"
-        "${PROJECT_SOURCE_DIR}/Code/wwlib"
-        "${PROJECT_SOURCE_DIR}/Code/wwdebug"
-        "${PROJECT_SOURCE_DIR}/Code/WWMath"
-        "${PROJECT_SOURCE_DIR}/Code/wwutil"
+        "${PROJECT_SOURCE_DIR}/external/SDL/include"
 )
-
-target_link_libraries(wwbitpack PRIVATE wwlib wwdebug WWMath wwutil)
-
-if(NOT WIN32)
-    target_compile_definitions(wwbitpack PUBLIC _UNIX)
-endif()

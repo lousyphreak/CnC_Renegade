@@ -40,6 +40,13 @@ When the workspace has finished building, the compiled binaries will be copied t
 ### Free Dedicated Server
 It’s possible to build the Windows version of the FDS (Free Dedicated Server) for Command & Conquer Renegade from the source code in this repository, just uncomment `#define FREEDEDICATEDSERVER` in [Combat\specialbuilds.h](Combat\specialbuilds.h) and perform a “Rebuild All” action on the Release config.
 
+For the modern CMake build, an additional `CommandoDedicated` target is available alongside the normal `Commando` target. It produces the `renegade_dedicated` executable without changing the existing `Renegade` build.
+
+- `cmake --build build --target Commando`
+- `cmake --build build --target CommandoDedicated`
+
+The current Linux bring-up version of `renegade_dedicated` enables the dedicated-only compile-time paths (`FREEDEDICATEDSERVER`), forces exclusive/headless server bootstrap behavior, skips SDL video/audio initialization, and validates the dedicated server startup configuration path. A lightweight smoke validation is available with `./build/bin/renegade_dedicated --headless-smoke`.
+
 
 ### Level Edit (Public Release)
 To build the public release build of Level Edit, modify the LevelEdit project settings and add `PUBLIC_EDITOR_VER` to the preprocessor defines.

@@ -1,4 +1,4 @@
-set(COMMANDO_SOURCES
+set(COMMANDO_SHARED_SOURCES
     apppacketstats.cpp
     bioevent.cpp
     campaign.cpp
@@ -78,6 +78,8 @@ set(COMMANDO_EXECUTABLE_SOURCES
     commando_sdl_main.cpp
 )
 
+set(COMMANDO_SOURCES ${COMMANDO_SHARED_SOURCES})
+
 list(REMOVE_ITEM COMMANDO_SOURCES
     buildnum.cpp
     campaign.cpp
@@ -92,6 +94,13 @@ list(REMOVE_ITEM COMMANDO_SOURCES
     mainloop.cpp
     slavemaster.cpp
     systemsettings.cpp
+)
+
+set(COMMANDO_DEDICATED_SOURCES ${COMMANDO_SOURCES})
+
+set(COMMANDO_DEDICATED_EXECUTABLE_SOURCES
+    commando_dedicated_bootstrap.cpp
+    commando_dedicated_sdl_main.cpp
 )
 
 file(GLOB COMMANDO_HEADERS CONFIGURE_DEPENDS
@@ -144,6 +153,40 @@ target_link_libraries(CommandoLib
         SDL3::SDL3
 )
 
+add_library(CommandoDedicatedLib STATIC ${COMMANDO_DEDICATED_SOURCES} ${COMMANDO_HEADERS})
+renegade_configure_target(CommandoDedicatedLib)
+
+target_compile_definitions(CommandoDedicatedLib
+    PRIVATE
+        FREEDEDICATEDSERVER
+        GAME_BUILD
+        GAME_ONLY
+)
+
+target_include_directories(CommandoDedicatedLib
+    PRIVATE
+        ${COMMANDO_INCLUDE_DIRS}
+)
+
+target_link_libraries(CommandoDedicatedLib
+    PUBLIC
+        BinkMovie
+        Combat
+        Scripts
+        WWAudio
+        WWMath
+        wwbitpack
+        wwdebug
+        wwnet
+        wwphys
+        wwsaveload
+        wwtranslatedb
+        wwui
+        wwutil
+        wwlib
+        SDL3::SDL3
+)
+
 add_executable(Commando ${COMMANDO_EXECUTABLE_SOURCES})
 renegade_configure_target(Commando)
 
@@ -157,11 +200,31 @@ if(WIN32)
     set_target_properties(Commando PROPERTIES WIN32_EXECUTABLE TRUE)
 endif()
 
+add_executable(CommandoDedicated ${COMMANDO_DEDICATED_EXECUTABLE_SOURCES})
+renegade_configure_target(CommandoDedicated)
+
+target_link_libraries(CommandoDedicated PRIVATE CommandoDedicatedLib SDL3::SDL3)
+
+set_target_properties(CommandoDedicated PROPERTIES
+    OUTPUT_NAME "renegade_dedicated"
+)
+
+if(WIN32)
+    set_target_properties(CommandoDedicated PROPERTIES WIN32_EXECUTABLE TRUE)
+endif()
+
 if(TARGET SDL3::SDL3-shared)
     add_custom_command(TARGET Commando POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "$<TARGET_FILE:SDL3::SDL3-shared>"
             "$<TARGET_FILE_DIR:Commando>"
+        VERBATIM
+    )
+
+    add_custom_command(TARGET CommandoDedicated POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:SDL3::SDL3-shared>"
+            "$<TARGET_FILE_DIR:CommandoDedicated>"
         VERBATIM
     )
 endif()

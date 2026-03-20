@@ -35,9 +35,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#if defined(_MSC_VER)
 #pragma once
-#endif
 
 #ifndef STATICPHYS_H
 #define STATICPHYS_H

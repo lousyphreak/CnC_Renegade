@@ -39,9 +39,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#if defined(_MSC_VER)
 #pragma once
-#endif
 
 #ifndef PROJECTILE_H
 #define PROJECTILE_H

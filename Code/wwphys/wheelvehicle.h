@@ -35,9 +35,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#if defined(_MSC_VER)
 #pragma once
-#endif
 
 #ifndef WHEELVEHICLE_H
 #define WHEELVEHICLE_H

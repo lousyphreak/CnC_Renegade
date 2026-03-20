@@ -45,7 +45,6 @@
 #include "phys.h"
 #include "wwmemlog.h"
 #include <cstdio>
-#include <windows.h>
 
 /*
 ** Chunk ID's used by a visibility table to save itself
@@ -479,7 +478,6 @@ void CompressedVisTableClass::Load (void* hfile)
 		BufferSize = 0L;
 	}
 
-	#ifdef _UNIX
 	if (hfile != NULL) {
 
 		FILE * file = static_cast<FILE *>(hfile);
@@ -493,29 +491,12 @@ void CompressedVisTableClass::Load (void* hfile)
 		const size_t bytes_read = ::fread(Buffer, sizeof(uint8), BufferSize, file);
 		WWASSERT(bytes_read == static_cast<size_t>(BufferSize));
 	}
-	#else
-	if ((HANDLE)hfile != INVALID_HANDLE_VALUE) {
-
-		/*
-		** Read the buffer size
-		*/
-		uint32 dwbytes_read = 0L;
-		::ReadFile ((HANDLE)hfile, &BufferSize, sizeof (BufferSize), &dwbytes_read, NULL);
-
-		/*
-		** Read the buffer
-		*/
-		Buffer = new uint8[BufferSize];
-		::ReadFile ((HANDLE)hfile, Buffer, sizeof (uint8) * BufferSize, &dwbytes_read, NULL);
-	}
-	#endif
 	
 	return;
 }
 
 void CompressedVisTableClass::Save (void* hfile)
 {
-	#ifdef _UNIX
 	if (hfile != NULL) {
 
 		FILE * file = static_cast<FILE *>(hfile);
@@ -525,21 +506,6 @@ void CompressedVisTableClass::Save (void* hfile)
 		const size_t bytes_written = ::fwrite(Buffer, sizeof(uint8), BufferSize, file);
 		WWASSERT(bytes_written == static_cast<size_t>(BufferSize));
 	}
-	#else
-	if ((HANDLE)hfile != INVALID_HANDLE_VALUE) {
-
-		/*
-		** Write the buffer size
-		*/
-		uint32 dwbytes_written = 0L;
-		::WriteFile ((HANDLE)hfile, &BufferSize, sizeof (BufferSize), &dwbytes_written, NULL);
-
-		/*
-		** Write the buffer
-		*/
-		::WriteFile ((HANDLE)hfile, Buffer, sizeof (uint8) * BufferSize, &dwbytes_written, NULL);		
-	}
-	#endif
 	
 	return;
 }

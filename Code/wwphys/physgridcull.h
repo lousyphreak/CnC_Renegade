@@ -35,9 +35,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#if defined(_MSC_VER)
 #pragma once
-#endif
 
 #ifndef PHYSGRIDCULL_H
 #define PHYSGRIDCULL_H

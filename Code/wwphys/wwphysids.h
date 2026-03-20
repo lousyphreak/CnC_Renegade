@@ -35,9 +35,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#if defined(_MSC_VER)
 #pragma once
-#endif
 
 #ifndef WWPHYSIDS_H
 #define WWPHYSIDS_H

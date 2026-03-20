@@ -35,7 +35,6 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "Path.h"
-#include <windows.h>
 #include "colmathaabox.h"
 #include "Pathfind.h"
 #include "PathfindPortal.h"

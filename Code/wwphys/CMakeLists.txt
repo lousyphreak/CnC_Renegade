@@ -26,12 +26,6 @@ target_include_directories(wwphys
         "${PROJECT_SOURCE_DIR}/Code/wwbitpack"
         "${PROJECT_SOURCE_DIR}/Code/wwtranslatedb"
         "${PROJECT_SOURCE_DIR}/Code/ww3d2"
-        "${PROJECT_SOURCE_DIR}/Code/WWAudio"
-        "${PROJECT_SOURCE_DIR}/Code/wwui"
 )
 
-target_link_libraries(wwphys PRIVATE wwlib wwdebug WWMath wwutil wwsaveload wwbitpack wwtranslatedb WWAudio)
-
-if(NOT WIN32)
-    target_compile_definitions(wwphys PUBLIC _UNIX)
-endif()
+    target_link_libraries(wwphys PRIVATE wwlib wwdebug WWMath wwutil wwsaveload wwbitpack wwtranslatedb)

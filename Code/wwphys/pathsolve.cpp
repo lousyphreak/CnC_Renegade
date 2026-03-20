@@ -37,7 +37,7 @@
 
 #include "pathsolve.h"
 
-#include <windows.h>
+#include <SDL3/SDL_timer.h>
 #include "Pathfind.h"
 #include "PathfindPortal.h"
 #include "PathNode.h"
@@ -89,9 +89,7 @@ long long PathSolveClass::_TicksPerMilliSec = 0;
 static inline long long
 Get_Time (void)
 {
-	long long curr_time = 0;
-	::QueryPerformanceCounter ((LARGE_INTEGER *)&curr_time);
-	return curr_time;
+	return static_cast<long long>(SDL_GetPerformanceCounter());
 }
 
 
@@ -217,7 +215,7 @@ PathSolveClass::PathSolveClass (void)
 	// per millisecond we will get.
 	//
 	if (_TicksPerMilliSec == 0) {
-		::QueryPerformanceFrequency ((LARGE_INTEGER *)&_TicksPerMilliSec);
+		_TicksPerMilliSec = static_cast<long long>(SDL_GetPerformanceFrequency());
 		_TicksPerMilliSec /= 1000;
 	}
 
@@ -247,7 +245,7 @@ PathSolveClass::PathSolveClass (const Vector3 &start, const Vector3 &dest)
 	// per millisecond we will get.
 	//
 	if (_TicksPerMilliSec == 0) {
-		::QueryPerformanceFrequency ((LARGE_INTEGER *)&_TicksPerMilliSec);
+		_TicksPerMilliSec = static_cast<long long>(SDL_GetPerformanceFrequency());
 		_TicksPerMilliSec /= 1000;
 	}
 

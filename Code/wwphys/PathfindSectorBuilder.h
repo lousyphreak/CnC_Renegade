@@ -28,9 +28,7 @@
  * Functions:                                                                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#if defined(_MSC_VER)
 #pragma once
-#endif
 
 #ifndef _PATHFIND_SECTOR_BUILDER_H
 #define _PATHFIND_SECTOR_BUILDER_H

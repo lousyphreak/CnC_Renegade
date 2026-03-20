@@ -48,7 +48,6 @@
 #include "refcount.h"
 #include "camera.h"
 #include "quat.h"
-#include "win.h"
 #include "vertmaterial.h"
 #include "wwprofile.h"
 #include "texture.h"
@@ -63,12 +62,6 @@
 
 
 #define DEBUG_SHADOW_RENDERING				0
-
-#if (DEBUG_SHADOW_RENDERING)
-#define SHADOW_WINDOW_STYLE		WS_POPUP | WS_CAPTION | WS_BORDER | WS_VISIBLE
-#else
-#define SHADOW_WINDOW_STYLE		WS_POPUP | WS_CAPTION | WS_BORDER
-#endif
 
 const int		SHADOW_CLIP_FAR							= 500;
 const int		STATIC_PROJECTOR_RESOLUTION			= 256; //128;

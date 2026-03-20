@@ -37,8 +37,8 @@
 
 #include "pathmgr.h"
 #include "pathsolve.h"
+#include <SDL3/SDL_timer.h>
 #include "chunkio.h"
-#include "win.h"
 #include "wwmemlog.h"
 #include "systimer.h"
 
@@ -81,7 +81,7 @@ PathMgrClass::Initialize (void)
 	//	Determine what the resolution of our timer is
 	//
 	if (TicksPerMilliSec == 0) {
-		::QueryPerformanceFrequency ((LARGE_INTEGER *)&TicksPerMilliSec);
+		TicksPerMilliSec = static_cast<long long>(SDL_GetPerformanceFrequency());
 		TicksPerMilliSec /= 1000;
 	}
 
@@ -319,9 +319,7 @@ PathMgrClass::Load (ChunkLoadClass &cload)
 static inline long long
 Get_Time (void)
 {
-	long long curr_time = 0;
-	::QueryPerformanceCounter ((LARGE_INTEGER *)&curr_time);
-	return curr_time;
+	return static_cast<long long>(SDL_GetPerformanceCounter());
 }
 
 

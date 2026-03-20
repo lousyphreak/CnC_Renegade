@@ -35,7 +35,9 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "always.h"
-#include "autostart.h"
+#include "AutoStart.h"
+
+#if RENEGADE_WITH_LEGACY_WOL
 //#include "dlgmplangametype.h"
 #include "gameinitmgr.h"
 #include "registry.h"
@@ -44,7 +46,7 @@
 #include "gameinitmgr.h"
 #include "campaign.h"
 #include "win.h"
-#include "except.h"
+#include "Except.h"
 #include "listctrl.h"
 #include "dlgwolautostart.h"
 #include "dlgdownload.h"
@@ -54,10 +56,10 @@
 #include "gamesideservercontrol.h"
 #include "gamedata.h"
 #include "nat.h"
-#include "consolemode.h"
+#include "ConsoleMode.h"
 #include "wwonline\wolserver.h"
 #include "Notify.h"
-#include "serversettings.h"
+#include "ServerSettings.h"
 #include "wolbuddymgr.h"
 #include "bandwidthcheck.h"
 #include "bandwidth.h"
@@ -858,6 +860,8 @@ void AutoRestartClass::ReceiveSignal(WolGameModeClass &game_mode)
 		}
 	}
 }
+
+#endif
 
 
 

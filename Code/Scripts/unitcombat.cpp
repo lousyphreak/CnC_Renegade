@@ -71,6 +71,8 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 	Vector3 idleposition;
 	Vector3 searchposition;
 	bool combatspeech;
+	float movement_speed;
+	bool movement_crouched;
 	int soldier_type;
 	// Sodier type is a Script Param that adjusts the UnitCombat behavior
 	//		0 - Default
@@ -123,6 +125,9 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 	void Created(GameObject * obj)
 	{
 		anim_script = NULL;
+		combatspeech = false;
+		movement_speed = 1.0f;
+		movement_crouched = false;
 		self_id = Commands->Get_ID( obj );
 		idleposition = Commands->Get_Position( obj );
 		state = STATE_IDLE;
@@ -130,7 +135,7 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 		float duration;
 		duration = Commands->Get_Random( 5, 15 );
 
-		Commands->Start_Timer ( obj, duration, TIMER_IDLE_ANIM );
+		Commands->Start_Timer ( obj, this, duration, TIMER_IDLE_ANIM );
 
 		if ( script_override > 0 )
 		{
@@ -428,7 +433,7 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 				{
 					if ( function == FUNC_SEARCH_LOCATION )
 					{
-						Commands->Start_Timer( obj, 10.0, TIMER_SEARCH_LOCATION );
+						Commands->Start_Timer( obj, this, 10.0f, TIMER_SEARCH_LOCATION );
 						Function_Search_Circle( obj, searchposition, 10.0f);
 					}
 					else if ( function == FUNC_SEARCH_CIRCLE )
@@ -489,8 +494,8 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 			Commands->Send_Custom_Event(obj,scoreboard,TALLY,TALLY_KILL);
 		}
 
-		Commands->Action_Movement_Stop( obj );
-		Commands->Action_Attack_Stop( obj );
+		Reset_Action( obj );
+		Reset_Action( obj );
 		Commands->Create_Sound("Death01",Commands->Get_Position(obj), obj );
 //		Commands->Create_Instant_Logical_Sound( (CombatSoundType)(SOUND_DEATH), 30.0, obj, Commands->Get_Position( obj ) );
 
@@ -600,7 +605,7 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 			{
 				float duration;
 				duration = Commands->Get_Random( 15, 25);
-				Commands->Start_Timer(obj, duration ,TIMER_IDLE_ANIM);
+				Commands->Start_Timer(obj, this, duration ,TIMER_IDLE_ANIM);
 			}
 			return;
 		}
@@ -643,7 +648,7 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 		{
 			float duration;
 			duration = Commands->Get_Random( 15, 25);
-			Commands->Start_Timer( obj, duration ,TIMER_IDLE_ANIM);
+			Commands->Start_Timer( obj, this, duration ,TIMER_IDLE_ANIM);
 			if ( state == STATE_IDLE )
 			{
 				Function_Play_Idle_Anim( obj );
@@ -767,8 +772,8 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 		Commands->Enable_Enemy_Seen( obj, false);
 //		Commands->Enable_Sound_Heard( Me, false);
 //		Commands->Create_Instant_Logical_Sound( (CombatSoundType)(SOUND_ENEMY_SEEN), 20.0, Me, Commands->Get_Position( Me ) );
-		Commands->Action_Movement_Set_Crouch( obj, false);
-		double theta_angle = (360/5);
+		Set_Movement_Crouch( false );
+		double theta_angle = (360.0 / 5.0);
 		float temp = Commands->Get_Random(0.0f,1.0f);
 		if (temp > 0.4f)
 			{
@@ -781,15 +786,15 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 		targetlocation.Rotate_Z( DEG_TO_RADF(theta_angle) );
 		targetlocation += Commands->Get_Position( Enemy );
 		targetlocation.Z += 0.5;
-		Commands->Action_Movement_Set_Forward_Speed( obj, 0.3f );
-		Commands->Action_Movement_Goto_Location( obj, targetlocation, 2.0f);
+		Set_Movement_Speed( 0.3f );
+		Action_Goto_Location( obj, targetlocation, 2.0f );
 
 		if ( soldier_type > 0 )
 		{
 			return;
 		}
 
-		Commands->Action_Attack_Object( obj, Enemy, Accuracy , Range );
+		Action_Attack_Object( obj, Enemy, Accuracy , Range );
 	}
 
 	void Function_Crouch_Attack(GameObject * obj, GameObject * Enemy, float Accuracy, float Range, float Duration )
@@ -799,9 +804,9 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 		Commands->Enable_Enemy_Seen( obj, false);
 //		Commands->Enable_Sound_Heard( Me, false);
 //		Commands->Create_Instant_Logical_Sound( (CombatSoundType)(SOUND_ENEMY_SEEN), 20.0, Me, Commands->Get_Position( Me ) );
-		Commands->Action_Movement_Set_Crouch( obj, true );
-		Commands->Start_Timer( obj, Duration, TIMER_CROUCH_ATTACK );
-		Commands->Action_Attack_Object( obj, Enemy, Accuracy, Range );
+		Set_Movement_Crouch( true );
+		Commands->Start_Timer( obj, this, Duration, TIMER_CROUCH_ATTACK );
+		Action_Attack_Object( obj, Enemy, Accuracy, Range );
 	}
 
 	void Function_Stand_Attack(GameObject * obj, GameObject * Enemy, float Accuracy, float Range )
@@ -811,7 +816,7 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 		Commands->Enable_Enemy_Seen( obj, false);
 //		Commands->Enable_Sound_Heard( Me, false);
 //		Commands->Create_Instant_Logical_Sound( (CombatSoundType)(SOUND_ENEMY_SEEN), 20.0, Me, Commands->Get_Position( Me ) );
-		Commands->Action_Attack_Object( obj, Enemy, Accuracy, Range );
+		Action_Attack_Object( obj, Enemy, Accuracy, Range );
 	}
 
 	void Function_Panic(GameObject * obj)
@@ -983,11 +988,11 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 		Commands->Enable_Enemy_Seen( obj, true);
 //		Commands->Enable_Sound_Heard( Me, true);
 
-		Commands->Action_Movement_Set_Crouch( obj, false);
-		Commands->Action_Attack_Stop( obj );
-		Commands->Action_Movement_Set_Forward_Speed( obj, 0.4f );
+		Set_Movement_Crouch( false );
+		Reset_Action( obj );
+		Set_Movement_Speed( 0.4f );
 
-		double theta_angle = (360/5);
+		double theta_angle = (360.0 / 5.0);
 		float reverse = Commands->Get_Random(0.0f,1.0f);
 		if ( reverse < 0.1f)
 			{
@@ -999,7 +1004,7 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 		targetlocation.Rotate_Z(DEG_TO_RADF(theta_angle));
 		targetlocation += position;
 		targetlocation.Z += 0.5;
-		Commands->Action_Movement_Goto_Location( obj, targetlocation, 2.0f);
+		Action_Goto_Location( obj, targetlocation, 2.0f );
 	}
 
 	void Function_Search_Facing( GameObject * obj, Vector3 position, float Distance )
@@ -1008,7 +1013,7 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 		function = FUNC_SEARCH_FACING;
 		Commands->Enable_Enemy_Seen( obj, true);
 //		Commands->Enable_Sound_Heard( Me, true);
-		Commands->Action_Attack_Location( obj, searchposition, 0, 0 );
+		Action_Attack_Location( obj, searchposition, 0, 0 );
 	}
 
 	void Function_Search_Location( GameObject * obj, Vector3 position , bool Crouch )
@@ -1019,10 +1024,10 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 		Commands->Enable_Enemy_Seen( obj, true);
 //		Commands->Enable_Sound_Heard( Me, true);
 
-		Commands->Action_Movement_Set_Crouch( obj, Crouch );
-		Commands->Action_Movement_Set_Forward_Speed( obj, 0.4f );
-		Commands->Action_Attack_Location( obj, searchposition, 0, 0 );
-		Commands->Action_Movement_Goto_Location( obj, searchposition, 3.0f );
+		Set_Movement_Crouch( Crouch );
+		Set_Movement_Speed( 0.4f );
+		Action_Attack_Location( obj, searchposition, 0, 0 );
+		Action_Goto_Location( obj, searchposition, 3.0f );
 	}
 
 /*
@@ -1097,7 +1102,7 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 		if (combatspeech == false )
 		{
 			combatspeech = true;
-			Commands->Start_Timer( obj, 4.0f, TIMER_COMBAT_SPEECH );
+			Commands->Start_Timer( obj, this, 4.0f, TIMER_COMBAT_SPEECH );
 
 			float sound_random = Commands->Get_Random( 0.0f , 80.0f);
 			if ( sound_random <= 10)
@@ -1161,7 +1166,7 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 		if (combatspeech == false )
 		{
 			combatspeech = true;
-			Commands->Start_Timer( obj, 4.0f, TIMER_COMBAT_SPEECH );
+			Commands->Start_Timer( obj, this, 4.0f, TIMER_COMBAT_SPEECH );
 			float sound_random = Commands->Get_Random( 0.0f , 40.0f);
 			if ( sound_random <=10.0 )
 			{ speech_script = "HoldYourPositions01"; }
@@ -1181,7 +1186,7 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 		if (combatspeech == false )
 		{
 			combatspeech = true;
-			Commands->Start_Timer( obj, 4.0f, TIMER_COMBAT_SPEECH );
+			Commands->Start_Timer( obj, this, 4.0f, TIMER_COMBAT_SPEECH );
 			float sound_random = Commands->Get_Random( 0.0f , 120.0f);
 			if ( sound_random <= 10.0 )
 			{ speech_script = "ForKane01"; }
@@ -1217,7 +1222,7 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 		if (combatspeech == false )
 		{
 			combatspeech = true;
-			Commands->Start_Timer( obj, 4.0f, TIMER_COMBAT_SPEECH );
+			Commands->Start_Timer( obj, this, 4.0f, TIMER_COMBAT_SPEECH );
 			float sound_random = Commands->Get_Random( 0.0f , 20.0f);
 			if ( sound_random <= 10.0 )
 			{ speech_script = "UhOh01"; }
@@ -1237,7 +1242,7 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 		if (combatspeech == false )
 		{
 			combatspeech = true;
-			Commands->Start_Timer( obj, 4.0f, TIMER_COMBAT_SPEECH );
+			Commands->Start_Timer( obj, this, 4.0f, TIMER_COMBAT_SPEECH );
 			float taunt_random = Commands->Get_Random( 0.0f , 20.0f);
 			if ( taunt_random <= 10.0 )
 			{ speech_script = "Q_Huh01"; }
@@ -1257,7 +1262,7 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 		if (combatspeech == false )
 		{
 			combatspeech = true;
-			Commands->Start_Timer( obj, 4.0f, TIMER_COMBAT_SPEECH );
+			Commands->Start_Timer( obj, this, 4.0f, TIMER_COMBAT_SPEECH );
 			float taunt_random = Commands->Get_Random( 0.0f , 20.0f);
 
 			if ( taunt_random <= 10.0 )
@@ -1276,8 +1281,8 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 	void State_Change_Critical( GameObject *obj )
 	{
 		state = STATE_CRITICAL;
-		Commands->Action_Movement_Stop( obj );
-		Commands->Action_Attack_Stop( obj );
+		Reset_Action( obj );
+		Reset_Action( obj );
 		Commands->Set_Animation( obj, NULL, 0);
 		Commands->Enable_Enemy_Seen( obj, false);
 //		Commands->Enable_Sound_Heard( Me, false);
@@ -1286,12 +1291,51 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 	void State_Change_Idle( GameObject * obj, Vector3 position )
 	{
 		state = STATE_IDLE_MOVEMENT;
-		Commands->Action_Attack_Stop( obj );
-		Commands->Action_Movement_Set_Crouch( obj, false);
-		Commands->Action_Movement_Set_Forward_Speed( obj, 0.1f);
+		Reset_Action( obj );
+		Set_Movement_Crouch( false );
+		Set_Movement_Speed( 0.1f );
 		Commands->Enable_Enemy_Seen( obj, true);
 //		Commands->Enable_Sound_Heard( Me, true);
-		Commands->Action_Movement_Goto_Location( obj, position , 1.0 );
+		Action_Goto_Location( obj, position , 1.0 );
+	}
+
+	void Set_Movement_Crouch( bool crouched )
+	{
+		movement_crouched = crouched;
+	}
+
+	void Set_Movement_Speed( float speed )
+	{
+		movement_speed = speed;
+	}
+
+	void Reset_Action( GameObject * obj )
+	{
+		Commands->Action_Reset( obj, 100.0f );
+	}
+
+	void Action_Goto_Location( GameObject * obj, const Vector3 & location, float arrived_distance )
+	{
+		ActionParamsStruct params;
+		params.Set_Basic( this, 100, 0 );
+		params.Set_Movement( location, movement_speed, arrived_distance, movement_crouched );
+		Commands->Action_Goto( obj, params );
+	}
+
+	void Action_Attack_Object( GameObject * obj, GameObject * enemy, float accuracy, float range, bool primary_fire = true )
+	{
+		ActionParamsStruct params;
+		params.Set_Basic( this, 100, 0 );
+		params.Set_Attack( enemy, range, accuracy, primary_fire );
+		Commands->Action_Attack( obj, params );
+	}
+
+	void Action_Attack_Location( GameObject * obj, const Vector3 & location, float accuracy, float range, bool primary_fire = true )
+	{
+		ActionParamsStruct params;
+		params.Set_Basic( this, 100, 0 );
+		params.Set_Attack( location, range, accuracy, primary_fire );
+		Commands->Action_Attack( obj, params );
 	}
 
 };

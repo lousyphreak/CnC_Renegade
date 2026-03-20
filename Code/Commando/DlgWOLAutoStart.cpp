@@ -36,7 +36,9 @@
 
 
 #include "always.h"
-#include "autostart.h"
+#include "AutoStart.h"
+
+#if RENEGADE_WITH_LEGACY_WOL
 #include "win.h"
 #include "listctrl.h"
 #include "dlgwolautostart.h"
@@ -166,3 +168,5 @@ void AutoRestartProgressDialogClass::Add_Text(unsigned short *txt)
 		list_ctrl->Insert_Entry(AddItemIndex++, txt);
 	}
 }
+
+#endif

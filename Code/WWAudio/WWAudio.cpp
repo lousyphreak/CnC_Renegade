@@ -46,7 +46,7 @@
 #include "Sound3D.h"
 #include "RawFile.H"
 #include "WW3D.H"
-#include "SoundScene.H"
+#include "SoundScene.h"
 #include "SoundPseudo3D.h"
 #include "FFactory.H"
 #include "Registry.H"

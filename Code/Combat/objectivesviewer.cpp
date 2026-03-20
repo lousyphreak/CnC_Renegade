@@ -202,7 +202,7 @@ ObjectivesViewerClass::Update (void)
 	//
 	//	Add all the objectives to the text window
 	//
-	for (index = 0; index < objective_count; index ++){
+	for (int index = 0; index < objective_count; index ++){
 		Objective *objective = sorted_list[index];
 		
 		const WCHAR *text				= TranslateDBClass::Get_String (objective->ShortDescriptionID);
@@ -329,7 +329,7 @@ ObjectivesViewerClass::fnCompareObjectivesCallback
 		//
 		const WCHAR *text1 = TranslateDBClass::Get_String (objective1->ShortDescriptionID);
 		const WCHAR *text2 = TranslateDBClass::Get_String (objective2->ShortDescriptionID);
-		result = ::wcsicmp (text1, text2);
+		result = ::_wcsicmp (text1, text2);
 	}
 
    return result;

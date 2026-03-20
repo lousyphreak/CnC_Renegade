@@ -36,10 +36,15 @@
 #ifndef __DLGWOLWAIT_H__
 #define __DLGWOLWAIT_H__
 
-#include <WWUI\PopupDialog.h>
-#include <WWLib\Notify.h>
-#include <WWOnline\RefPtr.h>
-#include <WWOnline\WaitCondition.h>
+#include "renegade_build_config.h"
+#include <win.h>
+#include "Notify.h"
+
+#if RENEGADE_WITH_LEGACY_WOL
+
+#include "popupdialog.h"
+#include <WWOnline/RefPtr.h>
+#include <WWOnline/WaitCondition.h>
 
 namespace WWOnline
 {
@@ -120,5 +125,58 @@ class DlgWOLWait :
 		bool mShowDialog;
 		static DlgWOLWait *	mTheInstance;
 	};
+
+#else
+
+template<typename Type> class RefPtr;
+
+class WaitCondition
+	{
+	public:
+		enum WaitResult {Waiting, ConditionMet, UserCancel, TimeOut, Error};
+	};
+
+class DlgWOLWait;
+
+class DlgWOLWaitEvent :
+		public TypedEventPtr<DlgWOLWaitEvent, WaitCondition>
+	{
+	public:
+		typedef WaitCondition::WaitResult WaitResult;
+
+		inline WaitResult Result(void) const
+			{return mResult;}
+
+		DlgWOLWaitEvent(WaitResult result = WaitCondition::Error, WaitCondition* wait = 0) :
+				TypedEventPtr<DlgWOLWaitEvent, WaitCondition>(wait),
+				mResult(result)
+			{}
+
+	private:
+		WaitResult mResult;
+	};
+
+class DlgWOLWait
+	{
+	public:
+		enum {SHOW_NEVER = 0xFFFFFFFF};
+
+		static bool DoDialog(const WCHAR*, const WCHAR*, RefPtr<WaitCondition>&,
+				Observer<DlgWOLWaitEvent>* = 0, unsigned long = 0, unsigned long = 0)
+			{return false;}
+
+		static bool DoDialog(const WCHAR*, RefPtr<WaitCondition>&,
+				Observer<DlgWOLWaitEvent>* = 0, unsigned long = 0, unsigned long = 0)
+			{return false;}
+
+		static bool DoDialog(int, RefPtr<WaitCondition>&,
+				Observer<DlgWOLWaitEvent>* = 0, unsigned long = 0, unsigned long = 0)
+			{return false;}
+
+		static DlgWOLWait *Get_Instance(void)
+			{return 0;}
+	};
+
+#endif
 
 #endif // __DLGWOLLOGON_H__

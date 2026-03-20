@@ -39,9 +39,37 @@
 #include "wwfile.h"
 #include "timemgr.h"
 
-#include <WTYPES.H>	// for SYSTEMTIME
+#include <ctime>
 
 FileClass * _DiagLogFile = NULL;
+
+namespace {
+
+StringClass Build_Diag_Log_Timestamp()
+{
+	StringClass dt_string;
+
+#if defined(_WIN32)
+	SYSTEMTIME dt;
+	::GetSystemTime(&dt);
+	dt_string.Format("%02d/%02d/%02d %02d:%02d:%02d", dt.wMonth, dt.wDay, dt.wYear, dt.wHour, dt.wMinute, dt.wSecond);
+#else
+	std::time_t now = std::time(nullptr);
+	std::tm dt = {};
+	gmtime_r(&now, &dt);
+	dt_string.Format("%02d/%02d/%04d %02d:%02d:%02d",
+		dt.tm_mon + 1,
+		dt.tm_mday,
+		dt.tm_year + 1900,
+		dt.tm_hour,
+		dt.tm_min,
+		dt.tm_sec);
+#endif
+
+	return dt_string;
+}
+
+} // namespace
 
 /*
 **
@@ -66,20 +94,14 @@ void	DiagLogClass::Init( void )
 		_DiagLogFile = file;
 	}
 
-	SYSTEMTIME dt;
-	::GetSystemTime( &dt );
-	StringClass dt_string;
-	dt_string.Format( "%02d/%02d/%02d %02d:%02d:%02d", dt.wMonth, dt.wDay, dt.wYear, dt.wHour, dt.wMinute, dt.wSecond );
+	StringClass dt_string = Build_Diag_Log_Timestamp();
 	DIAG_LOG(( "OPEN", "%s", (const char *)dt_string ));
 }
 
 void	DiagLogClass::Shutdown( void )
 {
 	if ( _DiagLogFile != NULL ) {
-		SYSTEMTIME dt;
-		::GetSystemTime( &dt );
-		StringClass dt_string;
-		dt_string.Format( "%02d/%02d/%02d %02d:%02d:%02d", dt.wMonth, dt.wDay, dt.wYear, dt.wHour, dt.wMinute, dt.wSecond );
+		StringClass dt_string = Build_Diag_Log_Timestamp();
 		DIAG_LOG(( "CLOS", "%s", (const char *)dt_string ));
 
 		_DiagLogFile->Close();
@@ -100,7 +122,7 @@ void	DiagLogClass::Log_Timed( const char * type, const char * format, ... )
 
 		StringClass line;
 		float time = TimeManager::Get_Total_Seconds();
-		line.Format( "%s; %1.2f; %s%c%c", type, time, data, 0x0D, 0x0A );
+		line.Format( "%s; %1.2f; %s%c%c", type, time, data.Peek_Buffer(), 0x0D, 0x0A );
 		_DiagLogFile->Write( line, ::strlen( line ) );
 	}
 }

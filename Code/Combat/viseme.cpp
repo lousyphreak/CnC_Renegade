@@ -18,11 +18,49 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <cctype>
+#include "always.h"
 #include <wwdebug.h>
-#include "Viseme.h"
+#include "viseme.h"
 
 #define IS_VOWEL(x)			( x && (x=='a' || x=='e' || x=='i' || x=='o' || x=='u') )
 #define IS_CONSONANT(x)		( x && !IS_VOWEL(x) )
+
+namespace {
+
+char viseme_to_lower(char ch)
+{
+	return static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+}
+
+void viseme_lowercase_in_place(char * text)
+{
+	if (text == nullptr) {
+		return;
+	}
+
+	for (char * cursor = text; *cursor != '\0'; ++cursor) {
+		*cursor = viseme_to_lower(*cursor);
+	}
+}
+
+int viseme_strnicmp(const char * lhs, const char * rhs, std::size_t count)
+{
+	for (std::size_t index = 0; index < count; ++index) {
+		const char left = viseme_to_lower(lhs[index]);
+		const char right = viseme_to_lower(rhs[index]);
+		if (left != right) {
+			return (left < right) ? -1 : 1;
+		}
+		if (lhs[index] == '\0' || rhs[index] == '\0') {
+			break;
+		}
+	}
+
+	return 0;
+}
+
+} // namespace
 
 struct VisemeTableItem
 {
@@ -100,7 +138,7 @@ VisemeManager::VisemeManager(void)
 	VisemeTableItem *pItem = gsVisemeTable;
 
 	for (int i=0; i<numVisemeTableItems; i++,pItem++) {
-		int index = (int)tolower(pItem->LetterCombination[0]) - 'a';
+		int index = (int)viseme_to_lower(pItem->LetterCombination[0]) - 'a';
 
 		if ( index >= 0 && index < NUM_VISEME_REFERENCES ) {
 			VisemeTableReferenceItem *pR = &VisemeReferenceTable[index];
@@ -134,7 +172,7 @@ int VisemeManager::Get_Visemes(const char *word, int *visemelist, int maxvisemes
 	// make a local copy of the word in lower case
 	strncpy(local_buf, word, sizeof(local_buf)-1);
 	local_buf[sizeof(local_buf)-1] = 0;
-	_strlwr(local_buf);
+	viseme_lowercase_in_place(local_buf);
 
 	const char *pchar = local_buf;
 	while ( *pchar ) {
@@ -262,7 +300,7 @@ int VisemeManager::Lookup(const char *pchar, const char * /*word*/, int viseme[]
 {
 	int length = 0;
 
-	char ch = (char)tolower(*pchar);
+	char ch = viseme_to_lower(*pchar);
 	int index = ch - 'a';
 
 	if ( index < 0 || index >= NUM_VISEME_REFERENCES )	{
@@ -275,7 +313,7 @@ int VisemeManager::Lookup(const char *pchar, const char * /*word*/, int viseme[]
 	VisemeTableItem *pI = &gsVisemeTable[pR->StartIndex + pR->Count - 1];
 	for (int i=0; i<pR->Count; i++,pI--) {
 		length = strlen(pI->LetterCombination);
-		if ( strnicmp(pchar, pI->LetterCombination, length) == 0 )
+		if ( viseme_strnicmp(pchar, pI->LetterCombination, length) == 0 )
 		{
 			// found!
 			viseme[0] = pI->Visemes[0];

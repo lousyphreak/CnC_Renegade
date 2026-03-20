@@ -471,6 +471,108 @@ public:
 	ScriptCommands	*Commands;
 };
 
+#define RENEGADE_SC_PP_CAT_IMPL(a, b) a##b
+#define RENEGADE_SC_PP_CAT(a, b) RENEGADE_SC_PP_CAT_IMPL(a, b)
+#define RENEGADE_SC_PP_NARG_IMPL(_1, _2, _3, _4, _5, _6, _7, N, ...) N
+#define RENEGADE_SC_PP_NARG(...) RENEGADE_SC_PP_NARG_IMPL(__VA_ARGS__, 7, 6, 5, 4, 3, 2, 1, 0)
+
+#define Send_Custom_Event(...) RENEGADE_SC_PP_CAT(RENEGADE_SC_Send_Custom_Event_, RENEGADE_SC_PP_NARG(__VA_ARGS__))(__VA_ARGS__)
+#define RENEGADE_SC_Send_Custom_Event_4(from, to, type, param) Send_Custom_Event(from, to, type, param, 0)
+#define RENEGADE_SC_Send_Custom_Event_5(from, to, type, param, delay) Send_Custom_Event(from, to, type, param, delay)
+
+#define Join_Conversation(...) RENEGADE_SC_PP_CAT(RENEGADE_SC_Join_Conversation_, RENEGADE_SC_PP_NARG(__VA_ARGS__))(__VA_ARGS__)
+#define RENEGADE_SC_Join_Conversation_2(object, conversation_id) Join_Conversation(object, conversation_id, true, true, true)
+#define RENEGADE_SC_Join_Conversation_4(object, conversation_id, allow_move, allow_head_turn) Join_Conversation(object, conversation_id, allow_move, allow_head_turn, true)
+#define RENEGADE_SC_Join_Conversation_5(object, conversation_id, allow_move, allow_head_turn, allow_face) Join_Conversation(object, conversation_id, allow_move, allow_head_turn, allow_face)
+
+#define Create_Conversation(...) RENEGADE_SC_PP_CAT(RENEGADE_SC_Create_Conversation_, RENEGADE_SC_PP_NARG(__VA_ARGS__))(__VA_ARGS__)
+#define RENEGADE_SC_Create_Conversation_1(name) Create_Conversation(name, 0, 0, true)
+#define RENEGADE_SC_Create_Conversation_2(name, priority) Create_Conversation(name, priority, 0, true)
+#define RENEGADE_SC_Create_Conversation_3(name, priority, max_dist) Create_Conversation(name, priority, max_dist, true)
+#define RENEGADE_SC_Create_Conversation_4(name, priority, max_dist, interruptable) Create_Conversation(name, priority, max_dist, interruptable)
+
+#define Start_Conversation(...) RENEGADE_SC_PP_CAT(RENEGADE_SC_Start_Conversation_, RENEGADE_SC_PP_NARG(__VA_ARGS__))(__VA_ARGS__)
+#define RENEGADE_SC_Start_Conversation_1(conversation_id) Start_Conversation(conversation_id, 0)
+#define RENEGADE_SC_Start_Conversation_2(conversation_id, action_id) Start_Conversation(conversation_id, action_id)
+
+#define Set_Animation(...) RENEGADE_SC_PP_CAT(RENEGADE_SC_Set_Animation_, RENEGADE_SC_PP_NARG(__VA_ARGS__))(__VA_ARGS__)
+#define RENEGADE_SC_Set_Animation_2(animation_name, looping) Set_Animation(animation_name, looping)
+#define RENEGADE_SC_Set_Animation_3(object, animation_name, looping) Set_Animation(object, animation_name, looping, NULL, 0.0F, -1.0F, false)
+#define RENEGADE_SC_Set_Animation_6(object, animation_name, looping, sub_object_name, start_frame, end_frame) Set_Animation(object, animation_name, looping, sub_object_name, start_frame, end_frame, false)
+#define RENEGADE_SC_Set_Animation_7(object, animation_name, looping, sub_object_name, start_frame, end_frame, is_blended) Set_Animation(object, animation_name, looping, sub_object_name, start_frame, end_frame, is_blended)
+
+#define Apply_Damage(...) RENEGADE_SC_PP_CAT(RENEGADE_SC_Apply_Damage_, RENEGADE_SC_PP_NARG(__VA_ARGS__))(__VA_ARGS__)
+#define RENEGADE_SC_Apply_Damage_3(object, amount, warhead) Apply_Damage(object, amount, warhead, NULL)
+#define RENEGADE_SC_Apply_Damage_4(object, amount, warhead, damager) Apply_Damage(object, amount, warhead, damager)
+
+#define Give_PowerUp(...) RENEGADE_SC_PP_CAT(RENEGADE_SC_Give_PowerUp_, RENEGADE_SC_PP_NARG(__VA_ARGS__))(__VA_ARGS__)
+#define RENEGADE_SC_Give_PowerUp_2(object, preset_name) Give_PowerUp(object, preset_name, false)
+#define RENEGADE_SC_Give_PowerUp_3(object, preset_name, display_on_hud) Give_PowerUp(object, preset_name, display_on_hud)
+
+#define Add_Objective(...) RENEGADE_SC_PP_CAT(RENEGADE_SC_Add_Objective_, RENEGADE_SC_PP_NARG(__VA_ARGS__))(__VA_ARGS__)
+#define RENEGADE_SC_Add_Objective_4(id, type, status, short_description_id) Add_Objective(id, type, status, short_description_id, NULL, 0)
+#define RENEGADE_SC_Add_Objective_5(id, type, status, short_description_id, sound_filename) Add_Objective(id, type, status, short_description_id, sound_filename, 0)
+#define RENEGADE_SC_Add_Objective_6(id, type, status, short_description_id, sound_filename, long_description_id) Add_Objective(id, type, status, short_description_id, sound_filename, long_description_id)
+
+#define Modify_Action(...) RENEGADE_SC_PP_CAT(RENEGADE_SC_Modify_Action_, RENEGADE_SC_PP_NARG(__VA_ARGS__))(__VA_ARGS__)
+#define RENEGADE_SC_Modify_Action_3(object, action_id, params) Modify_Action(object, action_id, params, true, true)
+#define RENEGADE_SC_Modify_Action_4(object, action_id, params, modify_move) Modify_Action(object, action_id, params, modify_move, true)
+#define RENEGADE_SC_Modify_Action_5(object, action_id, params, modify_move, modify_attack) Modify_Action(object, action_id, params, modify_move, modify_attack)
+
+#define Trigger_Weapon(...) RENEGADE_SC_PP_CAT(RENEGADE_SC_Trigger_Weapon_, RENEGADE_SC_PP_NARG(__VA_ARGS__))(__VA_ARGS__)
+#define RENEGADE_SC_Trigger_Weapon_3(object, trigger, target) Trigger_Weapon(object, trigger, target, true)
+#define RENEGADE_SC_Trigger_Weapon_4(object, trigger, target, primary) Trigger_Weapon(object, trigger, target, primary)
+
+#define Stop_Sound(...) RENEGADE_SC_PP_CAT(RENEGADE_SC_Stop_Sound_, RENEGADE_SC_PP_NARG(__VA_ARGS__))(__VA_ARGS__)
+#define RENEGADE_SC_Stop_Sound_1(sound_id) Stop_Sound(sound_id, true)
+#define RENEGADE_SC_Stop_Sound_2(sound_id, destroy_sound) Stop_Sound(sound_id, destroy_sound)
+
+#define Find_Closest_Soldier(...) RENEGADE_SC_PP_CAT(RENEGADE_SC_Find_Closest_Soldier_, RENEGADE_SC_PP_NARG(__VA_ARGS__))(__VA_ARGS__)
+#define RENEGADE_SC_Find_Closest_Soldier_3(position, min_dist, max_dist) Find_Closest_Soldier(position, min_dist, max_dist, true)
+#define RENEGADE_SC_Find_Closest_Soldier_4(position, min_dist, max_dist, only_human) Find_Closest_Soldier(position, min_dist, max_dist, only_human)
+
+#define Display_Float(...) RENEGADE_SC_PP_CAT(RENEGADE_SC_Display_Float_, RENEGADE_SC_PP_NARG(__VA_ARGS__))(__VA_ARGS__)
+#define RENEGADE_SC_Display_Float_1(value) Display_Float(value, "%f")
+#define RENEGADE_SC_Display_Float_2(value, format) Display_Float(value, format)
+
+#define Display_Int(...) RENEGADE_SC_PP_CAT(RENEGADE_SC_Display_Int_, RENEGADE_SC_PP_NARG(__VA_ARGS__))(__VA_ARGS__)
+#define RENEGADE_SC_Display_Int_1(value) Display_Int(value, "%d")
+#define RENEGADE_SC_Display_Int_2(value, format) Display_Int(value, format)
+
+#define Enable_Enemy_Seen(...) RENEGADE_SC_PP_CAT(RENEGADE_SC_Enable_Enemy_Seen_, RENEGADE_SC_PP_NARG(__VA_ARGS__))(__VA_ARGS__)
+#define RENEGADE_SC_Enable_Enemy_Seen_1(object) Enable_Enemy_Seen(object, true)
+#define RENEGADE_SC_Enable_Enemy_Seen_2(object, enable) Enable_Enemy_Seen(object, enable)
+
+#define Create_Explosion(...) RENEGADE_SC_PP_CAT(RENEGADE_SC_Create_Explosion_, RENEGADE_SC_PP_NARG(__VA_ARGS__))(__VA_ARGS__)
+#define RENEGADE_SC_Create_Explosion_2(explosion_name, position) Create_Explosion(explosion_name, position, NULL)
+#define RENEGADE_SC_Create_Explosion_3(explosion_name, position, creator) Create_Explosion(explosion_name, position, creator)
+
+#define Create_Explosion_At_Bone(...) RENEGADE_SC_PP_CAT(RENEGADE_SC_Create_Explosion_At_Bone_, RENEGADE_SC_PP_NARG(__VA_ARGS__))(__VA_ARGS__)
+#define RENEGADE_SC_Create_Explosion_At_Bone_3(explosion_name, object, bone_name) Create_Explosion_At_Bone(explosion_name, object, bone_name, NULL)
+#define RENEGADE_SC_Create_Explosion_At_Bone_4(explosion_name, object, bone_name, creator) Create_Explosion_At_Bone(explosion_name, object, bone_name, creator)
+
+#define Set_Innate_Soldier_Home_Location(...) RENEGADE_SC_PP_CAT(RENEGADE_SC_Set_Innate_Soldier_Home_Location_, RENEGADE_SC_PP_NARG(__VA_ARGS__))(__VA_ARGS__)
+#define RENEGADE_SC_Set_Innate_Soldier_Home_Location_2(object, home_pos) Set_Innate_Soldier_Home_Location(object, home_pos, 999999)
+#define RENEGADE_SC_Set_Innate_Soldier_Home_Location_3(object, home_pos, home_radius) Set_Innate_Soldier_Home_Location(object, home_pos, home_radius)
+
+#define Static_Anim_Phys_Goto_Frame(...) RENEGADE_SC_PP_CAT(RENEGADE_SC_Static_Anim_Phys_Goto_Frame_, RENEGADE_SC_PP_NARG(__VA_ARGS__))(__VA_ARGS__)
+#define RENEGADE_SC_Static_Anim_Phys_Goto_Frame_2(object_id, frame) Static_Anim_Phys_Goto_Frame(object_id, frame, NULL)
+#define RENEGADE_SC_Static_Anim_Phys_Goto_Frame_3(object_id, frame, animation_name) Static_Anim_Phys_Goto_Frame(object_id, frame, animation_name)
+
+#define Static_Anim_Phys_Goto_Last_Frame(...) RENEGADE_SC_PP_CAT(RENEGADE_SC_Static_Anim_Phys_Goto_Last_Frame_, RENEGADE_SC_PP_NARG(__VA_ARGS__))(__VA_ARGS__)
+#define RENEGADE_SC_Static_Anim_Phys_Goto_Last_Frame_1(object_id) Static_Anim_Phys_Goto_Last_Frame(object_id, NULL)
+#define RENEGADE_SC_Static_Anim_Phys_Goto_Last_Frame_2(object_id, animation_name) Static_Anim_Phys_Goto_Last_Frame(object_id, animation_name)
+
+#define Shake_Camera(...) RENEGADE_SC_PP_CAT(RENEGADE_SC_Shake_Camera_, RENEGADE_SC_PP_NARG(__VA_ARGS__))(__VA_ARGS__)
+#define RENEGADE_SC_Shake_Camera_1(position) Shake_Camera(position, 25, 0.25f, 1.5f)
+#define RENEGADE_SC_Shake_Camera_2(position, radius) Shake_Camera(position, radius, 0.25f, 1.5f)
+#define RENEGADE_SC_Shake_Camera_3(position, radius, intensity) Shake_Camera(position, radius, intensity, 1.5f)
+#define RENEGADE_SC_Shake_Camera_4(position, radius, intensity, duration) Shake_Camera(position, radius, intensity, duration)
+
+#define Grant_Key(...) RENEGADE_SC_PP_CAT(RENEGADE_SC_Grant_Key_, RENEGADE_SC_PP_NARG(__VA_ARGS__))(__VA_ARGS__)
+#define RENEGADE_SC_Grant_Key_2(object, key) Grant_Key(object, key, true)
+#define RENEGADE_SC_Grant_Key_3(object, key, grant) Grant_Key(object, key, grant)
+
 /*
 ** Get Script Commands 
 ** This should only be called in the host application

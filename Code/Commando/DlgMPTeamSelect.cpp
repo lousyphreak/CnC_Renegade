@@ -39,7 +39,7 @@
 #include "gamedata.h"
 #include "wolgameinfo.h"
 #include "wolloginprofile.h"
-#include "dlgmessagebox.h"
+#include "DlgMessageBox.h"
 #include "renegadedialogmgr.h"
 #include <combat\playertype.h>
 #include <wwonline\wolgameoptions.h>

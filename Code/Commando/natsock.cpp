@@ -129,7 +129,7 @@ SocketHandlerClass::~SocketHandlerClass(void)
  *=============================================================================================*/
 bool SocketHandlerClass::Open(int inport, int outport)
 {
-	LINGER ling;
+	struct linger ling;
 	struct sockaddr_in addr;
 	static int socket_transmit_buffer_size = SOCKET_BUFFER_SIZE;
 	static int socket_receive_buffer_size = SOCKET_BUFFER_SIZE;

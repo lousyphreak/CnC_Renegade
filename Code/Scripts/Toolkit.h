@@ -71,7 +71,7 @@
 
 #include "CustomEvents.h"
 #include "scripts.h"
-#include "dprint.h"
+#include "DPrint.h"
 #include "vector3.h"
 #include "wwmath.h"
 #include <string.h>

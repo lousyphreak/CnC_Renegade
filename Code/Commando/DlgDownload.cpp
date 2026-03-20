@@ -43,7 +43,7 @@
 #include <WWTranslateDB\TranslateDB.h>
 #include <wwdebug/wwdebug.h>
 #include "mainloop.h"
-#include "consolemode.h"
+#include "ConsoleMode.h"
 
 #ifdef _MSC_VER
 #pragma warning (push,3)

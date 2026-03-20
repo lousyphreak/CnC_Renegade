@@ -44,8 +44,163 @@
 #ifndef NAT_H
 #define NAT_H
 
+#include "renegade_build_config.h"
+
 #include	"always.h"
 #include	"win.h"
+
+#if !RENEGADE_WITH_LEGACY_WOL
+
+#include	"nataddr.h"
+#include <wwlib/vector.h>
+
+namespace WOL {
+struct User;
+class Server;
+}
+
+class WideStringClass;
+class StringClass;
+class cPacket;
+class SocketHandlerClass;
+class RegistryClass;
+
+class FirewallHelperClass {
+	public:
+		typedef enum tFirewallBehaviorType {
+			FIREWALL_TYPE_UNKNOWN = 0,
+			FIREWALL_TYPE_SIMPLE = 1
+		} FirewallBehaviorType;
+
+		enum {
+			FW_RESULT_UNKNOWN,
+			FW_RESULT_FAILED,
+			FW_RESULT_SUCCEEDED,
+			FW_RESULT_CANCELLED
+		};
+
+		FirewallHelperClass(void) :
+			SourcePortPool(0),
+			ClientPort(0),
+			SendDelay(false)
+		{}
+
+		void Startup(void) {}
+		void Shutdown(void) {}
+		void Detect_Firewall(HANDLE = 0) {}
+		unsigned short Get_Raw_Firewall_Behavior(void) { return FIREWALL_TYPE_UNKNOWN; }
+		short Get_Source_Port_Allocation_Delta(void) { return 0; }
+		unsigned short Get_Next_Mangled_Source_Port(unsigned short source_port) { return source_port; }
+		int Get_Firewall_Hardness(FirewallBehaviorType) { return 0; }
+		int Get_Firewall_Retries(FirewallBehaviorType) { return 0; }
+		void Set_Source_Port_Pool_Start(int port) { SourcePortPool = port; }
+		int Get_Source_Port_Pool(void) { return SourcePortPool; }
+		int Build_Mangler_Packet(unsigned char *, unsigned short, unsigned long = 0, bool = false) { return 0; }
+		unsigned short Get_Next_Temporary_Source_Port(int) { return 0; }
+		bool Get_Reference_Port(void) { return false; }
+		void Reset_Server(void) {}
+		unsigned short Get_Client_Bind_Port(void) { return ClientPort; }
+		void Set_Firewall_Info(unsigned long, int, unsigned short, bool send_delay, int) { SendDelay = send_delay; }
+		void Get_Firewall_Info(unsigned long &last_behavior, int &last_delta, unsigned short &port_pool, bool &send_delay, int &confidence) const {
+			last_behavior = FIREWALL_TYPE_UNKNOWN;
+			last_delta = 0;
+			port_pool = 0;
+			send_delay = SendDelay;
+			confidence = 0;
+		}
+		void Set_Send_Delay(bool send_delay) { SendDelay = send_delay; }
+		bool Get_Send_Delay(void) { return SendDelay; }
+		bool Send_To_Mangler(IPAddressClass *, SocketHandlerClass *, unsigned long, bool = false) { return false; }
+		unsigned short Get_Mangler_Response(unsigned long, SocketHandlerClass *, int = 0, bool = false) { return 0; }
+		void Connected_To_WWOnline_Server(void) {}
+		void Talk_To_New_Player(WOL::User *) {}
+		void Send_My_Port(unsigned short) {}
+		void Set_Client_Connect_Event(HANDLE, HANDLE, int *, int *) {}
+		bool Remove_Player_From_Negotiation_Queue(char *) { return false; }
+		bool Remove_Player_From_Negotiation_Queue_If_Mutex_Available(char *) { return false; }
+		void Cleanup_Client_Queue(void) {}
+		bool Get_Local_Chat_Connection_Address(void) { return false; }
+		unsigned long Get_Local_Address(void) { return 0; }
+		IPAddressClass &Get_External_Address(void) { return ExternalAddress; }
+		void Set_External_Address(IPAddressClass &addr) { ExternalAddress = addr; }
+		void Reset(void) {}
+		bool Is_Busy(void) { return false; }
+		bool Is_NAT(void) { return false; }
+		bool Is_NAT(FirewallBehaviorType) { return false; }
+		bool Is_Netgear(FirewallBehaviorType) { return false; }
+		bool Is_Netgear(void) { return false; }
+
+	private:
+		int SourcePortPool;
+		unsigned short ClientPort;
+		bool SendDelay;
+		IPAddressClass ExternalAddress;
+};
+
+class WOLNATInterfaceClass {
+	public:
+		WOLNATInterfaceClass(void) :
+			IsServer(false),
+			ForcePort(0),
+			PortBase(0),
+			RegExternalIP(0),
+			RegExternalPort(0),
+			ChatExternalIP(0)
+		{}
+
+		void Init(void) {}
+		void Shutdown(void) {}
+		void Service(void) {}
+		void Set_Service_Socket_Handler(SocketHandlerClass *) {}
+		void Service_Receive_Queue(SocketHandlerClass *) {}
+		void Get_Current_Server_ConnData(char *buffer, int size) { if (buffer != 0 && size > 0) { buffer[0] = 0; } }
+		void Send_Private_Game_Options(WOL::User *, char *) {}
+		bool Get_Private_Game_Options(WOL::User *, char *, int) { return false; }
+		char *Get_Silly_String(WideStringClass *, char *buffer, int buffer_size) {
+			if (buffer != 0 && buffer_size > 0) {
+				buffer[0] = 0;
+			}
+			return buffer;
+		}
+		bool Get_Packet(char *, int, IPAddressClass &) { return false; }
+		void Intercept_Game_Packet(cPacket &) {}
+		bool Send_Game_Format_Packet_To(IPAddressClass *, char *, int, SocketHandlerClass * = NULL) { return false; }
+		bool Get_My_Name(char *namebuf) { if (namebuf != 0) { namebuf[0] = 0; } return false; }
+		bool Am_I_Server(void) { return IsServer; }
+		void Set_Server(bool is_server) { IsServer = is_server; }
+		void Set_Server_Negotiated_Address(IPAddressClass *) {}
+		DynamicVectorClass<WOL::Server*> Get_Mangler_Server_List(void) { return DynamicVectorClass<WOL::Server*>(); }
+		unsigned short Get_Mangler_Port_By_Index(int) { return 0; }
+		bool Get_Mangler_Name_By_Index(int, char *mangler_name) { if (mangler_name != 0) { mangler_name[0] = 0; } return false; }
+		int Get_Num_Mangler_Servers(void) { return 0; }
+		unsigned long Get_Local_Address(void) { return 0; }
+		void Tell_Server_That_Client_Is_In_Channel(void) {}
+		bool Is_NAT_Thread_Busy(void) { return false; }
+		unsigned short Get_Next_Client_Port(void) { return ForcePort; }
+		unsigned short Get_Port_As_Server(void) { return (ForcePort != 0) ? ForcePort : PortBase; }
+		unsigned short Get_Port_As_Server_Client(void) { return (ForcePort != 0) ? static_cast<unsigned short>(ForcePort + 1) : static_cast<unsigned short>(PortBase + 1); }
+		unsigned short Get_Force_Port(void) { return ForcePort; }
+		void Get_Config(RegistryClass *, int &port_number, bool &send_delay) { port_number = ForcePort; send_delay = false; }
+		void Set_Config(RegistryClass *, int port_number, bool) { ForcePort = static_cast<unsigned short>(port_number); PortBase = static_cast<unsigned short>(port_number); }
+		void Save_Firewall_Info_To_Registry(void) {}
+		unsigned long Get_Reg_External_IP(void) { return RegExternalIP; }
+		unsigned long Get_Reg_External_Port(void) { return RegExternalPort; }
+		void Get_Compact_Log(StringClass &) {}
+		unsigned long Get_Chat_External_IP(void) { return ChatExternalIP; }
+
+	private:
+		bool IsServer;
+		unsigned short ForcePort;
+		unsigned short PortBase;
+		unsigned long RegExternalIP;
+		unsigned long RegExternalPort;
+		unsigned long ChatExternalIP;
+};
+
+extern FirewallHelperClass FirewallHelper;
+extern WOLNATInterfaceClass WOLNATInterface;
+
+#else
 
 #ifdef WWASSERT
 #ifndef fw_assert
@@ -703,6 +858,9 @@ class FirewallHelperClass {
 ** Single instance of FirewallHelperClass
 */
 extern FirewallHelperClass FirewallHelper;
+
+
+#endif
 
 
 #endif	//NAT_H

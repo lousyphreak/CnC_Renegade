@@ -41,7 +41,7 @@
 #ifndef _SLAVEMASTER_H
 #define _SLAVEMASTER_H
 
-#include <winbase.h>
+#include <win.h>
 
 #define MAX_SLAVES	7
 

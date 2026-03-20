@@ -57,7 +57,7 @@
 #include "playermanager.h"
 #include "translatedb.h"
 #include "string_ids.h"
-#include "consolemode.h"
+#include "ConsoleMode.h"
 #include "gamespyadmin.h"
 
 //
@@ -565,7 +565,7 @@ void cTeamManager::Render_Team_List(void)
 			break;
 		}
 	}
-   for (j = 0; j < MAX_TEAMS; j++) {
+   for (int j = 0; j < MAX_TEAMS; j++) {
 	   cTeam * p_team = Team_Array[j];
 		WWASSERT(p_team != NULL);
 		renderer_team_colors[j]=p_team->Get_Color();
@@ -637,7 +637,7 @@ void cTeamManager::Render_Team_List(void)
    //
    List_Print(heading, Vector3(1, 1, 1));
 
-   for (j = 0; j < MAX_TEAMS; j++) {
+	for (int j = 0; j < MAX_TEAMS; j++) {
 		List_Print(renderer_team_strings[j], renderer_team_colors[j]);
    }
 

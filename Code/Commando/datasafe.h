@@ -1371,27 +1371,9 @@ DataSafeClass<T>::~DataSafeClass(void)
 template <class T>
 unsigned long DataSafeClass<T>::Get_Type_Code(void)
 {
-	/*
-	** Make sure this function gets expanded multiple times for different types by referencing the type.
-	*/
-	volatile int data_size = sizeof(T);
-	data_size = data_size;
-
-	/*
-	** Since we aren't using RTTI I need some other way of distinguishing types in the safe. Because it's templatised, this
-	** code will get expanded once for each type it's used with. I will use the location in memory of the function to
-	** uniquely identify each type. What a cunning plan.
-	*/
-	static unsigned long instruction_pointer;
-	instruction_pointer = 0;
-	__asm {
-here:
-		lea	eax,here
-		mov	[instruction_pointer],eax
-	};
-
+	static int type_marker = 0;
+	unsigned long instruction_pointer = (unsigned long)(uintptr_t)&type_marker;
 	ds_assert(instruction_pointer != 0);
-
 	return(instruction_pointer);
 }
 

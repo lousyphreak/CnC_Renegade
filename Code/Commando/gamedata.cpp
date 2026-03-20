@@ -80,18 +80,18 @@
 #include "sctextobj.h"
 #include "widestring.h"
 #include "vehicle.h"
-#include "wolgameinfo.h"
+#include "WOLGameInfo.h"
 #include "spawn.h"
 #include "dlgcncwinscreen.h"
 #include "dialogmgr.h"
 #include "rawfile.h"
-#include "consolemode.h"
+#include "ConsoleMode.h"
 #include "gamedataupdateevent.h"
 #include "stylemgr.h"
 #include "modpackagemgr.h"
 #include "modpackage.h"
 #include "bandwidthcheck.h"
-#include "serversettings.h"
+#include "ServerSettings.h"
 
 #include "gamespyadmin.h"
 #include "specialbuilds.h"
@@ -183,7 +183,8 @@ cGameData::cGameData(void)	:
 
 	Set_Password(						L"");
    //Set_Owner(							"UNOWNED");
-   Set_Owner(							cNetInterface::Get_Nickname());
+	WideStringClass owner_name(cNetInterface::Get_Nickname());
+   Set_Owner(							owner_name);
 
 	IntermissionTimeSeconds			= 15;
    Set_Version_Number(				cNetwork::Get_Exe_Key());
@@ -1112,19 +1113,19 @@ void cGameData::Load_From_Server_Config(LPCSTR config_file)
 
 	// Now read the 16 bit versions as overrides.
 	WideStringClass wide_string(Get_Game_Title(), true);
-	p_ini->Get_Wide_String(wide_string, INI_SECTION_NAME, "wGameTitle", wide_string.Peek_Buffer());
+	p_ini->Get_Wide_String(wide_string, INI_SECTION_NAME, "wGameTitle", reinterpret_cast<const unsigned short *>(wide_string.Peek_Buffer()));
 	Set_Game_Title(wide_string);
 
 	wide_string = Get_Password();
-	p_ini->Get_Wide_String(wide_string, INI_SECTION_NAME, "wPassword", wide_string.Peek_Buffer());
+	p_ini->Get_Wide_String(wide_string, INI_SECTION_NAME, "wPassword", reinterpret_cast<const unsigned short *>(wide_string.Peek_Buffer()));
 	Set_Password(wide_string);
 
 	wide_string = Get_Motd();
-	p_ini->Get_Wide_String(wide_string, INI_SECTION_NAME, "wMotd", wide_string.Peek_Buffer());
+	p_ini->Get_Wide_String(wide_string, INI_SECTION_NAME, "wMotd", reinterpret_cast<const unsigned short *>(wide_string.Peek_Buffer()));
 	Set_Motd(wide_string);
 
 	wide_string = Get_Settings_Description();
-	p_ini->Get_Wide_String(wide_string, INI_SECTION_NAME, "wConfigName", wide_string.Peek_Buffer());
+	p_ini->Get_Wide_String(wide_string, INI_SECTION_NAME, "wConfigName", reinterpret_cast<const unsigned short *>(wide_string.Peek_Buffer()));
 	Set_Settings_Description(wide_string);
 
 	for (int j = 0; j < MAX_MAPS; j++) {
@@ -1158,8 +1159,9 @@ void cGameData::Save_To_Server_Config(LPCSTR config_file)
 	// We can't overwrite entries, so clear them out first.
 	//
 	p_ini->Clear(INI_SECTION_NAME);
-	p_ini->Put_Wide_String(	INI_SECTION_NAME, "wConfigName",					Get_Settings_Description());
-   p_ini->Put_Wide_String(	INI_SECTION_NAME, "wPassword",					Get_Password());
+	WideStringClass settings_description = Get_Settings_Description();
+	p_ini->Put_Wide_String(	INI_SECTION_NAME, "wConfigName",					reinterpret_cast<const unsigned short *>(settings_description.Peek_Buffer()));
+   p_ini->Put_Wide_String(	INI_SECTION_NAME, "wPassword",					reinterpret_cast<const unsigned short *>(Get_Password()));
 	p_ini->Put_String(		INI_SECTION_NAME, "MapName",						Get_Map_Name());
 	p_ini->Put_String(		INI_SECTION_NAME, "ModName",						Get_Mod_Name());
    p_ini->Put_Int(			INI_SECTION_NAME, "TimeLimitMinutes",			Get_Time_Limit_Minutes());
@@ -1178,8 +1180,8 @@ void cGameData::Save_To_Server_Config(LPCSTR config_file)
 	p_ini->Put_Bool(			INI_SECTION_NAME, "SpawnWeapons",				SpawnWeapons.Get());
 	//p_ini->Put_Bool(			INI_SECTION_NAME, "IsClientTrusted",			IsClientTrusted.Get());
 	p_ini->Put_Bool(			INI_SECTION_NAME, "UseLagReduction",			IsClientTrusted.Get());
-   p_ini->Put_Wide_String(	INI_SECTION_NAME, "wGameTitle",					Get_Game_Title());
-   p_ini->Put_Wide_String(	INI_SECTION_NAME, "wMOTD",							Get_Motd());
+	p_ini->Put_Wide_String(	INI_SECTION_NAME, "wGameTitle",					reinterpret_cast<const unsigned short *>(Get_Game_Title()));
+	p_ini->Put_Wide_String(	INI_SECTION_NAME, "wMOTD",							reinterpret_cast<const unsigned short *>(Get_Motd()));
 #if (0)
 	// Save out 8 bit string versions too.
 	StringClass string8(256, true);
@@ -1883,7 +1885,7 @@ void cGameData::Show_Game_Settings_Limits(void)
 	PTextRenderer->Build_Sentence(renderer_time_text);
 	PTextRenderer->Draw_Sentence();
 
-	for (j=0;j<OldBottomText.Count();++j) {
+	for (int j = 0; j < OldBottomText.Count(); ++j) {
 		y -= 1.2 * charHeight;
 		loc[1]=cMathUtil::Round(y);
 		PTextRenderer->Set_Location(loc);

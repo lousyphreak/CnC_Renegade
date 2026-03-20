@@ -35,9 +35,9 @@
 
 #include "windows.h"
 #include "scripts.h"
-#include "scriptregistrar.h"
+#include "ScriptRegistrar.h"
 //#include "missioncontrol.h"
-#include "dprint.h"
+#include "DPrint.h"
 
 /******************************************************************************
 *

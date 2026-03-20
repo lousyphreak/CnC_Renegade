@@ -124,10 +124,29 @@ char ErrorVal[1024] = {0,0,0,0};
 **
 */
 typedef unsigned int DATASAFE_UNSIGNED_INT;
-DECLARE_DATA_SAFE(int);
-DECLARE_DATA_SAFE(DATASAFE_UNSIGNED_INT);
-DECLARE_DATA_SAFE(float);
-DECLARE_DATA_SAFE(double);
+DataSafeClass<int> DataSafeint;
+template<> int DataSafeClass<int>::Type;
+template<> char DataSafeClass<int>::ReturnList[MAX_OBJECT_COPIES][sizeof(int)];
+template<> int DataSafeClass<int>::ReturnIndex;
+template<> int DataSafeClass<int>::MinSlop;
+
+DataSafeClass<DATASAFE_UNSIGNED_INT> DataSafeDATASAFE_UNSIGNED_INT;
+template<> int DataSafeClass<DATASAFE_UNSIGNED_INT>::Type;
+template<> char DataSafeClass<DATASAFE_UNSIGNED_INT>::ReturnList[MAX_OBJECT_COPIES][sizeof(DATASAFE_UNSIGNED_INT)];
+template<> int DataSafeClass<DATASAFE_UNSIGNED_INT>::ReturnIndex;
+template<> int DataSafeClass<DATASAFE_UNSIGNED_INT>::MinSlop;
+
+DataSafeClass<float> DataSafefloat;
+template<> int DataSafeClass<float>::Type;
+template<> char DataSafeClass<float>::ReturnList[MAX_OBJECT_COPIES][sizeof(float)];
+template<> int DataSafeClass<float>::ReturnIndex;
+template<> int DataSafeClass<float>::MinSlop;
+
+DataSafeClass<double> DataSafedouble;
+template<> int DataSafeClass<double>::Type;
+template<> char DataSafeClass<double>::ReturnList[MAX_OBJECT_COPIES][sizeof(double)];
+template<> int DataSafeClass<double>::ReturnIndex;
+template<> int DataSafeClass<double>::MinSlop;
 
 /*
 ** Define this to set the keys to a fixed value to aid debugging.

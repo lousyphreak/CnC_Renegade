@@ -20,9 +20,14 @@
 #ifndef _GAMESPY_QNR_H_
 #define _GAMESPY_QNR_H_
 
+#include "renegade_build_config.h"
+
 /********
 INCLUDES
 ********/
+
+#if RENEGADE_WITH_GAMESPY
+
 #include <GameSpy\gqueryreporting.h>
 #include <wwlib/widestring.h>
 #include "trim.h"
@@ -71,5 +76,39 @@ public:
 };
 
 extern CGameSpyQnR GameSpyQnR;
+
+#else
+
+#include "wwstring.h"
+#include "widestring.h"
+
+class CGameSpyQnR
+{
+public:
+	CGameSpyQnR();
+	virtual ~CGameSpyQnR();
+
+	void Init(void);
+	void LaunchArcade(void);
+	void TrackUsage(void);
+	void Shutdown(void);
+	BOOL Parse_HeartBeat_List(const char *list);
+	const char *Get_GameSpy_GameName(void);
+	const char *Get_Default_HeartBeat_List(void);
+	void Enable_Reporting(BOOL enable);
+	BOOL IsEnabled(void);
+	void Think(void);
+	void basic_callback(char *outbuf, int maxlen);
+	void info_callback(char *outbuf, int maxlen);
+	void rules_callback(char *outbuf, int maxlen);
+	void players_callback(char *outbuf, int maxlen);
+
+private:
+	BOOL m_GSEnabled;
+};
+
+extern CGameSpyQnR GameSpyQnR;
+
+#endif
 
 #endif

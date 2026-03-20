@@ -1,6 +1,7 @@
 file(GLOB WWAUDIO_HEADERS CONFIGURE_DEPENDS "*.h")
 
 add_library(WWAudio STATIC
+    AudioSaveLoad_null.cpp
     wwaudio_null.cpp
     ${WWAUDIO_HEADERS}
 )

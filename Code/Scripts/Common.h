@@ -40,9 +40,9 @@
 
 #include "CustomEvents.h"
 #include "scripts.h"
-#include "dprint.h"
-#include "groupcontrol.h"
-#include "group.h"
+#include "DPrint.h"
+#include "GroupControl.h"
+#include "Group.h"
 #include "vector3.h"
 #include "wwmath.h"
 #include <string.h>

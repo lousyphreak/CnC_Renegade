@@ -43,6 +43,7 @@
 
 
 #include "wwstring.h"
+#include <wwlib/vector.h>
 #include "bittype.h"
 
 

@@ -65,7 +65,7 @@
 #include "apppackettypes.h"
 #include "messagewindow.h"
 #include "playerkill.h"
-#include "consolemode.h"
+#include "ConsoleMode.h"
 #include "gamespyadmin.h"
 
 

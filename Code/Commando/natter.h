@@ -46,6 +46,14 @@
 #ifndef NATTER_H
 #define NATTER_H
 
+#include "renegade_build_config.h"
+
+#if !RENEGADE_WITH_LEGACY_WOL
+
+#include "nat.h"
+
+#else
+
 #include "always.h"
 //#include "nat.h"
 #include	"nataddr.h"
@@ -413,6 +421,8 @@ class WOLNATInterfaceClass :	public Observer<WWOnline::UserEvent>,
 ** Extern for single instance of the WOLNATInterface.
 */
 extern WOLNATInterfaceClass WOLNATInterface;
+
+#endif
 
 
 #endif //NATTER_H

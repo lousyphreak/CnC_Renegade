@@ -40,7 +40,7 @@
 #include "translatedb.h"
 #include "string_ids.h"
 #include "dialogmgr.h"
-#include "dlgmessagebox.h"
+#include "DlgMessageBox.h"
 #include "dlgdownload.h"
 #include "dlgquickmatch.h"
 #include "dlgmpwolgamelist.h"
@@ -48,7 +48,7 @@
 #include "dlgsidebarhelp.h"
 #include "WOLLoginProfile.h"
 #include "bandwidthcheck.h"
-#include "autostart.h"
+#include "AutoStart.h"
 
 ////////////////////////////////////////////////////////////////
 //	Static member initialization

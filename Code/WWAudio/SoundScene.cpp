@@ -35,8 +35,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include "soundscene.h"
-#include "soundcullobj.h"
+#include "SoundScene.h"
+#include "SoundCullObj.h"
 #include "LogicalSound.h"
 #include "LogicalListener.h"
 #include "chunkio.h"

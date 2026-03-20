@@ -38,6 +38,10 @@
 #ifndef _AUTOSTART_H
 #define _AUTOSTART_H
 
+#include "renegade_build_config.h"
+
+#if RENEGADE_WITH_LEGACY_WOL
+
 #include "WOLLogonMgr.h"
 #include <wwlib\signaler.h>
 #include "wolgmode.h"
@@ -142,6 +146,29 @@ class AutoRestartClass : public Observer<WOLLogonAction>, public Observer<WWOnli
 		int NumChannelCreateTries;
 
 };
+
+#else
+
+class AutoRestartClass
+{
+	public:
+		AutoRestartClass(void) : RestartFlag(false) {}
+
+		void Restart_Game(void) {}
+		void Think(void) {}
+		bool Is_Active(void) { return false; }
+		void Set_Restart_Flag(bool enable) { RestartFlag = enable; }
+		bool Get_Restart_Flag(void) { return RestartFlag; }
+		void Cancel(void) {}
+
+		inline static const char *REG_VALUE_AUTO_RESTART_FLAG = "AutoRestartFlag";
+		inline static const char *REG_VALUE_AUTO_RESTART_TYPE = "AutoRestartType";
+
+	private:
+		bool RestartFlag;
+};
+
+#endif
 
 
 extern AutoRestartClass AutoRestart;

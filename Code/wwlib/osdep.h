@@ -147,6 +147,22 @@ inline bool GameInFocus = true;
 #define _MAX_PATH PATH_MAX
 #endif
 
+#ifndef _MAX_DRIVE
+#define _MAX_DRIVE 3
+#endif
+
+#ifndef _MAX_DIR
+#define _MAX_DIR 256
+#endif
+
+#ifndef _MAX_FNAME
+#define _MAX_FNAME 256
+#endif
+
+#ifndef _MAX_EXT
+#define _MAX_EXT 256
+#endif
+
 #ifndef INVALID_FILE_ATTRIBUTES
 #define INVALID_FILE_ATTRIBUTES 0xFFFFFFFFu
 #endif
@@ -526,6 +542,11 @@ inline int _stricmp(const char * lhs, const char * rhs)
     return stricmp(lhs, rhs);
 }
 
+inline int strcmpi(const char * lhs, const char * rhs)
+{
+    return stricmp(lhs, rhs);
+}
+
 inline int strnicmp(const char * lhs, const char * rhs, std::size_t count)
 {
     return ::strncasecmp(lhs, rhs, count);
@@ -637,6 +658,103 @@ inline int _wcsicmp(const wchar_t * lhs, const wchar_t * rhs)
     return _wcsnicmp(lhs, rhs, std::max(lhs_length, rhs_length) + 1);
 }
 
+inline int wcsicmp(const wchar_t * lhs, const wchar_t * rhs)
+{
+    return _wcsicmp(lhs, rhs);
+}
+
+inline int lstrcmpi(const char * lhs, const char * rhs)
+{
+    return stricmp(lhs, rhs);
+}
+
+inline int lstrcmpi(const wchar_t * lhs, const wchar_t * rhs)
+{
+    return _wcsicmp(lhs, rhs);
+}
+
+template <typename CharT>
+inline void renegade_copy_path_component(CharT * destination, std::size_t capacity, const std::basic_string<CharT> & value)
+{
+    if (destination == nullptr || capacity == 0) {
+        return;
+    }
+
+    const std::size_t count = std::min(capacity - 1, value.size());
+    if (count > 0) {
+        std::char_traits<CharT>::copy(destination, value.c_str(), count);
+    }
+    destination[count] = static_cast<CharT>(0);
+}
+
+template <typename CharT>
+inline void renegade_splitpath_impl(const CharT * path, CharT * drive, CharT * dir, CharT * fname, CharT * ext)
+{
+    renegade_copy_path_component(drive, _MAX_DRIVE, std::basic_string<CharT>());
+    renegade_copy_path_component(dir, _MAX_DIR, std::basic_string<CharT>());
+    renegade_copy_path_component(fname, _MAX_FNAME, std::basic_string<CharT>());
+    renegade_copy_path_component(ext, _MAX_EXT, std::basic_string<CharT>());
+
+    if (path == nullptr) {
+        return;
+    }
+
+    const std::basic_string<CharT> text(path);
+    std::size_t start = 0;
+    std::basic_string<CharT> drive_text;
+    if (text.size() >= 2 && text[1] == static_cast<CharT>(':')) {
+        drive_text = text.substr(0, 2);
+        start = 2;
+    }
+
+    std::size_t last_separator = std::basic_string<CharT>::npos;
+    for (std::size_t index = text.size(); index-- > start;) {
+        if (text[index] == static_cast<CharT>('/') || text[index] == static_cast<CharT>('\\')) {
+            last_separator = index;
+            break;
+        }
+    }
+
+    std::basic_string<CharT> dir_text;
+    std::size_t filename_start = start;
+    if (last_separator != std::basic_string<CharT>::npos) {
+        dir_text = text.substr(start, last_separator + 1 - start);
+        filename_start = last_separator + 1;
+    }
+
+    const std::basic_string<CharT> filename_text = text.substr(filename_start);
+    std::basic_string<CharT> fname_text = filename_text;
+    std::basic_string<CharT> ext_text;
+
+    std::size_t dot = std::basic_string<CharT>::npos;
+    for (std::size_t index = filename_text.size(); index-- > 0;) {
+        if (filename_text[index] == static_cast<CharT>('.')) {
+            dot = index;
+            break;
+        }
+    }
+
+    if (dot != std::basic_string<CharT>::npos && dot != 0) {
+        fname_text = filename_text.substr(0, dot);
+        ext_text = filename_text.substr(dot);
+    }
+
+    renegade_copy_path_component(drive, _MAX_DRIVE, drive_text);
+    renegade_copy_path_component(dir, _MAX_DIR, dir_text);
+    renegade_copy_path_component(fname, _MAX_FNAME, fname_text);
+    renegade_copy_path_component(ext, _MAX_EXT, ext_text);
+}
+
+inline void _splitpath(const char * path, char * drive, char * dir, char * fname, char * ext)
+{
+    renegade_splitpath_impl(path, drive, dir, fname, ext);
+}
+
+inline void _wsplitpath(const wchar_t * path, wchar_t * drive, wchar_t * dir, wchar_t * fname, wchar_t * ext)
+{
+    renegade_splitpath_impl(path, drive, dir, fname, ext);
+}
+
 inline int _wtoi(const wchar_t * text)
 {
     return (text == nullptr) ? 0 : static_cast<int>(std::wcstol(text, nullptr, 10));
@@ -716,6 +834,35 @@ inline int WideCharToMultiByte(
     temp.push_back(L'\0');
     const wchar_t * temp_src = temp.c_str();
     return static_cast<int>(std::wcsrtombs(destination, &temp_src, destination_length, &state));
+}
+
+inline int MultiByteToWideChar(
+    unsigned int,
+    DWORD,
+    const char * source,
+    int source_length,
+    wchar_t * destination,
+    int destination_length)
+{
+    if (source == nullptr) {
+        return 0;
+    }
+
+    std::mbstate_t state{};
+    const char * src = source;
+
+    if (destination == nullptr || destination_length == 0) {
+        return static_cast<int>(1 + std::mbsrtowcs(nullptr, &src, 0, &state));
+    }
+
+    if (source_length < 0) {
+        return static_cast<int>(std::mbsrtowcs(destination, &src, destination_length, &state));
+    }
+
+    std::string temp(source, source + source_length);
+    temp.push_back('\0');
+    const char * temp_src = temp.c_str();
+    return static_cast<int>(std::mbsrtowcs(destination, &temp_src, destination_length, &state));
 }
 
 #endif

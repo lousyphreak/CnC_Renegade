@@ -30,6 +30,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef _WIN32
+#include <unistd.h>
+#endif
+
 #include "miscutil.h"
 #include "wwdebug.h"
 #include "win.h"
@@ -99,6 +103,9 @@ void cNetInterface::Set_Nickname(WideStringClass & name)
 //-----------------------------------------------------------------------------
 void cNetInterface::Set_Random_Nickname(void)
 {      
+	char name[MAX_NICKNAME_LENGTH + 1] = {0};
+
+	#ifdef _WIN32
 	char name[MAX_COMPUTERNAME_LENGTH + 1];
 	DWORD size = sizeof(name);
 	::GetComputerName(name, &size);
@@ -107,6 +114,12 @@ void cNetInterface::Set_Random_Nickname(void)
 	if (length_test > 0) {
 		name[MAX_NICKNAME_LENGTH - 1] = 0;
 	}
+	#else
+	if (gethostname(name, sizeof(name)) != 0) {
+		std::snprintf(name, sizeof(name), "Player");
+	}
+	name[MAX_NICKNAME_LENGTH - 1] = 0;
+	#endif
 
 	WideStringClass widename;
 	widename.Convert_From(name);

@@ -61,7 +61,7 @@
 #include "translatedb.h"
 #include "string_ids.h"
 #include "systeminfolog.h"
-#include "consolemode.h"
+#include "ConsoleMode.h"
 #include "gamespyadmin.h"
 #include "demosupport.h"
 
@@ -1376,7 +1376,7 @@ void cPlayerManager::Render_Player_List(void)
 	*/
    List_Print(heading, Vector3(1, 1, 1));
 
-	for (j = 0; j < renderer_displayed_player_count; j++) {
+		for (int j = 0; j < renderer_displayed_player_count; j++) {
 		//
 		// Put a symbol next to my name so that it stands out
 		//

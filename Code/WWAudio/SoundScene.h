@@ -46,8 +46,8 @@
 #include "gridcull.h"
 #include "Listener.h"
 #include "vector.h"
-#include "priorityvector.h"
-#include "soundcullobj.h"
+#include "PriorityVector.h"
+#include "SoundCullObj.h"
 #include "LogicalListener.h"
 #include "multilist.h"
 

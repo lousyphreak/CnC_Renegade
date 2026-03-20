@@ -36,7 +36,6 @@
 
 #include "singletoninstancekeeper.h"
 #include "wwdebug.h"
-#include "autostart.h"
 
 
 //
@@ -57,6 +56,45 @@ static const char *	AUTOPLAY_GUID = "01AF9993-3492-11d3-8F6F-0060089C05B1";
 const char *	SingletonInstanceKeeperClass::APP_GUID = "C6D925A3-7A9B-4ca3-866D-8B4D506C3665";
 
 bool SingletonInstanceKeeperClass::AllowMultipleInstances = false;
+
+#ifndef _WIN32
+
+//////////////////////////////////////////////////////////////////////
+//	SingletonInstanceKeeperClass
+//////////////////////////////////////////////////////////////////////
+SingletonInstanceKeeperClass::SingletonInstanceKeeperClass (void)	:
+	AppMutex (NULL),
+	AutoPlayMutex (NULL)
+{
+	return;
+}
+
+//////////////////////////////////////////////////////////////////////
+//	SingletonInstanceKeeperClass
+//////////////////////////////////////////////////////////////////////
+SingletonInstanceKeeperClass::~SingletonInstanceKeeperClass (void)
+{
+	return;
+}
+
+//////////////////////////////////////////////////////////////////////
+//	Verify_Safe_To_Execute
+//////////////////////////////////////////////////////////////////////
+bool
+SingletonInstanceKeeperClass::Verify_Safe_To_Execute (void)
+{
+	return true;
+}
+
+//////////////////////////////////////////////////////////////////////
+//	Allow_Multiple_Instances
+//////////////////////////////////////////////////////////////////////
+void SingletonInstanceKeeperClass::Allow_Multiple_Instances(bool flag)
+{
+	AllowMultipleInstances = flag;
+}
+
+#else
 
 
 //////////////////////////////////////////////////////////////////////
@@ -199,3 +237,5 @@ void SingletonInstanceKeeperClass::Allow_Multiple_Instances(bool flag)
 {
 	AllowMultipleInstances = flag;
 }
+
+#endif

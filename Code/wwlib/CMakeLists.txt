@@ -7,7 +7,10 @@ endif()
 
 set(WWLIB_SOURCES
     cpudetect_stub.cpp
+    slnode.cpp
     systimer.cpp
+    widestring.cpp
+    wwstring.cpp
 )
 
 if(RENEGADE_WITH_LEGACY_IMAGEHLP_STACKTRACE)

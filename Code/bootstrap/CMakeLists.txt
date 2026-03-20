@@ -3,7 +3,7 @@ add_executable(renegade_bootstrap
 )
 
 renegade_configure_target(renegade_bootstrap)
-target_link_libraries(renegade_bootstrap PRIVATE SDL3::SDL3)
+target_link_libraries(renegade_bootstrap PRIVATE Commando Scripts wwlib SDL3::SDL3)
 
 if(TARGET SDL3::SDL3-shared)
     add_custom_command(TARGET renegade_bootstrap POST_BUILD

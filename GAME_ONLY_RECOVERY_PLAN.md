@@ -1,6 +1,6 @@
 # Game-Only Recovery Plan
 
-Last updated: 2026-03-19
+Last updated: 2026-03-20
 
 This document is the **implementation reference** for getting the repository from its current archival state to a **fully working game build**.
 
@@ -528,8 +528,8 @@ Actions:
 - [x] `BinkMovie` is now present in the active CMake graph with a `RENEGADE_WITH_BINK=OFF` stub implementation (`binkmovie_stub.cpp`), and `cmake --build build --target BinkMovie -j1` succeeds.
 - [x] Umbra is now driven from the central feature configuration instead of a hardcoded local define; `wwphys/umbrasupport.h` and `Code/wwphys/CMakeLists.txt` both honor `RENEGADE_WITH_UMBRA`.
 - [x] The Linux/bootstrap compatibility layer now covers the legacy Win32, Miles, DirectInput, ImageHlp, and several DX8-adjacent include surfaces needed to compile deeper into the runtime graph.
-- [ ] GameSpy and legacy WOL service layers are still untouched on the `Commando` side; they remain later Phase 4 work after the gameplay/runtime libraries build cleanly.
-- [ ] Phase 4 is not yet closed: `wwphys` is now green, but the game executable is still not linkable because the downstream gameplay/script targets are still being stabilized and the GameSpy/WOL service layers remain deferred.
+- [x] The bootstrap/non-WOL `Commando` path now has concrete GameSpy/WOL/browser/service stubs and compatibility fences sufficient for the active Linux x64 build graph to compile and link without the historical online SDK stack.
+- [x] Phase 4's bootstrap dependency-fencing goal is now met for the active slice: the current `renegade_bootstrap` executable links without Bink, Miles, Umbra, GameSpy, or legacy WOL being restored.
 
 ## Phase 5 — Get gameplay and script loading online
 
@@ -580,8 +580,8 @@ Actions:
 - [x] `Scripts` is now built as a shared library target with the historical runtime-facing name `Scripts`.
 - [x] `Combat/scripts.cpp` preserves the legacy DLL-loading contract while adding non-Windows `.so` fallback candidates (`Scripts.so`, `libScripts.so`, etc.) so the bootstrap runtime can keep the old call sites.
 - [x] `RENEGADE_WITH_SCRIPT_DLL` now gates script-module loading cleanly instead of forcing unconditional runtime failure.
-- [ ] Full `Combat` compile validation is still pending because `Code/Combat/ccamera.cpp` currently fails on `soundscene.h`.
-- [ ] Full `Scripts` compile validation is still pending because `Code/Scripts/Common.h` currently fails on `dprint.h`.
+- [x] `Combat` now compiles and links in the active Linux x64 bootstrap graph.
+- [x] `Scripts` now compiles and links as `Scripts.so` in the active Linux x64 bootstrap graph.
 - [ ] The real script implementation path has not been validated end-to-end yet; only the target wiring and loader compatibility work are in place.
 
 ## Phase 6 — Bring up the renderer and input in two stages
@@ -687,6 +687,13 @@ Get the real game executable online with the stubbed subsystems above.
 
 - the CMake build produces a real game executable
 - the executable starts and reaches the idle/main loop path
+
+### Phase 7 implementation status (2026-03-20)
+
+- [x] `Commando` now exists as an active CMake target slice, and `cmake --build build --target Commando -j32` succeeds in the Linux x64 bootstrap configuration.
+- [x] `renegade_bootstrap` now links successfully against the current `Commando` slice, and `cmake --build build --target renegade_bootstrap -j32` succeeds.
+- [x] The current bootstrap link keeps non-essential historical app dependencies (`slavemaster.cpp`, `systemsettings.cpp`) out of the first `Commando` slice while preserving the core runtime graph.
+- [ ] The post-link runtime/main-loop smoke for the expanded `Commando` slice still needs to be rerun before Phase 7 can be considered fully closed.
 
 ## Phase 8 — Reach a first playable offline build
 
@@ -873,7 +880,6 @@ Do **not** block the game-only plan on any of the following:
 - resurrecting SafeDisk
 - resurrecting RTPatch
 - rebuilding the 3ds Max exporter plugin ecosystem
-- porting to Linux/macOS/x64 before Win32 works
 - writing a brand-new renderer before the first working boot
 
 ## Immediate next implementation actions
@@ -881,35 +887,33 @@ Do **not** block the game-only plan on any of the following:
 The next concrete implementation steps from the current repository state are:
 
 1. keep the root CMake skeleton, generated config header, SDL3 submodule, and `renegade_bootstrap` healthy while expanding the runtime graph
-2. normalize the remaining `Combat` portability headers, starting with `Code/Combat/ccamera.cpp` and its `soundscene.h` include
-3. normalize the remaining `Scripts` portability headers, starting with `Code/Scripts/Common.h` and its `dprint.h` include
-4. rerun `cmake --build build --target Combat -j1` and then `cmake --build build --target Scripts -j1` until both targets are green
-5. once `Combat` and `Scripts` are compiling, finish the still-missing Phase 4 service stubs for GameSpy and legacy WOL before attempting `Commando`
-6. add `Commando`, get a linkable null-feature executable, and only then continue into first-frame / real-input restoration
-7. keep Phase 2 MSVC validation and broader historical-source restoration on the backlog, but do not let them distract from the current Linux game-only critical path
+2. rerun a runtime smoke for the newly linked `Commando` slice (`renegade_bootstrap`, then `--headless-smoke` or equivalent) and capture the next startup/runtime blocker
+3. widen the `Commando` slice incrementally by restoring currently deferred files only when their platform/runtime dependencies are ready
+4. continue replacing bootstrap-only service stubs with real implementations once offline/local startup is stable
+5. keep Phase 2 MSVC validation and broader historical-source restoration on the backlog, but do not let them distract from the current Linux game-only critical path
 
-## Current stopping point (2026-03-19)
+## Current stopping point (2026-03-20)
 
 This is the handoff state for the current bring-up pass.
 
-- Last attempted `Combat` command: `cmake --build build --target Combat -j1`
-- Current `Combat` failure: `Code/Combat/ccamera.cpp` includes `soundscene.h`, which still does not resolve on Linux/bootstrap
-- Last attempted `Scripts` command: `cmake --build build --target Scripts -j1`
-- Current `Scripts` failure: `Code/Scripts/Common.h` includes `dprint.h`, which still does not resolve on Linux/bootstrap
-- Current meaning: `wwphys` is now green; the remaining bring-up work has moved into portability cleanup in `Combat` and `Scripts` rather than renderer-adjacent `wwphys` fallout
+- Last attempted `Commando` command: `cmake --build build --target Commando -j32`
+- Last attempted bootstrap command: `cmake --build build --target renegade_bootstrap -j32`
+- Current `Commando` state: the active Linux x64 `Commando` slice compiles successfully as `libCommando.a`
+- Current bootstrap state: `renegade_bootstrap` links successfully against `Commando`, `Scripts`, and the expanded bootstrap `wwlib`
+- Current meaning: the bring-up has advanced past `Combat`/`Scripts` compile cleanup and into Phase 7 executable/runtime validation work
 - Already verified in this pass:
    - `cmake -S . -B build` still succeeds
    - `cmake --build build --target WWAudio -j1` succeeds
    - `cmake --build build --target BinkMovie -j1` succeeds
    - `cmake --build build --target wwphys -j1` succeeds
-   - `cmake --build build --target Combat -j1` now gets past the `wwphys` layer and fails later in `ccamera.cpp`
-   - `cmake --build build --target Scripts -j1` now gets past the `CustomEvents`/`ScriptFactory` casing issues and fails later in `Common.h`
+   - `cmake --build build --target Combat -j1` succeeds
+   - `cmake --build build --target Scripts -j1` succeeds
+   - `cmake --build build --target Commando -j32` succeeds
+   - `cmake --build build --target renegade_bootstrap -j32` succeeds
 - Recommended resume order:
-   1. fix `soundscene.h` in `Combat`
-   2. fix `dprint.h` in `Scripts`
-   3. rerun `cmake --build build --target Combat -j1`
-   4. rerun `cmake --build build --target Scripts -j1`
-   5. once those are green, return to the service-layer stubs and `Commando`
+   1. run the newly linked bootstrap executable through a current smoke test and capture the next runtime blocker
+   2. expand the `Commando` slice only where needed for startup/main-loop progress
+   3. keep replacing bootstrap-only service stubs with real implementations as runtime dependencies come online
 
 ## Bottom line
 

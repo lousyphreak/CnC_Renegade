@@ -45,7 +45,7 @@
 #include "WOLChatMgr.h"
 #include "WOLJoinGame.h"
 #include "WOLGameInfo.h"
-#include "consolemode.h"
+#include "ConsoleMode.h"
 #include <WWOnline\WOLChannel.h>
 #include <WWOnline\WOLProduct.h>
 #include <WWLib\Registry.h>

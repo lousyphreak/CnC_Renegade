@@ -55,10 +55,10 @@
 #include <WWTranslateDB\TranslateDB.h>
 #include <wwdebug/wwdebug.h>
 #include "UserOptions.h"
-#include "autostart.h"
-#include "consolemode.h"
+#include "AutoStart.h"
+#include "ConsoleMode.h"
 #include "specialbuilds.h"
-#include "serversettings.h"
+#include "ServerSettings.h"
 
 using namespace WWOnline;
 

@@ -72,7 +72,7 @@
 #include "dlghelpscreen.h"
 #include "dlgcncreference.h"
 #include "wwmemlog.h"
-#include "consolemode.h"
+#include "ConsoleMode.h"
 #include "specialbuilds.h"
 
 

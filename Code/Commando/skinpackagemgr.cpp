@@ -38,6 +38,19 @@
 #include "registry.h"
 #include "_globals.h"
 
+#include <cstring>
+#include <filesystem>
+
+namespace {
+
+bool Matches_Package_File(const std::filesystem::path &path)
+{
+	StringClass extension(path.extension().string().c_str(), true);
+	return extension.Compare_No_Case(".pkg") == 0;
+}
+
+}
+
 
 /////////////////////////////////////////////////////////////////////
 //	Local constants
@@ -106,31 +119,28 @@ SkinPackageMgrClass::Shutdown (void)
 void
 SkinPackageMgrClass::Build_List (void)
 {
-	WIN32_FIND_DATA find_info	= { 0 };
-	BOOL keep_going				= TRUE;
-	HANDLE file_find				= NULL;
-
-	//
-	//	Build a list of all the saved games we know about
-	//
-	for (file_find = ::FindFirstFile ("*.pkg", &find_info);
-		 (file_find != INVALID_HANDLE_VALUE) && keep_going;
-		  keep_going = ::FindNextFile (file_find, &find_info))
-	{		
-		//
-		//	Create the package from the data in this mix file
-		//
-		SkinPackageClass package;
-		package.Set_Package_Filename (find_info.cFileName);
-
-		//
-		//	Add the package to our list
-		//
-		PackageList.Add (package);
+	std::error_code error;
+	const std::filesystem::path search_root = std::filesystem::current_path(error);
+	if (error) {
+		return;
 	}
 
-	if (file_find != INVALID_HANDLE_VALUE) {			  
-		::FindClose (file_find); 
+	for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(search_root, error)) {
+		if (error) {
+			break;
+		}
+
+		if (!entry.is_regular_file()) {
+			continue;
+		}
+
+		if (!Matches_Package_File(entry.path())) {
+			continue;
+		}
+
+		SkinPackageClass package;
+		package.Set_Package_Filename(entry.path().filename().string().c_str());
+		PackageList.Add(package);
 	}
 	
 	return ;

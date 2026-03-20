@@ -39,7 +39,7 @@
 #include "DlgMPWOLAddIgnoreEntry.h"
 #include "WOLLogonMgr.h"
 #include "Resource.h"
-#include "consolemode.h"
+#include "ConsoleMode.h"
 #include <WWUI\ListCtrl.h>
 
 DlgWOLPageReply* DlgWOLPageReply::_mInstance = NULL;

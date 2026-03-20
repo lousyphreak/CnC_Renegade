@@ -44,10 +44,11 @@
 #include "networkobjectmgr.h"
 #include "gameobjmanager.h"
 #include "vendor.h"
+#include "playermanager.h"
 #include "playertype.h"
 #include "purchaseresponseevent.h"
 #include "apppackettypes.h"
-#include "consolemode.h"
+#include "ConsoleMode.h"
 
 
 DECLARE_NETWORKOBJECT_FACTORY(cPurchaseRequestEvent, NETCLASSID_PURCHASEREQUESTEVENT);

@@ -44,6 +44,28 @@
 #include "mixfile.h"
 #include "gametype.h"
 
+#include <cstring>
+#include <filesystem>
+
+namespace {
+
+bool Matches_Search_Mask(const std::filesystem::path &path, const char *search_mask)
+{
+	if (search_mask == NULL) {
+		return false;
+	}
+
+	const char *extension = std::strrchr(search_mask, '.');
+	if (extension == NULL) {
+		return false;
+	}
+
+	StringClass file_extension(path.extension().string().c_str(), true);
+	return file_extension.Compare_No_Case(extension) == 0;
+}
+
+}
+
 
 /////////////////////////////////////////////////////////////////////
 //	Local constants
@@ -114,31 +136,28 @@ ModPackageMgrClass::Shutdown (void)
 void
 ModPackageMgrClass::Build_List (void)
 {
-	WIN32_FIND_DATA find_info	= { 0 };
-	BOOL keep_going				= TRUE;
-	HANDLE file_find				= NULL;
-
-	//
-	//	Build a list of all the saved games we know about
-	//
-	for (file_find = ::FindFirstFile ("data\\*.pkg", &find_info);
-		 (file_find != INVALID_HANDLE_VALUE) && keep_going;
-		  keep_going = ::FindNextFile (file_find, &find_info))
-	{		
-		//
-		//	Create the package from the data in this mix file
-		//
-		ModPackageClass package;
-		package.Set_Package_Filename (find_info.cFileName);
-
-		//
-		//	Add the package to our list
-		//
-		PackageList.Add (package);
+	std::error_code error;
+	const std::filesystem::path data_directory("data");
+	if (!std::filesystem::exists(data_directory, error)) {
+		return;
 	}
 
-	if (file_find != INVALID_HANDLE_VALUE) {			  
-		::FindClose (file_find); 
+	for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(data_directory, error)) {
+		if (error) {
+			break;
+		}
+
+		if (!entry.is_regular_file()) {
+			continue;
+		}
+
+		if (!Matches_Search_Mask(entry.path(), "*.pkg")) {
+			continue;
+		}
+
+		ModPackageClass package;
+		package.Set_Package_Filename(entry.path().filename().string().c_str());
+		PackageList.Add(package);
 	}
 	
 	return ;
@@ -343,38 +362,33 @@ ModPackageMgrClass::Find_Filename_From_CRC
 	bool retval = false;
 
 
-	WIN32_FIND_DATA find_info	= { 0 };
-	BOOL keep_going				= TRUE;
-	HANDLE file_find				= NULL;
-
 	(*filename) = "";
 
-	StringClass full_search_mask	= "data\\";
-	full_search_mask					+= search_mask;
+	std::error_code error;
+	const std::filesystem::path data_directory("data");
+	if (!std::filesystem::exists(data_directory, error)) {
+		return false;
+	}
 
-	//
-	//	Build a list of all the saved games we know about
-	//
-	for (file_find = ::FindFirstFile (full_search_mask, &find_info);
-		 (file_find != INVALID_HANDLE_VALUE) && keep_going;
-		  keep_going = ::FindNextFile (file_find, &find_info))
-	{
-		//
-		//	Is this the map we were looking for?
-		//
-		if (::CRC_Stringi (find_info.cFileName) == filename_crc) {
+	for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(data_directory, error)) {
+		if (error) {
+			break;
+		}
 
-			//
-			//	Return the file name to the caller
-			//
-			(*filename) = find_info.cFileName;
+		if (!entry.is_regular_file()) {
+			continue;
+		}
+
+		if (!Matches_Search_Mask(entry.path(), search_mask)) {
+			continue;
+		}
+
+		const std::string filename_string = entry.path().filename().string();
+		if (::CRC_Stringi(filename_string.c_str()) == filename_crc) {
+			(*filename) = filename_string.c_str();
 			retval = true;
 			break;
 		}
-	}
-
-	if (file_find != INVALID_HANDLE_VALUE) {
-		::FindClose (file_find);
 	}
 
 	return retval;

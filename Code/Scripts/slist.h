@@ -154,8 +154,8 @@ bool SList<T>::Insert_Before(T *newnode, T   *oldnode)
 	//  valid.
 	if (cur->Next() != NULL && cur->Next()->Data() == oldnode) {  
 		SLNode<T> *temp	= new SLNode<T> (newnode);
-		temp->NodeNext			= cur->Next();
-		cur->NodeNext			= temp;
+		temp->Set_Next(cur->Next());
+		cur->Set_Next(temp);
 		return(true);
 	}
 	return(false);
@@ -199,8 +199,8 @@ bool SList<T>::Insert_After(T *newnode, T *oldnode)
 		}
 
 		SLNode<T> *temp		= new SLNode<T>(newnode);
-		temp->NodeNext			= cur->Next();
-		cur->NodeNext			= temp;
+		temp->Set_Next(cur->Next());
+		cur->Set_Next(temp);
 		return true;
 	} 
 	return false;
@@ -263,7 +263,7 @@ bool SList<T>::Remove(T *element)
 	//  valid.
 	if (cur->Next() != NULL && cur->Next()->Data() == element) {  
 		SLNode<T> *temp	= cur->Next();
-		cur->NodeNext		= temp->Next();
+		cur->Set_Next(temp->Next());
 		if (temp == TailNode) TailNode = cur;
 		delete temp;
 		return true;
@@ -428,7 +428,7 @@ bool SList<T>::Add_Head(T *data)
 	if (!data) return false;
 
 	SLNode<T> *temp			= new SLNode<T>(data);
-	temp->NodeNext				= HeadNode;
+	temp->Set_Next(HeadNode);
 	HeadNode						= temp;
 	if (!TailNode) TailNode	= temp;
 	return true;
@@ -459,8 +459,8 @@ bool SList<T>::Add_Head(SList<T>& list)
 	for (SLNode<T> *cur = list.HeadNode; cur; cur = cur->Next()) 
 	if (addpoint) {
 		SLNode<T> *temp   = new SLNode<T>(cur->Data());
-		temp->NodeNext = addpoint->NodeNext;
-		addpoint->NodeNext = temp;
+		temp->Set_Next(addpoint->Next());
+		addpoint->Set_Next(temp);
 		addpoint = temp;
 	} else {
 		Add_Head(cur->Data());
@@ -491,7 +491,7 @@ bool SList<T>::Add_Tail(T *data)
 	if (HeadNode == NULL) {				// empty list
 		HeadNode = TailNode	= temp;
 	} else {									// non-empty list
-		TailNode->NodeNext	= temp;
+		TailNode->Set_Next(temp);
 		TailNode					= temp;
 	}
 	return true;

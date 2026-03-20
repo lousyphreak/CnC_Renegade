@@ -93,6 +93,111 @@ void __cdecl Print_Win32Error(unsigned long win32Error);
 #else
 
 #include "osdep.h"
+#include <chrono>
+#include <cstring>
+#include <ctime>
+#include <unistd.h>
+
+#ifndef MAX_PATH
+#define MAX_PATH 260
+#endif
+
+#ifndef RENEGADE_COMPAT_HKEY_DEFINED
+#define RENEGADE_COMPAT_HKEY_DEFINED
+typedef void *HKEY;
+#endif
+
+#ifndef RENEGADE_COMPAT_SYSTEMTIME_DEFINED
+#define RENEGADE_COMPAT_SYSTEMTIME_DEFINED
+typedef struct _SYSTEMTIME {
+	WORD wYear;
+	WORD wMonth;
+	WORD wDayOfWeek;
+	WORD wDay;
+	WORD wHour;
+	WORD wMinute;
+	WORD wSecond;
+	WORD wMilliseconds;
+} SYSTEMTIME, *LPSYSTEMTIME;
+#endif
+
+#ifndef RENEGADE_COMPAT_FILETIME_DEFINED
+#define RENEGADE_COMPAT_FILETIME_DEFINED
+typedef struct _FILETIME {
+	DWORD dwLowDateTime;
+	DWORD dwHighDateTime;
+} FILETIME, *LPFILETIME;
+#endif
+
+#ifndef RENEGADE_COMPAT_PROCESS_INFORMATION_DEFINED
+#define RENEGADE_COMPAT_PROCESS_INFORMATION_DEFINED
+typedef struct _PROCESS_INFORMATION {
+	HANDLE hProcess;
+	HANDLE hThread;
+	DWORD dwProcessId;
+	DWORD dwThreadId;
+} PROCESS_INFORMATION, *LPPROCESS_INFORMATION;
+#endif
+
+#ifndef RENEGADE_COMPAT_STARTUPINFO_DEFINED
+#define RENEGADE_COMPAT_STARTUPINFO_DEFINED
+typedef struct _STARTUPINFOA {
+	DWORD cb;
+	char *lpReserved;
+	char *lpDesktop;
+	char *lpTitle;
+	DWORD dwX;
+	DWORD dwY;
+	DWORD dwXSize;
+	DWORD dwYSize;
+	DWORD dwXCountChars;
+	DWORD dwYCountChars;
+	DWORD dwFillAttribute;
+	DWORD dwFlags;
+	WORD wShowWindow;
+	WORD cbReserved2;
+	unsigned char *lpReserved2;
+	HANDLE hStdInput;
+	HANDLE hStdOutput;
+	HANDLE hStdError;
+} STARTUPINFO, *LPSTARTUPINFO;
+#endif
+
+inline DWORD GetTickCount(void)
+{
+	using namespace std::chrono;
+	return static_cast<DWORD>(duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count() & 0xffffffffu);
+}
+
+inline DWORD GetCurrentProcessId(void)
+{
+	return static_cast<DWORD>(getpid());
+}
+
+inline void GetSystemTime(LPSYSTEMTIME system_time)
+{
+	if (system_time == nullptr) {
+		return;
+	}
+
+	std::time_t now = std::time(nullptr);
+	std::tm utc_time = {};
+	gmtime_r(&now, &utc_time);
+
+	system_time->wYear = static_cast<WORD>(utc_time.tm_year + 1900);
+	system_time->wMonth = static_cast<WORD>(utc_time.tm_mon + 1);
+	system_time->wDayOfWeek = static_cast<WORD>(utc_time.tm_wday);
+	system_time->wDay = static_cast<WORD>(utc_time.tm_mday);
+	system_time->wHour = static_cast<WORD>(utc_time.tm_hour);
+	system_time->wMinute = static_cast<WORD>(utc_time.tm_min);
+	system_time->wSecond = static_cast<WORD>(utc_time.tm_sec);
+	system_time->wMilliseconds = 0;
+}
+
+inline int lstrlen(const char *text)
+{
+	return (text != NULL) ? static_cast<int>(std::strlen(text)) : 0;
+}
 
 #endif // _WIN32
 

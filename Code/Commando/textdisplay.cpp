@@ -46,7 +46,7 @@
 #include "ccamera.h"
 #include "render2dsentence.h"
 #include "wwmemlog.h"
-#include "consolemode.h"
+#include "ConsoleMode.h"
 
 /*
 ** TextDisplayLine

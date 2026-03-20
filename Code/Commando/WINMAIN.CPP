@@ -60,7 +60,7 @@
 #include "devoptions.h"
 #include "dialogmgr.h"
 #include "renegadedialogmgr.h"
-#include "except.h"
+#include "Except.h"
 
 #include "DirectInput.h"
 #include "WebBrowser.h"

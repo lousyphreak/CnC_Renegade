@@ -34,8 +34,12 @@
  * Functions:                                                                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+#include "renegade_build_config.h"
 #include <win.h>
-#include "wwonline\wolsession.h"
+
+#if RENEGADE_WITH_LEGACY_WOL
+#include <WWOnline/WOLSession.h>
+#endif
 
 class StringClass;
 
@@ -69,8 +73,10 @@ class ServerSettingsClass
 		/*
 		** Populating ini file with server list.
 		*/
+		#if RENEGADE_WITH_LEGACY_WOL
 		static char *Get_Preferred_Server(const WWOnline::IRCServerList &server_list);
-		static void Write_Server_List(const WWOnline::IRCServerList &server_listvoid);
+		static void Write_Server_List(const WWOnline::IRCServerList &server_list);
+		#endif
 	private:
 		static char SettingsFile[MAX_PATH];
 		static bool IsActive;

@@ -56,7 +56,7 @@
 #include "hudinfo.h"
 #include "Listener.h"
 #include "WWAudio.h"
-#include "soundscene.h"
+#include "SoundScene.h"
 #include "wwprofile.h"
 #include "diaglog.h"
 #include "gametype.h"

@@ -34,7 +34,7 @@
 
 #include "LogicalListener.h"
 #include "WWAudio.h"
-#include "SoundScene.H"
+#include "SoundScene.h"
 #include "SoundChunkIDs.h"
 #include "persistfactory.h"
 

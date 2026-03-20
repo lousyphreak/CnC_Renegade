@@ -35,7 +35,7 @@
 #include "GameResSend.h"
 #include "GameData.h"
 #include "Player.h"
-#include "consolemode.h"
+#include "ConsoleMode.h"
 #include <Combat\PlayerType.h>
 #include <WWOnline\GameResPacket.h>
 #include <WWOnline\WOLSession.h>

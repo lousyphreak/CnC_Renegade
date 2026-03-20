@@ -49,7 +49,7 @@
 #include "widestring.h"
 #include "radar.h"
 #include "DlgMPTeamSelect.h"
-#include <WWLib\Signaler.h>
+#include "Signaler.h"
 
 const int		MAX_PASSWORD_SIZE			= 16;				//including NULL
 const int		MAX_MAPNAME_SIZE			= 28;				//including NULL
@@ -58,6 +58,7 @@ const int		MAX_MOTD_LENGTH			= 100;
 #define MAX_CLAN_SLOTS 2
 
 class SoldierGameObj;
+class cPlayer;
 class cPacket;
 //class Render2DTextClass;
 class Render2DSentenceClass;
@@ -289,7 +290,7 @@ class	cGameData :
 		virtual	void	Get_Description(WideStringClass & description);
 
 
-		WideStringClass	Get_Settings_Description(void)						{return(SettingsDescription);}
+		WideStringClass	Get_Settings_Description(void)						{return WideStringClass(SettingsDescription);}
 		void					Set_Settings_Description(WideStringClass desc)	{SettingsDescription = desc;}
 
 		cBoolean			IsIntermission;

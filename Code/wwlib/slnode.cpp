@@ -38,4 +38,5 @@
 
 
 
-DEFINE_AUTO_POOL (GenericSLNode, 256);
+template<> ObjectPoolClass<GenericSLNode, 256> AutoPoolClass<GenericSLNode, 256>::Allocator = ObjectPoolClass<GenericSLNode, 256>();
+template class AutoPoolClass<GenericSLNode, 256>;

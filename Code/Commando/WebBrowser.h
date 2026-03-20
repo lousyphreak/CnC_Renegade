@@ -37,8 +37,12 @@
 #ifndef __WEBBROWSER_H__
 #define __WEBBROWSER_H__
 
+#include "renegade_build_config.h"
+
+#if RENEGADE_WITH_LEGACY_WOL
+
 #include "WOLBrowser\WOLBrowser.h"
-#include <WWLib\Notify.h>
+#include "Notify.h"
 #include <atlbase.h>
 #include <windows.h>
 
@@ -173,5 +177,70 @@ class WebBrowser :
 		STDMETHOD(OnErrorMsg)(const wchar_t* error);
 		STDMETHOD(OnRegisterLogin)(const wchar_t* nick, const wchar_t* pass);
 	};
+
+#else
+
+#include "always.h"
+
+#ifndef HWND
+typedef void * HWND;
+#endif
+
+class WebBrowser;
+
+class WebEvent
+	{
+	public:
+		typedef enum
+			{
+			None = 0,
+			Quit,
+			CertificationFailed,
+			} EventID;
+
+		inline EventID Event(void) const
+			{return mEvent;}
+
+		WebEvent(EventID event, WebBrowser* object) :
+			mEvent(event),
+			mObject(object)
+			{}
+
+		WebBrowser *GetObject(void) const
+			{return mObject;}
+
+	private:
+		EventID mEvent;
+		WebBrowser *mObject;
+	};
+
+class WebBrowser
+	{
+	public:
+		#ifdef _DEBUG
+		static bool InstallPrerequisites(void);
+		#endif
+
+		static bool IsWebPageDisplayed(void);
+		static WebBrowser* CreateInstance(HWND window);
+
+		bool UsingEmbeddedBrowser(void) const { return false; }
+		bool IsExternalBrowserRunning(void) const;
+		bool ShowWebPage(char* page);
+		bool LaunchExternal(const char* url);
+		void Show(void);
+		void Hide(void);
+		bool IsVisible(void) const { return mVisible; }
+
+	protected:
+		WebBrowser();
+		virtual ~WebBrowser();
+
+	private:
+		static WebBrowser* _mInstance;
+		bool mVisible;
+	};
+
+#endif
 
 #endif // __WEBBROWSER_H__

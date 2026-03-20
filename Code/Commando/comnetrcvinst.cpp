@@ -46,8 +46,8 @@
 #include "wwprofile.h"
 #include "serverfps.h"
 #include "useroptions.h"
-#include "serversettings.h"
-#include "consolemode.h"
+#include "ServerSettings.h"
+#include "ConsoleMode.h"
 #include "demosupport.h"
 
 //-----------------------------------------------------------------------------

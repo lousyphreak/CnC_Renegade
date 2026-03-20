@@ -67,7 +67,7 @@
 #include "playermanager.h"
 #include "teammanager.h"
 #include "bandwidthgraph.h"
-#include "except.h"
+#include "Except.h"
 #include "skinpackagemgr.h"
 #include "modpackagemgr.h"
 

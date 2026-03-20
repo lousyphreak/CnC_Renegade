@@ -36,7 +36,7 @@
 ******************************************************************************/
 
 #include "scripts.h"
-#include "toolkit.h"
+#include "Toolkit.h"
 #include <string.h>
 #include <stdio.h>
 #include "Mission3.h"
@@ -56,4 +56,4 @@ DECLARE_SCRIPT(MS04_Gunboat_Waypath_Movement, "")
 		params.WaypathID = 100033;
 		Commands->Action_Goto( obj, params );
 	}
-}
+};

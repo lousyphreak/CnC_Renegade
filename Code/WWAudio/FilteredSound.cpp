@@ -35,9 +35,9 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include "filteredsound.h"
+#include "FilteredSound.h"
 #include "WWAudio.h"
-#include "soundscene.h"
+#include "SoundScene.h"
 #include "soundchunkids.h"
 #include "persistfactory.h"
 #include "soundhandle.h"

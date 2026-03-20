@@ -37,7 +37,11 @@
 #ifndef __DLGMPTEAMSELECT_H__
 #define __DLGMPTEAMSELECT_H__
 
-#include "PlayerManager.h"
+#include "renegade_build_config.h"
+
+#if RENEGADE_WITH_LEGACY_WOL
+
+#include "playermanager.h"
 #include <WWUI\MenuDialog.h>
 #include <WWLib\Notify.h>
 #include <WWLib\Signaler.h>
@@ -108,5 +112,22 @@ class DlgMPTeamSelect :
 		RefPtr<WWOnline::Session> mWOLSession;
 		WOLGameInfo mGameInfo;
 	};
+
+#else
+
+#include "../wwlib/Notify.h"
+
+template <typename SignalType>
+class Signaler;
+
+typedef TypedEventPair<bool, int> MPChooseTeamSignal;
+
+class DlgMPTeamSelect
+	{
+	public:
+		static void DoDialog(Signaler<MPChooseTeamSignal>&) {}
+	};
+
+#endif
 
 #endif // __DLGMPTEAMSELECT_H__

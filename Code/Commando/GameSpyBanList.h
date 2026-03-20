@@ -27,6 +27,8 @@
 #define __GAMESPYBANLIST_H__
 
 #include "bittype.h"
+#include "listnode.h"
+#include <cstddef>
 
 enum GAMESPY_KICK_STATE_ENUM
 {

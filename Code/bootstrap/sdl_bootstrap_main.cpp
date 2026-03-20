@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string_view>
 
+#include "../Commando/commando_bootstrap_bridge.h"
 #include "renegade_build_config.h"
 
 namespace {
@@ -28,7 +29,8 @@ void PrintBootstrapBanner()
         << "  x86 asm enabled: " << RENEGADE_WITH_X86_ASM << '\n'
         << "  Win32 stacktrace enabled: " << RENEGADE_WITH_WIN32_STACKTRACE << '\n'
         << "  renderer enabled: " << RENEGADE_WITH_DX8_RENDERER << '\n'
-        << "  directinput enabled: " << RENEGADE_WITH_DIRECTINPUT << '\n';
+        << "  directinput enabled: " << RENEGADE_WITH_DIRECTINPUT << '\n'
+        << "  commando target: " << Renegade_Commando_Bootstrap_Summary() << '\n';
 }
 
 } // namespace

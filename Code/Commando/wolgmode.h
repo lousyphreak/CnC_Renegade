@@ -41,11 +41,15 @@
 #ifndef __WOLGMODE_H__
 #define __WOLGMODE_H__
 
-#include "GameMode.h"
+#include "renegade_build_config.h"
+
+#if RENEGADE_WITH_LEGACY_WOL
+
+#include "gamemode.h"
 #include "WOLBuddyMgr.h"
-#include <WWOnline\RefPtr.h>
-#include <WWLib\Notify.h>
-#include <WWLib\Signaler.h>
+#include "../WWOnline/RefPtr.h"
+#include "Notify.h"
+#include "Signaler.h"
 
 class cGameData;
 class cPlayer;
@@ -181,5 +185,60 @@ class	WolGameModeClass :
 		DynamicVectorClass<unsigned int> IdleKickTimeList;
 
 	};
+
+#else
+
+#include "gamemode.h"
+#include "../WWOnline/RefPtr.h"
+
+class cGameData;
+class cPlayer;
+
+namespace WWOnline
+{
+class UserData;
+}
+
+class WolGameModeClass : public GameModeClass
+	{
+	public:
+		WolGameModeClass();
+		~WolGameModeClass();
+
+		inline const char* Name(void)
+			{return "WOL";}
+
+		void Init(void);
+		void Shutdown(void);
+		void Think(void);
+		void Render(void) {}
+
+		void Create_Game(cGameData*);
+		void Leave_Game(void);
+		void Start_Game(cGameData*);
+		void End_Game(void);
+		void Accept_Actions(void);
+		void Refusal_Actions(void);
+		void Init_WOL_Player(cPlayer* player);
+		RefPtr<WWOnline::UserData> Get_WOL_User_Data(const wchar_t* name);
+		void Page_WOL_User(const wchar_t* name, const wchar_t* msg);
+		void Reply_Last_Page(const wchar_t* msg);
+		void Locate_WOL_User(const wchar_t* name);
+		void Invite_WOL_User(const wchar_t* name, const wchar_t* msg);
+		void Join_WOL_User(const wchar_t* name);
+		bool Kick_Player(const wchar_t* name);
+		void Ban_Player(const wchar_t* name, unsigned long ip);
+		bool Is_Banned(const char *player_name, unsigned long ip);
+		void Read_Kick_List(void);
+		void Auto_Kick(void);
+		void System_Timer_Reset(void);
+		inline cGameData* Get_Game(void) const { return 0; }
+		inline bool Channel_Create_OK(void) { return false; }
+		void Set_Quiet_Mode(bool quiet);
+		bool Post_Game_Check(void);
+		static void Game_Start_Timeout_Callback(void);
+	};
+
+#endif
 
 #endif	// __WOLGMODE_H__

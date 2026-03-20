@@ -42,16 +42,26 @@
 #ifndef _BANDWIDTHCHECK_H
 #define _BANDWIDTHCHECK_H
 
-#include <WWOnline\WaitCondition.h>
-#include <wwlib\except.h>
-#include <windows.h>
-#include <BandTest\BandTest.h>
+#include "renegade_build_config.h"
+#include <WWOnline/RefPtr.h>
+
+#if RENEGADE_WITH_LEGACY_WOL
+#include <WWOnline/WaitCondition.h>
+#else
+class WaitCondition;
+#endif
+
+#include "Except.h"
+#include <win.h>
+#include <BandTest/BandTest.h>
 
 
 namespace WWOnline {
 	class Session;
 }
 
+
+#if RENEGADE_WITH_LEGACY_WOL
 
 
 class BandwidthCheckerClass
@@ -163,5 +173,44 @@ class BandwidthDetectWait : public SingleWait
 
 
 
+#else
+
+class StringClass;
+
+class BandwidthCheckerClass
+{
+	public:
+		#pragma pack(push)
+		#pragma pack(1)
+		typedef struct tInternalPackedBandwidthType {
+			unsigned char Up		: 4;
+			unsigned char Down	: 4;
+		} InternalPackedBandwidthType;
+
+		typedef union tPackedBandwidthType {
+			InternalPackedBandwidthType Bandwidth;
+			unsigned char RawBandwidth;
+		} PackedBandwidthType;
+		#pragma pack(pop)
+
+		static RefPtr<WaitCondition> Detect(void) { return RefPtr<WaitCondition>(); }
+		static void Check_Now(HANDLE) {}
+		static bool Got_Bandwidth(void) { return true; }
+		static void Force_Upstream_Bandwidth(unsigned int) {}
+		static unsigned long Get_Upstream_Bandwidth(void) { return 0; }
+		static unsigned long Get_Reported_Upstream_Bandwidth(void) { return 0; }
+		static unsigned short *Get_Upstream_Bandwidth_As_String(void) { static unsigned short empty[] = {0}; return empty; }
+		static unsigned long Get_Downstream_Bandwidth(void) { return 0; }
+		static unsigned long Get_Reported_Downstream_Bandwidth(void) { return 0; }
+		static unsigned short *Get_Downstream_Bandwidth_As_String(void) { static unsigned short empty[] = {0}; return empty; }
+		static unsigned short *Get_Bandwidth_As_String(void) { static unsigned short empty[] = {0}; return empty; }
+		static unsigned short *Get_Bandwidth_As_String(PackedBandwidthType) { static unsigned short empty[] = {0}; return empty; }
+		static PackedBandwidthType Get_Packed_Bandwidth(void) { PackedBandwidthType packed = {}; return packed; }
+		static bool Failed_Due_To_No_Connection(void) { return false; }
+		static void Get_Compact_Log(StringClass &) {}
+		static bool Is_Thread_Running(void) { return false; }
+};
+
+#endif
 
 #endif //_BANDWIDTHCHECK_H

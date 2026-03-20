@@ -41,13 +41,17 @@
 #ifndef __DIALOG_TESTS_H
 #define __DIALOG_TESTS_H
 
+#include "renegade_build_config.h"
 #include "popupdialog.h"
 #include "menudialog.h"
 #include "childdialog.h"
 #include "resource.h"
 #include "DlgWOLWait.h"
-#include <WWLib\Notify.h>
-#include <WWOnline\RefPtr.h>
+#include "Notify.h"
+
+#if RENEGADE_WITH_LEGACY_WOL
+#include <WWOnline/RefPtr.h>
+#endif
 
 
 class WheeledVehicleDefClass;

@@ -42,7 +42,7 @@
 #include "combatsaveload.h"
 #include "physstaticsavesystem.h"
 #include "physdynamicsavesystem.h"
-#include "audiosaveload.h"
+#include "AudioSaveLoad.h"
 #include "matrix3d.h"
 #include "scripts.h"
 #include "combat.h"
@@ -190,7 +190,7 @@ void	SaveGameManager::Pre_Load_Game
 		//
 		//	HACK HACK - Put the level 9 mix file first...
 		//
-		if (	::lstrcmpi (filename, "M09.mix") == 0 &&
+		if (	::stricmp (filename, "M09.mix") == 0 &&
 				FileFactoryListClass::Get_Instance () != NULL)
 		{
 			FileFactoryListClass::Get_Instance ()->Set_Search_Start(filename);
@@ -220,7 +220,7 @@ void	SaveGameManager::Pre_Load_Game
 			//
 			//	HACK HACK - Put the level 9 mix file first...
 			//
-			if (	::lstrcmpi (mix_filename, "M09.mix") == 0 &&
+			if (	::stricmp (mix_filename, "M09.mix") == 0 &&
 					FileFactoryListClass::Get_Instance () != NULL)
 			{
 				FileFactoryListClass::Get_Instance ()->Set_Search_Start(mix_filename);
@@ -324,7 +324,7 @@ bool	SaveGameManager::Smart_Peek_Description
 	//
 	//	Is this a mix file?
 	//
-	FileFactoryClass * mix_factory = NULL;
+	MixFileFactoryClass * mix_factory = NULL;
 	if (::strcmpi (extension, ".mix") == 0) {		
 		
 		//

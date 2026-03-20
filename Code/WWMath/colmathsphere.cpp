@@ -53,6 +53,46 @@
 #include "obbox.h"
 #include "wwdebug.h"
 
+namespace
+{
+
+float Distance_Squared_To_Line_Segment(const Vector3 & point, const LineSegClass & line)
+{
+	const Vector3 closest = line.Find_Point_Closest_To(point);
+	return (closest - point).Length2();
+}
+
+float Distance_Squared_To_Triangle(const Vector3 & point, const TriClass & tri)
+{
+	const Vector3 edge0 = *tri.V[1] - *tri.V[0];
+	const Vector3 edge1 = *tri.V[2] - *tri.V[0];
+	const Vector3 normal = *tri.N;
+	const float plane_distance = Vector3::Dot_Product(point - *tri.V[0], normal);
+	const Vector3 projected_point = point - plane_distance * normal;
+
+	if (tri.Contains_Point(projected_point)) {
+		return plane_distance * plane_distance;
+	}
+
+	LineSegClass edges[3] = {
+		LineSegClass(*tri.V[0], *tri.V[1]),
+		LineSegClass(*tri.V[1], *tri.V[2]),
+		LineSegClass(*tri.V[2], *tri.V[0])
+	};
+
+	float best_distance_sq = Distance_Squared_To_Line_Segment(point, edges[0]);
+	for (int i = 1; i < 3; ++i) {
+		const float edge_distance_sq = Distance_Squared_To_Line_Segment(point, edges[i]);
+		if (edge_distance_sq < best_distance_sq) {
+			best_distance_sq = edge_distance_sq;
+		}
+	}
+
+	return best_distance_sq;
+}
+
+} // namespace
+
 
 // Sphere Intersection fucntions.  Does the sphere intersect the passed in object
 /***********************************************************************************************
@@ -69,16 +109,13 @@
  *=============================================================================================*/
 bool CollisionMath::Intersection_Test(const SphereClass & sphere,const AABoxClass & box)
 {
-	/*
-	** Simple but slightly inaccurate test, expand the box by the sphere's radius, then 
-	** test whether the sphere is contained in that new box.  This is actually testing
-	** against a cube which encloses the sphere...
-	*/
-	Vector3 dc = box.Center - sphere.Center;
-	if (WWMath::Fabs(dc.X) < box.Extent.X + sphere.Radius) return false;
-	if (WWMath::Fabs(dc.Y) < box.Extent.Y + sphere.Radius) return false;
-	if (WWMath::Fabs(dc.Z) < box.Extent.Z + sphere.Radius) return false;
-	return true;
+	Vector3 closest_point(
+		WWMath::Clamp(sphere.Center.X, box.Center.X - box.Extent.X, box.Center.X + box.Extent.X),
+		WWMath::Clamp(sphere.Center.Y, box.Center.Y - box.Extent.Y, box.Center.Y + box.Extent.Y),
+		WWMath::Clamp(sphere.Center.Z, box.Center.Z - box.Extent.Z, box.Center.Z + box.Extent.Z)
+	);
+
+	return (closest_point - sphere.Center).Length2() <= sphere.Radius * sphere.Radius;
 }
 
 
@@ -96,18 +133,16 @@ bool CollisionMath::Intersection_Test(const SphereClass & sphere,const AABoxClas
  *=============================================================================================*/
 bool CollisionMath::Intersection_Test(const SphereClass & sphere,const OBBoxClass & box)
 {
-	/*
-	** Compute the sphere's position in the box's coordinate system
-	*/
 	Matrix3D tm(box.Basis,box.Center);
 	Vector3 box_rel_center;
 	Matrix3D::Inverse_Transform_Vector(tm,sphere.Center,&box_rel_center);
+	Vector3 closest_point(
+		WWMath::Clamp(box_rel_center.X, -box.Extent.X, box.Extent.X),
+		WWMath::Clamp(box_rel_center.Y, -box.Extent.Y, box.Extent.Y),
+		WWMath::Clamp(box_rel_center.Z, -box.Extent.Z, box.Extent.Z)
+	);
 
-	if (box.Extent.X < WWMath::Fabs(box_rel_center.X)) return false;
-	if (box.Extent.Y < WWMath::Fabs(box_rel_center.Y)) return false;
-	if (box.Extent.Z < WWMath::Fabs(box_rel_center.Z)) return false;
-
-	return true;
+	return (closest_point - box_rel_center).Length2() <= sphere.Radius * sphere.Radius;
 }
 
 // Sphere Overlap functions.  Where is operand B with respect to the sphere
@@ -150,9 +185,25 @@ CollisionMath::Overlap_Test(const SphereClass & sphere,const Vector3 & point)
  *   4/25/2001  gth : Created.                                                                 *
  *=============================================================================================*/
 CollisionMath::OverlapType
-CollisionMath::Overlap_Test(const SphereClass & /*sphere*/,const LineSegClass & /*line*/)
+CollisionMath::Overlap_Test(const SphereClass & sphere,const LineSegClass & line)
 {
-	WWASSERT(0); //TODO
+	int mask = 0;
+	mask |= CollisionMath::Overlap_Test(sphere, line.Get_P0());
+	mask |= CollisionMath::Overlap_Test(sphere, line.Get_P1());
+	const OverlapType endpoint_result = eval_overlap_mask(mask);
+	if (endpoint_result != POS) {
+		return endpoint_result;
+	}
+
+	const float radius_sq = sphere.Radius * sphere.Radius;
+	const float distance_sq = Distance_Squared_To_Line_Segment(sphere.Center, line);
+	if (distance_sq < radius_sq - COINCIDENCE_EPSILON) {
+		return BOTH;
+	}
+	if (distance_sq <= radius_sq + COINCIDENCE_EPSILON) {
+		return ON;
+	}
+
 	return POS;
 }
 
@@ -170,9 +221,26 @@ CollisionMath::Overlap_Test(const SphereClass & /*sphere*/,const LineSegClass & 
  *   4/25/2001  gth : Created.                                                                 *
  *=============================================================================================*/
 CollisionMath::OverlapType
-CollisionMath::Overlap_Test(const SphereClass & /*sphere*/,const TriClass & /*tri*/)
+CollisionMath::Overlap_Test(const SphereClass & sphere,const TriClass & tri)
 {
-	WWASSERT(0); //TODO
+	int mask = 0;
+	mask |= CollisionMath::Overlap_Test(sphere, *tri.V[0]);
+	mask |= CollisionMath::Overlap_Test(sphere, *tri.V[1]);
+	mask |= CollisionMath::Overlap_Test(sphere, *tri.V[2]);
+	const OverlapType vertex_result = eval_overlap_mask(mask);
+	if (vertex_result != POS) {
+		return vertex_result;
+	}
+
+	const float radius_sq = sphere.Radius * sphere.Radius;
+	const float distance_sq = Distance_Squared_To_Triangle(sphere.Center, tri);
+	if (distance_sq < radius_sq - COINCIDENCE_EPSILON) {
+		return BOTH;
+	}
+	if (distance_sq <= radius_sq + COINCIDENCE_EPSILON) {
+		return ON;
+	}
+
 	return POS;
 }
 

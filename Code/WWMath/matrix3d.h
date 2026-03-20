@@ -73,25 +73,16 @@
  *   operator != -- Matrix inequality operator                                                 * 
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#if defined(_MSC_VER)
 #pragma once
-#endif
 
 #ifndef MATRIX3D_H
 #define MATRIX3D_H
-
-#ifdef _UNIX
-#include "osdep.h"
-#endif
 
 #include "always.h"
 #include <assert.h>
 #include "vector2.h"
 #include "vector3.h"
 #include "vector4.h"
-#ifdef _UNIX
-#include "osdep.h"
-#endif
 
 
 class Matrix3;

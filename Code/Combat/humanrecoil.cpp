@@ -41,6 +41,7 @@
 #include "wwdebug.h"
 #include "rendobj.h"
 #include "htree.h"
+#include <SDL3/SDL_stdinc.h>
 #include <string.h>
 
 
@@ -137,7 +138,7 @@ void HumanRecoilClass::Initialize(RenderObjClass * model)
 		
 		for (int model_bone = 0; model_bone < tree->Num_Pivots(); model_bone++) {
 			
-			if (stricmp(_RecoilData[recoil_bone].BoneName, tree->Get_Bone_Name(model_bone)) == 0) {
+			if (SDL_strcasecmp(_RecoilData[recoil_bone].BoneName, tree->Get_Bone_Name(model_bone)) == 0) {
 				_RecoilData[recoil_bone].BoneIndex = model_bone;
 				model_bone = tree->Num_Pivots();
 			}

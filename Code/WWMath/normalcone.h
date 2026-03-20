@@ -43,6 +43,8 @@
 ** -ehc
 */
 
+#pragma once
+
 #ifndef NORMALCONE_H
 #define NORMALCONE_H
 

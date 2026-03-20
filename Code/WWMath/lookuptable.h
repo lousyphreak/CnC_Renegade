@@ -37,6 +37,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
+#pragma once
+
 #ifndef LOOKUPTABLE_H
 #define LOOKUPTABLE_H
 

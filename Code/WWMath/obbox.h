@@ -38,9 +38,7 @@
  *   OBBoxClass::Compute_Axis_Aligned_Extent -- computes extent of an AABox enclosing this box *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#if defined(_MSC_VER)
 #pragma once
-#endif
 
 #ifndef OBBOX_H
 #define OBBOX_H
@@ -262,7 +260,7 @@ inline bool OBBoxClass::operator== (const OBBoxClass &src)
  *=============================================================================================*/
 inline bool OBBoxClass::operator!= (const OBBoxClass &src)
 {
-	return (Center != src.Center) || (Extent != src.Extent) && (Basis == src.Basis);
+	return (Center != src.Center) || (Extent != src.Extent) || (Basis != src.Basis);
 }
 
 #endif

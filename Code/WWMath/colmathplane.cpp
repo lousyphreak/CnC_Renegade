@@ -87,7 +87,7 @@ CollisionMath::Overlap_Test(const AAPlaneClass & plane,const SphereClass & spher
 	if (delta > sphere.Radius) {
 		return POS;
 	} 
-	if (delta < sphere.Radius) {
+	if (delta < -sphere.Radius) {
 		return NEG;
 	}
 	return BOTH;
@@ -124,11 +124,20 @@ CollisionMath::Overlap_Test(const AAPlaneClass & plane,const AABoxClass & box)
 
 
 CollisionMath::OverlapType
-CollisionMath::Overlap_Test(const AAPlaneClass & /*plane*/,const OBBoxClass & /*box*/)
+CollisionMath::Overlap_Test(const AAPlaneClass & plane,const OBBoxClass & box)
 {
-// TODO
-	WWASSERT(0);
-	return POS;
+	Vector3 normal(0.0f, 0.0f, 0.0f);
+	normal[plane.Normal] = 1.0f;
+
+	const float distance = box.Center[plane.Normal] - plane.Dist;
+	const float radius = box.Project_To_Axis(normal);
+	if (distance > radius) {
+		return POS;
+	}
+	if (distance < -radius) {
+		return NEG;
+	}
+	return BOTH;
 }
 
 

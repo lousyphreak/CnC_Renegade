@@ -63,9 +63,7 @@
  *   Vector3::Is_Valid -- Verifies that each component of this vector is a valid float         *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#if defined(_MSC_VER)
 #pragma once
-#endif
 
 #ifndef VECTOR3_H
 #define VECTOR3_H
@@ -73,9 +71,6 @@
 #include "always.h"
 #include "wwmath.h"
 #include <assert.h>
-#ifdef _UNIX
-#include "osdep.h"
-#endif
 
 
 /*

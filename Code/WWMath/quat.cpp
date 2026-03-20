@@ -257,7 +257,7 @@ Quaternion Axis_To_Quat(const Vector3 &a, float phi)
 #define ARC_TABLE_SIZE_MASK 1023
 #define SIN_TABLE_SIZE_MASK 1023
 
-void __cdecl Fast_Slerp(Quaternion& res, const Quaternion & p,const Quaternion & q,float alpha)
+void Fast_Slerp(Quaternion& res, const Quaternion & p,const Quaternion & q,float alpha)
 {
 	float float_epsilon2=WWMATH_EPSILON * WWMATH_EPSILON;
 	float HalfOfArcTableSize=float(ARC_TABLE_SIZE/2);
@@ -438,7 +438,7 @@ no_negative:
 	}
 }
 #else
-void __cdecl Fast_Slerp(Quaternion& res, const Quaternion & p,const Quaternion & q,float alpha)
+void Fast_Slerp(Quaternion& res, const Quaternion & p,const Quaternion & q,float alpha)
 {		
 	float beta;			// complementary interploation parameter
 	float theta;		// angle between p and q

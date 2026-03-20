@@ -42,9 +42,7 @@
  *----------------------------------------------------------------------------------------------*
  */
 
-#if defined(_MSC_VER)
 #pragma once
-#endif
 
 #ifndef VECTORPROCESSOR_H
 #define VECTORPROCESSOR_H
@@ -79,8 +77,6 @@ public:
 	static void MinMax(Vector3 *src, Vector3 &min, Vector3 &max, const int count);
 
 	static void MulAdd(float * dest,float multiplier,float add,int count);
-
-	static void Prefetch(void* address);
 
 	static void DotProduct(float *dst, const Vector3 &a, const Vector3 *b,const int count);
 	static void ClampMin(float *dst, float *src, const float min, const int count);

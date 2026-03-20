@@ -40,6 +40,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
+#pragma once
+
 #ifndef COLMATHPLANE_H
 #define COLMATHPLANE_H
 

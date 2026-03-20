@@ -13,7 +13,3 @@ target_include_directories(WWMath
 )
 
 target_link_libraries(WWMath PRIVATE wwlib)
-
-if(NOT WIN32)
-    target_compile_definitions(WWMath PUBLIC _UNIX)
-endif()

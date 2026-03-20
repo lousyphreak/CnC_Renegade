@@ -36,8 +36,13 @@
  * Functions:                                                                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+#pragma once
+
 #ifndef COLMATHLINE_H
 #define COLMATHLINE_H
+
+#include "colmath.h"
+#include "aabox.h"
 
 /*
 ** Inline collision functions dealing with line segments

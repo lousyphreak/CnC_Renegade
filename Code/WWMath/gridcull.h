@@ -51,9 +51,7 @@
  *   GridCullSystemClass::VolumeStruct::Split -- split this volume                             *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#if defined(_MSC_VER)
 #pragma once
-#endif
 
 #ifndef GRIDCULL_H
 #define GRIDCULL_H

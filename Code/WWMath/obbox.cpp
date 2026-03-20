@@ -54,7 +54,6 @@
 #include <assert.h>
 //#include <stdlib.h>
 
-
 /***********************************************************************************************
  * OBBoxClass::OBBoxClass -- Constructor that computes the box for a set of points             *
  *                                                                                             *
@@ -67,10 +66,35 @@
  * HISTORY:                                                                                    *
  *   2/4/98     GTH : Created.                                                                 *
  *=============================================================================================*/
-OBBoxClass::OBBoxClass(const Vector3 * /*points*/, int /*n*/)
+OBBoxClass::OBBoxClass(const Vector3 * points, int num_points)
 {
-	// TODO: IMPLEMENT THIS!!!
-	assert(0);
+	Basis = Matrix3::Identity;
+	Center.Set(0.0f, 0.0f, 0.0f);
+	Extent.Set(0.0f, 0.0f, 0.0f);
+
+	if (points == NULL || num_points <= 0) {
+		return;
+	}
+
+	if (num_points == 1) {
+		Center = points[0];
+		return;
+	}
+
+	Vector3 min_point = points[0];
+	Vector3 max_point = points[0];
+	for (int i = 1; i < num_points; ++i) {
+		min_point.X = MIN(min_point.X, points[i].X);
+		min_point.Y = MIN(min_point.Y, points[i].Y);
+		min_point.Z = MIN(min_point.Z, points[i].Z);
+
+		max_point.X = MAX(max_point.X, points[i].X);
+		max_point.Y = MAX(max_point.Y, points[i].Y);
+		max_point.Z = MAX(max_point.Z, points[i].Z);
+	}
+
+	Center = 0.5f * (min_point + max_point);
+	Extent = 0.5f * (max_point - min_point);
 
 #if 0	
 	int i;

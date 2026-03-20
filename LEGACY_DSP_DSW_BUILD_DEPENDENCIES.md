@@ -8,7 +8,25 @@ This document is generated from the legacy Visual C++ **.dsw** and **.dsp** proj
 
 ## Quick dependency overview (repo targets)
 
-This section lists the legacy build targets that directly depend on other repository targets. Targets not listed here have no direct repo-target dependencies.
+This section lists the legacy build targets grouped by dependency level. The dependency-free libraries appear first so the overview starts with the foundational build blocks; the remaining targets follow with their direct repo-target dependencies.
+
+- `wwlib`
+- `wwmath`
+- `wwdebug`
+- `wwsaveload`
+- `wwphys`
+- `wwtranslatedb`
+- `wwutil`
+- `wwnet`
+- `wwui`
+- `WWAudio`
+- `wwbitpack`
+- `BinkMovie`
+- `SControl`
+- `Combat`
+- `pluglib`
+
+Targets that depend on other repository targets:
 
 - `SkeletonHack`: `wwlib`
 - `wdump`: `wwlib`

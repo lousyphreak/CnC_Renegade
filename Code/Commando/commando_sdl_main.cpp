@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string_view>
 
-#include "../Commando/commando_bootstrap_bridge.h"
+#include "commando_bootstrap_bridge.h"
 #include "renegade_build_config.h"
 
 namespace {
@@ -20,17 +20,17 @@ bool HasArgument(int argc, char **argv, std::string_view needle)
     return false;
 }
 
-void PrintBootstrapBanner()
+void PrintCommandoBanner()
 {
     std::cout
-        << "Renegade bootstrap\n"
+        << "Renegade Commando executable\n"
         << "  platform target: " << RENEGADE_BOOTSTRAP_PLATFORM << '\n'
         << "  SDL version pin: " << RENEGADE_SDL3_VERSION << '\n'
         << "  x86 asm enabled: " << RENEGADE_WITH_X86_ASM << '\n'
         << "  Win32 stacktrace enabled: " << RENEGADE_WITH_WIN32_STACKTRACE << '\n'
         << "  renderer enabled: " << RENEGADE_WITH_DX8_RENDERER << '\n'
         << "  directinput enabled: " << RENEGADE_WITH_DIRECTINPUT << '\n'
-        << "  commando target: " << Renegade_Commando_Bootstrap_Summary() << '\n';
+        << "  commando slice: " << Renegade_Commando_Bootstrap_Summary() << '\n';
 }
 
 } // namespace
@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 {
     const bool smoke_test = HasArgument(argc, argv, "--headless-smoke");
 
-    PrintBootstrapBanner();
+    PrintCommandoBanner();
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD)) {
         std::cerr << "SDL_Init failed: " << SDL_GetError() << '\n';
@@ -47,7 +47,7 @@ int main(int argc, char **argv)
     }
 
     const SDL_WindowFlags window_flags = smoke_test ? SDL_WINDOW_HIDDEN : SDL_WINDOW_RESIZABLE;
-    SDL_Window *window = SDL_CreateWindow("Renegade Bootstrap", 1280, 720, window_flags);
+    SDL_Window *window = SDL_CreateWindow("Renegade", 1280, 720, window_flags);
     if (window == nullptr) {
         std::cerr << "SDL_CreateWindow failed: " << SDL_GetError() << '\n';
         SDL_Quit();
@@ -67,7 +67,7 @@ int main(int argc, char **argv)
         return EXIT_SUCCESS;
     }
 
-    std::cout << "Bootstrap window opened. Close the window to exit.\n";
+    std::cout << "Renegade window opened. Close the window to exit.\n";
 
     bool running = true;
     while (running) {

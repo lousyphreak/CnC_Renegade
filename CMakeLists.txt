@@ -30,12 +30,12 @@ configure_file(
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64)$")
-        message(STATUS "Renegade bootstrap target: Linux x64")
+        message(STATUS "Renegade runtime target: Linux x64")
     else()
         message(WARNING "Initial bring-up is validated on Linux x64. Current processor: ${CMAKE_SYSTEM_PROCESSOR}")
     endif()
 else()
-    message(STATUS "Configuring for ${CMAKE_SYSTEM_NAME}. The first validated bootstrap target remains Linux x64.")
+    message(STATUS "Configuring for ${CMAKE_SYSTEM_NAME}. The first validated runtime target remains Linux x64.")
 endif()
 
 set(SDL_INSTALL OFF CACHE BOOL "" FORCE)

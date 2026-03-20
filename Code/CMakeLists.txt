@@ -13,7 +13,3 @@ add_subdirectory(wwphys)
 add_subdirectory(Combat)
 add_subdirectory(Scripts)
 add_subdirectory(Commando)
-
-if(RENEGADE_ENABLE_BOOTSTRAP_APP)
-    add_subdirectory(bootstrap)
-endif()

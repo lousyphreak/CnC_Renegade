@@ -74,6 +74,10 @@ set(COMMANDO_SOURCES
     commando_service_stubs.cpp
 )
 
+set(COMMANDO_EXECUTABLE_SOURCES
+    commando_sdl_main.cpp
+)
+
 list(REMOVE_ITEM COMMANDO_SOURCES
     buildnum.cpp
     campaign.cpp
@@ -94,10 +98,10 @@ file(GLOB COMMANDO_HEADERS CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/*.h"
 )
 
-add_library(Commando STATIC ${COMMANDO_SOURCES} ${COMMANDO_HEADERS})
-renegade_configure_target(Commando)
+add_library(CommandoLib STATIC ${COMMANDO_SOURCES} ${COMMANDO_HEADERS})
+renegade_configure_target(CommandoLib)
 
-target_compile_definitions(Commando
+target_compile_definitions(CommandoLib
     PRIVATE
         GAME_BUILD
         GAME_ONLY
@@ -116,12 +120,12 @@ foreach(code_dir IN LISTS CODE_TOP_LEVEL_DIRS)
     endif()
 endforeach()
 
-target_include_directories(Commando
+target_include_directories(CommandoLib
     PRIVATE
         ${COMMANDO_INCLUDE_DIRS}
 )
 
-target_link_libraries(Commando
+target_link_libraries(CommandoLib
     PUBLIC
         BinkMovie
         Combat
@@ -139,3 +143,25 @@ target_link_libraries(Commando
         wwlib
         SDL3::SDL3
 )
+
+add_executable(Commando ${COMMANDO_EXECUTABLE_SOURCES})
+renegade_configure_target(Commando)
+
+target_link_libraries(Commando PRIVATE CommandoLib SDL3::SDL3)
+
+set_target_properties(Commando PROPERTIES
+    OUTPUT_NAME "Renegade"
+)
+
+if(WIN32)
+    set_target_properties(Commando PROPERTIES WIN32_EXECUTABLE TRUE)
+endif()
+
+if(TARGET SDL3::SDL3-shared)
+    add_custom_command(TARGET Commando POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:SDL3::SDL3-shared>"
+            "$<TARGET_FILE_DIR:Commando>"
+        VERBATIM
+    )
+endif()

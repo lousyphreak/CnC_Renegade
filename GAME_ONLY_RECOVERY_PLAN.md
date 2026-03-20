@@ -886,10 +886,10 @@ Do **not** block the game-only plan on any of the following:
 
 The next concrete implementation steps from the current repository state are:
 
-1. keep the root CMake skeleton, generated config header, SDL3 submodule, and `renegade_bootstrap` healthy while expanding the runtime graph
-2. rerun a runtime smoke for the newly linked `Commando` slice (`renegade_bootstrap`, then `--headless-smoke` or equivalent) and capture the next startup/runtime blocker
+1. keep the root CMake skeleton, generated config header, SDL3 submodule, and merged `Commando` executable healthy while expanding the runtime graph
+2. rerun a runtime smoke for the current `Commando`/`Renegade` executable (`--headless-smoke` or equivalent) and capture the next startup/runtime blocker
 3. widen the `Commando` slice incrementally by restoring currently deferred files only when their platform/runtime dependencies are ready
-4. continue replacing bootstrap-only service stubs with real implementations once offline/local startup is stable
+4. continue replacing bring-up-only service stubs with real implementations once offline/local startup is stable
 5. keep Phase 2 MSVC validation and broader historical-source restoration on the backlog, but do not let them distract from the current Linux game-only critical path
 
 ## Current stopping point (2026-03-20)
@@ -897,9 +897,9 @@ The next concrete implementation steps from the current repository state are:
 This is the handoff state for the current bring-up pass.
 
 - Last attempted `Commando` command: `cmake --build build --target Commando -j32`
-- Last attempted bootstrap command: `cmake --build build --target renegade_bootstrap -j32`
-- Current `Commando` state: the active Linux x64 `Commando` slice compiles successfully as `libCommando.a`
-- Current bootstrap state: `renegade_bootstrap` links successfully against `Commando`, `Scripts`, and the expanded bootstrap `wwlib`
+- Last attempted executable smoke command: `SDL_AUDIODRIVER=dummy SDL_VIDEODRIVER=dummy ./build/bin/Renegade --headless-smoke`
+- Current `Commando` state: the active Linux x64 `Commando` target now produces the `Renegade` executable while the current bring-up slice remains factored through the internal `CommandoLib` static library
+- Current executable state: the former `renegade_bootstrap` SDL entrypoint now lives under the `Commando` target until the historical runtime path replaces it
 - Current meaning: the bring-up has advanced past `Combat`/`Scripts` compile cleanup and into Phase 7 executable/runtime validation work
 - Already verified in this pass:
    - `cmake -S . -B build` still succeeds
@@ -909,11 +909,11 @@ This is the handoff state for the current bring-up pass.
    - `cmake --build build --target Combat -j1` succeeds
    - `cmake --build build --target Scripts -j1` succeeds
    - `cmake --build build --target Commando -j32` succeeds
-   - `cmake --build build --target renegade_bootstrap -j32` succeeds
+   - `SDL_AUDIODRIVER=dummy SDL_VIDEODRIVER=dummy ./build/bin/Renegade --headless-smoke` succeeds
 - Recommended resume order:
-   1. run the newly linked bootstrap executable through a current smoke test and capture the next runtime blocker
+   1. run the merged `Commando`/`Renegade` executable through a current smoke test and capture the next runtime blocker
    2. expand the `Commando` slice only where needed for startup/main-loop progress
-   3. keep replacing bootstrap-only service stubs with real implementations as runtime dependencies come online
+   3. keep replacing bring-up-only service stubs with real implementations as runtime dependencies come online
 
 ## Bottom line
 

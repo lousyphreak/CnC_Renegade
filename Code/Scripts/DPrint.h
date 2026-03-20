@@ -45,9 +45,9 @@ extern "C"
 
 #ifdef _DEBUG
 //! Ouput debug print messages to the debugger and log file.
-void __cdecl DebugPrint(const char* string, ...);
+void DebugPrint(const char* string, ...);
 #else
-#define DebugPrint
+#define DebugPrint(...) ((void)0)
 #endif
 
 

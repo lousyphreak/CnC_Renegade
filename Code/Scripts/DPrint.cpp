@@ -38,15 +38,74 @@
 #ifdef _DEBUG
 
 #include "DPrint.h"
-#include <windows.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <assert.h>
+#include <SDL3/SDL_filesystem.h>
+#include <SDL3/SDL_iostream.h>
+#include <SDL3/SDL_log.h>
+#include <SDL3/SDL_stdinc.h>
+
+#include <array>
+#include <cstdarg>
+#include <cstring>
+#include <string>
 
 #include "scriptcommands.h"
 extern ScriptCommands* Commands;
 
-#define LOGFILE_NAME "ScriptLog"
+namespace
+{
+	constexpr const char * LOGFILE_NAME = "ScriptLog.txt";
+
+	std::string Build_Log_Filename()
+	{
+		char * base_path = SDL_GetBasePath();
+		std::string filename = (base_path != nullptr) ? base_path : "";
+		if (base_path != nullptr) {
+			SDL_free(base_path);
+		}
+
+		filename += LOGFILE_NAME;
+		return filename;
+	}
+
+	std::string Normalize_Log_Text(const char * text)
+	{
+		std::string normalized;
+		if (text == nullptr) {
+			return normalized;
+		}
+
+		const std::size_t length = std::strlen(text);
+		normalized.reserve(length + 8);
+
+		for (std::size_t index = 0; index < length; ++index) {
+			const char current = text[index];
+			if (current == '\n' && (index == 0 || text[index - 1] != '\r')) {
+				normalized.push_back('\r');
+			}
+			normalized.push_back(current);
+		}
+
+		return normalized;
+	}
+
+	void Write_Log_File(const char * text)
+	{
+		const std::string filename = Build_Log_Filename();
+		SDL_IOStream * file = SDL_IOFromFile(filename.c_str(), "ab");
+		if (file == nullptr) {
+			SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Failed to open script log '%s': %s", filename.c_str(), SDL_GetError());
+			return;
+		}
+
+		const std::string normalized = Normalize_Log_Text(text);
+		const std::size_t written = SDL_WriteIO(file, normalized.data(), normalized.size());
+		if (written != normalized.size()) {
+			SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Short write while appending to script log '%s'", filename.c_str());
+		}
+
+		SDL_CloseIO(file);
+	}
+}
 
 /****************************************************************************
 *
@@ -65,88 +124,25 @@ extern ScriptCommands* Commands;
 *
 ****************************************************************************/
 
-void __cdecl DebugPrint(const char* string, ...)
-	{
-	static char _buffer[1024];
-	static char _filename[512] = "";
-
-	if (string != NULL)
-		{
-		va_list	va;
-
-		// Format string
-		va_start(va, string);
-		vsprintf(&_buffer[0], string, va);
-		va_end(va);
-
-		if (Commands != NULL)
-			{
-			// Send string to commando executable
-			Commands->Debug_Message(_buffer);
-			}
-		else
-			{
-			// Send string to debugger
-			OutputDebugString(_buffer);
-			}
-
-#if 0
-		HANDLE file = INVALID_HANDLE_VALUE;
-
-		// Open log file
-		if (strlen(_filename) == 0)
-			{
-			char path[_MAX_PATH];
-			char drive[_MAX_DRIVE];
-			char dir[_MAX_DIR];
-
-			GetModuleFileName(GetModuleHandle(NULL), &path[0], sizeof(path));
-			_splitpath(path, drive, dir, NULL, NULL);
-			_makepath(_filename, drive, dir, LOGFILE_NAME, "txt");
-
-			file = CreateFile(_filename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
-				FILE_ATTRIBUTE_NORMAL, NULL);
-			}
-		else
-			{
-			file = CreateFile(_filename, GENERIC_WRITE, 0, NULL, OPEN_ALWAYS,
-				FILE_ATTRIBUTE_NORMAL, NULL);
-			}
-		
-		// Insert carriage return after newlines
-		int i = 0;
-
-		while (_buffer[i] != '\0')
-			{
-			if (_buffer[i] == '\n')
-				{
-				int end = strlen(_buffer);
-				assert((end + 1) <= sizeof(_buffer));
-
-				while (end >= i)
-					{
-					_buffer[end + 1] = _buffer[end];
-					end--;
-					}
-
-				_buffer[i] = '\r';
-				i++;
-				}
-
-			i++;
-			}
-
-		// Send string to log file
-		if (file != INVALID_HANDLE_VALUE)
-			{
-			DWORD written;
-
-			SetFilePointer(file, 0, NULL, FILE_END);
-			WriteFile(file, &_buffer[0], strlen(_buffer), &written, NULL);
-			CloseHandle(file);
-			}
-#endif
-		}
+void DebugPrint(const char* string, ...)
+{
+	if (string == NULL) {
+		return;
 	}
+
+	std::array<char, 1024> buffer{};
+	va_list va;
+	va_start(va, string);
+	SDL_vsnprintf(buffer.data(), buffer.size(), string, va);
+	va_end(va);
+
+	if (Commands != NULL) {
+		Commands->Debug_Message(buffer.data());
+	} else {
+		SDL_Log("%s", buffer.data());
+	}
+
+	Write_Log_File(buffer.data());
+}
 
 #endif // _DEBUG

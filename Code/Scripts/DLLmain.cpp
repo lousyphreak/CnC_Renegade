@@ -33,42 +33,22 @@
 *
 ******************************************************************************/
 
-#include "windows.h"
 #include "scripts.h"
 #include "ScriptRegistrar.h"
 //#include "missioncontrol.h"
 #include "DPrint.h"
 
-/******************************************************************************
-*
-* NAME
-*     DllMain
-*
-* DESCRIPTION
-*     Main DLL entry point
-*
-* INPUTS
-*     HINSTANCE hinst
-*     DWORD reason
-*     LPVOID
-*
-* RESULTS
-*     BOOL APIENTRY
-*
-******************************************************************************/
-
-__declspec(dllexport)
-BOOL APIENTRY DllMain(HINSTANCE hinst, DWORD reason, LPVOID)
+namespace
 {
-	if (reason == DLL_PROCESS_ATTACH) {
-//		DebugPrint("\n========== Script.dll loaded ==========\n");
-		DebugPrint("Total registered scripts: %d\n", ScriptRegistrar::Count());
+	struct ScriptModuleLogger
+	{
+		ScriptModuleLogger()
+		{
+			DebugPrint("Total registered scripts: %d\n", ScriptRegistrar::Count());
+		}
+	};
 
-	} else if (reason == DLL_PROCESS_DETACH) {
-//		DebugPrint("\n========== Script.dll Unloaded ==========\n");
-	}
-
-	return TRUE;
+	ScriptModuleLogger g_script_module_logger;
 }
 
 
@@ -88,7 +68,7 @@ BOOL APIENTRY DllMain(HINSTANCE hinst, DWORD reason, LPVOID)
 *
 ******************************************************************************/
 
-ScriptClass* Create_Script(const char* name)
+SCRIPT_DLL_FUNCT ScriptClass* Create_Script(const char* name)
 {
 	return ScriptRegistrar::CreateScript(name);
 }
@@ -110,7 +90,7 @@ ScriptClass* Create_Script(const char* name)
 *
 ******************************************************************************/
 
-void Destroy_Script(ScriptClass* script)
+SCRIPT_DLL_FUNCT void Destroy_Script(ScriptClass* script)
 {
 	assert(script != NULL);
 	delete script;
@@ -133,7 +113,7 @@ void Destroy_Script(ScriptClass* script)
 *
 ******************************************************************************/
 
-int Get_Script_Count(void)
+SCRIPT_DLL_FUNCT int Get_Script_Count(void)
 {
 	return ScriptRegistrar::Count();
 }
@@ -155,7 +135,7 @@ int Get_Script_Count(void)
 *
 ******************************************************************************/
 
-const char* Get_Script_Name(int index)
+SCRIPT_DLL_FUNCT const char* Get_Script_Name(int index)
 {
 	ScriptFactory* factory = ScriptRegistrar::GetScriptFactory(index);
 
@@ -183,7 +163,7 @@ const char* Get_Script_Name(int index)
 *
 ******************************************************************************/
 
-const char* Get_Script_Param_Description(int index)
+SCRIPT_DLL_FUNCT const char* Get_Script_Param_Description(int index)
 {
 	ScriptFactory* factory = ScriptRegistrar::GetScriptFactory(index);
 
@@ -211,7 +191,7 @@ const char* Get_Script_Param_Description(int index)
 *
 ******************************************************************************/
 
-bool Set_Script_Commands(ScriptCommandsClass* commands)
+SCRIPT_DLL_FUNCT bool Set_Script_Commands(ScriptCommandsClass* commands)
 {
 	assert(commands != NULL);
 
@@ -250,7 +230,7 @@ bool Set_Script_Commands(ScriptCommandsClass* commands)
 *
 ******************************************************************************/
 
-void Set_Request_Destroy_Func(void (*function)(ScriptClass*))
+SCRIPT_DLL_FUNCT void Set_Request_Destroy_Func(void (*function)(ScriptClass*))
 {
 	assert(function != NULL);
 	ScriptImpClass::Set_Request_Destroy_Func(function);

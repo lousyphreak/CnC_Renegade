@@ -39,10 +39,20 @@
 
 #include	"gameobjobserver.h"
 
-#ifndef _WIN32
-#ifndef _declspec
-#define _declspec(x)
+#if defined(_WIN32)
+	#if defined(BUILDING_DLL)
+		#define SCRIPT_DLL_EXPORT __declspec(dllexport)
+	#else
+		#define SCRIPT_DLL_EXPORT __declspec(dllimport)
+	#endif
+#else
+	#define SCRIPT_DLL_EXPORT
 #endif
+
+#ifdef __cplusplus
+	#define	SCRIPT_DLL_FUNCT extern "C" SCRIPT_DLL_EXPORT
+#else
+	#define	SCRIPT_DLL_FUNCT SCRIPT_DLL_EXPORT
 #endif
 
 
@@ -75,16 +85,6 @@ class	ScriptClass : public GameObjObserverClass
 		virtual	void Save(ScriptSaver& saver) = 0;
 		virtual	void Load(ScriptLoader& loader) = 0;
 };
-
-
-/*
-** DLL import/export macros
-*/
-#ifdef BUILDING_DLL
-	#define	SCRIPT_DLL_FUNCT extern "C" _declspec(dllexport)
-#else
-	#define	SCRIPT_DLL_FUNCT _declspec(dllimport)
-#endif
 
 
 const char* const LPSTR_CREATE_SCRIPT = "Create_Script";

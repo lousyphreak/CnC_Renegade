@@ -17,7 +17,7 @@ target_include_directories(Scripts
         "${PROJECT_SOURCE_DIR}/Code/WWMath"
 )
 
-target_link_libraries(Scripts PRIVATE wwlib WWMath wwdebug)
+target_link_libraries(Scripts PRIVATE wwlib WWMath wwdebug SDL3::SDL3)
 
 target_compile_definitions(Scripts PRIVATE BUILDING_DLL=1)
 
@@ -25,7 +25,3 @@ set_target_properties(Scripts PROPERTIES
     OUTPUT_NAME "Scripts"
     PREFIX ""
 )
-
-if(NOT WIN32)
-    target_compile_definitions(Scripts PUBLIC _UNIX)
-endif()

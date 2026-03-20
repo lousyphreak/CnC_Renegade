@@ -16,10 +16,6 @@
 **	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#if defined(_MSC_VER)
-#pragma once
-#endif
-
 #ifndef __STRING_IDS_H
 #define __STRING_IDS_H
 

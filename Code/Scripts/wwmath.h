@@ -33,12 +33,6 @@
  *---------------------------------------------------------------------------------------------*
  * Functions:                                                                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-
-#if defined(_MSC_VER)
-#pragma once
-#endif
-
 #ifndef WWMATH_H
 #define WWMATH_H
 
@@ -60,13 +54,6 @@
 #define WWMATH_SQRT3			1.732050808f
 #define WWMATH_OOSQRT2		0.707106781f
 #define WWMATH_OOSQRT3		0.577350269f
-
-// (DRM 05/07/01) Temporarily eliminated _fastcall
-// on non-Microsoft compatible compilers. Jani
-// should be replacing this soon.
-#ifndef _MSC_VER
-#define __fastcall
-#endif // _MSC_VER
 
 /* 
 **	Macros to convert between degrees and radians
@@ -112,27 +99,16 @@ static void			Shutdown(void);
 // These are meant to be a collection of small math utility functions to be optimized at some point.
 static WWINLINE float Fabs(float val)
 {
-	int value=*(int*)&val;
-	value&=0x7fffffff;
-	return *(float*)&value;
+	return fabsf(val);
 }
 
 static WWINLINE int Float_To_Int_Chop(const float& f);
 static WWINLINE int Float_To_Int_Floor(const float& f);
-
-#if defined(_MSC_VER) && defined(_M_IX86)
-static WWINLINE float Cos(float val);
-static WWINLINE float Sin(float val);
-static WWINLINE float Sqrt(float val);
-static float __fastcall Inv_Sqrt(float a);	// Some 30% faster inverse square root than regular C++ compiled, from Intel's math library
-static WWINLINE long	 Float_To_Long(float f);
-#else
 static float Cos(float val);
 static float Sin(float val);
 static float Sqrt(float val);
 static float Inv_Sqrt(float a);
 static long	Float_To_Long(float f);
-#endif
 
 
 static WWINLINE float Fast_Sin(float val);
@@ -298,80 +274,33 @@ WWINLINE bool WWMath::Is_Valid_Double(double x)
 // Float to long
 // ----------------------------------------------------------------------------
 
-#if defined(_MSC_VER) && defined(_M_IX86)
-WWINLINE long WWMath::Float_To_Long(float f)
-{
-	long i;
-
-	__asm {
-		fld [f]
-		fistp [i]
-	}
-
-	return i;
-}
-#else 
 WWINLINE long WWMath::Float_To_Long(float f)
 {
 	return (long) f;
 }
-#endif
 
 WWINLINE long WWMath::Float_To_Long(double f)	
 {
-#if defined(_MSC_VER) && defined(_M_IX86)
-	long retval;
-	__asm fld	qword ptr [f]
-	__asm fistp dword ptr [retval]
-	return retval;
-#else 
 	return (long) f;
-#endif
 }
 
 // ----------------------------------------------------------------------------
 // Cos
 // ----------------------------------------------------------------------------
 
-#if defined(_MSC_VER) && defined(_M_IX86)
-WWINLINE float WWMath::Cos(float val)
-{
-	float retval;
-	__asm {
-		fld [val]
-		fcos
-		fstp [retval]
-	}
-	return retval;
-}
-#else
 WWINLINE float WWMath::Cos(float val)
 {
 	return cosf(val);
 }
-#endif
 
 // ----------------------------------------------------------------------------
 // Sin
 // ----------------------------------------------------------------------------
 
-#if defined(_MSC_VER) && defined(_M_IX86)
-WWINLINE float WWMath::Sin(float val)
-{
-	float retval;
-	__asm {
-		fld [val]
-		fsin
-		fstp [retval]
-	}
-	return retval;
-}
-#else
 WWINLINE float WWMath::Sin(float val)
 {
 	return sinf(val);
 }
-#endif
 
 // ----------------------------------------------------------------------------
 // Fast, table based sin
@@ -545,106 +474,29 @@ WWINLINE float WWMath::Asin(float val)
 // Sqrt
 // ----------------------------------------------------------------------------
 
-#if defined(_MSC_VER) && defined(_M_IX86)
-WWINLINE float WWMath::Sqrt(float val)
-{
-	float retval;
-	__asm {
-		fld [val]
-		fsqrt
-		fstp [retval]
-	}
-	return retval;
-}
-#else
 WWINLINE float WWMath::Sqrt(float val)
 {
 	return (float)sqrt(val);
 }
-#endif
 
 WWINLINE int WWMath::Float_To_Int_Chop(const float& f)
 {
-    int a	= *reinterpret_cast<const int*>(&f);				// take bit pattern of float into a register
-    int sign	= (a>>31);												// sign = 0xFFFFFFFF if original value is negative, 0 if positive
-    int mantissa	= (a&((1<<23)-1))|(1<<23);						// extract mantissa and add the hidden bit
-    int exponent	= ((a&0x7fffffff)>>23)-127;					// extract the exponent
-    int r	= ((unsigned int)(mantissa)<<8)>>(31-exponent);	// ((1<<exponent)*mantissa)>>24 -- (we know that mantissa > (1<<24))
-    return ((r ^ (sign)) - sign ) &~ (exponent>>31);			// add original sign. If exponent was negative, make return value 0.
+	return (int)f;
 }
 
 WWINLINE int WWMath::Float_To_Int_Floor (const float& f)
 {
-	int a			= *reinterpret_cast<const int*>(&f);			// take bit pattern of float into a register
-	int sign		= (a>>31);												// sign = 0xFFFFFFFF if original value is negative, 0 if positive
-	a&=0x7fffffff;															// we don't need the sign any more
-
-	int exponent	= (a>>23)-127;										// extract the exponent
-	int expsign	= ~(exponent>>31);									// 0xFFFFFFFF if exponent is positive, 0 otherwise
-	int imask		= ( (1<<(31-(exponent))))-1;					// mask for true integer values
-	int mantissa	= (a&((1<<23)-1));								// extract mantissa (without the hidden bit)
-	int r			= ((unsigned int)(mantissa|(1<<23))<<8)>>(31-exponent);	// ((1<<exponent)*(mantissa|hidden bit))>>24 -- (we know that mantissa > (1<<24))
-
-	r = ((r & expsign) ^ (sign)) + ((!((mantissa<<8)&imask)&(expsign^((a-1)>>31)))&sign);	// if (fabs(value)<1.0) value = 0; copy sign; if (value < 0 && value==(int)(value)) value++;
-	return r;
+	return (int)floorf(f);
 }
 
 // ----------------------------------------------------------------------------
 // Inverse square root
 // ----------------------------------------------------------------------------
 
-#if defined(_MSC_VER) && defined(_M_IX86)
-WWINLINE __declspec(naked) float __fastcall WWMath::Inv_Sqrt(float a)
-{
-	__asm {
-		mov		eax, 0be6eb508h
-		mov		DWORD PTR [esp-12],03fc00000h ;  1.5 on the stack
-		sub		eax, DWORD PTR [esp+4]; a
-		sub		DWORD PTR [esp+4], 800000h ; a/2 a=Y0
-		shr		eax, 1     ; firs approx in eax=R0
-		mov		DWORD PTR [esp-8], eax
-
-		fld		DWORD PTR [esp-8] ;r
-		fmul	st, st            ;r*r
-		fld		DWORD PTR [esp-8] ;r
-		fxch	st(1)
-		fmul	DWORD PTR [esp+4];a ;r*r*y0
-		fld		DWORD PTR [esp-12];load 1.5
-		fld		st(0)
-		fsub	st,st(2)			   ;r1 = 1.5 - y1
-		;x1 = st(3)
-		;y1 = st(2)
-		;1.5 = st(1)
-		;r1 = st(0)
-
-		fld		st(1)
-		fxch	st(1)
-		fmul	st(3),st			; y2=y1*r1*...
-		fmul	st(3),st			; y2=y1*r1*r1
-		fmulp	st(4),st            ; x2=x1*r1
-		fsub	st,st(2)               ; r2=1.5-y2
-		;x2=st(3)
-		;y2=st(2)
-		;1.5=st(1)
-		;r2 = st(0)
-
-		fmul	st(2),st			;y3=y2*r2*...
-		fmul	st(3),st			;x3=x2*r2
-		fmulp	st(2),st			;y3=y2*r2*r2
-		fxch	st(1)
-		fsubp	st(1),st			;r3= 1.5 - y3
-		;x3 = st(1)
-		;r3 = st(0)
-		fmulp	st(1), st
-		ret 4
-	}
-}
-#else
 WWINLINE float WWMath::Inv_Sqrt(float val)
 {
 	return 1.0f / (float)sqrt(val);
 }
-#endif
 
 
 #endif

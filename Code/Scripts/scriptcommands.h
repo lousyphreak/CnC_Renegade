@@ -49,16 +49,6 @@
 	#include "actionparams.h"
 #endif
 
-
-/*
-** DLL import/export macros
-*/
-#ifdef	BUILDING_DLL
-	#define	SCRIPT_DLL_COMMAND	_declspec(dllimport)
-#else
-	#define	SCRIPT_DLL_COMMAND	extern "C" _declspec(dllexport)
-#endif
-
 /*
 ** Types
 */

@@ -41,11 +41,6 @@
 #include <stdio.h>
 #include "Mission3.h"
 
-#ifdef _XBOX
-#include "wwhack.h"
-
-#endif
-
 DECLARE_SCRIPT(MS04_Gunboat_Waypath_Movement, "")
 {
 	void Created( GameObject * obj ) 

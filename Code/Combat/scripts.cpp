@@ -44,25 +44,22 @@
 #include "ffactorylist.h"
 #include "rawfile.h"
 #include "gametype.h"
+#include <SDL3/SDL_loadso.h>
 #include <stdio.h>
 #include <win.h>
-
-#ifndef _WIN32
-#include <dlfcn.h>
-#endif
 
 ScriptCommands* EngineCommands = NULL;
 
 namespace {
 
-#ifndef _WIN32
-
 HINSTANCE Load_Script_Module(const char * module_name)
 {
-	const char *candidates[5] = { 0 };
+	const char *candidates[9] = { 0 };
 	char stem[_MAX_PATH] = { 0 };
 	char candidate_so[_MAX_PATH] = { 0 };
 	char candidate_lib_so[_MAX_PATH] = { 0 };
+	char candidate_dll[_MAX_PATH] = { 0 };
+	char candidate_dylib[_MAX_PATH] = { 0 };
 	int candidate_count = 0;
 
 	if (module_name != NULL && module_name[0] != '\0') {
@@ -77,13 +74,19 @@ HINSTANCE Load_Script_Module(const char * module_name)
 		if (stem[0] != '\0') {
 			::snprintf(candidate_so, sizeof(candidate_so), "%s.so", stem);
 			::snprintf(candidate_lib_so, sizeof(candidate_lib_so), "lib%s.so", stem);
+			::snprintf(candidate_dll, sizeof(candidate_dll), "%s.dll", stem);
+			::snprintf(candidate_dylib, sizeof(candidate_dylib), "%s.dylib", stem);
 			candidates[candidate_count++] = candidate_so;
 			candidates[candidate_count++] = candidate_lib_so;
+			candidates[candidate_count++] = candidate_dll;
+			candidates[candidate_count++] = candidate_dylib;
 		}
 
 		if (_stricmp(stem, "SCRIPTS") == 0 || _stricmp(stem, "SCRIPTSD") == 0 || _stricmp(stem, "SCRIPTSP") == 0) {
 			candidates[candidate_count++] = "Scripts.so";
 			candidates[candidate_count++] = "libScripts.so";
+			candidates[candidate_count++] = "Scripts.dylib";
+			candidates[candidate_count++] = "libScripts.dylib";
 		}
 	}
 
@@ -93,7 +96,7 @@ HINSTANCE Load_Script_Module(const char * module_name)
 			continue;
 		}
 
-		void *handle = dlopen(candidate, RTLD_NOW | RTLD_LOCAL);
+		void *handle = SDL_LoadObject(candidate);
 		if (handle != NULL) {
 			if (module_name != NULL && _stricmp(candidate, module_name) != 0) {
 				Debug_Say(("Loaded script module %s via compatibility fallback %s\n", module_name, candidate));
@@ -102,7 +105,7 @@ HINSTANCE Load_Script_Module(const char * module_name)
 		}
 	}
 
-	const char *error_text = dlerror();
+	const char *error_text = SDL_GetError();
 	Debug_Say(("Could not load script module %s (%s)\n", module_name, error_text != NULL ? error_text : "unknown error"));
 	return NULL;
 }
@@ -110,44 +113,18 @@ HINSTANCE Load_Script_Module(const char * module_name)
 void Unload_Script_Module(HINSTANCE module)
 {
 	if (module != NULL) {
-		dlclose(module);
+		SDL_UnloadObject(reinterpret_cast<SDL_SharedObject *>(module));
 	}
 }
 
-void *Resolve_Script_Symbol(HINSTANCE module, const char * symbol_name)
+SDL_FunctionPointer Resolve_Script_Symbol(HINSTANCE module, const char * symbol_name)
 {
 	if (module == NULL) {
 		return NULL;
 	}
 
-	dlerror();
-	return dlsym(module, symbol_name);
+	return SDL_LoadFunction(reinterpret_cast<SDL_SharedObject *>(module), symbol_name);
 }
-
-#else
-
-HINSTANCE Load_Script_Module(const char * module_name)
-{
-	return LoadLibrary(module_name);
-}
-
-void Unload_Script_Module(HINSTANCE module)
-{
-	if (module != NULL) {
-		FreeLibrary(module);
-	}
-}
-
-void *Resolve_Script_Symbol(HINSTANCE module, const char * symbol_name)
-{
-	if (module == NULL) {
-		return NULL;
-	}
-
-	return GetProcAddress(module, symbol_name);
-}
-
-#endif
 
 }
 

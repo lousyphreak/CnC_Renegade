@@ -40,9 +40,15 @@
 #include "saveloadids.h"
 #include "simpledefinitionfactory.h"
 #include "persistfactory.h"
-#include "win.h"
 #include "wwhack.h"
-#include "systimer.h"
+
+#include <SDL3/SDL_timer.h>
+
+
+static inline unsigned long Get_Twiddler_Seed(void)
+{
+	return static_cast<unsigned long>(SDL_GetTicks() & 0xFFFFFFFFu);
+}
 
 
 DECLARE_FORCE_LINK( Twiddler )
@@ -112,7 +118,7 @@ TwiddlerClass::Twiddle (void) const
 		//
 		//	Get a random index into our definition list
 		//
-		RandomClass randomizer (TIMEGETTIME ());
+		RandomClass randomizer (Get_Twiddler_Seed ());
 		int index = randomizer (0, m_DefinitionList.Count () - 1);
 
 		//

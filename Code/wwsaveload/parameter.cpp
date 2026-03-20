@@ -41,6 +41,8 @@
 #include "wwstring.h"
 #include "definitionclassids.h"
 
+#include <SDL3/SDL_stdinc.h>
+
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -1926,7 +1928,7 @@ FilenameListParameterClass::operator== (const FilenameListParameterClass &src)
 		for (int index = 0; (index < count1) && retval; index ++) {
 			StringClass &filename1 = (*m_FilenameList)[index];
 			StringClass &filename2 = (*src.m_FilenameList)[index];
-			retval &= (::stricmp (filename1, filename2) == 0);
+			retval &= (SDL_strcasecmp ((const char *)filename1, (const char *)filename2) == 0);
 		}
 	}
 
@@ -2070,7 +2072,7 @@ ScriptListParameterClass::Are_Lists_Identical
 	for (int index = 0; (index < count1) && retval; index ++) {
 		StringClass &string1 = list1[index];
 		StringClass &string2 = list2[index];
-		retval &= (::stricmp (string1, string2) == 0);
+		retval &= (SDL_strcasecmp ((const char *)string1, (const char *)string2) == 0);
 	}
 
 	return retval;

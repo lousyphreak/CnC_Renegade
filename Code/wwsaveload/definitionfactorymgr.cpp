@@ -37,10 +37,8 @@
 #include "definitionfactorymgr.h"
 #include "definitionfactory.h"
 #include "wwdebug.h"
-#include <string.h>
-#ifdef _UNIX
-#include "osdep.h"
-#endif
+
+#include <SDL3/SDL_stdinc.h>
 
 ////////////////////////////////////////////////////////////////////////////
 //	Static member initialization
@@ -99,7 +97,7 @@ DefinitionFactoryMgrClass::Find_Factory (const char *name)
 		//
 		//	Is this the factory we were looking for?
 		//
-		if (::stricmp (curr_factory->Get_Name (), name) == 0) {
+		if (SDL_strcasecmp (curr_factory->Get_Name (), name) == 0) {
 			factory = curr_factory;
 		}
 	}

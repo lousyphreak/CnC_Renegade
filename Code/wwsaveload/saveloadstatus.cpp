@@ -17,16 +17,71 @@
 */
 
 #include "saveloadstatus.h"
-#include "mutex.h"
+
+#include <SDL3/SDL_mutex.h>
 
 #define MAX_STATUS_TEXT_ID 2
 
-static CriticalSectionClass text_mutex;
+namespace
+{
+	class SaveLoadStatusMutexClass
+	{
+	public:
+		SaveLoadStatusMutexClass()
+			: Mutex(SDL_CreateMutex())
+		{
+		}
+
+		~SaveLoadStatusMutexClass()
+		{
+			if (Mutex != NULL) {
+				SDL_DestroyMutex(Mutex);
+			}
+		}
+
+		void Lock()
+		{
+			if (Mutex != NULL) {
+				SDL_LockMutex(Mutex);
+			}
+		}
+
+		void Unlock()
+		{
+			if (Mutex != NULL) {
+				SDL_UnlockMutex(Mutex);
+			}
+		}
+
+	private:
+		SDL_Mutex * Mutex;
+	};
+
+	class SaveLoadStatusLockClass
+	{
+	public:
+		explicit SaveLoadStatusLockClass(SaveLoadStatusMutexClass & mutex)
+			: Mutex(mutex)
+		{
+			Mutex.Lock();
+		}
+
+		~SaveLoadStatusLockClass()
+		{
+			Mutex.Unlock();
+		}
+
+	private:
+		SaveLoadStatusMutexClass & Mutex;
+	};
+}
+
+static SaveLoadStatusMutexClass text_mutex;
 static StringClass status_text[MAX_STATUS_TEXT_ID];
 
 void SaveLoadStatus::Set_Status_Text(const char* text,int id)
 {
-	CriticalSectionClass::LockClass m(text_mutex);
+	SaveLoadStatusLockClass m(text_mutex);
 	WWASSERT(id<MAX_STATUS_TEXT_ID);
 	status_text[id]=text;
 	if (id==0) status_text[1]="";
@@ -34,7 +89,7 @@ void SaveLoadStatus::Set_Status_Text(const char* text,int id)
 
 void SaveLoadStatus::Get_Status_Text(StringClass& text, int id)
 {
-	CriticalSectionClass::LockClass m(text_mutex);
+	SaveLoadStatusLockClass m(text_mutex);
 	WWASSERT(id<MAX_STATUS_TEXT_ID);
 	text=status_text[id];
 }

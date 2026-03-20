@@ -44,8 +44,21 @@
 #include "wwdebug.h"
 #include "wwmemlog.h"
 #include "twiddler.h"
+#include <SDL3/SDL_stdinc.h>
 #include <string.h>
 #include "wwprofile.h"
+
+
+static void Make_String_Lower_Case(char * text)
+{
+	if (text == NULL) {
+		return;
+	}
+
+	for (; *text != '\0'; ++text) {
+		*text = static_cast<char>(SDL_tolower(static_cast<unsigned char>(*text)));
+	}
+}
 
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -193,7 +206,7 @@ DefinitionMgrClass::Find_Named_Definition (const char *name, bool twiddle)
 		//
 		//	Is this the definition we were looking for?
 		//
-		if (curr_def != NULL && ::stricmp (curr_def->Get_Name (), name) == 0) {
+		if (curr_def != NULL && SDL_strcasecmp (curr_def->Get_Name (), name) == 0) {
 			definition = curr_def;
 			break;
 		}
@@ -242,7 +255,7 @@ DefinitionMgrClass::Find_Typed_Definition (const char *name, uint32 class_id, bo
 	WWASSERT(DefinitionHash != NULL);
 
 	StringClass lower_case_name(name,true);
-	_strlwr(lower_case_name.Peek_Buffer());
+	Make_String_Lower_Case(lower_case_name.Peek_Buffer());
 	DynamicVectorClass<DefinitionClass*>* defs = DefinitionHash->Get(lower_case_name);
 
 	if (defs) {
@@ -280,7 +293,7 @@ DefinitionMgrClass::Find_Typed_Definition (const char *name, uint32 class_id, bo
 					//
 					//	Is this the definition we were looking for?
 					//
-					if (::stricmp (curr_def->Get_Name (), name) == 0) {
+					if (SDL_strcasecmp (curr_def->Get_Name (), name) == 0) {
 						definition = curr_def;
 						// Add the definition to the hash table, so that it can be quickly accessed the next time it is needed.
 						if (!defs) {

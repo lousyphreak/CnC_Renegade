@@ -14,7 +14,3 @@ target_include_directories(wwsaveload
 )
 
 target_link_libraries(wwsaveload PRIVATE wwlib wwdebug WWMath wwutil)
-
-if(NOT WIN32)
-    target_compile_definitions(wwsaveload PUBLIC _UNIX)
-endif()

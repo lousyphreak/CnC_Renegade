@@ -45,11 +45,13 @@
 #include "wwhack.h"
 #include "wwprofile.h"
 
-#include "win.h"
-#if defined(_MSC_VER)
-#pragma warning(disable:4201) // warning C4201: nonstandard extension used : nameless struct/union
-#endif
-#include "systimer.h"
+#include <SDL3/SDL_timer.h>
+
+
+static inline unsigned long Get_Save_Load_Ticks(void)
+{
+	return static_cast<unsigned long>(SDL_GetTicks() & 0xFFFFFFFFu);
+}
 
 
 SaveLoadSubSystemClass *		SaveLoadSystemClass::SubSystemListHead = NULL;
@@ -111,7 +113,7 @@ bool SaveLoadSystemClass::Load (ChunkLoadClass &cload,bool auto_post_load)
 // Nework update macro for post loader.
 #define UPDATE_NETWORK 											\
 	if (network_callback) {                            \
-		unsigned long time2 = TIMEGETTIME();            \
+		unsigned long time2 = Get_Save_Load_Ticks();    \
 		if (time2 - time > 20) {                        \
 			network_callback();                          \
 			time = time2;                                \
@@ -120,7 +122,7 @@ bool SaveLoadSystemClass::Load (ChunkLoadClass &cload,bool auto_post_load)
 
 bool SaveLoadSystemClass::Post_Load_Processing (void(*network_callback)(void))
 {
-	unsigned long time = TIMEGETTIME();
+	unsigned long time = Get_Save_Load_Ticks();
 
 	// Call PostLoad on each PersistClass that wanted post-load
 	PostLoadableClass * obj = PostLoadList.Remove_Head();

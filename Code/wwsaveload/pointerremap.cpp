@@ -39,6 +39,14 @@
 #include "refcount.h"
 #include "wwdebug.h"
 
+#include <cstdint>
+
+
+static inline std::uintptr_t Pointer_To_Integer(const void * pointer)
+{
+	return reinterpret_cast<std::uintptr_t>(pointer);
+}
+
 
 const int POINTER_TABLES_GROWTH_STEP = 4096;
 
@@ -91,15 +99,16 @@ void PointerRemapClass::Process_Request_Table(DynamicVectorClass<PtrRemapStruct>
 
 		void * pointer_to_remap = *(request_table[pointer_index].PointerToRemap);
 		int pre_search_index = pair_index;
+		const std::uintptr_t pointer_value = Pointer_To_Integer(pointer_to_remap);
 
 		// Find the pair which contains the pointer we are looking for as its "old" pointer
 		while (	(pair_index < PointerPairTable.Count()) &&
-					(PointerPairTable[pair_index].OldPointer < pointer_to_remap)  ) 
+					(Pointer_To_Integer(PointerPairTable[pair_index].OldPointer) < pointer_value)  ) 
 		{
 			pair_index++;
 		}
 	
-		if ((pair_index < PointerPairTable.Count()) && (PointerPairTable[pair_index].OldPointer == pointer_to_remap)) {
+		if ((pair_index < PointerPairTable.Count()) && (Pointer_To_Integer(PointerPairTable[pair_index].OldPointer) == pointer_value)) {
 
 			// we found the match, plug in the new pointer and add a ref if needed.
 			*request_table[pointer_index].PointerToRemap = PointerPairTable[pair_index].NewPointer;
@@ -176,11 +185,13 @@ int PointerRemapClass::ptr_pair_compare_function(void const * ptr1, void const *
 {
 	void * old1 = ((PointerRemapClass::PtrPairStruct const *)ptr1)->OldPointer;
 	void * old2 = ((PointerRemapClass::PtrPairStruct const *)ptr2)->OldPointer;
+	const std::uintptr_t value1 = Pointer_To_Integer(old1);
+	const std::uintptr_t value2 = Pointer_To_Integer(old2);
 
-	if (old1 == old2) {
+	if (value1 == value2) {
 		return(0);
 	}
-	if (old1 < old2) {
+	if (value1 < value2) {
 		return(-1);
 	}
 	return(1);
@@ -197,11 +208,13 @@ int PointerRemapClass::ptr_request_compare_function(void const * ptr1, void cons
 	
 	void * old1 = *(remap1->PointerToRemap);
 	void * old2 = *(remap2->PointerToRemap);
+	const std::uintptr_t value1 = Pointer_To_Integer(old1);
+	const std::uintptr_t value2 = Pointer_To_Integer(old2);
 
-	if (old1 == old2) {
+	if (value1 == value2) {
 		return(0);
 	}
-	if (old1 < old2) {
+	if (value1 < value2) {
 		return(-1);
 	}
 	return(1);

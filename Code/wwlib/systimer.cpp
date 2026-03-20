@@ -55,7 +55,7 @@ SysTimeClass SystemTime;
  *=============================================================================================*/
 void SysTimeClass::Reset(void)
 {
-	StartTime = timeGetTime();
+	StartTime = static_cast<unsigned long>(SDL_GetTicks() & 0xFFFFFFFFu);
 	WrapAdd = 0 - StartTime;
 }
 

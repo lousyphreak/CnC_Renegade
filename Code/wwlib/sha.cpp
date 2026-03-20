@@ -39,13 +39,9 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include	"sha.h"
-#include	<iostream.h>
+#include	<algorithm>
+#include	<cstring>
 #include	<stdlib.h>
-
-
-#if !defined(__BORLANDC__) && !defined(min)
-#define	min(a, b)		((a)<(b))?(a):(b)
-#endif
 
 
 /***********************************************************************************************
@@ -85,7 +81,7 @@ void SHAEngine::Process_Partial(void const * & data, long & length)
 	**	Attach as many bytes as possible from the source data into
 	**	the staging buffer.
 	*/
-	int add_count = min((int)length, SRC_BLOCK_SIZE - PartialCount);
+	int add_count = std::min<int>((int)length, SRC_BLOCK_SIZE - PartialCount);
 	memcpy(&Partial[PartialCount], data, add_count);
 	data = ((char const *&)data) + add_count;
 	PartialCount += add_count;
@@ -145,7 +141,7 @@ void SHAEngine::Hash(void const * data, long length)
 	for (int bcount = 0; bcount < blocks; bcount++) {
 		Process_Block(source, Acc);
 		Length += (long)SRC_BLOCK_SIZE;
-		source += SRC_BLOCK_SIZE/sizeof(long);
+		source = reinterpret_cast<long const *>(reinterpret_cast<char const *>(source) + SRC_BLOCK_SIZE);
 		length -= (long)SRC_BLOCK_SIZE;
 	}
 

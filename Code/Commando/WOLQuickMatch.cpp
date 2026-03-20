@@ -39,7 +39,6 @@
 #include <WWOnline\WOLConnect.h>
 #include <WWOnline\WOLServer.h>
 #include <WWOnline\WOLLadder.h>
-#include <WWLib\CPUDetect.h>
 #include <wwdebug/wwdebug.h>
 #include "cnetwork.h"
 #include "translatedb.h"
@@ -288,8 +287,8 @@ bool WOLQuickMatch::SendClientInfo(void)
 	{
 	unsigned long ver = cNetwork::Get_Exe_Key();
 
-	// Get CPU speed
-	int speed = CPUDetectClass::Get_Processor_Speed();
+	// Legacy CPU-speed heuristics were removed.
+	int speed = 0;
 
 	// Get amount of physical memory
 	MEMORYSTATUS memStatus;

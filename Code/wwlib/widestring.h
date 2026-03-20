@@ -34,9 +34,7 @@
  * Functions:                                                                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#if defined(_MSC_VER)
 #pragma once
-#endif
 
 #ifndef __WIDESTRING_H
 #define __WIDESTRING_H
@@ -44,7 +42,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include "always.h"
-#include "wwdebug.h"
+#include "wwlib_debug.h"
 #include "win.h"
 #include "wwstring.h"
 #include "trim.h"

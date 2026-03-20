@@ -74,7 +74,6 @@
 #include "dx8wrapper.h"
 #include "pscene.h"
 #include "systeminfolog.h"
-#include "cpudetect.h"
 #include "dx8caps.h"
 #include "registry.h"
 #include "specialbuilds.h"
@@ -295,7 +294,7 @@ static void Log_System_Information()
 
 	StringClass string; // This will be a long string so don't allocate locally!
 	string.Format("Computer name: %s\r\nUser name: %s\r\n\r\n",name,user);
-	string+=CPUDetectClass::Get_Processor_Log();
+	string+="CPU information: unavailable (legacy CPU detection removed)\r\n";
 	if (DX8Wrapper::Get_Current_Caps()) {
 		string+=DX8Wrapper::Get_Current_Caps()->Get_Log();
 	}
@@ -303,7 +302,7 @@ static void Log_System_Information()
 	string+="Compact tab-delimited version:\r\n";
 	StringClass tmp;	// This will be long so no local alloc needed
 
-	string+=CPUDetectClass::Get_Compact_Log();
+	string+="CPU\tUNAVAILABLE\t";
 	if (DX8Wrapper::Get_Current_Caps()) {
 		string+=DX8Wrapper::Get_Current_Caps()->Get_Compact_Log();
 	}

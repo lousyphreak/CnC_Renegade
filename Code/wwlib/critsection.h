@@ -39,13 +39,13 @@
 #ifndef CRIT_SECTION
 #define CRIT_SECTION
 
-#if defined(_MSC_VER)
 #pragma once
-#endif
 
 #include "always.h"
-#include "wwdebug.h"
-#include <windows.h>
+#include "wwlib_debug.h"
+
+#include <SDL3/SDL_mutex.h>
+#include <SDL3/SDL_thread.h>
 
 class CriticalSectionClass
 {
@@ -67,7 +67,9 @@ public:
 	friend LockClass;
 
 private:
-	CRITICAL_SECTION Bar;
+	SDL_Mutex * Bar;
+	SDL_ThreadID Owner;
+	unsigned Recursion;
 	bool inside;
 	void Enter();
 	void Exit();

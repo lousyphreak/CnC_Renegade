@@ -1,3 +1,5 @@
+#pragma once
+
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -39,7 +41,6 @@
 #ifndef FIXED_H
 #define FIXED_H
 
-#include "bool.h"
 //#pragma warning 604 9
 //#pragma warning 595 9
 

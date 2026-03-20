@@ -58,7 +58,6 @@
 #include "lightenvironment.h"
 #include "shader.h"
 #include "vector4.h"
-#include "cpudetect.h"
 #include "dx8caps.h"
 
 #include "texture.h"
@@ -843,7 +842,7 @@ not_changed:
 
 WWINLINE void DX8Wrapper::Clamp_Color(Vector4& color)
 {
-	if (!CPUDetectClass::Has_CMOV_Instruction()) {
+	if (true) {
 		for (int i=0;i<4;++i) {
 			float f=(color[i]<0.0f) ? 0.0f : color[i];
 			color[i]=(f>1.0f) ? 1.0f : f;

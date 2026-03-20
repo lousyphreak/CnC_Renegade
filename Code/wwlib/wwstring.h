@@ -34,9 +34,7 @@
  * Functions:                                                                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#if defined(_MSC_VER)
 #pragma once
-#endif
 
 #ifndef __WWSTRING_H
 #define __WWSTRING_H
@@ -48,7 +46,7 @@
 #include <stdarg.h>
 #include <tchar.h>
 #include "trim.h"
-#include "wwdebug.h"
+#include "wwlib_debug.h"
 #ifdef _UNIX
 #include "osdep.h"
 #endif
@@ -122,7 +120,7 @@ public:
 
 	void			Erase (int start_index, int char_count);
 	int _cdecl  Format (const TCHAR *format, ...);
-	int _cdecl  Format_Args (const TCHAR *format, const va_list & arg_list );
+	int _cdecl  Format_Args (const TCHAR *format, va_list arg_list );
 
 	// Trim leading and trailing whitespace characters (values <= 32)
 	void Trim(void);

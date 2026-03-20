@@ -52,7 +52,6 @@
 #include	"always.h"
 #include <windows.h>
 #include	"assert.h"
-#include "cpudetect.h"
 #include	"except.h"
 //#include "debug.h"
 #include "mpu.h"
@@ -570,7 +569,7 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	/*
 	** CPU type
 	*/
-	sprintf(scrap, "\r\nCPU %s, %d Mhz, Vendor: %s\r\n", (char*)CPUDetectClass::Get_Processor_String(), Get_RDTSC_CPU_Speed(), (char*)CPUDetectClass::Get_Processor_Manufacturer_Name());
+	sprintf(scrap, "\r\nCPU information unavailable (legacy CPU detection removed)\r\n");
 	Add_Txt(scrap);
 
 

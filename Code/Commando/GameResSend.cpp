@@ -41,9 +41,7 @@
 #include <WWOnline\WOLSession.h>
 #include <WWOnline\WOLProduct.h>
 #include <WWOnline\WOLUser.h>
-#include <WWLib\CPUDetect.h>
 #include <WWLib\VerChk.h>
-#include <WWLib\CPUDetect.h>
 #include <WWLib\global.h>
 #include <WWLib\md5.h>
 #include <WW3D2\DX8Wrapper.h>
@@ -114,9 +112,9 @@ void SendGameResults(unsigned long gameID, cGameData* theGame, SList<cPlayer>* p
 		time.wMonth, time.wDay, time.wYear, time.wHour, time.wMinute, time.wSecond);
 	stats.Add_Field("DATE", buildDate);
 
-	// Proocessor information
-	stats.Add_Field("PROC", (char*)CPUDetectClass::Get_Processor_String());
-	stats.Add_Field("PSPD", (unsigned long)CPUDetectClass::Get_Processor_Speed());
+	// Legacy processor detection was removed.
+	stats.Add_Field("PROC", "Unavailable");
+	stats.Add_Field("PSPD", 0UL);
 
 	// Amount of system memory on server
 	MEMORYSTATUS memStatus;

@@ -33,15 +33,13 @@
  *---------------------------------------------------------------------------------------------* 
  * Functions:                                                                                  * 
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-#if _MSC_VER >= 1000
 #pragma once
-#endif // _MSC_VER >= 1000
 
 #ifndef MMSYS_H
 #define MMSYS_H
 
 /*
-** This header just includes mmsystem.h with warning 4201 disabled
+** This header just includes the platform-specific multimedia timer declarations.
 */
 
 #ifdef _WIN32

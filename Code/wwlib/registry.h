@@ -33,9 +33,7 @@
  *---------------------------------------------------------------------------------------------*
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#if _MSC_VER >= 1000
 #pragma once
-#endif // _MSC_VER >= 1000
 
 #ifndef REGISTRY_H
 #define REGISTRY_H
@@ -109,13 +107,7 @@ public:
 
 
 private:
-
-	static void Delete_Registry_Values(HKEY key);
-	static void Save_Registry_Tree(char *path, INIClass *ini);
-	static void Save_Registry_Values(HKEY key, char *path, INIClass *ini);
-
-
-	int	Key;
+	StringClass KeyPath;
 	bool	IsValid;
 
 	//

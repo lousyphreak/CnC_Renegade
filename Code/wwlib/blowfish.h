@@ -1,3 +1,5 @@
+#pragma once
+
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -45,7 +47,6 @@
 **	November of '94. Until the compiler supports this, use the following
 **	definition.
 */
-#include	"bool.h"
 
 
 /*

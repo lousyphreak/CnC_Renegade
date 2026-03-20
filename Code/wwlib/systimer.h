@@ -38,8 +38,8 @@
 #ifndef _SYSTIMER_H
 
 #include "always.h"
-#include "win.h"
-#include "mmsys.h"
+
+#include <SDL3/SDL_timer.h>
 
 #define TIMEGETTIME SystemTime.Get
 
@@ -56,9 +56,9 @@ class SysTimeClass
 		/*
 		** Get. Use everywhere you would use timeGetTime
 		*/
-		__forceinline unsigned long Get(void);
-		__forceinline unsigned long operator () (void) {return(Get());}
-		__forceinline operator unsigned long(void) {return(Get());}
+		WWINLINE unsigned long Get(void);
+		WWINLINE unsigned long operator () (void) {return(Get());}
+		WWINLINE operator unsigned long(void) {return(Get());}
 
 		/*
 		** Use periodically (like every few days!) to make sure the timer doesn't wrap.
@@ -101,7 +101,7 @@ extern SysTimeClass SystemTime;
  * HISTORY:                                                                                    *
  *   10/25/2001 1:38PM ST : Created                                                            *
  *=============================================================================================*/
-__forceinline unsigned long SysTimeClass::Get(void)
+WWINLINE unsigned long SysTimeClass::Get(void)
 {
 	/*
 	** This has to be static here since we don't know if we will get called in a global constructor of another object before our
@@ -114,7 +114,7 @@ __forceinline unsigned long SysTimeClass::Get(void)
 		is_init = true;
 	}
 
-	unsigned long time = timeGetTime();
+	unsigned long time = static_cast<unsigned long>(SDL_GetTicks() & 0xFFFFFFFFu);
 	if (time > StartTime) {
 		return(time - StartTime);
 	}

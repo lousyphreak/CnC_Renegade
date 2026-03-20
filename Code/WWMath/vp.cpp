@@ -39,7 +39,6 @@
 #include "matrix3d.h"
 #include "matrix4.h"
 #include "wwdebug.h"
-#include "cpudetect.h"
 #include <memory.h>
 
 #define SHUFFLE(x, y, z, w)	(((x)&3)<< 6|((y)&3)<<4|((z)&3)<< 2|((w)&3))
@@ -63,7 +62,7 @@
 void VectorProcessorClass::Prefetch(void* address)
 {
 #if RENEGADE_WITH_X86_ASM && defined(__ICL) && defined(_M_IX86)    // Detect Intel compiler
-	if (CPUDetectClass::_Has_SSE_Instruction_Set()) {
+	if (true) {
 		__asm {
 //			mov edx,address
 //			mov eax,[edx]
@@ -79,7 +78,7 @@ void VectorProcessorClass::Transform (Vector3* dst,const Vector3 *src, const Mat
 	if (count<=0) return;
 
 #if RENEGADE_WITH_X86_ASM && defined(__ICL) && defined(_M_IX86)    // Detect Intel compiler
-	if (CPUDetectClass::_Has_SSE_Instruction_Set()) {
+	if (true) {
 
 		__asm	{
 			mov		edx,dst

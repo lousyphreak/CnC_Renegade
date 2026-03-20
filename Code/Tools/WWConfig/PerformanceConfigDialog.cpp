@@ -29,7 +29,6 @@
 #include "phys.h"
 #include "videoconfigdialog.h"
 #include "dx8caps.h"
-#include "cpudetect.h"
 #include "formconv.h"
 
 #include "dx8wrapper.h"
@@ -901,11 +900,7 @@ void AutoConfigSettings()
 	DX8Caps caps(d3d,*d3dcaps,D3DFormat_To_WW3DFormat(display_format),adapter_id);
 	CanDoMultiPass=caps.Can_Do_Multi_Pass();
 
-	bool high_end_processor=CPUDetectClass::Has_SSE_Instruction_Set();
-	if (CPUDetectClass::Get_Processor_Manufacturer()==CPUDetectClass::MANUFACTURER_AMD &&
-		CPUDetectClass::Get_AMD_Processor()>=CPUDetectClass::AMD_PROCESSOR_ATHLON_025) {
-		high_end_processor=true;
-	}
+	bool high_end_processor = true;
 
 
 //	If no texture compression, default to texture resolution 1
@@ -993,7 +988,7 @@ void AutoConfigSettings()
 	// save memory.
 	// If card can't do multi pass (which is the case if we've seen z-fighting problems when multi-passing)
 	// select vertex solve.
-	if (!caps.Can_Do_Multi_Pass() || CPUDetectClass::Get_Total_Physical_Memory()<100*1024*1024) {
+	if (!caps.Can_Do_Multi_Pass()) {
 		registry.Set_Int (VALUE_NAME_PRELIT_MODE, 0);
 	}
 	// Otherwise select multitexturing if card can do it, or multipass...

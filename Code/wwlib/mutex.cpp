@@ -1,138 +1,133 @@
-/*
-**	Command & Conquer Renegade(tm)
-**	Copyright 2025 Electronic Arts Inc.
-**
-**	This program is free software: you can redistribute it and/or modify
-**	it under the terms of the GNU General Public License as published by
-**	the Free Software Foundation, either version 3 of the License, or
-**	(at your option) any later version.
-**
-**	This program is distributed in the hope that it will be useful,
-**	but WITHOUT ANY WARRANTY; without even the implied warranty of
-**	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-**	GNU General Public License for more details.
-**
-**	You should have received a copy of the GNU General Public License
-**	along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 #include "mutex.h"
-#include "wwdebug.h"
-#include <windows.h>
 
+#include "wwlib_debug.h"
 
-// ----------------------------------------------------------------------------
+#include <SDL3/SDL_mutex.h>
+#include <SDL3/SDL_thread.h>
+#include <SDL3/SDL_timer.h>
 
-MutexClass::MutexClass(const char* name) : handle(NULL), locked(false)
+namespace
 {
-	#ifdef _UNIX
-		//assert(0);
-	#else
-		handle=CreateMutex(NULL,false,name);
-		WWASSERT(handle);
-	#endif
+	struct WWLibMutexHandle
+	{
+		SDL_Mutex * Mutex;
+	};
+
+	struct WWLibCriticalSectionHandle
+	{
+		SDL_Mutex * Mutex;
+		SDL_ThreadID Owner;
+		unsigned Recursion;
+	};
+}
+
+MutexClass::MutexClass(const char *) : handle(new WWLibMutexHandle{SDL_CreateMutex()}), locked(false)
+{
+	WWASSERT(handle != NULL);
+	WWASSERT(static_cast<WWLibMutexHandle *>(handle)->Mutex != NULL);
 }
 
 MutexClass::~MutexClass()
 {
-	#ifdef _UNIX
-		//assert(0);
-	#else
-		WWASSERT(!locked); // Can't delete locked mutex!
-		CloseHandle(handle);
-	#endif
+	WWASSERT(!locked);
+	if (handle != NULL) {
+		SDL_DestroyMutex(static_cast<WWLibMutexHandle *>(handle)->Mutex);
+		delete static_cast<WWLibMutexHandle *>(handle);
+		handle = NULL;
+	}
 }
 
 bool MutexClass::Lock(int time)
 {
-	#ifdef _UNIX
-		//assert(0);
-		return true;
-	#else
-		int res = WaitForSingleObject(handle,time==WAIT_INFINITE ? INFINITE : time);
-		if (res!=WAIT_OBJECT_0) return false;
+	WWLibMutexHandle * mutex = static_cast<WWLibMutexHandle *>(handle);
+	WWASSERT(mutex != NULL && mutex->Mutex != NULL);
+
+	if (time == WAIT_INFINITE) {
+		SDL_LockMutex(mutex->Mutex);
 		locked++;
 		return true;
-	#endif
+	}
+
+	const Uint64 start = SDL_GetTicks();
+	while ((SDL_GetTicks() - start) < static_cast<Uint64>(time)) {
+		if (SDL_TryLockMutex(mutex->Mutex)) {
+			locked++;
+			return true;
+		}
+		SDL_Delay(1);
+	}
+
+	return false;
 }
 
 void MutexClass::Unlock()
 {
-	#ifdef _UNIX
-		//assert(0);
-	#else
-		WWASSERT(locked);
-		locked--;
-		int res=ReleaseMutex(handle);
-		WWASSERT(res);
-	#endif
+	WWASSERT(locked);
+	locked--;
+	SDL_UnlockMutex(static_cast<WWLibMutexHandle *>(handle)->Mutex);
 }
 
-// ----------------------------------------------------------------------------
-
-MutexClass::LockClass::LockClass(MutexClass& mutex_,int time) : mutex(mutex_)
+MutexClass::LockClass::LockClass(MutexClass & mutex_, int time) : mutex(mutex_)
 {
-	failed=!mutex.Lock(time);
+	failed = !mutex.Lock(time);
 }
 
 MutexClass::LockClass::~LockClass()
 {
-	if (!failed) mutex.Unlock();
+	if (!failed) {
+		mutex.Unlock();
+	}
 }
 
-
-
-
-
-
-
-// ----------------------------------------------------------------------------
-
-CriticalSectionClass::CriticalSectionClass() : handle(NULL), locked(false)
+CriticalSectionClass::CriticalSectionClass()
+	: handle(new WWLibCriticalSectionHandle{SDL_CreateMutex(), 0, 0}), locked(false)
 {
-	#ifdef _UNIX
-		//assert(0);
-	#else
-		handle=new char[sizeof(CRITICAL_SECTION)];
-		InitializeCriticalSection((CRITICAL_SECTION*)handle);
-	#endif
+	WWASSERT(handle != NULL);
+	WWASSERT(static_cast<WWLibCriticalSectionHandle *>(handle)->Mutex != NULL);
 }
 
 CriticalSectionClass::~CriticalSectionClass()
 {
-	#ifdef _UNIX
-		//assert(0);
-	#else
-		WWASSERT(!locked); // Can't delete locked mutex!
-		DeleteCriticalSection((CRITICAL_SECTION*)handle);
-		delete[] handle;
-	#endif
+	WWASSERT(!locked);
+	if (handle != NULL) {
+		SDL_DestroyMutex(static_cast<WWLibCriticalSectionHandle *>(handle)->Mutex);
+		delete static_cast<WWLibCriticalSectionHandle *>(handle);
+		handle = NULL;
+	}
 }
 
 void CriticalSectionClass::Lock()
 {
-	#ifdef _UNIX
-		//assert(0);
-	#else
-		EnterCriticalSection((CRITICAL_SECTION*)handle);
+	WWLibCriticalSectionHandle * critical_section = static_cast<WWLibCriticalSectionHandle *>(handle);
+	const SDL_ThreadID current_thread = SDL_GetCurrentThreadID();
+	if (critical_section->Owner == current_thread && critical_section->Recursion > 0) {
+		critical_section->Recursion++;
 		locked++;
-	#endif
+		return;
+	}
+
+	SDL_LockMutex(critical_section->Mutex);
+	critical_section->Owner = current_thread;
+	critical_section->Recursion = 1;
+	locked++;
 }
 
 void CriticalSectionClass::Unlock()
 {
-	#ifdef _UNIX
-		//assert(0);
-	#else
-		WWASSERT(locked);
-		locked--;
-		LeaveCriticalSection((CRITICAL_SECTION*)handle);
-	#endif
+	WWASSERT(locked);
+	WWLibCriticalSectionHandle * critical_section = static_cast<WWLibCriticalSectionHandle *>(handle);
+	WWASSERT(critical_section->Owner == SDL_GetCurrentThreadID());
+	WWASSERT(critical_section->Recursion > 0);
+
+	locked--;
+	critical_section->Recursion--;
+	if (critical_section->Recursion == 0) {
+		critical_section->Owner = 0;
+		SDL_UnlockMutex(critical_section->Mutex);
+	}
 }
 
-// ----------------------------------------------------------------------------
-
-CriticalSectionClass::LockClass::LockClass(CriticalSectionClass& critical_section) : CriticalSection(critical_section)
+CriticalSectionClass::LockClass::LockClass(CriticalSectionClass & critical_section) : CriticalSection(critical_section)
 {
 	CriticalSection.Lock();
 }
@@ -141,5 +136,3 @@ CriticalSectionClass::LockClass::~LockClass()
 {
 	CriticalSection.Unlock();
 }
-
-

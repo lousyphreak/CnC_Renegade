@@ -110,7 +110,6 @@
 #include "targa.h"
 #include "sortingrenderer.h"
 #include "thread.h"
-#include "cpudetect.h"
 #include "dx8texman.h"
 #include "formconv.h"
 #include "animatedsoundmgr.h"

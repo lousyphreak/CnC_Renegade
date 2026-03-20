@@ -19,15 +19,9 @@
 #ifndef THREAD_H
 #define THREAD_H
 
-#if defined(_MSC_VER)
 #pragma once
-#endif
 
 #include <cstdint>
-
-#ifdef _UNIX
-#include "osdep.h"
-#endif
 
 #include "always.h"
 
@@ -100,7 +94,7 @@ protected:
 	ExceptionHandlerType ExceptionHandler;
 
 private:
-	static void __cdecl Internal_Thread_Function(void*);
+	static int Internal_Thread_Function(void*);
 	volatile std::uintptr_t handle;
 	int thread_priority;
 };

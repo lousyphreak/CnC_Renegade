@@ -1,3 +1,5 @@
+#pragma once
+
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -40,7 +42,6 @@
 #ifndef SHAPESET_H
 #define SHAPESET_H
 
-#include	"bool.h"
 #include	"trect.h"
 
 /*

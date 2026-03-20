@@ -24,7 +24,6 @@
 #include "videoconfigdialog.h"
 #include "DriverVersionWarning.h"
 #include "dx8caps.h"
-#include "cpudetect.h"
 #include "dx8wrapper.h"
 #include "registry.h"
 #include "formconv.h"

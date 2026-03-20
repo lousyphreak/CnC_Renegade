@@ -53,7 +53,7 @@
 #include "Ini.h"
 #include "LicenseDialog.h"
 #include "MixFile.h"
-#include "Msgloop.h"
+#include "msgloop.h"
 #include "Registry.h"
 #include "ReviewDialog.h"
 #include "SafeTimer.h"

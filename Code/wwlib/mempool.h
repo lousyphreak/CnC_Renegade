@@ -43,15 +43,13 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#if defined(_MSC_VER)
 #pragma once
-#endif
 
 #ifndef MEMPOOL_H
 #define MEMPOOL_H
 
 #include "bittype.h"
-#include "wwdebug.h"
+#include "wwlib_debug.h"
 #include "mutex.h"
 #include <new.h>
 #include <stdlib.h>

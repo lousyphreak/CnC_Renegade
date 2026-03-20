@@ -40,7 +40,8 @@
 
 
 #include "refcount.h"
-#include <windows.h>
+
+#include <SDL3/SDL_assert.h>
 
 
 #ifndef NDEBUG
@@ -174,7 +175,7 @@ void RefCountClass::Add_Ref(void)
 
 	// See if programmer set break on for a specific address.
 	if (this == BreakOnReference) {
-		DebugBreak();  // trigger the debugger
+		SDL_TriggerBreakpoint();
 	}
 	Inc_Total_Refs(this);
 }
@@ -201,7 +202,7 @@ void	RefCountClass::Dec_Total_Refs(RefCountClass * obj)
 
 	// See if programmer set break on for a specific address.
 	if (obj == BreakOnReference) {
-		 DebugBreak();  // trigger the debugger
+		SDL_TriggerBreakpoint();
 	}
 }
 

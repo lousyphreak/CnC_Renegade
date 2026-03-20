@@ -33,9 +33,7 @@
  *---------------------------------------------------------------------------------------------* 
  * Functions:                                                                                  * 
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-#if _MSC_VER >= 1000
 #pragma once
-#endif // _MSC_VER >= 1000
 
 #ifndef WIN_H
 #define WIN_H
@@ -93,6 +91,7 @@ void __cdecl Print_Win32Error(unsigned long win32Error);
 #else
 
 #include "osdep.h"
+#include <cstdint>
 #include <chrono>
 #include <cstring>
 #include <ctime>
@@ -192,6 +191,60 @@ inline void GetSystemTime(LPSYSTEMTIME system_time)
 	system_time->wMinute = static_cast<WORD>(utc_time.tm_min);
 	system_time->wSecond = static_cast<WORD>(utc_time.tm_sec);
 	system_time->wMilliseconds = 0;
+}
+
+inline bool FileTimeToSystemTime(const FILETIME * file_time, LPSYSTEMTIME system_time)
+{
+	if (file_time == nullptr || system_time == nullptr) {
+		return false;
+	}
+
+	const std::uint64_t ticks = (static_cast<std::uint64_t>(file_time->dwHighDateTime) << 32) | file_time->dwLowDateTime;
+	constexpr std::uint64_t WINDOWS_TO_UNIX_EPOCH_100NS = 11644473600ull * 10000000ull;
+	if (ticks < WINDOWS_TO_UNIX_EPOCH_100NS) {
+		return false;
+	}
+
+	const std::uint64_t unix_100ns = ticks - WINDOWS_TO_UNIX_EPOCH_100NS;
+	const std::time_t seconds = static_cast<std::time_t>(unix_100ns / 10000000ull);
+	std::tm utc_time = {};
+	gmtime_r(&seconds, &utc_time);
+
+	system_time->wYear = static_cast<WORD>(utc_time.tm_year + 1900);
+	system_time->wMonth = static_cast<WORD>(utc_time.tm_mon + 1);
+	system_time->wDayOfWeek = static_cast<WORD>(utc_time.tm_wday);
+	system_time->wDay = static_cast<WORD>(utc_time.tm_mday);
+	system_time->wHour = static_cast<WORD>(utc_time.tm_hour);
+	system_time->wMinute = static_cast<WORD>(utc_time.tm_min);
+	system_time->wSecond = static_cast<WORD>(utc_time.tm_sec);
+	system_time->wMilliseconds = static_cast<WORD>((unix_100ns % 10000000ull) / 10000ull);
+	return true;
+}
+
+inline bool SystemTimeToFileTime(const SYSTEMTIME * system_time, LPFILETIME file_time)
+{
+	if (system_time == nullptr || file_time == nullptr) {
+		return false;
+	}
+
+	std::tm utc_time = {};
+	utc_time.tm_year = static_cast<int>(system_time->wYear) - 1900;
+	utc_time.tm_mon = static_cast<int>(system_time->wMonth) - 1;
+	utc_time.tm_mday = static_cast<int>(system_time->wDay);
+	utc_time.tm_hour = static_cast<int>(system_time->wHour);
+	utc_time.tm_min = static_cast<int>(system_time->wMinute);
+	utc_time.tm_sec = static_cast<int>(system_time->wSecond);
+
+	const std::time_t seconds = timegm(&utc_time);
+	if (seconds < 0) {
+		return false;
+	}
+
+	constexpr std::uint64_t WINDOWS_TO_UNIX_EPOCH_100NS = 11644473600ull * 10000000ull;
+	const std::uint64_t ticks = WINDOWS_TO_UNIX_EPOCH_100NS + (static_cast<std::uint64_t>(seconds) * 10000000ull) + (static_cast<std::uint64_t>(system_time->wMilliseconds) * 10000ull);
+	file_time->dwLowDateTime = static_cast<DWORD>(ticks & 0xFFFFFFFFull);
+	file_time->dwHighDateTime = static_cast<DWORD>(ticks >> 32);
+	return true;
 }
 
 inline int lstrlen(const char *text)

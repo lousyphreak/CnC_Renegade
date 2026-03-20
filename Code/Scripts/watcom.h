@@ -46,7 +46,6 @@
 **	November of '94. Until the compiler supports this, use the following
 **	definition.
 */
-#include	"bool.h"
 
 // Turn all warnings into errors.
 #pragma warning * 0
@@ -95,7 +94,6 @@
 **	November of '94. Until the compiler supports this, use the following
 **	definition.
 */
-#include	"bool.h"
 
 #if !defined(__BORLANDC__)
 #define M_E         2.71828182845904523536

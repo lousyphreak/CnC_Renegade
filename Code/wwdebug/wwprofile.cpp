@@ -60,7 +60,6 @@
 #include "rawfile.h"
 #include "ffactory.h"
 #include "simplevec.h"
-#include "cpudetect.h"
 
 static SimpleDynVecClass<WWProfileHierachyNodeClass*> ProfileCollectVector;
 static double TotalFrameTimes;
@@ -85,24 +84,12 @@ unsigned WWProfile_Get_System_Time()
  *=============================================================================================*/
 inline void WWProfile_Get_Ticks(_int64 * ticks)
 {
-#if !RENEGADE_WITH_X86_ASM || !defined(_MSC_VER) || !defined(_M_IX86)
-       *ticks = TIMEGETTIME();
-#else
-	__asm
-	{
-		push edx;
-		push ecx;
-		push eax;
-		mov ecx,ticks;
-		_emit 0Fh
-		_emit 31h
-		mov [ecx],eax;
-		mov [ecx+4],edx;
-		pop eax;
-		pop ecx;
-		pop edx;
-	}
-#endif
+	*ticks = TIMEGETTIME();
+}
+
+inline float WWProfile_Get_Seconds_Per_Tick()
+{
+	return 0.001f;
 }
 
 
@@ -295,7 +282,7 @@ bool	WWProfileHierachyNodeClass::Return( void )
 			WWProfile_Get_Ticks(&time);
 			time-=StartTime;
 
-			TotalTime += float(double(time)*CPUDetectClass::Get_Inv_Processor_Ticks_Per_Second());
+			TotalTime += static_cast<float>(double(time) * WWProfile_Get_Seconds_Per_Tick());
 		}
 	}
 	return RecursionCounter == 0;
@@ -473,7 +460,7 @@ float WWProfileManager::Get_Time_Since_Reset( void )
 	WWProfile_Get_Ticks(&time);
 	time -= ResetTime;
 
-	return float(double(time) * CPUDetectClass::Get_Inv_Processor_Ticks_Per_Second());
+	return static_cast<float>(double(time) * WWProfile_Get_Seconds_Per_Tick());
 }
 
 
@@ -714,7 +701,7 @@ WWTimeItClass::~WWTimeItClass( void )
 	WWProfile_Get_Ticks( &End );
 	End -= Time;
 #ifdef WWDEBUG
-	float time = End * CPUDetectClass::Get_Inv_Processor_Ticks_Per_Second();
+	float time = static_cast<float>(End * WWProfile_Get_Seconds_Per_Tick());
 	WWDEBUG_SAY(( "*** WWTIMEIT *** %s took %1.9f\n", Name, time ));
 #endif
 }
@@ -736,7 +723,7 @@ WWMeasureItClass::~WWMeasureItClass( void )
 	WWProfile_Get_Ticks( &End );
 	End -= Time;
 	WWASSERT(PResult != NULL);
-	*PResult = End  * CPUDetectClass::Get_Inv_Processor_Ticks_Per_Second();
+	*PResult = static_cast<float>(End * WWProfile_Get_Seconds_Per_Tick());
 }
 
 // ----------------------------------------------------------------------------

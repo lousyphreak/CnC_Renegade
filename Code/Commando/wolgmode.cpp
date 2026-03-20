@@ -57,7 +57,6 @@
 #include "WOLLoginProfile.h"
 #include "DlgDownload.h"
 #include "AutoStart.h"
-#include "cpudetect.h"
 #include "dx8wrapper.h"
 #include "systeminfolog.h"
 #include "registry.h"
@@ -721,7 +720,7 @@ void WolGameModeClass::End_Game(void)
 				// Jani do stuff here (send client system information string)
 				StringClass info(255, true);
 				info = "SYSINFO:";
-				info += CPUDetectClass::Get_Compact_Log();
+				info += "CPU\tUNAVAILABLE\t";
 				info += DX8Wrapper::Get_Current_Caps()->Get_Compact_Log();
 
 				StringClass tmp(255,true);

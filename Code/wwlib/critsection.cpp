@@ -38,37 +38,52 @@
 
 #include "critsection.h"
 
+#include <SDL3/SDL_mutex.h>
+
 CriticalSectionClass::CriticalSectionClass():
+Bar(SDL_CreateMutex()),
+Owner(0),
+Recursion(0),
 inside(false)
 {
-#ifndef _UNIX
-	InitializeCriticalSection(&Bar);
-#endif
+	WWASSERT(Bar != NULL);
 }
 
 CriticalSectionClass::~CriticalSectionClass()
 {
-#ifndef _UNIX
-	DeleteCriticalSection(&Bar);
-#endif
+	if (Bar != NULL) {
+		SDL_DestroyMutex(Bar);
+		Bar = NULL;
+	}
 }
 
 void CriticalSectionClass::Enter()
 {
-	WWASSERT(inside==false);
-#ifndef _UNIX	
-	EnterCriticalSection(&Bar);
-	inside=true;
-#endif
+	SDL_ThreadID current_thread = SDL_GetCurrentThreadID();
+	if (Owner == current_thread && Recursion > 0) {
+		Recursion++;
+		inside = true;
+		return;
+	}
+
+	SDL_LockMutex(Bar);
+	Owner = current_thread;
+	Recursion = 1;
+	inside = true;
 }
 
 void CriticalSectionClass::Exit()
 {
-	WWASSERT(inside==true);
-#ifndef _UNIX	
-	inside=false;
-	LeaveCriticalSection(&Bar);	
-#endif
+	WWASSERT(inside == true);
+	WWASSERT(Owner == SDL_GetCurrentThreadID());
+	WWASSERT(Recursion > 0);
+
+	Recursion--;
+	if (Recursion == 0) {
+		inside = false;
+		Owner = 0;
+		SDL_UnlockMutex(Bar);
+	}
 }
 
 CriticalSectionClass::LockClass::LockClass(CriticalSectionClass &c):

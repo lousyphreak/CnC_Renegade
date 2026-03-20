@@ -48,26 +48,87 @@
  *   WWProfileManager::Get_In_Order_Iterator -- Creates an "in-order" iterator for the profile *
  *   WWProfileManager::Release_In_Order_Iterator -- Return an "in-order" iterator              *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-
-#include "renegade_build_config.h"
 #include "wwprofile.h"
-#include "FastAllocator.h"
 #include "wwdebug.h"
-#include "win.h"
-//#include "systimer.h"
-#include "systimer.h"
-#include "rawfile.h"
-#include "ffactory.h"
-#include "simplevec.h"
+#include "wwmemlog.h"
 
-static SimpleDynVecClass<WWProfileHierachyNodeClass*> ProfileCollectVector;
-static double TotalFrameTimes;
-static bool ProfileCollecting;
+#include <SDL3/SDL_iostream.h>
+#include <SDL3/SDL_log.h>
+#include <SDL3/SDL_thread.h>
+#include <SDL3/SDL_timer.h>
+
+#include <cstdarg>
+#include <cstdio>
+#include <string>
+#include <vector>
+
+namespace {
+
+std::vector<WWProfileHierachyNodeClass*> g_profile_collect_vector;
+double g_total_frame_times = 0.0;
+bool g_profile_collecting = false;
+
+std::int64_t WWProfile_Query_Ticks()
+{
+	return static_cast<std::int64_t>(SDL_GetPerformanceCounter());
+}
+
+float WWProfile_Query_Seconds_Per_Tick()
+{
+	const Uint64 frequency = SDL_GetPerformanceFrequency();
+	if (frequency == 0) {
+		return 0.0f;
+	}
+	return static_cast<float>(1.0 / static_cast<double>(frequency));
+}
+
+std::string WWProfile_Format_String(const char * format, ...)
+{
+	va_list arguments;
+	va_start(arguments, format);
+	va_list copy;
+	va_copy(copy, arguments);
+	const int required = std::vsnprintf(nullptr, 0, format, copy);
+	va_end(copy);
+
+	std::string buffer;
+	if (required > 0) {
+		buffer.resize(static_cast<std::size_t>(required));
+		std::vsnprintf(buffer.data(), buffer.size() + 1, format, arguments);
+	}
+	va_end(arguments);
+	return buffer;
+}
+
+bool WWProfile_Write_Text(SDL_IOStream * stream, const std::string & text)
+{
+	if (stream == nullptr || text.empty()) {
+		return stream != nullptr;
+	}
+	return SDL_WriteIO(stream, text.data(), text.size()) == text.size();
+}
+
+void WWProfile_Write_Node(SDL_IOStream * stream, const WWProfileHierachyNodeClass * node, int recursion)
+{
+	if (node == nullptr) {
+		return;
+	}
+
+	if (node->Get_Total_Time() != 0.0f) {
+		std::string line(static_cast<std::size_t>(recursion), '\t');
+		line += WWProfile_Format_String("%s\t%d\t%f\r\n", node->Get_Name(), node->Get_Total_Calls(), node->Get_Total_Time() * 1000.0f);
+		WWProfile_Write_Text(stream, line);
+	}
+
+	WWProfile_Write_Node(stream, node->Get_Child(), recursion + 1);
+	WWProfile_Write_Node(stream, node->Get_Sibling(), recursion);
+}
+
+} // namespace
 
 unsigned WWProfile_Get_System_Time()
 {
-	return TIMEGETTIME();
+	return static_cast<unsigned>(SDL_GetTicks());
 }
 
 /***********************************************************************************************
@@ -82,14 +143,14 @@ unsigned WWProfile_Get_System_Time()
  * HISTORY:                                                                                    *
  *   9/24/2000  gth : Created.                                                                 *
  *=============================================================================================*/
-inline void WWProfile_Get_Ticks(_int64 * ticks)
+inline void WWProfile_Get_Ticks(std::int64_t * ticks)
 {
-	*ticks = TIMEGETTIME();
+	*ticks = WWProfile_Query_Ticks();
 }
 
 inline float WWProfile_Get_Seconds_Per_Tick()
 {
-	return 0.001f;
+	return WWProfile_Query_Seconds_Per_Tick();
 }
 
 
@@ -152,32 +213,13 @@ WWProfileHierachyNodeClass* WWProfileHierachyNodeClass::Clone_Hierarchy(WWProfil
 	node->RecursionCounter=RecursionCounter;
 	
 	if (Child) {
-		node->Child=Child->Clone_Hierarchy(this);
+		node->Child=Child->Clone_Hierarchy(node);
 	}
 	if (Sibling) {
 		node->Sibling=Sibling->Clone_Hierarchy(parent);
 	}
 
 	return node;
-}
-
-void WWProfileHierachyNodeClass::Write_To_File(FileClass* file,int recursion)
-{
-	if (TotalTime!=0.0f) {
-		int i;
-		StringClass string;
-		StringClass work;
-		for (i=0;i<recursion;++i) { string+="\t"; }
-		work.Format("%s\t%d\t%f\r\n",Name,TotalCalls,TotalTime*1000.0f);
-		string+=work;
-		file->Write(string.Peek_Buffer(),string.Get_Length());
-	}
-	if (Child) {
-		Child->Write_To_File(file,recursion+1);
-	}
-	if (Sibling) {
-		Sibling->Write_To_File(file,recursion);
-	}
 }
 
 
@@ -278,7 +320,7 @@ bool	WWProfileHierachyNodeClass::Return( void )
 {
 	if (--RecursionCounter == 0) {
 		if ( TotalCalls != 0 ) {
-			__int64 time;
+			std::int64_t time;
 			WWProfile_Get_Ticks(&time);
 			time-=StartTime;
 
@@ -298,9 +340,9 @@ WWProfileHierachyNodeClass		WWProfileManager::Root( "Root", NULL );
 WWProfileHierachyNodeClass	*	WWProfileManager::CurrentNode = &WWProfileManager::Root;
 WWProfileHierachyNodeClass	*	WWProfileManager::CurrentRootNode = &WWProfileManager::Root;
 int									WWProfileManager::FrameCounter = 0;
-__int64								WWProfileManager::ResetTime = 0;
+std::int64_t						WWProfileManager::ResetTime = 0;
 
-static unsigned int				ThreadID = static_cast<unsigned int>(-1);
+static SDL_ThreadID				ThreadID = 0;
 
 
 /***********************************************************************************************
@@ -323,7 +365,7 @@ static unsigned int				ThreadID = static_cast<unsigned int>(-1);
  *=============================================================================================*/
 void	WWProfileManager::Start_Profile( const char * name )
 {
-	if (::GetCurrentThreadId() != ThreadID) {
+	if (SDL_GetCurrentThreadID() != ThreadID) {
 		return;
 	}
 
@@ -337,7 +379,7 @@ void	WWProfileManager::Start_Profile( const char * name )
 
 void	WWProfileManager::Start_Root_Profile( const char * name )
 {
-	if (::GetCurrentThreadId() != ThreadID) {
+	if (SDL_GetCurrentThreadID() != ThreadID) {
 		return;
 	}
 
@@ -363,7 +405,7 @@ void	WWProfileManager::Start_Root_Profile( const char * name )
  *=============================================================================================*/
 void	WWProfileManager::Stop_Profile( void )
 {
-	if (::GetCurrentThreadId() != ThreadID) {
+	if (SDL_GetCurrentThreadID() != ThreadID) {
 		return;
 	}
 
@@ -376,7 +418,7 @@ void	WWProfileManager::Stop_Profile( void )
 
 void	WWProfileManager::Stop_Root_Profile( void )
 {
-	if (::GetCurrentThreadId() != ThreadID) {
+	if (SDL_GetCurrentThreadID() != ThreadID) {
 		return;
 	}
 
@@ -405,7 +447,7 @@ void	WWProfileManager::Stop_Root_Profile( void )
  *=============================================================================================*/
 void	WWProfileManager::Reset( void )
 {  
-	ThreadID = ::GetCurrentThreadId();
+	ThreadID = SDL_GetCurrentThreadID();
 
 	Root.Reset();
 	FrameCounter = 0;
@@ -427,13 +469,13 @@ void	WWProfileManager::Reset( void )
  *=============================================================================================*/
 void WWProfileManager::Increment_Frame_Counter( void )
 {
-	if (ProfileCollecting) {
+	if (g_profile_collecting) {
 		float time=Get_Time_Since_Reset();
-		TotalFrameTimes+=time;
+		g_total_frame_times+=time;
 		WWProfileHierachyNodeClass* new_root=Root.Clone_Hierarchy(NULL);
 		new_root->Set_Total_Time(time);
 		new_root->Set_Total_Calls(1);
-		ProfileCollectVector.Add(new_root);
+		g_profile_collect_vector.push_back(new_root);
 		Reset();
 	}
 
@@ -456,7 +498,7 @@ void WWProfileManager::Increment_Frame_Counter( void )
  *=============================================================================================*/
 float WWProfileManager::Get_Time_Since_Reset( void )
 {
-	__int64 time;
+	std::int64_t time;
 	WWProfile_Get_Ticks(&time);
 	time -= ResetTime;
 
@@ -503,50 +545,43 @@ void	WWProfileManager::Release_Iterator( WWProfileIterator * iterator )
 void	WWProfileManager::Begin_Collecting()
 {
 	Reset();
-	ProfileCollecting=true;
-	TotalFrameTimes=0.0;
+	g_profile_collecting=true;
+	g_total_frame_times=0.0;
 }
 
 void	WWProfileManager::End_Collecting(const char* filename)
 {
-	int i;
-	if (filename && ProfileCollectVector.Count()!=0) {
-		FileClass * file= _TheWritingFileFactory->Get_File(filename);	
-		if (file != NULL) {
-			//
-			//	Open or create the file
-			//
-			file->Open (FileClass::WRITE);
-
-			StringClass str;
-			float avg_frame_time=TotalFrameTimes/float(ProfileCollectVector.Count());
-			str.Format(
-				"Total frames: %d, average frame time: %fms\r\n"
+	if ((filename != nullptr) && !g_profile_collect_vector.empty()) {
+		SDL_IOStream * file = SDL_IOFromFile(filename, "wb");
+		if (file != nullptr) {
+			const float avg_frame_time = static_cast<float>(g_total_frame_times / static_cast<double>(g_profile_collect_vector.size()));
+			WWProfile_Write_Text(file, WWProfile_Format_String(
+				"Total frames: %zu, average frame time: %fms\r\n"
 				"All frames taking more than twice the average frame time are marked with keyword SPIKE.\r\n\r\n",
-				ProfileCollectVector.Count(),avg_frame_time*1000.0f);
-			file->Write(str.Peek_Buffer(),str.Get_Length());
+				g_profile_collect_vector.size(),
+				avg_frame_time * 1000.0f));
 
-			for (i=0;i<ProfileCollectVector.Count();++i) {
-				float frame_time=ProfileCollectVector[i]->Get_Total_Time();
-				str.Format("FRAME: %d %fms %s ---------------\r\n",i,frame_time*1000.0f,frame_time>avg_frame_time*2.0f ? "SPIKE" : "");
-				file->Write(str.Peek_Buffer(),str.Get_Length());
-				ProfileCollectVector[i]->Write_To_File(file,0);
+			for (std::size_t index = 0; index < g_profile_collect_vector.size(); ++index) {
+				const float frame_time = g_profile_collect_vector[index]->Get_Total_Time();
+				WWProfile_Write_Text(file, WWProfile_Format_String(
+					"FRAME: %zu %fms %s ---------------\r\n",
+					index,
+					frame_time * 1000.0f,
+					(frame_time > avg_frame_time * 2.0f) ? "SPIKE" : ""));
+				WWProfile_Write_Node(file, g_profile_collect_vector[index], 0);
 			}
-		
-			//
-			//	Close the file
-			//
-			file->Close ();
-			_TheWritingFileFactory->Return_File (file);
+
+			SDL_CloseIO(file);
+		} else {
+			WWDEBUG_WARNING(("Failed to open profile output '%s': %s\n", filename, SDL_GetError()));
 		}
 	}
 
-	for (i=0;i<ProfileCollectVector.Count();++i) {
-		delete ProfileCollectVector[i];
-		ProfileCollectVector[i]=0;
+	for (WWProfileHierachyNodeClass * node : g_profile_collect_vector) {
+		delete node;
 	}
-	ProfileCollectVector.Delete_All();
-	ProfileCollecting=false;
+	g_profile_collect_vector.clear();
+	g_profile_collecting=false;
 }
 
 
@@ -697,7 +732,7 @@ WWTimeItClass::WWTimeItClass( const char * name )
 
 WWTimeItClass::~WWTimeItClass( void )
 {
-	__int64 End;
+	std::int64_t End;
 	WWProfile_Get_Ticks( &End );
 	End -= Time;
 #ifdef WWDEBUG
@@ -719,7 +754,7 @@ WWMeasureItClass::WWMeasureItClass( float * p_result )
 
 WWMeasureItClass::~WWMeasureItClass( void )
 {
-	__int64 End;
+	std::int64_t End;
 	WWProfile_Get_Ticks( &End );
 	End -= Time;
 	WWASSERT(PResult != NULL);
@@ -736,30 +771,28 @@ unsigned WWMemoryAndTimeLog::TabCount;
 
 WWMemoryAndTimeLog::WWMemoryAndTimeLog(const char* name)
 	:
-	Name(name),
+	Name((name != NULL) ? name : "<unnamed>"),
 	TimeStart(WWProfile_Get_System_Time()),
-	AllocCountStart(FastAllocatorGeneral::Get_Allocator()->Get_Total_Allocation_Count()),
-	AllocSizeStart(FastAllocatorGeneral::Get_Allocator()->Get_Total_Allocated_Size())
+	AllocCountStart(WWMemoryLogClass::Get_Current_Allocation_Count()),
+	AllocSizeStart(WWMemoryLogClass::Get_Current_Allocated_Size())
 {
 	IntermediateTimeStart=TimeStart;
 	IntermediateAllocCountStart=AllocCountStart;
 	IntermediateAllocSizeStart=AllocSizeStart;
-	StringClass tmp(0,true);
-	for (unsigned i=0;i<TabCount;++i) tmp+="\t";
-	WWRELEASE_SAY(("%s%s {\n",tmp,name));
+	std::string indent(static_cast<std::size_t>(TabCount), '\t');
+	WWRELEASE_SAY(("%s%s {\n", indent.c_str(), Name));
 	TabCount++;
 }
 
 WWMemoryAndTimeLog::~WWMemoryAndTimeLog()
 {
 	if (TabCount>0) TabCount--;
-	StringClass tmp(0,true);
-	for (unsigned i=0;i<TabCount;++i) tmp+="\t";
-	WWRELEASE_SAY(("%s} ",tmp));
+	std::string indent(static_cast<std::size_t>(TabCount), '\t');
+	WWRELEASE_SAY(("%s} ", indent.c_str()));
 
 	unsigned current_time=WWProfile_Get_System_Time();
-	int current_alloc_count=FastAllocatorGeneral::Get_Allocator()->Get_Total_Allocation_Count();
-	int current_alloc_size=FastAllocatorGeneral::Get_Allocator()->Get_Total_Allocated_Size();
+	int current_alloc_count=WWMemoryLogClass::Get_Current_Allocation_Count();
+	int current_alloc_size=WWMemoryLogClass::Get_Current_Allocated_Size();
 	WWRELEASE_SAY(("IN TOTAL %s took %d.%3.3d s, did %d memory allocations of %d bytes\n",
 		Name,
 		(current_time - TimeStart)/1000, (current_time - TimeStart)%1000,
@@ -773,12 +806,11 @@ WWMemoryAndTimeLog::~WWMemoryAndTimeLog()
 void WWMemoryAndTimeLog::Log_Intermediate(const char* text)
 {
 	unsigned current_time=WWProfile_Get_System_Time();
-	int current_alloc_count=FastAllocatorGeneral::Get_Allocator()->Get_Total_Allocation_Count();
-	int current_alloc_size=FastAllocatorGeneral::Get_Allocator()->Get_Total_Allocated_Size();
-	StringClass tmp(0,true);
-	for (unsigned i=0;i<TabCount;++i) tmp+="\t";
+	int current_alloc_count=WWMemoryLogClass::Get_Current_Allocation_Count();
+	int current_alloc_size=WWMemoryLogClass::Get_Current_Allocated_Size();
+	std::string indent(static_cast<std::size_t>(TabCount), '\t');
 	WWRELEASE_SAY(("%s%s took %d.%3.3d s, did %d memory allocations of %d bytes\n",
-		tmp,
+		indent.c_str(),
 		text,
 		(current_time - IntermediateTimeStart)/1000, (current_time - IntermediateTimeStart)%1000,
 		current_alloc_count - IntermediateAllocCountStart,

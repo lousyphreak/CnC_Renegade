@@ -41,7 +41,6 @@
 #ifndef WWDEBUG_H
 #define WWDEBUG_H
 
-#include "renegade_build_config.h"
 #include <signal.h>
 				
 // The macro MESSAGE allows user to put:
@@ -55,9 +54,6 @@
 #define STRING_IT(a) #a																				  
 #define TOKEN_IT(a) STRING_IT(,##a)
 #define MESSAGE(a) message (__FILE__ "(" TOKEN_IT(__LINE__) ") : " a)
-
-void Convert_System_Error_To_String(int error_id, char* buffer, int buf_len);
-int Get_Last_System_Error();
 
 /*
 ** If 'WWDEBUG' is turned off, all WWDEBUG_xxx macros will
@@ -96,7 +92,8 @@ void					WWDebug_Profile_Start( const char * title);
 void					WWDebug_Profile_Stop( const char * title);
 
 /*
-** A message handler to display to DBWIN32
+** Compatibility message handler for legacy DBWIN32 call sites.
+** On modern platforms this forwards to SDL logging/debug output.
 */
 void					WWDebug_DBWin32_Message_Handler( const char * message);
 #endif
@@ -141,19 +138,7 @@ void					WWDebug_DBWin32_Message_Handler( const char * message);
 ** The WWDEBUG_BREAK macro will cause the application to break into
 ** the debugger...
 */
-#ifdef WWDEBUG
-#if RENEGADE_WITH_X86_ASM && defined(_MSC_VER) && defined(_M_IX86)
-#define WWDEBUG_BREAK							_asm int 0x03
-#else
 #define WWDEBUG_BREAK							raise(SIGTRAP)
-#endif
-#else
-#if RENEGADE_WITH_X86_ASM && defined(_MSC_VER) && defined(_M_IX86)
-#define WWDEBUG_BREAK							_asm int 0x03
-#else
-#define WWDEBUG_BREAK							raise(SIGTRAP)
-#endif
-#endif
 
 /*
 ** The WWDEBUG_TRIGGER macro can be used to ask the application if 

@@ -43,13 +43,7 @@
 #ifndef WWPROFILE_H
 #define WWPROFILE_H
 
-#include "wwstring.h"
-
-#if defined(_UNIX) && !defined(RENEGADE_HAS_MS_INT64_TYPEDEFS)
-typedef signed long long __int64;
-typedef signed long long _int64;
-#define RENEGADE_HAS_MS_INT64_TYPEDEFS 1
-#endif
+#include <cstdint>
 
 // enable profiling by default in debug mode.
 #ifdef WWDEBUG
@@ -57,7 +51,6 @@ typedef signed long long _int64;
 #endif
 
 extern unsigned WWProfile_Get_System_Time();	// timeGetTime() wrapper
-class FileClass;
 			
 /*
 ** A node in the WWProfile Hierarchy Tree
@@ -71,19 +64,22 @@ public:
 	WWProfileHierachyNodeClass * Get_Sub_Node( const char * name );
 
 	WWProfileHierachyNodeClass * Get_Parent( void )			{ return Parent; }
+	const WWProfileHierachyNodeClass * Get_Parent( void ) const	{ return Parent; }
 	WWProfileHierachyNodeClass * Get_Sibling( void )		{ return Sibling; }
+	const WWProfileHierachyNodeClass * Get_Sibling( void ) const	{ return Sibling; }
 	WWProfileHierachyNodeClass * Get_Child( void )			{ return Child; }
+	const WWProfileHierachyNodeClass * Get_Child( void ) const	{ return Child; }
 
 	void								Reset( void );
 	void								Call( void );
 	bool								Return( void );
 
 	const char *					Get_Name( void )				{ return Name; }
+	const char *					Get_Name( void ) const		{ return Name; }
 	int								Get_Total_Calls( void )		{ return TotalCalls; }
 	float								Get_Total_Time( void )		{ return TotalTime; }
 
 	WWProfileHierachyNodeClass* Clone_Hierarchy(WWProfileHierachyNodeClass* parent);
-	void								Write_To_File(FileClass* file,int recursion);
 
 	int								Get_Total_Calls() const { return TotalCalls; }
 	float								Get_Total_Time() const { return TotalTime; }
@@ -95,7 +91,7 @@ protected:
 	const char *					Name;
 	int								TotalCalls;
 	float								TotalTime;
-	__int64							StartTime;
+	std::int64_t					StartTime;
 	int								RecursionCounter;
 
 	WWProfileHierachyNodeClass *	Parent;
@@ -191,7 +187,7 @@ private:
 	static	WWProfileHierachyNodeClass *	CurrentNode;
 	static	WWProfileHierachyNodeClass *	CurrentRootNode;
 	static	int									FrameCounter;
-	static	__int64								ResetTime;
+	static	std::int64_t					ResetTime;
 
 	friend	class		WWProfileInOrderIterator;
 };
@@ -235,7 +231,7 @@ public:
 	~WWTimeItClass( void );
 private:
 	const char * Name;
-	__int64	Time;
+	std::int64_t	Time;
 };
 
 #ifdef ENABLE_WWPROFILE
@@ -257,7 +253,7 @@ public:
 	~WWMeasureItClass( void );
 
 private:
-	__int64	Time;
+	std::int64_t	Time;
 	float *  PResult;
 };
 
@@ -286,7 +282,7 @@ struct WWMemoryAndTimeLog
 	int IntermediateAllocCountStart;
 	int AllocSizeStart;
 	int IntermediateAllocSizeStart;
-	StringClass Name;
+	const char * Name;
 	static unsigned TabCount;
 
 	WWMemoryAndTimeLog(const char* name);

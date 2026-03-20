@@ -46,8 +46,6 @@
 
 #include <cstddef>
 
-class MemLogClass;
-
 /**
 ** Memory Log Categories
 ** You can cause memory allocations to be "counted" against any of the following categories.
@@ -124,6 +122,8 @@ public:
 	static void				Reset_Counters();			// Reset allocate and free counters
 	static int				Get_Allocate_Count();	// Return allocate count since last reset
 	static int				Get_Free_Count();			// Return allocate count since last reset
+	static int				Get_Current_Allocation_Count();
+	static int				Get_Current_Allocated_Size();
 
 	static void				Init();
 protected:
@@ -133,9 +133,6 @@ protected:
 	*/
 	static void				Push_Active_Category(int category);
 	static void				Pop_Active_Category(void);
-
-	static MemLogClass * Get_Log(void);
-	static void  Release_Log(void);
 
 	friend class WWMemorySampleClass;
 };

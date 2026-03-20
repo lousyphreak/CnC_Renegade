@@ -40,18 +40,17 @@
  *   WWDebug_Assert_Fail_Print -- Internal function, passes assert message to handler          *
  *   WWDebug_Check_Trigger -- calls the user-installed debug trigger handler                   *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-
 #include "wwdebug.h"
-#include "win.h"
-#include <stdlib.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <assert.h>
-#include <string.h>
-#include <signal.h>
-#include <errno.h>
-#include "Except.h"
+#include <SDL3/SDL_assert.h>
+#include <SDL3/SDL_init.h>
+#include <SDL3/SDL_log.h>
+#include <SDL3/SDL_messagebox.h>
+
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <string>
 
 
 static PrintFunc			_CurMessageHandler = NULL;
@@ -60,31 +59,105 @@ static TriggerFunc		_CurTriggerHandler = NULL;
 static ProfileFunc		_CurProfileStartHandler = NULL;
 static ProfileFunc		_CurProfileStopHandler = NULL;
 
-// Convert the latest system error into a string and return a pointer to
-// a static buffer containing the error string.
+namespace {
 
-void Convert_System_Error_To_String(int id, char* buffer, int buf_len)
+enum AssertDialogButtonId {
+	ASSERT_BUTTON_ABORT = 1,
+	ASSERT_BUTTON_RETRY = 2,
+	ASSERT_BUTTON_IGNORE = 3,
+};
+
+std::string WWDebug_Format_Message(const char * format, va_list arguments)
 {
-#ifndef _UNIX
-	FormatMessage(
-		FORMAT_MESSAGE_FROM_SYSTEM,
-		NULL,
-		id,
-		0,
-		buffer,
-		buf_len,
-		NULL);
-#endif
+	if (format == nullptr) {
+		return {};
+	}
+
+	va_list copy;
+	va_copy(copy, arguments);
+	const int required = std::vsnprintf(nullptr, 0, format, copy);
+	va_end(copy);
+
+	if (required < 0) {
+		return format;
+	}
+
+	std::string buffer(static_cast<std::size_t>(required), '\0');
+	std::vsnprintf(buffer.data(), buffer.size() + 1, format, arguments);
+	return buffer;
 }
 
-int Get_Last_System_Error()
+void WWDebug_Dispatch_Message(DebugType type, const char * format, va_list arguments)
 {
-	#ifdef _WIN32
-	return GetLastError();
-	#else
-	return errno;
-	#endif
+	if (_CurMessageHandler == NULL) {
+		return;
+	}
+
+	const std::string buffer = WWDebug_Format_Message(format, arguments);
+	_CurMessageHandler(type, buffer.c_str());
 }
+
+void WWDebug_Default_Assert(const char * expr, const char * file, int line, const char * detail)
+{
+	char assert_buffer[4096];
+	if ((detail != nullptr) && (detail[0] != '\0')) {
+		std::snprintf(assert_buffer, sizeof(assert_buffer),
+			"Assert failed\n\nExpression: %s\nFile: %s\nLine: %d\nDetail: %s",
+			expr,
+			file,
+			line,
+			detail);
+	} else {
+		std::snprintf(assert_buffer, sizeof(assert_buffer),
+			"Assert failed\n\nExpression: %s\nFile: %s\nLine: %d",
+			expr,
+			file,
+			line);
+	}
+
+	std::fprintf(stderr, "%s\n", assert_buffer);
+	std::fflush(stderr);
+	SDL_LogMessage(SDL_LOG_CATEGORY_ASSERT, SDL_LOG_PRIORITY_CRITICAL, "%s", assert_buffer);
+
+	if (SDL_IsMainThread()) {
+		const SDL_MessageBoxButtonData buttons[] = {
+			{ SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, ASSERT_BUTTON_RETRY, "Retry" },
+			{ SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, ASSERT_BUTTON_IGNORE, "Ignore" },
+			{ 0, ASSERT_BUTTON_ABORT, "Abort" },
+		};
+		const SDL_MessageBoxData message_box = {
+			SDL_MESSAGEBOX_ERROR,
+			NULL,
+			"WWDebug Assert",
+			assert_buffer,
+			static_cast<int>(sizeof(buttons) / sizeof(buttons[0])),
+			buttons,
+			NULL,
+		};
+
+		int selected_button = ASSERT_BUTTON_RETRY;
+		if (SDL_ShowMessageBox(&message_box, &selected_button)) {
+			switch (selected_button) {
+				case ASSERT_BUTTON_ABORT:
+					raise(SIGABRT);
+					std::_Exit(3);
+					break;
+
+				case ASSERT_BUTTON_IGNORE:
+					return;
+
+				case ASSERT_BUTTON_RETRY:
+				default:
+					WWDEBUG_BREAK;
+					return;
+			}
+		}
+	}
+
+	WWDEBUG_BREAK;
+}
+
+} // namespace
 
 /***********************************************************************************************
  * WWDebug_Install_Message_Handler -- install function for handling the debug messages         *
@@ -201,19 +274,10 @@ ProfileFunc	WWDebug_Install_Profile_Stop_Handler(ProfileFunc func)
 
 void WWDebug_Printf(const char * format,...)
 {
-	if (_CurMessageHandler != NULL) {
-
-		va_list	va;
-		char buffer[4096];
-
-		va_start(va, format);
-		vsprintf(buffer, format, va);
-		WWASSERT((strlen(buffer) < sizeof(buffer)));
-
-		_CurMessageHandler(WWDEBUG_TYPE_INFORMATION, buffer);
-		va_end(va);
-
-	}
+	va_list va;
+	va_start(va, format);
+	WWDebug_Dispatch_Message(WWDEBUG_TYPE_INFORMATION, format, va);
+	va_end(va);
 }
 
 /***********************************************************************************************
@@ -231,19 +295,10 @@ void WWDebug_Printf(const char * format,...)
 
 void WWDebug_Printf_Warning(const char * format,...)
 {
-	if (_CurMessageHandler != NULL) {
-
-		va_list	va;
-		char buffer[4096];
-
-		va_start(va, format);
-		vsprintf(buffer, format, va);
-		WWASSERT((strlen(buffer) < sizeof(buffer)));
-
-		_CurMessageHandler(WWDEBUG_TYPE_WARNING, buffer);
-		va_end(va);
-
-	}
+	va_list va;
+	va_start(va, format);
+	WWDebug_Dispatch_Message(WWDEBUG_TYPE_WARNING, format, va);
+	va_end(va);
 }
 
 /***********************************************************************************************
@@ -261,19 +316,10 @@ void WWDebug_Printf_Warning(const char * format,...)
 
 void WWDebug_Printf_Error(const char * format,...)
 {
-	if (_CurMessageHandler != NULL) {
-
-		va_list	va;
-		char buffer[4096];
-
-		va_start(va, format);
-		vsprintf(buffer, format, va);
-		WWASSERT((strlen(buffer) < sizeof(buffer)));
-
-		_CurMessageHandler(WWDEBUG_TYPE_ERROR, buffer);
-		va_end(va);
-
-	}
+	va_list va;
+	va_start(va, format);
+	WWDebug_Dispatch_Message(WWDEBUG_TYPE_ERROR, format, va);
+	va_end(va);
 }
 
 /***********************************************************************************************
@@ -294,41 +340,11 @@ void WWDebug_Assert_Fail(const char * expr,const char * file, int line)
 	if (_CurAssertHandler != NULL) {
 
 		char buffer[4096];
-		sprintf(buffer,"%s (%d) Assert: %s\n",file,line,expr);
+		std::snprintf(buffer, sizeof(buffer), "%s (%d) Assert: %s\n", file, line, expr);
 		_CurAssertHandler(buffer);
 
 	} else {
-
-		/*
-		// If the exception handler is try to quit the game then don't show an assert.
-		*/
-		if (Is_Trying_To_Exit()) {
-			#ifdef _WIN32
-			ExitProcess(0);
-			#else
-			_exit(0);
-			#endif
-		}
-
-		#ifdef _WIN32
-      char assertbuf[4096];
-		sprintf(assertbuf, "Assert failed\n\n. File %s Line %d", file, line);
-
-      int code = MessageBoxA(NULL, assertbuf, "WWDebug_Assert_Fail", MB_ABORTRETRYIGNORE|MB_ICONHAND|MB_SETFOREGROUND|MB_TASKMODAL);
-
-      if (code == IDABORT) {
-      	raise(SIGABRT);
-      	_exit(3);
-      }
-
-		if (code == IDRETRY) {
-			WWDEBUG_BREAK;
-      	return;
-		}
-		#else
-		fprintf(stderr, "Assert failed: %s (%d): %s\n", file, line, expr);
-		WWDEBUG_BREAK;
-		#endif
+		WWDebug_Default_Assert(expr, file, line, NULL);
    }
 }
 #endif
@@ -350,12 +366,12 @@ void WWDebug_Assert_Fail(const char * expr,const char * file, int line)
  * HISTORY:                                                                                    *
  *   12/11/2001 3:56PM ST : Created                                                            *
  *=============================================================================================*/
-#ifdef WWDEBUG
+#if defined(WWDEBUG) && defined(_MSC_VER)
 void __cdecl _assert(void *expr, void *filename, unsigned lineno)
 {
 	WWDebug_Assert_Fail((const char*)expr, (const char*)filename, lineno);
 }
-#endif //WWDEBUG
+#endif //WWDEBUG && _MSC_VER
 
 
 
@@ -379,12 +395,11 @@ void WWDebug_Assert_Fail_Print(const char * expr,const char * file, int line,con
 	if (_CurAssertHandler != NULL) {
 
 		char buffer[4096];
-		sprintf(buffer,"%s (%d) Assert: %s %s\n",file,line,expr, string);
+		std::snprintf(buffer, sizeof(buffer), "%s (%d) Assert: %s %s\n", file, line, expr, (string != NULL) ? string : "");
 		_CurAssertHandler(buffer);
 
 	} else {
-
-		assert(0);
+		WWDebug_Default_Assert(expr, file, line, string);
 
 	}
 }
@@ -469,62 +484,8 @@ void WWDebug_Profile_Stop( const char * title)
  *=============================================================================================*/
 void WWDebug_DBWin32_Message_Handler( const char * str )
 {
-
-    HANDLE heventDBWIN;  /* DBWIN32 synchronization object */
-    HANDLE heventData;   /* data passing synch object */
-    HANDLE hSharedFile;  /* memory mapped file shared data */
-    LPSTR lpszSharedMem;
-
-    /* make sure DBWIN is open and waiting */
-    heventDBWIN = OpenEvent(EVENT_MODIFY_STATE, FALSE, "DBWIN_BUFFER_READY");
-    if ( !heventDBWIN )
-    {
-        //MessageBox(NULL, "DBWIN_BUFFER_READY nonexistent", NULL, MB_OK);
-        return;
-    }
-
-    /* get a handle to the data synch object */
-    heventData = OpenEvent(EVENT_MODIFY_STATE, FALSE, "DBWIN_DATA_READY");
-    if ( !heventData )
-    {
-        // MessageBox(NULL, "DBWIN_DATA_READY nonexistent", NULL, MB_OK);
-        CloseHandle(heventDBWIN);
-        return;
-    }
-
-    hSharedFile = CreateFileMapping((HANDLE)-1, NULL, PAGE_READWRITE, 0, 4096, "DBWIN_BUFFER");
-    if (!hSharedFile)
-    {
-        //MessageBox(NULL, "DebugTrace: Unable to create file mapping object DBWIN_BUFFER", "Error", MB_OK);
-        CloseHandle(heventDBWIN);
-        CloseHandle(heventData);
-        return;
-    }
-
-    lpszSharedMem = (LPSTR)MapViewOfFile(hSharedFile, FILE_MAP_WRITE, 0, 0, 512);
-    if (!lpszSharedMem)
-    {
-        //MessageBox(NULL, "DebugTrace: Unable to map shared memory", "Error", MB_OK);
-        CloseHandle(heventDBWIN);
-        CloseHandle(heventData);
-        return;
-    }
-
-    /* wait for buffer event */
-    WaitForSingleObject(heventDBWIN, INFINITE);
-
-    /* write it to the shared memory */
-    *((LPDWORD)lpszSharedMem) = 0;
-    wsprintf(lpszSharedMem + sizeof(DWORD), "%s", str);
-
-    /* signal data ready event */
-    SetEvent(heventData);
-
-    /* clean up handles */
-    CloseHandle(hSharedFile);
-    CloseHandle(heventData);
-    CloseHandle(heventDBWIN);
-
-    return;
+	if ((str != NULL) && (str[0] != '\0')) {
+		SDL_Log("%s", str);
+	}
 }
 #endif // WWDEBUG

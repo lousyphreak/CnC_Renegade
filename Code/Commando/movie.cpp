@@ -35,7 +35,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "movie.h"
-#include "binkmovie.h"
+#include "BINKMovie.h"
 #include "campaign.h"
 #include "input.h"
 #include "_globals.h"

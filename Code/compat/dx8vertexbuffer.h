@@ -41,6 +41,11 @@ protected:
 	}
 
 public:
+	static unsigned Get_Total_Allocated_Memory()
+	{
+		return 0;
+	}
+
 	const FVFInfoClass & FVF_Info() const
 	{
 		return fvf_info;

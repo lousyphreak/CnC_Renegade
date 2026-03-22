@@ -38,7 +38,7 @@
 #ifndef LCW_H
 #define LCW_H
 
-#ifdef _UNIX
+#if !defined(_WIN32)
 #include "osdep.h"
 #endif
 

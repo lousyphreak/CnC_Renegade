@@ -88,8 +88,11 @@
 #include "trackedvehicle.h"
 #include "dx8rendererdebugger.h"
 #include "FastAllocator.h"
-#include <WWOnline\WOLSession.h>
 #include "ConsoleMode.h"
+
+#if RENEGADE_WITH_LEGACY_WOL
+#include "WOLSession.h"
+#endif
 
 //#include "dlgmpingamechat.h"
 
@@ -726,6 +729,7 @@ WWPROFILE( "Input Active" );
 			StringClass temp_string (true);
 			int count_2d = WWAudioClass::Get_Instance ()->Get_2D_Sample_Count ();
 			int count_3d = WWAudioClass::Get_Instance ()->Get_3D_Sample_Count ();
+			int sample_index = 0;
 
 			message = "2D or Pseudo-3D Sounds:\n";
 
@@ -1207,11 +1211,13 @@ void 	ConsoleGameModeClass::Parse_Input( char * string )
 			}
 			*/
       } else if (GameModeManager::Find("WOL")->Is_Active()) {
+			#if RENEGADE_WITH_LEGACY_WOL
 				RefPtr<WWOnline::Session> wolSession = WWOnline::Session::GetInstance(false);
 
 				if (wolSession.IsValid()) {
 					wolSession->SendPublicMessage(string);
 				}
+			#endif
       }
 	} else {
 		ConsoleFunctionManager::Parse_Input( string );

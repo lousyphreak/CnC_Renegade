@@ -45,16 +45,19 @@
 #include "gametype.h"
 #include "dialogbase.h"
 #include "dialogmgr.h"
-#include "dlgmpconnect.h"
 #include "dialogresource.h"
 #include "resource.h"
 #include "apppackettypes.h"
 #include "modpackagemgr.h"
 #include "specialbuilds.h"
-#include "dlgmpconnectionrefused.h"
 #include "translatedb.h"
 #include "string_ids.h"
-#include <WWLib\RealCRC.h>
+#include "realcrc.h"
+
+#if !defined(FREEDEDICATEDSERVER)
+#include "DlgMPConnect.h"
+#include "DlgMPConnectionRefused.h"
+#endif
 
 DECLARE_NETWORKOBJECT_FACTORY(cGameOptionsEvent, NETCLASSID_GAMEOPTIONSEVENT);
 
@@ -87,6 +90,7 @@ cGameOptionsEvent::Act(void)
 
 	The_Game()->Set_Hosted_Game_Number(HostedGameNumber);
 
+	#if !defined(FREEDEDICATEDSERVER)
 	if (!IS_SOLOPLAY) {
 		DialogBaseClass* dialog = DialogMgrClass::Find_Dialog(IDD_MULTIPLAY_CONNECTING);
 
@@ -94,6 +98,7 @@ cGameOptionsEvent::Act(void)
 	 		((DlgMPConnect*)dialog)->Connected(The_Game());
 		}
 	}
+	#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -162,6 +167,7 @@ cGameOptionsEvent::Import_Creation(BitStreamClass & packet)
 	The_Game()->Set_Map_Name(map_name);
 
 	if (!IS_SOLOPLAY) {
+		#if !defined(FREEDEDICATEDSERVER)
 		if (!The_Game()->Is_Map_Valid()) {
 			DialogBaseClass* dialog = DialogMgrClass::Find_Dialog(IDD_MULTIPLAY_CONNECTING);
 
@@ -174,6 +180,7 @@ cGameOptionsEvent::Import_Creation(BitStreamClass & packet)
 				TRANSLATE(IDS_MENU_MISSING_MAP));
 			DlgMPConnectionRefused::DoDialog(tval, false);
 		}
+		#endif
 	}
 
 #endif // MULTIPLAYERDEMO

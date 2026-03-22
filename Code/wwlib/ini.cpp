@@ -996,6 +996,20 @@ const WideStringClass& INIClass::Get_Wide_String(WideStringClass& new_string, ch
 {
 	unsigned short out[1024];
 	char buffer[1024];
+	auto assign_wide = [&new_string](const unsigned short * source) {
+		int length = 0;
+		if (source != NULL) {
+			while (source[length] != 0) {
+				++length;
+			}
+		}
+
+		WCHAR * destination = new_string.Get_Buffer(length + 1);
+		for (int index = 0; index < length; ++index) {
+			destination[index] = static_cast<WCHAR>(source[index]);
+		}
+		destination[length] = 0;
+	};
 
 	Base64Pipe b64pipe(Base64Pipe::DECODE);
 	BufferPipe bpipe(out, sizeof(out));
@@ -1003,11 +1017,14 @@ const WideStringClass& INIClass::Get_Wide_String(WideStringClass& new_string, ch
 
 	int length = Get_String(section, entry, "", buffer, sizeof(buffer));
 	if (length == 0) {
-		new_string = defvalue;
+		assign_wide(defvalue);
 	} else {
 		int outcount = b64pipe.Put(buffer, length);
 		outcount += b64pipe.End();
-		new_string = out;
+		const int max_chars = static_cast<int>(sizeof(out) / sizeof(out[0])) - 1;
+		const int decoded_chars = std::min(outcount / static_cast<int>(sizeof(unsigned short)), max_chars);
+		out[decoded_chars] = 0;
+		assign_wide(out);
 	}
 	return(new_string);
 }
@@ -1037,8 +1054,10 @@ bool INIClass::Put_Wide_String(char const * section, char const * entry, const u
 		return(false);
 	}
 
-	WideStringClass temp_string(string, true);
-	int len = temp_string.Get_Length();
+	int len = 0;
+	while (string[len] != 0) {
+		++len;
+	}
 
 	if (len == 0) {
 		Put_String(section, entry, "");

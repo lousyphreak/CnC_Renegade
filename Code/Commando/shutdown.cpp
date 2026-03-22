@@ -59,7 +59,7 @@
 #include "renegadedialogmgr.h"
 #include "campaign.h"
 #include "diaglog.h"
-#include "binkmovie.h"
+#include "BINKMovie.h"
 //#include "helptext.h"
 #include "init.h"
 #include "serverfps.h"
@@ -409,7 +409,9 @@ void Game_Shutdown(void)
 	//
 	//	Shutdown the input control system
 	//
+	#if !defined(FREEDEDICATEDSERVER)
 	InputConfigMgrClass::Shutdown();
+	#endif
 	Input::Save_Registry( APPLICATION_SUB_KEY_NAME_CONTROLS );
 	Input::Shutdown();
 

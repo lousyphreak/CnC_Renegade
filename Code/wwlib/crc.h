@@ -39,7 +39,7 @@
 #define CRC_H
 
 #include	<stdlib.h>
-#ifdef _UNIX
+#if !defined(_WIN32)
 	#include "osdep.h"
 #endif
 

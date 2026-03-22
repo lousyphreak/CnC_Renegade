@@ -41,7 +41,6 @@
 #include "vertmaterial.h"
 #include "realcrc.h"
 #include	"dx8wrapper.h"
-#include "dx8caps.h"
 #include "meshmdl.h"
 
 
@@ -850,6 +849,7 @@ void MeshMatDescClass::Post_Load_Process(bool lighting_enabled,MeshModelClass * 
 	** HACK: Kill BUMPENV passes on hardware that doesn't support BUMPENV
 	** HACK: Set lighting to false on all passes if all passes are of type NO DIFFUSE, NO AMBIENT, YES EMISSIVE
 	*/
+	int pass = 0;
 	for (pass=0; pass<PassCount; pass++) {
 		bool kill_pass = false;
 

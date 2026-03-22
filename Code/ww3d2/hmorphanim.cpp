@@ -248,11 +248,12 @@ static int Build_List_From_String
 		 (string_list != NULL))
 	{
 		int delim_len = ::strlen (delimiter);
+		const char *entry = NULL;
 
 		//
 		// Determine how many entries there will be in the list
 		//
-		for (const char *entry = buffer;
+		for (entry = buffer;
 			  (entry != NULL) && (entry[1] != 0);
 			  entry = ::strstr (entry, delimiter))
 		{
@@ -295,9 +296,9 @@ static int Build_List_From_String
 				// Copy this entry into its own string
 				//
 				StringClass entry_string = entry;
-				char *delim_start = ::strstr (entry_string, delimiter);				
+				const char *delim_start = ::strstr (entry_string.Peek_Buffer(), delimiter);				
 				if (delim_start != NULL) {
-					delim_start[0] = 0;
+					entry_string[static_cast<int>(delim_start - entry_string.Peek_Buffer())] = 0;
 				}
 
 				//
@@ -489,16 +490,17 @@ void HMorphAnimClass::Set_Name(const char * name)
 	// Try to find the separator (a period)
 	//
 	StringClass full_name	= name;
-	char *separator			= ::strchr (full_name, '.');
+	const char *separator			= ::strchr (full_name.Peek_Buffer(), '.');
 	if (separator != NULL) {
 		
 		//
 		// Null out the separator and copy the two names
 		// into our two buffers
 		//
-		separator[0] = 0;
 		::strcpy (AnimName, separator + 1);
-		::strcpy (HierarchyName, full_name);
+		const int hierarchy_length = static_cast<int>(separator - full_name.Peek_Buffer());
+		::strncpy (HierarchyName, full_name.Peek_Buffer(), hierarchy_length);
+		HierarchyName[hierarchy_length] = 0;
 	}
 
 	return ;

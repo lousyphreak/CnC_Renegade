@@ -28,4 +28,4 @@ target_include_directories(wwphys
         "${PROJECT_SOURCE_DIR}/Code/ww3d2"
 )
 
-    target_link_libraries(wwphys PRIVATE wwlib wwdebug WWMath wwutil wwsaveload wwbitpack wwtranslatedb)
+target_link_libraries(wwphys PRIVATE ww3d2 wwlib wwdebug WWMath wwutil wwsaveload wwbitpack wwtranslatedb)

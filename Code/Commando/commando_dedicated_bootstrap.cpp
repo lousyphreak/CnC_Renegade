@@ -2,11 +2,16 @@
 
 #include <filesystem>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <string_view>
 
 #include "ConsoleMode.h"
+#include "mainloop.h"
+#include "ServerSettings.h"
 #include "singletoninstancekeeper.h"
+#include "slavemaster.h"
+#include "useroptions.h"
 
 namespace {
 
@@ -69,12 +74,47 @@ std::filesystem::path Detect_Server_Config_Path(int argc, char **argv)
     return "server.ini";
 }
 
+std::string Build_Command_Line(int argc, char **argv)
+{
+    std::ostringstream command_line;
+
+    for (int i = 1; i < argc; ++i) {
+        if (argv[i] == nullptr || argv[i][0] == '\0') {
+            continue;
+        }
+
+        if (command_line.tellp() > 0) {
+            command_line << ' ';
+        }
+
+        command_line << argv[i];
+    }
+
+    return command_line.str();
+}
+
+void Apply_Dedicated_Defaults()
+{
+    ConsoleBox.Set_Exclusive(true);
+
+    if (!SlaveMaster.Am_I_Slave() && !ServerSettingsClass::Is_Server_Settings_File_Set()) {
+        char default_settings[] = "STARTSERVER=server.ini";
+        cUserOptions::Set_Server_INI_File(default_settings);
+    }
+}
+
 } // namespace
 
 int Renegade_Dedicated_Bootstrap(int argc, char **argv)
 {
     Set_Working_Directory_From_Executable(argv);
-    ConsoleBox.Set_Exclusive(true);
+
+    const std::string command_line = Build_Command_Line(argc, argv);
+    if (!cUserOptions::Parse_Command_Line(command_line.c_str())) {
+        return 0;
+    }
+
+    Apply_Dedicated_Defaults();
 
     SingletonInstanceKeeperClass instance_keeper;
     if (!instance_keeper.Verify_Safe_To_Execute()) {
@@ -82,7 +122,9 @@ int Renegade_Dedicated_Bootstrap(int argc, char **argv)
     }
 
     const bool smoke_test = HasArgument(argc, argv, "--headless-smoke");
-    const std::filesystem::path server_config = Detect_Server_Config_Path(argc, argv);
+    const std::filesystem::path server_config = ServerSettingsClass::Is_Server_Settings_File_Set()
+        ? std::filesystem::path(ServerSettingsClass::Get_Settings_File_Name())
+        : Detect_Server_Config_Path(argc, argv);
 
     if (!smoke_test && !std::filesystem::exists(server_config)) {
         std::cerr
@@ -96,10 +138,14 @@ int Renegade_Dedicated_Bootstrap(int argc, char **argv)
     std::cout << "  resolved server config: " << server_config.string() << '\n';
 
     if (smoke_test) {
+        if (ServerSettingsClass::Is_Server_Settings_File_Set() && !ServerSettingsClass::Parse(false)) {
+            std::cerr << "  startup validation: failed\n";
+            return 1;
+        }
+
         std::cout << "  headless smoke: success\n";
-    } else {
-        std::cout << "  startup validation: success\n";
+        return 0;
     }
 
-    return 0;
+    return Game_Main_Loop();
 }

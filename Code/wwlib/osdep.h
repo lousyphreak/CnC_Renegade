@@ -22,6 +22,8 @@
 #include <strings.h>
 #include <string>
 #include <thread>
+#include <unistd.h>
+#include <vector>
 
 #include "bittype.h"
 
@@ -98,6 +100,7 @@ using HCURSOR = void *;
 using HBRUSH = void *;
 using HICON = void *;
 using HDC = void *;
+using HACCEL = void *;
 using LARGE_INTEGER = long long;
 using FARPROC = void *;
 using LONG = long;
@@ -127,9 +130,16 @@ struct RECT {
     LONG bottom;
 };
 
+struct WIN32_FIND_DATAA {
+	DWORD dwFileAttributes;
+	char cFileName[260];
+};
+
+using WIN32_FIND_DATA = WIN32_FIND_DATAA;
+
 using COLORREF = DWORD;
 
-inline bool GameInFocus = true;
+extern bool GameInFocus;
 
 #ifndef TRUE
 #define TRUE 1
@@ -167,8 +177,76 @@ inline bool GameInFocus = true;
 #define INVALID_FILE_ATTRIBUTES 0xFFFFFFFFu
 #endif
 
+#ifndef INVALID_HANDLE_VALUE
+#define INVALID_HANDLE_VALUE reinterpret_cast<HANDLE>(static_cast<intptr_t>(-1))
+#endif
+
 #ifndef FILE_ATTRIBUTE_READONLY
 #define FILE_ATTRIBUTE_READONLY 0x00000001u
+#endif
+
+#ifndef FILE_ATTRIBUTE_DIRECTORY
+#define FILE_ATTRIBUTE_DIRECTORY 0x00000010u
+#endif
+
+#ifndef FILE_ATTRIBUTE_NORMAL
+#define FILE_ATTRIBUTE_NORMAL 0x00000080u
+#endif
+
+#ifndef GENERIC_WRITE
+#define GENERIC_WRITE 0x40000000u
+#endif
+
+#ifndef GENERIC_READ
+#define GENERIC_READ 0x80000000u
+#endif
+
+#ifndef FILE_SHARE_READ
+#define FILE_SHARE_READ 0x00000001u
+#endif
+
+#ifndef CREATE_NEW
+#define CREATE_NEW 1u
+#endif
+
+#ifndef CREATE_ALWAYS
+#define CREATE_ALWAYS 2u
+#endif
+
+#ifndef OPEN_EXISTING
+#define OPEN_EXISTING 3u
+#endif
+
+#ifndef ERROR_ALREADY_EXISTS
+#define ERROR_ALREADY_EXISTS 183u
+#endif
+
+#ifndef MAX_COMPUTERNAME_LENGTH
+#define MAX_COMPUTERNAME_LENGTH 15
+#endif
+
+#ifndef MB_OK
+#define MB_OK 0x00000000u
+#endif
+
+#ifndef MB_ICONEXCLAMATION
+#define MB_ICONEXCLAMATION 0x00000030u
+#endif
+
+#ifndef MB_SETFOREGROUND
+#define MB_SETFOREGROUND 0x00010000u
+#endif
+
+#ifndef SW_SHOW
+#define SW_SHOW 5
+#endif
+
+#ifndef SW_MINIMIZE
+#define SW_MINIMIZE 6
+#endif
+
+#ifndef MAKEINTRESOURCE
+#define MAKEINTRESOURCE(i) reinterpret_cast<const char *>(static_cast<uintptr_t>(static_cast<WORD>(i)))
 #endif
 
 #ifndef CP_ACP
@@ -420,9 +498,78 @@ inline DWORD GetLastError()
     return static_cast<DWORD>(errno);
 }
 
+namespace renegade_osdep {
+
+struct CompatFileHandle {
+    std::FILE *file;
+};
+
+struct CompatFindHandle {
+    std::vector<std::filesystem::path> entries;
+    std::size_t index;
+};
+
+inline std::string Normalize_Path(const char * path)
+{
+    if (path == nullptr) {
+        return std::string();
+    }
+
+    std::string normalized(path);
+    std::replace(normalized.begin(), normalized.end(), '\\', '/');
+    return normalized;
+}
+
+inline bool Wildcard_Match(const char * pattern, const char * text)
+{
+    if (pattern == nullptr || text == nullptr) {
+        return false;
+    }
+
+    if (*pattern == '\0') {
+        return *text == '\0';
+    }
+
+    if (*pattern == '*') {
+        for (const char * cursor = text; ; ++cursor) {
+            if (Wildcard_Match(pattern + 1, cursor)) {
+                return true;
+            }
+            if (*cursor == '\0') {
+                break;
+            }
+        }
+        return false;
+    }
+
+    if (*pattern == '?') {
+        return (*text != '\0') && Wildcard_Match(pattern + 1, text + 1);
+    }
+
+    return (std::tolower(static_cast<unsigned char>(*pattern)) == std::tolower(static_cast<unsigned char>(*text)))
+        && Wildcard_Match(pattern + 1, text + 1);
+}
+
+inline CompatFileHandle * As_File_Handle(HANDLE handle)
+{
+    return reinterpret_cast<CompatFileHandle *>(handle);
+}
+
+inline CompatFindHandle * As_Find_Handle(HANDLE handle)
+{
+    return reinterpret_cast<CompatFindHandle *>(handle);
+}
+
+} // namespace renegade_osdep
+
 inline void Sleep(DWORD milliseconds)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+}
+
+inline void ExitProcess(UINT exit_code)
+{
+	std::exit(static_cast<int>(exit_code));
 }
 
 inline DWORD GetCurrentThreadId()
@@ -517,6 +664,270 @@ inline int DeleteFile(const char * filename)
     return std::filesystem::remove(filename, error) ? TRUE : FALSE;
 }
 
+inline int MoveFile(const char * existing_filename, const char * new_filename)
+{
+    if (existing_filename == nullptr || new_filename == nullptr) {
+        errno = EINVAL;
+        return FALSE;
+    }
+
+    std::error_code error;
+    std::filesystem::rename(
+        std::filesystem::path(renegade_osdep::Normalize_Path(existing_filename)),
+        std::filesystem::path(renegade_osdep::Normalize_Path(new_filename)),
+        error);
+    return error ? FALSE : TRUE;
+}
+
+inline DWORD GetModuleFileName(HINSTANCE, char * buffer, DWORD size)
+{
+    if (buffer == nullptr || size == 0) {
+        return 0;
+    }
+
+    std::error_code error;
+    const auto executable = std::filesystem::read_symlink("/proc/self/exe", error);
+    const std::string path = error ? std::filesystem::current_path(error).string() : executable.string();
+    const std::size_t count = std::min<std::size_t>(size - 1, path.size());
+    std::memcpy(buffer, path.c_str(), count);
+    buffer[count] = '\0';
+    return static_cast<DWORD>(count);
+}
+
+inline BOOL CreateDirectory(const char * path, void *)
+{
+    if (path == nullptr) {
+        errno = EINVAL;
+        return FALSE;
+    }
+
+    std::error_code error;
+    const std::filesystem::path directory(renegade_osdep::Normalize_Path(path));
+    if (std::filesystem::exists(directory, error)) {
+        errno = EEXIST;
+        return FALSE;
+    }
+
+    return std::filesystem::create_directories(directory, error) ? TRUE : FALSE;
+}
+
+inline HANDLE CreateFile(const char * filename, DWORD desired_access, DWORD, void *, DWORD creation_disposition, DWORD, HANDLE)
+{
+    if (filename == nullptr) {
+        errno = EINVAL;
+        return INVALID_HANDLE_VALUE;
+    }
+
+    const std::filesystem::path path(renegade_osdep::Normalize_Path(filename));
+    const bool wants_write = (desired_access & GENERIC_WRITE) != 0 || creation_disposition == CREATE_ALWAYS || creation_disposition == CREATE_NEW;
+    const bool exists = std::filesystem::exists(path);
+
+    if (creation_disposition == CREATE_NEW && exists) {
+        errno = EEXIST;
+        return INVALID_HANDLE_VALUE;
+    }
+
+    const char * mode = wants_write ? "wb+" : "rb";
+    if (creation_disposition == OPEN_EXISTING && wants_write) {
+        mode = exists ? "rb+" : "wb+";
+    }
+
+    std::FILE * file = std::fopen(path.string().c_str(), mode);
+    if (file == nullptr) {
+        return INVALID_HANDLE_VALUE;
+    }
+
+    auto * handle = new renegade_osdep::CompatFileHandle{file};
+    return reinterpret_cast<HANDLE>(handle);
+}
+
+inline DWORD GetFileSize(HANDLE handle, DWORD *)
+{
+    auto * file_handle = renegade_osdep::As_File_Handle(handle);
+    if (file_handle == nullptr || file_handle->file == nullptr) {
+        return 0xFFFFFFFFu;
+    }
+
+    const long current = std::ftell(file_handle->file);
+    if (current < 0) {
+        return 0xFFFFFFFFu;
+    }
+
+    if (std::fseek(file_handle->file, 0, SEEK_END) != 0) {
+        return 0xFFFFFFFFu;
+    }
+
+    const long end = std::ftell(file_handle->file);
+    std::fseek(file_handle->file, current, SEEK_SET);
+    return end >= 0 ? static_cast<DWORD>(end) : 0xFFFFFFFFu;
+}
+
+inline BOOL WriteFile(HANDLE handle, const void * buffer, DWORD bytes_to_write, DWORD * bytes_written, void *)
+{
+    auto * file_handle = renegade_osdep::As_File_Handle(handle);
+    if (file_handle == nullptr || file_handle->file == nullptr) {
+        return FALSE;
+    }
+
+    const std::size_t written = std::fwrite(buffer, 1, bytes_to_write, file_handle->file);
+    if (bytes_written != nullptr) {
+        *bytes_written = static_cast<DWORD>(written);
+    }
+
+    return written == bytes_to_write ? TRUE : FALSE;
+}
+
+inline BOOL ReadFile(HANDLE handle, void * buffer, DWORD bytes_to_read, DWORD * bytes_read, void *)
+{
+    auto * file_handle = renegade_osdep::As_File_Handle(handle);
+    if (file_handle == nullptr || file_handle->file == nullptr) {
+        return FALSE;
+    }
+
+    const std::size_t read = std::fread(buffer, 1, bytes_to_read, file_handle->file);
+    if (bytes_read != nullptr) {
+        *bytes_read = static_cast<DWORD>(read);
+    }
+
+    return read == bytes_to_read ? TRUE : FALSE;
+}
+
+inline BOOL CloseHandle(HANDLE handle)
+{
+    auto * file_handle = renegade_osdep::As_File_Handle(handle);
+    if (handle == INVALID_HANDLE_VALUE || file_handle == nullptr) {
+        return FALSE;
+    }
+
+    const int result = (file_handle->file != nullptr) ? std::fclose(file_handle->file) : 0;
+    delete file_handle;
+    return result == 0 ? TRUE : FALSE;
+}
+
+inline HANDLE FindFirstFile(const char * pattern, WIN32_FIND_DATA * find_data)
+{
+    if (pattern == nullptr || find_data == nullptr) {
+        return INVALID_HANDLE_VALUE;
+    }
+
+    const std::filesystem::path path(renegade_osdep::Normalize_Path(pattern));
+    const std::filesystem::path directory = path.has_parent_path() ? path.parent_path() : std::filesystem::current_path();
+    const std::string wildcard = path.filename().string();
+
+    auto * handle = new renegade_osdep::CompatFindHandle{};
+    handle->index = 0;
+
+    std::error_code error;
+    for (const auto & entry : std::filesystem::directory_iterator(directory, error)) {
+        if (error) {
+            break;
+        }
+
+        const std::string filename = entry.path().filename().string();
+        if (renegade_osdep::Wildcard_Match(wildcard.c_str(), filename.c_str())) {
+            handle->entries.push_back(entry.path());
+        }
+    }
+
+    if (handle->entries.empty()) {
+        delete handle;
+        return INVALID_HANDLE_VALUE;
+    }
+
+    std::memset(find_data, 0, sizeof(*find_data));
+    std::snprintf(find_data->cFileName, sizeof(find_data->cFileName), "%s", handle->entries.front().filename().string().c_str());
+    return reinterpret_cast<HANDLE>(handle);
+}
+
+inline BOOL FindNextFile(HANDLE handle, WIN32_FIND_DATA * find_data)
+{
+    auto * find_handle = renegade_osdep::As_Find_Handle(handle);
+    if (find_handle == nullptr || find_data == nullptr) {
+        return FALSE;
+    }
+
+    ++find_handle->index;
+    if (find_handle->index >= find_handle->entries.size()) {
+        return FALSE;
+    }
+
+    std::memset(find_data, 0, sizeof(*find_data));
+    std::snprintf(find_data->cFileName, sizeof(find_data->cFileName), "%s", find_handle->entries[find_handle->index].filename().string().c_str());
+    return TRUE;
+}
+
+inline BOOL FindClose(HANDLE handle)
+{
+    auto * find_handle = renegade_osdep::As_Find_Handle(handle);
+    if (find_handle == nullptr || handle == INVALID_HANDLE_VALUE) {
+        return FALSE;
+    }
+
+    delete find_handle;
+    return TRUE;
+}
+
+inline BOOL GetComputerName(char * buffer, DWORD * size)
+{
+    if (buffer == nullptr || size == nullptr || *size == 0) {
+        return FALSE;
+    }
+
+    char hostname[256] = {0};
+    if (gethostname(hostname, sizeof(hostname)) != 0) {
+        return FALSE;
+    }
+
+    const std::size_t count = std::min<std::size_t>(*size - 1, std::strlen(hostname));
+    std::memcpy(buffer, hostname, count);
+    buffer[count] = '\0';
+    *size = static_cast<DWORD>(count);
+    return TRUE;
+}
+
+inline BOOL GetUserName(char * buffer, DWORD * size)
+{
+    if (buffer == nullptr || size == nullptr || *size == 0) {
+        return FALSE;
+    }
+
+    const char * user = std::getenv("USER");
+    if (user == nullptr || user[0] == '\0') {
+        user = "player";
+    }
+
+    const std::size_t count = std::min<std::size_t>(*size - 1, std::strlen(user));
+    std::memcpy(buffer, user, count);
+    buffer[count] = '\0';
+    *size = static_cast<DWORD>(count);
+    return TRUE;
+}
+
+inline HINSTANCE GetModuleHandle(const char *)
+{
+    return nullptr;
+}
+
+inline int MessageBox(HWND, const char * text, const char * caption, unsigned)
+{
+    std::fprintf(stderr, "%s: %s\n", caption != nullptr ? caption : "MessageBox", text != nullptr ? text : "");
+    return IDOK;
+}
+
+inline BOOL ShowWindow(HWND, int)
+{
+    return TRUE;
+}
+
+inline HACCEL LoadAccelerators(HINSTANCE, const char *)
+{
+    return nullptr;
+}
+
+inline void Add_Accelerator(HWND, HACCEL)
+{
+}
+
 inline DWORD GetFileAttributes(const char * filename)
 {
     std::error_code error;
@@ -526,6 +937,9 @@ inline DWORD GetFileAttributes(const char * filename)
     }
 
     DWORD attributes = 0;
+    if (std::filesystem::is_directory(status)) {
+        attributes |= FILE_ATTRIBUTE_DIRECTORY;
+    }
     if ((status.permissions() & std::filesystem::perms::owner_write) == std::filesystem::perms::none) {
         attributes |= FILE_ATTRIBUTE_READONLY;
     }
@@ -555,6 +969,70 @@ inline int strnicmp(const char * lhs, const char * rhs, std::size_t count)
 inline int _strnicmp(const char * lhs, const char * rhs, std::size_t count)
 {
     return strnicmp(lhs, rhs, count);
+}
+
+inline char * lstrcpy(char * destination, const char * source)
+{
+    return std::strcpy(destination, source != nullptr ? source : "");
+}
+
+inline char * lstrcat(char * destination, const char * source)
+{
+    return std::strcat(destination, source != nullptr ? source : "");
+}
+
+inline char * lstrcpyn(char * destination, const char * source, int count)
+{
+    if (destination == nullptr || count <= 0) {
+        return destination;
+    }
+    std::snprintf(destination, static_cast<std::size_t>(count), "%s", source != nullptr ? source : "");
+    return destination;
+}
+
+inline DWORD GetCurrentDirectory(DWORD buffer_length, char * buffer)
+{
+    const std::string cwd = std::filesystem::current_path().string();
+    if (buffer == nullptr || buffer_length == 0) {
+        return static_cast<DWORD>(cwd.size());
+    }
+    std::snprintf(buffer, buffer_length, "%s", cwd.c_str());
+    return static_cast<DWORD>(std::min<std::size_t>(cwd.size(), buffer_length > 0 ? buffer_length - 1 : 0));
+}
+
+inline char * _strdup(const char * text)
+{
+    return text != nullptr ? ::strdup(text) : nullptr;
+}
+
+inline char * itoa(int value, char * buffer, int radix)
+{
+    if (buffer == nullptr) {
+        return nullptr;
+    }
+
+    if (radix == 16) {
+        std::snprintf(buffer, 34, "%x", value);
+    } else {
+        std::snprintf(buffer, 34, "%d", value);
+    }
+    return buffer;
+}
+
+inline int _snprintf(char * buffer, std::size_t size, const char * format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    const int result = std::vsnprintf(buffer, size, format, args);
+    va_end(args);
+    return result;
+}
+
+#define RENEGADE_OUTPUTDEBUGSTRING_DEFINED 1
+
+inline void OutputDebugString(const char * text)
+{
+    std::fputs(text != nullptr ? text : "", stderr);
 }
 
 inline char * strupr(char * text)

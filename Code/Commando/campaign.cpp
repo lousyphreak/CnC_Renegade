@@ -220,6 +220,7 @@ void	CampaignManager::Continue( bool success )
 	if ( State == REPLAY_LEVEL ) {
 		State = REPLAY_SCORE;
 
+		#if !defined(FREEDEDICATEDSERVER)
 		// Activeate the Score screen before the combat deactivates, so we can get the stats
 		ScoreScreenGameModeClass * ss = (ScoreScreenGameModeClass *)GameModeManager::Find ("ScoreScreen");
 		if ( ss != NULL ) {
@@ -234,6 +235,7 @@ void	CampaignManager::Continue( bool success )
 		if ( ss != NULL ) {
 			ss->Activate();
 		}
+		#endif
 		return;
 	}
 
@@ -259,21 +261,24 @@ void	CampaignManager::Continue( bool success )
 
 		state_description += ::strlen( "Message " );
 
+		#if !defined(FREEDEDICATEDSERVER)
 		GameModeManager::Find ("Movie")->Deactivate();
 		GameModeManager::Find ("Combat")->Suspend();
 		GameInitMgrClass::End_Game();
 
 		GameModeManager::Find ("Menu")->Deactivate();
 		GameModeManager::Find ("ScoreScreen")->Activate();
+		#endif
 
 	} else if ( StringMatch( state_description, "Score" ) ) {
 
 		state_description += ::strlen( "Score" );
 
+		#if !defined(FREEDEDICATEDSERVER)
 		// Activeate the Score screen before the combat deactivates, so we can get the stats
 		ScoreScreenGameModeClass * ss = (ScoreScreenGameModeClass *)GameModeManager::Find ("ScoreScreen");
 		if ( ss != NULL ) {
-		 	ss->Save_Stats();
+	 		ss->Save_Stats();
 		}
 
 		GameModeManager::Find ("Movie")->Deactivate();
@@ -284,6 +289,7 @@ void	CampaignManager::Continue( bool success )
 		if ( ss != NULL ) {
 			ss->Activate();
 		}
+		#endif
 
 	} else if ( StringMatch( state_description, "Level " ) ) {
 
@@ -306,6 +312,7 @@ void	CampaignManager::Continue( bool success )
 		}
 
 	} else if ( StringMatch( state_description, "Movie " ) ) {
+		#if !defined(FREEDEDICATEDSERVER)
 
 		if (COMBAT_CAMERA != NULL) {
 			COMBAT_CAMERA->Set_Host_Model (NULL);
@@ -339,6 +346,7 @@ void	CampaignManager::Continue( bool success )
 				registry.Set_String( filename, description );
 			}
 		}
+		#endif
 
 	} else {
 

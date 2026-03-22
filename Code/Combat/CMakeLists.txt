@@ -26,7 +26,7 @@ target_include_directories(Combat
         "${PROJECT_SOURCE_DIR}/Code/ww3d2"
 )
 
-target_link_libraries(Combat PRIVATE wwlib wwdebug WWMath wwutil wwsaveload wwbitpack wwtranslatedb wwui wwnet WWAudio wwphys BinkMovie)
+target_link_libraries(Combat PRIVATE ww3d2 wwlib wwdebug WWMath wwutil wwsaveload wwbitpack wwtranslatedb wwui wwnet WWAudio wwphys BinkMovie)
 
 if(NOT WIN32)
     target_compile_definitions(Combat PUBLIC _UNIX)

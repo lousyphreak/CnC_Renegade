@@ -93,30 +93,30 @@ const unsigned short *cBandwidth::Get_Bandwidth_String_From_Type(BANDWIDTH_TYPE_
 
 	switch (bandwidth_type) {
 		case BANDWIDTH_MODEM_288:
-			return TRANSLATE(IDS_MP_CONNECTION_288);		//"BANDWIDTH_MODEM_288";
+			return reinterpret_cast<const unsigned short *>(TRANSLATE(IDS_MP_CONNECTION_288));		//"BANDWIDTH_MODEM_288";
 		case BANDWIDTH_MODEM_336:
-			return TRANSLATE(IDS_MP_CONNECTION_336);		//"BANDWIDTH_MODEM_336";
+			return reinterpret_cast<const unsigned short *>(TRANSLATE(IDS_MP_CONNECTION_336));		//"BANDWIDTH_MODEM_336";
 		case BANDWIDTH_MODEM_56:
-			return TRANSLATE(IDS_MP_CONNECTION_56);		//"BANDWIDTH_MODEM_56";
+			return reinterpret_cast<const unsigned short *>(TRANSLATE(IDS_MP_CONNECTION_56));		//"BANDWIDTH_MODEM_56";
 		case BANDWIDTH_ISDN:
-			return TRANSLATE(IDS_MP_CONNECTION_ISDN);		//"BANDWIDTH_ISDN";
+			return reinterpret_cast<const unsigned short *>(TRANSLATE(IDS_MP_CONNECTION_ISDN));		//"BANDWIDTH_ISDN";
 		case BANDWIDTH_CABLE:
-			return TRANSLATE(IDS_MP_CONNECTION_CABLE);	//"BANDWIDTH_CABLE";
+			return reinterpret_cast<const unsigned short *>(TRANSLATE(IDS_MP_CONNECTION_CABLE));	//"BANDWIDTH_CABLE";
 		case BANDWIDTH_LANT1:
-			return TRANSLATE(IDS_MP_CONNECTION_T1);		//"BANDWIDTH_LANT1";
+			return reinterpret_cast<const unsigned short *>(TRANSLATE(IDS_MP_CONNECTION_T1));		//"BANDWIDTH_LANT1";
 		case BANDWIDTH_CUSTOM:
-			return L"BANDWIDTH_CUSTOM";
+			return reinterpret_cast<const unsigned short *>(L"BANDWIDTH_CUSTOM");
 		case BANDWIDTH_AUTO:
 		{
 			//sprintf(_bandwidth_auto_txt, "BANDWIDTH_AUTO (%s)", BandwidthCheckerClass::Get_Bandwidth_As_String());
 			s.Format(TRANSLATE(IDS_MP_CONNECTION_T1), Get_Bandwidth_Bps_From_Type(bandwidth_type));
 			//wsprintf(_bandwidth_auto_txt, TRANSLATE(IDS_MP_CONNECTION_T1), Get_Bandwidth_Bps_From_Type(bandwidth_type));
 			//return ((const)_bandwidth_auto_txt);
-			return(s);
+			return reinterpret_cast<const unsigned short *>(s.Peek_Buffer());
 		}
 		default:
 			DIE;
-			return L"ERROR"; // to avoid compiler warning
+			return reinterpret_cast<const unsigned short *>(L"ERROR"); // to avoid compiler warning
    }
 }
 

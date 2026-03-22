@@ -41,6 +41,8 @@
 #ifndef __AUDIO_EVENTS_H
 #define __AUDIO_EVENTS_H
 
+#include "win.h"
+
 #include "simplevec.h"
 #include "bittype.h"
 #include "vector.h"

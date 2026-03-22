@@ -39,10 +39,10 @@
 #include	"mpmath.h"
 #include	"rng.h"
 
-int bignum::Error = 0;
-bool bignum::Carry = false;
-bool bignum::Borrow = false;
-bignum bignum::Remainder;
+template <> int Int<64>::Error = 0;
+template <> bool Int<64>::Carry = false;
+template <> bool Int<64>::Borrow = false;
+template <> Int<64> Int<64>::Remainder = 0;
 
 
 

@@ -2,6 +2,10 @@
     "chat.tools.terminal.autoApprove": {
         "cmake": true,
         "nproc": true,
-        "./build/bin/Renegade": true
+        "./build/bin/Renegade": true,
+        "nm": true,
+        "gdb": true,
+        "./renegade_dedicated": true,
+        "/home/lousy/git/CnC_Renegade/build/bin/renegade_dedicated": true
     }
 }

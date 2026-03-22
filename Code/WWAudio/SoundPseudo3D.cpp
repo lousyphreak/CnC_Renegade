@@ -39,7 +39,7 @@
 #include "WWAudio.h"
 #include "SoundScene.h"
 #include "Utils.h"
-#include "soundchunkids.h"
+#include "SoundChunkIDs.h"
 #include "persistfactory.h"
 #include "soundhandle.h"
 

@@ -46,6 +46,7 @@
 #include "cnetwork.h"
 #include "timemgr.h"
 #include "miscutil.h"
+#include "mathutil.h"
 #include "gamedata.h"
 #include "combat.h"
 #include "ccamera.h"

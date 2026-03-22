@@ -508,7 +508,8 @@ void cGameData::Set_Ip_And_Port(void)
 	//
 	// IP is set automatically in WOL unless there is an IP override and a port overrride.
 	//
-	if (GameModeManager::Find("WOL")->Is_Active()) {
+	GameModeClass *wol_mode = GameModeManager::Find("WOL");
+	if (wol_mode != NULL && wol_mode->Is_Active()) {
 
 		if (g_ip_override == INADDR_NONE || WOLNATInterface.Get_Force_Port() == 0) {
 			unsigned long temp = FirewallHelper.Get_Local_Address();
@@ -625,23 +626,38 @@ bool cGameData::Is_Limited(void) const
 bool cGameData::Is_Map_Valid(char **out_filename)
 {
 	bool map_exists = false;
+	char data_filename[_MAX_PATH] = { 0 };
 	if (ModName.Is_Empty () == false) {
 		if (out_filename) {
 			*out_filename = ModName.Peek_Buffer();
 		}
 		map_exists = cMiscUtil::File_Exists (ModName);
+		if (!map_exists) {
+			sprintf(data_filename, "data/%s", ModName.Peek_Buffer());
+			map_exists = cMiscUtil::File_Exists(data_filename);
+			if (out_filename && map_exists) {
+				*out_filename = data_filename;
+			}
+		}
 	} else {
 		if (out_filename) {
 			*out_filename = MapName.Peek_Buffer();
 		}
 		map_exists = cMiscUtil::File_Exists (MapName);
+		if (!map_exists) {
+			sprintf(data_filename, "data/%s", MapName.Peek_Buffer());
+			map_exists = cMiscUtil::File_Exists(data_filename);
+			if (out_filename && map_exists) {
+				*out_filename = data_filename;
+			}
+		}
 	}
 
 	return(map_exists);
 }
 
 
-#define PRINT_CONFIG_ERROR	ConsoleBox.Print("File %s - Error:\r\n\t ", Get_Ini_Filename());
+#define PRINT_CONFIG_ERROR	ConsoleBox.Print("File %s - Error:\r\n\t ", Get_Ini_Filename().Peek_Buffer());
 
 //-----------------------------------------------------------------------------
 bool cGameData::Is_Valid_Settings(WideStringClass& outMsg, bool check_as_server)
@@ -757,7 +773,7 @@ bool cGameData::Is_Valid_Settings(WideStringClass& outMsg, bool check_as_server)
 				StringClass map_name = Get_Map_Cycle(i);
 				if (map_name.Get_Length()) {
 					char filename[_MAX_PATH];
-					sprintf(filename, "data\\%s", map_name.Peek_Buffer());
+					sprintf(filename, "data/%s", map_name.Peek_Buffer());
 					RawFileClass file(filename);
 					if (!file.Is_Available()) {
 						PRINT_CONFIG_ERROR;
@@ -1011,7 +1027,7 @@ void cGameData::Load_From_Server_Config(LPCSTR config_file)
 	StringClass full_filename(config_file, true);
 
 	if (p_ini == NULL) {
-      full_filename.Format("data\\%s", config_file);
+		full_filename.Format("data/%s", config_file);
       FILE * file = fopen(full_filename, "w");
 	   fclose(file);
 
@@ -1536,7 +1552,7 @@ unsigned long cGameData::Get_Config_File_Mod_Time(void)
 	RawFileClass file(full_filename);
 
 	if (!file.Is_Available()) {
-      full_filename.Format("data\\%s", IniFilename);
+		full_filename.Format("data\\%s", IniFilename.Peek_Buffer());
 		file.Set_Name(full_filename);
    }
 
@@ -1963,7 +1979,7 @@ void cGameData::Get_Time_Limit_Text(WideStringClass& text)
       WideStringClass time_string(0, true);
       time_string.Format(L"%02d:%02d:%02d", hours, mins, seconds);
 
-		text.Format(L"%s: %s", TRANSLATION(IDS_MP_TIME_REMAINING), time_string);
+		text.Format(L"%s: %s", TRANSLATION(IDS_MP_TIME_REMAINING), time_string.Peek_Buffer());
    }
 
 }

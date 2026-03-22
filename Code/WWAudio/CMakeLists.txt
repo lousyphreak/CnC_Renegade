@@ -1,7 +1,14 @@
 file(GLOB WWAUDIO_HEADERS CONFIGURE_DEPENDS "*.h")
 
 add_library(WWAudio STATIC
+    AudioEvents.cpp
+    AudibleSound.cpp
+    AudibleSoundDefinition_headless.cpp
     AudioSaveLoad_null.cpp
+    Listener.cpp
+    Sound3D.cpp
+    SoundSceneObj.cpp
+    Threads_headless.cpp
     wwaudio_null.cpp
     ${WWAUDIO_HEADERS}
 )

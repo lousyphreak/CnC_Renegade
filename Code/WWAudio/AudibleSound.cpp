@@ -44,7 +44,7 @@
 #include "SoundScene.h"
 #include "FilteredSound.h"
 #include "Threads.h"
-#include "soundchunkids.h"
+#include "SoundChunkIDs.h"
 #include "simpledefinitionfactory.h"
 #include "persistfactory.h"
 #include "LogicalSound.h"
@@ -722,6 +722,12 @@ AudibleSoundClass::Seek (unsigned long milliseconds)
 void
 AudibleSoundClass::Set_Miles_Handle (MILES_HANDLE handle)
 {
+	#if WWAUDIO_USE_NULL_BACKEND
+	(void)handle;
+	Free_Miles_Handle();
+	return;
+	#endif
+
 	//
 	// Start fresh
 	//
@@ -1194,6 +1200,10 @@ AudibleSoundClass::Update_Play_Position (void)
 void
 AudibleSoundClass::Allocate_Miles_Handle (void)
 {
+	#if WWAUDIO_USE_NULL_BACKEND
+	return;
+	#endif
+
 	//
 	// If we need to, get a play-handle from the audio system
 	//
@@ -1465,6 +1475,10 @@ AudibleSoundClass::Free_Conversion (void)
 void
 AudibleSoundClass::Convert_To_Filtered (void)
 {
+	#if WWAUDIO_USE_NULL_BACKEND
+	return;
+	#endif
+
 	if (m_pConvertedFormat == NULL) {
 
 		//
@@ -1905,6 +1919,10 @@ AudibleSoundDefinitionClass::Create_Sound (int classid_hint) const
 LogicalSoundClass *
 AudibleSoundDefinitionClass::Create_Logical (void)
 {
+	#if WWAUDIO_USE_NULL_BACKEND
+	return NULL;
+	#endif
+
 	LogicalSoundClass *logical_sound = NULL;
 
 	if (m_CreateLogical) {
@@ -2050,12 +2068,14 @@ AudibleSoundClass::Load (ChunkLoadClass &cload)
 	//
 	//	Reconstruct the sound buffer we had before we saved
 	//
+	#if !WWAUDIO_USE_NULL_BACKEND
 	if (filename.Get_Length () > 0) {
 		bool is_3d = (As_Sound3DClass () != NULL);
 		SoundBufferClass *buffer = WWAudioClass::Get_Instance ()->Get_Sound_Buffer (filename, is_3d);
 		Set_Buffer (buffer);
 		REF_PTR_RELEASE (buffer);
 	}
+	#endif
 
 	return true;
 }

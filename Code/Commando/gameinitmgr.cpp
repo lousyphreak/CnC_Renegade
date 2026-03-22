@@ -75,7 +75,7 @@
 #include "hud.h"
 #include "gamespyadmin.h"
 #include "ServerSettings.h"
-#include "gamespy_qnr.h"
+#include "GameSpy_QnR.h"
 #include "specialbuilds.h"
 #include "modpackagemgr.h"
 
@@ -227,12 +227,14 @@ GameInitMgrClass::Start_Game (const char *map_name, int teamChoice, unsigned lon
    //
 	//	Let the LAN or WOL interface know we are starting a game
 	//
+	#if !defined(FREEDEDICATEDSERVER)
 	if (Mode == MODE_LAN) {
 		INIT_STATUS ("Go to location");
 		PLC->Go_To_Location (LANLOC_INGAME);
 	} else if (Mode == MODE_WOL) {
 		INIT_STATUS ("Go to game channel");
 	}
+	#endif
 
 	//
 	//	Reset some rendering data

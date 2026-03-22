@@ -7,6 +7,11 @@
 class IndexBufferClass : public RefCountClass
 {
 public:
+	static unsigned Get_Total_Allocated_Memory()
+	{
+		return 0;
+	}
+
 	IndexBufferClass(unsigned buffer_type, unsigned short index_count)
 		: engine_refs(0),
 		  index_count(index_count),

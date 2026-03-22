@@ -1461,6 +1461,7 @@ void SphereMeshClass::Generate(float radius, int slices, int stacks)
 
 	// Do Fan #2
 	int vtx_idx = Vertex_ct - 1;
+	int ct = 0;
 	for (ct = fan_size; ct < (fan_size * 2); ct++) {
 		fans[ct] = vtx_idx;
 		vtx_idx--;

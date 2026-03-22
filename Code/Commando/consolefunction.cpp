@@ -109,7 +109,7 @@
 #include "resource.h"
 #include "dx8wrapper.h"
 #include "sortingrenderer.h"
-#include "weathermgr.h"
+#include "WeatherMgr.h"
 #include "mapmgr.h"
 #include "Path.h"
 #include "sctextobj.h"
@@ -133,7 +133,7 @@
 #include "clientbboevent.h"
 #include "wheelvehicle.h"
 #include "trackedvehicle.h"
-#include "woldiags.h"
+#include "WOLDiags.h"
 #include "packetmgr.h"
 #include "requestkillevent.h"
 #include "csconsolecommandevent.h"
@@ -156,7 +156,7 @@
 #include "dlgcncpurchasemainmenu.h"
 #include "realcrc.h"
 #include "gamespyadmin.h"
-#include "gamespybanlist.h"
+#include "GameSpyBanList.h"
 #include "specialbuilds.h"
 #include "lightsolve.h"
 #include "lightsolvecontext.h"
@@ -3585,7 +3585,8 @@ public:
 		WW3D::Get_Device_Resolution(w,h,bits,windowed);
 		const RenderDeviceDescClass& desc=WW3D::Get_Render_Device_Desc();
 		const DynamicVectorClass<ResolutionDescClass> & resos=desc.Enumerate_Resolutions();
-		for (int i=0;i<resos.Count();++i) {
+		int i = 0;
+		for (;i<resos.Count();++i) {
 			if (resos[i].Width==w && resos[i].Height==h && resos[i].BitDepth==bits) {
 				break;
 			}
@@ -3875,6 +3876,7 @@ public:
 			if (The_Game() && The_Game()->IsDedicated.Is_True()) {
 
 				char upstring[256] = "?";
+				#if defined(_WIN32)
 				char timestr[256] = "?";
 				FILETIME creation;
 				FILETIME exit;
@@ -3893,6 +3895,9 @@ public:
 						}
 					}
 				}
+				#else
+				strcpy(upstring, "unknown start time");
+				#endif
 
 				GameModeClass* game = GameModeManager::Find("Combat");
 				if (game && game->Is_Active()) {
@@ -4006,11 +4011,13 @@ public:
 
 							char addr_string[128];
 							sockaddr_in *addr = &client->Get_Address();
-							sprintf(addr_string, "%d.%d.%d.%d;%d", 	(int)(addr->sin_addr.S_un.S_un_b.s_b1),
-																					(int)(addr->sin_addr.S_un.S_un_b.s_b2),
-																					(int)(addr->sin_addr.S_un.S_un_b.s_b3),
-																					(int)(addr->sin_addr.S_un.S_un_b.s_b4),
-																					unsigned int(ntohs(addr->sin_port)));
+							const uint32 address = ntohl(addr->sin_addr.s_addr);
+							sprintf(addr_string, "%d.%d.%d.%d;%u",
+								(int)((address >> 24) & 0xFF),
+								(int)((address >> 16) & 0xFF),
+								(int)((address >> 8) & 0xFF),
+								(int)(address & 0xFF),
+								static_cast<unsigned>(ntohs(addr->sin_port)));
 							int addr_string_len = strlen(addr_string);
 							char local_addr_string[128];
 							strcpy(local_addr_string, addr_string);
@@ -4046,6 +4053,7 @@ public:
 	virtual	const char * Get_Name( void )	{ return "kick"; }
 	virtual	const char * Get_Help( void )	{ return "KICK [<Nickname>|<Id>] - Kick a user from the game."; }
 	bool KickWOLUser(const WideStringClass & user_name) {
+		#if RENEGADE_WITH_LEGACY_WOL
 
 		GameModeClass* game = GameModeManager::Find("WOL");
 
@@ -4062,6 +4070,7 @@ public:
 				}
 			}
 		}
+		#endif
 		return false;
 	}
 	bool KickWOLUser(int id) {
@@ -4139,16 +4148,19 @@ public:
 
 		GameModeClass* wolgame = GameModeManager::Find("WOL");
 		bool is_wol = false;
+		#if RENEGADE_WITH_LEGACY_WOL
 		if (wolgame && wolgame->Is_Active()) {
 			is_wol = true;
 		}
+		#endif
 		//if (cGameSpyAdmin::Is_Gamespy_Game() && cNetwork::I_Am_Server()) {
 		if ((cGameSpyAdmin::Is_Gamespy_Game() || is_wol) && cNetwork::I_Am_Server()) {
 
 			if (!input || !(*input)) return;
 			cPlayer *player = NULL;
 
-			for (SLNode<cPlayer> *player_node = cPlayerManager::Get_Player_Object_List ()->Head ()
+			SLNode<cPlayer> *player_node = NULL;
+			for (player_node = cPlayerManager::Get_Player_Object_List ()->Head ()
 				; player_node != NULL; player_node = player_node->Next ()) {
 
 				player = player_node->Data ();
@@ -4159,7 +4171,9 @@ public:
 				}
 				if (stricmp(StringClass(input), StringClass(player->Get_Name())) == 0) {
 					if (is_wol) {
+						#if RENEGADE_WITH_LEGACY_WOL
 						((WolGameModeClass*)wolgame)->Ban_Player(player->Get_Name(), player->Get_Ip_Address());
+						#endif
 					} else {
 						if (player->Get_GameSpy_Hash_Id().Is_Empty()) {
 							GameSpyBanList.Ban_User(input);
@@ -4183,7 +4197,9 @@ public:
 					player = cPlayerManager::Find_Player(atoi(input));
 					if (player) {
 						if (is_wol) {
+							#if RENEGADE_WITH_LEGACY_WOL
 							((WolGameModeClass*)wolgame)->Ban_Player(player->Get_Name(), player->Get_Ip_Address());
+							#endif
 						} else {
 							if (player->Get_GameSpy_Hash_Id().Is_Empty() && !player->Get_Name().Is_Empty()) {
 								GameSpyBanList.Ban_User(StringClass(player->Get_Name()));
@@ -4207,6 +4223,10 @@ public:
 	virtual	const char * Get_Help( void )	{ return "ALLOW [<Nickname>|<Id>] - Remove user channel ban from this server (WOL mode only)."; }
 	virtual	void Activate( const char * input ) {
 
+		#if !RENEGADE_WITH_LEGACY_WOL
+		(void)input;
+		return;
+		#else
 		GameModeClass* game = GameModeManager::Find("WOL");
 
 		if (!input || !(*input)) return;
@@ -4222,6 +4242,7 @@ public:
 				}
 			}
 		}
+		#endif
 	}
 };
 
@@ -4234,6 +4255,10 @@ public:
 
 		static unsigned long last_page = 0;
 
+		#if !RENEGADE_WITH_LEGACY_WOL
+		(void)input;
+		return;
+		#else
 		GameModeClass* wolgame = GameModeManager::Find("WOL");
 		bool is_wol = false;
 		if (wolgame && wolgame->Is_Active()) {
@@ -4264,6 +4289,7 @@ public:
 				}
 			}
 		}
+		#endif
 	}
 };
 

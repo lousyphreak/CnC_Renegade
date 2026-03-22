@@ -323,11 +323,12 @@ MixFileFactoryClass::Flush_Changes (void)
 	StringClass full_path;
 	if (Get_Temp_Filename (path, full_path)) {
 		MixFileCreator new_mix_file (full_path);
+		int index = 0;
 
 		//
 		//	Add all the remaining files from our file set
 		//
-		for (int index = 0; index < FilenameList.Count (); index ++) {
+		for (index = 0; index < FilenameList.Count (); index ++) {
 			StringClass &filename = FilenameList[index];
 
 			//
@@ -614,7 +615,7 @@ void	Add_Files( const char * dir, MixFileCreator & mix )
 			StringClass name;
 			name.Format( "%s%s", dir, find_info.cFileName );
 			StringClass	source;
-			source.Format( "makemix\\%s", name );
+			source.Format( "makemix\\%s", name.Peek_Buffer() );
 			mix.Add_File( source, name );
 //			WWDEBUG_SAY(( "Adding file from %s %s\n", source, name ));
 		}

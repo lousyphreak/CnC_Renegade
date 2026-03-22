@@ -73,7 +73,6 @@
 #include "DlgMessageBox.h"
 #include "apppacketstats.h"
 #include "clientfps.h"
-#include "gamechanlist.h"
 #include "packetmgr.h"
 #include "clientpingmanager.h"
 #include "bandwidthgraph.h"
@@ -86,12 +85,16 @@
 #include "gamespyadmin.h"
 #include "demosupport.h"
 #include "ServerSettings.h"
-#include "dlgmpconnectionrefused.h"
+#include "DlgMPConnectionRefused.h"
 
-#include "Resource.h"
-#include <WWUI\DialogMgr.h>
+#include "resource.h"
+#include "dialogmgr.h"
 #include "ffactory.h"
 #include "realcrc.h"
+
+#if RENEGADE_WITH_LEGACY_WOL
+#include "gamechanlist.h"
+#endif
 
 extern bool g_is_loading;
 
@@ -595,7 +598,9 @@ void cNetwork::Onetime_Shutdown(void)
 
 	REF_PTR_RELEASE(VisTable);
 
+	#if RENEGADE_WITH_LEGACY_WOL
 	cGameChannelList::Remove_All();//TSS092201 added
+	#endif
 
 	//
 	// These are only printed once. So only run one game on a test run.
@@ -1386,7 +1391,7 @@ void cNetwork::Shell_Command(LPCSTR command)
 	WWASSERT(command != NULL);
 
 	HINSTANCE hinst = ShellExecute(NULL, NULL, command, NULL, "", SW_SHOW);
-	if ((int) hinst <= 32) {
+	if (reinterpret_cast<std::intptr_t>(hinst) <= 32) {
       WWDEBUG_SAY(("Error: ShellExecute failed.\n"));
 	}
 }

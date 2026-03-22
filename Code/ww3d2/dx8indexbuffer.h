@@ -43,6 +43,14 @@
 #ifndef DX8INDEXBUFFER_H
 #define DX8INDEXBUFFER_H
 
+#include "renegade_build_config.h"
+
+#if !RENEGADE_WITH_DX8_RENDERER
+
+#include "../compat/dx8indexbuffer.h"
+
+#else
+
 #include "always.h"
 #include "wwdebug.h"
 #include "refcount.h"
@@ -196,4 +204,6 @@ protected:
 };
 
 #endif //DX8INDEXBUFFER_H
+
+#endif
 

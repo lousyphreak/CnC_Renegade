@@ -43,6 +43,14 @@
 #ifndef DX8VERTEXBUFFER_H
 #define DX8VERTEXBUFFER_H
 
+#include "renegade_build_config.h"
+
+#if !RENEGADE_WITH_DX8_RENDERER
+
+#include "../compat/dx8vertexbuffer.h"
+
+#else
+
 #include "always.h"
 #include "wwdebug.h"
 #include "refcount.h"
@@ -255,3 +263,5 @@ public:
 
 
 #endif //DX8VERTEXBUFFER_H
+
+#endif

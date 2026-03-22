@@ -52,6 +52,7 @@
 #include "cnetwork.h"
 #include "gameinitmgr.h"
 #include "gamespyadmin.h"
+#include "playermanager.h"
 #include "specialbuilds.h"
 #include "dialogtests.h"
 #include "dialogmgr.h"

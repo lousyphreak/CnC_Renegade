@@ -760,6 +760,7 @@ void HTreeClass::Combo_Update
 #endif
 
 			pivot->IsVisible = false;
+			int anim_num = 0;
 
 			for ( anim_num = 0; (anim_num < anim->Get_Num_Anims()) && (!pivot->IsVisible); anim_num++ ) {
 				HAnimClass *motion = anim->Get_Motion( anim_num );

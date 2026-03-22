@@ -162,6 +162,60 @@ typedef struct _STARTUPINFOA {
 } STARTUPINFO, *LPSTARTUPINFO;
 #endif
 
+#ifndef RENEGADE_COMPAT_RESOURCE_TYPES_DEFINED
+#define RENEGADE_COMPAT_RESOURCE_TYPES_DEFINED
+typedef void * HRSRC;
+typedef void * HGLOBAL;
+typedef void * LPVOID;
+
+typedef struct _DLGTEMPLATE {
+	DWORD style;
+	DWORD dwExtendedStyle;
+	WORD cdit;
+	short x;
+	short y;
+	short cx;
+	short cy;
+} DLGTEMPLATE;
+
+typedef struct _DLGITEMTEMPLATE {
+	DWORD style;
+	DWORD dwExtendedStyle;
+	short x;
+	short y;
+	short cx;
+	short cy;
+	WORD id;
+} DLGITEMTEMPLATE;
+#endif
+
+#ifndef RT_DIALOG
+#define RT_DIALOG reinterpret_cast<const char *>(5)
+#endif
+
+#ifndef DS_SETFONT
+#define DS_SETFONT 0x00000040L
+#endif
+
+#ifndef CSTR_LESS_THAN
+#define CSTR_LESS_THAN 1
+#endif
+
+#ifndef CSTR_EQUAL
+#define CSTR_EQUAL 2
+#endif
+
+#ifndef CSTR_GREATER_THAN
+#define CSTR_GREATER_THAN 3
+#endif
+
+extern HINSTANCE	ProgramInstance;
+extern HWND			MainWindow;
+
+inline HRSRC FindResource(HINSTANCE, const char *, const char *) { return nullptr; }
+inline HGLOBAL LoadResource(HINSTANCE, HRSRC) { return nullptr; }
+inline LPVOID LockResource(HGLOBAL) { return nullptr; }
+
 inline DWORD GetTickCount(void)
 {
 	using namespace std::chrono;

@@ -22,6 +22,10 @@ public:
 	void Invalidate()
 	{
 	}
+
+	static void Request_Log_Statistics()
+	{
+	}
 };
 
 static DX8MeshRendererCompatClass TheDX8MeshRenderer;

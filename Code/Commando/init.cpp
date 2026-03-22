@@ -59,13 +59,13 @@
 #include "textdisplay.h"	// gamemode
 #include "scorescreen.h"	// gamemode
 #include "msgloop.h"
-#include "Resource.H"
+#include "resource.h"
 #include "miscutil.h"
 #include "cnetwork.h"
 #include "mathutil.h"
 #include "win.h"
-#include "Part_Ldr.H"
-#include "savegame.H"
+#include "part_ldr.h"
+#include "savegame.h"
 #include	"systemsettings.h"
 #include "gamedata.h"
 #include "sphereobj.h"
@@ -908,7 +908,9 @@ bool Game_Init(void)
 
 	Input::Init(dinput_avail);
 	Input::Load_Registry( APPLICATION_SUB_KEY_NAME_CONTROLS );
+	#if !defined(FREEDEDICATEDSERVER)
 	InputConfigMgrClass::Initialize();
+	#endif
 
 	//
 	//	Initialize the skin selection framework
@@ -973,6 +975,12 @@ bool Game_Init(void)
 	CampaignManager::Init();
 
 	// This order is also draw and think order
+	#if defined(FREEDEDICATEDSERVER)
+	GameModeManager::Add( new CombatGameModeClass );
+	GameModeManager::Add( new ConsoleGameModeClass );
+
+	GameModeManager::Find( "Console" )->Activate();
+	#else
 	GameModeManager::Add( new CombatGameModeClass );
 	GameModeManager::Add( new LanGameModeClass );
 	GameModeManager::Add( new WolGameModeClass );
@@ -990,9 +998,12 @@ bool Game_Init(void)
 	GameModeManager::Find( "Console" )->Activate();
 	GameModeManager::Find( "Menu" )->Activate();
 	GameModeManager::Find( "TextDisplay" )->Activate();
+	#endif
 
 	// After TextDisplay is created, install the Display Handler
+	#if !defined(FREEDEDICATEDSERVER)
 	DebugManager::Set_Display_Handler(&TextDisplayHandler);
+	#endif
 
 	//DEADMENU MenuManager::Set_Menu( "Menu_Main" );
 
@@ -1065,11 +1076,13 @@ bool Game_Init(void)
 			RenegadeDialogMgrClass::Goto_Location (RenegadeDialogMgrClass::LOC_SPLASH_IN);
 		}
 	} else {
+		#if !defined(FREEDEDICATEDSERVER)
 		MovieGameModeClass * mode = (MovieGameModeClass *)GameModeManager::Find ("Movie");
 		if ( mode ) {
 			mode->Activate();
 			mode->Startup_Movies( );
 		}
+		#endif
 	}
 
 #endif

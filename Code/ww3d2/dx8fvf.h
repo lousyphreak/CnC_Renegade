@@ -44,6 +44,14 @@
 #ifndef DX8_FVF_H
 #define DX8_FVF_H
 
+#include "renegade_build_config.h"
+
+#if !RENEGADE_WITH_DX8_RENDERER
+
+#include "../compat/dx8fvf.h"
+
+#else
+
 #include "always.h"
 #include <d3d8.h>
 #ifdef WWDEBUG
@@ -218,5 +226,7 @@ public:
 	void Get_FVF_Name(StringClass& fvfname) const;	// For debug purposes
 };
 
+
+#endif
 
 #endif

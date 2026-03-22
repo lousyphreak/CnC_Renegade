@@ -44,7 +44,7 @@
 
 #include "menudialog.h"
 #include "resource.h"
-#include <WWLib\Signaler.h>
+#include "Signaler.h"
 
 class DlgPasswordPrompt;
 

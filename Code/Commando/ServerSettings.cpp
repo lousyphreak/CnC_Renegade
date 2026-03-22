@@ -48,7 +48,6 @@
 #include "_globals.h"
 #include "bandwidth.h"
 #include "mpsettingsmgr.h"
-#include "wwonline\wolserver.h"
 #include "useroptions.h"
 #include "gamespyadmin.h"
 #include "servercontrol.h"
@@ -56,6 +55,10 @@
 #include "AutoStart.h"
 #include "GameSpy_QnR.h"
 #include "bandwidthcheck.h"
+
+#if RENEGADE_WITH_LEGACY_WOL
+#include "WOLServer.h"
+#endif
 
 
 
@@ -219,7 +222,7 @@ bool ServerSettingsClass::Parse(bool apply)
 		** Make sure the master server settings file is there.
 		*/
 		char filename[MAX_PATH];
-		sprintf(filename, "data\\%s", master_settings);
+		sprintf(filename, "data/%s", master_settings);
 		file.Set_Name(filename);
 		if (!file.Is_Available()) {
 			WWDEBUG_SAY(("Server settings file '%s' not found\n", filename));
@@ -554,7 +557,7 @@ bool ServerSettingsClass::Parse(bool apply)
 				*/
 				ini.Get_String(slave_section, ConfigSettingsName, "", slave_settings, sizeof(slave_settings));
 				if (strlen(slave_settings) != 0) {
-					sprintf(filename, "data\\%s", slave_settings);
+					sprintf(filename, "data/%s", slave_settings);
 					file.Set_Name(filename);
 					if (!file.Is_Available()) {
 						WWDEBUG_SAY(("Slave server settings file '%s' not found\n", filename));
@@ -760,6 +763,7 @@ void ServerSettingsClass::Decrypt_Serial(StringClass serial_in, StringClass &ser
  * HISTORY:                                                                                    *
  *   2/1/2002 1:18PM ST : Created                                                              *
  *=============================================================================================*/
+#if RENEGADE_WITH_LEGACY_WOL
 char *ServerSettingsClass::Get_Preferred_Server(const WWOnline::IRCServerList &server_list)
 {
 	if (IsActive && server_list.size()) {
@@ -808,10 +812,7 @@ void ServerSettingsClass::Write_Server_List(const WWOnline::IRCServerList &serve
 				** Read the file.
 				*/
 				char *file_buffer = new char[size + 8192];
-#ifdef WWDEBUG
-				unsigned long read_size =
-#endif //WWDEBUG
-				file.Read(file_buffer, size);
+				unsigned long read_size = file.Read(file_buffer, size);
 				WWASSERT(read_size == size);
 				file.Close();
 
@@ -855,6 +856,7 @@ void ServerSettingsClass::Write_Server_List(const WWOnline::IRCServerList &serve
 		}
 	}
 }
+#endif
 
 
 

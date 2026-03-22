@@ -46,13 +46,13 @@
 #include "crc.h"
 #include "msgstatlist.h"
 #include "wwprofile.h"
-#include "commando\nat.h"
-#include "commando\natter.h"
+#include "nat.h"
+#include "natter.h"
 #include "packetmgr.h"
 #include "BWBalance.h"
 
 #ifdef WWDEBUG
-#include "combat\crandom.h"
+#include "crandom.h"
 
 int cConnection::LatencyAddLow = 0;
 int cConnection::LatencyAddHigh = 0;
@@ -89,11 +89,13 @@ static const int		INVALID_RHOST_ID			= -1;
 char * Addr_As_String(sockaddr_in *addr)
 {
 	static char _string[128];
-	sprintf(_string, "%d.%d.%d.%d ; %d", 	(int)(addr->sin_addr.S_un.S_un_b.s_b1),
-														(int)(addr->sin_addr.S_un.S_un_b.s_b2),
-														(int)(addr->sin_addr.S_un.S_un_b.s_b3),
-														(int)(addr->sin_addr.S_un.S_un_b.s_b4),
-														htonl((int)(addr->sin_port)));
+	const uint32 address = ntohl(addr->sin_addr.s_addr);
+	sprintf(_string, "%d.%d.%d.%d ; %d",
+		(int)((address >> 24) & 0xFF),
+		(int)((address >> 16) & 0xFF),
+		(int)((address >> 8) & 0xFF),
+		(int)(address & 0xFF),
+		(int)ntohs(addr->sin_port));
 	return(_string);
 }
 //#endif //WWDEBUG
@@ -2368,7 +2370,7 @@ void cConnection::Service_Send(bool is_urgent)
          }
 
 	      // destroy all
-			for (objnode = p_rhost->Get_Packet_List(UNRELIABLE_SEND_LIST).Head();
+			for (SLNode<cPacket> * objnode = p_rhost->Get_Packet_List(UNRELIABLE_SEND_LIST).Head();
             objnode != NULL; objnode = objnode->Next()) {
 
             cPacket * p_packet = objnode->Data();

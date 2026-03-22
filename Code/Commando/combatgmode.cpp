@@ -81,6 +81,7 @@
 #include "sbbomanager.h"
 #include "savegame.h"
 #include "commandosaveload.h"
+#include "miscutil.h"
 #include "dlgmpingamechat.h"
 #include "loadingevent.h"
 #include "cheatmgr.h"
@@ -96,8 +97,8 @@
 #include "gametype.h"
 #include "wwmemlog.h"
 #include "directinput.h"
-#include "cncmodesettings.h"
-#include "announceevent.h"
+#include "CNCModeSettings.h"
+#include "AnnounceEvent.h"
 #include "FastAllocator.h"
 #include "dlgcncserverinfo.h"
 #include "radiocommanddisplay.h"
@@ -106,7 +107,7 @@
 #include "radiocommanddisplay.h"
 #include "ConsoleMode.h"
 #include "specialbuilds.h"
-#include <wwlib\realcrc.h>
+#include "realcrc.h"
 #include "demosupport.h"
 #include "natter.h"
 #include "gamespyadmin.h"
@@ -525,7 +526,7 @@ public:
 
 				backdrop.Set_Model(desc);
 				StringClass anim_name;
-				anim_name.Format( "%s.%s", desc, desc );
+				anim_name.Format( "%s.%s", desc.Peek_Buffer(), desc.Peek_Buffer() );
 				backdrop.Set_Animation( anim_name );
 				backdrop.Set_Animation_Percentage( 0 );
 			}
@@ -617,7 +618,7 @@ void CombatGameModeClass::Load_Level( void )
 	WWMEMLOG(MEM_GAMEDATA);
 	Debug_Say(("CombatGameModeClass::Load_Level\n"));
 
-	ConsoleBox.Print("Loading level %s\n", The_Game()->Get_Map_Name());
+	ConsoleBox.Print("Loading level %s\n", The_Game()->Get_Map_Name().Peek_Buffer());
 
 	CombatManager::Set_Load_Progress(0);
 	LoadingScreenClass loading_screen;	// Try moving this to very start of loading
@@ -677,7 +678,7 @@ void CombatGameModeClass::Load_Level( void )
 	preload_assets = cDevOptions::PreloadAssets.Get();
 #endif
 
-	DIAG_LOG(( "LOAD", "%s", map_name ));
+	DIAG_LOG(( "LOAD", "%s", map_name.Peek_Buffer() ));
 
 	NetworkObjectMgrClass::Set_Is_Level_Loading (true);
 

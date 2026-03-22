@@ -82,3 +82,31 @@ inline void AIL_lock()
 inline void AIL_unlock()
 {
 }
+
+inline void AIL_set_3D_position(H3DSAMPLE, float, float, float)
+{
+}
+
+inline void AIL_set_3D_orientation(H3DSAMPLE, float, float, float, float, float, float)
+{
+}
+
+inline void AIL_set_3D_velocity_vector(H3DSAMPLE, float, float, float, float)
+{
+}
+
+inline void AIL_set_3D_velocity_vector(H3DSAMPLE, float, float, float)
+{
+}
+
+inline void AIL_set_3D_sample_distances(H3DSAMPLE, float, float, int)
+{
+}
+
+inline void AIL_set_3D_sample_distances(H3DSAMPLE, float, float)
+{
+}
+
+inline void AIL_set_3D_sample_effects_level(H3DSAMPLE, float)
+{
+}

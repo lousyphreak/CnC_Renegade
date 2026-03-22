@@ -27,7 +27,9 @@ inline void OutputDebugStringW(const wchar_t * text)
     }
 }
 
+#ifndef RENEGADE_OUTPUTDEBUGSTRING_DEFINED
 inline void OutputDebugString(const char * text)
 {
     OutputDebugStringA(text);
 }
+#endif

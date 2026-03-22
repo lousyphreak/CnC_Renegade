@@ -34,19 +34,20 @@
 *
 ******************************************************************************/
 
-#include "announceevent.h"
+#include "AnnounceEvent.h"
 #include "networkobjectfactory.h"
 #include "apppackettypes.h"
 #include "networkobjectmgr.h"
 #include "cnetwork.h"
 #include "gamemode.h"
+#include "playermanager.h"
 #include "playertype.h"
 #include "translateobj.h"
 #include "translatedb.h"
 #include "WWAudio.h"
 #include "messagewindow.h"
-#include <wwlib\widestring.h>
-#include "cncmodesettings.h"
+#include "widestring.h"
+#include "CNCModeSettings.h"
 #include "floodprotectionmgr.h"
 
 
@@ -281,11 +282,12 @@ void SCAnnouncement::Act(void)
 
 			if (string)
 				{
-
-		    if (sender)
+				if (sender)
 					{
 					WideStringClass message(0, true);
-					message.Format(L"%s: %s", sender->Get_Name(), string);
+					message = sender->Get_Name();
+					message += L": ";
+					message += string;
 					CombatManager::Get_Message_Window()->Add_Message(message, sender->Get_Color());
 					}
 				else

@@ -54,7 +54,9 @@
 
 #include	"always.h"
 #include	"rawfile.h"
+#if defined(_WIN32)
 #include	<direct.h>
+#endif
 //#include	<share.h>
 #include	<stddef.h>
 #include	<stdio.h>
@@ -320,7 +322,7 @@ char const * RawFileClass::Set_Name(char const * filename)
 	** If this is a UNIX build, fix the filename from the DOS-like name passed in
 	*/
 	#ifdef _UNIX
-		for (int i=0; i<Filename.Length(); i++)
+		for (int i=0; i<Filename.Get_Length(); i++)
 		{
 			if (Filename[i]=='\\')
 				Filename[i]='/';
@@ -856,17 +858,18 @@ int RawFileClass::Size(void)
 	if (Is_Open()) {
 
       #ifdef _UNIX
-			fpos_t curpos,startpos,endpos;
-			fgetpos(Handle,&curpos);	
-
-			fseek(Handle,0,SEEK_SET);
-			fgetpos(Handle,&startpos);	
-
-			fseek(Handle,0,SEEK_END);
-			fgetpos(Handle,&endpos);	
-
-			size=endpos-startpos;
-			fsetpos(Handle,&curpos);
+			long curpos = ftell(Handle);
+			if (curpos < 0) {
+				size = 0xFFFFFFFF;
+			} else {
+				if (fseek(Handle, 0, SEEK_END) != 0) {
+					size = 0xFFFFFFFF;
+				} else {
+					long endpos = ftell(Handle);
+					size = (endpos >= 0) ? static_cast<int>(endpos) : 0xFFFFFFFF;
+				}
+				fseek(Handle, curpos, SEEK_SET);
+			}
 		#else
 			size = GetFileSize(Handle, NULL);
 		#endif

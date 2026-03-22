@@ -36,12 +36,16 @@
 
 
 #include "mpsettingsmgr.h"
+#include "renegade_build_config.h"
 #include "registry.h"
 #include "bittype.h"
 #include "_globals.h"
-#include "wwonline\\wolsession.h"
-#include <WWOnline\WOLLangCodes.h>
 #include "time.h"
+
+#if RENEGADE_WITH_LEGACY_WOL
+#include "WOLSession.h"
+#include "WOLLangCodes.h"
+#endif
 
 
 ////////////////////////////////////////////////////////////////
@@ -123,11 +127,16 @@ MPSettingsMgrClass::Load_Settings (void)
 			unsigned long lang = (sku & 0xFF);
 
 			// If this is not an Asian language region then use the Western defaults
+			#if RENEGADE_WITH_LEGACY_WOL
 			if ((WWOnline::LANGCODE_JAPANESE != lang) && (WWOnline::LANGCODE_KOREAN != lang)
 					&& (WWOnline::LANGCODE_CHINESE != lang)) {
 
 				defaultOptions = OPTION_DEFAULTS_LATIN;
 			}
+			#else
+			(void)lang;
+			defaultOptions = OPTION_DEFAULTS_LATIN;
+			#endif
 		}
 
 		OptionFlags = registry.Get_Int (REG_VALUE_OPTIONS, defaultOptions);
@@ -366,6 +375,7 @@ bool
 MPSettingsMgrClass::Are_Alternate_Skins_Unlocked (void)
 {
 	if (AreSkinsUnlocked == false) {
+		#if RENEGADE_WITH_LEGACY_WOL
 		
 		//
 		//	Do we have a valid WOL session to query?
@@ -427,6 +437,15 @@ MPSettingsMgrClass::Are_Alternate_Skins_Unlocked (void)
 			time_t curr_time;
 			AreSkinsUnlocked = (::time (&curr_time) >= expire_time);
 		}
+		#else
+		struct tm expiration_time_struct = { 0 };
+		expiration_time_struct.tm_year = 102;
+		expiration_time_struct.tm_mon = 2;
+		expiration_time_struct.tm_mday = 15;
+		time_t expire_time = ::mktime(&expiration_time_struct);
+		time_t curr_time;
+		AreSkinsUnlocked = (::time(&curr_time) >= expire_time);
+		#endif
 	}	
 
 	return AreSkinsUnlocked;

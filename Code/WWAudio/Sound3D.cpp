@@ -40,7 +40,7 @@
 #include "WWAudio.h"
 #include "SoundScene.h"
 #include "Utils.h"
-#include "soundchunkids.h"
+#include "SoundChunkIDs.h"
 #include "persistfactory.h"
 #include "chunkio.h"
 #include "sound3dhandle.h"
@@ -599,6 +599,10 @@ Sound3DClass::Initialize_Miles_Handle (void)
 void
 Sound3DClass::Allocate_Miles_Handle (void)
 {
+	#if WWAUDIO_USE_NULL_BACKEND
+	return;
+	#endif
+
 	//MMSLockClass lock;
 
 	//
@@ -762,6 +766,12 @@ Sound3DClass::Load (ChunkLoadClass &cload)
 void
 Sound3DClass::Set_Miles_Handle (MILES_HANDLE handle)
 {
+	#if WWAUDIO_USE_NULL_BACKEND
+	(void)handle;
+	Free_Miles_Handle();
+	return;
+	#endif
+
 	//
 	// Start fresh
 	//

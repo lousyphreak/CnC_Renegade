@@ -51,6 +51,7 @@
 #include "wwmath.h"
 #include "quat.h"
 #include "wwmath.h"
+#include <cmath>
 //#include <stdio.h>
 //#include <Windows.h>
 // Static Table, for Adaptive Delta Decompressor
@@ -1282,7 +1283,7 @@ return;
 	int count=datasize/sizeof(float);
 	for (int i=0;i<count;i++) {
 		float value=Data[i];
-		if (_isnan(value)) value=0.0f;
+		if (std::isnan(value)) value=0.0f;
 		if (value>100000.0f) value=0.0f;
 		if (value<-100000.0f) value=0.0f;
 		Data[i]=value;
@@ -1299,6 +1300,7 @@ return;
 	WWASSERT(!CompressedData);
 	CompressedData=new unsigned short[count];
 	float inv_scale=0.0f;
+	int i = 0;
 	if (ValueScale!=0.0f) {
 		inv_scale=1.0f/ValueScale;
 	}
@@ -1308,7 +1310,7 @@ return;
 		value-=ValueOffset;
 		value*=inv_scale;
 		int ivalue=WWMath::Float_To_Int_Floor(value);
-		CompressedData[i]=unsigned short(ivalue);
+		CompressedData[i]=static_cast<unsigned short>(ivalue);
 
 		float new_scale=ValueScale/65535.0f;
 		float new_value=int(CompressedData[i]);

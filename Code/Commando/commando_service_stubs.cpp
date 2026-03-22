@@ -7,22 +7,240 @@
 #include "wolgmode.h"
 #include "AutoStart.h"
 #include "ConsoleMode.h"
-#include "gamemode.h"
 #include "nat.h"
+#include "registry.h"
+#include "slavemaster.h"
+#include "_globals.h"
 
 #include "wwstring.h"
+SlaveServerClass::SlaveServerClass(void) :
+    Port(0),
+    Enable(false),
+    IsRunning(false),
+    ControlPort(0),
+    Bandwidth(0xffffffff)
+{
+    NickName[0] = '\0';
+    Serial[0] = '\0';
+    Password[0] = '\0';
+    SettingsFileName[0] = '\0';
+    ProcessInfo.hProcess = NULL;
+    ProcessInfo.hThread = NULL;
+    ProcessInfo.dwProcessId = 0;
+    ProcessInfo.dwThreadId = 0;
+}
+
+SlaveServerClass::~SlaveServerClass(void) = default;
+
+void SlaveServerClass::Set(bool enable, char *nick, char *serial, unsigned short port, char *settings_file, int bandwidth, char *password)
+{
+    Enable = enable;
+    Port = port;
+    Bandwidth = bandwidth;
+    IsRunning = false;
+    ControlPort = 0;
+
+    if (nick != NULL) {
+        std::strncpy(NickName, nick, sizeof(NickName) - 1);
+        NickName[sizeof(NickName) - 1] = '\0';
+    } else {
+        NickName[0] = '\0';
+    }
+
+    if (serial != NULL) {
+        std::strncpy(Serial, serial, sizeof(Serial) - 1);
+        Serial[sizeof(Serial) - 1] = '\0';
+    } else {
+        Serial[0] = '\0';
+    }
+
+    if (password != NULL) {
+        std::strncpy(Password, password, sizeof(Password) - 1);
+        Password[sizeof(Password) - 1] = '\0';
+    } else {
+        Password[0] = '\0';
+    }
+
+    if (settings_file != NULL) {
+        std::strncpy(SettingsFileName, settings_file, sizeof(SettingsFileName) - 1);
+        SettingsFileName[sizeof(SettingsFileName) - 1] = '\0';
+    } else {
+        SettingsFileName[0] = '\0';
+    }
+}
+
+void SlaveServerClass::Get(bool &enable, char *nick, char *serial, unsigned short &port, char *settings_file, int &bandwidth, char *password)
+{
+    enable = Enable;
+    port = Port;
+    bandwidth = Bandwidth;
+
+    if (nick != NULL) {
+        std::strcpy(nick, NickName);
+    }
+
+    if (serial != NULL) {
+        std::strcpy(serial, Serial);
+    }
+
+    if (settings_file != NULL) {
+        std::strcpy(settings_file, SettingsFileName);
+    }
+
+    if (password != NULL) {
+        std::strcpy(password, Password);
+    }
+}
+
+SlaveMasterClass SlaveMaster;
+
+SlaveMasterClass::SlaveMasterClass(void) :
+    NumSlaveServers(0),
+    SlaveMode(false)
+{
+}
+
+SlaveMasterClass::~SlaveMasterClass(void) = default;
+
+void SlaveMasterClass::Startup_Slaves(void)
+{
+}
+
+void SlaveMasterClass::Shutdown_Slaves(void)
+{
+    for (int index = 0; index < NumSlaveServers; ++index) {
+        SlaveServers[index].IsRunning = false;
+    }
+}
+
+bool SlaveMasterClass::Shutdown_Slave(char *slave_login)
+{
+    if (slave_login == NULL) {
+        return false;
+    }
+
+    for (int index = 0; index < NumSlaveServers; ++index) {
+        if (std::strcmp(SlaveServers[index].NickName, slave_login) == 0) {
+            SlaveServers[index].IsRunning = false;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+char *SlaveMasterClass::Get_Slave_Info(char *buffer, int buflen)
+{
+    if (buffer == NULL || buflen <= 0) {
+        return buffer;
+    }
+
+    std::snprintf(buffer, buflen, "single-process mode: slave orchestration disabled");
+    return buffer;
+}
+
+void SlaveMasterClass::Load(void)
+{
+}
+
+void SlaveMasterClass::Save(void)
+{
+}
+
+void SlaveMasterClass::Reset(void)
+{
+    NumSlaveServers = 0;
+    for (int index = 0; index < MAX_SLAVES; ++index) {
+        SlaveServers[index] = SlaveServerClass();
+    }
+}
+
+int SlaveMasterClass::Get_Num_Enabled_Slaves(void)
+{
+    int enabled_count = 0;
+    for (int index = 0; index < NumSlaveServers; ++index) {
+        if (SlaveServers[index].Enable) {
+            ++enabled_count;
+        }
+    }
+    return enabled_count;
+}
+
+void SlaveMasterClass::Add_Slave(bool enable, char *nick, char *serial, unsigned short port, char *settings_file, int bandwidth, char *password)
+{
+    if (NumSlaveServers >= MAX_SLAVES) {
+        return;
+    }
+
+    SlaveServers[NumSlaveServers].Set(enable, nick, serial, port, settings_file, bandwidth, password);
+    ++NumSlaveServers;
+}
+
+SlaveServerClass *SlaveMasterClass::Get_Slave(int index)
+{
+    if (index < 0 || index >= NumSlaveServers) {
+        return NULL;
+    }
+
+    return &SlaveServers[index];
+}
+
 #include "widestring.h"
 
-#include <algorithm>
+#include <SDL3/SDL_misc.h>
+
 #include <cstring>
 #include <cstdarg>
 #include <cstdio>
-#include <vector>
 
 namespace {
 
-std::vector<GameModeClass *> gGameModes;
-unsigned gHiddenRenderFrames = 0;
+struct WebPageEntry {
+    const char *name;
+    const char *embedded_url;
+    const char *external_url;
+};
+
+const WebPageEntry kDefaultWebPages[] = {
+    {"BattleClans", "http://renchat2.westwood.com/cgi-bin/cgiclient?ren_clan_manager&request=expand_template&Template=index.html&SKU=3072&LANGCODE=0&embedded=1", "http://renchat2.westwood.com/cgi-bin/cgiclient?ren_clan_manager&request=expand_template&Template=index.html&SKU=3072&LANGCODE=0"},
+    {"Ladder", "http://renchat2.westwood.com/renegade_embedded/index.html", "http://renchat2.westwood.com/renegade/index.html"},
+    {"NetStatus", "http://battleclans.westwood.com/cgi-bin/cgiclient?rosetta&request=do_netstatus&LANGCODE=0&SKU=3072&embedded=1", "http://battleclans.westwood.com/cgi-bin/cgiclient?rosetta&request=do_netstatus&LANGCODE=0&SKU=3072"},
+    {"News", "http://battleclans.westwood.com/cgi-bin/cgiclient?rosetta&request=do_news&LANGCODE=0&SKU=3072&embedded=1", "http://battleclans.westwood.com/cgi-bin/cgiclient?rosetta&request=do_news&LANGCODE=0&SKU=3072"},
+    {"Signup", "http://games2.westwood.com/cgi-bin/cgiclient?ren_reg2&request=expand_template&Template=newreg_menu.html&LANGCODE=0&embedded=1&SKU=3072", "http://games2.westwood.com/cgi-bin/cgiclient?ren_reg2&request=expand_template&Template=newreg_menu.html&LANGCODE=0"},
+    {nullptr, nullptr, nullptr},
+};
+
+const WebPageEntry *Find_Default_Web_Page(const char *page)
+{
+    if (page == NULL) {
+        return nullptr;
+    }
+
+    for (const WebPageEntry *entry = kDefaultWebPages; entry->name != nullptr; ++entry) {
+        if (std::strcmp(entry->name, page) == 0) {
+            return entry;
+        }
+    }
+
+    return nullptr;
+}
+
+bool Resolve_Web_Page_URL(const char *page, char *url, int url_size)
+{
+    if (page == NULL || url == NULL || url_size <= 0) {
+        return false;
+    }
+
+    const WebPageEntry *default_entry = Find_Default_Web_Page(page);
+    const char *default_url = (default_entry != nullptr) ? default_entry->external_url : page;
+
+    RegistryClass registry(APPLICATION_SUB_KEY_NAME_URL, false);
+    StringClass value_name(page, true);
+    value_name += "X";
+    registry.Get_String(value_name.Peek_Buffer(), url, url_size, default_url);
+
+    return url[0] != '\0';
+}
 
 }
 
@@ -266,147 +484,6 @@ void CCDKeyAuth::AuthSerial(const char *, StringClass &resp)
     resp = "";
 }
 
-Vector3 GameModeManager::BackgroundColor;
-int GameMajorModeClass::NumActiveMajorModes = 0;
-
-void GameModeClass::Activate()
-{
-    if (State == GAME_MODE_ACTIVE) {
-        return;
-    }
-    State = GAME_MODE_ACTIVE;
-    Init();
-}
-
-void GameModeClass::Deactivate()
-{
-    if (State == GAME_MODE_INACTIVE) {
-        return;
-    }
-    Shutdown();
-    State = GAME_MODE_INACTIVE;
-}
-
-void GameModeClass::Safely_Deactivate()
-{
-    if (State == GAME_MODE_INACTIVE_PENDING) {
-        Deactivate();
-    }
-}
-
-void GameModeClass::Suspend()
-{
-    if (State == GAME_MODE_ACTIVE) {
-        State = GAME_MODE_SUSPENDED;
-    }
-}
-
-void GameModeClass::Resume()
-{
-    if (State == GAME_MODE_SUSPENDED) {
-        State = GAME_MODE_ACTIVE;
-    }
-}
-
-void GameMajorModeClass::Activate()
-{
-    if (State != GAME_MODE_ACTIVE) {
-        ++NumActiveMajorModes;
-    }
-    GameModeClass::Activate();
-}
-
-void GameMajorModeClass::Deactivate()
-{
-    if (State == GAME_MODE_ACTIVE && NumActiveMajorModes > 0) {
-        --NumActiveMajorModes;
-    }
-    GameModeClass::Deactivate();
-}
-
-GameModeClass *GameModeManager::Add(GameModeClass *mode)
-{
-    if (mode != nullptr) {
-        gGameModes.push_back(mode);
-    }
-    return mode;
-}
-
-void GameModeManager::Remove(GameModeClass *mode)
-{
-    gGameModes.erase(std::remove(gGameModes.begin(), gGameModes.end(), mode), gGameModes.end());
-}
-
-int GameModeManager::Count()
-{
-    return static_cast<int>(gGameModes.size());
-}
-
-void GameModeManager::Destroy(GameModeClass *mode)
-{
-    Remove(mode);
-    delete mode;
-}
-
-void GameModeManager::Destroy_All(void)
-{
-    for (GameModeClass *mode : gGameModes) {
-        delete mode;
-    }
-    gGameModes.clear();
-}
-
-void GameModeManager::List_Active_Game_Modes(void)
-{
-}
-
-void GameModeManager::Think(void)
-{
-    for (GameModeClass *mode : gGameModes) {
-        if (mode != nullptr && !mode->Is_Inactive() && !mode->Is_Suspended()) {
-            mode->Think();
-        }
-    }
-}
-
-void GameModeManager::Render(void)
-{
-    if (gHiddenRenderFrames > 0) {
-        --gHiddenRenderFrames;
-        return;
-    }
-
-    for (GameModeClass *mode : gGameModes) {
-        if (mode != nullptr && !mode->Is_Inactive()) {
-            mode->Render();
-        }
-    }
-}
-
-GameModeClass *GameModeManager::Find(const char *name)
-{
-    for (GameModeClass *mode : gGameModes) {
-        if (mode != nullptr && name != nullptr && std::strcmp(mode->Name(), name) == 0) {
-            return mode;
-        }
-    }
-    return nullptr;
-}
-
-void GameModeManager::Safely_Deactivate()
-{
-    for (GameModeClass *mode : gGameModes) {
-        if (mode != nullptr) {
-            mode->Safely_Deactivate();
-        }
-    }
-}
-
-void GameModeManager::Hide_Render_Frames(unsigned frame_count)
-{
-    gHiddenRenderFrames = frame_count;
-}
-
 #if !defined(_WIN32)
 
 ConsoleModeClass ConsoleBox;
@@ -563,7 +640,7 @@ WebBrowser *WebBrowser::_mInstance = nullptr;
 #ifdef _DEBUG
 bool WebBrowser::InstallPrerequisites(void)
 {
-    return false;
+    return true;
 }
 #endif
 
@@ -585,14 +662,25 @@ bool WebBrowser::IsExternalBrowserRunning(void) const
     return false;
 }
 
-bool WebBrowser::ShowWebPage(char *)
+bool WebBrowser::ShowWebPage(char *page)
 {
-    return false;
+    char url[512];
+    if (!Resolve_Web_Page_URL(page, url, static_cast<int>(sizeof(url)))) {
+        return false;
+    }
+
+    return LaunchExternal(url);
 }
 
-bool WebBrowser::LaunchExternal(const char *)
+bool WebBrowser::LaunchExternal(const char *url)
 {
-    return false;
+    if (url == nullptr || url[0] == '\0') {
+        return false;
+    }
+
+    const bool launched = SDL_OpenURL(url);
+    mVisible = false;
+    return launched;
 }
 
 void WebBrowser::Show(void)

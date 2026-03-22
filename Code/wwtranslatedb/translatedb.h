@@ -252,7 +252,9 @@ TranslateDBClass::Get_String (uint32 id)
 	//
 	//	Check to make sure the database is loaded
 	//
-	WWASSERT (Is_Loaded());
+	if (!Is_Loaded()) {
+		return string;
+	}
 
 	//
 	//	Calculate which index this ID refers to
@@ -329,7 +331,9 @@ TranslateDBClass::Get_English_String (uint32 id)
 	//
 	//	Check to make sure the database is loaded
 	//
-	WWASSERT (m_ObjectList.Count () > 0);
+	if (m_ObjectList.Count () == 0) {
+		return string;
+	}
 
 	//
 	//	Calculate which index this ID refers to

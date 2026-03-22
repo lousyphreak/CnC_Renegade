@@ -53,6 +53,10 @@
 	#include "wwstring.h"
 #endif
 
+#ifndef VECTOR_H
+	#include "vector.h"
+#endif
+
 #ifndef	DEBUG_H
 	#include "debug.h"
 #endif

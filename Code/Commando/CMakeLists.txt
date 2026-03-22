@@ -87,16 +87,66 @@ list(REMOVE_ITEM COMMANDO_SOURCES
     evictionevent.cpp
     floodprotectionmgr.cpp
     gameinitmgr.cpp
-    gamemode.cpp
     gamesideservercontrol.cpp
     gdcnc.cpp
     init.cpp
     mainloop.cpp
     slavemaster.cpp
-    systemsettings.cpp
 )
 
 set(COMMANDO_DEDICATED_SOURCES ${COMMANDO_SOURCES})
+
+list(APPEND COMMANDO_DEDICATED_SOURCES
+    AnnounceEvent.cpp
+    bandwidth.cpp
+    bandwidthgraph.cpp
+    buildnum.cpp
+    campaign.cpp
+    cnetwork.cpp
+    combatgmode.cpp
+    console.cpp
+    consolefunction.cpp
+    diagnostics.cpp
+    dlgcncwinscreen.cpp
+    evictionevent.cpp
+    floodprotectionmgr.cpp
+    gamemenu.cpp
+    gameoptionsevent.cpp
+    gameinitmgr.cpp
+    gamesideservercontrol.cpp
+    gdcnc.cpp
+    init.cpp
+    lanchat.cpp
+    mainloop.cpp
+    movie.cpp
+    mpsettingsmgr.cpp
+    multihud.cpp
+    overlay.cpp
+    radiocommanddisplay.cpp
+    renegadedialogmgr_dedicated.cpp
+    commando_dedicated_ui_stubs.cpp
+    sbbomanager.cpp
+    sctextobj.cpp
+    scorescreen.cpp
+    ServerSettings.cpp
+    serverfps.cpp
+    shutdown.cpp
+    textdisplay.cpp
+)
+
+list(REMOVE_ITEM COMMANDO_DEDICATED_SOURCES renegadedialogmgr.cpp)
+list(REMOVE_ITEM COMMANDO_DEDICATED_SOURCES
+    langmode.cpp
+    gamemenu.cpp
+    movie.cpp
+    overlay.cpp
+    scorescreen.cpp
+    textdisplay.cpp
+    inputconfig.cpp
+    inputconfigmgr.cpp
+    lanchat.cpp
+    radiocommanddisplay.cpp
+)
 
 set(COMMANDO_DEDICATED_EXECUTABLE_SOURCES
     commando_dedicated_bootstrap.cpp
@@ -138,9 +188,11 @@ target_link_libraries(CommandoLib
     PUBLIC
         BinkMovie
         Combat
+        SControl
         Scripts
         WWAudio
         WWMath
+        ww3d2
         wwbitpack
         wwdebug
         wwnet
@@ -172,9 +224,11 @@ target_link_libraries(CommandoDedicatedLib
     PUBLIC
         BinkMovie
         Combat
+        SControl
         Scripts
         WWAudio
         WWMath
+        ww3d2
         wwbitpack
         wwdebug
         wwnet

@@ -1,13 +1,6 @@
 file(GLOB WWNET_SOURCES CONFIGURE_DEPENDS "*.cpp")
 file(GLOB WWNET_HEADERS CONFIGURE_DEPENDS "*.h")
 
-if(NOT WIN32)
-    list(REMOVE_ITEM WWNET_SOURCES
-        "${CMAKE_CURRENT_SOURCE_DIR}/BWBalance.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/connect.cpp"
-    )
-endif()
-
 add_library(wwnet STATIC ${WWNET_SOURCES} ${WWNET_HEADERS})
 renegade_configure_target(wwnet)
 

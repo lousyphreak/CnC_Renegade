@@ -124,29 +124,49 @@ char ErrorVal[1024] = {0,0,0,0};
 **
 */
 typedef unsigned int DATASAFE_UNSIGNED_INT;
+
+#if defined(FREEDEDICATEDSERVER)
+DataSafeClass<int> DataSafeint(NULL, 0);
+#else
 DataSafeClass<int> DataSafeint;
-template<> int DataSafeClass<int>::Type;
-template<> char DataSafeClass<int>::ReturnList[MAX_OBJECT_COPIES][sizeof(int)];
-template<> int DataSafeClass<int>::ReturnIndex;
-template<> int DataSafeClass<int>::MinSlop;
+#endif
+template<> int DataSafeClass<int>::Type = 0;
+template<> char DataSafeClass<int>::ReturnList[MAX_OBJECT_COPIES][sizeof(int)] = {};
+template<> int DataSafeClass<int>::ReturnIndex = 0;
+template<> int DataSafeClass<int>::MinSlop = 0;
 
+
+#if defined(FREEDEDICATEDSERVER)
+DataSafeClass<DATASAFE_UNSIGNED_INT> DataSafeDATASAFE_UNSIGNED_INT(NULL, 0);
+#else
 DataSafeClass<DATASAFE_UNSIGNED_INT> DataSafeDATASAFE_UNSIGNED_INT;
-template<> int DataSafeClass<DATASAFE_UNSIGNED_INT>::Type;
-template<> char DataSafeClass<DATASAFE_UNSIGNED_INT>::ReturnList[MAX_OBJECT_COPIES][sizeof(DATASAFE_UNSIGNED_INT)];
-template<> int DataSafeClass<DATASAFE_UNSIGNED_INT>::ReturnIndex;
-template<> int DataSafeClass<DATASAFE_UNSIGNED_INT>::MinSlop;
+#endif
+template<> int DataSafeClass<DATASAFE_UNSIGNED_INT>::Type = 0;
+template<> char DataSafeClass<DATASAFE_UNSIGNED_INT>::ReturnList[MAX_OBJECT_COPIES][sizeof(DATASAFE_UNSIGNED_INT)] = {};
+template<> int DataSafeClass<DATASAFE_UNSIGNED_INT>::ReturnIndex = 0;
+template<> int DataSafeClass<DATASAFE_UNSIGNED_INT>::MinSlop = 0;
 
+
+#if defined(FREEDEDICATEDSERVER)
+DataSafeClass<float> DataSafefloat(NULL, 0);
+#else
 DataSafeClass<float> DataSafefloat;
-template<> int DataSafeClass<float>::Type;
-template<> char DataSafeClass<float>::ReturnList[MAX_OBJECT_COPIES][sizeof(float)];
-template<> int DataSafeClass<float>::ReturnIndex;
-template<> int DataSafeClass<float>::MinSlop;
+#endif
+template<> int DataSafeClass<float>::Type = 0;
+template<> char DataSafeClass<float>::ReturnList[MAX_OBJECT_COPIES][sizeof(float)] = {};
+template<> int DataSafeClass<float>::ReturnIndex = 0;
+template<> int DataSafeClass<float>::MinSlop = 0;
 
+
+#if defined(FREEDEDICATEDSERVER)
+DataSafeClass<double> DataSafedouble(NULL, 0);
+#else
 DataSafeClass<double> DataSafedouble;
-template<> int DataSafeClass<double>::Type;
-template<> char DataSafeClass<double>::ReturnList[MAX_OBJECT_COPIES][sizeof(double)];
-template<> int DataSafeClass<double>::ReturnIndex;
-template<> int DataSafeClass<double>::MinSlop;
+#endif
+template<> int DataSafeClass<double>::Type = 0;
+template<> char DataSafeClass<double>::ReturnList[MAX_OBJECT_COPIES][sizeof(double)] = {};
+template<> int DataSafeClass<double>::ReturnIndex = 0;
+template<> int DataSafeClass<double>::MinSlop = 0;
 
 /*
 ** Define this to set the keys to a fixed value to aid debugging.

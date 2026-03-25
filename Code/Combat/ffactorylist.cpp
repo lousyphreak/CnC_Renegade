@@ -177,8 +177,12 @@ FileClass * FileFactoryListClass::Get_File( char const *filename )
 
 	// Failed!
 
-	// Just use the first and don't check for available
-	if ( FactoryList.Count() > 0 ) {
+	// If there is only a single factory, preserve the legacy fallback behavior so
+	// callers can still obtain a path for files they intend to create later. When
+	// multiple factories are present, returning an unavailable file from the first
+	// factory prevents archive-backed lookups from working correctly on
+	// case-sensitive platforms.
+	if ( FactoryList.Count() == 1 ) {
 		FileClass * file = FactoryList[0]->Get_File( filename );
 		if ( file != NULL ) {
 			return file;

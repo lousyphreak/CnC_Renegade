@@ -78,150 +78,26 @@
 #ifdef _UNIX
 namespace
 {
-bool Is_Path_Separator(char ch)
-{
-	return (ch == '/') || (ch == '\\');
-}
-
-void Normalize_Unix_Path_Separators(StringClass &path)
-{
-	for (int index = 0; index < path.Get_Length(); ++index) {
-		if (path[index] == '\\') {
-			path[index] = '/';
-		}
-	}
-}
-
-bool Find_Case_Insensitive_Path_Component(const std::filesystem::path &directory, const char *component, std::string &matched_component)
-{
-	std::error_code error;
-	for (const auto &entry : std::filesystem::directory_iterator(directory, error)) {
-		if (error) {
-			break;
-		}
-
-		const std::string filename = entry.path().filename().string();
-		if (_stricmp(filename.c_str(), component) == 0) {
-			matched_component = filename;
-			return true;
-		}
-	}
-
-	return false;
-}
-
-bool Resolve_Unix_Path_Case(const char *filename, bool allow_missing_leaf, StringClass &resolved_name)
-{
-	if (filename == NULL || filename[0] == 0) {
-		return false;
-	}
-
-	StringClass normalized_name(filename, true);
-	Normalize_Unix_Path_Separators(normalized_name);
-
-	const char *path = normalized_name.Peek_Buffer();
-	const int path_length = normalized_name.Get_Length();
-	if (path_length == 0) {
-		return false;
-	}
-
-	std::filesystem::path current_path;
-	int cursor = 0;
-
-	if (Is_Path_Separator(path[0])) {
-		current_path = std::filesystem::path("/");
-		while (cursor < path_length && Is_Path_Separator(path[cursor])) {
-			++cursor;
-		}
-	}
-
-	while (cursor < path_length) {
-		while (cursor < path_length && Is_Path_Separator(path[cursor])) {
-			++cursor;
-		}
-		if (cursor >= path_length) {
-			break;
-		}
-
-		const int component_start = cursor;
-		while (cursor < path_length && !Is_Path_Separator(path[cursor])) {
-			++cursor;
-		}
-
-		const int component_length = cursor - component_start;
-		std::string component(path + component_start, path + component_start + component_length);
-		if (component == ".") {
-			continue;
-		}
-		if (component == "..") {
-			if (current_path.empty()) {
-				current_path = std::filesystem::path("..");
-			} else {
-				current_path /= component;
-			}
-			continue;
-		}
-
-		int next_component = cursor;
-		while (next_component < path_length && Is_Path_Separator(path[next_component])) {
-			++next_component;
-		}
-		const bool is_last_component = (next_component >= path_length);
-
-		const std::filesystem::path search_directory = current_path.empty() ? std::filesystem::path(".") : current_path;
-		std::error_code status_error;
-		if (!std::filesystem::exists(search_directory, status_error) || !std::filesystem::is_directory(search_directory, status_error)) {
-			return false;
-		}
-
-		std::string matched_component;
-		if (Find_Case_Insensitive_Path_Component(search_directory, component.c_str(), matched_component)) {
-			current_path /= matched_component;
-		} else {
-			if (allow_missing_leaf && is_last_component) {
-				current_path /= component;
-				const std::string resolved_path = current_path.string();
-				resolved_name = resolved_path.c_str();
-				return true;
-			}
-			return false;
-		}
-	}
-
-	const std::string resolved_path = current_path.empty() ? std::string(path) : current_path.string();
-	resolved_name = resolved_path.c_str();
-	return true;
-}
-
 bool Build_Unix_Filename_For_Access(const char *filename, int rights, StringClass &platform_name)
 {
-	if (filename == NULL || filename[0] == 0) {
+	std::filesystem::path resolved_path;
+	if (!renegade_osdep::Resolve_Path_For_Access(filename, (rights & FileClass::WRITE) != 0, resolved_path)) {
 		return false;
 	}
 
-	StringClass normalized_name(filename, true);
-	Normalize_Unix_Path_Separators(normalized_name);
-
-	std::error_code error;
-	if (std::filesystem::exists(normalized_name.Peek_Buffer(), error)) {
-		platform_name = normalized_name;
-		return true;
-	}
-
-	if (Resolve_Unix_Path_Case(normalized_name.Peek_Buffer(), false, platform_name)) {
-		return true;
-	}
-
-	if ((rights & FileClass::WRITE) != 0) {
-		return Resolve_Unix_Path_Case(normalized_name.Peek_Buffer(), true, platform_name);
-	}
-
-	return false;
+	platform_name = resolved_path.string().c_str();
+	return true;
 }
 
 bool Build_Unix_Filename_For_Existing_File(const char *filename, StringClass &platform_name)
 {
-	return Build_Unix_Filename_For_Access(filename, FileClass::READ, platform_name);
+	std::filesystem::path resolved_path;
+	if (!renegade_osdep::Resolve_Existing_Path(filename, resolved_path)) {
+		return false;
+	}
+
+	platform_name = resolved_path.string().c_str();
+	return true;
 }
 }
 #endif
@@ -1159,7 +1035,11 @@ int RawFileClass::Delete(void)
 
 		int deleteok;
 		#ifdef _UNIX
-			deleteok=(unlink(Filename)==0)?TRUE:FALSE;
+			StringClass platform_name(true);
+			if (!Build_Unix_Filename_For_Existing_File(Filename, platform_name)) {
+				return(false);
+			}
+			deleteok=(unlink(platform_name)==0)?TRUE:FALSE;
 		#else
 			deleteok=DeleteFile(Filename);
 		#endif

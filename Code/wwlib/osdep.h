@@ -520,6 +520,172 @@ inline std::string Normalize_Path(const char * path)
     return normalized;
 }
 
+inline bool Is_Path_Separator(char ch)
+{
+    return (ch == '/') || (ch == '\\');
+}
+
+inline bool Find_Case_Insensitive_Path_Component(const std::filesystem::path & directory, const std::string & component, std::string & matched_component)
+{
+    std::error_code error;
+    for (const auto & entry : std::filesystem::directory_iterator(directory, error)) {
+        if (error) {
+            break;
+        }
+
+        const std::string filename = entry.path().filename().string();
+        if (::strcasecmp(filename.c_str(), component.c_str()) == 0) {
+            matched_component = filename;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+inline bool Resolve_Path_Case(const std::string & normalized_path, bool allow_missing_leaf, std::filesystem::path & resolved_path)
+{
+    if (normalized_path.empty()) {
+        return false;
+    }
+
+    const char * path = normalized_path.c_str();
+    const int path_length = static_cast<int>(normalized_path.size());
+
+    std::filesystem::path current_path;
+    int cursor = 0;
+
+    if (Is_Path_Separator(path[0])) {
+        current_path = std::filesystem::path("/");
+        while (cursor < path_length && Is_Path_Separator(path[cursor])) {
+            ++cursor;
+        }
+    }
+
+    while (cursor < path_length) {
+        while (cursor < path_length && Is_Path_Separator(path[cursor])) {
+            ++cursor;
+        }
+        if (cursor >= path_length) {
+            break;
+        }
+
+        const int component_start = cursor;
+        while (cursor < path_length && !Is_Path_Separator(path[cursor])) {
+            ++cursor;
+        }
+
+        std::string component(path + component_start, path + cursor);
+        if (component == ".") {
+            continue;
+        }
+        if (component == "..") {
+            if (current_path.empty()) {
+                current_path = std::filesystem::path("..");
+            } else {
+                current_path /= component;
+            }
+            continue;
+        }
+
+        int next_component = cursor;
+        while (next_component < path_length && Is_Path_Separator(path[next_component])) {
+            ++next_component;
+        }
+        const bool is_last_component = (next_component >= path_length);
+
+        const std::filesystem::path search_directory = current_path.empty() ? std::filesystem::path(".") : current_path;
+        std::error_code status_error;
+        if (!std::filesystem::exists(search_directory, status_error) || !std::filesystem::is_directory(search_directory, status_error)) {
+            return false;
+        }
+
+        std::string matched_component;
+        if (Find_Case_Insensitive_Path_Component(search_directory, component, matched_component)) {
+            current_path /= matched_component;
+        } else {
+            if (allow_missing_leaf && is_last_component) {
+                current_path /= component;
+                resolved_path = current_path;
+                return true;
+            }
+            return false;
+        }
+    }
+
+    resolved_path = current_path.empty() ? std::filesystem::path(normalized_path) : current_path;
+    return true;
+}
+
+inline bool Resolve_Existing_Path(const char * path, std::filesystem::path & resolved_path)
+{
+    const std::string normalized = Normalize_Path(path);
+    if (normalized.empty()) {
+        return false;
+    }
+
+    std::error_code error;
+    const std::filesystem::path candidate(normalized);
+    if (std::filesystem::exists(candidate, error)) {
+        resolved_path = candidate;
+        return true;
+    }
+
+    return Resolve_Path_Case(normalized, false, resolved_path);
+}
+
+inline bool Resolve_Path_For_Access(const char * path, bool allow_missing_leaf, std::filesystem::path & resolved_path)
+{
+    if (Resolve_Existing_Path(path, resolved_path)) {
+        return true;
+    }
+
+    if (!allow_missing_leaf) {
+        return false;
+    }
+
+    const std::string normalized = Normalize_Path(path);
+    if (normalized.empty()) {
+        return false;
+    }
+
+    return Resolve_Path_Case(normalized, true, resolved_path);
+}
+
+inline bool Resolve_Find_Pattern(const char * pattern, std::filesystem::path & directory, std::string & wildcard)
+{
+    const std::string normalized = Normalize_Path(pattern);
+    if (normalized.empty()) {
+        return false;
+    }
+
+    const std::filesystem::path path(normalized);
+    wildcard = path.filename().string();
+
+    std::filesystem::path raw_directory = path.has_parent_path() ? path.parent_path() : std::filesystem::path(".");
+    if (raw_directory.empty()) {
+        raw_directory = std::filesystem::path(".");
+    }
+
+    return Resolve_Existing_Path(raw_directory.string().c_str(), directory);
+}
+
+inline void Populate_Find_Data(const std::filesystem::path & entry_path, WIN32_FIND_DATA * find_data)
+{
+    if (find_data == nullptr) {
+        return;
+    }
+
+    std::memset(find_data, 0, sizeof(*find_data));
+    std::snprintf(find_data->cFileName, sizeof(find_data->cFileName), "%s", entry_path.filename().string().c_str());
+
+    std::error_code error;
+    const auto status = std::filesystem::status(entry_path, error);
+    if (!error && std::filesystem::is_directory(status)) {
+        find_data->dwFileAttributes |= FILE_ATTRIBUTE_DIRECTORY;
+    }
+}
+
 inline bool Wildcard_Match(const char * pattern, const char * text)
 {
     if (pattern == nullptr || text == nullptr) {
@@ -660,8 +826,13 @@ inline BOOL TryEnterCriticalSection(CRITICAL_SECTION * critical_section)
 
 inline int DeleteFile(const char * filename)
 {
+    std::filesystem::path resolved_path;
+    if (!renegade_osdep::Resolve_Existing_Path(filename, resolved_path)) {
+        return FALSE;
+    }
+
     std::error_code error;
-    return std::filesystem::remove(filename, error) ? TRUE : FALSE;
+    return std::filesystem::remove(resolved_path, error) ? TRUE : FALSE;
 }
 
 inline int MoveFile(const char * existing_filename, const char * new_filename)
@@ -671,11 +842,20 @@ inline int MoveFile(const char * existing_filename, const char * new_filename)
         return FALSE;
     }
 
+    std::filesystem::path existing_path;
+    if (!renegade_osdep::Resolve_Existing_Path(existing_filename, existing_path)) {
+        errno = ENOENT;
+        return FALSE;
+    }
+
+    std::filesystem::path new_path;
+    if (!renegade_osdep::Resolve_Path_For_Access(new_filename, true, new_path)) {
+        errno = ENOENT;
+        return FALSE;
+    }
+
     std::error_code error;
-    std::filesystem::rename(
-        std::filesystem::path(renegade_osdep::Normalize_Path(existing_filename)),
-        std::filesystem::path(renegade_osdep::Normalize_Path(new_filename)),
-        error);
+    std::filesystem::rename(existing_path, new_path, error);
     return error ? FALSE : TRUE;
 }
 
@@ -701,12 +881,19 @@ inline BOOL CreateDirectory(const char * path, void *)
         return FALSE;
     }
 
-    std::error_code error;
-    const std::filesystem::path directory(renegade_osdep::Normalize_Path(path));
-    if (std::filesystem::exists(directory, error)) {
+    std::filesystem::path existing_directory;
+    if (renegade_osdep::Resolve_Existing_Path(path, existing_directory)) {
         errno = EEXIST;
         return FALSE;
     }
+
+    std::filesystem::path directory;
+    if (!renegade_osdep::Resolve_Path_For_Access(path, true, directory)) {
+        errno = ENOENT;
+        return FALSE;
+    }
+
+    std::error_code error;
 
     return std::filesystem::create_directories(directory, error) ? TRUE : FALSE;
 }
@@ -718,9 +905,22 @@ inline HANDLE CreateFile(const char * filename, DWORD desired_access, DWORD, voi
         return INVALID_HANDLE_VALUE;
     }
 
-    const std::filesystem::path path(renegade_osdep::Normalize_Path(filename));
     const bool wants_write = (desired_access & GENERIC_WRITE) != 0 || creation_disposition == CREATE_ALWAYS || creation_disposition == CREATE_NEW;
-    const bool exists = std::filesystem::exists(path);
+
+    std::filesystem::path path;
+    const bool exists = renegade_osdep::Resolve_Existing_Path(filename, path);
+
+    if (!exists) {
+        if (creation_disposition == OPEN_EXISTING) {
+            errno = ENOENT;
+            return INVALID_HANDLE_VALUE;
+        }
+
+        if (!renegade_osdep::Resolve_Path_For_Access(filename, wants_write, path)) {
+            errno = ENOENT;
+            return INVALID_HANDLE_VALUE;
+        }
+    }
 
     if (creation_disposition == CREATE_NEW && exists) {
         errno = EEXIST;
@@ -810,9 +1010,11 @@ inline HANDLE FindFirstFile(const char * pattern, WIN32_FIND_DATA * find_data)
         return INVALID_HANDLE_VALUE;
     }
 
-    const std::filesystem::path path(renegade_osdep::Normalize_Path(pattern));
-    const std::filesystem::path directory = path.has_parent_path() ? path.parent_path() : std::filesystem::current_path();
-    const std::string wildcard = path.filename().string();
+    std::filesystem::path directory;
+    std::string wildcard;
+    if (!renegade_osdep::Resolve_Find_Pattern(pattern, directory, wildcard)) {
+        return INVALID_HANDLE_VALUE;
+    }
 
     auto * handle = new renegade_osdep::CompatFindHandle{};
     handle->index = 0;
@@ -834,8 +1036,7 @@ inline HANDLE FindFirstFile(const char * pattern, WIN32_FIND_DATA * find_data)
         return INVALID_HANDLE_VALUE;
     }
 
-    std::memset(find_data, 0, sizeof(*find_data));
-    std::snprintf(find_data->cFileName, sizeof(find_data->cFileName), "%s", handle->entries.front().filename().string().c_str());
+    renegade_osdep::Populate_Find_Data(handle->entries.front(), find_data);
     return reinterpret_cast<HANDLE>(handle);
 }
 
@@ -851,8 +1052,7 @@ inline BOOL FindNextFile(HANDLE handle, WIN32_FIND_DATA * find_data)
         return FALSE;
     }
 
-    std::memset(find_data, 0, sizeof(*find_data));
-    std::snprintf(find_data->cFileName, sizeof(find_data->cFileName), "%s", find_handle->entries[find_handle->index].filename().string().c_str());
+    renegade_osdep::Populate_Find_Data(find_handle->entries[find_handle->index], find_data);
     return TRUE;
 }
 
@@ -930,8 +1130,13 @@ inline void Add_Accelerator(HWND, HACCEL)
 
 inline DWORD GetFileAttributes(const char * filename)
 {
+    std::filesystem::path resolved_path;
+    if (!renegade_osdep::Resolve_Existing_Path(filename, resolved_path)) {
+        return INVALID_FILE_ATTRIBUTES;
+    }
+
     std::error_code error;
-    const auto status = std::filesystem::status(filename, error);
+    const auto status = std::filesystem::status(resolved_path, error);
     if (error || !std::filesystem::exists(status)) {
         return INVALID_FILE_ATTRIBUTES;
     }

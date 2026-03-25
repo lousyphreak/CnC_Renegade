@@ -49,14 +49,14 @@
 typedef struct
 {
 	char	signature[4];
-	long	header_offset;
-	long	names_offset;
+	uint32_t	header_offset;
+	uint32_t	names_offset;
 
 } MIXFILE_HEADER;
 
 typedef struct
 {
-	long	file_count;
+	uint32_t	file_count;
 
 } MIXFILE_DATA_HEADER;
 
@@ -76,14 +76,12 @@ MixFileFactoryClass::MixFileFactoryClass( const char * mix_filename, FileFactory
 	MixFilename	= mix_filename;
 	Factory		= factory;
 	FilenameList.Set_Growth_Step (1000);
-
 	// First, open the mix file
 	FileClass * file = factory->Get_File( mix_filename );
 
 //	WWASSERT( file );
 
 	if ( file && file->Is_Available() ) {
-
 		file->Open();
 
 		IsValid = true;
@@ -414,11 +412,11 @@ MixFileCreator::MixFileCreator( const char * filename )
 	if ( MixFile != NULL ) {
 		MixFile->Open( FileClass::WRITE );
 		MixFile->Write( "MIX1", 4 );
-		long	header_offset = 0;
+		uint32_t	header_offset = 0;
 		MixFile->Write( &header_offset, sizeof( header_offset ) );
-		long	names_offset = 0;
+		uint32_t	names_offset = 0;
 		MixFile->Write( &names_offset, sizeof( names_offset ) );
-		long	unused = 0;
+		uint32_t	unused = 0;
 		MixFile->Write( &unused, sizeof( unused ) );
 	}
 }
@@ -438,7 +436,7 @@ MixFileCreator::~MixFileCreator( void )
 	if ( MixFile != NULL ) {
 
 		// Save Header Data
-		int header_offset = MixFile->Tell();
+		uint32_t header_offset = MixFile->Tell();
 
 		// Save file count
 		int i,num_files = FileInfo.Count();
@@ -460,7 +458,7 @@ MixFileCreator::~MixFileCreator( void )
 		// ---------------------------------------
 
 		// Save Names Data
-		int names_offset = MixFile->Tell();
+		uint32_t names_offset = MixFile->Tell();
 
 		// Save file count
 		MixFile->Write( &num_files, sizeof( num_files ) );

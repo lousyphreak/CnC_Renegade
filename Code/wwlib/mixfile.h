@@ -51,6 +51,7 @@
 	#include "wwstring.h"
 #endif
 
+#include <cstdint>
 #include "vector.h"
 
 class FileClass;
@@ -101,9 +102,9 @@ private:
 		bool operator== (const FileInfoStruct &src)	{ return false; }
 		bool operator!= (const FileInfoStruct &src)	{ return true; }
 
-		unsigned long CRC;				// CRC code for embedded file.
-		unsigned long Offset;			// Offset from start of data section.
-		unsigned long Size;				// Size of data subfile.
+		uint32_t CRC;				// CRC code for embedded file.
+		uint32_t Offset;			// Offset from start of data section.
+		uint32_t Size;				// Size of data subfile.
 	};
 
 	struct AddInfoStruct {
@@ -148,9 +149,9 @@ private:
 		bool operator== (const FileInfoStruct &src)	{ return false; }
 		bool operator!= (const FileInfoStruct &src)	{ return true; }
 
-		unsigned long	CRC;				// CRC code for embedded file.
-		unsigned long	Offset;			// Offset from start of data section.
-		unsigned long	Size;				// Size of data subfile.
+		uint32_t	CRC;				// CRC code for embedded file.
+		uint32_t	Offset;			// Offset from start of data section.
+		uint32_t	Size;				// Size of data subfile.
 		StringClass		Filename;
 	};
 

@@ -96,6 +96,11 @@ int main(int argc, char **argv)
 
     Set_Working_Directory_From_Executable(argv);
 
+    // Let POSIX signal delivery keep its default semantics so tools like
+    // `kill` can terminate the process immediately even if the game loop is
+    // not pumping SDL events.
+    SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
+
     const std::string command_line = Build_Command_Line(argc, argv);
     if (!cUserOptions::Parse_Command_Line(command_line.c_str())) {
         return EXIT_FAILURE;

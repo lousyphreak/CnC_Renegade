@@ -36,7 +36,6 @@
 #include	"ffactory.h"
 #include	"rawfile.h"
 #include "bufffile.h"
-#include "realcrc.h"
 #include	<stdio.h>
 #include <stdlib.h>
 #include	<assert.h>
@@ -222,6 +221,10 @@ Is_Full_Path (const char *path)
 
 		// Check for network path
 		retval |= bool((path[0] == '\\') && (path[1] == '\\'));
+
+		#ifdef _UNIX
+			retval |= bool(path[0] == '/');
+		#endif
 	}
 
 	return retval;
@@ -291,7 +294,7 @@ FileClass * SimpleFileFactoryClass::Get_File( char const *filename )
 					}
 				}
 			} else {
-				new_name.Format("%s%s",SubDirectory,stripped_name);
+				new_name.Format("%s%s",SubDirectory.Peek_Buffer(),stripped_name.Peek_Buffer());
 			}
 		}
 

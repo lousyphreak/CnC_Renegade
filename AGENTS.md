@@ -7,3 +7,7 @@ there is an initial codebase analysis in `docs/investigation`, use it as a refer
 No "case forwarding headers": if an include directive has the wrong case, fix it.
 
 Use SDL3 for anything that it provides, to make sure the game runs on as many platforms as possible.
+
+Since we are aiming at porting the project to modern OSes, we will not implement new functionality, besides what is strictly required to run on those OSes. For example, we will not implement new graphics features, but we will implement newer graphics APIs supporting the original features.
+
+Since we also target Linux, we need to have our file system support case-sensitive paths, and we need to make sure that all file paths in the codebase are consistent with the actual file system.

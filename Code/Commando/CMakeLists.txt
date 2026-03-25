@@ -80,17 +80,41 @@ set(COMMANDO_EXECUTABLE_SOURCES
 
 set(COMMANDO_SOURCES ${COMMANDO_SHARED_SOURCES})
 
-list(REMOVE_ITEM COMMANDO_SOURCES
+list(APPEND COMMANDO_SOURCES
+    AnnounceEvent.cpp
+    bandwidth.cpp
+    bandwidthgraph.cpp
     buildnum.cpp
-    campaign.cpp
-    cdverify.cpp
+    cnetwork.cpp
+    combatgmode.cpp
+    console.cpp
+    consolefunction.cpp
+    diagnostics.cpp
+    commando_dedicated_ui_stubs.cpp
+    dlgwebpage_stub.cpp
+    dlgcncwinscreen.cpp
     evictionevent.cpp
-    floodprotectionmgr.cpp
-    gameinitmgr.cpp
-    gamesideservercontrol.cpp
-    gdcnc.cpp
+    gamemenu.cpp
+    gameoptionsevent.cpp
     init.cpp
-    mainloop.cpp
+    inputconfig.cpp
+    inputconfigmgr.cpp
+    lanchat.cpp
+    movie.cpp
+    mpsettingsmgr.cpp
+    multihud.cpp
+    overlay.cpp
+    renegadedialogmgr_dedicated.cpp
+    sbbomanager.cpp
+    sctextobj.cpp
+    scorescreen.cpp
+    ServerSettings.cpp
+    serverfps.cpp
+    shutdown.cpp
+)
+
+list(REMOVE_ITEM COMMANDO_SOURCES
+    cdverify.cpp
     slavemaster.cpp
 )
 
@@ -244,28 +268,32 @@ target_link_libraries(CommandoDedicatedLib
 add_executable(Commando ${COMMANDO_EXECUTABLE_SOURCES})
 renegade_configure_target(Commando)
 
-target_link_libraries(Commando PRIVATE CommandoLib SDL3::SDL3)
+target_link_libraries(Commando
+    PRIVATE
+        CommandoLib
+        Combat
+        CommandoLib
+        SDL3::SDL3
+)
 
 set_target_properties(Commando PROPERTIES
     OUTPUT_NAME "Renegade"
 )
 
-if(WIN32)
-    set_target_properties(Commando PROPERTIES WIN32_EXECUTABLE TRUE)
-endif()
-
 add_executable(CommandoDedicated ${COMMANDO_DEDICATED_EXECUTABLE_SOURCES})
 renegade_configure_target(CommandoDedicated)
 
-target_link_libraries(CommandoDedicated PRIVATE CommandoDedicatedLib SDL3::SDL3)
+target_link_libraries(CommandoDedicated
+    PRIVATE
+        CommandoDedicatedLib
+        Combat
+        CommandoDedicatedLib
+        SDL3::SDL3
+)
 
 set_target_properties(CommandoDedicated PROPERTIES
     OUTPUT_NAME "renegade_dedicated"
 )
-
-if(WIN32)
-    set_target_properties(CommandoDedicated PROPERTIES WIN32_EXECUTABLE TRUE)
-endif()
 
 if(TARGET SDL3::SDL3-shared)
     add_custom_command(TARGET Commando POST_BUILD

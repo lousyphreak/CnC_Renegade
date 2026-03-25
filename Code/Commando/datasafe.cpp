@@ -44,6 +44,31 @@
 #include "systimer.h"
 #include <stdio.h>
 
+namespace {
+
+unsigned int DataSafe_Random_Bits()
+{
+	static unsigned int seed = 0x6d2b79f5u ^ static_cast<unsigned int>(TIMEGETTIME()) ^ static_cast<unsigned int>(reinterpret_cast<uintptr_t>(&seed));
+	seed ^= seed << 13;
+	seed ^= seed >> 17;
+	seed ^= seed << 5;
+	return seed;
+}
+
+int DataSafe_Random_Int(int min_value, int max_value)
+{
+	if (min_value > max_value) {
+		const int temp = min_value;
+		min_value = max_value;
+		max_value = temp;
+	}
+
+	const unsigned int range = static_cast<unsigned int>(max_value - min_value) + 1u;
+	return min_value + static_cast<int>(DataSafe_Random_Bits() % range);
+}
+
+} // namespace
+
 /*
 ** Renegade specific includes. For reporting tampering.
 */
@@ -125,44 +150,28 @@ char ErrorVal[1024] = {0,0,0,0};
 */
 typedef unsigned int DATASAFE_UNSIGNED_INT;
 
-#if defined(FREEDEDICATEDSERVER)
 DataSafeClass<int> DataSafeint(NULL, 0);
-#else
-DataSafeClass<int> DataSafeint;
-#endif
 template<> int DataSafeClass<int>::Type = 0;
 template<> char DataSafeClass<int>::ReturnList[MAX_OBJECT_COPIES][sizeof(int)] = {};
 template<> int DataSafeClass<int>::ReturnIndex = 0;
 template<> int DataSafeClass<int>::MinSlop = 0;
 
 
-#if defined(FREEDEDICATEDSERVER)
 DataSafeClass<DATASAFE_UNSIGNED_INT> DataSafeDATASAFE_UNSIGNED_INT(NULL, 0);
-#else
-DataSafeClass<DATASAFE_UNSIGNED_INT> DataSafeDATASAFE_UNSIGNED_INT;
-#endif
 template<> int DataSafeClass<DATASAFE_UNSIGNED_INT>::Type = 0;
 template<> char DataSafeClass<DATASAFE_UNSIGNED_INT>::ReturnList[MAX_OBJECT_COPIES][sizeof(DATASAFE_UNSIGNED_INT)] = {};
 template<> int DataSafeClass<DATASAFE_UNSIGNED_INT>::ReturnIndex = 0;
 template<> int DataSafeClass<DATASAFE_UNSIGNED_INT>::MinSlop = 0;
 
 
-#if defined(FREEDEDICATEDSERVER)
 DataSafeClass<float> DataSafefloat(NULL, 0);
-#else
-DataSafeClass<float> DataSafefloat;
-#endif
 template<> int DataSafeClass<float>::Type = 0;
 template<> char DataSafeClass<float>::ReturnList[MAX_OBJECT_COPIES][sizeof(float)] = {};
 template<> int DataSafeClass<float>::ReturnIndex = 0;
 template<> int DataSafeClass<float>::MinSlop = 0;
 
 
-#if defined(FREEDEDICATEDSERVER)
 DataSafeClass<double> DataSafedouble(NULL, 0);
-#else
-DataSafeClass<double> DataSafedouble;
-#endif
 template<> int DataSafeClass<double>::Type = 0;
 template<> char DataSafeClass<double>::ReturnList[MAX_OBJECT_COPIES][sizeof(double)] = {};
 template<> int DataSafeClass<double>::ReturnIndex = 0;
@@ -206,8 +215,8 @@ GenericDataSafeClass::GenericDataSafeClass(void)
 		SimpleKey = 0x80000000;
 		HandleKey = 0x40000000;
 #else	//FIXED_KEY
-		SimpleKey = 0x55555555 ^ TIMEGETTIME() ^ FreeRandom.Get_Int(0, 0xffffffff);
-		HandleKey = 0xaaaaaaaa ^ (TIMEGETTIME()*2) ^ FreeRandom.Get_Int(0, 0xffffffff);
+		SimpleKey = 0x55555555 ^ TIMEGETTIME() ^ static_cast<unsigned long>(DataSafe_Random_Bits());
+		HandleKey = 0xaaaaaaaa ^ (TIMEGETTIME()*2) ^ static_cast<unsigned long>(DataSafe_Random_Bits());
 #endif	//FIXED_KEY
 		NumLists = 0;
 		Checksum = ~SimpleKey;
@@ -535,9 +544,9 @@ DataSafeEntryClass *GenericDataSafeClass::Get_Entry_By_Index(int list, int index
 void GenericDataSafeClass::Mem_Copy_Encrypt(void *dest, void *src, int size, bool do_checksum)
 {
 	ds_assert((size % 4) == 0);
-	unsigned long temp;
-	unsigned long *s = (unsigned long *) src;
-	unsigned long *d = (unsigned long *) dest;
+	uint32 temp;
+	uint32 *s = reinterpret_cast<uint32 *>(src);
+	uint32 *d = reinterpret_cast<uint32 *>(dest);
 
 	if (do_checksum) {
 		for (int i = 0 ; i < (size / 4) ; i++) {
@@ -576,9 +585,9 @@ void GenericDataSafeClass::Mem_Copy_Encrypt(void *dest, void *src, int size, boo
 void GenericDataSafeClass::Mem_Copy_Decrypt(void *dest, void *src, int size, bool do_checksum)
 {
 	ds_assert((size % 4) == 0);
-	unsigned long temp;
-	unsigned long *s = (unsigned long *) src;
-	unsigned long *d = (unsigned long *) dest;
+	uint32 temp;
+	uint32 *s = reinterpret_cast<uint32 *>(src);
+	uint32 *d = reinterpret_cast<uint32 *>(dest);
 
 	if (do_checksum) {
 		for (int i = 0 ; i < (size / 4) ; i++) {
@@ -615,16 +624,17 @@ void GenericDataSafeClass::Mem_Copy_Decrypt(void *dest, void *src, int size, boo
 void GenericDataSafeClass::Encrypt(void *data, int size, unsigned long key, bool do_checksum)
 {
 	ds_assert((size % 4) == 0);
-	unsigned long *data_ptr = (unsigned long*)data;
+	uint32 *data_ptr = reinterpret_cast<uint32 *>(data);
+	const uint32 key32 = static_cast<uint32>(key);
 
 	if (do_checksum) {
 		for (int i = 0 ; i < (size / 4) ; i++) {
-			*data_ptr ^= key;
+			*data_ptr ^= key32;
 			Checksum ^= *data_ptr++;
 		}
 	} else {
 		for (int i = 0 ; i < (size / 4) ; i++) {
-			*data_ptr ^= key;
+			*data_ptr ^= key32;
 		}
 	}
 }
@@ -650,16 +660,17 @@ void GenericDataSafeClass::Encrypt(void *data, int size, unsigned long key, bool
 void GenericDataSafeClass::Decrypt(void *data, int size, unsigned long key, bool do_checksum)
 {
 	ds_assert((size % 4) == 0);
-	unsigned long *data_ptr = (unsigned long*)data;
+	uint32 *data_ptr = reinterpret_cast<uint32 *>(data);
+	const uint32 key32 = static_cast<uint32>(key);
 
 	if (do_checksum) {
 		for (int i = 0 ; i < (size / 4) ; i++) {
 			Checksum ^= *data_ptr;
-			*data_ptr++ ^= key;
+			*data_ptr++ ^= key32;
 		}
 	} else {
 		for (int i = 0 ; i < (size / 4) ; i++) {
-			*data_ptr++ ^= key;
+			*data_ptr++ ^= key32;
 		}
 	}
 }
@@ -713,7 +724,7 @@ int GenericDataSafeClass::Get_Random_List_For_Insertion(int type)
 	*/
 	int pick = 0;
 	if (random_list_contenders.Count() > 1) {
-		pick = FreeRandom.Get_Int(0, random_list_contenders.Count()-1);
+		pick = DataSafe_Random_Int(0, random_list_contenders.Count()-1);
 	}
 	ds_assert(pick >= 0 && pick < random_list_contenders.Count());
 
@@ -809,7 +820,7 @@ void GenericDataSafeClass::Random_Insertion(DataSafeEntryClass *entry_ptr, int l
 		*/
 		int pick = 0;
 		if (Safe[list]->EntryCount > 1) {
-			pick = FreeRandom.Get_Int(0, Safe[list]->EntryCount-1);
+			pick = DataSafe_Random_Int(0, Safe[list]->EntryCount-1);
 		}
 
 		/*
@@ -981,7 +992,7 @@ void GenericDataSafeClass::Remove_From_List(int list, DataSafeEntryClass *entry_
 		/*
 		** Muss up the memory so the data value isn't hanging around.
 		*/
-		memset(entry_ptr, FreeRandom.Get_Int(0, 255), sizeof(*entry_ptr) + data_size);
+		memset(entry_ptr, DataSafe_Random_Int(0, 255), sizeof(*entry_ptr) + data_size);
 	}
 }
 
@@ -1068,7 +1079,7 @@ void GenericDataSafeClass::Shuffle(bool forced)
 		** Generate a new key.
 		*/
 		new_key = TIMEGETTIME();
-		new_key ^= FreeRandom.Get_Int(0, 0xffffffff);
+		new_key ^= static_cast<unsigned long>(DataSafe_Random_Bits());
 
 		/*
 		** Reset the checksum. Can't keep a running checksum if we re-key
@@ -1094,8 +1105,8 @@ void GenericDataSafeClass::Shuffle(bool forced)
 					//DataSafeEntryClass *first = Get_Entry_By_Index(i, FreeRandom.Get_Int(0, Safe[i]->EntryCount - 1));
 					//DataSafeEntryClass *second = Get_Entry_By_Index(i, FreeRandom.Get_Int(0, Safe[i]->EntryCount - 1));
 
-					int first_index = FreeRandom.Get_Int(0, Safe[i]->EntryCount - 1);
-					int second_index = FreeRandom.Get_Int(0, Safe[i]->EntryCount - 1);
+					int first_index = DataSafe_Random_Int(0, Safe[i]->EntryCount - 1);
+					int second_index = DataSafe_Random_Int(0, Safe[i]->EntryCount - 1);
 					DataSafeEntryClass *first = Get_Entry_By_Index(i, first_index);
 					DataSafeEntryClass *second = Get_Entry_By_Index(i, second_index);
 

@@ -75,16 +75,19 @@ cBandwidthGraph::Onetime_Init
 	if (can_render) {
 		WWASSERT(WW3DAssetManager::Get_Instance() != NULL);
    	PFont = WW3DAssetManager::Get_Instance()->Get_Font3DInstance("FONT6x8.TGA");
-   	WWASSERT(PFont != NULL);
-		PFont->Set_Mono_Spaced();
-		SET_REF_OWNER(PFont);
+		if (PFont != NULL) {
+			PFont->Set_Mono_Spaced();
+			SET_REF_OWNER(PFont);
 
-		PTextRenderer = new Render2DTextClass(PFont);
-		PTextRenderer->Set_Coordinate_Range(Render2DClass::Get_Screen_Resolution());
+			PTextRenderer = new Render2DTextClass(PFont);
+			PTextRenderer->Set_Coordinate_Range(Render2DClass::Get_Screen_Resolution());
 
-		BarWidth		= Render2DClass::Get_Screen_Resolution().Width() / 10.0f;
-		BarHeight	= PTextRenderer->Peek_Font()->Char_Height();
-		YIncrement	= BarHeight * 1.25f;
+			BarWidth		= Render2DClass::Get_Screen_Resolution().Width() / 10.0f;
+			BarHeight	= PTextRenderer->Peek_Font()->Char_Height();
+			YIncrement	= BarHeight * 1.25f;
+		} else {
+			WWDEBUG_SAY(("cBandwidthGraph::Onetime_Init: FONT6x8.TGA unavailable, disabling bandwidth graph renderer\n"));
+		}
 	}
 	// This needs to be done somewhere else - we need a good value whether we have the graph or not.
 	//PacketManager.Set_Stats_Sampling_Frequency_Delay(1000);

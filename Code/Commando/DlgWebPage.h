@@ -38,8 +38,11 @@
 #define __DLGWEBPAGE_H__
 
 #include "dialogbase.h"
+#include "Notify.h"
+
+#if RENEGADE_WITH_LEGACY_WOL
 #include <atlbase.h>
-#include <WWLib\Notify.h>
+#endif
 
 class WebBrowser;
 class WebEvent;

@@ -1143,11 +1143,11 @@ __forceinline void GenericDataSafeClass::Security_Check(void)
 					** Dereference stuff - make sure the list makes sense.
 					*/
 					DataSafeEntryClass *entry_ptr = Safe[i]->SafeList;
-					unsigned long *data = NULL;
+					uint32 *data = NULL;
 					ds_assert(entry_ptr != NULL);
 					int data_size = entry_ptr->Size;
 					ds_assert((data_size & 3) == 0);
-					data_size = data_size >> 2;
+					data_size = data_size / static_cast<int>(sizeof(uint32));
 
 					if (entry_ptr) {
 
@@ -1171,7 +1171,7 @@ __forceinline void GenericDataSafeClass::Security_Check(void)
 							/*
 							** Add in the data.
 							*/
-							data = (unsigned long *) (((char*)entry_ptr) + sizeof(*entry_ptr));
+							data = reinterpret_cast<uint32 *>(((char*)entry_ptr) + sizeof(*entry_ptr));
 							for (int z=0 ; z<data_size ; z++) {
 								checkey ^= *data++;
 							}

@@ -36,6 +36,7 @@
 
 
 #include "renegadedialogmgr.h"
+#include "renegade_build_config.h"
 #include "dialogmgr.h"
 #include "dialogbase.h"
 #include "dialogtests.h"
@@ -59,21 +60,24 @@
 #include "directinput.h"
 #include "input.h"
 #include "dlgmainmenu.h"
-#include "DlgWebPage.h"
-#include "dlgmpwolpagebuddy.h"
-#include "dlgmpwolbuddies.h"
-#include "dlgmpwolchat.h"
-#include "dlgmpwolgamelist.h"
 #include "dlgsavegame.h"
 #include "dlgcontrols.h"
-#include "dlgmpwolquickmatchoptions.h"
-#include "dlgmpwolmain.h"
-#include "DlgWOLSettings.h"
 #include "dlghelpscreen.h"
 #include "dlgcncreference.h"
 #include "wwmemlog.h"
 #include "ConsoleMode.h"
 #include "specialbuilds.h"
+
+#if RENEGADE_WITH_LEGACY_WOL
+#include "DlgWebPage.h"
+#include "dlgmpwolpagebuddy.h"
+#include "dlgmpwolbuddies.h"
+#include "dlgmpwolchat.h"
+#include "dlgmpwolgamelist.h"
+#include "dlgmpwolquickmatchoptions.h"
+#include "dlgmpwolmain.h"
+#include "DlgWOLSettings.h"
+#endif
 
 
 ////////////////////////////////////////////////////////////////
@@ -117,7 +121,11 @@ DialogFactoryBaseClass *FactoryArray[FACTORY_COUNT] =
 	NULL,//new DialogFactoryClass<MPServerStartMenuClass>,
 	new DialogFactoryClass<MultiplayOptionsMenuClass>,
 	NULL,
+	#if RENEGADE_WITH_LEGACY_WOL
 	new DialogFactoryClass<MPWolMainMenuClass>,
+	#else
+	NULL,
+	#endif
 	new DialogFactoryClass<MPLanGameListMenuClass>,
 	NULL,	//IDC_MENU_MP_LAN_JOIN_BUTTON
 	NULL,	//IDC_MENU_MP_LAN_START_BUTTON
@@ -261,11 +269,15 @@ RenegadeDialogMgrClass::Goto_Location (LOCATION location)
 			break;
 
 		case LOC_INTERNET_MAIN:
+		#if RENEGADE_WITH_LEGACY_WOL
 			MPWolMainMenuClass::Display ();
+		#endif
 			break;
 
 		case LOC_INTERNET_GAME_LIST:
+		#if RENEGADE_WITH_LEGACY_WOL
 			MPWolGameListMenuClass::DoDialog ();
+		#endif
 			break;
 
 		case LOC_LAN_MAIN:
@@ -380,19 +392,27 @@ Default_On_Command (DialogBaseClass *dialog, int ctrl_id, int mesage_id, DWORD p
 		}
 
 		case IDC_MP_SHORTCUT_NEWS:
+		#if RENEGADE_WITH_LEGACY_WOL
 			DlgWebPage::DoDialog("News");
+		#endif
 			break;
 
 		case IDC_MP_SHORTCUT_CLANS:
+		#if RENEGADE_WITH_LEGACY_WOL
 			DlgWebPage::DoDialog("BattleClans");
+		#endif
 			break;
 
 		case IDC_MP_SHORTCUT_RANKINGS:
+		#if RENEGADE_WITH_LEGACY_WOL
 			DlgWebPage::DoDialog("Ladder");
+		#endif
 			break;
 
 		case IDC_MP_SHORTCUT_ACCOUNT:
+		#if RENEGADE_WITH_LEGACY_WOL
 			DlgWOLSettings::DoDialog();
+		#endif
 			break;
 
 		#ifdef QUICKMATCH_OPTIONS
@@ -402,23 +422,33 @@ Default_On_Command (DialogBaseClass *dialog, int ctrl_id, int mesage_id, DWORD p
 		#endif // QUICKMATCH_OPTIONS
 
 		case IDC_MP_SHORTCUT_NET_STATUS:
+		#if RENEGADE_WITH_LEGACY_WOL
 			DlgWebPage::DoDialog("NetStatus");
+		#endif
 			break;
 
 		case IDC_MP_SHORTCUT_BUDDIES:
+		#if RENEGADE_WITH_LEGACY_WOL
 			MPWolBuddiesMenuClass::Display();
+		#endif
 			break;
 
 		case IDC_MP_SHORTCUT_PAGE_BUDDY:
+		#if RENEGADE_WITH_LEGACY_WOL
 			START_DIALOG (MPWolPageBuddyPopupClass);
+		#endif
 			break;
 
 		case IDC_MP_SHORTCUT_CHAT:
+		#if RENEGADE_WITH_LEGACY_WOL
 			MPWolChatMenuClass::DoDialog();
+		#endif
 			break;
 
 		case IDC_MP_SHORTCUT_GAMELIST:
+		#if RENEGADE_WITH_LEGACY_WOL
 			MPWolGameListMenuClass::DoDialog();
+		#endif
 			break;
 
 		case IDC_MP_SHORTCUT_INTERNET_OPTIONS:
@@ -461,6 +491,10 @@ Default_On_Command (DialogBaseClass *dialog, int ctrl_id, int mesage_id, DWORD p
 //
 int MyLoadStringW (UINT str_id, LPWSTR buffer, int buffer_len)
 {
+	#ifndef RT_STRING
+	#define RT_STRING MAKEINTRESOURCE(6)
+	#endif
+
 	//
 	//	Compute the block and offset
 	//
@@ -470,8 +504,11 @@ int MyLoadStringW (UINT str_id, LPWSTR buffer, int buffer_len)
 	//
 	//	Find the resource
 	//
-	HRSRC resource = ::FindResourceEx (NULL, RT_STRING, MAKEINTRESOURCE (block),
-								MAKELANGID (LANG_NEUTRAL, SUBLANG_NEUTRAL));
+	HRSRC resource = ::FindResource (NULL, MAKEINTRESOURCE (block), RT_STRING);
+	if (resource == NULL) {
+		buffer[0] = '\0';
+		return 0;
+	}
 
 	//
 	//	Load the resource into memory

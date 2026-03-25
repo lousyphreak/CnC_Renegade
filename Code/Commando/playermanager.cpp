@@ -86,14 +86,17 @@ void cPlayerManager::Onetime_Init(void)
 		WWASSERT(PFont == NULL);
 		WWASSERT(WW3DAssetManager::Get_Instance() != NULL);
    	PFont = WW3DAssetManager::Get_Instance()->Get_Font3DInstance("FONT6x8.TGA");
-   	WWASSERT(PFont != NULL);
-		PFont->Set_Mono_Spaced();
-		SET_REF_OWNER(PFont);
+		if (PFont != NULL) {
+			PFont->Set_Mono_Spaced();
+			SET_REF_OWNER(PFont);
 
-		WWASSERT(PTextRenderer == NULL);
-		PTextRenderer = new Render2DTextClass(PFont);
-   	WWASSERT(PTextRenderer != NULL);
-		PTextRenderer->Set_Coordinate_Range(Render2DClass::Get_Screen_Resolution());
+			WWASSERT(PTextRenderer == NULL);
+			PTextRenderer = new Render2DTextClass(PFont);
+		   	WWASSERT(PTextRenderer != NULL);
+			PTextRenderer->Set_Coordinate_Range(Render2DClass::Get_Screen_Resolution());
+		} else {
+			WWDEBUG_SAY(("cPlayerManager::Onetime_Init: FONT6x8.TGA unavailable, disabling player list HUD renderer\n"));
+		}
 	}
    ZeroMemory(Player_Array, sizeof(Player_Array));
 }
@@ -104,13 +107,15 @@ void cPlayerManager::Onetime_Shutdown(void)
 	WWDEBUG_SAY(("cPlayerManager::Onetime_Shutdown\n"));
 
 	if (!ConsoleBox.Is_Exclusive()) {
-		WWASSERT(PTextRenderer != NULL);
-		delete PTextRenderer;
-		PTextRenderer = NULL;
+		if (PTextRenderer != NULL) {
+			delete PTextRenderer;
+			PTextRenderer = NULL;
+		}
 
-		WWASSERT(PFont != NULL);
-		PFont->Release_Ref();
-		PFont = NULL;
+		if (PFont != NULL) {
+			PFont->Release_Ref();
+			PFont = NULL;
+		}
 	}
 }
 

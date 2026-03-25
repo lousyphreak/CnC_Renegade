@@ -109,12 +109,15 @@ void MultiHUDClass::Init(void)
 #ifdef WWDEBUG
 		WWASSERT(WW3DAssetManager::Get_Instance() != NULL);
    	PFont = WW3DAssetManager::Get_Instance()->Get_Font3DInstance("FONT6x8.TGA");
-   	WWASSERT(PFont != NULL);
-		PFont->Set_Mono_Spaced();
-		SET_REF_OWNER(PFont);
+		if (PFont != NULL) {
+			PFont->Set_Mono_Spaced();
+			SET_REF_OWNER(PFont);
 
-		PTextRenderer = new Render2DTextClass(PFont);
-		PTextRenderer->Set_Coordinate_Range(Render2DClass::Get_Screen_Resolution());
+			PTextRenderer = new Render2DTextClass(PFont);
+			PTextRenderer->Set_Coordinate_Range(Render2DClass::Get_Screen_Resolution());
+		} else {
+			WWDEBUG_SAY(("MultiHUDClass::Init: FONT6x8.TGA unavailable, disabling debug HUD renderer\n"));
+		}
 #endif
 
 		NameRenderer = new Render2DSentenceClass;

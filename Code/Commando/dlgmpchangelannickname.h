@@ -32,8 +32,8 @@
 *
 ******************************************************************************/
 
-#include "Resource.h"
-#include <WWUI\PopupDialog.h>
+#include "resource.h"
+#include "popupdialog.h"
 
 class DlgMpChangeLanNickname : public PopupDialogClass
 {

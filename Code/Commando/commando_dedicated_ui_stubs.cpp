@@ -1,12 +1,19 @@
 #include "cdverify.h"
 #include "DlgMessageBox.h"
 #include "DlgMPConnectionRefused.h"
+#include "DlgMPConnect.h"
+#include "clienthintmanager.h"
+#include "clientpingmanager.h"
+#include "dlgcontrols.h"
+#include "dlgmpchangelannickname.h"
 #include "dialogtests.h"
 #include "dlgcncbattleinfo.h"
 #include "dlgcncserverinfo.h"
 #include "dlgcncteaminfo.h"
 #include "dlgconfigvideotab.h"
 #include "dlgcncpurchasemainmenu.h"
+#include "gamechannel.h"
+#include "gamechanlist.h"
 #include "dlgloadspgame.h"
 #include "dlgmainmenu.h"
 #include "dlgmpingamechat.h"
@@ -20,11 +27,11 @@ int DlgMsgBox::CurrentCount = 0;
 int DlgConfigVideoTabClass::GammaLevel = GAMMA_SLIDER_DEFAULT;
 int DlgConfigVideoTabClass::BrightnessLevel = BRIGHTNESS_SLIDER_DEFAULT;
 int DlgConfigVideoTabClass::ContrastLevel = CONTRAST_SLIDER_DEFAULT;
+ControlsMenuClass *ControlsMenuClass::_TheInstance = nullptr;
 LoadSPGameMenuClass *LoadSPGameMenuClass::_TheInstance = nullptr;
 MainMenuDialogClass *MainMenuDialogClass::_TheInstance = nullptr;
 bool MainMenuDialogClass::Animated = false;
 bool CNCPurchaseMainMenuClass::SecretsEnabled = false;
-bool g_is_loading = false;
 float RadioCommandDisplayClass::DisplayTimer = 0.0f;
 bool RadioCommandDisplayClass::IsDisplayed = false;
 TextWindowClass *RadioCommandDisplayClass::TextWindow = nullptr;
@@ -37,6 +44,15 @@ const char *VALUE_NAME_SHADOW_MODE = "Shadow_Mode";
 const char *VALUE_NAME_STATIC_SHADOWS = "Static_Projectors";
 const char *VALUE_NAME_TEXTURE_RES = "Texture_Resolution";
 const char *VALUE_NAME_PARTICLE_DETAIL = "Particle_Detail";
+
+int DlgMpChangeLanNickname::DialogCount = 0;
+int cClientPingManager::PingNumber = 0;
+DWORD cClientPingManager::TimeSentMs = 0;
+DWORD cClientPingManager::LastRoundTripPingMs = 0;
+DWORD cClientPingManager::AvgRoundTripPingMs = 0;
+bool cClientPingManager::IsAwaitingResponse = false;
+DWORD cClientPingManager::RoundTripPingSamplesMs[cClientPingManager::MAX_SAMPLES] = {};
+SList<cGameChannel> cGameChannelList::ChanList;
 
 bool CDVerifyClass::Get_CD_Path(StringClass &drive_path)
 {
@@ -67,6 +83,134 @@ bool DlgMsgBox::DoDialog(int, int, DlgMsgBox::Type, Observer<DlgMsgBoxEvent> *, 
 bool DlgMPConnectionRefused::DoDialog(const WCHAR *, bool)
 {
     return false;
+}
+
+DlgMPConnect::DlgMPConnect(int teamChoice, unsigned long clanID)
+    : PopupDialogClass(0),
+      mTeamChoice(teamChoice),
+      mClanID(clanID),
+      mTheGame(nullptr),
+      mFailed(false)
+{
+}
+
+DlgMPConnect::~DlgMPConnect() = default;
+
+bool DlgMPConnect::DoDialog(int, unsigned long)
+{
+    return false;
+}
+
+void DlgMPConnect::Connected(cGameData *theGame)
+{
+    mTheGame = theGame;
+    mFailed = false;
+}
+
+void DlgMPConnect::Failed_To_Connect(void)
+{
+    mFailed = true;
+}
+
+void DlgMPConnect::On_Command(int, int, DWORD)
+{
+}
+
+void DlgMPConnect::On_Periodic(void)
+{
+}
+
+bool DlgMpChangeLanNickname::DoDialog(void)
+{
+    return false;
+}
+
+DlgMpChangeLanNickname::DlgMpChangeLanNickname()
+    : PopupDialogClass(0)
+{
+}
+
+DlgMpChangeLanNickname::~DlgMpChangeLanNickname() = default;
+
+void DlgMpChangeLanNickname::On_Init_Dialog(void)
+{
+}
+
+void DlgMpChangeLanNickname::On_Command(int, int, DWORD)
+{
+}
+
+void DlgMpChangeLanNickname::On_EditCtrl_Change(EditCtrlClass *, int)
+{
+}
+
+void DlgMpChangeLanNickname::On_EditCtrl_Enter_Pressed(EditCtrlClass *, int)
+{
+}
+
+void ControlsMenuClass::Reload(void)
+{
+}
+
+void ControlsMenuClass::Apply_Changes(void)
+{
+}
+
+void cClientPingManager::Init(void)
+{
+    PingNumber = 0;
+    TimeSentMs = 0;
+    LastRoundTripPingMs = 0;
+    AvgRoundTripPingMs = 0;
+    IsAwaitingResponse = false;
+}
+
+void cClientPingManager::Think(void)
+{
+}
+
+DWORD cClientPingManager::Get_Last_Round_Trip_Ping_Ms(void)
+{
+    return LastRoundTripPingMs;
+}
+
+DWORD cClientPingManager::Get_Avg_Round_Trip_Ping_Ms(void)
+{
+    return AvgRoundTripPingMs;
+}
+
+void cClientPingManager::Response_Received(int)
+{
+}
+
+void cClientPingManager::Compute_Average_Round_Trip_Ping_Ms(void)
+{
+}
+
+void cClientHintManager::Think(void)
+{
+}
+
+int __cdecl cClientHintManager::Priority_Compare(const void **, const void **)
+{
+    return 0;
+}
+
+void cGameChannelList::Add_Channel(cGameData *, const RefPtr<WWOnline::ChannelData> &)
+{
+}
+
+void cGameChannelList::Remove_Channel(const WideStringClass &)
+{
+}
+
+void cGameChannelList::Remove_All(void)
+{
+}
+
+cGameChannel *cGameChannelList::Find_Channel(const WideStringClass &)
+{
+    return nullptr;
 }
 
 void DlgMsgBox::SetResourceType(DlgMsgBox::Type)

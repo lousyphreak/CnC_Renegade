@@ -33,7 +33,7 @@
 
 #include "always.h"
 #include "bittype.h"
-#include <WWOnline\RefPtr.h>
+#include "RefPtr.h"
 
 class cGameData;
 class cGameChannel;

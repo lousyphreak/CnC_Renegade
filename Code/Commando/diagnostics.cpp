@@ -80,25 +80,28 @@ void cDiagnostics::Init(void)
 	if (!ConsoleBox.Is_Exclusive()) {
 		WWASSERT(WW3DAssetManager::Get_Instance() != NULL);
    	PFont = WW3DAssetManager::Get_Instance()->Get_Font3DInstance("FONT6x8.TGA");
-   	WWASSERT(PFont != NULL);
-		SET_REF_OWNER(PFont);
-		PFont->Set_Mono_Spaced();
+		if (PFont != NULL) {
+			SET_REF_OWNER(PFont);
+			PFont->Set_Mono_Spaced();
 
-		PRenderer = new Render2DTextClass(PFont);
-		WWASSERT(PRenderer != NULL);
+			PRenderer = new Render2DTextClass(PFont);
+			WWASSERT(PRenderer != NULL);
 
-		RectClass rect = Render2DClass::Get_Screen_Resolution();
-		PRenderer->Set_Coordinate_Range(rect);
+			RectClass rect = Render2DClass::Get_Screen_Resolution();
+			PRenderer->Set_Coordinate_Range(rect);
 
-		DiagnosticX = 10;
-		//DiagnosticY = 10;
+			DiagnosticX = 10;
+			//DiagnosticY = 10;
 
-		RendererFps=0;
-		RendererSFps=0;
-		RendererPing = 0;
-		RendererBandwidthBps = 0;
-		RendererGodStatus=false;
-		RendererVipStatus=false;
+			RendererFps=0;
+			RendererSFps=0;
+			RendererPing = 0;
+			RendererBandwidthBps = 0;
+			RendererGodStatus=false;
+			RendererVipStatus=false;
+		} else {
+			WWDEBUG_SAY(("cDiagnostics::Init: FONT6x8.TGA unavailable, disabling diagnostics renderer\n"));
+		}
 	}
 
 }

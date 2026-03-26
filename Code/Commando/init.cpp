@@ -1007,16 +1007,10 @@ bool Game_Init(void)
 
 	//DEADMENU MenuManager::Set_Menu( "Menu_Main" );
 
-	// Load the accelerator table and hand it off to WWLIB.
-	// Note:  Accelerator tables that are loaded from resources (like
-	// we are doing here) do not need to be manually freed.  Windows
-	// will cleanup for us when the process terminates.
-	#if !defined(FREEDEDICATEDSERVER)
-	HACCEL haccel = ::LoadAccelerators (::GetModuleHandle (NULL), MAKEINTRESOURCE (IDR_ACCELERATOR));
-	if (haccel) {
-		::Add_Accelerator (MainWindow, haccel);
-	}
-	#endif
+	// The legacy Win32 accelerator hookup is intentionally omitted here.
+	// The modernized event pump is SDL-based and no longer exposes a WWLIB
+	// accelerator registration path on Windows, so loading the resource would
+	// be dead setup code.
 
 	//WW3D::Set_Texture_Reduction( 1 );
 

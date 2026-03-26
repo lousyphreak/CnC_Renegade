@@ -118,7 +118,7 @@
 /*
 **
 */
-extern bool g_is_loading;
+bool g_is_loading = false;
 bool g_b_core_restart;//TSS081401
 bool g_client_quit = false;
 

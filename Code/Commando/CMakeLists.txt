@@ -113,6 +113,10 @@ list(APPEND COMMANDO_SOURCES
     shutdown.cpp
 )
 
+if(WIN32)
+    list(APPEND COMMANDO_SOURCES ConsoleMode.cpp)
+endif()
+
 list(REMOVE_ITEM COMMANDO_SOURCES
     cdverify.cpp
     slavemaster.cpp
@@ -171,6 +175,10 @@ list(REMOVE_ITEM COMMANDO_DEDICATED_SOURCES
     lanchat.cpp
     radiocommanddisplay.cpp
 )
+
+if(WIN32)
+    list(REMOVE_ITEM COMMANDO_DEDICATED_SOURCES ConsoleMode.cpp)
+endif()
 
 set(COMMANDO_DEDICATED_EXECUTABLE_SOURCES
     commando_dedicated_bootstrap.cpp

@@ -59,9 +59,6 @@ namespace
 	{
 		const char * base_path = SDL_GetBasePath();
 		std::string filename = (base_path != nullptr) ? base_path : "";
-		if (base_path != nullptr) {
-			SDL_free(const_cast<char *>(base_path));
-		}
 
 		filename += LOGFILE_NAME;
 		return filename;

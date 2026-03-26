@@ -89,10 +89,6 @@
 #include "dlgmainmenu.h"
 #include "ccamera.h"
 
-
-bool g_is_loading = false;
-
-
 ////////////////////////////////////////////////////////////////////
 //
 //	MenuGameModeClass2

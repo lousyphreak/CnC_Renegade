@@ -205,7 +205,7 @@ WaypointClass::Load_Variables (ChunkLoadClass &cload)
 				// to the remapping system.
 				//				
 				WaypointClass *old_ptr = NULL;
-				cload.Read (&old_ptr, sizeof (old_ptr));
+				ChunkIO_Read_Value(cload, old_ptr);
 				SaveLoadSystemClass::Register_Pointer (old_ptr, this);
 			}
 			break;

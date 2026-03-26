@@ -272,7 +272,7 @@ WaypathClass::Load_Variables (ChunkLoadClass &cload)
 				// list.  We will remap it later.
 				//				
 				WaypointClass *waypoint = NULL;
-				cload.Read (&waypoint, sizeof (waypoint));				
+				ChunkIO_Read_Value(cload, waypoint);				
 				m_Waypoints.Add (waypoint);				
 			}
 			break;
@@ -284,7 +284,7 @@ WaypathClass::Load_Variables (ChunkLoadClass &cload)
 				// to the remapping system.
 				//				
 				WaypathClass *old_ptr = NULL;
-				cload.Read (&old_ptr, sizeof (old_ptr));
+				ChunkIO_Read_Value(cload, old_ptr);
 				SaveLoadSystemClass::Register_Pointer (old_ptr, this);
 			}
 			break;

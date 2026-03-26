@@ -55,6 +55,9 @@
 #include "iostruct.h"
 #endif
 
+#include <cstdint>
+#include <unordered_map>
+
 
 /************************************************************************************
 
@@ -229,6 +232,67 @@ private:
 
 };
 
+
+/*
+** Legacy save files store pointer remap IDs in 32-bit fields. Preserve that
+** on 64-bit builds by serializing opaque 32-bit tokens rather than native
+** pointer widths.
+*/
+inline uint32 SaveLoad_Encode_Pointer_Token(const void * pointer)
+{
+	if (pointer == NULL) {
+		return 0;
+	}
+
+	static std::unordered_map<const void *, uint32> token_map;
+	static uint32 next_token = 1;
+
+	std::unordered_map<const void *, uint32>::const_iterator existing = token_map.find(pointer);
+	if (existing != token_map.end()) {
+		return existing->second;
+	}
+
+	const uint32 token = next_token++;
+	if (next_token == 0) {
+		next_token = 1;
+	}
+	token_map.insert(std::make_pair(pointer, token));
+	return token;
+}
+
+inline void * SaveLoad_Decode_Pointer_Token(uint32 token)
+{
+	return reinterpret_cast<void *>(static_cast<std::uintptr_t>(token));
+}
+
+template <class T>
+inline uint32 ChunkIO_Write_Value(ChunkSaveClass & csave, const T & value)
+{
+	return csave.Write(&value, sizeof(value));
+}
+
+template <class T>
+inline uint32 ChunkIO_Write_Value(ChunkSaveClass & csave, T * const & value)
+{
+	const uint32 token = SaveLoad_Encode_Pointer_Token(value);
+	return csave.Write(&token, sizeof(token));
+}
+
+template <class T>
+inline uint32 ChunkIO_Read_Value(ChunkLoadClass & cload, T & value)
+{
+	return cload.Read(&value, sizeof(value));
+}
+
+template <class T>
+inline uint32 ChunkIO_Read_Value(ChunkLoadClass & cload, T *& value)
+{
+	uint32 token = 0;
+	const uint32 bytes_read = cload.Read(&token, sizeof(token));
+	value = reinterpret_cast<T *>(SaveLoad_Decode_Pointer_Token(token));
+	return bytes_read;
+}
+
 /*
 ** WRITE_WWSTRING_CHUNK	- use this one-line macro to easily create a chunk to save a potentially
 ** long string.  Note:  This macro does NOT create a micro chunk...
@@ -294,7 +358,7 @@ private:
 */
 #define WRITE_MICRO_CHUNK(csave,id,var) { \
 	csave.Begin_Micro_Chunk(id); \
-	csave.Write(&var,sizeof(var)); \
+	ChunkIO_Write_Value(csave, var); \
 	csave.End_Micro_Chunk(); }
 
 #define WRITE_SAFE_MICRO_CHUNK(csave,id,var,type) { \
@@ -334,7 +398,7 @@ private:
 **	}
 */
 #define READ_MICRO_CHUNK(cload,id,var)						\
-	case (id):	cload.Read(&var,sizeof(var)); break;	\
+	case (id):	ChunkIO_Read_Value(cload, var); break;	\
 
 /*
 ** Like READ_MICRO_CHUNK but reads items straight into the data safe.
@@ -360,7 +424,7 @@ private:
 ** These load macros make it easier to add extra code to a specifc case
 */
 #define LOAD_MICRO_CHUNK(cload,var)						\
-	cload.Read(&var,sizeof(var)); \
+	ChunkIO_Read_Value(cload, var); \
 
 #define LOAD_MICRO_CHUNK_WWSTRING(cload,var)		\
 	cload.Read(var.Get_Buffer(cload.Cur_Micro_Chunk_Length()),cload.Cur_Micro_Chunk_Length());	\

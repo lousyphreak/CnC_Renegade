@@ -1175,7 +1175,12 @@ int RawFileClass::Raw_Seek(int pos, int dir)
 	}
 
    #ifdef _UNIX
-      pos=fseek(Handle, pos, dir);
+		if (fseek(Handle, pos, dir) != 0) {
+			pos = 0xFFFFFFFF;
+		} else {
+			long newpos = ftell(Handle);
+			pos = (newpos >= 0) ? static_cast<int>(newpos) : 0xFFFFFFFF;
+		}
    #else
 		switch (dir) {
 			case SEEK_SET:

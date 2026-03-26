@@ -1597,7 +1597,9 @@ void	Save_Data( ScriptSaver & saver, int id, int size, void * data )
 void Save_Pointer(ScriptSaver& saver, int id, void* pointer)
 {
 	SCRIPT_PTR_CHECK(pointer);
-	Save_Data(saver, id, sizeof(pointer), pointer);
+	saver.CSave.Begin_Micro_Chunk(id);
+	ChunkIO_Write_Value(saver.CSave, pointer);
+	saver.CSave.End_Micro_Chunk();
 }
 
 
@@ -1624,7 +1626,7 @@ void	Load_Data( ScriptLoader & loader, int size, void * data )
 void Load_Pointer(ScriptLoader& loader, void** pointer)
 {
 	SCRIPT_PTR_CHECK(pointer);
-	Load_Data(loader, sizeof(void*), pointer);
+	ChunkIO_Read_Value(loader.CLoad, *pointer);
 	REQUEST_POINTER_REMAP(pointer);
 }
 
@@ -3054,7 +3056,7 @@ void	Cinematic_Sniper_Control(bool enabled, float zoom)
 /*
 **
 */
-int	Text_File_Open( const char * filename )
+std::uintptr_t	Text_File_Open( const char * filename )
 {
 	FileClass * file = _TheFileFactory->Get_File( filename );
 	if ( file ) {
@@ -3064,12 +3066,12 @@ int	Text_File_Open( const char * filename )
 			file = NULL;
 		}
 	}
-	return (int)( file );
+	return reinterpret_cast<std::uintptr_t>(file);
 }
 
-bool	Text_File_Get_String( int handle, char * buffer, int size )
+bool	Text_File_Get_String( std::uintptr_t handle, char * buffer, int size )
 {
-	FileClass * file = (FileClass *)handle;
+	FileClass * file = reinterpret_cast<FileClass *>(handle);
 	char ch[4];
 	char *b = buffer;
 	while ( file->Read( &ch[0], 1 ) == 1 ) {
@@ -3085,9 +3087,9 @@ bool	Text_File_Get_String( int handle, char * buffer, int size )
 	return (buffer[0] != 0);
 }
 
-void	Text_File_Close( int handle )
+void	Text_File_Close( std::uintptr_t handle )
 {
-	FileClass * file = (FileClass *)handle;
+	FileClass * file = reinterpret_cast<FileClass *>(handle);
 	if ( file != NULL ) {
 		file->Close();
 		_TheFileFactory->Return_File( file );

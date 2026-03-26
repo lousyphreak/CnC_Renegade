@@ -485,12 +485,12 @@ static bool Create_Log_File_Name(const StringClass& folder, StringClass& filenam
 {
 	StringClass original(filename);
 	if (!use_numbering) {
-		filename.Format("%s\\%s",folder,original);
+		filename.Format("%s\\%s",(const char *)folder,(const char *)original);
 		return true;
 	}
 	for (int i=0;i<999;++i) {
 		HANDLE file;
-		filename.Format("%s\\%3.3d%s",folder,i,original);
+		filename.Format("%s\\%3.3d%s",(const char *)folder,i,(const char *)original);
 		file = CreateFile(filename, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (file!=INVALID_HANDLE_VALUE) {
 			CloseHandle(file);

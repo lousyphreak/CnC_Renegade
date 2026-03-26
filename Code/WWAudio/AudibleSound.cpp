@@ -2051,7 +2051,7 @@ AudibleSoundClass::Load (ChunkLoadClass &cload)
 						case VARID_THIS_PTR:
 						{
 							AudibleSoundClass *old_ptr = NULL;
-							cload.Read(&old_ptr, sizeof (old_ptr));
+							ChunkIO_Read_Value(cload, old_ptr);
 							SaveLoadSystemClass::Register_Pointer (old_ptr, this);
 						}
 						break;

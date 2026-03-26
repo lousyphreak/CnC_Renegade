@@ -669,7 +669,7 @@ void ServerSettingsClass::Encrypt_Serial(StringClass serial_in, StringClass &ser
 {
 	char *s;
 	int numberlength = serial_in.Get_Length();
-	unsigned long bytesread;
+	DWORD bytesread = 0;
 	char stringbuffer[ENCRYPTION_STRING_LENGTH];
 	int p;
 

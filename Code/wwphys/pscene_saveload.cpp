@@ -656,7 +656,7 @@ void PhysicsSceneClass::Save_Static_Object_States(ChunkSaveClass & csave)
 
 			csave.Begin_Chunk(PSCENE_DD_CHUNK_STATIC_OLD_PTR);
 			void * old_ptr = it.Peek_Obj();
-			csave.Write(&old_ptr,sizeof(void *));
+			ChunkIO_Write_Value(csave, old_ptr);
 			csave.End_Chunk();
 
 			csave.Begin_Chunk(PSCENE_DD_CHUNK_STATIC_OBJECT_STATE);
@@ -681,7 +681,7 @@ void PhysicsSceneClass::Load_Static_Object_States(ChunkLoadClass & cload)
 		cload.Open_Chunk();
 		WWASSERT(cload.Cur_Chunk_ID()==PSCENE_DD_CHUNK_STATIC_OLD_PTR);
 		void * old_ptr;
-		cload.Read(&old_ptr,sizeof(void *));
+		ChunkIO_Read_Value(cload, old_ptr);
 		SaveLoadSystemClass::Register_Pointer(old_ptr, sphys);
 		cload.Close_Chunk();
 

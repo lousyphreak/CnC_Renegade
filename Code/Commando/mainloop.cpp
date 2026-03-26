@@ -42,6 +42,7 @@
 #include "gamemode.h"
 #include "debug.h"
 #include "msgloop.h"
+#include "wwlib_debug.h"
 #include "wwprofile.h"
 #include "cnetwork.h"
 #include "miscutil.h"
@@ -200,12 +201,17 @@ int Game_Main_Loop(void)
 	const unsigned long servicetime = 1000; // Time in milliseconds.
 
 	unsigned long time;
+	WWLib_Debug_Printf("MainLoop: Starting Game_Init()\n");
 
 	// Only run main loop if the init is succesful!
 	if (Game_Init()) {
+		WWLib_Debug_Printf("MainLoop: Entering main loop\n");
+
 		while ( RunMainLoop ) {
 			_Game_Main_Loop_Loop();
 		}
+
+		WWLib_Debug_Printf("MainLoop: Exiting main loop\n");
 
 		// IML: Allow a short period to process any outstanding sound effects before shutdown.
 		time = TIMEGETTIME();

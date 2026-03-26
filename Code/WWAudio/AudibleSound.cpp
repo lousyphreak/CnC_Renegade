@@ -1,6 +1,7 @@
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
+	#endif
 **
 **	This program is free software: you can redistribute it and/or modify
 **	it under the terms of the GNU General Public License as published by
@@ -726,8 +727,7 @@ AudibleSoundClass::Set_Miles_Handle (MILES_HANDLE handle)
 	(void)handle;
 	Free_Miles_Handle();
 	return;
-	#endif
-
+	#else
 	//
 	// Start fresh
 	//
@@ -759,6 +759,7 @@ AudibleSoundClass::Set_Miles_Handle (MILES_HANDLE handle)
 	}
 
 	return ;
+	#endif
 }
 
 
@@ -1202,8 +1203,7 @@ AudibleSoundClass::Allocate_Miles_Handle (void)
 {
 	#if WWAUDIO_USE_NULL_BACKEND
 	return;
-	#endif
-
+	#else
 	//
 	// If we need to, get a play-handle from the audio system
 	//
@@ -1212,6 +1212,7 @@ AudibleSoundClass::Allocate_Miles_Handle (void)
 	}
 
 	return ;
+	#endif
 }
 
 
@@ -1477,8 +1478,7 @@ AudibleSoundClass::Convert_To_Filtered (void)
 {
 	#if WWAUDIO_USE_NULL_BACKEND
 	return;
-	#endif
-
+	#else
 	if (m_pConvertedFormat == NULL) {
 
 		//
@@ -1508,6 +1508,7 @@ AudibleSoundClass::Convert_To_Filtered (void)
 	}
 
 	return ;
+	#endif
 }
 
 
@@ -1921,8 +1922,7 @@ AudibleSoundDefinitionClass::Create_Logical (void)
 {
 	#if WWAUDIO_USE_NULL_BACKEND
 	return NULL;
-	#endif
-
+	#else
 	LogicalSoundClass *logical_sound = NULL;
 
 	if (m_CreateLogical) {
@@ -1947,6 +1947,7 @@ AudibleSoundDefinitionClass::Create_Logical (void)
 	}
 
 	return logical_sound;
+	#endif
 }
 
 

@@ -38,7 +38,7 @@ inline double Round_To_Nearest(double arg)
 inline std::uint32_t Round_To_UInt32(double arg)
 {
 	WWBITPACK_ASSERT(arg > -kEpsilon);
-	WWBITPACK_ASSERT(arg <= static_cast<double>(std::numeric_limits<std::uint32_t>::max()) + kEpsilon);
+	WWBITPACK_ASSERT(arg <= static_cast<double>((std::numeric_limits<std::uint32_t>::max)()) + kEpsilon);
 	return static_cast<std::uint32_t>(Round_To_Nearest(arg));
 }
 

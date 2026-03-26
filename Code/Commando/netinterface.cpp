@@ -106,14 +106,16 @@ void cNetInterface::Set_Random_Nickname(void)
 	char name[MAX_NICKNAME_LENGTH + 1] = {0};
 
 	#ifdef _WIN32
-	char name[MAX_COMPUTERNAME_LENGTH + 1];
-	DWORD size = sizeof(name);
-	::GetComputerName(name, &size);
+	char computer_name[MAX_COMPUTERNAME_LENGTH + 1];
+	DWORD size = sizeof(computer_name);
+	::GetComputerName(computer_name, &size);
 
 	int length_test = MAX_COMPUTERNAME_LENGTH + 1 - MAX_NICKNAME_LENGTH;
 	if (length_test > 0) {
-		name[MAX_NICKNAME_LENGTH - 1] = 0;
+		computer_name[MAX_NICKNAME_LENGTH - 1] = 0;
 	}
+	std::strncpy(name, computer_name, sizeof(name) - 1);
+	name[sizeof(name) - 1] = 0;
 	#else
 	if (gethostname(name, sizeof(name)) != 0) {
 		std::snprintf(name, sizeof(name), "Player");

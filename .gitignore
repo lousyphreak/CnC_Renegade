@@ -15,6 +15,7 @@ DirectX/
 
 # Output build folders
 [Bb]uild/
+[Bb]uild-*/
 [Rr]elease*
 [Pp]rofile*
 [Dd]ebug*

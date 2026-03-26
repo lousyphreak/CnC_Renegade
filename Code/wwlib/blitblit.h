@@ -452,7 +452,7 @@ class BlitTransLucent75 : public Blitter {
 **	does not allow inline-assembly to be part of an inline function -- go figure. 
 **	It will still compile, it just generates warning messages.
 */
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && defined(_M_IX86) && RENEGADE_WITH_X86_ASM
 
 inline void BlitTrans<unsigned char>::BlitForward(void * dest, void const * source, int len) const
 {

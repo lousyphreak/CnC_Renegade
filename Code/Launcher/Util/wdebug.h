@@ -53,10 +53,12 @@ will you be ready to leave grasshopper.
 #ifndef WDEBUG_HEADER
 #define WDEBUG_HEADER
 
-#include <iostream.h>
+#include <iostream>
 #include "sem4.h"
 #include "odevice.h"
 #include "streamer.h"
+
+using namespace std;
 
 // This is needed because the streams return a pointer.  Every time you
 //  change the output device the old stream is deleted, and a new one

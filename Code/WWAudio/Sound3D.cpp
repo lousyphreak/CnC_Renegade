@@ -601,8 +601,7 @@ Sound3DClass::Allocate_Miles_Handle (void)
 {
 	#if WWAUDIO_USE_NULL_BACKEND
 	return;
-	#endif
-
+	#else
 	//MMSLockClass lock;
 
 	//
@@ -613,6 +612,7 @@ Sound3DClass::Allocate_Miles_Handle (void)
 	}
 
 	return ;
+	#endif
 }
 
 
@@ -770,8 +770,7 @@ Sound3DClass::Set_Miles_Handle (MILES_HANDLE handle)
 	(void)handle;
 	Free_Miles_Handle();
 	return;
-	#endif
-
+	#else
 	//
 	// Start fresh
 	//
@@ -795,4 +794,5 @@ Sound3DClass::Set_Miles_Handle (MILES_HANDLE handle)
 	}
 
 	return ;
+	#endif
 }

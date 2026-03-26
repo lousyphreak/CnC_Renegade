@@ -38,7 +38,6 @@
 #include "ScriptFactory.h"
 #include "DPrint.h"
 #include <string.h>
-#include <strings.h>
 #include <assert.h>
 
 // ScriptFactory list

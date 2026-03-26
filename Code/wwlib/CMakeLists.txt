@@ -21,7 +21,6 @@ set(WWLIB_SOURCES
     lzo.cpp
     lzo1x_c.cpp
     lzo1x_d.cpp
-    lcw.cpp
     jshell.cpp
     lzopipe.cpp
     lzostraw.cpp
@@ -62,6 +61,12 @@ set(WWLIB_SOURCES
     xstraw.cpp
 )
 
+if(MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 4 AND RENEGADE_WITH_X86_ASM)
+    list(APPEND WWLIB_SOURCES lcw.cpp)
+else()
+    list(APPEND WWLIB_SOURCES lcw_portable.cpp)
+endif()
+
 add_library(wwlib STATIC ${WWLIB_SOURCES} ${WWLIB_BOOTSTRAP_HEADERS})
 renegade_configure_target(wwlib)
 
@@ -71,4 +76,4 @@ target_include_directories(wwlib
     "${PROJECT_SOURCE_DIR}/Code/wwdebug"
 )
 
-target_link_libraries(wwlib PRIVATE SDL3::SDL3)
+target_link_libraries(wwlib PUBLIC SDL3::SDL3)

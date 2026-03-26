@@ -48,7 +48,7 @@
 #include <stdio.h>
 #include <win.h>
 
-ScriptCommands* EngineCommands = NULL;
+ScriptCommandsClass* EngineCommands = NULL;
 
 namespace {
 
@@ -324,10 +324,7 @@ void ScriptManager::Load_Scripts(const char* dll_filename)
 		assert(set_commands_func != NULL);
 
 		if (set_commands_func != NULL) {
-			ScriptCommandsClass commands;
-			commands.Commands = EngineCommands;
-
-			bool success = set_commands_func(&commands);
+			bool success = set_commands_func(EngineCommands);
 
 			if (!success) {
 				Debug_Say(("Failed to set script commands!\n"));

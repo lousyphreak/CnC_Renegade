@@ -470,14 +470,15 @@ int INIClass::Load(Straw & ffile)
 				if (!strlen(buffer)) continue;
 
 				strtrim(divider);
+				const char * value_text = divider;
 				if (!strlen(divider)) {
 					if (KeepBlankEntries)
-						divider = " ";
+						value_text = " ";
 					else
 						continue;
 				}
 
-				if (Put_String(section, buffer, divider) == false) {
+				if (Put_String(section, buffer, value_text) == false) {
 					return(false);
 				}
 			}
@@ -536,15 +537,16 @@ int INIClass::Load(Straw & ffile)
 				if (!strlen(buffer)) continue;
 
 				strtrim(divider);
+				const char * value_text = divider;
 				if (!strlen(divider)) {
 					if (KeepBlankEntries)
-						divider = " ";
+						value_text = " ";
 					else
 						continue;
 				}
 
 
-				INIEntry * entryptr = new INIEntry(strdup(buffer), strdup(divider));
+				INIEntry * entryptr = new INIEntry(strdup(buffer), strdup(value_text));
 				if (entryptr == NULL) {
 					delete secptr;
 					Clear();

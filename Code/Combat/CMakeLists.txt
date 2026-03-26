@@ -8,9 +8,14 @@ list(REMOVE_ITEM COMBAT_SOURCES
 add_library(Combat STATIC ${COMBAT_SOURCES} ${COMBAT_HEADERS})
 renegade_configure_target(Combat)
 
+set(COMBAT_COMPAT_INCLUDE_DIRS)
+if(NOT WIN32)
+    list(APPEND COMBAT_COMPAT_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/Code/compat")
+endif()
+
 target_include_directories(Combat
     PUBLIC
-        "${PROJECT_SOURCE_DIR}/Code/compat"
+        ${COMBAT_COMPAT_INCLUDE_DIRS}
         "${CMAKE_CURRENT_SOURCE_DIR}"
         "${PROJECT_SOURCE_DIR}/Code/wwlib"
         "${PROJECT_SOURCE_DIR}/Code/wwdebug"
@@ -27,6 +32,10 @@ target_include_directories(Combat
 )
 
 target_link_libraries(Combat PRIVATE ww3d2 wwlib wwdebug WWMath wwutil wwsaveload wwbitpack wwtranslatedb wwui wwnet WWAudio wwphys BinkMovie)
+
+if(MSVC)
+    target_compile_options(Combat PRIVATE /Zc:strictStrings-)
+endif()
 
 if(NOT WIN32)
     target_compile_definitions(Combat PUBLIC _UNIX)

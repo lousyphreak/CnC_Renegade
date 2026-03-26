@@ -456,7 +456,7 @@ class RLEBlitTransLucent75 : public RLEBlitter {
 };
 
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && defined(_M_IX86) && RENEGADE_WITH_X86_ASM
 void RLEBlitTransZRemapXlat<unsigned short>::Blit(void * dest, void const * source, int len, int leadskip) const
 {
 	unsigned char const * remapper = *RemapTable;

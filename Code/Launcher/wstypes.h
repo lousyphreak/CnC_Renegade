@@ -31,6 +31,8 @@ Standard type definitions for the sake of portability and readability.
 #ifndef WTYPES_HEADER
 #define WTYPES_HEADER
 
+#include "bittype.h"
+
 #ifndef TRUE
 #define TRUE               1
 #endif
@@ -58,13 +60,7 @@ Standard type definitions for the sake of portability and readability.
 #define OUT
 #define INOUT
 
-typedef char               bit8;
-typedef char               sint8;
-typedef unsigned char      uint8;
-typedef signed short int   sint16;
-typedef unsigned short int uint16;
-typedef signed int         sint32;
-typedef unsigned int       uint32;
+typedef sint8              bit8;
 
 #define MAX_BIT8    0x1
 #define MAX_UINT32  0xFFFFFFFF

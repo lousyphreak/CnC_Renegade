@@ -1,5 +1,18 @@
 #pragma once
 
+#ifdef _WIN32
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
+#include "win.h"
+
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
+#else
+
 #include "win.h"
 
 #include <arpa/inet.h>
@@ -255,3 +268,5 @@ inline int recvfrom(SOCKET socket_handle, char * buffer, int length, int flags, 
     }
     return result;
 }
+
+#endif

@@ -42,7 +42,7 @@
 #define __SOUNDOBJ_H
 
 #pragma warning (push, 3)
-#include "Mss.H"
+#include "compat/Mss.H"
 #pragma warning (pop)
 
 //#include <malloc.h>

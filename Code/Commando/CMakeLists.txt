@@ -193,12 +193,18 @@ target_compile_definitions(CommandoLib
 set(COMMANDO_INCLUDE_DIRS
     "${PROJECT_SOURCE_DIR}/Code"
     "${PROJECT_SOURCE_DIR}/generated"
-    "${PROJECT_SOURCE_DIR}/Code/compat"
 )
+
+if(NOT WIN32)
+    list(APPEND COMMANDO_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/Code/compat")
+endif()
 
 file(GLOB CODE_TOP_LEVEL_DIRS LIST_DIRECTORIES true "${PROJECT_SOURCE_DIR}/Code/*")
 foreach(code_dir IN LISTS CODE_TOP_LEVEL_DIRS)
     if(IS_DIRECTORY "${code_dir}")
+        if(WIN32 AND code_dir STREQUAL "${PROJECT_SOURCE_DIR}/Code/compat")
+            continue()
+        endif()
         list(APPEND COMMANDO_INCLUDE_DIRS "${code_dir}")
     endif()
 endforeach()
@@ -228,6 +234,14 @@ target_link_libraries(CommandoLib
         wwlib
         SDL3::SDL3
 )
+
+if(MSVC)
+    target_compile_options(CommandoLib PRIVATE /Zc:strictStrings-)
+endif()
+
+if(WIN32)
+    target_link_libraries(CommandoLib PUBLIC ws2_32)
+endif()
 
 add_library(CommandoDedicatedLib STATIC ${COMMANDO_DEDICATED_SOURCES} ${COMMANDO_HEADERS})
 renegade_configure_target(CommandoDedicatedLib)
@@ -264,6 +278,14 @@ target_link_libraries(CommandoDedicatedLib
         wwlib
         SDL3::SDL3
 )
+
+if(MSVC)
+    target_compile_options(CommandoDedicatedLib PRIVATE /Zc:strictStrings-)
+endif()
+
+if(WIN32)
+    target_link_libraries(CommandoDedicatedLib PUBLIC ws2_32)
+endif()
 
 add_executable(Commando ${COMMANDO_EXECUTABLE_SOURCES})
 renegade_configure_target(Commando)

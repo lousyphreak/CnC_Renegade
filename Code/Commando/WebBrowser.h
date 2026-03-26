@@ -182,7 +182,7 @@ class WebBrowser :
 
 #include "always.h"
 
-#ifndef HWND
+#if !defined(_WIN32) && !defined(HWND)
 typedef void * HWND;
 #endif
 

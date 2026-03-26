@@ -41,6 +41,10 @@
 #ifndef WWDEBUG_H
 #define WWDEBUG_H
 
+#if defined(_MSC_VER) && defined(_WIN32)
+#include <intrin.h>
+#endif
+
 #include <signal.h>
 				
 // The macro MESSAGE allows user to put:
@@ -138,7 +142,11 @@ void					WWDebug_DBWin32_Message_Handler( const char * message);
 ** The WWDEBUG_BREAK macro will cause the application to break into
 ** the debugger...
 */
+#if defined(_MSC_VER) && defined(_WIN32)
+#define WWDEBUG_BREAK							__debugbreak()
+#else
 #define WWDEBUG_BREAK							raise(SIGTRAP)
+#endif
 
 /*
 ** The WWDEBUG_TRIGGER macro can be used to ask the application if 

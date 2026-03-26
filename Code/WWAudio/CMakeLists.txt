@@ -3,7 +3,6 @@ file(GLOB WWAUDIO_HEADERS CONFIGURE_DEPENDS "*.h")
 add_library(WWAudio STATIC
     AudioEvents.cpp
     AudibleSound.cpp
-    AudibleSoundDefinition_headless.cpp
     AudioSaveLoad_null.cpp
     Listener.cpp
     Sound3D.cpp
@@ -14,9 +13,14 @@ add_library(WWAudio STATIC
 )
 renegade_configure_target(WWAudio)
 
+set(WWAUDIO_COMPAT_INCLUDE_DIRS)
+if(NOT WIN32)
+    list(APPEND WWAUDIO_COMPAT_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/Code/compat")
+endif()
+
 target_include_directories(WWAudio
     PUBLIC
-        "${PROJECT_SOURCE_DIR}/Code/compat"
+        ${WWAUDIO_COMPAT_INCLUDE_DIRS}
         "${CMAKE_CURRENT_SOURCE_DIR}"
         "${PROJECT_SOURCE_DIR}/Code/wwlib"
         "${PROJECT_SOURCE_DIR}/Code/wwdebug"
@@ -29,6 +33,10 @@ target_include_directories(WWAudio
 
 target_link_libraries(WWAudio PRIVATE wwlib wwdebug WWMath wwutil wwsaveload wwtranslatedb)
 
+if(NOT RENEGADE_WITH_MILES)
+    target_compile_definitions(WWAudio PUBLIC WWAUDIO_USE_NULL_BACKEND=1)
+endif()
+
 if(NOT WIN32)
-    target_compile_definitions(WWAudio PUBLIC _UNIX WWAUDIO_USE_NULL_BACKEND=1)
+    target_compile_definitions(WWAudio PUBLIC _UNIX)
 endif()

@@ -4,7 +4,6 @@
 #define RENEGADE_OSDEP_H
 
 #include <algorithm>
-#include <alloca.h>
 #include <chrono>
 #include <cstdarg>
 #include <cstddef>
@@ -19,13 +18,54 @@
 #include <filesystem>
 #include <limits.h>
 #include <mutex>
-#include <strings.h>
 #include <string>
 #include <thread>
-#include <unistd.h>
 #include <vector>
 
 #include "bittype.h"
+
+#ifdef _WIN32
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
+#include <malloc.h>
+
+#include "win.h"
+
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
+#ifndef alloca
+#define alloca _alloca
+#endif
+
+#ifndef strcasecmp
+#define strcasecmp _stricmp
+#endif
+
+#ifndef strncasecmp
+#define strncasecmp _strnicmp
+#endif
+
+#ifndef stricmp
+#define stricmp _stricmp
+#endif
+
+#ifndef strcmpi
+#define strcmpi _stricmp
+#endif
+
+#ifndef strnicmp
+#define strnicmp _strnicmp
+#endif
+
+#else
+
+#include <alloca.h>
+#include <strings.h>
+#include <unistd.h>
 
 #ifndef _UNIX
 #define _UNIX 1
@@ -1547,5 +1587,7 @@ inline int MultiByteToWideChar(
     const char * temp_src = temp.c_str();
     return static_cast<int>(std::mbsrtowcs(destination, &temp_src, destination_length, &state));
 }
+
+#endif // _WIN32
 
 #endif

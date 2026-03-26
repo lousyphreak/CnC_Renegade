@@ -38,6 +38,8 @@
 #include "listctrl.h"
 #include "assetmgr.h"
 #include "refcount.h"
+
+#include <commctrl.h>
 #include "mousemgr.h"
 #include "ww3d.h"
 #include "dialogmgr.h"

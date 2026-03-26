@@ -484,7 +484,7 @@ void CCDKeyAuth::AuthSerial(const char *, StringClass &resp)
     resp = "";
 }
 
-#if !defined(_WIN32)
+#if !defined(_WIN32) || defined(FREEDEDICATEDSERVER)
 
 ConsoleModeClass ConsoleBox;
 

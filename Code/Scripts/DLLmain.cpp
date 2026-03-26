@@ -196,7 +196,7 @@ SCRIPT_DLL_FUNCT bool Set_Script_Commands(ScriptCommandsClass* commands)
 	assert(commands != NULL);
 
 	// Save the commands list
-	Commands = commands->Commands;
+	Commands = commands;
 
 	DebugPrint("Setting script commands (Version %d, Size %d)\n",
 		Commands->Version, Commands->Size);

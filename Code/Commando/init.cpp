@@ -1011,10 +1011,12 @@ bool Game_Init(void)
 	// Note:  Accelerator tables that are loaded from resources (like
 	// we are doing here) do not need to be manually freed.  Windows
 	// will cleanup for us when the process terminates.
+	#if !defined(FREEDEDICATEDSERVER)
 	HACCEL haccel = ::LoadAccelerators (::GetModuleHandle (NULL), MAKEINTRESOURCE (IDR_ACCELERATOR));
 	if (haccel) {
 		::Add_Accelerator (MainWindow, haccel);
 	}
+	#endif
 
 	//WW3D::Set_Texture_Reduction( 1 );
 

@@ -17,9 +17,14 @@ endif()
 
 renegade_configure_target(BinkMovie)
 
+set(BINKMOVIE_COMPAT_INCLUDE_DIRS)
+if(NOT WIN32)
+    list(APPEND BINKMOVIE_COMPAT_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/Code/compat")
+endif()
+
 target_include_directories(BinkMovie
     PUBLIC
-        "${PROJECT_SOURCE_DIR}/Code/compat"
+        ${BINKMOVIE_COMPAT_INCLUDE_DIRS}
         "${CMAKE_CURRENT_SOURCE_DIR}"
         "${PROJECT_SOURCE_DIR}/Code/wwlib"
         "${PROJECT_SOURCE_DIR}/Code/wwdebug"

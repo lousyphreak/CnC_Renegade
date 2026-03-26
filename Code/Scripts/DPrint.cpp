@@ -49,7 +49,7 @@
 #include <string>
 
 #include "scriptcommands.h"
-extern ScriptCommands* Commands;
+extern ScriptCommandsClass* Commands;
 
 namespace
 {
@@ -57,10 +57,10 @@ namespace
 
 	std::string Build_Log_Filename()
 	{
-		char * base_path = SDL_GetBasePath();
+		const char * base_path = SDL_GetBasePath();
 		std::string filename = (base_path != nullptr) ? base_path : "";
 		if (base_path != nullptr) {
-			SDL_free(base_path);
+			SDL_free(const_cast<char *>(base_path));
 		}
 
 		filename += LOGFILE_NAME;

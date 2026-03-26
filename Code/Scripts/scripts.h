@@ -37,6 +37,8 @@
 #ifndef	SCRIPTS_H
 #define	SCRIPTS_H
 
+#include "always.h"
+
 #include "scriptevents.h"
 #include "scriptcommands.h"
 #include "ScriptRegistrant.h"
@@ -229,7 +231,7 @@ private:
 #define REGISTER_VARIABLES()			public: void Register_Auto_Save_Variables( void )
 #define SAVE_VARIABLE( x, id )		Auto_Save_Variable( &x, sizeof( x ), id )
 
-extern ScriptCommands* Commands;
+extern ScriptCommandsClass* Commands;
 
 // Array Macros
 #define		ARRAY_ELEMENT_COUNT( x )	( sizeof( x ) / sizeof( x[0] ) )

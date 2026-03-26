@@ -19,6 +19,10 @@ target_include_directories(wwnet
 
 target_link_libraries(wwnet PRIVATE wwlib wwdebug WWMath wwutil wwsaveload wwbitpack)
 
+if(WIN32)
+    target_link_libraries(wwnet PUBLIC ws2_32)
+endif()
+
 if(NOT WIN32)
     target_compile_definitions(wwnet PUBLIC _UNIX)
 endif()

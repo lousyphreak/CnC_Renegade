@@ -2,6 +2,8 @@
 
 #include "win.h"
 
+#ifndef _WIN32
+
 #include <cstdio>
 #include <cwchar>
 
@@ -32,4 +34,6 @@ inline void OutputDebugString(const char * text)
 {
     OutputDebugStringA(text);
 }
+#endif
+
 #endif

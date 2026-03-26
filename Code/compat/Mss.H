@@ -3,6 +3,10 @@
 #include "windows.h"
 #include "bittype.h"
 
+#ifdef _WIN32
+#include <mmreg.h>
+#endif
+
 using U32 = uint32;
 using S32 = sint32;
 
@@ -19,6 +23,7 @@ using HSTREAM = void *;
 using H3DPOBJECT = void *;
 using HTIMER = sint32;
 
+#ifndef _WIN32
 struct WAVEFORMAT {
     WORD wFormatTag;
     WORD nChannels;
@@ -31,6 +36,8 @@ struct PCMWAVEFORMAT {
     WAVEFORMAT wf;
     WORD wBitsPerSample;
 };
+
+#endif
 
 using LPWAVEFORMAT = WAVEFORMAT *;
 using LPCWAVEFORMAT = const WAVEFORMAT *;

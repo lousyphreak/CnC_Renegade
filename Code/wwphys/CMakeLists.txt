@@ -14,9 +14,14 @@ list(REMOVE_ITEM WWPHYS_SOURCES
 add_library(wwphys STATIC ${WWPHYS_SOURCES} ${WWPHYS_HEADERS})
 renegade_configure_target(wwphys)
 
+set(WWPHYS_COMPAT_INCLUDE_DIRS)
+if(NOT WIN32)
+    list(APPEND WWPHYS_COMPAT_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/Code/compat")
+endif()
+
 target_include_directories(wwphys
     PUBLIC
-        "${PROJECT_SOURCE_DIR}/Code/compat"
+        ${WWPHYS_COMPAT_INCLUDE_DIRS}
         "${CMAKE_CURRENT_SOURCE_DIR}"
         "${PROJECT_SOURCE_DIR}/Code/wwlib"
         "${PROJECT_SOURCE_DIR}/Code/wwdebug"

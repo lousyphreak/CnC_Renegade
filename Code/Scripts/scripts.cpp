@@ -50,7 +50,7 @@ enum {
 };
 
 // Script commands
-ScriptCommands* Commands = NULL;
+ScriptCommandsClass* Commands = NULL;
 void (*ScriptImpClass::Request_Destroy_Script)(ScriptClass*) =  NULL;
 
 void ScriptImpClass::Set_Request_Destroy_Func(void (*function)(ScriptClass*))

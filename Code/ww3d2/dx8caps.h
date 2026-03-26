@@ -43,6 +43,12 @@
 #ifndef DX8CAPS_H
 #define DX8CAPS_H
 
+#if !RENEGADE_WITH_DX8_RENDERER
+
+#include "dx8wrapper_stub.h"
+
+#else
+
 #include "always.h"
 #include "ww3dformat.h"
 #include <d3d8.h>
@@ -299,5 +305,7 @@ private:
 	StringClass CapsLog;
 	StringClass CompactLog;
 };
+
+#endif
 
 #endif

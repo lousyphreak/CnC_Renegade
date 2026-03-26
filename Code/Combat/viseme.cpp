@@ -18,6 +18,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <cstddef>
 #include <cctype>
 #include "always.h"
 #include <wwdebug.h>

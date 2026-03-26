@@ -526,7 +526,9 @@ int MyLoadStringW (UINT str_id, LPWSTR buffer, int buffer_len)
 		//
 		//	Copy the string to our buffer
 		//
-		length = min ((int)(buffer_len - 1), (int)(*res_string));
+		const int max_length = buffer_len - 1;
+		const int resource_length = (int)(*res_string);
+		length = (max_length < resource_length) ? max_length : resource_length;
 		::wcsncpy (buffer, res_string + 1, length);
 	}
 

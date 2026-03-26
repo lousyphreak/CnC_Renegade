@@ -70,7 +70,38 @@ set(WW3D2_SOURCES
     ww3dformat_headless.cpp
 )
 
-add_library(ww3d2 STATIC ${WW3D2_SOURCES} ${WW3D2_HEADERS})
+set(WW3D2_BGFX_SHADER_SOURCES)
+if(RENEGADE_WITH_BGFX_RENDERER)
+    list(APPEND WW3D2_SOURCES dx8wrapper.cpp)
+
+    set(WW3D2_BGFX_SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
+    set(WW3D2_BGFX_GENERATED_SHADER_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated/shaders")
+
+    bgfx_compile_shaders(
+        TYPE VERTEX
+        SHADERS "${WW3D2_BGFX_SHADER_DIR}/vs_bootstrap.sc"
+        VARYING_DEF "${WW3D2_BGFX_SHADER_DIR}/varying.def.sc"
+        OUTPUT_DIR "${WW3D2_BGFX_GENERATED_SHADER_DIR}"
+        INCLUDE_DIRS "${bgfx_cmake_SOURCE_DIR}/bgfx/src"
+        AS_HEADERS
+    )
+    bgfx_compile_shaders(
+        TYPE FRAGMENT
+        SHADERS "${WW3D2_BGFX_SHADER_DIR}/fs_bootstrap.sc"
+        VARYING_DEF "${WW3D2_BGFX_SHADER_DIR}/varying.def.sc"
+        OUTPUT_DIR "${WW3D2_BGFX_GENERATED_SHADER_DIR}"
+        INCLUDE_DIRS "${bgfx_cmake_SOURCE_DIR}/bgfx/src"
+        AS_HEADERS
+    )
+
+    list(APPEND WW3D2_BGFX_SHADER_SOURCES
+        "${WW3D2_BGFX_SHADER_DIR}/varying.def.sc"
+        "${WW3D2_BGFX_SHADER_DIR}/vs_bootstrap.sc"
+        "${WW3D2_BGFX_SHADER_DIR}/fs_bootstrap.sc"
+    )
+endif()
+
+add_library(ww3d2 STATIC ${WW3D2_SOURCES} ${WW3D2_HEADERS} ${WW3D2_BGFX_SHADER_SOURCES})
 renegade_configure_target(ww3d2)
 
 set(WW3D2_COMPAT_INCLUDE_DIRS)
@@ -91,7 +122,21 @@ target_include_directories(ww3d2
         "${PROJECT_SOURCE_DIR}/Code/WWAudio"
 )
 
+if(RENEGADE_WITH_BGFX_RENDERER)
+    target_include_directories(ww3d2 PRIVATE "${WW3D2_BGFX_GENERATED_SHADER_DIR}")
+endif()
+
 target_link_libraries(ww3d2 PRIVATE wwlib wwdebug WWMath wwutil wwsaveload wwtranslatedb WWAudio SDL3::SDL3)
+
+if(RENEGADE_WITH_BGFX_RENDERER)
+    if(TARGET bgfx::bgfx)
+        target_link_libraries(ww3d2 PRIVATE bgfx::bgfx)
+    elseif(TARGET bgfx)
+        target_link_libraries(ww3d2 PRIVATE bgfx)
+    else()
+        message(FATAL_ERROR "RENEGADE_WITH_BGFX_RENDERER is enabled, but no bgfx target was exported by bgfx.cmake.")
+    endif()
+endif()
 
 if(NOT WIN32)
     target_compile_definitions(ww3d2 PUBLIC _UNIX)

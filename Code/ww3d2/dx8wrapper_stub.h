@@ -1,7 +1,5 @@
 #pragma once
 
-#include "always.h"
-#include "bittype.h"
 #include "vector3.h"
 #include "vector4.h"
 #include "../compat/dx8vertexbuffer.h"
@@ -23,16 +21,6 @@ public:
 };
 
 struct IDirect3DSurface8;
-using D3DCOLOR = uint32;
-
-struct D3DVIEWPORT8 {
-	unsigned X;
-	unsigned Y;
-	unsigned Width;
-	unsigned Height;
-	float MinZ;
-	float MaxZ;
-};
 
 #ifndef D3DTS_WORLD
 #define D3DTS_WORLD 0
@@ -304,7 +292,7 @@ public:
 	{
 	}
 
-	static Vector4 Convert_Color(D3DCOLOR color)
+	static Vector4 Convert_Color(unsigned int color)
 	{
 		const float inv = 1.0f / 255.0f;
 		return Vector4(
@@ -314,7 +302,7 @@ public:
 			static_cast<float>((color >> 24) & 0xFF) * inv);
 	}
 
-	static D3DCOLOR Convert_Color(const Vector4 &color)
+	static unsigned int Convert_Color(const Vector4 &color)
 	{
 		auto clamp = [](float value) -> unsigned long {
 			const float scaled = value < 0.0f ? 0.0f : (value > 1.0f ? 255.0f : value * 255.0f);
@@ -327,7 +315,7 @@ public:
 			clamp(color.Z);
 	}
 
-	static D3DCOLOR Convert_Color(const Vector3 &color, float alpha)
+	static unsigned int Convert_Color(const Vector3 &color, float alpha)
 	{
 		return Convert_Color(Vector4(color.X, color.Y, color.Z, alpha));
 	}

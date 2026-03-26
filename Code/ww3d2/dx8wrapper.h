@@ -43,7 +43,271 @@
 #ifndef DX8_WRAPPER_H
 #define DX8_WRAPPER_H
 
-#if !RENEGADE_WITH_DX8_RENDERER
+enum TransformSlot
+{
+	TRANSFORM_WORLD = 0,
+	TRANSFORM_VIEW = 1,
+	TRANSFORM_PROJECTION = 2,
+	TRANSFORM_TEXTURE0 = 16
+};
+
+inline TransformSlot Texture_Transform_Slot(unsigned stage)
+{
+	return static_cast<TransformSlot>(TRANSFORM_TEXTURE0 + stage);
+}
+
+class RenderViewportClass
+{
+public:
+	RenderViewportClass() : X(0), Y(0), Width(0), Height(0), MinZ(0.0f), MaxZ(1.0f) {}
+	RenderViewportClass(unsigned x, unsigned y, unsigned width, unsigned height, float min_z = 0.0f, float max_z = 1.0f)
+		: X(x), Y(y), Width(width), Height(height), MinZ(min_z), MaxZ(max_z) {}
+
+	unsigned X;
+	unsigned Y;
+	unsigned Width;
+	unsigned Height;
+	float MinZ;
+	float MaxZ;
+};
+
+#if !RENEGADE_WITH_DX8_RENDERER && RENEGADE_WITH_BGFX_RENDERER
+
+#include "vector3.h"
+#include "vector4.h"
+#include "../compat/dx8vertexbuffer.h"
+#include "../compat/dx8indexbuffer.h"
+
+struct Matrix4;
+using FLOAT = float;
+
+class TextureClass;
+class LightClass;
+class RenderDeviceDescClass;
+class DX8Caps {
+public:
+	bool Support_Render_To_Texture_Format(int) const { return false; }
+	bool Support_NPatches() const { return false; }
+	bool Support_Bump_Envmap() const { return false; }
+	bool Support_Bump_Envmap_Luminance() const { return false; }
+	const char *Get_Log() const { return "bgfx bootstrap caps unavailable\n"; }
+	const char *Get_Compact_Log() const { return "bgfx"; }
+};
+
+#ifndef D3DTS_WORLD
+#define D3DTS_WORLD 0
+#endif
+#ifndef D3DTS_VIEW
+#define D3DTS_VIEW 1
+#endif
+#ifndef D3DTS_PROJECTION
+#define D3DTS_PROJECTION 2
+#endif
+#ifndef D3DTS_TEXTURE0
+#define D3DTS_TEXTURE0 16
+#endif
+#ifndef D3DRS_FILLMODE
+#define D3DRS_FILLMODE 8
+#endif
+#ifndef D3DRS_ZBIAS
+#define D3DRS_ZBIAS 47
+#endif
+#ifndef D3DFILL_POINT
+#define D3DFILL_POINT 1
+#endif
+#ifndef D3DFILL_WIREFRAME
+#define D3DFILL_WIREFRAME 2
+#endif
+#ifndef D3DFILL_SOLID
+#define D3DFILL_SOLID 3
+#endif
+#ifndef D3DTSS_TEXCOORDINDEX
+#define D3DTSS_TEXCOORDINDEX 0
+#endif
+#ifndef D3DTSS_TEXTURETRANSFORMFLAGS
+#define D3DTSS_TEXTURETRANSFORMFLAGS 1
+#endif
+#ifndef D3DTSS_TCI_PASSTHRU
+#define D3DTSS_TCI_PASSTHRU 0
+#endif
+#ifndef D3DTSS_TCI_CAMERASPACEPOSITION
+#define D3DTSS_TCI_CAMERASPACEPOSITION 1
+#endif
+#ifndef D3DTSS_TCI_CAMERASPACENORMAL
+#define D3DTSS_TCI_CAMERASPACENORMAL 2
+#endif
+#ifndef D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR
+#define D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR 3
+#endif
+#ifndef D3DTTFF_COUNT2
+#define D3DTTFF_COUNT2 2
+#endif
+#ifndef D3DTTFF_COUNT3
+#define D3DTTFF_COUNT3 3
+#endif
+#ifndef D3DTTFF_PROJECTED
+#define D3DTTFF_PROJECTED 256
+#endif
+#ifndef D3DTSS_BUMPENVMAT00
+#define D3DTSS_BUMPENVMAT00 7
+#endif
+#ifndef D3DTSS_BUMPENVMAT01
+#define D3DTSS_BUMPENVMAT01 8
+#endif
+#ifndef D3DTSS_BUMPENVMAT10
+#define D3DTSS_BUMPENVMAT10 9
+#endif
+#ifndef D3DTSS_BUMPENVMAT11
+#define D3DTSS_BUMPENVMAT11 10
+#endif
+
+using D3DTRANSFORMSTATETYPE = int;
+
+#ifndef MAX_TEXTURE_STAGES
+#define MAX_TEXTURE_STAGES 2
+#endif
+
+enum {
+	BUFFER_TYPE_DX8,
+	BUFFER_TYPE_SORTING,
+	BUFFER_TYPE_DYNAMIC_DX8,
+	BUFFER_TYPE_DYNAMIC_SORTING,
+	BUFFER_TYPE_INVALID
+};
+
+class DX8Wrapper
+{
+public:
+	static bool &_Triangle_Draw_State()
+	{
+		static bool enabled = true;
+		return enabled;
+	}
+
+	static bool Init(void *hwnd, bool lite = false);
+	static void Shutdown(void);
+	static void Begin_Scene(void);
+	static void End_Scene(bool flip_frame = true);
+	static void Flip_To_Primary(void);
+	static void Clear(bool clear_color, bool clear_z_stencil, const Vector3 &color, float z = 1.0f, unsigned int stencil = 0);
+	static void Set_Viewport(const RenderViewportClass &viewport);
+
+	static bool Set_Any_Render_Device(void);
+	static bool Set_Render_Device(const char *dev_name, int width = -1, int height = -1, int bits = -1, int windowed = -1, bool resize_window = false);
+	static bool Set_Render_Device(int dev = -1, int width = -1, int height = -1, int bits = -1, int windowed = -1, bool resize_window = false);
+	static bool Set_Next_Render_Device(void);
+	static int Get_Render_Device_Count(void);
+	static int Get_Render_Device(void);
+	static const char *Get_Render_Device_Name(int device_index);
+	static const RenderDeviceDescClass &Get_Render_Device_Desc(int deviceidx = -1);
+	static bool Set_Device_Resolution(int width = -1, int height = -1, int bits = -1, int windowed = -1, bool resize_window = false);
+	static void Get_Device_Resolution(int &width, int &height, int &bits, bool &windowed);
+	static void Get_Render_Target_Resolution(int &width, int &height, int &bits, bool &windowed);
+	static int Get_Device_Resolution_Width(void);
+	static int Get_Device_Resolution_Height(void);
+	static bool Is_Windowed(void);
+	static bool Toggle_Windowed(void);
+	static void Set_Swap_Interval(int swap);
+	static int Get_Swap_Interval(void);
+	static void Set_Texture_Bitdepth(int depth);
+	static int Get_Texture_Bitdepth(void);
+	static void Update_Window(void *hwnd);
+	static void Refresh_Render_Device_Desc(void);
+
+	template <typename... Args>
+	static void Set_Transform(Args&&...) {}
+	template <typename... Args>
+	static void Get_Transform(Args&&...) {}
+	template <typename... Args>
+	static void Set_Projection_Transform_With_Z_Bias(Args&&...) {}
+	template <typename... Args>
+	static void Set_Light_Environment(Args&&...) {}
+	template <typename... Args>
+	static void Set_Light(Args&&...) {}
+	template <typename... Args>
+	static void Set_Vertex_Buffer(Args&&...) {}
+	template <typename... Args>
+	static void Set_Index_Buffer(Args&&...) {}
+	template <typename... Args>
+	static void Set_Index_Buffer_Index_Offset(Args&&...) {}
+	template <typename... Args>
+	static void Draw_Triangles(Args&&...) {}
+	template <typename... Args>
+	static void Draw_Strip(Args&&...) {}
+	template <typename... Args>
+	static void Set_Texture(Args&&...) {}
+	template <typename... Args>
+	static void Set_Material(Args&&...) {}
+	template <typename... Args>
+	static void Set_Shader(Args&&...) {}
+	template <typename... Args>
+	static void Set_Render_Target(Args&&...) {}
+	template <typename... Args>
+	static void Set_DX8_Texture_Stage_State(Args&&...) {}
+	template <typename... Args>
+	static void Set_DX8_Render_State(Args&&...) {}
+	template <typename... Args>
+	static void Set_Gamma(Args&&...) {}
+	template <typename... Args>
+	static void Set_Fog(Args&&...) {}
+
+	static void Set_Alpha(const float alpha, unsigned int &color)
+	{
+		unsigned char *component = reinterpret_cast<unsigned char *>(&color);
+		component[3] = static_cast<unsigned char>(255.0f * alpha);
+	}
+
+	static void Set_World_Identity() {}
+	static void Set_View_Identity() {}
+	static bool Is_Device_Lost() { return false; }
+	static bool Is_Initted();
+	static TextureClass *Create_Render_Target(unsigned, unsigned, int) { return NULL; }
+	static DX8Caps *Get_Current_Caps()
+	{
+		static DX8Caps caps;
+		return &caps;
+	}
+	static void _Enable_Triangle_Draw(bool enable) { _Triangle_Draw_State() = enable; }
+	static bool _Is_Triangle_Draw_Enabled() { return _Triangle_Draw_State(); }
+	static unsigned Get_Last_Frame_DX8_Calls() { return 0; }
+	static unsigned Get_Last_Frame_Matrix_Changes() { return 0; }
+	static unsigned Get_Last_Frame_Material_Changes() { return 0; }
+	static unsigned Get_Last_Frame_Vertex_Buffer_Changes() { return 0; }
+	static unsigned Get_Last_Frame_Index_Buffer_Changes() { return 0; }
+	static unsigned Get_Last_Frame_Light_Changes() { return 0; }
+	template <typename... Args>
+	static void _Copy_DX8_Rects(Args&&...) {}
+
+	static Vector4 Convert_Color(unsigned color)
+	{
+		const float inv = 1.0f / 255.0f;
+		return Vector4(
+			static_cast<float>((color >> 16) & 0xFF) * inv,
+			static_cast<float>((color >> 8) & 0xFF) * inv,
+			static_cast<float>(color & 0xFF) * inv,
+			static_cast<float>((color >> 24) & 0xFF) * inv);
+	}
+
+	static unsigned int Convert_Color(const Vector4 &color)
+	{
+		auto clamp = [](float value) -> unsigned long {
+			const float scaled = value < 0.0f ? 0.0f : (value > 1.0f ? 255.0f : value * 255.0f);
+			return static_cast<unsigned long>(scaled + 0.5f);
+		};
+
+		return (clamp(color.W) << 24) |
+			(clamp(color.X) << 16) |
+			(clamp(color.Y) << 8) |
+			clamp(color.Z);
+	}
+
+	static unsigned int Convert_Color(const Vector3 &color, float alpha)
+	{
+		return Convert_Color(Vector4(color.X, color.Y, color.Z, alpha));
+	}
+};
+
+#elif !RENEGADE_WITH_DX8_RENDERER
 
 #include "dx8wrapper_stub.h"
 
@@ -229,7 +493,7 @@ public:
 
 	static void Clear(bool clear_color, bool clear_z_stencil, const Vector3 &color, float z=1.0f, unsigned int stencil=0);
 
-	static void	Set_Viewport(CONST D3DVIEWPORT8* pViewport);
+	static void	Set_Viewport(const RenderViewportClass &viewport);
 
 	static void Set_Vertex_Buffer(const VertexBufferClass* vb);
 	static void Set_Vertex_Buffer(const DynamicVBAccessClass& vba);
@@ -251,9 +515,9 @@ public:
 	static void	Set_Pseudo_ZBias(int zbias);
 	static void Set_Projection_Transform_With_Z_Bias(const Matrix4& matrix,float znear, float zfar);	// pointer to 16 matrices
 
-	static void Set_Transform(D3DTRANSFORMSTATETYPE transform,const Matrix4& m);
-	static void Set_Transform(D3DTRANSFORMSTATETYPE transform,const Matrix3D& m);
-	static void Get_Transform(D3DTRANSFORMSTATETYPE transform, Matrix4& m);
+	static void Set_Transform(TransformSlot transform,const Matrix4& m);
+	static void Set_Transform(TransformSlot transform,const Matrix3D& m);
+	static void Get_Transform(TransformSlot transform, Matrix4& m);
 	static void	Set_World_Identity();
 	static void Set_View_Identity();
 	static bool	Is_World_Identity();
@@ -261,9 +525,9 @@ public:
 
 	// Note that *_DX8_Transform() functions take the matrix in DX8 format - transposed from Westwood convention.
 
-	static void _Set_DX8_Transform(D3DTRANSFORMSTATETYPE transform,const Matrix4& m);
-	static void _Set_DX8_Transform(D3DTRANSFORMSTATETYPE transform,const Matrix3D& m);
-	static void _Get_DX8_Transform(D3DTRANSFORMSTATETYPE transform, Matrix4& m);
+	static void _Set_DX8_Transform(TransformSlot transform,const Matrix4& m);
+	static void _Set_DX8_Transform(TransformSlot transform,const Matrix3D& m);
+	static void _Get_DX8_Transform(TransformSlot transform, Matrix4& m);
 
 	static void Set_DX8_Light(int index,D3DLIGHT8* light);
 	static void Set_DX8_Render_State(D3DRENDERSTATETYPE state, unsigned value);
@@ -355,7 +619,7 @@ public:
 
 	// Needed by shader class
 	static bool						Get_Fog_Enable() { return FogEnable; }
-	static D3DCOLOR				Get_Fog_Color() { return FogColor; }
+	static unsigned int		Get_Fog_Color() { return FogColor; }
 
 	// Utilities
 	static Vector4 Convert_Color(unsigned color);
@@ -518,7 +782,7 @@ protected:
 	// These fog settings are constant for all objects in a given scene,
 	// unlike the matching renderstates which vary based on shader settings.
 	static bool								FogEnable;
-	static D3DCOLOR						FogColor;
+	static unsigned int				FogColor;
 
 	static unsigned						matrix_changes;
 	static unsigned						material_changes;
@@ -557,24 +821,24 @@ protected:
 };
 
 
-WWINLINE void DX8Wrapper::_Set_DX8_Transform(D3DTRANSFORMSTATETYPE transform,const Matrix4& m)
+WWINLINE void DX8Wrapper::_Set_DX8_Transform(TransformSlot transform,const Matrix4& m)
 {
 	SNAPSHOT_SAY(("DX8 - SetTransform\n"));
 	DX8_RECORD_MATRIX_CHANGE();
-	DX8CALL(SetTransform(transform,(D3DMATRIX*)&m));
+	DX8CALL(SetTransform(static_cast<D3DTRANSFORMSTATETYPE>(transform),(D3DMATRIX*)&m));
 }
 
 
-WWINLINE void DX8Wrapper::_Set_DX8_Transform(D3DTRANSFORMSTATETYPE transform,const Matrix3D& m)
+WWINLINE void DX8Wrapper::_Set_DX8_Transform(TransformSlot transform,const Matrix3D& m)
 {
 	SNAPSHOT_SAY(("DX8 - SetTransform\n"));
 	DX8_RECORD_MATRIX_CHANGE();
-	DX8CALL(SetTransform(transform,(D3DMATRIX*)&m));
+	DX8CALL(SetTransform(static_cast<D3DTRANSFORMSTATETYPE>(transform),(D3DMATRIX*)&m));
 }
 
-WWINLINE void DX8Wrapper::_Get_DX8_Transform(D3DTRANSFORMSTATETYPE transform, Matrix4& m)
+WWINLINE void DX8Wrapper::_Get_DX8_Transform(TransformSlot transform, Matrix4& m)
 {
-	DX8CALL(GetTransform(transform,(D3DMATRIX*)&m));
+	DX8CALL(GetTransform(static_cast<D3DTRANSFORMSTATETYPE>(transform),(D3DMATRIX*)&m));
 }
 
 // ----------------------------------------------------------------------------
@@ -1008,20 +1272,20 @@ WWINLINE void DX8Wrapper::Set_DX8_ZBias(int zbias)
 	}
 }
 
-WWINLINE void DX8Wrapper::Set_Transform(D3DTRANSFORMSTATETYPE transform,const Matrix4& m)
+WWINLINE void DX8Wrapper::Set_Transform(TransformSlot transform,const Matrix4& m)
 {
 	switch ((int)transform) {
-	case D3DTS_WORLD:
+	case TRANSFORM_WORLD:
 		render_state.world=m.Transpose();
 		render_state_changed|=(unsigned)WORLD_CHANGED;
 		render_state_changed&=~(unsigned)WORLD_IDENTITY;
 		break;
-	case D3DTS_VIEW:
+	case TRANSFORM_VIEW:
 		render_state.view=m.Transpose();
 		render_state_changed|=(unsigned)VIEW_CHANGED;
 		render_state_changed&=~(unsigned)VIEW_IDENTITY;
 		break;
-	case D3DTS_PROJECTION:
+	case TRANSFORM_PROJECTION:
 		{
 			Matrix4 ProjectionMatrix=m.Transpose();
 			ZFar=0.0f;
@@ -1032,21 +1296,21 @@ WWINLINE void DX8Wrapper::Set_Transform(D3DTRANSFORMSTATETYPE transform,const Ma
 	default:
 		DX8_RECORD_MATRIX_CHANGE();
 		Matrix4 m2=m.Transpose();
-		DX8CALL(SetTransform(transform,(D3DMATRIX*)&m2));
+		DX8CALL(SetTransform(static_cast<D3DTRANSFORMSTATETYPE>(transform),(D3DMATRIX*)&m2));
 		break;
 	}
 }
 
-WWINLINE void DX8Wrapper::Set_Transform(D3DTRANSFORMSTATETYPE transform,const Matrix3D& m)
+WWINLINE void DX8Wrapper::Set_Transform(TransformSlot transform,const Matrix3D& m)
 {
 	Matrix4 m2(m);
 	switch ((int)transform) {
-	case D3DTS_WORLD:
+	case TRANSFORM_WORLD:
 		render_state.world=m2.Transpose();
 		render_state_changed|=(unsigned)WORLD_CHANGED;
 		render_state_changed&=~(unsigned)WORLD_IDENTITY;
 		break;
-	case D3DTS_VIEW:
+	case TRANSFORM_VIEW:
 		render_state.view=m2.Transpose();
 		render_state_changed|=(unsigned)VIEW_CHANGED;
 		render_state_changed&=~(unsigned)VIEW_IDENTITY;
@@ -1054,7 +1318,7 @@ WWINLINE void DX8Wrapper::Set_Transform(D3DTRANSFORMSTATETYPE transform,const Ma
 	default:
 		DX8_RECORD_MATRIX_CHANGE();
 		m2=m2.Transpose();
-		DX8CALL(SetTransform(transform,(D3DMATRIX*)&m2));
+		DX8CALL(SetTransform(static_cast<D3DTRANSFORMSTATETYPE>(transform),(D3DMATRIX*)&m2));
 		break;
 	}
 }
@@ -1083,21 +1347,21 @@ WWINLINE bool DX8Wrapper::Is_View_Identity()
 	return !!(render_state_changed&(unsigned)VIEW_IDENTITY);
 }
 
-WWINLINE void DX8Wrapper::Get_Transform(D3DTRANSFORMSTATETYPE transform, Matrix4& m)
+WWINLINE void DX8Wrapper::Get_Transform(TransformSlot transform, Matrix4& m)
 {
 	D3DMATRIX mat;
 
 	switch ((int)transform) {
-	case D3DTS_WORLD:
+	case TRANSFORM_WORLD:
 		if (render_state_changed&WORLD_IDENTITY) m.Make_Identity();
 		else m=render_state.world.Transpose();
 		break;
-	case D3DTS_VIEW:
+	case TRANSFORM_VIEW:
 		if (render_state_changed&VIEW_IDENTITY) m.Make_Identity();
 		else m=render_state.view.Transpose();
 		break;
 	default:
-		DX8CALL(GetTransform(transform,&mat));
+		DX8CALL(GetTransform(static_cast<D3DTRANSFORMSTATETYPE>(transform),&mat));
 		m=*(Matrix4*)&mat;
 		m=m.Transpose();
 		break;

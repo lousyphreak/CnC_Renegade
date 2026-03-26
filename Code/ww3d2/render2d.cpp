@@ -547,8 +547,8 @@ void Render2DClass::Render(void)
 	Matrix4 view,proj;
 	Matrix4 identity(true);
 
-	DX8Wrapper::Get_Transform(D3DTS_VIEW,view);
-	DX8Wrapper::Get_Transform(D3DTS_PROJECTION,proj);
+	DX8Wrapper::Get_Transform(TRANSFORM_VIEW,view);
+	DX8Wrapper::Get_Transform(TRANSFORM_PROJECTION,proj);
 
 	//
 	//	Configure the viewport for entire screen
@@ -556,14 +556,8 @@ void Render2DClass::Render(void)
 	int width, height, bits;
 	bool windowed;
 	WW3D::Get_Device_Resolution( width, height, bits, windowed );
-	D3DVIEWPORT8 vp = { 0 };
-	vp.X			= 0;
-	vp.Y			= 0;
-	vp.Width		= width;
-	vp.Height	= height;
-	vp.MinZ		= 0;
-	vp.MaxZ		= 1;
-	DX8Wrapper::Set_Viewport(&vp);
+	RenderViewportClass viewport(0, 0, static_cast<unsigned>(width), static_cast<unsigned>(height), 0.0f, 1.0f);
+	DX8Wrapper::Set_Viewport(viewport);
 
 	DX8Wrapper::Set_Shader(Shader);
 	DX8Wrapper::Set_Texture(0,Texture);
@@ -574,7 +568,7 @@ void Render2DClass::Render(void)
 
 	DX8Wrapper::Set_World_Identity();
 	DX8Wrapper::Set_View_Identity();
-	DX8Wrapper::Set_Transform(D3DTS_PROJECTION,identity);
+	DX8Wrapper::Set_Transform(TRANSFORM_PROJECTION,identity);
 
 	DynamicVBAccessClass vb(BUFFER_TYPE_DYNAMIC_DX8,dynamic_fvf_type,Vertices.Count());
 	{
@@ -605,8 +599,8 @@ void Render2DClass::Render(void)
 	DX8Wrapper::Set_Index_Buffer(ib,0);
 	DX8Wrapper::Draw_Triangles(0,Indices.Count()/3,0,Vertices.Count());	
 
-	DX8Wrapper::Set_Transform(D3DTS_VIEW,view);
-	DX8Wrapper::Set_Transform(D3DTS_PROJECTION,proj);
+	DX8Wrapper::Set_Transform(TRANSFORM_VIEW,view);
+	DX8Wrapper::Set_Transform(TRANSFORM_PROJECTION,proj);
 }
 
 

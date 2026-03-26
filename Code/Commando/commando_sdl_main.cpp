@@ -42,7 +42,8 @@ void PrintCommandoBanner()
         << "  SDL version pin: " << RENEGADE_SDL3_VERSION << '\n'
         << "  x86 asm enabled: " << RENEGADE_WITH_X86_ASM << '\n'
         << "  stacktrace backend: std::stacktrace with log fallback\n"
-        << "  renderer enabled: " << RENEGADE_WITH_DX8_RENDERER << '\n'
+        << "  dx8 renderer enabled: " << RENEGADE_WITH_DX8_RENDERER << '\n'
+        << "  bgfx bootstrap enabled: " << RENEGADE_WITH_BGFX_RENDERER << '\n'
         << "  combat input backend: SDL3\n"
         << "  commando slice: " << Renegade_Commando_Bootstrap_Summary() << '\n';
 }
@@ -333,8 +334,28 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    const SDL_WindowFlags window_flags = smoke_test ? SDL_WINDOW_HIDDEN : SDL_WINDOW_RESIZABLE;
-    SDL_Window *window = SDL_CreateWindow("Renegade", 1280, 720, window_flags);
+    SDL_PropertiesID window_props = SDL_CreateProperties();
+    if (window_props == 0) {
+        std::cerr << "SDL_CreateProperties failed: " << SDL_GetError() << '\n';
+        SDL_Quit();
+        return EXIT_FAILURE;
+    }
+
+    SDL_SetStringProperty(window_props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, "Renegade");
+    SDL_SetNumberProperty(window_props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, 1280);
+    SDL_SetNumberProperty(window_props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, 720);
+    SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_HIGH_PIXEL_DENSITY_BOOLEAN, true);
+    SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_HIDDEN_BOOLEAN, smoke_test);
+    SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, !smoke_test);
+#if RENEGADE_WITH_BGFX_RENDERER && !defined(__linux__)
+    SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_EXTERNAL_GRAPHICS_CONTEXT_BOOLEAN, true);
+#endif
+#if defined(__linux__) && RENEGADE_WITH_BGFX_RENDERER
+    SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
+#endif
+
+    SDL_Window *window = SDL_CreateWindowWithProperties(window_props);
+    SDL_DestroyProperties(window_props);
     if (window == nullptr) {
         std::cerr << "SDL_CreateWindow failed: " << SDL_GetError() << '\n';
         SDL_Quit();

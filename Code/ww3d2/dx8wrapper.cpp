@@ -37,6 +37,489 @@
  *   DX8Wrapper::_Update_Texture -- Copies a texture from system memory to video memory        *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+#if !RENEGADE_WITH_DX8_RENDERER && RENEGADE_WITH_BGFX_RENDERER
+
+#include "dx8wrapper.h"
+
+#include "rddesc.h"
+#include "render2d.h"
+
+#include <algorithm>
+#include <cstdint>
+#include <cstring>
+
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_properties.h>
+#include <SDL3/SDL_video.h>
+
+#include <bgfx/bgfx.h>
+#include <bgfx/platform.h>
+
+namespace {
+
+constexpr int kFallbackRenderWidth = 640;
+constexpr int kFallbackRenderHeight = 480;
+constexpr bgfx::ViewId kBootstrapViewId = 0;
+
+struct BgfxDx8WrapperState {
+	SDL_Window *window = nullptr;
+	SDL_GLContext gl_context = nullptr;
+	RenderDeviceDescClass render_device_desc;
+	RenderViewportClass viewport = RenderViewportClass(0u, 0u, static_cast<unsigned>(kFallbackRenderWidth), static_cast<unsigned>(kFallbackRenderHeight));
+	uint32_t reset_flags = BGFX_RESET_NONE;
+	uint32_t clear_color = 0x101820FFu;
+	float clear_depth = 1.0f;
+	uint8_t clear_stencil = 0;
+	uint16_t clear_flags = BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH;
+	int width = kFallbackRenderWidth;
+	int height = kFallbackRenderHeight;
+	int bit_depth = 32;
+	int swap_interval = 0;
+	bool initialized = false;
+	bool windowed = true;
+};
+
+BgfxDx8WrapperState g_bgfx;
+
+uint32_t Compose_Reset_Flags()
+{
+	return g_bgfx.swap_interval > 0 ? BGFX_RESET_VSYNC : BGFX_RESET_NONE;
+}
+
+bool Query_Window_Size(SDL_Window *window, int &width, int &height)
+{
+	if (window == nullptr) {
+		width = kFallbackRenderWidth;
+		height = kFallbackRenderHeight;
+		return false;
+	}
+
+	if (!SDL_GetWindowSizeInPixels(window, &width, &height)) {
+		if (!SDL_GetWindowSize(window, &width, &height)) {
+			width = kFallbackRenderWidth;
+			height = kFallbackRenderHeight;
+			return false;
+		}
+	}
+
+	width = std::max(width, 1);
+	height = std::max(height, 1);
+	return true;
+}
+
+bool Populate_Platform_Data(SDL_Window *window, bgfx::PlatformData &platform_data)
+{
+	if (window == nullptr) {
+		return false;
+	}
+
+	const SDL_PropertiesID properties = SDL_GetWindowProperties(window);
+	if (properties == 0) {
+		return false;
+	}
+
+#if defined(_WIN32)
+	platform_data.nwh = SDL_GetPointerProperty(properties, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
+	return platform_data.nwh != nullptr;
+#elif defined(__APPLE__)
+	platform_data.nwh = SDL_GetPointerProperty(properties, SDL_PROP_WINDOW_COCOA_WINDOW_POINTER, nullptr);
+	return platform_data.nwh != nullptr;
+#else
+	const char *video_driver = SDL_GetCurrentVideoDriver();
+	if (video_driver != nullptr && std::strcmp(video_driver, "wayland") == 0) {
+		platform_data.ndt = SDL_GetPointerProperty(properties, SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER, nullptr);
+		platform_data.nwh = SDL_GetPointerProperty(properties, SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER, nullptr);
+		return platform_data.ndt != nullptr && platform_data.nwh != nullptr;
+	}
+
+	if (video_driver != nullptr && std::strcmp(video_driver, "x11") == 0) {
+		platform_data.ndt = SDL_GetPointerProperty(properties, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr);
+		const Sint64 x11_window = SDL_GetNumberProperty(properties, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0);
+		platform_data.nwh = reinterpret_cast<void *>(static_cast<uintptr_t>(x11_window));
+		return platform_data.ndt != nullptr && x11_window != 0;
+	}
+
+	return false;
+#endif
+}
+
+void Update_Windowed_State()
+{
+	if (g_bgfx.window == nullptr) {
+		g_bgfx.windowed = true;
+		return;
+	}
+
+	const SDL_WindowFlags flags = SDL_GetWindowFlags(g_bgfx.window);
+	g_bgfx.windowed = (flags & SDL_WINDOW_FULLSCREEN) == 0;
+}
+
+void Apply_View_Rect()
+{
+	const uint16_t x = static_cast<uint16_t>(std::min(g_bgfx.viewport.X, 0xFFFFu));
+	const uint16_t y = static_cast<uint16_t>(std::min(g_bgfx.viewport.Y, 0xFFFFu));
+	const uint16_t width = static_cast<uint16_t>(std::min(std::max(g_bgfx.viewport.Width, 1u), 0xFFFFu));
+	const uint16_t height = static_cast<uint16_t>(std::min(std::max(g_bgfx.viewport.Height, 1u), 0xFFFFu));
+	bgfx::setViewRect(kBootstrapViewId, x, y, width, height);
+}
+
+bool Sync_Backbuffer(bool force_reset)
+{
+	if (!g_bgfx.initialized) {
+		return false;
+	}
+
+	int width = g_bgfx.width;
+	int height = g_bgfx.height;
+	Query_Window_Size(g_bgfx.window, width, height);
+
+	const uint32_t reset_flags = Compose_Reset_Flags();
+	const bool changed = force_reset || width != g_bgfx.width || height != g_bgfx.height || reset_flags != g_bgfx.reset_flags;
+	if (changed) {
+		g_bgfx.width = width;
+		g_bgfx.height = height;
+		g_bgfx.reset_flags = reset_flags;
+		bgfx::reset(static_cast<uint32_t>(g_bgfx.width), static_cast<uint32_t>(g_bgfx.height), g_bgfx.reset_flags);
+		DX8Wrapper::Refresh_Render_Device_Desc();
+		Render2DClass::Set_Screen_Resolution(RectClass(0, 0, g_bgfx.width, g_bgfx.height));
+	}
+
+	Update_Windowed_State();
+	Apply_View_Rect();
+	return true;
+}
+
+bool Initialize_Bgfx(SDL_Window *window)
+{
+	int width = kFallbackRenderWidth;
+	int height = kFallbackRenderHeight;
+	Query_Window_Size(window, width, height);
+
+	if (window != nullptr) {
+		SDL_PumpEvents();
+		SDL_SyncWindow(window);
+	}
+
+	bgfx::renderFrame();
+
+	bgfx::Init init;
+#if defined(__linux__)
+	init.type = bgfx::RendererType::OpenGL;
+#else
+	init.type = bgfx::RendererType::Count;
+#endif
+	init.vendorId = BGFX_PCI_ID_NONE;
+	init.resolution.width = static_cast<uint32_t>(width);
+	init.resolution.height = static_cast<uint32_t>(height);
+	init.resolution.reset = Compose_Reset_Flags();
+
+#if defined(__linux__)
+	SDL_GLContext gl_context = SDL_GL_CreateContext(window);
+	if (gl_context == nullptr) {
+		SDL_SetError("SDL_GL_CreateContext failed: %s", SDL_GetError());
+		return false;
+	}
+
+	if (!SDL_GL_MakeCurrent(window, gl_context)) {
+		SDL_GL_DestroyContext(gl_context);
+		SDL_SetError("SDL_GL_MakeCurrent failed: %s", SDL_GetError());
+		return false;
+	}
+
+	init.platformData.context = gl_context;
+#endif
+
+	if (!Populate_Platform_Data(window, init.platformData)) {
+#if defined(__linux__)
+		SDL_GL_DestroyContext(gl_context);
+#endif
+		SDL_SetError("Unable to extract native window/display handles for bgfx initialization.");
+		return false;
+	}
+
+	if (!bgfx::init(init)) {
+#if defined(__linux__)
+		SDL_GL_DestroyContext(gl_context);
+#endif
+		SDL_SetError("bgfx::init failed.");
+		return false;
+	}
+
+	g_bgfx.window = window;
+#if defined(__linux__)
+	g_bgfx.gl_context = gl_context;
+#endif
+	g_bgfx.width = width;
+	g_bgfx.height = height;
+	g_bgfx.reset_flags = init.resolution.reset;
+	g_bgfx.initialized = true;
+	g_bgfx.viewport = RenderViewportClass(0u, 0u, static_cast<unsigned>(width), static_cast<unsigned>(height));
+	Update_Windowed_State();
+	DX8Wrapper::Refresh_Render_Device_Desc();
+	Render2DClass::Set_Screen_Resolution(RectClass(0, 0, width, height));
+
+	bgfx::setViewName(kBootstrapViewId, "Bootstrap");
+	Apply_View_Rect();
+	bgfx::setViewClear(kBootstrapViewId, g_bgfx.clear_flags, g_bgfx.clear_color, g_bgfx.clear_depth, g_bgfx.clear_stencil);
+	return true;
+}
+
+void Shutdown_Bgfx()
+{
+	if (!g_bgfx.initialized) {
+		return;
+	}
+
+	bgfx::frame();
+	bgfx::shutdown();
+
+#if defined(__linux__)
+	if (g_bgfx.gl_context != nullptr) {
+		SDL_GL_DestroyContext(g_bgfx.gl_context);
+		g_bgfx.gl_context = nullptr;
+	}
+#endif
+
+	g_bgfx = BgfxDx8WrapperState();
+}
+
+} // namespace
+
+void DX8Wrapper::Refresh_Render_Device_Desc(void)
+{
+	g_bgfx.render_device_desc = RenderDeviceDescClass();
+	g_bgfx.render_device_desc.reset_resolution_list();
+	g_bgfx.render_device_desc.set_device_name("bgfx");
+	const char *video_driver = SDL_GetCurrentVideoDriver();
+	g_bgfx.render_device_desc.set_driver_name(video_driver != nullptr ? video_driver : "SDL3");
+	g_bgfx.render_device_desc.set_driver_version("bootstrap");
+	g_bgfx.render_device_desc.add_resolution(g_bgfx.width, g_bgfx.height, g_bgfx.bit_depth);
+}
+
+bool DX8Wrapper::Init(void *hwnd, bool lite)
+{
+	if (lite) {
+		return true;
+	}
+
+	g_bgfx.window = reinterpret_cast<SDL_Window *>(hwnd);
+	g_bgfx.reset_flags = Compose_Reset_Flags();
+	return Initialize_Bgfx(g_bgfx.window);
+}
+
+void DX8Wrapper::Shutdown(void)
+{
+	Shutdown_Bgfx();
+}
+
+void DX8Wrapper::Begin_Scene(void)
+{
+	if (!g_bgfx.initialized) {
+		return;
+	}
+
+	Sync_Backbuffer(false);
+	bgfx::setViewClear(kBootstrapViewId, g_bgfx.clear_flags, g_bgfx.clear_color, g_bgfx.clear_depth, g_bgfx.clear_stencil);
+	bgfx::touch(kBootstrapViewId);
+}
+
+void DX8Wrapper::End_Scene(bool flip_frame)
+{
+	if (!g_bgfx.initialized) {
+		return;
+	}
+
+	bgfx::frame(flip_frame ? BGFX_FRAME_NONE : BGFX_FRAME_FLUSH);
+}
+
+void DX8Wrapper::Flip_To_Primary(void)
+{
+}
+
+void DX8Wrapper::Clear(bool clear_color, bool clear_z_stencil, const Vector3 &color, float z, unsigned int stencil)
+{
+	g_bgfx.clear_flags = BGFX_CLEAR_NONE;
+	if (clear_color) {
+		g_bgfx.clear_flags |= BGFX_CLEAR_COLOR;
+	}
+	if (clear_z_stencil) {
+		g_bgfx.clear_flags |= BGFX_CLEAR_DEPTH;
+	}
+	g_bgfx.clear_color = Convert_Color(color, 1.0f);
+	g_bgfx.clear_depth = z;
+	g_bgfx.clear_stencil = static_cast<uint8_t>(stencil & 0xFFu);
+
+	if (g_bgfx.initialized) {
+		bgfx::setViewClear(kBootstrapViewId, g_bgfx.clear_flags, g_bgfx.clear_color, g_bgfx.clear_depth, g_bgfx.clear_stencil);
+	}
+}
+
+void DX8Wrapper::Set_Viewport(const RenderViewportClass &viewport)
+{
+	g_bgfx.viewport = viewport;
+	if (g_bgfx.initialized) {
+		Apply_View_Rect();
+	}
+}
+
+bool DX8Wrapper::Set_Any_Render_Device(void)
+{
+	return g_bgfx.initialized;
+}
+
+bool DX8Wrapper::Set_Render_Device(const char *dev_name, int width, int height, int bits, int windowed, bool resize_window)
+{
+	if (dev_name != nullptr && std::strcmp(dev_name, g_bgfx.render_device_desc.Get_Device_Name()) != 0) {
+		return false;
+	}
+
+	return Set_Device_Resolution(width, height, bits, windowed, resize_window);
+}
+
+bool DX8Wrapper::Set_Render_Device(int dev, int width, int height, int bits, int windowed, bool resize_window)
+{
+	if (dev > 0) {
+		return false;
+	}
+
+	return Set_Device_Resolution(width, height, bits, windowed, resize_window);
+}
+
+bool DX8Wrapper::Set_Next_Render_Device(void)
+{
+	return g_bgfx.initialized;
+}
+
+int DX8Wrapper::Get_Render_Device_Count(void)
+{
+	return 1;
+}
+
+int DX8Wrapper::Get_Render_Device(void)
+{
+	return 0;
+}
+
+const char *DX8Wrapper::Get_Render_Device_Name(int)
+{
+	return g_bgfx.render_device_desc.Get_Device_Name();
+}
+
+const RenderDeviceDescClass &DX8Wrapper::Get_Render_Device_Desc(int)
+{
+	return g_bgfx.render_device_desc;
+}
+
+bool DX8Wrapper::Set_Device_Resolution(int width, int height, int bits, int windowed, bool)
+{
+	if (bits > 0) {
+		g_bgfx.bit_depth = bits;
+		Refresh_Render_Device_Desc();
+	}
+
+	if (g_bgfx.window == nullptr) {
+		return false;
+	}
+
+	if (windowed != -1 && !SDL_SetWindowFullscreen(g_bgfx.window, windowed == 0)) {
+		return false;
+	}
+
+	if (width > 0 && height > 0 && !SDL_SetWindowSize(g_bgfx.window, width, height)) {
+		return false;
+	}
+
+	if (g_bgfx.initialized) {
+		return Sync_Backbuffer(true);
+	}
+
+	Query_Window_Size(g_bgfx.window, g_bgfx.width, g_bgfx.height);
+	Update_Windowed_State();
+	Refresh_Render_Device_Desc();
+	Render2DClass::Set_Screen_Resolution(RectClass(0, 0, g_bgfx.width, g_bgfx.height));
+	return true;
+}
+
+void DX8Wrapper::Get_Device_Resolution(int &width, int &height, int &bits, bool &windowed)
+{
+	width = g_bgfx.width;
+	height = g_bgfx.height;
+	bits = g_bgfx.bit_depth;
+	windowed = g_bgfx.windowed;
+}
+
+void DX8Wrapper::Get_Render_Target_Resolution(int &width, int &height, int &bits, bool &windowed)
+{
+	Get_Device_Resolution(width, height, bits, windowed);
+}
+
+int DX8Wrapper::Get_Device_Resolution_Width(void)
+{
+	return g_bgfx.width;
+}
+
+int DX8Wrapper::Get_Device_Resolution_Height(void)
+{
+	return g_bgfx.height;
+}
+
+bool DX8Wrapper::Is_Windowed(void)
+{
+	return g_bgfx.windowed;
+}
+
+bool DX8Wrapper::Toggle_Windowed(void)
+{
+	if (g_bgfx.window == nullptr) {
+		return false;
+	}
+
+	if (!SDL_SetWindowFullscreen(g_bgfx.window, g_bgfx.windowed)) {
+		return false;
+	}
+
+	return !g_bgfx.initialized || Sync_Backbuffer(true);
+}
+
+void DX8Wrapper::Set_Swap_Interval(int swap)
+{
+	g_bgfx.swap_interval = std::max(swap, 0);
+	if (g_bgfx.initialized) {
+		Sync_Backbuffer(true);
+	}
+}
+
+int DX8Wrapper::Get_Swap_Interval(void)
+{
+	return g_bgfx.swap_interval;
+}
+
+void DX8Wrapper::Set_Texture_Bitdepth(int depth)
+{
+	g_bgfx.bit_depth = depth;
+	Refresh_Render_Device_Desc();
+}
+
+int DX8Wrapper::Get_Texture_Bitdepth(void)
+{
+	return g_bgfx.bit_depth;
+}
+
+void DX8Wrapper::Update_Window(void *hwnd)
+{
+	g_bgfx.window = reinterpret_cast<SDL_Window *>(hwnd);
+	if (g_bgfx.initialized) {
+		Sync_Backbuffer(true);
+	}
+}
+
+bool DX8Wrapper::Is_Initted()
+{
+	return g_bgfx.initialized;
+}
+
+#else
+
 //#define CREATE_DX8_MULTI_THREADED
 //#define CREATE_DX8_FPU_PRESERVE
 #define WW3D_DEVTYPE D3DDEVTYPE_HAL
@@ -110,7 +593,7 @@ RenderStateStruct				DX8Wrapper::render_state;
 unsigned							DX8Wrapper::render_state_changed;
 
 bool								DX8Wrapper::FogEnable									= false;
-D3DCOLOR							DX8Wrapper::FogColor										= 0;
+unsigned int					DX8Wrapper::FogColor										= 0;
 
 IDirect3D8 *					DX8Wrapper::D3DInterface								= NULL;
 IDirect3DDevice8 *			DX8Wrapper::D3DDevice									= NULL;
@@ -1584,10 +2067,17 @@ void DX8Wrapper::Clear(bool clear_color, bool clear_z_stencil, const Vector3 &co
 	}
 }
 
-void DX8Wrapper::Set_Viewport(CONST D3DVIEWPORT8* pViewport)
+void DX8Wrapper::Set_Viewport(const RenderViewportClass &viewport)
 {
 	DX8_THREAD_ASSERT();
-	DX8CALL(SetViewport(pViewport));
+	D3DVIEWPORT8 d3d_viewport;
+	d3d_viewport.X = viewport.X;
+	d3d_viewport.Y = viewport.Y;
+	d3d_viewport.Width = viewport.Width;
+	d3d_viewport.Height = viewport.Height;
+	d3d_viewport.MinZ = viewport.MinZ;
+	d3d_viewport.MaxZ = viewport.MaxZ;
+	DX8CALL(SetViewport(&d3d_viewport));
 }
 
 // ----------------------------------------------------------------------------
@@ -3340,3 +3830,5 @@ const char* DX8Wrapper::Get_DX8_Blend_Op_Name(unsigned value)
 	default							: return "UNKNOWN";
 	}
 }
+
+#endif

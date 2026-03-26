@@ -40,6 +40,7 @@
 #include "htree.h"
 #include "vp.h"
 #include "visrasterizer.h"
+#include "dx8fvf.h"
 #include "dx8polygonrenderer.h"
 #include "bwrender.h"
 #include "camera.h"

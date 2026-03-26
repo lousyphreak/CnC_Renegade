@@ -8,9 +8,12 @@
 #include <string_view>
 
 #include "commando_bootstrap_bridge.h"
+#include "../Combat/directinput.h"
 #include "../Combat/input.h"
+#include "gamemode.h"
 #include "mainloop.h"
 #include "msgloop.h"
+#include "../ww3d2/ww3d.h"
 #include "../wwui/dialogmgr.h"
 #include "renegade_build_config.h"
 #include "renegadedialogmgr.h"
@@ -77,6 +80,75 @@ std::string Build_Command_Line(int argc, char **argv)
     }
 
     return command_line.str();
+}
+
+SDL_Window *Get_Main_Window()
+{
+    return reinterpret_cast<SDL_Window *>(MainWindow);
+}
+
+bool Is_Main_Window_Event(const SDL_Event &event)
+{
+    SDL_Window *window = Get_Main_Window();
+    if (window == nullptr) {
+        return false;
+    }
+
+    const SDL_WindowID main_window_id = SDL_GetWindowID(window);
+    switch (event.type) {
+        case SDL_EVENT_WINDOW_SHOWN:
+        case SDL_EVENT_WINDOW_HIDDEN:
+        case SDL_EVENT_WINDOW_EXPOSED:
+        case SDL_EVENT_WINDOW_MOVED:
+        case SDL_EVENT_WINDOW_RESIZED:
+        case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+        case SDL_EVENT_WINDOW_METAL_VIEW_RESIZED:
+        case SDL_EVENT_WINDOW_MINIMIZED:
+        case SDL_EVENT_WINDOW_MAXIMIZED:
+        case SDL_EVENT_WINDOW_RESTORED:
+        case SDL_EVENT_WINDOW_MOUSE_ENTER:
+        case SDL_EVENT_WINDOW_MOUSE_LEAVE:
+        case SDL_EVENT_WINDOW_FOCUS_GAINED:
+        case SDL_EVENT_WINDOW_FOCUS_LOST:
+        case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+        case SDL_EVENT_WINDOW_HIT_TEST:
+        case SDL_EVENT_WINDOW_ICCPROF_CHANGED:
+        case SDL_EVENT_WINDOW_DISPLAY_CHANGED:
+        case SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED:
+        case SDL_EVENT_WINDOW_SAFE_AREA_CHANGED:
+        case SDL_EVENT_WINDOW_OCCLUDED:
+        case SDL_EVENT_WINDOW_ENTER_FULLSCREEN:
+        case SDL_EVENT_WINDOW_LEAVE_FULLSCREEN:
+        case SDL_EVENT_WINDOW_DESTROYED:
+        case SDL_EVENT_WINDOW_HDR_STATE_CHANGED:
+            return event.window.windowID == main_window_id;
+
+        case SDL_EVENT_KEY_DOWN:
+        case SDL_EVENT_KEY_UP:
+            return event.key.windowID == main_window_id;
+
+        case SDL_EVENT_TEXT_INPUT:
+            return event.text.windowID == main_window_id;
+
+        default:
+            break;
+    }
+
+    return false;
+}
+
+void Handle_Window_Focus_Gained()
+{
+    GameInFocus = true;
+    WW3D::On_Activate_App();
+    GameModeManager::Hide_Render_Frames(1);
+}
+
+void Handle_Window_Focus_Lost()
+{
+    GameInFocus = false;
+    WW3D::On_Deactivate_App();
+    DirectInput::Unacquire();
 }
 
 SDL_Window *Get_Text_Input_Window()
@@ -166,10 +238,63 @@ void Dispatch_Runtime_Event(const SDL_Event &event)
     }
 }
 
+bool Handle_Window_Event(const SDL_Event &event)
+{
+    SDL_Window *window = Get_Main_Window();
+    if (window == nullptr || !Is_Main_Window_Event(event)) {
+        return false;
+    }
+
+    switch (event.type) {
+        case SDL_EVENT_WINDOW_FOCUS_GAINED:
+            Handle_Window_Focus_Gained();
+            return true;
+
+        case SDL_EVENT_WINDOW_FOCUS_LOST:
+            Handle_Window_Focus_Lost();
+            return true;
+
+        case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+            Stop_Main_Loop(EXIT_SUCCESS);
+            return true;
+
+        default:
+            break;
+    }
+
+    return false;
+}
+
+bool Handle_System_Key_Event(const SDL_Event &event)
+{
+    if (event.type != SDL_EVENT_KEY_DOWN || event.key.repeat) {
+        return false;
+    }
+
+    if ((event.key.mod & SDL_KMOD_ALT) == 0) {
+        return false;
+    }
+
+    if (event.key.key == SDLK_RETURN || event.key.key == SDLK_KP_ENTER) {
+        WW3D::Toggle_Windowed();
+        return true;
+    }
+
+    return false;
+}
+
 bool Handle_Main_Loop_Event(SDL_Event &event)
 {
-    if (event.type == SDL_EVENT_QUIT) {
+    if (event.type == SDL_EVENT_QUIT || event.type == SDL_EVENT_TERMINATING) {
         Stop_Main_Loop(EXIT_SUCCESS);
+        return true;
+    }
+
+    if (Handle_Window_Event(event)) {
+        return true;
+    }
+
+    if (Handle_System_Key_Event(event)) {
         return true;
     }
 

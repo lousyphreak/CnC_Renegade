@@ -85,6 +85,8 @@ void _Game_Main_Loop_Loop(void)
 {
 	WWPROFILE( "Main Loop" );
 
+	Windows_Message_Handler();
+
 	unsigned long time1 = TIMEGETTIME();
 
    TimeManager::Update();
@@ -155,7 +157,6 @@ void _Game_Main_Loop_Loop(void)
 	// Give the sound manager a chance to think
   // PROFILE(	"Audio", WWAudioClass::Get_Instance ()->On_Frame_Update (0) );
 
-   Windows_Message_Handler();
 #ifdef WWDEBUG
    // Sometimes it is useful to be able to artificially lower the frame rate
    Sleep(cDevOptions::DesiredFrameSleepMs.Get());

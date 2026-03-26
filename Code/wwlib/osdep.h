@@ -63,6 +63,8 @@
 
 #else
 
+#include <SDL3/SDL_video.h>
+
 #include <alloca.h>
 #include <strings.h>
 #include <unistd.h>
@@ -281,8 +283,16 @@ extern bool GameInFocus;
 #define SW_SHOW 5
 #endif
 
+#ifndef SW_HIDE
+#define SW_HIDE 0
+#endif
+
 #ifndef SW_MINIMIZE
 #define SW_MINIMIZE 6
+#endif
+
+#ifndef SW_RESTORE
+#define SW_RESTORE 9
 #endif
 
 #ifndef MAKEINTRESOURCE
@@ -1154,8 +1164,39 @@ inline int MessageBox(HWND, const char * text, const char * caption, unsigned)
     return IDOK;
 }
 
-inline BOOL ShowWindow(HWND, int)
+inline BOOL ShowWindow(HWND window_handle, int command)
 {
+    auto * window = reinterpret_cast<SDL_Window *>(window_handle);
+    if (window == nullptr) {
+        return FALSE;
+    }
+
+    switch (command) {
+        case SW_HIDE:
+            SDL_HideWindow(window);
+            SDL_SyncWindow(window);
+            break;
+
+        case SW_MINIMIZE:
+            SDL_MinimizeWindow(window);
+            SDL_SyncWindow(window);
+            break;
+
+        case SW_RESTORE:
+            SDL_RestoreWindow(window);
+            SDL_ShowWindow(window);
+            SDL_RaiseWindow(window);
+            SDL_SyncWindow(window);
+            break;
+
+        case SW_SHOW:
+        default:
+            SDL_ShowWindow(window);
+            SDL_RaiseWindow(window);
+            SDL_SyncWindow(window);
+            break;
+    }
+
     return TRUE;
 }
 

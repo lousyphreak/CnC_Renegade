@@ -693,6 +693,7 @@ Debug_Say(( "End length %d (count %d) at %d\n", length, count, timeGetTime()-sta
 bool Game_Init(void)
 {
 	WWMEMLOG(MEM_GAMEINIT);
+	Windows_Message_Handler();
 
 	// Set registry key to 1 for the duration of the init. This way we know if the program crashed while the init.
 	RegistryClass registry( APPLICATION_SUB_KEY_NAME_DEBUG );
@@ -863,11 +864,13 @@ bool Game_Init(void)
 	} else {
 		::ShowWindow( MainWindow, SW_SHOW );	// show the (initially hidden) window
 	}
+	Windows_Message_Handler();
 
 	// Clear screen
 	for (int frame=0;frame<3;++frame) {
 		WW3D::Begin_Render(true,true,Vector3(0.0f,0.0f,0.0f));
 		WW3D::End_Render();
+		Windows_Message_Handler();
 	}
 
 	ParticleEmitterClass::Set_Default_Remove_On_Complete(false);	// (gth) 09/17/2000 - by default emitters shouldn't self-destruct

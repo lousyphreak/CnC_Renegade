@@ -6,6 +6,7 @@
         "nm": true,
         "gdb": true,
         "./renegade_dedicated": true,
-        "/home/lousy/git/CnC_Renegade/build/bin/renegade_dedicated": true
+        "/home/lousy/git/CnC_Renegade/build/bin/renegade_dedicated": true,
+        "./Renegade": true
     }
 }

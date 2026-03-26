@@ -47,6 +47,8 @@
 #include "win.h"
 #include "IMEManager.h"
 
+#include <SDL3/SDL_events.h>
+
 ////////////////////////////////////////////////////////////////
 //
 //	WWUIInputClass
@@ -98,6 +100,8 @@ public:
 	virtual void				Exit_Menu_Mode (void)	{};
 
 	bool ProcessMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam, LRESULT& result);
+	bool ProcessEvent(const SDL_Event &event);
+	void Update_Keyboard_State(BYTE *state) const;
 
 	void InitIME(HWND hwnd);
 

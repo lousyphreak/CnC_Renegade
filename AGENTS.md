@@ -15,3 +15,7 @@ Since we also target Linux, we need to have our file system support case-sensiti
 ## Running the executables
 
 Executables willl run continuously until the user closes them, so you need to use the `timeout` tool to run them for a limited time, and then kill them.
+
+## Building the project
+
+Use `cmake --build` to build the project. The main windows build is in build-win.

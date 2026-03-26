@@ -8,9 +8,12 @@
 #include <string_view>
 
 #include "commando_bootstrap_bridge.h"
+#include "../Combat/input.h"
 #include "mainloop.h"
 #include "msgloop.h"
+#include "../wwui/dialogmgr.h"
 #include "renegade_build_config.h"
+#include "renegadedialogmgr.h"
 #include "singletoninstancekeeper.h"
 #include "useroptions.h"
 #include "win.h"
@@ -76,6 +79,93 @@ std::string Build_Command_Line(int argc, char **argv)
     return command_line.str();
 }
 
+SDL_Window *Get_Text_Input_Window()
+{
+    SDL_Window *window = SDL_GetKeyboardFocus();
+    if (window == nullptr) {
+        window = SDL_GetMouseFocus();
+    }
+    return window;
+}
+
+void Sync_Text_Input_State()
+{
+    SDL_Window *window = Get_Text_Input_Window();
+    if (window == nullptr) {
+        return;
+    }
+
+    const bool wants_text_input = Input::Is_Console_Enabled() || (DialogMgrClass::Get_Dialog_Count() > 0);
+    const bool text_input_active = SDL_TextInputActive(window);
+
+    if (wants_text_input && !text_input_active) {
+        SDL_StartTextInput(window);
+    } else if (!wants_text_input && text_input_active) {
+        SDL_ClearComposition(window);
+        SDL_StopTextInput(window);
+    }
+}
+
+int Map_Console_Key(const SDL_Event &event)
+{
+    if (event.type != SDL_EVENT_KEY_DOWN) {
+        return 0;
+    }
+
+    switch (event.key.key) {
+        case SDLK_BACKSPACE:
+            return 8;
+
+        case SDLK_TAB:
+            return 9;
+
+        case SDLK_RETURN:
+        case SDLK_KP_ENTER:
+            return 13;
+
+        case SDLK_ESCAPE:
+            return 27;
+
+        default:
+            break;
+    }
+
+    return 0;
+}
+
+void Dispatch_Console_Text(const char *text)
+{
+    if (text == nullptr) {
+        return;
+    }
+
+    for (const unsigned char *cursor = reinterpret_cast<const unsigned char *>(text); *cursor != 0; ++cursor) {
+        if (*cursor < 0x80) {
+            Input::Console_Add_Key(*cursor);
+        }
+    }
+}
+
+void Dispatch_Runtime_Event(const SDL_Event &event)
+{
+    if (Input::Is_Console_Enabled()) {
+        if (const int console_key = Map_Console_Key(event); console_key != 0) {
+            Input::Console_Add_Key(console_key);
+            return;
+        }
+
+        if (event.type == SDL_EVENT_TEXT_INPUT) {
+            Dispatch_Console_Text(event.text.text);
+        }
+
+        return;
+    }
+
+    if (_TheWWUIInput != nullptr) {
+        _TheWWUIInput->ProcessEvent(event);
+    }
+}
+
 bool Handle_Main_Loop_Event(SDL_Event &event)
 {
     if (event.type == SDL_EVENT_QUIT) {
@@ -83,7 +173,9 @@ bool Handle_Main_Loop_Event(SDL_Event &event)
         return true;
     }
 
-    return false;
+    Dispatch_Runtime_Event(event);
+
+    return true;
 }
 
 } // namespace
@@ -144,7 +236,9 @@ int main(int argc, char **argv)
     }
 
     Message_Intercept_Handler = Handle_Main_Loop_Event;
+    Message_Pre_Poll_Handler = Sync_Text_Input_State;
     const int exit_code = Game_Main_Loop();
+    Message_Pre_Poll_Handler = nullptr;
     Message_Intercept_Handler = nullptr;
 
     MainWindow = nullptr;

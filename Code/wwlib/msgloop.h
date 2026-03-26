@@ -43,6 +43,9 @@
 // Main event handler.
 void Windows_Message_Handler(void);
 
+// Optional callback invoked before polling events.
+extern void (*Message_Pre_Poll_Handler)(void);
+
 // General purpose event intercept handler.
 extern bool (*Message_Intercept_Handler)(SDL_Event &event);
 

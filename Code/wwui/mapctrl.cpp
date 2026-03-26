@@ -505,7 +505,7 @@ MapCtrlClass::On_Set_Cursor (const Vector2 &mouse_pos)
 	//
 	if (	ZoomInButtonRect.Contains (mouse_pos) ||
 			ZoomOutButtonRect.Contains (mouse_pos) ||
-			(::GetAsyncKeyState (VK_CONTROL) < 0) ||
+			((DialogMgrClass::Get_VKey_State (VK_CONTROL) & VKEY_PRESSED) == VKEY_PRESSED) ||
 			Marker_From_Pos (mouse_pos) != -1)
 	{
 		MouseMgrClass::Set_Cursor (MouseMgrClass::CURSOR_ACTION);
@@ -610,7 +610,7 @@ MapCtrlClass::On_LButton_Down (const Vector2 &mouse_pos)
 		//	If the user held the control as they clicked, then
 		//	notify the advise sinks that a position is being requested
 		//
-		if (::GetAsyncKeyState (VK_CONTROL) < 0) {						
+		if ((DialogMgrClass::Get_VKey_State (VK_CONTROL) & VKEY_PRESSED) == VKEY_PRESSED) {
 			Vector3 world_pos = Position_To_Coord (mouse_pos);
 			ADVISE_NOTIFY (On_MapCtrl_Pos_Clicked (this, Get_ID (), world_pos));
 		} else {

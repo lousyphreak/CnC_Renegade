@@ -3,16 +3,22 @@ file(GLOB WW3D2_HEADERS CONFIGURE_DEPENDS "*.h")
 set(WW3D2_SOURCES
     aabtree.cpp
     aabtreebuilder.cpp
+    agg_def.cpp
+    animobj.cpp
     assetstatus.cpp
     bitmaphandler.cpp
-    boxrobj_headless.cpp
+    boxrobj.cpp
     bwrender.cpp
     camera.cpp
+    collect.cpp
     coltest.cpp
-    decalmsh_headless.cpp
+    composite.cpp
+    decalmsh.cpp
+    distlod.cpp
     hanim.cpp
     hanimmgr.cpp
     hcanim.cpp
+    hlod.cpp
     hmorphanim.cpp
     hrawanim.cpp
     htree.cpp
@@ -28,8 +34,10 @@ set(WW3D2_SOURCES
     meshmdlio.cpp
     meshmdl.cpp
     matinfo.cpp
+    metalmap.cpp
     motchan.cpp
     line3d.cpp
+    nullrobj.cpp
     particle_renderers_headless.cpp
     part_buf.cpp
     part_emt.cpp
@@ -47,27 +55,32 @@ set(WW3D2_SOURCES
     segline.cpp
     soundrobj.cpp
     sphereobj.cpp
-    statistics_headless.cpp
+    statistics.cpp
     assetmgr_headless.cpp
     animatedsoundmgr.cpp
-    dazzle_headless.cpp
-    decalsys_headless.cpp
+    dazzle.cpp
+    decalsys.cpp
     dx8rendererdebugger.cpp
     dx8renderer_headless.cpp
     font3d.cpp
+    formconv.cpp
+    hmdldef.cpp
+    proto.cpp
     shader_headless.cpp
-    shattersystem_headless.cpp
+    shattersystem.cpp
+    snappts.cpp
+    dynamesh.cpp
     sortingrenderer_headless.cpp
     surfaceclass_headless.cpp
     texture_headless.cpp
     textureloader_headless.cpp
     texturethumbnail_headless.cpp
-    texproject_headless.cpp
+    texproject.cpp
     vertmaterial_headless.cpp
     visrasterizer.cpp
     w3d_util.cpp
     ww3d_headless.cpp
-    ww3dformat_headless.cpp
+    ww3dformat.cpp
 )
 
 set(WW3D2_BGFX_SHADER_SOURCES)

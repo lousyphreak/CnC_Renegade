@@ -123,6 +123,18 @@ public:
 	}
 };
 
+class SortingVertexBufferClass : public VertexBufferClass
+{
+public:
+	VertexFormatXYZNDUV2* VertexBuffer;
+
+	explicit SortingVertexBufferClass(unsigned short vertex_count = 0)
+		: VertexBufferClass(1, dynamic_fvf_type, vertex_count),
+		  VertexBuffer(reinterpret_cast<VertexFormatXYZNDUV2*>(Storage.data()))
+	{
+	}
+};
+
 class DynamicVBAccessClass
 {
 public:

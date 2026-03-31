@@ -73,10 +73,11 @@ public:
 
 #include "vector3.h"
 #include "vector4.h"
+#include "shader.h"
 #include "../compat/dx8vertexbuffer.h"
 #include "../compat/dx8indexbuffer.h"
 
-struct Matrix4;
+#include "matrix4.h"
 class Matrix3D;
 struct IDirect3DSurface8;
 using FLOAT = float;
@@ -84,8 +85,24 @@ using FLOAT = float;
 class TextureClass;
 class LightClass;
 class RenderDeviceDescClass;
-class ShaderClass;
 class VertexMaterialClass;
+
+#define MAX_TEXTURE_STAGES 2
+
+struct RenderStateStruct {
+	ShaderClass shader;
+	VertexMaterialClass* material = nullptr;
+	TextureClass* Textures[MAX_TEXTURE_STAGES] = {};
+	Matrix4 world;
+	Matrix4 view;
+	VertexBufferClass* vertex_buffer = nullptr;
+	IndexBufferClass* index_buffer = nullptr;
+	unsigned vertex_buffer_type = 0;
+	unsigned index_buffer_type = 0;
+	unsigned vba_offset = 0;
+	unsigned iba_offset = 0;
+	unsigned index_base_offset = 0;
+};
 class DX8Caps {
 public:
 	bool Support_Render_To_Texture_Format(int) const { return false; }
@@ -147,8 +164,6 @@ public:
 #define D3DTSS_BUMPENVMAT11 10
 
 using D3DTRANSFORMSTATETYPE = int;
-
-#define MAX_TEXTURE_STAGES 2
 
 enum {
 	BUFFER_TYPE_DX8,
@@ -231,6 +246,11 @@ public:
 	static void Set_DX8_Texture_Stage_State(unsigned stage, unsigned state, unsigned value);
 	static void Set_DX8_Render_State(unsigned state, unsigned value);
 
+	static void Get_Render_State(RenderStateStruct &state);
+	static void Set_Render_State(const RenderStateStruct &state);
+	static void Release_Render_State();
+	static void Apply_Render_State_Changes();
+
 	static void Set_Alpha(const float alpha, unsigned int &color)
 	{
 		unsigned char *component = reinterpret_cast<unsigned char *>(&color);
@@ -242,6 +262,9 @@ public:
 	static bool Is_Device_Lost() { return false; }
 	static bool Is_Initted();
 	static TextureClass *Create_Render_Target(unsigned, unsigned, int) { return NULL; }
+	static void Begin_Statistics() {}
+	static void End_Statistics() {}
+	static bool Is_Render_To_Texture() { return false; }
 	static DX8Caps *Get_Current_Caps()
 	{
 		static DX8Caps caps;
@@ -288,6 +311,11 @@ public:
 	static unsigned int Convert_Color(const Vector3 &color, float alpha)
 	{
 		return Convert_Color(Vector4(color.X, color.Y, color.Z, alpha));
+	}
+
+	static unsigned int Convert_Color_Clamp(const Vector4 &color)
+	{
+		return Convert_Color(color);
 	}
 };
 

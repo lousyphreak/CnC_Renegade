@@ -39,6 +39,24 @@
 #ifndef D3DFVF_TEX2
 #define D3DFVF_TEX2 0x200
 #endif
+#ifndef D3DFVF_TEX3
+#define D3DFVF_TEX3 0x300
+#endif
+#ifndef D3DFVF_TEX4
+#define D3DFVF_TEX4 0x400
+#endif
+#ifndef D3DFVF_TEX5
+#define D3DFVF_TEX5 0x500
+#endif
+#ifndef D3DFVF_TEX6
+#define D3DFVF_TEX6 0x600
+#endif
+#ifndef D3DFVF_TEX7
+#define D3DFVF_TEX7 0x700
+#endif
+#ifndef D3DFVF_TEX8
+#define D3DFVF_TEX8 0x800
+#endif
 
 enum {
 	DX8_FVF_XYZ				= D3DFVF_XYZ,

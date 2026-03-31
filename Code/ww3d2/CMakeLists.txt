@@ -61,6 +61,7 @@ set(WW3D2_SOURCES
     dazzle.cpp
     decalsys.cpp
     dx8rendererdebugger.cpp
+    dx8polygonrenderer.cpp
     dx8renderer_headless.cpp
     font3d.cpp
     formconv.cpp

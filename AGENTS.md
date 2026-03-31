@@ -23,3 +23,6 @@ The new renderer implementation should be **AS CLOSE AS POSSIBLE** to the old on
 
 Keep the headless renderer headless. When porting renderer functionality, do it in place where he old d3d functionality is, and make sure to keep the headless renderer headless, and not introduce new dependencies on the rest of the codebase.
 Remove all old d3d types, and replace them with bgfx types, or with our own types if bgfx does not provide them.
+
+
+- **DO NOT COMMIT** - the user will do that

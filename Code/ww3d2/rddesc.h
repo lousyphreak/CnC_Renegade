@@ -44,8 +44,6 @@
 
 #include "vector.h"
 #include "wwstring.h"
-#include "compat/d3d8types.h"
-#include "compat/d3d8caps.h"
 
 class ResolutionDescClass
 {
@@ -88,8 +86,6 @@ public:
 		set_hardware_name(src.Get_Hardware_Name());
 		set_hardware_vendor(src.Get_Hardware_Vendor());
 		set_hardware_chipset(src.Get_Hardware_Chipset());
-		Caps=src.Caps;
-		AdapterIdentifier=src.AdapterIdentifier;
 		ResArray = src.ResArray;
 		return *this;
 	}	
@@ -110,8 +106,6 @@ public:
 	const char *		Get_Hardware_Chipset() const	{ return HardwareChipset; }
 
 	const DynamicVectorClass<ResolutionDescClass> & Enumerate_Resolutions(void) const	{ return ResArray; }
-	const D3DCAPS8& 	Get_Caps() const { return Caps; }
-	const D3DADAPTER_IDENTIFIER8& Get_Adapter_Identifier() const { return AdapterIdentifier; }
 
 private:
 
@@ -140,9 +134,6 @@ private:
 	StringClass			HardwareVendor;
 	StringClass			HardwareChipset;
 
-	D3DCAPS8				Caps;
-	D3DADAPTER_IDENTIFIER8 AdapterIdentifier;
-	
 	DynamicVectorClass<ResolutionDescClass>	ResArray;
 
 	friend class WW3D;

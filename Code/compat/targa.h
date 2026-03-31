@@ -6,6 +6,7 @@ struct TargaHeader
 	unsigned short Height = 0;
 	unsigned char PixelDepth = 0;
 	unsigned char ImageType = 0;
+	unsigned char ColorMapType = 0;
 };
 
 struct Targa
@@ -27,6 +28,10 @@ struct Targa
 
 #ifndef TGA_TRUECOLOR
 #define TGA_TRUECOLOR 2
+#endif
+
+#ifndef TGA_MONO
+#define TGA_MONO 3
 #endif
 
 #ifndef TGAF_IMAGE

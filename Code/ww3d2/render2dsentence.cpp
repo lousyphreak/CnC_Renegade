@@ -675,18 +675,7 @@ Render2DSentenceClass::Build_Textures (void)
 		//
 		//	Create the new texture
 		//
-		#if !RENEGADE_WITH_DX8_RENDERER && RENEGADE_WITH_BGFX_RENDERER
 		TextureClass *new_texture = new TextureClass (curr_surface, TextureClass::MIP_LEVELS_1);
-		#else
-		TextureClass *new_texture = new TextureClass (desc.Width, desc.Width, WW3D_FORMAT_A4R4G4B4, TextureClass::MIP_LEVELS_1);
-		SurfaceClass *texture_surface = new_texture->Get_Surface_Level ();
-
-		//
-		//	Copy the contents of the texture from the surface
-		//
-		DX8Wrapper::_Copy_DX8_Rects (curr_surface->Peek_D3D_Surface (), NULL, 0, texture_surface->Peek_D3D_Surface (), NULL);
-		REF_PTR_RELEASE (texture_surface);
-		#endif
 
 		//
 		//	Assign this texture to any renderers that need it

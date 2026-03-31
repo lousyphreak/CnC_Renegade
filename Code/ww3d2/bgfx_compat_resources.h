@@ -1,9 +1,5 @@
 #pragma once
 
-#include "renegade_build_config.h"
-
-#if !RENEGADE_WITH_DX8_RENDERER && RENEGADE_WITH_BGFX_RENDERER
-
 #include "ww3dformat.h"
 
 #include <vector>
@@ -58,5 +54,3 @@ bgfx::TextureHandle BgfxCompat_Get_Texture_Handle(TextureClass *texture);
 uint64_t BgfxCompat_Get_Sampler_Flags(const TextureClass *texture);
 bgfx::TextureHandle BgfxCompat_Get_White_Texture();
 void BgfxCompat_Shutdown_Texture_System();
-
-#endif

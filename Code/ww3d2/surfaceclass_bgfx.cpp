@@ -1,7 +1,5 @@
 #include "surfaceclass.h"
 
-#if !RENEGADE_WITH_DX8_RENDERER && RENEGADE_WITH_BGFX_RENDERER
-
 #include "bgfx_compat_resources.h"
 
 #include "vector2i.h"
@@ -562,5 +560,3 @@ void SurfaceClass::Convert_Pixel(unsigned char *pixel, const SurfaceDescription 
 		static_cast<uint8_t>(std::clamp(rgb.Z, 0.0f, 1.0f) * 255.0f),
 		255);
 }
-
-#endif

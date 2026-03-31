@@ -1,7 +1,5 @@
 #include "texture.h"
 
-#if !RENEGADE_WITH_DX8_RENDERER && RENEGADE_WITH_BGFX_RENDERER
-
 #include "bgfx_compat_resources.h"
 
 #include "ww3d.h"
@@ -509,5 +507,3 @@ TextureClass *Load_Texture(ChunkLoadClass &)
 void Save_Texture(TextureClass *, ChunkSaveClass &)
 {
 }
-
-#endif

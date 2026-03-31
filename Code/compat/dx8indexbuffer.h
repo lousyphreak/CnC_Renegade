@@ -107,8 +107,11 @@ public:
 class SortingIndexBufferClass : public IndexBufferClass
 {
 public:
+	unsigned short* index_buffer;
+
 	explicit SortingIndexBufferClass(unsigned short index_count = 0)
-		: IndexBufferClass(1, index_count)
+		: IndexBufferClass(1, index_count),
+		  index_buffer(Storage.data())
 	{
 	}
 };

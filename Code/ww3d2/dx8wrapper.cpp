@@ -128,6 +128,12 @@ struct BgfxDx8WrapperState {
 	unsigned render_states[256] = { 0 };
 	unsigned texture_stage_states[MAX_TEXTURE_STAGES][32] = { { 0 } };
 	unsigned draw_calls = 0;
+	const VertexBufferClass *current_vb = nullptr;
+	const IndexBufferClass *current_ib = nullptr;
+	unsigned current_vb_type = BUFFER_TYPE_INVALID;
+	unsigned current_ib_type = BUFFER_TYPE_INVALID;
+	unsigned current_vba_offset = 0;
+	unsigned current_iba_offset = 0;
 
 	BgfxDx8WrapperState()
 	{
@@ -161,6 +167,12 @@ void Reset_Draw_State()
 	g_bgfx.textures[1] = nullptr;
 	g_bgfx.material = nullptr;
 	g_bgfx.shader = ShaderClass();
+	g_bgfx.current_vb = nullptr;
+	g_bgfx.current_ib = nullptr;
+	g_bgfx.current_vb_type = BUFFER_TYPE_INVALID;
+	g_bgfx.current_ib_type = BUFFER_TYPE_INVALID;
+	g_bgfx.current_vba_offset = 0;
+	g_bgfx.current_iba_offset = 0;
 	for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
 		for (unsigned state = 0; state < 32; ++state) {
 			g_bgfx.texture_stage_states[stage][state] = 0;
@@ -895,6 +907,9 @@ void DX8Wrapper::Set_Vertex_Buffer(const VertexBufferClass *vb)
 	g_bgfx.vertex_data = vb != nullptr ? vb->Get_Vertex_Data() : nullptr;
 	g_bgfx.vertex_fvf = vb != nullptr ? &vb->FVF_Info() : nullptr;
 	g_bgfx.vertex_count = vb != nullptr ? vb->Get_Vertex_Count() : 0;
+	g_bgfx.current_vb = vb;
+	g_bgfx.current_vb_type = vb != nullptr ? vb->Type() : BUFFER_TYPE_INVALID;
+	g_bgfx.current_vba_offset = 0;
 }
 
 void DX8Wrapper::Set_Vertex_Buffer(const DynamicVBAccessClass &vba)
@@ -902,6 +917,9 @@ void DX8Wrapper::Set_Vertex_Buffer(const DynamicVBAccessClass &vba)
 	g_bgfx.vertex_data = vba.Get_Vertex_Data();
 	g_bgfx.vertex_fvf = &vba.FVF_Info();
 	g_bgfx.vertex_count = vba.Get_Vertex_Count();
+	g_bgfx.current_vb = nullptr;
+	g_bgfx.current_vb_type = vba.Get_Type();
+	g_bgfx.current_vba_offset = 0;
 }
 
 void DX8Wrapper::Set_Index_Buffer(const IndexBufferClass *ib, unsigned short index_base_offset)
@@ -909,6 +927,9 @@ void DX8Wrapper::Set_Index_Buffer(const IndexBufferClass *ib, unsigned short ind
 	g_bgfx.index_data = ib != nullptr ? ib->Get_Index_Data() : nullptr;
 	g_bgfx.index_count = ib != nullptr ? ib->Get_Index_Count() : 0;
 	g_bgfx.index_base_offset = index_base_offset;
+	g_bgfx.current_ib = ib;
+	g_bgfx.current_ib_type = ib != nullptr ? ib->Type() : BUFFER_TYPE_INVALID;
+	g_bgfx.current_iba_offset = 0;
 }
 
 void DX8Wrapper::Set_Index_Buffer(const DynamicIBAccessClass &iba, unsigned short index_base_offset)
@@ -916,6 +937,9 @@ void DX8Wrapper::Set_Index_Buffer(const DynamicIBAccessClass &iba, unsigned shor
 	g_bgfx.index_data = iba.Get_Index_Data();
 	g_bgfx.index_count = iba.Get_Index_Count();
 	g_bgfx.index_base_offset = index_base_offset;
+	g_bgfx.current_ib = nullptr;
+	g_bgfx.current_ib_type = iba.Get_Type();
+	g_bgfx.current_iba_offset = 0;
 }
 
 void DX8Wrapper::Set_Index_Buffer_Index_Offset(unsigned offset)
@@ -972,6 +996,53 @@ void DX8Wrapper::Set_World_Identity()
 void DX8Wrapper::Set_View_Identity()
 {
 	g_bgfx.view.Make_Identity();
+}
+
+void DX8Wrapper::Get_Render_State(RenderStateStruct &state)
+{
+	state.shader = g_bgfx.shader;
+	state.material = const_cast<VertexMaterialClass*>(g_bgfx.material);
+	if (state.material) state.material->Add_Ref();
+	for (unsigned i = 0; i < MAX_TEXTURE_STAGES; ++i) {
+		state.Textures[i] = g_bgfx.textures[i];
+		if (state.Textures[i]) state.Textures[i]->Add_Ref();
+	}
+	state.world = g_bgfx.world;
+	state.view = g_bgfx.view;
+	state.vertex_buffer = const_cast<VertexBufferClass*>(g_bgfx.current_vb);
+	if (state.vertex_buffer) state.vertex_buffer->Add_Ref();
+	state.index_buffer = const_cast<IndexBufferClass*>(g_bgfx.current_ib);
+	if (state.index_buffer) state.index_buffer->Add_Ref();
+	state.vertex_buffer_type = g_bgfx.current_vb_type;
+	state.index_buffer_type = g_bgfx.current_ib_type;
+	state.vba_offset = g_bgfx.current_vba_offset;
+	state.iba_offset = g_bgfx.current_iba_offset;
+	state.index_base_offset = g_bgfx.index_base_offset;
+}
+
+void DX8Wrapper::Set_Render_State(const RenderStateStruct &state)
+{
+	Set_Shader(state.shader);
+	Set_Material(state.material);
+	for (unsigned i = 0; i < MAX_TEXTURE_STAGES; ++i) {
+		Set_Texture(i, state.Textures[i]);
+	}
+	Set_Transform(TRANSFORM_WORLD, state.world);
+	Set_Transform(TRANSFORM_VIEW, state.view);
+	if (state.vertex_buffer) {
+		Set_Vertex_Buffer(state.vertex_buffer);
+	}
+	if (state.index_buffer) {
+		Set_Index_Buffer(state.index_buffer, static_cast<unsigned short>(state.index_base_offset));
+	}
+}
+
+void DX8Wrapper::Release_Render_State()
+{
+}
+
+void DX8Wrapper::Apply_Render_State_Changes()
+{
 }
 
 void DX8Wrapper::_Copy_DX8_Rects(IDirect3DSurface8 *pSourceSurface, const RECT *pSourceRectsArray, UINT cRects, IDirect3DSurface8 *pDestinationSurface, const POINT *pDestPointsArray)

@@ -35,8 +35,8 @@
 ******************************************************************************/
 
 #include "DlgMessageBox.h"
-#include "Resource.h"
-#include <WWTranslateDB\TranslateDB.h>
+#include "resource.h"
+#include "translatedb.h"
 #include "wwdebug.h"
 
 //

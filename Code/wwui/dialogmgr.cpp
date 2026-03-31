@@ -442,12 +442,10 @@ DialogMgrClass::Render (void)
 	WWMEMLOG(MEM_GAMEDATA);
 
 	if (!GameInFocus) {
-		GameWasInFocus=false;
-		return;
-	}
-	if (!GameWasInFocus) {
+		GameWasInFocus = false;
+	} else if (!GameWasInFocus) {
 		DialogMgrClass::Reset();
-		GameWasInFocus=true;
+		GameWasInFocus = true;
 	}
 
 	//

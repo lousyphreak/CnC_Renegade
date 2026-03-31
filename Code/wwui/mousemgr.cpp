@@ -74,6 +74,8 @@ ScreenCursorClass *				MouseMgrClass::MouseCursor					= NULL;
 MouseMgrClass::CURSOR_TYPE		MouseMgrClass::CursorType					= MouseMgrClass::CURSOR_ARROW;
 unsigned int MouseMgrClass::CursorWaitCount = 0;
 
+static int s_mousemgr_render_log_count = 0;
+
 ////////////////////////////////////////////////////////////////
 //
 //	Initialize
@@ -210,6 +212,10 @@ void
 MouseMgrClass::Render (void)
 {
 	if (MouseCursor != NULL) {
+		if (s_mousemgr_render_log_count < 8) {
+			WWRELEASE_SAY(("MouseMgr: rendering cursor type %d\n", static_cast<int>(CursorType)));
+			++s_mousemgr_render_log_count;
+		}
 		MouseCursor->Render ();
 	}
 

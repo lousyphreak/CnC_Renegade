@@ -51,6 +51,8 @@
 #include "wwmemlog.h"
 #include "assetmgr.h"
 
+static int s_render2d_render_log_count = 0;
+
 RectClass							Render2DClass::ScreenResolution( 0,0,0,0 );
 
 
@@ -540,6 +542,11 @@ void Render2DClass::Render(void)
 {
 	if ( !Indices.Count() || IsHidden) {
 		return;
+	}
+
+	if (s_render2d_render_log_count < 8) {
+		WWRELEASE_SAY(("Render2D: rendering %d vertices / %d indices, texture=%s\n", Vertices.Count(), Indices.Count(), Texture != NULL ? Texture->Get_Full_Path().Peek_Buffer() : "<none>"));
+		++s_render2d_render_log_count;
 	}
 
 

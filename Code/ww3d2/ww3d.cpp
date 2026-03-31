@@ -111,8 +111,11 @@
 #include "sortingrenderer.h"
 #include "thread.h"
 #include "dx8texman.h"
-#include "formconv.h"
 #include "animatedsoundmgr.h"
+
+#if RENEGADE_WITH_DX8_RENDERER
+#include "formconv.h"
+#endif
 
 
 #ifndef _UNIX
@@ -265,7 +268,9 @@ WW3DErrorType WW3D::Init(void *hwnd, char *defaultpal, bool lite)
 	/*
 	** Initialize d3d, this also enumerates the available devices and resolutions.
 	*/
+	#if RENEGADE_WITH_DX8_RENDERER
 	Init_D3D_To_WW3_Conversion();
+	#endif
 	WWDEBUG_SAY(("Init DX8Wrapper\n"));
 	if (!DX8Wrapper::Init(_Hwnd, lite)) {
 		return(WW3D_ERROR_DIRECTX8_INITIALIZATION_FAILED);
@@ -273,8 +278,10 @@ WW3DErrorType WW3D::Init(void *hwnd, char *defaultpal, bool lite)
 	WWDEBUG_SAY(("Allocate Debug Resources\n"));
 	Allocate_Debug_Resources();
 
- 	MMRESULT r=timeBeginPeriod(1);
+	#if RENEGADE_WITH_DX8_RENDERER
+	MMRESULT r=timeBeginPeriod(1);
 	WWASSERT(r==TIMERR_NOERROR);
+	#endif
 
 	/*
 	** Initialize the dazzle system
@@ -1246,6 +1253,11 @@ void WW3D::Normalize_Coordinates(int x, int y, float &fx, float &fy)
  *=============================================================================================*/
 void WW3D::Make_Screen_Shot( const char * filename_base )
 {
+	#if !RENEGADE_WITH_DX8_RENDERER
+	(void)filename_base;
+	WWDEBUG_SAY(("WW3D::Make_Screen_Shot is not implemented for the bgfx bootstrap yet\n"));
+	return;
+	#else
 
 	WWASSERT(!IsRendering);
 
@@ -1325,6 +1337,7 @@ void WW3D::Make_Screen_Shot( const char * filename_base )
 	targ.Save(filename,TGAF_IMAGE,false);
 
 	delete [] image;
+	#endif
 
 }
 

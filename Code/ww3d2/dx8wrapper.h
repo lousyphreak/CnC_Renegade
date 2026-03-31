@@ -79,11 +79,15 @@ public:
 #include "../compat/dx8indexbuffer.h"
 
 struct Matrix4;
+class Matrix3D;
+struct IDirect3DSurface8;
 using FLOAT = float;
 
 class TextureClass;
 class LightClass;
 class RenderDeviceDescClass;
+class ShaderClass;
+class VertexMaterialClass;
 class DX8Caps {
 public:
 	bool Support_Render_To_Texture_Format(int) const { return false; }
@@ -108,6 +112,9 @@ public:
 #endif
 #ifndef D3DRS_FILLMODE
 #define D3DRS_FILLMODE 8
+#endif
+#ifndef D3DRS_AMBIENT
+#define D3DRS_AMBIENT 26
 #endif
 #ifndef D3DRS_ZBIAS
 #define D3DRS_ZBIAS 47
@@ -203,6 +210,10 @@ public:
 	static bool Set_Device_Resolution(int width = -1, int height = -1, int bits = -1, int windowed = -1, bool resize_window = false);
 	static void Get_Device_Resolution(int &width, int &height, int &bits, bool &windowed);
 	static void Get_Render_Target_Resolution(int &width, int &height, int &bits, bool &windowed);
+	static bool Registry_Save_Render_Device(const char *sub_key);
+	static bool Registry_Save_Render_Device(const char *sub_key, int device, int width, int height, int depth, bool windowed, int texture_depth);
+	static bool Registry_Load_Render_Device(const char *sub_key, bool resize_window);
+	static bool Registry_Load_Render_Device(const char *sub_key, char *device, int device_len, int &width, int &height, int &depth, int &windowed, int &texture_depth);
 	static int Get_Device_Resolution_Width(void);
 	static int Get_Device_Resolution_Height(void);
 	static bool Is_Windowed(void);
@@ -215,41 +226,34 @@ public:
 	static void Refresh_Render_Device_Desc(void);
 
 	template <typename... Args>
-	static void Set_Transform(Args&&...) {}
-	template <typename... Args>
-	static void Get_Transform(Args&&...) {}
-	template <typename... Args>
-	static void Set_Projection_Transform_With_Z_Bias(Args&&...) {}
-	template <typename... Args>
 	static void Set_Light_Environment(Args&&...) {}
 	template <typename... Args>
 	static void Set_Light(Args&&...) {}
 	template <typename... Args>
-	static void Set_Vertex_Buffer(Args&&...) {}
-	template <typename... Args>
-	static void Set_Index_Buffer(Args&&...) {}
-	template <typename... Args>
-	static void Set_Index_Buffer_Index_Offset(Args&&...) {}
-	template <typename... Args>
-	static void Draw_Triangles(Args&&...) {}
-	template <typename... Args>
 	static void Draw_Strip(Args&&...) {}
 	template <typename... Args>
-	static void Set_Texture(Args&&...) {}
-	template <typename... Args>
-	static void Set_Material(Args&&...) {}
-	template <typename... Args>
-	static void Set_Shader(Args&&...) {}
-	template <typename... Args>
 	static void Set_Render_Target(Args&&...) {}
-	template <typename... Args>
-	static void Set_DX8_Texture_Stage_State(Args&&...) {}
-	template <typename... Args>
-	static void Set_DX8_Render_State(Args&&...) {}
 	template <typename... Args>
 	static void Set_Gamma(Args&&...) {}
 	template <typename... Args>
 	static void Set_Fog(Args&&...) {}
+
+	static void Set_Transform(TransformSlot transform, const Matrix4 &m);
+	static void Set_Transform(TransformSlot transform, const Matrix3D &m);
+	static void Get_Transform(TransformSlot transform, Matrix4 &m);
+	static void Set_Projection_Transform_With_Z_Bias(const Matrix4 &matrix, float znear, float zfar);
+	static void Set_Vertex_Buffer(const VertexBufferClass *vb);
+	static void Set_Vertex_Buffer(const DynamicVBAccessClass &vba);
+	static void Set_Index_Buffer(const IndexBufferClass *ib, unsigned short index_base_offset);
+	static void Set_Index_Buffer(const DynamicIBAccessClass &iba, unsigned short index_base_offset);
+	static void Set_Index_Buffer_Index_Offset(unsigned offset);
+	static void Draw_Triangles(unsigned buffer_type, unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count);
+	static void Draw_Triangles(unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count);
+	static void Set_Texture(unsigned stage, TextureClass *texture);
+	static void Set_Material(const VertexMaterialClass *material);
+	static void Set_Shader(const ShaderClass &shader);
+	static void Set_DX8_Texture_Stage_State(unsigned stage, unsigned state, unsigned value);
+	static void Set_DX8_Render_State(unsigned state, unsigned value);
 
 	static void Set_Alpha(const float alpha, unsigned int &color)
 	{
@@ -257,8 +261,8 @@ public:
 		component[3] = static_cast<unsigned char>(255.0f * alpha);
 	}
 
-	static void Set_World_Identity() {}
-	static void Set_View_Identity() {}
+	static void Set_World_Identity();
+	static void Set_View_Identity();
 	static bool Is_Device_Lost() { return false; }
 	static bool Is_Initted();
 	static TextureClass *Create_Render_Target(unsigned, unsigned, int) { return NULL; }
@@ -275,8 +279,12 @@ public:
 	static unsigned Get_Last_Frame_Vertex_Buffer_Changes() { return 0; }
 	static unsigned Get_Last_Frame_Index_Buffer_Changes() { return 0; }
 	static unsigned Get_Last_Frame_Light_Changes() { return 0; }
-	template <typename... Args>
-	static void _Copy_DX8_Rects(Args&&...) {}
+	static void _Copy_DX8_Rects(
+		IDirect3DSurface8 *pSourceSurface,
+		const RECT *pSourceRectsArray,
+		UINT cRects,
+		IDirect3DSurface8 *pDestinationSurface,
+		const POINT *pDestPointsArray);
 
 	static Vector4 Convert_Color(unsigned color)
 	{

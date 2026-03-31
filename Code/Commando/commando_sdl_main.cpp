@@ -88,6 +88,18 @@ SDL_Window *Get_Main_Window()
     return reinterpret_cast<SDL_Window *>(MainWindow);
 }
 
+void Ensure_Window_Visible(SDL_Window *window)
+{
+    if (window == nullptr) {
+        return;
+    }
+
+    SDL_ShowWindow(window);
+    SDL_RaiseWindow(window);
+    SDL_SyncWindow(window);
+    SDL_PumpEvents();
+}
+
 bool Is_Main_Window_Event(const SDL_Event &event)
 {
     SDL_Window *window = Get_Main_Window();
@@ -350,16 +362,16 @@ int main(int argc, char **argv)
 #if RENEGADE_WITH_BGFX_RENDERER && !defined(__linux__)
     SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_EXTERNAL_GRAPHICS_CONTEXT_BOOLEAN, true);
 #endif
-#if defined(__linux__) && RENEGADE_WITH_BGFX_RENDERER
-    SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
-#endif
-
     SDL_Window *window = SDL_CreateWindowWithProperties(window_props);
     SDL_DestroyProperties(window_props);
     if (window == nullptr) {
         std::cerr << "SDL_CreateWindow failed: " << SDL_GetError() << '\n';
         SDL_Quit();
         return EXIT_FAILURE;
+    }
+
+    if (!smoke_test) {
+        Ensure_Window_Visible(window);
     }
 
     std::cout << "  SDL runtime platform: " << SDL_GetPlatform() << '\n';

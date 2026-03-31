@@ -49,6 +49,7 @@ set(WWLIB_SOURCES
     systimer.cpp
     textfile.cpp
     thread.cpp
+    TARGA.CPP
     trim.cpp
     vector.cpp
     win.cpp

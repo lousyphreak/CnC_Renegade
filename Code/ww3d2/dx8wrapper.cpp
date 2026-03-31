@@ -41,8 +41,17 @@
 
 #include "dx8wrapper.h"
 
+#include "bgfx_compat_resources.h"
+#include "matrix3d.h"
+#include "matrix4.h"
 #include "rddesc.h"
 #include "render2d.h"
+#include "registry.h"
+#include "shader.h"
+#include "texture.h"
+#include "vertmaterial.h"
+#include "ww3d.h"
+#include "wwdebug.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -55,11 +64,30 @@
 #include <bgfx/bgfx.h>
 #include <bgfx/platform.h>
 
+#include "glsl/fs_bootstrap.sc.bin.h"
+#include "glsl/vs_bootstrap.sc.bin.h"
+
 namespace {
 
 constexpr int kFallbackRenderWidth = 640;
 constexpr int kFallbackRenderHeight = 480;
 constexpr bgfx::ViewId kBootstrapViewId = 0;
+
+const float kIdentityMatrix[16] = {
+	1.0f, 0.0f, 0.0f, 0.0f,
+	0.0f, 1.0f, 0.0f, 0.0f,
+	0.0f, 0.0f, 1.0f, 0.0f,
+	0.0f, 0.0f, 0.0f, 1.0f,
+};
+
+struct BgfxGuiVertex {
+	float x;
+	float y;
+	float z;
+	uint32_t abgr;
+	float u;
+	float v;
+};
 
 struct BgfxDx8WrapperState {
 	SDL_Window *window = nullptr;
@@ -77,6 +105,32 @@ struct BgfxDx8WrapperState {
 	int swap_interval = 0;
 	bool initialized = false;
 	bool windowed = true;
+	bgfx::VertexLayout gui_layout;
+	bgfx::ProgramHandle gui_program = BGFX_INVALID_HANDLE;
+	bgfx::UniformHandle texture_uniform = BGFX_INVALID_HANDLE;
+	bool layout_ready = false;
+	Matrix4 world;
+	Matrix4 view;
+	Matrix4 projection;
+	const unsigned char *vertex_data = nullptr;
+	const FVFInfoClass *vertex_fvf = nullptr;
+	unsigned short vertex_count = 0;
+	const unsigned short *index_data = nullptr;
+	unsigned short index_count = 0;
+	unsigned short index_base_offset = 0;
+	TextureClass *textures[MAX_TEXTURE_STAGES] = { nullptr, nullptr };
+	ShaderClass shader;
+	const VertexMaterialClass *material = nullptr;
+	unsigned render_states[256] = { 0 };
+	unsigned texture_stage_states[MAX_TEXTURE_STAGES][32] = { { 0 } };
+	unsigned draw_calls = 0;
+
+	BgfxDx8WrapperState()
+	{
+		world.Make_Identity();
+		view.Make_Identity();
+		projection.Make_Identity();
+	}
 };
 
 BgfxDx8WrapperState g_bgfx;
@@ -84,6 +138,33 @@ BgfxDx8WrapperState g_bgfx;
 uint32_t Compose_Reset_Flags()
 {
 	return g_bgfx.swap_interval > 0 ? BGFX_RESET_VSYNC : BGFX_RESET_NONE;
+}
+
+uint32_t DX8_To_BGFX_Color(uint32_t color)
+{
+	return (color & 0xFF00FF00u) | ((color & 0x00FF0000u) >> 16) | ((color & 0x000000FFu) << 16);
+}
+
+void Reset_Draw_State()
+{
+	g_bgfx.vertex_data = nullptr;
+	g_bgfx.vertex_fvf = nullptr;
+	g_bgfx.vertex_count = 0;
+	g_bgfx.index_data = nullptr;
+	g_bgfx.index_count = 0;
+	g_bgfx.index_base_offset = 0;
+	g_bgfx.textures[0] = nullptr;
+	g_bgfx.textures[1] = nullptr;
+	g_bgfx.material = nullptr;
+	g_bgfx.shader = ShaderClass();
+	for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
+		for (unsigned state = 0; state < 32; ++state) {
+			g_bgfx.texture_stage_states[stage][state] = 0;
+		}
+	}
+	for (unsigned state = 0; state < 256; ++state) {
+		g_bgfx.render_states[state] = 0;
+	}
 }
 
 bool Query_Window_Size(SDL_Window *window, int &width, int &height)
@@ -106,6 +187,17 @@ bool Query_Window_Size(SDL_Window *window, int &width, int &height)
 	height = std::max(height, 1);
 	return true;
 }
+void Ensure_Window_Ready_For_BGFX(SDL_Window *window)
+{
+	if (window == nullptr) {
+		return;
+	}
+
+	SDL_ShowWindow(window);
+	SDL_RaiseWindow(window);
+	SDL_SyncWindow(window);
+	SDL_PumpEvents();
+}
 
 bool Populate_Platform_Data(SDL_Window *window, bgfx::PlatformData &platform_data)
 {
@@ -120,15 +212,18 @@ bool Populate_Platform_Data(SDL_Window *window, bgfx::PlatformData &platform_dat
 
 #if defined(_WIN32)
 	platform_data.nwh = SDL_GetPointerProperty(properties, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
+	platform_data.type = bgfx::NativeWindowHandleType::Default;
 	return platform_data.nwh != nullptr;
 #elif defined(__APPLE__)
 	platform_data.nwh = SDL_GetPointerProperty(properties, SDL_PROP_WINDOW_COCOA_WINDOW_POINTER, nullptr);
+	platform_data.type = bgfx::NativeWindowHandleType::Default;
 	return platform_data.nwh != nullptr;
 #else
 	const char *video_driver = SDL_GetCurrentVideoDriver();
 	if (video_driver != nullptr && std::strcmp(video_driver, "wayland") == 0) {
 		platform_data.ndt = SDL_GetPointerProperty(properties, SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER, nullptr);
 		platform_data.nwh = SDL_GetPointerProperty(properties, SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER, nullptr);
+		platform_data.type = bgfx::NativeWindowHandleType::Wayland;
 		return platform_data.ndt != nullptr && platform_data.nwh != nullptr;
 	}
 
@@ -136,9 +231,9 @@ bool Populate_Platform_Data(SDL_Window *window, bgfx::PlatformData &platform_dat
 		platform_data.ndt = SDL_GetPointerProperty(properties, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr);
 		const Sint64 x11_window = SDL_GetNumberProperty(properties, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0);
 		platform_data.nwh = reinterpret_cast<void *>(static_cast<uintptr_t>(x11_window));
+		platform_data.type = bgfx::NativeWindowHandleType::Default;
 		return platform_data.ndt != nullptr && x11_window != 0;
 	}
-
 	return false;
 #endif
 }
@@ -189,6 +284,178 @@ bool Sync_Backbuffer(bool force_reset)
 	return true;
 }
 
+bool Ensure_Gui_Resources()
+{
+	if (!g_bgfx.initialized) {
+		return false;
+	}
+
+	if (!g_bgfx.layout_ready) {
+		g_bgfx.gui_layout
+			.begin()
+			.add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
+			.add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
+			.add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+			.end();
+		g_bgfx.layout_ready = true;
+	}
+
+	if (!bgfx::isValid(g_bgfx.texture_uniform)) {
+		g_bgfx.texture_uniform = bgfx::createUniform("s_texColor", bgfx::UniformType::Sampler);
+	}
+
+	if (!bgfx::isValid(g_bgfx.gui_program)) {
+		const bgfx::ShaderHandle vertex_shader = bgfx::createShader(bgfx::copy(vs_bootstrap_glsl, sizeof(vs_bootstrap_glsl)));
+		const bgfx::ShaderHandle fragment_shader = bgfx::createShader(bgfx::copy(fs_bootstrap_glsl, sizeof(fs_bootstrap_glsl)));
+		g_bgfx.gui_program = bgfx::createProgram(vertex_shader, fragment_shader, true);
+		WWRELEASE_SAY(("BGFX2D: GUI shader program initialized\n"));
+	}
+
+	return bgfx::isValid(g_bgfx.gui_program) && bgfx::isValid(g_bgfx.texture_uniform);
+}
+
+uint64_t Build_BGFX_State()
+{
+	uint64_t state = 0;
+	if (g_bgfx.shader.Get_Color_Mask() != ShaderClass::COLOR_WRITE_DISABLE) {
+		state |= BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A;
+	}
+	if (g_bgfx.shader.Get_Depth_Mask() == ShaderClass::DEPTH_WRITE_ENABLE) {
+		state |= BGFX_STATE_WRITE_Z;
+	}
+
+	switch (g_bgfx.shader.Get_Depth_Compare()) {
+		case ShaderClass::PASS_LEQUAL: state |= BGFX_STATE_DEPTH_TEST_LEQUAL; break;
+		case ShaderClass::PASS_LESS: state |= BGFX_STATE_DEPTH_TEST_LESS; break;
+		case ShaderClass::PASS_EQUAL: state |= BGFX_STATE_DEPTH_TEST_EQUAL; break;
+		case ShaderClass::PASS_GEQUAL: state |= BGFX_STATE_DEPTH_TEST_GEQUAL; break;
+		case ShaderClass::PASS_GREATER: state |= BGFX_STATE_DEPTH_TEST_GREATER; break;
+		case ShaderClass::PASS_NOTEQUAL: state |= BGFX_STATE_DEPTH_TEST_NOTEQUAL; break;
+		case ShaderClass::PASS_NEVER: state |= BGFX_STATE_DEPTH_TEST_NEVER; break;
+		case ShaderClass::PASS_ALWAYS:
+		default: state |= BGFX_STATE_DEPTH_TEST_ALWAYS; break;
+	}
+
+	const ShaderClass::SrcBlendFuncType src = g_bgfx.shader.Get_Src_Blend_Func();
+	const ShaderClass::DstBlendFuncType dst = g_bgfx.shader.Get_Dst_Blend_Func();
+	if (!(src == ShaderClass::SRCBLEND_ONE && dst == ShaderClass::DSTBLEND_ZERO)) {
+		uint64_t src_factor = BGFX_STATE_BLEND_ONE;
+		uint64_t dst_factor = BGFX_STATE_BLEND_ZERO;
+		switch (src) {
+			case ShaderClass::SRCBLEND_ZERO: src_factor = BGFX_STATE_BLEND_ZERO; break;
+			case ShaderClass::SRCBLEND_SRC_ALPHA: src_factor = BGFX_STATE_BLEND_SRC_ALPHA; break;
+			case ShaderClass::SRCBLEND_ONE_MINUS_SRC_ALPHA: src_factor = BGFX_STATE_BLEND_INV_SRC_ALPHA; break;
+			case ShaderClass::SRCBLEND_ONE:
+			default: src_factor = BGFX_STATE_BLEND_ONE; break;
+		}
+		switch (dst) {
+			case ShaderClass::DSTBLEND_ONE: dst_factor = BGFX_STATE_BLEND_ONE; break;
+			case ShaderClass::DSTBLEND_SRC_COLOR: dst_factor = BGFX_STATE_BLEND_SRC_COLOR; break;
+			case ShaderClass::DSTBLEND_ONE_MINUS_SRC_COLOR: dst_factor = BGFX_STATE_BLEND_INV_SRC_COLOR; break;
+			case ShaderClass::DSTBLEND_SRC_ALPHA: dst_factor = BGFX_STATE_BLEND_SRC_ALPHA; break;
+			case ShaderClass::DSTBLEND_ONE_MINUS_SRC_ALPHA: dst_factor = BGFX_STATE_BLEND_INV_SRC_ALPHA; break;
+			case ShaderClass::DSTBLEND_ZERO:
+			default: dst_factor = BGFX_STATE_BLEND_ZERO; break;
+		}
+		state |= BGFX_STATE_BLEND_FUNC(src_factor, dst_factor);
+	}
+
+	state |= BGFX_STATE_MSAA;
+	return state;
+}
+
+bool Submit_Triangles(unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count)
+{
+	if (!DX8Wrapper::_Is_Triangle_Draw_Enabled() || !g_bgfx.initialized || polygon_count == 0 || !Ensure_Gui_Resources()) {
+		return false;
+	}
+	if (g_bgfx.vertex_data == nullptr || g_bgfx.index_data == nullptr || g_bgfx.vertex_fvf == nullptr) {
+		return false;
+	}
+
+	const uint32_t index_total = static_cast<uint32_t>(polygon_count) * 3U;
+	if (vertex_count == 0 || index_total == 0) {
+		return false;
+	}
+
+	if (bgfx::getAvailTransientVertexBuffer(vertex_count, g_bgfx.gui_layout) < vertex_count || bgfx::getAvailTransientIndexBuffer(index_total) < index_total) {
+		WWRELEASE_SAY(("BGFX2D: transient buffer allocation failed (%u vertices, %u indices)\n", vertex_count, index_total));
+		return false;
+	}
+
+	bgfx::TransientVertexBuffer tvb;
+	bgfx::TransientIndexBuffer tib;
+	bgfx::allocTransientVertexBuffer(&tvb, vertex_count, g_bgfx.gui_layout);
+	bgfx::allocTransientIndexBuffer(&tib, index_total);
+
+	const unsigned vertex_stride = g_bgfx.vertex_fvf->Get_FVF_Size();
+	const unsigned location_offset = g_bgfx.vertex_fvf->Get_Location_Offset();
+	const unsigned diffuse_offset = g_bgfx.vertex_fvf->Get_Diffuse_Offset();
+	const unsigned tex_offset = g_bgfx.vertex_fvf->Get_Tex_Offset(0);
+	BgfxGuiVertex *dst_vertices = reinterpret_cast<BgfxGuiVertex *>(tvb.data);
+	for (unsigned short i = 0; i < vertex_count; ++i) {
+		const unsigned char *src = g_bgfx.vertex_data + static_cast<size_t>(min_vertex_index + i) * vertex_stride;
+		const float *position = reinterpret_cast<const float *>(src + location_offset);
+		const uint32_t diffuse = *reinterpret_cast<const uint32_t *>(src + diffuse_offset);
+		const float *uv = reinterpret_cast<const float *>(src + tex_offset);
+		dst_vertices[i].x = position[0];
+		dst_vertices[i].y = position[1];
+		dst_vertices[i].z = position[2];
+		dst_vertices[i].abgr = DX8_To_BGFX_Color(diffuse);
+		dst_vertices[i].u = uv[0];
+		dst_vertices[i].v = uv[1];
+	}
+
+	uint16_t *dst_indices = reinterpret_cast<uint16_t *>(tib.data);
+	for (uint32_t i = 0; i < index_total; ++i) {
+		const uint16_t source_index = g_bgfx.index_data[start_index + i] + g_bgfx.index_base_offset;
+		dst_indices[i] = static_cast<uint16_t>(source_index - min_vertex_index);
+	}
+
+	const bgfx::TextureHandle texture_handle = BgfxCompat_Get_Texture_Handle(g_bgfx.textures[0]);
+	const uint64_t sampler_flags = BgfxCompat_Get_Sampler_Flags(g_bgfx.textures[0]);
+	bgfx::setViewTransform(kBootstrapViewId, kIdentityMatrix, kIdentityMatrix);
+	bgfx::setTransform(kIdentityMatrix);
+	bgfx::setTexture(0, g_bgfx.texture_uniform, bgfx::isValid(texture_handle) ? texture_handle : BgfxCompat_Get_White_Texture(), sampler_flags);
+	bgfx::setVertexBuffer(0, &tvb);
+	bgfx::setIndexBuffer(&tib);
+	bgfx::setState(Build_BGFX_State());
+	bgfx::submit(kBootstrapViewId, g_bgfx.gui_program);
+
+	if (g_bgfx.draw_calls < 8) {
+		WWRELEASE_SAY(("BGFX2D: submit %u tris, texture=%s\n", polygon_count, g_bgfx.textures[0] != nullptr ? g_bgfx.textures[0]->Get_Full_Path().Peek_Buffer() : "<white>"));
+	}
+	++g_bgfx.draw_calls;
+	return true;
+}
+
+void Copy_Surface_Rectangles(
+	IDirect3DSurface8 *source_surface,
+	const RECT *source_rects,
+	UINT rect_count,
+	IDirect3DSurface8 *destination_surface,
+	const POINT *dest_points)
+{
+	BgfxCompatSurface *dst = BgfxCompat_To_Surface(destination_surface);
+	const BgfxCompatSurface *src = BgfxCompat_To_Surface(source_surface);
+	if (dst == nullptr || src == nullptr || source_rects == nullptr || dest_points == nullptr || rect_count == 0 || dst->format != src->format) {
+		return;
+	}
+
+	const unsigned pixel_size = BgfxCompat_Get_Pixel_Size(dst->format);
+	for (UINT rect_index = 0; rect_index < rect_count; ++rect_index) {
+		const RECT &src_rect = source_rects[rect_index];
+		const POINT &dst_point = dest_points[rect_index];
+		const unsigned width = static_cast<unsigned>(std::max(src_rect.right - src_rect.left, 0L));
+		const unsigned height = static_cast<unsigned>(std::max(src_rect.bottom - src_rect.top, 0L));
+		for (unsigned row = 0; row < height; ++row) {
+			const size_t src_offset = (static_cast<size_t>(src_rect.top + static_cast<LONG>(row)) * static_cast<size_t>(src->width) + static_cast<size_t>(src_rect.left)) * pixel_size;
+			const size_t dst_offset = (static_cast<size_t>(dst_point.y + static_cast<LONG>(row)) * static_cast<size_t>(dst->width) + static_cast<size_t>(dst_point.x)) * pixel_size;
+			std::memcpy(dst->bytes.data() + dst_offset, src->bytes.data() + src_offset, static_cast<size_t>(width) * pixel_size);
+		}
+	}
+}
+
 bool Initialize_Bgfx(SDL_Window *window)
 {
 	int width = kFallbackRenderWidth;
@@ -196,6 +463,7 @@ bool Initialize_Bgfx(SDL_Window *window)
 	Query_Window_Size(window, width, height);
 
 	if (window != nullptr) {
+		Ensure_Window_Ready_For_BGFX(window);
 		SDL_PumpEvents();
 		SDL_SyncWindow(window);
 	}
@@ -213,46 +481,22 @@ bool Initialize_Bgfx(SDL_Window *window)
 	init.resolution.height = static_cast<uint32_t>(height);
 	init.resolution.reset = Compose_Reset_Flags();
 
-#if defined(__linux__)
-	SDL_GLContext gl_context = SDL_GL_CreateContext(window);
-	if (gl_context == nullptr) {
-		SDL_SetError("SDL_GL_CreateContext failed: %s", SDL_GetError());
-		return false;
-	}
-
-	if (!SDL_GL_MakeCurrent(window, gl_context)) {
-		SDL_GL_DestroyContext(gl_context);
-		SDL_SetError("SDL_GL_MakeCurrent failed: %s", SDL_GetError());
-		return false;
-	}
-
-	init.platformData.context = gl_context;
-#endif
-
 	if (!Populate_Platform_Data(window, init.platformData)) {
-#if defined(__linux__)
-		SDL_GL_DestroyContext(gl_context);
-#endif
 		SDL_SetError("Unable to extract native window/display handles for bgfx initialization.");
 		return false;
 	}
 
 	if (!bgfx::init(init)) {
-#if defined(__linux__)
-		SDL_GL_DestroyContext(gl_context);
-#endif
 		SDL_SetError("bgfx::init failed.");
 		return false;
 	}
 
 	g_bgfx.window = window;
-#if defined(__linux__)
-	g_bgfx.gl_context = gl_context;
-#endif
 	g_bgfx.width = width;
 	g_bgfx.height = height;
 	g_bgfx.reset_flags = init.resolution.reset;
 	g_bgfx.initialized = true;
+	Reset_Draw_State();
 	g_bgfx.viewport = RenderViewportClass(0u, 0u, static_cast<unsigned>(width), static_cast<unsigned>(height));
 	Update_Windowed_State();
 	DX8Wrapper::Refresh_Render_Device_Desc();
@@ -269,6 +513,16 @@ void Shutdown_Bgfx()
 	if (!g_bgfx.initialized) {
 		return;
 	}
+
+	if (bgfx::isValid(g_bgfx.gui_program)) {
+		bgfx::destroy(g_bgfx.gui_program);
+		g_bgfx.gui_program = BGFX_INVALID_HANDLE;
+	}
+	if (bgfx::isValid(g_bgfx.texture_uniform)) {
+		bgfx::destroy(g_bgfx.texture_uniform);
+		g_bgfx.texture_uniform = BGFX_INVALID_HANDLE;
+	}
+	BgfxCompat_Shutdown_Texture_System();
 
 	bgfx::frame();
 	bgfx::shutdown();
@@ -320,7 +574,9 @@ void DX8Wrapper::Begin_Scene(void)
 
 	Sync_Backbuffer(false);
 	bgfx::setViewClear(kBootstrapViewId, g_bgfx.clear_flags, g_bgfx.clear_color, g_bgfx.clear_depth, g_bgfx.clear_stencil);
+	bgfx::setViewTransform(kBootstrapViewId, kIdentityMatrix, kIdentityMatrix);
 	bgfx::touch(kBootstrapViewId);
+	g_bgfx.draw_calls = 0;
 }
 
 void DX8Wrapper::End_Scene(bool flip_frame)
@@ -516,6 +772,193 @@ void DX8Wrapper::Update_Window(void *hwnd)
 bool DX8Wrapper::Is_Initted()
 {
 	return g_bgfx.initialized;
+}
+
+bool DX8Wrapper::Registry_Save_Render_Device(const char *sub_key)
+{
+	return Registry_Save_Render_Device(sub_key, 0, g_bgfx.width, g_bgfx.height, g_bgfx.bit_depth, g_bgfx.windowed, g_bgfx.bit_depth);
+}
+
+bool DX8Wrapper::Registry_Save_Render_Device(const char *sub_key, int, int width, int height, int depth, bool windowed, int texture_depth)
+{
+	if (sub_key == nullptr) {
+		return false;
+	}
+
+	RegistryClass registry(sub_key);
+	if (!registry.Is_Valid()) {
+		return false;
+	}
+
+	registry.Set_String("RenderDeviceName", g_bgfx.render_device_desc.Get_Device_Name());
+	registry.Set_Int("RenderDeviceWidth", width > 0 ? width : g_bgfx.width);
+	registry.Set_Int("RenderDeviceHeight", height > 0 ? height : g_bgfx.height);
+	registry.Set_Int("RenderDeviceDepth", depth > 0 ? depth : g_bgfx.bit_depth);
+	registry.Set_Int("RenderDeviceWindowed", windowed ? 1 : 0);
+	registry.Set_Int("RenderDeviceTextureDepth", texture_depth > 0 ? texture_depth : g_bgfx.bit_depth);
+	return true;
+}
+
+bool DX8Wrapper::Registry_Load_Render_Device(const char *sub_key, bool resize_window)
+{
+	char device[256] = {};
+	int width = g_bgfx.width;
+	int height = g_bgfx.height;
+	int depth = g_bgfx.bit_depth;
+	int windowed = g_bgfx.windowed ? 1 : 0;
+	int texture_depth = g_bgfx.bit_depth;
+
+	if (!Registry_Load_Render_Device(sub_key, device, sizeof(device), width, height, depth, windowed, texture_depth)) {
+		return Set_Any_Render_Device();
+	}
+
+	Set_Texture_Bitdepth(texture_depth);
+	return Set_Render_Device(device[0] != '\0' ? device : g_bgfx.render_device_desc.Get_Device_Name(), width, height, depth, windowed, resize_window);
+}
+
+bool DX8Wrapper::Registry_Load_Render_Device(const char *sub_key, char *device, int device_len, int &width, int &height, int &depth, int &windowed, int &texture_depth)
+{
+	if (sub_key == nullptr) {
+		return false;
+	}
+
+	RegistryClass registry(sub_key);
+	if (!registry.Is_Valid()) {
+		return false;
+	}
+
+	char device_name[256] = {};
+	registry.Get_String("RenderDeviceName", device_name, sizeof(device_name), g_bgfx.render_device_desc.Get_Device_Name());
+	width = registry.Get_Int("RenderDeviceWidth", g_bgfx.width);
+	height = registry.Get_Int("RenderDeviceHeight", g_bgfx.height);
+	depth = registry.Get_Int("RenderDeviceDepth", g_bgfx.bit_depth);
+	windowed = registry.Get_Int("RenderDeviceWindowed", g_bgfx.windowed ? 1 : 0);
+	texture_depth = registry.Get_Int("RenderDeviceTextureDepth", g_bgfx.bit_depth);
+
+	if (device != nullptr && device_len > 0) {
+		std::snprintf(device, static_cast<size_t>(device_len), "%s", device_name);
+	}
+
+	return true;
+}
+
+void DX8Wrapper::Set_Transform(TransformSlot transform, const Matrix4 &m)
+{
+	switch (transform) {
+		case TRANSFORM_WORLD: g_bgfx.world = m; break;
+		case TRANSFORM_VIEW: g_bgfx.view = m; break;
+		case TRANSFORM_PROJECTION: g_bgfx.projection = m; break;
+		default: break;
+	}
+}
+
+void DX8Wrapper::Set_Transform(TransformSlot transform, const Matrix3D &m)
+{
+	Set_Transform(transform, Matrix4(m));
+}
+
+void DX8Wrapper::Get_Transform(TransformSlot transform, Matrix4 &m)
+{
+	switch (transform) {
+		case TRANSFORM_WORLD: m = g_bgfx.world; break;
+		case TRANSFORM_VIEW: m = g_bgfx.view; break;
+		case TRANSFORM_PROJECTION: m = g_bgfx.projection; break;
+		default: m.Make_Identity(); break;
+	}
+}
+
+void DX8Wrapper::Set_Projection_Transform_With_Z_Bias(const Matrix4 &matrix, float, float)
+{
+	g_bgfx.projection = matrix;
+}
+
+void DX8Wrapper::Set_Vertex_Buffer(const VertexBufferClass *vb)
+{
+	g_bgfx.vertex_data = vb != nullptr ? vb->Get_Vertex_Data() : nullptr;
+	g_bgfx.vertex_fvf = vb != nullptr ? &vb->FVF_Info() : nullptr;
+	g_bgfx.vertex_count = vb != nullptr ? vb->Get_Vertex_Count() : 0;
+}
+
+void DX8Wrapper::Set_Vertex_Buffer(const DynamicVBAccessClass &vba)
+{
+	g_bgfx.vertex_data = vba.Get_Vertex_Data();
+	g_bgfx.vertex_fvf = &vba.FVF_Info();
+	g_bgfx.vertex_count = vba.Get_Vertex_Count();
+}
+
+void DX8Wrapper::Set_Index_Buffer(const IndexBufferClass *ib, unsigned short index_base_offset)
+{
+	g_bgfx.index_data = ib != nullptr ? ib->Get_Index_Data() : nullptr;
+	g_bgfx.index_count = ib != nullptr ? ib->Get_Index_Count() : 0;
+	g_bgfx.index_base_offset = index_base_offset;
+}
+
+void DX8Wrapper::Set_Index_Buffer(const DynamicIBAccessClass &iba, unsigned short index_base_offset)
+{
+	g_bgfx.index_data = iba.Get_Index_Data();
+	g_bgfx.index_count = iba.Get_Index_Count();
+	g_bgfx.index_base_offset = index_base_offset;
+}
+
+void DX8Wrapper::Set_Index_Buffer_Index_Offset(unsigned offset)
+{
+	g_bgfx.index_base_offset = static_cast<unsigned short>(offset);
+}
+
+void DX8Wrapper::Draw_Triangles(unsigned, unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count)
+{
+	Submit_Triangles(start_index, polygon_count, min_vertex_index, vertex_count);
+}
+
+void DX8Wrapper::Draw_Triangles(unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count)
+{
+	Submit_Triangles(start_index, polygon_count, min_vertex_index, vertex_count);
+}
+
+void DX8Wrapper::Set_Texture(unsigned stage, TextureClass *texture)
+{
+	if (stage < MAX_TEXTURE_STAGES) {
+		g_bgfx.textures[stage] = texture;
+	}
+}
+
+void DX8Wrapper::Set_Material(const VertexMaterialClass *material)
+{
+	g_bgfx.material = material;
+}
+
+void DX8Wrapper::Set_Shader(const ShaderClass &shader)
+{
+	g_bgfx.shader = shader;
+}
+
+void DX8Wrapper::Set_DX8_Texture_Stage_State(unsigned stage, unsigned state, unsigned value)
+{
+	if (stage < MAX_TEXTURE_STAGES && state < 32) {
+		g_bgfx.texture_stage_states[stage][state] = value;
+	}
+}
+
+void DX8Wrapper::Set_DX8_Render_State(unsigned state, unsigned value)
+{
+	if (state < 256) {
+		g_bgfx.render_states[state] = value;
+	}
+}
+
+void DX8Wrapper::Set_World_Identity()
+{
+	g_bgfx.world.Make_Identity();
+}
+
+void DX8Wrapper::Set_View_Identity()
+{
+	g_bgfx.view.Make_Identity();
+}
+
+void DX8Wrapper::_Copy_DX8_Rects(IDirect3DSurface8 *pSourceSurface, const RECT *pSourceRectsArray, UINT cRects, IDirect3DSurface8 *pDestinationSurface, const POINT *pDestPointsArray)
+{
+	Copy_Surface_Rectangles(pSourceSurface, pSourceRectsArray, cRects, pDestinationSurface, pDestPointsArray);
 }
 
 #else

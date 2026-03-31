@@ -72,6 +72,21 @@ set(WW3D2_SOURCES
 
 set(WW3D2_BGFX_SHADER_SOURCES)
 if(RENEGADE_WITH_BGFX_RENDERER)
+    list(REMOVE_ITEM WW3D2_SOURCES
+        render2dsentence_headless.cpp
+        surfaceclass_headless.cpp
+        texture_headless.cpp
+        ww3d_headless.cpp
+    )
+
+    list(APPEND WW3D2_SOURCES
+        dx8texman_bgfx.cpp
+        render2dsentence.cpp
+        surfaceclass_bgfx.cpp
+        texture_bgfx.cpp
+        ww3d.cpp
+    )
+
     list(APPEND WW3D2_SOURCES dx8wrapper.cpp)
 
     set(WW3D2_BGFX_SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
@@ -136,6 +151,9 @@ if(RENEGADE_WITH_BGFX_RENDERER)
     else()
         message(FATAL_ERROR "RENEGADE_WITH_BGFX_RENDERER is enabled, but no bgfx target was exported by bgfx.cmake.")
     endif()
+
+    find_package(Freetype REQUIRED)
+    target_link_libraries(ww3d2 PRIVATE Freetype::Freetype)
 endif()
 
 if(NOT WIN32)

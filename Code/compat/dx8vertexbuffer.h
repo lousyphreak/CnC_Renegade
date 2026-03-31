@@ -56,6 +56,11 @@ public:
 		return VertexCount;
 	}
 
+	const unsigned char *Get_Vertex_Data() const
+	{
+		return Storage.data();
+	}
+
 	unsigned Type() const
 	{
 		return type;
@@ -121,6 +126,10 @@ public:
 class DynamicVBAccessClass
 {
 public:
+	static void _Reset(bool)
+	{
+	}
+
 	DynamicVBAccessClass(int, int vertex_count)
 		: FVFInfo(dynamic_fvf_type),
 		  Type(0),
@@ -150,6 +159,11 @@ public:
 	unsigned short Get_Vertex_Count() const
 	{
 		return VertexCount;
+	}
+
+	const unsigned char *Get_Vertex_Data() const
+	{
+		return Storage.data();
 	}
 
 	class WriteLockClass

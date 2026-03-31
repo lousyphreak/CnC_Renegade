@@ -4,9 +4,12 @@
 
 #if !defined(FREEDEDICATEDSERVER)
 #include "ConsoleMode.h"
+#include "dialogresource.h"
 #include "dialogmgr.h"
+#include "popupdialog.h"
 #include "directinput.h"
 #include "input.h"
+#include "resource.h"
 #endif
 
 #include <algorithm>
@@ -115,10 +118,29 @@ void RenegadeDialogMgrClass::Shutdown(void)
 	#endif
 }
 
-void RenegadeDialogMgrClass::Do_Simple_Dialog(int)
+void RenegadeDialogMgrClass::Do_Simple_Dialog(int dlg_res_id)
 {
+	#if !defined(FREEDEDICATEDSERVER)
+	if (DialogMgrClass::Get_Dialog_Count() > 0) {
+		return;
+	}
+
+	PopupDialogClass *dialog = new PopupDialogClass(dlg_res_id);
+	dialog->Start_Dialog();
+	REF_PTR_RELEASE(dialog);
+	#endif
 }
 
-void RenegadeDialogMgrClass::Goto_Location(LOCATION)
+void RenegadeDialogMgrClass::Goto_Location(LOCATION location)
 {
+	#if !defined(FREEDEDICATEDSERVER)
+	switch (location) {
+		case LOC_MAIN_MENU:
+			Do_Simple_Dialog(IDD_MENU_MAIN);
+			break;
+
+		default:
+			break;
+	}
+	#endif
 }

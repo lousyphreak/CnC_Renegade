@@ -162,8 +162,8 @@ list(APPEND COMMANDO_DEDICATED_SOURCES
     textdisplay.cpp
 )
 
-list(REMOVE_ITEM COMMANDO_DEDICATED_SOURCES renegadedialogmgr.cpp)
 list(REMOVE_ITEM COMMANDO_DEDICATED_SOURCES
+    renegadedialogmgr.cpp
     langmode.cpp
     gamemenu.cpp
     movie.cpp

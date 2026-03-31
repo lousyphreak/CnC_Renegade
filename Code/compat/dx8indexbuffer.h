@@ -25,6 +25,11 @@ public:
 		return index_count;
 	}
 
+	const unsigned short *Get_Index_Data() const
+	{
+		return Storage.data();
+	}
+
 	unsigned Type() const
 	{
 		return type;
@@ -111,6 +116,10 @@ public:
 class DynamicIBAccessClass
 {
 public:
+	static void _Reset(bool)
+	{
+	}
+
 	DynamicIBAccessClass(int, int index_count)
 		: Type(0),
 		  IndexCount(static_cast<unsigned short>(index_count)),
@@ -126,6 +135,11 @@ public:
 	unsigned short Get_Index_Count() const
 	{
 		return IndexCount;
+	}
+
+	const unsigned short *Get_Index_Data() const
+	{
+		return Storage.data();
 	}
 
 	class WriteLockClass

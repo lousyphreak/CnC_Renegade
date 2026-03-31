@@ -40,6 +40,8 @@
 #include "rect.h"
 #include "dialogmgr.h"
 
+static int s_screen_cursor_render_log_count = 0;
+
 
 ///////////////////////////////////////////////////////////////////
 //
@@ -105,6 +107,11 @@ ScreenCursorClass::Set_Texture (TextureClass *texture)
 void
 ScreenCursorClass::Render (void)
 {
+	if (s_screen_cursor_render_log_count < 8) {
+		WWRELEASE_SAY(("ScreenCursor: render %dx%d\n", Width, Height));
+		++s_screen_cursor_render_log_count;
+	}
+
 	//
 	//	Get the cursor's position
 	//

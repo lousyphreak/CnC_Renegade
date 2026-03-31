@@ -66,6 +66,12 @@
 
 #include "glsl/fs_bootstrap.sc.bin.h"
 #include "glsl/vs_bootstrap.sc.bin.h"
+#include "spirv/fs_bootstrap.sc.bin.h"
+#include "spirv/vs_bootstrap.sc.bin.h"
+#if defined(_WIN32)
+#include "dx11/fs_bootstrap.sc.bin.h"
+#include "dx11/vs_bootstrap.sc.bin.h"
+#endif
 
 namespace {
 
@@ -305,8 +311,29 @@ bool Ensure_Gui_Resources()
 	}
 
 	if (!bgfx::isValid(g_bgfx.gui_program)) {
-		const bgfx::ShaderHandle vertex_shader = bgfx::createShader(bgfx::copy(vs_bootstrap_glsl, sizeof(vs_bootstrap_glsl)));
-		const bgfx::ShaderHandle fragment_shader = bgfx::createShader(bgfx::copy(fs_bootstrap_glsl, sizeof(fs_bootstrap_glsl)));
+		const uint8_t *vs_data = nullptr;
+		uint32_t vs_size = 0;
+		const uint8_t *fs_data = nullptr;
+		uint32_t fs_size = 0;
+		switch (bgfx::getRendererType()) {
+		case bgfx::RendererType::Vulkan:
+			vs_data = vs_bootstrap_spv; vs_size = sizeof(vs_bootstrap_spv);
+			fs_data = fs_bootstrap_spv; fs_size = sizeof(fs_bootstrap_spv);
+			break;
+#if defined(_WIN32)
+		case bgfx::RendererType::Direct3D11:
+		case bgfx::RendererType::Direct3D12:
+			vs_data = vs_bootstrap_dx11; vs_size = sizeof(vs_bootstrap_dx11);
+			fs_data = fs_bootstrap_dx11; fs_size = sizeof(fs_bootstrap_dx11);
+			break;
+#endif
+		default:
+			vs_data = vs_bootstrap_glsl; vs_size = sizeof(vs_bootstrap_glsl);
+			fs_data = fs_bootstrap_glsl; fs_size = sizeof(fs_bootstrap_glsl);
+			break;
+		}
+		const bgfx::ShaderHandle vertex_shader = bgfx::createShader(bgfx::copy(vs_data, vs_size));
+		const bgfx::ShaderHandle fragment_shader = bgfx::createShader(bgfx::copy(fs_data, fs_size));
 		g_bgfx.gui_program = bgfx::createProgram(vertex_shader, fragment_shader, true);
 		WWRELEASE_SAY(("BGFX2D: GUI shader program initialized\n"));
 	}
@@ -468,11 +495,7 @@ bool Initialize_Bgfx(SDL_Window *window)
 	bgfx::renderFrame();
 
 	bgfx::Init init;
-#if defined(__linux__)
-	init.type = bgfx::RendererType::OpenGL;
-#else
 	init.type = bgfx::RendererType::Count;
-#endif
 	init.vendorId = BGFX_PCI_ID_NONE;
 	init.resolution.width = static_cast<uint32_t>(width);
 	init.resolution.height = static_cast<uint32_t>(height);

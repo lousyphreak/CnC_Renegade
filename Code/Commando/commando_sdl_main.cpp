@@ -359,7 +359,7 @@ int main(int argc, char **argv)
     SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_HIGH_PIXEL_DENSITY_BOOLEAN, true);
     SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_HIDDEN_BOOLEAN, smoke_test);
     SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, !smoke_test);
-#if RENEGADE_WITH_BGFX_RENDERER && !defined(__linux__)
+#if RENEGADE_WITH_BGFX_RENDERER
     SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_EXTERNAL_GRAPHICS_CONTEXT_BOOLEAN, true);
 #endif
     SDL_Window *window = SDL_CreateWindowWithProperties(window_props);

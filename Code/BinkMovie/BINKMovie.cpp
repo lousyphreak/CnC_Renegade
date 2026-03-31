@@ -16,7 +16,7 @@
 **	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "binkmovie.h"
+#include "BINKMovie.h"
 #include "dx8wrapper.h"
 #include "formconv.h"
 #include "render2d.h"
@@ -24,6 +24,7 @@
 #include "rect.h"
 #include "subtitlemanager.h"
 #include "dx8caps.h"
+#include "bgfx_compat_resources.h"
 
 class BINKMovieClass
 {
@@ -306,6 +307,18 @@ void BINKMovieClass::Render()
 					h = Bink->Height-TextureInfos[t].TextureLocY;
 				}
 
+				#if !RENEGADE_WITH_DX8_RENDERER && RENEGADE_WITH_BGFX_RENDERER
+				BgfxCompatTexture *texture = BgfxCompat_To_Texture(d3d_texture);
+				if (texture != NULL) {
+					const size_t row_bytes = static_cast<size_t>(w) * BgfxCompat_Get_Pixel_Size(texture->format);
+					for (unsigned y = 0; y < h; ++y) {
+						unsigned char *dest = texture->bytes.data() + static_cast<size_t>(y) * static_cast<size_t>(texture->width) * BgfxCompat_Get_Pixel_Size(texture->format);
+						memcpy(dest, cur_tex_ptr, row_bytes);
+						cur_tex_ptr += Bink->Width * 2;
+					}
+					texture->dirty = true;
+				}
+				#else
 				D3DSURFACE_DESC d3d_surf_desc;
 				D3DLOCKED_RECT locked_rect;
 
@@ -325,6 +338,7 @@ void BINKMovieClass::Render()
 				}
 
 				DX8_ErrorCode(d3d_texture->UnlockRect(0));
+				#endif
 			}
 		}
 

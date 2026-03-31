@@ -4,16 +4,22 @@
 
 #if !defined(FREEDEDICATEDSERVER)
 #include "ConsoleMode.h"
+#include "dialogbase.h"
 #include "dialogresource.h"
 #include "dialogmgr.h"
+#include "dlgmainmenu.h"
+#include "menu_dialog_subset.h"
 #include "popupdialog.h"
 #include "directinput.h"
+#include "gamemode.h"
 #include "input.h"
 #include "resource.h"
 #endif
 
 #include <algorithm>
 #include <cwchar>
+
+extern void Stop_Main_Loop(int);
 
 #if !defined(FREEDEDICATEDSERVER)
 namespace {
@@ -73,6 +79,68 @@ private:
 DialogFactoryBaseClass *FactoryArray[FACTORY_COUNT] = {};
 WWUIInputClass * _TheWWUIInput = nullptr;
 
+#if !defined(FREEDEDICATEDSERVER)
+namespace {
+
+bool CALLBACK Default_On_Command(DialogBaseClass *dialog, int ctrl_id, int mesage_id, DWORD param)
+{
+	bool handled = true;
+
+	if (ctrl_id >= DIALOG_LINK_FIRST && ctrl_id < DIALOG_LINK_LAST) {
+		DialogFactoryBaseClass *factory = FactoryArray[ctrl_id - DIALOG_LINK_FIRST];
+		if (factory != nullptr) {
+			factory->Do_Dialog();
+		}
+	}
+
+	switch (ctrl_id) {
+		case IDC_MENU_BACK_BUTTON:
+		case IDC_BACK:
+		case IDCANCEL:
+			dialog->End_Dialog();
+			break;
+
+		case IDC_QUIT:
+			Stop_Main_Loop(EXIT_SUCCESS);
+			break;
+
+		default:
+			handled = false;
+			break;
+	}
+
+	return handled;
+}
+
+template <typename T>
+void Install_Factory(int ctrl_id)
+{
+	const int index = ctrl_id - DIALOG_LINK_FIRST;
+	if (index >= 0 && index < FACTORY_COUNT && FactoryArray[index] == nullptr) {
+		FactoryArray[index] = new DialogFactoryClass<T>;
+	}
+}
+
+void Initialize_Factories()
+{
+	Install_Factory<ClientStartSPGameDialogClass>(IDC_MENU_START_SP_GAME_BUTTON);
+	Install_Factory<ClientOptionsMenuClass>(IDC_MENU_OPTIONS_BUTTON);
+	Install_Factory<ClientDifficultyMenuClass>(IDC_MENU_START_CAMPAIGN_BUTTON);
+	Install_Factory<ClientQuitVerificationDialogClass>(IDC_MENU_QUIT_BUTTON);
+	Install_Factory<MainMenuDialogClass>(IDC_MENU_MAIN_MENU_BUTTON);
+}
+
+void Shutdown_Factories()
+{
+	for (int index = 0; index < FACTORY_COUNT; ++index) {
+		delete FactoryArray[index];
+		FactoryArray[index] = nullptr;
+	}
+}
+
+} // namespace
+#endif
+
 int MyLoadStringW(UINT str_id, LPWSTR buffer, int buffer_len)
 {
 	if (buffer == nullptr || buffer_len <= 0) {
@@ -96,6 +164,7 @@ void RenegadeDialogMgrClass::Initialize(void)
 {
 	#if !defined(FREEDEDICATEDSERVER)
 	const char *style_mgr_ini = "stylemgr.ini";
+	Initialize_Factories();
 
 	if (_TheWWUIInput == nullptr) {
 		_TheWWUIInput = new RenegadeUIInputClass;
@@ -103,6 +172,7 @@ void RenegadeDialogMgrClass::Initialize(void)
 	}
 
 	if (!ConsoleBox.Is_Exclusive()) {
+		DialogBaseClass::Set_Default_Command_Handler(Default_On_Command);
 		DialogMgrClass::Initialize(style_mgr_ini);
 	}
 
@@ -115,6 +185,7 @@ void RenegadeDialogMgrClass::Shutdown(void)
 	#if !defined(FREEDEDICATEDSERVER)
 	DialogMgrClass::Shutdown();
 	REF_PTR_RELEASE(_TheWWUIInput);
+	Shutdown_Factories();
 	#endif
 }
 
@@ -136,11 +207,16 @@ void RenegadeDialogMgrClass::Goto_Location(LOCATION location)
 	#if !defined(FREEDEDICATEDSERVER)
 	switch (location) {
 		case LOC_MAIN_MENU:
-			Do_Simple_Dialog(IDD_MENU_MAIN);
+			MainMenuDialogClass::Display();
 			break;
 
 		default:
 			break;
+	}
+
+	GameModeClass *menu_game_mode = GameModeManager::Find("Menu");
+	if (menu_game_mode != nullptr && menu_game_mode->Is_Active() == false) {
+		menu_game_mode->Activate();
 	}
 	#endif
 }

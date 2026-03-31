@@ -422,9 +422,6 @@ bool Submit_Triangles(unsigned short start_index, unsigned short polygon_count, 
 	bgfx::setState(Build_BGFX_State());
 	bgfx::submit(kBootstrapViewId, g_bgfx.gui_program);
 
-	if (g_bgfx.draw_calls < 8) {
-		WWRELEASE_SAY(("BGFX2D: submit %u tris, texture=%s\n", polygon_count, g_bgfx.textures[0] != nullptr ? g_bgfx.textures[0]->Get_Full_Path().Peek_Buffer() : "<white>"));
-	}
 	++g_bgfx.draw_calls;
 	return true;
 }

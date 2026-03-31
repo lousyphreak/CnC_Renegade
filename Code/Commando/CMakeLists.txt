@@ -93,6 +93,7 @@ list(APPEND COMMANDO_SOURCES
     commando_dedicated_ui_stubs.cpp
     dlgwebpage_stub.cpp
     dlgcncwinscreen.cpp
+    dlgmainmenu.cpp
     evictionevent.cpp
     gamemenu.cpp
     gameoptionsevent.cpp
@@ -100,6 +101,7 @@ list(APPEND COMMANDO_SOURCES
     inputconfig.cpp
     inputconfigmgr.cpp
     lanchat.cpp
+    menu_dialog_subset.cpp
     movie.cpp
     mpsettingsmgr.cpp
     multihud.cpp
@@ -163,7 +165,8 @@ list(APPEND COMMANDO_DEDICATED_SOURCES
 )
 
 list(REMOVE_ITEM COMMANDO_DEDICATED_SOURCES
-    renegadedialogmgr.cpp
+    dlgmainmenu.cpp
+    menu_dialog_subset.cpp
     langmode.cpp
     gamemenu.cpp
     movie.cpp

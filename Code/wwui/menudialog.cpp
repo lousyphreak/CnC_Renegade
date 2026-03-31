@@ -35,12 +35,19 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "menudialog.h"
+#include "renegade_build_config.h"
 #include "menubackdrop.h"
 #include "render2d.h"
 #include "stylemgr.h"
 #include "dialogmgr.h"
 #include "childdialog.h"
 #include "dialogcontrol.h"
+
+namespace {
+
+constexpr bool kRenderMenuBackDrop = RENEGADE_WITH_DX8_RENDERER != 0;
+
+}
 
 
 ////////////////////////////////////////////////////////////////
@@ -136,7 +143,9 @@ MenuDialogClass::Render (void)
 		//
 		//	Render the background scene first
 		//
-		BackDrop->Render ();
+		if (kRenderMenuBackDrop) {
+			BackDrop->Render ();
+		}
 
 		//
 		//	Now, let the dialog subsystem render the controls and

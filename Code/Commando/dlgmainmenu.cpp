@@ -36,6 +36,7 @@
 
 
 #include "dlgmainmenu.h"
+#include "renegade_build_config.h"
 #include "assetmgr.h"
 #include "rendobj.h"
 #include "hanim.h"
@@ -48,7 +49,6 @@
 #include "meshgeometry.h"
 #include "dialogmgr.h"
 #include "gameinitmgr.h"
-#include "debug.h"
 #include "dialogcontrol.h"
 #include "specialbuilds.h"
 #include "buildnum.h"
@@ -58,13 +58,15 @@
 #include "init.h"
 #include "registry.h"
 #include "_globals.h"
-#include "dialogtests.h"
-#include "DlgWOLWait.h"
-#include "nicenum.h"
-#include "DlgMessageBox.h"
-#include "translatedb.h"
 #include "string_ids.h"
 #include "gamespyadmin.h"
+#include "menu_dialog_subset.h"
+
+namespace {
+
+constexpr bool kSupportsAnimatedMainMenu = RENEGADE_WITH_DX8_RENDERER != 0;
+
+}
 
 ////////////////////////////////////////////////////////////////
 //	Static member initialization
@@ -91,6 +93,10 @@ MainMenuDialogClass::MainMenuDialogClass (void)	:
 	RegistryClass reg(APPLICATION_SUB_KEY_NAME_OPTIONS);
 	if (reg.Get_Int("DisableMenuAnim", 0) != 0) {
 		Animated = false;
+	}
+
+	if (!kSupportsAnimatedMainMenu) {
+	Animated = false;
 	}
 
 
@@ -237,8 +243,7 @@ MainMenuDialogClass::Get_Transition_In (DialogBaseClass *prev_dlg)
 	//	We only want to transition between menu dialogs
 	//
 	if (prev_dlg == NULL ||
-			(prev_dlg != QuitVerificationDialogClass::Get_Instance () &&
-			 prev_dlg != DlgWOLWait::Get_Instance ()))
+			(prev_dlg != ClientQuitVerificationDialogClass::Get_Instance ()))
 	{
 		transition = new MainMenuTransitionClass;
 		transition->Set_Model (TitleTransModel);
@@ -389,24 +394,13 @@ MainMenuDialogClass::On_Command (int ctrl_id, int message_id, DWORD param)
 		}
 
 		case IDC_MENU_MP_LAN_GAME_BUTTON:
-			
-			//
-			// Clear any gamespyadmin flags
-			//
 			cGameSpyAdmin::Reset();
-
-			if (cNicEnum::Get_Num_Nics() > 0) {
-				GameInitMgrClass::Initialize_LAN ();
-			} else {
-				DlgMsgBox::DoDialog(
-					TRANSLATE(IDS_MP_UNABLE_INITIALIZE_LAN), 
-					TRANSLATE(IDS_MP_NO_LAN_IP_ADDRESSES_FOUND));
-				allow_default = false;
-			}
+			START_DIALOG (ClientLanMenuDialogClass);
+			allow_default = false;
 			break;
 
 		case IDC_MENU_MP_INTERNET_GAME_BUTTON:
-			START_DIALOG (InternetMainDialogClass);
+			START_DIALOG (ClientInternetMenuDialogClass);
 			allow_default = false;
 			break;
 
@@ -482,8 +476,8 @@ MainMenuDialogClass::Update_Version_Number (void)
 	//
 	// Version 1.0 by default
 	//
-	DWORD version_major = 1;
-	DWORD version_minor = 0;
+	unsigned long version_major = 1;
+	unsigned long version_minor = 0;
 	Get_Version_Number(&version_major, &version_minor);
 
 	//
@@ -494,7 +488,12 @@ MainMenuDialogClass::Update_Version_Number (void)
 	WideStringClass build_number(BuildInfoClass::Get_Build_Number_String(), true);
 	WideStringClass build_initials(BuildInfoClass::Get_Builder_Initials(), true);
 	WideStringClass build_date(BuildInfoClass::Get_Build_Date_String(), true);
-	version_string.Format (L"v%d.%.3d %s-%s %s", (version_major >> 16), (version_major & 0xFFFF), build_initials, build_number, build_date);
+	version_string.Format (L"v%lu.%03lu %s-%s %s",
+		(version_major >> 16),
+		(version_major & 0xFFFF),
+		build_initials.Peek_Buffer(),
+		build_number.Peek_Buffer(),
+		build_date.Peek_Buffer());
 	Set_Dlg_Item_Text (IDC_VERSION_STATIC, version_string);
 }
 

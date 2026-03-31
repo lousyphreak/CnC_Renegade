@@ -227,6 +227,9 @@ void	GameModeManager::Render( void )
 		// enabled, so it is safe to always call it
 		DX8RendererDebugger::Update();
 
+		GameModeClass *combat_mode = Find("Combat");
+		const bool combat_mode_active = (combat_mode != NULL) && combat_mode->Is_Active();
+
 		bool do_pscene = (COMBAT_SCENE != NULL) && !cNetwork::I_Am_Only_Server();
 		if (!GameInFocus) do_pscene=false;	// Don't render the game scene if the applicationisn't active
 		if (do_pscene) {
@@ -235,7 +238,7 @@ void	GameModeManager::Render( void )
 			//	Don't pre-process the combat scene (does VIS and stuff) if
 			// the game isn't active.  (This gives us a menu performance boost).
 			//
-			if (Find( "Combat" )->Is_Active()) {
+			if (combat_mode_active) {
 				COMBAT_SCENE->Pre_Render_Processing(*COMBAT_CAMERA);
 			}
 		}
@@ -261,14 +264,16 @@ void	GameModeManager::Render( void )
 
 		{
 			WWPROFILE( "Message Window" );
-			if (CombatManager::Get_Message_Window () != NULL) {
+			if (combat_mode_active && CombatManager::Get_Message_Window () != NULL) {
 				CombatManager::Get_Message_Window ()->Render();
 			}
 		}
 
 		{
 			WWPROFILE( "ObjectiveViewer" );
-			ObjectiveManager::Render_Viewer();
+			if (combat_mode_active || ObjectiveManager::Is_Viewer_Displayed()) {
+				ObjectiveManager::Render_Viewer();
+			}
 		}
 
 		{

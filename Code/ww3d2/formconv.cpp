@@ -37,121 +37,58 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #include "formconv.h"
 
-D3DFORMAT WW3DFormatToD3DFormatConversionArray[WW3D_FORMAT_COUNT] = {
-	D3DFMT_UNKNOWN,
-	D3DFMT_R8G8B8,
-	D3DFMT_A8R8G8B8,
-	D3DFMT_X8R8G8B8,
-	D3DFMT_R5G6B5,
-	D3DFMT_X1R5G5B5,
-	D3DFMT_A1R5G5B5,
-	D3DFMT_A4R4G4B4,
-	D3DFMT_R3G3B2,
-	D3DFMT_A8,
-	D3DFMT_A8R3G3B2,
-	D3DFMT_X4R4G4B4,
-	D3DFMT_A8P8,
-	D3DFMT_P8,
-	D3DFMT_L8,
-	D3DFMT_A8L8,
-	D3DFMT_A4L4,
-	D3DFMT_V8U8,		// Bumpmap
-	D3DFMT_L6V5U5,		// Bumpmap
-	D3DFMT_X8L8V8U8,	// Bumpmap
-	D3DFMT_DXT1,
-	D3DFMT_DXT2,
-	D3DFMT_DXT3,
-	D3DFMT_DXT4,
-	D3DFMT_DXT5
-};
-
-/*
-#define HIGHEST_SUPPORTED_D3DFORMAT D3DFMT_X8L8V8U8	//A4L4
-WW3DFormat D3DFormatToWW3DFormatConversionArray[HIGHEST_SUPPORTED_D3DFORMAT + 1] = {
-	WW3D_FORMAT_UNKNOWN,		// 0
-	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,
-	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,
-	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,
-	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,
-	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,
-	WW3D_FORMAT_R8G8B8,		// 20
-	WW3D_FORMAT_A8R8G8B8,
-	WW3D_FORMAT_X8R8G8B8,
-	WW3D_FORMAT_R5G6B5,
-	WW3D_FORMAT_X1R5G5B5,
-	WW3D_FORMAT_A1R5G5B5,
-	WW3D_FORMAT_A4R4G4B4,
-	WW3D_FORMAT_R3G3B2,
-	WW3D_FORMAT_A8,
-	WW3D_FORMAT_A8R3G3B2,
-	WW3D_FORMAT_X4R4G4B4,	// 30
-	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,
-	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,
-	WW3D_FORMAT_UNKNOWN,
-	WW3D_FORMAT_A8P8,			// 40
-	WW3D_FORMAT_P8,
-	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,
-	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,
-	WW3D_FORMAT_L8,			// 50
-	WW3D_FORMAT_A8L8,
-	WW3D_FORMAT_A4L4
-};
-*/
-
-#define HIGHEST_SUPPORTED_D3DFORMAT D3DFMT_X8L8V8U8
-WW3DFormat D3DFormatToWW3DFormatConversionArray[HIGHEST_SUPPORTED_D3DFORMAT + 1];
-
-D3DFORMAT WW3DFormat_To_D3DFormat(WW3DFormat ww3d_format) {
-	if (ww3d_format >= WW3D_FORMAT_COUNT) {
-		return D3DFMT_UNKNOWN;
-	} else {
-		return WW3DFormatToD3DFormatConversionArray[(unsigned int)ww3d_format];
+bgfx::TextureFormat::Enum WW3DFormat_To_BgfxFormat(WW3DFormat ww3d_format)
+{
+	switch (ww3d_format) {
+		case WW3D_FORMAT_R8G8B8:    return bgfx::TextureFormat::RGB8;
+		case WW3D_FORMAT_A8R8G8B8:  return bgfx::TextureFormat::BGRA8;
+		case WW3D_FORMAT_X8R8G8B8:  return bgfx::TextureFormat::BGRA8;
+		case WW3D_FORMAT_R5G6B5:    return bgfx::TextureFormat::R5G6B5;
+		case WW3D_FORMAT_X1R5G5B5:  return bgfx::TextureFormat::RGB5A1;
+		case WW3D_FORMAT_A1R5G5B5:  return bgfx::TextureFormat::RGB5A1;
+		case WW3D_FORMAT_A4R4G4B4:  return bgfx::TextureFormat::RGBA4;
+		case WW3D_FORMAT_R3G3B2:    return bgfx::TextureFormat::R8;       // No exact match
+		case WW3D_FORMAT_A8:        return bgfx::TextureFormat::A8;
+		case WW3D_FORMAT_A8R3G3B2:  return bgfx::TextureFormat::BGRA8;    // Upconvert
+		case WW3D_FORMAT_X4R4G4B4:  return bgfx::TextureFormat::RGBA4;
+		case WW3D_FORMAT_A8P8:      return bgfx::TextureFormat::BGRA8;    // No palette in bgfx
+		case WW3D_FORMAT_P8:        return bgfx::TextureFormat::R8;       // No palette in bgfx
+		case WW3D_FORMAT_L8:        return bgfx::TextureFormat::R8;
+		case WW3D_FORMAT_A8L8:      return bgfx::TextureFormat::RG8;
+		case WW3D_FORMAT_A4L4:      return bgfx::TextureFormat::RG8;
+		case WW3D_FORMAT_U8V8:      return bgfx::TextureFormat::RG8S;     // Signed
+		case WW3D_FORMAT_L6V5U5:    return bgfx::TextureFormat::RG8S;     // Closest
+		case WW3D_FORMAT_X8L8V8U8:  return bgfx::TextureFormat::RGBA8S;   // Closest
+		case WW3D_FORMAT_DXT1:      return bgfx::TextureFormat::BC1;
+		case WW3D_FORMAT_DXT2:      return bgfx::TextureFormat::BC2;
+		case WW3D_FORMAT_DXT3:      return bgfx::TextureFormat::BC2;
+		case WW3D_FORMAT_DXT4:      return bgfx::TextureFormat::BC3;
+		case WW3D_FORMAT_DXT5:      return bgfx::TextureFormat::BC3;
+		default:                    return bgfx::TextureFormat::Unknown;
 	}
 }
 
-WW3DFormat D3DFormat_To_WW3DFormat(D3DFORMAT d3d_format)
+WW3DFormat BgfxFormat_To_WW3DFormat(bgfx::TextureFormat::Enum bgfx_format)
 {
-	switch (d3d_format) {
-	// The DXT-codes are created with FOURCC macro and thus can't be placed in the conversion table
-	case D3DFMT_DXT1: return WW3D_FORMAT_DXT1;
-	case D3DFMT_DXT2: return WW3D_FORMAT_DXT2;
-	case D3DFMT_DXT3: return WW3D_FORMAT_DXT3;
-	case D3DFMT_DXT4: return WW3D_FORMAT_DXT4;
-	case D3DFMT_DXT5: return WW3D_FORMAT_DXT5;
-	default:
-		if (d3d_format > HIGHEST_SUPPORTED_D3DFORMAT) {
-			return WW3D_FORMAT_UNKNOWN;
-		} else {
-			return D3DFormatToWW3DFormatConversionArray[(unsigned int)d3d_format];
-		}
-		break;
+	switch (bgfx_format) {
+		case bgfx::TextureFormat::RGB8:    return WW3D_FORMAT_R8G8B8;
+		case bgfx::TextureFormat::BGRA8:   return WW3D_FORMAT_A8R8G8B8;
+		case bgfx::TextureFormat::R5G6B5:  return WW3D_FORMAT_R5G6B5;
+		case bgfx::TextureFormat::RGB5A1:  return WW3D_FORMAT_A1R5G5B5;
+		case bgfx::TextureFormat::RGBA4:   return WW3D_FORMAT_A4R4G4B4;
+		case bgfx::TextureFormat::R8:      return WW3D_FORMAT_L8;
+		case bgfx::TextureFormat::A8:      return WW3D_FORMAT_A8;
+		case bgfx::TextureFormat::RG8:     return WW3D_FORMAT_A8L8;
+		case bgfx::TextureFormat::RG8S:    return WW3D_FORMAT_U8V8;
+		case bgfx::TextureFormat::RGBA8S:  return WW3D_FORMAT_X8L8V8U8;
+		case bgfx::TextureFormat::BC1:     return WW3D_FORMAT_DXT1;
+		case bgfx::TextureFormat::BC2:     return WW3D_FORMAT_DXT3;
+		case bgfx::TextureFormat::BC3:     return WW3D_FORMAT_DXT5;
+		default:                           return WW3D_FORMAT_UNKNOWN;
 	}
 }
 
-void Init_D3D_To_WW3_Conversion()
+void Init_Format_Conversion()
 {
-	for (int i=0;i<HIGHEST_SUPPORTED_D3DFORMAT;++i) {
-		D3DFormatToWW3DFormatConversionArray[i]=WW3D_FORMAT_UNKNOWN;
-	}
-
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_R8G8B8]=WW3D_FORMAT_R8G8B8;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_A8R8G8B8]=WW3D_FORMAT_A8R8G8B8;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_X8R8G8B8]=WW3D_FORMAT_X8R8G8B8;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_R5G6B5]=WW3D_FORMAT_R5G6B5;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_X1R5G5B5]=WW3D_FORMAT_X1R5G5B5;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_A1R5G5B5]=WW3D_FORMAT_A1R5G5B5;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_A4R4G4B4]=WW3D_FORMAT_A4R4G4B4;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_R3G3B2]=WW3D_FORMAT_R3G3B2;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_A8]=WW3D_FORMAT_A8;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_A8R3G3B2]=WW3D_FORMAT_A8R3G3B2;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_X4R4G4B4]=WW3D_FORMAT_X4R4G4B4;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_A8P8]=WW3D_FORMAT_A8P8;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_P8]=WW3D_FORMAT_P8;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_L8]=WW3D_FORMAT_L8;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_A8L8]=WW3D_FORMAT_A8L8;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_A4L4]=WW3D_FORMAT_A4L4;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_V8U8]=WW3D_FORMAT_U8V8;				// Bumpmap
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_L6V5U5]=WW3D_FORMAT_L6V5U5;		// Bumpmap
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_X8L8V8U8]=WW3D_FORMAT_X8L8V8U8;	// Bumpmap
-
-};
+	// No-op: switch-based conversion requires no initialization.
+}

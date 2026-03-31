@@ -18,7 +18,7 @@
 
 #include "BINKMovie.h"
 #include "dx8wrapper.h"
-#include "formconv.h"
+#include "ww3dformat.h"
 #include "render2d.h"
 #include "Bink.h"
 #include "rect.h"
@@ -177,7 +177,7 @@ BINKMovieClass::BINKMovieClass(const char* filename, const char* subtitlename, F
 	for (y = 0; y < Bink->Height; y += max_height-1) {
 		for (x = 0; x < Bink->Width; x += max_width-1) {
 			TextureInfos[cnt].Texture = new TextureClass(
-				max_width, max_height, D3DFormat_To_WW3DFormat(D3DFMT_R5G6B5),
+				max_width, max_height, WW3D_FORMAT_R5G6B5,
 				TextureClass::MIP_LEVELS_1, TextureClass::POOL_MANAGED, false);
 
 			TextureInfos[cnt].TextureLocX = x;
@@ -307,7 +307,6 @@ void BINKMovieClass::Render()
 					h = Bink->Height-TextureInfos[t].TextureLocY;
 				}
 
-				#if !RENEGADE_WITH_DX8_RENDERER && RENEGADE_WITH_BGFX_RENDERER
 				BgfxCompatTexture *texture = BgfxCompat_To_Texture(d3d_texture);
 				if (texture != NULL) {
 					const size_t row_bytes = static_cast<size_t>(w) * BgfxCompat_Get_Pixel_Size(texture->format);
@@ -318,27 +317,6 @@ void BINKMovieClass::Render()
 					}
 					texture->dirty = true;
 				}
-				#else
-				D3DSURFACE_DESC d3d_surf_desc;
-				D3DLOCKED_RECT locked_rect;
-
-				DX8_ErrorCode(d3d_texture->GetLevelDesc(0, &d3d_surf_desc));
-
-				RECT rect;
-				rect.left = 0;
-				rect.top = 0;
-				rect.right = w;
-				rect.bottom = h;
-				DX8_ErrorCode(d3d_texture->LockRect(0,&locked_rect,&rect,0));
-
-				for (unsigned y = 0; y < h; ++y) {
-					unsigned char* dest = (unsigned char*)locked_rect.pBits + y * locked_rect.Pitch;
-					memcpy(dest, cur_tex_ptr, w * 2);
-					cur_tex_ptr += Bink->Width * 2;
-				}
-
-				DX8_ErrorCode(d3d_texture->UnlockRect(0));
-				#endif
 			}
 		}
 

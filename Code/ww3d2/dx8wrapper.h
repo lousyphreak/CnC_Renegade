@@ -89,10 +89,18 @@ class VertexMaterialClass;
 class DX8Caps {
 public:
 	bool Support_Render_To_Texture_Format(int) const { return false; }
+	bool Support_Texture_Format(int) const { return true; }
 	bool Support_NPatches() const { return false; }
 	bool Support_Bump_Envmap() const { return false; }
 	bool Support_Bump_Envmap_Luminance() const { return false; }
-	const char *Get_Log() const { return "bgfx bootstrap caps unavailable\n"; }
+	bool Support_TnL() const { return true; }
+	bool Support_DXTC() const { return true; }
+	bool Support_Gamma() const { return false; }
+	bool Support_ZBias() const { return true; }
+	bool Is_Fog_Allowed() const { return true; }
+	unsigned Get_Vendor() const { return 0; }
+	unsigned Get_Device() const { return 0; }
+	const char *Get_Log() const { return "bgfx renderer\n"; }
 	const char *Get_Compact_Log() const { return "bgfx"; }
 };
 
@@ -107,6 +115,15 @@ public:
 #define D3DRS_FILLMODE 8
 #define D3DRS_AMBIENT 26
 #define D3DRS_ZBIAS 47
+#define D3DRS_LIGHTING 137
+#define D3DRS_DIFFUSEMATERIALSOURCE 145
+#define D3DRS_SPECULARMATERIALSOURCE 146
+#define D3DRS_AMBIENTMATERIALSOURCE 147
+#define D3DRS_EMISSIVEMATERIALSOURCE 148
+
+#define D3DMCS_MATERIAL 0
+#define D3DMCS_COLOR1 1
+#define D3DMCS_COLOR2 2
 
 #define D3DFILL_POINT 1
 #define D3DFILL_WIREFRAME 2
@@ -119,6 +136,7 @@ public:
 #define D3DTSS_TCI_CAMERASPACENORMAL 2
 #define D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR 3
 
+#define D3DTTFF_DISABLE 0
 #define D3DTTFF_COUNT2 2
 #define D3DTTFF_COUNT3 3
 #define D3DTTFF_PROJECTED 256

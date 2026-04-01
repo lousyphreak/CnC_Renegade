@@ -12,6 +12,18 @@ Since we also target Linux, we need to have our file system support case-sensiti
 
 Executables willl run continuously until the user closes them, so you need to use the `timeout` tool to run them for a limited time, and then kill them.
 
+## Collecting screenshots
+
+When validating renderer changes, capture the real rendered output from the game window and compare it against the reference image, especially the background.
+
+On Linux/X11, use this workflow:
+
+1. Launch the executable on a real display with `timeout` so it exits automatically, for example: `DISPLAY=:1 timeout 20s <path-to-executable>`
+2. Find the X11 window id after the window appears, for example: `DISPLAY=:1 xdotool search --name 'Command & Conquer Renegade' | head -n1`
+3. Capture a single screenshot from that specific window: `DISPLAY=:1 ffmpeg -y -loglevel error -f x11grab -draw_mouse 0 -frames:v 1 -window_id "$WIN_ID" screenshot.png`
+
+If a title search is unreliable, use `DISPLAY=:1 xwininfo -root -tree` to find the correct window id manually. Prefer `-window_id` captures over full-screen grabs so the screenshot matches the renderer output exactly.
+
 ## Building the project
 
 Use `cmake --build` to build the project. The main windows build is in build-win.

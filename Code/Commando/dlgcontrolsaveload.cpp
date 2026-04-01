@@ -46,11 +46,15 @@
 ////////////////////////////////////////////////////////////////
 //	Local constants
 ////////////////////////////////////////////////////////////////
-static enum
+namespace {
+
+enum
 {
 	MBEVENT_DELETE_PROMPT	= 1,
 	MBEVENT_SAVE_PROMPT
 };
+
+}
 
 
 ////////////////////////////////////////////////////////////////
@@ -99,7 +103,7 @@ ControlSaveLoadMenuClass::On_Init_Dialog (void)
 		//
 		//	Add an entry so the user can add new configurations
 		//
-		int item_index = list_ctrl->Insert_Entry (index, TRANSLATE (IDS_MENU_EMPTY_SLOT));
+		int item_index = list_ctrl->Insert_Entry (count, TRANSLATE (IDS_MENU_EMPTY_SLOT));
 		list_ctrl->Set_Curr_Sel (item_index);
 
 		//
@@ -556,4 +560,3 @@ ControlSaveLoadMenuClass::On_EditCtrl_Enter_Pressed (EditCtrlClass *edit_ctrl, i
 
 	return ;
 }
-

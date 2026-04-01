@@ -257,7 +257,7 @@ protected:
 	virtual void			On_Destroy (void)					{}
 	virtual void			On_Activate (bool onoff);
 	virtual bool			On_Key_Down (uint32 key_id, uint32 key_data);
-	virtual void			On_Unicode_Char(uint16 unicode);
+	virtual void			On_Unicode_Char(WCHAR unicode);
 	virtual void			On_Mouse_Wheel (int direction);
 	virtual bool			On_Key_Up (uint32 key_id);
 	virtual void			On_Frame_Update (void);
@@ -290,4 +290,3 @@ protected:
 };
 
 #endif //__DIALOG_BASE_H
-

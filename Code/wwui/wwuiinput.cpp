@@ -245,7 +245,7 @@ bool WWUIInputClass::ProcessEvent(const SDL_Event &event)
 				uint16 unicode = 0;
 				const char *next = Decode_UTF8_Code_Unit(cursor, unicode);
 				if (unicode != 0) {
-					DialogMgrClass::On_Unicode_Char(unicode);
+					DialogMgrClass::On_Unicode_Char(static_cast<WCHAR>(unicode));
 					handled = true;
 				}
 				if (next == cursor) {

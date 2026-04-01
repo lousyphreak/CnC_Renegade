@@ -1090,7 +1090,7 @@ DialogBaseClass::On_Key_Up (uint32 key_id)
 //
 ////////////////////////////////////////////////////////////////
 void
-DialogBaseClass::On_Unicode_Char(uint16 unicode)
+DialogBaseClass::On_Unicode_Char(WCHAR unicode)
 {
 	Add_Ref ();
 

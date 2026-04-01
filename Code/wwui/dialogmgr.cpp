@@ -726,7 +726,7 @@ DialogMgrClass::On_Key_Up (uint32 key_id)
 //
 ////////////////////////////////////////////////////////////////
 void
-DialogMgrClass::On_Unicode_Char (uint16 unicode)
+DialogMgrClass::On_Unicode_Char (WCHAR unicode)
 {
 	if (Transition != NULL) {
 		return ;

@@ -153,13 +153,6 @@ ClientOptionsMenuClass::ClientOptionsMenuClass() :
 
 void ClientOptionsMenuClass::On_Init_Dialog()
 {
-	Disable_If_Present(this, IDC_MENU_CONTROLS_BUTTON);
-	Disable_If_Present(this, IDC_MENU_CHARACTER_BUTTON);
-	Disable_If_Present(this, IDC_MENU_CHEATS_BUTTON);
-	Disable_If_Present(this, IDC_MENU_TECH_BUTTON);
-	Disable_If_Present(this, IDC_MENU_MOVIES_BUTTON);
-	Disable_If_Present(this, IDC_MENU_PREVIEWS_BUTTON);
-	Disable_If_Present(this, IDC_MENU_CREDITS_BUTTON);
 	MenuDialogClass::On_Init_Dialog();
 }
 

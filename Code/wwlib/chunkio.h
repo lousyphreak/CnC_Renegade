@@ -58,6 +58,8 @@
 #include <cstdint>
 #include <unordered_map>
 
+class WideStringClass;
+
 
 /************************************************************************************
 
@@ -293,6 +295,9 @@ inline uint32 ChunkIO_Read_Value(ChunkLoadClass & cload, T *& value)
 	return bytes_read;
 }
 
+uint32 ChunkIO_Write_WideString(ChunkSaveClass & csave, const WideStringClass & value);
+uint32 ChunkIO_Read_WideString(ChunkLoadClass & cload, uint32 byte_count, WideStringClass & value);
+
 /*
 ** WRITE_WWSTRING_CHUNK	- use this one-line macro to easily create a chunk to save a potentially
 ** long string.  Note:  This macro does NOT create a micro chunk...
@@ -319,7 +324,7 @@ inline uint32 ChunkIO_Read_Value(ChunkLoadClass & cload, T *& value)
 
 #define WRITE_WIDESTRING_CHUNK(csave,id,var) { \
 	csave.Begin_Chunk(id); \
-	csave.Write((const WCHAR *)var, (var.Get_Length () + 1) * 2); \
+	ChunkIO_Write_WideString(csave, var); \
 	csave.End_Chunk(); }
 
 
@@ -342,7 +347,7 @@ inline uint32 ChunkIO_Read_Value(ChunkLoadClass & cload, T *& value)
 	case (id):	cload.Read(var.Get_Buffer(cload.Cur_Chunk_Length()),cload.Cur_Chunk_Length()); break;	\
 
 #define READ_WIDESTRING_CHUNK(cload,id,var)		\
-	case (id):	cload.Read(var.Get_Buffer((cload.Cur_Chunk_Length()+1)/2),cload.Cur_Chunk_Length()); break;	\
+	case (id):	ChunkIO_Read_WideString(cload, cload.Cur_Chunk_Length(), var); break;	\
 
 
 /*
@@ -379,7 +384,7 @@ inline uint32 ChunkIO_Read_Value(ChunkLoadClass & cload, T *& value)
 
 #define WRITE_MICRO_CHUNK_WIDESTRING(csave,id,var) { \
 	csave.Begin_Micro_Chunk(id); \
-	csave.Write((const WCHAR *)var, (var.Get_Length () + 1) * 2); \
+	ChunkIO_Write_WideString(csave, var); \
 	csave.End_Micro_Chunk(); }
 
 
@@ -418,7 +423,7 @@ inline uint32 ChunkIO_Read_Value(ChunkLoadClass & cload, T *& value)
 	case (id):	cload.Read(var.Get_Buffer(cload.Cur_Micro_Chunk_Length()),cload.Cur_Micro_Chunk_Length()); break;	\
 
 #define READ_MICRO_CHUNK_WIDESTRING(cload,id,var)		\
-	case (id):	cload.Read(var.Get_Buffer((cload.Cur_Micro_Chunk_Length()+1)/2),cload.Cur_Micro_Chunk_Length()); break;	\
+	case (id):	ChunkIO_Read_WideString(cload, cload.Cur_Micro_Chunk_Length(), var); break;	\
 
 /*
 ** These load macros make it easier to add extra code to a specifc case
@@ -430,7 +435,7 @@ inline uint32 ChunkIO_Read_Value(ChunkLoadClass & cload, T *& value)
 	cload.Read(var.Get_Buffer(cload.Cur_Micro_Chunk_Length()),cload.Cur_Micro_Chunk_Length());	\
 
 #define LOAD_MICRO_CHUNK_WIDESTRING(cload,var)		\
-	cload.Read(var.Get_Buffer((cload.Cur_Micro_Chunk_Length()+1)/2),cload.Cur_Micro_Chunk_Length());	\
+	ChunkIO_Read_WideString(cload, cload.Cur_Micro_Chunk_Length(), var);	\
 
 
 /*

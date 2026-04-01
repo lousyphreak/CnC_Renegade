@@ -204,7 +204,7 @@ private:
 	//
 	static bool		On_Key_Down (uint32 key_id, uint32 key_data);
 	static bool		On_Key_Up (uint32 key_id);
-	static void		On_Unicode_Char(uint16 unicode);
+	static void		On_Unicode_Char(WCHAR unicode);
 
 	////////////////////////////////////////////////////////////////
 	//	Private member data

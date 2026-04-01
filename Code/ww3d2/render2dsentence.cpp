@@ -1194,6 +1194,11 @@ FontCharsClass::~FontCharsClass (void)
 const FontCharsClass::CharDataStruct *
 FontCharsClass::Get_Char_Data (WCHAR ch)
 {
+	if (ch < 0 || static_cast<uint32>(ch) > 0xFFFFu) {
+		WWASSERT(0);
+		ch = L'?';
+	}
+
 	const CharDataStruct *retval = NULL;
 
 	if ( ch < 256 ) {

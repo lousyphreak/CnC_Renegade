@@ -78,6 +78,22 @@ set(COMMANDO_EXECUTABLE_SOURCES
     commando_sdl_main.cpp
 )
 
+set(COMMANDO_CLIENT_MENU_SOURCES
+    dlgcharacteroptions.cpp
+    dlgcheatoptions.cpp
+    dlgconfigaudiotab.cpp
+    dlgconfigperformancetab.cpp
+    dlgconfigvideotab.cpp
+    dlgcontroltabs.cpp
+    dlgcontrols.cpp
+    dlgcontrolsaveload.cpp
+    dlgcontrolslisttab.cpp
+    dlgcredits.cpp
+    dlgmovieoptions.cpp
+    dlgpreviewoptions.cpp
+    dlgtechoptions.cpp
+)
+
 set(COMMANDO_SOURCES ${COMMANDO_SHARED_SOURCES})
 
 list(APPEND COMMANDO_SOURCES
@@ -114,6 +130,10 @@ list(APPEND COMMANDO_SOURCES
     ServerSettings.cpp
     serverfps.cpp
     shutdown.cpp
+)
+
+list(APPEND COMMANDO_SOURCES
+    ${COMMANDO_CLIENT_MENU_SOURCES}
 )
 
 if(WIN32)
@@ -178,6 +198,7 @@ list(REMOVE_ITEM COMMANDO_DEDICATED_SOURCES
     inputconfigmgr.cpp
     lanchat.cpp
     radiocommanddisplay.cpp
+    ${COMMANDO_CLIENT_MENU_SOURCES}
 )
 
 if(WIN32)

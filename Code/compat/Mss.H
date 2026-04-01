@@ -70,6 +70,22 @@ struct AILSOUNDINFO {
 #define AIL_LOCK_PROTECTION 0
 #endif
 
+#ifndef AIL_3D_2_SPEAKER
+#define AIL_3D_2_SPEAKER 0
+#endif
+
+#ifndef AIL_3D_HEADPHONE
+#define AIL_3D_HEADPHONE 1
+#endif
+
+#ifndef AIL_3D_SURROUND
+#define AIL_3D_SURROUND 2
+#endif
+
+#ifndef AIL_3D_4_SPEAKER
+#define AIL_3D_4_SPEAKER 3
+#endif
+
 #ifndef DIG_USE_WAVEOUT
 #define DIG_USE_WAVEOUT 0
 #endif

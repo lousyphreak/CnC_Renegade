@@ -37,6 +37,7 @@
 #include "dlgconfigaudiotab.h"
 #include "resource.h"
 #include "sliderctrl.h"
+#include "checkboxctrl.h"
 #include "WWAudio.h"
 #include "comboboxctrl.h"
 #include "listctrl.h"
@@ -45,6 +46,7 @@
 #include "translatedb.h"
 #include "AudibleSound.h"
 #include "dialogmgr.h"
+#include "debug.h"
 
 
 ////////////////////////////////////////////////////////////////
@@ -410,6 +412,7 @@ DlgConfigAudioTabClass::Configure_Driver_List (void)
 {
 	ListCtrlClass *list_ctrl = (ListCtrlClass *)Get_Dlg_Item (IDC_DRIVER_LIST);
 	if (list_ctrl == NULL) {
+		InitialDeviceIndex = -1;
 		return ;
 	}
 
@@ -460,7 +463,7 @@ DlgConfigAudioTabClass::Configure_Driver_List (void)
 	//
 	//	Select the first entry by default (if necessary)
 	//
-	if (selected_default == false) {
+	if (selected_default == false && list_ctrl->Get_Entry_Count () > 0) {
 		list_ctrl->Set_Curr_Sel (0);
 	}
 
@@ -481,90 +484,165 @@ DlgConfigAudioTabClass::Configure_Driver_List (void)
 bool
 DlgConfigAudioTabClass::On_Apply (void)
 {
-	StringClass device_name;
-	int hertz				= 44100;
-	int bits					= 16;
-	int speaker_type		= 0;
-	bool is_stereo			= true;
-	float sound_vol		= 1.0F;
-	float music_vol		= 1.0F;
-	float dialog_vol		= 1.0F;
-	float cinematic_vol	= 1.0F;
-	bool sound_on			= true;
-	bool music_on			= true;
-	bool dialog_on			= true;
-	bool cinematic_on		= true;
+	WWAudioClass *audio = WWAudioClass::Get_Instance ();
+	StringClass device_name	= audio->Get_3D_Driver_Name ();
+	int hertz					= audio->Get_Playback_Rate ();
+	int bits						= audio->Get_Playback_Bits ();
+	int speaker_type			= audio->Get_Speaker_Type ();
+	bool is_stereo				= audio->Get_Playback_Stereo ();
+	float sound_vol			= audio->Get_Sound_Effects_Volume ();
+	float music_vol			= audio->Get_Music_Volume ();
+	float dialog_vol			= audio->Get_Dialog_Volume ();
+	float cinematic_vol		= audio->Get_Cinematic_Volume ();
+	bool sound_on				= audio->Are_Sound_Effects_On ();
+	bool music_on				= audio->Is_Music_On ();
+	bool dialog_on				= audio->Is_Dialog_On ();
+	bool cinematic_on			= audio->Is_Cinematic_Sound_On ();
+	int device_index			= InitialDeviceIndex;
+	bool can_change_3d_device = false;
+	bool missing_control		= false;
 
 	SliderCtrlClass *snd_vol_slider = (SliderCtrlClass *)Get_Dlg_Item (IDC_SOUND_EFFECTS_SLIDER);
 	SliderCtrlClass *mus_vol_slider = (SliderCtrlClass *)Get_Dlg_Item (IDC_MUSIC_SLIDER);
 	SliderCtrlClass *dia_vol_slider = (SliderCtrlClass *)Get_Dlg_Item (IDC_DIALOG_SLIDER);
 	SliderCtrlClass *cin_vol_slider = (SliderCtrlClass *)Get_Dlg_Item (IDC_CINEMATIC_SLIDER);
+	DialogControlClass *sound_check = Get_Dlg_Item (IDC_SOUND_EFFECTS_CHECK);
+	DialogControlClass *music_check = Get_Dlg_Item (IDC_MUSIC_CHECK);
+	DialogControlClass *dialog_check = Get_Dlg_Item (IDC_DIALOG_CHECK);
+	DialogControlClass *cinematic_check = Get_Dlg_Item (IDC_CINEMATIC_CHECK);
+	DialogControlClass *stereo_check = Get_Dlg_Item (IDC_STEREO_CHECK);
 
 	//
 	//	Get the volume settings
 	//
-	sound_vol		= snd_vol_slider->Get_Pos () / 100.0F;
-	music_vol		= mus_vol_slider->Get_Pos () / 100.0F;
-	dialog_vol		= dia_vol_slider->Get_Pos () / 100.0F;
-	cinematic_vol	= cin_vol_slider->Get_Pos () / 100.0F;
+	if (snd_vol_slider != NULL) {
+		sound_vol = snd_vol_slider->Get_Pos () / 100.0F;
+	} else {
+		missing_control = true;
+	}
+
+	if (mus_vol_slider != NULL) {
+		music_vol = mus_vol_slider->Get_Pos () / 100.0F;
+	} else {
+		missing_control = true;
+	}
+
+	if (dia_vol_slider != NULL) {
+		dialog_vol = dia_vol_slider->Get_Pos () / 100.0F;
+	} else {
+		missing_control = true;
+	}
+
+	if (cin_vol_slider != NULL) {
+		cinematic_vol = cin_vol_slider->Get_Pos () / 100.0F;
+	} else {
+		missing_control = true;
+	}
 
 	//
 	//	Setup the music volume controls
 	//
-	sound_on			= Is_Dlg_Button_Checked (IDC_SOUND_EFFECTS_CHECK);
-	music_on			= Is_Dlg_Button_Checked (IDC_MUSIC_CHECK);
-	dialog_on		= Is_Dlg_Button_Checked (IDC_DIALOG_CHECK);
-	cinematic_on	= Is_Dlg_Button_Checked (IDC_CINEMATIC_CHECK);
+	if (sound_check != NULL && sound_check->As_CheckBoxCtrlClass () != NULL) {
+		sound_on = sound_check->As_CheckBoxCtrlClass ()->Get_Check ();
+	} else {
+		missing_control = true;
+	}
+
+	if (music_check != NULL && music_check->As_CheckBoxCtrlClass () != NULL) {
+		music_on = music_check->As_CheckBoxCtrlClass ()->Get_Check ();
+	} else {
+		missing_control = true;
+	}
+
+	if (dialog_check != NULL && dialog_check->As_CheckBoxCtrlClass () != NULL) {
+		dialog_on = dialog_check->As_CheckBoxCtrlClass ()->Get_Check ();
+	} else {
+		missing_control = true;
+	}
+
+	if (cinematic_check != NULL && cinematic_check->As_CheckBoxCtrlClass () != NULL) {
+		cinematic_on = cinematic_check->As_CheckBoxCtrlClass ()->Get_Check ();
+	} else {
+		missing_control = true;
+	}
 	
 	//
 	//	Get the name of the selected device
 	//	
 	ListCtrlClass *list_ctrl = (ListCtrlClass *)Get_Dlg_Item (IDC_DRIVER_LIST);
-	int device_index = list_ctrl->Get_Curr_Sel ();
-	if (device_index >= 0) {
-		WideStringClass wide_device_name = list_ctrl->Get_Entry_Text (device_index, 0);
-		wide_device_name.Convert_To (device_name);
+	if (list_ctrl != NULL) {
+		device_index = list_ctrl->Get_Curr_Sel ();
+		if (device_index >= 0) {
+			WideStringClass wide_device_name = list_ctrl->Get_Entry_Text (device_index, 0);
+			wide_device_name.Convert_To (device_name);
+			can_change_3d_device = true;
+		}
+	} else {
+		missing_control = true;
 	}
 
 	//
 	//	Get the stereo flag from the dialog
 	//
-	is_stereo = Is_Dlg_Button_Checked (IDC_STEREO_CHECK);
+	if (stereo_check != NULL && stereo_check->As_CheckBoxCtrlClass () != NULL) {
+		is_stereo = stereo_check->As_CheckBoxCtrlClass ()->Get_Check ();
+	} else {
+		missing_control = true;
+	}
 
 	//
 	//	Get the playback bit rate from the dialog
 	//
 	ComboBoxCtrlClass *combo_box = (ComboBoxCtrlClass *)Get_Dlg_Item (IDC_QUALITY_COMBO);
-	int quality_cursel = combo_box->Get_Curr_Sel ();
-	if (quality_cursel == 0) {
-		bits = 8;
-	} else if (quality_cursel == 1) {
-		bits = 16;
+	if (combo_box != NULL) {
+		int quality_cursel = combo_box->Get_Curr_Sel ();
+		if (quality_cursel == 0) {
+			bits = 8;
+		} else if (quality_cursel == 1) {
+			bits = 16;
+		}
+	} else {
+		missing_control = true;
 	}
 
 	//
 	//	Get the playback rate from the controls
 	//
 	combo_box = (ComboBoxCtrlClass *)Get_Dlg_Item (IDC_RATE_COMBO);
-	int rate_cursel = combo_box->Get_Curr_Sel ();
-	if (rate_cursel == 0) {
-		hertz = 11025;
-	} else if (rate_cursel == 1) {
-		hertz = 22050;
-	} else if (rate_cursel == 2) {
-		hertz = 44100;
+	if (combo_box != NULL) {
+		int rate_cursel = combo_box->Get_Curr_Sel ();
+		if (rate_cursel == 0) {
+			hertz = 11025;
+		} else if (rate_cursel == 1) {
+			hertz = 22050;
+		} else if (rate_cursel == 2) {
+			hertz = 44100;
+		}
+	} else {
+		missing_control = true;
 	}
 
 	//
 	//	Get the playback rate from the controls
 	//
 	combo_box = (ComboBoxCtrlClass *)Get_Dlg_Item (IDC_SPEAKER_SETUP_COMBO);
-	speaker_type = combo_box->Get_Curr_Sel ();
+	if (combo_box != NULL) {
+		int speaker_cursel = combo_box->Get_Curr_Sel ();
+		if (speaker_cursel >= 0) {
+			speaker_type = speaker_cursel;
+		}
+	} else {
+		missing_control = true;
+	}
+
+	if (missing_control) {
+		Debug_Say (("DlgConfigAudioTabClass::On_Apply: one or more audio controls were unavailable; preserving current audio settings for those controls.\n"));
+	}
 
 	//
 	//	Store these settings in the registry
 	//
-	WWAudioClass::Get_Instance ()->Save_To_Registry (APPLICATION_SUB_KEY_NAME_SOUND,
+	audio->Save_To_Registry (APPLICATION_SUB_KEY_NAME_SOUND,
 												device_name, is_stereo, bits, hertz, sound_on,	
 												music_on, dialog_on, cinematic_on, sound_vol, music_vol,
 												dialog_vol, cinematic_vol, speaker_type);
@@ -572,23 +650,27 @@ DlgConfigAudioTabClass::On_Apply (void)
 	//
 	//	Don't change drivers unless necessary
 	//
-	if (InitialBits != bits || InitialHertz != hertz || InitialDeviceIndex != device_index || is_stereo != InitialIsStereo) {
-		WWAudioClass::Get_Instance ()->Open_2D_Device (is_stereo, bits, hertz);
-		WWAudioClass::Get_Instance ()->Select_3D_Device (device_name);
+	bool reopen_audio_device = (InitialBits != bits || InitialHertz != hertz || is_stereo != InitialIsStereo);
+	bool change_3d_device = (can_change_3d_device && InitialDeviceIndex != device_index);
+	if (reopen_audio_device || change_3d_device) {
+		audio->Open_2D_Device (is_stereo, bits, hertz);
+		if (device_name.Get_Length () > 0) {
+			audio->Select_3D_Device (device_name);
+		}
 	}
 
 	//
 	//	Apply the simple changes
 	//
-	WWAudioClass::Get_Instance ()->Set_Sound_Effects_Volume (sound_vol);
-	WWAudioClass::Get_Instance ()->Set_Music_Volume (music_vol);
-	WWAudioClass::Get_Instance ()->Set_Dialog_Volume (dialog_vol);
-	WWAudioClass::Get_Instance ()->Set_Cinematic_Volume (cinematic_vol);
-	WWAudioClass::Get_Instance ()->Allow_Sound_Effects (sound_on);
-	WWAudioClass::Get_Instance ()->Allow_Music (music_on);
-	WWAudioClass::Get_Instance ()->Allow_Dialog (dialog_on);
-	WWAudioClass::Get_Instance ()->Allow_Cinematic_Sound (cinematic_on);
-	WWAudioClass::Get_Instance ()->Set_Speaker_Type (speaker_type);
+	audio->Set_Sound_Effects_Volume (sound_vol);
+	audio->Set_Music_Volume (music_vol);
+	audio->Set_Dialog_Volume (dialog_vol);
+	audio->Set_Cinematic_Volume (cinematic_vol);
+	audio->Allow_Sound_Effects (sound_on);
+	audio->Allow_Music (music_on);
+	audio->Allow_Dialog (dialog_on);
+	audio->Allow_Cinematic_Sound (cinematic_on);
+	audio->Set_Speaker_Type (speaker_type);
 	return true;
 }
 
@@ -757,10 +839,26 @@ DlgConfigAudioTabClass::Set_Default_Volumes (void)
 	// IML: Get the default settings from the audio system.
 	WWAudioClass::Get_Instance()->Load_Default_Volume (defaultmusicvolume, defaultsoundvolume, defaultdialogvolume, defaultcinematicvolume);
 
-	snd_vol_slider->Set_Pos (defaultsoundvolume);
-	mus_vol_slider->Set_Pos (defaultmusicvolume);
-	dia_vol_slider->Set_Pos (defaultdialogvolume);
-	cin_vol_slider->Set_Pos (defaultcinematicvolume);
+	bool missing_slider = (snd_vol_slider == NULL || mus_vol_slider == NULL || dia_vol_slider == NULL || cin_vol_slider == NULL);
+	if (missing_slider) {
+		Debug_Say (("DlgConfigAudioTabClass::Set_Default_Volumes: one or more volume sliders were unavailable.\n"));
+	}
+
+	if (snd_vol_slider != NULL) {
+		snd_vol_slider->Set_Pos (defaultsoundvolume);
+	}
+
+	if (mus_vol_slider != NULL) {
+		mus_vol_slider->Set_Pos (defaultmusicvolume);
+	}
+
+	if (dia_vol_slider != NULL) {
+		dia_vol_slider->Set_Pos (defaultdialogvolume);
+	}
+
+	if (cin_vol_slider != NULL) {
+		cin_vol_slider->Set_Pos (defaultcinematicvolume);
+	}
 	
 	return ;
 }

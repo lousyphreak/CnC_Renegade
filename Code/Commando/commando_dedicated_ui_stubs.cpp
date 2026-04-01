@@ -24,10 +24,12 @@
 #include "wwstring.h"
 
 int DlgMsgBox::CurrentCount = 0;
+#if defined(FREEDEDICATEDSERVER)
 int DlgConfigVideoTabClass::GammaLevel = GAMMA_SLIDER_DEFAULT;
 int DlgConfigVideoTabClass::BrightnessLevel = BRIGHTNESS_SLIDER_DEFAULT;
 int DlgConfigVideoTabClass::ContrastLevel = CONTRAST_SLIDER_DEFAULT;
 ControlsMenuClass *ControlsMenuClass::_TheInstance = nullptr;
+#endif
 LoadSPGameMenuClass *LoadSPGameMenuClass::_TheInstance = nullptr;
 #if defined(FREEDEDICATEDSERVER)
 MainMenuDialogClass *MainMenuDialogClass::_TheInstance = nullptr;
@@ -39,6 +41,7 @@ bool RadioCommandDisplayClass::IsDisplayed = false;
 TextWindowClass *RadioCommandDisplayClass::TextWindow = nullptr;
 TextDisplayGameModeClass *TextDisplayGameModeClass::Instance = nullptr;
 
+#if defined(FREEDEDICATEDSERVER)
 const char *VALUE_NAME_DYN_LOD = "Dynamic_LOD_Budget";
 const char *VALUE_NAME_STATIC_LOD = "Static_LOD_Budget";
 const char *VALUE_NAME_DYN_SHADOWS = "Dynamic_Projectors";
@@ -46,6 +49,7 @@ const char *VALUE_NAME_SHADOW_MODE = "Shadow_Mode";
 const char *VALUE_NAME_STATIC_SHADOWS = "Static_Projectors";
 const char *VALUE_NAME_TEXTURE_RES = "Texture_Resolution";
 const char *VALUE_NAME_PARTICLE_DETAIL = "Particle_Detail";
+#endif
 
 int DlgMpChangeLanNickname::DialogCount = 0;
 int cClientPingManager::PingNumber = 0;
@@ -150,6 +154,7 @@ void DlgMpChangeLanNickname::On_EditCtrl_Enter_Pressed(EditCtrlClass *, int)
 {
 }
 
+#if defined(FREEDEDICATEDSERVER)
 void ControlsMenuClass::Reload(void)
 {
 }
@@ -157,6 +162,7 @@ void ControlsMenuClass::Reload(void)
 void ControlsMenuClass::Apply_Changes(void)
 {
 }
+#endif
 
 void cClientPingManager::Init(void)
 {

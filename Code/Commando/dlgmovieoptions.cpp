@@ -36,7 +36,7 @@
 
 #include "dlgmovieoptions.h"
 #include "listctrl.h"
-#include "binkmovie.h"
+#include "BINKMovie.h"
 #include "registry.h"
 #include "translatedb.h"
 #include "_globals.h"
@@ -389,4 +389,3 @@ MovieOptionsMenuClass::HandleNotification (CDVerifyEvent &event)
 	PendingMovieFilename = "";
 	return ;
 }
-

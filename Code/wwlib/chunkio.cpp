@@ -64,8 +64,107 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "chunkio.h"
+#include "widestring.h"
 #include <string.h>
 #include <assert.h>
+#include <vector>
+
+namespace
+{
+bool ChunkIO_Is_Surrogate_Pair(uint16 lead, uint16 trail)
+{
+	return	(lead >= 0xD800 && lead <= 0xDBFF) &&
+			(trail >= 0xDC00 && trail <= 0xDFFF);
+}
+}
+
+uint32 ChunkIO_Write_WideString(ChunkSaveClass & csave, const WideStringClass & value)
+{
+	const WCHAR *source = value;
+	const int source_length = value.Get_Length();
+
+	if (sizeof(WCHAR) == sizeof(uint16)) {
+		return csave.Write(source, (source_length + 1) * sizeof(uint16));
+	}
+
+	std::vector<uint16> serialized;
+	serialized.reserve(source_length + 1);
+
+	for (int index = 0; index < source_length; ++index) {
+		const uint32 codepoint = static_cast<uint32>(source[index]);
+
+		if (codepoint > 0x10FFFF) {
+			serialized.push_back(static_cast<uint16>('?'));
+		} else if (codepoint <= 0xFFFF) {
+			serialized.push_back(static_cast<uint16>(codepoint));
+		} else {
+			const uint32 surrogate = codepoint - 0x10000;
+			serialized.push_back(static_cast<uint16>(0xD800 + (surrogate >> 10)));
+			serialized.push_back(static_cast<uint16>(0xDC00 + (surrogate & 0x3FF)));
+		}
+	}
+
+	serialized.push_back(0);
+	return csave.Write(serialized.data(), serialized.size() * sizeof(uint16));
+}
+
+uint32 ChunkIO_Read_WideString(ChunkLoadClass & cload, uint32 byte_count, WideStringClass & value)
+{
+	value = L"";
+
+	if (byte_count == 0) {
+		return 0;
+	}
+
+	WWASSERT((byte_count & 1) == 0);
+
+	const uint32 serialized_length = ((byte_count + 1) / sizeof(uint16)) + 1;
+	std::vector<uint16> serialized(serialized_length, 0);
+	const uint32 bytes_read = cload.Read(serialized.data(), byte_count);
+	if (bytes_read != byte_count) {
+		return bytes_read;
+	}
+
+	const uint32 code_unit_count = byte_count / sizeof(uint16);
+
+	if (sizeof(WCHAR) == sizeof(uint16)) {
+		WCHAR *buffer = value.Get_Buffer(code_unit_count + 1);
+		for (uint32 index = 0; index < code_unit_count; ++index) {
+			buffer[index] = static_cast<WCHAR>(serialized[index]);
+		}
+		buffer[code_unit_count] = 0;
+		return bytes_read;
+	}
+
+	int decoded_length = 0;
+	for (uint32 index = 0; index < code_unit_count && serialized[index] != 0; ++index) {
+		if (index + 1 < code_unit_count && ChunkIO_Is_Surrogate_Pair(serialized[index], serialized[index + 1])) {
+			++index;
+		}
+
+		++decoded_length;
+	}
+
+	WCHAR *buffer = value.Get_Buffer(decoded_length + 1);
+	int output_index = 0;
+	for (uint32 index = 0; index < code_unit_count && serialized[index] != 0; ++index) {
+		const uint16 lead = serialized[index];
+		if (index + 1 < code_unit_count && ChunkIO_Is_Surrogate_Pair(lead, serialized[index + 1])) {
+			const uint16 trail = serialized[index + 1];
+			const uint32 codepoint =
+				0x10000 +
+				((static_cast<uint32>(lead - 0xD800) << 10) |
+				static_cast<uint32>(trail - 0xDC00));
+			buffer[output_index++] = static_cast<WCHAR>(codepoint);
+			++index;
+		} else {
+			buffer[output_index++] = static_cast<WCHAR>(lead);
+		}
+	}
+
+	buffer[output_index] = 0;
+	return bytes_read;
+}
 
 
 /*********************************************************************************************** 
@@ -838,4 +937,3 @@ uint32 ChunkLoadClass::Read(IOQuaternionStruct * q)
 	assert(q != NULL);
 	return Read(q,sizeof(q));
 }
-

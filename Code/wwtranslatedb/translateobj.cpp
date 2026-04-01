@@ -214,11 +214,8 @@ TDBObjClass::Load (ChunkLoadClass &cload)
 
 			case CHUNKID_TRANSLATED_STRING:
 			{
-				//
-				//	Load the translated string from its chunk
-				//
 				WideStringClass string;
-				cload.Read (string.Get_Buffer((cload.Cur_Chunk_Length () + 1) / 2), cload.Cur_Chunk_Length ());
+				ChunkIO_Read_WideString(cload, cload.Cur_Chunk_Length(), string);
 
 				//
 				//	Add the translated string to our list
@@ -282,11 +279,8 @@ TDBObjClass::Load_Variables (ChunkLoadClass &cload)
 
 			case VARID_STRING:
 			{
-				//
-				//	Load the translated string from its chunk
-				//
 				WideStringClass string;
-				cload.Read (string.Get_Buffer((cload.Cur_Micro_Chunk_Length () + 1) / 2), cload.Cur_Micro_Chunk_Length ());
+				ChunkIO_Read_WideString(cload, cload.Cur_Micro_Chunk_Length(), string);
 
 				//
 				//	Add the translated string to our list

@@ -7,7 +7,14 @@
 #include "dialogbase.h"
 #include "dialogresource.h"
 #include "dialogmgr.h"
+#include "dlgcharacteroptions.h"
+#include "dlgcheatoptions.h"
+#include "dlgcontrols.h"
+#include "dlgcredits.h"
 #include "dlgmainmenu.h"
+#include "dlgmovieoptions.h"
+#include "dlgpreviewoptions.h"
+#include "dlgtechoptions.h"
 #include "menu_dialog_subset.h"
 #include "popupdialog.h"
 #include "directinput.h"
@@ -126,6 +133,13 @@ void Initialize_Factories()
 	Install_Factory<ClientStartSPGameDialogClass>(IDC_MENU_START_SP_GAME_BUTTON);
 	Install_Factory<ClientOptionsMenuClass>(IDC_MENU_OPTIONS_BUTTON);
 	Install_Factory<ClientDifficultyMenuClass>(IDC_MENU_START_CAMPAIGN_BUTTON);
+	Install_Factory<ControlsMenuClass>(IDC_MENU_CONTROLS_BUTTON);
+	Install_Factory<CharacterOptionsMenuClass>(IDC_MENU_CHARACTER_BUTTON);
+	Install_Factory<CheatOptionsMenuClass>(IDC_MENU_CHEATS_BUTTON);
+	Install_Factory<TechOptionsMenuClass>(IDC_MENU_TECH_BUTTON);
+	Install_Factory<MovieOptionsMenuClass>(IDC_MENU_MOVIES_BUTTON);
+	Install_Factory<PreviewOptionsMenuClass>(IDC_MENU_PREVIEWS_BUTTON);
+	Install_Factory<CreditsMenuClass>(IDC_MENU_CREDITS_BUTTON);
 	Install_Factory<ClientQuitVerificationDialogClass>(IDC_MENU_QUIT_BUTTON);
 	Install_Factory<MainMenuDialogClass>(IDC_MENU_MAIN_MENU_BUTTON);
 }

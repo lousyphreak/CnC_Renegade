@@ -108,7 +108,7 @@ protected:
 **
 ** Notes:
 ** - The array forms of new and delete are not supported
-** - You must define the instance of the static object pool (Allocator)
+** - DEFINE_AUTO_POOL is retained for source compatibility but is no longer required
 ** - You can't derive a class from a class that is derived from AutoPoolClass 
 **   because its size won't match but it will try to use the same pool...
 **
@@ -145,18 +145,15 @@ private:
 	static void *	operator new [] (size_t size);
 	static void		operator delete[] (void * memory);
 
-	// This must be staticly declared by user
-	static ObjectPoolClass<T,BLOCK_SIZE>	Allocator;
+	static ObjectPoolClass<T,BLOCK_SIZE> & Get_Allocator(void);
 
 };
 
 /*
 ** DEFINE_AUTO_POOL(T,BLOCKSIZE)
-** Macro to declare the allocator for your class.  Put this in the cpp file for
-** the class.
+** Kept as a no-op so the original out-of-line declarations can remain in place.
 */
-#define DEFINE_AUTO_POOL(T,BLOCKSIZE) \
-template<> ObjectPoolClass<T,BLOCKSIZE> AutoPoolClass<T,BLOCKSIZE>::Allocator = ObjectPoolClass<T,BLOCKSIZE>();
+#define DEFINE_AUTO_POOL(T,BLOCKSIZE)
 
 
 /***********************************************************************************************
@@ -328,6 +325,20 @@ void ObjectPoolClass<T,BLOCK_SIZE>::Free_Object_Memory(T * obj)
 
 
 /***********************************************************************************************
+ * AutoPoolClass::Get_Allocator -- returns the object pool backing this AutoPool type          *
+ *                                                                                             *
+ * Pools are intentionally kept alive for the full process lifetime. Several pooled types are  *
+ * owned by global/static objects spread across translation units, and tearing the pool down   *
+ * during static shutdown can happen before those owners release their objects.                *
+ *=============================================================================================*/
+template<class T, int BLOCK_SIZE>
+ObjectPoolClass<T,BLOCK_SIZE> & AutoPoolClass<T,BLOCK_SIZE>::Get_Allocator(void)
+{
+	static ObjectPoolClass<T,BLOCK_SIZE> * allocator = new ObjectPoolClass<T,BLOCK_SIZE>();
+	return *allocator;
+}
+
+/***********************************************************************************************
  * AutoPoolClass::operator new -- overriden new which calls the internal ObjectPool            *
  *                                                                                             *
  * INPUT:                                                                                      *
@@ -343,7 +354,7 @@ template<class T, int BLOCK_SIZE>
 void * AutoPoolClass<T,BLOCK_SIZE>::operator new( size_t size ) 
 {
 	WWASSERT(size == sizeof(T));
-	return (void *)(Allocator.Allocate_Object_Memory());
+	return (void *)(Get_Allocator().Allocate_Object_Memory());
 }
 
 
@@ -363,7 +374,7 @@ template<class T, int BLOCK_SIZE>
 void AutoPoolClass<T,BLOCK_SIZE>::operator delete( void * memory ) 
 {
 	if ( memory == 0 ) return;
-	Allocator.Free_Object_Memory((T*)memory);
+	Get_Allocator().Free_Object_Memory((T*)memory);
 }
  
 

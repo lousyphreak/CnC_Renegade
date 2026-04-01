@@ -224,30 +224,33 @@ DialogTransitionClass *
 MainMenuDialogClass::Get_Transition_In (DialogBaseClass *prev_dlg)
 {
 	MainMenuTransitionClass *transition = NULL;
+	MenuBackDropClass *backdrop = Get_BackDrop ();
 
 	//
 	//	Add the transition model to the scene
 	//
-	if (TitleTransModel != NULL && TitleTransModel->Peek_Scene () == NULL) {
-		Get_BackDrop ()->Peek_Scene ()->Add_Render_Object (TitleTransModel);
+	if (backdrop != NULL && TitleTransModel != NULL && TitleTransModel->Peek_Scene () == NULL) {
+		backdrop->Peek_Scene ()->Add_Render_Object (TitleTransModel);
 	}
 
 	//
 	//	Add the logo to the screen
 	//
-	if (LogoModel != NULL && LogoModel->Peek_Scene () == NULL) {
-		Get_BackDrop ()->Peek_Scene ()->Add_Render_Object (LogoModel);
+	if (backdrop != NULL && LogoModel != NULL && LogoModel->Peek_Scene () == NULL) {
+		backdrop->Peek_Scene ()->Add_Render_Object (LogoModel);
 	}
 
 	//
 	//	We only want to transition between menu dialogs
 	//
-	if (prev_dlg == NULL ||
+	if (backdrop != NULL &&
+			(prev_dlg == NULL ||
 			(prev_dlg != ClientQuitVerificationDialogClass::Get_Instance ()))
+	)
 	{
 		transition = new MainMenuTransitionClass;
 		transition->Set_Model (TitleTransModel);
-		transition->Set_Camera (Get_BackDrop ()->Peek_Camera ());
+		transition->Set_Camera (backdrop->Peek_Camera ());
 		transition->Set_Type (DialogTransitionClass::SCREEN_IN);
 		transition->Set_Dialogs (this, prev_dlg);
 
@@ -272,16 +275,18 @@ DialogTransitionClass *
 MainMenuDialogClass::Get_Transition_Out (DialogBaseClass *next_dlg)
 {
 	MainMenuTransitionClass *transition = NULL;
+	MenuBackDropClass *backdrop = Get_BackDrop ();
 
 	//
 	//	We only want to transition between menu dialogs
 	//
-	if (	IsStartingPractice == false &&
+	if (	backdrop != NULL &&
+			IsStartingPractice == false &&
 			(next_dlg == NULL || next_dlg->As_MenuDialogClass () != NULL))
 	{
 		transition = new MainMenuTransitionClass;
 		transition->Set_Model (TitleTransModel);
-		transition->Set_Camera (Get_BackDrop ()->Peek_Camera ());
+		transition->Set_Camera (backdrop->Peek_Camera ());
 		transition->Set_Type (DialogTransitionClass::SCREEN_OUT);
 		transition->Set_Dialogs (this, next_dlg);
 

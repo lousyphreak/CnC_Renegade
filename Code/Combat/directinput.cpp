@@ -466,7 +466,8 @@ void DirectInput::Acquire(void)
 	}
 
 	if (SDL_Window *window = Get_Input_Window()) {
-		SDL_SetWindowRelativeMouseMode(window, true);
+		// TEMPORARY: disable mouse grab during development to make it easier to switch between the game and other windows
+		//SDL_SetWindowRelativeMouseMode(window, true);
 	}
 	Captured = true;
 	CapturedState = true;

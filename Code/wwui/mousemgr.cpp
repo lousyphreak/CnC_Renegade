@@ -39,6 +39,9 @@
 #include "screencursor.h"
 #include "assetmgr.h"
 #include "texture.h"
+#include "wwdebug.h"
+
+#include <SDL3/SDL_mouse.h>
 
 
 ////////////////////////////////////////////////////////////////
@@ -133,6 +136,9 @@ MouseMgrClass::Show_Cursor (bool onoff)
 		MouseCursor->Set_Texture (Textures[CursorType]);
 		MouseCursor->Set_Hotspot (HOTSPOTS[CursorType]);
 		CursorWaitCount = 0;
+		if (!SDL_HideCursor ()) {
+			WWDEBUG_SAY(("MouseMgrClass::Show_Cursor: SDL_HideCursor failed: %s\n", SDL_GetError()));
+		}
 		
 	} else if (MouseCursor != NULL && onoff == false) {
 		
@@ -141,6 +147,9 @@ MouseMgrClass::Show_Cursor (bool onoff)
 		//
 		delete MouseCursor;
 		MouseCursor = NULL;
+		if (!SDL_ShowCursor ()) {
+			WWDEBUG_SAY(("MouseMgrClass::Show_Cursor: SDL_ShowCursor failed: %s\n", SDL_GetError()));
+		}
 	}
 
 	return ;

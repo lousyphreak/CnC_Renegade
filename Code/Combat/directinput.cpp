@@ -322,8 +322,10 @@ bool SDLCALL DirectInput_Event_Watch(void *, SDL_Event *event)
 			}
 			PendingMouseAxis[DirectInput::MOUSE_X_AXIS] += static_cast<long>(std::lround(event->motion.xrel));
 			PendingMouseAxis[DirectInput::MOUSE_Y_AXIS] += static_cast<long>(std::lround(event->motion.yrel));
-			PendingCursorPos.X += event->motion.xrel * 2.0f;
-			PendingCursorPos.Y += event->motion.yrel * 2.0f;
+			// WWUI expects cursor positions in SDL window coordinates even while
+			// gameplay input remains driven by relative mouse axes.
+			PendingCursorPos.X = event->motion.x;
+			PendingCursorPos.Y = event->motion.y;
 			break;
 
 		case SDL_EVENT_MOUSE_BUTTON_DOWN:

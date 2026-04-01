@@ -106,6 +106,8 @@ struct BgfxDx8WrapperState {
 	uint16_t clear_flags = BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH;
 	int width = kFallbackRenderWidth;
 	int height = kFallbackRenderHeight;
+	int window_width = kFallbackRenderWidth;
+	int window_height = kFallbackRenderHeight;
 	int bit_depth = 32;
 	int swap_interval = 0;
 	bool initialized = false;
@@ -334,6 +336,12 @@ uint32_t Resolve_Diffuse_Color(uint32_t vertex_diffuse, bool has_diffuse)
 	return DX8Wrapper::Convert_Color(Vector4(resolved.X, resolved.Y, resolved.Z, g_bgfx.material->Get_Opacity()));
 }
 
+void Clamp_Window_Size(int &width, int &height)
+{
+	width = std::max(width, 1);
+	height = std::max(height, 1);
+}
+
 bool Query_Window_Size(SDL_Window *window, int &width, int &height)
 {
 	if (window == nullptr) {
@@ -342,16 +350,29 @@ bool Query_Window_Size(SDL_Window *window, int &width, int &height)
 		return false;
 	}
 
-	if (!SDL_GetWindowSizeInPixels(window, &width, &height)) {
-		if (!SDL_GetWindowSize(window, &width, &height)) {
-			width = kFallbackRenderWidth;
-			height = kFallbackRenderHeight;
-			return false;
-		}
+	if (!SDL_GetWindowSize(window, &width, &height)) {
+		width = kFallbackRenderWidth;
+		height = kFallbackRenderHeight;
+		return false;
 	}
 
-	width = std::max(width, 1);
-	height = std::max(height, 1);
+	Clamp_Window_Size(width, height);
+	return true;
+}
+
+bool Query_Window_Pixel_Size(SDL_Window *window, int &width, int &height)
+{
+	if (window == nullptr) {
+		width = kFallbackRenderWidth;
+		height = kFallbackRenderHeight;
+		return false;
+	}
+
+	if (!SDL_GetWindowSizeInPixels(window, &width, &height)) {
+		return Query_Window_Size(window, width, height);
+	}
+
+	Clamp_Window_Size(width, height);
 	return true;
 }
 void Ensure_Window_Ready_For_BGFX(SDL_Window *window)
@@ -431,19 +452,29 @@ bool Sync_Backbuffer(bool force_reset)
 		return false;
 	}
 
+	int window_width = g_bgfx.window_width;
+	int window_height = g_bgfx.window_height;
+	Query_Window_Size(g_bgfx.window, window_width, window_height);
+
 	int width = g_bgfx.width;
 	int height = g_bgfx.height;
-	Query_Window_Size(g_bgfx.window, width, height);
+	Query_Window_Pixel_Size(g_bgfx.window, width, height);
 
 	const uint32_t reset_flags = Compose_Reset_Flags();
-	const bool changed = force_reset || width != g_bgfx.width || height != g_bgfx.height || reset_flags != g_bgfx.reset_flags;
-	if (changed) {
+	const bool render_changed = force_reset || width != g_bgfx.width || height != g_bgfx.height || reset_flags != g_bgfx.reset_flags;
+	const bool window_changed = window_width != g_bgfx.window_width || window_height != g_bgfx.window_height;
+	if (render_changed) {
 		g_bgfx.width = width;
 		g_bgfx.height = height;
 		g_bgfx.reset_flags = reset_flags;
 		bgfx::reset(static_cast<uint32_t>(g_bgfx.width), static_cast<uint32_t>(g_bgfx.height), g_bgfx.reset_flags);
+	}
+
+	if (render_changed || window_changed) {
+		g_bgfx.window_width = window_width;
+		g_bgfx.window_height = window_height;
 		DX8Wrapper::Refresh_Render_Device_Desc();
-		Render2DClass::Set_Screen_Resolution(RectClass(0, 0, g_bgfx.width, g_bgfx.height));
+		Render2DClass::Set_Screen_Resolution(RectClass(0, 0, g_bgfx.window_width, g_bgfx.window_height));
 	}
 
 	Update_Windowed_State();
@@ -730,9 +761,13 @@ void Copy_Surface_Rectangles(
 
 bool Initialize_Bgfx(SDL_Window *window)
 {
+	int window_width = kFallbackRenderWidth;
+	int window_height = kFallbackRenderHeight;
+	Query_Window_Size(window, window_width, window_height);
+
 	int width = kFallbackRenderWidth;
 	int height = kFallbackRenderHeight;
-	Query_Window_Size(window, width, height);
+	Query_Window_Pixel_Size(window, width, height);
 
 	if (window != nullptr) {
 		Ensure_Window_Ready_For_BGFX(window);
@@ -762,13 +797,15 @@ bool Initialize_Bgfx(SDL_Window *window)
 	g_bgfx.window = window;
 	g_bgfx.width = width;
 	g_bgfx.height = height;
+	g_bgfx.window_width = window_width;
+	g_bgfx.window_height = window_height;
 	g_bgfx.reset_flags = init.resolution.reset;
 	g_bgfx.initialized = true;
 	Reset_Draw_State();
 	g_bgfx.viewport = RenderViewportClass(0u, 0u, static_cast<unsigned>(width), static_cast<unsigned>(height));
 	Update_Windowed_State();
 	DX8Wrapper::Refresh_Render_Device_Desc();
-	Render2DClass::Set_Screen_Resolution(RectClass(0, 0, width, height));
+	Render2DClass::Set_Screen_Resolution(RectClass(0, 0, window_width, window_height));
 
 	bgfx::setViewName(kBootstrapViewId, "Bootstrap");
 	Apply_View_Rect();
@@ -815,7 +852,7 @@ void DX8Wrapper::Refresh_Render_Device_Desc(void)
 	const char *video_driver = SDL_GetCurrentVideoDriver();
 	g_bgfx.render_device_desc.set_driver_name(video_driver != nullptr ? video_driver : "SDL3");
 	g_bgfx.render_device_desc.set_driver_version("bootstrap");
-	g_bgfx.render_device_desc.add_resolution(g_bgfx.width, g_bgfx.height, g_bgfx.bit_depth);
+	g_bgfx.render_device_desc.add_resolution(g_bgfx.window_width, g_bgfx.window_height, g_bgfx.bit_depth);
 }
 
 bool DX8Wrapper::Init(void *hwnd, bool lite)
@@ -957,14 +994,23 @@ bool DX8Wrapper::Set_Device_Resolution(int width, int height, int bits, int wind
 		return Sync_Backbuffer(true);
 	}
 
-	Query_Window_Size(g_bgfx.window, g_bgfx.width, g_bgfx.height);
+	Query_Window_Size(g_bgfx.window, g_bgfx.window_width, g_bgfx.window_height);
+	Query_Window_Pixel_Size(g_bgfx.window, g_bgfx.width, g_bgfx.height);
 	Update_Windowed_State();
 	Refresh_Render_Device_Desc();
-	Render2DClass::Set_Screen_Resolution(RectClass(0, 0, g_bgfx.width, g_bgfx.height));
+	Render2DClass::Set_Screen_Resolution(RectClass(0, 0, g_bgfx.window_width, g_bgfx.window_height));
 	return true;
 }
 
 void DX8Wrapper::Get_Device_Resolution(int &width, int &height, int &bits, bool &windowed)
+{
+	width = g_bgfx.window_width;
+	height = g_bgfx.window_height;
+	bits = g_bgfx.bit_depth;
+	windowed = g_bgfx.windowed;
+}
+
+void DX8Wrapper::Get_Render_Target_Resolution(int &width, int &height, int &bits, bool &windowed)
 {
 	width = g_bgfx.width;
 	height = g_bgfx.height;
@@ -972,19 +1018,14 @@ void DX8Wrapper::Get_Device_Resolution(int &width, int &height, int &bits, bool 
 	windowed = g_bgfx.windowed;
 }
 
-void DX8Wrapper::Get_Render_Target_Resolution(int &width, int &height, int &bits, bool &windowed)
-{
-	Get_Device_Resolution(width, height, bits, windowed);
-}
-
 int DX8Wrapper::Get_Device_Resolution_Width(void)
 {
-	return g_bgfx.width;
+	return g_bgfx.window_width;
 }
 
 int DX8Wrapper::Get_Device_Resolution_Height(void)
 {
-	return g_bgfx.height;
+	return g_bgfx.window_height;
 }
 
 bool DX8Wrapper::Is_Windowed(void)
@@ -1044,7 +1085,7 @@ bool DX8Wrapper::Is_Initted()
 
 bool DX8Wrapper::Registry_Save_Render_Device(const char *sub_key)
 {
-	return Registry_Save_Render_Device(sub_key, 0, g_bgfx.width, g_bgfx.height, g_bgfx.bit_depth, g_bgfx.windowed, g_bgfx.bit_depth);
+	return Registry_Save_Render_Device(sub_key, 0, g_bgfx.window_width, g_bgfx.window_height, g_bgfx.bit_depth, g_bgfx.windowed, g_bgfx.bit_depth);
 }
 
 bool DX8Wrapper::Registry_Save_Render_Device(const char *sub_key, int, int width, int height, int depth, bool windowed, int texture_depth)
@@ -1059,8 +1100,8 @@ bool DX8Wrapper::Registry_Save_Render_Device(const char *sub_key, int, int width
 	}
 
 	registry.Set_String("RenderDeviceName", g_bgfx.render_device_desc.Get_Device_Name());
-	registry.Set_Int("RenderDeviceWidth", width > 0 ? width : g_bgfx.width);
-	registry.Set_Int("RenderDeviceHeight", height > 0 ? height : g_bgfx.height);
+	registry.Set_Int("RenderDeviceWidth", width > 0 ? width : g_bgfx.window_width);
+	registry.Set_Int("RenderDeviceHeight", height > 0 ? height : g_bgfx.window_height);
 	registry.Set_Int("RenderDeviceDepth", depth > 0 ? depth : g_bgfx.bit_depth);
 	registry.Set_Int("RenderDeviceWindowed", windowed ? 1 : 0);
 	registry.Set_Int("RenderDeviceTextureDepth", texture_depth > 0 ? texture_depth : g_bgfx.bit_depth);
@@ -1070,8 +1111,8 @@ bool DX8Wrapper::Registry_Save_Render_Device(const char *sub_key, int, int width
 bool DX8Wrapper::Registry_Load_Render_Device(const char *sub_key, bool resize_window)
 {
 	char device[256] = {};
-	int width = g_bgfx.width;
-	int height = g_bgfx.height;
+	int width = g_bgfx.window_width;
+	int height = g_bgfx.window_height;
 	int depth = g_bgfx.bit_depth;
 	int windowed = g_bgfx.windowed ? 1 : 0;
 	int texture_depth = g_bgfx.bit_depth;
@@ -1097,8 +1138,8 @@ bool DX8Wrapper::Registry_Load_Render_Device(const char *sub_key, char *device, 
 
 	char device_name[256] = {};
 	registry.Get_String("RenderDeviceName", device_name, sizeof(device_name), g_bgfx.render_device_desc.Get_Device_Name());
-	width = registry.Get_Int("RenderDeviceWidth", g_bgfx.width);
-	height = registry.Get_Int("RenderDeviceHeight", g_bgfx.height);
+	width = registry.Get_Int("RenderDeviceWidth", g_bgfx.window_width);
+	height = registry.Get_Int("RenderDeviceHeight", g_bgfx.window_height);
 	depth = registry.Get_Int("RenderDeviceDepth", g_bgfx.bit_depth);
 	windowed = registry.Get_Int("RenderDeviceWindowed", g_bgfx.windowed ? 1 : 0);
 	texture_depth = registry.Get_Int("RenderDeviceTextureDepth", g_bgfx.bit_depth);

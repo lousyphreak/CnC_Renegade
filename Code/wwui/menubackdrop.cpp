@@ -43,6 +43,13 @@
 #include "light.h"
 #include "hanim.h"
 
+namespace {
+
+constexpr float kReferenceMenuAspect = 4.0F / 3.0F;
+constexpr float kReferenceMenuHFov = DEG_TO_RAD(45.0F);
+
+}
+
 
 ////////////////////////////////////////////////////////////////
 //
@@ -96,10 +103,7 @@ MenuBackDropClass::MenuBackDropClass (void)	:
 	//
 	//	Configure the view plane
 	//
-	const RectClass &screen_size = Render2DClass::Get_Screen_Resolution ();
-	float hfov = DEG_TO_RAD(45.0F);
-	float vfov = (screen_size.Height () / screen_size.Width ()) * hfov;
-	Camera->Set_View_Plane (hfov, vfov);
+	Update_Camera_View_Plane ();
 
 	//
 	//	Set the clip planes
@@ -131,11 +135,40 @@ MenuBackDropClass::~MenuBackDropClass (void)
 void
 MenuBackDropClass::Render (void)
 {
+	Update_Camera_View_Plane ();
+
 	//
 	//	Simple render the scene
 	//
 	WW3D::Render (Scene, Camera, ClearScreen, ClearScreen);
 	return ;
+}
+
+
+void
+MenuBackDropClass::Update_Camera_View_Plane (void)
+{
+	if (Camera == NULL) {
+		return ;
+	}
+
+	const RectClass &screen_size = Render2DClass::Get_Screen_Resolution ();
+	const float width = (screen_size.Width () > 0) ? (float)screen_size.Width () : 1.0F;
+	const float height = (screen_size.Height () > 0) ? (float)screen_size.Height () : 1.0F;
+	const float aspect = width / height;
+	const float reference_vfov = kReferenceMenuHFov / kReferenceMenuAspect;
+
+	float hfov = kReferenceMenuHFov;
+	float vfov = reference_vfov;
+
+	// Preserve the original 4:3 menu framing and reveal extra width on wider screens.
+	if (aspect >= kReferenceMenuAspect) {
+		hfov = reference_vfov * aspect;
+	} else {
+		vfov = kReferenceMenuHFov / aspect;
+	}
+
+	Camera->Set_View_Plane (hfov, vfov);
 }
 
 

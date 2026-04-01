@@ -555,7 +555,7 @@ void Render2DClass::Render(void)
 	//
 	int width, height, bits;
 	bool windowed;
-	WW3D::Get_Device_Resolution( width, height, bits, windowed );
+	WW3D::Get_Render_Target_Resolution( width, height, bits, windowed );
 	RenderViewportClass viewport(0, 0, static_cast<unsigned>(width), static_cast<unsigned>(height), 0.0f, 1.0f);
 	DX8Wrapper::Set_Viewport(viewport);
 

@@ -60,8 +60,6 @@ const int CHAR_BUFFER_LEN		= 32768;
 #if !defined(_WIN32)
 namespace {
 
-int g_draw_sentence_log_count = 0;
-
 struct BgfxFontFaceState {
 	FT_Face Face = nullptr;
 	int Ascender = 0;
@@ -710,11 +708,6 @@ Render2DSentenceClass::Draw_Sentence (uint32 color)
 {
 	Render2DClass *curr_renderer	= NULL;
 	SurfaceClass *curr_surface		= NULL;
-
-	if (g_draw_sentence_log_count < 8) {
-		WWRELEASE_SAY(("Render2DSentence: drawing %d chunks with color 0x%08x\n", SentenceData.Count(), color));
-		++g_draw_sentence_log_count;
-	}
 
 	DrawExtents.Set (0, 0, 0, 0);
 
@@ -1603,13 +1596,11 @@ FontCharsClass::Create_GDI_Font (const char *font_name)
 		font_state.Height = std::max(static_cast<int>(font_state.Face->size->metrics.height >> 6), std::max(PointSize, 1));
 		font_state.Path = font_path.string();
 		CharHeight = font_state.Height;
-		WWRELEASE_SAY(("Render2DSentence: using font %s for %s\n", font_state.Path.c_str(), font_name != nullptr ? font_name : "<null>"));
 	} else {
 		font_state.Face = nullptr;
 		font_state.Ascender = std::max(PointSize, 1);
 		font_state.Height = std::max(PointSize, 1);
 		CharHeight = font_state.Height;
-		WWRELEASE_SAY(("Render2DSentence: no native font match for %s, using fallback glyphs\n", font_name != nullptr ? font_name : "<null>"));
 	}
 
 	GDIFont = NULL;
@@ -1827,4 +1818,3 @@ FontCharsClass::Free_Character_Arrays (void)
 
 	return ;
 }
-

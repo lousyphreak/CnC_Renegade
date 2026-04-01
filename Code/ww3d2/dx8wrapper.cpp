@@ -52,6 +52,7 @@
 #include "wwdebug.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 
@@ -99,7 +100,7 @@ struct BgfxDx8WrapperState {
 	RenderDeviceDescClass render_device_desc;
 	RenderViewportClass viewport = RenderViewportClass(0u, 0u, static_cast<unsigned>(kFallbackRenderWidth), static_cast<unsigned>(kFallbackRenderHeight));
 	uint32_t reset_flags = BGFX_RESET_NONE;
-	uint32_t clear_color = 0x101820FFu;
+	uint32_t clear_color = 0x000000FFu;
 	float clear_depth = 1.0f;
 	uint8_t clear_stencil = 0;
 	uint16_t clear_flags = BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH;
@@ -116,6 +117,7 @@ struct BgfxDx8WrapperState {
 	Matrix4 world;
 	Matrix4 view;
 	Matrix4 projection;
+	Matrix4 texture_transforms[MAX_TEXTURE_STAGES];
 	const unsigned char *vertex_data = nullptr;
 	const FVFInfoClass *vertex_fvf = nullptr;
 	unsigned short vertex_count = 0;
@@ -140,6 +142,9 @@ struct BgfxDx8WrapperState {
 		world.Make_Identity();
 		view.Make_Identity();
 		projection.Make_Identity();
+		for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
+			texture_transforms[stage].Make_Identity();
+		}
 	}
 };
 
@@ -153,6 +158,12 @@ uint32_t Compose_Reset_Flags()
 uint32_t DX8_To_BGFX_Color(uint32_t color)
 {
 	return (color & 0xFF00FF00u) | ((color & 0x00FF0000u) >> 16) | ((color & 0x000000FFu) << 16);
+}
+
+// bgfx::setViewClear() expects RGBA, but DX8Wrapper::Convert_Color() produces ARGB.
+uint32_t ARGB_To_RGBA(uint32_t argb)
+{
+	return (argb << 8) | ((argb >> 24) & 0xFFu);
 }
 
 void Reset_Draw_State()
@@ -174,6 +185,7 @@ void Reset_Draw_State()
 	g_bgfx.current_vba_offset = 0;
 	g_bgfx.current_iba_offset = 0;
 	for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
+		g_bgfx.texture_transforms[stage].Make_Identity();
 		for (unsigned state = 0; state < 32; ++state) {
 			g_bgfx.texture_stage_states[stage][state] = 0;
 		}
@@ -181,6 +193,145 @@ void Reset_Draw_State()
 	for (unsigned state = 0; state < 256; ++state) {
 		g_bgfx.render_states[state] = 0;
 	}
+}
+
+void Apply_Material_Texture_State(const VertexMaterialClass *material)
+{
+	if (material == nullptr) {
+		DX8Wrapper::Set_DX8_Render_State(D3DRS_LIGHTING, false);
+		DX8Wrapper::Set_DX8_Render_State(D3DRS_AMBIENTMATERIALSOURCE, D3DMCS_MATERIAL);
+		DX8Wrapper::Set_DX8_Render_State(D3DRS_DIFFUSEMATERIALSOURCE, D3DMCS_MATERIAL);
+		DX8Wrapper::Set_DX8_Render_State(D3DRS_EMISSIVEMATERIALSOURCE, D3DMCS_MATERIAL);
+
+		for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
+			DX8Wrapper::Set_DX8_Texture_Stage_State(stage, D3DTSS_TEXCOORDINDEX, D3DTSS_TCI_PASSTHRU | stage);
+			DX8Wrapper::Set_DX8_Texture_Stage_State(stage, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE);
+		}
+		return;
+	}
+
+	// Legacy accessors are not const-correct even though material apply is logically read-only.
+	VertexMaterialClass *mutable_material = const_cast<VertexMaterialClass *>(material);
+	DX8Wrapper::Set_DX8_Render_State(D3DRS_LIGHTING, mutable_material->Get_Lighting());
+	DX8Wrapper::Set_DX8_Render_State(D3DRS_AMBIENTMATERIALSOURCE, mutable_material->Get_Ambient_Color_Source());
+	DX8Wrapper::Set_DX8_Render_State(D3DRS_DIFFUSEMATERIALSOURCE, mutable_material->Get_Diffuse_Color_Source());
+	DX8Wrapper::Set_DX8_Render_State(D3DRS_EMISSIVEMATERIALSOURCE, mutable_material->Get_Emissive_Color_Source());
+
+	for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
+		TextureMapperClass *mapper = mutable_material->Get_Mapper(stage);
+		if (mapper != nullptr) {
+			mapper->Apply(mutable_material->Get_UV_Source(stage));
+			mapper->Release_Ref();
+		} else {
+			DX8Wrapper::Set_DX8_Texture_Stage_State(stage, D3DTSS_TEXCOORDINDEX, D3DTSS_TCI_PASSTHRU | mutable_material->Get_UV_Source(stage));
+			DX8Wrapper::Set_DX8_Texture_Stage_State(stage, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE);
+		}
+	}
+}
+
+Vector3 Transform_Normal_To_Camera_Space(const Matrix4 &world_view, const Vector3 &normal)
+{
+	return Vector3(
+		world_view[0][0] * normal.X + world_view[0][1] * normal.Y + world_view[0][2] * normal.Z,
+		world_view[1][0] * normal.X + world_view[1][1] * normal.Y + world_view[1][2] * normal.Z,
+		world_view[2][0] * normal.X + world_view[2][1] * normal.Y + world_view[2][2] * normal.Z);
+}
+
+Vector3 Normalize_Vector(const Vector3 &value)
+{
+	const float length_squared = value.X * value.X + value.Y * value.Y + value.Z * value.Z;
+	if (length_squared <= 1.0e-12f) {
+		return Vector3(0.0f, 0.0f, 1.0f);
+	}
+
+	const float inverse_length = 1.0f / std::sqrt(length_squared);
+	return Vector3(value.X * inverse_length, value.Y * inverse_length, value.Z * inverse_length);
+}
+
+Vector4 Generate_Stage0_Texture_Input(
+	const Matrix4 &world_view,
+	unsigned texcoord_generation,
+	unsigned texcoord_set,
+	unsigned texcoord_count,
+	unsigned tex_offset,
+	bool has_normal,
+	unsigned normal_offset,
+	const unsigned char *src,
+	const float *position,
+	bool *generated)
+{
+	*generated = false;
+
+	if (texcoord_generation == D3DTSS_TCI_PASSTHRU) {
+		if (texcoord_set < texcoord_count) {
+			const float *uv = reinterpret_cast<const float *>(src + tex_offset);
+			*generated = true;
+			return Vector4(uv[0], uv[1], 0.0f, 1.0f);
+		}
+		return Vector4(0.0f, 0.0f, 0.0f, 1.0f);
+	}
+
+	const Vector3 object_position(position[0], position[1], position[2]);
+	Vector4 camera_position;
+	Matrix4::Transform_Vector(world_view, object_position, &camera_position);
+
+	if (texcoord_generation == D3DTSS_TCI_CAMERASPACEPOSITION) {
+		*generated = true;
+		return camera_position;
+	}
+
+	if (!has_normal) {
+		return Vector4(0.0f, 0.0f, 0.0f, 1.0f);
+	}
+
+	const float *normal_data = reinterpret_cast<const float *>(src + normal_offset);
+	const Vector3 object_normal(normal_data[0], normal_data[1], normal_data[2]);
+	const Vector3 camera_normal = Normalize_Vector(Transform_Normal_To_Camera_Space(world_view, object_normal));
+
+	if (texcoord_generation == D3DTSS_TCI_CAMERASPACENORMAL) {
+		*generated = true;
+		return Vector4(camera_normal.X, camera_normal.Y, camera_normal.Z, 1.0f);
+	}
+
+	if (texcoord_generation == D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR) {
+		const Vector3 to_eye = Normalize_Vector(Vector3(-camera_position.X, -camera_position.Y, -camera_position.Z));
+		const float dot = camera_normal.X * to_eye.X + camera_normal.Y * to_eye.Y + camera_normal.Z * to_eye.Z;
+		const Vector3 reflection(
+			2.0f * dot * camera_normal.X - to_eye.X,
+			2.0f * dot * camera_normal.Y - to_eye.Y,
+			2.0f * dot * camera_normal.Z - to_eye.Z);
+		*generated = true;
+		return Vector4(reflection.X, reflection.Y, reflection.Z, 1.0f);
+	}
+
+	return Vector4(0.0f, 0.0f, 0.0f, 1.0f);
+}
+
+uint32_t Resolve_Diffuse_Color(uint32_t vertex_diffuse, bool has_diffuse)
+{
+	if (g_bgfx.material == nullptr) {
+		return has_diffuse ? vertex_diffuse : 0xFFFFFFFFU;
+	}
+
+	// Mesh/material preprocessing already bakes material color and opacity into COLOR1 vertex diffuse when requested.
+	const unsigned diffuse_source = g_bgfx.render_states[D3DRS_DIFFUSEMATERIALSOURCE];
+	if (diffuse_source == D3DMCS_COLOR1 && has_diffuse) {
+		return vertex_diffuse;
+	}
+
+	Vector3 diffuse_color(1.0f, 1.0f, 1.0f);
+	Vector3 emissive_color(0.0f, 0.0f, 0.0f);
+	g_bgfx.material->Get_Diffuse(&diffuse_color);
+	g_bgfx.material->Get_Emissive(&emissive_color);
+
+	Vector3 resolved = diffuse_color;
+	if (g_bgfx.render_states[D3DRS_LIGHTING] != 0) {
+		resolved.X = std::min(resolved.X + emissive_color.X, 1.0f);
+		resolved.Y = std::min(resolved.Y + emissive_color.Y, 1.0f);
+		resolved.Z = std::min(resolved.Z + emissive_color.Z, 1.0f);
+	}
+
+	return DX8Wrapper::Convert_Color(Vector4(resolved.X, resolved.Y, resolved.Z, g_bgfx.material->Get_Opacity()));
 }
 
 bool Query_Window_Size(SDL_Window *window, int &width, int &height)
@@ -351,6 +502,24 @@ bool Ensure_Gui_Resources()
 	return bgfx::isValid(g_bgfx.gui_program) && bgfx::isValid(g_bgfx.texture_uniform);
 }
 
+Matrix4 Adjust_Projection_For_BGFX(const Matrix4 &projection)
+{
+	const bgfx::Caps *caps = bgfx::getCaps();
+
+	// CameraClass::Get_D3D_Projection_Matrix already maps clip-space depth to [0, 1].
+	// Backends that use [0, 1] (Vulkan, D3D11/12, Metal) need no adjustment.
+	if (caps == nullptr || !caps->homogeneousDepth) {
+		return projection;
+	}
+
+	// OpenGL uses homogeneous depth [-1, 1]. Convert the D3D-style [0, 1] projection
+	// back to [-1, 1]: z_ndc' = 2 * z_ndc - 1.
+	Matrix4 depth_remap(true);
+	depth_remap[2][2] = 2.0f;
+	depth_remap[2][3] = -1.0f;
+	return depth_remap * projection;
+}
+
 uint64_t Build_BGFX_State()
 {
 	uint64_t state = 0;
@@ -371,6 +540,14 @@ uint64_t Build_BGFX_State()
 		case ShaderClass::PASS_NEVER: state |= BGFX_STATE_DEPTH_TEST_NEVER; break;
 		case ShaderClass::PASS_ALWAYS:
 		default: state |= BGFX_STATE_DEPTH_TEST_ALWAYS; break;
+	}
+
+	if (g_bgfx.shader.Get_Alpha_Test() == ShaderClass::ALPHATEST_ENABLE) {
+		uint8_t alpha_ref = 0x60;
+		if (g_bgfx.shader.Get_Src_Blend_Func() == ShaderClass::SRCBLEND_ONE_MINUS_SRC_ALPHA) {
+			alpha_ref = static_cast<uint8_t>(0xFF - alpha_ref);
+		}
+		state |= BGFX_STATE_ALPHA_REF(alpha_ref);
 	}
 
 	const ShaderClass::SrcBlendFuncType src = g_bgfx.shader.Get_Src_Blend_Func();
@@ -395,6 +572,10 @@ uint64_t Build_BGFX_State()
 			default: dst_factor = BGFX_STATE_BLEND_ZERO; break;
 		}
 		state |= BGFX_STATE_BLEND_FUNC(src_factor, dst_factor);
+	}
+
+	if (g_bgfx.shader.Get_Cull_Mode() == ShaderClass::CULL_MODE_ENABLE) {
+		state |= ShaderClass::Is_Backface_Culling_Inverted() ? BGFX_STATE_CULL_CCW : BGFX_STATE_CULL_CW;
 	}
 
 	state |= BGFX_STATE_MSAA;
@@ -426,21 +607,63 @@ bool Submit_Triangles(unsigned short start_index, unsigned short polygon_count, 
 	bgfx::allocTransientIndexBuffer(&tib, index_total);
 
 	const unsigned vertex_stride = g_bgfx.vertex_fvf->Get_FVF_Size();
+	const unsigned vertex_format = g_bgfx.vertex_fvf->Get_FVF();
+	const unsigned texcoord_count = (vertex_format & D3DFVF_TEXCOUNT_MASK) >> 8;
 	const unsigned location_offset = g_bgfx.vertex_fvf->Get_Location_Offset();
+	const unsigned normal_offset = g_bgfx.vertex_fvf->Get_Normal_Offset();
 	const unsigned diffuse_offset = g_bgfx.vertex_fvf->Get_Diffuse_Offset();
-	const unsigned tex_offset = g_bgfx.vertex_fvf->Get_Tex_Offset(0);
+	const bool has_diffuse = (vertex_format & D3DFVF_DIFFUSE) == D3DFVF_DIFFUSE;
+	const bool has_normal = (vertex_format & D3DFVF_NORMAL) == D3DFVF_NORMAL;
+	const unsigned texcoord_index = g_bgfx.texture_stage_states[0][D3DTSS_TEXCOORDINDEX];
+	const unsigned texcoord_generation = texcoord_index & 0xFFFF0000u;
+	const unsigned selected_texcoord = texcoord_index & 0x0000FFFFu;
+	const unsigned texcoord_transform = g_bgfx.texture_stage_states[0][D3DTSS_TEXTURETRANSFORMFLAGS];
+	const bool has_selected_texcoord = texcoord_count > selected_texcoord;
+	const unsigned tex_offset = has_selected_texcoord ? g_bgfx.vertex_fvf->Get_Tex_Offset(selected_texcoord) : 0;
+	const bool apply_texture_transform = texcoord_transform != D3DTTFF_DISABLE;
+	const bool projected_texture = (texcoord_transform & D3DTTFF_PROJECTED) == D3DTTFF_PROJECTED;
+	const Matrix4 &texture_transform = g_bgfx.texture_transforms[0];
+	const Matrix4 world_view = g_bgfx.view * g_bgfx.world;
 	BgfxGuiVertex *dst_vertices = reinterpret_cast<BgfxGuiVertex *>(tvb.data);
 	for (unsigned short i = 0; i < vertex_count; ++i) {
 		const unsigned char *src = g_bgfx.vertex_data + static_cast<size_t>(min_vertex_index + i) * vertex_stride;
 		const float *position = reinterpret_cast<const float *>(src + location_offset);
-		const uint32_t diffuse = *reinterpret_cast<const uint32_t *>(src + diffuse_offset);
-		const float *uv = reinterpret_cast<const float *>(src + tex_offset);
+		const uint32_t diffuse = has_diffuse ? *reinterpret_cast<const uint32_t *>(src + diffuse_offset) : 0xFFFFFFFFU;
+		const uint32_t resolved_diffuse = Resolve_Diffuse_Color(diffuse, has_diffuse);
 		dst_vertices[i].x = position[0];
 		dst_vertices[i].y = position[1];
 		dst_vertices[i].z = position[2];
-		dst_vertices[i].abgr = DX8_To_BGFX_Color(diffuse);
-		dst_vertices[i].u = uv[0];
-		dst_vertices[i].v = uv[1];
+		dst_vertices[i].abgr = DX8_To_BGFX_Color(resolved_diffuse);
+
+		bool generated_texcoord = false;
+		const Vector4 stage0_input = Generate_Stage0_Texture_Input(
+			world_view,
+			texcoord_generation,
+			selected_texcoord,
+			texcoord_count,
+			tex_offset,
+			has_normal,
+			normal_offset,
+			src,
+			position,
+			&generated_texcoord);
+		if (generated_texcoord) {
+			Vector4 transformed = stage0_input;
+			if (apply_texture_transform) {
+				Matrix4::Transform_Vector(texture_transform, stage0_input, &transformed);
+			}
+
+			if (projected_texture && std::fabs(transformed.W) > 1.0e-12f) {
+				dst_vertices[i].u = transformed.X / transformed.W;
+				dst_vertices[i].v = transformed.Y / transformed.W;
+			} else {
+				dst_vertices[i].u = transformed.X;
+				dst_vertices[i].v = transformed.Y;
+			}
+		} else {
+			dst_vertices[i].u = 0.0f;
+			dst_vertices[i].v = 0.0f;
+		}
 	}
 
 	uint16_t *dst_indices = reinterpret_cast<uint16_t *>(tib.data);
@@ -449,10 +672,25 @@ bool Submit_Triangles(unsigned short start_index, unsigned short polygon_count, 
 		dst_indices[i] = static_cast<uint16_t>(source_index - min_vertex_index);
 	}
 
+	// bgfx::setViewTransform is view-level (shared by ALL draw calls in a view), not
+	// per-draw-call.  Since the engine changes view/projection per draw call (e.g. 3D
+	// backdrop vs 2D UI) but all draw calls share kBootstrapViewId, the last
+	// setViewTransform wins and earlier ones are lost.
+	//
+	// Fix: compute the full MVP on the CPU and pass it via bgfx::setTransform (which IS
+	// per-draw-call).  Begin_Scene already sets the view-level view/proj to identity,
+	// so u_modelViewProj = model * I * I = model = our pre-computed MVP.
+	//
+	// The engine's Matrix4 uses row-major storage with column-vector convention (M * v).
+	// bgfx expects the model matrix in row-major with row-vector convention (v * M).
+	// Transposing converts between the two conventions.
+	const Matrix4 adjusted_projection = Adjust_Projection_For_BGFX(g_bgfx.projection);
+	const Matrix4 mvp_engine = adjusted_projection * g_bgfx.view * g_bgfx.world;
+	const Matrix4 mvp_bgfx = mvp_engine.Transpose();
+
 	const bgfx::TextureHandle texture_handle = BgfxCompat_Get_Texture_Handle(g_bgfx.textures[0]);
 	const uint64_t sampler_flags = BgfxCompat_Get_Sampler_Flags(g_bgfx.textures[0]);
-	bgfx::setViewTransform(kBootstrapViewId, kIdentityMatrix, kIdentityMatrix);
-	bgfx::setTransform(kIdentityMatrix);
+	bgfx::setTransform(&mvp_bgfx[0][0]);
 	bgfx::setTexture(0, g_bgfx.texture_uniform, bgfx::isValid(texture_handle) ? texture_handle : BgfxCompat_Get_White_Texture(), sampler_flags);
 	bgfx::setVertexBuffer(0, &tvb);
 	bgfx::setIndexBuffer(&tib);
@@ -631,7 +869,7 @@ void DX8Wrapper::Clear(bool clear_color, bool clear_z_stencil, const Vector3 &co
 	if (clear_z_stencil) {
 		g_bgfx.clear_flags |= BGFX_CLEAR_DEPTH;
 	}
-	g_bgfx.clear_color = Convert_Color(color, 1.0f);
+	g_bgfx.clear_color = ARGB_To_RGBA(Convert_Color(color, 1.0f));
 	g_bgfx.clear_depth = z;
 	g_bgfx.clear_stencil = static_cast<uint8_t>(stencil & 0xFFu);
 
@@ -878,6 +1116,15 @@ void DX8Wrapper::Set_Transform(TransformSlot transform, const Matrix4 &m)
 		case TRANSFORM_WORLD: g_bgfx.world = m; break;
 		case TRANSFORM_VIEW: g_bgfx.view = m; break;
 		case TRANSFORM_PROJECTION: g_bgfx.projection = m; break;
+		case TRANSFORM_TEXTURE0:
+		case static_cast<TransformSlot>(TRANSFORM_TEXTURE0 + 1):
+		{
+			const unsigned stage = static_cast<unsigned>(transform - TRANSFORM_TEXTURE0);
+			if (stage < MAX_TEXTURE_STAGES) {
+				g_bgfx.texture_transforms[stage] = m;
+			}
+			break;
+		}
 		default: break;
 	}
 }
@@ -893,6 +1140,17 @@ void DX8Wrapper::Get_Transform(TransformSlot transform, Matrix4 &m)
 		case TRANSFORM_WORLD: m = g_bgfx.world; break;
 		case TRANSFORM_VIEW: m = g_bgfx.view; break;
 		case TRANSFORM_PROJECTION: m = g_bgfx.projection; break;
+		case TRANSFORM_TEXTURE0:
+		case static_cast<TransformSlot>(TRANSFORM_TEXTURE0 + 1):
+		{
+			const unsigned stage = static_cast<unsigned>(transform - TRANSFORM_TEXTURE0);
+			if (stage < MAX_TEXTURE_STAGES) {
+				m = g_bgfx.texture_transforms[stage];
+			} else {
+				m.Make_Identity();
+			}
+			break;
+		}
 		default: m.Make_Identity(); break;
 	}
 }
@@ -967,6 +1225,7 @@ void DX8Wrapper::Set_Texture(unsigned stage, TextureClass *texture)
 void DX8Wrapper::Set_Material(const VertexMaterialClass *material)
 {
 	g_bgfx.material = material;
+	Apply_Material_Texture_State(material);
 }
 
 void DX8Wrapper::Set_Shader(const ShaderClass &shader)
@@ -1009,6 +1268,7 @@ void DX8Wrapper::Get_Render_State(RenderStateStruct &state)
 	}
 	state.world = g_bgfx.world;
 	state.view = g_bgfx.view;
+	state.projection = g_bgfx.projection;
 	state.vertex_buffer = const_cast<VertexBufferClass*>(g_bgfx.current_vb);
 	if (state.vertex_buffer) state.vertex_buffer->Add_Ref();
 	state.index_buffer = const_cast<IndexBufferClass*>(g_bgfx.current_ib);
@@ -1029,6 +1289,7 @@ void DX8Wrapper::Set_Render_State(const RenderStateStruct &state)
 	}
 	Set_Transform(TRANSFORM_WORLD, state.world);
 	Set_Transform(TRANSFORM_VIEW, state.view);
+	Set_Transform(TRANSFORM_PROJECTION, state.projection);
 	if (state.vertex_buffer) {
 		Set_Vertex_Buffer(state.vertex_buffer);
 	}
@@ -1049,4 +1310,3 @@ void DX8Wrapper::_Copy_DX8_Rects(IDirect3DSurface8 *pSourceSurface, const RECT *
 {
 	Copy_Surface_Rectangles(pSourceSurface, pSourceRectsArray, cRects, pDestinationSurface, pDestPointsArray);
 }
-

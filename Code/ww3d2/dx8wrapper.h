@@ -95,6 +95,7 @@ struct RenderStateStruct {
 	TextureClass* Textures[MAX_TEXTURE_STAGES] = {};
 	Matrix4 world;
 	Matrix4 view;
+	Matrix4 projection;
 	VertexBufferClass* vertex_buffer = nullptr;
 	IndexBufferClass* index_buffer = nullptr;
 	unsigned vertex_buffer_type = 0;
@@ -148,10 +149,10 @@ public:
 
 #define D3DTSS_TEXCOORDINDEX 0
 #define D3DTSS_TEXTURETRANSFORMFLAGS 1
-#define D3DTSS_TCI_PASSTHRU 0
-#define D3DTSS_TCI_CAMERASPACEPOSITION 1
-#define D3DTSS_TCI_CAMERASPACENORMAL 2
-#define D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR 3
+#define D3DTSS_TCI_PASSTHRU 0x00000000
+#define D3DTSS_TCI_CAMERASPACEPOSITION 0x00010000
+#define D3DTSS_TCI_CAMERASPACENORMAL 0x00020000
+#define D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR 0x00030000
 
 #define D3DTTFF_DISABLE 0
 #define D3DTTFF_COUNT2 2

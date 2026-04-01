@@ -439,6 +439,7 @@ static void Apply_Render_State(RenderStateStruct& render_state)
 
 	DX8Wrapper::Set_Transform(D3DTS_WORLD,render_state.world);
 	DX8Wrapper::Set_Transform(D3DTS_VIEW,render_state.view);
+	DX8Wrapper::Set_Transform(D3DTS_PROJECTION,render_state.projection);
 }
 
 // ----------------------------------------------------------------------------
@@ -603,8 +604,10 @@ void SortingRendererClass::Flush()
 	WWPROFILE("SortingRenderer::Flush");
 	Matrix4 old_view;
 	Matrix4 old_world;
+	Matrix4 old_projection;
 	DX8Wrapper::Get_Transform(D3DTS_VIEW,old_view);
 	DX8Wrapper::Get_Transform(D3DTS_WORLD,old_world);
+	DX8Wrapper::Get_Transform(D3DTS_PROJECTION,old_projection);
 
 	while (SortingNodeStruct* state=sorted_list.Head()) {
 		state->Remove();
@@ -634,6 +637,7 @@ void SortingRendererClass::Flush()
 
 	DX8Wrapper::Set_Transform(D3DTS_VIEW,old_view);
 	DX8Wrapper::Set_Transform(D3DTS_WORLD,old_world);
+	DX8Wrapper::Set_Transform(D3DTS_PROJECTION,old_projection);
 
 }
 

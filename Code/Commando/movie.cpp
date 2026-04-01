@@ -40,6 +40,7 @@
 #include "input.h"
 #include "_globals.h"
 #include "registry.h"
+#include "renegade_build_config.h"
 #include "renegadedialogmgr.h"
 #include "wwmemlog.h"
 #include "gameinitmgr.h"
@@ -201,7 +202,8 @@ void 	MovieGameModeClass::Render()
 void	MovieGameModeClass::Start_Movie( const char * filename )
 {
 	WWMEMLOG(MEM_BINK);
-	
+
+#if RENEGADE_WITH_BINK
 	//
 	//	Check to see if we should enforce the CD or not...
 	//
@@ -217,6 +219,7 @@ void	MovieGameModeClass::Start_Movie( const char * filename )
 #if defined(BETACLIENT) || defined(FREEDEDICATEDSERVER) || defined(MULTIPLAYERDEMO)
 	force_cd = false;
 #endif //BETACLIENT
+#endif // RENEGADE_WITH_BINK
 
 	//
 	//	Play the movie (if it exists locally)
@@ -226,6 +229,7 @@ void	MovieGameModeClass::Start_Movie( const char * filename )
 		Play_Movie ( local_movie_path.string().c_str() );
 	} else {
 
+#if RENEGADE_WITH_BINK
 		//
 		//	Strip any path information off the filename
 		//
@@ -256,6 +260,7 @@ void	MovieGameModeClass::Start_Movie( const char * filename )
 			IsPending				= true;
 			CDVerifier.Display_UI( this );
 		}
+#endif
 	}
 }
 

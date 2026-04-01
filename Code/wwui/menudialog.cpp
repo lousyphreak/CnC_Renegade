@@ -45,7 +45,7 @@
 
 namespace {
 
-constexpr bool kRenderMenuBackDrop = RENEGADE_WITH_DX8_RENDERER != 0;
+constexpr bool kRenderMenuBackDrop = (RENEGADE_WITH_DX8_RENDERER != 0) || (RENEGADE_WITH_BGFX_RENDERER != 0);
 
 }
 

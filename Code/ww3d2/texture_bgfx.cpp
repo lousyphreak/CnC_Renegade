@@ -2,6 +2,8 @@
 
 #include "bgfx_compat_resources.h"
 
+#include "assetmgr.h"
+#include "w3d_file.h"
 #include "ww3d.h"
 #include "wwdebug.h"
 
@@ -331,7 +333,6 @@ TextureClass::TextureClass(const char *name, const char *full_path, MipCountType
 	Height = BgfxCompat_To_Texture(D3DTexture)->height;
 	TextureFormat = BgfxCompat_To_Texture(D3DTexture)->format;
 	REF_PTR_RELEASE(surface);
-	WWRELEASE_SAY(("BGFX Texture: loaded %s (%dx%d)\n", FullPath.Peek_Buffer(), Width, Height));
 }
 
 TextureClass::TextureClass(SurfaceClass *surface, MipCountType mip_level_count)
@@ -499,9 +500,89 @@ void TextureClass::Apply_Null(unsigned int)
 {
 }
 
-TextureClass *Load_Texture(ChunkLoadClass &)
+TextureClass *Load_Texture(ChunkLoadClass &cload)
 {
-	return NEW_REF(TextureClass, (1U, 1U, WW3D_FORMAT_A8R8G8B8, TextureClass::MIP_LEVELS_1, TextureClass::POOL_MANAGED, false));
+	TextureClass *newtex = NULL;
+
+	char name[256] = {0};
+	if (cload.Open_Chunk() && (cload.Cur_Chunk_ID() == W3D_CHUNK_TEXTURE)) {
+
+		W3dTextureInfoStruct texinfo = {};
+		bool hastexinfo = false;
+
+		while (cload.Open_Chunk()) {
+			switch (cload.Cur_Chunk_ID()) {
+				case W3D_CHUNK_TEXTURE_NAME:
+				{
+					const unsigned length = std::min<unsigned>(cload.Cur_Chunk_Length(), sizeof(name) - 1U);
+					cload.Read(&name, length);
+					name[length] = '\0';
+					break;
+				}
+
+				case W3D_CHUNK_TEXTURE_INFO:
+					cload.Read(&texinfo, sizeof(W3dTextureInfoStruct));
+					hastexinfo = true;
+					break;
+
+				default:
+					break;
+			}
+
+			cload.Close_Chunk();
+		}
+		cload.Close_Chunk();
+
+		if (name[0] == '\0') {
+			return NULL;
+		}
+
+		if (hastexinfo) {
+			TextureClass::MipCountType mipcount = TextureClass::MIP_LEVELS_ALL;
+			const bool no_lod = ((texinfo.Attributes & W3DTEXTURE_NO_LOD) == W3DTEXTURE_NO_LOD);
+
+			if (no_lod) {
+				mipcount = TextureClass::MIP_LEVELS_1;
+			} else {
+				switch (texinfo.Attributes & W3DTEXTURE_MIP_LEVELS_MASK) {
+					case W3DTEXTURE_MIP_LEVELS_ALL:
+						mipcount = TextureClass::MIP_LEVELS_ALL;
+						break;
+					case W3DTEXTURE_MIP_LEVELS_2:
+						mipcount = TextureClass::MIP_LEVELS_2;
+						break;
+					case W3DTEXTURE_MIP_LEVELS_3:
+						mipcount = TextureClass::MIP_LEVELS_3;
+						break;
+					case W3DTEXTURE_MIP_LEVELS_4:
+						mipcount = TextureClass::MIP_LEVELS_4;
+						break;
+					default:
+						WWASSERT(false);
+						mipcount = TextureClass::MIP_LEVELS_ALL;
+						break;
+				}
+			}
+
+			newtex = WW3DAssetManager::Get_Instance()->Get_Texture(name, mipcount, WW3D_FORMAT_UNKNOWN);
+
+			if (no_lod) {
+				newtex->Set_Mip_Mapping(TextureClass::FILTER_TYPE_NONE);
+			}
+
+			const bool u_clamp = ((texinfo.Attributes & W3DTEXTURE_CLAMP_U) != 0);
+			newtex->Set_U_Addr_Mode(u_clamp ? TextureClass::TEXTURE_ADDRESS_CLAMP : TextureClass::TEXTURE_ADDRESS_REPEAT);
+
+			const bool v_clamp = ((texinfo.Attributes & W3DTEXTURE_CLAMP_V) != 0);
+			newtex->Set_V_Addr_Mode(v_clamp ? TextureClass::TEXTURE_ADDRESS_CLAMP : TextureClass::TEXTURE_ADDRESS_REPEAT);
+		} else {
+			newtex = WW3DAssetManager::Get_Instance()->Get_Texture(name);
+		}
+
+		WWASSERT(newtex != NULL);
+	}
+
+	return newtex;
 }
 
 void Save_Texture(TextureClass *, ChunkSaveClass &)

@@ -64,7 +64,7 @@
 
 namespace {
 
-constexpr bool kSupportsAnimatedMainMenu = RENEGADE_WITH_DX8_RENDERER != 0;
+constexpr bool kSupportsAnimatedMainMenu = (RENEGADE_WITH_DX8_RENDERER != 0) || (RENEGADE_WITH_BGFX_RENDERER != 0);
 
 }
 

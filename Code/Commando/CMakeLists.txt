@@ -101,6 +101,7 @@ list(APPEND COMMANDO_SOURCES
     inputconfig.cpp
     inputconfigmgr.cpp
     lanchat.cpp
+    mainmenutransition.cpp
     menu_dialog_subset.cpp
     movie.cpp
     mpsettingsmgr.cpp

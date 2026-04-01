@@ -270,6 +270,7 @@ WW3DErrorType WW3D::Init(void *hwnd, char *defaultpal, bool lite)
 	if (!DX8Wrapper::Init(_Hwnd, lite)) {
 		return(WW3D_ERROR_DIRECTX8_INITIALIZATION_FAILED);
 	}
+	VertexMaterialClass::Init();
 	WWDEBUG_SAY(("Allocate Debug Resources\n"));
 	Allocate_Debug_Resources();
 
@@ -351,6 +352,7 @@ WW3DErrorType WW3D::Shutdown(void)
 	if (!Lite) {
 		DX8Wrapper::Shutdown();
 	}
+	VertexMaterialClass::Shutdown();
 
 	/*
 	** Clear the default static sort lists

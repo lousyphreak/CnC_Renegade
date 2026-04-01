@@ -51,8 +51,6 @@
 #include "wwmemlog.h"
 #include "assetmgr.h"
 
-static int s_render2d_render_log_count = 0;
-
 RectClass							Render2DClass::ScreenResolution( 0,0,0,0 );
 
 
@@ -544,11 +542,6 @@ void Render2DClass::Render(void)
 		return;
 	}
 
-	if (s_render2d_render_log_count < 8) {
-		WWRELEASE_SAY(("Render2D: rendering %d vertices / %d indices, texture=%s\n", Vertices.Count(), Indices.Count(), Texture != NULL ? Texture->Get_Full_Path().Peek_Buffer() : "<none>"));
-		++s_render2d_render_log_count;
-	}
-
 
 	// save the view and projection matrices since we're nuking them
 	Matrix4 view,proj;
@@ -765,4 +758,3 @@ Vector2	Render2DTextClass::Get_Text_Extents( const WCHAR * text )
 
 	return extent;
 }
-

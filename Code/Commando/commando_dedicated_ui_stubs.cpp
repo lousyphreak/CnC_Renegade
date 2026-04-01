@@ -29,8 +29,10 @@ int DlgConfigVideoTabClass::BrightnessLevel = BRIGHTNESS_SLIDER_DEFAULT;
 int DlgConfigVideoTabClass::ContrastLevel = CONTRAST_SLIDER_DEFAULT;
 ControlsMenuClass *ControlsMenuClass::_TheInstance = nullptr;
 LoadSPGameMenuClass *LoadSPGameMenuClass::_TheInstance = nullptr;
+#if defined(FREEDEDICATEDSERVER)
 MainMenuDialogClass *MainMenuDialogClass::_TheInstance = nullptr;
 bool MainMenuDialogClass::Animated = false;
+#endif
 bool CNCPurchaseMainMenuClass::SecretsEnabled = false;
 float RadioCommandDisplayClass::DisplayTimer = 0.0f;
 bool RadioCommandDisplayClass::IsDisplayed = false;
@@ -357,6 +359,7 @@ void RadioCommandDisplayClass::Render(void) {}
 void RadioCommandDisplayClass::Check_Keys(void) {}
 void RadioCommandDisplayClass::Update(DISPLAY_TYPE) {}
 
+#if defined(FREEDEDICATEDSERVER)
 MainMenuDialogClass::MainMenuDialogClass(void)
     : MenuDialogClass(0),
       LogoModel(nullptr),
@@ -408,6 +411,7 @@ StringClass MainMenuDialogClass::Choose_Skirmish_Map(void)
 {
     return StringClass(true);
 }
+#endif
 
 EditWheeledVehicleDialogClass::EditWheeledVehicleDialogClass(WheeledVehicleDefClass *def, float wheel_radius)
         : PopupDialogClass(0),

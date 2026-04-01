@@ -1,0 +1,1 @@
+cmake --build build -j32 && gdb -ex run ./build/bin/Renegade

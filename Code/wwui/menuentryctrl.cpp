@@ -176,17 +176,7 @@ MenuEntryCtrlClass::On_Create (void)
 	//	Determine what rectangle should be clickable
 	//	
 	Vector2 extents = TextRenderer.Get_Text_Extents (Title);
-	Rect = MaxRect;
-
-	//
-	//	Should we left justify?
-	//
-	if ((Style & 0xF00) == BS_LEFT) {
-		Rect.Right = Rect.Left + extents.X + TextRenderer.Get_Text_Extents (L"W").X;
-	} else {	
-		Rect.Left	= int(Rect.Left + (Rect.Width () / 2) - (extents.X / 2));
-		Rect.Right	= Rect.Left + extents.X + TextRenderer.Get_Text_Extents (L"W").X;
-	}
+	Update_Text_Rect (extents);
 
 	return ;
 }
@@ -511,10 +501,21 @@ MenuEntryCtrlClass::Create_Text_Renderer (void)
 	TextRenderer.Reset_Polys ();
 	GlowRenderer.Reset_Polys ();
 
+	if ((Style & 0xF) == BS_OWNERDRAW) {
+		StyleMgrClass::Assign_Font (&TextRenderer, StyleMgrClass::FONT_SM_MENU);
+		StyleMgrClass::Assign_Font (&GlowRenderer, StyleMgrClass::FONT_SM_MENU);
+	} else {
+		StyleMgrClass::Assign_Font (&TextRenderer, StyleMgrClass::FONT_MENU);
+		StyleMgrClass::Assign_Font (&GlowRenderer, StyleMgrClass::FONT_MENU);
+	}
+
+	TextRenderer.Build_Sentence (Title);
+
 	//
 	//	Get the extents of the text we will be drawing
 	//
 	Vector2 text_extent = TextRenderer.Get_Text_Extents (Title);
+	Update_Text_Rect (text_extent);
 		
 	//
 	//	Assume cenetered text
@@ -570,6 +571,28 @@ MenuEntryCtrlClass::Create_Text_Renderer (void)
 
 		TextRenderer.Set_Location (Vector2 (x_pos, y_pos));
 		TextRenderer.Draw_Sentence (RGB_TO_INT32 (0, 0, 0));
+	}
+
+	return ;
+}
+
+
+////////////////////////////////////////////////////////////////
+//
+//	Update_Text_Rect
+//
+////////////////////////////////////////////////////////////////
+void
+MenuEntryCtrlClass::Update_Text_Rect (const Vector2 &text_extent)
+{
+	Rect = MaxRect;
+	const float padding = TextRenderer.Get_Text_Extents (L"W").X;
+
+	if ((Style & 0xF00) == BS_LEFT) {
+		Rect.Right = Rect.Left + text_extent.X + padding;
+	} else {
+		Rect.Left = int(Rect.Left + (Rect.Width () / 2) - (text_extent.X / 2));
+		Rect.Right = Rect.Left + text_extent.X + padding;
 	}
 
 	return ;
@@ -785,5 +808,3 @@ MenuEntryCtrlClass::Center_Mouse (void)
 	DialogMgrClass::Set_Mouse_Pos (mouse_pos);
 	return ;
 }
-
-

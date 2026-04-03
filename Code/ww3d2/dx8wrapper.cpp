@@ -474,7 +474,7 @@ bool Sync_Backbuffer(bool force_reset)
 		g_bgfx.window_width = window_width;
 		g_bgfx.window_height = window_height;
 		DX8Wrapper::Refresh_Render_Device_Desc();
-		Render2DClass::Set_Screen_Resolution(RectClass(0, 0, g_bgfx.window_width, g_bgfx.window_height));
+		Render2DClass::Set_Screen_Resolution(RectClass(0, 0, g_bgfx.width, g_bgfx.height));
 	}
 
 	Update_Windowed_State();
@@ -805,7 +805,7 @@ bool Initialize_Bgfx(SDL_Window *window)
 	g_bgfx.viewport = RenderViewportClass(0u, 0u, static_cast<unsigned>(width), static_cast<unsigned>(height));
 	Update_Windowed_State();
 	DX8Wrapper::Refresh_Render_Device_Desc();
-	Render2DClass::Set_Screen_Resolution(RectClass(0, 0, window_width, window_height));
+	Render2DClass::Set_Screen_Resolution(RectClass(0, 0, width, height));
 
 	bgfx::setViewName(kBootstrapViewId, "Bootstrap");
 	Apply_View_Rect();
@@ -998,7 +998,7 @@ bool DX8Wrapper::Set_Device_Resolution(int width, int height, int bits, int wind
 	Query_Window_Pixel_Size(g_bgfx.window, g_bgfx.width, g_bgfx.height);
 	Update_Windowed_State();
 	Refresh_Render_Device_Desc();
-	Render2DClass::Set_Screen_Resolution(RectClass(0, 0, g_bgfx.window_width, g_bgfx.window_height));
+	Render2DClass::Set_Screen_Resolution(RectClass(0, 0, g_bgfx.width, g_bgfx.height));
 	return true;
 }
 

@@ -66,6 +66,7 @@
 #include "ProgressCtrl.h"
 #include "healthbarctrl.h"
 #include "systimer.h"
+#include "stylemgr.h"
 
 
 ////////////////////////////////////////////////////////////////
@@ -73,6 +74,32 @@
 ////////////////////////////////////////////////////////////////
 const float	RES_SCREEN_WIDTH	= 400;
 const float	RES_SCREEN_HEIGHT	= 300;
+
+namespace {
+
+RectClass Build_Control_Rect (const RectClass &dialog_rect, int dialog_width, int dialog_height, const DialogControlClass *control)
+{
+	const float width_scale = (dialog_width > 0) ? (dialog_rect.Width () / dialog_width) : 1.0F;
+	const float height_scale = (dialog_height > 0) ? (dialog_rect.Height () / dialog_height) : 1.0F;
+
+	const float left = dialog_rect.Left + (control->Get_Layout_X () * width_scale);
+	const float top = dialog_rect.Top + (control->Get_Layout_Y () * height_scale);
+	const float width = control->Get_Layout_Width () * width_scale;
+	const float height = control->Get_Layout_Height () * height_scale;
+	return RectClass (left, top, left + width, top + height);
+}
+
+RectClass Build_Dialog_Rect (int dialog_width, int dialog_height)
+{
+	const RectClass screen_rect = StyleMgrClass::Get_Layout_Rect ();
+	const int dlg_screen_width = int((((float)dialog_width) / RES_SCREEN_WIDTH) * screen_rect.Width ());
+	const int dlg_screen_height = int((((float)dialog_height) / RES_SCREEN_HEIGHT) * screen_rect.Height ());
+	const int left = int(screen_rect.Center ().X - (((float)dlg_screen_width) * 0.5F));
+	const int top = int(screen_rect.Center ().Y - (((float)dlg_screen_height) * 0.5F));
+	return RectClass (left, top, left + dlg_screen_width, top + dlg_screen_height);
+}
+
+}
 
 ////////////////////////////////////////////////////////////////
 //	Static member initialization
@@ -87,6 +114,8 @@ DEFAULT_DLG_CMD_HANDLER		DialogBaseClass::DefaultCmdHandler = NULL;
 ////////////////////////////////////////////////////////////////
 DialogBaseClass::DialogBaseClass (int res_id)	:
 	DialogResID (res_id),
+	TemplateWidth (0),
+	TemplateHeight (0),
 	AreControlsHidden (false),
 	LastFocusControl (NULL),
 	LastMouseClickTime (0),
@@ -127,21 +156,13 @@ DialogBaseClass::Start_Dialog (void)
 	//
 	DialogParserClass::Parse_Template (DialogResID, &dlg_width, &dlg_height,
 								&Title, &control_list);
+	TemplateWidth = dlg_width;
+	TemplateHeight = dlg_height;
 
 	//
 	//	Convert the dialog's width and height from dialog units to screen units
 	//
-	const RectClass &screen_rect	= Render2DClass::Get_Screen_Resolution ();
-	int dlg_screen_width				= int(((float)dlg_width / RES_SCREEN_WIDTH) * screen_rect.Width ());
-	int dlg_screen_height			= int(((float)dlg_height / RES_SCREEN_HEIGHT) * screen_rect.Height ());
-
-	//
-	//	Center the dialog on the screen
-	//
-	Rect.Left	= int(screen_rect.Center ().X - ((float)dlg_screen_width * 0.5F));
-	Rect.Top		= int(screen_rect.Center ().Y - ((float)dlg_screen_height * 0.5F));
-	Rect.Right	= int(Rect.Left + dlg_screen_width);
-	Rect.Bottom	= int(Rect.Top + dlg_screen_height);
+	Rect = Build_Dialog_Rect (TemplateWidth, TemplateHeight);
 
 	//
 	//	Now create the controls
@@ -254,19 +275,12 @@ DialogBaseClass::Start_Dialog (void)
 			control->Set_Text (info.title);
 			control->Set_Style (info.style);
 			control->Set_ID (info.id);
-
-			int ctrl_width		= int((((float)info.cx) / RES_SCREEN_WIDTH) * screen_rect.Width ());
-			int ctrl_height	= int((((float)info.cy) / RES_SCREEN_HEIGHT) * screen_rect.Height ());
+			control->Set_Layout_Hints (info.x, info.y, info.cx, info.cy);
 
 			//
 			//	Calculate the screen position of the control
 			//
-			RectClass rect;
-			rect.Left	= int(Rect.Left + ((((float)info.x) / RES_SCREEN_WIDTH) * screen_rect.Width ()));
-			rect.Top		= int(Rect.Top + ((((float)info.y) / RES_SCREEN_HEIGHT) * screen_rect.Height ()));
-			rect.Right	= int(rect.Left + ctrl_width);
-			rect.Bottom	= int(rect.Top + ctrl_height);
-			control->Set_Window_Rect (rect);
+			control->Set_Window_Rect (Build_Control_Rect (Rect, TemplateWidth, TemplateHeight, control));
 
 			//
 			//	Let the control know its been created
@@ -293,6 +307,81 @@ DialogBaseClass::Start_Dialog (void)
 	//	Allow derived clases to hook into this call
 	//
 	On_Init_Dialog ();
+	return ;
+}
+
+
+////////////////////////////////////////////////////////////////
+//
+//	Reflow_Layout
+//
+////////////////////////////////////////////////////////////////
+void
+DialogBaseClass::Reflow_Layout (void)
+{
+	for (int index = 0; index < ControlList.Count (); index ++) {
+		DialogControlClass *control = ControlList[index];
+		if (control->Has_Layout_Hints ()) {
+			control->Set_Window_Rect (Build_Control_Rect (Rect, TemplateWidth, TemplateHeight, control));
+		} else {
+			control->Set_Dirty ();
+		}
+	}
+
+	for (int index = 0; index < ChildDialogList.Count (); index ++) {
+		ChildDialogList[index]->On_Screen_Resolution_Changed ();
+	}
+
+	return ;
+}
+
+
+////////////////////////////////////////////////////////////////
+//
+//	On_Screen_Resolution_Changed
+//
+////////////////////////////////////////////////////////////////
+void
+DialogBaseClass::On_Screen_Resolution_Changed (void)
+{
+	if (TemplateWidth <= 0 || TemplateHeight <= 0) {
+		Set_Dirty ();
+		return ;
+	}
+
+	if (As_ChildDialogClass () == NULL) {
+		Rect = Build_Dialog_Rect (TemplateWidth, TemplateHeight);
+	}
+
+	Reflow_Layout ();
+	Set_Dirty ();
+	return ;
+}
+
+
+////////////////////////////////////////////////////////////////
+//
+//	Capture_Control_Layout
+//
+////////////////////////////////////////////////////////////////
+void
+DialogBaseClass::Capture_Control_Layout (DialogControlClass *control)
+{
+	if (	control == NULL ||
+			TemplateWidth <= 0 ||
+			TemplateHeight <= 0 ||
+			Rect.Width () <= 0.0F ||
+			Rect.Height () <= 0.0F)
+	{
+		return ;
+	}
+
+	const RectClass &control_rect = control->Get_Window_Rect ();
+	const int layout_x = int((((control_rect.Left - Rect.Left) / Rect.Width ()) * TemplateWidth) + 0.5F);
+	const int layout_y = int((((control_rect.Top - Rect.Top) / Rect.Height ()) * TemplateHeight) + 0.5F);
+	const int layout_width = int(((control_rect.Width () / Rect.Width ()) * TemplateWidth) + 0.5F);
+	const int layout_height = int(((control_rect.Height () / Rect.Height ()) * TemplateHeight) + 0.5F);
+	control->Set_Layout_Hints (layout_x, layout_y, layout_width, layout_height);
 	return ;
 }
 

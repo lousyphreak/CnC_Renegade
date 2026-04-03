@@ -272,6 +272,65 @@ SDL_Window *Get_Input_Window()
 	return window;
 }
 
+void Convert_Window_Coordinates_To_Render(float x, float y, float &render_x, float &render_y)
+{
+	render_x = x;
+	render_y = y;
+
+	SDL_Window *window = Get_Input_Window();
+	if (window == NULL) {
+		return;
+	}
+
+	int window_width = 0;
+	int window_height = 0;
+	if (!SDL_GetWindowSize(window, &window_width, &window_height) || window_width <= 0 || window_height <= 0) {
+		return;
+	}
+
+	int pixel_width = 0;
+	int pixel_height = 0;
+	if (!SDL_GetWindowSizeInPixels(window, &pixel_width, &pixel_height) || pixel_width <= 0 || pixel_height <= 0) {
+		pixel_width = window_width;
+		pixel_height = window_height;
+	}
+
+	render_x = x * static_cast<float>(pixel_width) / static_cast<float>(window_width);
+	render_y = y * static_cast<float>(pixel_height) / static_cast<float>(window_height);
+}
+
+void Convert_Render_Coordinates_To_Window(float x, float y, float &window_x, float &window_y)
+{
+	window_x = x;
+	window_y = y;
+
+	SDL_Window *window = Get_Input_Window();
+	if (window == NULL) {
+		return;
+	}
+
+	int window_width = 0;
+	int window_height = 0;
+	if (!SDL_GetWindowSize(window, &window_width, &window_height) || window_width <= 0 || window_height <= 0) {
+		return;
+	}
+
+	int pixel_width = 0;
+	int pixel_height = 0;
+	if (!SDL_GetWindowSizeInPixels(window, &pixel_width, &pixel_height) || pixel_width <= 0 || pixel_height <= 0) {
+		pixel_width = window_width;
+		pixel_height = window_height;
+	}
+
+	window_x = x * static_cast<float>(window_width) / static_cast<float>(pixel_width);
+	window_y = y * static_cast<float>(window_height) / static_cast<float>(pixel_height);
+}
+
+void Set_Pending_Cursor_Position(float x, float y)
+{
+	Convert_Window_Coordinates_To_Render(x, y, PendingCursorPos.X, PendingCursorPos.Y);
+}
+
 bool SDLCALL DirectInput_Event_Watch(void *, SDL_Event *event)
 {
 	std::lock_guard<std::mutex> lock(InputMutex);
@@ -316,16 +375,14 @@ bool SDLCALL DirectInput_Event_Watch(void *, SDL_Event *event)
 
 		case SDL_EVENT_MOUSE_MOTION:
 			if (!CapturedState) {
-				PendingCursorPos.X = event->motion.x;
-				PendingCursorPos.Y = event->motion.y;
+				Set_Pending_Cursor_Position(event->motion.x, event->motion.y);
 				break;
 			}
 			PendingMouseAxis[DirectInput::MOUSE_X_AXIS] += static_cast<long>(std::lround(event->motion.xrel));
 			PendingMouseAxis[DirectInput::MOUSE_Y_AXIS] += static_cast<long>(std::lround(event->motion.yrel));
-			// WWUI expects cursor positions in SDL window coordinates even while
+			// WWUI hit-testing/rendering uses the drawable resolution even while
 			// gameplay input remains driven by relative mouse axes.
-			PendingCursorPos.X = event->motion.x;
-			PendingCursorPos.Y = event->motion.y;
+			Set_Pending_Cursor_Position(event->motion.x, event->motion.y);
 			break;
 
 		case SDL_EVENT_MOUSE_BUTTON_DOWN:
@@ -337,8 +394,7 @@ bool SDLCALL DirectInput_Event_Watch(void *, SDL_Event *event)
 					MousePressed[index] = true;
 				}
 				MouseHeld[index] = true;
-				PendingCursorPos.X = event->button.x;
-				PendingCursorPos.Y = event->button.y;
+				Set_Pending_Cursor_Position(event->button.x, event->button.y);
 			}
 			break;
 
@@ -351,8 +407,7 @@ bool SDLCALL DirectInput_Event_Watch(void *, SDL_Event *event)
 					MouseReleased[index] = true;
 				}
 				MouseHeld[index] = false;
-				PendingCursorPos.X = event->button.x;
-				PendingCursorPos.Y = event->button.y;
+				Set_Pending_Cursor_Position(event->button.x, event->button.y);
 			}
 			break;
 
@@ -458,8 +513,7 @@ void DirectInput::Acquire(void)
 	float mouse_x = 0.0f;
 	float mouse_y = 0.0f;
 	SDL_GetMouseState(&mouse_x, &mouse_y);
-	CursorPos.X = mouse_x;
-	CursorPos.Y = mouse_y;
+	Convert_Window_Coordinates_To_Render(mouse_x, mouse_y, CursorPos.X, CursorPos.Y);
 	CursorPos.Z = 0.0f;
 
 	{
@@ -488,7 +542,10 @@ void DirectInput::Unacquire(void)
 	}
 
 	if (SDL_Window *window = Get_Input_Window()) {
-		SDL_WarpMouseInWindow(window, CursorPos.X, CursorPos.Y);
+		float window_x = CursorPos.X;
+		float window_y = CursorPos.Y;
+		Convert_Render_Coordinates_To_Window(CursorPos.X, CursorPos.Y, window_x, window_y);
+		SDL_WarpMouseInWindow(window, window_x, window_y);
 	}
 
 	Flush();

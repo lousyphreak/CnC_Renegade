@@ -160,6 +160,7 @@ protected:
 	Vector2										CoordinateScale;
 	Vector2										CoordinateOffset;
 	Vector2										BiasedCoordinateOffset;
+	bool											TracksScreenResolution;
 	TextureClass *								Texture;
 	ShaderClass									Shader;
 	DynamicVectorClass<unsigned short>	Indices;

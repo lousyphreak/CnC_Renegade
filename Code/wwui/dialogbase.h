@@ -149,12 +149,14 @@ public:
 	void						Show (bool onoff)			{ IsVisible = onoff; }
 	bool						Is_Visible (void) const	{ return IsVisible; }
 	void						Set_Dirty(bool onoff=true);
+	void						On_Screen_Resolution_Changed (void);
 
 	//
 	//	Position control
 	//
 	const RectClass &		Get_Rect (void) const					{ return Rect; }
 	void						Set_Rect (const RectClass &rect);
+	void						Capture_Control_Layout (DialogControlClass *control);
 
 	//
 	//	Flow control
@@ -270,6 +272,7 @@ protected:
 	void						Send_Mouse_Input (DialogControlClass *control, const Vector2 &mouse_pos);
 
 	void						Build_Control_List (CONTROL_LIST &list);
+	void						Reflow_Layout (void);
 	void						Set_Default_Focus (void);
 
 	////////////////////////////////////////////////////////////////
@@ -278,6 +281,8 @@ protected:
 	WideStringClass				Title;
 	RectClass						Rect;
 	int								DialogResID;
+	int								TemplateWidth;
+	int								TemplateHeight;
 	CONTROL_LIST					ControlList;
 	DIALOG_LIST						ChildDialogList;
 	DialogControlClass *			LastFocusControl;

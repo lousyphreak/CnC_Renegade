@@ -95,6 +95,7 @@ protected:
 	void					Update_Client_Rect (void);
 
 	void					Create_Text_Renderer (void);
+	void					Update_Text_Rect (const Vector2 &text_extent);
 	void					Set_State (int new_state);
 	void					Update_State (void);
 

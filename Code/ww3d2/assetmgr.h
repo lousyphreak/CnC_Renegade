@@ -277,6 +277,7 @@ public:
 	** Access to FontChars. Used by Render2DSentenceClass
 	*/
 	virtual FontCharsClass *		Get_FontChars( const char * name, int point_size, bool is_bold = false );
+	virtual void						Release_Unused_FontChars( void );
 
 	/*
 	** Access to HTrees, Used by Animatable3DObj's

@@ -25,6 +25,12 @@
 
 namespace {
 
+DynamicVectorClass<Render2DSentenceClass *> &Get_Live_Sentence_Renderers()
+{
+	static DynamicVectorClass<Render2DSentenceClass *> renderers;
+	return renderers;
+}
+
 int Headless_Char_Width(FontCharsClass * font, WCHAR ch)
 {
 	if (font == NULL) {
@@ -183,12 +189,19 @@ Render2DSentenceClass::Render2DSentenceClass(void) :
 	LockedPtr(NULL),
 	LockedStride(0),
 	CurTexture(NULL),
-	Shader(Render2DClass::Get_Default_Shader())
+	Shader(Render2DClass::Get_Default_Shader()),
+	TrackedFontID(-1)
 {
+	Get_Live_Sentence_Renderers().Add(this);
 }
 
 Render2DSentenceClass::~Render2DSentenceClass(void)
 {
+	const int id = Get_Live_Sentence_Renderers().ID(this);
+	if (id != -1) {
+		Get_Live_Sentence_Renderers().Delete(id);
+	}
+
 	REF_PTR_RELEASE(Font);
 	Reset();
 }
@@ -238,7 +251,30 @@ void Render2DSentenceClass::Reset_Polys(void)
 
 void Render2DSentenceClass::Set_Font(FontCharsClass * font)
 {
+	Reset();
+	TrackedFontID = -1;
 	REF_PTR_SET(Font, font);
+}
+
+void Render2DSentenceClass::Refresh_Tracked_Fonts(FontCharsClass *const * fonts, int font_count)
+{
+	if (fonts == NULL || font_count <= 0) {
+		return;
+	}
+
+	DynamicVectorClass<Render2DSentenceClass *> &renderers = Get_Live_Sentence_Renderers();
+	for (int index = 0; index < renderers.Count(); ++index) {
+		Render2DSentenceClass *renderer = renderers[index];
+		if (renderer == NULL) {
+			continue;
+		}
+
+		const int tracked_font_id = renderer->TrackedFontID;
+		if (tracked_font_id >= 0 && tracked_font_id < font_count) {
+			renderer->Set_Font(fonts[tracked_font_id]);
+			renderer->TrackedFontID = tracked_font_id;
+		}
+	}
 }
 
 void Render2DSentenceClass::Set_Location(const Vector2 & loc)

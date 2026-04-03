@@ -161,8 +161,8 @@ PopupDialogClass::Build_Background_Renderers (void)
 		//
 		//	Determine what scale to use
 		//
-		float scale_x = Render2DClass::Get_Screen_Resolution().Width () / 800;
-		float scale_y = Render2DClass::Get_Screen_Resolution().Height () / 600;
+		float scale_x = StyleMgrClass::Get_X_Scale ();
+		float scale_y = StyleMgrClass::Get_Y_Scale ();
 
 		//
 		//	Calculate the title bar rectangle

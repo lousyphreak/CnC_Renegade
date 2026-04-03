@@ -130,6 +130,9 @@ public:
 
 	FontCharsClass *	Peek_Font( void )						{ return Font; }
 	void	Set_Font( FontCharsClass *font );
+	void	Set_Font_Tracking_ID (int id)					{ TrackedFontID = id; }
+	int		Get_Font_Tracking_ID (void) const			{ return TrackedFontID; }
+	static void	Refresh_Tracked_Fonts (FontCharsClass *const *fonts, int font_count);
 
 	void	Set_Location( const Vector2 & loc );
 	void	Set_Base_Location( const Vector2 & loc );
@@ -247,6 +250,7 @@ private:
 	int												LockedStride;
 	TextureClass *									CurTexture;
 	ShaderClass										Shader;
+	int												TrackedFontID;
 };
 
 #endif	// RENDER2DSENTENCE_H

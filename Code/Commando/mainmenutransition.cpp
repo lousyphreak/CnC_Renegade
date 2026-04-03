@@ -221,7 +221,7 @@ MainMenuTransitionClass::Update_Controls (void)
 	//
 	//	Get the half dimensions of the screen
 	//
-	const RectClass &screen_rect = Render2DClass::Get_Screen_Resolution ();
+	const RectClass screen_rect = StyleMgrClass::Get_Layout_Rect ();
 	float half_width		= screen_rect.Width () / 2.0F;
 	float half_height		= screen_rect.Height () / 2.0F;
 
@@ -249,8 +249,8 @@ MainMenuTransitionClass::Update_Controls (void)
 		//
 		//	Convert the normalized screen space position to pixel coordinates
 		//
-		new_pos.X = half_width * (new_pos.X + 1.0F);
-		new_pos.Y = half_height * (1.0F - new_pos.Y);
+		new_pos.X = screen_rect.Left + (half_width * (new_pos.X + 1.0F));
+		new_pos.Y = screen_rect.Top + (half_height * (1.0F - new_pos.Y));
 
 		//
 		//	Move each control to the left of the bone a little
@@ -264,6 +264,7 @@ MainMenuTransitionClass::Update_Controls (void)
 		const RectClass &control_rect	= control->Get_Window_Rect ();
 		new_pos.Y							-= (control_rect.Height () / 2);
 		control->Set_Window_Pos (Vector2 (new_pos.X, new_pos.Y));
+		Dialog->Capture_Control_Layout (control);
 	}
 
 	return ;
@@ -289,4 +290,3 @@ MainMenuTransitionClass::Is_Valid (void) const
 
 	return retval;
 }
-

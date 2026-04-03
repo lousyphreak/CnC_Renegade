@@ -148,8 +148,8 @@ ScrollBarCtrlClass::ScrollBarCtrlClass (void)	:
 	//
 	//	Scale the control
 	//
-	ScaleX	= Render2DClass::Get_Screen_Resolution().Width () / 800;
-	ScaleY	= Render2DClass::Get_Screen_Resolution().Height () / 600;
+	ScaleX	= StyleMgrClass::Get_X_Scale ();
+	ScaleY	= StyleMgrClass::Get_Y_Scale ();
 	Width		= Width * ScaleX;
 	return ;
 }
@@ -786,4 +786,3 @@ ScrollBarCtrlClass::Update_Thumb_Rect (void)
 	ThumbRect.Bottom	= int(ThumbRect.Top + ThumbHeight);
 	return ;
 }
-

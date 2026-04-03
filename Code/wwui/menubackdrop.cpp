@@ -48,6 +48,17 @@ namespace {
 constexpr float kReferenceMenuAspect = 4.0F / 3.0F;
 constexpr float kReferenceMenuHFov = DEG_TO_RAD(45.0F);
 
+float Convert_Horizontal_To_Vertical_Fov (float hfov, float aspect)
+{
+	return 2.0F * WWMath::Atan (tan (hfov * 0.5F) / aspect);
+}
+
+
+float Convert_Vertical_To_Horizontal_Fov (float vfov, float aspect)
+{
+	return 2.0F * WWMath::Atan (tan (vfov * 0.5F) * aspect);
+}
+
 }
 
 
@@ -156,16 +167,16 @@ MenuBackDropClass::Update_Camera_View_Plane (void)
 	const float width = (screen_size.Width () > 0) ? (float)screen_size.Width () : 1.0F;
 	const float height = (screen_size.Height () > 0) ? (float)screen_size.Height () : 1.0F;
 	const float aspect = width / height;
-	const float reference_vfov = kReferenceMenuHFov / kReferenceMenuAspect;
+	const float reference_vfov = Convert_Horizontal_To_Vertical_Fov (kReferenceMenuHFov, kReferenceMenuAspect);
 
 	float hfov = kReferenceMenuHFov;
 	float vfov = reference_vfov;
 
 	// Preserve the original 4:3 menu framing and reveal extra width on wider screens.
 	if (aspect >= kReferenceMenuAspect) {
-		hfov = reference_vfov * aspect;
+		hfov = Convert_Vertical_To_Horizontal_Fov (reference_vfov, aspect);
 	} else {
-		vfov = kReferenceMenuHFov / aspect;
+		vfov = Convert_Horizontal_To_Vertical_Fov (kReferenceMenuHFov, aspect);
 	}
 
 	Camera->Set_View_Plane (hfov, vfov);

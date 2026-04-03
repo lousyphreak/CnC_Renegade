@@ -57,6 +57,16 @@
 const int CHAR_TEXTURE_SIZE	= 256;
 const int CHAR_BUFFER_LEN		= 32768;
 
+namespace {
+
+DynamicVectorClass<Render2DSentenceClass *> &Get_Live_Sentence_Renderers()
+{
+	static DynamicVectorClass<Render2DSentenceClass *> renderers;
+	return renderers;
+}
+
+}
+
 #if !defined(_WIN32)
 namespace {
 
@@ -207,8 +217,10 @@ Render2DSentenceClass::Render2DSentenceClass (void) :
 	WrapWidth (0),
 	TabStop (5.0),
 	DrawExtents (0, 0, 0, 0),
-	Renderers(sizeof(PreAllocatedRenderers)/sizeof(RendererDataStruct),PreAllocatedRenderers)
+	Renderers(sizeof(PreAllocatedRenderers)/sizeof(RendererDataStruct),PreAllocatedRenderers),
+	TrackedFontID (-1)
 {
+	Get_Live_Sentence_Renderers ().Add (this);
 	Shader = Render2DClass::Get_Default_Shader ();
 	return ;
 }
@@ -221,6 +233,11 @@ Render2DSentenceClass::Render2DSentenceClass (void) :
 ////////////////////////////////////////////////////////////////////////////////////
 Render2DSentenceClass::~Render2DSentenceClass (void)
 {
+	int id = Get_Live_Sentence_Renderers ().ID (this);
+	if (id != -1) {
+		Get_Live_Sentence_Renderers ().Delete (id);
+	}
+
 	REF_PTR_RELEASE (Font);
 	Reset ();
 	return ;
@@ -236,7 +253,38 @@ void
 Render2DSentenceClass::Set_Font (FontCharsClass *font)
 {
 	Reset ();
+	TrackedFontID = -1;
 	REF_PTR_SET (Font, font);
+	return ;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////
+//
+//	Refresh_Tracked_Fonts
+//
+////////////////////////////////////////////////////////////////////////////////////
+void
+Render2DSentenceClass::Refresh_Tracked_Fonts (FontCharsClass *const *fonts, int font_count)
+{
+	if (fonts == NULL || font_count <= 0) {
+		return ;
+	}
+
+	DynamicVectorClass<Render2DSentenceClass *> &renderers = Get_Live_Sentence_Renderers ();
+	for (int index = 0; index < renderers.Count (); index ++) {
+		Render2DSentenceClass *renderer = renderers[index];
+		if (renderer == NULL) {
+			continue;
+		}
+
+		const int tracked_font_id = renderer->TrackedFontID;
+		if (tracked_font_id >= 0 && tracked_font_id < font_count) {
+			renderer->Set_Font (fonts[tracked_font_id]);
+			renderer->TrackedFontID = tracked_font_id;
+		}
+	}
+
 	return ;
 }
 

@@ -60,6 +60,7 @@ RectClass							Render2DClass::ScreenResolution( 0,0,0,0 );
 Render2DClass::Render2DClass( TextureClass* tex ) :
 	CoordinateScale( 1, 1 ),
 	CoordinateOffset( 0, 0 ),
+	TracksScreenResolution( false ),
 	Texture(0),
 	ZValue(0),
 	IsHidden( false ),
@@ -108,12 +109,18 @@ Render2DClass::Get_Default_Shader( void )
 
 void	Render2DClass::Reset(void)
 {
+	if (TracksScreenResolution) {
+		Set_Coordinate_Range(Get_Screen_Resolution());
+	}
+
 	Vertices.Reset_Active();
 	UVCoordinates.Reset_Active();
 	Colors.Reset_Active();
 	Indices.Reset_Active();
 
-	Update_Bias(); // Keep the bias updated
+	if (!TracksScreenResolution) {
+		Update_Bias(); // Keep the bias updated
+	}
 }
 
 void Render2DClass::Set_Texture(TextureClass* tex)
@@ -172,6 +179,7 @@ void	Render2DClass::Set_Coordinate_Range( const RectClass & range )
 	CoordinateScale.Y = -2 / range.Height();
 	CoordinateOffset.X = -(CoordinateScale.X * range.Left) - 1;
 	CoordinateOffset.Y = -(CoordinateScale.Y * range.Top) + 1;
+	TracksScreenResolution = (range == Get_Screen_Resolution());
 
 	Update_Bias();
 }

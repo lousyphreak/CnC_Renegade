@@ -51,6 +51,7 @@
 #include "dialogtransition.h"
 #include "systimer.h"
 #include "tooltip.h"
+#include "render2d.h"
 
 
 ////////////////////////////////////////////////////////////////
@@ -440,12 +441,29 @@ void
 DialogMgrClass::Render (void)
 {
 	WWMEMLOG(MEM_GAMEDATA);
+	static bool s_have_screen_resolution = false;
+	static RectClass s_last_screen_resolution (0, 0, 0, 0);
 
 	if (!GameInFocus) {
 		GameWasInFocus = false;
 	} else if (!GameWasInFocus) {
 		DialogMgrClass::Reset();
 		GameWasInFocus = true;
+	}
+
+	const RectClass &screen_resolution = Render2DClass::Get_Screen_Resolution ();
+	if (!s_have_screen_resolution || screen_resolution != s_last_screen_resolution) {
+		s_have_screen_resolution = true;
+		s_last_screen_resolution = screen_resolution;
+		StyleMgrClass::Refresh_Fonts ();
+
+		for (int index = 0; index < DialogList.Count (); index ++) {
+			if (DialogList[index]->As_ChildDialogClass () == NULL) {
+				DialogList[index]->On_Screen_Resolution_Changed ();
+			}
+		}
+
+		ToolTipMgrClass::Reset ();
 	}
 
 	//

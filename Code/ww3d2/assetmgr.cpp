@@ -1343,6 +1343,17 @@ void	WW3DAssetManager::Release_All_FontChars( void )
 	}
 }
 
+void	WW3DAssetManager::Release_Unused_FontChars( void )
+{
+	for ( int index = FontCharsList.Count() - 1; index >= 0; index-- ) {
+		FontCharsClass * font = FontCharsList[index];
+		if ( font->Num_Refs() == 1 ) {
+			FontCharsList.Delete(index);
+			font->Release_Ref();
+		}
+	}
+}
+
 /***********************************************************************************************
  * WW3DAssetManager::Register_Prototype_Loader -- add a new loader to the system               *
  *                                                                                             *
@@ -1575,5 +1586,4 @@ const char * HTreeIterator::Current_Item_Name(void)
 {
 	return WW3DAssetManager::Get_Instance()->HTreeManager.Get_Tree(Index)->Get_Name();
 }
-
 

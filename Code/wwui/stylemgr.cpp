@@ -55,6 +55,14 @@
 ////////////////////////////////////////////////////////////////
 static const char *	DEFAULT_BACKDROP_NAME	= "GRADENT_TEST.TGA";
 
+namespace {
+
+constexpr float kUILayoutReferenceWidth = 800.0F;
+constexpr float kUILayoutReferenceHeight = 600.0F;
+constexpr float kUILayoutReferenceAspect = kUILayoutReferenceWidth / kUILayoutReferenceHeight;
+
+}
+
 
 struct FONT_DESC
 {
@@ -122,6 +130,9 @@ uint32						StyleMgrClass::TabGlowColor				= RGB_TO_INT32 (16, 10, 0);
 FontCharsClass *			StyleMgrClass::Fonts[FONT_MAX]			= { NULL };
 float							StyleMgrClass::ScaleX						= 1.0F;
 float							StyleMgrClass::ScaleY						= 1.0F;
+StringClass					StyleMgrClass::ConfiguredFontNames[FONT_MAX];
+int							StyleMgrClass::ConfiguredFontPointSizes[FONT_MAX] = { 0 };
+bool							StyleMgrClass::ConfiguredFontBoldFlags[FONT_MAX] = { false };
 
 DynamicVectorClass<StringClass>	StyleMgrClass::FontFileList;
 StringClass								StyleMgrClass::EventAudioList[StyleMgrClass::EVENT_AUDIO_MAX];
@@ -129,34 +140,111 @@ StringClass								StyleMgrClass::EventAudioList[StyleMgrClass::EVENT_AUDIO_MAX]
 
 ////////////////////////////////////////////////////////////////
 //
+//	Get_Layout_Rect
+//
+///////////////////////////////////////////////////////////////
+RectClass
+StyleMgrClass::Get_Layout_Rect (void)
+{
+	const RectClass &screen_rect = Render2DClass::Get_Screen_Resolution ();
+	const float screen_width = (screen_rect.Width () > 0.0F) ? screen_rect.Width () : 1.0F;
+	const float screen_height = (screen_rect.Height () > 0.0F) ? screen_rect.Height () : 1.0F;
+
+	float layout_width = screen_width;
+	float layout_height = screen_height;
+	if ((screen_width / screen_height) > kUILayoutReferenceAspect) {
+		layout_width = screen_height * kUILayoutReferenceAspect;
+	} else {
+		layout_height = screen_width / kUILayoutReferenceAspect;
+	}
+
+	const float left = screen_rect.Left + ((screen_width - layout_width) * 0.5F);
+	const float top = screen_rect.Top + ((screen_height - layout_height) * 0.5F);
+	return RectClass(left, top, left + layout_width, top + layout_height);
+}
+
+
+///////////////////////////////////////////////////////////////
+//
+//	Get_X_Scale
+//
+///////////////////////////////////////////////////////////////
+float
+StyleMgrClass::Get_X_Scale (void)
+{
+	return Get_Layout_Rect ().Width () / kUILayoutReferenceWidth;
+}
+
+
+///////////////////////////////////////////////////////////////
+//
+//	Get_Y_Scale
+//
+///////////////////////////////////////////////////////////////
+float
+StyleMgrClass::Get_Y_Scale (void)
+{
+	return Get_Layout_Rect ().Height () / kUILayoutReferenceHeight;
+}
+
+
+///////////////////////////////////////////////////////////////
+//
+//	Store_Default_Font_Configuration
+//
+///////////////////////////////////////////////////////////////
+void
+StyleMgrClass::Store_Default_Font_Configuration (void)
+{
+	for (int index = 0; index < FONT_MAX; index ++) {
+		ConfiguredFontNames[index] = DEFAULT_FONTS[index].name;
+		ConfiguredFontPointSizes[index] = DEFAULT_FONTS[index].point_size;
+		ConfiguredFontBoldFlags[index] = DEFAULT_FONTS[index].is_bold;
+	}
+
+	return ;
+}
+
+
+///////////////////////////////////////////////////////////////
+//
+//	Load_Fonts_From_Configuration
+//
+///////////////////////////////////////////////////////////////
+void
+StyleMgrClass::Load_Fonts_From_Configuration (void)
+{
+	ScaleX = Get_X_Scale ();
+	ScaleY = Get_Y_Scale ();
+
+	for (int index = 0; index < FONT_MAX; index ++) {
+		REF_PTR_RELEASE (Fonts[index]);
+
+		bool is_bold = ConfiguredFontBoldFlags[index];
+		float point_size = ((float)ConfiguredFontPointSizes[index]) * ScaleY;
+		point_size = max (point_size, 8.0F);
+		if (point_size < 10.0F && ScaleY < 1.0F) {
+			is_bold = false;
+		}
+
+		Fonts[index] = WW3DAssetManager::Get_Instance()->Get_FontChars (ConfiguredFontNames[index],
+								point_size, is_bold);
+	}
+
+	return ;
+}
+
+
+///////////////////////////////////////////////////////////////
+//
 //	Initialize
 //
 ////////////////////////////////////////////////////////////////
 void
 StyleMgrClass::Initialize (void)
 {
-	//
-	//	Compute the scale
-	//
-	ScaleX = Render2DClass::Get_Screen_Resolution().Width () / 800.0F;
-	ScaleY = Render2DClass::Get_Screen_Resolution().Height () / 600.0F;
-
-	//
-	//	Load each font
-	//
-	for (int index = 0; index < FONT_MAX; index ++) {
-
-		//
-		//	Scale the point size to fit this resolution
-		//
-		float point_size = ((float)DEFAULT_FONTS[index].point_size) * ScaleY;
-
-		//
-		//	Create the font
-		//
-		Fonts[index] = WW3DAssetManager::Get_Instance()->Get_FontChars (DEFAULT_FONTS[index].name,
-								point_size, DEFAULT_FONTS[index].is_bold);
-	}
+	Store_Default_Font_Configuration ();
+	Load_Fonts_From_Configuration ();
 
 	//
 	//	Load the backdrop texture name
@@ -175,12 +263,7 @@ void
 StyleMgrClass::Initialize_From_INI (const char *filename)
 {
 	Shutdown ();
-
-	//
-	//	Compute the scale
-	//
-	ScaleX = Render2DClass::Get_Screen_Resolution().Width () / 800.0F;
-	ScaleY = Render2DClass::Get_Screen_Resolution().Height () / 600.0F;
+	Store_Default_Font_Configuration ();
 
 	//
 	//	Get the INI file
@@ -248,27 +331,11 @@ StyleMgrClass::Initialize_From_INI (const char *filename)
 			StringClass font_name	= ::strtok (font_entry.Peek_Buffer (), ",");
 			StringClass font_size	= ::strtok (NULL, ",");
 			StringClass font_bold	= ::strtok (NULL, ",");
-			bool is_bold				= (::atoi (font_bold) != 0);
-
-			//
-			//	Scale the point size to fit this resolution
-			//
-			float point_size = ((float)::atoi (font_size)) * ScaleY;			
-			
-			//
-			//	Remove bold from "small" fonts if they're scaled down
-			//
-			point_size = max (point_size, 8.0F);
-			if (point_size < 10.0F && ScaleY < 1.0F) {
-				is_bold = false;
+			if (font_name.Is_Empty () == false && font_size.Is_Empty () == false) {
+				ConfiguredFontNames[index] = font_name;
+				ConfiguredFontPointSizes[index] = ::atoi (font_size);
+				ConfiguredFontBoldFlags[index] = (::atoi (font_bold) != 0);
 			}
-
-			//
-			//	Create the font
-			//
-			Fonts[index] = WW3DAssetManager::Get_Instance()->Get_FontChars (font_name,
-									point_size, is_bold);
-
 		}
 
 		//
@@ -295,11 +362,28 @@ StyleMgrClass::Initialize_From_INI (const char *filename)
 		ini_file = NULL;
 	}
 
+	Load_Fonts_From_Configuration ();
+
 	return ;
 }
 
 
 ////////////////////////////////////////////////////////////////
+//
+//	Refresh_Fonts
+//
+///////////////////////////////////////////////////////////////
+void
+StyleMgrClass::Refresh_Fonts (void)
+{
+	Load_Fonts_From_Configuration ();
+	Render2DSentenceClass::Refresh_Tracked_Fonts (Fonts, FONT_MAX);
+	WW3DAssetManager::Get_Instance()->Release_Unused_FontChars ();
+	return ;
+}
+
+
+///////////////////////////////////////////////////////////////
 //
 //	Shutdown
 //
@@ -371,6 +455,7 @@ void
 StyleMgrClass::Assign_Font (Render2DSentenceClass *renderer, FONT_STYLE style)
 {
 	renderer->Set_Font (Fonts[style]);
+	renderer->Set_Font_Tracking_ID (style);
 	return ;
 }
 
@@ -1012,6 +1097,8 @@ StyleMgrClass::Render_Glow
 	JUSTIFICATION				justify
 )
 {
+	renderer->Build_Sentence (text);
+
 	//
 	//	Get the extents of the text we will be drawing
 	//

@@ -42,6 +42,7 @@
 #define __STYLE_MGR_H
 
 #include "bittype.h"
+#include "rect.h"
 #include "widestring.h"
 #include "vector.h"
 
@@ -53,9 +54,6 @@ class TextureClass;
 class Render2DClass;
 class Render2DSentenceClass;
 class FontCharsClass;
-class RectClass;
-
-
 ////////////////////////////////////////////////////////////////
 //
 //	StyleMgrClass
@@ -118,6 +116,7 @@ public:
 	//
 	static void				Initialize (void);
 	static void				Initialize_From_INI (const char *filename);
+	static void				Refresh_Fonts (void);
 	static void				Shutdown (void);
 
 	//
@@ -140,8 +139,9 @@ public:
 	//
 	//	Scale support
 	//
-	static float			Get_X_Scale (void)	{ return ScaleX; }
-	static float			Get_Y_Scale (void)	{ return ScaleY; }
+	static RectClass		Get_Layout_Rect (void);
+	static float			Get_X_Scale (void);
+	static float			Get_Y_Scale (void);
 
 	//
 	//	Color methods
@@ -207,9 +207,14 @@ private:
 	static FontCharsClass *			Fonts[FONT_MAX];
 	static float						ScaleX;
 	static float						ScaleY;
+	static StringClass				ConfiguredFontNames[FONT_MAX];
+	static int							ConfiguredFontPointSizes[FONT_MAX];
+	static bool						ConfiguredFontBoldFlags[FONT_MAX];
 	static DynamicVectorClass<StringClass>	FontFileList;
 	static StringClass				EventAudioList[EVENT_AUDIO_MAX];
+
+	static void				Store_Default_Font_Configuration (void);
+	static void				Load_Fonts_From_Configuration (void);
 };
 
 #endif //__STYLE_MGR_H
-

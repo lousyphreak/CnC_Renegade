@@ -373,7 +373,7 @@ ShortcutBarCtrlClass::Update_Client_Rect (void)
 	//
 	//	Determine what scale to use
 	//
-	float scale_x = Render2DClass::Get_Screen_Resolution().Width () / 800.0F;
+	float scale_x = StyleMgrClass::Get_X_Scale ();
 
 	//
 	//	Calculate the display rectangle

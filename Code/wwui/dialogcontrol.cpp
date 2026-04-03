@@ -62,7 +62,12 @@ DialogControlClass::DialogControlClass (void)	:
 	IsVisible (true),
 	IsEmbedded (false),
 	TextColor (0, 0, 0),
-	IsTextColorOverridden (false)
+	IsTextColorOverridden (false),
+	LayoutX (0),
+	LayoutY (0),
+	LayoutWidth (0),
+	LayoutHeight (0),
+	HasLayoutHints (false)
 {
 	
 	INT32_TO_VRGB (StyleMgrClass::Get_Text_Color (), TextColor);

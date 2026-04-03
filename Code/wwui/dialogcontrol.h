@@ -129,6 +129,11 @@ public:
 	const RectClass &	Get_Client_Rect (void) const					{ return ClientRect; }
 	DWORD					Get_Style (void) const							{ return Style; }
 	int					Get_ID (void) const								{ return ID; }
+	bool					Has_Layout_Hints (void) const				{ return HasLayoutHints; }
+	int					Get_Layout_X (void) const						{ return LayoutX; }
+	int					Get_Layout_Y (void) const						{ return LayoutY; }
+	int					Get_Layout_Width (void) const				{ return LayoutWidth; }
+	int					Get_Layout_Height (void) const				{ return LayoutHeight; }
 
 	virtual void	Set_Text (const WCHAR *title)					{ Title = title; Set_Dirty ();  }
 	void					Set_Window_Rect (const RectClass &rect)	{ Rect = rect; Update_Client_Rect (); }
@@ -136,6 +141,14 @@ public:
 	void					Set_Client_Rect (const RectClass &rect)	{ ClientRect = rect; }
 	virtual void	Set_Style (DWORD style)							{ Style = style; }
 	void					Set_ID (int id)									{ ID = id; }
+	void					Set_Layout_Hints (int x, int y, int width, int height)
+							{
+								LayoutX = x;
+								LayoutY = y;
+								LayoutWidth = width;
+								LayoutHeight = height;
+								HasLayoutHints = true;
+							}
 	
 	//
 	//	Parent access
@@ -251,6 +264,11 @@ protected:
 	bool						IsEmbedded;
 	Vector3					TextColor;
 	bool						IsTextColorOverridden;
+	int						LayoutX;
+	int						LayoutY;
+	int						LayoutWidth;
+	int						LayoutHeight;
+	bool						HasLayoutHints;
 
 	ControlAdviseSinkClass *	AdviseSink;
 };

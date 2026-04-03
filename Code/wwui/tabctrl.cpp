@@ -93,8 +93,8 @@ TabCtrlClass::TabCtrlClass (void)	:
 	//
 	//	Determine what scale to use
 	//
-	ScaleX = Render2DClass::Get_Screen_Resolution().Width () / 800;
-	ScaleY = Render2DClass::Get_Screen_Resolution().Height () / 600;
+	ScaleX = StyleMgrClass::Get_X_Scale ();
+	ScaleY = StyleMgrClass::Get_Y_Scale ();
 
 	//
 	//	Assign the font to the text renderers

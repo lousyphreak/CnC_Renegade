@@ -124,6 +124,7 @@ list(APPEND COMMANDO_SOURCES
     multihud.cpp
     overlay.cpp
     renegadedialogmgr_dedicated.cpp
+    renegadecheatmgr.cpp
     sbbomanager.cpp
     sctextobj.cpp
     scorescreen.cpp

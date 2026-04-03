@@ -111,6 +111,7 @@
 #include "gamespyadmin.h"
 #include "shutdown.h"
 #include "specialbuilds.h"
+#include "renegadecheatmgr.h"
 
 extern const char *VALUE_NAME_TEXTURE_FILTER_MODE;
 
@@ -972,6 +973,8 @@ bool Game_Init(void)
 	cBandwidthGraph::Onetime_Init();
 
    cNetUtil::Wsa_Init();
+
+	Ensure_Renegade_CheatMgr_Initialized();
 
 	CombatManager::Init(ConsoleBox.Is_Exclusive() ? false : true);
 

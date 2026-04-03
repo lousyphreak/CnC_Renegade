@@ -326,7 +326,7 @@ LogicalSoundClass * WWAudioClass::Create_Logical_Sound(void)
 
 LogicalListenerClass * WWAudioClass::Create_Logical_Listener(void)
 {
-    return NULL;
+    return new LogicalListenerClass;
 }
 
 void WWAudioClass::Add_Logical_Type(int id, LPCTSTR display_name)

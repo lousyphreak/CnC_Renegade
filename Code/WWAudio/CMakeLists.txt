@@ -5,6 +5,7 @@ add_library(WWAudio STATIC
     AudibleSound.cpp
     AudioSaveLoad_null.cpp
     Listener.cpp
+    LogicalListener.cpp
     Sound3D.cpp
     SoundSceneObj.cpp
     Threads_headless.cpp

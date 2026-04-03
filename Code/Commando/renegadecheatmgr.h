@@ -76,5 +76,7 @@ protected:
 	///////////////////////////////////////////////////////////////////
 };
 
+void Ensure_Renegade_CheatMgr_Initialized(void);
+
 
 #endif //__RENEGADECHEATMGR_H

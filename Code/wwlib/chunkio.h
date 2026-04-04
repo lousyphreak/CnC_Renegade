@@ -246,12 +246,6 @@ inline std::unordered_map<const void *, uint32> & SaveLoad_Pointer_Token_Map()
 	return token_map;
 }
 
-inline std::unordered_map<uint32, const void *> & SaveLoad_Reverse_Pointer_Token_Map()
-{
-	static std::unordered_map<uint32, const void *> reverse_token_map;
-	return reverse_token_map;
-}
-
 inline uint32 & SaveLoad_Next_Pointer_Token()
 {
 	static uint32 next_token = 1;
@@ -261,7 +255,6 @@ inline uint32 & SaveLoad_Next_Pointer_Token()
 inline void SaveLoad_Reset_Pointer_Tokens()
 {
 	SaveLoad_Pointer_Token_Map().clear();
-	SaveLoad_Reverse_Pointer_Token_Map().clear();
 	SaveLoad_Next_Pointer_Token() = 1;
 }
 
@@ -273,7 +266,6 @@ inline uint32 SaveLoad_Encode_Pointer_Token(const void * pointer)
 
 	uint32 & next_token = SaveLoad_Next_Pointer_Token();
 	std::unordered_map<const void *, uint32> & token_map = SaveLoad_Pointer_Token_Map();
-	std::unordered_map<uint32, const void *> & reverse_token_map = SaveLoad_Reverse_Pointer_Token_Map();
 
 	std::unordered_map<const void *, uint32>::const_iterator existing = token_map.find(pointer);
 	if (existing != token_map.end()) {
@@ -285,20 +277,22 @@ inline uint32 SaveLoad_Encode_Pointer_Token(const void * pointer)
 		next_token = 1;
 	}
 	token_map.insert(std::make_pair(pointer, token));
-	reverse_token_map[token] = pointer;
 	return token;
+}
+
+/*
+** Save files do not contain native pointers. They contain 32-bit remap IDs.
+** The load path converts those IDs into pointer-shaped keys so the legacy
+** PointerRemapClass can continue to match them without assuming pointer width.
+*/
+inline void * SaveLoad_Pointer_Token_To_Remap_Key(uint32 token)
+{
+	return reinterpret_cast<void *>(static_cast<std::uintptr_t>(token));
 }
 
 inline void * SaveLoad_Decode_Pointer_Token(uint32 token)
 {
-	std::unordered_map<uint32, const void *> & reverse_token_map = SaveLoad_Reverse_Pointer_Token_Map();
-
-	std::unordered_map<uint32, const void *>::const_iterator existing = reverse_token_map.find(token);
-	if (existing != reverse_token_map.end()) {
-		return const_cast<void *>(existing->second);
-	}
-
-	return reinterpret_cast<void *>(static_cast<std::uintptr_t>(token));
+	return SaveLoad_Pointer_Token_To_Remap_Key(token);
 }
 
 template <class T>

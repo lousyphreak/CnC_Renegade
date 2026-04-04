@@ -299,7 +299,7 @@ WaypointNodeClass::Load_Variables (ChunkLoadClass &cload)
 				//	Read the old pointer from the chunk and register it
 				// for remapping.
 				//				
-				cload.Read (&m_Waypath, sizeof (m_Waypath));				
+				ChunkIO_Read_Value(cload, m_Waypath);
 				REQUEST_POINTER_REMAP ((void **)&m_Waypath);
 			}
 			break;
@@ -311,7 +311,7 @@ WaypointNodeClass::Load_Variables (ChunkLoadClass &cload)
 				// to the remapping system.
 				//				
 				WaypointNodeClass *old_ptr = NULL;
-				cload.Read (&old_ptr, sizeof (old_ptr));
+				ChunkIO_Read_Value(cload, old_ptr);
 				SaveLoadSystemClass::Register_Pointer (old_ptr, this);
 			}
 			break;

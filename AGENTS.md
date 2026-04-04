@@ -48,3 +48,13 @@ Remove all old d3d types, and replace them with bgfx types, or with our own type
 
 - **DO NOT COMMIT** - the user will do that
 - **DO NOT CHANGE THE ORIGINAL GAME CODE** - unless needed to port to new functionality, like changing the file system to use SDL3, or changing the input handling to use SDL3, but do not change the original game logic or behavior unless absolutely necessary. if you need to change something in the original code, make sure to document it in the `PORTING_PROGRESS.md` and `PORTING_KNOWLEDGE.md` files, and explain why the change was needed and how it was implemented.
+
+
+## **ACCEPTABLE CHANGES**
+
+the following is acceptable:
+- compiler/OS fixes (like updating code for modern compilers or case insensitive file opening)
+- implementation replacement for cross platform support (for example d3d-->bgfx, native system interaction -->SDL3)
+- removal of legacy things for good reasons (like CPU detection, because it is no longer required on modern systems)
+
+**ANYTHING ELSE IS NOT ACCEPTABLE** - we want to avoid changing behaviour of the original game as much as possible, and we want to preserve the original game logic and functionality as much as possible.

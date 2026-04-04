@@ -298,19 +298,19 @@ Random3Class::Random3Class(unsigned seed1, unsigned seed2) :
  *=============================================================================================*/
 int Random3Class::operator() (void)
 {
-	int loword = Seed;
-	int hiword = Index++;
+	unsigned int loword = static_cast<unsigned int>(Seed);
+	unsigned int hiword = static_cast<unsigned int>(Index++);
 	for (int i = 0; i < 4; i++) {
-		int hihold  = hiword;
-		int temp    = hihold ^  Mix1[i];
-		int itmpl   = temp   &  0xffff;
-		int itmph   = temp   >> 16;
+		unsigned int hihold = hiword;
+		unsigned int temp = hihold ^ static_cast<unsigned int>(Mix1[i]);
+		unsigned int itmpl = temp & 0xffffu;
+		unsigned int itmph = temp >> 16;
 		temp    = itmpl * itmpl + ~(itmph * itmph);
 		temp    = (temp >> 16) | (temp << 16);
-		hiword  = loword ^ ((temp ^ Mix2[i]) + itmpl * itmph);
+		hiword  = loword ^ ((temp ^ static_cast<unsigned int>(Mix2[i])) + itmpl * itmph);
 		loword  = hihold;
 	}
-	return(hiword);
+	return static_cast<int>(hiword);
 }	
 
 

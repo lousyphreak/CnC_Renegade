@@ -41,6 +41,8 @@
 #define WWMATH_H
 
 #include "always.h"
+#include <cstdint>
+#include <cstring>
 #include <math.h>
 #include <cmath>
 #include <float.h>
@@ -254,8 +256,9 @@ WWINLINE double WWMath::Lerp(double a, double b, float lerp )
 
 WWINLINE bool WWMath::Is_Valid_Float(float x)
 {
-	unsigned long * plong = (unsigned long *)(&x);
-	unsigned long exponent = ((*plong) & 0x7F800000) >> (32-9);
+	uint32_t bits = 0;
+	std::memcpy(&bits, &x, sizeof(bits));
+	uint32_t exponent = (bits & 0x7F800000u) >> (32-9);
 
 	// if exponent is 0xFF, this is a NAN 
 	if (exponent == 0xFF) {
@@ -266,8 +269,9 @@ WWINLINE bool WWMath::Is_Valid_Float(float x)
 
 WWINLINE bool WWMath::Is_Valid_Double(double x)
 {
-	unsigned long * plong = (unsigned long *)(&x) + 1;
-	unsigned long exponent = ((*plong) & 0x7FF00000) >> (32-12);
+	uint64_t bits = 0;
+	std::memcpy(&bits, &x, sizeof(bits));
+	uint32_t exponent = static_cast<uint32_t>((bits >> 52) & 0x7FFu);
 
 	// if exponent is 0x7FF, this is a NAN 
 	if (exponent == 0x7FF) {

@@ -41,11 +41,23 @@
 ////////////////////////////////////////////////////////////////
 //	Static member initialization
 ////////////////////////////////////////////////////////////////
-NetworkObjectMgrClass::OBJECT_LIST	NetworkObjectMgrClass::_ObjectList;
-NetworkObjectMgrClass::OBJECT_LIST	NetworkObjectMgrClass::_DeletePendingList;
 int											NetworkObjectMgrClass::_NewDynamicID = NETID_DYNAMIC_OBJECT_MIN;
 int											NetworkObjectMgrClass::_NewClientID = 0;
 bool											NetworkObjectMgrClass::_IsLevelLoading = false;
+
+NetworkObjectMgrClass::OBJECT_LIST &
+NetworkObjectMgrClass::Get_Object_List(void)
+{
+	static OBJECT_LIST object_list;
+	return object_list;
+}
+
+NetworkObjectMgrClass::OBJECT_LIST &
+NetworkObjectMgrClass::Get_Delete_Pending_List(void)
+{
+	static OBJECT_LIST delete_pending_list;
+	return delete_pending_list;
+}
 
 ////////////////////////////////////////////////////////////////
 //
@@ -67,7 +79,7 @@ NetworkObjectMgrClass::Register_Object (NetworkObjectClass *object)
 			//
 			//	Insert the object into the list
 			//
-			_ObjectList.Insert (index, object);
+			Get_Object_List ().Insert (index, object);
 		}
 	}
 
@@ -95,7 +107,7 @@ NetworkObjectMgrClass::Unregister_Object (NetworkObjectClass *object)
 			//
 			//	Remove the object from the list
 			//
-			_ObjectList.Delete (index);
+			Get_Object_List ().Delete (index);
 		}
 	}
 
@@ -118,7 +130,7 @@ NetworkObjectMgrClass::Find_Object (int object_id)
 	//
 	int index = 0;
 	if (Find_Object (object_id, &index)) {
-		object = _ObjectList[index];
+		object = Get_Object_List ()[index];
 	}
 
 	return object;
@@ -224,7 +236,8 @@ NetworkObjectMgrClass::Find_Object (int id_to_find, int *index)
 	bool found		= false;	
 	(*index)			= 0;
 	int min_index	= 0;
-	int max_index	= _ObjectList.Count () - 1;		
+	OBJECT_LIST &object_list = Get_Object_List ();
+	int max_index	= object_list.Count () - 1;		
 	
 	//
 	//	Keep looping until we've closed the window of possiblity
@@ -236,7 +249,7 @@ NetworkObjectMgrClass::Find_Object (int id_to_find, int *index)
 		//	Calculate what slot we are currently looking at
 		//
 		int curr_index	= min_index + ((max_index - min_index) / 2);
-		int curr_id		= _ObjectList[curr_index]->Get_Network_ID ();
+		int curr_id		= object_list[curr_index]->Get_Network_ID ();
 
 		//
 		//	Did we find the right slot?
@@ -281,9 +294,10 @@ NetworkObjectMgrClass::Think (void)
 	//
 	//	Simply let each object think
 	//
-	for (int index = 0; index < _ObjectList.Count (); index ++) {
-		WWASSERT(_ObjectList[index] != NULL);
-		_ObjectList[index]->Network_Think ();
+	OBJECT_LIST &object_list = Get_Object_List ();
+	for (int index = 0; index < object_list.Count (); index ++) {
+		WWASSERT(object_list[index] != NULL);
+		object_list[index]->Network_Think ();
 	}
 
 	return ;
@@ -305,8 +319,9 @@ NetworkObjectMgrClass::Set_All_Delete_Pending (void)
 	//
 	//	Mark all netobjects as delete pending
 	//
-	for (int index = 0; index < _ObjectList.Count (); index ++) {
-		_ObjectList[index]->Set_Delete_Pending();
+	OBJECT_LIST &object_list = Get_Object_List ();
+	for (int index = 0; index < object_list.Count (); index ++) {
+		object_list[index]->Set_Delete_Pending();
 	}
 
 	return ;
@@ -330,17 +345,18 @@ NetworkObjectMgrClass::Delete_Pending (void)
 	//
 	//	Delete each object that is pending...
 	//
-	for (int index = 0; index < _DeletePendingList.Count (); index ++) {
-		WWASSERT(_DeletePendingList[index] != NULL);
-		if (_DeletePendingList[index]->Is_Delete_Pending ()) {
-			_DeletePendingList[index]->Delete ();
+	OBJECT_LIST &delete_pending_list = Get_Delete_Pending_List ();
+	for (int index = 0; index < delete_pending_list.Count (); index ++) {
+		WWASSERT(delete_pending_list[index] != NULL);
+		if (delete_pending_list[index]->Is_Delete_Pending ()) {
+			delete_pending_list[index]->Delete ();
 		}
 	}
 
 //	if (_DeletePendingList.Count()) {
 //		_DeletePendingList.Delete_All ();
 //	}
-	_DeletePendingList.Reset_Active();	// No need to resize the vector back to zero...
+	delete_pending_list.Reset_Active();	// No need to resize the vector back to zero...
 	return ;
 }
 
@@ -359,11 +375,12 @@ NetworkObjectMgrClass::Delete_Client_Objects (int client_id)
 	//	Delete each object that belongs to the given client
 	//
 
-	for (int index = 0; index < _ObjectList.Count (); index ++) {
-		WWASSERT(_ObjectList[index] != NULL);
-		if (_ObjectList[index]->Belongs_To_Client (client_id)) {
+	OBJECT_LIST &object_list = Get_Object_List ();
+	for (int index = 0; index < object_list.Count (); index ++) {
+		WWASSERT(object_list[index] != NULL);
+		if (object_list[index]->Belongs_To_Client (client_id)) {
 			//TSS092301 _ObjectList[index]->Delete ();
-			_ObjectList[index]->Set_Delete_Pending();
+			object_list[index]->Set_Delete_Pending();
 		}
 	}
 
@@ -387,8 +404,9 @@ NetworkObjectMgrClass::Restore_Dirty_Bits (int client_id)
 	// For now I am going to use the topmost client id...
 	//
 
-	for (int index = 0; index < _ObjectList.Count (); index ++) {
-		NetworkObjectClass * p_object = _ObjectList[index];
+	OBJECT_LIST &object_list = Get_Object_List ();
+	for (int index = 0; index < object_list.Count (); index ++) {
+		NetworkObjectClass * p_object = object_list[index];
 		WWASSERT(p_object != NULL);
 		BYTE generic_bits = p_object->Get_Object_Dirty_Bits(NetworkObjectClass::MAX_CLIENT_COUNT - 1);//TSS2001e
 		p_object->Set_Object_Dirty_Bits(client_id, generic_bits);
@@ -406,8 +424,9 @@ NetworkObjectMgrClass::Restore_Dirty_Bits (int client_id)
 void
 NetworkObjectMgrClass::Register_Object_For_Deletion (NetworkObjectClass *object)
 {
-	if (_DeletePendingList.ID (object) == -1) {
-		_DeletePendingList.Add (object);
+	OBJECT_LIST &delete_pending_list = Get_Delete_Pending_List ();
+	if (delete_pending_list.ID (object) == -1) {
+		delete_pending_list.Add (object);
 	}
 
 	return ;
@@ -422,9 +441,10 @@ NetworkObjectMgrClass::Register_Object_For_Deletion (NetworkObjectClass *object)
 void 
 NetworkObjectMgrClass::Reset_Import_State_Counts(void)
 {
-	for (int index = 0; index < _ObjectList.Count (); index ++) {
+	OBJECT_LIST &object_list = Get_Object_List ();
+	for (int index = 0; index < object_list.Count (); index ++) {
 
-		NetworkObjectClass * p_object = _ObjectList[index];
+		NetworkObjectClass * p_object = object_list[index];
 		WWASSERT(p_object != NULL);
 			
 		//
@@ -433,5 +453,4 @@ NetworkObjectMgrClass::Reset_Import_State_Counts(void)
 		p_object->Reset_Import_State_Count();
 	}
 }
-
 

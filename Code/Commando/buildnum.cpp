@@ -37,6 +37,8 @@
 #include "always.h"
 #include "buildnum.h"
 #include "wwdebug.h"
+#include <cstdint>
+#include <cstring>
 #include <stdio.h>
 #include "win.h"
 
@@ -70,7 +72,9 @@ char BuildInfoClass::BuildDate   [64] = {"Insert1Build2Date3Here4     xxxx      
  *=============================================================================================*/
 unsigned long BuildInfoClass::Get_Build_Number(void)
 {
-	return (*(unsigned long*)(&BuildNumber[28]));
+	uint32_t build_number = 0;
+	std::memcpy(&build_number, &BuildNumber[28], sizeof(build_number));
+	return build_number;
 }
 
 
@@ -93,7 +97,7 @@ unsigned long BuildInfoClass::Get_Build_Number(void)
 char *BuildInfoClass::Get_Build_Number_String(void)
 {
 	static char _buffer[16];
-	sprintf (_buffer, "%d", *(unsigned long*)(&BuildNumber[28]));
+	sprintf (_buffer, "%u", static_cast<unsigned int>(Get_Build_Number()));
 	return (_buffer);
 }
 
@@ -311,7 +315,6 @@ void BuildInfoClass::Log_Build_Info(void)
 	WWDEBUG_SAY((Composite_Build_Info()));
 	WWDEBUG_SAY(("\n"));
 }
-
 
 
 

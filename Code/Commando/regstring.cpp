@@ -63,9 +63,10 @@ cRegistryString::cRegistryString(LPCSTR registry_location, LPCSTR key_name,
 void cRegistryString::Set(LPCSTR value)
 {
    WWASSERT(value != NULL);
-   WWASSERT(strlen(value) < sizeof(Value));
+   const size_t value_length = strlen(value);
+   WWASSERT(value_length < sizeof(Value));
 
-   strcpy(Value, value);
+   memmove(Value, value, value_length + 1);
 
    if (strcmp(RegistryLocation, "")) {
 	   RegistryClass * registry = new RegistryClass(RegistryLocation);

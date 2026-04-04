@@ -68,12 +68,12 @@ char* strtrim(char* buffer)
 		}
 
 		if (source != buffer) {
-			strcpy(buffer, source);
+			memmove(buffer, source, strlen(source) + 1);
 		}
 
 		/* Clip trailing white space from the string. */
-		for (int index = strlen(buffer) - 1; index >= 0; --index) {
-			if ((*source != 0) && ((unsigned char)buffer[index] <= 32)) {
+		for (int index = static_cast<int>(strlen(buffer)) - 1; index >= 0; --index) {
+			if ((unsigned char)buffer[index] <= 32) {
 				buffer[index] = '\0';
 			} else {
 				break;
@@ -96,12 +96,12 @@ wchar_t* wcstrim(wchar_t* buffer)
 		}
 		
 		if (source != buffer) {
-			wcscpy(buffer, source);
+			memmove(buffer, source, (wcslen(source) + 1) * sizeof(wchar_t));
 		}
 
 		/* Clip trailing white space from the string. */
-		for (int index = wcslen(buffer) - 1; index >= 0; --index) {
-			if ((*source != 0) && ((unsigned int)buffer[index] <= 32)) {
+		for (int index = static_cast<int>(wcslen(buffer)) - 1; index >= 0; --index) {
+			if ((unsigned int)buffer[index] <= 32) {
 				buffer[index] = L'\0';
 			} else {
 				break;

@@ -205,7 +205,7 @@ class List : public GenericList {
 		T First_Valid(void) const {return((T)GenericList::First_Valid());}
 		T Last(void) const {return((T)GenericList::Last());}
 		T Last_Valid(void) const {return((T)GenericList::Last_Valid());}
-		void Delete(void) {while (First()->Is_Valid()) delete First();}
+		void Delete(void) {while (First_Valid() != 0) delete First_Valid();}
 
 	private:
 		List(List<T> const & rvalue);

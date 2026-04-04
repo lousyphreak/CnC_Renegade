@@ -37,6 +37,7 @@ set(WW3D2_SOURCES
     metalmap.cpp
     motchan.cpp
     line3d.cpp
+    layer.cpp
     nullrobj.cpp
     particle_renderers_headless.cpp
     part_buf.cpp

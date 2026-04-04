@@ -113,9 +113,9 @@ public:
 	//
 	//	Object enumeration
 	//
-	static int							Get_Object_Count (void)	{ return _ObjectList.Count (); }
-	static NetworkObjectClass *	Get_Object (int index)	{ return _ObjectList[index]; }
-	static int							Get_Pending_Object_Count (void)	{ return _DeletePendingList.Count (); }
+	static int							Get_Object_Count (void)	{ return Get_Object_List().Count (); }
+	static NetworkObjectClass *	Get_Object (int index)	{ return Get_Object_List()[index]; }
+	static int							Get_Pending_Object_Count (void)	{ return Get_Delete_Pending_List().Count (); }
 
 	//
 	//	Object lookup
@@ -137,20 +137,20 @@ public:
 private:
 
 	////////////////////////////////////////////////////////////////
-	//	Private methods
-	////////////////////////////////////////////////////////////////
-	static bool							Find_Object (int id_to_find, int *index);
-
-	////////////////////////////////////////////////////////////////
 	//	Private tyepdefs
 	////////////////////////////////////////////////////////////////
 	typedef DynamicVectorClass<NetworkObjectClass *>	OBJECT_LIST;
 
 	////////////////////////////////////////////////////////////////
+	//	Private methods
+	////////////////////////////////////////////////////////////////
+	static bool							Find_Object (int id_to_find, int *index);
+	static OBJECT_LIST				&Get_Object_List (void);
+	static OBJECT_LIST				&Get_Delete_Pending_List (void);
+
+	////////////////////////////////////////////////////////////////
 	//	Private member data
 	////////////////////////////////////////////////////////////////
-	static OBJECT_LIST	_ObjectList;
-	static OBJECT_LIST	_DeletePendingList;
 	static int			_NewDynamicID;
 	static int			_NewClientID;
 	static bool			_IsLevelLoading;

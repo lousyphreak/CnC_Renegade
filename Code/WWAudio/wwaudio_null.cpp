@@ -3,7 +3,14 @@
 #include "AudibleSound.h"
 #include "LogicalListener.h"
 #include "LogicalSound.h"
+#include "SoundBuffer.h"
+#include "SoundChunkIDs.h"
+#include "SoundScene.h"
+#include "persistfactory.h"
 #include "refcount.h"
+#include "soundhandle.h"
+
+#include <cstring>
 
 WWAudioClass *WWAudioClass::_theInstance = NULL;
 HANDLE WWAudioClass::_TimerSyncEvent = NULL;
@@ -488,4 +495,304 @@ AudibleSoundClass * WWAudioClass::Peek_3D_Sample(int)
 void WWAudioClass::Free_Completed_Sounds(void)
 {
     m_CompletedSounds.Delete_All();
+}
+
+namespace
+{
+SimplePersistFactoryClass<LogicalSoundClass, CHUNKID_LOGICALSOUND> g_logical_sound_persist_factory;
+}
+
+SoundSceneClass::SoundSceneClass(void)
+    : m_Listener(new Listener3DClass),
+      m_2ndListener(NULL),
+      m_MinExtents(0.0f, 0.0f, 0.0f),
+      m_MaxExtents(0.0f, 0.0f, 0.0f),
+      m_IsBatchMode(false)
+{
+}
+
+SoundSceneClass::~SoundSceneClass(void)
+{
+    delete m_Listener;
+    m_Listener = NULL;
+    m_2ndListener = NULL;
+}
+
+void SoundSceneClass::Re_Partition(const Vector3 &min_dimension, const Vector3 &max_dimension)
+{
+    m_MinExtents = min_dimension;
+    m_MaxExtents = max_dimension;
+}
+
+void SoundSceneClass::Collect_Logical_Sounds(int)
+{
+}
+
+void SoundSceneClass::Set_2nd_Listener(Listener3DClass *listener)
+{
+    m_2ndListener = listener;
+}
+
+void SoundSceneClass::Flush_Scene(void)
+{
+}
+
+void SoundSceneClass::Update_Sound(SoundCullObjClass *)
+{
+}
+
+void SoundSceneClass::Add_Sound(AudibleSoundClass *, bool)
+{
+}
+
+void SoundSceneClass::Remove_Sound(AudibleSoundClass *, bool)
+{
+}
+
+void SoundSceneClass::Add_Static_Sound(AudibleSoundClass *, bool)
+{
+}
+
+void SoundSceneClass::Remove_Static_Sound(AudibleSoundClass *, bool)
+{
+}
+
+void SoundSceneClass::Add_Logical_Sound(LogicalSoundClass *, bool)
+{
+}
+
+void SoundSceneClass::Remove_Logical_Sound(LogicalSoundClass *, bool, bool)
+{
+}
+
+void SoundSceneClass::Add_Logical_Listener(LogicalListenerClass *)
+{
+}
+
+void SoundSceneClass::Remove_Logical_Listener(LogicalListenerClass *)
+{
+}
+
+bool SoundSceneClass::Save_Static(ChunkSaveClass &)
+{
+    return true;
+}
+
+bool SoundSceneClass::Load_Static(ChunkLoadClass &)
+{
+    return true;
+}
+
+bool SoundSceneClass::Save_Dynamic(ChunkSaveClass &)
+{
+    return true;
+}
+
+bool SoundSceneClass::Load_Dynamic(ChunkLoadClass &)
+{
+    return true;
+}
+
+bool SoundSceneClass::Is_Sound_In_Scene(AudibleSoundClass *, bool)
+{
+    return false;
+}
+
+void SoundSceneClass::On_Frame_Update(unsigned int)
+{
+}
+
+void SoundSceneClass::Initialize(void)
+{
+}
+
+bool SoundSceneClass::Is_Logical_Sound_In_Scene(LogicalSoundClass *, bool)
+{
+    return false;
+}
+
+void SoundSceneClass::Save_Static_Sounds(ChunkSaveClass &)
+{
+}
+
+void SoundSceneClass::Load_Static_Sounds(ChunkLoadClass &)
+{
+}
+
+void SoundSceneClass::Collect_Audible_Sounds(Listener3DClass *, COLLECTED_SOUNDS &)
+{
+}
+
+LogicalSoundClass::LogicalSoundClass(void)
+    : m_DropOffRadius(1.0f),
+      m_IsSingleShot(false),
+      m_TypeMask(0),
+      m_Position(0.0f, 0.0f, 0.0f),
+      m_OldestListenerTimestamp(0),
+      m_MaxListeners(0),
+      m_NotifyDelayInMS(2000),
+      m_LastNotification(0)
+{
+}
+
+LogicalSoundClass::~LogicalSoundClass(void)
+{
+}
+
+bool LogicalSoundClass::Allow_Notify(uint32 timestamp)
+{
+    if ((timestamp - m_LastNotification) < m_NotifyDelayInMS) {
+        return false;
+    }
+
+    m_LastNotification = timestamp;
+    return true;
+}
+
+bool LogicalSoundClass::On_Frame_Update(unsigned int)
+{
+    return false;
+}
+
+void LogicalSoundClass::Add_To_Scene(bool)
+{
+    SoundSceneClass *scene = WWAudioClass::Get_Instance() != NULL ? WWAudioClass::Get_Instance()->Get_Sound_Scene() : NULL;
+    if ((scene != NULL) && (m_Scene == NULL)) {
+        m_Scene = scene;
+        scene->Add_Logical_Sound(this, m_IsSingleShot);
+    }
+}
+
+void LogicalSoundClass::Remove_From_Scene(void)
+{
+    if (m_Scene != NULL) {
+        m_Scene->Remove_Logical_Sound(this, m_IsSingleShot);
+        m_Scene = NULL;
+    }
+}
+
+bool LogicalSoundClass::Save(ChunkSaveClass &)
+{
+    return true;
+}
+
+bool LogicalSoundClass::Load(ChunkLoadClass &)
+{
+    return true;
+}
+
+const PersistFactoryClass &LogicalSoundClass::Get_Factory(void) const
+{
+    return g_logical_sound_persist_factory;
+}
+
+SoundBufferClass::SoundBufferClass(void)
+    : m_Buffer(NULL),
+      m_Length(0),
+      m_Filename(NULL),
+      m_Duration(0),
+      m_Rate(0),
+      m_Bits(0),
+      m_Channels(0),
+      m_Type(WAVE_FORMAT_PCM)
+{
+}
+
+SoundBufferClass::~SoundBufferClass(void)
+{
+    std::free(m_Filename);
+    Free_Buffer();
+}
+
+bool SoundBufferClass::Load_From_File(const char *filename)
+{
+    Set_Filename(filename);
+    return false;
+}
+
+bool SoundBufferClass::Load_From_File(FileClass &)
+{
+    return false;
+}
+
+bool SoundBufferClass::Load_From_Memory(unsigned char *mem_buffer, unsigned long size)
+{
+    Free_Buffer();
+    if ((mem_buffer == NULL) || (size == 0)) {
+        return false;
+    }
+
+    m_Buffer = new unsigned char[size];
+    std::memcpy(m_Buffer, mem_buffer, size);
+    m_Length = size;
+    Determine_Stats(m_Buffer);
+    return true;
+}
+
+void SoundBufferClass::Set_Filename(const char *name)
+{
+    std::free(m_Filename);
+    m_Filename = NULL;
+    if (name != NULL) {
+        m_Filename = ::strdup(name);
+    }
+}
+
+void SoundBufferClass::Free_Buffer(void)
+{
+    delete [] m_Buffer;
+    m_Buffer = NULL;
+    m_Length = 0;
+}
+
+void SoundBufferClass::Determine_Stats(unsigned char *)
+{
+    m_Duration = 0;
+    m_Rate = 0;
+    m_Bits = 0;
+    m_Channels = 0;
+    m_Type = WAVE_FORMAT_PCM;
+}
+
+StreamSoundBufferClass::StreamSoundBufferClass(void)
+{
+}
+
+StreamSoundBufferClass::~StreamSoundBufferClass(void)
+{
+}
+
+bool StreamSoundBufferClass::Load_From_File(const char *filename)
+{
+    Set_Filename(filename);
+    return false;
+}
+
+bool StreamSoundBufferClass::Load_From_File(FileClass &)
+{
+    return false;
+}
+
+void StreamSoundBufferClass::Free_Buffer(void)
+{
+    SoundBufferClass::Free_Buffer();
+}
+
+bool StreamSoundBufferClass::Load_From_File(HANDLE, unsigned long, unsigned long)
+{
+    return false;
+}
+
+SoundHandleClass::SoundHandleClass(void)
+    : Buffer(NULL)
+{
+}
+
+SoundHandleClass::~SoundHandleClass(void)
+{
+}
+
+void SoundHandleClass::Initialize(SoundBufferClass *buffer)
+{
+    Buffer = buffer;
 }

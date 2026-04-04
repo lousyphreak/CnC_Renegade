@@ -30,11 +30,13 @@ class ClientDifficultyMenuClass : public MenuDialogClass
 {
 public:
 	ClientDifficultyMenuClass();
+	void Set_Replay(const char *filename) { ReplayFilename = filename; }
 
 	void On_Frame_Update() override;
 	void On_Command(int ctrl_id, int message_id, DWORD param) override;
 
 private:
+	StringClass ReplayFilename;
 	int CurrSel;
 };
 

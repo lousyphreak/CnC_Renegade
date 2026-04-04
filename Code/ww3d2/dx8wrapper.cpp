@@ -55,6 +55,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_properties.h>
@@ -479,6 +480,7 @@ bool Sync_Backbuffer(bool force_reset)
 
 	Update_Windowed_State();
 	Apply_View_Rect();
+	bgfx::setViewClear(kBootstrapViewId, g_bgfx.clear_flags, g_bgfx.clear_color, g_bgfx.clear_depth, g_bgfx.clear_stencil);
 	return true;
 }
 
@@ -627,14 +629,45 @@ bool Submit_Triangles(unsigned short start_index, unsigned short polygon_count, 
 		return false;
 	}
 
-	if (bgfx::getAvailTransientVertexBuffer(vertex_count, g_bgfx.gui_layout) < vertex_count || bgfx::getAvailTransientIndexBuffer(index_total) < index_total) {
-		WWRELEASE_SAY(("BGFX2D: transient buffer allocation failed (%u vertices, %u indices)\n", vertex_count, index_total));
+	if (static_cast<uint32_t>(start_index) + index_total > g_bgfx.index_count) {
+		WWRELEASE_SAY(("BGFX2D: index buffer range out of bounds (start=%u count=%u available=%u)\n", start_index, index_total, g_bgfx.index_count));
+		return false;
+	}
+
+	const uint32_t base_vertex_index = static_cast<uint32_t>(g_bgfx.index_base_offset);
+	const uint32_t requested_min_source = base_vertex_index + static_cast<uint32_t>(min_vertex_index);
+	const uint32_t requested_max_source = requested_min_source + static_cast<uint32_t>(vertex_count) - 1U;
+	if (requested_max_source >= g_bgfx.vertex_count) {
+		WWRELEASE_SAY(("BGFX2D: vertex buffer range out of bounds (min=%u count=%u base=%u available=%u)\n", min_vertex_index, vertex_count, g_bgfx.index_base_offset, g_bgfx.vertex_count));
+		return false;
+	}
+
+	uint32_t draw_min_source = std::numeric_limits<uint32_t>::max();
+	uint32_t draw_max_source = 0;
+	for (uint32_t i = 0; i < index_total; ++i) {
+		const uint32_t source_index = static_cast<uint32_t>(g_bgfx.index_data[start_index + i]) + base_vertex_index;
+		if (source_index >= g_bgfx.vertex_count) {
+			WWRELEASE_SAY(("BGFX2D: source index out of bounds (index=%u available=%u)\n", source_index, g_bgfx.vertex_count));
+			return false;
+		}
+		draw_min_source = std::min(draw_min_source, source_index);
+		draw_max_source = std::max(draw_max_source, source_index);
+	}
+
+	if (draw_min_source < requested_min_source || draw_max_source > requested_max_source) {
+		WWRELEASE_SAY(("BGFX2D: draw uses vertices outside requested range (requested=%u..%u actual=%u..%u)\n", requested_min_source, requested_max_source, draw_min_source, draw_max_source));
+		return false;
+	}
+
+	const uint32_t source_vertex_count = draw_max_source - draw_min_source + 1U;
+	if (bgfx::getAvailTransientVertexBuffer(source_vertex_count, g_bgfx.gui_layout) < source_vertex_count || bgfx::getAvailTransientIndexBuffer(index_total) < index_total) {
+		WWRELEASE_SAY(("BGFX2D: transient buffer allocation failed (%u vertices, %u indices)\n", source_vertex_count, index_total));
 		return false;
 	}
 
 	bgfx::TransientVertexBuffer tvb;
 	bgfx::TransientIndexBuffer tib;
-	bgfx::allocTransientVertexBuffer(&tvb, vertex_count, g_bgfx.gui_layout);
+	bgfx::allocTransientVertexBuffer(&tvb, source_vertex_count, g_bgfx.gui_layout);
 	bgfx::allocTransientIndexBuffer(&tib, index_total);
 
 	const unsigned vertex_stride = g_bgfx.vertex_fvf->Get_FVF_Size();
@@ -656,8 +689,8 @@ bool Submit_Triangles(unsigned short start_index, unsigned short polygon_count, 
 	const Matrix4 &texture_transform = g_bgfx.texture_transforms[0];
 	const Matrix4 world_view = g_bgfx.view * g_bgfx.world;
 	BgfxGuiVertex *dst_vertices = reinterpret_cast<BgfxGuiVertex *>(tvb.data);
-	for (unsigned short i = 0; i < vertex_count; ++i) {
-		const unsigned char *src = g_bgfx.vertex_data + static_cast<size_t>(min_vertex_index + i) * vertex_stride;
+	for (uint32_t i = 0; i < source_vertex_count; ++i) {
+		const unsigned char *src = g_bgfx.vertex_data + static_cast<size_t>(draw_min_source + i) * vertex_stride;
 		const float *position = reinterpret_cast<const float *>(src + location_offset);
 		const uint32_t diffuse = has_diffuse ? *reinterpret_cast<const uint32_t *>(src + diffuse_offset) : 0xFFFFFFFFU;
 		const uint32_t resolved_diffuse = Resolve_Diffuse_Color(diffuse, has_diffuse);
@@ -699,8 +732,8 @@ bool Submit_Triangles(unsigned short start_index, unsigned short polygon_count, 
 
 	uint16_t *dst_indices = reinterpret_cast<uint16_t *>(tib.data);
 	for (uint32_t i = 0; i < index_total; ++i) {
-		const uint16_t source_index = g_bgfx.index_data[start_index + i] + g_bgfx.index_base_offset;
-		dst_indices[i] = static_cast<uint16_t>(source_index - min_vertex_index);
+		const uint32_t source_index = static_cast<uint32_t>(g_bgfx.index_data[start_index + i]) + base_vertex_index;
+		dst_indices[i] = static_cast<uint16_t>(source_index - draw_min_source);
 	}
 
 	// bgfx::setViewTransform is view-level (shared by ALL draw calls in a view), not
@@ -808,6 +841,7 @@ bool Initialize_Bgfx(SDL_Window *window)
 	Render2DClass::Set_Screen_Resolution(RectClass(0, 0, width, height));
 
 	bgfx::setViewName(kBootstrapViewId, "Bootstrap");
+	bgfx::setViewMode(kBootstrapViewId, bgfx::ViewMode::Sequential);
 	Apply_View_Rect();
 	bgfx::setViewClear(kBootstrapViewId, g_bgfx.clear_flags, g_bgfx.clear_color, g_bgfx.clear_depth, g_bgfx.clear_stencil);
 	return true;
@@ -878,7 +912,9 @@ void DX8Wrapper::Begin_Scene(void)
 	}
 
 	Sync_Backbuffer(false);
+	Ensure_Gui_Resources();
 	bgfx::setViewClear(kBootstrapViewId, g_bgfx.clear_flags, g_bgfx.clear_color, g_bgfx.clear_depth, g_bgfx.clear_stencil);
+	bgfx::setViewMode(kBootstrapViewId, bgfx::ViewMode::Sequential);
 	bgfx::setViewTransform(kBootstrapViewId, kIdentityMatrix, kIdentityMatrix);
 	bgfx::touch(kBootstrapViewId);
 	g_bgfx.draw_calls = 0;

@@ -45,6 +45,7 @@
 #include "menudialog.h"
 #include "resource.h"
 #include "DlgMessageBox.h"
+#include "vector.h"
 
 
 ////////////////////////////////////////////////////////////////
@@ -55,6 +56,24 @@
 class SaveGameMenuClass : public MenuDialogClass, public Observer<DlgMsgBoxEvent>
 {
 public:
+	struct EntryMetadata
+	{
+		FILETIME FileTime;
+		StringClass Filename;
+
+		bool operator== (const EntryMetadata &src) const
+		{
+			return FileTime.dwLowDateTime == src.FileTime.dwLowDateTime &&
+				FileTime.dwHighDateTime == src.FileTime.dwHighDateTime &&
+				Filename == src.Filename;
+		}
+
+		bool operator!= (const EntryMetadata &src) const
+		{
+			return !(*this == src);
+		}
+	};
+
 	
 	////////////////////////////////////////////////////////////////
 	//	Public constructors/destructors
@@ -62,7 +81,9 @@ public:
 	SaveGameMenuClass (void)	:
 		CurrSortCol (1),
 		IsSortAscending (false),
-		MenuDialogClass (IDD_MENU_SAVE_GAME)	{}
+		MenuDialogClass (IDD_MENU_SAVE_GAME)	{ _TheInstance = this; }
+
+	~SaveGameMenuClass (void) { if (_TheInstance == this) _TheInstance = NULL; }
 
 
 	////////////////////////////////////////////////////////////////
@@ -92,6 +113,7 @@ private:
 	//	Static members
 	////////////////////////////////////////////////////////////////
 	static int CALLBACK LoadListSortCallback (ListCtrlClass *list_ctrl, int item_index1, int item_index2, uint32 user_param);
+	static SaveGameMenuClass * _TheInstance;
 
 	////////////////////////////////////////////////////////////////
 	//	Private methods
@@ -101,14 +123,15 @@ private:
 	void		Get_Unique_Save_Filename (StringClass &filename);
 	void		Update_Text_Field (void);
 	void		Reload_List (const char *current_filename);
+	EntryMetadata *Get_Entry_Metadata(ListCtrlClass *list_ctrl, int item_index);
 
 	////////////////////////////////////////////////////////////////
 	//	Private member data
 	////////////////////////////////////////////////////////////////
 	uint16	CurrSortCol;
 	bool		IsSortAscending;
+	DynamicVectorClass<EntryMetadata> EntryMetadataList;
 };
 
 
 #endif //__DLG_SAVE_GAME_H
-

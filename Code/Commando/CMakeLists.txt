@@ -79,8 +79,20 @@ set(COMMANDO_EXECUTABLE_SOURCES
 )
 
 set(COMMANDO_CLIENT_MENU_SOURCES
+    dlgcncreference.cpp
     dlgcharacteroptions.cpp
     dlgcheatoptions.cpp
+    dlgevabuildingstab.cpp
+    dlgevacharacterstab.cpp
+    dlgevadatatab.cpp
+    dlgevaencyclopedia.cpp
+    dlgevamaptab.cpp
+    dlgevaobjectivestab.cpp
+    dlgevaviewertab.cpp
+    dlgevavehiclestab.cpp
+    dlgevaweaponstab.cpp
+    dlghelpscreen.cpp
+    dlgloadspgame.cpp
     dlgconfigaudiotab.cpp
     dlgconfigperformancetab.cpp
     dlgconfigvideotab.cpp
@@ -91,6 +103,7 @@ set(COMMANDO_CLIENT_MENU_SOURCES
     dlgcredits.cpp
     dlgmovieoptions.cpp
     dlgpreviewoptions.cpp
+    dlgsavegame.cpp
     dlgtechoptions.cpp
 )
 

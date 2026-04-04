@@ -54,6 +54,29 @@
 #include "wheelvehicle.h"
 #include "string_ids.h"
 
+namespace
+{
+	const uint32 EVA_VIEWER_INDEX_MASK = 0x00FFFFFFU;
+	const uint32 EVA_VIEWER_PLAYER_TYPE_SHIFT = 24U;
+	const int EVA_VIEWER_PLAYER_TYPE_BIAS = 4;
+
+	uint32 Pack_Viewer_Entry_Data(int object_index, int player_type)
+	{
+		return (static_cast<uint32>(object_index) & EVA_VIEWER_INDEX_MASK) |
+			((static_cast<uint32>(player_type + EVA_VIEWER_PLAYER_TYPE_BIAS) & 0xFFU) << EVA_VIEWER_PLAYER_TYPE_SHIFT);
+	}
+
+	int Unpack_Viewer_Object_Index(uint32 entry_data)
+	{
+		return static_cast<int>(entry_data & EVA_VIEWER_INDEX_MASK);
+	}
+
+	int Unpack_Viewer_Player_Type(uint32 entry_data)
+	{
+		return static_cast<int>((entry_data >> EVA_VIEWER_PLAYER_TYPE_SHIFT) & 0xFFU) - EVA_VIEWER_PLAYER_TYPE_BIAS;
+	}
+}
+
 
 ////////////////////////////////////////////////////////////////
 //
@@ -107,7 +130,7 @@ EvaViewerTabClass::On_Init_Dialog (void)
 			//
 			int item_index = ListCtrl->Insert_Entry (index, object.Get_Name ());
 			if (item_index >= 0) {
-				ListCtrl->Set_Entry_Data (item_index, 0, (uint32)&object);
+				ListCtrl->Set_Entry_Data (item_index, 0, Pack_Viewer_Entry_Data (index, object.Get_Player_Type ()));
 
 				//
 				//	Colorize the entry
@@ -294,7 +317,12 @@ EvaViewerTabClass::View_Entry (int entry_index)
 		//
 		//	Load the data for this selection
 		//
-		EvaViewerObjectClass *object = (EvaViewerObjectClass *)ListCtrl->Get_Entry_Data (entry_index, 0);
+		const int object_index = Unpack_Viewer_Object_Index (ListCtrl->Get_Entry_Data (entry_index, 0));
+		if (object_index < 0 || object_index >= ObjectList.Count ()) {
+			return ;
+		}
+
+		EvaViewerObjectClass *object = &ObjectList[object_index];
 		name			= object->Get_Name ();
 		description	= object->Get_Description ();
 		affiliation = object->Get_Affiliation ();
@@ -457,18 +485,19 @@ EvaViewerTabClass::ListSortCallback
 	//
 	//	Lookup the data associated with these entries
 	//
-	EvaViewerObjectClass *object1 = (EvaViewerObjectClass *)list_ctrl->Get_Entry_Data (item_index1, 0);
-	EvaViewerObjectClass *object2 = (EvaViewerObjectClass *)list_ctrl->Get_Entry_Data (item_index2, 0);
-
-	int player_type1 = object1->Get_Player_Type ();
-	int player_type2 = object2->Get_Player_Type ();
+	const uint32 entry_data1 = list_ctrl->Get_Entry_Data (item_index1, 0);
+	const uint32 entry_data2 = list_ctrl->Get_Entry_Data (item_index2, 0);
+	int player_type1 = Unpack_Viewer_Player_Type (entry_data1);
+	int player_type2 = Unpack_Viewer_Player_Type (entry_data2);
 	int result = 0;
 
 	//
 	//	Sort alphatically if the types are the same
 	//
 	if (player_type1 == player_type2) {
-		result = ::wcsicmp (object1->Get_Name (), object2->Get_Name ());
+		const WCHAR *name1 = list_ctrl->Get_Entry_Text (item_index1, 0);
+		const WCHAR *name2 = list_ctrl->Get_Entry_Text (item_index2, 0);
+		result = ::wcsicmp (name1, name2);
 	} else {
 
 		//

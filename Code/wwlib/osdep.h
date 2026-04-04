@@ -172,8 +172,17 @@ struct RECT {
     LONG bottom;
 };
 
+#ifndef RENEGADE_COMPAT_FILETIME_DEFINED
+#define RENEGADE_COMPAT_FILETIME_DEFINED
+typedef struct _FILETIME {
+	DWORD dwLowDateTime;
+	DWORD dwHighDateTime;
+} FILETIME, *LPFILETIME;
+#endif
+
 struct WIN32_FIND_DATAA {
 	DWORD dwFileAttributes;
+	FILETIME ftLastWriteTime;
 	char cFileName[260];
 };
 
@@ -733,6 +742,24 @@ inline void Populate_Find_Data(const std::filesystem::path & entry_path, WIN32_F
     const auto status = std::filesystem::status(entry_path, error);
     if (!error && std::filesystem::is_directory(status)) {
         find_data->dwFileAttributes |= FILE_ATTRIBUTE_DIRECTORY;
+    }
+
+    const auto last_write = std::filesystem::last_write_time(entry_path, error);
+    if (!error) {
+        const auto system_now = std::chrono::system_clock::now();
+        const auto file_now = decltype(last_write)::clock::now();
+        const auto adjusted = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+            last_write - file_now + system_now);
+        const auto unix_duration = adjusted.time_since_epoch();
+        const auto unix_seconds = std::chrono::duration_cast<std::chrono::seconds>(unix_duration);
+        const auto unix_100ns = std::chrono::duration_cast<std::chrono::nanoseconds>(unix_duration - unix_seconds).count() / 100;
+        constexpr std::uint64_t WINDOWS_TO_UNIX_EPOCH_100NS = 11644473600ull * 10000000ull;
+        const std::uint64_t ticks =
+            WINDOWS_TO_UNIX_EPOCH_100NS +
+            (static_cast<std::uint64_t>(unix_seconds.count()) * 10000000ull) +
+            static_cast<std::uint64_t>(unix_100ns);
+        find_data->ftLastWriteTime.dwLowDateTime = static_cast<DWORD>(ticks & 0xFFFFFFFFull);
+        find_data->ftLastWriteTime.dwHighDateTime = static_cast<DWORD>(ticks >> 32);
     }
 }
 

@@ -40,8 +40,8 @@
 #include "MPSettingsMgr.h"
 #include "DlgMessageBox.h"
 #include "DlgWOLSettings.h"
-#include <WWOnline\WOLLoginInfo.h>
-#include <WWUI\ComboBoxCtrl.h>
+#include <WWOnline/WOLLoginInfo.h>
+#include <wwui/comboboxctrl.h>
 #include <wwui/editctrl.h>
 #include "DlgWebpage.h"
 #include "string_ids.h"

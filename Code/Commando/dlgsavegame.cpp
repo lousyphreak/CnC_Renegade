@@ -48,23 +48,27 @@
 #include "string_ids.h"
 #include "editctrl.h"
 
+#include <filesystem>
+
 
 ////////////////////////////////////////////////////////////////
 //	Local constants
 ////////////////////////////////////////////////////////////////
-static enum
+enum
 {
 	MBEVENT_OVERWRITE_PROMPT	= 1,
 	MBEVENT_DELETE_PROMPT,
 };
 
-static enum
+enum
 {
 	COL_DATE	= 0,
 	COL_TIME,
 	COL_NAME
 };
 
+
+SaveGameMenuClass * SaveGameMenuClass::_TheInstance = NULL;
 
 ////////////////////////////////////////////////////////////////
 //
@@ -74,6 +78,8 @@ static enum
 void
 SaveGameMenuClass::On_Init_Dialog (void)
 {
+	EntryMetadataList.Delete_All ();
+
 	//
 	//	Get a pointer to the list control
 	//
@@ -154,6 +160,31 @@ SaveGameMenuClass::On_ListCtrl_Column_Click
 //	On_ListCtrl_Delete_Entry
 //
 ////////////////////////////////////////////////////////////////
+SaveGameMenuClass::EntryMetadata *
+SaveGameMenuClass::Get_Entry_Metadata (ListCtrlClass *list_ctrl, int item_index)
+{
+	if (list_ctrl == NULL || item_index < 0) {
+		return NULL;
+	}
+
+	const uint32 handle = list_ctrl->Get_Entry_Data (item_index, 0);
+	if (handle == 0) {
+		return NULL;
+	}
+
+	const int metadata_index = static_cast<int>(handle) - 1;
+	if (metadata_index < 0 || metadata_index >= EntryMetadataList.Count ()) {
+		return NULL;
+	}
+
+	return &EntryMetadataList[metadata_index];
+}
+
+///////////////////////////////////////////////////////////////
+//
+//	On_ListCtrl_Delete_Entry
+//
+///////////////////////////////////////////////////////////////
 void
 SaveGameMenuClass::On_ListCtrl_Delete_Entry
 (
@@ -163,20 +194,7 @@ SaveGameMenuClass::On_ListCtrl_Delete_Entry
 )
 {
 	if (ctrl_id == IDC_LOAD_GAME_LIST_CTRL) {
-		
-		//
-		//	Remove the data we associated with this entry
-		//
-		FILETIME *file_time		= (FILETIME *)list_ctrl->Get_Entry_Data (item_index, 0);
-		StringClass *filename	= (StringClass *)list_ctrl->Get_Entry_Data (item_index, 2);
 		list_ctrl->Set_Entry_Data (item_index, 0, 0);
-		list_ctrl->Set_Entry_Data (item_index, 2, 0);
-		if (file_time != NULL) {
-			delete file_time;
-		}		
-		if (filename != NULL) {
-			delete filename;
-		}		
 	}
 
 	return ;
@@ -210,9 +228,13 @@ SaveGameMenuClass::LoadListSortCallback (ListCtrlClass *list_ctrl, int item_inde
 			//
 			//	Sort by time
 			//
-			FILETIME *file_time1 = (FILETIME *)list_ctrl->Get_Entry_Data (item_index1, 0);
-			FILETIME *file_time2 = (FILETIME *)list_ctrl->Get_Entry_Data (item_index2, 0);
-			retval = ::CompareFileTime (file_time1, file_time2);
+			EntryMetadata *metadata1 = _TheInstance != NULL ? _TheInstance->Get_Entry_Metadata (list_ctrl, item_index1) : NULL;
+			EntryMetadata *metadata2 = _TheInstance != NULL ? _TheInstance->Get_Entry_Metadata (list_ctrl, item_index2) : NULL;
+			if (metadata1 == NULL || metadata2 == NULL) {
+				retval = (metadata1 != NULL) - (metadata2 != NULL);
+			} else {
+				retval = ::CompareFileTime (&metadata1->FileTime, &metadata2->FileTime);
+			}
 
 		} else {
 			
@@ -298,7 +320,11 @@ SaveGameMenuClass::Save_Game (bool prompt)
 		if (list_ctrl->Get_Entry_Data (item_index, 0) == NULL) {
 			Get_Unique_Save_Filename (full_path);
 		} else {
-			StringClass filename = ((StringClass *)list_ctrl->Get_Entry_Data (item_index, 2))->Peek_Buffer ();
+			EntryMetadata *metadata = Get_Entry_Metadata (list_ctrl, item_index);
+			if (metadata == NULL) {
+				return ;
+			}
+			StringClass filename = metadata->Filename.Peek_Buffer ();
 
 			//
 			//	Build a full filename
@@ -470,7 +496,11 @@ SaveGameMenuClass::Delete_Game (bool prompt)
 		//	Determine what filename this entry refers to
 		//		
 		if (list_ctrl->Get_Entry_Data (item_index, 0) != NULL) {
-			StringClass filename = ((StringClass *)list_ctrl->Get_Entry_Data (item_index, 2))->Peek_Buffer ();
+			EntryMetadata *metadata = Get_Entry_Metadata (list_ctrl, item_index);
+			if (metadata == NULL) {
+				return ;
+			}
+			StringClass filename = metadata->Filename.Peek_Buffer ();
 
 			if (prompt) {
 
@@ -518,6 +548,8 @@ SaveGameMenuClass::Delete_Game (bool prompt)
 void
 SaveGameMenuClass::Reload_List (const char *current_filename)
 {
+	EntryMetadataList.Delete_All ();
+
 	//
 	//	Get a pointer to the list control
 	//
@@ -583,8 +615,11 @@ SaveGameMenuClass::Reload_List (const char *current_filename)
 			list_ctrl->Set_Entry_Text (item_index, 1, date_string);
 			list_ctrl->Set_Entry_Text (item_index, 2, description);
 			
-			list_ctrl->Set_Entry_Data (item_index, 0, (uint32)new FILETIME(local_time));
-			list_ctrl->Set_Entry_Data (item_index, 2, (uint32)new StringClass(find_info.cFileName));
+			EntryMetadata metadata;
+			metadata.FileTime = local_time;
+			metadata.Filename = find_info.cFileName;
+			EntryMetadataList.Add (metadata);
+			list_ctrl->Set_Entry_Data (item_index, 0, EntryMetadataList.Count ());
 
 			//
 			//	Select this entry if its the default
@@ -706,51 +741,24 @@ SaveGameMenuClass::On_EditCtrl_Enter_Pressed (EditCtrlClass *edit_ctrl, int ctrl
 bool
 SaveGameMenuClass::Check_HD_Space (void)
 {
-	bool retval = true;
-
-	ULARGE_INTEGER freebytecount;		// Free bytes on disk available to caller (caller may not have access to entire disk).
-	ULARGE_INTEGER totalbytecount;	// Total bytes on disk.
-	StringClass		kernelpathname;
-	__int64			diskspace;
-
-	int (__stdcall *getfreediskspaceex) (LPCTSTR, PULARGE_INTEGER, PULARGE_INTEGER, PULARGE_INTEGER);
-
-	//	Get the free disk space on the drive.
-	// NOTE IML: For Win'95, must query for support for GetDiskFreeSpaceEx before using it - otherwise use GetDiskFreeSpace().
-	GetSystemDirectory (kernelpathname.Get_Buffer (_MAX_PATH), _MAX_PATH);
-	kernelpathname += "\\";
-	kernelpathname += "Kernel32.dll";
-	getfreediskspaceex = (int (_stdcall*) (LPCTSTR, PULARGE_INTEGER, PULARGE_INTEGER, PULARGE_INTEGER)) GetProcAddress (GetModuleHandle (kernelpathname.Peek_Buffer()), "GetDiskFreeSpaceExA");
-	if (getfreediskspaceex != NULL) {
-
-		if (!getfreediskspaceex (NULL, &freebytecount, &totalbytecount, NULL)) return (false);
-	
-		// Convert to a 64-bit integer.
-		diskspace = freebytecount.QuadPart;
-	
-	} else {
-
-		DWORD sectorspercluster, bytespersector, freeclustercount, totalclustercount;
-		
-		// The Ex version is not available. Use the Win'95 version.
-		// QUESTION: SDK docs say that values returned by this function are erroneous if partition > 2Gb.
-		//				 Does that mean that the partition is guaranteed to be <= 2Gb if Ex is not available?
-		if (!GetDiskFreeSpace (NULL, &sectorspercluster, &bytespersector, &freeclustercount, &totalclustercount)) return (false); 
-		diskspace = sectorspercluster * bytespersector * freeclustercount;
+	std::error_code error;
+	const std::filesystem::space_info space_info = std::filesystem::space(std::filesystem::current_path(), error);
+	if (error) {
+		return false;
 	}
 	
 	//
 	//	Is there at least 2 megs of disk space available?
 	//
-	const __int64 TWO_MEGS = (1024 * 1024 * 2);
-	if (diskspace < TWO_MEGS) {
+	const std::uintmax_t TWO_MEGS = 1024u * 1024u * 2u;
+	if (space_info.available < TWO_MEGS) {
 
 		//
 		//	Let the user know that they can't save because of lack of disk space
 		//
 		DlgMsgBox::DoDialog (IDS_MENU_SAVE_NO_DISK_SPACE_TITLE, IDS_MENU_SAVE_NO_DISK_SPACE_MSG);
-		retval = false;
+		return false;
 	}
 
-	return retval;
+	return true;
 }

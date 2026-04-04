@@ -105,7 +105,7 @@ MenuDialogClass::~MenuDialogClass (void)
 void
 MenuDialogClass::Initialize (void)
 {	
-	BackDrop = new MenuBackDropClass;
+	Get_BackDrop ();
 	return ;
 }
 
@@ -144,7 +144,7 @@ MenuDialogClass::Render (void)
 		//	Render the background scene first
 		//
 		if (kRenderMenuBackDrop) {
-			BackDrop->Render ();
+			Get_BackDrop ()->Render ();
 		}
 
 		//
@@ -179,6 +179,8 @@ MenuDialogClass::On_Init_Dialog (void)
 void
 MenuDialogClass::Start_Dialog (void)
 {
+	Get_BackDrop ();
+
 	//
 	//	As a menu dialog we use the whole screen
 	//
@@ -256,6 +258,22 @@ MenuDialogClass::End_Dialog (void)
 
 	DialogBaseClass::End_Dialog ();
 	return ;
+}
+
+
+MenuBackDropClass *
+MenuDialogClass::Get_BackDrop (void)
+{
+	if (BackDrop == NULL) {
+		BackDrop = new MenuBackDropClass;
+	}
+
+	if (BackDrop != NULL && BackDrop->Peek_Model () == NULL) {
+		BackDrop->Set_Model ("IF_BACK01");
+		BackDrop->Set_Animation ("IF_BACK01.IF_BACK01");
+	}
+
+	return BackDrop;
 }
 
 

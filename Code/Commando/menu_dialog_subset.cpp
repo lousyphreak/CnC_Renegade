@@ -4,6 +4,7 @@
 #include "dialogcontrol.h"
 #include "dialogmgr.h"
 #include "gameinitmgr.h"
+#include "gamemode.h"
 #include "god.h"
 #include "string_ids.h"
 #include "translatedb.h"
@@ -134,8 +135,18 @@ void ClientDifficultyMenuClass::On_Command(int ctrl_id, int message_id, DWORD pa
 		case IDC_MENU_DIFFCULTY04_BUTTON:
 		{
 			const int difficulty = ctrl_id - IDC_MENU_DIFFCULTY01_BUTTON;
-			GameInitMgrClass::Initialize_SP();
-			CampaignManager::Start_Campaign(difficulty);
+			if (ReplayFilename.Is_Empty()) {
+				GameInitMgrClass::Initialize_SP();
+				CampaignManager::Start_Campaign(difficulty);
+			} else {
+				if (GameModeManager::Find("Combat")->Is_Suspended()) {
+					GameInitMgrClass::End_Game();
+					GameModeManager::Safely_Deactivate();
+				}
+
+				GameInitMgrClass::Initialize_SP();
+				CampaignManager::Replay_Level(ReplayFilename, difficulty);
+			}
 			break;
 		}
 

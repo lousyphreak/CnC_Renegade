@@ -47,23 +47,23 @@
 #include "string_ids.h"
 #include "campaign.h"
 #include "dialogmgr.h"
+#include "menu_dialog_subset.h"
 #include "renegadedialogmgr.h"
 #include "god.h"
 #include "registry.h"
 #include "_globals.h"
-#include "dialogtests.h"
 #include "specialbuilds.h"
 
 
 ////////////////////////////////////////////////////////////////
 //	Local constants
 ////////////////////////////////////////////////////////////////
-static enum
+enum
 {
 	MBEVENT_DELETE_PROMPT	= 1,
 };
 
-static enum
+enum
 {
 	COL_DATE	= 0,
 	COL_TIME,
@@ -84,6 +84,8 @@ LoadSPGameMenuClass *	LoadSPGameMenuClass::_TheInstance	= NULL;
 void
 LoadSPGameMenuClass::On_Init_Dialog (void)
 {
+	EntryMetadataList.Delete_All ();
+
 	//
 	//	Get a pointer to the list control
 	//
@@ -246,9 +248,12 @@ LoadSPGameMenuClass::Build_List (const char *search_string, int start_index)
 				file_path += "\\";
 				file_path += find_info.cFileName;
 				
-				list_ctrl->Set_Entry_Data (item_index, 0, (uint32)new FILETIME(local_time));
-				list_ctrl->Set_Entry_Data (item_index, 1, (uint32)new StringClass(file_path));
-				list_ctrl->Set_Entry_Data (item_index, 2, (uint32)new StringClass(find_info.cFileName));
+				EntryMetadata metadata;
+				metadata.FileTime = local_time;
+				metadata.Path = file_path;
+				metadata.Filename = find_info.cFileName;
+				EntryMetadataList.Add (metadata);
+				list_ctrl->Set_Entry_Data (item_index, 0, EntryMetadataList.Count ());
 			}
 		}
 	}
@@ -394,6 +399,31 @@ LoadSPGameMenuClass::On_ListCtrl_Column_Click
 //	On_ListCtrl_Delete_Entry
 //
 ////////////////////////////////////////////////////////////////
+LoadSPGameMenuClass::EntryMetadata *
+LoadSPGameMenuClass::Get_Entry_Metadata (ListCtrlClass *list_ctrl, int item_index)
+{
+	if (list_ctrl == NULL || item_index < 0) {
+		return NULL;
+	}
+
+	const uint32 handle = list_ctrl->Get_Entry_Data (item_index, 0);
+	if (handle == 0) {
+		return NULL;
+	}
+
+	const int metadata_index = static_cast<int>(handle) - 1;
+	if (metadata_index < 0 || metadata_index >= EntryMetadataList.Count ()) {
+		return NULL;
+	}
+
+	return &EntryMetadataList[metadata_index];
+}
+
+///////////////////////////////////////////////////////////////
+//
+//	On_ListCtrl_Delete_Entry
+//
+///////////////////////////////////////////////////////////////
 void
 LoadSPGameMenuClass::On_ListCtrl_Delete_Entry
 (
@@ -403,31 +433,7 @@ LoadSPGameMenuClass::On_ListCtrl_Delete_Entry
 )
 {
 	if (ctrl_id == IDC_LOAD_GAME_LIST_CTRL) {
-		
-		//
-		//	Remove the data we associated with this entry
-		//
-		FILETIME *file_time		= (FILETIME *)list_ctrl->Get_Entry_Data (item_index, 0);
-		StringClass *path			= (StringClass *)list_ctrl->Get_Entry_Data (item_index, 1);
-		StringClass *filename	= (StringClass *)list_ctrl->Get_Entry_Data (item_index, 2);
 		list_ctrl->Set_Entry_Data (item_index, 0, 0);
-		list_ctrl->Set_Entry_Data (item_index, 1, 0);
-		list_ctrl->Set_Entry_Data (item_index, 2, 0);
-		
-		//
-		//	Free the data
-		//
-		if (file_time != NULL) {
-			delete file_time;
-		}
-		
-		if (path != NULL) {
-			delete path;
-		}
-				
-		if (filename != NULL) {
-			delete filename;
-		}
 	}
 
 	return ;
@@ -455,9 +461,13 @@ LoadSPGameMenuClass::LoadListSortCallback (ListCtrlClass *list_ctrl, int item_in
 		//
 		//	Sort by time
 		//
-		FILETIME *file_time1 = (FILETIME *)list_ctrl->Get_Entry_Data (item_index1, 0);
-		FILETIME *file_time2 = (FILETIME *)list_ctrl->Get_Entry_Data (item_index2, 0);
-		retval = ::CompareFileTime (file_time1, file_time2);
+		EntryMetadata *metadata1 = Get_Instance () != NULL ? Get_Instance ()->Get_Entry_Metadata (list_ctrl, item_index1) : NULL;
+		EntryMetadata *metadata2 = Get_Instance () != NULL ? Get_Instance ()->Get_Entry_Metadata (list_ctrl, item_index2) : NULL;
+		if (metadata1 == NULL || metadata2 == NULL) {
+			retval = (metadata1 != NULL) - (metadata2 != NULL);
+		} else {
+			retval = ::CompareFileTime (&metadata1->FileTime, &metadata2->FileTime);
+		}
 
 	} else {
 		
@@ -541,7 +551,11 @@ LoadSPGameMenuClass::Load_Game (void)
 		//
 		//	Get the name of the map
 		//
-		StringClass *filename	= (StringClass *)list_ctrl->Get_Entry_Data (item_index, 2);
+		EntryMetadata *metadata = Get_Entry_Metadata (list_ctrl, item_index);
+		if (metadata == NULL) {
+			return ;
+		}
+		StringClass *filename = &metadata->Filename;
 		StringClass save_name(filename->Peek_Buffer(),true);
 
 		StringClass map_name(0,true);
@@ -556,7 +570,7 @@ LoadSPGameMenuClass::Load_Game (void)
 		bool is_replay = Get_Game_Rank( save_name ) > 0;
 		if ( is_replay ) {
 			// if replay
-			DifficultyMenuClass * dialog = new DifficultyMenuClass();
+			ClientDifficultyMenuClass * dialog = new ClientDifficultyMenuClass();
 			dialog->Set_Replay( save_name );
 			dialog->Start_Dialog();
 			dialog->Release_Ref();
@@ -632,8 +646,9 @@ LoadSPGameMenuClass::Update_Button_State (void)
 		//
 		//	Get the filename associated with this entry
 		//		
-		if (list_ctrl->Get_Entry_Data (item_index, 0) != NULL) {
-			StringClass filename = ((StringClass *)list_ctrl->Get_Entry_Data (item_index, 1))->Peek_Buffer ();
+		EntryMetadata *metadata = Get_Entry_Metadata (list_ctrl, item_index);
+		if (metadata != NULL) {
+			StringClass filename = metadata->Path.Peek_Buffer ();
 			
 			//
 			//	Check to see if this is a saved game or a level file.
@@ -697,8 +712,9 @@ LoadSPGameMenuClass::Delete_Game (bool prompt)
 		//
 		//	Determine what filename this entry refers to
 		//		
-		if (list_ctrl->Get_Entry_Data (item_index, 0) != NULL) {
-			StringClass filename = ((StringClass *)list_ctrl->Get_Entry_Data (item_index, 1))->Peek_Buffer ();
+		EntryMetadata *metadata = Get_Entry_Metadata (list_ctrl, item_index);
+		if (metadata != NULL) {
+			StringClass filename = metadata->Path.Peek_Buffer ();
 
 			// Never delete .MIX files
 			int len = filename.Get_Length ();

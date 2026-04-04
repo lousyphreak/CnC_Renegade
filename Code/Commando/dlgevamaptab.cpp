@@ -121,7 +121,7 @@ EvaMapTabClass::On_Init_Dialog (void)
 				//
 				int color = VRGB_TO_INT32 (objective->Type_To_Color ());
 				int item_index = map_ctrl->Add_Marker (L"", objective->Position, RectClass (32, 0, 64, 32), color);
-				map_ctrl->Set_Marker_Data (item_index, (uint32)objective);
+				map_ctrl->Set_Marker_Data (item_index, index);
 			}
 		}
 
@@ -183,7 +183,7 @@ EvaMapTabClass::On_MapCtrl_Marker_Hilighted
 		//
 		//	Display the objective information
 		//
-		Objective *objective = (Objective *)map_ctrl->Get_Marker_Data (marker_index);
+		Objective *objective = ObjectiveManager::Get_Objective (static_cast<int>(map_ctrl->Get_Marker_Data (marker_index)));
 		if (objective != NULL) {
 
 			WideStringClass name = TRANSLATE (objective->ShortDescriptionID);
@@ -264,4 +264,3 @@ EvaMapTabClass::On_MapCtrl_Pos_Clicked
 	GameInitMgrClass::Continue_Game();
 	return ;
 }
-

@@ -54,6 +54,7 @@
 #include "menubackdrop.h"
 #include "gameinitmgr.h"
 #include "input.h"
+#include "keyboard.h"
 
 ////////////////////////////////////////////////////////////////
 //
@@ -240,4 +241,3 @@ HelpScreenDialogClass::On_Key_Down (uint32 key_id, uint32 key_data)
 
 	return retval;
 }
-

@@ -45,6 +45,7 @@
 #include "menudialog.h"
 #include "resource.h"
 #include "DlgMessageBox.h"
+#include "vector.h"
 
 
 ////////////////////////////////////////////////////////////////
@@ -55,6 +56,26 @@
 class LoadSPGameMenuClass : public MenuDialogClass, public Observer<DlgMsgBoxEvent>
 {
 public:
+	struct EntryMetadata
+	{
+		FILETIME FileTime;
+		StringClass Path;
+		StringClass Filename;
+
+		bool operator== (const EntryMetadata &src) const
+		{
+			return FileTime.dwLowDateTime == src.FileTime.dwLowDateTime &&
+				FileTime.dwHighDateTime == src.FileTime.dwHighDateTime &&
+				Path == src.Path &&
+				Filename == src.Filename;
+		}
+
+		bool operator!= (const EntryMetadata &src) const
+		{
+			return !(*this == src);
+		}
+	};
+
 	
 	////////////////////////////////////////////////////////////////
 	//	Public constructors/destructors
@@ -109,6 +130,7 @@ private:
 	void		Load_Game (void);
 	void		Delete_Game (bool prompt);
 	int			Build_List (const char *search_string, int start_index);
+	EntryMetadata *Get_Entry_Metadata(ListCtrlClass *list_ctrl, int item_index);
 
 	static	bool	Is_Game_Allowed(const char * filename);
 	static	int		Get_Game_Rank(const char * filename);
@@ -118,10 +140,10 @@ private:
 	////////////////////////////////////////////////////////////////
 	uint16	CurrSortCol;
 	bool		IsSortAscending;
+	DynamicVectorClass<EntryMetadata> EntryMetadataList;
 
 	static LoadSPGameMenuClass *_TheInstance;
 };
 
 
 #endif //__DLGLOADSPGAME_H
-

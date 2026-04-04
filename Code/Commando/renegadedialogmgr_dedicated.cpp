@@ -7,13 +7,18 @@
 #include "dialogbase.h"
 #include "dialogresource.h"
 #include "dialogmgr.h"
+#include "dlgcncreference.h"
 #include "dlgcharacteroptions.h"
 #include "dlgcheatoptions.h"
 #include "dlgcontrols.h"
 #include "dlgcredits.h"
+#include "dlgevaencyclopedia.h"
+#include "dlghelpscreen.h"
+#include "dlgloadspgame.h"
 #include "dlgmainmenu.h"
 #include "dlgmovieoptions.h"
 #include "dlgpreviewoptions.h"
+#include "dlgsavegame.h"
 #include "dlgtechoptions.h"
 #include "menu_dialog_subset.h"
 #include "popupdialog.h"
@@ -131,8 +136,10 @@ void Install_Factory(int ctrl_id)
 void Initialize_Factories()
 {
 	Install_Factory<ClientStartSPGameDialogClass>(IDC_MENU_START_SP_GAME_BUTTON);
+	Install_Factory<ClientInternetMenuDialogClass>(IDC_MENU_START_MP_GAME_BUTTON);
 	Install_Factory<ClientOptionsMenuClass>(IDC_MENU_OPTIONS_BUTTON);
 	Install_Factory<ClientDifficultyMenuClass>(IDC_MENU_START_CAMPAIGN_BUTTON);
+	Install_Factory<LoadSPGameMenuClass>(IDC_MENU_LOAD_SP_GAME_BUTTON);
 	Install_Factory<ControlsMenuClass>(IDC_MENU_CONTROLS_BUTTON);
 	Install_Factory<CharacterOptionsMenuClass>(IDC_MENU_CHARACTER_BUTTON);
 	Install_Factory<CheatOptionsMenuClass>(IDC_MENU_CHEATS_BUTTON);
@@ -142,6 +149,11 @@ void Initialize_Factories()
 	Install_Factory<CreditsMenuClass>(IDC_MENU_CREDITS_BUTTON);
 	Install_Factory<ClientQuitVerificationDialogClass>(IDC_MENU_QUIT_BUTTON);
 	Install_Factory<MainMenuDialogClass>(IDC_MENU_MAIN_MENU_BUTTON);
+	Install_Factory<SaveGameMenuClass>(IDC_MENU_SAVE_SP_GAME_BUTTON);
+	Install_Factory<ClientLanMenuDialogClass>(IDC_MENU_MP_LAN_BUTTON);
+	Install_Factory<ClientInternetMenuDialogClass>(IDC_MENU_MP_INTERNET_BUTTON);
+	Install_Factory<ClientInternetMenuDialogClass>(IDC_MENU_MP_INTERNET_GAME_BUTTON);
+	Install_Factory<ClientLanMenuDialogClass>(IDC_MENU_MP_LAN_GAME_BUTTON);
 }
 
 void Shutdown_Factories()
@@ -222,6 +234,48 @@ void RenegadeDialogMgrClass::Goto_Location(LOCATION location)
 	switch (location) {
 		case LOC_MAIN_MENU:
 			MainMenuDialogClass::Display();
+			break;
+
+		case LOC_INTERNET_MAIN:
+		case LOC_INTERNET_GAME_LIST:
+		case LOC_GAMESPY_MAIN:
+		{
+			ClientInternetMenuDialogClass *dialog = new ClientInternetMenuDialogClass;
+			dialog->Start_Dialog();
+			REF_PTR_RELEASE(dialog);
+			break;
+		}
+
+		case LOC_LAN_MAIN:
+		{
+			ClientLanMenuDialogClass *dialog = new ClientLanMenuDialogClass;
+			dialog->Start_Dialog();
+			REF_PTR_RELEASE(dialog);
+			break;
+		}
+
+		case LOC_ENCYCLOPEDIA:
+			EVAEncyclopediaMenuClass::Display();
+			break;
+
+		case LOC_OBJECTIVES:
+			EVAEncyclopediaMenuClass::Display(EVAEncyclopediaMenuClass::TAB_OBJECTIVES);
+			break;
+
+		case LOC_MAP:
+			EVAEncyclopediaMenuClass::Display(EVAEncyclopediaMenuClass::TAB_MAP);
+			break;
+
+		case LOC_CNC_REFERENCE:
+			CnCReferenceMenuClass::Display();
+			break;
+
+		case LOC_LOAD_GAME:
+			LoadSPGameMenuClass::Display();
+			break;
+
+		case LOC_IN_GAME_HELP:
+			HelpScreenDialogClass::Display();
 			break;
 
 		default:

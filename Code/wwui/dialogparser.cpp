@@ -123,6 +123,16 @@ std::string Trim_Copy(const std::string &value)
 	return value.substr(start, end - start + 1);
 }
 
+bool Statement_Needs_Continuation(const std::string &statement)
+{
+	if (statement.empty()) {
+		return false;
+	}
+
+	const char last = statement.back();
+	return last == ',' || last == '|';
+}
+
 std::string Strip_Line_Comment(const std::string &line)
 {
 	bool in_quote = false;
@@ -582,7 +592,7 @@ bool Parse_Template_From_Rc_Source(int res_id, int *dlg_width, int *dlg_height, 
 		}
 
 		std::string statement = line;
-		while (!statement.empty() && statement.back() == ',' && std::getline(file, line)) {
+		while (Statement_Needs_Continuation(statement) && std::getline(file, line)) {
 			statement += " " + Trim_Copy(Strip_Line_Comment(line));
 		}
 
@@ -858,4 +868,3 @@ DialogParserClass::Parse_Template
 	return ;
 	#endif
 }
-

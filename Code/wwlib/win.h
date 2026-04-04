@@ -275,6 +275,64 @@ inline bool FileTimeToSystemTime(const FILETIME * file_time, LPSYSTEMTIME system
 	return true;
 }
 
+inline bool SystemTimeToFileTime(const SYSTEMTIME * system_time, LPFILETIME file_time);
+
+inline bool FileTimeToLocalFileTime(const FILETIME * file_time, LPFILETIME local_file_time)
+{
+	if (file_time == nullptr || local_file_time == nullptr) {
+		return false;
+	}
+
+	SYSTEMTIME utc_system_time = {};
+	if (!FileTimeToSystemTime(file_time, &utc_system_time)) {
+		return false;
+	}
+
+	std::tm utc_time = {};
+	utc_time.tm_year = static_cast<int>(utc_system_time.wYear) - 1900;
+	utc_time.tm_mon = static_cast<int>(utc_system_time.wMonth) - 1;
+	utc_time.tm_mday = static_cast<int>(utc_system_time.wDay);
+	utc_time.tm_hour = static_cast<int>(utc_system_time.wHour);
+	utc_time.tm_min = static_cast<int>(utc_system_time.wMinute);
+	utc_time.tm_sec = static_cast<int>(utc_system_time.wSecond);
+
+	const std::time_t seconds = timegm(&utc_time);
+	if (seconds < 0) {
+		return false;
+	}
+
+	std::tm local_time = {};
+	localtime_r(&seconds, &local_time);
+
+	SYSTEMTIME local_system_time = {};
+	local_system_time.wYear = static_cast<WORD>(local_time.tm_year + 1900);
+	local_system_time.wMonth = static_cast<WORD>(local_time.tm_mon + 1);
+	local_system_time.wDayOfWeek = static_cast<WORD>(local_time.tm_wday);
+	local_system_time.wDay = static_cast<WORD>(local_time.tm_mday);
+	local_system_time.wHour = static_cast<WORD>(local_time.tm_hour);
+	local_system_time.wMinute = static_cast<WORD>(local_time.tm_min);
+	local_system_time.wSecond = static_cast<WORD>(local_time.tm_sec);
+	local_system_time.wMilliseconds = utc_system_time.wMilliseconds;
+	return SystemTimeToFileTime(&local_system_time, local_file_time);
+}
+
+inline LONG CompareFileTime(const FILETIME * lhs, const FILETIME * rhs)
+{
+	if (lhs == nullptr || rhs == nullptr) {
+		return 0;
+	}
+
+	const std::uint64_t lhs_ticks = (static_cast<std::uint64_t>(lhs->dwHighDateTime) << 32) | lhs->dwLowDateTime;
+	const std::uint64_t rhs_ticks = (static_cast<std::uint64_t>(rhs->dwHighDateTime) << 32) | rhs->dwLowDateTime;
+	if (lhs_ticks < rhs_ticks) {
+		return -1;
+	}
+	if (lhs_ticks > rhs_ticks) {
+		return 1;
+	}
+	return 0;
+}
+
 inline bool SystemTimeToFileTime(const SYSTEMTIME * system_time, LPFILETIME file_time)
 {
 	if (system_time == nullptr || file_time == nullptr) {

@@ -38,9 +38,9 @@
 
 #include "DlgWOLLogon.h"
 #include <wwlib/refcount.h>
-#include <WWLib\Notify.h>
-#include <WWOnline\RefPtr.h>
-#include <WWOnline\WOLSession.h>
+#include <wwlib/Notify.h>
+#include <WWOnline/RefPtr.h>
+#include <WWOnline/WOLSession.h>
 
 class DlgWOLWaitEvent;
 class DlgMsgBoxEvent;

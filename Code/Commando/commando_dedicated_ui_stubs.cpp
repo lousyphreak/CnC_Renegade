@@ -30,8 +30,8 @@ int DlgConfigVideoTabClass::BrightnessLevel = BRIGHTNESS_SLIDER_DEFAULT;
 int DlgConfigVideoTabClass::ContrastLevel = CONTRAST_SLIDER_DEFAULT;
 ControlsMenuClass *ControlsMenuClass::_TheInstance = nullptr;
 #endif
-LoadSPGameMenuClass *LoadSPGameMenuClass::_TheInstance = nullptr;
 #if defined(FREEDEDICATEDSERVER)
+LoadSPGameMenuClass *LoadSPGameMenuClass::_TheInstance = nullptr;
 MainMenuDialogClass *MainMenuDialogClass::_TheInstance = nullptr;
 bool MainMenuDialogClass::Animated = false;
 #endif
@@ -270,9 +270,11 @@ void MPIngameChatPopupClass::On_Init_Dialog(void) {}
 void MPIngameChatPopupClass::On_Command(int, int, DWORD) {}
 void MPIngameChatPopupClass::Render(void) {}
 
+#if defined(FREEDEDICATEDSERVER)
 void LoadSPGameMenuClass::Set_Game_Rank(const char *, int)
 {
 }
+#endif
 
 void TextDebugDisplayHandlerClass::Display_Text(const char *, const Vector4 &)
 {

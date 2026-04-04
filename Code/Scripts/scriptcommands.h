@@ -49,6 +49,8 @@
 	#include "actionparams.h"
 #endif
 
+#include <cstdint>
+
 /*
 ** Types
 */
@@ -403,9 +405,9 @@ typedef struct {
 	void	(*Cinematic_Sniper_Control)	(bool enabled, float zoom);
 
 	// File Access
-	int	(*Text_File_Open)			( const char * filename );
-	bool	(*Text_File_Get_String)	( int handle, char * buffer, int size );
-	void	(*Text_File_Close)		( int handle );
+	std::uintptr_t	(*Text_File_Open)			( const char * filename );
+	bool	(*Text_File_Get_String)	( std::uintptr_t handle, char * buffer, int size );
+	void	(*Text_File_Close)		( std::uintptr_t handle );
 
 	// Vehicle Transitions
 	void	(*Enable_Vehicle_Transitions)	( GameObject * object, bool enable );

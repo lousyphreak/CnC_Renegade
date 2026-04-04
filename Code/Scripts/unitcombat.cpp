@@ -494,8 +494,8 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 			Commands->Send_Custom_Event(obj,scoreboard,TALLY,TALLY_KILL);
 		}
 
-		Reset_Action( obj );
-		Reset_Action( obj );
+		Action_Movement_Stop( obj );
+		Action_Attack_Stop( obj );
 		Commands->Create_Sound("Death01",Commands->Get_Position(obj), obj );
 //		Commands->Create_Instant_Logical_Sound( (CombatSoundType)(SOUND_DEATH), 30.0, obj, Commands->Get_Position( obj ) );
 
@@ -989,7 +989,7 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 //		Commands->Enable_Sound_Heard( Me, true);
 
 		Set_Movement_Crouch( false );
-		Reset_Action( obj );
+		Action_Attack_Stop( obj );
 		Set_Movement_Speed( 0.4f );
 
 		double theta_angle = (360.0 / 5.0);
@@ -1281,8 +1281,8 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 	void State_Change_Critical( GameObject *obj )
 	{
 		state = STATE_CRITICAL;
-		Reset_Action( obj );
-		Reset_Action( obj );
+		Action_Movement_Stop( obj );
+		Action_Attack_Stop( obj );
 		Commands->Set_Animation( obj, NULL, 0);
 		Commands->Enable_Enemy_Seen( obj, false);
 //		Commands->Enable_Sound_Heard( Me, false);
@@ -1291,12 +1291,23 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 	void State_Change_Idle( GameObject * obj, Vector3 position )
 	{
 		state = STATE_IDLE_MOVEMENT;
-		Reset_Action( obj );
+		Action_Attack_Stop( obj );
 		Set_Movement_Crouch( false );
 		Set_Movement_Speed( 0.1f );
 		Commands->Enable_Enemy_Seen( obj, true);
 //		Commands->Enable_Sound_Heard( Me, true);
 		Action_Goto_Location( obj, position , 1.0 );
+	}
+
+	int Get_Unit_Combat_Action_ID( void ) const
+	{
+		return self_id;
+	}
+
+	bool Get_Current_Unit_Combat_Action( GameObject * obj, ActionParamsStruct & params )
+	{
+		return ( Commands->Get_Action_ID( obj ) == Get_Unit_Combat_Action_ID() )
+			&& Commands->Get_Action_Params( obj, params );
 	}
 
 	void Set_Movement_Crouch( bool crouched )
@@ -1309,34 +1320,103 @@ DECLARE_SCRIPT ( Unit_Combat,"Scoreboard_ID=0:int,Controller_ID=0:int,Script_Ove
 		movement_speed = speed;
 	}
 
-	void Reset_Action( GameObject * obj )
+	void Action_Movement_Stop( GameObject * obj )
 	{
+		ActionParamsStruct params;
+		if ( Get_Current_Unit_Combat_Action( obj, params ) ) {
+			if ( params.AttackActive ) {
+				params.MoveObject = NULL;
+				params.MoveObjectOffset = Vector3( 0.0f, 0.0f, 0.0f );
+				params.MoveSpeed = 0.0f;
+				params.MoveArrivedDistance = DONT_MOVE_ARRIVED_DIST;
+				params.MoveBackup = false;
+				params.MoveFollow = false;
+				params.MovePathfind = true;
+				Commands->Modify_Action( obj, Get_Unit_Combat_Action_ID(), params, true, false );
+				return;
+			}
+
+			Commands->Action_Reset( obj, 100.0f );
+		}
+	}
+
+	void Action_Attack_Stop( GameObject * obj )
+	{
+		ActionParamsStruct params;
+		if ( !Get_Current_Unit_Combat_Action( obj, params ) || !params.AttackActive ) {
+			return;
+		}
+
+		if ( params.MoveArrivedDistance < DONT_MOVE_ARRIVED_DIST ) {
+			params.AttackActive = false;
+			Commands->Modify_Action( obj, Get_Unit_Combat_Action_ID(), params, false, true );
+			return;
+		}
+
 		Commands->Action_Reset( obj, 100.0f );
 	}
 
 	void Action_Goto_Location( GameObject * obj, const Vector3 & location, float arrived_distance )
 	{
 		ActionParamsStruct params;
-		params.Set_Basic( this, 100, 0 );
+		params.Set_Basic( this, 100, Get_Unit_Combat_Action_ID() );
 		params.Set_Movement( location, movement_speed, arrived_distance, movement_crouched );
+
+		ActionParamsStruct current_params;
+		if ( Get_Current_Unit_Combat_Action( obj, current_params ) && current_params.AttackActive ) {
+			Commands->Modify_Action( obj, Get_Unit_Combat_Action_ID(), params, true, false );
+			return;
+		}
+
 		Commands->Action_Goto( obj, params );
 	}
 
 	void Action_Attack_Object( GameObject * obj, GameObject * enemy, float accuracy, float range, bool primary_fire = true )
 	{
 		ActionParamsStruct params;
-		params.Set_Basic( this, 100, 0 );
+		params.Set_Basic( this, 100, Get_Unit_Combat_Action_ID() );
 		params.Set_Attack( enemy, range, accuracy, primary_fire );
+		params.AttackCrouched = movement_crouched;
+
+		ActionParamsStruct current_params;
+		if ( Get_Current_Unit_Combat_Action( obj, current_params ) && current_params.MoveArrivedDistance < DONT_MOVE_ARRIVED_DIST ) {
+			params.MoveLocation = current_params.MoveLocation;
+			params.MoveObject = current_params.MoveObject;
+			params.MoveObjectOffset = current_params.MoveObjectOffset;
+			params.MoveSpeed = current_params.MoveSpeed;
+			params.MoveArrivedDistance = current_params.MoveArrivedDistance;
+			params.MoveBackup = current_params.MoveBackup;
+			params.MoveFollow = current_params.MoveFollow;
+			params.MoveCrouched = current_params.MoveCrouched;
+			params.MovePathfind = current_params.MovePathfind;
+			params.ShutdownEngineOnArrival = current_params.ShutdownEngineOnArrival;
+		}
+
 		Commands->Action_Attack( obj, params );
 	}
 
 	void Action_Attack_Location( GameObject * obj, const Vector3 & location, float accuracy, float range, bool primary_fire = true )
 	{
 		ActionParamsStruct params;
-		params.Set_Basic( this, 100, 0 );
+		params.Set_Basic( this, 100, Get_Unit_Combat_Action_ID() );
 		params.Set_Attack( location, range, accuracy, primary_fire );
+		params.AttackCrouched = movement_crouched;
+
+		ActionParamsStruct current_params;
+		if ( Get_Current_Unit_Combat_Action( obj, current_params ) && current_params.MoveArrivedDistance < DONT_MOVE_ARRIVED_DIST ) {
+			params.MoveLocation = current_params.MoveLocation;
+			params.MoveObject = current_params.MoveObject;
+			params.MoveObjectOffset = current_params.MoveObjectOffset;
+			params.MoveSpeed = current_params.MoveSpeed;
+			params.MoveArrivedDistance = current_params.MoveArrivedDistance;
+			params.MoveBackup = current_params.MoveBackup;
+			params.MoveFollow = current_params.MoveFollow;
+			params.MoveCrouched = current_params.MoveCrouched;
+			params.MovePathfind = current_params.MovePathfind;
+			params.ShutdownEngineOnArrival = current_params.ShutdownEngineOnArrival;
+		}
+
 		Commands->Action_Attack( obj, params );
 	}
 
 };
-

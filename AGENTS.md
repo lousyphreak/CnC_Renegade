@@ -16,15 +16,7 @@ Executables willl run continuously until the user closes them, so you need to us
 
 Use `cmake --build` to build the project. The main windows build is in build-win.
 The build should alway be Debug mode with ASAN and UBSAN enabled, to catch any memory errors and undefined behavior during development.
-**ALWAYS** build and run the main executable before returning to the user, to make sure that the port is working and that there are no crashes or major issues.
-
-## Renderer porting
-
-We will port the renderer from D3D8 to bgfx. The port will be fully destructive, meaning that we will replace the old D3D8 implementation with a new one using bgfx. No new features should be implemented, only the features that are required to run the game on modern OSes.
-The new renderer implementation should be **AS CLOSE AS POSSIBLE** to the old one, in terms of structure and organization, to make it easier to review and to ensure that we are not introducing new bugs.
-
-Keep the headless renderer headless. When porting renderer functionality, do it in place where he old d3d functionality is, and make sure to keep the headless renderer headless, and not introduce new dependencies on the rest of the codebase.
-Remove all old d3d types, and replace them with bgfx types, or with our own types if bgfx does not provide them.
+**ALWAYS** build and run the main executable before returning to the user, to make sure that the port is working and that there are no crashes or major issues for at least 30 seconds. Should **ANY** crash or major issue be found, fix it as part of your task before returning to the user.
 
 ## General guidelines
 

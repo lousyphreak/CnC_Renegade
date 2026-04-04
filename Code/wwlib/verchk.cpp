@@ -57,8 +57,31 @@ bool GetFileCreationTime(char * filename, FILETIME * createTime)
 	return WWLib_Get_FileTime(filename, createTime);
 }
 
-int Compare_EXE_Version(int, const char * filename)
+int Compare_EXE_Version(int app_instance, const char * filename)
 {
-	(void)filename;
+	if (filename == nullptr) {
+		return 0;
+	}
+
+	FILETIME current_time = {};
+	FILETIME target_time = {};
+	char current_filename[MAX_PATH] = {};
+
+	if (GetModuleFileName(reinterpret_cast<HINSTANCE>(app_instance), current_filename, MAX_PATH) == 0) {
+		return 0;
+	}
+
+	if (!WWLib_Get_FileTime(current_filename, &current_time) || !WWLib_Get_FileTime(filename, &target_time)) {
+		return 0;
+	}
+
+	if (current_time.dwHighDateTime != target_time.dwHighDateTime) {
+		return (current_time.dwHighDateTime < target_time.dwHighDateTime) ? -1 : 1;
+	}
+
+	if (current_time.dwLowDateTime != target_time.dwLowDateTime) {
+		return (current_time.dwLowDateTime < target_time.dwLowDateTime) ? -1 : 1;
+	}
+
 	return 0;
 }

@@ -1,11 +1,8 @@
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
-			StringClass platform_name(true);
-			if (!Build_Unix_Filename_For_Existing_File(Filename, platform_name)) {
-				return(false);
-			}
-			deleteok=(unlink(platform_name)==0)?TRUE:FALSE;
+**
+**	This program is free software: you can redistribute it and/or modify
 **	it under the terms of the GNU General Public License as published by
 **	the Free Software Foundation, either version 3 of the License, or
 **	(at your option) any later version.
@@ -1296,4 +1293,3 @@ void RawFileClass::Detach (void)
 	Time = 0;
 	Handle = NULL_HANDLE;	
 }
-

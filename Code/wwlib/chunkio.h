@@ -240,14 +240,27 @@ private:
 ** on 64-bit builds by serializing opaque 32-bit tokens rather than native
 ** pointer widths.
 */
+inline std::unordered_map<const void *, uint32> & SaveLoad_Pointer_Token_Map()
+{
+	static std::unordered_map<const void *, uint32> token_map;
+	return token_map;
+}
+
+inline std::unordered_map<uint32, const void *> & SaveLoad_Reverse_Pointer_Token_Map()
+{
+	static std::unordered_map<uint32, const void *> reverse_token_map;
+	return reverse_token_map;
+}
+
 inline uint32 SaveLoad_Encode_Pointer_Token(const void * pointer)
 {
 	if (pointer == NULL) {
 		return 0;
 	}
 
-	static std::unordered_map<const void *, uint32> token_map;
 	static uint32 next_token = 1;
+	std::unordered_map<const void *, uint32> & token_map = SaveLoad_Pointer_Token_Map();
+	std::unordered_map<uint32, const void *> & reverse_token_map = SaveLoad_Reverse_Pointer_Token_Map();
 
 	std::unordered_map<const void *, uint32>::const_iterator existing = token_map.find(pointer);
 	if (existing != token_map.end()) {
@@ -259,11 +272,19 @@ inline uint32 SaveLoad_Encode_Pointer_Token(const void * pointer)
 		next_token = 1;
 	}
 	token_map.insert(std::make_pair(pointer, token));
+	reverse_token_map[token] = pointer;
 	return token;
 }
 
 inline void * SaveLoad_Decode_Pointer_Token(uint32 token)
 {
+	std::unordered_map<uint32, const void *> & reverse_token_map = SaveLoad_Reverse_Pointer_Token_Map();
+
+	std::unordered_map<uint32, const void *>::const_iterator existing = reverse_token_map.find(token);
+	if (existing != reverse_token_map.end()) {
+		return const_cast<void *>(existing->second);
+	}
+
 	return reinterpret_cast<void *>(static_cast<std::uintptr_t>(token));
 }
 

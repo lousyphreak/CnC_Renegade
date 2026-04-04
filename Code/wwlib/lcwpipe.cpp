@@ -69,8 +69,10 @@ LCWPipe::LCWPipe(CompControl control, int blocksize) :
 		Buffer(NULL),
 		Buffer2(NULL),
 		BlockSize(blocksize)
-{
-	SafetyMargin = BlockSize/128+1;
+	{
+	const int legacy_safety_margin = BlockSize / 128 + 1;
+	const int literal_only_safety_margin = ((BlockSize + 62) / 63) + 1;
+	SafetyMargin = MAX(legacy_safety_margin, literal_only_safety_margin);
 	Buffer = new char[BlockSize+SafetyMargin];
 	Buffer2 = new char[BlockSize+SafetyMargin];
 	BlockHeader.CompCount = 0xFFFF;
@@ -310,4 +312,3 @@ int LCWPipe::Flush(void)
 	total += Pipe::Flush();
 	return(total);
 }
-

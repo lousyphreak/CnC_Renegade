@@ -111,7 +111,7 @@ void ThreadClass::Sleep_Ms(unsigned ms)
 
 void ThreadClass::Switch_Thread()
 {
-	SDL_Delay(0);
+	SDL_Delay(1);
 }
 
 unsigned ThreadClass::_Get_Current_Thread_ID()

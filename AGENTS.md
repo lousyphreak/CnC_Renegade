@@ -57,4 +57,7 @@ the following is acceptable:
 - implementation replacement for cross platform support (for example d3d-->bgfx, native system interaction -->SDL3)
 - removal of legacy things for good reasons (like CPU detection, because it is no longer required on modern systems)
 
+the following **MUST** be changed:
+- win32 specific behaviour (we want the codebase to be 100% cross platform)
+
 **ANYTHING ELSE IS NOT ACCEPTABLE** - we want to avoid changing behaviour of the original game as much as possible, and we want to preserve the original game logic and functionality as much as possible.

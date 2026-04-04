@@ -26,6 +26,8 @@
 
 #include "encoderlist.h"
 
+#include "wwdebug.h"
+
 //
 // Class statics
 //
@@ -35,6 +37,8 @@ cEncoderTypeEntry cEncoderList::EncoderTypes[MAX_ENCODERTYPES];
 //-----------------------------------------------------------------------------
 void cEncoderList::Clear_Entries()
 {
+	WWDEBUG_SAY(("cEncoderList::Clear_Entries\n"));
+
 	for (int i = 0; i < MAX_ENCODERTYPES; i++) {
 		EncoderTypes[i].Invalidate();
 	}
@@ -43,6 +47,6 @@ void cEncoderList::Clear_Entries()
 //-----------------------------------------------------------------------------
 cEncoderTypeEntry & cEncoderList::Get_Encoder_Type_Entry(int index)
 {
-	WWBITPACK_ASSERT(index >= 0 && index < MAX_ENCODERTYPES);
+	WWASSERT(index >= 0 && index < MAX_ENCODERTYPES);
 	return EncoderTypes[index];
 }

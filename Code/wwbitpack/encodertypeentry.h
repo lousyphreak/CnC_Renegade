@@ -26,7 +26,7 @@
 #ifndef ENCODERTYPEENTRY_H
 #define ENCODERTYPEENTRY_H
 
-#include <cstdint>
+#include "bittype.h"
 
 class cEncoderTypeEntry
 {
@@ -36,11 +36,11 @@ class cEncoderTypeEntry
 		void Init(double min, double max, double resolution);
 		void Init(int num_bits);
 
-		bool Scale(double value, std::uint32_t & scaled_value);
-		double Unscale(std::uint32_t u_value);
+		bool Scale(double value, ULONG & scaled_value);
+		double Unscale(ULONG u_value);
 		double Clamp(double value);
 
-		std::uint32_t	Get_Bit_Precision()	const	{return BitPrecision;}
+		UINT	Get_Bit_Precision()	const	{return BitPrecision;}
 		double	Get_Resolution()	const	{return Resolution;}
 
 		bool Is_Valid() const;
@@ -57,7 +57,7 @@ class cEncoderTypeEntry
 		double Min;
 		double Max;
 		double Resolution;
-		std::uint32_t BitPrecision;
+		UINT BitPrecision;
 };
 
 #endif // ENCODERTYPEENTRY_H

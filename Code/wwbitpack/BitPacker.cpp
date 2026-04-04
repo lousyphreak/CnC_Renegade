@@ -26,113 +26,177 @@
 
 #include "BitPacker.h"
 
-#include <cstring>
+#include <string.h>	// for memset
 
-#include "wwbitpack_platform.h"
+#include "wwdebug.h"
 
 //-----------------------------------------------------------------------------
+//cBitPacker::cBitPacker(UINT buffer_size) :
 cBitPacker::cBitPacker() :
+	//BufferSize(buffer_size),
 	BitWritePosition(0),
 	BitReadPosition(0)
 {
-	std::memset(Buffer, 0, sizeof(Buffer));
+	//WWASSERT(BufferSize > 0);
+
+	//Buffer = new BYTE[BufferSize];
+	//WWASSERT(Buffer != NULL);
+	//memset(Buffer, 0, BufferSize);
+	memset(Buffer, 0, MAX_BUFFER_SIZE);
 }
 
 //-----------------------------------------------------------------------------
-cBitPacker::~cBitPacker()
+cBitPacker::~cBitPacker() 
 {
-}
-
-//-----------------------------------------------------------------------------
-void cBitPacker::Reset()
-{
-	std::memset(Buffer, 0, sizeof(Buffer));
-	BitWritePosition = 0;
-	BitReadPosition = 0;
+	//delete [] Buffer;
 }
 
 //-----------------------------------------------------------------------------
 cBitPacker& cBitPacker::operator=(const cBitPacker& rhs)
 {
-	std::memcpy(Buffer, rhs.Buffer, sizeof(Buffer));
-	BitReadPosition = rhs.BitReadPosition;
-	BitWritePosition = rhs.BitWritePosition;
+	//WWASSERT(BufferSize == rhs.BufferSize);
 
-	return *this;
+	//memcpy(Buffer, rhs.Buffer, rhs.BufferSize);
+	memcpy(Buffer, rhs.Buffer, MAX_BUFFER_SIZE);
+	BitReadPosition		= rhs.BitReadPosition;
+	BitWritePosition		= rhs.BitWritePosition;
+
+   return * this;
 }
 
 //-----------------------------------------------------------------------------
-void cBitPacker::Add_Bits(std::uint32_t value, std::uint32_t num_bits)
+//
+// This method needs optimization
+//
+// 02-14-2002 Jani: Optimized the code somewhat. Note that the old code reverted
+// the bit order and the new one doesn't, so the versions are not compatible.
+// If you use optimized Add_Bits() you need to also use optimize Get_Bits().
+//
+
+void cBitPacker::Add_Bits(ULONG value, UINT num_bits)
 {
-	WWBITPACK_ASSERT(num_bits > 0 && num_bits <= MAX_BITS);
-	WWBITPACK_ASSERT(BitWritePosition + num_bits <= MAX_BUFFER_SIZE * wwbitpack::kBitsPerByte);
+	//
+	// N.B. Presently you cannot use this class with an atomic type of more 
+	// than 4 bytes, such as a double. Hopefully you would be using a float 
+	// instead anyway.
+	//
+#if 0	// Old version
+	WWASSERT(num_bits > 0 && num_bits <= MAX_BITS);
 
-	for (std::uint32_t bit_index = 0; bit_index < num_bits; ++bit_index) {
-		const std::uint32_t destination_bit = BitWritePosition + bit_index;
-		const std::uint32_t byte_index = destination_bit / wwbitpack::kBitsPerByte;
-		const std::uint32_t bit_offset = 7u - (destination_bit % wwbitpack::kBitsPerByte);
-		const std::uint8_t mask = static_cast<std::uint8_t>(1u << bit_offset);
-		const std::uint32_t source_mask = 1u << (num_bits - bit_index - 1u);
+	ULONG mask = 1 << (num_bits - 1);
+	while (mask > 0) {
 
-		if ((value & source_mask) != 0u) {
-			Buffer[byte_index] |= mask;
-		} else {
-			Buffer[byte_index] &= static_cast<std::uint8_t>(~mask);
+		//WWASSERT(BitWritePosition < BufferSize * 8);
+		WWASSERT(BitWritePosition < MAX_BUFFER_SIZE * 8);
+
+		UINT byte_num = BitWritePosition / 8;
+		UINT bit_offset = BitWritePosition % 8;
+		bool bit_value = (value & mask) != 0;
+		Buffer[byte_num] |= bit_value << bit_offset;
+
+		BitWritePosition++;
+
+		mask >>= 1;
+	}
+
+#else	// New faster version
+
+	// Verify that we're not writing over buffer
+	WWASSERT(num_bits > 0 && num_bits <= MAX_BITS);
+	WWASSERT(BitWritePosition+num_bits <= MAX_BUFFER_SIZE * 8);
+
+	// Fill the remaining bits of the write byte first
+	UINT byte_num = BitWritePosition >> 3;
+	UINT bit_offset = BitWritePosition & 0x7;
+	BitWritePosition+=num_bits;		// Advance the write position
+
+	// If write buffer is not byte aligned, write the remaining bits first
+	value <<= 32-num_bits;
+	if (bit_offset) {
+		UINT bit_count = 8 - bit_offset;
+		if (bit_count>num_bits) bit_count=num_bits;
+
+		ULONG bit_value = value;
+		value <<= bit_count;					// Remove the copied bits
+		num_bits -= bit_count;
+		bit_value >>= (24+bit_offset);
+		Buffer[byte_num++] |= bit_value;
+	}
+
+	// Write the rest of the data as bytes
+	if (num_bits>8) {
+		for (unsigned a=0;a<num_bits;a+=8) {
+			Buffer[byte_num++]=(unsigned char)(value>>24);
+			value<<=8;
 		}
 	}
-
-	BitWritePosition += num_bits;
-	Clear_Unused_Tail_Bits();
+	else {
+		Buffer[byte_num]=(unsigned char)(value>>24);
+	}
+#endif
 }
 
 //-----------------------------------------------------------------------------
-void cBitPacker::Get_Bits(std::uint32_t & value, std::uint32_t num_bits)
+//
+// This method needs optimization
+// 02-14-2002 Jani: Optimized. See Add_Bits() for notes.
+//
+void cBitPacker::Get_Bits(ULONG & value, UINT num_bits)
 {
-	WWBITPACK_ASSERT(num_bits > 0 && num_bits <= MAX_BITS);
-	WWBITPACK_ASSERT(BitReadPosition + num_bits <= MAX_BUFFER_SIZE * wwbitpack::kBitsPerByte);
-	WWBITPACK_ASSERT(BitReadPosition + num_bits <= BitWritePosition);
+#if 0	// Old version
+	WWASSERT(num_bits > 0 && num_bits <= MAX_BITS);
 
 	value = 0;
-	for (std::uint32_t bit_index = 0; bit_index < num_bits; ++bit_index) {
-		const std::uint32_t source_bit = BitReadPosition + bit_index;
-		const std::uint32_t byte_index = source_bit / wwbitpack::kBitsPerByte;
-		const std::uint32_t bit_offset = 7u - (source_bit % wwbitpack::kBitsPerByte);
-		const std::uint32_t bit = (Buffer[byte_index] >> bit_offset) & 0x1u;
+	for (int bit = num_bits - 1; bit >= 0; bit--) {
 
-		value = (value << 1u) | bit;
+		//WWASSERT(BitReadPosition < BufferSize * 8);
+		WWASSERT(BitReadPosition < MAX_BUFFER_SIZE * 8);
+		WWASSERT(BitReadPosition < BitWritePosition);
+		UINT byte_num = BitReadPosition / 8;
+		UINT bit_offset = BitReadPosition % 8;
+		bool b = (Buffer[byte_num] & (1 << bit_offset)) != 0;
+
+		value += (b << bit);	
+
+		BitReadPosition++;
 	}
+#else // New faster version
 
+	// Verify that we're not reading over buffer or write pointer
+	WWASSERT(num_bits > 0 && num_bits <= MAX_BITS);
+	WWASSERT(BitReadPosition+num_bits <= MAX_BUFFER_SIZE * 8);
+	WWASSERT(BitReadPosition+num_bits <= BitWritePosition);
+
+	UINT read_len=num_bits;
+	UINT byte_num = BitReadPosition / 8;
+	UINT bit_offset = BitReadPosition % 8;
 	BitReadPosition += num_bits;
+
+	UINT bit_count = 8 - bit_offset;
+	if (bit_count>num_bits) bit_count=num_bits;
+	value = (ULONG(Buffer[byte_num++]) << (bit_offset+24));
+	num_bits-=bit_count;
+
+	int shift = 24 - static_cast<int>(bit_count);
+	for (; shift>0;shift-=8,num_bits-=8) {
+		value |= unsigned(Buffer[byte_num++]) << shift;
+	}
+	if (num_bits>0) {
+		value |= Buffer[byte_num++]>>(-shift);
+	}
+
+	value >>= 32-read_len;
+#endif
 }
 
 //-----------------------------------------------------------------------------
-void cBitPacker::Set_Bit_Write_Position(unsigned int position)
+//
+// This method is only for use by a packet class when data is received.
+//
+
+void cBitPacker::Set_Bit_Write_Position(UINT position)
 {
-	WWBITPACK_ASSERT(position <= MAX_BUFFER_SIZE * wwbitpack::kBitsPerByte);
+	//WWASSERT(position <= BufferSize * 8);
+	WWASSERT(position <= MAX_BUFFER_SIZE * 8);
 	BitWritePosition = position;
-	if (BitReadPosition > BitWritePosition) {
-		BitReadPosition = BitWritePosition;
-	}
-	Clear_Unused_Tail_Bits();
 }
-
-//-----------------------------------------------------------------------------
-unsigned int cBitPacker::Get_Compressed_Size_Bytes() const
-{
-	return (BitWritePosition + wwbitpack::kBitsPerByte - 1u) / wwbitpack::kBitsPerByte;
-}
-
-//-----------------------------------------------------------------------------
-void cBitPacker::Clear_Unused_Tail_Bits()
-{
-	const std::uint32_t used_bits_in_last_byte = BitWritePosition % wwbitpack::kBitsPerByte;
-	if (used_bits_in_last_byte == 0u) {
-		return;
-	}
-
-	const std::uint32_t byte_index = BitWritePosition / wwbitpack::kBitsPerByte;
-	const std::uint8_t used_mask = static_cast<std::uint8_t>(0xFFu << (wwbitpack::kBitsPerByte - used_bits_in_last_byte));
-	Buffer[byte_index] &= used_mask;
-}
-
-

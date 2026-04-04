@@ -27,44 +27,51 @@
 #ifndef BITPACKER_H
 #define BITPACKER_H
 
-#include <cstdint>
 
-static constexpr std::uint32_t MAX_BITS = 32;
+#include "always.h"
+#include "bittype.h"
+
+
+#pragma warning(disable:4514)
+
+static const int MAX_BITS = 32;
 
 // 1400 is too big. Minimum MTU allowable on the internet is 576. IP Header is 20 bytes. UDP header is 8 bytes
 // So our max packet size is 576 - 28 = 548
 //static const int MAX_BUFFER_SIZE = 1400;
-static constexpr std::uint32_t MAX_BUFFER_SIZE = 548;
+static const int MAX_BUFFER_SIZE = 548;
 
 class cBitPacker
 {
 	public:
+		//cBitPacker(UINT buffer_size);
 		cBitPacker();
 		virtual ~cBitPacker();
 
-		char * Get_Data() const {return reinterpret_cast<char *>(const_cast<std::uint8_t *>(Buffer));}
-		unsigned int Get_Buffer_Size() const {return MAX_BUFFER_SIZE;}
+		char * Get_Data() const {return (char *) Buffer;}
+		//UINT Get_Buffer_Size() const {return BufferSize;}
+		UINT Get_Buffer_Size() const {return MAX_BUFFER_SIZE;}
 		void Flush() {BitReadPosition = BitWritePosition;}
 		bool Is_Flushed() const {return (BitReadPosition == BitWritePosition);}
-		void Reset();
 
-		void Add_Bits(std::uint32_t value, std::uint32_t num_bits);
-		void Get_Bits(std::uint32_t & value, std::uint32_t num_bits);
+		void Add_Bits(ULONG value, UINT num_bits);
+		void Get_Bits(ULONG & value, UINT num_bits);
 
-		void Set_Bit_Write_Position(unsigned int position);
-		unsigned int Get_Bit_Write_Position() const {return BitWritePosition;}
-		unsigned int Get_Compressed_Size_Bytes() const;
+		void Set_Bit_Write_Position(UINT position);
+		UINT Get_Bit_Write_Position() const {return BitWritePosition;}
 
 	protected:
-		cBitPacker& operator=(const cBitPacker& rhs);
+      cBitPacker& operator=(const cBitPacker& rhs);
 
 	private:
-		cBitPacker(const cBitPacker& source); // Disallow copy constructor
-		void Clear_Unused_Tail_Bits();
 
-		std::uint8_t Buffer[MAX_BUFFER_SIZE];
-		std::uint32_t BitWritePosition;
-		std::uint32_t BitReadPosition;
+      cBitPacker(const cBitPacker& source); // Disallow copy constructor
+
+		//BYTE * Buffer;
+		//const UINT BufferSize;
+		BYTE Buffer[MAX_BUFFER_SIZE];
+		UINT BitWritePosition;
+		UINT BitReadPosition;
 };
 
 #endif // BITPACKER_H

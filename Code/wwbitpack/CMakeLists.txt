@@ -7,5 +7,8 @@ renegade_configure_target(wwbitpack)
 target_include_directories(wwbitpack
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}"
-        "${PROJECT_SOURCE_DIR}/external/SDL/include"
+        "${PROJECT_SOURCE_DIR}/Code/WWMath"
+        "${PROJECT_SOURCE_DIR}/Code/wwdebug"
+        "${PROJECT_SOURCE_DIR}/Code/wwlib"
+        "${PROJECT_SOURCE_DIR}/Code/wwutil"
 )

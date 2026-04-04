@@ -1,1 +1,2 @@
-cmake --build build -j32 && gdb -batch -ex run -ex "thread apply all bt" -ex quit --args ./build/bin/Renegade
+cmake --build build -j32 && \
+gdb -batch -q -ex "run" -ex "bt" --args ./build/bin/Renegade

@@ -40,23 +40,30 @@
 #include "timemgr.h"
 
 #include <ctime>
+#include <mutex>
 
 FileClass * _DiagLogFile = NULL;
 
 namespace {
 
+std::tm Get_Diag_Log_Utc_Time()
+{
+	std::tm dt = {};
+	const std::time_t now = std::time(nullptr);
+
+	static std::mutex utc_time_mutex;
+	std::lock_guard<std::mutex> lock(utc_time_mutex);
+	if (const std::tm *utc_time = std::gmtime(&now)) {
+		dt = *utc_time;
+	}
+
+	return dt;
+}
+
 StringClass Build_Diag_Log_Timestamp()
 {
+	const std::tm dt = Get_Diag_Log_Utc_Time();
 	StringClass dt_string;
-
-#if defined(_WIN32)
-	SYSTEMTIME dt;
-	::GetSystemTime(&dt);
-	dt_string.Format("%02d/%02d/%02d %02d:%02d:%02d", dt.wMonth, dt.wDay, dt.wYear, dt.wHour, dt.wMinute, dt.wSecond);
-#else
-	std::time_t now = std::time(nullptr);
-	std::tm dt = {};
-	gmtime_r(&now, &dt);
 	dt_string.Format("%02d/%02d/%04d %02d:%02d:%02d",
 		dt.tm_mon + 1,
 		dt.tm_mday,
@@ -64,7 +71,6 @@ StringClass Build_Diag_Log_Timestamp()
 		dt.tm_hour,
 		dt.tm_min,
 		dt.tm_sec);
-#endif
 
 	return dt_string;
 }
@@ -126,4 +132,3 @@ void	DiagLogClass::Log_Timed( const char * type, const char * format, ... )
 		_DiagLogFile->Write( line, ::strlen( line ) );
 	}
 }
-

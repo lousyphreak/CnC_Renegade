@@ -39,14 +39,20 @@
 
 #include	"gameobjobserver.h"
 
-#if defined(_WIN32)
-	#if defined(BUILDING_DLL)
+#if defined(BUILDING_DLL)
+	#if defined(_MSC_VER)
 		#define SCRIPT_DLL_EXPORT __declspec(dllexport)
+	#elif defined(__GNUC__) || defined(__clang__)
+		#define SCRIPT_DLL_EXPORT __attribute__((visibility("default")))
 	#else
-		#define SCRIPT_DLL_EXPORT __declspec(dllimport)
+		#define SCRIPT_DLL_EXPORT
 	#endif
 #else
-	#define SCRIPT_DLL_EXPORT
+	#if defined(_MSC_VER)
+		#define SCRIPT_DLL_EXPORT __declspec(dllimport)
+	#else
+		#define SCRIPT_DLL_EXPORT
+	#endif
 #endif
 
 #ifdef __cplusplus

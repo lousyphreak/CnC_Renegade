@@ -223,10 +223,10 @@ MapMgrClass::Clear_Cloud_Cell (int x_pos, int y_pos)
 	//
 	//	Clamp the cells
 	//
-	int cell_x	= (::max) (x_pos, 0);
-	int cell_y	= (::max) (y_pos, 0);
-	cell_x		= (::min) (x_pos, CLOUD_WIDTH - 1);
-	cell_y		= (::min) (y_pos, CLOUD_HEIGHT - 1);
+	int cell_x	= (std::max) (x_pos, 0);
+	int cell_y	= (std::max) (y_pos, 0);
+	cell_x		= (std::min) (x_pos, CLOUD_WIDTH - 1);
+	cell_y		= (std::min) (y_pos, CLOUD_HEIGHT - 1);
 
 	//
 	//	Determine which bit we need to clear
@@ -299,4 +299,3 @@ MapMgrClass::Is_Cell_Visible (int x_pos, int y_pos)
 }
 
 #endif //__MAP_MGR_H
-

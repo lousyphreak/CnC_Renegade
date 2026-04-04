@@ -12,18 +12,6 @@ Since we also target Linux, we need to have our file system support case-sensiti
 
 Executables willl run continuously until the user closes them, so you need to use the `timeout` tool to run them for a limited time, and then kill them.
 
-## Collecting screenshots
-
-When validating renderer changes, capture the real rendered output from the game window and compare it against the reference image, especially the background.
-
-On Linux/X11, use this workflow:
-
-1. Launch the executable on a real display with `timeout` so it exits automatically, for example: `DISPLAY=:1 timeout 20s <path-to-executable>`
-2. Find the X11 window id after the window appears, for example: `DISPLAY=:1 xdotool search --name 'Command & Conquer Renegade' | head -n1`
-3. Capture a single screenshot from that specific window: `DISPLAY=:1 ffmpeg -y -loglevel error -f x11grab -draw_mouse 0 -frames:v 1 -window_id "$WIN_ID" screenshot.png`
-
-If a title search is unreliable, use `DISPLAY=:1 xwininfo -root -tree` to find the correct window id manually. Prefer `-window_id` captures over full-screen grabs so the screenshot matches the renderer output exactly.
-
 ## Building the project
 
 Use `cmake --build` to build the project. The main windows build is in build-win.
@@ -58,6 +46,8 @@ the following is acceptable:
 - removal of legacy things for good reasons (like CPU detection, because it is no longer required on modern systems)
 
 the following **MUST** be changed:
-- win32 specific behaviour (we want the codebase to be 100% cross platform)
+- **ANY** win32 specific behaviour (we want the codebase to be 100% cross platform, without any win32 specific code or dependencies)
+- wide strings (we want to use UTF-8 everywhere, and not have any wide string dependencies in the codebase)
+- checking for _WIN32 or similar is a code smell, we want to remove all of those and replace them with more generic cross platform code, for example using SDL3 for input and file system instead of win32 API.
 
 **ANYTHING ELSE IS NOT ACCEPTABLE** - we want to avoid changing behaviour of the original game as much as possible, and we want to preserve the original game logic and functionality as much as possible.

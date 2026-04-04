@@ -110,7 +110,8 @@ uint32 ChunkIO_Write_WideString(ChunkSaveClass & csave, const WideStringClass & 
 
 uint32 ChunkIO_Read_WideString(ChunkLoadClass & cload, uint32 byte_count, WideStringClass & value)
 {
-	value = L"";
+	WCHAR *empty_buffer = value.Get_Buffer(1);
+	empty_buffer[0] = 0;
 
 	if (byte_count == 0) {
 		return 0;
@@ -186,6 +187,7 @@ ChunkSaveClass::ChunkSaveClass(FileClass * file) :
 	InMicroChunk(false),
 	MicroChunkPosition(0)
 {
+	SaveLoad_Reset_Pointer_Tokens();
 	memset(PositionStack,0,sizeof(PositionStack));
 	memset(HeaderStack,0,sizeof(HeaderStack));
 	memset(&MCHeader,0,sizeof(MCHeader));
@@ -491,6 +493,7 @@ ChunkLoadClass::ChunkLoadClass(FileClass * file) :
 	InMicroChunk(false),
 	MicroChunkPosition(0)
 {
+	SaveLoad_Reset_Pointer_Tokens();
 	memset(PositionStack,0,sizeof(PositionStack));
 	memset(HeaderStack,0,sizeof(HeaderStack));
 	memset(&MCHeader,0,sizeof(MCHeader));

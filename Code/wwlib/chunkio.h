@@ -252,13 +252,26 @@ inline std::unordered_map<uint32, const void *> & SaveLoad_Reverse_Pointer_Token
 	return reverse_token_map;
 }
 
+inline uint32 & SaveLoad_Next_Pointer_Token()
+{
+	static uint32 next_token = 1;
+	return next_token;
+}
+
+inline void SaveLoad_Reset_Pointer_Tokens()
+{
+	SaveLoad_Pointer_Token_Map().clear();
+	SaveLoad_Reverse_Pointer_Token_Map().clear();
+	SaveLoad_Next_Pointer_Token() = 1;
+}
+
 inline uint32 SaveLoad_Encode_Pointer_Token(const void * pointer)
 {
 	if (pointer == NULL) {
 		return 0;
 	}
 
-	static uint32 next_token = 1;
+	uint32 & next_token = SaveLoad_Next_Pointer_Token();
 	std::unordered_map<const void *, uint32> & token_map = SaveLoad_Pointer_Token_Map();
 	std::unordered_map<uint32, const void *> & reverse_token_map = SaveLoad_Reverse_Pointer_Token_Map();
 

@@ -7,10 +7,13 @@
 #include <string>
 #include <string_view>
 
+#include "buildnum.h"
 #include "commando_bootstrap_bridge.h"
+#include "Except.h"
 #include "../Combat/directinput.h"
 #include "../Combat/input.h"
 #include "gamemode.h"
+#include "init.h"
 #include "mainloop.h"
 #include "msgloop.h"
 #include "../ww3d2/ww3d.h"
@@ -393,11 +396,16 @@ int main(int argc, char **argv)
         return EXIT_SUCCESS;
     }
 
+    Register_Thread_ID(GetCurrentThreadId(), "Main Thread", true);
+    Register_Application_Exception_Callback(&Application_Exception_Callback);
+    Register_Application_Version_Callback(&BuildInfoClass::Composite_Build_Info);
+
     Message_Intercept_Handler = Handle_Main_Loop_Event;
     Message_Pre_Poll_Handler = Sync_Text_Input_State;
     const int exit_code = Game_Main_Loop();
     Message_Pre_Poll_Handler = nullptr;
     Message_Intercept_Handler = nullptr;
+    Unregister_Thread_ID(GetCurrentThreadId(), "Main Thread");
 
     MainWindow = nullptr;
     GameInFocus = false;

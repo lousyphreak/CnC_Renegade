@@ -207,6 +207,26 @@ void SimpleFileFactoryClass::Append_Sub_Directory( const char * sub_directory )
 
 
 /*
+**	Find_Last_Path_Separator
+*/
+static const char *
+Find_Last_Path_Separator(const char * path)
+{
+	const char * backslash = ::strrchr(path, '\\');
+	const char * slash = ::strrchr(path, '/');
+
+	if (backslash == NULL) {
+		return slash;
+	}
+
+	if (slash == NULL) {
+		return backslash;
+	}
+
+	return (backslash > slash) ? backslash : slash;
+}
+
+/*
 **	Is_Full_Path
 */
 static bool
@@ -221,10 +241,7 @@ Is_Full_Path (const char *path)
 
 		// Check for network path
 		retval |= bool((path[0] == '\\') && (path[1] == '\\'));
-
-		#ifdef _UNIX
-			retval |= bool(path[0] == '/');
-		#endif
+		retval |= bool(path[0] == '/');
 	}
 
 	return retval;
@@ -240,7 +257,7 @@ FileClass * SimpleFileFactoryClass::Get_File( char const *filename )
 	// concatenated which may not produce reasonable results.
 	StringClass stripped_name(true);
 	if (IsStripPath) {
-		const char * ptr = ::strrchr( filename, '\\' );
+		const char * ptr = Find_Last_Path_Separator(filename);
 
 		if (ptr != 0) {
 			ptr++;
@@ -309,5 +326,4 @@ void SimpleFileFactoryClass::Return_File( FileClass *file )
 {
 	delete file;
 }
-
 

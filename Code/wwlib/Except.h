@@ -74,16 +74,10 @@ extern unsigned long ExceptionReturnAddress;
 extern unsigned long ExceptionReturnFrame;
 
 
-#ifdef _WIN32
-using RenegadeThreadHandle = HANDLE;
-#else
-using RenegadeThreadHandle = void *;
-#endif
-
 typedef struct tThreadInfoType {
 	char				ThreadName[128];
 	unsigned long	ThreadID;
-	RenegadeThreadHandle	ThreadHandle;
+	HANDLE			ThreadHandle;
 	bool				Main;
 } ThreadInfoType;
 

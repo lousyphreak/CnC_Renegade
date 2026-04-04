@@ -12,6 +12,7 @@
 #include <map>
 #include <mutex>
 #include <string>
+#include <vector>
 
 bool RegistryClass::IsLocked = false;
 
@@ -225,35 +226,179 @@ namespace
 		return (section_name.compare(0, prefix.size(), prefix) == 0) && (section_name[prefix.size()] == '\\');
 	}
 
+	bool Is_High_Surrogate(uint32 value)
+	{
+		return value >= 0xD800 && value <= 0xDBFF;
+	}
+
+	bool Is_Low_Surrogate(uint32 value)
+	{
+		return value >= 0xDC00 && value <= 0xDFFF;
+	}
+
+	void Set_Empty_Wide_String(WideStringClass & out)
+	{
+		WCHAR * buffer = out.Get_Buffer(1);
+		buffer[0] = 0;
+	}
+
+	void Append_UTF8(std::string & text, uint32 codepoint)
+	{
+		if (codepoint > 0x10FFFF || (codepoint >= 0xD800 && codepoint <= 0xDFFF)) {
+			codepoint = 0xFFFD;
+		}
+
+		if (codepoint < 0x80) {
+			text += static_cast<char>(codepoint);
+		} else if (codepoint < 0x800) {
+			text += static_cast<char>(0xC0 | (codepoint >> 6));
+			text += static_cast<char>(0x80 | (codepoint & 0x3F));
+		} else if (codepoint < 0x10000) {
+			text += static_cast<char>(0xE0 | (codepoint >> 12));
+			text += static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F));
+			text += static_cast<char>(0x80 | (codepoint & 0x3F));
+		} else {
+			text += static_cast<char>(0xF0 | (codepoint >> 18));
+			text += static_cast<char>(0x80 | ((codepoint >> 12) & 0x3F));
+			text += static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F));
+			text += static_cast<char>(0x80 | (codepoint & 0x3F));
+		}
+	}
+
+	uint32 Decode_UTF8_Codepoint(const std::string & value, std::size_t & index)
+	{
+		const std::size_t start = index;
+		const unsigned char lead = static_cast<unsigned char>(value[index++]);
+		if (lead < 0x80) {
+			return lead;
+		}
+
+		int continuation_count = 0;
+		uint32 codepoint = 0;
+		uint32 minimum = 0;
+
+		if ((lead & 0xE0) == 0xC0) {
+			continuation_count = 1;
+			codepoint = lead & 0x1F;
+			minimum = 0x80;
+		} else if ((lead & 0xF0) == 0xE0) {
+			continuation_count = 2;
+			codepoint = lead & 0x0F;
+			minimum = 0x800;
+		} else if ((lead & 0xF8) == 0xF0) {
+			continuation_count = 3;
+			codepoint = lead & 0x07;
+			minimum = 0x10000;
+		} else {
+			index = start + 1;
+			return 0xFFFD;
+		}
+
+		std::size_t read_index = index;
+		for (int continuation = 0; continuation < continuation_count; ++continuation) {
+			if (read_index >= value.size()) {
+				index = start + 1;
+				return 0xFFFD;
+			}
+
+			const unsigned char next = static_cast<unsigned char>(value[read_index]);
+			if ((next & 0xC0) != 0x80) {
+				index = start + 1;
+				return 0xFFFD;
+			}
+
+			codepoint = (codepoint << 6) | (next & 0x3F);
+			++read_index;
+		}
+
+		if (codepoint < minimum || codepoint > 0x10FFFF || (codepoint >= 0xD800 && codepoint <= 0xDFFF)) {
+			index = start + 1;
+			return 0xFFFD;
+		}
+
+		index = read_index;
+		return codepoint;
+	}
+
 	std::string Wide_To_UTF8(const WCHAR * value)
 	{
 		if (value == nullptr) {
 			return std::string();
 		}
 
-		const int required = WideCharToMultiByte(CP_ACP, 0, value, -1, NULL, 0, NULL, NULL);
-		if (required <= 0) {
-			return std::string();
+		std::string text;
+		for (std::size_t index = 0; value[index] != 0; ++index) {
+			uint32 codepoint = static_cast<uint32>(value[index]);
+
+			if (sizeof(WCHAR) == sizeof(unsigned short)) {
+				if (Is_High_Surrogate(codepoint)) {
+					const uint32 trail = static_cast<uint32>(value[index + 1]);
+					if (Is_Low_Surrogate(trail)) {
+						codepoint =
+							0x10000 +
+							(((codepoint - 0xD800) << 10) | (trail - 0xDC00));
+						++index;
+					} else {
+						codepoint = 0xFFFD;
+					}
+				} else if (Is_Low_Surrogate(codepoint)) {
+					codepoint = 0xFFFD;
+				}
+			}
+
+			Append_UTF8(text, codepoint);
 		}
 
-		std::string text(static_cast<std::size_t>(required), '\0');
-		WideCharToMultiByte(CP_ACP, 0, value, -1, text.data(), required, NULL, NULL);
-		if (!text.empty() && text.back() == '\0') {
-			text.pop_back();
-		}
 		return text;
 	}
 
 	void UTF8_To_Wide(const std::string & value, WideStringClass & out)
 	{
-		const int required = MultiByteToWideChar(CP_ACP, 0, value.c_str(), -1, NULL, 0);
-		if (required <= 0) {
-			out = L"";
+		if (value.empty()) {
+			Set_Empty_Wide_String(out);
 			return;
 		}
 
-		WCHAR * buffer = out.Get_Buffer(required);
-		MultiByteToWideChar(CP_ACP, 0, value.c_str(), -1, buffer, required);
+		std::vector<uint32> codepoints;
+		codepoints.reserve(value.size());
+		for (std::size_t index = 0; index < value.size();) {
+			codepoints.push_back(Decode_UTF8_Codepoint(value, index));
+		}
+
+		if (sizeof(WCHAR) == sizeof(unsigned short)) {
+			int code_unit_count = 0;
+			for (uint32 codepoint : codepoints) {
+				code_unit_count += (codepoint > 0xFFFF) ? 2 : 1;
+			}
+
+			WCHAR * buffer = out.Get_Buffer(code_unit_count + 1);
+			int output_index = 0;
+			for (uint32 codepoint : codepoints) {
+				if (codepoint > 0x10FFFF || (codepoint >= 0xD800 && codepoint <= 0xDFFF)) {
+					codepoint = 0xFFFD;
+				}
+
+				if (codepoint > 0xFFFF) {
+					const uint32 surrogate = codepoint - 0x10000;
+					buffer[output_index++] = static_cast<WCHAR>(0xD800 + (surrogate >> 10));
+					buffer[output_index++] = static_cast<WCHAR>(0xDC00 + (surrogate & 0x3FF));
+				} else {
+					buffer[output_index++] = static_cast<WCHAR>(codepoint);
+				}
+			}
+			buffer[output_index] = 0;
+			return;
+		}
+
+		WCHAR * buffer = out.Get_Buffer(static_cast<int>(codepoints.size()) + 1);
+		int output_index = 0;
+		for (uint32 codepoint : codepoints) {
+			if (codepoint > 0x10FFFF || (codepoint >= 0xD800 && codepoint <= 0xDFFF)) {
+				codepoint = 0xFFFD;
+			}
+			buffer[output_index++] = static_cast<WCHAR>(codepoint);
+		}
+		buffer[output_index] = 0;
 	}
 }
 
@@ -440,7 +585,7 @@ void RegistryClass::Get_String(const WCHAR * name, WideStringClass & string, con
 	} else if (default_string != NULL) {
 		string = default_string;
 	} else {
-		string = L"";
+		Set_Empty_Wide_String(string);
 	}
 }
 

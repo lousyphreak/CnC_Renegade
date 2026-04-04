@@ -38,9 +38,7 @@
 #ifndef LCW_H
 #define LCW_H
 
-#if !defined(_WIN32)
 #include "osdep.h"
-#endif
 
 int LCW_Uncomp(void const * source, void * dest, unsigned long length=0);
 

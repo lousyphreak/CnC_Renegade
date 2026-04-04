@@ -1,5 +1,10 @@
 #include "Except.h"
 
+#include <algorithm>
+#include <cstring>
+#include <mutex>
+#include <vector>
+
 unsigned long ExceptionReturnStack = 0;
 unsigned long ExceptionReturnAddress = 0;
 unsigned long ExceptionReturnFrame = 0;
@@ -8,7 +13,26 @@ namespace {
 bool g_trying_to_exit = false;
 void (*g_app_exception_callback)(void) = nullptr;
 char *(*g_app_version_callback)(void) = nullptr;
-unsigned long g_main_thread_id = 0;
+
+std::mutex & Thread_List_Mutex()
+{
+    static std::mutex mutex;
+    return mutex;
+}
+
+std::vector<ThreadInfoType> & Thread_List()
+{
+    static std::vector<ThreadInfoType> threads;
+    return threads;
+}
+
+std::vector<ThreadInfoType>::iterator Find_Thread_By_Name(const char * thread_name)
+{
+    std::vector<ThreadInfoType> & threads = Thread_List();
+    return std::find_if(threads.begin(), threads.end(), [thread_name](const ThreadInfoType & thread) {
+        return std::strcmp(thread.ThreadName, thread_name) == 0;
+    });
+}
 }
 
 int Exception_Handler(int, EXCEPTION_POINTERS *)
@@ -37,15 +61,41 @@ void Load_Image_Helper(void)
 {
 }
 
-void Register_Thread_ID(unsigned long thread_id, char *, bool main)
+void Register_Thread_ID(unsigned long thread_id, char * thread_name, bool main)
 {
-    if (main) {
-        g_main_thread_id = thread_id;
+    if (thread_name == nullptr) {
+        return;
     }
+
+    std::lock_guard<std::mutex> lock(Thread_List_Mutex());
+    std::vector<ThreadInfoType> & threads = Thread_List();
+    std::vector<ThreadInfoType>::iterator existing = Find_Thread_By_Name(thread_name);
+    if (existing != threads.end()) {
+        existing->ThreadID = thread_id;
+        existing->Main = main || existing->Main;
+        return;
+    }
+
+    ThreadInfoType thread = {};
+    thread.ThreadID = thread_id;
+    std::strncpy(thread.ThreadName, thread_name, sizeof(thread.ThreadName) - 1);
+    thread.ThreadName[sizeof(thread.ThreadName) - 1] = '\0';
+    thread.ThreadHandle = nullptr;
+    thread.Main = main;
+    threads.push_back(thread);
 }
 
-void Unregister_Thread_ID(unsigned long, char *)
+void Unregister_Thread_ID(unsigned long thread_id, char * thread_name)
 {
+    if (thread_name == nullptr) {
+        return;
+    }
+
+    std::lock_guard<std::mutex> lock(Thread_List_Mutex());
+    std::vector<ThreadInfoType> & threads = Thread_List();
+    threads.erase(std::remove_if(threads.begin(), threads.end(), [thread_id, thread_name](const ThreadInfoType & thread) {
+        return std::strcmp(thread.ThreadName, thread_name) == 0 && (thread_id == 0 || thread.ThreadID == thread_id);
+    }), threads.end());
 }
 
 void Register_Application_Exception_Callback(void (*app_callback)(void))
@@ -70,5 +120,12 @@ bool Is_Trying_To_Exit(void)
 
 unsigned long Get_Main_Thread_ID(void)
 {
-    return g_main_thread_id;
+    std::lock_guard<std::mutex> lock(Thread_List_Mutex());
+    const std::vector<ThreadInfoType> & threads = Thread_List();
+    for (const ThreadInfoType & thread : threads) {
+        if (thread.Main) {
+            return thread.ThreadID;
+        }
+    }
+    return 0;
 }

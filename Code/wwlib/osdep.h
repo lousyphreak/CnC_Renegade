@@ -63,6 +63,7 @@
 
 #else
 
+#include <SDL3/SDL_thread.h>
 #include <SDL3/SDL_video.h>
 
 #include <alloca.h>
@@ -817,8 +818,7 @@ inline void ExitProcess(UINT exit_code)
 
 inline DWORD GetCurrentThreadId()
 {
-    const auto hashed = std::hash<std::thread::id>{}(std::this_thread::get_id());
-    return static_cast<DWORD>(hashed & 0xFFFFFFFFu);
+    return static_cast<DWORD>(SDL_GetCurrentThreadID() & 0xFFFFFFFFu);
 }
 
 inline DWORD timeGetTime()

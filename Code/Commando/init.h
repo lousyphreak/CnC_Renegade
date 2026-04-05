@@ -56,5 +56,6 @@ void	Copy_Logs(unsigned version);
 #define VALUE_NAME_DISABLE_LOG_COPYING "DisableLogCopying"
 
 extern SimpleFileFactoryClass	RenegadeBaseFileFactory;
+extern SimpleFileFactoryClass	RenegadeRootFileFactory;
 
 #endif

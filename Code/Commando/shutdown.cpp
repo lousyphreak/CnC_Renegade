@@ -429,7 +429,9 @@ void Game_Shutdown(void)
 	//cHelpText::Close();
 
 	PhysicsSceneClass * scene = PhysicsSceneClass::Get_Instance();
-	scene->Set_Max_Simultaneous_Shadows(0);
+	if (scene != NULL) {
+		scene->Set_Max_Simultaneous_Shadows(0);
+	}
 
 	PathMgrClass::Shutdown();
 	WWMath::Shutdown();
@@ -450,6 +452,7 @@ void Game_Shutdown(void)
 	*/
 	if (FileFactoryListClass::Get_Instance() != NULL) {
 		FileFactoryListClass::Get_Instance()->Remove_FileFactory(&RenegadeBaseFileFactory);
+		FileFactoryListClass::Get_Instance()->Remove_FileFactory(&RenegadeRootFileFactory);
 	}
 	while (FileFactoryListClass::Get_Instance() != NULL) {
 		FileFactoryClass * factory = FileFactoryListClass::Get_Instance()->Remove_FileFactory();

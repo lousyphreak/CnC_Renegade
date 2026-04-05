@@ -218,7 +218,9 @@ Render2DSentenceClass::Render2DSentenceClass (void) :
 	TabStop (5.0),
 	DrawExtents (0, 0, 0, 0),
 	Renderers(sizeof(PreAllocatedRenderers)/sizeof(RendererDataStruct),PreAllocatedRenderers),
-	TrackedFontID (-1)
+	TrackedFontID (-1),
+	CachedSentenceText (0),
+	SentenceDirty (true)
 {
 	Get_Live_Sentence_Renderers ().Add (this);
 	Shader = Render2DClass::Get_Default_Shader ();
@@ -252,9 +254,14 @@ Render2DSentenceClass::~Render2DSentenceClass (void)
 void
 Render2DSentenceClass::Set_Font (FontCharsClass *font)
 {
+	if (Font == font) {
+		return ;
+	}
+
 	Reset ();
 	TrackedFontID = -1;
 	REF_PTR_SET (Font, font);
+	SentenceDirty = true;
 	return ;
 }
 
@@ -336,6 +343,8 @@ Render2DSentenceClass::Reset (void)
 
 	Cursor.Set (0, 0);
 	MonoSpaced = false;
+	CachedSentenceText = L"";
+	SentenceDirty = true;
 
 	Release_Pending_Surfaces ();
 	Reset_Sentence_Data ();
@@ -442,11 +451,13 @@ Render2DSentenceClass::Set_Location (const Vector2 &loc)
 void
 Render2DSentenceClass::Set_Tabstop(float stop)
 {
-	if (stop > 0.0) {
-		TabStop = stop;
-	} else {
-		TabStop = 1.0;
+	const float new_tab_stop = (stop > 0.0F) ? stop : 1.0F;
+	if (TabStop != new_tab_stop) {
+		TabStop = new_tab_stop;
+		SentenceDirty = true;
 	}
+
+	return ;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -1050,6 +1061,12 @@ Render2DSentenceClass::Build_Sentence (const WCHAR *text)
 		return;
 	}
 
+	const WCHAR *original_text = text;
+
+	if (!SentenceDirty && CachedSentenceText == original_text) {
+		return ;
+	}
+
 	//
 	//	Start fresh
 	//
@@ -1174,6 +1191,8 @@ Render2DSentenceClass::Build_Sentence (const WCHAR *text)
 		}
 	}
 
+	CachedSentenceText = original_text;
+	SentenceDirty = false;
 	return ;
 }
 

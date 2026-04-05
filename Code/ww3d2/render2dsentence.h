@@ -136,7 +136,7 @@ public:
 
 	void	Set_Location( const Vector2 & loc );
 	void	Set_Base_Location( const Vector2 & loc );
-	void	Set_Wrapping_Width (float width)					{ WrapWidth = width; }
+	void	Set_Wrapping_Width (float width)					{ if (WrapWidth != width) { WrapWidth = width; SentenceDirty = true; } }
 	
 	void	Set_Tabstop(float stop);
 
@@ -173,10 +173,10 @@ public:
 	//
 	//	Texture hint
 	//
-	void	Set_Texture_Size_Hint( int hint )				{ TextureSizeHint = hint; }
+	void	Set_Texture_Size_Hint( int hint )				{ if (TextureSizeHint != hint) { TextureSizeHint = hint; SentenceDirty = true; } }
 	int	Get_Texture_Size_Hint( void ) const				{ return TextureSizeHint; }
 
-	void	Set_Mono_Spaced( bool onoff )						{ MonoSpaced = onoff; }
+	void	Set_Mono_Spaced( bool onoff )						{ if (MonoSpaced != onoff) { MonoSpaced = onoff; SentenceDirty = true; } }
 
 	// Force all alphas 
 	void	Force_Alpha( float alpha );
@@ -251,6 +251,8 @@ private:
 	TextureClass *									CurTexture;
 	ShaderClass										Shader;
 	int												TrackedFontID;
+	WideStringClass								CachedSentenceText;
+	bool												SentenceDirty;
 };
 
 #endif	// RENDER2DSENTENCE_H

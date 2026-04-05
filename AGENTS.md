@@ -16,7 +16,7 @@ Executables willl run continuously until the user closes them, so you need to us
 
 Use `cmake --build` to build the project. The main windows build is in build-win.
 The build should alway be Debug mode with ASAN and UBSAN enabled, to catch any memory errors and undefined behavior during development.
-**ALWAYS** build and run the main executable before returning to the user, to make sure that the port is working and that there are no crashes or major issues for at least 30 seconds. Should **ANY** crash or major issue be found, fix it as part of your task before returning to the user.
+**ALWAYS** build and run the main executable before returning to the user, to make sure that the port is working and that there are no crashes or major issues for at least 300 seconds. Should **ANY** crash or major issue be found, fix it as part of your task before returning to the user.
 
 ## General guidelines
 

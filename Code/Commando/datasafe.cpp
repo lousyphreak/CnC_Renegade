@@ -902,10 +902,10 @@ void GenericDataSafeClass::Swap_Entries(DataSafeEntryClass *first, DataSafeEntry
 			/*
 			** Convert to long pointers to make it easy to read.
 			*/
-			long *p1 = (long*) first_data;
-			long *p2 = (long*) second_data;
+			uint32 *p1 = reinterpret_cast<uint32*>(first_data);
+			uint32 *p2 = reinterpret_cast<uint32*>(second_data);
 
-			long temp = *p1;
+			uint32 temp = *p1;
 			*p1 = *p2;
 			*p2 = temp;
 

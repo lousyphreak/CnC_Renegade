@@ -44,6 +44,7 @@
 #include "matrix4.h"
 #include "rddesc.h"
 #include "render2d.h"
+#include "refcount.h"
 #include "registry.h"
 #include "shader.h"
 #include "texture.h"
@@ -177,8 +178,8 @@ void Reset_Draw_State()
 	g_bgfx.index_data = nullptr;
 	g_bgfx.index_count = 0;
 	g_bgfx.index_base_offset = 0;
-	g_bgfx.textures[0] = nullptr;
-	g_bgfx.textures[1] = nullptr;
+	REF_PTR_RELEASE(g_bgfx.textures[0]);
+	REF_PTR_RELEASE(g_bgfx.textures[1]);
 	g_bgfx.material = nullptr;
 	g_bgfx.shader = ShaderClass();
 	g_bgfx.current_vb = nullptr;
@@ -853,6 +854,8 @@ void Shutdown_Bgfx()
 		return;
 	}
 
+	Reset_Draw_State();
+
 	if (bgfx::isValid(g_bgfx.gui_program)) {
 		bgfx::destroy(g_bgfx.gui_program);
 		g_bgfx.gui_program = BGFX_INVALID_HANDLE;
@@ -1295,7 +1298,7 @@ void DX8Wrapper::Draw_Triangles(unsigned short start_index, unsigned short polyg
 void DX8Wrapper::Set_Texture(unsigned stage, TextureClass *texture)
 {
 	if (stage < MAX_TEXTURE_STAGES) {
-		g_bgfx.textures[stage] = texture;
+		REF_PTR_SET(g_bgfx.textures[stage], texture);
 	}
 }
 

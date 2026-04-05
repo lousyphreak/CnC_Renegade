@@ -36,27 +36,27 @@
 
 
 #include "always.h"
-#include <windows.h>
+#include "windows.h"
 #include "WWAudio.h"
 #include "wwdebug.h"
 #include "Utils.h"
-#include "RealCRC.H"
+#include "realcrc.h"
 #include "SoundBuffer.h"
 #include "AudibleSound.h"
 #include "Sound3D.h"
-#include "RawFile.H"
-#include "WW3D.H"
+#include "rawfile.h"
+#include "ww3d.h"
 #include "SoundScene.h"
 #include "SoundPseudo3D.h"
-#include "FFactory.H"
-#include "Registry.H"
+#include "ffactory.h"
+#include "registry.h"
 #include "Threads.h"
 #include "LogicalSound.h"
 #include "LogicalListener.h"
 #include "definitionclassids.h"
 #include "wwmemlog.h"
 #include "wwprofile.h"
-#include "Ini.h"
+#include "ini.h"
 
 
 #ifdef G_CODE_BASE
@@ -173,8 +173,6 @@ WWAudioClass::WWAudioClass (bool lite)
 	  m_CachedAreSoundEffectsEnabled (true),
 	  AudioIni (NULL)
 {
-	::InitializeCriticalSection (&MMSLockClass::_MSSLockCriticalSection);
-
 	m_ForceDisable = lite;
 
 	//
@@ -184,7 +182,7 @@ WWAudioClass::WWAudioClass (bool lite)
 		AIL_startup ();
 	}
 	_theInstance = this;
-	_TimerSyncEvent = ::CreateEvent (NULL, TRUE, FALSE, "WWAUDIO_TIMER_SYNC");
+	_TimerSyncEvent = NULL;
 
 	//
 	// Set some default values
@@ -230,10 +228,7 @@ WWAudioClass::~WWAudioClass (void)
 
 	Shutdown ();
 	_theInstance = NULL;
-	::CloseHandle(_TimerSyncEvent);
 	_TimerSyncEvent = NULL;
-
-	::DeleteCriticalSection (&MMSLockClass::_MSSLockCriticalSection);
 
 	//
 	//	Free the list of logical "types".
@@ -686,12 +681,13 @@ WWAudioClass::Create_Sound_Buffer
 	//	Determine how large this buffer can be
 	//
 	int max_size = is_3d ? m_Max3DBufferSize : m_Max2DBufferSize;
+	const int file_size = file.Size ();
 
 	//
 	// Create a streaming sound buffer object if the
 	// file is too large to preload.
 	//
-	if (file.Size () > max_size) {
+	if ((!is_3d && file_size <= 0) || (file_size > max_size)) {
 		sound_buffer = new StreamSoundBufferClass;
 	} else {
 		sound_buffer = new SoundBufferClass;
@@ -2501,10 +2497,6 @@ WWAudioClass::Shutdown (void)
 		::AIL_release_timer_handle (m_UpdateTimer);
 		m_UpdateTimer = -1;
 
-		// Wait for the timer callback function to end
-		::WaitForSingleObject (_TimerSyncEvent, 20000);
-		::CloseHandle (_TimerSyncEvent);
-		_TimerSyncEvent = NULL;
 	}
 
 	//
@@ -3232,7 +3224,7 @@ WWAudioClass::Save_To_Registry
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 U32 AILCALLBACK
-WWAudioClass::File_Open_Callback (char const *filename, U32 *file_handle)
+WWAudioClass::File_Open_Callback (char const *filename, uintptr_t *file_handle)
 {
 	U32 retval = false;
 
@@ -3243,7 +3235,7 @@ WWAudioClass::File_Open_Callback (char const *filename, U32 *file_handle)
 		//
 		FileClass *file = Get_Instance ()->Get_File (filename);
 		if (file != NULL && file->Open ()) {
-			(*file_handle) = (U32)file;
+			(*file_handle) = reinterpret_cast<uintptr_t>(file);
 			retval = true;
 		}
 	}
@@ -3258,17 +3250,20 @@ WWAudioClass::File_Open_Callback (char const *filename, U32 *file_handle)
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 void AILCALLBACK
-WWAudioClass::File_Close_Callback (U32 file_handle)
+WWAudioClass::File_Close_Callback (uintptr_t file_handle)
 {
 	if (Get_Instance () != NULL) {
 
 		//
 		//	Close the file (if necessary)
 		//
-		FileClass *file = reinterpret_cast<FileClass *> (file_handle);
-		if (file != NULL) {
-			Get_Instance ()->Return_File (file);
+	FileClass *file = reinterpret_cast<FileClass *> (file_handle);
+	if (file != NULL) {
+		if (file->Is_Open ()) {
+			file->Close ();
 		}
+		Get_Instance ()->Return_File (file);
+	}
 	}
 
 	return ;
@@ -3281,7 +3276,7 @@ WWAudioClass::File_Close_Callback (U32 file_handle)
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 S32 AILCALLBACK
-WWAudioClass::File_Seek_Callback (U32 file_handle, S32 offset, U32 type)
+WWAudioClass::File_Seek_Callback (uintptr_t file_handle, S32 offset, U32 type)
 {
 	S32 retval = 0;
 
@@ -3326,7 +3321,7 @@ WWAudioClass::File_Seek_Callback (U32 file_handle, S32 offset, U32 type)
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 U32 AILCALLBACK
-WWAudioClass::File_Read_Callback (U32 file_handle, void *buffer, U32 bytes)
+WWAudioClass::File_Read_Callback (uintptr_t file_handle, void *buffer, U32 bytes)
 {
 	U32 retval = 0;
 
@@ -3450,7 +3445,7 @@ WWAudioClass::Set_Active_Sound_Page (SOUND_PAGE page)
 	//
 	//	Resume any sounds that are playing in the new page
 	//
-	for (index = 0; index < m_Playlist[page].Count ();index ++) {
+	for (int index = 0; index < m_Playlist[page].Count ();index ++) {
 		m_Playlist[page][index]->Resume ();
 	}
 

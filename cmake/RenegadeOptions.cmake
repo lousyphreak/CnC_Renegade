@@ -12,6 +12,8 @@ else()
 endif()
 
 option(RENEGADE_WITH_SDL3 "Use vendored SDL3 for platform abstractions" ON)
+set(RENEGADE_AUDIO_BACKEND "SDL_MIXER" CACHE STRING "Audio backend to use")
+set_property(CACHE RENEGADE_AUDIO_BACKEND PROPERTY STRINGS "SDL_MIXER" "NULL")
 option(RENEGADE_WITH_X86_ASM "Enable legacy x86 assembly implementations" OFF)
 option(RENEGADE_WITH_UMBRA "Enable Umbra integration" OFF)
 option(RENEGADE_WITH_BINK "Enable Bink movie playback" OFF)

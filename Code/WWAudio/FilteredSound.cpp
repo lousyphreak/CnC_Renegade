@@ -123,9 +123,9 @@ FilteredSoundClass::Initialize_Miles_Handle (void)
 		//
 		//	Change the reverb's settings to simulate a 'tinny' effect.
 		//
-		F32 reverb_level   = 0.3F;
-		F32 reverb_reflect = 0.01F;
-		F32 reverb_decay   = 0.535F;
+		float reverb_level   = 0.3F;
+		float reverb_reflect = 0.01F;
+		float reverb_decay   = 0.535F;
 		::AIL_set_filter_sample_preference (m_SoundHandle->Get_HSAMPLE (),
 														"Reverb level",
 														&reverb_level);

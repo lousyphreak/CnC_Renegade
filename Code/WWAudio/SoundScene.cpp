@@ -203,7 +203,9 @@ SoundSceneClass::Collect_Logical_Sounds (int listener_count)
 				//	Is the sound ready to notify?
 				//
 				if (sound_obj->Allow_Notify (timestamp)) {
-					listener->On_Event (AudioCallbackClass::EVENT_LOGICAL_HEARD, (uint32)listener, (uint32)sound_obj);
+					listener->On_Event (AudioCallbackClass::EVENT_LOGICAL_HEARD,
+						reinterpret_cast<uintptr_t>(listener),
+						reinterpret_cast<uintptr_t>(sound_obj));
 				}
 			}
 		}

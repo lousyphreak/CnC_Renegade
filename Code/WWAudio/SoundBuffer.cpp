@@ -40,8 +40,11 @@
 #include "wwdebug.h"
 #include "Utils.h"
 #include "ffactory.h"
+#include "sdlmixer_audio_utils.h"
 #include "win.h"
 #include "wwprofile.h"
+
+#include <vector>
 
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -59,6 +62,38 @@ public:
 };
 
 static DynamicVectorClass<FileMappingClass> MappingList;
+
+namespace
+{
+bool Read_File_Contents(FileClass &file, std::vector<unsigned char> &buffer, int reported_size)
+{
+	buffer.clear ();
+
+	if (reported_size > 0) {
+		buffer.resize (reported_size);
+		return (file.Read (buffer.data (), reported_size) == reported_size);
+	}
+
+	unsigned char chunk[4096];
+	for (;;) {
+		int bytes_read = file.Read (chunk, sizeof (chunk));
+		if (bytes_read < 0) {
+			buffer.clear ();
+			return false;
+		}
+		if (bytes_read == 0) {
+			break;
+		}
+
+		buffer.insert (buffer.end (), chunk, chunk + bytes_read);
+		if (bytes_read < (int)sizeof (chunk)) {
+			break;
+		}
+	}
+
+	return (!buffer.empty ());
+}
+}
 
 
 
@@ -130,17 +165,13 @@ SoundBufferClass::Determine_Stats (unsigned char *buffer)
 
 	// Attempt to get statistical information about this sound
 	AILSOUNDINFO info = { 0 };
-	if ((buffer != NULL) && (::AIL_WAV_info (buffer, &info) != 0)) {
+	if ((buffer != NULL) && WWAudio_Get_Audio_Info_From_Memory(buffer, m_Length, &info, &m_Duration)) {
 
 		// Cache this information
 		m_Rate = info.rate;
 		m_Channels = info.channels;
 		m_Bits = info.bits;
 		m_Type = info.format;
-
-		// Determine how long this sound will play for
-		float bytes_sec = float((m_Channels * m_Rate * m_Bits) >> 3);
-		m_Duration = (unsigned long)((((float)m_Length) / bytes_sec) * 1000.0F);
 	}
 
 	return ;
@@ -218,21 +249,17 @@ SoundBufferClass::Load_From_File (FileClass &file)
 		we_opened = (file.Open () == TRUE);
 	}
 
-	// Determine the size of the buffer
-	m_Length = file.Size ();
-	WWASSERT	(m_Length > 0L);
-	if (m_Length > 0L) {
+	std::vector<unsigned char> file_data;
+	const int reported_size = file.Size ();
+	retval = Read_File_Contents (file, file_data, reported_size);
+	if (retval && !file_data.empty ()) {
 
-		// Allocate a new buffer of the correct length and read the contents
-		// of the file into the buffer
+		m_Length = file_data.size ();
 		m_Buffer = new unsigned char[m_Length];
-		retval = bool(file.Read (m_Buffer, m_Length) == (int)m_Length);
-
-		// If we failed, free the buffer
-		if (retval == false) {
-			Free_Buffer ();
-		}
+		::memcpy (m_Buffer, file_data.data (), m_Length);
 		Determine_Stats (m_Buffer);
+	} else {
+		Free_Buffer ();
 	}
 
 	// Close the file if necessary
@@ -374,13 +401,15 @@ StreamSoundBufferClass::Load_From_File (FileClass &file)
 		we_opened = (file.Open () == TRUE);
 	}
 
-	m_Length = file.Size ();
+	const int reported_size = file.Size ();
+	m_Length = (reported_size > 0) ? reported_size : 0;
 
-	// Allocate a new buffer of the correct length and read the contents
-	// of the file into the buffer
-	unsigned char buffer[4096] = { 0 };
-	file.Read (buffer, sizeof (buffer));
-	Determine_Stats (buffer);
+	if (reported_size > 0) {
+		std::vector<unsigned char> buffer;
+		if (Read_File_Contents(file, buffer, reported_size) && !buffer.empty()) {
+			Determine_Stats(buffer.data());
+		}
+	}
 
 	// Close the file if necessary
 	if (we_opened) {
@@ -389,4 +418,3 @@ StreamSoundBufferClass::Load_From_File (FileClass &file)
 
 	return true;
 }
-

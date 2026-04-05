@@ -1,5 +1,18 @@
 # Porting Knowledge
 
+## SDL_mixer WWAudio backend notes
+
+- The safest audio-porting seam is the Miles compatibility layer, not the gameplay-facing WWAudio classes. `AudibleSound`, `Sound3D`, `SoundScene`, logical sound objects, and save/load behavior already contain the original gameplay policy and can be kept largely intact.
+- SDL3_mixer is good enough to preserve the major Renegade audio behaviors that matter to gameplay: 2D samples, streamed playback, per-track gain, stereo panning, playback-rate scaling, pause/resume/stop, and basic positional approximation.
+- Miles-era hardware/DSP features do not map 1:1. Treat true reverb/filter provider behavior as best-effort/no-op unless SDL_mixer exposes an equivalent control.
+- `RENEGADE_AUDIO_BACKEND` is the build switch for audio backend selection. Supported values are `SDL_MIXER` and `NULL`, and the intended default is `SDL_MIXER`.
+- The `external/SDL_mixer` submodule at `release-3.2.0` did not include the vendored codec dependency trees needed for `SDLMIXER_VENDORED=ON`. On this tree, SDL_mixer must currently be configured with `SDLMIXER_VENDORED=OFF` and use system codec packages.
+- Linux/x86_64 exposed latent WWAudio assumptions that Win32 tolerated. Any Miles handle/user-data or file-callback payload that stores object pointers must use `uintptr_t`, not `U32`, `S32`, or pointer-to-int truncating casts like `(S32)this`.
+- Restoring original files also reintroduces Windows-era include casing. Audio code that compiles on case-insensitive filesystems may still fail on Linux until header names are matched exactly.
+- SDL_mixer callback-stream playback is not equally reliable across codecs. In this port, streamed WAV content worked directly through `MIX_SetTrackIOStream`, but MP3 music hit `mpg123_seek` errors on the custom callback-backed IO path.
+- The practical fix is to keep callback-stream playback as the first choice, but fall back to `MIX_LoadAudio_IO` + `MIX_SetTrackAudio` for compressed tracks that fail to start. This preserves music playback while still using true callback streaming where SDL_mixer handles it cleanly.
+- `FileClass::Size()` cannot be assumed to be valid for every file-factory source. Some audio assets can report an unknown size; code that casts that value into unsigned buffer lengths will explode on 64-bit builds. Treat non-positive sizes as "unknown" and either stream them or read incrementally instead of preallocating from the reported size.
+
 ## DataSafe LP64 hazard
 
 - The original datasafe code assumes `long` is 32 bits in `GenericDataSafeClass::Swap_Entries`.

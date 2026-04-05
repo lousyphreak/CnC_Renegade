@@ -200,7 +200,7 @@ MapMgrClass::Clear_Cloud_Cell (const Vector3 &pos)
 	//
 	int bit_offset	= (cell_y * CLOUD_WIDTH) + cell_x;
 	int index		= bit_offset / 32;
-	int bit			= (bit_offset - (index * 32)) + 1;
+	int bit			= bit_offset - (index * 32);
 
 	//
 	//	Clear the bit
@@ -233,7 +233,7 @@ MapMgrClass::Clear_Cloud_Cell (int x_pos, int y_pos)
 	//
 	int bit_offset	= (cell_y * CLOUD_WIDTH) + cell_x;
 	int index		= bit_offset / 32;
-	int bit			= (bit_offset - (index * 32)) + 1;
+	int bit			= bit_offset - (index * 32);
 
 	//
 	//	Clear the bit
@@ -272,7 +272,7 @@ MapMgrClass::Clear_Cloud_Cell_By_Pixel (int x_pos, int y_pos)
 	//
 	int bit_offset	= (cell_y * CLOUD_WIDTH) + cell_x;
 	int index		= bit_offset / 32;
-	int bit			= (bit_offset - (index * 32)) + 1;
+	int bit			= bit_offset - (index * 32);
 
 	//
 	//	Clear the bit
@@ -290,7 +290,7 @@ MapMgrClass::Is_Cell_Visible (int x_pos, int y_pos)
 {
 	int bit_offset	= (y_pos * CLOUD_WIDTH) + x_pos;
 	int index		= bit_offset / 32;
-	int bit			= (bit_offset - (index * 32)) + 1;
+	int bit			= bit_offset - (index * 32);
 	
 	//
 	//	Index into the vector to see if this cell is clouded or not

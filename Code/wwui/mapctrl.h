@@ -259,7 +259,7 @@ MapCtrlClass::Is_Cell_Shrouded (int cell_x, int cell_y)
 	{
 		int bit_offset	= (cell_y * CloudSize.I) + cell_x;
 		int index		= bit_offset / 32;
-		int bit			= (bit_offset - (index * 32)) + 1;
+		int bit			= bit_offset - (index * 32);
 
 		//
 		//	Check this bit

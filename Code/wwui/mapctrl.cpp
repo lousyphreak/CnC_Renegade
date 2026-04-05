@@ -1087,7 +1087,7 @@ MapCtrlClass::Initialize_Cloud (int cells_x, int cells_y)
 	//
 	//	Allocate a bit vector large enough to hold the cells
 	//
-	CloudVector = new uint32[((CloudSize.I * CloudSize.J) / sizeof (uint32)) + 1];
+	CloudVector = new uint32[((CloudSize.I * CloudSize.J) / 32) + 1];
 	return ;
 }
 
@@ -1100,7 +1100,7 @@ MapCtrlClass::Initialize_Cloud (int cells_x, int cells_y)
 void
 MapCtrlClass::Reset_Cloud (void)
 {
-	::memset (CloudVector, 0xFF, sizeof (uint32) * ((CloudSize.I * CloudSize.J) / sizeof (uint32)) + 1);
+	::memset (CloudVector, 0xFF, sizeof (uint32) * (((CloudSize.I * CloudSize.J) / 32) + 1));
 	return ;
 }
 
@@ -1122,7 +1122,7 @@ MapCtrlClass::Set_Cloud_Cell (int cell_x, int cell_y, bool is_visible)
 	//
 	int bit_offset	= (cell_y * CloudSize.I) + cell_x;
 	int index		= bit_offset / 32;
-	int bit			= (bit_offset - (index * 32)) + 1;
+	int bit			= bit_offset - (index * 32);
 
 	//
 	//	Set (or clear) the bit
@@ -1146,7 +1146,7 @@ void
 MapCtrlClass::Free_Cloud_Data (void)
 {
 	if (CloudVector != NULL) {
-		delete CloudVector;
+		delete [] CloudVector;
 		CloudVector = NULL;
 	}
 

@@ -94,6 +94,7 @@ struct BgfxGuiVertex {
 	uint32_t abgr;
 	float u;
 	float v;
+	float fog;
 };
 
 struct BgfxDx8WrapperState {
@@ -117,6 +118,8 @@ struct BgfxDx8WrapperState {
 	bgfx::VertexLayout gui_layout;
 	bgfx::ProgramHandle gui_program = BGFX_INVALID_HANDLE;
 	bgfx::UniformHandle texture_uniform = BGFX_INVALID_HANDLE;
+	bgfx::UniformHandle fog_state_uniform = BGFX_INVALID_HANDLE;
+	bgfx::UniformHandle fog_color_uniform = BGFX_INVALID_HANDLE;
 	bool layout_ready = false;
 	Matrix4 world;
 	Matrix4 view;
@@ -168,6 +171,35 @@ uint32_t DX8_To_BGFX_Color(uint32_t color)
 uint32_t ARGB_To_RGBA(uint32_t argb)
 {
 	return (argb << 8) | ((argb >> 24) & 0xFFu);
+}
+
+float Clamp_Fog_Factor(float fog)
+{
+	if (fog < 0.0f) {
+		return 0.0f;
+	}
+	if (fog > 1.0f) {
+		return 1.0f;
+	}
+	return fog;
+}
+
+float Compute_Vertex_Fog(const Matrix4 &world_view, const float *position)
+{
+	if (!DX8Wrapper::Get_Fog_Enable()) {
+		return 0.0f;
+	}
+
+	Vector4 view_position;
+	Matrix4::Transform_Vector(world_view, Vector3(position[0], position[1], position[2]), &view_position);
+	const float fog_distance = std::max(-view_position.Z, 0.0f);
+	const float fog_start = DX8Wrapper::Get_Fog_Start();
+	const float fog_end = DX8Wrapper::Get_Fog_End();
+	if (fog_end <= fog_start) {
+		return fog_distance >= fog_end ? 1.0f : 0.0f;
+	}
+
+	return Clamp_Fog_Factor((fog_distance - fog_start) / (fog_end - fog_start));
 }
 
 void Reset_Draw_State()
@@ -497,12 +529,19 @@ bool Ensure_Gui_Resources()
 			.add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
 			.add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
 			.add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+			.add(bgfx::Attrib::TexCoord1, 1, bgfx::AttribType::Float)
 			.end();
 		g_bgfx.layout_ready = true;
 	}
 
 	if (!bgfx::isValid(g_bgfx.texture_uniform)) {
 		g_bgfx.texture_uniform = bgfx::createUniform("s_texColor", bgfx::UniformType::Sampler);
+	}
+	if (!bgfx::isValid(g_bgfx.fog_state_uniform)) {
+		g_bgfx.fog_state_uniform = bgfx::createUniform("u_fogState", bgfx::UniformType::Vec4);
+	}
+	if (!bgfx::isValid(g_bgfx.fog_color_uniform)) {
+		g_bgfx.fog_color_uniform = bgfx::createUniform("u_fogColor", bgfx::UniformType::Vec4);
 	}
 
 	if (!bgfx::isValid(g_bgfx.gui_program)) {
@@ -533,7 +572,10 @@ bool Ensure_Gui_Resources()
 		WWRELEASE_SAY(("BGFX2D: GUI shader program initialized\n"));
 	}
 
-	return bgfx::isValid(g_bgfx.gui_program) && bgfx::isValid(g_bgfx.texture_uniform);
+	return bgfx::isValid(g_bgfx.gui_program) &&
+		bgfx::isValid(g_bgfx.texture_uniform) &&
+		bgfx::isValid(g_bgfx.fog_state_uniform) &&
+		bgfx::isValid(g_bgfx.fog_color_uniform);
 }
 
 Matrix4 Adjust_Projection_For_BGFX(const Matrix4 &projection)
@@ -699,6 +741,7 @@ bool Submit_Triangles(unsigned short start_index, unsigned short polygon_count, 
 		dst_vertices[i].y = position[1];
 		dst_vertices[i].z = position[2];
 		dst_vertices[i].abgr = DX8_To_BGFX_Color(resolved_diffuse);
+		dst_vertices[i].fog = Compute_Vertex_Fog(world_view, position);
 
 		bool generated_texcoord = false;
 		const Vector4 stage0_input = Generate_Stage0_Texture_Input(
@@ -755,8 +798,16 @@ bool Submit_Triangles(unsigned short start_index, unsigned short polygon_count, 
 
 	const bgfx::TextureHandle texture_handle = BgfxCompat_Get_Texture_Handle(g_bgfx.textures[0]);
 	const uint64_t sampler_flags = BgfxCompat_Get_Sampler_Flags(g_bgfx.textures[0]);
+	const float fog_mode = (DX8Wrapper::Get_Current_Caps()->Is_Fog_Allowed() && DX8Wrapper::Get_Fog_Enable())
+		? static_cast<float>(g_bgfx.shader.Get_Fog_Func())
+		: static_cast<float>(ShaderClass::FOG_DISABLE);
+	const float fog_state[4] = { fog_mode, 0.0f, 0.0f, 0.0f };
+	const Vector3 fog_color_value = DX8Wrapper::Get_Fog_Color_Vector();
+	const float fog_color[4] = { fog_color_value.X, fog_color_value.Y, fog_color_value.Z, 1.0f };
 	bgfx::setTransform(&mvp_bgfx[0][0]);
 	bgfx::setTexture(0, g_bgfx.texture_uniform, bgfx::isValid(texture_handle) ? texture_handle : BgfxCompat_Get_White_Texture(), sampler_flags);
+	bgfx::setUniform(g_bgfx.fog_state_uniform, fog_state);
+	bgfx::setUniform(g_bgfx.fog_color_uniform, fog_color);
 	bgfx::setVertexBuffer(0, &tvb);
 	bgfx::setIndexBuffer(&tib);
 	bgfx::setState(Build_BGFX_State());
@@ -864,6 +915,14 @@ void Shutdown_Bgfx()
 		bgfx::destroy(g_bgfx.texture_uniform);
 		g_bgfx.texture_uniform = BGFX_INVALID_HANDLE;
 	}
+	if (bgfx::isValid(g_bgfx.fog_state_uniform)) {
+		bgfx::destroy(g_bgfx.fog_state_uniform);
+		g_bgfx.fog_state_uniform = BGFX_INVALID_HANDLE;
+	}
+	if (bgfx::isValid(g_bgfx.fog_color_uniform)) {
+		bgfx::destroy(g_bgfx.fog_color_uniform);
+		g_bgfx.fog_color_uniform = BGFX_INVALID_HANDLE;
+	}
 	BgfxCompat_Shutdown_Texture_System();
 
 	bgfx::frame();
@@ -921,6 +980,14 @@ void DX8Wrapper::Begin_Scene(void)
 	bgfx::setViewTransform(kBootstrapViewId, kIdentityMatrix, kIdentityMatrix);
 	bgfx::touch(kBootstrapViewId);
 	g_bgfx.draw_calls = 0;
+}
+
+void DX8Wrapper::Set_Fog(bool enable, const Vector3 &color, float start, float end)
+{
+	_Fog_Enable_State() = enable;
+	_Fog_Color_State() = color;
+	_Fog_Start_State() = std::max(start, 0.0f);
+	_Fog_End_State() = std::max(end, _Fog_Start_State());
 }
 
 void DX8Wrapper::End_Scene(bool flip_frame)

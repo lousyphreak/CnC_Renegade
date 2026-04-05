@@ -250,6 +250,9 @@ void ShaderClass::Init_From_Material3(const W3dMaterial3Struct & mat3)
  *=============================================================================================*/
 void ShaderClass::Enable_Fog(const char *source)
 {
+	// The bgfx shader path can explicitly attenuate fragment RGB/A before blending,
+	// so most blends that were "unfoggable" in the old fixed-function renderer can
+	// be represented as a scaled-fragment fog instead of warning.
 	switch (Get_Src_Blend_Func()) {
 
 		case ShaderClass::SRCBLEND_ZERO:
@@ -269,6 +272,9 @@ void ShaderClass::Enable_Fog(const char *source)
 
 				case ShaderClass::DSTBLEND_ONE:
 				case ShaderClass::DSTBLEND_ONE_MINUS_SRC_COLOR:
+				case ShaderClass::DSTBLEND_SRC_COLOR:
+				case ShaderClass::DSTBLEND_SRC_ALPHA:
+				case ShaderClass::DSTBLEND_ONE_MINUS_SRC_ALPHA:
 					Set_Fog_Func (ShaderClass::FOG_SCALE_FRAGMENT);
 					break;
 
@@ -281,6 +287,8 @@ void ShaderClass::Enable_Fog(const char *source)
 		case ShaderClass::SRCBLEND_SRC_ALPHA:
 			if (Get_Dst_Blend_Func() == ShaderClass::DSTBLEND_ONE_MINUS_SRC_ALPHA) {
 				Set_Fog_Func (ShaderClass::FOG_ENABLE);
+			} else if (Get_Dst_Blend_Func() != ShaderClass::DSTBLEND_ZERO) {
+				Set_Fog_Func (ShaderClass::FOG_SCALE_FRAGMENT);
 			} else {
 				Report_Unable_To_Fog (source);
 			}
@@ -289,6 +297,8 @@ void ShaderClass::Enable_Fog(const char *source)
 		case ShaderClass::SRCBLEND_ONE_MINUS_SRC_ALPHA:
 			if (Get_Dst_Blend_Func() == ShaderClass::DSTBLEND_SRC_ALPHA) {
 				Set_Fog_Func (ShaderClass::FOG_ENABLE);
+			} else if (Get_Dst_Blend_Func() != ShaderClass::DSTBLEND_ZERO) {
+				Set_Fog_Func (ShaderClass::FOG_SCALE_FRAGMENT);
 			} else {
 				Report_Unable_To_Fog (source);
 			}

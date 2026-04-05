@@ -2,6 +2,13 @@
 
 ## Recent changes
 
+- Implemented real scene fog in the bgfx renderer instead of leaving `DX8Wrapper::Set_Fog` as a no-op.
+- Root cause: the bgfx bootstrap path only forwarded texture/color/alpha-test state, so scene fog range/color never reached the GPU. The bgfx-only `ShaderClass::Enable_Fog` path also still inherited fixed-function fog restrictions and warned on blend modes used by vehicle wheel materials.
+- Resolution: the bgfx wrapper now stores fog enable/color/range state, computes a per-vertex fog factor in camera space, passes fog mode/color through bgfx uniforms, and applies the legacy fog behaviors in the bootstrap shaders. The bgfx `shader_headless.cpp` fog selector now also maps additional non-fixed-function blend combinations to `FOG_SCALE_FRAGMENT` instead of warning.
+
+- Fixed sanitizer-detected fog-of-war storage bugs in the UI map control and gameplay map manager.
+- Root cause: `MapCtrlClass::Initialize_Cloud` allocated the fog-of-war bit vector with `new[]`, but `Free_Cloud_Data` destroyed it with scalar `delete`. The UI cloud-vector sizing also used a `sizeof(uint32)` divisor instead of a 32-bits-per-word divisor, and both the UI and gameplay cloud bit math offset the bit index by `+ 1`, which can produce undefined `1 << 32` shifts on cell boundaries.
+- Resolution: `MapCtrlClass::Free_Cloud_Data` now uses `delete[]`, the UI cloud-vector allocation/reset sizing now matches the gameplay `((cell_count / 32) + 1)` word-count formula, and the fog-of-war bit index calculations in `mapctrl` and `mapmgr` now use the in-word range `0..31` instead of `1..32`.
 - Replaced the null WWAudio path with a selectable SDL_mixer-backed backend while preserving the original WWAudio gameplay-facing object model.
 - Added `external/SDL_mixer` as a git submodule and introduced the `RENEGADE_AUDIO_BACKEND` CMake option with `SDL_MIXER` and `NULL` values. The default is now `SDL_MIXER`.
 - Root build wiring now brings in `external/SDL_mixer` when the SDL backend is selected, and WWAudio switches between the restored portable source set and the null backend source set based on the same option.

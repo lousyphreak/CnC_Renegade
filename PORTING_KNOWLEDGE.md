@@ -1,5 +1,19 @@
 # Porting Knowledge
 
+## bgfx scene fog behavior
+
+- The bgfx renderer does not inherit D3D8 fixed-function fog automatically; `SceneClass::Render` only stays wired up if `DX8Wrapper::Set_Fog` stores the scene fog state and the bgfx draw path forwards it into shader uniforms.
+- Renegade camera space is forward-negative-Z. A practical linear fog factor for the bgfx path is therefore based on `max(-view_z, 0)` against the scene's fog start/end distances.
+- For the bgfx bootstrap shader, `FOG_ENABLE` should blend fragment RGB toward the scene fog color, `FOG_SCALE_FRAGMENT` should attenuate fragment RGBA by `(1 - fog)` so alpha-driven blend modes also fade out, and `FOG_WHITE` should blend fragment RGB toward white to preserve the original multiplicative-fog behavior.
+- The bgfx-only `shader_headless.cpp` path can safely accept more blend combinations than the old fixed-function renderer because the shader can explicitly attenuate the fragment before the backend blend stage. That is the right place to suppress legacy "Unable to fog shader" warnings for bgfx-specific support.
+
+## UI map cloud buffer ownership
+
+- `MapCtrlClass` in `Code/wwui/mapctrl.cpp` owns its fog-of-war bitfield as a dynamic `uint32[]` array.
+- Keep the UI cloud buffer sizing consistent with the gameplay map manager: the storage count is `((cell_count / 32) + 1)` 32-bit words, not a byte-count expression based on `sizeof(uint32)`.
+- Because the buffer is allocated with `new[]`, teardown must always use `delete[]`. ASan will flag this immediately when the EVA encyclopedia/map tab is destroyed.
+- The fog-of-war bit index inside each 32-bit word must stay in the range `0..31`. The original `+ 1` offset turns every 32nd cell into `1 << 32`, which UBSan reports as undefined behavior on modern builds.
+
 ## SDL_mixer WWAudio backend notes
 
 - The safest audio-porting seam is the Miles compatibility layer, not the gameplay-facing WWAudio classes. `AudibleSound`, `Sound3D`, `SoundScene`, logical sound objects, and save/load behavior already contain the original gameplay policy and can be kept largely intact.

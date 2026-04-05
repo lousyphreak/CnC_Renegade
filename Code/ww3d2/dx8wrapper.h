@@ -132,6 +132,8 @@ public:
 
 #define D3DRS_FILLMODE 8
 #define D3DRS_AMBIENT 26
+#define D3DRS_FOGENABLE 28
+#define D3DRS_FOGCOLOR 34
 #define D3DRS_ZBIAS 47
 #define D3DRS_LIGHTING 137
 #define D3DRS_DIFFUSEMATERIALSOURCE 145
@@ -227,8 +229,12 @@ public:
 	static void Set_Render_Target(Args&&...) {}
 	template <typename... Args>
 	static void Set_Gamma(Args&&...) {}
-	template <typename... Args>
-	static void Set_Fog(Args&&...) {}
+	static void Set_Fog(bool enable, const Vector3 &color, float start, float end);
+	static bool Get_Fog_Enable() { return _Fog_Enable_State(); }
+	static unsigned Get_Fog_Color() { return Convert_Color(_Fog_Color_State(), 1.0f); }
+	static const Vector3 &Get_Fog_Color_Vector() { return _Fog_Color_State(); }
+	static float Get_Fog_Start() { return _Fog_Start_State(); }
+	static float Get_Fog_End() { return _Fog_End_State(); }
 
 	static void Set_Transform(TransformSlot transform, const Matrix4 &m);
 	static void Set_Transform(TransformSlot transform, const Matrix3D &m);
@@ -317,6 +323,31 @@ public:
 	static unsigned int Convert_Color_Clamp(const Vector4 &color)
 	{
 		return Convert_Color(color);
+	}
+
+private:
+	static bool &_Fog_Enable_State()
+	{
+		static bool enabled = false;
+		return enabled;
+	}
+
+	static Vector3 &_Fog_Color_State()
+	{
+		static Vector3 color(0.0f, 0.0f, 0.0f);
+		return color;
+	}
+
+	static float &_Fog_Start_State()
+	{
+		static float start = 0.0f;
+		return start;
+	}
+
+	static float &_Fog_End_State()
+	{
+		static float end = 1000.0f;
+		return end;
 	}
 };
 

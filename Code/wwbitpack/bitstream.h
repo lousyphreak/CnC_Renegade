@@ -45,6 +45,7 @@
 #include "encoderlist.h"
 #include "mathutil.h"
 #include "math.h"
+#include <string.h>
 #include "widestring.h"
 
 #define BYTE_DEPTH(x)		(sizeof(x))
@@ -166,7 +167,9 @@ class BitStreamClass : public cBitPacker
 				Add_Bits(scaled_value, entry.Get_Bit_Precision());
 
 			} else {
-				Add_Bits(*(reinterpret_cast<ULONG *>(&value)), BIT_DEPTH(T));
+				ULONG raw_value = 0;
+				::memcpy(&raw_value, &value, sizeof(value));
+				Add_Bits(raw_value, BIT_DEPTH(T));
 			}
 
 			UncompressedSizeBytes += BYTE_DEPTH(T);
@@ -206,7 +209,7 @@ class BitStreamClass : public cBitPacker
 				ULONG u_value;
 				Get_Bits(u_value, BIT_DEPTH(T));
 
-				value = *(reinterpret_cast<T *>(&u_value));
+				::memcpy(&value, &u_value, sizeof(value));
 			}
 			return value;
 		}

@@ -408,10 +408,31 @@ private:
 SimpleFileFactoryClass	RenegadeWritingFileFactory;
 
 SimpleFileFactoryClass	RenegadeBaseFileFactory;
+SimpleFileFactoryClass	RenegadeRootFileFactory;
 MixFileFactoryClass	*	AlwaysMixFileFactory;
 FileFactoryListClass		_RenegadeFileFactory;
 StrippingFileFactoryClass	AudioFileFactory;
 LoggingFileFactoryClass		LoggingFileFactory;
+
+/*
+**
+*/
+static void Add_Mix_File_Factories(FileFactoryListClass &factory_list, FileFactoryClass *base_factory, const char *pattern)
+{
+	WIN32_FIND_DATA find_info = { 0 };
+	BOOL keep_going = TRUE;
+	HANDLE file_find = NULL;
+	for (file_find = ::FindFirstFile(pattern, &find_info);
+		 (file_find != INVALID_HANDLE_VALUE) && keep_going;
+		  keep_going = ::FindNextFile(file_find, &find_info))
+	{
+		factory_list.Add_FileFactory(new MixFileFactoryClass(find_info.cFileName, base_factory), find_info.cFileName);
+	}
+
+	if (file_find != INVALID_HANDLE_VALUE) {
+		::FindClose(file_find);
+	}
+}
 
 /*
 **
@@ -731,6 +752,7 @@ bool Game_Init(void)
 	RenegadeBaseFileFactory.Set_Sub_Directory( DATA_SUBDIRECTORY );
 	RenegadeBaseFileFactory.Append_Sub_Directory( SAVE_SUBDIRECTORY );
 	RenegadeBaseFileFactory.Append_Sub_Directory( CONFIG_SUBDIRECTORY );
+	RenegadeRootFileFactory.Set_Sub_Directory( "" );
 
 	_TheSimpleFileFactory->Set_Sub_Directory( DATA_SUBDIRECTORY );
 	_TheSimpleFileFactory->Append_Sub_Directory( SAVE_SUBDIRECTORY );
@@ -739,32 +761,16 @@ bool Game_Init(void)
 	_TheSimpleFileFactory->Set_Strip_Path( true );
 
 	_RenegadeFileFactory.Add_FileFactory( &RenegadeBaseFileFactory, "" );
+	_RenegadeFileFactory.Add_FileFactory( &RenegadeRootFileFactory, "" );
 	_RenegadeFileFactory.Add_FileFactory( new MixFileFactoryClass( "Always2.dat", &RenegadeBaseFileFactory ), "Always2.dat" );
-	_RenegadeFileFactory.Add_FileFactory( new MixFileFactoryClass( "Always.dbs", &RenegadeBaseFileFactory ), "Always.dbs" );
-	_RenegadeFileFactory.Add_FileFactory( new MixFileFactoryClass( "Always.dat", &RenegadeBaseFileFactory ), "Always.dat" );
+	_RenegadeFileFactory.Add_FileFactory( new MixFileFactoryClass( "always.dbs", &RenegadeBaseFileFactory ), "always.dbs" );
+	_RenegadeFileFactory.Add_FileFactory( new MixFileFactoryClass( "always.dat", &RenegadeBaseFileFactory ), "always.dat" );
 
 	//
 	//	Search for all mix files in the data directory
 	//
-	WIN32_FIND_DATA find_info	= { 0 };
-	BOOL keep_going				= TRUE;
-	HANDLE file_find				= NULL;
-	for (file_find = ::FindFirstFile ("data\\*.mix", &find_info);
-		 (file_find != INVALID_HANDLE_VALUE) && keep_going;
-		  keep_going = ::FindNextFile (file_find, &find_info))
-	{
-		//
-		//	Add this mix file to our mix file factory list
-		//
-		_RenegadeFileFactory.Add_FileFactory( new MixFileFactoryClass (find_info.cFileName, &RenegadeBaseFileFactory ), find_info.cFileName );
-	}
-
-	//
-	//	Close the search handle
-	//
-	if (file_find != INVALID_HANDLE_VALUE) {
-		::FindClose (file_find);
-	}
+	Add_Mix_File_Factories(_RenegadeFileFactory, &RenegadeBaseFileFactory, "data\\*.mix");
+	Add_Mix_File_Factories(_RenegadeFileFactory, &RenegadeRootFileFactory, "*.mix");
 
 	_TheFileFactory = &_RenegadeFileFactory;
 

@@ -96,15 +96,16 @@ cPlayer::cPlayer(void) :
 	Ping					= -1;
 	FastSortKey			= 0;
 	NumWolGames			= 0;
+	GameSpyAuthState = GAMESPY_AUTH_STATE_INITIAL;
+	GameSpyAuthStateEntryTimeMs = 0;
+	GameSpyKickState = GAMESPY_KICK_STATE_INITIAL;
+	GameSpyKickStateEntryTimeMs = 0;
 
 	Reset_Join_Time();
 	Reset_Total_Time();
 	Set_Is_In_Game(true);
 	Set_Is_Waiting_For_Intermission(false);
 	Set_App_Packet_Type(APPPACKETTYPE_PLAYER);
-
-	Set_GameSpy_Auth_State(GAMESPY_AUTH_STATE_INITIAL);
-	Set_GameSpy_Kick_State(GAMESPY_KICK_STATE_INITIAL);
 
    cPlayerManager::Add(this);
 }

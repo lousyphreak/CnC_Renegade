@@ -1858,6 +1858,16 @@ void PhysicsSceneClass::Per_Frame_Statistics_Update(void)
 	CurrentStats.FrameCount ++;
 
 	if (CurrentStats.FrameCount >= STATISTICS_FRAMES) {
+		const auto clamp_stat = [](long long value) -> int
+		{
+			if (value > INT_MAX) {
+				return INT_MAX;
+			}
+			if (value < INT_MIN) {
+				return INT_MIN;
+			}
+			return static_cast<int>(value);
+		};
 		
 		/*
 		** Collect the culling system stats
@@ -1866,10 +1876,10 @@ void PhysicsSceneClass::Per_Frame_Statistics_Update(void)
 		const AABTreeCullSystemClass::StatsStruct & static_stats = StaticCullingSystem->Get_Statistics();
 		const AABTreeCullSystemClass::StatsStruct & light_stats = StaticLightingSystem->Get_Statistics();
 
-		CurrentStats.CullNodeCount = dyn_stats.NodeCount + static_stats.NodeCount + light_stats.NodeCount;
-		CurrentStats.CullNodesAccepted = dyn_stats.NodesAccepted + static_stats.NodesAccepted + light_stats.NodesAccepted;
-		CurrentStats.CullNodesTriviallyAccepted = dyn_stats.NodesTriviallyAccepted + static_stats.NodesTriviallyAccepted + light_stats.NodesTriviallyAccepted;
-		CurrentStats.CullNodesRejected = dyn_stats.NodesRejected + static_stats.NodesRejected + light_stats.NodesRejected;
+		CurrentStats.CullNodeCount = clamp_stat(static_cast<long long>(dyn_stats.NodeCount) + static_cast<long long>(static_stats.NodeCount) + static_cast<long long>(light_stats.NodeCount));
+		CurrentStats.CullNodesAccepted = clamp_stat(static_cast<long long>(dyn_stats.NodesAccepted) + static_cast<long long>(static_stats.NodesAccepted) + static_cast<long long>(light_stats.NodesAccepted));
+		CurrentStats.CullNodesTriviallyAccepted = clamp_stat(static_cast<long long>(dyn_stats.NodesTriviallyAccepted) + static_cast<long long>(static_stats.NodesTriviallyAccepted) + static_cast<long long>(light_stats.NodesTriviallyAccepted));
+		CurrentStats.CullNodesRejected = clamp_stat(static_cast<long long>(dyn_stats.NodesRejected) + static_cast<long long>(static_stats.NodesRejected) + static_cast<long long>(light_stats.NodesRejected));
 
 		DynamicCullingSystem->Reset_Statistics();
 		StaticCullingSystem->Reset_Statistics();
@@ -2150,5 +2160,4 @@ void Force_Link_Modules(void)
 	FORCE_LINK(shakeablestaticphys);
 	FORCE_LINK(RenegadeTerrainPatch);
 }
-
 

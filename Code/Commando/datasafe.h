@@ -1691,7 +1691,7 @@ void DataSafeClass<T>::Delete_Entry(DataSafeHandleClass handle)
 		}
 		Remove_From_List(list, entry_ptr);
 		Free_Handle_ID(list, id);
-		delete [] (void*) entry_ptr;
+		delete [] reinterpret_cast<char*>(entry_ptr);
 		return;
 	}
 
@@ -4425,7 +4425,6 @@ inline bool SafeDataClass<T>::Commit(T *data_ptr) const
 
 
 #endif //_DATASAFE_H
-
 
 
 

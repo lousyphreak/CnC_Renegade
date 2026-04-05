@@ -243,7 +243,10 @@ int Pick_Random_Number(T & generator, int minval, int maxval)
 	**	Create a full bit mask pattern that has all bits set that just
 	**	barely covers the magnitude of the number range desired.
 	*/
-	int mask = ~( (~0L) << (highbit+1));
+	unsigned int mask = ~0u;
+	if (highbit + 1 < static_cast<int>(sizeof(mask) * 8)) {
+		mask = (1u << (highbit + 1)) - 1u;
+	}
 
 	/*
 	**	Keep picking random numbers until it fits within the magnitude desired. With a 
@@ -252,7 +255,7 @@ int Pick_Random_Number(T & generator, int minval, int maxval)
 	*/
 	int pick = magnitude+1;
 	while (pick > magnitude) {
-		pick = generator() & mask;
+		pick = generator() & static_cast<int>(mask);
 	}
 
 	/*

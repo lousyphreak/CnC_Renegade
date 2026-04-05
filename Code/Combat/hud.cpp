@@ -717,20 +717,16 @@ static	void	Weapon_Init( void )
 //	WeaponNameRenderer->Set_Coordinate_Range( Render2DClass::Get_Screen_Resolution() );
 
 	Font3DInstanceClass * font = WW3DAssetManager::Get_Instance()->Get_Font3DInstance( LARGE_FONT );
-	if (font != NULL) {
-		SET_REF_OWNER( font );
-		WeaponClipCountRenderer = new Render2DTextClass( font );
-		WeaponClipCountRenderer->Set_Coordinate_Range( Render2DClass::Get_Screen_Resolution() );
-		font->Release_Ref();
-	}
+	SET_REF_OWNER( font );
+	WeaponClipCountRenderer = new Render2DTextClass( font );
+	WeaponClipCountRenderer->Set_Coordinate_Range( Render2DClass::Get_Screen_Resolution() );
+	font->Release_Ref();
 
 	font = WW3DAssetManager::Get_Instance()->Get_Font3DInstance( SMALL_FONT );
-	if (font != NULL) {
-		SET_REF_OWNER( font );
-		WeaponTotalCountRenderer = new Render2DTextClass( font );
-		WeaponTotalCountRenderer->Set_Coordinate_Range( Render2DClass::Get_Screen_Resolution() );
-		font->Release_Ref();
-	}
+	SET_REF_OWNER( font );
+	WeaponTotalCountRenderer = new Render2DTextClass( font );
+	WeaponTotalCountRenderer->Set_Coordinate_Range( Render2DClass::Get_Screen_Resolution() );
+	font->Release_Ref();
 
 	_LastHUDWeapon = NULL;
 	_LastVehicleSeat = -1;
@@ -784,10 +780,6 @@ static	void	Weapon_Reset( void )
 
 static	void	Weapon_Update( void ) 
 {
-	if (WeaponClipCountRenderer == NULL || WeaponTotalCountRenderer == NULL || WeaponBoxRenderer == NULL || WeaponImageRenderer == NULL || WeaponNameRenderer == NULL) {
-		return;
-	}
-
 	WeaponClass * weapon = NULL;
 	if ( COMBAT_STAR ) {
 		weapon = COMBAT_STAR->Get_Weapon();
@@ -963,10 +955,6 @@ static	void	Weapon_Update( void )
 
 static	void	Weapon_Render( void )
 {
-	if (WeaponBoxRenderer == NULL || WeaponImageRenderer == NULL || WeaponNameRenderer == NULL || WeaponClipCountRenderer == NULL || WeaponTotalCountRenderer == NULL) {
-		return;
-	}
-
 	WeaponBoxRenderer->Render();
 	WeaponImageRenderer->Render();
 	WeaponNameRenderer->Render();
@@ -2330,20 +2318,16 @@ static	void	Info_Init( void )
 	InfoRenderer->Set_Coordinate_Range( Render2DClass::Get_Screen_Resolution() );
 
 	Font3DInstanceClass * font = WW3DAssetManager::Get_Instance()->Get_Font3DInstance( LARGE_FONT );
-	if (font != NULL) {
-		SET_REF_OWNER( font );
-		InfoHealthCountRenderer = new Render2DTextClass( font );
-		InfoHealthCountRenderer->Set_Coordinate_Range( Render2DClass::Get_Screen_Resolution() );
-		font->Release_Ref();
-	}
+	SET_REF_OWNER( font );
+	InfoHealthCountRenderer = new Render2DTextClass( font );
+	InfoHealthCountRenderer->Set_Coordinate_Range( Render2DClass::Get_Screen_Resolution() );
+	font->Release_Ref();
 
 	font = WW3DAssetManager::Get_Instance()->Get_Font3DInstance( SMALL_FONT );
-	if (font != NULL) {
-		SET_REF_OWNER( font );
-		InfoShieldCountRenderer = new Render2DTextClass( font );
-		InfoShieldCountRenderer->Set_Coordinate_Range( Render2DClass::Get_Screen_Resolution() );
-		font->Release_Ref();
-	}
+	SET_REF_OWNER( font );
+	InfoShieldCountRenderer = new Render2DTextClass( font );
+	InfoShieldCountRenderer->Set_Coordinate_Range( Render2DClass::Get_Screen_Resolution() );
+	font->Release_Ref();
 
 	InfoBase = Render2DClass::Get_Screen_Resolution().Lower_Left() + Vector2( INFO_OFFSET );
 }
@@ -2364,10 +2348,6 @@ static	void	Info_Shutdown( void )
 
 static	void	Info_Update_Health_Shield( void )
 {
-	if (InfoRenderer == NULL || InfoHealthCountRenderer == NULL || InfoShieldCountRenderer == NULL) {
-		return;
-	}
-
 	// Draw Health
 	float health = 0;
 	float health_percent = 0;
@@ -2730,10 +2710,6 @@ return;
 
 static	void	Info_Render( void )
 {
-	if (InfoRenderer == NULL || InfoHealthCountRenderer == NULL || InfoShieldCountRenderer == NULL) {
-		return;
-	}
-
 	InfoRenderer->Render();
 	InfoHealthCountRenderer->Render();
 	InfoShieldCountRenderer->Render();

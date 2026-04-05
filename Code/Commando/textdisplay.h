@@ -151,26 +151,26 @@ public:
 	void		Display_Vis_Warning( bool on )					{ DisplayVisWarning = on; }
 
 private:
-	Font3DInstanceClass	*	Font;
-	Font3DInstanceClass	*	MonoFont;
-	Render2DTextClass	*		Display;
-	Render2DTextClass	*		VerboseDisplay;
-	Render2DTextClass	*		StatisticsDisplay;
+	Font3DInstanceClass	*	Font = NULL;
+	Font3DInstanceClass	*	MonoFont = NULL;
+	Render2DTextClass	*		Display = NULL;
+	Render2DTextClass	*		VerboseDisplay = NULL;
+	Render2DTextClass	*		StatisticsDisplay = NULL;
 	DynamicVectorClass<WideStringClass> RendererLines;
 	DynamicVectorClass<unsigned long> RendererColors;
-	float							DisplayY;
+	float							DisplayY = 0.0f;
 
 	SList<TextDisplayLine>	ScrollLines;
 	StringClass					InputText;
 	StringClass					HelpText;
 	StringClass					VerboseHelpText;
-	bool							TextChanged;
-	bool							VerboseTextChanged;
-	bool							DisplayVisWarning;
+	bool							TextChanged = false;
+	bool							VerboseTextChanged = false;
+	bool							DisplayVisWarning = false;
 
-	int							MaxScrollLines;
-	float							ScrollLinesPersistTime;
-	float							VerticalScroll;
+	int							MaxScrollLines = 0;
+	float							ScrollLinesPersistTime = 0.0f;
+	float							VerticalScroll = 0.0f;
 
 	static TextDisplayGameModeClass * Instance;
 

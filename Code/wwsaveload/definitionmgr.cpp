@@ -535,7 +535,9 @@ DefinitionMgrClass::Prepare_Definition_Array (void)
 		//
 		//	Copy the entries from the old array to the new array
 		//
-		::memcpy (new_array, _SortedDefinitionArray, _DefinitionCount * sizeof (DefinitionClass *));
+		if (_DefinitionCount > 0 && _SortedDefinitionArray != NULL) {
+			::memcpy (new_array, _SortedDefinitionArray, _DefinitionCount * sizeof (DefinitionClass *));
+		}
 
 		//
 		//	Free the old array and start using the new array

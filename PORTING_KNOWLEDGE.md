@@ -26,6 +26,12 @@
 - Those cached `TextureClass*` bindings must participate in refcounting. Storing raw pointers is unsafe because UI and sentence rendering can destroy textures while the wrapper still plans to submit draws that read the current binding.
 - When porting more D3D state to bgfx/SDL paths, treat cached resource bindings as owners until they are replaced or the draw state is reset/shutdown.
 
+## Conversation manager re-entrancy
+
+- `ConversationMgrClass::Think` is re-entrant through scripting. `ActiveConversationClass::Stop_Conversation` calls `Notify_Monitors_On_End`, and observer callbacks can immediately invoke script commands such as `Stop_All_Conversations()`.
+- Because `ActiveConversationList` stores raw `ActiveConversationClass*` entries, the manager must hold an explicit temporary ref before calling `ActiveConversationClass::Think()`. Otherwise the current conversation can be deleted out from under the outer loop before the post-`Think()` cleanup runs.
+- After any callback-driven `Think()` step, do not assume the original list index is still valid. Re-check whether the same pointer still occupies that slot before deleting it, and resync the loop if the active list changed underneath you.
+
 ## Script module discovery in the build tree
 
 - Gameplay mission logic depends on the external `Scripts` shared library loaded by `ScriptManager` in `Code/Combat/scripts.cpp`.

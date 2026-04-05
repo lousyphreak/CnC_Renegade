@@ -1089,18 +1089,28 @@ ConversationMgrClass::Think (void)
 		//
 		bool remove_from_list = true;
 		if (active_conversation != NULL) {
+			active_conversation->Add_Ref ();
 			active_conversation->Think ();
 			remove_from_list = active_conversation->Is_Finished ();
 		}
 
+		bool is_same_entry = (index < ActiveConversationList.Count () && ActiveConversationList[index] == active_conversation);
+
 		//
 		//	Remove this conversation from our control (if necessary)
 		//
-		if (remove_from_list) {
+		if (is_same_entry && remove_from_list) {
 			ActiveConversationList.Delete (index);
-			REF_PTR_RELEASE (active_conversation);
+			active_conversation->Release_Ref ();
+			active_conversation->Release_Ref ();
 			index --;
 			count --;
+		} else if (active_conversation != NULL) {
+			active_conversation->Release_Ref ();
+			if (is_same_entry == false) {
+				count = ActiveConversationList.Count ();
+				index --;
+			}
 		}
 	}
 

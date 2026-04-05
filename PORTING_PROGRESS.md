@@ -36,6 +36,10 @@
 - Root cause: `DX8Wrapper` cached raw `TextureClass*` bindings in bgfx render state without retaining a reference, allowing UI textures to be destroyed while still bound for later draw submission.
 - Resolution: `DX8Wrapper::Set_Texture` now retains/release-refcounts the currently bound textures, and draw-state shutdown/reset paths release those retained references.
 - Validation: rebuilt with `cmake --build build -j32` and ran `./build/bin/Renegade` under `/usr/bin/timeout 35s`; the executable stayed up for the full smoke window with no AddressSanitizer errors.
+- Fixed an AddressSanitizer-detected heap-use-after-free in `Code/Combat/conversationmgr.cpp` during the mission/tutorial conversation path.
+- Root cause: `ConversationMgrClass::Think` iterated `ActiveConversationList` with raw pointers and called `ActiveConversationClass::Think()` without holding a temporary ref. Script callbacks reached from `Notify_Monitors_On_End` can re-enter the conversation manager, reset the active list, and delete the current conversation before the outer loop calls `Is_Finished()` or removes it.
+- Resolution: the manager now keeps a temporary reference across each `ActiveConversationClass::Think()` call and only removes the conversation by index when the same entry is still present in `ActiveConversationList` after any re-entrant mutation.
+- Validation: rebuilt with `cmake --build build --config Debug -- -j$(nproc)` and ran `./build/bin/Renegade` under `/usr/bin/timeout 35s`; the executable stayed alive for the full smoke window and the captured log contained no AddressSanitizer or UBSan failures.
 
 ## Remaining work
 

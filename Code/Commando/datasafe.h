@@ -288,7 +288,7 @@ class DataSafeHandleClass
 		/*
 		** Consturctor.
 		*/
-		DataSafeHandleClass(int val = 0) {
+		DataSafeHandleClass(uint32 val = 0) {
 			Handle.Whole.WholeHandle = val;
 		};
 
@@ -296,27 +296,35 @@ class DataSafeHandleClass
 		** Validity check.
 		*/
 		bool Is_Valid(void) const {
-			return(Handle.Whole.WholeHandle != -1);
+			return(Handle.Whole.WholeHandle != UINT32_C(0xFFFFFFFF));
 		};
 
 		/*
 		** Convenience functions and operators to handle setting or getting a handle using an int.
 		*/
-		inline int operator = (const int &val) {
+		inline uint32 operator = (const uint32 &val) {
 			Handle.Whole.WholeHandle = val;
 			return(val);
 		};
 
-		inline operator int (void) {
+		inline operator uint32 (void) {
 			return(Handle.Whole.WholeHandle);
 		}
 
-		inline operator int (void) const {
+		inline operator uint32 (void) const {
 			return(Handle.Whole.WholeHandle);
 		}
 
-		inline int &operator () (void) {
+		inline uint32 &operator () (void) {
 			return(Handle.Whole.WholeHandle);
+		}
+
+		inline DataSafeHandleClass operator ^ (uint32 key) const {
+			return DataSafeHandleClass(Handle.Whole.WholeHandle ^ key);
+		}
+
+		inline DataSafeHandleClass operator ^ (unsigned long key) const {
+			return (*this) ^ static_cast<uint32>(key);
 		}
 
 		/*
@@ -327,7 +335,7 @@ class DataSafeHandleClass
 				/*
 				** All the handle components conveniently together in an int.
 				*/
-				int WholeHandle;
+				uint32 WholeHandle;
 			} Whole;
 
 			struct {
@@ -579,8 +587,8 @@ class GenericDataSafeClass
 		*/
 		static void Shuffle(bool forced = false);
 		static void Swap_Entries(DataSafeEntryClass *first, DataSafeEntryClass *second, int type);
-		static void Encrypt(void *data, int size, unsigned long key = SimpleKey, bool do_checksum = true);
-		static void Decrypt(void *data, int size, unsigned long key = SimpleKey, bool do_checksum = true);
+		static void Encrypt(void *data, int size, uint32 key = SimpleKey, bool do_checksum = true);
+		static void Decrypt(void *data, int size, uint32 key = SimpleKey, bool do_checksum = true);
 		static void Mem_Copy_Encrypt(void *dest, void *src, int size, bool do_checksum);
 		static void Mem_Copy_Decrypt(void *dest, void *src, int size, bool do_checksum);
 		static __forceinline void Security_Check(void);
@@ -664,12 +672,12 @@ class GenericDataSafeClass
 		/*
 		** Simple key value used for xoring.
 		*/
-		static unsigned long SimpleKey;
+		static uint32 SimpleKey;
 
 		/*
 		** Key used for encrypting handles.
 		*/
-		static unsigned long HandleKey;
+		static uint32 HandleKey;
 
 		/*
 		** Number of valid entries in the Safe list.
@@ -686,7 +694,7 @@ class GenericDataSafeClass
 		/*
 		** Integrity check.
 		*/
-		static unsigned long Checksum;
+		static uint32 Checksum;
 
 		/*
 		** Shuffle delay.
@@ -1654,6 +1662,11 @@ void DataSafeClass<T>::Delete_Entry(DataSafeHandleClass handle)
 	DataSafeHandleClass new_handle = handle ^ HandleKey;
 	list = new_handle.Handle.Part.List;
 	id = new_handle.Handle.Part.ID;
+
+	if (list < 0 || list >= NumLists || Safe[list] == NULL) {
+		ds_assert(false);
+		return;
+	}
 
 	/*
 	** Check that list number.
@@ -4425,6 +4438,3 @@ inline bool SafeDataClass<T>::Commit(T *data_ptr) const
 
 
 #endif //_DATASAFE_H
-
-
-

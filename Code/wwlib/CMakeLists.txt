@@ -36,6 +36,7 @@ set(WWLIB_SOURCES
     refcount.cpp
     realcrc.cpp
     registry.cpp
+    ramfile.cpp
     rawfile.cpp
     readline.cpp
     random.cpp

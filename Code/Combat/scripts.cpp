@@ -44,26 +44,53 @@
 #include "ffactorylist.h"
 #include "rawfile.h"
 #include "gametype.h"
+#include <SDL3/SDL_filesystem.h>
 #include <SDL3/SDL_loadso.h>
+#include <filesystem>
 #include <stdio.h>
+#include <string>
+#include <vector>
 #include <win.h>
 
 ScriptCommandsClass* EngineCommands = NULL;
 
 namespace {
 
+void Add_Script_Module_Candidate(std::vector<std::string> &candidates, const char *candidate)
+{
+	if (candidate == NULL || candidate[0] == '\0') {
+		return;
+	}
+
+	for (const std::string &existing : candidates) {
+		if (_stricmp(existing.c_str(), candidate) == 0) {
+			return;
+		}
+	}
+
+	candidates.emplace_back(candidate);
+}
+
+void Add_Script_Module_Path_Candidates(std::vector<std::string> &candidates, const std::filesystem::path &base_path, const char *candidate)
+{
+	if (candidate == NULL || candidate[0] == '\0' || base_path.empty()) {
+		return;
+	}
+
+	Add_Script_Module_Candidate(candidates, (base_path / candidate).string().c_str());
+}
+
 HINSTANCE Load_Script_Module(const char * module_name)
 {
-	const char *candidates[9] = { 0 };
+	std::vector<std::string> candidates;
 	char stem[_MAX_PATH] = { 0 };
 	char candidate_so[_MAX_PATH] = { 0 };
 	char candidate_lib_so[_MAX_PATH] = { 0 };
 	char candidate_dll[_MAX_PATH] = { 0 };
 	char candidate_dylib[_MAX_PATH] = { 0 };
-	int candidate_count = 0;
 
 	if (module_name != NULL && module_name[0] != '\0') {
-		candidates[candidate_count++] = module_name;
+		Add_Script_Module_Candidate(candidates, module_name);
 
 		::strncpy(stem, module_name, sizeof(stem) - 1);
 		char *dot = ::strrchr(stem, '.');
@@ -76,30 +103,37 @@ HINSTANCE Load_Script_Module(const char * module_name)
 			::snprintf(candidate_lib_so, sizeof(candidate_lib_so), "lib%s.so", stem);
 			::snprintf(candidate_dll, sizeof(candidate_dll), "%s.dll", stem);
 			::snprintf(candidate_dylib, sizeof(candidate_dylib), "%s.dylib", stem);
-			candidates[candidate_count++] = candidate_so;
-			candidates[candidate_count++] = candidate_lib_so;
-			candidates[candidate_count++] = candidate_dll;
-			candidates[candidate_count++] = candidate_dylib;
+			Add_Script_Module_Candidate(candidates, candidate_so);
+			Add_Script_Module_Candidate(candidates, candidate_lib_so);
+			Add_Script_Module_Candidate(candidates, candidate_dll);
+			Add_Script_Module_Candidate(candidates, candidate_dylib);
 		}
 
 		if (_stricmp(stem, "SCRIPTS") == 0 || _stricmp(stem, "SCRIPTSD") == 0 || _stricmp(stem, "SCRIPTSP") == 0) {
-			candidates[candidate_count++] = "Scripts.so";
-			candidates[candidate_count++] = "libScripts.so";
-			candidates[candidate_count++] = "Scripts.dylib";
-			candidates[candidate_count++] = "libScripts.dylib";
+			Add_Script_Module_Candidate(candidates, "Scripts.so");
+			Add_Script_Module_Candidate(candidates, "libScripts.so");
+			Add_Script_Module_Candidate(candidates, "Scripts.dylib");
+			Add_Script_Module_Candidate(candidates, "libScripts.dylib");
 		}
 	}
 
-	for (int index = 0; index < candidate_count; ++index) {
-		const char *candidate = candidates[index];
-		if (candidate == NULL || candidate[0] == '\0') {
-			continue;
-		}
+	const char *base_path_text = SDL_GetBasePath();
+	if (base_path_text != NULL && base_path_text[0] != '\0') {
+		const std::filesystem::path base_path(base_path_text);
+		const std::vector<std::string> base_names = candidates;
 
-		void *handle = SDL_LoadObject(candidate);
+		for (const std::string &candidate : base_names) {
+			Add_Script_Module_Path_Candidates(candidates, base_path, candidate.c_str());
+			Add_Script_Module_Path_Candidates(candidates, base_path / ".." / "lib", candidate.c_str());
+			Add_Script_Module_Path_Candidates(candidates, base_path / ".." / "Lib", candidate.c_str());
+		}
+	}
+
+	for (const std::string &candidate : candidates) {
+		void *handle = SDL_LoadObject(candidate.c_str());
 		if (handle != NULL) {
-			if (module_name != NULL && _stricmp(candidate, module_name) != 0) {
-				Debug_Say(("Loaded script module %s via compatibility fallback %s\n", module_name, candidate));
+			if (module_name != NULL && _stricmp(candidate.c_str(), module_name) != 0) {
+				Debug_Say(("Loaded script module %s via compatibility fallback %s\n", module_name, candidate.c_str()));
 			}
 			return (HINSTANCE)handle;
 		}

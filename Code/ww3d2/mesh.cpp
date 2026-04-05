@@ -883,7 +883,9 @@ void MeshClass::Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass *
 		if (temp_apt.Count() > 0) {
 
 			int buftype = BUFFER_TYPE_DYNAMIC_DX8;
-			if (Model->Get_Flag(MeshGeometryClass::SORT) && WW3D::Is_Sorting_Enabled()) {
+			if (Model->Get_Flag(MeshGeometryClass::SORT) &&
+				WW3D::Is_Sorting_Enabled() &&
+				Model->Get_Sort_Level() == SORT_LEVEL_NONE) {
 				buftype = BUFFER_TYPE_DYNAMIC_SORTING;
 			}
 
@@ -1596,7 +1598,6 @@ void MeshClass::Load_User_Lighting (ChunkLoadClass & cload)
 
 	Set_Has_User_Lighting(true);
 }
-
 
 
 

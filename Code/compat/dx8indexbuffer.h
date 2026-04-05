@@ -123,11 +123,17 @@ public:
 	{
 	}
 
-	DynamicIBAccessClass(int, int index_count)
-		: Type(0),
+	DynamicIBAccessClass(int type, int index_count)
+		: Type(static_cast<unsigned>(type)),
 		  IndexCount(static_cast<unsigned short>(index_count)),
-		  Storage(static_cast<size_t>(index_count), 0)
+		  BackingBuffer(NULL)
 	{
+		Attach_Shared_Buffer(type);
+	}
+
+	~DynamicIBAccessClass()
+	{
+		REF_PTR_RELEASE(BackingBuffer);
 	}
 
 	unsigned Get_Type() const
@@ -142,7 +148,12 @@ public:
 
 	const unsigned short *Get_Index_Data() const
 	{
-		return Storage.data();
+		return BackingBuffer != NULL ? BackingBuffer->Get_Index_Data() : NULL;
+	}
+
+	const IndexBufferClass * Get_Index_Buffer() const
+	{
+		return BackingBuffer;
 	}
 
 	class WriteLockClass
@@ -155,7 +166,7 @@ public:
 
 		unsigned short * Get_Index_Array()
 		{
-			return Access != nullptr ? Access->Storage.data() : nullptr;
+			return Access != nullptr && Access->BackingBuffer != NULL ? const_cast<unsigned short *>(Access->BackingBuffer->Get_Index_Data()) : nullptr;
 		}
 
 	private:
@@ -163,7 +174,34 @@ public:
 	};
 
 private:
+	static IndexBufferClass *& Shared_DX8_Buffer()
+	{
+		static IndexBufferClass * buffer = NULL;
+		return buffer;
+	}
+
+	static IndexBufferClass *& Shared_Sorting_Buffer()
+	{
+		static IndexBufferClass * buffer = NULL;
+		return buffer;
+	}
+
+	void Attach_Shared_Buffer(int type)
+	{
+		const bool sorting_buffer = (type == 1 || type == 3);
+		IndexBufferClass *& shared_buffer = sorting_buffer ? Shared_Sorting_Buffer() : Shared_DX8_Buffer();
+
+		if (shared_buffer == NULL || shared_buffer->Get_Index_Count() < IndexCount) {
+			REF_PTR_RELEASE(shared_buffer);
+			shared_buffer = sorting_buffer ?
+				static_cast<IndexBufferClass *>(new SortingIndexBufferClass(IndexCount)) :
+				static_cast<IndexBufferClass *>(new DX8IndexBufferClass(IndexCount));
+		}
+
+		REF_PTR_SET(BackingBuffer, shared_buffer);
+	}
+
 	unsigned Type;
 	unsigned short IndexCount;
-	std::vector<unsigned short> Storage;
+	IndexBufferClass * BackingBuffer;
 };

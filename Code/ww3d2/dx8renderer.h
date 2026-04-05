@@ -306,18 +306,20 @@ private:
 */
 struct MeshRegKeyStruct
 {
-	MeshRegKeyStruct(void) : Model(NULL), UserLighting(NULL) {}
-	MeshRegKeyStruct(MeshModelClass * mdl,unsigned int * lighting) : Model(mdl), UserLighting(lighting) {}
-	bool operator == (const MeshRegKeyStruct & that) { return ((Model == that.Model) && (UserLighting == that.UserLighting)); }
+	MeshRegKeyStruct(void) : Model(NULL), UserLighting(NULL), Sorting(false) {}
+	MeshRegKeyStruct(MeshModelClass * mdl,unsigned int * lighting,bool sorting) : Model(mdl), UserLighting(lighting), Sorting(sorting) {}
+	bool operator == (const MeshRegKeyStruct & that) { return ((Model == that.Model) && (UserLighting == that.UserLighting) && (Sorting == that.Sorting)); }
 
 	MeshModelClass *	Model;
 	unsigned int *		UserLighting;
+	bool				Sorting;
 };
 
 
 template <> inline unsigned int HashTemplateKeyClass<MeshRegKeyStruct>::Get_Hash_Value(const MeshRegKeyStruct& key)
 {
 	unsigned int hval = static_cast<unsigned int>(reinterpret_cast<std::uintptr_t>(key.Model) + reinterpret_cast<std::uintptr_t>(key.UserLighting));
+	hval ^= key.Sorting ? 0x9e3779b9U : 0U;
 	hval = hval + (hval>>5) + (hval>>10) + (hval >> 20);
 	return hval;
 }

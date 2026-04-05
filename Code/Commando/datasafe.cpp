@@ -103,9 +103,9 @@ int DataSafe_Random_Int(int min_value, int max_value)
 **
 ** I need to make this stuff static so that I can templatize the derived class and have all expansions use the same data.
 */
-unsigned long GenericDataSafeClass::SimpleKey;
-unsigned long GenericDataSafeClass::HandleKey;
-unsigned long GenericDataSafeClass::Checksum;
+uint32 GenericDataSafeClass::SimpleKey;
+uint32 GenericDataSafeClass::HandleKey;
+uint32 GenericDataSafeClass::Checksum;
 unsigned long GenericDataSafeClass::ShuffleDelay;
 unsigned long GenericDataSafeClass::SecurityCheckDelay;
 DataSafeHandleClass GenericDataSafeClass::SentinelOne = 0;
@@ -379,6 +379,12 @@ DataSafeEntryClass *GenericDataSafeClass::Get_Entry(DataSafeHandleClass handle)
 	DataSafeHandleClass new_handle = handle ^ HandleKey;
 	list = new_handle.Handle.Part.List;
 
+	if (list < 0 || list >= NumLists || Safe[list] == NULL) {
+		WWDEBUG_SAY(("WARNING: Data Safe: Invalid handle list %d for handle %08x\n", list, static_cast<unsigned int>(handle)));
+		ds_assert(false);
+		return NULL;
+	}
+
 	/*
 	** Apply the current data key to the handle for matching purposes.
 	*/
@@ -449,6 +455,12 @@ int GenericDataSafeClass::Get_Entry_Type(DataSafeHandleClass handle)
 	*/
 	DataSafeHandleClass new_handle = handle ^ HandleKey;
 	list = new_handle.Handle.Part.List;
+
+	if (list < 0 || list >= NumLists || Safe[list] == NULL) {
+		WWDEBUG_SAY(("WARNING: Data Safe: Invalid entry type lookup list %d for handle %08x\n", list, static_cast<unsigned int>(handle)));
+		ds_assert(false);
+		return -1;
+	}
 
 	ds_assert(list >= 0);
 	ds_assert(list < NumLists);
@@ -621,20 +633,19 @@ void GenericDataSafeClass::Mem_Copy_Decrypt(void *dest, void *src, int size, boo
  * HISTORY:                                                                                    *
  *   6/19/2001 9:29PM ST : Created                                                             *
  *=============================================================================================*/
-void GenericDataSafeClass::Encrypt(void *data, int size, unsigned long key, bool do_checksum)
+void GenericDataSafeClass::Encrypt(void *data, int size, uint32 key, bool do_checksum)
 {
 	ds_assert((size % 4) == 0);
 	uint32 *data_ptr = reinterpret_cast<uint32 *>(data);
-	const uint32 key32 = static_cast<uint32>(key);
 
 	if (do_checksum) {
 		for (int i = 0 ; i < (size / 4) ; i++) {
-			*data_ptr ^= key32;
+			*data_ptr ^= key;
 			Checksum ^= *data_ptr++;
 		}
 	} else {
 		for (int i = 0 ; i < (size / 4) ; i++) {
-			*data_ptr ^= key32;
+			*data_ptr ^= key;
 		}
 	}
 }
@@ -657,20 +668,19 @@ void GenericDataSafeClass::Encrypt(void *data, int size, unsigned long key, bool
  * HISTORY:                                                                                    *
  *   6/19/2001 9:29PM ST : Created                                                             *
  *=============================================================================================*/
-void GenericDataSafeClass::Decrypt(void *data, int size, unsigned long key, bool do_checksum)
+void GenericDataSafeClass::Decrypt(void *data, int size, uint32 key, bool do_checksum)
 {
 	ds_assert((size % 4) == 0);
 	uint32 *data_ptr = reinterpret_cast<uint32 *>(data);
-	const uint32 key32 = static_cast<uint32>(key);
 
 	if (do_checksum) {
 		for (int i = 0 ; i < (size / 4) ; i++) {
 			Checksum ^= *data_ptr;
-			*data_ptr++ ^= key32;
+			*data_ptr++ ^= key;
 		}
 	} else {
 		for (int i = 0 ; i < (size / 4) ; i++) {
-			*data_ptr++ ^= key32;
+			*data_ptr++ ^= key;
 		}
 	}
 }

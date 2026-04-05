@@ -1761,7 +1761,10 @@ void DX8TextureCategoryClass::Render(void)
 			/*
 			** Render mesh using either sorting or immediate pipeline
 			*/
-			if ((!!mesh->Peek_Model()->Get_Flag(MeshGeometryClass::SORT)) && WW3D::Is_Sorting_Enabled()) {
+			if (container->Is_Sorting() &&
+				(!!mesh->Peek_Model()->Get_Flag(MeshGeometryClass::SORT)) &&
+				WW3D::Is_Sorting_Enabled() &&
+				mesh->Peek_Model()->Get_Sort_Level() == SORT_LEVEL_NONE) {
 				renderer->Render_Sorted(mesh->Get_Base_Vertex_Offset(),mesh->Get_Bounding_Sphere());
 			} else {
 				renderer->Render(mesh->Get_Base_Vertex_Offset());
@@ -1847,12 +1850,30 @@ static void Add_Rigid_Mesh_To_Container(FVFCategoryList* container_list,unsigned
 
 // ----------------------------------------------------------------------------
 
+static bool Requires_Sorting_Renderer_Registration(MeshModelClass * mmc)
+{
+	return ((!!mmc->Get_Flag(MeshModelClass::SORT)) &&
+		WW3D::Is_Sorting_Enabled() &&
+		(mmc->Get_Sort_Level() == SORT_LEVEL_NONE));
+}
+
 void DX8MeshRendererClass::Unregister_Mesh_Type(MeshClass* mesh)
 {
+	bool registered_sorting = Requires_Sorting_Renderer_Registration(mesh->Peek_Model());
+	DX8PolygonRendererClass * renderer = mesh->PolygonRendererList.Peek_Head();
+	if (renderer != NULL) {
+		DX8TextureCategoryClass * texture_category = renderer->Get_Texture_Category();
+		if (texture_category != NULL) {
+			DX8FVFCategoryContainer * container = texture_category->Get_Container();
+			if (container != NULL) {
+				registered_sorting = container->Is_Sorting();
+			}
+		}
+	}
 	while (DX8PolygonRendererClass* n=mesh->PolygonRendererList.Remove_Head()) {
 		delete n;
 	}
-	_RegisteredMeshTable.Remove(MeshRegKeyStruct(mesh->Peek_Model(),mesh->Get_User_Lighting_Array()),mesh);
+	_RegisteredMeshTable.Remove(MeshRegKeyStruct(mesh->Peek_Model(),mesh->Get_User_Lighting_Array(),registered_sorting),mesh);
 
 	// Also remove the gap filler!
 	MeshModelClass * mmc = mesh->Peek_Model();
@@ -1898,7 +1919,8 @@ void DX8MeshRendererClass::Register_Mesh_Type(MeshClass* mesh)
 	} else {
 
 		unsigned int * user_lighting = mesh->Get_User_Lighting_Array();
-		MeshClass * existing_mesh = _RegisteredMeshTable.Get(MeshRegKeyStruct(mmc,user_lighting));
+		bool sorting = Requires_Sorting_Renderer_Registration(mmc);
+		MeshClass * existing_mesh = _RegisteredMeshTable.Get(MeshRegKeyStruct(mmc,user_lighting,sorting));
 		if (existing_mesh != NULL) {
 
 			// We found another instance of this mesh model so we can simply clone the poly renderers
@@ -1945,7 +1967,7 @@ void DX8MeshRendererClass::Register_Mesh_Type(MeshClass* mesh)
 			** Done processing the mesh, add its polygon renderers to the global registered mesh list
 			*/
 			if (mesh->PolygonRendererList.Is_Empty() == false) {
-				_RegisteredMeshTable.Insert(MeshRegKeyStruct(mmc,user_lighting),mesh);
+				_RegisteredMeshTable.Insert(MeshRegKeyStruct(mmc,user_lighting,sorting),mesh);
 			}
 			else {
 				WWDEBUG_SAY(("Error: Register_Mesh_Type failed! file: %s line: %d\r\n",__FILE__,__LINE__));
@@ -2093,10 +2115,5 @@ void DX8MeshRendererClass::Invalidate()
 
 	texture_category_container_lists_rigid.Delete_All();
 }
-
-
-
-
-
 
 

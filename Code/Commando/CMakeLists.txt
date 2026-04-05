@@ -38,6 +38,7 @@ set(COMMANDO_SHARED_SOURCES
     moneyevent.cpp
     nataddr.cpp
     natsock.cpp
+    netgraphs.cpp
     netevent.cpp
     nethandler.cpp
     netinterface.cpp
@@ -69,6 +70,7 @@ set(COMMANDO_SHARED_SOURCES
     vendor.cpp
     vipmodeevent.cpp
     warpevent.cpp
+    WOLDiags.cpp
     winevent.cpp
     commando_bootstrap_bridge.cpp
     commando_service_stubs.cpp

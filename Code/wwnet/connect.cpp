@@ -51,6 +51,15 @@
 #include "packetmgr.h"
 #include "BWBalance.h"
 
+namespace {
+
+bool Delete_Int_Vector_Index(DynamicVectorClass<int> &vector, int index)
+{
+	return (vector.*static_cast<bool (DynamicVectorClass<int>::*)(int)>(&DynamicVectorClass<int>::Delete))(index);
+}
+
+}
+
 #ifdef WWDEBUG
 #include "crandom.h"
 
@@ -617,7 +626,7 @@ bool cConnection::Receive_Packet()
 				LaggedPackets.Delete(p);
 				LaggedPacketTimes.Delete(p);
 				ret_code = LaggedPacketRetCodes[p];
-				LaggedPacketRetCodes.Delete(p);
+				Delete_Int_Vector_Index(LaggedPacketRetCodes, p);
 				break;
 			}
 		}

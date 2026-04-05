@@ -34,6 +34,9 @@
 ******************************************************************************/
 
 #include "WOLDiags.h"
+
+#if RENEGADE_WITH_LEGACY_WOL
+
 #include <WWOnline\WOLSession.h>
 #include <WWOnline\WOLServer.h>
 
@@ -130,5 +133,19 @@ void WOLConsoleFunctionClass::Activate(const char* input)
 		cmd = _dispatch[index].Cmd;
 		}
 	}
+
+#else
+
+const char* WOLConsoleFunctionClass::Get_Help(void)
+	{
+	return ("WOL - Westwood Online diagnostics are unavailable in this build");
+	}
+
+void WOLConsoleFunctionClass::Activate(const char*)
+	{
+	ConsoleFunctionClass::Print("Westwood Online diagnostics are unavailable in this build.\n");
+	}
+
+#endif
 
 #endif // WWDEBUG

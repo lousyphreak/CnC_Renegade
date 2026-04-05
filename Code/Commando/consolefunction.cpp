@@ -1085,11 +1085,7 @@ public:
 		// Set 800 x 600, windowed mode
 		//
 		{
-		RegistryClass registry(APPLICATION_SUB_KEY_NAME_RENDER);
-		WWASSERT(registry.Is_Valid());
-		registry.Set_Int(VALUE_NAME_RENDER_DEVICE_WIDTH, 800);
-		registry.Set_Int(VALUE_NAME_RENDER_DEVICE_HEIGHT, 600);
-		registry.Set_Int(VALUE_NAME_RENDER_DEVICE_WINDOWED, TRUE);
+		WW3D::Registry_Save_Render_Device(APPLICATION_SUB_KEY_NAME_RENDER, -1, 800, 600, -1, true, -1);
 		}
 
 		/*
@@ -2316,7 +2312,7 @@ public:
 	virtual	const char * Get_Help( void )	{ return "BREAK - break execution. Do not use this just for fun."; }
 	virtual	void Activate( const char * input ) {
 		Print("Breaking execution on demand.\n");
-		_asm int 0x03;
+		WWDEBUG_BREAK;
 	}
 };
 
@@ -5513,4 +5509,3 @@ void	ConsoleFunctionManager::Print( const char *format, ... )
 	ConsoleBox.Print(string.Peek_Buffer());
 	va_end (arg_list);
 }
-

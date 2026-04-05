@@ -142,20 +142,27 @@ public:
 	{
 	}
 
-	DynamicVBAccessClass(int, int vertex_count)
+	DynamicVBAccessClass(int type, int vertex_count)
 		: FVFInfo(dynamic_fvf_type),
-		  Type(0),
+		  Type(static_cast<unsigned>(type)),
 		  VertexCount(static_cast<unsigned short>(vertex_count)),
-		  Storage(static_cast<size_t>(vertex_count) * static_cast<size_t>(FVFInfo.Get_FVF_Size()), 0)
+		  BackingBuffer(NULL)
 	{
+		Attach_Shared_Buffer(type);
 	}
 
-	DynamicVBAccessClass(int, int, int vertex_count)
+	DynamicVBAccessClass(int type, int, int vertex_count)
 		: FVFInfo(dynamic_fvf_type),
-		  Type(0),
+		  Type(static_cast<unsigned>(type)),
 		  VertexCount(static_cast<unsigned short>(vertex_count)),
-		  Storage(static_cast<size_t>(vertex_count) * static_cast<size_t>(FVFInfo.Get_FVF_Size()), 0)
+		  BackingBuffer(NULL)
 	{
+		Attach_Shared_Buffer(type);
+	}
+
+	~DynamicVBAccessClass()
+	{
+		REF_PTR_RELEASE(BackingBuffer);
 	}
 
 	const FVFInfoClass & FVF_Info() const
@@ -175,7 +182,12 @@ public:
 
 	const unsigned char *Get_Vertex_Data() const
 	{
-		return Storage.data();
+		return BackingBuffer != NULL ? BackingBuffer->Get_Vertex_Data() : NULL;
+	}
+
+	const VertexBufferClass * Get_Vertex_Buffer() const
+	{
+		return BackingBuffer;
 	}
 
 	class WriteLockClass
@@ -188,7 +200,7 @@ public:
 
 		void * Get_Vertex_Array()
 		{
-			return Access != nullptr ? Access->Storage.data() : nullptr;
+			return Access != nullptr && Access->BackingBuffer != NULL ? const_cast<unsigned char*>(Access->BackingBuffer->Get_Vertex_Data()) : nullptr;
 		}
 
 		VertexFormatXYZNDUV2 * Get_Formatted_Vertex_Array()
@@ -201,8 +213,35 @@ public:
 	};
 
 private:
+	static VertexBufferClass *& Shared_DX8_Buffer()
+	{
+		static VertexBufferClass * buffer = NULL;
+		return buffer;
+	}
+
+	static VertexBufferClass *& Shared_Sorting_Buffer()
+	{
+		static VertexBufferClass * buffer = NULL;
+		return buffer;
+	}
+
+	void Attach_Shared_Buffer(int type)
+	{
+		const bool sorting_buffer = (type == 1 || type == 3);
+		VertexBufferClass *& shared_buffer = sorting_buffer ? Shared_Sorting_Buffer() : Shared_DX8_Buffer();
+
+		if (shared_buffer == NULL || shared_buffer->Get_Vertex_Count() < VertexCount) {
+			REF_PTR_RELEASE(shared_buffer);
+			shared_buffer = sorting_buffer ?
+				static_cast<VertexBufferClass *>(new SortingVertexBufferClass(VertexCount)) :
+				static_cast<VertexBufferClass *>(new DX8VertexBufferClass(dynamic_fvf_type, VertexCount));
+		}
+
+		REF_PTR_SET(BackingBuffer, shared_buffer);
+	}
+
 	FVFInfoClass FVFInfo;
 	unsigned Type;
 	unsigned short VertexCount;
-	std::vector<unsigned char> Storage;
+	VertexBufferClass * BackingBuffer;
 };

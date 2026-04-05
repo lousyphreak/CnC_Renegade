@@ -310,6 +310,9 @@ int VisemeManager::Lookup(const char *pchar, const char * /*word*/, int viseme[]
 	}
 
 	VisemeTableReferenceItem *pR = &VisemeReferenceTable[index];
+	if ( pR->Count <= 0 ) {
+		return 0;
+	}
 	// we search backwards so that we can find the max. match first
 	VisemeTableItem *pI = &gsVisemeTable[pR->StartIndex + pR->Count - 1];
 	for (int i=0; i<pR->Count; i++,pI--) {

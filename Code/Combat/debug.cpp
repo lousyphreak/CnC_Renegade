@@ -41,6 +41,7 @@
 #include "registry.h"
 #include "ww3d.h"
 #include "ww3dtrig.h"
+#include "wwphystrig.h"
 
 #include <SDL3/SDL_log.h>
 

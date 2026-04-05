@@ -1255,7 +1255,7 @@ void DX8Wrapper::Set_Vertex_Buffer(const DynamicVBAccessClass &vba)
 	g_bgfx.vertex_data = vba.Get_Vertex_Data();
 	g_bgfx.vertex_fvf = &vba.FVF_Info();
 	g_bgfx.vertex_count = vba.Get_Vertex_Count();
-	g_bgfx.current_vb = nullptr;
+	g_bgfx.current_vb = vba.Get_Vertex_Buffer();
 	g_bgfx.current_vb_type = vba.Get_Type();
 	g_bgfx.current_vba_offset = 0;
 }
@@ -1275,7 +1275,7 @@ void DX8Wrapper::Set_Index_Buffer(const DynamicIBAccessClass &iba, unsigned shor
 	g_bgfx.index_data = iba.Get_Index_Data();
 	g_bgfx.index_count = iba.Get_Index_Count();
 	g_bgfx.index_base_offset = index_base_offset;
-	g_bgfx.current_ib = nullptr;
+	g_bgfx.current_ib = iba.Get_Index_Buffer();
 	g_bgfx.current_ib_type = iba.Get_Type();
 	g_bgfx.current_iba_offset = 0;
 }

@@ -78,6 +78,7 @@
 #include "string_ids.h"
 #include "soundrobj.h"
 #include "crandom.h"
+#include "wwlib_debug.h"
 #include "systimer.h"
 #include "renegadedialogmgr.h"
 #include "campaign.h"
@@ -350,11 +351,11 @@ void Commando_Assert_Handler(const char * message)
 			m$"               "m           "
                        																												*/
 
-		_asm int 0x03;
+		WWDEBUG_BREAK;
 	}
 
 	if (cDevOptions::ExitThreadOnAssert.Is_True()) {
-      ExitThread(1);
+      return;
    }
 
 #endif // WWDEBUG

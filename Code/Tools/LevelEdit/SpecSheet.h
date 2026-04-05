@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // SpecSheet.h : header file
 //
@@ -54,9 +56,9 @@ public:
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(SpecSheetClass)
 	protected:
-	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
-	virtual BOOL OnCommand(WPARAM wParam, LPARAM lParam);
-	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+	virtual int32_t PreCreateWindow(CREATESTRUCT& cs);
+	virtual int32_t OnCommand(uintptr_t wParam, intptr_t lParam);
+	virtual intptr_t WindowProc(uint32_t message, uintptr_t wParam, intptr_t lParam);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -67,16 +69,16 @@ public:
 protected:
 	//{{AFX_MSG(SpecSheetClass)
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
-	afx_msg UINT OnNcHitTest(CPoint point);
-	afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
-	afx_msg BOOL OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message);
-	afx_msg void OnNcMouseMove(UINT nHitTest, CPoint point);
-	afx_msg void OnNcLButtonDown(UINT nHitTest, CPoint point);
-	afx_msg void OnNcLButtonUp(UINT nHitTest, CPoint point);
-	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
-	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
-	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
-	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg uint32_t OnNcHitTest(CPoint point);
+	afx_msg void OnVScroll(uint32_t nSBCode, uint32_t nPos, CScrollBar* pScrollBar);
+	afx_msg int32_t OnSetCursor(CWnd* pWnd, uint32_t nHitTest, uint32_t message);
+	afx_msg void OnNcMouseMove(uint32_t nHitTest, CPoint point);
+	afx_msg void OnNcLButtonDown(uint32_t nHitTest, CPoint point);
+	afx_msg void OnNcLButtonUp(uint32_t nHitTest, CPoint point);
+	afx_msg void OnLButtonDown(uint32_t nFlags, CPoint point);
+	afx_msg void OnLButtonUp(uint32_t nFlags, CPoint point);
+	afx_msg void OnMouseMove(uint32_t nFlags, CPoint point);
+	afx_msg void OnSize(uint32_t nType, int cx, int cy);
 	afx_msg void OnDestroy();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()

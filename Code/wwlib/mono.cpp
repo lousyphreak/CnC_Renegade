@@ -159,8 +159,8 @@ void MonoClass::Pan(int )
 {
 #ifdef _WINDOWS
 	if ( Enabled && (Handle != INVALID_HANDLE_VALUE) ) {
-		unsigned long retval;
-		DeviceIoControl(Handle, (DWORD)IOCTL_MONO_PAN, NULL, 0, NULL, 0, &retval, 0);
+		uint32_t retval;
+		DeviceIoControl(Handle, (uint32_t)IOCTL_MONO_PAN, NULL, 0, NULL, 0, &retval, 0);
 	}
 #endif
 }
@@ -192,13 +192,13 @@ void MonoClass::Sub_Window(int x, int y, int w, int h)
 		struct subwindow {
 			int X,Y,W,H;
 		} subwindow;
-		unsigned long retval;
+		uint32_t retval;
 
 		subwindow.X = x;
 		subwindow.Y = y;
 		subwindow.W = w;
 		subwindow.H = h;
-		DeviceIoControl(Handle, (DWORD)IOCTL_MONO_SET_WINDOW, &subwindow, sizeof(subwindow), NULL, 0, &retval, 0);
+		DeviceIoControl(Handle, (uint32_t)IOCTL_MONO_SET_WINDOW, &subwindow, sizeof(subwindow), NULL, 0, &retval, 0);
 	}
 #endif
 }
@@ -229,11 +229,11 @@ void MonoClass::Set_Cursor(int x, int y)
 		struct  {
 			int X,Y;
 		} cursor;
-		unsigned long retval;
+		uint32_t retval;
 
 		cursor.X = x;
 		cursor.Y = y;
-		DeviceIoControl(Handle, (DWORD)IOCTL_MONO_SET_CURSOR, &cursor, sizeof(cursor), NULL, 0, &retval, 0);
+		DeviceIoControl(Handle, (uint32_t)IOCTL_MONO_SET_CURSOR, &cursor, sizeof(cursor), NULL, 0, &retval, 0);
 	}
 #endif
 }
@@ -260,9 +260,9 @@ void MonoClass::Clear(void)
 {
 #ifdef _WINDOWS
 	if ( Enabled && (Handle != INVALID_HANDLE_VALUE) ) {
-		unsigned long retval;
+		uint32_t retval;
 
-		DeviceIoControl(Handle, (DWORD)IOCTL_MONO_CLEAR_SCREEN, NULL, 0, NULL, 0, &retval, 0);
+		DeviceIoControl(Handle, (uint32_t)IOCTL_MONO_CLEAR_SCREEN, NULL, 0, NULL, 0, &retval, 0);
 	}
 #endif
 }
@@ -293,7 +293,7 @@ void MonoClass::Fill_Attrib(int x, int y, int w, int h, MonoAttribute attrib)
 {
 #ifdef _WINDOWS
 	if ( Enabled && (Handle != INVALID_HANDLE_VALUE) ) {
-		unsigned long retval;
+		uint32_t retval;
 		struct fillcontrol  {
 			int X,Y,W,H,A;
 		} fillcontrol;
@@ -304,7 +304,7 @@ void MonoClass::Fill_Attrib(int x, int y, int w, int h, MonoAttribute attrib)
 		fillcontrol.W = w;
 		fillcontrol.H = h;
 		fillcontrol.A = attrib;
-		DeviceIoControl(Handle, (DWORD)IOCTL_MONO_FILL_ATTRIB, &fillcontrol, sizeof(fillcontrol), NULL, 0, &retval, 0);
+		DeviceIoControl(Handle, (uint32_t)IOCTL_MONO_FILL_ATTRIB, &fillcontrol, sizeof(fillcontrol), NULL, 0, &retval, 0);
 	}
 #endif
 }
@@ -332,8 +332,8 @@ void MonoClass::Scroll(int )
 {
 #ifdef _WINDOWS
 	if ( Enabled && (Handle != INVALID_HANDLE_VALUE) ) {
-		unsigned long retval;
-		DeviceIoControl(Handle, (DWORD)IOCTL_MONO_SCROLL, NULL, 0, NULL, 0, &retval, 0);
+		uint32_t retval;
+		DeviceIoControl(Handle, (uint32_t)IOCTL_MONO_SCROLL, NULL, 0, NULL, 0, &retval, 0);
 	}
 #endif
 }
@@ -442,7 +442,7 @@ void MonoClass::Print(char const * ptr)
 {
 #ifdef _WINDOWS
 	if ( Enabled && (Handle != INVALID_HANDLE_VALUE) ) {
-		unsigned long retval;
+		uint32_t retval;
 		WriteFile(Handle, ptr, strlen(ptr), &retval, NULL);
 	}
 #endif
@@ -468,8 +468,8 @@ void MonoClass::Set_Default_Attribute(MonoAttribute attrib)
 {
 #ifdef _WINDOWS
 	if ( Enabled && (Handle != INVALID_HANDLE_VALUE) ) {
-		unsigned long retval;
-		DeviceIoControl(Handle, (DWORD)IOCTL_MONO_SET_ATTRIBUTE, &attrib, 1, NULL, 0, &retval, 0);
+		uint32_t retval;
+		DeviceIoControl(Handle, (uint32_t)IOCTL_MONO_SET_ATTRIBUTE, &attrib, 1, NULL, 0, &retval, 0);
 	}
 #endif
 }	
@@ -499,10 +499,10 @@ void MonoClass::Text_Print(char const *text, int x, int y, MonoAttribute attrib)
 {
 #ifdef _WINDOWS
 	if ( Enabled && (Handle != INVALID_HANDLE_VALUE) ) {
-		unsigned long retval;
+		uint32_t retval;
 
 		Set_Cursor(x, y);
-		DeviceIoControl(Handle, (DWORD)IOCTL_MONO_SET_ATTRIBUTE, &attrib, 1, NULL, 0, &retval, 0);
+		DeviceIoControl(Handle, (uint32_t)IOCTL_MONO_SET_ATTRIBUTE, &attrib, 1, NULL, 0, &retval, 0);
 		Print(text);
 	}
 #endif
@@ -578,8 +578,8 @@ void MonoClass::View(void)
 {
 #ifdef _WINDOWS
 	if ( Enabled && (Handle != INVALID_HANDLE_VALUE) ) {
-		unsigned long retval;
-		DeviceIoControl(Handle, (DWORD)IOCTL_MONO_BRING_TO_TOP, NULL, 0, NULL, 0, &retval, 0);
+		uint32_t retval;
+		DeviceIoControl(Handle, (uint32_t)IOCTL_MONO_BRING_TO_TOP, NULL, 0, NULL, 0, &retval, 0);
 		Current = this;
 	}
 #endif

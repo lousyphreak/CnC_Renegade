@@ -110,9 +110,9 @@ bool use_simple_rendering(int geo_type)
 ** build the bitfield of W3D mesh attributes for the given node
 **
 ************************************************************************************/
-uint32 setup_mesh_attributes(INode * node)
+uint32_t setup_mesh_attributes(INode * node)
 {
-	uint32 attributes = W3D_MESH_FLAG_NONE;
+	uint32_t attributes = W3D_MESH_FLAG_NONE;
 
 	/*
 	** Mesh will be one of:
@@ -238,7 +238,7 @@ MeshSaveClass::MeshSaveClass
 {
 	Mesh			mesh = *input_mesh;		// copy the mesh so we can modify it
 	Mtl *		   nodemtl = inode->GetMtl();
-	DWORD		   wirecolor = inode->GetWireColor();
+	uint32_t		   wirecolor = inode->GetWireColor();
 
 	PS2Material = FALSE;
 
@@ -336,7 +336,7 @@ MeshSaveClass::MeshSaveClass
 	// Determine if the deformer should use alpha or v-color info
 	//////////////////////////////////////////////////////////////////////	
 	if (ExportOptions.Is_Vertex_Alpha_Enabled()) {
-		unsigned int alpha_passes = 0;
+		uint32_t alpha_passes = 0;
 		for (int pass=0; pass < MaterialDesc.Pass_Count(); pass++) {
 			if (MaterialDesc.Pass_Uses_Vertex_Alpha(pass)) {
 				alpha_passes |= (1 << pass);
@@ -1176,7 +1176,7 @@ int MeshSaveClass::write_vert_shade_indices(ChunkSaveClass & csave)
 
 		const MeshBuilderClass::VertClass & vert = Builder.Get_Vertex(i);
 
-		uint32 shade_index = vert.ShadeIndex;
+		uint32_t shade_index = vert.ShadeIndex;
 		
 		if (csave.Write(&(shade_index),sizeof(shade_index)) != sizeof(shade_index)) {
 			return 1;
@@ -1504,16 +1504,16 @@ int MeshSaveClass::write_vertex_material_ids(ChunkSaveClass & csave,int pass)
 		return 1;
 	}
 
-	uint32 matid;
+	uint32_t matid;
 
 	if (stats.HasPerVertexMaterial[pass]) {
 		for (int i=0; i<Builder.Get_Vertex_Count(); i++) {
 			matid = Builder.Get_Vertex(i).VertexMaterialIndex[pass];
-			if (csave.Write(&matid,sizeof(uint32)) != sizeof(uint32)) return 1;
+			if (csave.Write(&matid,sizeof(uint32_t)) != sizeof(uint32_t)) return 1;
 		}
 	} else {
 		matid = Builder.Get_Vertex(0).VertexMaterialIndex[pass];
-		if (csave.Write(&matid,sizeof(uint32)) != sizeof(uint32)) return 1;
+		if (csave.Write(&matid,sizeof(uint32_t)) != sizeof(uint32_t)) return 1;
 	}
 		
 	if (!csave.End_Chunk()) {
@@ -1530,15 +1530,15 @@ int MeshSaveClass::write_shader_ids(ChunkSaveClass & csave,int pass)
 		return 1;
 	}
 
-	uint32 shaderid;
+	uint32_t shaderid;
 	if (stats.HasPerPolyShader[pass]) {
 		for (int i=0; i<Builder.Get_Face_Count(); i++) {
 			shaderid = Builder.Get_Face(i).ShaderIndex[pass];
-			if (csave.Write(&shaderid,sizeof(uint32)) != sizeof(uint32)) return 1;
+			if (csave.Write(&shaderid,sizeof(uint32_t)) != sizeof(uint32_t)) return 1;
 		}
 	} else {
 		shaderid = Builder.Get_Face(0).ShaderIndex[pass];
-		if (csave.Write(&shaderid,sizeof(uint32)) != sizeof(uint32)) return 1;
+		if (csave.Write(&shaderid,sizeof(uint32_t)) != sizeof(uint32_t)) return 1;
 	}
 		
 	if (!csave.End_Chunk()) {
@@ -1558,12 +1558,12 @@ int MeshSaveClass::write_dcg(ChunkSaveClass & csave,int pass)
 	for (int i=0; i<Builder.Get_Vertex_Count(); i++) {
 		Vector3 vcolor = Builder.Get_Vertex(i).DiffuseColor[pass];
 		W3dRGBAStruct color;
-		color.R = (uint8)(255.0f * vcolor.X);
-		color.G = (uint8)(255.0f * vcolor.Y);
-		color.B = (uint8)(255.0f * vcolor.Z);
+		color.R = (uint8_t)(255.0f * vcolor.X);
+		color.G = (uint8_t)(255.0f * vcolor.Y);
+		color.B = (uint8_t)(255.0f * vcolor.Z);
 
 		float a = Builder.Get_Vertex(i).Alpha[pass];
-		color.A = (uint8)(255.0f * a);
+		color.A = (uint8_t)(255.0f * a);
 
 		if (csave.Write(&(color),sizeof(W3dRGBAStruct)) != sizeof(W3dRGBAStruct)) {
 			return 1;
@@ -1603,15 +1603,15 @@ int MeshSaveClass::write_texture_ids(ChunkSaveClass & csave,int pass,int stage)
 		return 1;
 	}
 
-	uint32 texid;
+	uint32_t texid;
 	if (stats.HasPerPolyTexture[pass][stage]) {
 		for (int i=0; i<Builder.Get_Face_Count(); i++) {
 			texid = Builder.Get_Face(i).TextureIndex[pass][stage];
-			if (csave.Write(&texid,sizeof(uint32)) != sizeof(uint32)) return 1;
+			if (csave.Write(&texid,sizeof(uint32_t)) != sizeof(uint32_t)) return 1;
 		}
 	} else {
 		texid = Builder.Get_Face(0).TextureIndex[pass][stage];
-		if (csave.Write(&texid,sizeof(uint32)) != sizeof(uint32)) return 1;
+		if (csave.Write(&texid,sizeof(uint32_t)) != sizeof(uint32_t)) return 1;
 	}
 		
 	if (!csave.End_Chunk()) {
@@ -1745,7 +1745,7 @@ int MeshSaveClass::scan_used_materials(Mesh & mesh,Mtl * nodemtl)
  *   10/26/1997 GH  : Created.                                                                 * 
  *   2/8/99     GTH : modified to use the MaterialRemapTable                                   *
  *=============================================================================================*/
-void MeshSaveClass::create_materials(Mtl * nodemtl,DWORD wirecolor)
+void MeshSaveClass::create_materials(Mtl * nodemtl,uint32_t wirecolor)
 {
 	bool domaps = !use_simple_rendering(Header.Attributes);
 	
@@ -1786,9 +1786,9 @@ void MeshSaveClass::create_materials(Mtl * nodemtl,DWORD wirecolor)
 		vmat.Opacity = 0.5f;
 
 		// add material 0
-		vmat.Diffuse.R = (uint8)(diffuse.r * 255.0f);
-		vmat.Diffuse.G = (uint8)(diffuse.g * 255.0f);
-		vmat.Diffuse.B = (uint8)(diffuse.b * 255.0f);
+		vmat.Diffuse.R = (uint8_t)(diffuse.r * 255.0f);
+		vmat.Diffuse.G = (uint8_t)(diffuse.g * 255.0f);
+		vmat.Diffuse.B = (uint8_t)(diffuse.b * 255.0f);
 		material.Set_Pass_Count(1);
 		material.Set_Vertex_Material(vmat,0);
 		material.Set_Shader(shader,0);

@@ -67,7 +67,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CCardinalDialog message handlers
 
-BOOL CCardinalDialog::OnInitDialog() 
+int32_t CCardinalDialog::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
 	

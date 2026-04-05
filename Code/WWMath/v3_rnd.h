@@ -35,6 +35,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #pragma once
 
+#include <cstdint>
+
 #ifndef V3_RND_H
 #define V3_RND_H
 
@@ -70,7 +72,7 @@ class Vector3Randomizer {
 		virtual ~Vector3Randomizer(void)																		{ }
 
 		// RTTI identifiction
-		virtual unsigned int				Class_ID (void) const											= 0;
+		virtual uint32_t				Class_ID (void) const											= 0;
 
 		// Return a random vector
 		virtual void						Get_Vector(Vector3 &vector) 									= 0;
@@ -90,7 +92,7 @@ class Vector3Randomizer {
 
 		// Utility functions
 		float Get_Random_Float_Minus1_To_1()	{ return Randomizer * OOIntMax; }
-		float Get_Random_Float_0_To_1()			{ return ((unsigned int)Randomizer) * OOUIntMax; }
+		float Get_Random_Float_0_To_1()			{ return ((uint32_t)Randomizer) * OOUIntMax; }
 
 		static const float OOIntMax;
 		static const float OOUIntMax;
@@ -112,7 +114,7 @@ class Vector3SolidBoxRandomizer : public Vector3Randomizer {
 
 		Vector3SolidBoxRandomizer(const Vector3 & extents);
 
-		virtual unsigned int				Class_ID (void) const { return CLASSID_SOLIDBOX; }
+		virtual uint32_t				Class_ID (void) const { return CLASSID_SOLIDBOX; }
 		virtual const Vector3 &			Get_Extents (void) const { return Extents; }
 		virtual void						Get_Vector(Vector3 &vector);
 		virtual float						Get_Maximum_Extent(void);
@@ -143,7 +145,7 @@ class Vector3SolidSphereRandomizer : public Vector3Randomizer {
 
 		Vector3SolidSphereRandomizer(float radius);
 
-		virtual unsigned int				Class_ID (void) const { return CLASSID_SOLIDSPHERE; }
+		virtual uint32_t				Class_ID (void) const { return CLASSID_SOLIDSPHERE; }
 		virtual float						Get_Radius (void) const { return Radius; }
 		virtual void						Get_Vector(Vector3 &vector);
 		virtual float						Get_Maximum_Extent(void);
@@ -174,7 +176,7 @@ class Vector3HollowSphereRandomizer : public Vector3Randomizer {
 
 		Vector3HollowSphereRandomizer(float radius);
 
-		virtual unsigned int				Class_ID (void) const { return CLASSID_HOLLOWSPHERE; }
+		virtual uint32_t				Class_ID (void) const { return CLASSID_HOLLOWSPHERE; }
 		virtual float						Get_Radius (void) const { return Radius; }
 		virtual void						Get_Vector(Vector3 &vector);
 		virtual float						Get_Maximum_Extent(void);
@@ -205,7 +207,7 @@ class Vector3SolidCylinderRandomizer : public Vector3Randomizer {
 
 		Vector3SolidCylinderRandomizer(float extent, float radius);
 
-		virtual unsigned int				Class_ID (void) const { return CLASSID_SOLIDCYLINDER; }
+		virtual uint32_t				Class_ID (void) const { return CLASSID_SOLIDCYLINDER; }
 		virtual float						Get_Radius (void) const { return Radius; }
 		virtual float						Get_Height (void) const { return Extent; }
 		virtual void						Get_Vector(Vector3 &vector);

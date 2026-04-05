@@ -37,6 +37,8 @@
 #ifndef BFISH_H
 #define BFISH_H
 
+#include <cstdint>
+
 #include	<limits.h>
 
 
@@ -72,9 +74,9 @@ class BlowfishEngine {
 	private:
 		bool IsKeyed;
 
-		void Sub_Key_Encrypt(unsigned long & left, unsigned long & right);
+		void Sub_Key_Encrypt(uint32_t & left, uint32_t & right);
 
-		void Process_Block(void const * plaintext, void * cyphertext, unsigned long const * ptable);
+		void Process_Block(void const * plaintext, void * cyphertext, uint32_t const * ptable);
 		void Initialize_Tables(void);
 
 		enum {
@@ -86,19 +88,19 @@ class BlowfishEngine {
 		**	filled with a number generated from pi. Thus they are not random but
 		**	they don't hold a weak pattern either.
 		*/
-		static unsigned long const P_Init[ROUNDS+2];
-		static unsigned long const S_Init[4][UCHAR_MAX+1];
+		static uint32_t const P_Init[ROUNDS+2];
+		static uint32_t const S_Init[4][UCHAR_MAX+1];
 
 		/*
 		**	Permutation tables for encryption and decryption.
 		*/
- 		unsigned long P_Encrypt[ROUNDS+2];
- 		unsigned long P_Decrypt[ROUNDS+2];
+ 		uint32_t P_Encrypt[ROUNDS+2];
+ 		uint32_t P_Decrypt[ROUNDS+2];
 
 		/*
 		**	S-Box tables (four).
 		*/
-		unsigned long bf_S[4][UCHAR_MAX+1];
+		uint32_t bf_S[4][UCHAR_MAX+1];
 };
 
 #endif

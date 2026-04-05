@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -57,12 +59,12 @@ documentation and/or software.
 
 /* MD5 context. */
 typedef struct {
-  UINT4 state[4];                                   /* state (ABCD) */
-  UINT4 count[2];        /* number of bits, modulo 2^64 (lsb first) */
-  unsigned char buffer[64];                         /* input buffer */
+  uint32_t state[4];                                   /* state (ABCD) */
+  uint32_t count[2];        /* number of bits, modulo 2^64 (lsb first) */
+  uint8_t buffer[64];                         /* input buffer */
 } MD5_CTX;
 
 void MD5Init PROTO_LIST ((MD5_CTX *));
 void MD5Update PROTO_LIST
-  ((MD5_CTX *, unsigned char *, unsigned int));
-void MD5Final PROTO_LIST ((unsigned char [16], MD5_CTX *));
+  ((MD5_CTX *, uint8_t *, uint32_t));
+void MD5Final PROTO_LIST ((uint8_t [16], MD5_CTX *));

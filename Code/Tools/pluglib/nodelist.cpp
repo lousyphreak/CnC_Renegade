@@ -238,7 +238,7 @@ INode * INodeListClass::operator[] ( int index ) const
  *=============================================================================================*/
 void INodeListClass::Insert(INodeListClass & insertlist)
 {
-	for (unsigned int i=0; i<insertlist.Num_Nodes(); i++) {
+	for (uint32_t i=0; i<insertlist.Num_Nodes(); i++) {
 		Insert(insertlist[i]);
 	}
 }
@@ -370,8 +370,8 @@ int INodeListClass::callback(INode * node)
 
 void INodeListClass::Sort(const INodeCompareClass & node_compare)
 {
-	for (unsigned int i=0; i<Num_Nodes(); i++) {
-		for (unsigned int j=0; j<Num_Nodes(); j++) {
+	for (uint32_t i=0; i<Num_Nodes(); i++) {
+		for (uint32_t j=0; j<Num_Nodes(); j++) {
 
 			INodeListEntryClass * ni = get_nth_item(i);
 			INodeListEntryClass * nj = get_nth_item(j);

@@ -71,7 +71,7 @@ GeneratingVisDialogClass::GeneratingVisDialogClass (float granularity, CWnd *par
 	//
 	//	Determine the section of the status file
 	//
-	DWORD process_id = ::GetCurrentProcessId ();
+	uint32_t process_id = ::GetCurrentProcessId ();
 	m_StatusSection.Format ("%d", process_id);
 
 	//
@@ -117,7 +117,7 @@ END_MESSAGE_MAP()
 //	OnInitDialog
 //
 //////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 GeneratingVisDialogClass::OnInitDialog (void) 
 {
 	CDialog::OnInitDialog ();
@@ -218,12 +218,12 @@ GeneratingVisDialogClass::Build_Node_List (NODE_LIST &node_list)
 //	WindowProc
 //
 //////////////////////////////////////////////////////////////////////////////
-LRESULT
+intptr_t
 GeneratingVisDialogClass::WindowProc
 (
-	UINT		message,
-	WPARAM	wParam,
-	LPARAM	lParam
+	uint32_t		message,
+	uintptr_t	wParam,
+	intptr_t	lParam
 )
 {
 	if (message == WM_USER+101) {
@@ -308,15 +308,15 @@ GeneratingVisDialogClass::Update_Time (void)
 	//
 	// Compute the elapsed and estimated remaining time
 	//
-	DWORD cur_ticks = ::GetTickCount();
-	DWORD elapsed_ticks;
+	uint32_t cur_ticks = ::GetTickCount();
+	uint32_t elapsed_ticks;
 	if (cur_ticks > m_StartTime) {
 		elapsed_ticks = cur_ticks - m_StartTime;
 	} else {
 		elapsed_ticks = 0xFFFFFFFF - m_StartTime + cur_ticks;
 	}
-	DWORD avg_ticks = elapsed_ticks / m_CurrentPoint;
-	DWORD remaining_ticks = (m_TotalPoints - m_CurrentPoint) * avg_ticks;
+	uint32_t avg_ticks = elapsed_ticks / m_CurrentPoint;
+	uint32_t remaining_ticks = (m_TotalPoints - m_CurrentPoint) * avg_ticks;
 
 	float elapsed_minutes = (float)elapsed_ticks / 60000.0f;
 	float remaining_minutes = (float)remaining_ticks / 60000.0f;

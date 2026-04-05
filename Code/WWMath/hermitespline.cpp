@@ -327,13 +327,13 @@ void HermiteSpline1DClass::Evaluate(float time,float * set_val)
 		h2*Tangents[i0].OutTangent + h3*Tangents[i1].InTangent;
 }
 
-void HermiteSpline1DClass::Set_Key(int i,float point,unsigned int extra)
+void HermiteSpline1DClass::Set_Key(int i,float point,uint32_t extra)
 {
 	Curve1DClass::Set_Key(i,point,extra);
 	TangentsDirty = true;
 }
 
-int HermiteSpline1DClass::Add_Key(float point,float t,unsigned int extra)
+int HermiteSpline1DClass::Add_Key(float point,float t,uint32_t extra)
 {
 	int index = Curve1DClass::Add_Key(point,t,extra);
 	TangentsDirty = true;

@@ -19,6 +19,8 @@
 #ifndef WINBLOWS_HEADER
 #define WINBLOWS_HEADER
 
+#include <cstdint>
+
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <windowsx.h>
@@ -32,6 +34,6 @@
 
   extern int       main(int argc, char *argv[]);
 
-  int              Print_WM(UINT wm,char *out);
+  int              Print_WM(uint32_t wm,char *out);
 
 #endif

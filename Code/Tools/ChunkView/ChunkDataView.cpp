@@ -108,15 +108,15 @@ void CChunkDataView::OnInitialUpdate()
 	CListView::OnInitialUpdate();
 	
 	CListCtrl &list = GetListCtrl();
-	long flags = list.GetStyle();
+	int32_t flags = list.GetStyle();
 	flags |= LVS_REPORT;
 	SetWindowLong(list.GetSafeHwnd(), GWL_STYLE, flags);
 
 	//list.SetFont ();
-	::SendMessage (list, WM_SETFONT, (WPARAM)GetStockObject (ANSI_FIXED_FONT), 0L);
+	::SendMessage (list, WM_SETFONT, (uintptr_t)GetStockObject (ANSI_FIXED_FONT), 0L);
 }
 
-void CChunkDataView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint) 
+void CChunkDataView::OnUpdate(CView* pSender, intptr_t lHint, CObject* pHint) 
 {
 	if (this == pSender) return;
 
@@ -211,13 +211,13 @@ void CChunkDataView::Display_Chunk_Micro_Chunks(const ChunkImageClass * chunk)
 	list.InsertColumn(2, &DataColumn);
 
 	int rowcounter = 0;
-	const uint8 * workptr = chunk->Get_Data();
+	const uint8_t * workptr = chunk->Get_Data();
 	static char _buf[256];
 
 	while (workptr < chunk->Get_Data() + chunk->Get_Length()) {
 		
-		uint8 micro_id = *workptr++;
-		uint8 micro_size = *workptr++;
+		uint8_t micro_id = *workptr++;
+		uint8_t micro_size = *workptr++;
 
 		// Add a line for the id
 		CString tmp_string;
@@ -248,13 +248,13 @@ void CChunkDataView::Reset_Columns(void)
 {
 	CListCtrl &list = GetListCtrl();
 
-	BOOL hascolumns = TRUE;
+	int32_t hascolumns = TRUE;
 	while (hascolumns) {
 		hascolumns = list.DeleteColumn(0);
 	}
 }
 
-HexToStringClass * CChunkDataView::Create_Hex_Converter(const uint8 * data,const uint32 size)
+HexToStringClass * CChunkDataView::Create_Hex_Converter(const uint8_t * data,const uint32_t size)
 {
 	HexToStringClass * hexconv = NULL;
 	

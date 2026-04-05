@@ -74,7 +74,7 @@ END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
 // SelectionDialog message handlers
-BOOL SelectionDialog::OnInitDialog() 
+int32_t SelectionDialog::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
 	

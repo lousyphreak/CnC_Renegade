@@ -84,7 +84,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 SunlightDialogClass::OnInitDialog (void) 
 {
 	// Allow the base class to process this message
@@ -121,8 +121,8 @@ SunlightDialogClass::OnInitDialog (void)
 void
 SunlightDialogClass::OnHScroll
 (
-	UINT nSBCode,
-	UINT nPos, 
+	uint32_t nSBCode,
+	uint32_t nPos, 
 	CScrollBar* pScrollBar
 ) 
 {
@@ -206,7 +206,7 @@ SunlightDialogClass::OnDrawItem
 ) 
 {
 	// Determine what state to draw the button in (pushed or normal)
-	UINT state = DFCS_BUTTONPUSH | DFCS_ADJUSTRECT;
+	uint32_t state = DFCS_BUTTONPUSH | DFCS_ADJUSTRECT;
 	if (lpDrawItemStruct->itemState & ODS_SELECTED) {
 		state |= DFCS_PUSHED;
 	}

@@ -64,7 +64,7 @@ enum FontRemapEnum  {
 extern void 						*FontData[NUM_FONT_STYLES];
 
 // For now we have green cause that is all that is needed.  Add more as needed.
-extern unsigned char				*FontRemapTables[NUM_FONT_REMAPS];
+extern uint8_t				*FontRemapTables[NUM_FONT_REMAPS];
 
 // Number of colors (allocated chars) in FontRemapTable.  Useful for some of the RAMPS.
 extern int							FontRemapTablesSize[NUM_FONT_REMAPS];
@@ -82,6 +82,6 @@ void Release_Default_Font_Data();
 void *Load_Font_Data(char *fname);
 																  
 // Creates a palette from a ramp palette given min and max values.
-unsigned char *Build_Font_Palette_From_Ramp(float val_norm, FontRemapEnum remap, unsigned char *ret_remap = &FontRemapTables[USER_256_COLORS][0]);
+uint8_t *Build_Font_Palette_From_Ramp(float val_norm, FontRemapEnum remap, uint8_t *ret_remap = &FontRemapTables[USER_256_COLORS][0]);
 
 #endif

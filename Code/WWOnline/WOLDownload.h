@@ -36,6 +36,8 @@
 #ifndef __WOLDOWNLOAD_H__
 #define __WOLDOWNLOAD_H__
 
+#include <cstdint>
+
 #include <atlbase.h>
 #include "RefCounted.h"
 #include "RefPtr.h"
@@ -64,10 +66,10 @@ class Download :
 		bool IsDone(void) const;
 		void Process(void);
 
-		unsigned long GetSKU(void) const
+		uint32_t GetSKU(void) const
 			{return mWOLUpdate.SKU;}
 
-		unsigned long GetVersion(void) const
+		uint32_t GetVersion(void) const
 			{return mWOLUpdate.version;}
 
 		bool IsRequired(void) const
@@ -124,7 +126,7 @@ class Download :
 		WOL::Update mWOLUpdate;
 
 		CComPtr<WOL::IDownload> mDownloadObject;
-		unsigned long mDownloadCookie;
+		uint32_t mDownloadCookie;
 
 		DLState mState;
 
@@ -143,9 +145,9 @@ class Download :
 	// IUnknown methods
 	//---------------------------------------------------------------------------
 	protected:
-		virtual HRESULT STDMETHODCALLTYPE QueryInterface(const IID& iid, void** ppv);
-		virtual ULONG STDMETHODCALLTYPE AddRef(void);
-		virtual ULONG STDMETHODCALLTYPE Release(void);
+		virtual int32_t STDMETHODCALLTYPE QueryInterface(const IID& iid, void** ppv);
+		virtual uint32_t STDMETHODCALLTYPE AddRef(void);
+		virtual uint32_t STDMETHODCALLTYPE Release(void);
 
 	//---------------------------------------------------------------------------
 	// IDownloadEvent Methods
@@ -200,7 +202,7 @@ class DownloadEvent
 	};
 
 
-typedef void (*DownloadWaitCallback)(DownloadEvent& event, unsigned long userdata);
+typedef void (*DownloadWaitCallback)(DownloadEvent& event, uint32_t userdata);
 
 class DownloadWait :
 		public SingleWait,
@@ -215,9 +217,9 @@ class DownloadWait :
 
 		void EndWait(WaitResult, const wchar_t*);
 
-		void SetCallback(DownloadWaitCallback callback, unsigned long userdata);
+		void SetCallback(DownloadWaitCallback callback, uint32_t userdata);
 
-		unsigned int GetDownloadCount(void) const
+		uint32_t GetDownloadCount(void) const
 			{return mFiles.size();}
 
 		const RefPtr<Download>& GetCurrentDownload(void) const
@@ -242,7 +244,7 @@ class DownloadWait :
 		RefPtr<Download> mCurrentDownload;
 
 		DownloadWaitCallback mCallback;
-		unsigned long mUserdata;
+		uint32_t mUserdata;
 	};
 
 } // namespace WWOnline

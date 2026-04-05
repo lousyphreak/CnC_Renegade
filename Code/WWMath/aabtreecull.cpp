@@ -55,7 +55,7 @@ DEFINE_AUTO_POOL(AABTreeNodeClass,256);
 /*
 ** Current version of the file format
 */
-const uint32 AABTREE_CURRENT_VERSION = 0x00010000;
+const uint32_t AABTREE_CURRENT_VERSION = 0x00010000;
 
 
 /*
@@ -87,7 +87,7 @@ struct IOAABNodeStruct
 {
 	IOVector3Struct	Center;
 	IOVector3Struct	Extent;
-	uint32				Attributes;
+	uint32_t				Attributes;
 };
 
 
@@ -712,7 +712,7 @@ void AABTreeCullSystemClass::Load(ChunkLoadClass & cload)
 	}
 
 	// read in the version and verify that it is the current version
-	uint32 version;
+	uint32_t version;
 	cload.Read(&version,sizeof(version));
 	if (version != AABTREE_CURRENT_VERSION) {
 		WWDEBUG_ERROR(("Attempting to read an obsolete AAB-Tree!"));
@@ -802,8 +802,8 @@ void AABTreeCullSystemClass::Load_Nodes(AABTreeNodeClass * node,ChunkLoadClass &
 void AABTreeCullSystemClass::Save(ChunkSaveClass & csave)
 {
 	csave.Begin_Chunk(AABTREE_CHUNK_VERSION);
-	uint32 version = AABTREE_CURRENT_VERSION;
-	csave.Write(&version,sizeof(uint32));
+	uint32_t version = AABTREE_CURRENT_VERSION;
+	csave.Write(&version,sizeof(uint32_t));
 	csave.End_Chunk();
 
 	Save_Nodes(RootNode,csave);
@@ -855,7 +855,7 @@ void AABTreeCullSystemClass::Save_Nodes(AABTreeNodeClass * node,ChunkSaveClass &
 
 void AABTreeCullSystemClass::Load_Object_Linkage(ChunkLoadClass & cload,CullableClass * obj)
 {
-	uint32 index;
+	uint32_t index;
 	cload.Open_Chunk();
 	WWASSERT(cload.Cur_Chunk_ID() == AABTREE_CHUNK_NODE_INDEX);
 	cload.Read(&index,sizeof(index));
@@ -875,7 +875,7 @@ void AABTreeCullSystemClass::Save_Object_Linkage(ChunkSaveClass & csave,Cullable
 	AABTreeNodeClass * node = link->Node;
 	WWASSERT(node);
 
-	uint32 index = node->Index;
+	uint32_t index = node->Index;
 	csave.Begin_Chunk(AABTREE_CHUNK_NODE_INDEX);
 	csave.Write(&index,sizeof(index));
 	csave.End_Chunk();
@@ -1591,25 +1591,25 @@ void AABTreeIterator::validate(void)
 
   Here is the existing data in each Node:
 
-	uint32					Index;				// Index of this node
+	uint32_t					Index;				// Index of this node
 	AABoxClass				Box;					// Bounding box of the node
 	AABTreeNodeClass *	Parent;				// parent of this node
 	AABTreeNodeClass *	Front;				// front node
 	AABTreeNodeClass *	Back;					// back node
 	CullableClass *		Object;				// objects in this node
-	uint32					UserData;			// 32bit field for the user, initialized to 0
+	uint32_t					UserData;			// 32bit field for the user, initialized to 0
 
 	Total Size:				48 bytes
 
 	Here is a possible replacement:
 
-	uint16					Index;
+	uint16_t					Index;
 	short						x,y,z,w,l,h;		// Need origin and scale factors for the boxes stored in tree
-	uint16					ParentIndex;
-	uint16					FrontIndex;
-	uint16					BackIndex;
+	uint16_t					ParentIndex;
+	uint16_t					FrontIndex;
+	uint16_t					BackIndex;
 	CullableClass *		Object;
-	uint32					UserData;
+	uint32_t					UserData;
 	
 	Total Size:				28 bytes
 

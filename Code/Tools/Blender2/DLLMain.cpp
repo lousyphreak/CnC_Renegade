@@ -20,7 +20,7 @@
 
 HINSTANCE hInstance;
 
-static BOOL controlsInit = FALSE;
+static int32_t controlsInit = FALSE;
 
 #define DLLEXPORT __declspec(dllexport)
 
@@ -28,10 +28,10 @@ static BOOL controlsInit = FALSE;
 // DllMain
 //----------------------------------------------------------------------------
 
-BOOL WINAPI DllMain
+int32_t WINAPI DllMain
 (
 	HINSTANCE hinstDLL,
-	ULONG,
+	uint32_t,
 	LPVOID
 )
 {
@@ -79,7 +79,7 @@ DLLEXPORT ClassDesc * LibClassDesc(int i)
 // LibVersion
 //----------------------------------------------------------------------------
 
-DLLEXPORT ULONG LibVersion()
+DLLEXPORT uint32_t LibVersion()
 {
 	return VERSION_3DSMAX;
 }

@@ -35,6 +35,8 @@
 #ifndef __WOLNETUTILOBSERVER_H__
 #define __WOLNETUTILOBSERVER_H__
 
+#include <cstdint>
+
 #include <windows.h>
 #include "WOLUser.h"
 
@@ -61,26 +63,26 @@ class NetUtilObserver :
 		//---------------------------------------------------------------------------
 		// IUnknown methods
 		//---------------------------------------------------------------------------
-		virtual HRESULT STDMETHODCALLTYPE QueryInterface(const IID& iid, void** ppv);
-		virtual ULONG STDMETHODCALLTYPE AddRef(void);
-		virtual ULONG STDMETHODCALLTYPE Release(void);
+		virtual int32_t STDMETHODCALLTYPE QueryInterface(const IID& iid, void** ppv);
+		virtual uint32_t STDMETHODCALLTYPE AddRef(void);
+		virtual uint32_t STDMETHODCALLTYPE Release(void);
 
 		//---------------------------------------------------------------------------
 		// INetUtilEvent Methods
 		//---------------------------------------------------------------------------
-		STDMETHOD(OnPing)(HRESULT hr, int time, unsigned long ip, int handle);
+		STDMETHOD(OnPing)(int32_t hr, int time, uint32_t ip, int handle);
         
-		STDMETHOD(OnLadderList)(HRESULT hr, WOL::Ladder* list, int count, long time, int keyRung);
+		STDMETHOD(OnLadderList)(int32_t hr, WOL::Ladder* list, int count, int32_t time, int keyRung);
        
-		STDMETHOD(OnGameresSent)(HRESULT hr);
+		STDMETHOD(OnGameresSent)(int32_t hr);
       
-		STDMETHOD(OnNewNick)(HRESULT hr, LPCSTR message, LPCSTR nick, LPCSTR pass);
+		STDMETHOD(OnNewNick)(int32_t hr, LPCSTR message, LPCSTR nick, LPCSTR pass);
         
-		STDMETHOD(OnAgeCheck)(HRESULT hr, int years, int consent);
+		STDMETHOD(OnAgeCheck)(int32_t hr, int years, int consent);
    
-		STDMETHOD(OnWDTState)(HRESULT hr, unsigned char* state, int length);
+		STDMETHOD(OnWDTState)(int32_t hr, uint8_t* state, int length);
 
-		STDMETHOD(OnHighscore)(HRESULT hr, WOL::Highscore* list, int count, long time, int keyRung);
+		STDMETHOD(OnHighscore)(int32_t hr, WOL::Highscore* list, int count, int32_t time, int keyRung);
 
 	protected:
 		virtual ~NetUtilObserver();
@@ -88,11 +90,11 @@ class NetUtilObserver :
 		NetUtilObserver(const NetUtilObserver&);
 		const NetUtilObserver& operator=(const NetUtilObserver&);
 
-		void ProcessLadderListResults(WOL::Ladder* list, long timeStamp);
+		void ProcessLadderListResults(WOL::Ladder* list, int32_t timeStamp);
 		void NotifyClanLadderUpdate(const UserList& users, const RefPtr<SquadData>& squad);
 
 	private:
-		ULONG mRefCount;
+		uint32_t mRefCount;
 		Session* mOuter;
 	};
 

@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __FORMCLASS_H
@@ -52,18 +54,18 @@ class FormClass : public ParamDlg
 			: m_hWnd (NULL) {}
 		~FormClass (void) {}
 
-		HWND						Create_Form (HWND parent_wnd, UINT template_id);
+		HWND						Create_Form (HWND parent_wnd, uint32_t template_id);
 		void						Show (bool show_flag = true) { ::ShowWindow (m_hWnd, show_flag ? SW_SHOW : SW_HIDE); }
-		virtual BOOL			Dialog_Proc (HWND dlg_wnd, UINT message, WPARAM wparam, LPARAM lparam) = 0;
+		virtual int32_t			Dialog_Proc (HWND dlg_wnd, uint32_t message, uintptr_t wparam, intptr_t lparam) = 0;
 		HWND						Get_Hwnd(void) { return m_hWnd; }
 		virtual void			Invalidate(void) { InvalidateRect(m_hWnd,NULL,0); }
 
 	protected:
 		
-		BOOL						ExecuteDlgInit(LPVOID lpResource);
-		BOOL						ExecuteDlgInit(LPCTSTR lpszResourceName);
+		int32_t						ExecuteDlgInit(LPVOID lpResource);
+		int32_t						ExecuteDlgInit(LPCTSTR lpszResourceName);
 
-		static BOOL	WINAPI	fnFormProc (HWND dlg_wnd, UINT message, WPARAM wparam,  LPARAM lparam);
+		static int32_t	WINAPI	fnFormProc (HWND dlg_wnd, uint32_t message, uintptr_t wparam,  intptr_t lparam);
 
 		HWND						m_hWnd;
 		RECT						m_FormRect;

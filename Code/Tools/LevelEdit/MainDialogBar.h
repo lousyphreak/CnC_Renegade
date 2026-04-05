@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 #include "resource.h"
@@ -61,7 +63,7 @@ public:
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(MainDialogBarClass)
 	public:
-	virtual BOOL PreTranslateMessage(MSG* pMsg);
+	virtual int32_t PreTranslateMessage(MSG* pMsg);
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 	//}}AFX_VIRTUAL
@@ -71,9 +73,9 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(MainDialogBarClass)
-	virtual BOOL OnInitDialog();
-	afx_msg void OnSize(UINT nType, int cx, int cy);
-	afx_msg void OnSelchangeLibraryTab(NMHDR* pNMHDR, LRESULT* pResult);
+	virtual int32_t OnInitDialog();
+	afx_msg void OnSize(uint32_t nType, int cx, int cy);
+	afx_msg void OnSelchangeLibraryTab(NMHDR* pNMHDR, intptr_t* pResult);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 
@@ -96,7 +98,7 @@ public:
 	///////////////////////////////////////////////////////////
 	//	Public methods
 	///////////////////////////////////////////////////////////
-	BOOL						Create (CWnd *parent_wnd, UINT style, UINT id);
+	int32_t						Create (CWnd *parent_wnd, uint32_t style, uint32_t id);
 	void						Initialize (void);
 	PresetsFormClass *	Get_Presets_Form (void)		{ return (PresetsFormClass *)m_pTabs[TAB_GLOBAL]; }
 	InstancesPageClass *	Get_Instances_Form (void)	{ return (InstancesPageClass *)m_pTabs[TAB_INSTANCES]; }
@@ -111,10 +113,10 @@ private:
 	int m_iCurrentTab;
 };
 
-inline BOOL
-MainDialogBarClass::Create (CWnd *parent_wnd, UINT style, UINT id)
+inline int32_t
+MainDialogBarClass::Create (CWnd *parent_wnd, uint32_t style, uint32_t id)
 {
-	BOOL retval = CDialogBar::Create (parent_wnd, MainDialogBarClass::IDD, style, id);
+	int32_t retval = CDialogBar::Create (parent_wnd, MainDialogBarClass::IDD, style, id);
 	Initialize ();
 	return retval;
 }

@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __LIGHT_NODE_H
@@ -141,8 +143,8 @@ public:
 	void			Set_Group_ID (int group_id);
 	int			Get_Group_ID (void) const;
 
-	uint32		Get_Vis_Sector_ID (void) const		{ return m_VisSectorID; }
-	void			Set_Vis_Sector_ID (uint32 vis_id);
+	uint32_t		Get_Vis_Sector_ID (void) const		{ return m_VisSectorID; }
+	void			Set_Vis_Sector_ID (uint32_t vis_id);
 
 protected:
 
@@ -163,7 +165,7 @@ protected:
 	AttenuationSphereClass *	m_Sphere;
 
 	bool					m_UsePreset;
-	uint32				m_VisSectorID;
+	uint32_t				m_VisSectorID;
 };
 
 

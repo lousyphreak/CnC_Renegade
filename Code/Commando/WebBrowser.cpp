@@ -67,7 +67,7 @@ bool WebBrowser::InstallPrerequisites(void)
 	// the WOLBrowser class object. If we can get the class object then the
 	// component is already registered.
 	CComPtr<IClassFactory> factory;
-	HRESULT hr = CoGetClassObject(CLSID_WOLBrowser, CLSCTX_INPROC_SERVER, NULL,
+	int32_t hr = CoGetClassObject(CLSID_WOLBrowser, CLSCTX_INPROC_SERVER, NULL,
 			IID_IClassFactory, (void**)&factory);
 
 	// If the component isn't registered then check for it in the run directory
@@ -78,7 +78,7 @@ bool WebBrowser::InstallPrerequisites(void)
 
 		// Attempt to find the WOLBrowser server in the run directory.
 		char dllPath[512];
-		DWORD length = GetCurrentDirectory(sizeof(dllPath), dllPath);
+		uint32_t length = GetCurrentDirectory(sizeof(dllPath), dllPath);
 
 		if (length == 0)
 			{
@@ -102,7 +102,7 @@ bool WebBrowser::InstallPrerequisites(void)
 
 	// Attempt to open the URL key
 	HKEY key;
-	LONG result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, APPLICATION_SUB_KEY_NAME_URL, 0, KEY_ALL_ACCESS, &key);
+	int32_t result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, APPLICATION_SUB_KEY_NAME_URL, 0, KEY_ALL_ACCESS, &key);
 
 	if (ERROR_SUCCESS != result)
 		{
@@ -111,7 +111,7 @@ bool WebBrowser::InstallPrerequisites(void)
 				"Renegade Warning!", MB_ICONWARNING|MB_OK);
 
 		// Attempt to create the key.
-		LONG result = RegCreateKeyEx(HKEY_LOCAL_MACHINE, APPLICATION_SUB_KEY_NAME_URL, 0, NULL,
+		int32_t result = RegCreateKeyEx(HKEY_LOCAL_MACHINE, APPLICATION_SUB_KEY_NAME_URL, 0, NULL,
 			REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &key, NULL);
 
 		if (ERROR_SUCCESS != result)
@@ -149,9 +149,9 @@ bool WebBrowser::InstallPrerequisites(void)
 
 		while (valueName)
 			{
-			DWORD type;
+			uint32_t type;
 			char data[512];
-			DWORD size = sizeof(data);
+			uint32_t size = sizeof(data);
 			result = RegQueryValueEx(key, valueName, NULL, &type, (LPBYTE)&data, &size);
 
 			// If the URL value is not found then add it.
@@ -159,7 +159,7 @@ bool WebBrowser::InstallPrerequisites(void)
 
 			if (ERROR_SUCCESS != result || (strcmp(valueData, data) != 0))
 				{
-				result = RegSetValueEx(key, valueName, NULL, REG_SZ, (CONST BYTE*)valueData,
+				result = RegSetValueEx(key, valueName, NULL, REG_SZ, (CONST uint8_t*)valueData,
 					(strlen(valueData) + 1));
 
 				if (ERROR_SUCCESS != result)
@@ -336,8 +336,8 @@ bool WebBrowser::FinalizeCreate(HWND window)
 		RECT windowRect;
 		GetClientRect(window, &windowRect);
 
-		LONG windowWidth = (windowRect.right - windowRect.left);
-		LONG windowHeight = (windowRect.bottom - windowRect.top);
+		int32_t windowWidth = (windowRect.right - windowRect.left);
+		int32_t windowHeight = (windowRect.bottom - windowRect.top);
 
 		// If the display is smaller than 800 x 600 use the external browser.
 		// Therefore we do NOT need to create the embedded browser component.
@@ -346,7 +346,7 @@ bool WebBrowser::FinalizeCreate(HWND window)
 			// Create the embedded browser component.
 			WWDEBUG_SAY(("WebBrowser: Creating WOLBrowser component\n"));
 
-			HRESULT hr = CoCreateInstance(CLSID_WOLBrowser, NULL, CLSCTX_INPROC_SERVER,
+			int32_t hr = CoCreateInstance(CLSID_WOLBrowser, NULL, CLSCTX_INPROC_SERVER,
 					IID_IWOLBrowser, (void**)&mWOLBrowser);
 
 			if (FAILED(hr))
@@ -432,7 +432,7 @@ bool WebBrowser::ShowWebPage(char* page)
 				mbstowcs(framePage, path, MAX_PATH);
 				wcscat(framePage, L"frame.htm");
 
-				HRESULT hr = mWOLBrowser->Navigate(framePage, 0 , NULL);
+				int32_t hr = mWOLBrowser->Navigate(framePage, 0 , NULL);
 
 				if (SUCCEEDED(hr))
 					{
@@ -524,7 +524,7 @@ void WebBrowser::Hide(void)
 bool WebBrowser::RetrievePageURL(const char* page, char* url, int size)
 	{
 	HKEY key;
-	LONG result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, APPLICATION_SUB_KEY_NAME_URL, 0, KEY_READ, &key);
+	int32_t result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, APPLICATION_SUB_KEY_NAME_URL, 0, KEY_READ, &key);
 
 	if (result == ERROR_SUCCESS)
 		{
@@ -536,9 +536,9 @@ bool WebBrowser::RetrievePageURL(const char* page, char* url, int size)
 			strcat(valueName, "X");
 			}
 
-		DWORD type;
-		DWORD sizeOfBuffer = size;
-		result = RegQueryValueEx(key, valueName, NULL, &type, (unsigned char*)url,
+		uint32_t type;
+		uint32_t sizeOfBuffer = size;
+		result = RegQueryValueEx(key, valueName, NULL, &type, (uint8_t*)url,
 				&sizeOfBuffer);
 
 		RegCloseKey(key);
@@ -570,7 +570,7 @@ bool WebBrowser::RetrievePageURL(const char* page, char* url, int size)
 bool WebBrowser::RetrieveHTMLPath(char* path, int size)
 	{
 	// Retrieve the full pathname for the current process.
-	DWORD length = GetCurrentDirectory(size, path);
+	uint32_t length = GetCurrentDirectory(size, path);
 
 	if (length == 0)
 		{
@@ -638,7 +638,7 @@ STDMETHODIMP WebBrowser::QueryInterface(REFIID iid, void** ppv)
 *
 ******************************************************************************/
 
-ULONG STDMETHODCALLTYPE WebBrowser::AddRef(void)
+uint32_t STDMETHODCALLTYPE WebBrowser::AddRef(void)
 	{
 	return ++mRefCount;
 	}
@@ -658,7 +658,7 @@ ULONG STDMETHODCALLTYPE WebBrowser::AddRef(void)
 *
 ******************************************************************************/
 
-ULONG STDMETHODCALLTYPE WebBrowser::Release(void)
+uint32_t STDMETHODCALLTYPE WebBrowser::Release(void)
 	{
 	WWASSERT(mRefCount > 0 && "WebBrowser: Negative reference count");
 	--mRefCount;
@@ -744,7 +744,7 @@ STDMETHODIMP WebBrowser::OnBeforeNavigate(const wchar_t* /* url */,
 *
 ******************************************************************************/
 
-STDMETHODIMP WebBrowser::OnDocumentComplete(const wchar_t* url, BOOL isTopFrame)
+STDMETHODIMP WebBrowser::OnDocumentComplete(const wchar_t* url, int32_t isTopFrame)
 	{
 	WWDEBUG_SAY(("WebBrowser: OnDocumentComplete: %S\n", url));
 
@@ -797,7 +797,7 @@ STDMETHODIMP WebBrowser::OnDownloadBegin(void)
 *
 ******************************************************************************/
 
-STDMETHODIMP WebBrowser::OnProgressChange(long /* progress */, long /* progressMax */)
+STDMETHODIMP WebBrowser::OnProgressChange(int32_t /* progress */, int32_t /* progressMax */)
 	{
 	return S_OK;
 	}
@@ -927,7 +927,7 @@ STDMETHODIMP WebBrowser::OnNewWindow(void)
 ******************************************************************************/
 
 STDMETHODIMP WebBrowser::OnShowMessage(const wchar_t* /* text */, const wchar_t* /* caption */,
-		unsigned long /* type */, long* /* result */)
+		uint32_t /* type */, int32_t* /* result */)
 	{
 	return S_OK;
 	}
@@ -1071,7 +1071,7 @@ bool WebBrowser::LaunchExternal(const char* url)
 
 	// Write generic contents
 	const char* contents = "<title>ViewHTML</title>";
-	DWORD written;
+	uint32_t written;
 	WriteFile(file, contents, strlen(contents), &written, NULL);
 	CloseHandle(file);
 
@@ -1098,7 +1098,7 @@ bool WebBrowser::LaunchExternal(const char* url)
 
 	memset(&mProcessInfo, 0, sizeof(mProcessInfo));
 
-	BOOL createSuccess = CreateProcess(exeName, commandLine, NULL, NULL, FALSE,
+	int32_t createSuccess = CreateProcess(exeName, commandLine, NULL, NULL, FALSE,
 			0, NULL, NULL, &startupInfo, &mProcessInfo);
 
 	WWASSERT(createSuccess && "Failed to launch external WebBrowser.");
@@ -1130,15 +1130,15 @@ bool WebBrowser::LaunchExternal(const char* url)
 
 bool WebBrowser::IsExternalBrowserRunning(void) const
 	{
-  DWORD wait = WaitForInputIdle(mProcessInfo.hProcess, 50);
+  uint32_t wait = WaitForInputIdle(mProcessInfo.hProcess, 50);
 
 	if (WAIT_TIMEOUT == wait)
 		{
 		return true;
 		}
 
-	DWORD active = 0;
-	BOOL success = GetExitCodeProcess(mProcessInfo.hProcess, &active);
+	uint32_t active = 0;
+	int32_t success = GetExitCodeProcess(mProcessInfo.hProcess, &active);
 	WWASSERT_PRINT(success, "GetExitCodeProcess() Failed");
 
 	if (success == FALSE)

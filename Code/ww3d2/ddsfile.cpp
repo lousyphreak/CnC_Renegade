@@ -54,7 +54,7 @@ DDSFileClass::DDSFileClass(const char* name,unsigned reduction_factor)
 
 	file->Open();
 	DateTime=file->Get_Date_Time();
-	char header[4];
+	uint8_t header[4];
 	file->Read(header,4);
 	// Now, we read DDSURFACEDESC2 defining the compressed data
 	unsigned read_bytes=file->Read(&SurfaceDesc,sizeof(LegacyDDSURFACEDESC2));
@@ -137,7 +137,7 @@ unsigned DDSFileClass::Get_Height(unsigned level) const
 	return height;
 }
 
-const unsigned char* DDSFileClass::Get_Memory_Pointer(unsigned level) const
+const uint8_t* DDSFileClass::Get_Memory_Pointer(unsigned level) const
 {
 	WWASSERT(level<MipLevels); 
 	return DDSMemory+LevelOffsets[level];
@@ -199,7 +199,7 @@ bool DDSFileClass::Load()
 
 	if (size) {
 		// Allocate memory for the data excluding the headers
-		DDSMemory=new unsigned char[size];
+		DDSMemory=new uint8_t[size];
 		// Read data
 		unsigned read_size=file->Read(DDSMemory,size);
 		// Verify we got all the data
@@ -232,7 +232,7 @@ void DDSFileClass::Copy_Level_To_Surface(unsigned level,IDirect3DSurface8* d3d_s
 		D3DFormat_To_WW3DFormat(surface_desc.Format),
 		surface_desc.Width,
 		surface_desc.Height,
-		reinterpret_cast<unsigned char*>(locked_rect.pBits),
+		reinterpret_cast<uint8_t*>(locked_rect.pBits),
 		locked_rect.Pitch);
 
 	// Finally, unlock the surface
@@ -254,7 +254,7 @@ void DDSFileClass::Copy_Level_To_Surface(
 	WW3DFormat dest_format, 
 	unsigned dest_width, 
 	unsigned dest_height, 
-	unsigned char* dest_surface, 
+	uint8_t* dest_surface, 
 	unsigned dest_pitch)
 {
 	WWASSERT(DDSMemory);
@@ -289,7 +289,7 @@ void DDSFileClass::Copy_Level_To_Surface(
 				// Copy 4x4 block at a time
 				bool contains_alpha=false;
 				for (unsigned y=0;y<dest_height;y+=4) {
-					unsigned char* dest_ptr=dest_surface;
+					uint8_t* dest_ptr=dest_surface;
 					dest_ptr+=y*dest_pitch;
 					for (unsigned x=0;x<dest_width;x+=4,dest_ptr+=dest_bpp*4) {
 						contains_alpha|=Get_4x4_Block(dest_ptr,dest_pitch,dest_format,level,x,y);
@@ -305,7 +305,7 @@ void DDSFileClass::Copy_Level_To_Surface(
 
 // ----------------------------------------------------------------------------
 
-WWINLINE static unsigned RGB565_To_ARGB8888(unsigned short rgb)
+WWINLINE static unsigned RGB565_To_ARGB8888(uint16_t rgb)
 {
 	unsigned rgba=0;
 	rgba|=unsigned(rgb&0x001f)<<3;
@@ -373,11 +373,11 @@ unsigned DDSFileClass::Get_Pixel(unsigned level,unsigned x,unsigned y) const
 	// or we don't.
 	case WW3D_FORMAT_DXT1:
 		{
-			const unsigned char* block_memory=Get_Memory_Pointer(level)+(x/4)*8+((y/4)*(Get_Width(level)/4))*8;
+			const uint8_t* block_memory=Get_Memory_Pointer(level)+(x/4)*8+((y/4)*(Get_Width(level)/4))*8;
 
-			unsigned col0=RGB565_To_ARGB8888(*(unsigned short*)&block_memory[0]);
-			unsigned col1=RGB565_To_ARGB8888(*(unsigned short*)&block_memory[2]);
-			unsigned char line=block_memory[4+(y%4)];
+			unsigned col0=RGB565_To_ARGB8888(*(uint16_t*)&block_memory[0]);
+			unsigned col1=RGB565_To_ARGB8888(*(uint16_t*)&block_memory[2]);
+			uint8_t line=block_memory[4+(y%4)];
 			line>>=(x%4)*2;
 			line=(line&3);
 			if (col0>col1) {
@@ -406,7 +406,7 @@ unsigned DDSFileClass::Get_Pixel(unsigned level,unsigned x,unsigned y) const
 		return 0xffffffff;
 	case WW3D_FORMAT_DXT5:
 		{
-			const unsigned char* alpha_block=Get_Memory_Pointer(level)+(x/4)*16+((y/4)*(Get_Width(level)/4))*16;
+			const uint8_t* alpha_block=Get_Memory_Pointer(level)+(x/4)*16+((y/4)*(Get_Width(level)/4))*16;
 
 			unsigned alpha0=alpha_block[0];
 			unsigned alpha1=alpha_block[1];
@@ -461,10 +461,10 @@ unsigned DDSFileClass::Get_Pixel(unsigned level,unsigned x,unsigned y) const
 
 			// Extract color
 
-			const unsigned char* color_block=alpha_block+8;
-			unsigned col0=RGB565_To_ARGB8888(*(unsigned short*)&color_block[0]);
-			unsigned col1=RGB565_To_ARGB8888(*(unsigned short*)&color_block[2]);
-			unsigned char line=color_block[4+(y%4)];
+			const uint8_t* color_block=alpha_block+8;
+			unsigned col0=RGB565_To_ARGB8888(*(uint16_t*)&color_block[0]);
+			unsigned col1=RGB565_To_ARGB8888(*(uint16_t*)&color_block[2]);
+			uint8_t line=color_block[4+(y%4)];
 			line>>=(x%4)*2;
 			line=(line&3);
 			switch (line) {
@@ -490,7 +490,7 @@ unsigned DDSFileClass::Get_Pixel(unsigned level,unsigned x,unsigned y) const
 // ----------------------------------------------------------------------------
 
 bool DDSFileClass::Get_4x4_Block(
-	unsigned char* dest_ptr,			// Destination surface pointer
+	uint8_t* dest_ptr,			// Destination surface pointer
 	unsigned dest_pitch,					// Destination surface pitch, in bytes
 	WW3DFormat dest_format,				// Destination surface format, A8R8G8B8 is fastest
 	unsigned level,						// DDS mipmap level to copy from
@@ -516,17 +516,17 @@ bool DDSFileClass::Get_4x4_Block(
 	// or we don't.
 	case WW3D_FORMAT_DXT1:
 		{
-			const unsigned char* block_memory=Get_Memory_Pointer(level)+(source_x/4)*8+((source_y/4)*(Get_Width(level)/4))*8;
+			const uint8_t* block_memory=Get_Memory_Pointer(level)+(source_x/4)*8+((source_y/4)*(Get_Width(level)/4))*8;
 
-			unsigned col0=RGB565_To_ARGB8888(*(unsigned short*)&block_memory[0]);
-			unsigned col1=RGB565_To_ARGB8888(*(unsigned short*)&block_memory[2]);
+			unsigned col0=RGB565_To_ARGB8888(*(uint16_t*)&block_memory[0]);
+			unsigned col1=RGB565_To_ARGB8888(*(uint16_t*)&block_memory[2]);
 			// Even if we don't support alpha, decompression is different if source has alpha
 			unsigned dest_pixel=0;
 			if (col0>col1) {
 				for (int y=0;y<4;++y) {
-					unsigned char* tmp_dest_ptr=dest_ptr;
+					uint8_t* tmp_dest_ptr=dest_ptr;
 					dest_ptr+=dest_pitch;
-					unsigned char line=block_memory[4+y];
+					uint8_t line=block_memory[4+y];
 					for (int x=0;x<4;++x) {
 						switch (line&3) {
 						case 0: dest_pixel=col0|0xff000000; break;
@@ -545,9 +545,9 @@ bool DDSFileClass::Get_4x4_Block(
 			else {
 				bool contains_alpha=false;
 				for (int y=0;y<4;++y) {
-					unsigned char* tmp_dest_ptr=dest_ptr;
+					uint8_t* tmp_dest_ptr=dest_ptr;
 					dest_ptr+=dest_pitch;
-					unsigned char line=block_memory[4+y];
+					uint8_t line=block_memory[4+y];
 					for (int x=0;x<4;++x) {
 						switch (line&3) {
 						case 0: dest_pixel=col0|0xff000000; break;
@@ -574,7 +574,7 @@ bool DDSFileClass::Get_4x4_Block(
 	case WW3D_FORMAT_DXT5:
 		{
 			// Init alphas
-			const unsigned char* alpha_block=Get_Memory_Pointer(level)+(source_x/4)*16+((source_y/4)*(Get_Width(level)/4))*16;
+			const uint8_t* alpha_block=Get_Memory_Pointer(level)+(source_x/4)*16+((source_y/4)*(Get_Width(level)/4))*16;
 
 			unsigned alphas[8];
 			alphas[0]=alpha_block[0];
@@ -599,9 +599,9 @@ bool DDSFileClass::Get_4x4_Block(
 			}
 
 			// Init colors
-			const unsigned char* color_block=alpha_block+8;
-			unsigned col0=RGB565_To_ARGB8888(*(unsigned short*)&color_block[0]);
-			unsigned col1=RGB565_To_ARGB8888(*(unsigned short*)&color_block[2]);
+			const uint8_t* color_block=alpha_block+8;
+			unsigned col0=RGB565_To_ARGB8888(*(uint16_t*)&color_block[0]);
+			unsigned col1=RGB565_To_ARGB8888(*(uint16_t*)&color_block[2]);
 
 			unsigned dest_pixel=0;
 			unsigned bit_idx=0;
@@ -624,9 +624,9 @@ bool DDSFileClass::Get_4x4_Block(
 
 			unsigned aii=0;
 			for (int y=0;y<4;++y) {
-				unsigned char* tmp_dest_ptr=dest_ptr;
+				uint8_t* tmp_dest_ptr=dest_ptr;
 				dest_ptr+=dest_pitch;
-				unsigned char line=color_block[4+y];
+				uint8_t line=color_block[4+y];
 				for (int x=0;x<4;++x,bit_idx+=3) {
 					unsigned alpha_value=alphas[alpha_indices[aii++]];
 					contains_alpha&=alpha_value;
@@ -652,9 +652,9 @@ bool DDSFileClass::Get_4x4_Block(
 
 /*
 			for (int y=0;y<4;++y) {
-				unsigned char* tmp_dest_ptr=dest_ptr;
+				uint8_t* tmp_dest_ptr=dest_ptr;
 				dest_ptr+=dest_pitch;
-				unsigned char line=color_block[4+y];
+				uint8_t line=color_block[4+y];
 				for (int x=0;x<4;++x,bit_idx+=3) {
 					unsigned byte_idx=bit_idx/8;
 					unsigned tmp_bit_idx=bit_idx&7;

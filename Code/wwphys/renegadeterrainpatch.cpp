@@ -259,8 +259,8 @@ RenegadeTerrainPatchClass::Allocate_Grid (void)
 	//	Allocate and initiailze the array of quad flags
 	//
 	int quad_count	= (GridPointsX - 1) * (GridPointsY - 1);
-	QuadFlags		= new uint8[quad_count];
-	::memset (QuadFlags, 0, sizeof (uint8) * quad_count);
+	QuadFlags		= new uint8_t[quad_count];
+	::memset (QuadFlags, 0, sizeof (uint8_t) * quad_count);
 
 	AreBuffersDirty	= true;
 	return ;
@@ -435,7 +435,7 @@ RenegadeTerrainPatchClass::Render_Procedural_Material_Pass(MaterialPassClass * m
 			DynamicIBAccessClass dynamic_ib(buftype,temp_apt.Count() * 3);
 			{
 				DynamicIBAccessClass::WriteLockClass lock(&dynamic_ib);
-				unsigned short * indices = lock.Get_Index_Array();
+				uint16_t * indices = lock.Get_Index_Array();
 				const TriIndex * polys = Model->Get_Polygon_Array();
 
 				for (int i=0; i < temp_apt.Count(); i++)
@@ -444,9 +444,9 @@ RenegadeTerrainPatchClass::Render_Procedural_Material_Pass(MaterialPassClass * m
 					unsigned v1 = polys[temp_apt[i]].J;
 					unsigned v2 = polys[temp_apt[i]].K;
 
-					indices[i*3 + 0] = (unsigned short)v0;
-					indices[i*3 + 1] = (unsigned short)v1;
-					indices[i*3 + 2] = (unsigned short)v2;
+					indices[i*3 + 0] = (uint16_t)v0;
+					indices[i*3 + 1] = (uint16_t)v1;
+					indices[i*3 + 2] = (uint16_t)v2;
 
 					min_v = WWMath::Min(v0,min_v);
 					min_v = WWMath::Min(v1,min_v);
@@ -685,7 +685,7 @@ RenegadeTerrainPatchClass::Build_Rendering_Buffers (int texture_index, int pass_
 		//	Lock the index buffer
 		//
 		IndexBufferClass::WriteLockClass lock (material_pass->IndexBuffers[pass_type]);
-		unsigned short * indices = lock.Get_Index_Array();
+		uint16_t * indices = lock.Get_Index_Array();
 
 		//
 		//	Now, compose the triangles by indexing the verts into the vertex buffer
@@ -716,13 +716,13 @@ RenegadeTerrainPatchClass::Build_Rendering_Buffers (int texture_index, int pass_
 			//
 			//	Add the current quad to the index buffer
 			//
-			indices[ib_index ++] = (unsigned short)vertex_index_map[v0_index];
-			indices[ib_index ++] = (unsigned short)vertex_index_map[v2_index];
-			indices[ib_index ++] = (unsigned short)vertex_index_map[v3_index];
+			indices[ib_index ++] = (uint16_t)vertex_index_map[v0_index];
+			indices[ib_index ++] = (uint16_t)vertex_index_map[v2_index];
+			indices[ib_index ++] = (uint16_t)vertex_index_map[v3_index];
 
-			indices[ib_index ++] = (unsigned short)vertex_index_map[v2_index];
-			indices[ib_index ++] = (unsigned short)vertex_index_map[v0_index];
-			indices[ib_index ++] = (unsigned short)vertex_index_map[v1_index];
+			indices[ib_index ++] = (uint16_t)vertex_index_map[v2_index];
+			indices[ib_index ++] = (uint16_t)vertex_index_map[v0_index];
+			indices[ib_index ++] = (uint16_t)vertex_index_map[v1_index];
 		}
 
 	} // end scope for lock
@@ -1826,7 +1826,7 @@ RenegadeTerrainPatchClass::Save (ChunkSaveClass &csave)
 	csave.Begin_Chunk (CHUNKID_QUAD_FLAGS);
 
 		int quad_count = (GridPointsX - 1) * (GridPointsY - 1);
-		csave.Write (QuadFlags, sizeof (uint8) * quad_count);
+		csave.Write (QuadFlags, sizeof (uint8_t) * quad_count);
 				
 	csave.End_Chunk ();
 
@@ -1919,7 +1919,7 @@ RenegadeTerrainPatchClass::Load (ChunkLoadClass &cload)
 				//	Read the array of quad flags
 				//
 				int quad_count = (GridPointsX - 1) * (GridPointsY - 1);
-				cload.Read (QuadFlags, sizeof (uint8) * quad_count);
+				cload.Read (QuadFlags, sizeof (uint8_t) * quad_count);
 				break;
 			}
 

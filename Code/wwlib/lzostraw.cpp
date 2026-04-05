@@ -71,9 +71,9 @@ LZOStraw::LZOStraw(CompControl control, int blocksize) :
 		BlockSize(blocksize)
 {
 	SafetyMargin = BlockSize;
-	Buffer = new char[BlockSize+SafetyMargin];
+	Buffer = new uint8_t[BlockSize+SafetyMargin];
 	if (control == COMPRESS) {
-		Buffer2 = new char[BlockSize+SafetyMargin];
+		Buffer2 = new uint8_t[BlockSize+SafetyMargin];
 	}
 }
 
@@ -160,20 +160,20 @@ int LZOStraw::Get(void * destbuf, int slen)
 			int incount = Straw::Get(&BlockHeader, sizeof(BlockHeader));
 			if (incount != sizeof(BlockHeader)) break;
 
-			char *staging_buffer = new char [BlockHeader.CompCount];
+			uint8_t *staging_buffer = new uint8_t [BlockHeader.CompCount];
 			incount = Straw::Get(staging_buffer, BlockHeader.CompCount);
 			if (incount != BlockHeader.CompCount) break;
-			unsigned int length = sizeof(Buffer);
-			lzo1x_decompress ((unsigned char*)staging_buffer, BlockHeader.CompCount, (unsigned char*)Buffer, &length, NULL);
+			uint32_t length = sizeof(Buffer);
+			lzo1x_decompress ((uint8_t*)staging_buffer, BlockHeader.CompCount, (uint8_t*)Buffer, &length, NULL);
 			delete [] staging_buffer;
 			Counter = BlockHeader.UncompCount;
 		} else {
-			BlockHeader.UncompCount = (unsigned short)Straw::Get(Buffer, BlockSize);
+			BlockHeader.UncompCount = (uint16_t)Straw::Get(Buffer, BlockSize);
 			if (BlockHeader.UncompCount == 0) break;
-			char *dictionary = new char [64*1024];
-			unsigned int length = sizeof (Buffer2) - sizeof (BlockHeader);
-			lzo1x_1_compress ((unsigned char*)Buffer, BlockHeader.UncompCount, (unsigned char*)(&Buffer2[sizeof(BlockHeader)]), &length, dictionary);
-			BlockHeader.CompCount = (unsigned short)length;
+			uint8_t *dictionary = new uint8_t [64*1024];
+			uint32_t length = sizeof (Buffer2) - sizeof (BlockHeader);
+			lzo1x_1_compress ((uint8_t*)Buffer, BlockHeader.UncompCount, (uint8_t*)(&Buffer2[sizeof(BlockHeader)]), &length, dictionary);
+			BlockHeader.CompCount = (uint16_t)length;
 			delete [] dictionary;
 			memmove(Buffer2, &BlockHeader, sizeof(BlockHeader));
 			Counter = BlockHeader.CompCount+sizeof(BlockHeader);

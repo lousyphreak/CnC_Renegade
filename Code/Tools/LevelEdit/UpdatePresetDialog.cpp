@@ -105,7 +105,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 UpdatePresetDialogClass::OnInitDialog (void) 
 {
 	CDialog::OnInitDialog ();

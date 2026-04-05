@@ -89,7 +89,7 @@ END_MESSAGE_MAP()
 //
 //	ColorSelectionDialogClass
 //
-BOOL
+int32_t
 ColorSelectionDialogClass::OnInitDialog (void)
 {
 	// Allow the base class to process this message
@@ -112,7 +112,7 @@ ColorSelectionDialogClass::OnInitDialog (void)
 	    (red_value == blue_value)) {
 
 		// Check the grayscale checkbox
-		SendDlgItemMessage (IDC_GRAYSCALE_CHECK, BM_SETCHECK, (WPARAM)TRUE);
+		SendDlgItemMessage (IDC_GRAYSCALE_CHECK, BM_SETCHECK, (uintptr_t)TRUE);
 	}
 
 	// Set the initial slider positions
@@ -149,8 +149,8 @@ ColorSelectionDialogClass::OnOK (void)
 void
 ColorSelectionDialogClass::OnHScroll
 (
-	UINT nSBCode,
-	UINT nPos,
+	uint32_t nSBCode,
+	uint32_t nPos,
 	CScrollBar *pScrollBar
 )
 {
@@ -248,7 +248,7 @@ ColorSelectionDialogClass::OnChangeBlueEdit (void)
 		Update_Sliders (IDC_SLIDER_BLUE);
 
 		// Reset the cursor to the end of the edit box
-		SendDlgItemMessage (IDC_BLUE_EDIT, EM_SETSEL, (WPARAM)(int)10, (LPARAM)(int)20);
+		SendDlgItemMessage (IDC_BLUE_EDIT, EM_SETSEL, (uintptr_t)(int)10, (intptr_t)(int)20);
 	}
 
 	return ;
@@ -270,7 +270,7 @@ ColorSelectionDialogClass::OnChangeGreenEdit (void)
 		Update_Sliders (IDC_SLIDER_GREEN);
 
 		// Reset the cursor to the end of the edit box
-		SendDlgItemMessage (IDC_GREEN_EDIT, EM_SETSEL, (WPARAM)(int)10, (LPARAM)(int)20);
+		SendDlgItemMessage (IDC_GREEN_EDIT, EM_SETSEL, (uintptr_t)(int)10, (intptr_t)(int)20);
 	}
 
 	return ;
@@ -292,7 +292,7 @@ ColorSelectionDialogClass::OnChangeRedEdit (void)
 		Update_Sliders (IDC_SLIDER_RED);
 
 		// Reset the cursor to the end of the edit box
-		SendDlgItemMessage (IDC_RED_EDIT, EM_SETSEL, (WPARAM)(int)10, (LPARAM)(int)20);
+		SendDlgItemMessage (IDC_RED_EDIT, EM_SETSEL, (uintptr_t)(int)10, (intptr_t)(int)20);
 	}
 
 	return ;

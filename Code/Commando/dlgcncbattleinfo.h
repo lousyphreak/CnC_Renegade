@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __DLGCNCBATTLEINFO_H
@@ -83,7 +85,7 @@ private:
 	void		Populate_Player_List (ListCtrlClass *list_ctrl, int team_id);
 	void		Build_Player_Display_Name(const cPlayer* player, WideStringClass& outName);
 	
-	static int CALLBACK ListSortCallback (ListCtrlClass *list_ctrl, int item_index1, int item_index2, uint32 user_param);
+	static int CALLBACK ListSortCallback (ListCtrlClass *list_ctrl, int item_index1, int item_index2, uint32_t user_param);
 	
 	///////////////////////////////////////////////////////////////////
 	//	Private member data

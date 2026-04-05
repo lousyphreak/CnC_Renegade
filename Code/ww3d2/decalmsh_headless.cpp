@@ -18,12 +18,12 @@ RigidDecalMeshClass::~RigidDecalMeshClass() = default;
 
 void RigidDecalMeshClass::Render() {}
 
-bool RigidDecalMeshClass::Create_Decal(DecalGeneratorClass *, const OBBoxClass &, SimpleDynVecClass<uint32> &, const DynamicVectorClass<Vector3> *)
+bool RigidDecalMeshClass::Create_Decal(DecalGeneratorClass *, const OBBoxClass &, SimpleDynVecClass<uint32_t> &, const DynamicVectorClass<Vector3> *)
 {
     return false;
 }
 
-bool RigidDecalMeshClass::Delete_Decal(uint32)
+bool RigidDecalMeshClass::Delete_Decal(uint32_t)
 {
     return false;
 }
@@ -42,12 +42,12 @@ SkinDecalMeshClass::~SkinDecalMeshClass() = default;
 
 void SkinDecalMeshClass::Render() {}
 
-bool SkinDecalMeshClass::Create_Decal(DecalGeneratorClass *, const OBBoxClass &, SimpleDynVecClass<uint32> &, const DynamicVectorClass<Vector3> *)
+bool SkinDecalMeshClass::Create_Decal(DecalGeneratorClass *, const OBBoxClass &, SimpleDynVecClass<uint32_t> &, const DynamicVectorClass<Vector3> *)
 {
     return false;
 }
 
-bool SkinDecalMeshClass::Delete_Decal(uint32)
+bool SkinDecalMeshClass::Delete_Decal(uint32_t)
 {
     return false;
 }

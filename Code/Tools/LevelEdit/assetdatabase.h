@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __ASSETDATABASE_H
@@ -121,7 +123,7 @@ public:
 		//
 		// User information
 		//
-		virtual BOOL				Is_Read_Only (void) const	{ return TRUE; }
+		virtual int32_t				Is_Read_Only (void) const	{ return TRUE; }
 
 protected:
 	

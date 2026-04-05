@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __MAP_CTRL_H
@@ -86,14 +88,14 @@ public:
 	const Vector3 &	Get_Position (void) const				{ return Position; }
 	const WCHAR *		Get_Name (void) const					{ return Name; }
 	const RectClass &	Get_Rect (void) const					{ return UVRect; }
-	uint32				Get_User_Data (void)	const				{ return UserData; }
-	uint32				Get_Color (void) const					{ return Color; }
+	uint32_t				Get_User_Data (void)	const				{ return UserData; }
+	uint32_t				Get_Color (void) const					{ return Color; }
 	
 	void					Set_Position (const Vector3 &pos)	{ Position = pos; }
 	void					Set_Name (const WCHAR *name)			{ Name = name; }
 	void					Set_Rect (const RectClass &rect)		{ UVRect = rect; }
-	void					Set_User_Data (uint32 data)			{ UserData = data; }
-	void					Set_Color (uint32 color)				{ Color = color; }
+	void					Set_User_Data (uint32_t data)			{ UserData = data; }
+	void					Set_Color (uint32_t color)				{ Color = color; }
 
 protected:
 
@@ -103,8 +105,8 @@ protected:
 	Vector3				Position;
 	WideStringClass	Name;
 	RectClass			UVRect;
-	uint32				UserData;
-	uint32				Color;
+	uint32_t				UserData;
+	uint32_t				Color;
 };
 
 
@@ -162,8 +164,8 @@ public:
 	//	Marker control
 	//
 	int				Add_Marker (const WCHAR *name, const Vector3 &pos, const RectClass &uv_rect, int color = 0xFFFFFFFF);
-	uint32			Get_Marker_Data (int index);
-	void				Set_Marker_Data (int index, uint32 user_data);
+	uint32_t			Get_Marker_Data (int index);
+	void				Set_Marker_Data (int index, uint32_t user_data);
 	void				Remove_Marker (int index);
 
 	//
@@ -236,7 +238,7 @@ protected:
 	Vector2					MapCenterPoint;
 	Vector2					MapScale;
 
-	uint32 *					CloudVector;
+	uint32_t *					CloudVector;
 	Vector2i					CloudSize;
 
 	DynamicVectorClass<MapMarkerClass>	MarkerList;

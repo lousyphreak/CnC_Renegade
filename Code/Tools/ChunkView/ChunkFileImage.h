@@ -38,6 +38,8 @@
 #ifndef CHUNKFILEIMAGE_H
 #define CHUNKFILEIMAGE_H
 
+#include <cstdint>
+
 
 #include "bittype.h"
 
@@ -74,9 +76,9 @@ public:
 	void									Load(ChunkLoadClass & cload);
 	void									Add_Child(ChunkImageClass * child);	
 
-	uint32								Get_ID(void) const								{ return ID; }
-	uint32								Get_Length(void) const							{ return Length; }
-	const uint8 *						Get_Data(void)	const								{ return Data; }
+	uint32_t								Get_ID(void) const								{ return ID; }
+	uint32_t								Get_Length(void) const							{ return Length; }
+	const uint8_t *						Get_Data(void)	const								{ return Data; }
 
 	int									Get_Child_Count(void) const;
 	const ChunkImageClass *			Get_Child(int i) const;
@@ -90,9 +92,9 @@ protected:
 
 	ChunkImageClass *					Child;
 	ChunkImageClass *					Sibling;
-	unsigned char *					Data;
-	unsigned long						ID;
-	unsigned long						Length;
+	uint8_t *					Data;
+	uint32_t						ID;
+	uint32_t						Length;
 
 	friend class ChunkFileImageClass;
 };

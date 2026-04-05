@@ -19,6 +19,8 @@
 #ifndef _SHELLEXT_H
 #define _SHELLEXT_H
 
+#include <cstdint>
+
 #define MAX_TEXTURES_INFILE	32
 #define MAX_TEXUTRE_NAME_LEN	32
 #define MAX_MESH					128
@@ -59,7 +61,7 @@ DEFINE_GUID(CLSID_ShellExtension, 0x556f8779L, 0x49c4, 0x4e88, 0x9c, 0xef, 0x0a,
 class CShellExtClassFactory : public IClassFactory
 {
 protected:
-	ULONG	m_cRef;
+	uint32_t	m_cRef;
 
 public:
 	CShellExtClassFactory();
@@ -67,12 +69,12 @@ public:
 
 	//IUnknown members
 	STDMETHODIMP			QueryInterface(REFIID, LPVOID FAR *);
-	STDMETHODIMP_(ULONG)	AddRef();
-	STDMETHODIMP_(ULONG)	Release();
+	STDMETHODIMP_(uint32_t)	AddRef();
+	STDMETHODIMP_(uint32_t)	Release();
 
 	//IClassFactory members
 	STDMETHODIMP		CreateInstance(LPUNKNOWN, REFIID, LPVOID FAR *);
-	STDMETHODIMP		LockServer(BOOL);
+	STDMETHODIMP		LockServer(int32_t);
 
 };
 typedef CShellExtClassFactory *LPCSHELLEXTCLASSFACTORY;
@@ -87,7 +89,7 @@ public:
 void Read_SelectedFile();
 protected:
 //	ITEMIDLIST m_idFolder;
-	ULONG        m_cRef;
+	uint32_t        m_cRef;
 	LPDATAOBJECT m_pDataObj;
     char         m_szFileUserClickedOn[MAX_PATH];
 	STDMETHODIMP DoW3DMenu1(HWND hParent, LPCSTR pszWorkingDir, LPCSTR pszCmd,LPCSTR pszParam, int iShowCmd);
@@ -99,30 +101,30 @@ public:
 
 	//IUnknown members
 	STDMETHODIMP			QueryInterface(REFIID, LPVOID FAR *);
-	STDMETHODIMP_(ULONG)	AddRef();
-	STDMETHODIMP_(ULONG)	Release();
+	STDMETHODIMP_(uint32_t)	AddRef();
+	STDMETHODIMP_(uint32_t)	Release();
 
 	//IShell members
-	STDMETHODIMP			QueryContextMenu(HMENU hMenu, UINT indexMenu, UINT idCmdFirst, UINT idCmdLast, UINT uFlags);
+	STDMETHODIMP			QueryContextMenu(HMENU hMenu, uint32_t indexMenu, uint32_t idCmdFirst, uint32_t idCmdLast, uint32_t uFlags);
 	STDMETHODIMP			InvokeCommand(LPCMINVOKECOMMANDINFO lpcmi);
-	STDMETHODIMP			GetCommandString(UINT idCmd, UINT uFlags, UINT FAR *reserved, LPSTR pszName, UINT cchMax);
+	STDMETHODIMP			GetCommandString(uint32_t idCmd, uint32_t uFlags, uint32_t FAR *reserved, LPSTR pszName, uint32_t cchMax);
 	//IShellExtInit methods
 	STDMETHODIMP		    Initialize(LPCITEMIDLIST pIDFolder, LPDATAOBJECT pDataObj, HKEY hKeyID);
     //IExtractIcon methods
-    STDMETHODIMP GetIconLocation(UINT   uFlags,LPSTR  szIconFile,UINT   cchMax,int   *piIndex,UINT  *pwFlags);
-    STDMETHODIMP Extract(LPCSTR pszFile,UINT   nIconIndex,HICON  *phiconLarge,HICON  *phiconSmall,UINT   nIconSize);
+    STDMETHODIMP GetIconLocation(uint32_t   uFlags,LPSTR  szIconFile,uint32_t   cchMax,int   *piIndex,uint32_t  *pwFlags);
+    STDMETHODIMP Extract(LPCSTR pszFile,uint32_t   nIconIndex,HICON  *phiconLarge,HICON  *phiconSmall,uint32_t   nIconSize);
     //IPersistFile methods
     STDMETHODIMP GetClassID(LPCLSID lpClassID);
     STDMETHODIMP IsDirty();
-    STDMETHODIMP Load(LPCOLESTR lpszFileName, DWORD grfMode);
-    STDMETHODIMP Save(LPCOLESTR lpszFileName, BOOL fRemember);
+    STDMETHODIMP Load(LPCOLESTR lpszFileName, uint32_t grfMode);
+    STDMETHODIMP Save(LPCOLESTR lpszFileName, int32_t fRemember);
     STDMETHODIMP SaveCompleted(LPCOLESTR lpszFileName);
     STDMETHODIMP GetCurFile(LPOLESTR FAR* lplpszFileName);
     //IShellPropSheetExt methods
-    STDMETHODIMP AddPages(LPFNADDPROPSHEETPAGE lpfnAddPage, LPARAM lParam);
-    STDMETHODIMP ReplacePage(UINT uPageID, LPFNADDPROPSHEETPAGE lpfnReplaceWith, LPARAM lParam);
+    STDMETHODIMP AddPages(LPFNADDPROPSHEETPAGE lpfnAddPage, intptr_t lParam);
+    STDMETHODIMP ReplacePage(uint32_t uPageID, LPFNADDPROPSHEETPAGE lpfnReplaceWith, intptr_t lParam);
     //ICopyHook method
-    STDMETHODIMP_(UINT) CopyCallback(HWND hwnd, UINT wFunc, UINT wFlags, LPCSTR pszSrcFile, DWORD dwSrcAttribs,LPCSTR pszDestFile, DWORD dwDestAttribs);
+    STDMETHODIMP_(uint32_t) CopyCallback(HWND hwnd, uint32_t wFunc, uint32_t wFlags, LPCSTR pszSrcFile, uint32_t dwSrcAttribs,LPCSTR pszDestFile, uint32_t dwDestAttribs);
 public:
 	W3dAnimHeaderStruct	m_AnimInfos[MAX_ANIMS_INFILE];
 	W3dHierarchyStruct	m_Hierarchies[MAX_ANIMS_INFILE];

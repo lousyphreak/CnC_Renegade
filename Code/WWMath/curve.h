@@ -37,6 +37,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef CURVE_H
 #define CURVE_H
 
@@ -131,9 +133,9 @@ public:
 	virtual bool		Is_Looping(void);
 	virtual void		Set_Looping(bool onoff);
 	virtual int			Key_Count(void);
-	virtual void		Get_Key(int i,float * set_point,float * set_t,unsigned int * extra=NULL);
-	virtual void		Set_Key(int i,float point,unsigned int extra=0);
-	virtual int			Add_Key(float point,float t,unsigned int extra=0);
+	virtual void		Get_Key(int i,float * set_point,float * set_t,uint32_t * extra=NULL);
+	virtual void		Set_Key(int i,float point,uint32_t extra=0);
+	virtual int			Add_Key(float point,float t,uint32_t extra=0);
 	virtual void		Remove_Key(int i);
 	virtual void		Clear_Keys(void);
 	float					Get_Start_Time(void);
@@ -152,7 +154,7 @@ protected:
 	public:
 		float			Point;
 		float			Time;
-		unsigned int	Extra;
+		uint32_t	Extra;
 		bool operator == (const KeyClass & that) { return ((Point == that.Point) && (Time == that.Time) && (Extra == that.Extra)); }
 		bool operator != (const KeyClass & that) { return !KeyClass::operator==(that); }
 	};

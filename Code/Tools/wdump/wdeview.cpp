@@ -78,7 +78,7 @@ void CWDumpEditView::Dump(CDumpContext& dc) const
 /////////////////////////////////////////////////////////////////////////////
 // CWDumpEditView message handlers
 
-void CWDumpEditView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint) 
+void CWDumpEditView::OnUpdate(CView* pSender, intptr_t lHint, CObject* pHint) 
 {
 	// TODO: Add your specialized code here and/or call the base class
 	CEdit &edit = GetEditCtrl();
@@ -90,7 +90,7 @@ void CWDumpEditView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 		edit.SetWindowText("Load a chunk file and select the chunk in the tree view to see it's hex data here.");
 		return; // no selected chunk item, leave a clear screen.
 	}
-	char *text = Build_Hex_Text((unsigned char *) item->Data, item->Length);
+	char *text = Build_Hex_Text((uint8_t *) item->Data, item->Length);
 
 	edit.SetWindowText(text);
 
@@ -98,7 +98,7 @@ void CWDumpEditView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 }
 
 
-char * CWDumpEditView::Build_Hex_Text(unsigned char * Source, int Length)
+char * CWDumpEditView::Build_Hex_Text(uint8_t * Source, int Length)
 {
 	if(Source == 0) {
 			char *c = new char[256];

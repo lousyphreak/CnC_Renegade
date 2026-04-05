@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // PhysObjEditDialog.h : header file
 //
@@ -97,7 +99,7 @@ private:
 	///////////////////////////////////////////////////////////////////
 	ModelDefParameterClass *	m_PhysDefParam;
 	SpecSheetClass	*			m_ParamSheet;
-	unsigned int				m_DefinitionID;
+	uint32_t				m_DefinitionID;
 	CString						m_FilterString;
 	bool							m_IsTemp;
 	bool							m_ReadOnly;

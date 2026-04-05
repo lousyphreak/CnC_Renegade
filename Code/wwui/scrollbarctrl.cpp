@@ -571,7 +571,7 @@ ScrollBarCtrlClass::On_Kill_Focus (DialogControlClass *focus)
 //
 ////////////////////////////////////////////////////////////////
 bool
-ScrollBarCtrlClass::On_Key_Down (uint32 key_id, uint32 key_data)
+ScrollBarCtrlClass::On_Key_Down (uint32_t key_id, uint32_t key_data)
 {
 	bool handled = true;
 

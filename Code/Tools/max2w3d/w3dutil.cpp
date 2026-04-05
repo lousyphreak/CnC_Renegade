@@ -58,9 +58,9 @@
 #define DAZZLE_SECTION_BUFFERSIZE	32767
 
 
-static BOOL CALLBACK _settings_form_dlg_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK _w3d_utility_tools_dlg_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK _w3d_utility_cstools_dlg_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+static int32_t CALLBACK _settings_form_dlg_proc(HWND hWnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
+static int32_t CALLBACK _w3d_utility_tools_dlg_proc(HWND hWnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
+static int32_t CALLBACK _w3d_utility_cstools_dlg_proc(HWND hWnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
 
 static VisibleSelectedINodeFilter _INodeFilter;
 
@@ -123,7 +123,7 @@ public:
 	SettingsFormClass(HWND hwnd);
 	~SettingsFormClass(void);
 
-	bool		Dialog_Proc(HWND hWnd,UINT message,WPARAM wParam,LPARAM);
+	bool		Dialog_Proc(HWND hWnd,uint32_t message,uintptr_t wParam,intptr_t);
 	void		Selection_Changed(void);
 
 	static void	Update_All_Instances(void);
@@ -317,7 +317,7 @@ class W3DUtilityClassDesc:public ClassDesc
 public:
 
 	int 				IsPublic()								{ return 1; }
-	void *			Create(BOOL loading = FALSE)		{ return &TheW3DUtility; }
+	void *			Create(int32_t loading = FALSE)		{ return &TheW3DUtility; }
 	const TCHAR *	ClassName()								{ return Get_String(IDS_W3D_UTILITY_CLASS_NAME); }
 	SClass_ID		SuperClassID()							{ return UTILITY_CLASS_ID; }
 	Class_ID			ClassID()								{ return W3DUtilityClassID; }
@@ -472,7 +472,7 @@ void W3DUtilityClass::eval_node_states(INodeListClass * list,NodeStatesStruct * 
 	/*
 	** evaluate each node
 	*/
-	for (unsigned int ni=0; ni<list->Num_Nodes(); ni++) {
+	for (uint32_t ni=0; ni<list->Num_Nodes(); ni++) {
 		
 		W3DAppData2Struct * wdata = get_app_data_2((*list)[ni]);
 		assert(wdata);
@@ -550,7 +550,7 @@ void W3DUtilityClass::update_settings_controls(INodeListClass * node_list)
 
 void	W3DUtilityClass::set_hierarchy_in_all_selected(INodeListClass * node_list,bool onoff)
 {
-	for (unsigned int ni=0; ni<node_list->Num_Nodes(); ni++) {
+	for (uint32_t ni=0; ni<node_list->Num_Nodes(); ni++) {
 		W3DAppData2Struct * wdata = get_app_data_2((*node_list)[ni]);
 		wdata->Enable_Export_Transform(onoff);
 	}
@@ -559,7 +559,7 @@ void	W3DUtilityClass::set_hierarchy_in_all_selected(INodeListClass * node_list,b
 
 void	W3DUtilityClass::set_geometry_in_all_selected(INodeListClass * node_list,bool onoff)
 {
-	for (unsigned int ni=0; ni<node_list->Num_Nodes(); ni++) {
+	for (uint32_t ni=0; ni<node_list->Num_Nodes(); ni++) {
 		W3DAppData2Struct * wdata = get_app_data_2((*node_list)[ni]);
 		wdata->Enable_Export_Geometry(onoff);
 	}
@@ -568,7 +568,7 @@ void	W3DUtilityClass::set_geometry_in_all_selected(INodeListClass * node_list,bo
 
 void	W3DUtilityClass::enable_hidden_in_all_selected(INodeListClass * node_list,bool onoff)
 {
-	for (unsigned int ni=0; ni<node_list->Num_Nodes(); ni++) {
+	for (uint32_t ni=0; ni<node_list->Num_Nodes(); ni++) {
 		W3DAppData2Struct * wdata = get_app_data_2((*node_list)[ni]);
 		wdata->Enable_Hidden(onoff);
 	}
@@ -577,7 +577,7 @@ void	W3DUtilityClass::enable_hidden_in_all_selected(INodeListClass * node_list,b
 
 void	W3DUtilityClass::enable_two_sided_in_all_selected(INodeListClass * node_list,bool onoff)
 {
-	for (unsigned int ni=0; ni<node_list->Num_Nodes(); ni++) {
+	for (uint32_t ni=0; ni<node_list->Num_Nodes(); ni++) {
 		W3DAppData2Struct * wdata = get_app_data_2((*node_list)[ni]);
 		wdata->Enable_Two_Sided(onoff);
 	}
@@ -586,7 +586,7 @@ void	W3DUtilityClass::enable_two_sided_in_all_selected(INodeListClass * node_lis
 
 void	W3DUtilityClass::enable_znormals_in_all_selected(INodeListClass * node_list,bool onoff)
 {
-	for (unsigned int ni=0; ni<node_list->Num_Nodes(); ni++) {
+	for (uint32_t ni=0; ni<node_list->Num_Nodes(); ni++) {
 		W3DAppData2Struct * wdata = get_app_data_2((*node_list)[ni]);
 		wdata->Enable_ZNormals(onoff);
 	}
@@ -595,7 +595,7 @@ void	W3DUtilityClass::enable_znormals_in_all_selected(INodeListClass * node_list
 
 void	W3DUtilityClass::enable_vertex_alpha_in_all_selected(INodeListClass * node_list,bool onoff)
 {
-	for (unsigned int ni=0; ni<node_list->Num_Nodes(); ni++) {
+	for (uint32_t ni=0; ni<node_list->Num_Nodes(); ni++) {
 		W3DAppData2Struct * wdata = get_app_data_2((*node_list)[ni]);
 		wdata->Enable_Vertex_Alpha(onoff);
 	}
@@ -604,7 +604,7 @@ void	W3DUtilityClass::enable_vertex_alpha_in_all_selected(INodeListClass * node_
 
 void	W3DUtilityClass::enable_shadow_in_all_selected(INodeListClass * node_list,bool onoff)
 {
-	for (unsigned int ni=0; ni<node_list->Num_Nodes(); ni++) {
+	for (uint32_t ni=0; ni<node_list->Num_Nodes(); ni++) {
 		W3DAppData2Struct * wdata = get_app_data_2((*node_list)[ni]);
 		wdata->Enable_Shadow(onoff);
 	}
@@ -613,7 +613,7 @@ void	W3DUtilityClass::enable_shadow_in_all_selected(INodeListClass * node_list,b
 
 void	W3DUtilityClass::enable_shatterable_in_all_selected(INodeListClass * node_list,bool onoff)
 {
-	for (unsigned int ni=0; ni<node_list->Num_Nodes(); ni++) {
+	for (uint32_t ni=0; ni<node_list->Num_Nodes(); ni++) {
 		W3DAppData2Struct * wdata = get_app_data_2((*node_list)[ni]);
 		wdata->Enable_Shatterable(onoff);
 	}
@@ -622,7 +622,7 @@ void	W3DUtilityClass::enable_shatterable_in_all_selected(INodeListClass * node_l
 
 void	W3DUtilityClass::enable_npatches_in_all_selected(INodeListClass * node_list,bool onoff)
 {
-	for (unsigned int ni=0; ni<node_list->Num_Nodes(); ni++) {
+	for (uint32_t ni=0; ni<node_list->Num_Nodes(); ni++) {
 		W3DAppData2Struct * wdata = get_app_data_2((*node_list)[ni]);
 		wdata->Enable_NPatchable(onoff);
 	}
@@ -631,7 +631,7 @@ void	W3DUtilityClass::enable_npatches_in_all_selected(INodeListClass * node_list
 
 void	W3DUtilityClass::enable_physical_collision_in_all_selected(INodeListClass * node_list,bool onoff)
 {
-	for (unsigned int ni=0; ni<node_list->Num_Nodes(); ni++) {
+	for (uint32_t ni=0; ni<node_list->Num_Nodes(); ni++) {
 		W3DAppData2Struct * wdata = get_app_data_2((*node_list)[ni]);
 		wdata->Enable_Physical_Collision(onoff);
 	}
@@ -640,7 +640,7 @@ void	W3DUtilityClass::enable_physical_collision_in_all_selected(INodeListClass *
 
 void	W3DUtilityClass::enable_projectile_collision_in_all_selected(INodeListClass * node_list,bool onoff)
 {
-	for (unsigned int ni=0; ni<node_list->Num_Nodes(); ni++) {
+	for (uint32_t ni=0; ni<node_list->Num_Nodes(); ni++) {
 		W3DAppData2Struct * wdata = get_app_data_2((*node_list)[ni]);
 		wdata->Enable_Projectile_Collision(onoff);
 	}
@@ -649,7 +649,7 @@ void	W3DUtilityClass::enable_projectile_collision_in_all_selected(INodeListClass
 
 void	W3DUtilityClass::enable_vis_collision_in_all_selected(INodeListClass * node_list,bool onoff)
 {
-	for (unsigned int ni=0; ni<node_list->Num_Nodes(); ni++) {
+	for (uint32_t ni=0; ni<node_list->Num_Nodes(); ni++) {
 		W3DAppData2Struct * wdata = get_app_data_2((*node_list)[ni]);
 		wdata->Enable_Vis_Collision(onoff);
 	}
@@ -658,7 +658,7 @@ void	W3DUtilityClass::enable_vis_collision_in_all_selected(INodeListClass * node
 
 void	W3DUtilityClass::enable_camera_collision_in_all_selected(INodeListClass * node_list,bool onoff)
 {
-	for (unsigned int ni=0; ni<node_list->Num_Nodes(); ni++) {
+	for (uint32_t ni=0; ni<node_list->Num_Nodes(); ni++) {
 		W3DAppData2Struct * wdata = get_app_data_2((*node_list)[ni]);
 		wdata->Enable_Camera_Collision(onoff);
 	}
@@ -667,7 +667,7 @@ void	W3DUtilityClass::enable_camera_collision_in_all_selected(INodeListClass * n
 
 void	W3DUtilityClass::enable_vehicle_collision_in_all_selected(INodeListClass * node_list,bool onoff)
 {
-	for (unsigned int ni=0; ni<node_list->Num_Nodes(); ni++) {
+	for (uint32_t ni=0; ni<node_list->Num_Nodes(); ni++) {
 		W3DAppData2Struct * wdata = get_app_data_2((*node_list)[ni]);
 		wdata->Enable_Vehicle_Collision(onoff);
 	}
@@ -676,7 +676,7 @@ void	W3DUtilityClass::enable_vehicle_collision_in_all_selected(INodeListClass * 
 
 void	W3DUtilityClass::set_geometry_type_in_all_selected(INodeListClass * node_list,int geotype)
 {
-	for (unsigned int ni=0; ni<node_list->Num_Nodes(); ni++) {
+	for (uint32_t ni=0; ni<node_list->Num_Nodes(); ni++) {
 		W3DAppData2Struct * wdata = get_app_data_2((*node_list)[ni]);
 		wdata->Set_Geometry_Type((W3DAppData2Struct::GeometryTypeEnum)geotype);
 	}
@@ -685,7 +685,7 @@ void	W3DUtilityClass::set_geometry_type_in_all_selected(INodeListClass * node_li
 
 void W3DUtilityClass::set_dazzle_type_in_all_selected(INodeListClass * node_list,char * dazzle_type)
 {
-	for (unsigned int ni=0; ni<node_list->Num_Nodes(); ni++) {
+	for (uint32_t ni=0; ni<node_list->Num_Nodes(); ni++) {
 		W3DDazzleAppDataStruct * dazzledata = get_dazzle_app_data((*node_list)[ni]);
 		strncpy(dazzledata->DazzleType,dazzle_type,sizeof(dazzledata->DazzleType) - 1);
 	}
@@ -1382,7 +1382,7 @@ W3DDazzleAppDataStruct * W3DUtilityClass::get_dazzle_app_data(INode * node)
 ** Dialog procs for the W3DUtilityClass
 **
 **********************************************************************************************/
-static BOOL CALLBACK _w3d_utility_cstools_dlg_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
+static int32_t CALLBACK _w3d_utility_cstools_dlg_proc(HWND hWnd, uint32_t msg, uintptr_t wParam, intptr_t lParam){
 	switch (msg) {
 		case WM_LBUTTONDOWN:
 		case WM_LBUTTONUP:
@@ -1412,7 +1412,7 @@ static BOOL CALLBACK _w3d_utility_cstools_dlg_proc(HWND hWnd, UINT msg, WPARAM w
 ** Dialog procs for the W3DUtilityClass
 **
 **********************************************************************************************/
-static BOOL CALLBACK _w3d_utility_tools_dlg_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+static int32_t CALLBACK _w3d_utility_tools_dlg_proc(HWND hWnd, uint32_t msg, uintptr_t wParam, intptr_t lParam)
 {
 	switch (msg) {
 
@@ -1498,7 +1498,7 @@ static BOOL CALLBACK _w3d_utility_tools_dlg_proc(HWND hWnd, UINT msg, WPARAM wPa
 **********************************************************************************************/
 SettingsFormClass *	SettingsFormClass::ActiveList = NULL;
 
-BOOL CALLBACK _settings_form_dlg_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+int32_t CALLBACK _settings_form_dlg_proc(HWND hWnd, uint32_t msg, uintptr_t wParam, intptr_t lParam)
 {
 	if (msg == WM_INITDIALOG) {
 		SettingsFormClass * form = new SettingsFormClass(hWnd);
@@ -1620,15 +1620,15 @@ void SettingsFormClass::Init(void)
 			entry = strchr(entry,'=');
 			if (entry != NULL) {
 				entry++;
-				::SendMessage(dazzle_combo,CB_ADDSTRING,0,(LPARAM)entry);
+				::SendMessage(dazzle_combo,CB_ADDSTRING,0,(intptr_t)entry);
 				entry += strlen(entry) + 1;
 			}
 		}
 	} else {
-		::SendMessage(dazzle_combo,CB_ADDSTRING,0,(LPARAM)"Default");
+		::SendMessage(dazzle_combo,CB_ADDSTRING,0,(intptr_t)"Default");
 	}
 
-	::SendMessage(dazzle_combo,CB_SETCURSEL,(WPARAM)0,0);
+	::SendMessage(dazzle_combo,CB_SETCURSEL,(uintptr_t)0,0);
 
 	delete dazzle_types_buffer;
 
@@ -1651,7 +1651,7 @@ void SettingsFormClass::Destroy(void)
 	RegionSpin = NULL;
 }
 
-bool SettingsFormClass::Dialog_Proc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
+bool SettingsFormClass::Dialog_Proc(HWND hWnd,uint32_t message,uintptr_t wParam,intptr_t lParam)
 {
 	int check;
 
@@ -1807,7 +1807,7 @@ bool SettingsFormClass::Dialog_Proc(HWND hWnd,UINT message,WPARAM wParam,LPARAM 
 							int cursel = ::SendMessage(dazzle_combo,CB_GETCURSEL,0,0);
 							int len = ::SendMessage(dazzle_combo,CB_GETLBTEXTLEN,cursel,0);
 							if (len < 128) {
-								::SendMessage(dazzle_combo,CB_GETLBTEXT,(WPARAM)cursel,(LPARAM)dazzle_type);
+								::SendMessage(dazzle_combo,CB_GETLBTEXT,(uintptr_t)cursel,(intptr_t)dazzle_type);
 								W3DUtilityClass::set_dazzle_type_in_all_selected(&node_list,dazzle_type);
 							}
 						}
@@ -1982,7 +1982,7 @@ void SettingsFormClass::Update_Controls(INodeListClass * node_list)
 	** The damage region spinner should only be enabled if
 	** Export Hierarchy is checked for all selected nodes.
 	*/
-	BOOL spinner_enable = false;
+	int32_t spinner_enable = false;
 	if (ns.ExportHierarchy == 1)
 	{
 		if (ns.DamageRegion != MAX_DAMAGE_REGIONS)
@@ -2015,11 +2015,11 @@ void SettingsFormClass::Update_Controls(INodeListClass * node_list)
 	}
 	HWND dazzle_combo = GetDlgItem(Hwnd,IDC_DAZZLE_COMBO);
 	EnableWindow(dazzle_combo,dazzle_combo_enable);
-	int selindex = ::SendMessage(dazzle_combo,CB_FINDSTRING,(WPARAM)0,(LPARAM)ns.DazzleType);
+	int selindex = ::SendMessage(dazzle_combo,CB_FINDSTRING,(uintptr_t)0,(intptr_t)ns.DazzleType);
 	if (selindex != CB_ERR) {
-		::SendMessage(dazzle_combo,CB_SETCURSEL,(WPARAM)selindex,(LPARAM)0);
+		::SendMessage(dazzle_combo,CB_SETCURSEL,(uintptr_t)selindex,(intptr_t)0);
 	} else {
-		::SendMessage(dazzle_combo,CB_SETCURSEL,(WPARAM)0,(LPARAM)0);
+		::SendMessage(dazzle_combo,CB_SETCURSEL,(uintptr_t)0,(intptr_t)0);
 	}
 
 	/*

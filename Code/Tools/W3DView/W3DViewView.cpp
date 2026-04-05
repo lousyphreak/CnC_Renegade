@@ -54,7 +54,7 @@ CW3DViewView::~CW3DViewView()
 {
 }
 
-BOOL CW3DViewView::PreCreateWindow(CREATESTRUCT& cs)
+int32_t CW3DViewView::PreCreateWindow(CREATESTRUCT& cs)
 {
 	// TODO: Modify the Window class or styles here by modifying
 	//  the CREATESTRUCT cs

@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __DEFINITION_H
@@ -78,9 +80,9 @@ public:
 	/////////////////////////////////////////////////////////////////////
 	
 	// Type identification
-	virtual uint32						Get_Class_ID (void) const = 0;
-	virtual uint32						Get_ID (void) const;
-	virtual void						Set_ID (uint32 id);
+	virtual uint32_t						Get_Class_ID (void) const = 0;
+	virtual uint32_t						Get_ID (void) const;
+	virtual void						Set_ID (uint32_t id);
 	virtual PersistClass *			Create (void) const = 0;
 
 	// Display name methods
@@ -95,8 +97,8 @@ public:
 	virtual bool						Load (ChunkLoadClass &cload);
 
 	// User data support
-	uint32								Get_User_Data (void) const		{ return m_GenericUserData; }
-	void									Set_User_Data (uint32 data)	{ m_GenericUserData = data; }
+	uint32_t								Get_User_Data (void) const		{ return m_GenericUserData; }
+	void									Set_User_Data (uint32_t data)	{ m_GenericUserData = data; }
 
 	// Save support
 	bool									Is_Save_Enabled (void) const	{ return m_SaveEnabled; }
@@ -121,8 +123,8 @@ private:
 	//	Private member data
 	/////////////////////////////////////////////////////////////////////
 	StringClass				m_Name;
-	uint32					m_ID;
-	uint32					m_GenericUserData;
+	uint32_t					m_ID;
+	uint32_t					m_GenericUserData;
 	bool						m_SaveEnabled;
 
 	/////////////////////////////////////////////////////////////////////
@@ -175,7 +177,7 @@ DefinitionClass::Set_Name (const char *new_name)
 //////////////////////////////////////////////////////////////////////////////////
 //	Get_ID
 //////////////////////////////////////////////////////////////////////////////////
-inline uint32
+inline uint32_t
 DefinitionClass::Get_ID (void) const
 {
 	return m_ID;

@@ -38,6 +38,8 @@
 #ifndef BCHANNEL_H
 #define BCHANNEL_H
 
+#include <cstdint>
+
 #ifndef ALWAYS_H
 #include "always.h"
 #endif
@@ -64,7 +66,7 @@ class BitChannelClass
 {
 public:
 
-	BitChannelClass(uint32 id,int maxframes,uint32 chntype,bool def_val);
+	BitChannelClass(uint32_t id,int maxframes,uint32_t chntype,bool def_val);
 	~BitChannelClass(void);
 
 	void		Set_Bit(int framenumber,bool bit);
@@ -75,8 +77,8 @@ public:
 
 private:
 
-	uint32					ID;
-	uint32					ChannelType;
+	uint32_t					ID;
+	uint32_t					ChannelType;
 	int						MaxFrames;
 	bool						IsEmpty;
 
@@ -92,8 +94,8 @@ private:
 	void compute_range(void);
   
   // compress functions
-	void remove_packet(W3dTimeCodedBitChannelStruct * c, uint32 packet_idx);
-	uint32 find_useless_packet(W3dTimeCodedBitChannelStruct * c);
+	void remove_packet(W3dTimeCodedBitChannelStruct * c, uint32_t packet_idx);
+	uint32_t find_useless_packet(W3dTimeCodedBitChannelStruct * c);
 	void compress(W3dTimeCodedBitChannelStruct * c);
   
   

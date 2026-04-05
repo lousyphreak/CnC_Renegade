@@ -49,7 +49,7 @@ static const int AXIS_BMP_HEIGHT	= 65;
 //	Local Inlines
 //
 /////////////////////////////////////////////////////////////////////////////
-static inline HBITMAP Load_Bitmap (UINT res_id)
+static inline HBITMAP Load_Bitmap (uint32_t res_id)
 {
 	return (HBITMAP)::LoadImage (::AfxGetResourceHandle (), MAKEINTRESOURCE (res_id), IMAGE_BITMAP, 0, 0, LR_LOADTRANSPARENT);
 }
@@ -176,7 +176,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 VisErrorReportDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();	
@@ -330,8 +330,8 @@ VisErrorReportDialogClass::OnPaint (void)
 void
 VisErrorReportDialogClass::OnVScroll
 (
-	UINT			nSBCode,
-	UINT			nPos,
+	uint32_t			nSBCode,
+	uint32_t			nPos,
 	CScrollBar *pScrollBar
 ) 
 {	
@@ -356,7 +356,7 @@ VisErrorReportDialogClass::OnVScroll
 //
 /////////////////////////////////////////////////////////////////////////////
 void
-VisErrorReportDialogClass::OnLButtonDown (UINT nFlags, CPoint point) 
+VisErrorReportDialogClass::OnLButtonDown (uint32_t nFlags, CPoint point) 
 {
 	if (m_GraphArea.PtInRect (point)) {
 		 m_TrackPixel = point.x - m_GraphArea.left;
@@ -380,7 +380,7 @@ VisErrorReportDialogClass::OnLButtonDown (UINT nFlags, CPoint point)
 //
 /////////////////////////////////////////////////////////////////////////////
 void
-VisErrorReportDialogClass::OnLButtonUp (UINT nFlags, CPoint point) 
+VisErrorReportDialogClass::OnLButtonUp (uint32_t nFlags, CPoint point) 
 {
 	if (m_bTrackingSel) {
 		 m_bTrackingSel = false;
@@ -398,7 +398,7 @@ VisErrorReportDialogClass::OnLButtonUp (UINT nFlags, CPoint point)
 //
 /////////////////////////////////////////////////////////////////////////////
 void
-VisErrorReportDialogClass::OnMouseMove (UINT nFlags, CPoint point) 
+VisErrorReportDialogClass::OnMouseMove (uint32_t nFlags, CPoint point) 
 {
 	if (m_bTrackingSel) {		 
 		 int new_pixel = point.x - m_GraphArea.left;
@@ -783,7 +783,7 @@ VisErrorReportDialogClass::OnDrawItem
 	//
 	// Determine what state to draw the button in (pushed or normal)
 	//
-	UINT state = DFCS_BUTTONPUSH | DFCS_ADJUSTRECT;
+	uint32_t state = DFCS_BUTTONPUSH | DFCS_ADJUSTRECT;
 	POINT offset = { 0 };
 	if (lpDrawItemStruct->itemState & ODS_SELECTED) {
 		state |= DFCS_PUSHED;
@@ -872,7 +872,7 @@ VisErrorReportDialogClass::Paint_Axis_Area (HDC hdc)
 	return ;
 }
 
-UINT VisErrorReportDialogClass::OnNcHitTest(CPoint point) 
+uint32_t VisErrorReportDialogClass::OnNcHitTest(CPoint point) 
 {
 	// TODO: Add your message handler code here and/or call default
 	
@@ -885,15 +885,15 @@ UINT VisErrorReportDialogClass::OnNcHitTest(CPoint point)
 // OnSetCursor
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 VisErrorReportDialogClass::OnSetCursor
 (
 	CWnd *	pwnd,
-	UINT		hit_test,
-	UINT		message
+	uint32_t		hit_test,
+	uint32_t		message
 )
 {
-	BOOL retval = FALSE;
+	int32_t retval = FALSE;
 
 	//
 	//	Determine if the cursor is over a 'hot-spot' in the axis area.

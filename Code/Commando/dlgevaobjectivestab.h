@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __DLG_EVA_OBJECTIVES_TAB_H
@@ -64,7 +66,7 @@ public:
 	//	Public methods
 	////////////////////////////////////////////////////////////////
 	void		On_Init_Dialog (void);
-	void		On_Command (int ctrl_id, int mesage_id, DWORD param);
+	void		On_Command (int ctrl_id, int mesage_id, uint32_t param);
 	void		On_ListCtrl_Sel_Change (ListCtrlClass *list_ctrl, int ctrl_id, int old_index, int new_index);
 
 private:
@@ -78,7 +80,7 @@ private:
 	////////////////////////////////////////////////////////////////
 	//	Static methods
 	////////////////////////////////////////////////////////////////
-	static int CALLBACK	ListSortCallback (ListCtrlClass *list_ctrl, int item_index1, int item_index2, uint32 user_param);
+	static int CALLBACK	ListSortCallback (ListCtrlClass *list_ctrl, int item_index1, int item_index2, uint32_t user_param);
 
 	////////////////////////////////////////////////////////////////
 	//	Private member data

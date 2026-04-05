@@ -21,6 +21,8 @@
 
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 // ColorBar.h : header file
 //
@@ -107,7 +109,7 @@ public:
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(ColorBarClass)
 	public:
-	virtual BOOL Create(LPCTSTR lpszClassName, LPCTSTR lpszWindowName, DWORD dwStyle, const RECT& rect, CWnd* pParentWnd, UINT nID, CCreateContext* pContext = NULL);
+	virtual int32_t Create(LPCTSTR lpszClassName, LPCTSTR lpszWindowName, uint32_t dwStyle, const RECT& rect, CWnd* pParentWnd, uint32_t nID, CCreateContext* pContext = NULL);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -118,19 +120,19 @@ public:
 protected:
 	//{{AFX_MSG(ColorBarClass)
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
-	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg void OnSize(uint32_t nType, int cx, int cy);
 	afx_msg void OnPaint();
-	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
-	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
-	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonDown(uint32_t nFlags, CPoint point);
+	afx_msg void OnLButtonUp(uint32_t nFlags, CPoint point);
+	afx_msg void OnMouseMove(uint32_t nFlags, CPoint point);
 	afx_msg void OnKillFocus(CWnd* pNewWnd);
 	afx_msg void OnSetFocus(CWnd* pOldWnd);
-	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
-	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
+	afx_msg void OnKeyDown(uint32_t nChar, uint32_t nRepCnt, uint32_t nFlags);
+	afx_msg void OnLButtonDblClk(uint32_t nFlags, CPoint point);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 
-	friend LRESULT WINAPI fnColorBarProc (HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
+	friend intptr_t WINAPI fnColorBarProc (HWND hwnd, uint32_t message, uintptr_t wparam, intptr_t lparam);
 
 	public:
 		
@@ -138,11 +140,11 @@ protected:
 		//
 		//	Public methods
 		//
-		bool				Insert_Point (int index, float position, float red, float green, float blue, DWORD flags = POINT_VISIBLE | POINT_CAN_MOVE);
-		bool				Insert_Point (CPoint point, DWORD flags = POINT_VISIBLE | POINT_CAN_MOVE);
-		bool				Modify_Point (int index, float position, float red, float green, float blue, DWORD flags = POINT_VISIBLE | POINT_CAN_MOVE);
-		bool				Set_User_Data (int index, DWORD data);
-		DWORD				Get_User_Data (int index);
+		bool				Insert_Point (int index, float position, float red, float green, float blue, uint32_t flags = POINT_VISIBLE | POINT_CAN_MOVE);
+		bool				Insert_Point (CPoint point, uint32_t flags = POINT_VISIBLE | POINT_CAN_MOVE);
+		bool				Modify_Point (int index, float position, float red, float green, float blue, uint32_t flags = POINT_VISIBLE | POINT_CAN_MOVE);
+		bool				Set_User_Data (int index, uint32_t data);
+		uint32_t				Get_User_Data (int index);
 		bool				Set_Graph_Percent (int index, float percent);
 		float				Get_Graph_Percent (int index);
 		bool				Delete_Point (int index);
@@ -160,7 +162,7 @@ protected:
 		void				Set_Range (float min, float max);
 
 		void				Set_Redraw (bool redraw = true);
-		LRESULT			Send_Notification (int code, int key);
+		intptr_t			Send_Notification (int code, int key);
 
 		//////////////////////////////////////////////////////////////////////////
 		//	Static members
@@ -190,7 +192,7 @@ protected:
 			float	GreenInc;
 			float	BlueInc;
 
-			DWORD user_data;
+			uint32_t user_data;
 			int	flags;
 
 		} COLOR_POINT;
@@ -203,8 +205,8 @@ protected:
 		void				Create_Bitmap (void);
 		void				Free_Bitmap (void);
 		void				Free_Marker_Bitmap (void);
-		void				Paint_Bar_Horz (int x_pos, int y_pos, int width, int height, UCHAR *pbits);
-		void				Paint_Bar_Vert (int x_pos, int y_pos, int width, int height, UCHAR *pbits);
+		void				Paint_Bar_Horz (int x_pos, int y_pos, int width, int height, uint8_t *pbits);
+		void				Paint_Bar_Vert (int x_pos, int y_pos, int width, int height, uint8_t *pbits);
 		void				Update_Point_Info (void);
 		void				Load_Key_Frame_BMP (void);
 		void				Paint_Key_Frame (int x_pos, int y_pos);
@@ -223,8 +225,8 @@ protected:
 		HBITMAP			m_hBitmap;
 		HBITMAP			m_KeyFrameDIB;
 		HDC				m_hMemDC;
-		UCHAR	*			m_pBits;
-		UCHAR	*			m_pKeyFrameBits;
+		uint8_t	*			m_pBits;
+		uint8_t	*			m_pKeyFrameBits;
 		int				m_iColorWidth;
 		int				m_iColorHeight;
 		int				m_iBMPWidth;

@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // PresetsForm.h : header file
 //
@@ -89,7 +91,7 @@ public:
 	//{{AFX_VIRTUAL(PresetsFormClass)
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-	virtual BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult);
+	virtual int32_t OnNotify(uintptr_t wParam, intptr_t lParam, intptr_t* pResult);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -102,15 +104,15 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(PresetsFormClass)
-	afx_msg void OnSize(UINT nType, int cx, int cy);
-	virtual BOOL OnInitDialog();
+	afx_msg void OnSize(uint32_t nType, int cx, int cy);
+	virtual int32_t OnInitDialog();
 	afx_msg void OnAdd();
-	afx_msg void OnDeleteitemPresetsTree(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnDeleteitemPresetsTree(NMHDR* pNMHDR, intptr_t* pResult);
 	afx_msg void OnModify();
 	afx_msg void OnMake();
 	afx_msg void OnAddTemp();
 	afx_msg void OnDelete();
-	afx_msg void OnSelchangedPresetsTree(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnSelchangedPresetsTree(NMHDR* pNMHDR, intptr_t* pResult);
 	afx_msg void OnPlay();
 	afx_msg void OnInfo();
 	afx_msg void OnExtra();
@@ -124,11 +126,11 @@ protected:
 	afx_msg void OnUpdateVss();
 	afx_msg void OnBatchImportTerrain();
 	afx_msg void OnUpdateBatchImportTerrain(CCmdUI* pCmdUI);
-	afx_msg void OnBegindragPresetsTree(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnBegindragPresetsTree(NMHDR* pNMHDR, intptr_t* pResult);
 	afx_msg void OnBuildEmbedNodeList();
 	afx_msg void OnUpdateEmbeddedNodeList(CCmdUI* pCmdUI);
-	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
-	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonUp(uint32_t nFlags, CPoint point);
+	afx_msg void OnMouseMove(uint32_t nFlags, CPoint point);
 	afx_msg void OnDestroy();
 	afx_msg void OnClearEmbeddedNodeList();
 	afx_msg void OnUpdateClearEmbeddedNodeList(CCmdUI* pCmdUI);
@@ -143,9 +145,9 @@ public:
 	void								Reload_Presets (void);	
 
 	bool								Save_Temp_Presets (void);
-	bool								Save_Global_Presets (uint32 class_id);
+	bool								Save_Global_Presets (uint32_t class_id);
 	
-	bool								Save_Presets (LPCTSTR path, uint32 class_id, bool temps_only = false, bool class_id_matters = true);
+	bool								Save_Presets (LPCTSTR path, uint32_t class_id, bool temps_only = false, bool class_id_matters = true);
 	static bool						Old_Load_Presets (void);
 	static bool						Load_Temp_Presets (void);
 	static bool						Load_Databases (void);
@@ -167,7 +169,7 @@ public:
 	//	Preset addition support
 	//
 	void								Add_Preset (PresetClass *preset);
-	void								Sort_Items (uint32 class_id);
+	void								Sort_Items (uint32_t class_id);
 	
 protected:
 
@@ -175,14 +177,14 @@ protected:
 	//	Protected methods
 	/////////////////////////////////////////////////////////
 	void								Fill_In_Presets (HTREEITEM root_item);
-	void								Fill_In_Preset_Children (HTREEITEM root_item, uint32 parent_id);
+	void								Fill_In_Preset_Children (HTREEITEM root_item, uint32_t parent_id);
 
-	bool								Save_Presets (uint32 class_id, bool temps_only = false);
-	void								Save_Presets (HANDLE file, uint32 class_id, bool temps_only = false, bool class_id_matters = true);
-	static bool						Load_Presets (uint32 class_id);	
+	bool								Save_Presets (uint32_t class_id, bool temps_only = false);
+	void								Save_Presets (HANDLE file, uint32_t class_id, bool temps_only = false, bool class_id_matters = true);
+	static bool						Load_Presets (uint32_t class_id);	
 
-	HTREEITEM						Find_Preset (HTREEITEM root_item, uint32 id);
-	HTREEITEM						Find_Factory (HTREEITEM root_item, uint32 id);
+	HTREEITEM						Find_Preset (HTREEITEM root_item, uint32_t id);
+	HTREEITEM						Find_Factory (HTREEITEM root_item, uint32_t id);
 
 	void								Set_Item_Data (HTREEITEM item, DefinitionFactoryClass *factory);
 	void								Set_Item_Data (HTREEITEM item, PresetClass *preset);

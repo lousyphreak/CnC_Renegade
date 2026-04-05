@@ -2665,7 +2665,7 @@ const PersistFactoryClass & Phys3DefClass::Get_Factory (void) const
 	return _Phys3DefFactory;
 }
 
-uint32 Phys3DefClass::Get_Class_ID (void) const	
+uint32_t Phys3DefClass::Get_Class_ID (void) const	
 { 
 	return CLASSID_PHYS3DEF; 
 }

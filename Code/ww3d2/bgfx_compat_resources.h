@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "ww3dformat.h"
 
 #include <vector>
@@ -15,7 +17,7 @@ struct BgfxCompatSurface
 	unsigned width = 1;
 	unsigned height = 1;
 	WW3DFormat format = WW3D_FORMAT_A8R8G8B8;
-	std::vector<unsigned char> bytes;
+	std::vector<uint8_t> bytes;
 };
 
 struct BgfxCompatTexture
@@ -23,7 +25,7 @@ struct BgfxCompatTexture
 	int width = 1;
 	int height = 1;
 	WW3DFormat format = WW3D_FORMAT_A8R8G8B8;
-	std::vector<unsigned char> bytes;
+	std::vector<uint8_t> bytes;
 	bgfx::TextureHandle handle = BGFX_INVALID_HANDLE;
 	bool dirty = true;
 };
@@ -49,7 +51,7 @@ inline const BgfxCompatTexture *BgfxCompat_To_Texture(const IDirect3DTexture8 *t
 }
 
 unsigned BgfxCompat_Get_Pixel_Size(WW3DFormat format);
-std::vector<unsigned char> BgfxCompat_Convert_Surface_To_RGBA8(const BgfxCompatSurface &surface);
+std::vector<uint8_t> BgfxCompat_Convert_Surface_To_RGBA8(const BgfxCompatSurface &surface);
 bgfx::TextureHandle BgfxCompat_Get_Texture_Handle(TextureClass *texture);
 uint64_t BgfxCompat_Get_Sampler_Flags(const TextureClass *texture);
 bgfx::TextureHandle BgfxCompat_Get_White_Texture();

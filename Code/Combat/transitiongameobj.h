@@ -37,6 +37,8 @@
 #ifndef	TRANSITIONGAMEOBJ_H
 #define	TRANSITIONGAMEOBJ_H
 
+#include <cstdint>
+
 #ifndef	ALWAYS_H
 	#include "always.h"
 #endif
@@ -58,7 +60,7 @@ public:
 	TransitionGameObjDef( void ) {};
 	virtual ~TransitionGameObjDef( void );
 
-	virtual uint32								Get_Class_ID( void ) const;
+	virtual uint32_t								Get_Class_ID( void ) const;
 	virtual PersistClass *					Create( void ) const ;
 	virtual bool								Save( ChunkSaveClass &csave );
 	virtual bool								Load( ChunkLoadClass &cload );

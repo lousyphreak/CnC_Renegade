@@ -99,7 +99,7 @@ END_MESSAGE_MAP()
  * HISTORY:                                                                                    *
  *   09/06/00    IML : Created.                                                                * 
  *=============================================================================================*/
-BOOL InsertSolveDialog::OnInitDialog() 
+int32_t InsertSolveDialog::OnInitDialog() 
 {
 	char inclusionstring [2] = "^";
 

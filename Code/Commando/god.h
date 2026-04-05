@@ -25,6 +25,8 @@
 //-----------------------------------------------------------------------------
 #if defined(_MSV_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef GOD_H
@@ -45,7 +47,7 @@ class cGod
 	public:
 		static void					Think(void);
 		static cPlayer *			Create_Player(int client_id, const WideStringClass & name,
-														int team_choice, unsigned long clanID, bool is_invulnerable = false);
+														int team_choice, uint32_t clanID, bool is_invulnerable = false);
 
 		static void					Create_Ai_Player(void);
 		static void					Create_Grunt(Vector3 & pos);

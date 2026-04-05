@@ -37,6 +37,8 @@
 #ifndef __DLGWOLLOGON_H__
 #define __DLGWOLLOGON_H__
 
+#include <cstdint>
+
 #include "DlgWOLWait.h"
 #include <wwui/popupdialog.h>
 #include <wwlib/Notify.h>
@@ -83,7 +85,7 @@ class DlgWOLLogon :
 		bool FinalizeCreate(const wchar_t* login);
 
 		void On_Init_Dialog(void);
-		void On_Command(int ctrl, int message, DWORD param);
+		void On_Command(int ctrl, int message, uint32_t param);
 
 		void UpdatePersonas(void);
 		void SelectPersona(const wchar_t* name);

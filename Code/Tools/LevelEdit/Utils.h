@@ -26,6 +26,8 @@
 #ifndef __UTILS_H
 #define __UTILS_H
 
+#include <cstdint>
+
 
 #include "refcount.h"
 #include "shlobj.h"
@@ -94,8 +96,8 @@
 			ASSERT (expr);			\
 			if (!(expr))
 
-#define GET_X_LPARAM(lp)                        ((int)(short)LOWORD(lp))
-#define GET_Y_LPARAM(lp)                        ((int)(short)HIWORD(lp))
+#define GET_X_LPARAM(lp)                        (static_cast<int>(static_cast<int16_t>(LOWORD(lp))))
+#define GET_Y_LPARAM(lp)                        (static_cast<int>(static_cast<int16_t>(HIWORD(lp))))
 
 
 #define INLINE_ACCESSOR_CONST(_type, _class, _name)	\
@@ -252,7 +254,7 @@ PresetsFormClass *			Get_Presets_Form (void);
 //	Misc routines
 //
 int								Get_Next_Temp_ID (void);
-LPCTSTR							Get_Factory_Name (uint32 class_id);
+LPCTSTR							Get_Factory_Name (uint32_t class_id);
 
 //
 //	'Safe' creation routines (provides error message, etc)
@@ -262,8 +264,8 @@ PersistClass *					Instance_Definition (DefinitionClass *definition);
 //
 //	Painting/subclassing/dialog control routines
 //
-LRESULT CALLBACK				CheckBoxSubclassProc (HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
-void								Paint_Gradient (HWND hwnd, BYTE base_red, BYTE base_green, BYTE base_blue);
+intptr_t CALLBACK				CheckBoxSubclassProc (HWND hwnd, uint32_t message, uintptr_t wparam, intptr_t lparam);
+void								Paint_Gradient (HWND hwnd, uint8_t base_red, uint8_t base_green, uint8_t base_blue);
 void								Constrain_Point_To_Aspect_Ratio (float &xpos, float &ypos);
 void								Fill_Node_Instance_Combo (HWND hcombobox, NodeClass *pdefault = NULL);
 void								Fill_Group_Combo (HWND hcombobox, GroupMgrClass *pdefault = NULL);
@@ -298,7 +300,7 @@ void								Convert_Newline_To_Chars (CString &string);
 //
 //	Message box/status methods
 //
-UINT								Message_Box (HWND hparentwnd, UINT message_id, UINT title_id, UINT style = MB_ICONEXCLAMATION | MB_OK);
+uint32_t								Message_Box (HWND hparentwnd, uint32_t message_id, uint32_t title_id, uint32_t style = MB_ICONEXCLAMATION | MB_OK);
 void								Update_Frame_Count (int frame, int max_frames);
 void								Set_Modified (bool modified = true);
 bool								Is_Silent_Mode (void);
@@ -307,8 +309,8 @@ void								Set_Silent_Mode (bool is_silent);
 //
 // Dialog routines
 //
-void								SetDlgItemFloat (HWND hdlg, UINT child_id, float value);
-float								GetDlgItemFloat (HWND hdlg, UINT child_id, bool interpret = false);
+void								SetDlgItemFloat (HWND hdlg, uint32_t child_id, float value);
+float								GetDlgItemFloat (HWND hdlg, uint32_t child_id, bool interpret = false);
 float								GetWindowFloat (HWND hwnd, bool interpret = false);
 void								SetWindowFloat (HWND hwnd, float value);
 void								Make_Edit_Float_Ctrl (HWND edit_wnd);
@@ -319,13 +321,13 @@ void								Kill_VSS_Update_Dialog (HWND hdlg);
 //
 //	File routines
 //
-DWORD								Get_File_Size (LPCTSTR path);
+uint32_t								Get_File_Size (LPCTSTR path);
 bool								Get_File_Time (LPCTSTR path, LPFILETIME pcreation_time = NULL, LPFILETIME paccess_time = NULL, LPFILETIME pwrite_time = NULL);
 bool								Is_Path_Relative (LPCTSTR path);
 bool								Find_File (LPCTSTR filename, LPCTSTR start_dir, CString &full_path);
 int								Quick_Compare_Files (LPCTSTR file1, LPCTSTR file2);
 int								Get_LOD_File_Count (LPCTSTR first_lod_filename, CString *pbase_filename = NULL);
-bool								Browse_For_Folder (CString &folder, HWND hparentwnd, LPCTSTR default_path, LPCTSTR title, UINT flags = BIF_RETURNONLYFSDIRS);
+bool								Browse_For_Folder (CString &folder, HWND hparentwnd, LPCTSTR default_path, LPCTSTR title, uint32_t flags = BIF_RETURNONLYFSDIRS);
 bool								Copy_File (LPCTSTR existing_filename, LPCTSTR new_filename, bool bforce_copy = false);
 
 //
@@ -348,10 +350,10 @@ bool								Get_Collision_Box (RenderObjClass *render_obj, AABoxClass &aabox, OB
 //
 //	Thread routines
 //
-typedef UINT (*MY_THREADPROC) (DWORD dwparam1, DWORD dwparam2, DWORD dwparam3, HRESULT *presult);
-typedef UINT (*MY_UITHREADPROC) (DWORD dwparam1, DWORD dwparam2, DWORD dwparam3, HRESULT *presult, HWND *phmain_wnd);
-void								Create_Worker_Thread (MY_THREADPROC fnthread_proc, DWORD dwparam1, DWORD dwparam2, DWORD dwparam3, HRESULT *presult);
-void								Create_UI_Thread (MY_UITHREADPROC fnthread_proc, DWORD dwparam1, DWORD dwparam2, DWORD dwparam3, HRESULT *presult, HWND *phmain_wnd);
+typedef uint32_t (*MY_THREADPROC) (uint32_t dwparam1, uint32_t dwparam2, uint32_t dwparam3, int32_t *presult);
+typedef uint32_t (*MY_UITHREADPROC) (uint32_t dwparam1, uint32_t dwparam2, uint32_t dwparam3, int32_t *presult, HWND *phmain_wnd);
+void								Create_Worker_Thread (MY_THREADPROC fnthread_proc, uint32_t dwparam1, uint32_t dwparam2, uint32_t dwparam3, int32_t *presult);
+void								Create_UI_Thread (MY_UITHREADPROC fnthread_proc, uint32_t dwparam1, uint32_t dwparam2, uint32_t dwparam3, int32_t *presult, HWND *phmain_wnd);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -372,7 +374,7 @@ class FileAccessRightsClass
 
 	private:
 		bool			m_bNeedsRestoring;
-		LONG			m_FileAttrs;
+		int32_t			m_FileAttrs;
 		CString		m_Filename;
 };
 

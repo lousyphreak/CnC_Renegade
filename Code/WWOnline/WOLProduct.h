@@ -43,6 +43,8 @@
 #ifndef __WOLPRODUCT_H__
 #define __WOLPRODUCT_H__
 
+#include <cstdint>
+
 #include "RefCounted.h"
 #include "RefPtr.h"
 #include <wwlib/wwstring.h>
@@ -59,22 +61,22 @@ class Product :
 		const char* GetRegistryPath(void) const
 			{return mRegistryPath;}
 
-		unsigned long GetSKU(void) const
+		uint32_t GetSKU(void) const
 			{return mProductSKU;}
 
-		unsigned long GetLanguageSKU(void) const
+		uint32_t GetLanguageSKU(void) const
 			{return mProductSKU | mLanguageCode;}
 
-		unsigned long GetLadderSKU(void) const
+		uint32_t GetLadderSKU(void) const
 			{return mLadderSKU;}
 
-		unsigned long GetLanguageCode(void) const
+		uint32_t GetLanguageCode(void) const
 			{return mLanguageCode;}
 
-		unsigned long GetVersion(void) const
+		uint32_t GetVersion(void) const
 			{return mProductVersion;}
 
-		long GetGameCode(void) const
+		int32_t GetGameCode(void) const
 			{return mGameCode;}
 
 		const wchar_t* GetChannelPassword(void) const
@@ -83,22 +85,22 @@ class Product :
 		class Initializer
 			{
 			public:
-				Initializer(const char* registryPath, int gameCode, const wchar_t* chanPass, unsigned long ladderSKU);
+				Initializer(const char* registryPath, int gameCode, const wchar_t* chanPass, uint32_t ladderSKU);
 				~Initializer();
 			};
 
 	private:
 		friend class Initializer;
-		static RefPtr<Product> Create(const char* registryPath, int gameCode, const wchar_t* chanPass, unsigned long ladderSKU);
+		static RefPtr<Product> Create(const char* registryPath, int gameCode, const wchar_t* chanPass, uint32_t ladderSKU);
 
-		Product(const char* registryPath, int gameCode, const wchar_t* chanPass, unsigned long ladderSKU);
+		Product(const char* registryPath, int gameCode, const wchar_t* chanPass, uint32_t ladderSKU);
 
 		StringClass mRegistryPath;
-		unsigned long mProductSKU;
-		unsigned long mProductVersion;
-		unsigned long mLanguageCode;
-		unsigned long mLadderSKU;
-		long mGameCode;
+		uint32_t mProductSKU;
+		uint32_t mProductVersion;
+		uint32_t mLanguageCode;
+		uint32_t mLadderSKU;
+		int32_t mGameCode;
 		WideStringClass mChannelPassword;
 	};
 

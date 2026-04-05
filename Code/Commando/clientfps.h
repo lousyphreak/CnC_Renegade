@@ -37,6 +37,8 @@
 #ifndef __CLIENTFPS_H__
 #define __CLIENTFPS_H__
 
+#include <cstdint>
+
 #include "networkobject.h"
 #include "netclassids.h"
 //#include "control.h"
@@ -53,7 +55,7 @@ public:
 	~CClientFps();
 
 	void					Init(void);
-	virtual uint32		Get_Network_Class_ID(void) const					{return NETCLASSID_CLIENTFPS;}
+	virtual uint32_t		Get_Network_Class_ID(void) const					{return NETCLASSID_CLIENTFPS;}
 	virtual void		Delete(void)											{delete this;}
 
 	void					Set_Fps(int fps);
@@ -68,7 +70,7 @@ public:
 private:
 
 	int					ClientId;
-	BYTE					Fps;
+	uint8_t					Fps;
 };
 
 //-----------------------------------------------------------------------------

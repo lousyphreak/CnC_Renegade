@@ -36,6 +36,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef __PATHMGR_H
 #define __PATHMGR_H
 
@@ -75,7 +77,7 @@ public:
 	//
 	//	Path resolution
 	//
-	static void						Resolve_Paths (const Vector3 &camera_pos, uint32 milliseconds = 5);
+	static void						Resolve_Paths (const Vector3 &camera_pos, uint32_t milliseconds = 5);
 	static PathSolveClass *		Peek_Active_Path (void)	{ return ActivePath; }
 
 	//
@@ -105,7 +107,7 @@ private:
 	static DynamicVectorClass<PathSolveClass *>	AvailablePathList;
 	static DynamicVectorClass<PathSolveClass *>	UsedPathList;
 	static PathSolveClass *								ActivePath;
-	static long long									TicksPerMilliSec;
+	static int64_t									TicksPerMilliSec;
 };
 
 

@@ -62,7 +62,7 @@ void PhysicsSceneClass::Enable_Collision_Detection(int group0,int group1)
 	assert(group0 <= MAX_COLLISION_GROUP);
 	assert(group1 <= MAX_COLLISION_GROUP);
 
-	unsigned int index;
+	uint32_t index;
 
 	index = group0 | (group1 << COLLISION_FLAG_SHIFT);
 	AllowCollisionFlags[index] = 1;
@@ -78,7 +78,7 @@ void PhysicsSceneClass::Disable_Collision_Detection(int group0,int group1)
 	assert(group0 <= MAX_COLLISION_GROUP);
 	assert(group1 <= MAX_COLLISION_GROUP);
 
-	unsigned int index;
+	uint32_t index;
 
 	index = group0 | (group1 << COLLISION_FLAG_SHIFT);
 	AllowCollisionFlags[index] = 0;
@@ -94,7 +94,7 @@ void PhysicsSceneClass::Enable_All_Collision_Detections(int group)
 
 	for (int i=0; i <= MAX_COLLISION_GROUP; i++) {
 
-		unsigned int index;
+		uint32_t index;
 		index = group | (i << COLLISION_FLAG_SHIFT);
 		AllowCollisionFlags[index] = 1;
 
@@ -111,7 +111,7 @@ void PhysicsSceneClass::Disable_All_Collision_Detections(int group)
 
 	for (int i=0; i <= MAX_COLLISION_GROUP; i++) {
 
-		unsigned int index;
+		uint32_t index;
 		index = group | (i << COLLISION_FLAG_SHIFT);
 		AllowCollisionFlags[index] = 0;
 

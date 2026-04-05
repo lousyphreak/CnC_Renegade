@@ -35,11 +35,11 @@
 #include "sha.h"
 
 // Static class variables
-unsigned char	SecureRandomClass::Seeds[SecureRandomClass::SeedLength];
+uint8_t	SecureRandomClass::Seeds[SecureRandomClass::SeedLength];
 bool				SecureRandomClass::Initialized=false;
-unsigned int	SecureRandomClass::RandomCache[SecureRandomClass::SHADigestBytes / sizeof(unsigned int)];
+uint32_t	SecureRandomClass::RandomCache[SecureRandomClass::SHADigestBytes / sizeof(uint32_t)];
 int				SecureRandomClass::RandomCacheEntries=0;
-unsigned int	SecureRandomClass::Counter=0;
+uint32_t	SecureRandomClass::Counter=0;
 Random3Class	SecureRandomClass::RandomHelper;
 
 SecureRandomClass::SecureRandomClass()
@@ -59,14 +59,14 @@ SecureRandomClass::~SecureRandomClass()
 //
 // Add seed values to our pool of randomness
 //
-void SecureRandomClass::Add_Seeds(unsigned char *values, int length)
+void SecureRandomClass::Add_Seeds(uint8_t *values, int length)
 {
 	for (int i=0; i<length; i++)
 	{
 		Seeds[0]^=values[i];
 
 		// Rotate the seeds to the left
-		unsigned char uctemp=Seeds[SeedLength-1];
+		uint8_t uctemp=Seeds[SeedLength-1];
 		for (int j=SeedLength-1; j>=1; j--)
 			Seeds[j]=Seeds[j-1];
 		Seeds[0]=uctemp;
@@ -79,7 +79,7 @@ void SecureRandomClass::Add_Seeds(unsigned char *values, int length)
 //
 // Get a 32bit random value
 //
-unsigned long SecureRandomClass::Randval(void)
+uint32_t SecureRandomClass::Randval(void)
 {
 	if (RandomCacheEntries == 0)
 	{
@@ -90,9 +90,9 @@ unsigned long SecureRandomClass::Randval(void)
 		sha.Result(digest);
 
 		memcpy(RandomCache, digest, SHADigestBytes);
-		RandomCacheEntries=(SHADigestBytes / sizeof(unsigned int));
+		RandomCacheEntries=(SHADigestBytes / sizeof(uint32_t));
 
-		unsigned int *int_seeds=(unsigned int *)Seeds;
+		uint32_t *int_seeds=(uint32_t *)Seeds;
 		int_seeds[0]^=Counter;			// remove the last counter (double xor)
 		int_seeds[0]^=(Counter+1);		// put the new counter in place
 
@@ -102,11 +102,11 @@ unsigned long SecureRandomClass::Randval(void)
 		Counter++;				// increment counter
 	}
 
-	unsigned long retval=RandomCache[--RandomCacheEntries];
+	uint32_t retval=RandomCache[--RandomCacheEntries];
 
 	// SHA doesn't have the best distribution properties in the world
 	//   We'll XOR the result with the output of another random number
-	unsigned long helperval=RandomHelper();
+	uint32_t helperval=RandomHelper();
 	retval^=helperval;
 
 	return(retval);
@@ -132,18 +132,18 @@ void SecureRandomClass::Generate_Seed(void)
 	// Start with some garbage values
 	memset(Seeds, 0xAA, SeedLength);
 
-	unsigned int *int_seeds=(unsigned int *)Seeds;
-	int int_seed_length=SeedLength/sizeof(unsigned int);
+	uint32_t *int_seeds=(uint32_t *)Seeds;
+	int int_seed_length=SeedLength/sizeof(uint32_t);
 	std::random_device random_device;
-	for (i = 0; i < SeedLength; i += static_cast<int>(sizeof(unsigned int))) {
-		unsigned int entropy = random_device();
-		for (int byte = 0; byte < static_cast<int>(sizeof(unsigned int)) && (i + byte) < SeedLength; ++byte) {
-			Seeds[i + byte] ^= static_cast<unsigned char>((entropy >> (byte * 8)) & 0xFFu);
+	for (i = 0; i < SeedLength; i += static_cast<int>(sizeof(uint32_t))) {
+		uint32_t entropy = random_device();
+		for (int byte = 0; byte < static_cast<int>(sizeof(uint32_t)) && (i + byte) < SeedLength; ++byte) {
+			Seeds[i + byte] ^= static_cast<uint8_t>((entropy >> (byte * 8)) & 0xFFu);
 		}
 	}
 
-	const unsigned int tick_seed = static_cast<unsigned int>(SDL_GetTicks() & 0xFFFFFFFFu);
-	const unsigned int chrono_seed = static_cast<unsigned int>(std::chrono::steady_clock::now().time_since_epoch().count());
+	const uint32_t tick_seed = static_cast<uint32_t>(SDL_GetTicks() & 0xFFFFFFFFu);
+	const uint32_t chrono_seed = static_cast<uint32_t>(std::chrono::steady_clock::now().time_since_epoch().count());
 
 	for (i=0; i<int_seed_length; i++)
 	{
@@ -153,7 +153,10 @@ void SecureRandomClass::Generate_Seed(void)
 			int_seeds[i]^=tick_seed;
 		else if ((i % 4) == 2)
 			int_seeds[i]^=chrono_seed;
-		else if ((i % 4) == 3)
-			int_seeds[i]^=static_cast<unsigned int>(reinterpret_cast<std::uintptr_t>(&int_seeds[i])) ^ static_cast<unsigned int>(i);
+		else if ((i % 4) == 3) {
+			const std::uintptr_t pointer_seed = reinterpret_cast<std::uintptr_t>(&int_seeds[i]);
+			const uint32_t folded_pointer_seed = static_cast<uint32_t>(pointer_seed ^ (pointer_seed >> 32));
+			int_seeds[i]^=folded_pointer_seed ^ static_cast<uint32_t>(i);
+		}
 	}
 }

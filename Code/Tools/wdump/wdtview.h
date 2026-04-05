@@ -21,6 +21,8 @@
 
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 // WDTView.h : header file
 //
@@ -45,7 +47,7 @@ public:
 	//{{AFX_VIRTUAL(CWDumpTreeView)
 	protected:
 	virtual void OnDraw(CDC* pDC);      // overridden to draw this view
-	virtual void OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint);
+	virtual void OnUpdate(CView* pSender, intptr_t lHint, CObject* pHint);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -70,7 +72,7 @@ protected:
 	void		  SelectTreeItem (HTREEITEM treeitem, ChunkItem *chunkitem);
 
 	//{{AFX_MSG(CWDumpTreeView)
-	afx_msg void OnSelchanged(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnSelchanged(NMHDR* pNMHDR, intptr_t* pResult);
 	afx_msg void OnToolsFind();
 	afx_msg void OnToolsFindNext();
 	//}}AFX_MSG

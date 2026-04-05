@@ -61,7 +61,7 @@ PresetLoggerClass::Log_Created (PresetClass *preset)
 		//	Lookup the users name
 		//
 		char computer_name[256];
-		DWORD size = sizeof (computer_name);
+		uint32_t size = sizeof (computer_name);
 		::GetComputerName (computer_name, &size);
 
 		//
@@ -121,7 +121,7 @@ PresetLoggerClass::Log_Moved (PresetClass *preset, const char *new_parent_name)
 		//	Lookup the users name
 		//
 		char computer_name[256];
-		DWORD size = sizeof (computer_name);
+		uint32_t size = sizeof (computer_name);
 		::GetComputerName (computer_name, &size);
 
 		//
@@ -160,7 +160,7 @@ PresetLoggerClass::Log_Renamed (const char *old_name, const char *new_name)
 		//	Lookup the users name
 		//
 		char computer_name[256];
-		DWORD size = sizeof (computer_name);
+		uint32_t size = sizeof (computer_name);
 		::GetComputerName (computer_name, &size);
 
 		//
@@ -199,7 +199,7 @@ PresetLoggerClass::Log_Deleted (const char *preset_name)
 		//	Lookup the users name
 		//
 		char computer_name[256];
-		DWORD size = sizeof (computer_name);
+		uint32_t size = sizeof (computer_name);
 		::GetComputerName (computer_name, &size);
 		
 		//

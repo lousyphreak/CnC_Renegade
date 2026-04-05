@@ -45,9 +45,9 @@
 #include <SDL3/SDL_timer.h>
 
 
-static inline unsigned long Get_Twiddler_Seed(void)
+static inline uint32_t Get_Twiddler_Seed(void)
 {
-	return static_cast<unsigned long>(SDL_GetTicks() & 0xFFFFFFFFu);
+	return static_cast<uint32_t>(SDL_GetTicks() & 0xFFFFFFFFu);
 }
 
 

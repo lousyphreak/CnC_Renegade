@@ -19,6 +19,8 @@
 #ifndef TCPMGR_HEADER
 #define TCPMGR_HEADER
 
+#include <cstdint>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -46,7 +48,7 @@
 #include <fcntl.h>
 #include <limits.h>
 
-typedef sint32         SOCKET;
+typedef int32_t         SOCKET;
 #define closesocket    close
 #define SOCKET_ERROR   -1
 #define INVALID_SOCKET -1
@@ -107,35 +109,35 @@ class TCPMgr {
             TCPMgr();
             ~TCPMgr();
 
-  bit8      addListener(uint32 ip, uint16 port, bit8 reuseAddr);
-  bit8      removeListener(uint32 ip, uint16 port);
-  bit8      getListener(uint32 ip, uint16 port, OUT SOCKET &outsock);
+  int8_t      addListener(uint32_t ip, uint16_t port, int8_t reuseAddr);
+  int8_t      removeListener(uint32_t ip, uint16_t port);
+  int8_t      getListener(uint32_t ip, uint16_t port, OUT SOCKET &outsock);
 
-  bit8      connect(char *address, uint16 port, uint32 *handle);
-  bit8      connect(uint32 ip, uint16 port,OUT uint32 *handle);
+  int8_t      connect(char *address, uint16_t port, uint32_t *handle);
+  int8_t      connect(uint32_t ip, uint16_t port,OUT uint32_t *handle);
 
-  bit8      getOutgoingConnection(TCPCon **conn, uint32 handle, sint32 wait_secs);
-  bit8      getIncomingConnection(TCPCon **conn, uint16 port, sint32 wait_secs);
+  int8_t      getOutgoingConnection(TCPCon **conn, uint32_t handle, int32_t wait_secs);
+  int8_t      getIncomingConnection(TCPCon **conn, uint16_t port, int32_t wait_secs);
 
-  bit8      setBufferedWrites(TCPCon *con, bit8 enabled);
+  int8_t      setBufferedWrites(TCPCon *con, int8_t enabled);
   void      pumpWriters(void);  // pump the buffered writer connections
 
   // Static methods
-  static int       wait(uint32 sec, uint32 usec, SOCKET *sockets, int count, bit8 readMode=TRUE);
+  static int       wait(uint32_t sec, uint32_t usec, SOCKET *sockets, int count, int8_t readMode=TRUE);
   static STATUS    getStatus(void);
 
  private:
 
-  SOCKET    createSocket(uint32 ip, uint16 port, bit8 reuseAddr=TRUE);
-  bit8      setBlocking(SOCKET fd, bit8 block);
-  bit8      getConnection(TCPCon **conn, uint32 handle, uint16 port, sint32 wait_secs, DIRECTION dir);
+  SOCKET    createSocket(uint32_t ip, uint16_t port, int8_t reuseAddr=TRUE);
+  int8_t      setBlocking(SOCKET fd, int8_t block);
+  int8_t      getConnection(TCPCon **conn, uint32_t handle, uint16_t port, int32_t wait_secs, DIRECTION dir);
   void      pumpConnections(void);
 
   struct ListenSocket
   {
     SOCKET   fd;
-    uint32   ip;
-    uint32   port;
+    uint32_t   ip;
+    uint32_t   port;
   };
 
   ArrayList<ListenSocket>       ListenArray_;
@@ -145,18 +147,18 @@ class TCPMgr {
   struct PendingConn
   {
     SOCKET      fd;
-    uint32      ip;
-    uint16      port;
+    uint32_t      ip;
+    uint16_t      port;
     time_t      startTime;
-    uint32      handle;
+    uint32_t      handle;
     CONN_STATE  state;
-    bit8        incoming;
-    uint32      remoteIp;
-    uint16      remotePort;
+    int8_t        incoming;
+    uint32_t      remoteIp;
+    uint16_t      remotePort;
   };
 
   ArrayList<PendingConn>  ConnectArray_;
-  uint32                  HandleSequence_;
+  uint32_t                  HandleSequence_;
 };
 
 #endif

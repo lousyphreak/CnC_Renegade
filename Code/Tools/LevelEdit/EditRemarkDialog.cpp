@@ -89,7 +89,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 EditRemarkDialogClass::OnInitDialog (void) 
 {
 	CDialog::OnInitDialog ();

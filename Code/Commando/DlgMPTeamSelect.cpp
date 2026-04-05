@@ -78,7 +78,7 @@ typedef void (*GameOptionsDispatchFunc)(DlgMPTeamSelect&, const char*);
 #define PARSE_STRING(s, d, v) {v = strtok(s, d);}
 
 
-static int CALLBACK ListSortCallback(ListCtrlClass* list, int index1, int index2, uint32 param)
+static int CALLBACK ListSortCallback(ListCtrlClass* list, int index1, int index2, uint32_t param)
 	{
 	int rank1 = (int)list->Get_Entry_Data(index1, COL_RANK);
 	int rank2 = (int)list->Get_Entry_Data(index2, COL_RANK);
@@ -392,7 +392,7 @@ void DlgMPTeamSelect::On_Frame_Update(void)
 *
 ******************************************************************************/
 
-void DlgMPTeamSelect::On_Command(int ctrlID, int message, DWORD param)
+void DlgMPTeamSelect::On_Command(int ctrlID, int message, uint32_t param)
 	{
 	switch (ctrlID)
 		{
@@ -841,7 +841,7 @@ void DlgMPTeamSelect::ProcessWOLGameInfo(DlgMPTeamSelect& dialog, const char* da
 		strncpy(info, data, 255);
 
 		// Get players name
-		unsigned long mapCRC = 0;
+		uint32_t mapCRC = 0;
 		PARSE_HEXDWORD(info, " ", mapCRC);
 
 		StringClass mapname(64, true);

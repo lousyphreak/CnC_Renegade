@@ -269,7 +269,7 @@ StringsMgrClass::Export_IDs (void)
 		//	Check to make sure the destination filename is not read-only
 		//
 		CString path				= dialog.GetPathName ();
-		DWORD file_attributes	= ::GetFileAttributes (path);
+		uint32_t file_attributes	= ::GetFileAttributes (path);
 		if (file_attributes != 0xFFFFFFFF && file_attributes & FILE_ATTRIBUTE_READONLY) {
 			::MessageBox (::AfxGetMainWnd ()->m_hWnd, "File is read-only, export operation can not complete.", "File Error", MB_ICONERROR | MB_ICONEXCLAMATION);
 		} else {
@@ -420,7 +420,7 @@ StringsMgrClass::Edit_Database (HWND parent_wnd)
 //
 /////////////////////////////////////////////////////////////////////////
 void
-StringsMgrClass::Export_For_Translation (const char *filename, uint32 lang_id)
+StringsMgrClass::Export_For_Translation (const char *filename, uint32_t lang_id)
 {
 	CWaitCursor wait_cursor;
 
@@ -539,7 +539,7 @@ StringsMgrClass::Export_For_Translation (const char *filename, uint32 lang_id)
 //
 /////////////////////////////////////////////////////////////////////////
 void
-StringsMgrClass::Import_From_Translation (const char *filename, uint32 lang_id)
+StringsMgrClass::Import_From_Translation (const char *filename, uint32_t lang_id)
 {
 	CWaitCursor wait_cursor;
 

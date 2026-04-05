@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __PURCHASESETTINGS_H
@@ -90,7 +92,7 @@ public:
 	//
 	//	From DefinitionClass
 	//
-	virtual uint32								Get_Class_ID (void) const;
+	virtual uint32_t								Get_Class_ID (void) const;
 	virtual PersistClass *					Create (void) const ;
 	virtual bool								Save (ChunkSaveClass &csave);
 	virtual bool								Load (ChunkLoadClass &cload);

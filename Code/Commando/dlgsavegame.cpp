@@ -167,7 +167,7 @@ SaveGameMenuClass::Get_Entry_Metadata (ListCtrlClass *list_ctrl, int item_index)
 		return NULL;
 	}
 
-	const uint32 handle = list_ctrl->Get_Entry_Data (item_index, 0);
+	const uint32_t handle = list_ctrl->Get_Entry_Data (item_index, 0);
 	if (handle == 0) {
 		return NULL;
 	}
@@ -207,7 +207,7 @@ SaveGameMenuClass::On_ListCtrl_Delete_Entry
 //
 ////////////////////////////////////////////////////////////////
 int CALLBACK
-SaveGameMenuClass::LoadListSortCallback (ListCtrlClass *list_ctrl, int item_index1, int item_index2, uint32 user_param)
+SaveGameMenuClass::LoadListSortCallback (ListCtrlClass *list_ctrl, int item_index1, int item_index2, uint32_t user_param)
 {
 	int retval = 0;
 
@@ -215,7 +215,7 @@ SaveGameMenuClass::LoadListSortCallback (ListCtrlClass *list_ctrl, int item_inde
 	//	Get the sorting params
 	//
 	int	sort_col_index = LOWORD (user_param);
-	BOOL	sort_ascending	= HIWORD (user_param);
+	int32_t	sort_ascending	= HIWORD (user_param);
 
 	if (list_ctrl->Get_Entry_Data (item_index1, 0) == NULL) {
 		retval = -1;
@@ -265,7 +265,7 @@ SaveGameMenuClass::LoadListSortCallback (ListCtrlClass *list_ctrl, int item_inde
 //
 ////////////////////////////////////////////////////////////////
 void
-SaveGameMenuClass::On_Command (int ctrl_id, int message_id, DWORD param)
+SaveGameMenuClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	switch (ctrl_id)
 	{
@@ -573,7 +573,7 @@ SaveGameMenuClass::Reload_List (const char *current_filename)
 	}
 
 	WIN32_FIND_DATA find_info	= { 0 };
-	BOOL keep_going				= TRUE;
+	int32_t keep_going				= TRUE;
 	HANDLE file_find				= NULL;
 
 	//

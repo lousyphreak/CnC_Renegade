@@ -35,6 +35,8 @@
  * Functions:                                                              * 
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+#include <cstdint>
+
 #define FIELD_HEADER_SIZE	(sizeof(FieldClass) - (sizeof(void *) * 2))
 
 #define TYPE_CHAR                       1
@@ -58,11 +60,11 @@ class FieldClass
    //
    FieldClass(void) {};
    FieldClass(char *id, char data);
-   FieldClass(char *id, unsigned char data);
-   FieldClass(char *id, short data);
-   FieldClass(char *id, unsigned short data);
-   FieldClass(char *id, long data);
-   FieldClass(char *id, unsigned long data);
+   FieldClass(char *id, uint8_t data);
+   FieldClass(char *id, int16_t data);
+   FieldClass(char *id, uint16_t data);
+   FieldClass(char *id, int32_t data);
+   FieldClass(char *id, uint32_t data);
    FieldClass(char *id, char *data);
    FieldClass(char *id, void *data, int length);
 
@@ -70,16 +72,16 @@ class FieldClass
 
    // Change the field contents
    void Set(char *id, char data);
-   void Set(char *id, unsigned char data);
-   void Set(char *id, short data);
-   void Set(char *id, unsigned short data);
-   void Set(char *id, long data);
-   void Set(char *id, unsigned long data);
+   void Set(char *id, uint8_t data);
+   void Set(char *id, int16_t data);
+   void Set(char *id, uint16_t data);
+   void Set(char *id, int32_t data);
+   void Set(char *id, uint32_t data);
    void Set(char *id, char *data);
    void Set(char *id, void *data, int length);
 
    int             Get_Type(void);    // get the datatype of this field
-   unsigned short  Get_Size(void)  { return Size; }
+   uint16_t  Get_Size(void)  { return Size; }
 
    void            Host_To_Net(void);
    void            Net_To_Host(void);
@@ -89,11 +91,10 @@ class FieldClass
    void            Clear(void);        // dealloc mem & zero safely
 
    char            ID[4];              // id value of this field
-   unsigned short  DataType;           // id of the data type we are using
-   unsigned short  Size;               // size of the data portion of this field
+   uint16_t  DataType;           // id of the data type we are using
+   uint16_t  Size;               // size of the data portion of this field
    void           *Data;               // pointer to the data portion of this field
    FieldClass     *Next;               // pointer to the next field in the field list
 };
-
 
 

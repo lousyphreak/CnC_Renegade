@@ -632,8 +632,8 @@ bool
 MPChatChildDialogClass::On_EditCtrl_Key_Down
 (
 	EditCtrlClass *	edit_ctrl,
-	uint32				key_id,
-	uint32				key_data
+	uint32_t				key_id,
+	uint32_t				key_data
 )
 {
 	bool retval					= false;
@@ -700,7 +700,7 @@ MPChatChildDialogClass::On_EditCtrl_Key_Down
 //
 ////////////////////////////////////////////////////////////////
 void
-MPChatChildDialogClass::On_Command (int ctrl_id, int message_id, DWORD param)
+MPChatChildDialogClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	switch (ctrl_id)
 	{
@@ -822,7 +822,7 @@ MPIngameChatPopupClass::Render (void)
 //
 ////////////////////////////////////////////////////////////////
 void
-MPIngameChatPopupClass::On_Command (int ctrl_id, int message_id, DWORD param)
+MPIngameChatPopupClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	/*switch (ctrl_id)
 	{

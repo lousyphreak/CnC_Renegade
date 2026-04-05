@@ -24,6 +24,8 @@
 
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 
 #ifndef __AFXWIN_H__
@@ -46,9 +48,9 @@ public:
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(CLevelEditApp)
 	public:
-	virtual BOOL InitInstance();
+	virtual int32_t InitInstance();
 	virtual int ExitInstance();
-	virtual BOOL PreTranslateMessage(MSG* pMsg);
+	virtual int32_t PreTranslateMessage(MSG* pMsg);
 	//}}AFX_VIRTUAL
 
 // Implementation

@@ -47,7 +47,7 @@ Wtime::Wtime( Wtime &other )
   usec=other.usec;
 }
 
-Wtime::Wtime( uint32 other )
+Wtime::Wtime( uint32_t other )
 {
   sign=POSITIVE;
   sec=other;
@@ -81,10 +81,10 @@ void Wtime::Update(void)
 // Can have a +minutes after the normal time
 // eg: Thu, 20 Jun 1996 17:33:49 +100
 // Returns true if successfully parsed, false otherwise
-bit8 Wtime::ParseDate(char *in)
+int8_t Wtime::ParseDate(char *in)
 {
   int i;
-  uint32 minOffset;
+  uint32_t minOffset;
   struct tm t;
   char *ptr=in;
   while ((!isgraph(*ptr))&&(*ptr!=0)) ptr++;  // skip to start of string
@@ -131,8 +131,8 @@ bit8 Wtime::ParseDate(char *in)
   t.tm_year%=100;   // 1996 is stored as 96, not 1996
   t.tm_isdst=-1;    // daylight savings info isn't available
 
-  sec=(uint32)(mktime(&t));
-  if ((sint32)sec==-1)
+  sec=(uint32_t)(mktime(&t));
+  if ((int32_t)sec==-1)
     return(FALSE);
 
 
@@ -166,7 +166,7 @@ bit8 Wtime::ParseDate(char *in)
 // This takes the standard Microsoft time formatting string
 // make sure the out string is big enough
 // An example format would be "mm/dd/yy hh:mm:ss"
-bit8 Wtime::FormatTime(char *out, char *format)
+int8_t Wtime::FormatTime(char *out, char *format)
 {
   int lastWasH=0;
   out[0]=0;
@@ -370,27 +370,27 @@ void Wtime::PrintDate(char *out) const
     GetYear());
 }
 
-uint32 Wtime::GetSec(void) const
+uint32_t Wtime::GetSec(void) const
 {
   return(sec);
 }
 
-uint32 Wtime::GetUsec(void) const
+uint32_t Wtime::GetUsec(void) const
 {
   return(usec);
 }
 
-void Wtime::SetSec(uint32 newsec)
+void Wtime::SetSec(uint32_t newsec)
 {
   sec=newsec;
 }
 
-void Wtime::SetUsec(uint32 newusec)
+void Wtime::SetUsec(uint32_t newusec)
 {
   usec=newusec;
 }
 
-void Wtime::Set(uint32 newsec, uint32 newusec)
+void Wtime::Set(uint32_t newsec, uint32_t newusec)
 {
   sec=newsec;
   usec=newusec;
@@ -413,7 +413,7 @@ void Wtime::GetTimevalMT(struct timeval &tv)
 }
 
 
-uint32 Wtime::GetSecond(void) const
+uint32_t Wtime::GetSecond(void) const
 {
   struct tm *tptr;
 
@@ -426,7 +426,7 @@ uint32 Wtime::GetSecond(void) const
 
   return(tptr->tm_sec);
 }
-uint32 Wtime::GetMinute(void) const
+uint32_t Wtime::GetMinute(void) const
 {
   struct tm *tptr;
 
@@ -439,7 +439,7 @@ uint32 Wtime::GetMinute(void) const
 
   return(tptr->tm_min);
 }
-uint32 Wtime::GetHour(void) const
+uint32_t Wtime::GetHour(void) const
 {
   struct tm *tptr;
 
@@ -452,7 +452,7 @@ uint32 Wtime::GetHour(void) const
  
   return(tptr->tm_hour);
 }
-uint32 Wtime::GetMDay(void) const
+uint32_t Wtime::GetMDay(void) const
 {
   struct tm *tptr;
 
@@ -465,7 +465,7 @@ uint32 Wtime::GetMDay(void) const
 
   return(tptr->tm_mday);
 }
-uint32 Wtime::GetWDay(void) const
+uint32_t Wtime::GetWDay(void) const
 {
   struct tm *tptr;
 
@@ -478,7 +478,7 @@ uint32 Wtime::GetWDay(void) const
 
   return(tptr->tm_wday+1);
 }
-uint32 Wtime::GetYDay(void) const
+uint32_t Wtime::GetYDay(void) const
 {
   struct tm *tptr;
 
@@ -491,18 +491,18 @@ uint32 Wtime::GetYDay(void) const
 
   return(tptr->tm_yday+1);
 }
-uint32 Wtime::GetYWeek(void) const
+uint32_t Wtime::GetYWeek(void) const
 {
-  uint32 yweek;
-  uint32 yday=GetYDay();
-  uint32 wday=GetWDay();
+  uint32_t yweek;
+  uint32_t yday=GetYDay();
+  uint32_t wday=GetWDay();
   //phase holds the first weekday of the year.  If (Jan 1 = Sun) phase = 0
-  sint32 phase=((wday-yday)%7);
+  int32_t phase=((wday-yday)%7);
   if (phase<0) phase+=7;
   yweek=((yday+phase-1)/7)+1; 
   return(yweek);
 }
-uint32 Wtime::GetMonth(void) const
+uint32_t Wtime::GetMonth(void) const
 {
   struct tm *tptr;
 
@@ -516,7 +516,7 @@ uint32 Wtime::GetMonth(void) const
   return(tptr->tm_mon+1);
 }
 
-uint32 Wtime::GetYear(void) const
+uint32_t Wtime::GetYear(void) const
 {
   struct tm *tptr;
 
@@ -534,7 +534,7 @@ uint32 Wtime::GetYear(void) const
 }
 
 
-bit8 Wtime::GetSign(void) const
+int8_t Wtime::GetSign(void) const
 {
   return(sign);
 }
@@ -558,25 +558,25 @@ int   Wtime::Compare(const Wtime &other) const
 }
   
 
-bit8 Wtime::operator == ( const Wtime &other ) const
+int8_t Wtime::operator == ( const Wtime &other ) const
 {
-  bit8 retval=Compare(other);
+  int8_t retval=Compare(other);
   if (retval==0)
     return(TRUE);
   else
     return(FALSE);
 }
 
-bit8 Wtime::operator != ( const Wtime &other ) const
+int8_t Wtime::operator != ( const Wtime &other ) const
 {
-  bit8 retval=Compare(other);
+  int8_t retval=Compare(other);
   if (retval==0)
     return(FALSE);
   else
     return(TRUE);
 }
 
-bit8 Wtime::operator < ( const Wtime &other ) const
+int8_t Wtime::operator < ( const Wtime &other ) const
 {
   int retval=Compare(other);
   if (retval==-1)
@@ -585,7 +585,7 @@ bit8 Wtime::operator < ( const Wtime &other ) const
     return(FALSE);
 }
 
-bit8 Wtime::operator > ( const Wtime &other ) const
+int8_t Wtime::operator > ( const Wtime &other ) const
 {
   int retval=Compare(other);
   if (retval==1)
@@ -594,7 +594,7 @@ bit8 Wtime::operator > ( const Wtime &other ) const
     return(FALSE);
 }
 
-bit8 Wtime::operator <= ( const Wtime &other ) const
+int8_t Wtime::operator <= ( const Wtime &other ) const
 {
   int retval=Compare(other);
   if ((retval==-1)||(retval==0))
@@ -603,7 +603,7 @@ bit8 Wtime::operator <= ( const Wtime &other ) const
     return(FALSE);
 }
 
-bit8 Wtime::operator >= ( const Wtime &other ) const
+int8_t Wtime::operator >= ( const Wtime &other ) const
 {
   int retval=Compare(other);
   if ((retval==1)||(retval==0))
@@ -727,7 +727,7 @@ Wtime &Wtime::operator += (const Wtime &other)
 
 Wtime &Wtime::operator -= (const Wtime &other)
 {
-  sint32 temp;
+  int32_t temp;
   if (Compare(other)==-1)
   {
     sec=0;                  // can't handle negative time 
@@ -735,8 +735,8 @@ Wtime &Wtime::operator -= (const Wtime &other)
     return *this;
   }
   sec-=other.sec;
-  temp=(sint32)usec;
-  temp-=(sint32)other.usec;
+  temp=(int32_t)usec;
+  temp-=(int32_t)other.usec;
   if (temp<0)
   {
     sec--;
@@ -770,21 +770,21 @@ Wtime   &Wtime::operator = (const Wtime &other)
 }
 
 
-Wtime &Wtime::operator += (const uint32 other)
+Wtime &Wtime::operator += (const uint32_t other)
 {
   sec+=other;
   return *this;
 }
 
 
-Wtime &Wtime::operator -= (const uint32 other)
+Wtime &Wtime::operator -= (const uint32_t other)
 {
   sec-=other;
   return *this;
 }
 
 
-Wtime Wtime::operator - (uint32 other)
+Wtime Wtime::operator - (uint32_t other)
 {
   Wtime temp(*this);
   temp-=other;
@@ -792,7 +792,7 @@ Wtime Wtime::operator - (uint32 other)
 }
 
 
-Wtime Wtime::operator + (uint32 other)
+Wtime Wtime::operator + (uint32_t other)
 {
   Wtime temp(*this);
   temp+=other;
@@ -800,7 +800,7 @@ Wtime Wtime::operator + (uint32 other)
 }
 
 
-Wtime &Wtime::operator = (const uint32 other)
+Wtime &Wtime::operator = (const uint32_t other)
 {
   sign=POSITIVE;
   sec=other;

@@ -78,29 +78,29 @@ void ChunkTableClass::AddItem(CListCtrl *List, int &Counter, const char *Name, c
 	}
 }
 
-void ChunkTableClass::AddItemVersion(CListCtrl *List,int &Counter,uint32 version)
+void ChunkTableClass::AddItemVersion(CListCtrl *List,int &Counter,uint32_t version)
 {
 	char buf[64];
 	sprintf(buf,"%d.%d",W3D_GET_MAJOR_VERSION(version),W3D_GET_MINOR_VERSION(version));
 	AddItem(List,Counter,"Version",buf);
 }
 
-void ChunkTableClass::AddItem(CListCtrl *List, int &Counter, const char *Name, uint32 Value) {
+void ChunkTableClass::AddItem(CListCtrl *List, int &Counter, const char *Name, uint32_t Value) {
 	char buf[256];
 	sprintf(buf, "%d", Value);
 	AddItem(List, Counter, Name, buf, "int32");
 }
-void ChunkTableClass::AddItem(CListCtrl *List, int &Counter, const char *Name, uint16 Value) {
+void ChunkTableClass::AddItem(CListCtrl *List, int &Counter, const char *Name, uint16_t Value) {
 	char buf[256];
 	sprintf(buf, "%d", Value);
 	AddItem(List, Counter, Name, buf, "int16");
 }
-void ChunkTableClass::AddItem(CListCtrl *List, int &Counter, const char *Name, uint8 Value) {
+void ChunkTableClass::AddItem(CListCtrl *List, int &Counter, const char *Name, uint8_t Value) {
 	char buf[256];
 	sprintf(buf, "%d", Value);
 	AddItem(List, Counter, Name, buf, "int8");
 }
-void ChunkTableClass::AddItem(CListCtrl *List, int &Counter, const char *Name, uint8 *Value, int Count) {
+void ChunkTableClass::AddItem(CListCtrl *List, int &Counter, const char *Name, uint8_t *Value, int Count) {
 	CString buffer;
 	CString temp;
 	int counter = 0;
@@ -117,7 +117,7 @@ void ChunkTableClass::AddItem(CListCtrl *List,int &Counter,  const char *Name, f
 	sprintf(buf, "%f", Value);
 	AddItem(List, Counter, Name, buf, "float");
 }
-void ChunkTableClass::AddItem(CListCtrl *List, int &Counter, const char *Name, uint32 *Value, int Count) {
+void ChunkTableClass::AddItem(CListCtrl *List, int &Counter, const char *Name, uint32_t *Value, int Count) {
 	CString buffer;
 	CString temp;
 	int counter = 0;
@@ -810,7 +810,7 @@ void ChunkTableClass::List_W3D_CHUNK_MESH_HEADER3(ChunkItem *Item, CListCtrl *Li
 	if (data->SortLevel == SORT_LEVEL_NONE) {
 		AddItem(List, Counter, "SortLevel", "NONE");
 	} else {
-		AddItem(List, Counter, "SortLevel", (uint8)data->SortLevel);
+		AddItem(List, Counter, "SortLevel", (uint8_t)data->SortLevel);
 	}
 
 	if ((data->Attributes & W3D_MESH_FLAG_PRELIT_MASK) != 0x0) {
@@ -869,8 +869,8 @@ void ChunkTableClass::List_W3D_CHUNK_TRIANGLES(ChunkItem *Item, CListCtrl *List)
 
 void ChunkTableClass::List_W3D_CHUNK_PER_TRI_MATERIALS(ChunkItem * Item,CListCtrl *List)
 {
-	unsigned short *data;
-	data = (unsigned short *) Item->Data;
+	uint16_t *data;
+	data = (uint16_t *) Item->Data;
 	int Counter = 0;
 	int index = 0;
 	void *max = (char *) Item->Data + Item->Length;
@@ -888,7 +888,7 @@ void ChunkTableClass::List_W3D_CHUNK_PER_TRI_MATERIALS(ChunkItem * Item,CListCtr
 
 void	ChunkTableClass::List_W3D_CHUNK_VERTEX_SHADE_INDICES(ChunkItem * Item,CListCtrl *List)
 {
-	uint32 * data = (uint32 *) Item->Data;
+	uint32_t * data = (uint32_t *) Item->Data;
 	int Counter = 0;
 	int index = 0;
 	void *max = (char *) Item->Data + Item->Length;
@@ -1095,7 +1095,7 @@ void	ChunkTableClass::List_W3D_CHUNK_VERTEX_MATERIAL_IDS(ChunkItem * Item,CListC
 {
 	int Counter = 0;
 	int counter = 0;
-	uint32 *data = (uint32 *)Item->Data;
+	uint32_t *data = (uint32_t *)Item->Data;
 	void *max = (char *) Item->Data + Item->Length;
 	char buf[256];
 
@@ -1113,7 +1113,7 @@ void	ChunkTableClass::List_W3D_CHUNK_SHADER_IDS(ChunkItem * Item,CListCtrl *List
 {
 	int Counter = 0;
 	int counter = 0;
-	uint32 *data = (uint32 *)Item->Data;
+	uint32_t *data = (uint32_t *)Item->Data;
 	void *max = (char *) Item->Data + Item->Length;
 	char buf[256];
 
@@ -1193,7 +1193,7 @@ void	ChunkTableClass::List_W3D_CHUNK_TEXTURE_IDS(ChunkItem * Item,CListCtrl *Lis
 {	
 	int Counter = 0;
 	int counter = 0;
-	uint32 *data = (uint32 *)Item->Data;
+	uint32_t *data = (uint32_t *)Item->Data;
 	void *max = (char *) Item->Data + Item->Length;
 	char buf[256];
 
@@ -1261,7 +1261,7 @@ void ChunkTableClass::List_W3D_CHUNK_AABTREE_POLYINDICES(ChunkItem * Item,CListC
 {
 	int Counter = 0;
 	int counter = 0;
-	uint32 *data = (uint32 *)Item->Data;
+	uint32_t *data = (uint32_t *)Item->Data;
 	void *max = (char *) Item->Data + Item->Length;
 	char buf[256];
 
@@ -1436,7 +1436,7 @@ void ChunkTableClass::List_W3D_CHUNK_BIT_CHANNEL(ChunkItem *Item, CListCtrl *Lis
 
 	W3dBitChannelStruct *data = (W3dBitChannelStruct *) Item->Data;
 	int Counter = 0;
-	unsigned char * bits = &(data->Data[0]);
+	uint8_t * bits = &(data->Data[0]);
 
 	AddItem(List, Counter, "FirstFrame", data->FirstFrame);
 	AddItem(List, Counter, "LastFrame", data->LastFrame);
@@ -1453,7 +1453,7 @@ void ChunkTableClass::List_W3D_CHUNK_BIT_CHANNEL(ChunkItem *Item, CListCtrl *Lis
 	CString name;
 	for (int frameidx=0; frameidx <= data->LastFrame - data->FirstFrame; frameidx++) {
 		name.Format("Data[%d]",frameidx + data->FirstFrame);
-		AddItem(List, Counter, name, (uint8)Get_Bit(bits,frameidx));
+		AddItem(List, Counter, name, (uint8_t)Get_Bit(bits,frameidx));
 	}
 }
 
@@ -1762,7 +1762,7 @@ void ChunkTableClass::List_W3D_CHUNK_EMITTER_ROTATION_KEYFRAMES(ChunkItem * Item
 
 	W3dEmitterRotationKeyframeStruct * key = (W3dEmitterRotationKeyframeStruct *)((char*)Item->Data + sizeof(W3dEmitterRotationHeaderStruct));
 	char buf[256];
-	for (unsigned int i=0; i<header->KeyframeCount+1; i++) {
+	for (uint32_t i=0; i<header->KeyframeCount+1; i++) {
 		sprintf(buf,"Time[%d]",i);
 		AddItem(List,counter,buf,key[i].Time);
 		sprintf(buf,"Rotation[%d]",i);
@@ -1779,7 +1779,7 @@ void ChunkTableClass::List_W3D_CHUNK_EMITTER_FRAME_KEYFRAMES(ChunkItem * Item,CL
 
 	W3dEmitterFrameKeyframeStruct * key = (W3dEmitterFrameKeyframeStruct *)((char *)Item->Data + sizeof(W3dEmitterFrameHeaderStruct));
 	char buf[256];
-	for (unsigned int i=0; i<header->KeyframeCount+1; i++) {
+	for (uint32_t i=0; i<header->KeyframeCount+1; i++) {
 		sprintf(buf,"Time[%d]",i);
 		AddItem(List,counter,buf,key[i].Time);
 		sprintf(buf,"Frame[%d]",i);
@@ -1796,7 +1796,7 @@ void ChunkTableClass::List_W3D_CHUNK_EMITTER_BLUR_TIME_KEYFRAMES(ChunkItem * Ite
 
 	W3dEmitterBlurTimeKeyframeStruct * key = (W3dEmitterBlurTimeKeyframeStruct *)((char *)Item->Data + sizeof(W3dEmitterBlurTimeHeaderStruct));
 	char buf[256];
-	for (unsigned int i=0; i<header->KeyframeCount+1; i++) {
+	for (uint32_t i=0; i<header->KeyframeCount+1; i++) {
 		sprintf(buf,"Time[%d]",i);
 		AddItem(List,counter,buf,key[i].Time);
 		sprintf(buf,"BlurTime[%d]",i);
@@ -1827,7 +1827,7 @@ void ChunkTableClass::List_W3D_CHUNK_AGGREGATE_INFO(ChunkItem * Item,CListCtrl *
 	char label[256];
 	W3dAggregateSubobjectStruct * defs = (W3dAggregateSubobjectStruct *)((char*)Item->Data + sizeof(W3dAggregateInfoStruct));
 	
-	for (unsigned int subobj=0; subobj<info->SubobjectCount; subobj++) {
+	for (uint32_t subobj=0; subobj<info->SubobjectCount; subobj++) {
 		counter = 0;
 		
 		sprintf(label,"SubObject[%d].SubobjectName",subobj);
@@ -1846,7 +1846,7 @@ void ChunkTableClass::List_W3D_CHUNK_TEXTURE_REPLACER_INFO(ChunkItem * Item,CLis
 
 	W3dTextureReplacerStruct * data = (W3dTextureReplacerStruct *)(header + 1);
 
-	for (uint32 replaceidx=0; replaceidx<header->ReplacedTexturesCount; replaceidx++) {
+	for (uint32_t replaceidx=0; replaceidx<header->ReplacedTexturesCount; replaceidx++) {
 		int pathidx = 0;
 		char label[256];
 
@@ -2193,7 +2193,7 @@ ChunkItem::ChunkItem(ChunkLoadClass &cload) {
 	if(Length == 0) {
 		Data = 0;
 	} else {
-		Data = new char[Length];
+		Data = new uint8_t[Length];
 		cload.Read(Data, Length);
 	}
 }
@@ -2317,18 +2317,18 @@ void ChunkData::Release_Data()
 
 int Get_Bit(void const * array, int bit)
 {
-	unsigned char mask = (unsigned char)(1 << (bit % 8));
-	return((*((unsigned char *)array + (bit/8)) & mask) != 0);
+	uint8_t mask = (uint8_t)(1 << (bit % 8));
+	return((*((uint8_t *)array + (bit/8)) & mask) != 0);
 }
 
 void Set_Bit(void * array, int bit, int value)
 {
-	unsigned char mask = (unsigned char)(1 << (bit % 8));
+	uint8_t mask = (uint8_t)(1 << (bit % 8));
 
 	if (value != 0) {
-		*((unsigned char *)array + (bit/8)) |= mask;
+		*((uint8_t *)array + (bit/8)) |= mask;
 	} else {
-		*((unsigned char *)array + (bit/8)) &= (unsigned char)~mask;
+		*((uint8_t *)array + (bit/8)) &= (uint8_t)~mask;
 	}
 }
 

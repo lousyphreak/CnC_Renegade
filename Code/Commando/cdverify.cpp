@@ -62,7 +62,7 @@ public:
 		Object (NULL),
 		PopupDialogClass (IDD_CDVERIFY) {}
 
-	void	On_Command (int ctrl_id, int mesage_id, DWORD param);
+	void	On_Command (int ctrl_id, int mesage_id, uint32_t param);
 	void	Set_Object (CDVerifyClass *object)	{ Object = object; }
 
 private:
@@ -155,7 +155,7 @@ CDVerifyClass::Display_UI (Observer<CDVerifyEvent> *observer)
 //
 ////////////////////////////////////////////////////////////////
 void
-CDVerifyDialogClass::On_Command (int ctrl_id, int message_id, DWORD param)
+CDVerifyDialogClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	//
 	//	Check to see if the CD is in the drive now...

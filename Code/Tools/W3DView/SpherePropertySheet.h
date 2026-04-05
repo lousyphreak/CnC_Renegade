@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __SPHERE_PROPERTY_SHEET_H
@@ -64,8 +66,8 @@ class SpherePropertySheetClass : public CPropertySheet
 
 // Construction
 public:
-	SpherePropertySheetClass (SphereRenderObjClass *sphere, UINT nIDCaption, CWnd* pParentWnd = NULL, UINT iSelectPage = 0);
-	SpherePropertySheetClass (SphereRenderObjClass *sphere, LPCTSTR pszCaption, CWnd* pParentWnd = NULL, UINT iSelectPage = 0);
+	SpherePropertySheetClass (SphereRenderObjClass *sphere, uint32_t nIDCaption, CWnd* pParentWnd = NULL, uint32_t iSelectPage = 0);
+	SpherePropertySheetClass (SphereRenderObjClass *sphere, LPCTSTR pszCaption, CWnd* pParentWnd = NULL, uint32_t iSelectPage = 0);
 
 // Attributes
 public:
@@ -77,7 +79,7 @@ public:
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(SpherePropertySheetClass)
 	protected:
-	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+	virtual intptr_t WindowProc(uint32_t message, uintptr_t wParam, intptr_t lParam);
 	//}}AFX_VIRTUAL
 
 // Implementation

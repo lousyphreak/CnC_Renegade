@@ -59,7 +59,7 @@ static char THIS_FILE[] = __FILE__;
  * HISTORY:                                                                                    *
  *   02/03/00    IML : Created.                                                                * 
  *=============================================================================================*/
-BOOL PackingDialog::OnInitDialog() 
+int32_t PackingDialog::OnInitDialog() 
 {
   	static LV_COLUMN _column [2] = {
 		{LVCF_FMT | LVCF_TEXT | LVCF_WIDTH, LVCFMT_LEFT,  0, "Statistic", 0, 0},

@@ -169,11 +169,11 @@ WaypathInfoPageClass::Apply_Changes (void)
 // OnCommand
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 WaypathInfoPageClass::OnCommand
 (
-	WPARAM wParam,
-	LPARAM lParam
+	uintptr_t wParam,
+	intptr_t lParam
 ) 
 {
 	if (LOWORD (wParam) == IDC_INNATE_PATHFIND_CHECK && HIWORD (wParam) == BN_CLICKED) {

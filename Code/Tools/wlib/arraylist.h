@@ -47,6 +47,8 @@ that don't belong to them, etc...
 #ifndef ARRAYLIST_HEADER
 #define ARRAYLIST_HEADER    
 
+#include <cstdint>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -71,39 +73,39 @@ class ArrayList
   void             clear(void);
 
   // Add a node after the zero based 'pos'
-  bit8             add(IN T &node,sint32 pos);
-  bit8             addTail(IN T &node);
-  bit8             addHead(IN T &node);
-  bit8		   addSortedAsc(IN T &node);		// Ascending
-  bit8		   addSortedDes(IN T &node);		// Descending
-  /*bit8		   addNumSortedAsc(IN T &node);		// Ascending
-  bit8		   addNumSortedDes(IN T &node);		// Descending*/
-  bit8             addMany(OUT T *outarray, sint32 pos, sint32 howmany);
+  int8_t             add(IN T &node,int32_t pos);
+  int8_t             addTail(IN T &node);
+  int8_t             addHead(IN T &node);
+  int8_t		   addSortedAsc(IN T &node);		// Ascending
+  int8_t		   addSortedDes(IN T &node);		// Descending
+  /*int8_t		   addNumSortedAsc(IN T &node);		// Ascending
+  int8_t		   addNumSortedDes(IN T &node);		// Descending*/
+  int8_t             addMany(OUT T *outarray, int32_t pos, int32_t howmany);
 
   // Remove a node
-  bit8             remove(OUT T &node,sint32 pos);
-  bit8             remove(sint32 pos);
-  bit8             removeHead(OUT T &node);
-  bit8             removeTail(OUT T &node);
-  sint32           removeMany(OUT T *outarray, sint32 pos, sint32 howmany);
+  int8_t             remove(OUT T &node,int32_t pos);
+  int8_t             remove(int32_t pos);
+  int8_t             removeHead(OUT T &node);
+  int8_t             removeTail(OUT T &node);
+  int32_t           removeMany(OUT T *outarray, int32_t pos, int32_t howmany);
 
   // Replace one obj with another
-  bit8             replace(IN T &node, sint32 pos);
+  int8_t             replace(IN T &node, int32_t pos);
 
 
   // Get a node without removing from the list
-  bit8             get(OUT T &node,sint32 pos) RO;
-  bit8             getHead(OUT T &node) RO;
-  bit8             getTail(OUT T &node) RO;        
+  int8_t             get(OUT T &node,int32_t pos) RO;
+  int8_t             getHead(OUT T &node) RO;
+  int8_t             getTail(OUT T &node) RO;        
 
   // Get a pointer to the interally managed copy (careful!)
-  bit8             getPointer(OUT T **node,sint32 pos) RO;
+  int8_t             getPointer(OUT T **node,int32_t pos) RO;
 
   // Get the number of entries in the list
-  sint32           length(void) RO;
+  int32_t           length(void) RO;
 
   // UNSAFE! for classes, see note below!
-  bit8             setSize(sint32 newsize, IN T &filler);
+  int8_t             setSize(int32_t newsize, IN T &filler);
 
   // Print information on the list
   void             print(FILE *out);
@@ -112,9 +114,9 @@ class ArrayList
   ArrayList<T>   &operator=(IN ArrayList<T> &other);
 
  private:
-  sint32 	   _sortedLookup(IN T &target, int ascending);
-  sint32           Entries_;   // Number of entries
-  sint32           Slots_;     // Number of available slots
+  int32_t 	   _sortedLookup(IN T &target, int ascending);
+  int32_t           Entries_;   // Number of entries
+  int32_t           Slots_;     // Number of available slots
 
   T               *Vector_;    // The actual memory where the list is held
 
@@ -123,8 +125,8 @@ class ArrayList
     INITIAL_SIZE = 10
   };
 
-  bit8             growVector(void);   // Expand the number of slots
-  bit8             shrinkVector(void); // Reduce the number of slots
+  int8_t             growVector(void);   // Expand the number of slots
+  int8_t             shrinkVector(void); // Reduce the number of slots
 };
 
 
@@ -153,7 +155,7 @@ ArrayList<T>::~ArrayList()
 {
   clear();                   // Remove the entries & call destructors on them
 
-  delete[]((uint8*)Vector_); // this will prevent the destructors from
+  delete[]((uint8_t*)Vector_); // this will prevent the destructors from
                              //  gettting called on elements not
                              //  containing valid objects.
 
@@ -197,7 +199,7 @@ void ArrayList<T>::clear()
 //
 // **************************************************************************
 template <class T>
-bit8 ArrayList<T>::setSize(sint32 newsize, IN T &filler)
+int8_t ArrayList<T>::setSize(int32_t newsize, IN T &filler)
 {
   int oldEntries=Entries_;
   Entries_ = newsize;
@@ -227,7 +229,7 @@ bit8 ArrayList<T>::setSize(sint32 newsize, IN T &filler)
 // When adding into a position, the new node goes at the zero based slot
 // specified by pos. All other nodes get moved one slot down.
 template <class T>
-bit8 ArrayList<T>::add(IN T &node,sint32 pos)
+int8_t ArrayList<T>::add(IN T &node,int32_t pos)
 {
   if (pos > Entries_)      // You can only access one of the end of the vector
     pos=Entries_; 
@@ -254,7 +256,7 @@ bit8 ArrayList<T>::add(IN T &node,sint32 pos)
 
 // Add to the first node, all others get shifted down one slot
 template <class T>
-bit8 ArrayList<T>::addHead(IN T &node)  
+int8_t ArrayList<T>::addHead(IN T &node)  
 {
   return(add(node,0));
 }
@@ -262,7 +264,7 @@ bit8 ArrayList<T>::addHead(IN T &node)
 
 // Append to the end of the list
 template <class T>
-bit8 ArrayList<T>::addTail(IN T &node)
+int8_t ArrayList<T>::addTail(IN T &node)
 {
   return(add(node,length()));
 }  
@@ -271,9 +273,9 @@ bit8 ArrayList<T>::addTail(IN T &node)
 // addSortedX only works (properly) if evrerything else in the list is added
 // using addSorted.
 template <class T>
-bit8 ArrayList<T>::addSortedAsc(IN T &node)
+int8_t ArrayList<T>::addSortedAsc(IN T &node)
 {
-	sint32 pos = _sortedLookup(node, 1);
+	int32_t pos = _sortedLookup(node, 1);
 	return(add(node, pos));
 }
 
@@ -281,16 +283,16 @@ bit8 ArrayList<T>::addSortedAsc(IN T &node)
 // addSortedX only works (properly) if evrerything else in the list is added
 // using addSorted.
 template <class T>
-bit8 ArrayList<T>::addSortedDes(IN T &node)
+int8_t ArrayList<T>::addSortedDes(IN T &node)
 {
-	sint32 pos = _sortedLookup(node, 0);
+	int32_t pos = _sortedLookup(node, 0);
 	return(add(node, pos));
 }
 
 
 // This is the binary search used by addSorted
 template <class T>
-sint32 ArrayList<T>::_sortedLookup(IN T &target, int ascending)
+int32_t ArrayList<T>::_sortedLookup(IN T &target, int ascending)
 {
 	int	low, mid, high;
 	T* 	lowtarget;
@@ -397,25 +399,25 @@ sint32 ArrayList<T>::_sortedLookup(IN T &target, int ascending)
 // Yes...now that you mention it I am on crack...
 //	
 template <class T>
-bit8 ArrayList<T>::addNumSortedAsc(IN T &node, char delim, int fields)
+int8_t ArrayList<T>::addNumSortedAsc(IN T &node, char delim, int fields)
 {
-        sint32 pos = _numSortedLookup(node, delim, fields, 1);
+        int32_t pos = _numSortedLookup(node, delim, fields, 1);
         return(add(node, pos));
 }
 
 
 // See addNumSortedAsc comment above.
 template <class T>
-bit8 ArrayList<T>::addSortedDes(IN T &node, char delim, int fields)
+int8_t ArrayList<T>::addSortedDes(IN T &node, char delim, int fields)
 {
-        sint32 pos = _sortedLookup(node, delim, fields, 0);
+        int32_t pos = _sortedLookup(node, delim, fields, 0);
         return(add(node, pos));
 }
 
 
 // This is the binary search used by addSorted
 template <class T>
-sint32 ArrayList<T>::_numSortedLookup(IN T &target, char delim, int fields, int ascending)
+int32_t ArrayList<T>::_numSortedLookup(IN T &target, char delim, int fields, int ascending)
 {
 	int	low, mid, high;
 	T* 	lowtarget;
@@ -502,7 +504,7 @@ sint32 ArrayList<T>::_numSortedLookup(IN T &target, char delim, int fields, int 
 // Delete an item at this index and construct a new one in it's place
 //
 template <class T>
-bit8 ArrayList<T>::replace(IN T &node, sint32 pos)
+int8_t ArrayList<T>::replace(IN T &node, int32_t pos)
 {
   if (Entries_==0)
     return(FALSE);
@@ -525,7 +527,7 @@ bit8 ArrayList<T>::replace(IN T &node, sint32 pos)
 // Remove at the zero based index specified by 'pos'.  When removing from
 // a slot, all others get shifted up by one.
 template <class T>
-bit8 ArrayList<T>::remove(sint32 pos) 
+int8_t ArrayList<T>::remove(int32_t pos) 
 {
   if (Entries_==0)
     return(FALSE);
@@ -552,9 +554,9 @@ bit8 ArrayList<T>::remove(sint32 pos)
 // Remove at the zero based index specified by 'pos'.  When removing from
 // a slot, all others get shifted up by one.
 template <class T>
-bit8 ArrayList<T>::remove(OUT T &node, sint32 pos)
+int8_t ArrayList<T>::remove(OUT T &node, int32_t pos)
 {
-  bit8 retval;
+  int8_t retval;
   retval=get(node,pos);
   if (retval==FALSE)
     return(FALSE);
@@ -564,7 +566,7 @@ bit8 ArrayList<T>::remove(OUT T &node, sint32 pos)
 
 // Remove the first node of the list
 template <class T>
-bit8 ArrayList<T>::removeHead(OUT T &node)     
+int8_t ArrayList<T>::removeHead(OUT T &node)     
 {
   return(remove(node,0));
 }
@@ -572,7 +574,7 @@ bit8 ArrayList<T>::removeHead(OUT T &node)
 
 // Remove the last node of the list
 template <class T>
-bit8 ArrayList<T>::removeTail(OUT T &node)
+int8_t ArrayList<T>::removeTail(OUT T &node)
 {
   return(remove(node,Entries_-1));
 } 
@@ -581,7 +583,7 @@ bit8 ArrayList<T>::removeTail(OUT T &node)
 //  sometimes efficiency requires it...
 // get a copy of an item
 template <class T>
-bit8 ArrayList<T>::getPointer(OUT T **node,sint32 pos) RO 
+int8_t ArrayList<T>::getPointer(OUT T **node,int32_t pos) RO 
 {
   if ((pos < 0)||(pos >= Entries_))
     return(FALSE);
@@ -592,7 +594,7 @@ bit8 ArrayList<T>::getPointer(OUT T **node,sint32 pos) RO
 
 // get a copy of an item
 template <class T>
-bit8 ArrayList<T>::get(OUT T &node,sint32 pos) RO 
+int8_t ArrayList<T>::get(OUT T &node,int32_t pos) RO 
 {
   if ((pos < 0)||(pos >= Entries_))
     return(FALSE);
@@ -603,7 +605,7 @@ bit8 ArrayList<T>::get(OUT T &node,sint32 pos) RO
 
 // get a copy of the first node of the list
 template <class T>
-bit8 ArrayList<T>::getHead(OUT T &node) RO 
+int8_t ArrayList<T>::getHead(OUT T &node) RO 
 {
   return(get(node,0));
 }
@@ -611,7 +613,7 @@ bit8 ArrayList<T>::getHead(OUT T &node) RO
 
 // get a copy of the last node
 template <class T>
-bit8 ArrayList<T>::getTail(OUT T &node) RO 
+int8_t ArrayList<T>::getTail(OUT T &node) RO 
 {
   return(get(node,Entries_-1));
 }      
@@ -630,14 +632,14 @@ void ArrayList<T>::print(FILE *out)
 
 // Return the current length of the list
 template <class T>
-sint32 ArrayList<T>::length(void) RO 
+int32_t ArrayList<T>::length(void) RO 
 {
   return(Entries_);
 }    
 
 // Grow the vector by a factor of 2X 
 template <class T>
-bit8 ArrayList<T>::growVector(void)
+int8_t ArrayList<T>::growVector(void)
 {
   if (Entries_ < Slots_)   // Don't grow until we're at 100% usage
     return(FALSE);
@@ -653,13 +655,13 @@ bit8 ArrayList<T>::growVector(void)
   //  the slots as objects and then calling the assignment operator on them
   //  when they actually get used.
   //
-  T *newVector=(T *)(new uint8[newSlots * sizeof(T)]);
+  T *newVector=(T *)(new uint8_t[newSlots * sizeof(T)]);
   memset(newVector,0,newSlots * sizeof(T)); // zero just to be safe
 
   if (Vector_ != NULL)
     memcpy(newVector,Vector_,Entries_*sizeof(T));
 
-  delete[]((uint8 *)Vector_);  // Get rid of the old vector without calling
+  delete[]((uint8_t *)Vector_);  // Get rid of the old vector without calling
                                //  destructors
 
   Vector_=newVector;
@@ -671,7 +673,7 @@ bit8 ArrayList<T>::growVector(void)
 
 // Shrink the vector by a factor of 2X
 template <class T>
-bit8 ArrayList<T>::shrinkVector(void)
+int8_t ArrayList<T>::shrinkVector(void)
 {
   //fprintf(stderr,"Shrink called\n");
 
@@ -693,12 +695,12 @@ bit8 ArrayList<T>::shrinkVector(void)
   //  the slots as objects and then calling the assignment operator on them
   //  when they actually get used.
   //
-  T *newVector=(T *)(new uint8[newSlots * sizeof(T)]);
+  T *newVector=(T *)(new uint8_t[newSlots * sizeof(T)]);
  
   if (Vector_ != NULL)    // Vector_ better not be NULL!
     memcpy(newVector,Vector_,Entries_*sizeof(T));
 
-  delete[]((uint8 *)Vector_);  // Get rid of the old vector without calling
+  delete[]((uint8_t *)Vector_);  // Get rid of the old vector without calling
                                //  destructors
  
   Vector_=newVector;
@@ -712,7 +714,7 @@ bit8 ArrayList<T>::shrinkVector(void)
 // artifact DLL in the archive and similar functions in this header file.
 // Compiles, but not tested. LFeenanEA - January 27th 2025
 template <class T>
-sint32 ArrayList<T>::removeMany(OUT T *outarray, sint32 pos, sint32 howmany)
+int32_t ArrayList<T>::removeMany(OUT T *outarray, int32_t pos, int32_t howmany)
 {
   if (Entries_==0)
     return(FALSE);
@@ -745,7 +747,7 @@ sint32 ArrayList<T>::removeMany(OUT T *outarray, sint32 pos, sint32 howmany)
 // artifact DLL in the archive and similar functions in this header file.
 // Compiles, but not tested. LFeenanEA - January 27th 2025
 template <class T>
-bit8 ArrayList<T>::addMany(IN T *inarray, sint32 pos, sint32 howmany)
+int8_t ArrayList<T>::addMany(IN T *inarray, int32_t pos, int32_t howmany)
 {
   if (pos > Entries_)      // You can only access one of the end of the vector
     pos=Entries_;

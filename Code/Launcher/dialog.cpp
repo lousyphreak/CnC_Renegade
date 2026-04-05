@@ -25,7 +25,7 @@
 #include<commctrl.h>
 
 HWND PatchDialog;
-BOOL CALLBACK Patch_Window_Proc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
+int32_t CALLBACK Patch_Window_Proc(HWND hwnd, uint32_t iMsg, uintptr_t wParam, intptr_t lParam);
 
 HWND Create_Patch_Dialog(void)
 {
@@ -37,7 +37,7 @@ HWND Create_Patch_Dialog(void)
   return(PatchDialog);
 }
 
-BOOL CALLBACK Patch_Window_Proc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
+int32_t CALLBACK Patch_Window_Proc(HWND hwnd, uint32_t iMsg, uintptr_t wParam, intptr_t lParam)
 {
 
   static LoadBmp bmpLoader;

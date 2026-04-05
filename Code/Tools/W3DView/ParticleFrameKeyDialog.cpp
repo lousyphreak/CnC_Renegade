@@ -62,7 +62,7 @@ END_MESSAGE_MAP()
 // ParticleFrameKeyDialogClass message handlers
 
 
-BOOL ParticleFrameKeyDialogClass::OnInitDialog() 
+int32_t ParticleFrameKeyDialogClass::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
 	
@@ -79,7 +79,7 @@ void ParticleFrameKeyDialogClass::OnOK()
 	CDialog::OnOK();
 }
 
-BOOL ParticleFrameKeyDialogClass::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult) 
+int32_t ParticleFrameKeyDialogClass::OnNotify(uintptr_t wParam, intptr_t lParam, intptr_t* pResult) 
 {
 	//
 	//	Update the spinner control if necessary

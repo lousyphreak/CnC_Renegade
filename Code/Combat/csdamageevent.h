@@ -37,6 +37,8 @@
 #ifndef __CSDAMAGEEVENT_H__
 #define __CSDAMAGEEVENT_H__
 
+#include <cstdint>
+
 #include "networkobject.h"
 #include "netclassids.h"
 
@@ -54,7 +56,7 @@ public:
 	virtual void			Export_Creation(BitStreamClass &packet);
 	virtual void			Import_Creation(BitStreamClass &packet);
 
-	virtual uint32			Get_Network_Class_ID(void) const				{return NETCLASSID_CSDAMAGEEVENT;}
+	virtual uint32_t			Get_Network_Class_ID(void) const				{return NETCLASSID_CSDAMAGEEVENT;}
 	virtual void			Delete(void)										{delete this;}
 
 	static void				Set_Are_Clients_Trusted(bool flag)			{AreClientsTrusted = flag;}

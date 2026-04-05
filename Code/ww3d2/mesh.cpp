@@ -125,7 +125,7 @@
 static unsigned MeshDebugIdCount;
 
 bool MeshClass::Legacy_Meshes_Fogged = true;
-static SimpleDynVecClass<uint32> temp_apt;
+static SimpleDynVecClass<uint32_t> temp_apt;
 
 /*
 ** This #define causes the collision code to always recompute the triangle normals rather
@@ -372,7 +372,7 @@ void MeshClass::Set_Name(const char * name)
  * HISTORY:                                                                                    *
  *   5/15/98    GTH : Created.                                                                 *
  *=============================================================================================*/
-uint32 MeshClass::Get_W3D_Flags(void)
+uint32_t MeshClass::Get_W3D_Flags(void)
 { 
 	return Model->W3dAttributes; 
 }
@@ -638,7 +638,7 @@ void MeshClass::Create_Decal(DecalGeneratorClass * generator)
  * HISTORY:                                                                                    *
  *   1/26/00    gth : Created.                                                                 *
  *=============================================================================================*/
-void MeshClass::Delete_Decal(uint32 decal_id)
+void MeshClass::Delete_Decal(uint32_t decal_id)
 {
 	if (DecalMesh != NULL) {
 		DecalMesh->Delete_Decal(decal_id);
@@ -692,7 +692,7 @@ void MeshClass::Render(RenderInfoClass & rinfo)
 
 	// If static sort lists are enabled and this mesh has a sort level, put it on the list instead
 	// of rendering it.
-	unsigned int sort_level = (unsigned int)Model->Get_Sort_Level();
+	uint32_t sort_level = (uint32_t)Model->Get_Sort_Level();
 
 	if (WW3D::Are_Static_Sort_Lists_Enabled() && sort_level != SORT_LEVEL_NONE) {
 
@@ -898,7 +898,7 @@ void MeshClass::Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass *
 			DynamicIBAccessClass dynamic_ib(buftype,temp_apt.Count() * 3);
 			{
 				DynamicIBAccessClass::WriteLockClass lock(&dynamic_ib);
-				unsigned short * indices = lock.Get_Index_Array();
+				uint16_t * indices = lock.Get_Index_Array();
 				const TriIndex * polys = Model->Get_Polygon_Array();
 
 				for (int i=0; i < temp_apt.Count(); i++)
@@ -907,9 +907,9 @@ void MeshClass::Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass *
 					unsigned v1 = polys[temp_apt[i]].J;
 					unsigned v2 = polys[temp_apt[i]].K;
 
-					indices[i*3 + 0] = (unsigned short)v0;
-					indices[i*3 + 1] = (unsigned short)v1;
-					indices[i*3 + 2] = (unsigned short)v2;
+					indices[i*3 + 0] = (uint16_t)v0;
+					indices[i*3 + 1] = (uint16_t)v1;
+					indices[i*3 + 2] = (uint16_t)v2;
 
 					min_v = WWMath::Min(v0,min_v);
 					min_v = WWMath::Min(v1,min_v);
@@ -1499,10 +1499,10 @@ void MeshClass::Set_Sort_Level(int level)
 	}
 }
 
-unsigned int * MeshClass::Get_User_Lighting_Array(bool alloc)
+uint32_t * MeshClass::Get_User_Lighting_Array(bool alloc)
 {
 	if (alloc && (UserLighting == NULL)) {
-		UserLighting = new unsigned int[Model->Get_Vertex_Count()];
+		UserLighting = new uint32_t[Model->Get_Vertex_Count()];
 	}
 	return UserLighting;
 }
@@ -1589,7 +1589,7 @@ void MeshClass::Load_User_Lighting (ChunkLoadClass & cload)
 		if (	(cload.Cur_Chunk_ID() == CHUNKID_USER_LIGHTING_ARRAY) && 
 				(cload.Cur_Chunk_Length() == (unsigned)(Model->Get_Vertex_Count() * 4)) ) 
 		{
-			unsigned int * lighting = Get_User_Lighting_Array(true);
+			uint32_t * lighting = Get_User_Lighting_Array(true);
 			cload.Read(lighting,Model->Get_Vertex_Count() * 4);
 			setup_materials_for_user_lighting();
 		}

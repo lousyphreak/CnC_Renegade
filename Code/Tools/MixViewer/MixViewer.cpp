@@ -63,7 +63,7 @@ CMixViewerApp theApp;
 /////////////////////////////////////////////////////////////////////////////
 // CMixViewerApp initialization
 
-BOOL CMixViewerApp::InitInstance()
+int32_t CMixViewerApp::InitInstance()
 {
 	AfxEnableControlContainer();
 

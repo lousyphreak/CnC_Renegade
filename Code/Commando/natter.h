@@ -43,6 +43,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef NATTER_H
 #define NATTER_H
 
@@ -186,10 +188,10 @@ class WOLNATInterfaceClass :	public Observer<WWOnline::UserEvent>,
 		void Set_Server(bool is_server);
 		void Set_Server_Negotiated_Address(IPAddressClass *server_address);
 		DynamicVectorClass<WOL::Server*> Get_Mangler_Server_List(void);
-		unsigned short Get_Mangler_Port_By_Index(int index);
+		uint16_t Get_Mangler_Port_By_Index(int index);
 		bool Get_Mangler_Name_By_Index(int index, char *mangler_name);
 		int Get_Num_Mangler_Servers(void);
-		unsigned long Get_Local_Address(void) {
+		uint32_t Get_Local_Address(void) {
 			return(0);//return(FirewallHelper.Get_Local_Address());
 		};
 		void Tell_Server_That_Client_Is_In_Channel(void);
@@ -198,10 +200,10 @@ class WOLNATInterfaceClass :	public Observer<WWOnline::UserEvent>,
 		/*
 		** Game port management.
 		*/
-		unsigned short Get_Next_Client_Port(void);
-		unsigned short Get_Port_As_Server(void);
-		unsigned short Get_Port_As_Server_Client(void);
-		unsigned short Get_Force_Port(void) {return(ForcePort);};
+		uint16_t Get_Next_Client_Port(void);
+		uint16_t Get_Port_As_Server(void);
+		uint16_t Get_Port_As_Server_Client(void);
+		uint16_t Get_Force_Port(void) {return(ForcePort);};
 
 		/*
 		** Config.
@@ -209,10 +211,10 @@ class WOLNATInterfaceClass :	public Observer<WWOnline::UserEvent>,
 		void Get_Config(RegistryClass *reg, int &port_number, bool &send_delay);
 		void Set_Config(RegistryClass *reg, int port_number, bool send_delay);
 		void Save_Firewall_Info_To_Registry(void);
-		unsigned long Get_Reg_External_IP(void) {return(RegExternalIP);}
-		unsigned long Get_Reg_External_Port(void) {return(RegExternalPort);}
+		uint32_t Get_Reg_External_IP(void) {return(RegExternalIP);}
+		uint32_t Get_Reg_External_Port(void) {return(RegExternalPort);}
 		void Get_Compact_Log(StringClass &log_string);
-		unsigned long Get_Chat_External_IP(void) {return(ChatExternalIP);}
+		uint32_t Get_Chat_External_IP(void) {return(ChatExternalIP);}
 
 
 		/*
@@ -318,23 +320,23 @@ class WOLNATInterfaceClass :	public Observer<WWOnline::UserEvent>,
 		** PortBase is the start of the current port number range we are using. The range is added to the port base every time
 		** we start a new game so we are always using a fresh port. The server uses 2 ports per game and the client uses 1 port.
 		*/
-		unsigned short PortBase;
+		uint16_t PortBase;
 
 		/*
 		** Set this to non-zero to force it to be used as the local port.
 		*/
-		unsigned short ForcePort;
+		uint16_t ForcePort;
 
 		/*
 		** External IP and port from the registry.
 		*/
-		unsigned long RegExternalIP;
-		unsigned short RegExternalPort;
+		uint32_t RegExternalIP;
+		uint16_t RegExternalPort;
 
 		/*
 		** Our IP according to westwood chat.
 		*/
-		unsigned long ChatExternalIP;
+		uint32_t ChatExternalIP;
 
 		/*
 		** Bloat pointer to the Session class.
@@ -351,7 +353,7 @@ class WOLNATInterfaceClass :	public Observer<WWOnline::UserEvent>,
 		*/
 		struct GamePacketStruct {
 			IPAddressClass		FromAddress;
-			unsigned char		Payload[512];
+			uint8_t		Payload[512];
 		};
 
 		DynamicVectorClass<GamePacketStruct*> IncomingPackets;

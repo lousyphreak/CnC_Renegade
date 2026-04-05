@@ -126,7 +126,7 @@ void
 EditFilenameListDialogClass::OnKeydownFilenameListCtrl
 (
 	NMHDR *pNMHDR,
-	LRESULT *pResult
+	intptr_t *pResult
 ) 
 {
 	LV_KEYDOWN* pLVKeyDow = (LV_KEYDOWN*)pNMHDR;
@@ -153,7 +153,7 @@ EditFilenameListDialogClass::OnKeydownFilenameListCtrl
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 EditFilenameListDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();

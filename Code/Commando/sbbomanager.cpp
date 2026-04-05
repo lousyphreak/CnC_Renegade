@@ -106,7 +106,7 @@ cSbboManager::Think
 
 		if (SlowSamples >= 10 && PoorRatios >= 10) {
 
-			ULONG sbbo = cNetwork::PServerConnection->Get_Bandwidth_Budget_Out();
+			uint32_t sbbo = cNetwork::PServerConnection->Get_Bandwidth_Budget_Out();
 			if (sbbo >= 64000)
 			{
 				sbbo *= 0.90;

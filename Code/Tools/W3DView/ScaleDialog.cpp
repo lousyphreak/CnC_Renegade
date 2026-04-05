@@ -76,7 +76,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 ScaleDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog();
@@ -126,12 +126,12 @@ ScaleDialogClass::OnOK (void)
 // OnNotify
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 ScaleDialogClass::OnNotify
 (	
-	WPARAM wParam,
-	LPARAM lParam,
-	LRESULT *pResult
+	uintptr_t wParam,
+	intptr_t lParam,
+	intptr_t *pResult
 ) 
 {
 	//

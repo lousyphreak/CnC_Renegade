@@ -243,7 +243,7 @@ void TransitionDialogClass::On_Frame_Update (void)
 	// For each label...
 	for (unsigned label = 0; label < LABEL_COUNT; label++) {
 
-		uint32 color;
+		uint32_t color;
 		float	 f;	
 
 		if ((Time < labelcontroltimes [label][0]) || (Time > labelcontroltimes [label][3])) {
@@ -259,7 +259,7 @@ void TransitionDialogClass::On_Frame_Update (void)
 				}
 			}
 		}
-		color = ((uint32)(f * 0xff)) << 24;
+		color = ((uint32_t)(f * 0xff)) << 24;
 
 		TextRenderers [label]->Reset_Polys();
 		TextRenderers [label]->Draw_Sentence (color | (RGBA_TO_INT32 (255, 213, 40, 0)));
@@ -367,7 +367,7 @@ Vector2 TransitionDialogClass::Position (int controlid, const WideStringClass &t
 	DialogTextClass *textcontrol;
 	RectClass		  rect;	
 	Vector2			  textextent;	
-	DWORD				  style;
+	uint32_t				  style;
 	Vector2			  position;
 
 	textcontrol	= Get_Dlg_Item (controlid)->As_DialogTextClass();

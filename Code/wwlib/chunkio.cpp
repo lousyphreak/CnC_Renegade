@@ -71,44 +71,44 @@
 
 namespace
 {
-bool ChunkIO_Is_Surrogate_Pair(uint16 lead, uint16 trail)
+bool ChunkIO_Is_Surrogate_Pair(uint16_t lead, uint16_t trail)
 {
 	return	(lead >= 0xD800 && lead <= 0xDBFF) &&
 			(trail >= 0xDC00 && trail <= 0xDFFF);
 }
 }
 
-uint32 ChunkIO_Write_WideString(ChunkSaveClass & csave, const WideStringClass & value)
+uint32_t ChunkIO_Write_WideString(ChunkSaveClass & csave, const WideStringClass & value)
 {
 	const WCHAR *source = value;
 	const int source_length = value.Get_Length();
 
-	if (sizeof(WCHAR) == sizeof(uint16)) {
-		return csave.Write(source, (source_length + 1) * sizeof(uint16));
+	if (sizeof(WCHAR) == sizeof(uint16_t)) {
+		return csave.Write(source, (source_length + 1) * sizeof(uint16_t));
 	}
 
-	std::vector<uint16> serialized;
+	std::vector<uint16_t> serialized;
 	serialized.reserve(source_length + 1);
 
 	for (int index = 0; index < source_length; ++index) {
-		const uint32 codepoint = static_cast<uint32>(source[index]);
+		const uint32_t codepoint = static_cast<uint32_t>(source[index]);
 
 		if (codepoint > 0x10FFFF) {
-			serialized.push_back(static_cast<uint16>('?'));
+			serialized.push_back(static_cast<uint16_t>('?'));
 		} else if (codepoint <= 0xFFFF) {
-			serialized.push_back(static_cast<uint16>(codepoint));
+			serialized.push_back(static_cast<uint16_t>(codepoint));
 		} else {
-			const uint32 surrogate = codepoint - 0x10000;
-			serialized.push_back(static_cast<uint16>(0xD800 + (surrogate >> 10)));
-			serialized.push_back(static_cast<uint16>(0xDC00 + (surrogate & 0x3FF)));
+			const uint32_t surrogate = codepoint - 0x10000;
+			serialized.push_back(static_cast<uint16_t>(0xD800 + (surrogate >> 10)));
+			serialized.push_back(static_cast<uint16_t>(0xDC00 + (surrogate & 0x3FF)));
 		}
 	}
 
 	serialized.push_back(0);
-	return csave.Write(serialized.data(), serialized.size() * sizeof(uint16));
+	return csave.Write(serialized.data(), serialized.size() * sizeof(uint16_t));
 }
 
-uint32 ChunkIO_Read_WideString(ChunkLoadClass & cload, uint32 byte_count, WideStringClass & value)
+uint32_t ChunkIO_Read_WideString(ChunkLoadClass & cload, uint32_t byte_count, WideStringClass & value)
 {
 	WCHAR *empty_buffer = value.Get_Buffer(1);
 	empty_buffer[0] = 0;
@@ -119,18 +119,18 @@ uint32 ChunkIO_Read_WideString(ChunkLoadClass & cload, uint32 byte_count, WideSt
 
 	WWASSERT((byte_count & 1) == 0);
 
-	const uint32 serialized_length = ((byte_count + 1) / sizeof(uint16)) + 1;
-	std::vector<uint16> serialized(serialized_length, 0);
-	const uint32 bytes_read = cload.Read(serialized.data(), byte_count);
+	const uint32_t serialized_length = ((byte_count + 1) / sizeof(uint16_t)) + 1;
+	std::vector<uint16_t> serialized(serialized_length, 0);
+	const uint32_t bytes_read = cload.Read(serialized.data(), byte_count);
 	if (bytes_read != byte_count) {
 		return bytes_read;
 	}
 
-	const uint32 code_unit_count = byte_count / sizeof(uint16);
+	const uint32_t code_unit_count = byte_count / sizeof(uint16_t);
 
-	if (sizeof(WCHAR) == sizeof(uint16)) {
+	if (sizeof(WCHAR) == sizeof(uint16_t)) {
 		WCHAR *buffer = value.Get_Buffer(code_unit_count + 1);
-		for (uint32 index = 0; index < code_unit_count; ++index) {
+		for (uint32_t index = 0; index < code_unit_count; ++index) {
 			buffer[index] = static_cast<WCHAR>(serialized[index]);
 		}
 		buffer[code_unit_count] = 0;
@@ -138,7 +138,7 @@ uint32 ChunkIO_Read_WideString(ChunkLoadClass & cload, uint32 byte_count, WideSt
 	}
 
 	int decoded_length = 0;
-	for (uint32 index = 0; index < code_unit_count && serialized[index] != 0; ++index) {
+	for (uint32_t index = 0; index < code_unit_count && serialized[index] != 0; ++index) {
 		if (index + 1 < code_unit_count && ChunkIO_Is_Surrogate_Pair(serialized[index], serialized[index + 1])) {
 			++index;
 		}
@@ -148,14 +148,14 @@ uint32 ChunkIO_Read_WideString(ChunkLoadClass & cload, uint32 byte_count, WideSt
 
 	WCHAR *buffer = value.Get_Buffer(decoded_length + 1);
 	int output_index = 0;
-	for (uint32 index = 0; index < code_unit_count && serialized[index] != 0; ++index) {
-		const uint16 lead = serialized[index];
+	for (uint32_t index = 0; index < code_unit_count && serialized[index] != 0; ++index) {
+		const uint16_t lead = serialized[index];
 		if (index + 1 < code_unit_count && ChunkIO_Is_Surrogate_Pair(lead, serialized[index + 1])) {
-			const uint16 trail = serialized[index + 1];
-			const uint32 codepoint =
+			const uint16_t trail = serialized[index + 1];
+			const uint32_t codepoint =
 				0x10000 +
-				((static_cast<uint32>(lead - 0xD800) << 10) |
-				static_cast<uint32>(trail - 0xDC00));
+				((static_cast<uint32_t>(lead - 0xD800) << 10) |
+				static_cast<uint32_t>(trail - 0xDC00));
 			buffer[output_index++] = static_cast<WCHAR>(codepoint);
 			++index;
 		} else {
@@ -207,7 +207,7 @@ ChunkSaveClass::ChunkSaveClass(FileClass * file) :
  * HISTORY:                                                                                    * 
  *   07/17/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-bool ChunkSaveClass::Begin_Chunk(uint32 id)
+bool ChunkSaveClass::Begin_Chunk(uint32_t id)
 {
 	ChunkHeader	chunkh;
 	int 			filepos;
@@ -296,7 +296,7 @@ bool ChunkSaveClass::End_Chunk(void)
  * HISTORY:                                                                                    *
  *   9/3/99     GTH : Created.                                                                 *
  *=============================================================================================*/
-bool ChunkSaveClass::Begin_Micro_Chunk(uint32 id)
+bool ChunkSaveClass::Begin_Micro_Chunk(uint32_t id)
 {
 	assert(id < 256);
 	assert(!InMicroChunk);
@@ -363,7 +363,7 @@ bool ChunkSaveClass::End_Micro_Chunk(void)
  * HISTORY:                                                                                    * 
  *   07/17/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-uint32 ChunkSaveClass::Write(const void * buf, uint32 nbytes)
+uint32_t ChunkSaveClass::Write(const void * buf, uint32_t nbytes)
 {
 	// If this assert hits, you mixed data and chunks within the same chunk NO NO!
 	assert(HeaderStack[StackIndex-1].Get_Sub_Chunk_Flag() == 0);
@@ -399,7 +399,7 @@ uint32 ChunkSaveClass::Write(const void * buf, uint32 nbytes)
  * HISTORY:                                                                                    *
  *   1/4/99     GTH : Created.                                                                 *
  *=============================================================================================*/
-uint32 ChunkSaveClass::Write(const IOVector2Struct & v)
+uint32_t ChunkSaveClass::Write(const IOVector2Struct & v)
 {
 	return Write(&v,sizeof(v));
 }
@@ -417,7 +417,7 @@ uint32 ChunkSaveClass::Write(const IOVector2Struct & v)
  * HISTORY:                                                                                    *
  *   1/4/99     GTH : Created.                                                                 *
  *=============================================================================================*/
-uint32 ChunkSaveClass::Write(const IOVector3Struct & v)
+uint32_t ChunkSaveClass::Write(const IOVector3Struct & v)
 {	
 	return Write(&v,sizeof(v));
 }
@@ -435,7 +435,7 @@ uint32 ChunkSaveClass::Write(const IOVector3Struct & v)
  * HISTORY:                                                                                    *
  *   1/4/99     GTH : Created.                                                                 *
  *=============================================================================================*/
-uint32 ChunkSaveClass::Write(const IOVector4Struct & v)
+uint32_t ChunkSaveClass::Write(const IOVector4Struct & v)
 {
 	return Write(&v,sizeof(v));
 }
@@ -452,7 +452,7 @@ uint32 ChunkSaveClass::Write(const IOVector4Struct & v)
  * HISTORY:                                                                                    *
  *   1/4/99     GTH : Created.                                                                 *
  *=============================================================================================*/
-uint32 ChunkSaveClass::Write(const IOQuaternionStruct & q)
+uint32_t ChunkSaveClass::Write(const IOQuaternionStruct & q)
 {
 	return Write(&q,sizeof(q));
 }
@@ -548,7 +548,7 @@ bool ChunkLoadClass::Open_Chunk()
  * HISTORY:                                                                                    *
  *   3/4/2002   gth : Created.                                                                 *
  *=============================================================================================*/
-bool ChunkLoadClass::Peek_Next_Chunk(uint32 * set_id,uint32 * set_size)
+bool ChunkLoadClass::Peek_Next_Chunk(uint32_t * set_id,uint32_t * set_size)
 {
 	// if user didn't close any micro chunks that he opened, bad things could happen
 	assert(InMicroChunk == false);							
@@ -628,7 +628,7 @@ bool ChunkLoadClass::Close_Chunk()
  * HISTORY:                                                                                    * 
  *   07/17/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-uint32 ChunkLoadClass::Cur_Chunk_ID()
+uint32_t ChunkLoadClass::Cur_Chunk_ID()
 {
 	assert(StackIndex >= 1);
 	return HeaderStack[StackIndex-1].Get_Type();
@@ -647,7 +647,7 @@ uint32 ChunkLoadClass::Cur_Chunk_ID()
  * HISTORY:                                                                                    * 
  *   07/17/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-uint32 ChunkLoadClass::Cur_Chunk_Length()
+uint32_t ChunkLoadClass::Cur_Chunk_Length()
 {
 	assert(StackIndex >= 1);
 	return HeaderStack[StackIndex-1].Get_Size();
@@ -766,7 +766,7 @@ bool ChunkLoadClass::Close_Micro_Chunk()
  * HISTORY:                                                                                    *
  *   9/3/99     GTH : Created.                                                                 *
  *=============================================================================================*/
-uint32 ChunkLoadClass::Cur_Micro_Chunk_ID()
+uint32_t ChunkLoadClass::Cur_Micro_Chunk_ID()
 {
 	assert(InMicroChunk);
 	return MCHeader.Get_Type();
@@ -787,14 +787,14 @@ uint32 ChunkLoadClass::Cur_Micro_Chunk_ID()
  * HISTORY:                                                                                    *
  *   9/3/99     GTH : Created.                                                                 *
  *=============================================================================================*/
-uint32 ChunkLoadClass::Cur_Micro_Chunk_Length()
+uint32_t ChunkLoadClass::Cur_Micro_Chunk_Length()
 {
 	assert(InMicroChunk);
 	return MCHeader.Get_Size();
 }
 
 // Seek over nbytes in the stream
-uint32 ChunkLoadClass::Seek(uint32 nbytes)
+uint32_t ChunkLoadClass::Seek(uint32_t nbytes)
 {
 	assert(StackIndex >= 1);
 
@@ -808,7 +808,7 @@ uint32 ChunkLoadClass::Seek(uint32 nbytes)
 		return 0;
 	}
 	
-	uint32 curpos=File->Tell();
+	uint32_t curpos=File->Tell();
 	if (File->Seek(nbytes,SEEK_CUR)-curpos != (int)nbytes) {
 		return 0;
 	}
@@ -836,7 +836,7 @@ uint32 ChunkLoadClass::Seek(uint32 nbytes)
  * HISTORY:                                                                                    * 
  *   07/17/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-uint32 ChunkLoadClass::Read(void * buf,uint32 nbytes)
+uint32_t ChunkLoadClass::Read(void * buf,uint32_t nbytes)
 {
 	assert(StackIndex >= 1);
 
@@ -878,7 +878,7 @@ uint32 ChunkLoadClass::Read(void * buf,uint32 nbytes)
  * HISTORY:                                                                                    *
  *   1/4/99     GTH : Created.                                                                 *
  *=============================================================================================*/
-uint32 ChunkLoadClass::Read(IOVector2Struct * v)
+uint32_t ChunkLoadClass::Read(IOVector2Struct * v)
 {
 	assert(v != NULL);
 	return Read(v,sizeof(v));
@@ -897,7 +897,7 @@ uint32 ChunkLoadClass::Read(IOVector2Struct * v)
  * HISTORY:                                                                                    *
  *   1/4/99     GTH : Created.                                                                 *
  *=============================================================================================*/
-uint32 ChunkLoadClass::Read(IOVector3Struct * v)
+uint32_t ChunkLoadClass::Read(IOVector3Struct * v)
 {
 	assert(v != NULL);
 	return Read(v,sizeof(v));
@@ -916,7 +916,7 @@ uint32 ChunkLoadClass::Read(IOVector3Struct * v)
  * HISTORY:                                                                                    *
  *   1/4/99     GTH : Created.                                                                 *
  *=============================================================================================*/
-uint32 ChunkLoadClass::Read(IOVector4Struct * v)
+uint32_t ChunkLoadClass::Read(IOVector4Struct * v)
 {
 	assert(v != NULL);
 	return Read(v,sizeof(v));
@@ -935,7 +935,7 @@ uint32 ChunkLoadClass::Read(IOVector4Struct * v)
  * HISTORY:                                                                                    *
  *   1/4/99     GTH : Created.                                                                 *
  *=============================================================================================*/
-uint32 ChunkLoadClass::Read(IOQuaternionStruct * q)
+uint32_t ChunkLoadClass::Read(IOQuaternionStruct * q)
 {
 	assert(q != NULL);
 	return Read(q,sizeof(q));

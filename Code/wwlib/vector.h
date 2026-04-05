@@ -315,7 +315,7 @@ template<class T>
 inline int VectorClass<T>::ID(T const * ptr)
 {
 	if (!IsValid) return(0);
-	return(((unsigned long)ptr - (unsigned long)&(*this)[0]) / sizeof(T));
+	return static_cast<int>(ptr - &(*this)[0]);
 }
 
 
@@ -942,7 +942,7 @@ int First_False_Bit(void const * array);
 class BooleanVectorClass
 {
 	public:
-		BooleanVectorClass(unsigned size=0, unsigned char * array=0);
+		BooleanVectorClass(unsigned size=0, uint8_t * array=0);
 		BooleanVectorClass(BooleanVectorClass const & vector);
 
 		// Assignment operator.
@@ -952,7 +952,7 @@ class BooleanVectorClass
 		bool operator == (BooleanVectorClass const & vector) const;
 
 		// Initialization
-		void Init(unsigned size, unsigned char * array);
+		void Init(unsigned size, uint8_t * array);
 		void Init(unsigned size);
 
 		// Fetch number of boolean objects in vector.
@@ -1015,7 +1015,7 @@ class BooleanVectorClass
 		}
 
 		// Accessors (usefull for saving the bit vector)
-		const VectorClass<unsigned char> &	Get_Bit_Array(void)	{ return BitArray; }
+		const VectorClass<uint8_t> &	Get_Bit_Array(void)	{ return BitArray; }
 
 	protected:
 
@@ -1046,7 +1046,7 @@ class BooleanVectorClass
 		/*
 		**	This points to the allocated bitfield array.
 		*/
-		VectorClass<unsigned char> BitArray;
+		VectorClass<uint8_t> BitArray;
 };
 
 

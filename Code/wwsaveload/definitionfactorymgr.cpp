@@ -52,7 +52,7 @@ DefinitionFactoryClass *DefinitionFactoryMgrClass::_FactoryListHead = 0;
 //
 ////////////////////////////////////////////////////////////////////////////
 DefinitionFactoryClass *
-DefinitionFactoryMgrClass::Find_Factory (uint32 class_id)
+DefinitionFactoryMgrClass::Find_Factory (uint32_t class_id)
 {
 	DefinitionFactoryClass *factory = 0;
 
@@ -112,7 +112,7 @@ DefinitionFactoryMgrClass::Find_Factory (const char *name)
 //
 ////////////////////////////////////////////////////////////////////////////
 DefinitionFactoryClass *
-DefinitionFactoryMgrClass::Get_First (uint32 superclass_id)
+DefinitionFactoryMgrClass::Get_First (uint32_t superclass_id)
 {
 	DefinitionFactoryClass *factory = 0;
 
@@ -145,7 +145,7 @@ DefinitionFactoryClass *
 DefinitionFactoryMgrClass::Get_Next
 (
 	DefinitionFactoryClass *curr_factory,
-	uint32						superclass_id
+	uint32_t						superclass_id
 )
 {
 	DefinitionFactoryClass *factory = 0;

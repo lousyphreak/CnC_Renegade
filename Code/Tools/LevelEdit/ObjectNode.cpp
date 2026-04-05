@@ -166,7 +166,7 @@ ObjectNodeClass::Show_Settings_Dialog (void)
 	prop_sheet.Add_Page (&scripts_tab);
 
 	// Show the property sheet
-	UINT ret_code = prop_sheet.DoModal ();
+	uint32_t ret_code = prop_sheet.DoModal ();
 	if (ret_code == IDOK) {
 		
 		//
@@ -444,7 +444,7 @@ ObjectNodeClass::Destroy_Game_Obj (void)
 //
 /////////////////////////////////////////////////////////////////
 void
-ObjectNodeClass::Set_ID (uint32 id)
+ObjectNodeClass::Set_ID (uint32_t id)
 {
 	NodeClass::Set_ID (id);
 	if (m_GameObj != NULL) {

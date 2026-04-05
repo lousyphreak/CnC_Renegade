@@ -144,12 +144,10 @@ using HBRUSH = void *;
 using HICON = void *;
 using HDC = void *;
 using HACCEL = void *;
-using LARGE_INTEGER = long long;
+using LARGE_INTEGER = int64_t;
 using FARPROC = void *;
-using LONG = long;
-using LPARAM = std::intptr_t;
-using WPARAM = std::uintptr_t;
-using LRESULT = std::intptr_t;
+using intptr_t = std::intptr_t;
+using uintptr_t = std::uintptr_t;
 using LPLOGFONT = void *;
 
 struct CRITICAL_SECTION {
@@ -157,39 +155,39 @@ struct CRITICAL_SECTION {
 };
 
 struct POINT {
-    LONG x;
-    LONG y;
+    int32_t x;
+    int32_t y;
 };
 
 struct SIZE {
-    LONG cx;
-    LONG cy;
+    int32_t cx;
+    int32_t cy;
 };
 
 struct RECT {
-    LONG left;
-    LONG top;
-    LONG right;
-    LONG bottom;
+    int32_t left;
+    int32_t top;
+    int32_t right;
+    int32_t bottom;
 };
 
 #ifndef RENEGADE_COMPAT_FILETIME_DEFINED
 #define RENEGADE_COMPAT_FILETIME_DEFINED
 typedef struct _FILETIME {
-	DWORD dwLowDateTime;
-	DWORD dwHighDateTime;
+	uint32_t dwLowDateTime;
+	uint32_t dwHighDateTime;
 } FILETIME, *LPFILETIME;
 #endif
 
 struct WIN32_FIND_DATAA {
-	DWORD dwFileAttributes;
+	uint32_t dwFileAttributes;
 	FILETIME ftLastWriteTime;
 	char cFileName[260];
 };
 
 using WIN32_FIND_DATA = WIN32_FIND_DATAA;
 
-using COLORREF = DWORD;
+using COLORREF = uint32_t;
 
 extern bool GameInFocus;
 
@@ -306,7 +304,7 @@ extern bool GameInFocus;
 #endif
 
 #ifndef MAKEINTRESOURCE
-#define MAKEINTRESOURCE(i) reinterpret_cast<const char *>(static_cast<uintptr_t>(static_cast<WORD>(i)))
+#define MAKEINTRESOURCE(i) reinterpret_cast<const char *>(static_cast<uintptr_t>(static_cast<uint16_t>(i)))
 #endif
 
 #ifndef CP_ACP
@@ -534,15 +532,15 @@ extern bool GameInFocus;
 #endif
 
 #ifndef LOWORD
-#define LOWORD(value) (static_cast<WORD>(static_cast<DWORD>(value) & 0xFFFF))
+#define LOWORD(value) (static_cast<uint16_t>(static_cast<uint32_t>(value) & 0xFFFF))
 #endif
 
 #ifndef HIWORD
-#define HIWORD(value) (static_cast<WORD>((static_cast<DWORD>(value) >> 16) & 0xFFFF))
+#define HIWORD(value) (static_cast<uint16_t>((static_cast<uint32_t>(value) >> 16) & 0xFFFF))
 #endif
 
 #ifndef MAKELONG
-#define MAKELONG(low, high) (static_cast<LONG>((static_cast<WORD>(low)) | (static_cast<DWORD>(static_cast<WORD>(high)) << 16)))
+#define MAKELONG(low, high) (static_cast<int32_t>((static_cast<uint16_t>(low)) | (static_cast<uint32_t>(static_cast<uint16_t>(high)) << 16)))
 #endif
 
 #ifndef LOCALE_USER_DEFAULT
@@ -553,9 +551,9 @@ extern bool GameInFocus;
 #define NORM_IGNORECASE 0x00000001
 #endif
 
-inline DWORD GetLastError()
+inline uint32_t GetLastError()
 {
-    return static_cast<DWORD>(errno);
+    return static_cast<uint32_t>(errno);
 }
 
 namespace renegade_osdep {
@@ -759,8 +757,8 @@ inline void Populate_Find_Data(const std::filesystem::path & entry_path, WIN32_F
             WINDOWS_TO_UNIX_EPOCH_100NS +
             (static_cast<std::uint64_t>(unix_seconds.count()) * 10000000ull) +
             static_cast<std::uint64_t>(unix_100ns);
-        find_data->ftLastWriteTime.dwLowDateTime = static_cast<DWORD>(ticks & 0xFFFFFFFFull);
-        find_data->ftLastWriteTime.dwHighDateTime = static_cast<DWORD>(ticks >> 32);
+        find_data->ftLastWriteTime.dwLowDateTime = static_cast<uint32_t>(ticks & 0xFFFFFFFFull);
+        find_data->ftLastWriteTime.dwHighDateTime = static_cast<uint32_t>(ticks >> 32);
     }
 }
 
@@ -790,7 +788,7 @@ inline bool Wildcard_Match(const char * pattern, const char * text)
         return (*text != '\0') && Wildcard_Match(pattern + 1, text + 1);
     }
 
-    return (std::tolower(static_cast<unsigned char>(*pattern)) == std::tolower(static_cast<unsigned char>(*text)))
+    return (std::tolower(static_cast<uint8_t>(*pattern)) == std::tolower(static_cast<uint8_t>(*text)))
         && Wildcard_Match(pattern + 1, text + 1);
 }
 
@@ -806,30 +804,30 @@ inline CompatFindHandle * As_Find_Handle(HANDLE handle)
 
 } // namespace renegade_osdep
 
-inline void Sleep(DWORD milliseconds)
+inline void Sleep(uint32_t milliseconds)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
 }
 
-inline void ExitProcess(UINT exit_code)
+inline void ExitProcess(uint32_t exit_code)
 {
 	std::exit(static_cast<int>(exit_code));
 }
 
-inline DWORD GetCurrentThreadId()
+inline uint32_t GetCurrentThreadId()
 {
-    return static_cast<DWORD>(SDL_GetCurrentThreadID() & 0xFFFFFFFFu);
+    return static_cast<uint32_t>(SDL_GetCurrentThreadID() & 0xFFFFFFFFu);
 }
 
-inline DWORD timeGetTime()
+inline uint32_t timeGetTime()
 {
     using clock = std::chrono::steady_clock;
     static const auto start = clock::now();
     const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(clock::now() - start);
-    return static_cast<DWORD>(elapsed.count() & 0xFFFFFFFFu);
+    return static_cast<uint32_t>(elapsed.count() & 0xFFFFFFFFu);
 }
 
-inline short GetAsyncKeyState(int)
+inline int16_t GetAsyncKeyState(int)
 {
     return 0;
 }
@@ -844,7 +842,7 @@ inline int RemoveFontResource(const char *)
     return 0;
 }
 
-inline int GetKeyboardState(unsigned char * state)
+inline int GetKeyboardState(uint8_t * state)
 {
     if (state != nullptr) {
         std::memset(state, 0, 256);
@@ -857,7 +855,7 @@ inline void ZeroMemory(void * destination, std::size_t size)
     std::memset(destination, 0, size);
 }
 
-inline BOOL QueryPerformanceFrequency(LARGE_INTEGER * frequency)
+inline int32_t QueryPerformanceFrequency(LARGE_INTEGER * frequency)
 {
     if (frequency != nullptr) {
         *frequency = 1000000;
@@ -865,7 +863,7 @@ inline BOOL QueryPerformanceFrequency(LARGE_INTEGER * frequency)
     return TRUE;
 }
 
-inline BOOL QueryPerformanceCounter(LARGE_INTEGER * counter)
+inline int32_t QueryPerformanceCounter(LARGE_INTEGER * counter)
 {
     if (counter != nullptr) {
         *counter = std::chrono::duration_cast<std::chrono::microseconds>(
@@ -896,7 +894,7 @@ inline void LeaveCriticalSection(CRITICAL_SECTION * critical_section)
     }
 }
 
-inline BOOL TryEnterCriticalSection(CRITICAL_SECTION * critical_section)
+inline int32_t TryEnterCriticalSection(CRITICAL_SECTION * critical_section)
 {
     return (critical_section != nullptr && critical_section->mutex.try_lock()) ? TRUE : FALSE;
 }
@@ -936,7 +934,7 @@ inline int MoveFile(const char * existing_filename, const char * new_filename)
     return error ? FALSE : TRUE;
 }
 
-inline DWORD GetModuleFileName(HINSTANCE, char * buffer, DWORD size)
+inline uint32_t GetModuleFileName(HINSTANCE, char * buffer, uint32_t size)
 {
     if (buffer == nullptr || size == 0) {
         return 0;
@@ -948,10 +946,10 @@ inline DWORD GetModuleFileName(HINSTANCE, char * buffer, DWORD size)
     const std::size_t count = std::min<std::size_t>(size - 1, path.size());
     std::memcpy(buffer, path.c_str(), count);
     buffer[count] = '\0';
-    return static_cast<DWORD>(count);
+    return static_cast<uint32_t>(count);
 }
 
-inline BOOL CreateDirectory(const char * path, void *)
+inline int32_t CreateDirectory(const char * path, void *)
 {
     if (path == nullptr) {
         errno = EINVAL;
@@ -975,7 +973,7 @@ inline BOOL CreateDirectory(const char * path, void *)
     return std::filesystem::create_directories(directory, error) ? TRUE : FALSE;
 }
 
-inline HANDLE CreateFile(const char * filename, DWORD desired_access, DWORD, void *, DWORD creation_disposition, DWORD, HANDLE)
+inline HANDLE CreateFile(const char * filename, uint32_t desired_access, uint32_t, void *, uint32_t creation_disposition, uint32_t, HANDLE)
 {
     if (filename == nullptr) {
         errno = EINVAL;
@@ -1018,14 +1016,14 @@ inline HANDLE CreateFile(const char * filename, DWORD desired_access, DWORD, voi
     return reinterpret_cast<HANDLE>(handle);
 }
 
-inline DWORD GetFileSize(HANDLE handle, DWORD *)
+inline uint32_t GetFileSize(HANDLE handle, uint32_t *)
 {
     auto * file_handle = renegade_osdep::As_File_Handle(handle);
     if (file_handle == nullptr || file_handle->file == nullptr) {
         return 0xFFFFFFFFu;
     }
 
-    const long current = std::ftell(file_handle->file);
+    const int32_t current = static_cast<int32_t>(std::ftell(file_handle->file));
     if (current < 0) {
         return 0xFFFFFFFFu;
     }
@@ -1034,12 +1032,12 @@ inline DWORD GetFileSize(HANDLE handle, DWORD *)
         return 0xFFFFFFFFu;
     }
 
-    const long end = std::ftell(file_handle->file);
+    const int32_t end = static_cast<int32_t>(std::ftell(file_handle->file));
     std::fseek(file_handle->file, current, SEEK_SET);
-    return end >= 0 ? static_cast<DWORD>(end) : 0xFFFFFFFFu;
+    return end >= 0 ? static_cast<uint32_t>(end) : 0xFFFFFFFFu;
 }
 
-inline BOOL WriteFile(HANDLE handle, const void * buffer, DWORD bytes_to_write, DWORD * bytes_written, void *)
+inline int32_t WriteFile(HANDLE handle, const void * buffer, uint32_t bytes_to_write, uint32_t * bytes_written, void *)
 {
     auto * file_handle = renegade_osdep::As_File_Handle(handle);
     if (file_handle == nullptr || file_handle->file == nullptr) {
@@ -1048,13 +1046,13 @@ inline BOOL WriteFile(HANDLE handle, const void * buffer, DWORD bytes_to_write, 
 
     const std::size_t written = std::fwrite(buffer, 1, bytes_to_write, file_handle->file);
     if (bytes_written != nullptr) {
-        *bytes_written = static_cast<DWORD>(written);
+        *bytes_written = static_cast<uint32_t>(written);
     }
 
     return written == bytes_to_write ? TRUE : FALSE;
 }
 
-inline BOOL ReadFile(HANDLE handle, void * buffer, DWORD bytes_to_read, DWORD * bytes_read, void *)
+inline int32_t ReadFile(HANDLE handle, void * buffer, uint32_t bytes_to_read, uint32_t * bytes_read, void *)
 {
     auto * file_handle = renegade_osdep::As_File_Handle(handle);
     if (file_handle == nullptr || file_handle->file == nullptr) {
@@ -1063,13 +1061,13 @@ inline BOOL ReadFile(HANDLE handle, void * buffer, DWORD bytes_to_read, DWORD * 
 
     const std::size_t read = std::fread(buffer, 1, bytes_to_read, file_handle->file);
     if (bytes_read != nullptr) {
-        *bytes_read = static_cast<DWORD>(read);
+        *bytes_read = static_cast<uint32_t>(read);
     }
 
     return read == bytes_to_read ? TRUE : FALSE;
 }
 
-inline BOOL CloseHandle(HANDLE handle)
+inline int32_t CloseHandle(HANDLE handle)
 {
     auto * file_handle = renegade_osdep::As_File_Handle(handle);
     if (handle == INVALID_HANDLE_VALUE || file_handle == nullptr) {
@@ -1117,7 +1115,7 @@ inline HANDLE FindFirstFile(const char * pattern, WIN32_FIND_DATA * find_data)
     return reinterpret_cast<HANDLE>(handle);
 }
 
-inline BOOL FindNextFile(HANDLE handle, WIN32_FIND_DATA * find_data)
+inline int32_t FindNextFile(HANDLE handle, WIN32_FIND_DATA * find_data)
 {
     auto * find_handle = renegade_osdep::As_Find_Handle(handle);
     if (find_handle == nullptr || find_data == nullptr) {
@@ -1133,7 +1131,7 @@ inline BOOL FindNextFile(HANDLE handle, WIN32_FIND_DATA * find_data)
     return TRUE;
 }
 
-inline BOOL FindClose(HANDLE handle)
+inline int32_t FindClose(HANDLE handle)
 {
     auto * find_handle = renegade_osdep::As_Find_Handle(handle);
     if (find_handle == nullptr || handle == INVALID_HANDLE_VALUE) {
@@ -1144,7 +1142,7 @@ inline BOOL FindClose(HANDLE handle)
     return TRUE;
 }
 
-inline BOOL GetComputerName(char * buffer, DWORD * size)
+inline int32_t GetComputerName(char * buffer, uint32_t * size)
 {
     if (buffer == nullptr || size == nullptr || *size == 0) {
         return FALSE;
@@ -1158,11 +1156,11 @@ inline BOOL GetComputerName(char * buffer, DWORD * size)
     const std::size_t count = std::min<std::size_t>(*size - 1, std::strlen(hostname));
     std::memcpy(buffer, hostname, count);
     buffer[count] = '\0';
-    *size = static_cast<DWORD>(count);
+    *size = static_cast<uint32_t>(count);
     return TRUE;
 }
 
-inline BOOL GetUserName(char * buffer, DWORD * size)
+inline int32_t GetUserName(char * buffer, uint32_t * size)
 {
     if (buffer == nullptr || size == nullptr || *size == 0) {
         return FALSE;
@@ -1176,7 +1174,7 @@ inline BOOL GetUserName(char * buffer, DWORD * size)
     const std::size_t count = std::min<std::size_t>(*size - 1, std::strlen(user));
     std::memcpy(buffer, user, count);
     buffer[count] = '\0';
-    *size = static_cast<DWORD>(count);
+    *size = static_cast<uint32_t>(count);
     return TRUE;
 }
 
@@ -1191,7 +1189,7 @@ inline int MessageBox(HWND, const char * text, const char * caption, unsigned)
     return IDOK;
 }
 
-inline BOOL ShowWindow(HWND window_handle, int command)
+inline int32_t ShowWindow(HWND window_handle, int command)
 {
     auto * window = reinterpret_cast<SDL_Window *>(window_handle);
     if (window == nullptr) {
@@ -1236,7 +1234,7 @@ inline void Add_Accelerator(HWND, HACCEL)
 {
 }
 
-inline DWORD GetFileAttributes(const char * filename)
+inline uint32_t GetFileAttributes(const char * filename)
 {
     std::filesystem::path resolved_path;
     if (!renegade_osdep::Resolve_Existing_Path(filename, resolved_path)) {
@@ -1249,7 +1247,7 @@ inline DWORD GetFileAttributes(const char * filename)
         return INVALID_FILE_ATTRIBUTES;
     }
 
-    DWORD attributes = 0;
+    uint32_t attributes = 0;
     if (std::filesystem::is_directory(status)) {
         attributes |= FILE_ATTRIBUTE_DIRECTORY;
     }
@@ -1303,14 +1301,14 @@ inline char * lstrcpyn(char * destination, const char * source, int count)
     return destination;
 }
 
-inline DWORD GetCurrentDirectory(DWORD buffer_length, char * buffer)
+inline uint32_t GetCurrentDirectory(uint32_t buffer_length, char * buffer)
 {
     const std::string cwd = std::filesystem::current_path().string();
     if (buffer == nullptr || buffer_length == 0) {
-        return static_cast<DWORD>(cwd.size());
+        return static_cast<uint32_t>(cwd.size());
     }
     std::snprintf(buffer, buffer_length, "%s", cwd.c_str());
-    return static_cast<DWORD>(std::min<std::size_t>(cwd.size(), buffer_length > 0 ? buffer_length - 1 : 0));
+    return static_cast<uint32_t>(std::min<std::size_t>(cwd.size(), buffer_length > 0 ? buffer_length - 1 : 0));
 }
 
 inline char * _strdup(const char * text)
@@ -1355,7 +1353,7 @@ inline char * strupr(char * text)
     }
 
     for (char * cursor = text; *cursor != '\0'; ++cursor) {
-        *cursor = static_cast<char>(::toupper(static_cast<unsigned char>(*cursor)));
+        *cursor = static_cast<char>(::toupper(static_cast<uint8_t>(*cursor)));
     }
     return text;
 }
@@ -1372,7 +1370,7 @@ inline char * strlwr(char * text)
     }
 
     for (char * cursor = text; *cursor != '\0'; ++cursor) {
-        *cursor = static_cast<char>(::tolower(static_cast<unsigned char>(*cursor)));
+        *cursor = static_cast<char>(::tolower(static_cast<uint8_t>(*cursor)));
     }
     return text;
 }
@@ -1551,19 +1549,19 @@ inline int _wtoi(const wchar_t * text)
     return (text == nullptr) ? 0 : static_cast<int>(std::wcstol(text, nullptr, 10));
 }
 
-inline unsigned long _lrotl(unsigned long value, int shift)
+inline uint32_t _lrotl(uint32_t value, int shift)
 {
     const uint32_t narrowed = static_cast<uint32_t>(value);
     const unsigned normalized = static_cast<unsigned>(shift) & 31u;
-    return static_cast<unsigned long>((narrowed << normalized) | (narrowed >> ((32u - normalized) & 31u)));
+    return static_cast<uint32_t>((narrowed << normalized) | (narrowed >> ((32u - normalized) & 31u)));
 }
 
-inline unsigned long _byteswap_ulong(unsigned long value)
+inline uint32_t _byteswap_ulong(uint32_t value)
 {
-    return static_cast<unsigned long>(__builtin_bswap32(static_cast<uint32_t>(value)));
+    return static_cast<uint32_t>(__builtin_bswap32(static_cast<uint32_t>(value)));
 }
 
-inline int CompareStringW(DWORD, DWORD, const wchar_t * lhs, int lhs_length, const wchar_t * rhs, int rhs_length)
+inline int CompareStringW(uint32_t, uint32_t, const wchar_t * lhs, int lhs_length, const wchar_t * rhs, int rhs_length)
 {
     const std::wstring lhs_text = (lhs == nullptr)
         ? std::wstring()
@@ -1593,14 +1591,14 @@ inline int _vsnwprintf(wchar_t * buffer, std::size_t count, const wchar_t * form
 }
 
 inline int WideCharToMultiByte(
-    unsigned int,
-    DWORD,
+    uint32_t,
+    uint32_t,
     const wchar_t * source,
     int source_length,
     char * destination,
     int destination_length,
     const char *,
-    BOOL * used_default_char)
+    int32_t * used_default_char)
 {
     if (used_default_char != nullptr) {
         *used_default_char = FALSE;
@@ -1628,8 +1626,8 @@ inline int WideCharToMultiByte(
 }
 
 inline int MultiByteToWideChar(
-    unsigned int,
-    DWORD,
+    uint32_t,
+    uint32_t,
     const char * source,
     int source_length,
     wchar_t * destination,

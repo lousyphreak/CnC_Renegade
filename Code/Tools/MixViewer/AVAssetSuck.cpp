@@ -55,7 +55,7 @@ void AVAssetSuckerClass::Suck(char *input_file, char *output_file)
 
 
 
-unsigned int AVAssetSuckerClass::Do_Stuff(void *param)
+uint32_t AVAssetSuckerClass::Do_Stuff(void *param)
 {
 	((AVAssetSuckerClass*)param)->Thread_Suck();
 	return(1);

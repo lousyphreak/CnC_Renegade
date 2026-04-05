@@ -66,7 +66,7 @@ FilePickerClass::On_Pick (void)
 	CString filename	= ::Get_Filename_From_Path (full_path);
 	CString path;
 	
-	DWORD attribs = ::GetFileAttributes (full_path);
+	uint32_t attribs = ::GetFileAttributes (full_path);
 	if ((attribs != 0xFFFFFFFF) && !(attribs & FILE_ATTRIBUTE_DIRECTORY)) {
 		path = ::Strip_Filename_From_Path (full_path);
 	} else if ((attribs == 0xFFFFFFFF) && (::strchr (filename, '*') != NULL)) {

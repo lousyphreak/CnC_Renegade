@@ -93,7 +93,7 @@ END_MESSAGE_MAP()
 // MainDialogBarClass message handlers
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 MainDialogBarClass::OnInitDialog (void) 
 {
 	return TRUE;
@@ -108,7 +108,7 @@ MainDialogBarClass::OnInitDialog (void)
 void
 MainDialogBarClass::OnSize
 (
-	UINT	nType,
+	uint32_t	nType,
 	int	cx,
 	int	cy
 )
@@ -159,7 +159,7 @@ void
 MainDialogBarClass::OnSelchangeLibraryTab
 (
 	NMHDR* pNMHDR,
-	LRESULT* pResult
+	intptr_t* pResult
 ) 
 {
 	// Which tab is selected?
@@ -252,7 +252,7 @@ MainDialogBarClass::Initialize (void)
 	return ;
 }
 
-BOOL MainDialogBarClass::PreTranslateMessage(MSG* pMsg) 
+int32_t MainDialogBarClass::PreTranslateMessage(MSG* pMsg) 
 {
 	// TODO: Add your specialized code here and/or call the base class
 	

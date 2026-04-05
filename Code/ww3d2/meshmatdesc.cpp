@@ -160,7 +160,7 @@ bool UVBufferClass::Is_Equal_To(const UVBufferClass & that)
 
 void UVBufferClass::Update_CRC(void)
 {
-	CRC = CRC_Memory((unsigned char *)Get_Array(),Get_Count() * sizeof(Vector2));
+	CRC = CRC_Memory((uint8_t *)Get_Array(),Get_Count() * sizeof(Vector2));
 }
 
 
@@ -599,7 +599,7 @@ void MeshMatDescClass::Install_UV_Array(int pass,int stage,Vector2 * uvs,int cou
 	/*
 	** Compute the crc of this uv array
 	*/
-	unsigned int crc = CRC_Memory((unsigned char *)uvs,count * sizeof(Vector2));
+	uint32_t crc = CRC_Memory((uint8_t *)uvs,count * sizeof(Vector2));
 
 	/*
 	** See if there is an existing uv-array that matches the one just loaded

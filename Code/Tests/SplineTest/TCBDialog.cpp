@@ -66,7 +66,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CTCBDialog message handlers
 
-BOOL CTCBDialog::OnInitDialog() 
+int32_t CTCBDialog::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
 	

@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // CardinalDialog.h : header file
 //
@@ -62,7 +64,7 @@ protected:
 	// Generated message map functions
 	//{{AFX_MSG(CCardinalDialog)
 	virtual void OnOK();
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };

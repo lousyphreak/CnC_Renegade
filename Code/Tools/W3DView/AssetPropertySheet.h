@@ -21,6 +21,8 @@
 
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 // AssetPropertySheet.h : header file
 //
@@ -60,8 +62,8 @@ protected:
 
     private:
         // Private constructors (shouldn't be called)
-	    CAssetPropertySheet(UINT nIDCaption, CWnd* pParentWnd = NULL, UINT iSelectPage = 0) {}
-	    CAssetPropertySheet(LPCTSTR pszCaption, CWnd* pParentWnd = NULL, UINT iSelectPage = 0) {}
+	    CAssetPropertySheet(uint32_t nIDCaption, CWnd* pParentWnd = NULL, uint32_t iSelectPage = 0) {}
+	    CAssetPropertySheet(LPCTSTR pszCaption, CWnd* pParentWnd = NULL, uint32_t iSelectPage = 0) {}
 
         CPropertyPage *m_pCPropertyPage;
 };

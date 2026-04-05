@@ -38,6 +38,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef BWRENDER_H
@@ -64,16 +66,16 @@ class BWRenderClass
 	// The buffer is not allocated or freed by this class.
 	class Buffer
 	{
-		unsigned char* buffer;
+		uint8_t* buffer;
 		int scale;
 		int minv;
 		int maxv;
 	public:
-		Buffer(unsigned char* buffer, int scale);
+		Buffer(uint8_t* buffer, int scale);
 		~Buffer();
 
 		void Set_H_Line(int start_x, int end_x, int y);
-		void Fill(unsigned char c);
+		void Fill(uint8_t c);
 		inline int Scale() const { return scale; }
 	} pixel_buffer;
 
@@ -82,13 +84,13 @@ class BWRenderClass
 	void Render_Preprocessed_Triangle(Vector3& xcf,Vector3i& yci);
 
 public:
-	BWRenderClass(unsigned char* buffer, int scale);
+	BWRenderClass(uint8_t* buffer, int scale);
 	~BWRenderClass();
 
-	void Fill(unsigned char c);
+	void Fill(uint8_t c);
 	void Set_Vertex_Locations(Vector2* vertices,int count); // Warning! Contents are modified!
-	void Render_Triangles(const unsigned long* indices,int index_count);
-	void Render_Triangle_Strip(const unsigned long* indices,int index_count);
+	void Render_Triangles(const uint32_t* indices,int index_count);
+	void Render_Triangle_Strip(const uint32_t* indices,int index_count);
 };
 
 

@@ -292,7 +292,7 @@ ScreenCursorClass::Render (RenderInfoClass &rinfo)
 	DynamicIBAccessClass ibaccess(BUFFER_TYPE_DYNAMIC_SORTING,FACE_COUNT*3);
 	{
 		DynamicIBAccessClass::WriteLockClass lock(&ibaccess);
-		unsigned short * indices = lock.Get_Index_Array();
+		uint16_t * indices = lock.Get_Index_Array();
 		for (int i=0; i<FACE_COUNT; i++) {
 			indices[3*i+0] = m_Triangles[i][0];
 			indices[3*i+1] = m_Triangles[i][1];

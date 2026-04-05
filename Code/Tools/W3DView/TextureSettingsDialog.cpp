@@ -130,7 +130,7 @@ END_MESSAGE_MAP()
 //
 // OnInitDialog
 //
-BOOL
+int32_t
 TextureSettingsDialogClass::OnInitDialog (void)
 {
 	// Allow the base class to process this message
@@ -148,7 +148,7 @@ TextureSettingsDialogClass::OnInitDialog (void)
 
 	// Remove the border from around our child window
 	HWND hchild_wnd = ::GetDlgItem (m_hWnd, IDC_TEXTURE_THUMBNAIL);
-	LONG style = ::GetWindowLong (hchild_wnd, GWL_STYLE);
+	int32_t style = ::GetWindowLong (hchild_wnd, GWL_STYLE);
 	::SetWindowLong (hchild_wnd, GWL_STYLE, style & (~WS_BORDER));
 
 	// Enable or disable the 'restore' button based on whether or not we
@@ -213,7 +213,7 @@ TextureSettingsDialogClass::Fill_Controls (TextureClass *ptexture)
 		case ID_MANUAL_ANIM_TEXTURE_INSTANCE_CLASS:
 		case ID_TIME_ANIM_TEXTURE_INSTANCE_CLASS:
 		case ID_RESIZEABLE_TEXTURE_INSTANCE_CLASS:
-			SendDlgItemMessage (IDC_RESIZEABLE_CHECK, BM_SETCHECK, (WPARAM)TRUE);
+			SendDlgItemMessage (IDC_RESIZEABLE_CHECK, BM_SETCHECK, (uintptr_t)TRUE);
 			psource = ((ResizeableTextureInstanceClass *)ptexture)->Peek_Source();
 
 			// Fill the 'filename' edit control
@@ -232,10 +232,10 @@ TextureSettingsDialogClass::Fill_Controls (TextureClass *ptexture)
 	// Set the checkboxes
 	ASSERT (psource != NULL);
 	if (psource != NULL) {
-		SendDlgItemMessage (IDC_MIPMAP_OFF_CHECK, BM_SETCHECK, (WPARAM)(psource->getMipmap () == srTextureIFace::MIPMAP_NONE));
-		SendDlgItemMessage (IDC_ALPHA_CHECK, BM_SETCHECK, (WPARAM)(psource->isHintEnabled(srTextureIFace::HINT_ALPHA_BITMASK)));	
-		SendDlgItemMessage (IDC_CLAMPU_CHECK, BM_SETCHECK, (WPARAM)(psource->Get_U_Addr_Mode() == TextureClass::TEXTURE_ADDRESS_CLAMP));
-		SendDlgItemMessage (IDC_CLAMPV_CHECK, BM_SETCHECK, (WPARAM)(psource->Get_V_Addr_Mode() == TextureClass::TEXTURE_ADDRESS_CLAMP));
+		SendDlgItemMessage (IDC_MIPMAP_OFF_CHECK, BM_SETCHECK, (uintptr_t)(psource->getMipmap () == srTextureIFace::MIPMAP_NONE));
+		SendDlgItemMessage (IDC_ALPHA_CHECK, BM_SETCHECK, (uintptr_t)(psource->isHintEnabled(srTextureIFace::HINT_ALPHA_BITMASK)));	
+		SendDlgItemMessage (IDC_CLAMPU_CHECK, BM_SETCHECK, (uintptr_t)(psource->Get_U_Addr_Mode() == TextureClass::TEXTURE_ADDRESS_CLAMP));
+		SendDlgItemMessage (IDC_CLAMPV_CHECK, BM_SETCHECK, (uintptr_t)(psource->Get_V_Addr_Mode() == TextureClass::TEXTURE_ADDRESS_CLAMP));
 	}
 
 	return ;
@@ -295,7 +295,7 @@ TextureSettingsDialogClass::Fill_Animation_Controls (TextureClass *ptexture)
 	}
 
 	// Check or uncheck the animation box depending on if it was an animated texture
-	SendDlgItemMessage (IDC_ANIMATION_CHECK, BM_SETCHECK, (WPARAM)banimated);
+	SendDlgItemMessage (IDC_ANIMATION_CHECK, BM_SETCHECK, (uintptr_t)banimated);
 	
 	// Was this an animated texture?	
 	if (banimated == true) {
@@ -375,12 +375,12 @@ TextureSettingsDialogClass::OnAnimationCheck (void)
 //
 // WindowProc
 //
-LRESULT
+intptr_t
 TextureSettingsDialogClass::WindowProc
 (
-	UINT message,
-	WPARAM wParam,
-	LPARAM lParam
+	uint32_t message,
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	if (message == WM_PAINT) {
@@ -465,7 +465,7 @@ TextureSettingsDialogClass::OnBrowseButton (void)
 
 		// Set the text of the filename combobox control
 		SetDlgItemText (IDC_FILENAME_EDIT, dialog.GetFileName ());
-		SendDlgItemMessage (IDC_FILENAME_EDIT, EM_SETSEL, (WPARAM)0, (LPARAM)-1);
+		SendDlgItemMessage (IDC_FILENAME_EDIT, EM_SETSEL, (uintptr_t)0, (intptr_t)-1);
 
 		// Enable the apply button
 		::EnableWindow (::GetDlgItem (m_hWnd, IDC_APPLY), TRUE);

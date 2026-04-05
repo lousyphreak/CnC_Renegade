@@ -74,7 +74,7 @@ END_MESSAGE_MAP()
 //	OnInitDialog
 //
 ///////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 TranslationExportDialogClass::OnInitDialog (void) 
 {
 	CDialog::OnInitDialog ();

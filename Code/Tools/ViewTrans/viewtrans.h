@@ -38,6 +38,8 @@
 #ifndef VIEWTRANS_H
 #define VIEWTRANS_H
 
+#include <cstdint>
+
 #include <Max.h>
 #include <Quat.h>
 #include <UTILAPI.H>
@@ -74,7 +76,7 @@ class TransViewerUtility : public UtilityObj
 public:
 
 	TransViewerUtility();
-	void OnInitDialog(HWND hWnd, LPARAM lParam);
+	void OnInitDialog(HWND hWnd, intptr_t lParam);
 	void BeginEditParams(Interface *ip, IUtil *iu);
 	void EndEditParams(Interface *ip, IUtil *iu);
 	void SelectionSetChanged(Interface *ip,IUtil *iu);
@@ -99,8 +101,8 @@ public:
 private:	
 
 	// windows Dialog Proc which manipulates this class's data.
-	friend BOOL CALLBACK UtilityDlgProc(HWND hDlg, UINT message, 
-		WPARAM wParam, LPARAM lParam);
+	friend int32_t CALLBACK UtilityDlgProc(HWND hDlg, uint32_t message, 
+		uintptr_t wParam, intptr_t lParam);
 
 };
 
@@ -114,7 +116,7 @@ class UtilityClassDesc : public ClassDesc
 {
 public:
 	int 			IsPublic() {return 1;}
-	void *			Create(BOOL loading = FALSE) {return &TheUtility;}
+	void *			Create(int32_t loading = FALSE) {return &TheUtility;}
 	const TCHAR *	ClassName() {return VIEWTRANS_CLASS_NAME;}
 	SClass_ID		SuperClassID() {return UTILITY_CLASS_ID;}
 	Class_ID		ClassID() {return VIEWTRANS_CLASS_ID;}

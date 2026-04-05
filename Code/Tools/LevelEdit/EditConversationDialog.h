@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 #include "resource.h"
@@ -56,7 +58,7 @@ public:
 	//{{AFX_VIRTUAL(EditConversationDialogClass)
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-	virtual BOOL OnCommand(WPARAM wParam, LPARAM lParam);
+	virtual int32_t OnCommand(uintptr_t wParam, intptr_t lParam);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -64,14 +66,14 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(EditConversationDialogClass)
-	afx_msg void OnDblclkRemarkList(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnKeydownRemarkList(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnDblclkRemarkList(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnKeydownRemarkList(NMHDR* pNMHDR, intptr_t* pResult);
 	virtual void OnOK();
 	afx_msg void OnAdd();
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	afx_msg void OnInsert();
-	afx_msg void OnItemchangedRemarkList(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnDeleteitemRemarkList(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnItemchangedRemarkList(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnDeleteitemRemarkList(NMHDR* pNMHDR, intptr_t* pResult);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 

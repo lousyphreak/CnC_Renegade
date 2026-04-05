@@ -97,7 +97,7 @@ void CMixViewerDoc::Dump(CDumpContext& dc) const
 // OnNewDocument
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CMixViewerDoc::OnNewDocument (void)
 {
 	if (!CDocument::OnNewDocument ()) {
@@ -123,7 +123,7 @@ CMixViewerDoc::OnNewDocument (void)
 // OnOpenDocument
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CMixViewerDoc::OnOpenDocument (LPCTSTR path)
 {
 	if (!CDocument::OnOpenDocument (path)) {

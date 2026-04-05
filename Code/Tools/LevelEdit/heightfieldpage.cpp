@@ -148,7 +148,7 @@ void HeightfieldPageClass::Dump(CDumpContext& dc) const
 void
 HeightfieldPageClass::OnSize
 (
-	UINT	nType,
+	uint32_t	nType,
 	int	cx,
 	int	cy
 ) 
@@ -182,7 +182,7 @@ HeightfieldPageClass::OnDestroy (void)
 //  OnInitDialog
 //
 ////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 HeightfieldPageClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -230,8 +230,8 @@ HeightfieldPageClass::OnCreateNewButton (void)
 //  OnCommand
 //
 ////////////////////////////////////////////////////////////////////////////
-BOOL
-HeightfieldPageClass::OnCommand (WPARAM wParam, LPARAM lParam)
+int32_t
+HeightfieldPageClass::OnCommand (uintptr_t wParam, intptr_t lParam)
 {
 	if (IsInitialized) {
 
@@ -345,7 +345,7 @@ HeightfieldPageClass::Update_Material_Button (int index)
 		//
 		//	Put the bitmap into the button
 		//
-		HBITMAP old_bmp = (HBITMAP)::SendMessage (button_wnd, BM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)thumbnail);
+		HBITMAP old_bmp = (HBITMAP)::SendMessage (button_wnd, BM_SETIMAGE, (uintptr_t)IMAGE_BITMAP, (intptr_t)thumbnail);
 		if (old_bmp != NULL) {
 
 			//

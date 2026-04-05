@@ -76,7 +76,7 @@ void CWDumpListView::Dump(CDumpContext& dc) const
 /////////////////////////////////////////////////////////////////////////////
 // CWDumpListView message handlers
 
-void CWDumpListView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint) 
+void CWDumpListView::OnUpdate(CView* pSender, intptr_t lHint, CObject* pHint) 
 {
 	CListCtrl &list = GetListCtrl();
 	CWdumpDoc *doc= (CWdumpDoc *) GetDocument();
@@ -94,7 +94,7 @@ void CWDumpListView::OnInitialUpdate()
 	CListView::OnInitialUpdate();
 	
 	CListCtrl &list = GetListCtrl();
-	long flags = list.GetStyle();
+	int32_t flags = static_cast<int32_t>(list.GetStyle());
 	flags |= LVS_REPORT;
 	SetWindowLong(list.GetSafeHwnd(), GWL_STYLE, flags);
 

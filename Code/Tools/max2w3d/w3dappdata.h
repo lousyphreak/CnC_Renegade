@@ -39,6 +39,8 @@
 #ifndef W3DAPPDATA_H
 #define W3DAPPDATA_H
 
+#include <cstdint>
+
 #include <Max.h>
 
 /*
@@ -208,7 +210,7 @@ struct W3DAppData0Struct
 	bool	Is_ZNormals(void)						{ return (ExportFlags & EXPORT_ZNORMALS_FLAG) == EXPORT_ZNORMALS_FLAG; }
 	bool	Is_Shadow(void)						{ return (ExportFlags & EXPORT_CAST_SHADOW_FLAG) == EXPORT_CAST_SHADOW_FLAG; }
 	
-	unsigned short ExportFlags;	// what was I thinking??? (gth)
+	uint16_t ExportFlags;	// what was I thinking??? (gth)
 };
 
 
@@ -307,7 +309,7 @@ struct W3DAppData2Struct
 	void	Enable_Export_Transform(bool onoff)			{ if (onoff) { ExportFlags |= EXPORT_TRANSFORM; } else { ExportFlags &= ~EXPORT_TRANSFORM; } }
 	void	Enable_Export_Geometry(bool onoff)			{ if (onoff) { ExportFlags |= EXPORT_GEOMETRY; } else { ExportFlags &= ~EXPORT_GEOMETRY; } }
 
-	void	Set_Geometry_Type(GeometryTypeEnum type)	{ GeometryType = (unsigned int)type; }
+	void	Set_Geometry_Type(GeometryTypeEnum type)	{ GeometryType = (uint32_t)type; }
 
 	void	Enable_Hidden(bool onoff)						{ if (onoff) { GeometryFlags |= GEOMETRY_FLAG_HIDDEN; } else { GeometryFlags &= ~GEOMETRY_FLAG_HIDDEN; } }
 	void	Enable_Two_Sided(bool onoff)					{ if (onoff) { GeometryFlags |= GEOMETRY_FLAG_TWO_SIDED; } else { GeometryFlags &= ~GEOMETRY_FLAG_TWO_SIDED; } }
@@ -370,13 +372,13 @@ protected:
 		COLLISION_FLAG_VEHICLE =			0x00000010,
 	};
 
-	unsigned int ExportFlags;				
-	unsigned int GeometryType;				
-	unsigned int GeometryFlags;
-	unsigned int CollisionFlags;
+	uint32_t ExportFlags;				
+	uint32_t GeometryType;				
+	uint32_t GeometryFlags;
+	uint32_t CollisionFlags;
 
 	// future expansion, initialized to zeros
-	unsigned int UnUsed[4];
+	uint32_t UnUsed[4];
 };
 
 
@@ -406,7 +408,7 @@ struct W3DDazzleAppDataStruct
 	/*
 	** Members
 	*/
-	unsigned int	UnUsed[4];
+	uint32_t	UnUsed[4];
 	char				DazzleType[128];
 };
 

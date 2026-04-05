@@ -120,7 +120,7 @@ HistogramCtlClass::Create_DIB_Section (void)
 	// Release our temporary screen DC
 	::ReleaseDC (NULL, hscreen_dc);
 
-	// Window's bitmaps are DWORD aligned, so make sure
+	// Window's bitmaps are uint32_t aligned, so make sure
 	// we take that into account.
 	int alignment_offset = (m_BMPWidth * 3) % 4;
 	alignment_offset = (alignment_offset != 0) ? (4 - alignment_offset) : 0;
@@ -187,12 +187,12 @@ HistogramCtlClass::Paint_DIB (void)
 	int sel_start_x	= int((m_Selection.min / x_range) * (float)(m_BMPWidth-1));
 	int sel_end_x		= int((m_Selection.max / x_range) * (float)(m_BMPWidth-1));
 
-	BYTE sel_back_red		= BYTE (m_BkSelColor.X * 255);
-	BYTE sel_back_green	= BYTE (m_BkSelColor.Y * 255);
-	BYTE sel_back_blue	= BYTE (m_BkSelColor.Z * 255);
-	BYTE sel_red			= BYTE (m_SelColor.X * 255);
-	BYTE sel_green			= BYTE (m_SelColor.Y * 255);
-	BYTE sel_blue			= BYTE (m_SelColor.Z * 255);
+	uint8_t sel_back_red		= uint8_t (m_BkSelColor.X * 255);
+	uint8_t sel_back_green	= uint8_t (m_BkSelColor.Y * 255);
+	uint8_t sel_back_blue	= uint8_t (m_BkSelColor.Z * 255);
+	uint8_t sel_red			= uint8_t (m_SelColor.X * 255);
+	uint8_t sel_green			= uint8_t (m_SelColor.Y * 255);
+	uint8_t sel_blue			= uint8_t (m_SelColor.Z * 255);
 
 	//
 	//	Paint the background
@@ -212,9 +212,9 @@ HistogramCtlClass::Paint_DIB (void)
 		int bmp_index = 0;
 		int row_offset = m_ScanlineSize - (m_BMPWidth * 3);
 		for (int row = 0; row < m_BMPHeight; row ++) {
-			BYTE curr_red	= BYTE(red * 255);
-			BYTE curr_green = BYTE(green * 255);
-			BYTE curr_blue	= BYTE(blue * 255);
+			uint8_t curr_red	= uint8_t(red * 255);
+			uint8_t curr_green = uint8_t(green * 255);
+			uint8_t curr_blue	= uint8_t(blue * 255);
 
 			for (int col = 0; col < m_BMPWidth; col ++) {
 
@@ -295,9 +295,9 @@ HistogramCtlClass::Paint_DIB (void)
 						m_pBits[bmp_index + 1]	= sel_green;
 						m_pBits[bmp_index + 2]	= sel_red;
 					} else {
-						m_pBits[bmp_index]		= BYTE(curr_blue * 255);
-						m_pBits[bmp_index + 1]	= BYTE(curr_green * 255);
-						m_pBits[bmp_index + 2]	= BYTE(curr_red * 255);
+						m_pBits[bmp_index]		= uint8_t(curr_blue * 255);
+						m_pBits[bmp_index + 1]	= uint8_t(curr_green * 255);
+						m_pBits[bmp_index + 2]	= uint8_t(curr_red * 255);
 					}
 
 					//

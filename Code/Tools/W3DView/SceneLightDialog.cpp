@@ -92,7 +92,7 @@ END_MESSAGE_MAP()
 //
 //  OnInitDialog
 //
-BOOL
+int32_t
 CSceneLightDialog::OnInitDialog (void) 
 {
 	// Allow the base class to process this message
@@ -130,8 +130,8 @@ CSceneLightDialog::OnInitDialog (void)
 		double start = 0;
 		double end = 0;
 		pCDoc->GetSceneLight ()->Get_Far_Attenuation_Range (start, end);
-		BOOL atten_on = pCDoc->GetSceneLight ()->Get_Flag (LightClass::FAR_ATTENUATION);
-		SendDlgItemMessage (IDC_ATTENUATION_CHECK, BM_SETCHECK, (WPARAM)atten_on);
+		int32_t atten_on = pCDoc->GetSceneLight ()->Get_Flag (LightClass::FAR_ATTENUATION);
+		SendDlgItemMessage (IDC_ATTENUATION_CHECK, BM_SETCHECK, (uintptr_t)atten_on);
 
 		// Get the light's intensity
 		float intensity = pCDoc->GetSceneLight ()->Get_Intensity ();			
@@ -174,7 +174,7 @@ CSceneLightDialog::OnInitDialog (void)
 	}
 
 	// Check the 'Diffuse' channel by default
-	SendDlgItemMessage (IDC_CHANNEL_DIFFUSE_RADIO, BM_SETCHECK, (WPARAM)TRUE);
+	SendDlgItemMessage (IDC_CHANNEL_DIFFUSE_RADIO, BM_SETCHECK, (uintptr_t)TRUE);
 	Update_Attenuation_Controls ();
 	return TRUE;
 }
@@ -187,8 +187,8 @@ CSceneLightDialog::OnInitDialog (void)
 void
 CSceneLightDialog::OnHScroll
 (
-    UINT nSBCode,
-    UINT nPos,
+    uint32_t nSBCode,
+    uint32_t nPos,
     CScrollBar* pScrollBar
 )
 {
@@ -285,12 +285,12 @@ CSceneLightDialog::OnCancel (void)
 //
 //  WindowProc
 //
-LRESULT
+intptr_t
 CSceneLightDialog::WindowProc
 (
-    UINT message,
-    WPARAM wParam,
-    LPARAM lParam
+    uint32_t message,
+    uintptr_t wParam,
+    intptr_t lParam
 ) 
 {
 	switch (message)
@@ -461,9 +461,9 @@ CSceneLightDialog::Set_Color_Control_State (const Vector3 &color)
 	// Should we 'lock' the color sliders together?
 	if ((color.X == color.Y) &&
 		 (color.X == color.Z)) {
-		SendDlgItemMessage (IDC_GRAYSCALE_CHECK, BM_SETCHECK, (WPARAM)TRUE);
+		SendDlgItemMessage (IDC_GRAYSCALE_CHECK, BM_SETCHECK, (uintptr_t)TRUE);
 	} else {		
-		SendDlgItemMessage (IDC_GRAYSCALE_CHECK, BM_SETCHECK, (WPARAM)FALSE);
+		SendDlgItemMessage (IDC_GRAYSCALE_CHECK, BM_SETCHECK, (uintptr_t)FALSE);
 	}
 
 	// Set the color slider positions
@@ -536,7 +536,7 @@ void
 CSceneLightDialog::Update_Attenuation_Controls (void)
 {
 	// Enable or disable the attenuation controls based on the group's checkstate
-	BOOL enable = (SendDlgItemMessage (IDC_ATTENUATION_CHECK, BM_GETCHECK) == 1);
+	int32_t enable = (SendDlgItemMessage (IDC_ATTENUATION_CHECK, BM_GETCHECK) == 1);
 	::EnableWindow (::GetDlgItem (m_hWnd, IDC_START_ATTENUATION_EDIT), enable);
 	::EnableWindow (::GetDlgItem (m_hWnd, IDC_START_ATTENUATION_SPIN), enable);
 	::EnableWindow (::GetDlgItem (m_hWnd, IDC_END_ATTENUATION_EDIT), enable);

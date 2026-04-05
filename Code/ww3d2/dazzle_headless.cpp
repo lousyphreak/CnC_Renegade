@@ -11,7 +11,7 @@ const DazzleVisibilityClass * g_visibility_handler = NULL;
 class HeadlessDazzlePersistFactory : public PersistFactoryClass
 {
 public:
-	uint32 Chunk_ID(void) const override { return 0; }
+	uint32_t Chunk_ID(void) const override { return 0; }
 	PersistClass * Load(ChunkLoadClass &) const override { return NULL; }
 	void Save(ChunkSaveClass &, PersistClass *) const override {}
 };
@@ -26,8 +26,8 @@ DazzleLoaderClass _DazzleLoader;
 DazzleLayerClass::DazzleLayerClass(void) : visible_lists(NULL) {}
 DazzleLayerClass::~DazzleLayerClass(void) { delete [] visible_lists; }
 void DazzleLayerClass::Render(CameraClass *) {}
-int DazzleLayerClass::Get_Visible_Item_Count(unsigned int) const { return 0; }
-void DazzleLayerClass::Clear_Visible_List(unsigned int) {}
+int DazzleLayerClass::Get_Visible_Item_Count(uint32_t) const { return 0; }
+void DazzleLayerClass::Clear_Visible_List(uint32_t) {}
 
 float DazzleVisibilityClass::Compute_Dazzle_Visibility(RenderInfoClass &, DazzleRenderObjClass *, const Vector3 &) const { return 1.0f; }
 
@@ -90,7 +90,7 @@ void DazzleRenderObjClass::Init_Type(const DazzleInitClass &) {}
 void DazzleRenderObjClass::Init_Lensflare(const LensflareInitClass &) {}
 void DazzleRenderObjClass::Init_From_INI(const INIClass *) {}
 unsigned DazzleRenderObjClass::Get_Type_ID(const char *) { return 0; }
-const char * DazzleRenderObjClass::Get_Type_Name(unsigned int) { return "headless_dazzle"; }
+const char * DazzleRenderObjClass::Get_Type_Name(uint32_t) { return "headless_dazzle"; }
 DazzleTypeClass * DazzleRenderObjClass::Get_Type_Class(unsigned) { return NULL; }
 unsigned DazzleRenderObjClass::Get_Lensflare_ID(const char *) { return 0; }
 LensflareTypeClass * DazzleRenderObjClass::Get_Lensflare_Class(unsigned) { return NULL; }

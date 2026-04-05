@@ -131,7 +131,7 @@ void __cdecl DebugPrint(const char* string, ...)
 			{
 			SetFilePointer(file, 0, NULL, FILE_END);
 
-			DWORD written;
+			uint32_t written;
 			WriteFile(file, &_buffer[0], strlen(_buffer), &written, NULL);
 			
 			CloseHandle(file);

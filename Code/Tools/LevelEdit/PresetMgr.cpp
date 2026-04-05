@@ -275,7 +275,7 @@ PresetMgrClass::Unlink_Preset (PresetClass *preset)
 //	Chunk_ID
 //
 ///////////////////////////////////////////////////////////////////////
-uint32
+uint32_t
 PresetMgrClass::Chunk_ID (void) const
 {
 	return CHUNKID_PRESETMGR;
@@ -509,7 +509,7 @@ PresetMgrClass::Load_Presets (ChunkLoadClass &cload)
 //
 ///////////////////////////////////////////////////////////////////////
 PresetClass *
-PresetMgrClass::Find_Preset (uint32 id)
+PresetMgrClass::Find_Preset (uint32_t id)
 {
 	PresetClass *retval = NULL;
 
@@ -531,7 +531,7 @@ PresetMgrClass::Find_Preset (uint32 id)
 //
 ///////////////////////////////////////////////////////////////////////
 PresetClass *
-PresetMgrClass::Find_Typed_Preset (uint32 class_id, LPCTSTR name)
+PresetMgrClass::Find_Typed_Preset (uint32_t class_id, LPCTSTR name)
 {
 	PresetClass *retval = NULL;
 
@@ -589,7 +589,7 @@ PresetMgrClass::Get_Next (PresetClass *preset)
 bool
 PresetMgrClass::Is_One_Of
 (
-	uint32			id_to_find,
+	uint32_t			id_to_find,
 	ID_TYPE			type,
 	bool				include_twiddlers,
 	PresetClass *	preset
@@ -603,7 +603,7 @@ PresetMgrClass::Is_One_Of
 		//
 		//	Determine which class ID to check
 		//
-		uint32 class_id = definition->Get_Class_ID ();
+		uint32_t class_id = definition->Get_Class_ID ();
 		if (include_twiddlers && class_id == CLASSID_TWIDDLERS) {
 			class_id = ((TwiddlerClass *)definition)->Get_Indirect_Class_ID ();
 		}
@@ -638,7 +638,7 @@ PresetMgrClass::Is_One_Of
 //
 ///////////////////////////////////////////////////////////////////////
 PresetClass *
-PresetMgrClass::Get_First (uint32 id, ID_TYPE type, bool include_twiddlers)
+PresetMgrClass::Get_First (uint32_t id, ID_TYPE type, bool include_twiddlers)
 {
 	PresetClass *req_preset = NULL;
 
@@ -669,7 +669,7 @@ PresetClass *
 PresetMgrClass::Get_Next
 (
 	PresetClass *	current,
-	uint32			id,
+	uint32_t			id,
 	ID_TYPE			type,
 	bool				include_twiddlers
 )
@@ -689,7 +689,7 @@ PresetMgrClass::Get_Next
 
 		/*DefinitionClass *definition = current->Get_Definition ();
 		if (definition != NULL) {
-			uint32 class_id = definition->Get_Class_ID ();
+			uint32_t class_id = definition->Get_Class_ID ();
 
 			if (type == ID_CLASS) {
 				
@@ -765,7 +765,7 @@ PresetMgrClass::Validate_Version (void)
 //
 ///////////////////////////////////////////////////////////////////////
 bool
-PresetMgrClass::Check_Out_Database (uint32 class_id, bool *should_undo_on_err)
+PresetMgrClass::Check_Out_Database (uint32_t class_id, bool *should_undo_on_err)
 {
 	CWaitCursor wait_cursor;
 
@@ -923,7 +923,7 @@ PresetMgrClass::Is_Database_Checked_Out (LPCTSTR full_path)
 //
 ///////////////////////////////////////////////////////////////////////
 bool
-PresetMgrClass::Undo_Database_Check_Out (uint32 class_id)
+PresetMgrClass::Undo_Database_Check_Out (uint32_t class_id)
 {
 	bool retval = false;
 	FileMgrClass *file_mgr = ::Get_File_Mgr ();
@@ -956,7 +956,7 @@ PresetMgrClass::Undo_Database_Check_Out (uint32 class_id)
 //
 ///////////////////////////////////////////////////////////////////////
 void
-PresetMgrClass::Build_Preset_Tree (uint32 class_id, PRESET_TREE &tree, bool include_twiddlers)
+PresetMgrClass::Build_Preset_Tree (uint32_t class_id, PRESET_TREE &tree, bool include_twiddlers)
 {
 	tree.Reset ();
 	
@@ -998,7 +998,7 @@ PresetMgrClass::Build_Preset_Tree (uint32 class_id, PRESET_TREE &tree, bool incl
 void
 PresetMgrClass::Add_Children_To_Tree
 (
-	uint32					parent_id,
+	uint32_t					parent_id,
 	PRESET_TREE_LEAF *	leaf,
 	bool						include_twiddlers
 )
@@ -1020,7 +1020,7 @@ PresetMgrClass::Add_Children_To_Tree
 				//
 				//	Check to see if this meets the twiddler requirement
 				//
-				uint32 class_id = child_preset->Get_Definition ()->Get_Class_ID ();
+				uint32_t class_id = child_preset->Get_Definition ()->Get_Class_ID ();
 				if (include_twiddlers || class_id != CLASSID_TWIDDLERS) {
 
 					//
@@ -1050,7 +1050,7 @@ PresetMgrClass::Add_Children_To_Tree
 //
 ///////////////////////////////////////////////////////////////////////
 void
-PresetMgrClass::Build_Factory_Tree (uint32 class_id, FACTORY_TREE &tree)
+PresetMgrClass::Build_Factory_Tree (uint32_t class_id, FACTORY_TREE &tree)
 {
 	tree.Reset ();
 
@@ -1064,7 +1064,7 @@ PresetMgrClass::Build_Factory_Tree (uint32 class_id, FACTORY_TREE &tree)
 			//
 			//	Add this factory to the tree
 			//
-			uint32 factory_class_id = PRESET_CATEGORIES[index].clsid;
+			uint32_t factory_class_id = PRESET_CATEGORIES[index].clsid;
 			//FACTORY_TREE_LEAF *leaf = (FACTORY_TREE_LEAF *)tree.Add (factory_class_id);
 			FACTORY_TREE_LEAF *leaf = tree.Add_Sorted (factory_class_id, PRESET_CATEGORIES[index].name);
 
@@ -1130,7 +1130,7 @@ PresetMgrClass::Put_Presets_Back (PRESET_LIST &preset_list)
 void
 PresetMgrClass::Remove_Non_Matching_Presets
 (
-	uint32				class_id,
+	uint32_t				class_id,
 	bool					class_id_matters,
 	bool					is_temp,
 	PRESET_LIST &		removed_preset_list
@@ -1147,7 +1147,7 @@ PresetMgrClass::Remove_Non_Matching_Presets
 		//
 		//	Determine what class ID this preset belongs to...
 		//
-		uint32 curr_class_id = 0;
+		uint32_t curr_class_id = 0;
 		DefinitionClass *definition = preset->Get_Definition ();
 		if (definition != NULL) {
 			curr_class_id = definition->Get_Class_ID ();
@@ -1346,7 +1346,7 @@ PresetMgrClass::Add_Dirty_Preset_Files_To_VSS (void)
 PresetClass *
 PresetMgrClass::Create_Preset
 (
-	uint32			class_id,
+	uint32_t			class_id,
 	const char *	name,
 	bool				is_temp
 )

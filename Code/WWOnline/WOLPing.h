@@ -35,6 +35,8 @@
 #ifndef __WOLPING_H__
 #define __WOLPING_H__
 
+#include <cstdint>
+
 #include <wwlib/wwstring.h>
 
 namespace WWOnline {
@@ -42,7 +44,7 @@ namespace WWOnline {
 class RawPing
 	{
 	public:
-		RawPing(const char* host, unsigned long ip, int time) :
+		RawPing(const char* host, uint32_t ip, int time) :
 				mHostAddress(host),
 				mIP(ip),
 				mTime(time),
@@ -52,10 +54,10 @@ class RawPing
 		inline const char* GetHostAddress(void) const
 			{return mHostAddress.Peek_Buffer();}
 
-		inline void SetIPAddress(unsigned long ip)
+		inline void SetIPAddress(uint32_t ip)
 			{mIP = ip;}
 
-		inline unsigned long GetIPAddress(void) const
+		inline uint32_t GetIPAddress(void) const
 			{return mIP;}
 
 		inline void SetTime(int time)
@@ -72,7 +74,7 @@ class RawPing
 
 	private:
 		StringClass mHostAddress;
-		unsigned long mIP;
+		uint32_t mIP;
 		int mTime;
 		int mHandle;
 	};

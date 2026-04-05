@@ -38,6 +38,8 @@
 #ifndef W3DDESC_H
 #define W3DDESC_H
 
+#include <cstdint>
+
 #include "always.h"
 #include <Max.h>
 
@@ -52,7 +54,7 @@
 class W3dClassDesc : public ClassDesc
 {
 public:
-	void *			Create(BOOL);
+	void *			Create(int32_t);
 	int				IsPublic();
 	const TCHAR *	ClassName();
 	SClass_ID		SuperClassID(); 

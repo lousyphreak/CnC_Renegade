@@ -37,6 +37,8 @@
 #ifndef	ELEVATOR_H
 #define	ELEVATOR_H
 
+#include <cstdint>
+
 #ifndef	ALWAYS_H
 	#include "always.h"
 #endif
@@ -71,7 +73,7 @@ class ElevatorPhysDefClass : public AccessiblePhysDefClass
 public:
 	ElevatorPhysDefClass(void);
 	
-	virtual uint32								Get_Class_ID( void ) const;
+	virtual uint32_t								Get_Class_ID( void ) const;
 	virtual const char *						Get_Type_Name(void)				{ return "ElevatorPhysDef"; }
 	virtual bool								Is_Type(const char *);
 	virtual PersistClass *					Create( void ) const ;

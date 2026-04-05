@@ -35,6 +35,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #pragma once
 
+#include <cstdint>
+
 #ifndef RNG_H
 #define RNG_H
 
@@ -46,7 +48,7 @@ class RandomNumberGenerator {
 	public:
 		virtual ~RandomNumberGenerator() {}
 
-		virtual void Get_Block(void * output, unsigned int size) = 0;
+		virtual void Get_Block(void * output, uint32_t size) = 0;
 };
 
 

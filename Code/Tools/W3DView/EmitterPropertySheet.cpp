@@ -62,7 +62,7 @@ IMPLEMENT_DYNAMIC(EmitterPropertySheetClass, CPropertySheet)
 EmitterPropertySheetClass::EmitterPropertySheetClass
 (
 	EmitterInstanceListClass *emitter_list,
-	UINT nIDCaption,
+	uint32_t nIDCaption,
 	CWnd *pParentWnd
 )
 	:  m_pEmitterList (NULL),
@@ -118,12 +118,12 @@ END_MESSAGE_MAP()
 //
 //  EmitterPropertySheetClass
 //
-LRESULT
+intptr_t
 EmitterPropertySheetClass::WindowProc
 (
-	UINT message,
-	WPARAM wParam,
-	LPARAM lParam
+	uint32_t message,
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	switch (message)
@@ -151,7 +151,7 @@ EmitterPropertySheetClass::WindowProc
 				{					
 					// Did the user click the button?
 					if (HIWORD (wParam) == BN_CLICKED) {
-						LRESULT lresult = CPropertySheet::WindowProc (message, wParam, lParam);
+						intptr_t lresult = CPropertySheet::WindowProc (message, wParam, lParam);
 
 						// If all the pages contain valid data, then update the emitter
 						if (m_GeneralPage.Is_Data_Valid () &&

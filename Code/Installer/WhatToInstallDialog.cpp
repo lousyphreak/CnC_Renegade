@@ -102,7 +102,7 @@ void WhatToInstallDialogClass::On_Init_Dialog (void)
  * HISTORY:                                                                                    *
  *   08/22/01    IML : Created.                                                                * 
  *=============================================================================================*/
-void WhatToInstallDialogClass::On_Command (int ctrl_id, int message_id, DWORD param)
+void WhatToInstallDialogClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	switch (ctrl_id) {
 

@@ -66,7 +66,7 @@ VisibleMeshINodeFilter DefaultINodeFilter;
  * HISTORY:                                                                                    * 
  *   07/10/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-BOOL HelperINodeFilter::Accept_Node(INode * node,TimeValue time)
+int32_t HelperINodeFilter::Accept_Node(INode * node,TimeValue time)
 {
 	Object * obj = node->EvalWorldState(time).obj;
 
@@ -92,7 +92,7 @@ BOOL HelperINodeFilter::Accept_Node(INode * node,TimeValue time)
  * HISTORY:                                                                                    * 
  *   07/10/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-BOOL MeshINodeFilter::Accept_Node(INode * node,TimeValue time)
+int32_t MeshINodeFilter::Accept_Node(INode * node,TimeValue time)
 {
 	Object * obj = node->EvalWorldState(time).obj;
 
@@ -128,7 +128,7 @@ BOOL MeshINodeFilter::Accept_Node(INode * node,TimeValue time)
  * HISTORY:                                                                                    * 
  *   06/09/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-BOOL VisibleMeshINodeFilter::Accept_Node(INode * node, TimeValue time)
+int32_t VisibleMeshINodeFilter::Accept_Node(INode * node, TimeValue time)
 {
 	Object * obj = node->EvalWorldState(time).obj;
 
@@ -163,7 +163,7 @@ BOOL VisibleMeshINodeFilter::Accept_Node(INode * node, TimeValue time)
  * HISTORY:                                                                                    * 
  *   07/03/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-BOOL VisibleHelperINodeFilter::Accept_Node(INode * node, TimeValue time)
+int32_t VisibleHelperINodeFilter::Accept_Node(INode * node, TimeValue time)
 {
 	Object * obj = node->EvalWorldState(time).obj;
 
@@ -195,7 +195,7 @@ BOOL VisibleHelperINodeFilter::Accept_Node(INode * node, TimeValue time)
  * HISTORY:                                                                                    * 
  *   07/03/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-BOOL VisibleMeshOrHelperINodeFilter::Accept_Node(INode * node, TimeValue time)
+int32_t VisibleMeshOrHelperINodeFilter::Accept_Node(INode * node, TimeValue time)
 {
 	Object * obj = node->EvalWorldState(time).obj;
 
@@ -238,7 +238,7 @@ BOOL VisibleMeshOrHelperINodeFilter::Accept_Node(INode * node, TimeValue time)
  * HISTORY:                                                                                    * 
  *   06/09/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-BOOL AnimatedINodeFilter::Accept_Node(INode * node, TimeValue time)
+int32_t AnimatedINodeFilter::Accept_Node(INode * node, TimeValue time)
 {
 	Object			* obj = node->EvalWorldState(time).obj;
 	Control			* poscon = node->GetTMController()->GetPositionController();
@@ -275,7 +275,7 @@ BOOL AnimatedINodeFilter::Accept_Node(INode * node, TimeValue time)
  * HISTORY:                                                                                    *
  *   1/13/98    GTH : Created.                                                                 *
  *=============================================================================================*/
-BOOL VisibleSelectedINodeFilter::Accept_Node(INode * node, TimeValue time)
+int32_t VisibleSelectedINodeFilter::Accept_Node(INode * node, TimeValue time)
 {
 	if (!node->IsHidden() && node->Selected()) {
 		return TRUE;

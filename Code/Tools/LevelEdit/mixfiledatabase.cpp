@@ -127,7 +127,7 @@ MixFileDatabaseClass::Open_Database
 	//	Search for all mix files in the installation directory
 	//
 	WIN32_FIND_DATA find_info	= { 0 };
-	BOOL keep_going				= TRUE;
+	int32_t keep_going				= TRUE;
 	HANDLE file_find				= NULL;
 	for (file_find = ::FindFirstFile (search_path, &find_info);
 		 (file_find != INVALID_HANDLE_VALUE) && keep_going;
@@ -267,7 +267,7 @@ MixFileDatabaseClass::Copy_File (FileClass *src_file, LPCTSTR local_filename)
 		//	Copy the data from the source file to the destination file
 		//
 		int file_size = src_file->Size ();
-		uint8 buffer[4096];
+		uint8_t buffer[4096];
 		while (file_size > 0) {
 			
 			//

@@ -426,11 +426,11 @@ int PlayerDataClass::Get_Weapon_Fired_Count(void) const
 }
 
 //------------------------------------------------------------------------------------
-bool PlayerDataClass::Get_Weapon_Fired(int index, unsigned long& weaponID, unsigned long& firedCount) const
+bool PlayerDataClass::Get_Weapon_Fired(int index, uint32_t& weaponID, uint32_t& firedCount) const
 {
 	if ((index >= 0) && (index < StatWeaponIDFired.Count())) {
-		weaponID = (unsigned long)StatWeaponIDFired[index];
-		firedCount = (unsigned long)StatWeaponFireCount[index];
+		weaponID = (uint32_t)StatWeaponIDFired[index];
+		firedCount = (uint32_t)StatWeaponFireCount[index];
 		return true;
 	}
 

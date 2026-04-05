@@ -54,7 +54,7 @@ CWdumpDoc::~CWdumpDoc()
 {
 }
 
-BOOL CWdumpDoc::OnNewDocument()
+int32_t CWdumpDoc::OnNewDocument()
 {
 	m_ChunkItem = 0;
 

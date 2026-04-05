@@ -19,6 +19,8 @@
 #ifndef TCP_CON_HEADER
 #define TCP_CON_HEADER
 
+#include <cstdint>
+
 #include "tcpmgr.h"
 #include "wlib/arraylist.h"
 
@@ -32,15 +34,15 @@ class TCPCon /// : OutputDevice
 
    SOCKET  getFD(void);
    void    close(void); 
-   sint32  write(IN uint8 *msg, uint32 len, sint32 wait_secs=-1);
-   sint32  read(OUT uint8 *msg, uint32 maxlen, sint32 wait_secs=-1);
-   bit8    unread(uint8 *data, int length);
-   bit8    getRemoteAddr(uint32 *ip, uint16 *port);
-   sint32  printf(const char *format, ...);
-   bit8    isConnected(void);
+   int32_t  write(IN uint8_t *msg, uint32_t len, int32_t wait_secs=-1);
+   int32_t  read(OUT uint8_t *msg, uint32_t maxlen, int32_t wait_secs=-1);
+   int8_t    unread(uint8_t *data, int length);
+   int8_t    getRemoteAddr(uint32_t *ip, uint16_t *port);
+   int32_t  printf(const char *format, ...);
+   int8_t    isConnected(void);
 
-   bit8    setInputDelay(sint32 delay) { InputDelay_=delay; return(TRUE); };
-   bit8    setOutputDelay(sint32 delay) { OutputDelay_=delay; return(TRUE); };
+   int8_t    setInputDelay(int32_t delay) { InputDelay_=delay; return(TRUE); };
+   int8_t    setOutputDelay(int32_t delay) { OutputDelay_=delay; return(TRUE); };
 
    // For OutputDevice
    /// virtual int print(IN char *str, int len); 
@@ -48,19 +50,19 @@ class TCPCon /// : OutputDevice
  private:
    friend  class TCPMgr;
    void    pumpWrites(void);  // for buffered mode
-   void    setBufferedWrites(TCPMgr *mgrptr, bit8 enabled);
+   void    setBufferedWrites(TCPMgr *mgrptr, int8_t enabled);
 
-   sint32  normalWrite(IN uint8 *msg, uint32 len, sint32 wait_secs=-1);
+   int32_t  normalWrite(IN uint8_t *msg, uint32_t len, int32_t wait_secs=-1);
 
-   sint32              InputDelay_;  // default max time for input
-   sint32              OutputDelay_; // default max time for output
+   int32_t              InputDelay_;  // default max time for input
+   int32_t              OutputDelay_; // default max time for output
 
    TCPMgr::CONN_STATE  State_;
    SOCKET              Socket_;
-   ArrayList<uint8>    ReadQueue_;       // reads are buffered
+   ArrayList<uint8_t>    ReadQueue_;       // reads are buffered
 
-   bit8                BufferedWrites_;  // T/F buffer writes?
-   ArrayList<uint8>    WriteQueue_;      // writes _can_ be buffered
+   int8_t                BufferedWrites_;  // T/F buffer writes?
+   ArrayList<uint8_t>    WriteQueue_;      // writes _can_ be buffered
    TCPMgr              *TCPMgrPtr_;      // pointer to my manager object
 };
 

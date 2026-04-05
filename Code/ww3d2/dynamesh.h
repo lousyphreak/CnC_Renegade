@@ -35,6 +35,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef DYNAMESH_H
@@ -61,8 +63,8 @@ class DynamicMeshModel : public MeshGeometryClass
 
 public:
 
-	DynamicMeshModel(unsigned int max_polys, unsigned int max_verts);
-	DynamicMeshModel(unsigned int max_polys, unsigned int max_verts, MaterialInfoClass *mat_info);
+	DynamicMeshModel(uint32_t max_polys, uint32_t max_verts);
+	DynamicMeshModel(uint32_t max_polys, uint32_t max_verts, MaterialInfoClass *mat_info);
 	DynamicMeshModel(const DynamicMeshModel &src);
 	~DynamicMeshModel(void);
 

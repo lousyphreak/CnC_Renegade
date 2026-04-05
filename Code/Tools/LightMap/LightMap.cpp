@@ -44,7 +44,7 @@
 #include <direct.h>
 
 //	Static functions.
-BOOL CALLBACK TopLevelWindowSearch (HWND hwnd, LPARAM lParam);
+int32_t CALLBACK TopLevelWindowSearch (HWND hwnd, intptr_t lParam);
 
 // The following is maintained by MFC tools.
 #ifdef _DEBUG
@@ -86,7 +86,7 @@ public:
 // Implementation
 protected:
 	//{{AFX_MSG(CAboutDlg)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };
@@ -140,12 +140,12 @@ LightMapApp::LightMapApp()
  * HISTORY:                                                                                    *
  *   6/1/99    IML : Created.                                                                  * 
  *=============================================================================================*/
-BOOL LightMapApp::InitInstance()
+int32_t LightMapApp::InitInstance()
 {
 	char computername [MAX_COMPUTERNAME_LENGTH + 1];
 	char processidname [33];
 
-	DWORD computernamesize;
+	uint32_t computernamesize;
 
 	// Standard initialization
 	// If you are not using these features and wish to reduce the size
@@ -179,16 +179,16 @@ BOOL LightMapApp::InitInstance()
 	::GetModuleFileName (NULL, filename, sizeof (filename));
 
 	// Get the version information for this application.
-	DWORD dummy_var = 0;
-	DWORD version_size = ::GetFileVersionInfoSize (filename, &dummy_var);
+	uint32_t dummy_var = 0;
+	uint32_t version_size = ::GetFileVersionInfoSize (filename, &dummy_var);
 	if (version_size > 0) {
 
 		// Get the file version block
-		LPBYTE pblock = new BYTE [version_size];
+		LPBYTE pblock = new uint8_t [version_size];
 		if (::GetFileVersionInfo (filename, 0L, version_size, pblock)) {
 
 			// Query the block for the file version information.
-			UINT version_len = 0;
+			uint32_t version_len = 0;
 			VS_FIXEDFILEINFO *pversion_info = NULL;
 			if (::VerQueryValue (pblock, "\\", (LPVOID*) &pversion_info, &version_len)) {
 				ApplicationVersion = pversion_info->dwFileVersionMS;
@@ -274,9 +274,9 @@ void LightMapApp::Do_Version_Check()
  * HISTORY:                                                                                    *
  *   05/15/00    IML : Created.                                                                *
  *=============================================================================================*/
-BOOL CALLBACK TopLevelWindowSearch (HWND hwnd, LPARAM lParam)
+int32_t CALLBACK TopLevelWindowSearch (HWND hwnd, intptr_t lParam)
 {
-	BOOL bcontinue = TRUE;
+	int32_t bcontinue = TRUE;
 
 	// Is this a viewer window?
 	if (::GetProp (hwnd, "LIGHTMAP") != 0) {
@@ -392,9 +392,9 @@ bool LightMapApp::Explorer_Style()
  * HISTORY:                                                                                    *
  *   6/1/99    IML : Created.                                                                  * 
  *=============================================================================================*/
-DWORD LightMapApp::File_Dialog_Flags()
+uint32_t LightMapApp::File_Dialog_Flags()
 {
-	DWORD	flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
+	uint32_t	flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
 
 	if (Explorer_Style()) flags |= OFN_EXPLORER;
 	return (flags);
@@ -413,7 +413,7 @@ DWORD LightMapApp::File_Dialog_Flags()
  * HISTORY:                                                                                    *
  *   6/1/99    IML : Created.                                                                  * 
  *=============================================================================================*/
-BOOL CAboutDlg::OnInitDialog() 
+int32_t CAboutDlg::OnInitDialog() 
 {
 	// Allow the base class to process this message.
 	CDialog::OnInitDialog();

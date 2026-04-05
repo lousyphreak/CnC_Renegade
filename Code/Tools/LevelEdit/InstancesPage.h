@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // InstancesPage.h : header file
 //
@@ -70,7 +72,7 @@ public:
 	//{{AFX_VIRTUAL(InstancesPageClass)
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+	virtual intptr_t WindowProc(uint32_t message, uintptr_t wParam, intptr_t lParam);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -82,17 +84,17 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(InstancesPageClass)
-	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg void OnSize(uint32_t nType, int cx, int cy);
 	afx_msg void OnDestroy();
 	afx_msg void OnEdit();
 	afx_msg void OnGoto();
 	afx_msg void OnShowAll();
 	afx_msg void OnSelect();
 	afx_msg void OnDelete();
-	virtual BOOL OnInitDialog();
-	afx_msg void OnDeleteitemInstanceList(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnDblclkInstanceList(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnItemchangedInstanceList(NMHDR* pNMHDR, LRESULT* pResult);
+	virtual int32_t OnInitDialog();
+	afx_msg void OnDeleteitemInstanceList(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnDblclkInstanceList(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnItemchangedInstanceList(NMHDR* pNMHDR, intptr_t* pResult);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 
@@ -117,13 +119,13 @@ protected:
 	void					Insert_Navigator (void);
 	NodeClass *			Get_Item_Node (int index);
 
-	void					Populate_List (uint32 class_id);
+	void					Populate_List (uint32_t class_id);
 	void					Populate_List (NodeClass *node);
 
 	void					Hide_Nodes (int index, bool hide);
-	void					Hide_Node (NodeClass *node, uint32 class_id, bool hide);
+	void					Hide_Node (NodeClass *node, uint32_t class_id, bool hide);
 	void					Update_Button_States (void);
-	bool					Does_Factory_Have_Children (uint32 factory_id);
+	bool					Does_Factory_Have_Children (uint32_t factory_id);
 	void					Update_Overlays (void);
 
 private:
@@ -132,8 +134,8 @@ private:
 	//	Private member data
 	///////////////////////////////////////////////////////
 	DialogToolbarClass			m_Toolbar;
-	uint32							m_ClassID;
-	DynamicVectorClass<uint32>	m_ClassIDStack;
+	uint32_t							m_ClassID;
+	DynamicVectorClass<uint32_t>	m_ClassIDStack;
 };
 
 /////////////////////////////////////////////////////////////////////////////

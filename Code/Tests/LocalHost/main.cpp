@@ -49,7 +49,7 @@ void main(void)
 	}
 	assert(sock != INVALID_SOCKET);
    
-	ULONG is_nonblocking = TRUE;
+	uint32_t is_nonblocking = TRUE;
    int rc_ioctl = ::ioctlsocket(sock, FIONBIO, &is_nonblocking);
    assert(rc_ioctl == 0);
 	
@@ -67,9 +67,9 @@ void main(void)
 		//
 		// Send a packet periodically
 		//
-		static DWORD last_send_time_ms = 0;
-		DWORD time_now_ms = ::timeGetTime();
-		const DWORD SEND_INTERVAL_MS = 500;
+		static uint32_t last_send_time_ms = 0;
+		uint32_t time_now_ms = ::timeGetTime();
+		const uint32_t SEND_INTERVAL_MS = 500;
 		if (time_now_ms - last_send_time_ms > SEND_INTERVAL_MS)
 		{
 			last_send_time_ms = time_now_ms;

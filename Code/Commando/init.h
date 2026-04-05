@@ -37,6 +37,8 @@
 #ifndef INIT_H
 #define INIT_H
 
+#include <cstdint>
+
 #ifndef ALWAYS_H
 #include "always.h"
 #endif
@@ -44,7 +46,7 @@
 #include "ffactory.h"
 
 
-void	Get_Version_Number(unsigned long *major, unsigned long *minor);
+void	Get_Version_Number(uint32_t *major, uint32_t *minor);
 bool	Game_Init(void);
 void	Install_Fonts (bool onoff);
 void	Application_Exception_Callback(void);

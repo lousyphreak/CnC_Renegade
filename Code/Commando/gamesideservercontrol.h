@@ -35,6 +35,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #pragma once
+
+#include <cstdint>
 #ifndef _GAMESIDESERVERCONTROL_H
 #define _GAMESIDESERVERCONTROL_H
 
@@ -63,7 +65,7 @@ class GameSideServerControlClass
 		static void Shutdown(void);
 		static const char *App_Request_Callback(char *request);
 		static void Print(char *text, ...);
-		static void Send_Message(char *text, unsigned long ip, unsigned short port);
+		static void Send_Message(char *text, uint32_t ip, uint16_t port);
 		static void Set_Welcome_Message(void);
 
 	private:

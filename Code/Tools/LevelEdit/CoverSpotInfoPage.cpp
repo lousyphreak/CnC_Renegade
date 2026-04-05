@@ -138,7 +138,7 @@ CoverSpotInfoPageClass::HandleInitDialog (void)
 bool
 CoverSpotInfoPageClass::Apply_Changes (void)
 {
-	BOOL crouch = SendDlgItemMessage (IDC_CROUCH_CHECK, BM_GETCHECK);
+	int32_t crouch = SendDlgItemMessage (IDC_CROUCH_CHECK, BM_GETCHECK);
 	m_CoverSpot->Set_Requires_Crouch (bool(crouch == 1));
 
 	// Return true to allow the dialog to close

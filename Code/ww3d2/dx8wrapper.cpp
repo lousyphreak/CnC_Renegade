@@ -125,12 +125,12 @@ struct BgfxDx8WrapperState {
 	Matrix4 view;
 	Matrix4 projection;
 	Matrix4 texture_transforms[MAX_TEXTURE_STAGES];
-	const unsigned char *vertex_data = nullptr;
+	const uint8_t *vertex_data = nullptr;
 	const FVFInfoClass *vertex_fvf = nullptr;
-	unsigned short vertex_count = 0;
-	const unsigned short *index_data = nullptr;
-	unsigned short index_count = 0;
-	unsigned short index_base_offset = 0;
+	uint16_t vertex_count = 0;
+	const uint16_t *index_data = nullptr;
+	uint16_t index_count = 0;
+	uint16_t index_base_offset = 0;
 	TextureClass *textures[MAX_TEXTURE_STAGES] = { nullptr, nullptr };
 	ShaderClass shader;
 	const VertexMaterialClass *material = nullptr;
@@ -292,7 +292,7 @@ Vector4 Generate_Stage0_Texture_Input(
 	unsigned tex_offset,
 	bool has_normal,
 	unsigned normal_offset,
-	const unsigned char *src,
+	const uint8_t *src,
 	const float *position,
 	bool *generated)
 {
@@ -658,7 +658,7 @@ uint64_t Build_BGFX_State()
 	return state;
 }
 
-bool Submit_Triangles(unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count)
+bool Submit_Triangles(uint16_t start_index, uint16_t polygon_count, uint16_t min_vertex_index, uint16_t vertex_count)
 {
 	if (!DX8Wrapper::_Is_Triangle_Draw_Enabled() || !g_bgfx.initialized || polygon_count == 0 || !Ensure_Gui_Resources()) {
 		return false;
@@ -733,7 +733,7 @@ bool Submit_Triangles(unsigned short start_index, unsigned short polygon_count, 
 	const Matrix4 world_view = g_bgfx.view * g_bgfx.world;
 	BgfxGuiVertex *dst_vertices = reinterpret_cast<BgfxGuiVertex *>(tvb.data);
 	for (uint32_t i = 0; i < source_vertex_count; ++i) {
-		const unsigned char *src = g_bgfx.vertex_data + static_cast<size_t>(draw_min_source + i) * vertex_stride;
+		const uint8_t *src = g_bgfx.vertex_data + static_cast<size_t>(draw_min_source + i) * vertex_stride;
 		const float *position = reinterpret_cast<const float *>(src + location_offset);
 		const uint32_t diffuse = has_diffuse ? *reinterpret_cast<const uint32_t *>(src + diffuse_offset) : 0xFFFFFFFFU;
 		const uint32_t resolved_diffuse = Resolve_Diffuse_Color(diffuse, has_diffuse);
@@ -820,7 +820,7 @@ bool Submit_Triangles(unsigned short start_index, unsigned short polygon_count, 
 void Copy_Surface_Rectangles(
 	IDirect3DSurface8 *source_surface,
 	const RECT *source_rects,
-	UINT rect_count,
+	uint32_t rect_count,
 	IDirect3DSurface8 *destination_surface,
 	const POINT *dest_points)
 {
@@ -831,14 +831,14 @@ void Copy_Surface_Rectangles(
 	}
 
 	const unsigned pixel_size = BgfxCompat_Get_Pixel_Size(dst->format);
-	for (UINT rect_index = 0; rect_index < rect_count; ++rect_index) {
+	for (uint32_t rect_index = 0; rect_index < rect_count; ++rect_index) {
 		const RECT &src_rect = source_rects[rect_index];
 		const POINT &dst_point = dest_points[rect_index];
-		const unsigned width = static_cast<unsigned>(std::max(src_rect.right - src_rect.left, 0L));
-		const unsigned height = static_cast<unsigned>(std::max(src_rect.bottom - src_rect.top, 0L));
+		const unsigned width = static_cast<unsigned>(std::max(src_rect.right - src_rect.left, 0));
+		const unsigned height = static_cast<unsigned>(std::max(src_rect.bottom - src_rect.top, 0));
 		for (unsigned row = 0; row < height; ++row) {
-			const size_t src_offset = (static_cast<size_t>(src_rect.top + static_cast<LONG>(row)) * static_cast<size_t>(src->width) + static_cast<size_t>(src_rect.left)) * pixel_size;
-			const size_t dst_offset = (static_cast<size_t>(dst_point.y + static_cast<LONG>(row)) * static_cast<size_t>(dst->width) + static_cast<size_t>(dst_point.x)) * pixel_size;
+			const size_t src_offset = (static_cast<size_t>(src_rect.top + static_cast<int32_t>(row)) * static_cast<size_t>(src->width) + static_cast<size_t>(src_rect.left)) * pixel_size;
+			const size_t dst_offset = (static_cast<size_t>(dst_point.y + static_cast<int32_t>(row)) * static_cast<size_t>(dst->width) + static_cast<size_t>(dst_point.x)) * pixel_size;
 			std::memcpy(dst->bytes.data() + dst_offset, src->bytes.data() + src_offset, static_cast<size_t>(width) * pixel_size);
 		}
 	}
@@ -1003,7 +1003,7 @@ void DX8Wrapper::Flip_To_Primary(void)
 {
 }
 
-void DX8Wrapper::Clear(bool clear_color, bool clear_z_stencil, const Vector3 &color, float z, unsigned int stencil)
+void DX8Wrapper::Clear(bool clear_color, bool clear_z_stencil, const Vector3 &color, float z, uint32_t stencil)
 {
 	g_bgfx.clear_flags = BGFX_CLEAR_NONE;
 	if (clear_color) {
@@ -1327,7 +1327,7 @@ void DX8Wrapper::Set_Vertex_Buffer(const DynamicVBAccessClass &vba)
 	g_bgfx.current_vba_offset = 0;
 }
 
-void DX8Wrapper::Set_Index_Buffer(const IndexBufferClass *ib, unsigned short index_base_offset)
+void DX8Wrapper::Set_Index_Buffer(const IndexBufferClass *ib, uint16_t index_base_offset)
 {
 	g_bgfx.index_data = ib != nullptr ? ib->Get_Index_Data() : nullptr;
 	g_bgfx.index_count = ib != nullptr ? ib->Get_Index_Count() : 0;
@@ -1337,7 +1337,7 @@ void DX8Wrapper::Set_Index_Buffer(const IndexBufferClass *ib, unsigned short ind
 	g_bgfx.current_iba_offset = 0;
 }
 
-void DX8Wrapper::Set_Index_Buffer(const DynamicIBAccessClass &iba, unsigned short index_base_offset)
+void DX8Wrapper::Set_Index_Buffer(const DynamicIBAccessClass &iba, uint16_t index_base_offset)
 {
 	g_bgfx.index_data = iba.Get_Index_Data();
 	g_bgfx.index_count = iba.Get_Index_Count();
@@ -1349,15 +1349,15 @@ void DX8Wrapper::Set_Index_Buffer(const DynamicIBAccessClass &iba, unsigned shor
 
 void DX8Wrapper::Set_Index_Buffer_Index_Offset(unsigned offset)
 {
-	g_bgfx.index_base_offset = static_cast<unsigned short>(offset);
+	g_bgfx.index_base_offset = static_cast<uint16_t>(offset);
 }
 
-void DX8Wrapper::Draw_Triangles(unsigned, unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count)
+void DX8Wrapper::Draw_Triangles(unsigned, uint16_t start_index, uint16_t polygon_count, uint16_t min_vertex_index, uint16_t vertex_count)
 {
 	Submit_Triangles(start_index, polygon_count, min_vertex_index, vertex_count);
 }
 
-void DX8Wrapper::Draw_Triangles(unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count)
+void DX8Wrapper::Draw_Triangles(uint16_t start_index, uint16_t polygon_count, uint16_t min_vertex_index, uint16_t vertex_count)
 {
 	Submit_Triangles(start_index, polygon_count, min_vertex_index, vertex_count);
 }
@@ -1441,7 +1441,7 @@ void DX8Wrapper::Set_Render_State(const RenderStateStruct &state)
 		Set_Vertex_Buffer(state.vertex_buffer);
 	}
 	if (state.index_buffer) {
-		Set_Index_Buffer(state.index_buffer, static_cast<unsigned short>(state.index_base_offset));
+		Set_Index_Buffer(state.index_buffer, static_cast<uint16_t>(state.index_base_offset));
 	}
 }
 
@@ -1453,7 +1453,7 @@ void DX8Wrapper::Apply_Render_State_Changes()
 {
 }
 
-void DX8Wrapper::_Copy_DX8_Rects(IDirect3DSurface8 *pSourceSurface, const RECT *pSourceRectsArray, UINT cRects, IDirect3DSurface8 *pDestinationSurface, const POINT *pDestPointsArray)
+void DX8Wrapper::_Copy_DX8_Rects(IDirect3DSurface8 *pSourceSurface, const RECT *pSourceRectsArray, uint32_t cRects, IDirect3DSurface8 *pDestinationSurface, const POINT *pDestPointsArray)
 {
 	Copy_Surface_Rectangles(pSourceSurface, pSourceRectsArray, cRects, pDestinationSurface, pDestPointsArray);
 }

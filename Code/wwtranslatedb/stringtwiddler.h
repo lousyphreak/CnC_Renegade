@@ -38,6 +38,8 @@
 #ifndef __STRING_TWIDDLER_H
 #define __STRING_TWIDDLER_H
 
+#include <cstdint>
+
 #include "translateobj.h"
 #include "translatedb.h"
 #include "vector.h"
@@ -93,12 +95,12 @@ public:
 	//
 	// Inherited
 	//
-	const WideStringClass &		Get_String (uint32 lang_id);
+	const WideStringClass &		Get_String (uint32_t lang_id);
 	const StringClass &			Get_English_String (void)		{ Randomize (); return TDBObjClass::Get_English_String (); }
 	const StringClass &			Get_ID_Desc (void)				{ Randomize (); return TDBObjClass::Get_ID_Desc (); }
-	uint32							Get_Sound_ID (void)				{ Randomize (); return TDBObjClass::Get_Sound_ID (); }
+	uint32_t							Get_Sound_ID (void)				{ Randomize (); return TDBObjClass::Get_Sound_ID (); }
 	const StringClass &			Get_Animation_Name (void)		{ Randomize (); return TDBObjClass::Get_Animation_Name (); }
-	uint32							Get_Category_ID (void)			{ Randomize (); return TDBObjClass::Get_Category_ID (); }
+	uint32_t							Get_Category_ID (void)			{ Randomize (); return TDBObjClass::Get_Category_ID (); }
 
 	//
 	//	String list access

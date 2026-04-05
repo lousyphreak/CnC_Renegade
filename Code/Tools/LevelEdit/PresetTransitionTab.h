@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 #ifndef __AFXEXT_H__
@@ -80,12 +82,12 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(PresetTransitionTabClass)
-	afx_msg void OnItemChangedTransitionList(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnItemChangedTransitionList(NMHDR* pNMHDR, intptr_t* pResult);
 	afx_msg void OnAddButton();
 	afx_msg void OnDeleteButton();
 	afx_msg void OnModifyButton();
-	afx_msg void OnDeleteitemTransitionList(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnDblclkTransitionList(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnDeleteitemTransitionList(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnDblclkTransitionList(NMHDR* pNMHDR, intptr_t* pResult);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 

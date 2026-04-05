@@ -408,7 +408,7 @@ NetworkObjectMgrClass::Restore_Dirty_Bits (int client_id)
 	for (int index = 0; index < object_list.Count (); index ++) {
 		NetworkObjectClass * p_object = object_list[index];
 		WWASSERT(p_object != NULL);
-		BYTE generic_bits = p_object->Get_Object_Dirty_Bits(NetworkObjectClass::MAX_CLIENT_COUNT - 1);//TSS2001e
+		uint8_t generic_bits = p_object->Get_Object_Dirty_Bits(NetworkObjectClass::MAX_CLIENT_COUNT - 1);//TSS2001e
 		p_object->Set_Object_Dirty_Bits(client_id, generic_bits);
 	}
 

@@ -222,7 +222,7 @@ PresetTransitionTabClass::Insert_Transition (TransitionDataClass *transition)
 	int index		= m_ListCtrl.InsertItem (0xFF, name);
 	if (index >= 0) {
 		m_ListCtrl.SetItemText (index, COL_ANIMATION, transition->Get_Animation_Name ());
-		m_ListCtrl.SetItemData (index, (ULONG)transition);
+		m_ListCtrl.SetItemData (index, (uint32_t)transition);
 	}
 
 	return ;
@@ -365,7 +365,7 @@ void
 PresetTransitionTabClass::OnItemChangedTransitionList
 (
 	NMHDR *	pNMHDR,
-	LRESULT*	pResult
+	intptr_t*	pResult
 )
 {
 	NM_LISTVIEW *pNMListView = (NM_LISTVIEW *)pNMHDR;
@@ -511,7 +511,7 @@ void
 PresetTransitionTabClass::OnDeleteitemTransitionList
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 )
 {
 	NM_LISTVIEW* pNMListView = (NM_LISTVIEW*)pNMHDR;
@@ -539,7 +539,7 @@ void
 PresetTransitionTabClass::OnDblclkTransitionList
 (
 	NMHDR *	pNMHDR,
-	LRESULT *pResult
+	intptr_t *pResult
 )
 {
 	(*pResult) = 0;

@@ -49,10 +49,10 @@ CritSec::~CritSec()
 //
 // If refcount is not null you can get the current ref counter after the lock.
 //
-sint32 CritSec::lock(int *refcount) RO 
+int32_t CritSec::lock(int *refcount) RO 
 {
  #ifdef _UNIX
-    sint32	status;
+    int32_t	status;
 
     // I TRY to get the lock. IF I succeed, OR if I fail because
     // I already have the lock, I  just increment the reference
@@ -93,10 +93,10 @@ sint32 CritSec::lock(int *refcount) RO
 }
 
 // The "unlock" function release the critical section.
-sint32 CritSec::unlock(void) RO 
+int32_t CritSec::unlock(void) RO 
 {
  #ifdef _UNIX
-    sint32	status = 0;
+    int32_t	status = 0;
     
     assert(RefCount_ >= 0);
     if (RefCount_ <= 0)

@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __DLG_MP_WOL_PAGE_BUDDY_H
@@ -63,7 +65,7 @@ public:
 protected:
 
 	void On_Init_Dialog(void);
-	void On_Command(int ctrl_id, int mesage_id, DWORD param);
+	void On_Command(int ctrl_id, int mesage_id, uint32_t param);
 
 	void Send_Page(void);
 	void CheckIfCanSendPage(void);

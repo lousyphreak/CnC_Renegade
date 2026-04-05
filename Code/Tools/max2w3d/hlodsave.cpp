@@ -63,21 +63,21 @@
 
 struct W3dHLodHeaderStruct
 {
-	uint32					Version;
-	uint32					LodCount;
+	uint32_t					Version;
+	uint32_t					LodCount;
 	char						Name[W3D_NAME_LEN];
 	char						HierarchyName[W3D_NAME_LEN];		// name of the hierarchy tree to use (\0 if none)
 };
 
 struct W3dHLodArrayHeaderStruct
 {
-	uint32					ModelCount;
+	uint32_t					ModelCount;
 	float32					MaxScreenSize;		// if model is bigger than this, switch to higher lod.
 };
 
 struct W3dHLodSubObjectStruct
 {
-	uint32					BoneIndex;
+	uint32_t					BoneIndex;
 	char						Name[W3D_NAME_LEN*2];
 };
 */

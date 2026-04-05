@@ -175,7 +175,7 @@ bool MouseHeld[DirectInput::NUM_MOUSE_BUTTONS] = {};
 bool MousePressed[DirectInput::NUM_MOUSE_BUTTONS] = {};
 bool MouseReleased[DirectInput::NUM_MOUSE_BUTTONS] = {};
 bool JoystickHeld[DirectInput::NUM_JOYSTICK_BUTTONS] = {};
-long PendingMouseAxis[DirectInput::NUM_MOUSE_AXIS] = {};
+int32_t PendingMouseAxis[DirectInput::NUM_MOUSE_AXIS] = {};
 Vector3 PendingCursorPos(0.0f, 0.0f, 0.0f);
 int PendingLastKeyPressed = 0;
 SDL_Gamepad *ActiveGamepad = NULL;
@@ -378,8 +378,8 @@ bool SDLCALL DirectInput_Event_Watch(void *, SDL_Event *event)
 				Set_Pending_Cursor_Position(event->motion.x, event->motion.y);
 				break;
 			}
-			PendingMouseAxis[DirectInput::MOUSE_X_AXIS] += static_cast<long>(std::lround(event->motion.xrel));
-			PendingMouseAxis[DirectInput::MOUSE_Y_AXIS] += static_cast<long>(std::lround(event->motion.yrel));
+			PendingMouseAxis[DirectInput::MOUSE_X_AXIS] += static_cast<int32_t>(std::lround(event->motion.xrel));
+			PendingMouseAxis[DirectInput::MOUSE_Y_AXIS] += static_cast<int32_t>(std::lround(event->motion.yrel));
 			// WWUI hit-testing/rendering uses the drawable resolution even while
 			// gameplay input remains driven by relative mouse axes.
 			Set_Pending_Cursor_Position(event->motion.x, event->motion.y);
@@ -438,9 +438,9 @@ bool SDLCALL DirectInput_Event_Watch(void *, SDL_Event *event)
 
 char	DirectInput::DIKeyboardButtons[NUM_KEYBOARD_BUTTONS];
 char	DirectInput::DIMouseButtons[NUM_MOUSE_BUTTONS];
-long	DirectInput::DIMouseAxis[NUM_MOUSE_AXIS];
+int32_t	DirectInput::DIMouseAxis[NUM_MOUSE_AXIS];
 char	DirectInput::DIJoystickButtons[NUM_JOYSTICK_BUTTONS];
-long	DirectInput::DIJoystickAxis[2];
+int32_t	DirectInput::DIJoystickAxis[2];
 float	DirectInput::ButtonLastHitTime[NUM_KEYBOARD_BUTTONS];
 Vector3	DirectInput::CursorPos(0, 0, 0);
 bool	DirectInput::EatMouseHeld = false;
@@ -603,14 +603,14 @@ void DirectInput::ReadJoystick( void )
 
 	bool button_a_down = false;
 	bool button_b_down = false;
-	long axis_x = 0;
-	long axis_y = 0;
+	int32_t axis_x = 0;
+	int32_t axis_y = 0;
 
 	if (ActiveGamepad != NULL) {
 		button_a_down = SDL_GetGamepadButton(ActiveGamepad, SDL_GAMEPAD_BUTTON_SOUTH);
 		button_b_down = SDL_GetGamepadButton(ActiveGamepad, SDL_GAMEPAD_BUTTON_EAST);
-		axis_x = static_cast<long>(std::lround((SDL_GetGamepadAxis(ActiveGamepad, SDL_GAMEPAD_AXIS_LEFTX) * 1000.0f) / 32767.0f));
-		axis_y = static_cast<long>(std::lround((SDL_GetGamepadAxis(ActiveGamepad, SDL_GAMEPAD_AXIS_LEFTY) * 1000.0f) / 32767.0f));
+		axis_x = static_cast<int32_t>(std::lround((SDL_GetGamepadAxis(ActiveGamepad, SDL_GAMEPAD_AXIS_LEFTX) * 1000.0f) / 32767.0f));
+		axis_y = static_cast<int32_t>(std::lround((SDL_GetGamepadAxis(ActiveGamepad, SDL_GAMEPAD_AXIS_LEFTY) * 1000.0f) / 32767.0f));
 	}
 
 	DIJoystickButtons[0] = Build_Button_State(button_a_down, button_a_down && !JoystickHeld[0], !button_a_down && JoystickHeld[0]);

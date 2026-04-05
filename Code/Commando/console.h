@@ -37,6 +37,8 @@
 #ifndef	CONSOLE_H
 #define	CONSOLE_H
 
+#include <cstdint>
+
 #ifndef	ALWAYS_H
 	#include "always.h"
 #endif
@@ -119,7 +121,7 @@ private:
 	void		Update_Memory_Log( void );
 
 	bool	PerformanceSamplingActive;
-   DWORD ConsoleInputType;
+   uint32_t ConsoleInputType;
    int   PromptLength;
    static const float LeftMargin;
 

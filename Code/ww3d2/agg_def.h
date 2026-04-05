@@ -35,6 +35,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef AGGREGATE_DEF_H
@@ -117,7 +119,7 @@ class AggregateDefClass
 		//
 		//	Public accessors
 		//
-		ULONG							Class_ID (void) const					{ return m_MiscInfo.OriginalClassID; }
+		uint32_t							Class_ID (void) const					{ return m_MiscInfo.OriginalClassID; }
 
 		//
 		//	Initialization
@@ -189,7 +191,7 @@ class AggregateDefClass
 		//
 		//	Private member data
 		//
-		DWORD																m_Version;
+		uint32_t																m_Version;
 		DynamicVectorClass<W3dAggregateSubobjectStruct *>	m_SubobjectList;
 		W3dAggregateInfoStruct										m_Info;
 		W3dAggregateMiscInfo											m_MiscInfo;

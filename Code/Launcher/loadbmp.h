@@ -19,6 +19,8 @@
 #ifndef LOADBMP_HEADER
 #define LOADBMP_HEADER
 
+#include <cstdint>
+
 #include<stdlib.h>
 #include<stdio.h>
 #include "wstypes.h"
@@ -33,8 +35,8 @@ class LoadBmp
  public:
                   LoadBmp();
                  ~LoadBmp();
-   bit8           init(char *filename,HWND hwnd);  // must call before the drawBmp
-   bit8           drawBmp(void);  // call this from your WM_PAINT message
+   int8_t           init(char *filename,HWND hwnd);  // must call before the drawBmp
+   int8_t           drawBmp(void);  // call this from your WM_PAINT message
 
  private:
    HBITMAP        BitmapHandle_;

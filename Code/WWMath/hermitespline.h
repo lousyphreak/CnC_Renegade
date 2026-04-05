@@ -37,6 +37,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef HERMITE_H
 #define HERMITE_H
 
@@ -107,8 +109,8 @@ public:
 	virtual void		Evaluate(float time,float * set_val);
 	virtual void		Set_Looping(bool onoff);
 	
-	virtual void		Set_Key(int i,float point,unsigned int extra=0);
-	virtual int			Add_Key(float point,float t,unsigned int extra=0);
+	virtual void		Set_Key(int i,float point,uint32_t extra=0);
+	virtual int			Add_Key(float point,float t,uint32_t extra=0);
 	virtual void		Remove_Key(int i);
 	virtual void		Clear_Keys(void);
 

@@ -21,6 +21,8 @@
 
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 // DeviceSelectionDialog.h : header file
 //
@@ -32,7 +34,7 @@ class CDeviceSelectionDialog : public CDialog
 {
 // Construction
 public:
-	CDeviceSelectionDialog(BOOL bLookupCachedInfo = TRUE, CWnd* pParent = NULL);   // standard constructor
+	CDeviceSelectionDialog(int32_t bLookupCachedInfo = TRUE, CWnd* pParent = NULL);   // standard constructor
 
 // Dialog Data
 	//{{AFX_DATA(CDeviceSelectionDialog)
@@ -55,7 +57,7 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(CDeviceSelectionDialog)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	afx_msg void OnSelchangeRenderDeviceCombo();
 	virtual void OnOK();
 	//}}AFX_MSG
@@ -78,7 +80,7 @@ protected:
         void UpdateDeviceDescription (void);
 
     private:
-        BOOL		m_bLookupCachedInfo;
+        int32_t		m_bLookupCachedInfo;
         int			m_iDeviceIndex;
         int			m_iBitsPerPixel;
 		  CString	m_DriverName;

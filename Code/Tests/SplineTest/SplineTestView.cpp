@@ -72,7 +72,7 @@ CSplineTestView::~CSplineTestView()
 {
 }
 
-BOOL CSplineTestView::PreCreateWindow(CREATESTRUCT& cs)
+int32_t CSplineTestView::PreCreateWindow(CREATESTRUCT& cs)
 {
 	// TODO: Modify the Window class or styles here by modifying
 	//  the CREATESTRUCT cs
@@ -223,7 +223,7 @@ CSplineTestDoc* CSplineTestView::GetDocument() // non-debug version is inline
 /////////////////////////////////////////////////////////////////////////////
 // CSplineTestView message handlers
 
-void CSplineTestView::OnLButtonDown(UINT nFlags, CPoint point) 
+void CSplineTestView::OnLButtonDown(uint32_t nFlags, CPoint point) 
 {
 	CSplineTestDoc* pDoc = GetDocument();
 	if (pDoc) {
@@ -241,7 +241,7 @@ void CSplineTestView::OnLButtonDown(UINT nFlags, CPoint point)
 	CView::OnLButtonDown(nFlags, point);
 }
 
-void CSplineTestView::OnLButtonUp(UINT nFlags, CPoint point) 
+void CSplineTestView::OnLButtonUp(uint32_t nFlags, CPoint point) 
 {
 	// were we dragging something?  if so release it
 	// otherwise add a point to the curve
@@ -260,7 +260,7 @@ void CSplineTestView::OnLButtonUp(UINT nFlags, CPoint point)
 	CView::OnLButtonUp(nFlags, point);
 }
 
-void CSplineTestView::OnMouseMove(UINT nFlags, CPoint point) 
+void CSplineTestView::OnMouseMove(uint32_t nFlags, CPoint point) 
 {
 	CSplineTestDoc* pDoc = GetDocument();
 
@@ -275,7 +275,7 @@ void CSplineTestView::OnMouseMove(UINT nFlags, CPoint point)
 	CView::OnMouseMove(nFlags, point);
 }
 
-void CSplineTestView::OnRButtonUp(UINT nFlags, CPoint point) 
+void CSplineTestView::OnRButtonUp(uint32_t nFlags, CPoint point) 
 {
 	Vector3 pt;
 	Un_Map_Point(point.x,point.y,&pt);

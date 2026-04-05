@@ -1704,8 +1704,8 @@ bool
 ColorParameterCtrlClass::On_Command
 (
 	HWND		parent_wnd,
-	WPARAM	wparam,
-	LPARAM	lparam
+	uintptr_t	wparam,
+	intptr_t	lparam
 )
 {
 	bool retval = false;
@@ -1754,8 +1754,8 @@ bool
 ColorParameterCtrlClass::On_DrawItem
 (
 	HWND		parent_wnd,
-	WPARAM	wparam,
-	LPARAM	lparam
+	uintptr_t	wparam,
+	intptr_t	lparam
 )
 {
 	bool retval = false;
@@ -1770,7 +1770,7 @@ ColorParameterCtrlClass::On_DrawItem
 		Vector3 color = m_Parameter->Get_Value ();
 
 		// Determine what state to draw the button in (pushed or normal)
-		UINT state = DFCS_BUTTONPUSH | DFCS_ADJUSTRECT;
+		uint32_t state = DFCS_BUTTONPUSH | DFCS_ADJUSTRECT;
 		if (drawitem_info->itemState & ODS_SELECTED) {
 			state |= DFCS_PUSHED;
 		}
@@ -1907,8 +1907,8 @@ bool
 PhysDefParameterCtrlClass::On_Command
 (
 	HWND		parent_wnd,
-	WPARAM	wparam,
-	LPARAM	lparam
+	uintptr_t	wparam,
+	intptr_t	lparam
 )
 {
 	bool retval = false;
@@ -2194,8 +2194,8 @@ bool
 ScriptParameterCtrlClass::On_Command
 (
 	HWND		parent_wnd,
-	WPARAM	wparam,
-	LPARAM	lparam
+	uintptr_t	wparam,
+	intptr_t	lparam
 )
 {
 	bool retval = false;
@@ -2367,8 +2367,8 @@ bool
 DefIDListParameterCtrlClass::On_Command
 (
 	HWND		parent_wnd,
-	WPARAM	wparam,
-	LPARAM	lparam
+	uintptr_t	wparam,
+	intptr_t	lparam
 )
 {
 	bool retval = false;
@@ -2384,9 +2384,9 @@ DefIDListParameterCtrlClass::On_Command
 		//
 		//	What class-id should we let the user pick from?
 		//
-		uint32 root_class_id			= m_Parameter->Get_Class_ID ();
-		uint32 selected_class_id	= 0;
-		uint32 *class_id_ptr			= m_Parameter->Get_Selected_Class_ID ();
+		uint32_t root_class_id			= m_Parameter->Get_Class_ID ();
+		uint32_t selected_class_id	= 0;
+		uint32_t *class_id_ptr			= m_Parameter->Get_Selected_Class_ID ();
 		if (class_id_ptr != NULL) {
 			selected_class_id = (*class_id_ptr);
 		}
@@ -2529,8 +2529,8 @@ bool
 ZoneParameterCtrlClass::On_Command
 (
 	HWND		parent_wnd,
-	WPARAM	wparam,
-	LPARAM	lparam
+	uintptr_t	wparam,
+	intptr_t	lparam
 )
 {
 	bool retval = false;
@@ -2650,8 +2650,8 @@ bool
 FilenameListParameterCtrlClass::On_Command
 (
 	HWND		parent_wnd,
-	WPARAM	wparam,
-	LPARAM	lparam
+	uintptr_t	wparam,
+	intptr_t	lparam
 )
 {
 	bool retval = false;

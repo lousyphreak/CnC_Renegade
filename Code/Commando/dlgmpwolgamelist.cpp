@@ -84,10 +84,10 @@ static enum
 #define FLAGSORT_CLAN       0x08
 
 static void SetGameTypeFlags(ListCtrlClass* list, int itemIndex, const WOLGameInfo& gameInfo);
-static void SetPingTimeIcon(ListCtrlClass* list, int itemIndex, long pingTime);
-static int CALLBACK FlagsSortCallback(ListCtrlClass* list, int item1, int item2, uint32 param);
-static int CALLBACK NumericSortCallback(ListCtrlClass* list, int item1, int item2, uint32 param);
-static int CALLBACK AlphaSortCallback(ListCtrlClass* list, int index1, int index2, uint32 param);
+static void SetPingTimeIcon(ListCtrlClass* list, int itemIndex, int32_t pingTime);
+static int CALLBACK FlagsSortCallback(ListCtrlClass* list, int item1, int item2, uint32_t param);
+static int CALLBACK NumericSortCallback(ListCtrlClass* list, int item1, int item2, uint32_t param);
+static int CALLBACK AlphaSortCallback(ListCtrlClass* list, int index1, int index2, uint32_t param);
 
 
 MPWolGameListMenuClass* MPWolGameListMenuClass::_mInstance = NULL;
@@ -337,7 +337,7 @@ void MPWolGameListMenuClass::On_Init_Dialog(void)
 *
 ******************************************************************************/
 
-void MPWolGameListMenuClass::On_Command(int id, int msg, DWORD param)
+void MPWolGameListMenuClass::On_Command(int id, int msg, uint32_t param)
 	{
 	switch (id)
 		{
@@ -411,7 +411,7 @@ void MPWolGameListMenuClass::On_Command(int id, int msg, DWORD param)
 *
 ******************************************************************************/
 
-bool MPWolGameListMenuClass::On_Key_Down(uint32 key_id, uint32 key_data)
+bool MPWolGameListMenuClass::On_Key_Down(uint32_t key_id, uint32_t key_data)
 	{
 	if (VK_F5 == key_id)
 		{
@@ -622,7 +622,7 @@ void MPWolGameListMenuClass::UpdateChannels(ListCtrlClass* list, const ChannelLi
 						{
 						ChannelData* rawChannel = channel.ReferencedObject();
 						rawChannel->AddReference();
-						list->Set_Entry_Data(itemIndex, COL_HOST_NAME, (unsigned long)rawChannel);
+						list->Set_Entry_Data(itemIndex, COL_HOST_NAME, (uint32_t)rawChannel);
 
 						// Show the game channel name
 						list->Set_Entry_Text(itemIndex, COL_HOST_NAME, channel->GetName());
@@ -678,7 +678,7 @@ void MPWolGameListMenuClass::UpdateChannels(ListCtrlClass* list, const ChannelLi
 						selIndex = itemIndex;
 						}
 
-					if (gameInfo.Version() != (unsigned long)cNetwork::Get_Exe_Key() || !gameInfo.IsMapValid())
+					if (gameInfo.Version() != (uint32_t)cNetwork::Get_Exe_Key() || !gameInfo.IsMapValid())
 						{
 						ChannelData* rawChannel = (ChannelData*)list->Get_Entry_Data(itemIndex, COL_HOST_NAME);
 
@@ -900,8 +900,8 @@ void MPWolGameListMenuClass::On_ListCtrl_Sel_Change(ListCtrlClass* list, int id,
 					text.Format(TRANSLATE(IDS_MENU_HOST_INFO_FORMAT), (const WCHAR*)channel->GetName(),
 							mSelectedGame.Title(), HIWORD(mSelectedGame.Version()), LOWORD(mSelectedGame.Version()));
 #else
-					unsigned long verMajor = 0;
-					unsigned long verMinor = 0;
+					uint32_t verMajor = 0;
+					uint32_t verMinor = 0;
 					Get_Version_Number(&verMajor,&verMinor);
 
 					text.Format(TRANSLATE(IDS_MENU_HOST_INFO_FORMAT), (const WCHAR*)channel->GetName(),
@@ -1131,7 +1131,7 @@ void MPWolGameListMenuClass::HandleNotification(WWOnline::SquadEvent& event)
 
 	if (squad.IsValid())
 		{
-		unsigned long squadID = squad->GetID();
+		uint32_t squadID = squad->GetID();
 
 		if (mSelectedGame.ClanID1() == squadID || mSelectedGame.ClanID2() == squadID)
 			{
@@ -1182,7 +1182,7 @@ void SetGameTypeFlags(ListCtrlClass* list, int itemIndex, const WOLGameInfo& gam
 	WWASSERT(list != NULL);
 
 	list->Reset_Icons(itemIndex, COL_ICON);
-	uint32 flags = 0;
+	uint32_t flags = 0;
 
 	if (gameInfo.IsLaddered())
 		{
@@ -1234,7 +1234,7 @@ void SetGameTypeFlags(ListCtrlClass* list, int itemIndex, const WOLGameInfo& gam
 *
 ******************************************************************************/
 
-void SetPingTimeIcon(ListCtrlClass* list, int itemIndex, long pingTime)
+void SetPingTimeIcon(ListCtrlClass* list, int itemIndex, int32_t pingTime)
 	{
 	const char* pingIcon = NULL;
 
@@ -1254,7 +1254,7 @@ void SetPingTimeIcon(ListCtrlClass* list, int itemIndex, long pingTime)
 	list->Reset_Icons(itemIndex, COL_PING);
 	list->Add_Icon(itemIndex, COL_PING, pingIcon);
 
-	unsigned long displayPing = (unsigned long)((1000.0 / 256.0) * (sqrt(double(pingTime))));
+	uint32_t displayPing = (uint32_t)((1000.0 / 256.0) * (sqrt(double(pingTime))));
 	list->Set_Entry_Data(itemIndex, COL_PING, displayPing);
 
 	WideStringClass text(32, true);
@@ -1281,7 +1281,7 @@ void SetPingTimeIcon(ListCtrlClass* list, int itemIndex, long pingTime)
 *
 ******************************************************************************/
 
-void MPWolGameListMenuClass::SortGameChannels(int column, bool isAscending, unsigned long param)
+void MPWolGameListMenuClass::SortGameChannels(int column, bool isAscending, uint32_t param)
 	{
 	mSortColumn = column;
 	mIsSortAscending = isAscending;
@@ -1336,12 +1336,12 @@ void MPWolGameListMenuClass::SortGameChannels(int column, bool isAscending, unsi
 *
 ******************************************************************************/
 
-int CALLBACK FlagsSortCallback(ListCtrlClass* list, int index1, int index2, uint32 mask)
+int CALLBACK FlagsSortCallback(ListCtrlClass* list, int index1, int index2, uint32_t mask)
 	{
-	uint32 flags1 = list->Get_Entry_Data(index1, COL_ICON);
+	uint32_t flags1 = list->Get_Entry_Data(index1, COL_ICON);
 	flags1 &= mask;
 
-	uint32 flags2 = list->Get_Entry_Data(index2, COL_ICON);
+	uint32_t flags2 = list->Get_Entry_Data(index2, COL_ICON);
 	flags2 &= mask;
 
 	if (flags1 && !flags2)
@@ -1399,13 +1399,13 @@ int CALLBACK FlagsSortCallback(ListCtrlClass* list, int index1, int index2, uint
 *
 ******************************************************************************/
 
-int CALLBACK NumericSortCallback(ListCtrlClass* list, int index1, int index2, uint32 param)
+int CALLBACK NumericSortCallback(ListCtrlClass* list, int index1, int index2, uint32_t param)
 	{
 	// Sort by numeric value stored in entry data field
 	int	column = LOWORD(param);
 
-	uint32 data1 = list->Get_Entry_Data(index1, column);
-	uint32 data2 = list->Get_Entry_Data(index2, column);
+	uint32_t data1 = list->Get_Entry_Data(index1, column);
+	uint32_t data2 = list->Get_Entry_Data(index2, column);
 
 	int retval = (data1 - data2);
 
@@ -1477,7 +1477,7 @@ int CALLBACK NumericSortCallback(ListCtrlClass* list, int index1, int index2, ui
 *
 ******************************************************************************/
 
-int CALLBACK AlphaSortCallback(ListCtrlClass* list, int index1, int index2, uint32 param)
+int CALLBACK AlphaSortCallback(ListCtrlClass* list, int index1, int index2, uint32_t param)
 	{
 	// Sort by numeric value stored in entry data field
 	int	column = LOWORD(param);
@@ -1489,8 +1489,8 @@ int CALLBACK AlphaSortCallback(ListCtrlClass* list, int index1, int index2, uint
 	// If the strings match then secondary sort by ping time.
 	if (retval == 0)
 		{
-		uint32 data1 = list->Get_Entry_Data(index1, COL_PING);
-		uint32 data2 = list->Get_Entry_Data(index2, COL_PING);
+		uint32_t data1 = list->Get_Entry_Data(index1, COL_PING);
+		uint32_t data2 = list->Get_Entry_Data(index2, COL_PING);
 
 		retval = (data1 - data2);
 

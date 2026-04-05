@@ -32,7 +32,7 @@ AudibleSoundDefinitionClass::AudibleSoundDefinitionClass(void)
 {
 }
 
-uint32 AudibleSoundDefinitionClass::Get_Class_ID(void) const
+uint32_t AudibleSoundDefinitionClass::Get_Class_ID(void) const
 {
 	return CLASSID_SOUND_DEF;
 }

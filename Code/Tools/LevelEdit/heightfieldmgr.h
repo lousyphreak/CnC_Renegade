@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __HEIGHTFIELDMGR_H
@@ -96,7 +98,7 @@ public:
 	//
 	//	From SaveLoadSubSystemClass
 	//
-	uint32					Chunk_ID (void) const			{ return CHUNKID_HEIGHTFIELD_MGR; }
+	uint32_t					Chunk_ID (void) const			{ return CHUNKID_HEIGHTFIELD_MGR; }
 
 protected:
 

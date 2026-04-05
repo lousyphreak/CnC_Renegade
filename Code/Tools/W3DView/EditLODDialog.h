@@ -21,6 +21,8 @@
 
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 // EditLODDialog.h : header file
 //
@@ -55,12 +57,12 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(CEditLODDialog)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	virtual void OnOK();
 	virtual void OnCancel();
-	afx_msg void OnDeltaposSwitchUpSpin(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnDeltaposSwitchDnSpin(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnItemChangedHierarchyList(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnDeltaposSwitchUpSpin(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnDeltaposSwitchDnSpin(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnItemChangedHierarchyList(NMHDR* pNMHDR, intptr_t* pResult);
 	afx_msg void OnUpdateSwitchDnEdit();
 	afx_msg void OnUpdateSwitchUpEdit();
 	afx_msg void OnRecalc();
@@ -70,7 +72,7 @@ protected:
     public:
     protected:
         void ResetControls (int iIndex);
-        void EnableControls (BOOL bEnable);
+        void EnableControls (int32_t bEnable);
 
     private:
         float m_spinIncrement;

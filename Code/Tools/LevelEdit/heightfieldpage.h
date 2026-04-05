@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __HEIGHTFIELDPAGE_H
@@ -83,7 +85,7 @@ public:
 	//{{AFX_VIRTUAL(HeightfieldPageClass)
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-	virtual BOOL OnCommand(WPARAM wParam, LPARAM lParam);
+	virtual int32_t OnCommand(uintptr_t wParam, intptr_t lParam);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -95,9 +97,9 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(HeightfieldPageClass)
-	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg void OnSize(uint32_t nType, int cx, int cy);
 	afx_msg void OnDestroy();
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	afx_msg void OnCreateNewButton();
 	afx_msg void OnMaterialSettingsButton();
 	//}}AFX_MSG

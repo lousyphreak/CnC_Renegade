@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // AggregateNameDialog.h : header file
 //
@@ -33,7 +35,7 @@ class AggregateNameDialogClass : public CDialog
 // Construction
 public:
 	AggregateNameDialogClass(CWnd* pParent = NULL);
-	AggregateNameDialogClass(UINT resource_id, const CString &def_name, CWnd* pParent = NULL);
+	AggregateNameDialogClass(uint32_t resource_id, const CString &def_name, CWnd* pParent = NULL);
 
 // Dialog Data
 	//{{AFX_DATA(AggregateNameDialogClass)
@@ -55,7 +57,7 @@ protected:
 	// Generated message map functions
 	//{{AFX_MSG(AggregateNameDialogClass)
 	virtual void OnOK();
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 

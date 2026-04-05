@@ -58,7 +58,7 @@ Fill_Vector3_Rnd_Combo (HWND hcombobox)
 	//	Add all the strings to the combobox
 	//
 	for (int index = 0; index < Vector3Randomizer::CLASSID_MAXKNOWN; index ++) {
-		::SendMessage (hcombobox, CB_ADDSTRING, 0, (LPARAM)RANDOMIZER_NAMES[index]);
+		::SendMessage (hcombobox, CB_ADDSTRING, 0, (intptr_t)RANDOMIZER_NAMES[index]);
 	}
 
 	return ;

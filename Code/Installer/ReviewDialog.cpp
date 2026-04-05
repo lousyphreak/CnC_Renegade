@@ -134,7 +134,7 @@ void ReviewDialogClass::On_Activate (bool onoff)
  * HISTORY:                                                                                    *
  *   08/22/01    IML : Created.                                                                * 
  *=============================================================================================*/
-void ReviewDialogClass::On_Command (int ctrl_id, int message_id, DWORD param)
+void ReviewDialogClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	InstallMenuDialogClass::On_Command (ctrl_id, message_id, param);
 }

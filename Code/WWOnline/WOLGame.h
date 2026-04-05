@@ -35,6 +35,8 @@
 #ifndef __WOLGAME_H__
 #define __WOLGAME_H__
 
+#include <cstdint>
+
 #include "RefPtr.h"
 #include "WOLUser.h"
 #include "WaitCondition.h"
@@ -53,7 +55,7 @@ class GameStartEvent
 		const UserList& GetPlayers(void) const
 			{return mPlayers;}
 
-		const unsigned long GetGameID(void) const
+		const uint32_t GetGameID(void) const
 			{return mGameID;}
 
 		bool IsSuccess(void) const
@@ -61,12 +63,12 @@ class GameStartEvent
 
 		const char* GetErrorDescription(void) const;
 
-		GameStartEvent(HRESULT result) :
+		GameStartEvent(int32_t result) :
 				mResult(result),
 				mGameID(0)
 			{}
 
-		GameStartEvent(const RefPtr<ChannelData>& channel, const UserList& users, unsigned long gameID);
+		GameStartEvent(const RefPtr<ChannelData>& channel, const UserList& users, uint32_t gameID);
 		~GameStartEvent()
 			{}
 
@@ -75,10 +77,10 @@ class GameStartEvent
 		const GameStartEvent operator=(const GameStartEvent&);
 
 	private:
-		HRESULT mResult;
+		int32_t mResult;
 		RefPtr<ChannelData> mChannel;
 		UserList mPlayers;
-		unsigned long mGameID;
+		uint32_t mGameID;
 	};
 
 

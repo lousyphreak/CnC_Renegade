@@ -139,7 +139,7 @@ VolumeRandomDialogClass::OnOK (void)
 //	OnInitDialog
 //
 ////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 VolumeRandomDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -152,7 +152,7 @@ VolumeRandomDialogClass::OnInitDialog (void)
 	bool initial_sphere_hollow = false;
 	float initial_cylinder_radius = 1.0F;
 	float initial_cylinder_height = 1.0F;
-	UINT initial_type = IDC_BOX_RADIO;
+	uint32_t initial_type = IDC_BOX_RADIO;
 
 	//
 	//	Initialize from the provided randomizer
@@ -202,7 +202,7 @@ VolumeRandomDialogClass::OnInitDialog (void)
 	//	Initialize the sphere controls
 	//
 	::Initialize_Spinner (m_SphereRadiusSpin, initial_sphere_radius, 0, 10000);
-	SendDlgItemMessage (IDC_SPHERE_HOLLOW_CHECK, BM_SETCHECK, (WPARAM)initial_sphere_hollow);
+	SendDlgItemMessage (IDC_SPHERE_HOLLOW_CHECK, BM_SETCHECK, (uintptr_t)initial_sphere_hollow);
 
 	//
 	//	Initialize the cylinder controls
@@ -213,7 +213,7 @@ VolumeRandomDialogClass::OnInitDialog (void)
 	//
 	//	Check the appropriate radio
 	//
-	SendDlgItemMessage (initial_type, BM_SETCHECK, (WPARAM)TRUE);
+	SendDlgItemMessage (initial_type, BM_SETCHECK, (uintptr_t)TRUE);
 	Update_Enable_State ();
 	return TRUE;
 }
@@ -303,12 +303,12 @@ VolumeRandomDialogClass::Update_Enable_State (void)
 //	OnNotify
 //
 ////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 VolumeRandomDialogClass::OnNotify
 (
-	WPARAM wParam,
-	LPARAM lParam,
-	LRESULT *pResult
+	uintptr_t wParam,
+	intptr_t lParam,
+	intptr_t *pResult
 ) 
 {
 	//

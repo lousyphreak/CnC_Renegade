@@ -75,7 +75,7 @@ END_MESSAGE_MAP()
 //	OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 GenericTextDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -101,7 +101,7 @@ GenericTextDialogClass::OnInitDialog (void)
 	//	Set the icon
 	//
 	if (icon != NULL) {
-		SendDlgItemMessage (IDC_GENERIC_ICON, STM_SETIMAGE, (WPARAM)IMAGE_ICON, (LPARAM)icon);
+		SendDlgItemMessage (IDC_GENERIC_ICON, STM_SETIMAGE, (uintptr_t)IMAGE_ICON, (intptr_t)icon);
 	}
 
 	return TRUE;

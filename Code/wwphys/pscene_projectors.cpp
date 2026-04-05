@@ -87,8 +87,8 @@ public:
 	virtual ~StaticShadowTexMgrClass(void);
 	void						Reset(void);
 
-	TextureClass *			Peek_Shadow_Texture(uint32 obj_type_id,const Quaternion & orientation);
-	void						Add_Shadow_Texture(uint32 obj_type_id,const Quaternion & orientation,TextureClass * tex);
+	TextureClass *			Peek_Shadow_Texture(uint32_t obj_type_id,const Quaternion & orientation);
+	void						Add_Shadow_Texture(uint32_t obj_type_id,const Quaternion & orientation,TextureClass * tex);
 	void						Remove_Shadow_Texture(TextureClass * tex);
 
 private:
@@ -97,14 +97,14 @@ private:
 	{
 	public:
 		ShadowTexClass(void);
-		ShadowTexClass(uint32 obj_type_id,const Quaternion & orientation,TextureClass * tex);
+		ShadowTexClass(uint32_t obj_type_id,const Quaternion & orientation,TextureClass * tex);
 		ShadowTexClass(const ShadowTexClass & that);
 		~ShadowTexClass(void);
 		const ShadowTexClass & operator = (const ShadowTexClass &);
 
 		bool					operator == (const ShadowTexClass &)						{ return false; }
 		bool					operator != (const ShadowTexClass & that)					{ return true; }
-		uint32				ObjectTypeID;			// use the Definition ID to uniquely identify object types
+		uint32_t				ObjectTypeID;			// use the Definition ID to uniquely identify object types
 		Quaternion			ObjectOrientation;	// orientation of the object when this shadow was generated
 		TextureClass *		Texture;					// texture
 
@@ -128,11 +128,11 @@ public:
 //	void					Reset(); // Jani: Disabling reset. Re-allocating render targets if the device is out of
 										// free texture memory causes problems on at least TNT2.
 
-	void					Set_Max_Simultaneous_Shadows(unsigned int max);
-	unsigned int		Get_Max_Simultaneous_Shadows(void);
+	void					Set_Max_Simultaneous_Shadows(uint32_t max);
+	uint32_t		Get_Max_Simultaneous_Shadows(void);
 
-	void					Set_Shadow_Resolution(unsigned int size);
-	unsigned int		Get_Shadow_Resolution(void);
+	void					Set_Shadow_Resolution(uint32_t size);
+	uint32_t		Get_Shadow_Resolution(void);
 
 	void					Per_Frame_Reset(void);
 	void					Assign_Render_Target_Texture(TexProjectClass * tex_proj);
@@ -141,8 +141,8 @@ private:
 
 	TextureClass *		Allocate_Render_Target_Texture(void);
 
-	unsigned int		CurShadow;
-	unsigned int		TextureResolution;
+	uint32_t		CurShadow;
+	uint32_t		TextureResolution;
 	SimpleVecClass<TextureClass *>	ShadowTextures;
 
 };
@@ -192,7 +192,7 @@ StaticShadowTexMgrClass::ShadowTexClass::ShadowTexClass(void) :
 
 StaticShadowTexMgrClass::ShadowTexClass::ShadowTexClass
 (
-	uint32 obj_type_id,
+	uint32_t obj_type_id,
 	const Quaternion & orientation,
 	TextureClass * tex
 ) :
@@ -246,7 +246,7 @@ void StaticShadowTexMgrClass::Reset(void)
 
 TextureClass * StaticShadowTexMgrClass::Peek_Shadow_Texture
 (
-	uint32					obj_type_id,
+	uint32_t					obj_type_id,
 	const Quaternion &	orientation
 )
 {
@@ -263,7 +263,7 @@ TextureClass * StaticShadowTexMgrClass::Peek_Shadow_Texture
 
 void StaticShadowTexMgrClass::Add_Shadow_Texture
 (
-	uint32					obj_type_id,
+	uint32_t					obj_type_id,
 	const Quaternion &	orientation,
 	TextureClass *			tex
 )
@@ -322,7 +322,7 @@ void DynamicShadowTexMgrClass::Reset(void)
 
 // Set the maximum number of dynamic render targets. Allocate all
 // textures at this point!
-void DynamicShadowTexMgrClass::Set_Max_Simultaneous_Shadows(unsigned int max)
+void DynamicShadowTexMgrClass::Set_Max_Simultaneous_Shadows(uint32_t max)
 {
 	int curlen = ShadowTextures.Length();
 	for (int i=max;i<curlen; i++) {
@@ -342,14 +342,14 @@ void DynamicShadowTexMgrClass::Set_Max_Simultaneous_Shadows(unsigned int max)
 	}
 }
 
-unsigned int DynamicShadowTexMgrClass::Get_Max_Simultaneous_Shadows(void)
+uint32_t DynamicShadowTexMgrClass::Get_Max_Simultaneous_Shadows(void)
 {
 	return ShadowTextures.Length();
 }
 
-void DynamicShadowTexMgrClass::Set_Shadow_Resolution(unsigned int res)
+void DynamicShadowTexMgrClass::Set_Shadow_Resolution(uint32_t res)
 {
-	unsigned int oksize = ::Find_POT(res);
+	uint32_t oksize = ::Find_POT(res);
 	if (oksize > 256) {
 		oksize = 256;
 	}
@@ -372,7 +372,7 @@ void DynamicShadowTexMgrClass::Set_Shadow_Resolution(unsigned int res)
 	}
 }
 
-unsigned int DynamicShadowTexMgrClass::Get_Shadow_Resolution(void)
+uint32_t DynamicShadowTexMgrClass::Get_Shadow_Resolution(void)
 {
 	return TextureResolution;
 }
@@ -384,7 +384,7 @@ void DynamicShadowTexMgrClass::Per_Frame_Reset(void)
 
 void DynamicShadowTexMgrClass::Assign_Render_Target_Texture(TexProjectClass * tex_proj)
 {
-	if (CurShadow < (unsigned int)ShadowTextures.Length()) {
+	if (CurShadow < (uint32_t)ShadowTextures.Length()) {
 		if (ShadowTextures[CurShadow] == NULL) {
 			ShadowTextures[CurShadow] = Allocate_Render_Target_Texture();
 		}
@@ -429,22 +429,22 @@ void PhysicsSceneClass::Release_Projector_Resources(void)
 }
 
 
-void PhysicsSceneClass::Set_Shadow_Resolution(unsigned int res)
+void PhysicsSceneClass::Set_Shadow_Resolution(uint32_t res)
 {
 	_DynamicShadowTexMgr.Set_Shadow_Resolution(res);
 }
 
-unsigned int PhysicsSceneClass::Get_Shadow_Resolution(void)
+uint32_t PhysicsSceneClass::Get_Shadow_Resolution(void)
 {
 	return _DynamicShadowTexMgr.Get_Shadow_Resolution();
 }
 
-void PhysicsSceneClass::Set_Max_Simultaneous_Shadows(unsigned int count)
+void PhysicsSceneClass::Set_Max_Simultaneous_Shadows(uint32_t count)
 {
 	_DynamicShadowTexMgr.Set_Max_Simultaneous_Shadows(count);
 }
 
-unsigned int PhysicsSceneClass::Get_Max_Simultaneous_Shadows(void)
+uint32_t PhysicsSceneClass::Get_Max_Simultaneous_Shadows(void)
 {
 	return _DynamicShadowTexMgr.Get_Max_Simultaneous_Shadows();
 }
@@ -720,7 +720,7 @@ void PhysicsSceneClass::Apply_Projectors
 	** Build a list of the dynamic shadow textures that need to be rendered
 	*/
 	TexProjListClass rt_projector_list;
-	unsigned int count = 0;
+	uint32_t count = 0;
 
 	if (DynamicProjectorsEnabled) {
 
@@ -976,10 +976,10 @@ static void Create_Render_Target_Test(TextureClass* render_target)
 	DynamicIBAccessClass ib_access(BUFFER_TYPE_DYNAMIC_DX8,polygon_count*3);
 	{
 		DynamicIBAccessClass::WriteLockClass lock(&ib_access);
-		unsigned short* inds=lock.Get_Index_Array();
+		uint16_t* inds=lock.Get_Index_Array();
 
 		for (int i=0;i<polygon_count*3;++i) {
-			*inds++=short(i);
+			*inds++=static_cast<uint16_t>(i);
 		}
 	}
 
@@ -1017,7 +1017,7 @@ static bool Test_Render_Target_Surface(TextureClass* render_target)
 	REF_PTR_RELEASE(surf);
 
 	int pitch;
-	unsigned char* tmpbits=(unsigned char*)new_surf->Lock(&pitch);
+	uint8_t* tmpbits=(uint8_t*)new_surf->Lock(&pitch);
 
 	unsigned color1,color2,color3,color4;
 	BitmapHandlerClass::Read_B8G8R8A8(
@@ -1143,8 +1143,8 @@ void PhysicsSceneClass::Generate_Static_Shadow_Projectors(void)
 /*
 		char* bits=new char[desc.Width*desc.Height*3];
 		//memcpy(bits,tmpbits,desc.Width*desc.Height*4);
-		for (unsigned int y=0;y<desc.Height;++y) {
-			for (unsigned int x=0;x<desc.Width;++x) {
+		for (uint32_t y=0;y<desc.Height;++y) {
+			for (uint32_t x=0;x<desc.Width;++x) {
 				// index for image
 				unsigned index=3*(x+y*desc.Width);
 				// index for fb
@@ -1162,7 +1162,7 @@ void PhysicsSceneClass::Generate_Static_Shadow_Projectors(void)
 		targ.Header.Height=desc.Height;
 		targ.Header.PixelDepth=24;
 		targ.Header.ImageType=TGA_TRUECOLOR;
-		targ.SetImage((char*)bits);
+		targ.SetImage(bits);
 		targ.YFlip();
 
 		const char* filename="shadowtex.tga";

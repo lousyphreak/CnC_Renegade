@@ -76,7 +76,7 @@ extern bool GameInFocus;
 
 #ifdef _DEBUG
 
-void __cdecl Print_Win32Error(unsigned long win32Error);
+void __cdecl Print_Win32Error(uint32_t win32Error);
 
 #else // _DEBUG
 
@@ -109,22 +109,22 @@ typedef void *HKEY;
 #ifndef RENEGADE_COMPAT_SYSTEMTIME_DEFINED
 #define RENEGADE_COMPAT_SYSTEMTIME_DEFINED
 typedef struct _SYSTEMTIME {
-	WORD wYear;
-	WORD wMonth;
-	WORD wDayOfWeek;
-	WORD wDay;
-	WORD wHour;
-	WORD wMinute;
-	WORD wSecond;
-	WORD wMilliseconds;
+	uint16_t wYear;
+	uint16_t wMonth;
+	uint16_t wDayOfWeek;
+	uint16_t wDay;
+	uint16_t wHour;
+	uint16_t wMinute;
+	uint16_t wSecond;
+	uint16_t wMilliseconds;
 } SYSTEMTIME, *LPSYSTEMTIME;
 #endif
 
 #ifndef RENEGADE_COMPAT_FILETIME_DEFINED
 #define RENEGADE_COMPAT_FILETIME_DEFINED
 typedef struct _FILETIME {
-	DWORD dwLowDateTime;
-	DWORD dwHighDateTime;
+	uint32_t dwLowDateTime;
+	uint32_t dwHighDateTime;
 } FILETIME, *LPFILETIME;
 #endif
 
@@ -133,29 +133,29 @@ typedef struct _FILETIME {
 typedef struct _PROCESS_INFORMATION {
 	HANDLE hProcess;
 	HANDLE hThread;
-	DWORD dwProcessId;
-	DWORD dwThreadId;
+	uint32_t dwProcessId;
+	uint32_t dwThreadId;
 } PROCESS_INFORMATION, *LPPROCESS_INFORMATION;
 #endif
 
 #ifndef RENEGADE_COMPAT_STARTUPINFO_DEFINED
 #define RENEGADE_COMPAT_STARTUPINFO_DEFINED
 typedef struct _STARTUPINFOA {
-	DWORD cb;
+	uint32_t cb;
 	char *lpReserved;
 	char *lpDesktop;
 	char *lpTitle;
-	DWORD dwX;
-	DWORD dwY;
-	DWORD dwXSize;
-	DWORD dwYSize;
-	DWORD dwXCountChars;
-	DWORD dwYCountChars;
-	DWORD dwFillAttribute;
-	DWORD dwFlags;
-	WORD wShowWindow;
-	WORD cbReserved2;
-	unsigned char *lpReserved2;
+	uint32_t dwX;
+	uint32_t dwY;
+	uint32_t dwXSize;
+	uint32_t dwYSize;
+	uint32_t dwXCountChars;
+	uint32_t dwYCountChars;
+	uint32_t dwFillAttribute;
+	uint32_t dwFlags;
+	uint16_t wShowWindow;
+	uint16_t cbReserved2;
+	uint8_t *lpReserved2;
 	HANDLE hStdInput;
 	HANDLE hStdOutput;
 	HANDLE hStdError;
@@ -169,23 +169,23 @@ typedef void * HGLOBAL;
 typedef void * LPVOID;
 
 typedef struct _DLGTEMPLATE {
-	DWORD style;
-	DWORD dwExtendedStyle;
-	WORD cdit;
-	short x;
-	short y;
-	short cx;
-	short cy;
+	uint32_t style;
+	uint32_t dwExtendedStyle;
+	uint16_t cdit;
+	int16_t x;
+	int16_t y;
+	int16_t cx;
+	int16_t cy;
 } DLGTEMPLATE;
 
 typedef struct _DLGITEMTEMPLATE {
-	DWORD style;
-	DWORD dwExtendedStyle;
-	short x;
-	short y;
-	short cx;
-	short cy;
-	WORD id;
+	uint32_t style;
+	uint32_t dwExtendedStyle;
+	int16_t x;
+	int16_t y;
+	int16_t cx;
+	int16_t cy;
+	uint16_t id;
 } DLGITEMTEMPLATE;
 #endif
 
@@ -216,15 +216,15 @@ inline HRSRC FindResource(HINSTANCE, const char *, const char *) { return nullpt
 inline HGLOBAL LoadResource(HINSTANCE, HRSRC) { return nullptr; }
 inline LPVOID LockResource(HGLOBAL) { return nullptr; }
 
-inline DWORD GetTickCount(void)
+inline uint32_t GetTickCount(void)
 {
 	using namespace std::chrono;
-	return static_cast<DWORD>(duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count() & 0xffffffffu);
+	return static_cast<uint32_t>(duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count() & 0xffffffffu);
 }
 
-inline DWORD GetCurrentProcessId(void)
+inline uint32_t GetCurrentProcessId(void)
 {
-	return static_cast<DWORD>(getpid());
+	return static_cast<uint32_t>(getpid());
 }
 
 inline void GetSystemTime(LPSYSTEMTIME system_time)
@@ -237,13 +237,13 @@ inline void GetSystemTime(LPSYSTEMTIME system_time)
 	std::tm utc_time = {};
 	gmtime_r(&now, &utc_time);
 
-	system_time->wYear = static_cast<WORD>(utc_time.tm_year + 1900);
-	system_time->wMonth = static_cast<WORD>(utc_time.tm_mon + 1);
-	system_time->wDayOfWeek = static_cast<WORD>(utc_time.tm_wday);
-	system_time->wDay = static_cast<WORD>(utc_time.tm_mday);
-	system_time->wHour = static_cast<WORD>(utc_time.tm_hour);
-	system_time->wMinute = static_cast<WORD>(utc_time.tm_min);
-	system_time->wSecond = static_cast<WORD>(utc_time.tm_sec);
+	system_time->wYear = static_cast<uint16_t>(utc_time.tm_year + 1900);
+	system_time->wMonth = static_cast<uint16_t>(utc_time.tm_mon + 1);
+	system_time->wDayOfWeek = static_cast<uint16_t>(utc_time.tm_wday);
+	system_time->wDay = static_cast<uint16_t>(utc_time.tm_mday);
+	system_time->wHour = static_cast<uint16_t>(utc_time.tm_hour);
+	system_time->wMinute = static_cast<uint16_t>(utc_time.tm_min);
+	system_time->wSecond = static_cast<uint16_t>(utc_time.tm_sec);
 	system_time->wMilliseconds = 0;
 }
 
@@ -264,14 +264,14 @@ inline bool FileTimeToSystemTime(const FILETIME * file_time, LPSYSTEMTIME system
 	std::tm utc_time = {};
 	gmtime_r(&seconds, &utc_time);
 
-	system_time->wYear = static_cast<WORD>(utc_time.tm_year + 1900);
-	system_time->wMonth = static_cast<WORD>(utc_time.tm_mon + 1);
-	system_time->wDayOfWeek = static_cast<WORD>(utc_time.tm_wday);
-	system_time->wDay = static_cast<WORD>(utc_time.tm_mday);
-	system_time->wHour = static_cast<WORD>(utc_time.tm_hour);
-	system_time->wMinute = static_cast<WORD>(utc_time.tm_min);
-	system_time->wSecond = static_cast<WORD>(utc_time.tm_sec);
-	system_time->wMilliseconds = static_cast<WORD>((unix_100ns % 10000000ull) / 10000ull);
+	system_time->wYear = static_cast<uint16_t>(utc_time.tm_year + 1900);
+	system_time->wMonth = static_cast<uint16_t>(utc_time.tm_mon + 1);
+	system_time->wDayOfWeek = static_cast<uint16_t>(utc_time.tm_wday);
+	system_time->wDay = static_cast<uint16_t>(utc_time.tm_mday);
+	system_time->wHour = static_cast<uint16_t>(utc_time.tm_hour);
+	system_time->wMinute = static_cast<uint16_t>(utc_time.tm_min);
+	system_time->wSecond = static_cast<uint16_t>(utc_time.tm_sec);
+	system_time->wMilliseconds = static_cast<uint16_t>((unix_100ns % 10000000ull) / 10000ull);
 	return true;
 }
 
@@ -305,18 +305,18 @@ inline bool FileTimeToLocalFileTime(const FILETIME * file_time, LPFILETIME local
 	localtime_r(&seconds, &local_time);
 
 	SYSTEMTIME local_system_time = {};
-	local_system_time.wYear = static_cast<WORD>(local_time.tm_year + 1900);
-	local_system_time.wMonth = static_cast<WORD>(local_time.tm_mon + 1);
-	local_system_time.wDayOfWeek = static_cast<WORD>(local_time.tm_wday);
-	local_system_time.wDay = static_cast<WORD>(local_time.tm_mday);
-	local_system_time.wHour = static_cast<WORD>(local_time.tm_hour);
-	local_system_time.wMinute = static_cast<WORD>(local_time.tm_min);
-	local_system_time.wSecond = static_cast<WORD>(local_time.tm_sec);
+	local_system_time.wYear = static_cast<uint16_t>(local_time.tm_year + 1900);
+	local_system_time.wMonth = static_cast<uint16_t>(local_time.tm_mon + 1);
+	local_system_time.wDayOfWeek = static_cast<uint16_t>(local_time.tm_wday);
+	local_system_time.wDay = static_cast<uint16_t>(local_time.tm_mday);
+	local_system_time.wHour = static_cast<uint16_t>(local_time.tm_hour);
+	local_system_time.wMinute = static_cast<uint16_t>(local_time.tm_min);
+	local_system_time.wSecond = static_cast<uint16_t>(local_time.tm_sec);
 	local_system_time.wMilliseconds = utc_system_time.wMilliseconds;
 	return SystemTimeToFileTime(&local_system_time, local_file_time);
 }
 
-inline LONG CompareFileTime(const FILETIME * lhs, const FILETIME * rhs)
+inline int32_t CompareFileTime(const FILETIME * lhs, const FILETIME * rhs)
 {
 	if (lhs == nullptr || rhs == nullptr) {
 		return 0;
@@ -354,8 +354,8 @@ inline bool SystemTimeToFileTime(const SYSTEMTIME * system_time, LPFILETIME file
 
 	constexpr std::uint64_t WINDOWS_TO_UNIX_EPOCH_100NS = 11644473600ull * 10000000ull;
 	const std::uint64_t ticks = WINDOWS_TO_UNIX_EPOCH_100NS + (static_cast<std::uint64_t>(seconds) * 10000000ull) + (static_cast<std::uint64_t>(system_time->wMilliseconds) * 10000ull);
-	file_time->dwLowDateTime = static_cast<DWORD>(ticks & 0xFFFFFFFFull);
-	file_time->dwHighDateTime = static_cast<DWORD>(ticks >> 32);
+	file_time->dwLowDateTime = static_cast<uint32_t>(ticks & 0xFFFFFFFFull);
+	file_time->dwHighDateTime = static_cast<uint32_t>(ticks >> 32);
 	return true;
 }
 

@@ -38,6 +38,8 @@
 #pragma once
 #endif // _MSC_VER >= 1000
 
+#include <cstdint>
+
 #ifndef WWDEBUG_H
 #define WWDEBUG_H
 
@@ -72,7 +74,7 @@ typedef enum {
 
 typedef void (*PrintFunc)(DebugType type, const char * message);
 typedef void (*AssertPrintFunc)(const char * message);
-typedef bool (*TriggerFunc)(int trigger_num);
+typedef bool (*TriggerFunc)(int32_t trigger_num);
 typedef void (*ProfileFunc)(const char * title);
 
 PrintFunc			WWDebug_Install_Message_Handler(PrintFunc func);

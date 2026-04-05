@@ -101,7 +101,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 EditDialogueDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog();
@@ -259,7 +259,7 @@ void
 EditDialogueDialogClass::OnDblclkOptionList
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 )
 {
 	//
@@ -306,7 +306,7 @@ void
 EditDialogueDialogClass::OnDeleteitemOptionList
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 )
 {
 	NM_LISTVIEW* pNMListView = (NM_LISTVIEW*)pNMHDR;
@@ -385,7 +385,7 @@ EditDialogueDialogClass::Insert_Entry (DialogueOptionClass *option)
 			//
 			//	Associate the object with the entry in the list control
 			//
-			m_ListCtrl.SetItemData (item_index, (DWORD)option);
+			m_ListCtrl.SetItemData (item_index, (uint32_t)option);
 						
 			//
 			//	Lookup the string entry in our translation database
@@ -416,7 +416,7 @@ void
 EditDialogueDialogClass::OnItemchangedRemarkList
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 )
 {
 	NM_LISTVIEW *pNMListView = (NM_LISTVIEW *)pNMHDR;
@@ -472,7 +472,7 @@ void
 EditDialogueDialogClass::OnDeltaposSelectedWeightSpin
 (
 	NMHDR *pNMHDR,
-	LRESULT *pResult
+	intptr_t *pResult
 ) 
 {
 	NM_UPDOWN* pNMUpDown = (NM_UPDOWN*)pNMHDR;
@@ -538,8 +538,8 @@ EditDialogueDialogClass::Update_Current_Weight (void)
 void
 EditDialogueDialogClass::OnVScroll
 (
-	UINT			nSBCode,
-	UINT			nPos,
+	uint32_t			nSBCode,
+	uint32_t			nPos,
 	CScrollBar *pScrollBar
 )
 {

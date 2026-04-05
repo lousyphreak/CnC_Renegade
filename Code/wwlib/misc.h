@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -42,7 +44,7 @@
 #include	"win.h"
 #include	"ddraw.h"
 
-extern unsigned char CurrentPalette[768];
+extern uint8_t CurrentPalette[768];
 extern bool Debug_Windowed;
 
 extern	LPDIRECTDRAWSURFACE	PaletteSurface;
@@ -53,7 +55,7 @@ extern	LPDIRECTDRAWSURFACE	PaletteSurface;
 /* The following prototypes are for the file: DDRAW.CPP							*/
 /*=========================================================================*/
 void Prep_Direct_Draw(void);
-void 		Process_DD_Result(HRESULT result, int display_ok_msg);
+void 		Process_DD_Result(int32_t result, int display_ok_msg);
 bool 		Set_Video_Mode(HWND hwnd, int w, int h, int bits_per_pixel);
 void 		Reset_Video_Mode(void);
 unsigned 	Get_Free_Video_Memory(void);
@@ -143,14 +145,14 @@ extern "C" {
 void __cdecl Shake_Screen(int shakes);
 
 //void * Build_Fading_Table(PaletteClass const & palette, void * dest, int color, int frac);
-//void * __cdecl Build_Fading_Table(void const *palette, void const *dest, long int color, long int frac);
+//void * __cdecl Build_Fading_Table(void const *palette, void const *dest, int32_t color, int32_t frac);
 
 /*=========================================================================*/
 /* The following prototypes are for the file: DETPROC.ASM						*/
 /*=========================================================================*/
 
-extern WORD __cdecl  Processor(void);
-extern WORD __cdecl Operating_System(void);
+extern uint16_t __cdecl  Processor(void);
+extern uint16_t __cdecl Operating_System(void);
 
 extern int __cdecl Clip_Rect ( int * x , int * y , int * dw , int * dh ,
 	       	   			 int width , int height ) ;
@@ -163,7 +165,7 @@ extern int __cdecl Confine_Rect ( int * x , int * y , int dw , int dh ,
 /* The following prototypes are for the file: OPSYS.ASM							*/
 /*=========================================================================*/
 
-extern WORD OperationgSystem;
+extern uint16_t OperationgSystem;
 
 #ifdef __cplusplus
 }

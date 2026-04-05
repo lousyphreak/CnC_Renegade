@@ -44,7 +44,7 @@ for the 'get' functions. E.g. getString("KEY",valWstring);
 
 #include "configfile.h"
 
-static uint32 Wstring_Hash(Wstring &string);
+static uint32_t Wstring_Hash(Wstring &string);
 static char  *Eat_Spaces(char *string);
 
 ConfigFile::ConfigFile() : dictionary(Wstring_Hash)
@@ -55,7 +55,7 @@ ConfigFile::~ConfigFile()
 
 // Read and parse the config file.  The key value pairs will be stored
 //   for later access by the getString/getInt functions.
-bit8 ConfigFile::readFile(FILE *in)
+int8_t ConfigFile::readFile(FILE *in)
 {
   char    string[256];
   Wstring  key;
@@ -84,13 +84,13 @@ bit8 ConfigFile::readFile(FILE *in)
 }
 
 // Get a config entry as a string
-bit8 ConfigFile::getString(Wstring &key,Wstring &value)
+int8_t ConfigFile::getString(Wstring &key,Wstring &value)
 {
   return(dictionary.getValue(key,value));
 } 
 
 // Get a config entry as a string
-bit8 ConfigFile::getString(char *key,Wstring &value)
+int8_t ConfigFile::getString(char *key,Wstring &value)
 {
   Wstring sKey;
   sKey.set(key);
@@ -98,10 +98,10 @@ bit8 ConfigFile::getString(char *key,Wstring &value)
 }   
 
 // Get a config entry as an integer
-bit8 ConfigFile::getInt(Wstring &key,sint32 &value)
+int8_t ConfigFile::getInt(Wstring &key,int32_t &value)
 {
   Wstring svalue;
-  bit8 retval=dictionary.getValue(key,svalue);
+  int8_t retval=dictionary.getValue(key,svalue);
   if (retval==FALSE)
     return(FALSE);
   value=atol(svalue.get());
@@ -109,7 +109,7 @@ bit8 ConfigFile::getInt(Wstring &key,sint32 &value)
 }
 
 // Get a config entry as an integer
-bit8 ConfigFile::getInt(char *key,sint32 &value)
+int8_t ConfigFile::getInt(char *key,int32_t &value)
 {
   Wstring sKey;
   sKey.set(key);
@@ -119,10 +119,10 @@ bit8 ConfigFile::getInt(char *key,sint32 &value)
 
 
 // Get a config entry as an integer
-bit8 ConfigFile::getInt(Wstring &key,sint16 &value)
+int8_t ConfigFile::getInt(Wstring &key,int16_t &value)
 {
   Wstring svalue;
-  bit8 retval=dictionary.getValue(key,svalue);
+  int8_t retval=dictionary.getValue(key,svalue);
   if (retval==FALSE)
     return(FALSE);
   value=atoi(svalue.get());
@@ -130,7 +130,7 @@ bit8 ConfigFile::getInt(Wstring &key,sint16 &value)
 }
  
 // Get a config entry as an integer
-bit8 ConfigFile::getInt(char *key,sint16 &value)
+int8_t ConfigFile::getInt(char *key,int16_t &value)
 {
   Wstring sKey;
   sKey.set(key);
@@ -143,11 +143,11 @@ bit8 ConfigFile::getInt(char *key,sint16 &value)
 
 // Given a Wstring, return a 32 bit integer that has a good numeric
 //   distributation for the purposes of indexing into a hash table.
-static uint32 Wstring_Hash(Wstring &string)
+static uint32_t Wstring_Hash(Wstring &string)
 {
-  uint32 retval=0;
+  uint32_t retval=0;
   retval=string.length();
-  for (uint32 i=0; i<string.length(); i++)
+  for (uint32_t i=0; i<string.length(); i++)
   {
     retval+=*(string.get()+i);
     retval+=i;

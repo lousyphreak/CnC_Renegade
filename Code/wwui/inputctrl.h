@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __INPUTBOX_CTRL_H
@@ -87,8 +89,8 @@ public:
 	//
 	//	User data support
 	//
-	uint32			Get_User_Data (void)				{ return UserData; }
-	void				Set_User_Data (uint32 data)	{ UserData = data; }
+	uint32_t			Get_User_Data (void)				{ return UserData; }
+	void				Set_User_Data (uint32_t data)	{ UserData = data; }
 
 protected:
 
@@ -102,7 +104,7 @@ protected:
 	void				On_Set_Cursor (const Vector2 &mouse_pos);
 	void				On_Set_Focus (void);
 	void				On_Kill_Focus (DialogControlClass *focus);
-	bool				On_Key_Down (uint32 key_id, uint32 key_data);
+	bool				On_Key_Down (uint32_t key_id, uint32_t key_data);
 	void				On_Create (void);
 	void				On_Mouse_Wheel (int direction);
 	void				Update_Client_Rect (void);
@@ -120,7 +122,7 @@ protected:
 	Render2DClass				HilightRenderer;
 	int							KeyAssignment;
 	int							MouseIgnoreTime;
-	uint32						UserData;	
+	uint32_t						UserData;	
 	int							PendingKeyID;
 };
 

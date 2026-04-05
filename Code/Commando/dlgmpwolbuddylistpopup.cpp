@@ -76,9 +76,9 @@ MPWolBuddyListPopupClass::On_Init_Dialog (void)
 
 		if (buddyMgr) {
 			const WWOnline::UserList& list = buddyMgr->GetBuddyList();
-			const unsigned int count = list.size();
+			const uint32_t count = list.size();
 			
-			for (unsigned int index = 0; index < count; ++index) {
+			for (uint32_t index = 0; index < count; ++index) {
 				const RefPtr<WWOnline::UserData>& user = list[index];
 
 				if (user->GetLocation() != WWOnline::USERLOCATION_OFFLINE) {
@@ -101,7 +101,7 @@ MPWolBuddyListPopupClass::On_Init_Dialog (void)
 //
 ////////////////////////////////////////////////////////////////
 void
-MPWolBuddyListPopupClass::On_Command (int ctrl_id, int message_id, DWORD param)
+MPWolBuddyListPopupClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	switch (ctrl_id)
 	{

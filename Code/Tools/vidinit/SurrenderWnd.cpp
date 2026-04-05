@@ -176,7 +176,7 @@ void CSurrenderWnd::OnClose()
 }
 
 
-void CSurrenderWnd::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags) 
+void CSurrenderWnd::OnKeyDown(uint32_t nChar, uint32_t nRepCnt, uint32_t nFlags) 
 {
 	// TODO: Add your message handler code here and/or call default
 	

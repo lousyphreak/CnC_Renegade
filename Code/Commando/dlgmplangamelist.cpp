@@ -195,7 +195,7 @@ MPLanGameListMenuClass::On_Destroy (void)
 //
 ////////////////////////////////////////////////////////////////
 void
-MPLanGameListMenuClass::On_Command (int ctrl_id, int message_id, DWORD param)
+MPLanGameListMenuClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	switch (ctrl_id) {
 
@@ -292,7 +292,7 @@ MPLanGameListMenuClass::On_Frame_Update (void)
 }
 
 
-bool MPLanGameListMenuClass::On_Key_Down(uint32 key_id, uint32 key_data)
+bool MPLanGameListMenuClass::On_Key_Down(uint32_t key_id, uint32_t key_data)
 {
 	if (VK_F5 == key_id) {
 		Update_Game_List();
@@ -418,7 +418,7 @@ MPLanGameListMenuClass::Update_Game_List (void)
 			//
 			//	Associate the channel data inside with the entry
 			//
-			list_ctrl->Set_Entry_Data (item_index, 0, (uint32)channel);
+			list_ctrl->Set_Entry_Data (item_index, 0, (uint32_t)channel);
 			channel->Add_Ref ();
 
 			//

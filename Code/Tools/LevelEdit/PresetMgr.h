@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __PRESET_MGR_H
@@ -61,8 +63,8 @@ class PresetClass;
 typedef SortedNTreeClass<PresetClass *>		PRESET_TREE;
 typedef SortedNTreeLeafClass<PresetClass *>	PRESET_TREE_LEAF;
 
-typedef SortedNTreeClass<uint32>					FACTORY_TREE;
-typedef SortedNTreeLeafClass<uint32>			FACTORY_TREE_LEAF;
+typedef SortedNTreeClass<uint32_t>					FACTORY_TREE;
+typedef SortedNTreeLeafClass<uint32_t>			FACTORY_TREE_LEAF;
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -73,7 +75,7 @@ extern class PresetMgrClass _ThePresetMgr;
 //////////////////////////////////////////////////////////////////////////
 //	Constants
 //////////////////////////////////////////////////////////////////////////
-const DWORD TEMP_DEF_ID_START			= 1000000000;
+const uint32_t TEMP_DEF_ID_START			= 1000000000;
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -96,7 +98,7 @@ public:
 	//////////////////////////////////////////////////////////////
 	
 	// From SaveLoadSubSystemClass
-	virtual uint32				Chunk_ID (void) const;
+	virtual uint32_t				Chunk_ID (void) const;
 	virtual const char *		Name (void) const			{ return "PresetMgrClass"; }
 
 	// Initialization
@@ -109,11 +111,11 @@ public:
 	static void					Free_Presets (void);
 	static void					Free_All_Embedded_Nodes (void);
 
-	static bool					Check_Out_Database (uint32 class_id, bool *should_undo_on_err);
+	static bool					Check_Out_Database (uint32_t class_id, bool *should_undo_on_err);
 	static bool					Check_Out_Database (LPCTSTR path, bool *should_undo_on_err);
 	static bool					Check_In_Database (LPCTSTR path);
 	static bool					Is_Database_Checked_Out (LPCTSTR full_path);
-	static bool					Undo_Database_Check_Out (uint32 class_id);
+	static bool					Undo_Database_Check_Out (uint32_t class_id);
 
 	// Enumeration
 	typedef enum
@@ -122,30 +124,30 @@ public:
 		ID_SUPERCLASS,
 	} ID_TYPE;
 
-	static PresetClass *		Find_Typed_Preset (uint32 class_id, LPCTSTR name);
-	static PresetClass *		Find_Preset (uint32 id);
+	static PresetClass *		Find_Typed_Preset (uint32_t class_id, LPCTSTR name);
+	static PresetClass *		Find_Preset (uint32_t id);
 	static PresetClass *		Find_Preset (LPCTSTR name);
 	static PresetClass *		Get_First (void);
-	static PresetClass *		Get_First (uint32 id, ID_TYPE type, bool include_twiddlers = false);
+	static PresetClass *		Get_First (uint32_t id, ID_TYPE type, bool include_twiddlers = false);
 	static PresetClass *		Get_Next (PresetClass *current);	
-	static PresetClass *		Get_Next (PresetClass *current, uint32 class_id, ID_TYPE type, bool include_twiddlers = false);
+	static PresetClass *		Get_Next (PresetClass *current, uint32_t class_id, ID_TYPE type, bool include_twiddlers = false);
 
 	//
 	// Tree building methods
 	//
-	static void					Build_Preset_Tree (uint32 class_id, PRESET_TREE &tree, bool include_twiddlers = true);
-	static void					Build_Factory_Tree (uint32 class_id, FACTORY_TREE &tree);
+	static void					Build_Preset_Tree (uint32_t class_id, PRESET_TREE &tree, bool include_twiddlers = true);
+	static void					Build_Factory_Tree (uint32_t class_id, FACTORY_TREE &tree);
 
 	//
 	//	Content control
 	// 
 	static void					Put_Presets_Back (PRESET_LIST &preset_list);
-	static void					Remove_Non_Matching_Presets (uint32 class_id, bool class_id_matters, bool is_temp, PRESET_LIST &removed_preset_list);
+	static void					Remove_Non_Matching_Presets (uint32_t class_id, bool class_id_matters, bool is_temp, PRESET_LIST &removed_preset_list);
 
 	//
 	//	Preset creation
 	//
-	static PresetClass *		Create_Preset (uint32 class_id, const char * name, bool is_temp);
+	static PresetClass *		Create_Preset (uint32_t class_id, const char * name, bool is_temp);
 
 	//
 	//	Dirty preset methods
@@ -162,7 +164,7 @@ public:
 	//
 	//	Export methods
 	//
-	static void					Export_Settings (uint32 class_id, const char *filename);
+	static void					Export_Settings (uint32_t class_id, const char *filename);
 
 protected:
 
@@ -186,10 +188,10 @@ protected:
 	static void					Validate_Version (void);
 
 	// Tree building methods
-	static void					Add_Children_To_Tree (uint32 parent_id, PRESET_TREE_LEAF *leaf, bool include_twiddlers);
+	static void					Add_Children_To_Tree (uint32_t parent_id, PRESET_TREE_LEAF *leaf, bool include_twiddlers);
 
 	// Type checking
-	static bool					Is_One_Of (uint32 id_to_find, ID_TYPE type, bool include_twiddlers, PresetClass *preset);
+	static bool					Is_One_Of (uint32_t id_to_find, ID_TYPE type, bool include_twiddlers, PresetClass *preset);
 
 private:
 

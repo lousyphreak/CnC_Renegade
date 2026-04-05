@@ -223,7 +223,7 @@ TileNodeClass::Save (ChunkSaveClass &csave)
 		//	Save the tile's vis-id to the chunk
 		//	
 		if (m_PhysObj != NULL) {
-			uint32 vis_id = ((StaticPhysClass *)m_PhysObj)->Get_Vis_Object_ID ();
+			uint32_t vis_id = ((StaticPhysClass *)m_PhysObj)->Get_Vis_Object_ID ();
 			WRITE_MICRO_CHUNK (csave, VARID_VISOBJECTID, vis_id);
 			vis_id = ((StaticPhysClass *)m_PhysObj)->Get_Vis_Sector_ID ();
 			WRITE_MICRO_CHUNK (csave, VARID_VISSECTORID, vis_id);

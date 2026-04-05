@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __PRESET_H
@@ -143,11 +145,11 @@ public:
 	//
 	// Pass-thrus to the definition object
 	//
-	uint32					Get_ID (void) const;
-	void						Set_ID (uint32 id);
+	uint32_t					Get_ID (void) const;
+	void						Set_ID (uint32_t id);
 	LPCTSTR					Get_Name (void) const;
 	void						Set_Name (LPCTSTR name);
-	uint32					Get_Class_ID (void) const;
+	uint32_t					Get_Class_ID (void) const;
 
 	//
 	// Misc helper methods
@@ -198,8 +200,8 @@ private:
 	StringClass				m_Comments;
 	bool						m_IsTemporary;
 	bool						m_IsValid;
-	uint32					m_ParentID;
-	mutable uint32			m_DefinitionID;
+	uint32_t					m_ParentID;
+	mutable uint32_t			m_DefinitionID;
 	NODE_LIST				m_NodeList;
 
 	DynamicVectorClass<int>	m_ChildIDList;
@@ -218,7 +220,7 @@ INLINE_ACCESSOR_CONST (bool, PresetClass, IsTemporary);
 ////////////////////////////////////////////////////////////////////
 //	Get_ID
 ////////////////////////////////////////////////////////////////////
-inline uint32
+inline uint32_t
 PresetClass::Get_ID (void) const
 {
 	if (m_Definition != NULL) {
@@ -232,7 +234,7 @@ PresetClass::Get_ID (void) const
 //	Set_ID
 ////////////////////////////////////////////////////////////////////
 inline void
-PresetClass::Set_ID (uint32 id)
+PresetClass::Set_ID (uint32_t id)
 {
 	if (m_Definition != NULL) {
 		m_Definition->Set_ID (id);		
@@ -301,10 +303,10 @@ PresetClass::Set_Manual_Dependencies (STRING_LIST &list)
 ////////////////////////////////////////////////////////////////////
 //	Get_Class_ID
 ////////////////////////////////////////////////////////////////////
-inline uint32
+inline uint32_t
 PresetClass::Get_Class_ID (void) const
 {
-	uint32 class_id = 0;
+	uint32_t class_id = 0;
 	if (m_Definition != NULL) {
 		class_id = m_Definition->Get_Class_ID ();
 	}

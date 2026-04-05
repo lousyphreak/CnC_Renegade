@@ -60,7 +60,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CRenderDeviceDialog message handlers
 
-BOOL CRenderDeviceDialog::OnInitDialog() 
+int32_t CRenderDeviceDialog::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
 

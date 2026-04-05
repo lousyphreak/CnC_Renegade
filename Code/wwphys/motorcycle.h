@@ -37,6 +37,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef MOTORCYCLE_H
 #define MOTORCYCLE_H
 
@@ -101,7 +103,7 @@ public:
 	MotorcycleDefClass (void);
 	
 	// From DefinitionClass
-	virtual uint32								Get_Class_ID (void) const;
+	virtual uint32_t								Get_Class_ID (void) const;
 	virtual PersistClass *					Create(void) const;
 
 	// From PhysDefClass

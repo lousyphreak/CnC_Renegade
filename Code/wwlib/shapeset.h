@@ -42,6 +42,8 @@
 #ifndef SHAPESET_H
 #define SHAPESET_H
 
+#include <cstdint>
+
 #include	"trect.h"
 
 /*
@@ -97,18 +99,18 @@ class ShapeSet
 		/*
 		**	QShape information flags.
 		*/
-		short Flags;
+		int16_t Flags;
 
 		/*
 		**	The nominal width and height of the shape (in pixels).
 		*/
-		short Width;
-		short Height;
+		int16_t Width;
+		int16_t Height;
 
 		/*
 		**	The total number of shapes in the file.
 		*/
-		short Count;
+		int16_t Count;
 
 		/*
 		**	Each shape is represented by this structure. It appears in a linear array near the
@@ -121,19 +123,19 @@ class ShapeSet
 				**	The sub-offset (relative to logical 0,0 at upper left corner) for this
 				**	shape's data.
 				*/
-				short X;
-				short Y;
+				int16_t X;
+				int16_t Y;
 
 				/*
 				**	The dimensions of this shape's data.
 				*/
-				short Width;
-				short Height;
+				int16_t Width;
+				int16_t Height;
 
 				/*
 				**	Flags that indicate some aspect of this particular shape image.
 				*/
-				short Flags;
+				int16_t Flags;
 				enum {
 					SFLAG_TRANSPARENT=0x01,		// Are there are any transparent pixels present?
 					SFLAG_RLE=0x02					// Is it RLE compressed?
@@ -143,21 +145,21 @@ class ShapeSet
 				/*
 				**	Size of the data for this frame.
 				*/
-				short Size;
+				int16_t Size;
 
 				/*
 				**	Offset from the start of the shape data file to where the first pixel
 				**	of this shape image data is located.
 				*/
-				long Data;
+				int32_t Data;
 
 				bool Is_Transparent(void) const {return((Flags & SFLAG_TRANSPARENT) != 0);}
 				bool Is_RLE_Compressed(void) const {return((Flags & SFLAG_RLE) != 0);}
-				short Get_Size(void) const {return(Size);}
+				int16_t Get_Size(void) const {return(Size);}
 
 				void Flag_Transparent(void) {Flags |= SFLAG_TRANSPARENT;}
 				void Flag_RLE_Compressed(void) {Flags |= SFLAG_RLE;}
-				void Set_Size(short size) {Size = size;}
+				void Set_Size(int16_t size) {Size = size;}
 		};
 
 		bool Is_Shape_Index_Valid(int index) const {return(unsigned(index) < unsigned(Count));}

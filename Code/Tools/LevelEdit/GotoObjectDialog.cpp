@@ -82,7 +82,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 GotoObjectDialogClass::OnInitDialog (void) 
 {
 	// Allow the base class to process this message
@@ -146,7 +146,7 @@ void
 GotoObjectDialogClass::OnEditChangeObjectList (void)
 {
 	// Enable/disable the OK button based on the validity of the user's entry
-	::EnableWindow (::GetDlgItem (m_hWnd, IDOK), BOOL(Get_Current_Selection () != -1));
+	::EnableWindow (::GetDlgItem (m_hWnd, IDOK), int32_t(Get_Current_Selection () != -1));
 	return ;
 }
 

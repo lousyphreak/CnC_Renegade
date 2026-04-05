@@ -36,6 +36,8 @@
 #ifndef WWMATH_H
 #define WWMATH_H
 
+#include <cstdint>
+
 #include "always.h"
 #include <math.h>
 #include <float.h>
@@ -108,7 +110,7 @@ static float Cos(float val);
 static float Sin(float val);
 static float Sqrt(float val);
 static float Inv_Sqrt(float a);
-static long	Float_To_Long(float f);
+static int32_t	Float_To_Long(float f);
 
 
 static WWINLINE float Fast_Sin(float val);
@@ -142,10 +144,10 @@ static float		Max(float a, float b);
 static float		Lerp(float a, float b, float lerp );
 static double		Lerp(double a, double b, float lerp );
 
-static long			Float_To_Long(double f);
+static int32_t	Float_To_Long(double f);
 
-static unsigned char Unit_Float_To_Byte(float f) { return (unsigned char)(f*255.0f); }
-static float			Byte_To_Unit_Float(unsigned char byte) { return ((float)byte) / 255.0f; }
+static uint8_t Unit_Float_To_Byte(float f) { return (uint8_t)(f*255.0f); }
+static float			Byte_To_Unit_Float(uint8_t byte) { return ((float)byte) / 255.0f; }
 
 static bool			Is_Valid_Float(float x);
 static bool			Is_Valid_Double(double x);
@@ -248,8 +250,8 @@ WWINLINE double WWMath::Lerp(double a, double b, float lerp )
 
 WWINLINE bool WWMath::Is_Valid_Float(float x)
 {
-	unsigned long * plong = (unsigned long *)(&x);
-	unsigned long exponent = ((*plong) & 0x7F800000) >> (32-9);
+	uint32_t * plong = (uint32_t *)(&x);
+	uint32_t exponent = ((*plong) & 0x7F800000) >> (32-9);
 
 	// if exponent is 0xFF, this is a NAN 
 	if (exponent == 0xFF) {
@@ -260,8 +262,8 @@ WWINLINE bool WWMath::Is_Valid_Float(float x)
 
 WWINLINE bool WWMath::Is_Valid_Double(double x)
 {
-	unsigned long * plong = (unsigned long *)(&x) + 1;
-	unsigned long exponent = ((*plong) & 0x7FF00000) >> (32-12);
+	uint32_t * plong = (uint32_t *)(&x) + 1;
+	uint32_t exponent = ((*plong) & 0x7FF00000) >> (32-12);
 
 	// if exponent is 0x7FF, this is a NAN 
 	if (exponent == 0x7FF) {
@@ -274,14 +276,14 @@ WWINLINE bool WWMath::Is_Valid_Double(double x)
 // Float to long
 // ----------------------------------------------------------------------------
 
-WWINLINE long WWMath::Float_To_Long(float f)
+WWINLINE int32_t WWMath::Float_To_Long(float f)
 {
-	return (long) f;
+	return static_cast<int32_t>(f);
 }
 
-WWINLINE long WWMath::Float_To_Long(double f)	
+WWINLINE int32_t WWMath::Float_To_Long(double f)	
 {
-	return (long) f;
+	return static_cast<int32_t>(f);
 }
 
 // ----------------------------------------------------------------------------

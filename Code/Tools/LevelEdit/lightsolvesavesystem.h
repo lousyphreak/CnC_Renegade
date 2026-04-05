@@ -38,6 +38,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef LIGHTSOLVESAVESYSTEM_H
@@ -62,7 +64,7 @@ class LightSolveSaveSystemClass : public SaveLoadSubSystemClass
 {
 public:
 	
-	virtual uint32				Chunk_ID (void) const;
+	virtual uint32_t				Chunk_ID (void) const;
 
 protected:
 

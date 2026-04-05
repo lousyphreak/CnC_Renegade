@@ -37,6 +37,8 @@
 #ifndef	DOORS_H
 #define	DOORS_H
 
+#include <cstdint>
+
 #ifndef	ALWAYS_H
 	#include "always.h"
 #endif
@@ -69,7 +71,7 @@ class DoorPhysDefClass : public AccessiblePhysDefClass
 public:
 	DoorPhysDefClass(void);
 	
-	virtual uint32								Get_Class_ID( void ) const;
+	virtual uint32_t								Get_Class_ID( void ) const;
 	virtual const char *						Get_Type_Name(void)				{ return "DoorPhysDef"; }
 	virtual bool								Is_Type(const char *);
 	virtual PersistClass *					Create( void ) const ;

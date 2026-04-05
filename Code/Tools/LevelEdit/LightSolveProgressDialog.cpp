@@ -94,7 +94,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL 
+int32_t 
 LightSolveProgressDialog::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
@@ -126,8 +126,8 @@ LightSolveProgressDialog::OnCancel (void)
 // WindowProc
 //
 /////////////////////////////////////////////////////////////////////////////
-LRESULT 
-LightSolveProgressDialog::WindowProc(UINT message, WPARAM wParam, LPARAM lParam) 
+intptr_t 
+LightSolveProgressDialog::WindowProc(uint32_t message, uintptr_t wParam, intptr_t lParam) 
 {
 	if (message == WM_USER+101) {
 		//

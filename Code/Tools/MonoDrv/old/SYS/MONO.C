@@ -1,3 +1,4 @@
+#include <stdint.h>
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -71,10 +72,10 @@
 //typedef struct
 //{
 //    INTERFACE_TYPE   InterfaceType; // Isa, Eisa, etc....
-//    ULONG            BusNumber;     // Bus number
+//    uint32_t            BusNumber;     // Bus number
 //    PHYSICAL_ADDRESS BusAddress;    // Bus-relative address
-//    ULONG            AddressSpace;  // 0 is memory, 1 is I/O
-//    ULONG            Length;        // Length of section to map
+//    uint32_t            AddressSpace;  // 0 is memory, 1 is I/O
+//    uint32_t            Length;        // Length of section to map
 //
 //} PHYSICAL_MEMORY_INFO, *PPHYSICAL_MEMORY_INFO;
 
@@ -93,9 +94,9 @@
 #define	MONO_WIDTH	80
 #define	MONO_HEIGHT	25
 
-#define	SIZE_OF_SCREEN	(MONO_WIDTH * MONO_HEIGHT * sizeof(unsigned short))
+#define	SIZE_OF_SCREEN	(MONO_WIDTH * MONO_HEIGHT * sizeof(uint16_t))
 
-#define	BUILD_CHAR(c, a)	((unsigned short)(((a) << 8) | ((c) & 0xFF)))
+#define	BUILD_CHAR(c, a)	((uint16_t)(((a) << 8) | ((c) & 0xFF)))
 
 /*
 **	This control block is used by the actual display routines. They
@@ -107,7 +108,7 @@ typedef struct BuffControl
 {
 	int XPos;
 	int YPos;
-	unsigned short * Buffer;
+	uint16_t * Buffer;
 
 	/*
 	**	This is the default attribute to use when displaying text.
@@ -130,7 +131,7 @@ typedef struct MonoGlobals
 	/*
 	**	Logical pointer to the CRTC registers.
 	*/
-	unsigned char * CRTCRegisters;
+	uint8_t * CRTCRegisters;
 
 	/*
 	**	Pointer to the context that is currently "on top" and visible.
@@ -146,7 +147,7 @@ typedef struct MonoGlobals
 	/*
 	**	Locked memory pointer.
 	*/
-	unsigned char * LockPtr;
+	uint8_t * LockPtr;
 	int LockCount;
 } MonoGlobals;
 
@@ -157,9 +158,9 @@ typedef struct MonoGlobals
 typedef struct _MONO_RESOURCE
 {
     PHYSICAL_ADDRESS  PhysicalAddress;
-    unsigned long             Length;
-    unsigned long             AddressSpace;
-    unsigned long             RangeSharable;
+    uint32_t             Length;
+    uint32_t             AddressSpace;
+    uint32_t             RangeSharable;
 
 }   MONO_RESOURCE, *PMONO_RESOURCE;
 
@@ -180,7 +181,7 @@ MonoGlobals * GlobalDeviceExtension = NULL;
 // MonoDbgPrint.
 //
 
-unsigned long MonoDbgLevel = 3;
+uint32_t MonoDbgLevel = 3;
 
 
 
@@ -216,18 +217,18 @@ MONO_RESOURCE MonoResources[] =
 **	code.
 */
 typedef struct CellType {
-	unsigned char Character;	// Character to display.
-	unsigned char Attribute;	// Attribute.
+	char Character;	// Character to display.
+	uint8_t Attribute;	// Attribute.
 } CellType;
 
 
 
 NTSTATUS MonoDispatch(PDEVICE_OBJECT DeviceObject, PIRP Irp);
 void MonoUnload(PDRIVER_OBJECT DriverObject);
-BOOLEAN pMonoReportResourceUsage(PDRIVER_OBJECT DriverObject, PMONO_RESOURCE MonoResources, unsigned long NumberOfResources);
-//NTSTATUS MapMemMapTheMemory(PDEVICE_OBJECT DeviceObject,PVOID IoBuffer, ULONG OutputBufferLength);
+BOOLEAN pMonoReportResourceUsage(PDRIVER_OBJECT DriverObject, PMONO_RESOURCE MonoResources, uint32_t NumberOfResources);
+//NTSTATUS MapMemMapTheMemory(PDEVICE_OBJECT DeviceObject,PVOID IoBuffer, uint32_t OutputBufferLength);
 
-void * Mono_Get_Address_Ptr(PHYSICAL_ADDRESS PhysicalAddress, unsigned long AddressSpace, unsigned long NumberOfBytes);
+void * Mono_Get_Address_Ptr(PHYSICAL_ADDRESS PhysicalAddress, uint32_t AddressSpace, uint32_t NumberOfBytes);
 void Mono_Set_Cursor(MonoGlobals * device, int x, int y);
 void Mono_Set_View_Pos(MonoGlobals * device, int pos);
 NTSTATUS Mono_Detect_MGA_Adapter(void);
@@ -235,9 +236,9 @@ void * Mono_Fetch_Ptr(PDEVICE_OBJECT DeviceObject);
 void Mono_Buff_Copy(BuffControl * from, BuffControl * to);
 void Mono_Printf(BuffControl * control, char const * DbgMessage, ...);
 void Mono_Clear_Screen(BuffControl * control);
-void Mono_Print_Raw(BuffControl * control, unsigned char * string, unsigned long length);
+void Mono_Print_Raw(BuffControl * control, char * string, uint32_t length);
 void Mono_Scroll(BuffControl * control);
-void Mono_Print(BuffControl * control, unsigned char * string, unsigned long length);
+void Mono_Print(BuffControl * control, char * string, uint32_t length);
 void Mono_Bring_To_Top(MonoGlobals * device, BuffControl * context);
 void Mono_Pan(BuffControl * control);
 void Display_Signon_Banner(BuffControl * control);
@@ -328,13 +329,13 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath)
 				);
 
 		deviceExtension->CRTCRegisters =
-				(unsigned char *) Mono_Get_Address_Ptr(MonoResources[MONO_CRTC_REG].PhysicalAddress,
+				(uint8_t *) Mono_Get_Address_Ptr(MonoResources[MONO_CRTC_REG].PhysicalAddress,
 				MonoResources[MONO_CRTC_REG].AddressSpace,
 				MonoResources[MONO_CRTC_REG].Length
 				);
 
 		//        deviceExtension->ModeControlRegister =
-		//            (unsigned char *) Mono_Get_Address_Ptr (MonoResources[MONO_MODE_CTL_REG].PhysicalAddress,
+		//            (uint8_t *) Mono_Get_Address_Ptr (MonoResources[MONO_MODE_CTL_REG].PhysicalAddress,
 		//                                            MonoResources[MONO_MODE_CTL_REG].AddressSpace,
 		//                                            MonoResources[MONO_MODE_CTL_REG].Length
 		//                                            );
@@ -434,9 +435,9 @@ NTSTATUS MonoDispatch(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 	PIO_STACK_LOCATION irpStack;
 	MonoGlobals *  deviceExtension;
 	void * ioBuffer;
-	unsigned long inputBufferLength;
-	unsigned long outputBufferLength;
-	unsigned long ioControlCode;
+	uint32_t inputBufferLength;
+	uint32_t outputBufferLength;
+	uint32_t ioControlCode;
 	NTSTATUS ntStatus;
 	BuffControl * context = NULL;
 	FILE_OBJECT * fileobject = NULL;
@@ -521,7 +522,7 @@ NTSTATUS MonoDispatch(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 					newcon->XPos = 0;
 					newcon->YPos = 0;
 					newcon->Attribute = 0x07;
-					newcon->Buffer = (unsigned short *)(((char *)fileobject->FsContext) + sizeof(BuffControl));
+					newcon->Buffer = (uint16_t *)(((char *)fileobject->FsContext) + sizeof(BuffControl));
 					Mono_Clear_Screen(control);
 					Mono_Bring_To_Top(deviceExtension, control);
 				} else {
@@ -696,7 +697,7 @@ void MonoUnload(PDRIVER_OBJECT DriverObject)
 NTSTATUS Mono_Detect_MGA_Adapter(void)
 {
 	PHYSICAL_ADDRESS physicalAddress;
-	unsigned char * crtcRegisters;
+	uint8_t * crtcRegisters;
 
 	/*
 	**	Get address to the CRTC registers.
@@ -750,7 +751,7 @@ NTSTATUS Mono_Detect_MGA_Adapter(void)
  * HISTORY:                                                                                    *
  *   01/05/1997 JLB : Created.                                                                 *
  *=============================================================================================*/
-void * Mono_Get_Address_Ptr(PHYSICAL_ADDRESS address, unsigned long space, unsigned long length)
+void * Mono_Get_Address_Ptr(PHYSICAL_ADDRESS address, uint32_t space, uint32_t length)
 {
 	PHYSICAL_ADDRESS translatedAddress;
 	void * usable_ptr = NULL;
@@ -812,12 +813,12 @@ Return Value:
     FALSE otherwise.
 
 --*/
-BOOLEAN pMonoReportResourceUsage(PDRIVER_OBJECT DriverObject, PMONO_RESOURCE MonoResources, unsigned long NumberOfResources)
+BOOLEAN pMonoReportResourceUsage(PDRIVER_OBJECT DriverObject, PMONO_RESOURCE MonoResources, uint32_t NumberOfResources)
 {
-	unsigned long                           sizeOfResourceList = 0;
+	uint32_t                           sizeOfResourceList = 0;
 	PCM_RESOURCE_LIST               resourceList       = NULL;
 	PCM_PARTIAL_RESOURCE_DESCRIPTOR partial;
-	unsigned long                           i;
+	uint32_t                           i;
 	UNICODE_STRING                  className;
 	BOOLEAN                         conflictDetected;
 
@@ -922,9 +923,9 @@ void Mono_Set_Cursor(MonoGlobals * device, int x, int y)
 	pos = newx + newy*MONO_WIDTH;
 
 	WRITE_PORT_UCHAR(device->CRTCRegisters, 0x0E);
-	WRITE_PORT_UCHAR(device->CRTCRegisters+1, (unsigned char)(pos>>8));
+	WRITE_PORT_UCHAR(device->CRTCRegisters+1, (uint8_t)(pos>>8));
 	WRITE_PORT_UCHAR(device->CRTCRegisters, 0x0F);
-	WRITE_PORT_UCHAR(device->CRTCRegisters+1, (unsigned char)(pos & 0xFF));
+	WRITE_PORT_UCHAR(device->CRTCRegisters+1, (uint8_t)(pos & 0xFF));
 
 	device->Control.XPos = newx;
 	device->Control.YPos = newy;
@@ -950,19 +951,19 @@ void Mono_Set_Cursor(MonoGlobals * device, int x, int y)
  * HISTORY:                                                                                    *
  *   01/04/1997 JLB : Created.                                                                 *
  *=============================================================================================*/
-void Mono_Print(BuffControl * control, unsigned char * string, unsigned long length)
+void Mono_Print(BuffControl * control, char * string, uint32_t length)
 {
 	if (control != NULL)  {
 		int x,y;
-		unsigned char space = ' ';
+		char space = ' ';
 
 		x = control->XPos;
 		y = control->YPos;
 
 		while (length > 0) {
-			unsigned char * blockstart;
+			char * blockstart;
 			int blocklen;
-			unsigned char bchar;		// Breaking character.
+			char bchar;		// Breaking character.
 
 			/*
 			**	Scan for a block of contiguous non-formatting characters to print.
@@ -1085,12 +1086,12 @@ void Mono_Scroll(BuffControl * control)
 {
 	if (control != NULL)  {
 		int j;
-		unsigned short * vidmem;
-		unsigned short blank = BUILD_CHAR(' ', control->Attribute);
+		uint16_t * vidmem;
+		uint16_t blank = BUILD_CHAR(' ', control->Attribute);
 
 		vidmem = control->Buffer;
 
-		RtlMoveMemory(vidmem, vidmem+MONO_WIDTH, (MONO_HEIGHT-1) * MONO_WIDTH * sizeof(unsigned short));
+		RtlMoveMemory(vidmem, vidmem+MONO_WIDTH, (MONO_HEIGHT-1) * MONO_WIDTH * sizeof(uint16_t));
 
 		/*
 		**	Fill the bottom row with blanks.
@@ -1126,13 +1127,13 @@ void Mono_Pan(BuffControl * control)
 {
 	if (control != NULL)  {
 		int j;
-		unsigned short * vidmem;
-		unsigned short blank = BUILD_CHAR(' ', control->Attribute);
+		uint16_t * vidmem;
+		uint16_t blank = BUILD_CHAR(' ', control->Attribute);
 
 		vidmem = control->Buffer;
 
 		for (j = 0; j < MONO_HEIGHT; j++) {
-			RtlMoveMemory(vidmem+j*MONO_WIDTH, vidmem+j*MONO_WIDTH+1, (MONO_WIDTH-1) * sizeof(unsigned short));
+			RtlMoveMemory(vidmem+j*MONO_WIDTH, vidmem+j*MONO_WIDTH+1, (MONO_WIDTH-1) * sizeof(uint16_t));
 			*(vidmem + j*MONO_WIDTH + MONO_WIDTH-1) = blank;
 		}
 		control->XPos -= 1;
@@ -1166,19 +1167,19 @@ void Mono_Pan(BuffControl * control)
  * HISTORY:                                                                                    *
  *   01/04/1997 JLB : Created.                                                                 *
  *=============================================================================================*/
-void Mono_Print_Raw(BuffControl * control, unsigned char * string, unsigned long length)
+void Mono_Print_Raw(BuffControl * control, char * string, uint32_t length)
 {
 	if (control != NULL)  {
-		unsigned short * vidmem;
+		uint16_t * vidmem;
 		int x,y;
-		unsigned long i;
+		uint32_t i;
 
 		vidmem = control->Buffer;
 		x = control->XPos;
 		y = control->YPos;
 
 		for (i = 0; i < length; i++) {
-			unsigned char letter;
+			char letter;
 			letter = *string++;
 
 			*(vidmem + x + (y * MONO_WIDTH)) = BUILD_CHAR(letter, control->Attribute);
@@ -1216,8 +1217,8 @@ void Mono_Clear_Screen(BuffControl * control)
 {
 	if (control != NULL)  {
 		int i;
-		unsigned short * vidptr = control->Buffer;
-		unsigned short blank = BUILD_CHAR(' ', control->Attribute);
+		uint16_t * vidptr = control->Buffer;
+		uint16_t blank = BUILD_CHAR(' ', control->Attribute);
 
 		for (i = 0; i < MONO_HEIGHT*MONO_WIDTH; i++) {
 			*vidptr++ = blank;
@@ -1280,9 +1281,9 @@ void Mono_Set_View_Pos(MonoGlobals * device, int pos)
 {
 	if (device != NULL)  {
 		WRITE_PORT_UCHAR(device->CRTCRegisters, 0xC);
-		WRITE_PORT_UCHAR(device->CRTCRegisters+1, (unsigned char)(pos >> 8));
+		WRITE_PORT_UCHAR(device->CRTCRegisters+1, (uint8_t)(pos >> 8));
 		WRITE_PORT_UCHAR(device->CRTCRegisters, 0xD);
-		WRITE_PORT_UCHAR(device->CRTCRegisters+1, (unsigned char)(pos & 0xFF));
+		WRITE_PORT_UCHAR(device->CRTCRegisters+1, (uint8_t)(pos & 0xFF));
 	}
 }
 
@@ -1385,7 +1386,7 @@ void * Mono_Fetch_Ptr(PDEVICE_OBJECT DeviceObject)
 	if (NT_SUCCESS(error)) {
 		PHYSICAL_ADDRESS logical_base_address;
 		PHYSICAL_ADDRESS physical_address;
-		ULONG in_io_space = 0;
+		uint32_t in_io_space = 0;
 
 		physical_address.HighPart = 0;
 		physical_address.LowPart = MONO_MEMORY;
@@ -1395,7 +1396,7 @@ void * Mono_Fetch_Ptr(PDEVICE_OBJECT DeviceObject)
 		//
 		if (HalTranslateBusAddress(Isa, 0, physical_address, &in_io_space, &logical_base_address)) {
 			PVOID virtual_address = NULL;
-			ULONG viewlength = MONO_MEM_LENGTH;
+			uint32_t viewlength = MONO_MEM_LENGTH;
 			PHYSICAL_ADDRESS view_base = logical_base_address;
 
 			//
@@ -1409,7 +1410,7 @@ void * Mono_Fetch_Ptr(PDEVICE_OBJECT DeviceObject)
 				// nearest 64 K boundary. Now return a virtual address that sits where
 				// we want by adding in the offset from the beginning of the section.
 				//
-				(ULONG) virtual_address += (ULONG)logical_base_address.LowPart - (ULONG)view_base.LowPart;
+				(uint32_t) virtual_address += (uint32_t)logical_base_address.LowPart - (uint32_t)view_base.LowPart;
 				retval = virtual_address;
 			}
 		}

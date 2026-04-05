@@ -414,8 +414,8 @@ namespace
 		constexpr std::uint64_t WINDOWS_TO_UNIX_EPOCH_100NS = 11644473600ull * 10000000ull;
 		const std::uint64_t ticks = WINDOWS_TO_UNIX_EPOCH_100NS + static_cast<std::uint64_t>(nanoseconds / 100);
 
-		create_time->dwLowDateTime = static_cast<DWORD>(ticks & 0xFFFFFFFFull);
-		create_time->dwHighDateTime = static_cast<DWORD>(ticks >> 32);
+		create_time->dwLowDateTime = static_cast<uint32_t>(ticks & 0xFFFFFFFFull);
+		create_time->dwHighDateTime = static_cast<uint32_t>(ticks >> 32);
 		return true;
 	}
 }

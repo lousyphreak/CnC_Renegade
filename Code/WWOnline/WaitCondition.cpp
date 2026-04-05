@@ -115,11 +115,11 @@ WaitCondition::~WaitCondition()
 *
 ******************************************************************************/
 
-WaitCondition::WaitResult WaitCondition::WaitFor(CallbackHook& hook, unsigned long timeout)
+WaitCondition::WaitResult WaitCondition::WaitFor(CallbackHook& hook, uint32_t timeout)
 	{
 	WaitBeginning();
 
-	DWORD startTime = TIMEGETTIME();
+	uint32_t startTime = TIMEGETTIME();
 
 	while (GetResult() == Waiting)
 		{
@@ -160,7 +160,7 @@ WaitCondition::WaitResult WaitCondition::WaitFor(CallbackHook& hook, unsigned lo
 *
 ******************************************************************************/
 
-RefPtr<SingleWait> SingleWait::Create(const wchar_t* text, unsigned long timeout)
+RefPtr<SingleWait> SingleWait::Create(const wchar_t* text, uint32_t timeout)
 	{
 	return new SingleWait(text, timeout);
 	}
@@ -185,7 +185,7 @@ RefPtr<SingleWait> SingleWait::Create(const wchar_t* text, unsigned long timeout
 *
 ******************************************************************************/
 
-SingleWait::SingleWait(const wchar_t* waitText, unsigned long timeout) :
+SingleWait::SingleWait(const wchar_t* waitText, uint32_t timeout) :
 	  mWaitText(waitText),
 	  mEndResult(Waiting),
 		mTimeout(timeout)
@@ -363,7 +363,7 @@ void SingleWait::SetWaitText(const wchar_t* waitText)
 *
 ******************************************************************************/
 
-unsigned long SingleWait::GetTimeout(void) const
+uint32_t SingleWait::GetTimeout(void) const
 	{
 	return mTimeout;
 	}
@@ -708,7 +708,7 @@ const wchar_t* SerialWait::GetWaitText(void) const
 *
 ******************************************************************************/
 
-unsigned long SerialWait::GetTimeout(void) const
+uint32_t SerialWait::GetTimeout(void) const
 	{
 	if ((mCurrentWait >= 0) && ((unsigned)mCurrentWait < mWaits.size()))
 		{
@@ -812,7 +812,7 @@ void ANDWait::Add(const RefPtr<WaitCondition>& wait)
 		mWaits.push_back(wait);
 
 		// The timeout should be the longest of the all the waits
-		unsigned long timeout = wait->GetTimeout();
+		uint32_t timeout = wait->GetTimeout();
 
 		if (timeout > mMaxTimeout)
 			{
@@ -845,7 +845,7 @@ void ANDWait::Add(const RefPtr<WaitCondition>& wait)
 
 void ANDWait::WaitBeginning(void)
 	{
-	for (unsigned int index = 0; index < mWaits.size(); index++)
+	for (uint32_t index = 0; index < mWaits.size(); index++)
 		{
 		mWaits[index]->WaitBeginning();
 		}
@@ -871,12 +871,12 @@ WaitCondition::WaitResult ANDWait::GetResult(void)
 	{
 	if (mEndResult == Waiting)
 		{
-		unsigned int metConditions = 0;
-		unsigned int count = mWaits.size();
+		uint32_t metConditions = 0;
+		uint32_t count = mWaits.size();
 
 		// Get the result of all the wait conditions being processed. If they are
 		// all finished then the entire wait finished.
-		for (unsigned int index = 0; index < count; ++index)
+		for (uint32_t index = 0; index < count; ++index)
 			{
 			RefPtr<WaitCondition>& wait = mWaits[index];
 			WaitResult result = wait->GetResult();
@@ -928,7 +928,7 @@ void ANDWait::EndWait(WaitResult result, const wchar_t* endText)
 	mEndResult = result;
 	mEndText = endText;
 
-	for (unsigned int index = 0; index < mWaits.size(); ++index)
+	for (uint32_t index = 0; index < mWaits.size(); ++index)
 		{
 		mWaits[index]->EndWait(result, L"");
 		}
@@ -986,7 +986,7 @@ const wchar_t* ANDWait::GetWaitText(void) const
 *
 ******************************************************************************/
 
-unsigned long ANDWait::GetTimeout(void) const
+uint32_t ANDWait::GetTimeout(void) const
 	{
 	return mMaxTimeout;
 	}
@@ -1083,7 +1083,7 @@ void ORWait::Add(const RefPtr<WaitCondition>& wait)
 		mWaits.push_back(wait);
 
 		// Use the longest timeout value.
-		unsigned long timeout = wait->GetTimeout();
+		uint32_t timeout = wait->GetTimeout();
 
 		if (timeout > mMaxTimeout)
 			{
@@ -1115,7 +1115,7 @@ void ORWait::Add(const RefPtr<WaitCondition>& wait)
 
 void ORWait::WaitBeginning(void)
 	{
-	for (unsigned int index = 0; index < mWaits.size(); index++)
+	for (uint32_t index = 0; index < mWaits.size(); index++)
 		{
 		mWaits[index]->WaitBeginning();
 		}
@@ -1146,7 +1146,7 @@ WaitCondition::WaitResult ORWait::GetResult(void)
 
 	// Get the result of all the wait conditions being processed. If any one
 	// is finished then the entire wait finished.
-	for (unsigned int index = 0; index < mWaits.size(); index++)
+	for (uint32_t index = 0; index < mWaits.size(); index++)
 		{
 		mEndResult = mWaits[index]->GetResult();
 
@@ -1180,7 +1180,7 @@ void ORWait::EndWait(WaitResult result, const wchar_t* endText)
 	mEndText = endText;
 	mEndResult = result;
 
-	for (unsigned int index = 0; index < mWaits.size(); ++index)
+	for (uint32_t index = 0; index < mWaits.size(); ++index)
 		{
 		mWaits[index]->EndWait(result, L"");
 		}

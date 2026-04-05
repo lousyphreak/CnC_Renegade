@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // EmitterPropertySheet.h : header file
 //
@@ -52,7 +54,7 @@ class EmitterPropertySheetClass : public CPropertySheet
 
 // Construction
 public:
-	EmitterPropertySheetClass (EmitterInstanceListClass *emitter_list, UINT nIDCaption, CWnd* pParentWnd = NULL);
+	EmitterPropertySheetClass (EmitterInstanceListClass *emitter_list, uint32_t nIDCaption, CWnd* pParentWnd = NULL);
 	EmitterPropertySheetClass (EmitterInstanceListClass *emitter_list, LPCTSTR pszCaption, CWnd* pParentWnd = NULL);
 
 // Attributes
@@ -65,7 +67,7 @@ public:
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(EmitterPropertySheetClass)
 	protected:
-	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+	virtual intptr_t WindowProc(uint32_t message, uintptr_t wParam, intptr_t lParam);
 	//}}AFX_VIRTUAL
 
 // Implementation

@@ -38,6 +38,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef MESH_H
@@ -126,7 +128,7 @@ public:
 	// Render Object Interface - Decals
 	/////////////////////////////////////////////////////////////////////////////
 	virtual void					Create_Decal(DecalGeneratorClass * generator);
-	virtual void					Delete_Decal(uint32 decal_id);
+	virtual void					Delete_Decal(uint32_t decal_id);
 	
 	/////////////////////////////////////////////////////////////////////////////
 	// MeshClass Interface
@@ -136,7 +138,7 @@ public:
 	void								Generate_Culling_Tree(void);
 	MeshModelClass *				Get_Model(void);
 	MeshModelClass *				Peek_Model(void);
-	uint32							Get_W3D_Flags(void);
+	uint32_t							Get_W3D_Flags(void);
 	const char *					Get_User_Text(void) const;
 
 	bool								Contains(const Vector3 &point);
@@ -174,7 +176,7 @@ public:
 	** User Lighting feature, meshes can have a user lighting array.
 	*/
 	void								Install_User_Lighting_Array(Vector4 * lighting);
-	unsigned int *					Get_User_Lighting_Array(bool alloc = false);
+	uint32_t *					Get_User_Lighting_Array(bool alloc = false);
 
 	virtual void					Save_User_Lighting (ChunkSaveClass & csave);
 	virtual void					Load_User_Lighting (ChunkLoadClass & cload);
@@ -202,7 +204,7 @@ protected:
 	unsigned							MeshDebugId;
 	bool								IsDisabledByDebugger;
 
-	unsigned int *					UserLighting;			// optional array of user lighting values
+	uint32_t *					UserLighting;			// optional array of user lighting values
 
 	// DX8 Mesh rendering system data
 	DX8PolygonRendererList		PolygonRendererList;

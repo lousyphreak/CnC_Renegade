@@ -22,10 +22,10 @@ TexProjectClass::~TexProjectClass(void)
 	REF_PTR_RELEASE(RenderTarget);
 }
 
-void TexProjectClass::Set_Texture_Size(int size) { Flags &= ~SIZE_MASK; Flags |= (static_cast<uint32>(size) << SIZE_SHIFT); }
+void TexProjectClass::Set_Texture_Size(int size) { Flags &= ~SIZE_MASK; Flags |= (static_cast<uint32_t>(size) << SIZE_SHIFT); }
 int TexProjectClass::Get_Texture_Size(void) { return static_cast<int>((Flags & SIZE_MASK) >> SIZE_SHIFT); }
-void TexProjectClass::Set_Flag(uint32 flag,bool onoff) { if (onoff) Flags |= flag; else Flags &= ~flag; }
-bool TexProjectClass::Get_Flag(uint32 flag) const { return (Flags & flag) == flag; }
+void TexProjectClass::Set_Flag(uint32_t flag,bool onoff) { if (onoff) Flags |= flag; else Flags &= ~flag; }
+bool TexProjectClass::Get_Flag(uint32_t flag) const { return (Flags & flag) == flag; }
 void TexProjectClass::Set_Intensity(float intensity,bool immediate) { DesiredIntensity = intensity; if (immediate) Intensity = intensity; }
 float TexProjectClass::Get_Intensity(void) { return DesiredIntensity; }
 bool TexProjectClass::Is_Intensity_Zero(void) { return Intensity == 0.0f && DesiredIntensity == 0.0f; }

@@ -19,6 +19,8 @@
 #ifndef __IMECANDIDATECTRL_H__
 #define __IMECANDIDATECTRL_H__
 
+#include <cstdint>
+
 #include "dialogcontrol.h"
 #include "scrollbarctrl.h"
 #include "render2d.h"
@@ -76,8 +78,8 @@ class IMECandidateCtrl :
 		Vector2 mCellSize;
 
 		int mCurrSel;
-		unsigned int mScrollPos;
-		unsigned int mCellsPerPage;
+		uint32_t mScrollPos;
+		uint32_t mCellsPerPage;
 		
 		ScrollBarCtrlClass mScrollBarCtrl;
 		RectClass mScrollBarRect;

@@ -136,8 +136,8 @@ bool Validate_Install_CD (const char driveletter, const WideStringClass &install
 {
 	char	multibytevolumename [_MAX_PATH];
 	char	filesystemname [_MAX_PATH];
-	DWORD	maxfilenamelength;
-	DWORD	flags;
+	uint32_t	maxfilenamelength;
+	uint32_t	flags;
 	char	rootpathname [] = "?:\\";
 
 	rootpathname [0] = driveletter;
@@ -197,7 +197,7 @@ bool Get_Disk_Space_Available (const WideStringClass &path, __int64 &diskspace)
 	
 	} else {
 
-		DWORD sectorspercluster, bytespersector, freeclustercount, totalclustercount;
+		uint32_t sectorspercluster, bytespersector, freeclustercount, totalclustercount;
 		
 		// The Ex version is not available. Use the Win'95 version.
 		// QUESTION: SDK docs say that values returned by this function are erroneous if partition > 2Gb.
@@ -330,7 +330,7 @@ bool Create_Directory (const WCHAR *drive, const WCHAR *directory, WCHAR *subdir
 	WCHAR				 *c, replacement;
 	WideStringClass  path;
 	StringClass		  multibytepath;
-	DWORD				  errorcode;
+	uint32_t				  errorcode;
 
 	// If subdirectory is empty, we're done.
 	c = subdirectory;
@@ -622,7 +622,7 @@ WCHAR *Extract_Trailing_Name (WideStringClass &path)
 bool Directory_Exists (const WideStringClass &path)
 {
 	StringClass multibytepath (path);
-	DWORD			errorcode;
+	uint32_t			errorcode;
 
 	if (CreateDirectory (multibytepath, NULL)) {
 		errorcode = 0; 
@@ -699,12 +699,12 @@ bool Is_System_Directory (const WideStringClass &path)
 	hinstLib = LoadLibrary ("shfolder.dll"); 
 	if (hinstLib != NULL) { 
 
-		HRESULT (__stdcall * PFNSHGETFOLDERPATHA)(HWND, int, HANDLE, DWORD, LPSTR);
-		PFNSHGETFOLDERPATHA = ( HRESULT ( __stdcall * )(HWND, int, HANDLE, DWORD, LPSTR)) GetProcAddress( hinstLib, "SHGetFolderPathA" );
+		int32_t (__stdcall * PFNSHGETFOLDERPATHA)(HWND, int, HANDLE, uint32_t, LPSTR);
+		PFNSHGETFOLDERPATHA = ( int32_t ( __stdcall * )(HWND, int, HANDLE, uint32_t, LPSTR)) GetProcAddress( hinstLib, "SHGetFolderPathA" );
 
 		if (PFNSHGETFOLDERPATHA != NULL) {
 
-			HRESULT hr = 0;
+			int32_t hr = 0;
 
 			for (int i = 0; i < sizeof (DirectoryTypes) / sizeof(int); i++) {			
 

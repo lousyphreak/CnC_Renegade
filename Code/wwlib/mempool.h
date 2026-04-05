@@ -90,7 +90,7 @@ protected:
 	struct BlockHeader
 	{
 		BlockHeader * Next;
-		alignas(T) unsigned char Storage[sizeof(T) * BLOCK_SIZE];
+		alignas(T) uint8_t Storage[sizeof(T) * BLOCK_SIZE];
 	};
 
 	T	*		FreeListHead;			

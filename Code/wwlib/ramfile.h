@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -61,8 +63,8 @@ class RAMFileClass : public FileClass
 		virtual int Size(void);
 		virtual int Write(void const * buffer, int size);
 		virtual void Close(void);
-		virtual unsigned long Get_Date_Time(void) {return(0);}
-		virtual bool Set_Date_Time(unsigned long ) {return(true);}
+		virtual uint32_t Get_Date_Time(void) {return(0);}
+		virtual bool Set_Date_Time(uint32_t ) {return(true);}
 		virtual void Error(int , int = false, char const * =NULL) {}
 		virtual void Bias(int start, int length=-1);
 
@@ -73,7 +75,7 @@ class RAMFileClass : public FileClass
 		/*
 		**	Pointer to the buffer that the "file" will reside in.
 		*/
-		char * Buffer;
+		uint8_t * Buffer;
 
 		/*
 		**	The maximum size of the buffer. The file occupying the buffer

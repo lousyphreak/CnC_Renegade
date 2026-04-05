@@ -128,7 +128,7 @@ Session::Session() :
 	WWDEBUG_SAY(("WOL: Session instantiated\n"));
 
 	// Initailize COM
-	HRESULT hr = CoInitialize(NULL);
+	int32_t hr = CoInitialize(NULL);
 
 	if (FAILED(hr))
 		{
@@ -165,7 +165,7 @@ bool Session::FinalizeCreate(void)
 	//---------------------------------------------------------------------------
 	WWDEBUG_SAY(("WOL: Creating IID_IChat object\n"));
 	WOL::IChat* chatObject = NULL;
-	HRESULT hr = CoCreateInstance(WOL::CLSID_Chat, NULL, CLSCTX_INPROC_SERVER,
+	int32_t hr = CoCreateInstance(WOL::CLSID_Chat, NULL, CLSCTX_INPROC_SERVER,
 			WOL::IID_IChat, (void**)&chatObject);
 
 	if (FAILED(hr))
@@ -262,16 +262,16 @@ bool Session::FinalizeCreate(void)
 
 	if (FAILED(hr))
 		{
-		WWDEBUG_SAY(("WOLERROR: SetAttributeValue(RegPath) HRESULT = %s\n", GetChatErrorString(hr)));
+		WWDEBUG_SAY(("WOLERROR: SetAttributeValue(RegPath) int32_t = %s\n", GetChatErrorString(hr)));
 		return false;
 		}
 
-	unsigned int sku = product->GetSKU();
+	uint32_t sku = product->GetSKU();
 	hr = mChat->SetProductSKU(sku);
 
 	if (FAILED(hr))
 		{
-		WWDEBUG_SAY(("WOLERROR: SetProductSKU() HRESULT = %s\n", GetChatErrorString(hr)));
+		WWDEBUG_SAY(("WOLERROR: SetProductSKU() int32_t = %s\n", GetChatErrorString(hr)));
 		return false;
 		}
 
@@ -280,7 +280,7 @@ bool Session::FinalizeCreate(void)
 
 	if (FAILED(hr))
 		{
-		WWDEBUG_SAY(("WOLERROR: SetAttributeValue(AutoTopic) HRESULT = %s\n", GetChatErrorString(hr)));
+		WWDEBUG_SAY(("WOLERROR: SetAttributeValue(AutoTopic) int32_t = %s\n", GetChatErrorString(hr)));
 		return false;
 		}
 
@@ -416,7 +416,7 @@ bool Session::Process(void)
 		MakeLocateUserRequests();
 		}
 
-	DWORD theTime = TIMEGETTIME();
+	uint32_t theTime = TIMEGETTIME();
 
 	if (theTime < mLastUserDataRequestTime)
 		{
@@ -493,14 +493,14 @@ bool Session::RequestServerList(bool ignore)
 	mIgnoreServerLists = ignore;
 	mRequestingServerList = !ignore;
 
-	unsigned int sku = product->GetLanguageSKU();
-	unsigned int version = product->GetVersion();
+	uint32_t sku = product->GetLanguageSKU();
+	uint32_t version = product->GetVersion();
 
-	HRESULT hr = mChat->RequestServerList(sku, version, "NoUser", "NoPass", 30000);
+	int32_t hr = mChat->RequestServerList(sku, version, "NoUser", "NoPass", 30000);
 
 	if (FAILED(hr))
 		{
-		WWDEBUG_SAY(("WOLERROR: RequestServerList() HRESULT = %s\n", GetChatErrorString(hr)));
+		WWDEBUG_SAY(("WOLERROR: RequestServerList() int32_t = %s\n", GetChatErrorString(hr)));
 		}
 
 	return SUCCEEDED(hr);
@@ -731,7 +731,7 @@ void Session::ClearServers(void)
 bool Session::EnableProgressiveChannelList(bool enable)
 	{
 	const char* onoff = ((enable == true) ? "true" : "false");
-	HRESULT hr = mChat->SetAttributeValue("IncrementalChannelLists", onoff);
+	int32_t hr = mChat->SetAttributeValue("IncrementalChannelLists", onoff);
 	return SUCCEEDED(hr);
 	}
 
@@ -762,7 +762,7 @@ bool Session::RequestChannelList(int channelType, bool autoPing)
 		return false;
 		}
 
-	HRESULT hr = mChat->RequestChannelList(channelType, autoPing);
+	int32_t hr = mChat->RequestChannelList(channelType, autoPing);
 
 	if (SUCCEEDED(hr))
 		{
@@ -770,7 +770,7 @@ bool Session::RequestChannelList(int channelType, bool autoPing)
 		return true;
 		}
 
-	WWDEBUG_SAY(("WOLERROR: RequestChannelList() HRESULT = %s\n", GetChatErrorString(hr)));
+	WWDEBUG_SAY(("WOLERROR: RequestChannelList() int32_t = %s\n", GetChatErrorString(hr)));
 
 	return false;
 	}
@@ -1005,11 +1005,11 @@ bool Session::RequestChannelJoin(const RefPtr<ChannelData>& channel, const wchar
 		RefPtr<ChannelData> inList = FindChannel(channel->GetName());
 		wolChannel.hidden = (inList.IsValid() ? 0 : 1);
 
-		HRESULT hr = mChat->RequestChannelJoin(&wolChannel);
+		int32_t hr = mChat->RequestChannelJoin(&wolChannel);
 
 		if (FAILED(hr))
 			{
-			WWDEBUG_SAY(("WOLERROR: RequestChannelJoin() HRESULT = %s\n", GetChatErrorString(hr)));
+			WWDEBUG_SAY(("WOLERROR: RequestChannelJoin() int32_t = %s\n", GetChatErrorString(hr)));
 			}
 
 		return SUCCEEDED(hr);
@@ -1054,11 +1054,11 @@ bool Session::RequestLeaveChannel(void)
 	{
 	if (ChannelJoined == mCurrentChannelStatus)
 		{
-		HRESULT hr = mChat->RequestChannelLeave();
+		int32_t hr = mChat->RequestChannelLeave();
 
 		if (FAILED(hr))
 			{
-			WWDEBUG_SAY(("WOLERROR: RequestChannelLeave() failed HRESULT = %s\n", GetChatErrorString(hr)));
+			WWDEBUG_SAY(("WOLERROR: RequestChannelLeave() failed int32_t = %s\n", GetChatErrorString(hr)));
 			return false;
 			}
 
@@ -1393,14 +1393,14 @@ bool Session::SendChannelTopic(void)
 
 		if (topic)
 			{
-			HRESULT hr = mChat->RequestChannelTopic(topic);
+			int32_t hr = mChat->RequestChannelTopic(topic);
 
 			if (SUCCEEDED(hr))
 				{
 				return true;
 				}
 
-			WWDEBUG_SAY(("WOLERROR: SendChannelTopic() HRESULT = %s\n", GetChatErrorString(hr)));
+			WWDEBUG_SAY(("WOLERROR: SendChannelTopic() int32_t = %s\n", GetChatErrorString(hr)));
 			}
 		}
 
@@ -1434,14 +1434,14 @@ bool Session::SendChannelExtraInfo(void)
 
 		if (exInfo)
 			{
-			HRESULT hr = mChat->SetChannelExInfo(exInfo);
+			int32_t hr = mChat->SetChannelExInfo(exInfo);
 
 			if (SUCCEEDED(hr))
 				{
 				return true;
 				}
 
-			WWDEBUG_SAY(("WOLERROR: ChangeChannelExtraInfo() HRESULT = %s\n", GetChatErrorString(hr)));
+			WWDEBUG_SAY(("WOLERROR: ChangeChannelExtraInfo() int32_t = %s\n", GetChatErrorString(hr)));
 			}
 		}
 
@@ -1467,11 +1467,11 @@ bool Session::SendChannelExtraInfo(void)
 
 bool Session::RequestUserList(void)
 	{
-	HRESULT hr = mChat->RequestUserList();
+	int32_t hr = mChat->RequestUserList();
 
 	if (FAILED(hr))
 		{
-		WWDEBUG_SAY(("WOLERROR: RequestUserList() HRESULT = %s\n", GetChatErrorString(hr)));
+		WWDEBUG_SAY(("WOLERROR: RequestUserList() int32_t = %s\n", GetChatErrorString(hr)));
 		}
 
 	return SUCCEEDED(hr);
@@ -1596,14 +1596,14 @@ bool Session::ChangeCurrentUserLocale(WOL::Locale locale)
 	{
 	if (mCurrentUser.IsValid() && (mCurrentUser->GetLocale() != locale))
 		{
-		HRESULT hr = mChat->RequestSetLocale(locale);
+		int32_t hr = mChat->RequestSetLocale(locale);
 
 		if (SUCCEEDED(hr))
 			{
 			return true;
 			}
 
-		WWDEBUG_SAY(("WOLERROR: RequestSetLocale() HRESULT = %s\n", GetChatErrorString(hr)));
+		WWDEBUG_SAY(("WOLERROR: RequestSetLocale() int32_t = %s\n", GetChatErrorString(hr)));
 		}
 
 	return false;
@@ -1632,7 +1632,7 @@ bool Session::SquelchUser(const RefPtr<UserData>& user, bool onoff)
 	if (user.IsValid())
 		{
 		WWDEBUG_SAY(("WOL: SquelchUser '%S'\n", user->GetName()));
-		HRESULT hr = mChat->SetSquelch(&user->GetData(), onoff);
+		int32_t hr = mChat->SetSquelch(&user->GetData(), onoff);
 
 		if (SUCCEEDED(hr))
 			{
@@ -1640,7 +1640,7 @@ bool Session::SquelchUser(const RefPtr<UserData>& user, bool onoff)
 			return true;
 			}
 
-		WWDEBUG_SAY(("WOLERROR: SetSquelch() HRESULT = %s\n", GetChatErrorString(hr)));
+		WWDEBUG_SAY(("WOLERROR: SetSquelch() int32_t = %s\n", GetChatErrorString(hr)));
 		}
 
 	return false;
@@ -1673,14 +1673,14 @@ bool Session::KickUser(const wchar_t* username)
 		if (user.IsValid())
 			{
 			WWDEBUG_SAY(("WOL: KickUser '%S'\n", user->GetName()));
-			HRESULT hr = mChat->RequestUserKick(&user->GetData());
+			int32_t hr = mChat->RequestUserKick(&user->GetData());
 
 			if (SUCCEEDED(hr))
 				{
 				return true;
 				}
 
-			WWDEBUG_SAY(("WOLERROR: RequestUserKick() HRESULT = %s\n", GetChatErrorString(hr)));
+			WWDEBUG_SAY(("WOLERROR: RequestUserKick() int32_t = %s\n", GetChatErrorString(hr)));
 			}
 		}
 
@@ -1715,14 +1715,14 @@ bool Session::BanUser(const wchar_t* username, bool banned)
 		char ansiName[64];
 		wcstombs(ansiName, username, sizeof(ansiName));
 
-		HRESULT hr = mChat->RequestChannelBan(ansiName, banned);
+		int32_t hr = mChat->RequestChannelBan(ansiName, banned);
 
 		if (SUCCEEDED(hr))
 			{
 			return true;
 			}
 
-		WWDEBUG_SAY(("WOLERROR: RequestChannelBan() HRESULT = %s\n", GetChatErrorString(hr)));
+		WWDEBUG_SAY(("WOLERROR: RequestChannelBan() int32_t = %s\n", GetChatErrorString(hr)));
 		}
 
 	return false;
@@ -1760,22 +1760,22 @@ bool Session::PageUser(const wchar_t* username, const wchar_t* message)
 			char ansiMessage[1024];
 			wcstombs(ansiMessage, message, sizeof(ansiMessage));
 
-			HRESULT hr = mChat->RequestPage(&wolUser, ansiMessage);
+			int32_t hr = mChat->RequestPage(&wolUser, ansiMessage);
 
 			if (FAILED(hr))
 				{
-				WWDEBUG_SAY(("WOLERROR: RequestPage() HRESULT = %s\n", GetChatErrorString(hr)));
+				WWDEBUG_SAY(("WOLERROR: RequestPage() int32_t = %s\n", GetChatErrorString(hr)));
 				}
 
 			return SUCCEEDED(hr);
 			}
 		else
 			{
-			HRESULT hr = mChat->RequestUnicodePage(&wolUser, message);
+			int32_t hr = mChat->RequestUnicodePage(&wolUser, message);
 
 			if (FAILED(hr))
 				{
-				WWDEBUG_SAY(("WOLERROR: RequestUnicodePage() HRESULT = %s\n", GetChatErrorString(hr)));
+				WWDEBUG_SAY(("WOLERROR: RequestUnicodePage() int32_t = %s\n", GetChatErrorString(hr)));
 				}
 
 			return SUCCEEDED(hr);
@@ -1871,11 +1871,11 @@ void Session::MakeLocateUserRequests(void)
 		mLocatingUser = mLocatePendingUsers[0];
 		mLocatePendingUsers.erase(mLocatePendingUsers.begin());
 
-		HRESULT hr = mChat->RequestFind(&mLocatingUser->GetData());
+		int32_t hr = mChat->RequestFind(&mLocatingUser->GetData());
 
 		if (FAILED(hr))
 			{
-			WWDEBUG_SAY(("WOLERROR: RequestFind() HRESULT = %s\n", GetChatErrorString(hr)));
+			WWDEBUG_SAY(("WOLERROR: RequestFind() int32_t = %s\n", GetChatErrorString(hr)));
 			}
 		}
 	}
@@ -1902,9 +1902,9 @@ void Session::RequestUserLocale(const wchar_t* username)
 	if (username && (wcslen(username) > 0))
 		{
 		// Make sure the user is not already in the list.
-		const unsigned int count = mLocaleRequests.size();
+		const uint32_t count = mLocaleRequests.size();
 
-		for (unsigned int index = 0; index < count; ++index)
+		for (uint32_t index = 0; index < count; ++index)
 			{
 			if (mLocaleRequests[index].Compare_No_Case(username) == 0)
 				{
@@ -1937,13 +1937,13 @@ void Session::MakeLocaleRequests(void)
 	{
 	if (!mLocaleRequests.empty())
 		{
-		const unsigned int count = min<unsigned int>(10, mLocaleRequests.size());
+		const uint32_t count = min<uint32_t>(10, mLocaleRequests.size());
 		WOL::User* users = new WOL::User[count];
 		WWASSERT(users && "Failed to create temporary users array");
 
 		if (users)
 			{
-			for (unsigned int index = 0; index < count; ++index)
+			for (uint32_t index = 0; index < count; ++index)
 				{
 				WideStringClass& username = mLocaleRequests[index];
 				WWDEBUG_SAY(("WOL: Requesting locale for '%S'\n", (const WCHAR*)username));
@@ -1962,7 +1962,7 @@ void Session::MakeLocaleRequests(void)
 					}
 				}
 
-			HRESULT hr = mChat->RequestUserLocale(users);
+			int32_t hr = mChat->RequestUserLocale(users);
 
 			// If request was successful then remove from the pending list.
 			if (SUCCEEDED(hr))
@@ -1972,7 +1972,7 @@ void Session::MakeLocaleRequests(void)
 				}
 			else
 				{
-				WWDEBUG_SAY(("WOLERROR: RequestUserLocale() HRESULT = %s\n", GetChatErrorString(hr)));
+				WWDEBUG_SAY(("WOLERROR: RequestUserLocale() int32_t = %s\n", GetChatErrorString(hr)));
 				}
 
 			delete []users;
@@ -1997,7 +1997,7 @@ void Session::MakeLocaleRequests(void)
 *
 ******************************************************************************/
 
-void Session::RequestSquadInfoByID(unsigned long squadID)
+void Session::RequestSquadInfoByID(uint32_t squadID)
 	{
 	if (squadID != 0)
 		{
@@ -2008,9 +2008,9 @@ void Session::RequestSquadInfoByID(unsigned long squadID)
 		_itow(squadID, idString, 10);
 
 		// Only add a request that is not already pending.
-		const unsigned int count = mSquadRequests.size();
+		const uint32_t count = mSquadRequests.size();
 
-		for (unsigned int index = 0; index < count; ++index)
+		for (uint32_t index = 0; index < count; ++index)
 			{
 			if (mSquadRequests[index] == idString)
 				{
@@ -2044,7 +2044,7 @@ void Session::RequestSquadInfoByMemberName(const wchar_t* memberName)
 	if (memberName && (wcslen(memberName) > 0))
 		{
 		// Only add a request that is not already pending.
-		for (unsigned int index = 0; index < mSquadRequests.size(); index++)
+		for (uint32_t index = 0; index < mSquadRequests.size(); index++)
 			{
 			if (mSquadRequests[index].Compare_No_Case(memberName) == 0)
 				{
@@ -2078,14 +2078,14 @@ void Session::MakeSquadRequests(void)
 	if (!mSquadRequests.empty() && mSquadPending.empty())
 		{
 		// Send up to ten requests at a time.
-		unsigned int count = min<unsigned int>(10, mSquadRequests.size());
+		uint32_t count = min<uint32_t>(10, mSquadRequests.size());
 
 		// Send each request in turn,
-		for (unsigned int index = 0; index < count; ++index)
+		for (uint32_t index = 0; index < count; ++index)
 			{
 			const WideStringClass& request = mSquadRequests[index];
 
-			HRESULT hr = E_FAIL;
+			int32_t hr = E_FAIL;
 
 			// Check to see if this is an ID or a name
 			// - names can't have the first character be a number so this works.
@@ -2093,7 +2093,7 @@ void Session::MakeSquadRequests(void)
 
 			if (iswdigit(firstChar))
 				{
-				unsigned int squadID = _wtoi(request);
+				uint32_t squadID = _wtoi(request);
 				WWDEBUG_SAY(("WOL: SquadInfo requested for ID %ld\n", squadID));
 				hr = mChat->RequestSquadInfo(squadID);
 				}
@@ -2108,7 +2108,7 @@ void Session::MakeSquadRequests(void)
 
 			if (FAILED(hr))
 				{
-				WWDEBUG_SAY(("WOLERROR: RequestSquadInfo() HRESULT = %s\n", GetChatErrorString(hr)));
+				WWDEBUG_SAY(("WOLERROR: RequestSquadInfo() int32_t = %s\n", GetChatErrorString(hr)));
 				break;
 				}
 
@@ -2141,7 +2141,7 @@ void Session::RequestTeamInfo(const wchar_t* username)
 	{
 	if (username && (wcslen(username) > 0))
 		{
-		for (unsigned int index = 0; index < mTeamRequests.size(); index++)
+		for (uint32_t index = 0; index < mTeamRequests.size(); index++)
 			{
 			if (mTeamRequests[index].Compare_No_Case(username) == 0)
 				{
@@ -2176,13 +2176,13 @@ void Session::MakeTeamRequests(void)
 		{
 		WWDEBUG_SAY(("WOL: Requesting team information\n"));
 
-		unsigned int count = min<unsigned int>(10, mTeamRequests.size());
+		uint32_t count = min<uint32_t>(10, mTeamRequests.size());
 		WOL::User* users = new WOL::User[count];
 		WWASSERT(users && "Failed to create temporary users array");
 
 		if (users)
 			{
-			for (unsigned int index = 0; index < count; index++)
+			for (uint32_t index = 0; index < count; index++)
 				{
 				WOL::User& user = users[index];
 
@@ -2200,7 +2200,7 @@ void Session::MakeTeamRequests(void)
 					}
 				}
 
-			HRESULT hr = mChat->RequestUserTeam(users);
+			int32_t hr = mChat->RequestUserTeam(users);
 
 			// If request was successful then remove from the pending list.
 			if (SUCCEEDED(hr))
@@ -2210,7 +2210,7 @@ void Session::MakeTeamRequests(void)
 				}
 			else
 				{
-				WWDEBUG_SAY(("WOL: HRESULT = %s\n", GetChatErrorString(hr)));
+				WWDEBUG_SAY(("WOL: int32_t = %s\n", GetChatErrorString(hr)));
 				}
 
 			delete []users;
@@ -2236,7 +2236,7 @@ void Session::MakeTeamRequests(void)
 *
 ******************************************************************************/
 
-void Session::RequestLadderInfo(const wchar_t* name, unsigned long type)
+void Session::RequestLadderInfo(const wchar_t* name, uint32_t type)
 	{
 	if (name && (wcslen(name) > 0) && (type & LADDERTYPE_MASK))
 		{
@@ -2315,7 +2315,7 @@ void Session::MakeLadderRequests(void)
 			char keys[256];
 			keys[0] = 0;
 
-			unsigned int count = 0;
+			uint32_t count = 0;
 			LadderRequestList::iterator request = mLadderRequests.begin();
 			const WideStringClass& firstRequest = *request;
 
@@ -2352,17 +2352,17 @@ void Session::MakeLadderRequests(void)
 			mLadderPending = count;
 
 			const char* hostAddr = mLadderServer->GetHostAddress();
-			unsigned int port = mLadderServer->GetPort();
-			unsigned long sku = product->GetLadderSKU();
+			uint32_t port = mLadderServer->GetPort();
+			uint32_t sku = product->GetLadderSKU();
 
 			// Request individual ladder
 			if (firstRequest[0] == L'I')
 				{
-				HRESULT hr = mNetUtil->RequestLadderList(hostAddr, port, keys, sku, -1, 0, 0);
+				int32_t hr = mNetUtil->RequestLadderList(hostAddr, port, keys, sku, -1, 0, 0);
 
 				if (FAILED(hr))
 					{
-					WWDEBUG_SAY(("WOLERROR: RequestLadderList (Individual) HRESULT = %s\n", GetNetUtilErrorString(hr)));
+					WWDEBUG_SAY(("WOLERROR: RequestLadderList (Individual) int32_t = %s\n", GetNetUtilErrorString(hr)));
 					return;
 					}
 
@@ -2372,11 +2372,11 @@ void Session::MakeLadderRequests(void)
 			// Request team ladder
 			if (firstRequest[1] == L'T')
 				{
-				HRESULT hr = mNetUtil->RequestLadderList(hostAddr, port, keys, (sku | LadderType_Team), -1, 0, 0);
+				int32_t hr = mNetUtil->RequestLadderList(hostAddr, port, keys, (sku | LadderType_Team), -1, 0, 0);
 
 				if (FAILED(hr))
 					{
-					WWDEBUG_SAY(("WOLERROR: RequestLadderList (Team) HRESULT = %s\n", GetNetUtilErrorString(hr)));
+					WWDEBUG_SAY(("WOLERROR: RequestLadderList (Team) int32_t = %s\n", GetNetUtilErrorString(hr)));
 					return;
 					}
 
@@ -2386,11 +2386,11 @@ void Session::MakeLadderRequests(void)
 			// Request clan ladder
 			if (firstRequest[2] == L'C')
 				{
-				HRESULT hr = mNetUtil->RequestLadderList(hostAddr, port, keys, (sku | LadderType_Clan), -1, 0, 0);
+				int32_t hr = mNetUtil->RequestLadderList(hostAddr, port, keys, (sku | LadderType_Clan), -1, 0, 0);
 
 				if (FAILED(hr))
 					{
-					WWDEBUG_SAY(("WOLERROR: RequestLadderList (Clan) HRESULT = %s\n", GetNetUtilErrorString(hr)));
+					WWDEBUG_SAY(("WOLERROR: RequestLadderList (Clan) int32_t = %s\n", GetNetUtilErrorString(hr)));
 					return;
 					}
 
@@ -2418,14 +2418,14 @@ void Session::MakeLadderRequests(void)
 *
 ******************************************************************************/
 
-void Session::RequestUserDetails(const RefPtr<UserData>& user, unsigned long requestFlags)
+void Session::RequestUserDetails(const RefPtr<UserData>& user, uint32_t requestFlags)
 	{
 	if (user.IsValid())
 		{
 		if (requestFlags & REQUEST_SQUADINFO)
 			{
 			// Request squad information for the user.
-			unsigned int squadID = user->GetSquadID();
+			uint32_t squadID = user->GetSquadID();
 			RefPtr<SquadData> squad = user->GetSquad();
 
 			bool requestSquad = (!squad.IsValid() && (squadID != 0));
@@ -2509,11 +2509,11 @@ void Session::AutoRequestUserDetails(const RefPtr<UserData>& user)
 
 bool Session::RequestBuddyList(void)
 	{
-	HRESULT hr = mChat->RequestBuddyList();
+	int32_t hr = mChat->RequestBuddyList();
 
 	if (FAILED(hr))
 		{
-		WWDEBUG_SAY(("WOLERROR: RequestBuddyList() failed HRESULT = %s\n", GetChatErrorString(hr)));
+		WWDEBUG_SAY(("WOLERROR: RequestBuddyList() failed int32_t = %s\n", GetChatErrorString(hr)));
 		}
 
 	return SUCCEEDED(hr);
@@ -2543,11 +2543,11 @@ bool Session::AddBuddy(const wchar_t* buddyName)
 	wcstombs((char*)&wolUser.name, buddyName, sizeof(wolUser.name));
 	wolUser.name[sizeof(wolUser.name) - 1] = 0;
 
-	HRESULT hr = mChat->RequestBuddyAdd(&wolUser);
+	int32_t hr = mChat->RequestBuddyAdd(&wolUser);
 
 	if (FAILED(hr))
 		{
-		WWDEBUG_SAY(("WOLERROR: RequestBuddyAdd() failed HRESULT = %s\n", GetChatErrorString(hr)));
+		WWDEBUG_SAY(("WOLERROR: RequestBuddyAdd() failed int32_t = %s\n", GetChatErrorString(hr)));
 		}
 
 	return SUCCEEDED(hr);
@@ -2577,11 +2577,11 @@ bool Session::RemoveBuddy(const wchar_t* buddyName)
 	wcstombs((char*)&wolUser.name, buddyName, sizeof(wolUser.name));
 	wolUser.name[sizeof(wolUser.name) - 1] = 0;
 
-	HRESULT hr = mChat->RequestBuddyDelete(&wolUser);
+	int32_t hr = mChat->RequestBuddyDelete(&wolUser);
 
 	if (FAILED(hr))
 		{
-		WWDEBUG_SAY(("WOLERROR: RequestBuddyDelete() failed HRESULT = %s\n", GetChatErrorString(hr)));
+		WWDEBUG_SAY(("WOLERROR: RequestBuddyDelete() failed int32_t = %s\n", GetChatErrorString(hr)));
 		}
 
 	return SUCCEEDED(hr);
@@ -2607,11 +2607,11 @@ bool Session::RemoveBuddy(const wchar_t* buddyName)
 
 bool Session::AllowFindPage(bool allowFind, bool allowPage)
 	{
-	HRESULT hr = mChat->SetFindPage(allowFind, allowPage);
+	int32_t hr = mChat->SetFindPage(allowFind, allowPage);
 
 	if (FAILED(hr))
 		{
-		WWDEBUG_SAY(("WOLERROR: SetFindPage() failed HRESULT = %s\n", GetChatErrorString(hr)));
+		WWDEBUG_SAY(("WOLERROR: SetFindPage() failed int32_t = %s\n", GetChatErrorString(hr)));
 		}
 
 	return SUCCEEDED(hr);
@@ -2636,11 +2636,11 @@ bool Session::AllowFindPage(bool allowFind, bool allowPage)
 
 bool Session::SetBadLanguageFilter(bool enabled)
 	{
-	HRESULT hr = mChat->SetLangFilter(enabled);
+	int32_t hr = mChat->SetLangFilter(enabled);
 
 	if (FAILED(hr))
 		{
-		WWDEBUG_SAY(("WOLERROR: SetLangFilter() failed HRESULT = %s\n", GetChatErrorString(hr)));
+		WWDEBUG_SAY(("WOLERROR: SetLangFilter() failed int32_t = %s\n", GetChatErrorString(hr)));
 		}
 
 	return SUCCEEDED(hr);
@@ -2925,10 +2925,10 @@ bool Session::SendPrivateGameOptions(const UserList& users, const char* options)
 	{
 	if (options)
 		{
-		for (unsigned int index = 0; index < users.size(); index++)
+		for (uint32_t index = 0; index < users.size(); index++)
 			{
 			NativeWOLUserList wolUsers(users);
-			HRESULT hr = mChat->RequestPrivateGameOptions(wolUsers, options);
+			int32_t hr = mChat->RequestPrivateGameOptions(wolUsers, options);
 
 			if (FAILED(hr))
 				{
@@ -3007,20 +3007,20 @@ void Session::GetLocaleStrings(std::vector<WideStringClass>& localeStrings)
 *
 ******************************************************************************/
 
-bool Session::SendGameResults(unsigned char* packet, unsigned long length)
+bool Session::SendGameResults(uint8_t* packet, uint32_t length)
 	{
 	if (packet && mGameResultsServer.IsValid())
 		{
 		mNetUtil->SetGameResMD5(true);
 
 		const char* host = mGameResultsServer->GetHostAddress();
-		unsigned int port = mGameResultsServer->GetPort();
+		uint32_t port = mGameResultsServer->GetPort();
 
-		HRESULT hr = mNetUtil->RequestLargeGameresSend(host, port, packet, length);
+		int32_t hr = mNetUtil->RequestLargeGameresSend(host, port, packet, length);
 
 		if (FAILED(hr))
 			{
-			WWDEBUG_SAY(("WOLERROR: RequestLargeGameresSend() failed HRESULT = %s\n", GetChatErrorString(hr)));
+			WWDEBUG_SAY(("WOLERROR: RequestLargeGameresSend() failed int32_t = %s\n", GetChatErrorString(hr)));
 			}
 
 		return SUCCEEDED(hr);
@@ -3112,7 +3112,7 @@ void Session::MakePingRequests(void)
 	{
 	if (mPingEnable && (mPingRequests.size() > mPingsPending))
 		{
-		for (unsigned int index = 0; index < mPingRequests.size(); index++)
+		for (uint32_t index = 0; index < mPingRequests.size(); index++)
 			{
 			RawPing* ping = &mPingRequests[index];
 
@@ -3120,7 +3120,7 @@ void Session::MakePingRequests(void)
 				{
 				int handle = 0;
 
-				HRESULT hr = mNetUtil->RequestPing(ping->GetHostAddress(), ping->GetTime(), &handle);
+				int32_t hr = mNetUtil->RequestPing(ping->GetHostAddress(), ping->GetTime(), &handle);
 
 				if (SUCCEEDED(hr))
 					{
@@ -3158,7 +3158,7 @@ void Session::UpdatePingServerTime(const char* name, int time)
 		// Automatically update ping server times.
 		const PingServerList& pingers = GetPingServerList();
 
-		for (unsigned int index = 0; index < pingers.size(); index++)
+		for (uint32_t index = 0; index < pingers.size(); index++)
 			{
 			const char* pinger = pingers[index]->GetHostAddress();
 
@@ -3282,12 +3282,12 @@ const CComPtr<WOL::IIGROptions>& Session::GetIGRObject(void)
 		WWDEBUG_SAY(("WOL: Creating IID_IIGROptions object\n"));
 		WOL::IIGROptions* igrObject = NULL;
 
-		HRESULT hr = CoCreateInstance(WOL::CLSID_IGROptions, NULL, CLSCTX_INPROC_SERVER,
+		int32_t hr = CoCreateInstance(WOL::CLSID_IGROptions, NULL, CLSCTX_INPROC_SERVER,
 			WOL::IID_IIGROptions, (void**)&igrObject);
 
 		if (SUCCEEDED(hr))
 			{
-			HRESULT hr = igrObject->Init();
+			int32_t hr = igrObject->Init();
 
 			if (S_FALSE == hr)
 				{
@@ -3328,7 +3328,7 @@ bool Session::IsStoreLoginAllowed(void)
 
 	if (igr)
 		{
-		HRESULT hr = igr->Is_Storing_Nicks_Allowed();
+		int32_t hr = igr->Is_Storing_Nicks_Allowed();
 		return (hr == S_OK);
 		}
 
@@ -3358,7 +3358,7 @@ bool Session::IsAutoLoginAllowed(void)
 
 	if (igr)
 		{
-		HRESULT hr = igr->Is_Auto_Login_Allowed();
+		int32_t hr = igr->Is_Auto_Login_Allowed();
 		return (hr == S_OK);
 		}
 
@@ -3387,7 +3387,7 @@ bool Session::IsRunRegAppAllowed(void)
 
 	if (igr)
 		{
-		HRESULT hr = igr->Is_Running_Reg_App_Allowed();
+		int32_t hr = igr->Is_Running_Reg_App_Allowed();
 		return (hr == S_OK);
 		}
 

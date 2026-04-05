@@ -129,10 +129,10 @@ void main ()
 
 	BoxClass mybox0(box0);
 	BoxClass mybox1(box1);
-	unsigned long high;
-	unsigned long cycles0;
-	unsigned long cycles1;
-	unsigned long cycles2;
+	uint32_t high;
+	uint32_t cycles0;
+	uint32_t cycles1;
+	uint32_t cycles2;
 
 	while (box1.center[2] > -20.0f) {
 
@@ -265,9 +265,9 @@ void main ()
 
 void benchmark_transformations(void)
 { 
-	unsigned long high;
-	unsigned long cycles0;
-	unsigned long cycles1;
+	uint32_t high;
+	uint32_t cycles0;
+	uint32_t cycles1;
 
 	/*
 	** Testing speed of the matrix library...

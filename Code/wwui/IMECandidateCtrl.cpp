@@ -127,9 +127,9 @@ void IMECandidateCtrl::Changed(IME::IMECandidate* candidate)
 		{
 		mScrollPos = candidate->GetPageStart();
 
-		unsigned long candSel = candidate->GetSelection();
+		uint32_t candSel = candidate->GetSelection();
 
-		if (candSel != (unsigned long)mCurrSel)
+		if (candSel != (uint32_t)mCurrSel)
 			{
 			mCurrSel = candSel;
 			UpdateScrollPos();
@@ -239,12 +239,12 @@ void IMECandidateCtrl::CreateTextRenderer(void)
 	if (mCandidate)
 		{
 		// Add each candidate to the list
-		const unsigned int selIndexBias = (mCandidate->IsStartFrom1() ? 1 : 0);
+		const uint32_t selIndexBias = (mCandidate->IsStartFrom1() ? 1 : 0);
 
 		float currYPos = ClientRect.Top;
-		const unsigned long candidateCount = mCandidate->GetCount();
+		const uint32_t candidateCount = mCandidate->GetCount();
 
-		for (unsigned long index = mScrollPos; index < candidateCount; ++index)
+		for (uint32_t index = mScrollPos; index < candidateCount; ++index)
 			{
 			// Build the rectangle we will draw the text into
 			RectClass textRect;
@@ -329,7 +329,7 @@ void IMECandidateCtrl::SetCurrSel(int index)
 	{
 	if (mCandidate)
 		{
-		if ((index != mCurrSel) && (index == -1) || ((index >= 0) && (unsigned long)index < mCandidate->GetCount()))
+		if ((index != mCurrSel) && (index == -1) || ((index >= 0) && (uint32_t)index < mCandidate->GetCount()))
 			{
 			mCurrSel = index;
 			Set_Dirty();
@@ -358,9 +358,9 @@ int IMECandidateCtrl::EntryFromPos(const Vector2& mousePos)
 		// Loop over all the entries in our current view
 		float currYPos = ClientRect.Top;
 
-		const unsigned long candidateCount = mCandidate->GetCount();
+		const uint32_t candidateCount = mCandidate->GetCount();
 
-		for (unsigned long index = mScrollPos; index < candidateCount; ++index)
+		for (uint32_t index = mScrollPos; index < candidateCount; ++index)
 			{
 			// Is ths mouse over this entry?
 			if ((mousePos.Y >= currYPos && mousePos.Y <= (currYPos + mCellSize.Y))
@@ -396,7 +396,7 @@ void IMECandidateCtrl::UpdateScrollPos(void)
 	{
 	if (mCurrSel != -1)
 		{
-		unsigned int scrollPos = mScrollPos;
+		uint32_t scrollPos = mScrollPos;
 
 		if (mCurrSel < (int)scrollPos)
 			{
@@ -407,7 +407,7 @@ void IMECandidateCtrl::UpdateScrollPos(void)
 		else if (mCurrSel >= (int)(scrollPos + mCellsPerPage))
 			{
 			//	Scroll down so the current selection is in view
-			scrollPos = max<unsigned int>((unsigned int)mCurrSel - (mCellsPerPage - 1), 0);
+			scrollPos = max<uint32_t>((uint32_t)mCurrSel - (mCellsPerPage - 1), 0);
 			Set_Dirty();
 			}
 
@@ -447,7 +447,7 @@ void IMECandidateCtrl::Update_Client_Rect(void)
 	Vector2 pageSize;
 	CalculateCandidatePageExtent(pageSize, mCellSize);
 
-	mCellsPerPage = (unsigned int)(pageSize.Y / mCellSize.Y);
+	mCellsPerPage = (uint32_t)(pageSize.Y / mCellSize.Y);
 
 	Rect.Right = (Rect.Left + (pageSize.X + (BORDER_WIDTH * 2.0f)));
 	Rect.Bottom = (Rect.Top + (pageSize.Y + (BORDER_HEIGHT * 2.0f)));
@@ -462,9 +462,9 @@ void IMECandidateCtrl::Update_Client_Rect(void)
 		WWASSERT(mCandidate->GetPageSize() <= mCellsPerPage);
 
 		//	Do we need to show a scroll bar?
-		const unsigned long candidateCount = mCandidate->GetCount();
+		const uint32_t candidateCount = mCandidate->GetCount();
 
-		if ((unsigned long)mCellsPerPage < candidateCount)
+		if ((uint32_t)mCellsPerPage < candidateCount)
 			{
 			// Position the scrollbar to the right of the list
 			RectClass scrollRect;
@@ -508,9 +508,9 @@ void IMECandidateCtrl::CalculateCandidatePageExtent(Vector2& outExtent, Vector2&
 		{
 		// Get the size of the widest candidate string.
 		float maxCandWidth = 0.0f;
-		const unsigned long candidateCount = mCandidate->GetCount();
+		const uint32_t candidateCount = mCandidate->GetCount();
 
-		for (unsigned long index = 0; index < candidateCount; ++index)
+		for (uint32_t index = 0; index < candidateCount; ++index)
 			{
 			// Get the extent of the current entry
 			const WCHAR* text = mCandidate->GetCandidate(index);
@@ -610,7 +610,7 @@ void IMECandidateCtrl::On_LButton_Up(const Vector2& mousePos)
 		{
 		const wchar_t* string = mCandidate->GetCandidate(sel);
 		WWDEBUG_SAY(("*** Selected Candidate: %d %04x\n", sel, *string));
-		mCandidate->SelectCandidate((unsigned long)sel);
+		mCandidate->SelectCandidate((uint32_t)sel);
 		}
 	}
 

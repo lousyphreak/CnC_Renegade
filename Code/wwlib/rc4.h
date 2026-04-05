@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -45,21 +47,21 @@ public:
 	// Key length can be 0..256 bytes
 	// Key preparation takes about 0.015 Ms on a 1Ghz PC
 	//
-	void Prepare_Key(const unsigned char *key_data_ptr, int key_data_len);
+	void Prepare_Key(const uint8_t *key_data_ptr, int key_data_len);
 
 	//
 	// In-place encryption.  Call Prepare_Key first!
 	// Only a few clock cycles per byte (9 or so...)
 	//
-	void RC4(unsigned char *buffer_ptr, int buffer_len);
+	void RC4(uint8_t *buffer_ptr, int buffer_len);
 
 private:
 
 	struct RC4Key
 	{      
-		unsigned char State[256];       
-		unsigned char X;        
-		unsigned char Y;
+		uint8_t State[256];       
+		uint8_t X;        
+		uint8_t Y;
 	};
 
 	RC4Key	Key;

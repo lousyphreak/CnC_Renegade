@@ -234,7 +234,7 @@ void PresetsFormClass::Dump(CDumpContext& dc) const
 void
 PresetsFormClass::OnSize
 (
-	UINT	nType,
+	uint32_t	nType,
 	int	cx,
 	int	cy
 )
@@ -288,7 +288,7 @@ PresetsFormClass::OnSize
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 PresetsFormClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -410,7 +410,7 @@ PresetsFormClass::Fill_In_Presets (HTREEITEM root_item)
 {
 	DefinitionFactoryClass *factory = Get_Item_Factory (root_item);
 	if (factory != NULL && factory->Is_Displayed ()) {
-		uint32 class_id = factory->Get_Class_ID ();
+		uint32_t class_id = factory->Get_Class_ID ();
 
 		//
 		//	Find all the presets that belong to this class
@@ -450,7 +450,7 @@ void
 PresetsFormClass::Fill_In_Preset_Children
 (
 	HTREEITEM	root_item,
-	uint32		parent_id
+	uint32_t		parent_id
 )
 {
 	//
@@ -513,7 +513,7 @@ PresetsFormClass::Fill_In_Preset_Children
 //
 /////////////////////////////////////////////////////////////////////////////
 HTREEITEM
-PresetsFormClass::Find_Preset (HTREEITEM root_item, uint32 id)
+PresetsFormClass::Find_Preset (HTREEITEM root_item, uint32_t id)
 {
 	HTREEITEM preset_item = NULL;
 
@@ -550,7 +550,7 @@ PresetsFormClass::Find_Preset (HTREEITEM root_item, uint32 id)
 //
 /////////////////////////////////////////////////////////////////////////////
 HTREEITEM
-PresetsFormClass::Find_Factory (HTREEITEM root_item, uint32 id)
+PresetsFormClass::Find_Factory (HTREEITEM root_item, uint32_t id)
 {
 	HTREEITEM factory_item = NULL;
 
@@ -600,7 +600,7 @@ PresetsFormClass::Get_Selected_Factory (void)
 		//
 		DefinitionClass *definition = Get_Item_Definition (curr_item);
 		if (definition != NULL) {
-			uint32 class_id = definition->Get_Class_ID ();
+			uint32_t class_id = definition->Get_Class_ID ();
 			factory = DefinitionFactoryMgrClass::Find_Factory (class_id);
 		} 		
 	}
@@ -631,7 +631,7 @@ PresetsFormClass::Set_Item_Data (HTREEITEM item, DefinitionFactoryClass *factory
 	//
 	item_data->type		= TYPE_FACTORY;
 	item_data->factory	= factory;
-	m_TreeCtrl.SetItemData (item, (DWORD)item_data);
+	m_TreeCtrl.SetItemData (item, (uint32_t)item_data);
 	return ;	
 }
 
@@ -658,7 +658,7 @@ PresetsFormClass::Set_Item_Data (HTREEITEM item, PresetClass *preset)
 	//
 	item_data->type	= TYPE_PRESET;
 	item_data->preset	= preset;
-	m_TreeCtrl.SetItemData (item, (DWORD)item_data);
+	m_TreeCtrl.SetItemData (item, (uint32_t)item_data);
 	return ;	
 }
 
@@ -860,7 +860,7 @@ void
 PresetsFormClass::OnDeleteitemPresetsTree
 (
 	NMHDR *	pNMHDR,
-	LRESULT *pResult
+	intptr_t *pResult
 )
 {
 	NM_TREEVIEW *pNMTreeView = (NM_TREEVIEW *)pNMHDR;
@@ -946,7 +946,7 @@ PresetsFormClass::OnModify (void)
 			//
 			SelectionCaptureClass sel_capture (this);
 			bool undo_on_err	= false;
-			uint32 class_id	= preset->Get_Class_ID ();
+			uint32_t class_id	= preset->Get_Class_ID ();
 			if (PresetMgrClass::Check_Out_Database (class_id, &undo_on_err)) {
 				sel_capture.Restore ();
 
@@ -1054,7 +1054,7 @@ PresetsFormClass::Load_Preset_Libraries (void)
 //
 /////////////////////////////////////////////////////////////////////////////
 bool
-PresetsFormClass::Load_Presets (uint32 class_id)
+PresetsFormClass::Load_Presets (uint32_t class_id)
 {
 	//
 	//	Build a filename for the presets library
@@ -1084,8 +1084,8 @@ PresetsFormClass::Load_Presets (uint32 class_id)
 			//
 			//	Read the file into memory
 			//
-			unsigned char *buffer = new unsigned char[file_size];
-			DWORD bytes_read = 0;
+			uint8_t *buffer = new uint8_t[file_size];
+			uint32_t bytes_read = 0;
 			::ReadFile (file, buffer, file_size, &bytes_read, NULL);
 
 			//
@@ -1150,8 +1150,8 @@ PresetsFormClass::Old_Load_Presets (void)
 			//
 			//	Read the file into memory
 			//
-			unsigned char *buffer = new unsigned char[file_size];
-			DWORD bytes_read = 0;
+			uint8_t *buffer = new uint8_t[file_size];
+			uint32_t bytes_read = 0;
 			::ReadFile (file, buffer, file_size, &bytes_read, NULL);
 
 			//
@@ -1240,7 +1240,7 @@ PresetsFormClass::Save_Temp_Presets (void)
 //
 /////////////////////////////////////////////////////////////////////////////
 bool
-PresetsFormClass::Save_Global_Presets (uint32 class_id)
+PresetsFormClass::Save_Global_Presets (uint32_t class_id)
 {
 
 #ifndef PUBLIC_EDITOR_VER
@@ -1360,7 +1360,7 @@ bool
 PresetsFormClass::Save_Presets
 (
 	LPCTSTR	path,
-	uint32	class_id,
+	uint32_t	class_id,
 	bool		class_id_matters,
 	bool		temps_only
 )
@@ -1369,7 +1369,7 @@ PresetsFormClass::Save_Presets
 	// Delete the file if it already exists
 	//
 	if (::GetFileAttributes (path) != 0xFFFFFFFF) {
-			DWORD attributes = ::GetFileAttributes (path);
+			uint32_t attributes = ::GetFileAttributes (path);
 		::SetFileAttributes (path, attributes & (~FILE_ATTRIBUTE_READONLY));
 		::DeleteFile (path);
 	}
@@ -1398,7 +1398,7 @@ PresetsFormClass::Save_Presets
 		//
 		//	Warn the user
 		//
-		DWORD last_error = ::GetLastError ();
+		uint32_t last_error = ::GetLastError ();
 		CString message;		
 		message.Format ("Unable to create database file.\nPath:%s\nError Code:%d", path, last_error);
 		::MessageBox (::AfxGetMainWnd ()->m_hWnd, message, "File I/O Error", MB_ICONERROR | MB_OK);
@@ -1414,7 +1414,7 @@ PresetsFormClass::Save_Presets
 //
 /////////////////////////////////////////////////////////////////////////////
 bool
-PresetsFormClass::Save_Presets (uint32 class_id, bool temps_only)
+PresetsFormClass::Save_Presets (uint32_t class_id, bool temps_only)
 {
 	//
 	//	Build a filename for the presets library
@@ -1435,7 +1435,7 @@ PresetsFormClass::Save_Presets (uint32 class_id, bool temps_only)
 //
 /////////////////////////////////////////////////////////////////////////////
 void
-PresetsFormClass::Save_Presets (HANDLE file, uint32 class_id, bool class_id_matters, bool temps_only)
+PresetsFormClass::Save_Presets (HANDLE file, uint32_t class_id, bool class_id_matters, bool temps_only)
 {
 	//
 	//	Create a chunk IO object that we can use to save our subsystems
@@ -1752,7 +1752,7 @@ PresetsFormClass::OnDelete (void)
 					//	Determine what class-id's these presets belong to (they all belong
 					// to the same class)
 					//
-					uint32 class_id = 0;
+					uint32_t class_id = 0;
 					DefinitionClass *definition = preset->Get_Definition ();
 					if (definition != NULL) {
 						class_id = definition->Get_Class_ID ();
@@ -2064,7 +2064,7 @@ PresetsFormClass::Enable_Button (int cmd_id)
 //
 ////////////////////////////////////////////////////////////////////////////
 void
-PresetsFormClass::OnSelchangedPresetsTree (NMHDR *pNMHDR, LRESULT *pResult)
+PresetsFormClass::OnSelchangedPresetsTree (NMHDR *pNMHDR, intptr_t *pResult)
 {
 	NM_TREEVIEW* pNMTreeView = (NM_TREEVIEW*)pNMHDR;
 	(*pResult) = 0;
@@ -2396,12 +2396,12 @@ PresetsFormClass::OnExtra (void)
 //  OnNotify
 //
 ////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 PresetsFormClass::OnNotify
 (
-	WPARAM wParam,
-	LPARAM lParam,
-	LRESULT* pResult
+	uintptr_t wParam,
+	intptr_t lParam,
+	intptr_t* pResult
 ) 
 {
 	if (((NMHDR *)lParam)->code == TBN_DROPDOWN) {
@@ -2553,7 +2553,7 @@ PresetsFormClass::OnDrawItem
 	CRect rect = lpDrawItemStruct->rcItem;
 
 	int dss_state = DSS_NORMAL;
-	UINT bk_color = 0;
+	uint32_t bk_color = 0;
 		
 	//
 	//	Deteremine what background and text color to use
@@ -2590,7 +2590,7 @@ PresetsFormClass::OnDrawItem
 	::DrawState (	lpDrawItemStruct->hDC,
 						NULL,
 						NULL,
-						(LPARAM)(LPCTSTR)text,
+						(intptr_t)(LPCTSTR)text,
 						0,
 						rect.left + 24,
 						rect.top + (rect.Height () >> 1) - (text_size.cy >> 1),
@@ -2600,7 +2600,7 @@ PresetsFormClass::OnDrawItem
 	//	Draw the associated icon (if necessary)
 	//
 	if (icon != NULL) {
-		::DrawState ( lpDrawItemStruct->hDC, NULL, NULL, (LPARAM)icon, 0, rect.left + 4, rect.top + 4, 16, 16, DST_ICON | dss_state);
+		::DrawState ( lpDrawItemStruct->hDC, NULL, NULL, (intptr_t)icon, 0, rect.left + 4, rect.top + 4, 16, 16, DST_ICON | dss_state);
 	}	
 
 	
@@ -2669,7 +2669,7 @@ PresetsFormClass::OnConvert (void)
 			//
 			SelectionCaptureClass sel_capture (this);
 			bool undo_check_out	= false;
-			uint32 class_id		= preset->Get_Class_ID ();
+			uint32_t class_id		= preset->Get_Class_ID ();
 			if (PresetMgrClass::Check_Out_Database (class_id, &undo_check_out)) {
 				sel_capture.Restore ();
 
@@ -2765,7 +2765,7 @@ PresetsFormClass::OnClearEmbeddedNodeList (void)
 			//
 			SelectionCaptureClass sel_capture (this);
 			bool undo_on_err	= false;
-			uint32 class_id	= preset->Get_Class_ID ();
+			uint32_t class_id	= preset->Get_Class_ID ();
 			if (PresetMgrClass::Check_Out_Database (class_id, &undo_on_err)) {
 				sel_capture.Restore ();
 
@@ -2880,7 +2880,7 @@ PresetsFormClass::OnBuildEmbedNodeList (void)
 			//
 			SelectionCaptureClass sel_capture (this);
 			bool undo_on_err	= false;
-			uint32 class_id	= preset->Get_Class_ID ();
+			uint32_t class_id	= preset->Get_Class_ID ();
 			if (PresetMgrClass::Check_Out_Database (class_id, &undo_on_err)) {
 				sel_capture.Restore ();
 
@@ -3090,7 +3090,7 @@ void
 PresetsFormClass::OnBegindragPresetsTree
 (
 	NMHDR *	pNMHDR,
-	LRESULT *pResult
+	intptr_t *pResult
 )
 {
 	NM_TREEVIEW *tv_info = (NM_TREEVIEW *)pNMHDR;
@@ -3121,7 +3121,7 @@ PresetsFormClass::OnBegindragPresetsTree
 //
 ////////////////////////////////////////////////////////////////////////////
 void
-PresetsFormClass::OnLButtonUp (UINT nFlags, CPoint point) 
+PresetsFormClass::OnLButtonUp (uint32_t nFlags, CPoint point) 
 {
 	if (m_IsDragging) {
 
@@ -3143,7 +3143,7 @@ PresetsFormClass::OnLButtonUp (UINT nFlags, CPoint point)
 		//
 		//	Check to ensure its OK to move the preset
 		//
-		UINT flags					= TVHT_ONITEM;
+		uint32_t flags					= TVHT_ONITEM;
 		HTREEITEM drop_target	= m_TreeCtrl.HitTest (tree_pt, &flags);
 		if (Is_Drop_OK (drop_target)) {
 			
@@ -3169,7 +3169,7 @@ PresetsFormClass::OnLButtonUp (UINT nFlags, CPoint point)
 //
 ////////////////////////////////////////////////////////////////////////////
 void
-PresetsFormClass::OnMouseMove (UINT nFlags, CPoint point) 
+PresetsFormClass::OnMouseMove (uint32_t nFlags, CPoint point) 
 {
 	if (m_IsDragging) {
 		
@@ -3189,7 +3189,7 @@ PresetsFormClass::OnMouseMove (UINT nFlags, CPoint point)
 		//
 		//	Determine if we should hilight one of the entries in the tree control
 		//
-		UINT flags					= TVHT_ONITEM;
+		uint32_t flags					= TVHT_ONITEM;
 		HTREEITEM drop_target	= m_TreeCtrl.HitTest (tree_pt, &flags);
 		if (drop_target != NULL) {
 			m_TreeCtrl.SelectDropTarget (drop_target);
@@ -3311,14 +3311,14 @@ PresetsFormClass::Do_Drop (HTREEITEM drag_item, HTREEITEM drop_item)
 	//	Does this operation affect only shared presets or only temps?
 	//
 	if (is_drag_temp == false) {
-		uint32 drag_preset_id = drag_preset->Get_Definition ()->Get_ID ();
+		uint32_t drag_preset_id = drag_preset->Get_Definition ()->Get_ID ();
 
 		//
 		//	Check out the definition database
 		//
 		SelectionCaptureClass sel_capture (this);
 		bool undo_on_err	= false;
-		uint32 class_id	= drag_preset->Get_Class_ID ();
+		uint32_t class_id	= drag_preset->Get_Class_ID ();
 		if (PresetMgrClass::Check_Out_Database (class_id, &undo_on_err)) {
 			sel_capture.Restore ();
 
@@ -3621,7 +3621,7 @@ PresetsFormClass::Build_File_Dependencies_For_Definition
 void
 PresetsFormClass::Add_Preset (PresetClass *preset)
 {
-	uint32 class_id = preset->Get_Class_ID ();
+	uint32_t class_id = preset->Get_Class_ID ();
 
 	//
 	//	Find the root item 
@@ -3645,7 +3645,7 @@ PresetsFormClass::Add_Preset (PresetClass *preset)
 //
 ////////////////////////////////////////////////////////////////////////////
 void
-PresetsFormClass::Sort_Items (uint32 class_id)
+PresetsFormClass::Sort_Items (uint32_t class_id)
 {
 	//
 	//	Find the root item 

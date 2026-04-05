@@ -1448,8 +1448,8 @@ PathfindClass::Free_Waypath_Sectors_And_Portals (void)
 		//
 		//	Remove this portal from the sectors that reference it
 		//
-		uint16 dest_sector1_id = portal->Get_Dest_Sector1 ();
-		uint16 dest_sector2_id = portal->Get_Dest_Sector2 ();
+		uint16_t dest_sector1_id = portal->Get_Dest_Sector1 ();
+		uint16_t dest_sector2_id = portal->Get_Dest_Sector2 ();
 		PathfindSectorClass *dest_sector1 = Peek_Sector (dest_sector1_id);
 		PathfindSectorClass *dest_sector2 = Peek_Sector (dest_sector2_id);
 
@@ -1601,8 +1601,8 @@ PathfindClass::Generate_Waypath_Sector_And_Portals (WaypathClass *waypath)
 			//
 			//	Lookup the sectors this portal will connect
 			//
-			uint16 dest_sector1_id = curr_portal->Get_Dest_Sector1 ();
-			uint16 dest_sector2_id = curr_portal->Get_Dest_Sector2 ();
+			uint16_t dest_sector1_id = curr_portal->Get_Dest_Sector1 ();
+			uint16_t dest_sector2_id = curr_portal->Get_Dest_Sector2 ();
 			PathfindSectorClass *dest_sector1 = Peek_Sector (dest_sector1_id);
 			PathfindSectorClass *dest_sector2 = Peek_Sector (dest_sector2_id);
 

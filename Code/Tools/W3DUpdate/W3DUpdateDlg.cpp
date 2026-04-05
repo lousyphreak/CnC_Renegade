@@ -50,9 +50,9 @@ typedef struct
 	LPCTSTR	src;
 	LPCTSTR	default_dir;
 	LPCTSTR	reg_key;	
-	UINT		ctrl_id;
-	UINT		clean_ctrl_id;
-	UINT		dir_ctrl_id;
+	uint32_t		ctrl_id;
+	uint32_t		clean_ctrl_id;
+	uint32_t		dir_ctrl_id;
 	bool		clean_default;
 	int		copy_to_app_dir1;
 	int		copy_to_app_dir2;
@@ -129,7 +129,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CW3DUpdateDlg message handlers
 
-BOOL CW3DUpdateDlg::OnInitDialog()
+int32_t CW3DUpdateDlg::OnInitDialog()
 {
 	CDialog::OnInitDialog();
 
@@ -155,13 +155,13 @@ BOOL CW3DUpdateDlg::OnInitDialog()
 		//
 		if (::RegOpenKeyEx (HKEY_CURRENT_USER, reg_key_name, 0L, KEY_READ, &hreg_key) == ERROR_SUCCESS) {
 			//Moumine- 
-			//SendDlgItemMessage (app_info.ctrl_id, BM_SETCHECK, (WPARAM)TRUE);
+			//SendDlgItemMessage (app_info.ctrl_id, BM_SETCHECK, (uintptr_t)TRUE);
 			
 			//
 			//	Read the installation directory from the registry
 			//
-			DWORD size = sizeof (path);
-			::RegQueryValueEx (hreg_key, INSTALL_REG_VALUE, 0L, NULL, (BYTE *)path, &size);
+			uint32_t size = sizeof (path);
+			::RegQueryValueEx (hreg_key, INSTALL_REG_VALUE, 0L, NULL, (uint8_t *)path, &size);
 			::RegCloseKey (hreg_key);
 		} else {
 			::EnableWindow (::GetDlgItem (m_hWnd, app_info.clean_ctrl_id), false);
@@ -183,7 +183,7 @@ BOOL CW3DUpdateDlg::OnInitDialog()
 		//	Check the clean option (by default) if necessary
 		//
 		if (app_info.clean_default && app_info.clean_ctrl_id != -1) {
-			SendDlgItemMessage (app_info.clean_ctrl_id, BM_SETCHECK, (WPARAM)TRUE);
+			SendDlgItemMessage (app_info.clean_ctrl_id, BM_SETCHECK, (uintptr_t)TRUE);
 		}
 	}
 
@@ -200,7 +200,7 @@ void CW3DUpdateDlg::OnPaint()
 	{
 		CPaintDC dc(this); // device context for painting
 
-		SendMessage(WM_ICONERASEBKGND, (WPARAM) dc.GetSafeHdc(), 0);
+		SendMessage(WM_ICONERASEBKGND, (uintptr_t) dc.GetSafeHdc(), 0);
 
 		// Center icon in client rectangle
 		int cxIcon = GetSystemMetrics(SM_CXICON);
@@ -404,7 +404,7 @@ CW3DUpdateDlg::Install_App
 									INSTALL_REG_VALUE,
 									0L,
 									REG_SZ,
-									(BYTE *)(LPCTSTR)dest_path,
+									(uint8_t *)(LPCTSTR)dest_path,
 									dest_path.GetLength () + 1);
 			::RegCloseKey (reg_key);
 		}
@@ -514,7 +514,7 @@ Delete_File (LPCTSTR filename)
 	if (filename != NULL) {
 
 		// Strip the readonly bit off if necessary
-		DWORD attributes = ::GetFileAttributes (filename);
+		uint32_t attributes = ::GetFileAttributes (filename);
 		if ((attributes != 0xFFFFFFFF) &&
 			 ((attributes & FILE_ATTRIBUTE_READONLY) == FILE_ATTRIBUTE_READONLY)) {
 			::SetFileAttributes (filename, attributes & (~FILE_ATTRIBUTE_READONLY));
@@ -554,7 +554,7 @@ Copy_File
 		bool allow_copy = (::lstrcmpi (existing_filename, new_filename) != 0);
 		
 		// Strip the readonly bit off if necessary
-		DWORD attributes = ::GetFileAttributes (new_filename);
+		uint32_t attributes = ::GetFileAttributes (new_filename);
 		if (allow_copy &&
 		    (attributes != 0xFFFFFFFF) &&
 			 ((attributes & FILE_ATTRIBUTE_READONLY) == FILE_ATTRIBUTE_READONLY)) {
@@ -638,7 +638,7 @@ Create_Dir_If_Necessary (LPCTSTR path)
 //	fnUpdateAppDirectory
 //
 //////////////////////////////////////////////////////////////////////////////////
-UINT
+uint32_t
 fnUpdateAppDirectory (LPVOID pParam)
 {
 	static call_depth(0);
@@ -743,11 +743,11 @@ Update_App
 //	OnCommand
 //
 //////////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CW3DUpdateDlg::OnCommand
 (
-	WPARAM wParam,
-	LPARAM lParam
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	for (int index = 0; index < APP_MAX; index ++) {
@@ -806,10 +806,10 @@ void CW3DUpdateDlg::RegisterShellExt()
 	CString reg_value(MAKEINTRESOURCE(IDS_SHELLEXT_NAME));
 	CString value_name;
 	//[HKEY_CLASSES_ROOT\CLSID\{556F8779-49C4-4e88-9CEF-0AC2CFD6B763}]
-	DWORD ret_val = ::RegCreateKeyEx (HKEY_CLASSES_ROOT,reg_key_name,0L,NULL,REG_OPTION_NON_VOLATILE,KEY_ALL_ACCESS,NULL,&reg_key,NULL);
+	uint32_t ret_val = ::RegCreateKeyEx (HKEY_CLASSES_ROOT,reg_key_name,0L,NULL,REG_OPTION_NON_VOLATILE,KEY_ALL_ACCESS,NULL,&reg_key,NULL);
 	if (ERROR_SUCCESS == ret_val) {
 		//   @="W3D Shell Extension"
-		ret_val = ::RegSetValueEx(reg_key,"",0L,REG_SZ,(BYTE *)(LPCTSTR)reg_value,reg_value.GetLength () + 1);
+		ret_val = ::RegSetValueEx(reg_key,"",0L,REG_SZ,(uint8_t *)(LPCTSTR)reg_value,reg_value.GetLength () + 1);
 	}
 	//[HKEY_CLASSES_ROOT\CLSID\{556F8779-49C4-4e88-9CEF-0AC2CFD6B763}\InProcServer32]
 	::RegCloseKey (reg_key);
@@ -818,11 +818,11 @@ void CW3DUpdateDlg::RegisterShellExt()
 	if (ERROR_SUCCESS == ret_val){
 		//@="W3Dshellext.dll"
 		reg_value.LoadString(IDS_SHELLEXT_DLLNAME);
-		ret_val = ::RegSetValueEx(reg_key, "",0L,REG_SZ,(BYTE *)(LPCTSTR)reg_value,reg_value.GetLength () + 1);
+		ret_val = ::RegSetValueEx(reg_key, "",0L,REG_SZ,(uint8_t *)(LPCTSTR)reg_value,reg_value.GetLength () + 1);
 		//"ThreadingModel"="Apartment"
 		reg_value.LoadString(IDS_W3DSHELLEXT_APARTMENT);
 		value_name.LoadString(IDS_W3DSHELLEXT_THMODEL);
-		ret_val = ::RegSetValueEx(reg_key, value_name,0L,REG_SZ,(BYTE *)(LPCTSTR)reg_value,reg_value.GetLength () + 1);
+		ret_val = ::RegSetValueEx(reg_key, value_name,0L,REG_SZ,(uint8_t *)(LPCTSTR)reg_value,reg_value.GetLength () + 1);
 	}
 	::RegCloseKey (reg_key);
 	//[HKEY_CLASSES_ROOT\.w3d]
@@ -831,7 +831,7 @@ void CW3DUpdateDlg::RegisterShellExt()
 	if (ERROR_SUCCESS == ret_val) {
 		//@="W3DFile"
 		reg_value.LoadString(IDS_W3DFILETEXT);
-		ret_val = ::RegSetValueEx(reg_key, "",0L,REG_SZ,(BYTE *)(LPCTSTR)reg_value,reg_value.GetLength () + 1);
+		ret_val = ::RegSetValueEx(reg_key, "",0L,REG_SZ,(uint8_t *)(LPCTSTR)reg_value,reg_value.GetLength () + 1);
 	}
 	::RegCloseKey (reg_key);
 	//[HKEY_CLASSES_ROOT\W3DFile]
@@ -840,7 +840,7 @@ void CW3DUpdateDlg::RegisterShellExt()
 	if (ERROR_SUCCESS == ret_val) {
    //@="Shell Extension file"
 		reg_value.LoadString(IDS_W3DSHELLEXT_TEXT);
-		ret_val = ::RegSetValueEx(reg_key, "",0L,REG_SZ,(BYTE *)(LPCTSTR)reg_value,reg_value.GetLength () + 1);
+		ret_val = ::RegSetValueEx(reg_key, "",0L,REG_SZ,(uint8_t *)(LPCTSTR)reg_value,reg_value.GetLength () + 1);
 	}
 	::RegCloseKey (reg_key);
 	//[HKEY_CLASSES_ROOT\W3DFile\shellex\ContextMenuHandlers]
@@ -849,7 +849,7 @@ void CW3DUpdateDlg::RegisterShellExt()
 	if (ERROR_SUCCESS == ret_val) {
 		//@="W3DCtxMenu"
 		reg_value.LoadString(IDS_W3DMENU_TEXT);
-		ret_val = ::RegSetValueEx(reg_key, "",0L,REG_SZ,(BYTE *)(LPCTSTR)reg_value,reg_value.GetLength () + 1);
+		ret_val = ::RegSetValueEx(reg_key, "",0L,REG_SZ,(uint8_t *)(LPCTSTR)reg_value,reg_value.GetLength () + 1);
 	}
 	::RegCloseKey (reg_key);
 	//[HKEY_CLASSES_ROOT\W3DFile\shellex\ContextMenuHandlers\W3DCtxMenu]
@@ -858,7 +858,7 @@ void CW3DUpdateDlg::RegisterShellExt()
 	if (ERROR_SUCCESS == ret_val) {
 		//@="{556F8779-49C4-4e88-9CEF-0AC2CFD6B763}"
 		reg_value.LoadString(IDS_W3DSHELLEXT_GUID);
-		ret_val = ::RegSetValueEx(reg_key, "",0L,REG_SZ,(BYTE *)(LPCTSTR)reg_value,reg_value.GetLength () + 1);
+		ret_val = ::RegSetValueEx(reg_key, "",0L,REG_SZ,(uint8_t *)(LPCTSTR)reg_value,reg_value.GetLength () + 1);
 	}
 	::RegCloseKey (reg_key);
 	//[HKEY_CLASSES_ROOT\W3DFile\shellex\PropertySheetHandlers]
@@ -867,7 +867,7 @@ void CW3DUpdateDlg::RegisterShellExt()
 	if (ERROR_SUCCESS == ret_val) {
 		//@="W3DPropertyPage"
 		reg_value.LoadString(IDS_W3DPROPPAGE_TEXT);
-		ret_val = ::RegSetValueEx(reg_key, "",0L,REG_SZ,(BYTE *)(LPCTSTR)reg_value,reg_value.GetLength () + 1);
+		ret_val = ::RegSetValueEx(reg_key, "",0L,REG_SZ,(uint8_t *)(LPCTSTR)reg_value,reg_value.GetLength () + 1);
 	}
 	::RegCloseKey (reg_key);
 	//[HKEY_CLASSES_ROOT\W3DFile\shellex\PropertySheetHandlers\W3DPropertyPage]
@@ -876,7 +876,7 @@ void CW3DUpdateDlg::RegisterShellExt()
 	if (ERROR_SUCCESS == ret_val) {
    //@="{556F8779-49C4-4e88-9CEF-0AC2CFD6B763}"
 		reg_value.LoadString(IDS_W3DSHELLEXT_GUID);
-		ret_val = ::RegSetValueEx(reg_key, "",0L,REG_SZ,(BYTE *)(LPCTSTR)reg_value,reg_value.GetLength () + 1);
+		ret_val = ::RegSetValueEx(reg_key, "",0L,REG_SZ,(uint8_t *)(LPCTSTR)reg_value,reg_value.GetLength () + 1);
 	}
 	::RegCloseKey (reg_key);
 	//[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions\Approved]
@@ -886,7 +886,7 @@ void CW3DUpdateDlg::RegisterShellExt()
    //"{556F8779-49C4-4e88-9CEF-0AC2CFD6B763}"="W3D Shell Extension"
 		value_name.LoadString(IDS_W3DSHELLEXT_GUID);
 		reg_value.LoadString(IDS_W3DSHELLEXT_TEXT);
-		ret_val = ::RegSetValueEx(reg_key, value_name,0L,REG_SZ,(BYTE *)(LPCTSTR)reg_value,reg_value.GetLength () + 1);
+		ret_val = ::RegSetValueEx(reg_key, value_name,0L,REG_SZ,(uint8_t *)(LPCTSTR)reg_value,reg_value.GetLength () + 1);
 	}
 	::RegCloseKey (reg_key);
 	//[HKEY_CLASSES_ROOT\W3DFile\\DefaultIcon
@@ -895,7 +895,7 @@ void CW3DUpdateDlg::RegisterShellExt()
 	if (ERROR_SUCCESS == ret_val) {
    //%SystemRoot%\\system32\\W3DShellExt.dll,0
 		reg_value.LoadString(IDS_W3DDEFAULTICON_TEXT);
-		ret_val = ::RegSetValueEx(reg_key, "",0L,REG_SZ,(BYTE *)(LPCTSTR)reg_value,reg_value.GetLength () + 1);
+		ret_val = ::RegSetValueEx(reg_key, "",0L,REG_SZ,(uint8_t *)(LPCTSTR)reg_value,reg_value.GetLength () + 1);
 	}
 	SHChangeNotify(SHCNE_ASSOCCHANGED,SHCNF_IDLIST ,NULL,NULL);	
 }
@@ -908,10 +908,10 @@ void CW3DUpdateDlg::RegisterViewer(int index){
 	CString reg_value(MAKEINTRESOURCE(IDS_VIEWERCOMMAND));
 	reg_value = dest_path + reg_value; 
 	//[HKEY_CLASSES_ROOT\CLSID\{556F8779-49C4-4e88-9CEF-0AC2CFD6B763}]
-	DWORD ret_val = ::RegCreateKeyEx (HKEY_CLASSES_ROOT,reg_key_name,0L,NULL,REG_OPTION_NON_VOLATILE,KEY_ALL_ACCESS,NULL,&reg_key,NULL);
+	uint32_t ret_val = ::RegCreateKeyEx (HKEY_CLASSES_ROOT,reg_key_name,0L,NULL,REG_OPTION_NON_VOLATILE,KEY_ALL_ACCESS,NULL,&reg_key,NULL);
 	if (ERROR_SUCCESS == ret_val) {
 		//   @="W3D Shell Extension"
-		ret_val = ::RegSetValueEx(reg_key,"",0L,REG_SZ,(BYTE *)(LPCTSTR)reg_value,reg_value.GetLength () + 1);
+		ret_val = ::RegSetValueEx(reg_key,"",0L,REG_SZ,(uint8_t *)(LPCTSTR)reg_value,reg_value.GetLength () + 1);
 	}
 
 }

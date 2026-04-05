@@ -38,6 +38,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 
 #ifndef UARRAY_H
@@ -188,8 +190,8 @@ inline int UniqueArrayClass<T>::Add(const T & new_item)
 	HashCalculator->Compute_Hash(new_item);
 	num_hash_vals = HashCalculator->Num_Hash_Values();
 	
-	unsigned int lasthash = 0xFFFFFFFF;
-	unsigned int hash;
+	uint32_t lasthash = 0xFFFFFFFF;
+	uint32_t hash;
 	
 	for (int hidx = 0; hidx < num_hash_vals; hidx++) {
 		hash = HashCalculator->Get_Hash_Value(hidx);

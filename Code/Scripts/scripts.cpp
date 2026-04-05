@@ -312,7 +312,7 @@ void ScriptImpClass::Set_Parameters_String(const char* params)
 *
 ******************************************************************************/
 
-void ScriptImpClass::Get_Parameters_String(char* buffer, unsigned int size)
+void ScriptImpClass::Get_Parameters_String(char* buffer, uint32_t size)
 {
 	assert(buffer != NULL);
 
@@ -321,7 +321,7 @@ void ScriptImpClass::Get_Parameters_String(char* buffer, unsigned int size)
 	// Build parameter string (comma seperated)
 	int count = Get_Parameter_Count();
 	int i = 0;
-	unsigned int stringLen = 0;
+	uint32_t stringLen = 0;
 
 	while ((i < count) && (stringLen < size)) {
 		if (i > 0) {
@@ -628,7 +628,7 @@ void ScriptImpClass::Save(ScriptSaver& saver)
 
 void ScriptImpClass::Load(ScriptLoader& loader)
 {
-	unsigned int chunkID;
+	uint32_t chunkID;
 
 	while (Commands->Open_Chunk(loader, &chunkID)) {
 

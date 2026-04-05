@@ -78,13 +78,13 @@ void HSVClass::Adjust(int ratio, HSVClass const & hsv)
 	**	destination color.
 	*/
 	int value = hsv.Get_Value() - Get_Value();
-	Value = (unsigned char)(Get_Value() + (value * ratio) / 256);
+	Value = (uint8_t)(Get_Value() + (value * ratio) / 256);
 
 	int saturation = hsv.Get_Saturation() - Get_Saturation();
-	Saturation = (unsigned char)(Get_Saturation() + (saturation * ratio) / 256);
+	Saturation = (uint8_t)(Get_Saturation() + (saturation * ratio) / 256);
 
 	int hue = hsv.Get_Hue() - Get_Hue();
-	Hue = (unsigned char)(Get_Hue() + (hue * ratio) / 256);
+	Hue = (uint8_t)(Get_Hue() + (hue * ratio) / 256);
 }
 
 
@@ -136,10 +136,10 @@ int HSVClass::Difference(HSVClass const & hsv) const
  *=============================================================================================*/
 HSVClass::operator RGBClass (void) const
 {
-	unsigned int i;				// Integer part.
-	unsigned int f;				// Fractional or remainder part.  f/HSV_BASE gives fraction.
-	unsigned int tmp;			// Temporary variable to help with calculations.
-	unsigned int values[7];	// Possible rgb values.  Don't use zero.
+	uint32_t i;				// Integer part.
+	uint32_t f;				// Fractional or remainder part.  f/HSV_BASE gives fraction.
+	uint32_t tmp;			// Temporary variable to help with calculations.
+	uint32_t values[7];	// Possible rgb values.  Don't use zero.
 
 	int hue = Get_Hue();
 	int saturation = Get_Saturation();
@@ -184,7 +184,7 @@ HSVClass::operator RGBClass (void) const
 	i += (i > 4) ? -4 : 2;
 	green = values[i];
 
-	RGBClass rgb((unsigned char)red, (unsigned char)green, (unsigned char)blue);
+	RGBClass rgb((uint8_t)red, (uint8_t)green, (uint8_t)blue);
 	return(rgb);
 }
 

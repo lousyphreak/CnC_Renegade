@@ -298,16 +298,16 @@ Random3Class::Random3Class(unsigned seed1, unsigned seed2) :
  *=============================================================================================*/
 int Random3Class::operator() (void)
 {
-	unsigned int loword = static_cast<unsigned int>(Seed);
-	unsigned int hiword = static_cast<unsigned int>(Index++);
+	uint32_t loword = static_cast<uint32_t>(Seed);
+	uint32_t hiword = static_cast<uint32_t>(Index++);
 	for (int i = 0; i < 4; i++) {
-		unsigned int hihold = hiword;
-		unsigned int temp = hihold ^ static_cast<unsigned int>(Mix1[i]);
-		unsigned int itmpl = temp & 0xffffu;
-		unsigned int itmph = temp >> 16;
+		uint32_t hihold = hiword;
+		uint32_t temp = hihold ^ static_cast<uint32_t>(Mix1[i]);
+		uint32_t itmpl = temp & 0xffffu;
+		uint32_t itmph = temp >> 16;
 		temp    = itmpl * itmpl + ~(itmph * itmph);
 		temp    = (temp >> 16) | (temp << 16);
-		hiword  = loword ^ ((temp ^ static_cast<unsigned int>(Mix2[i])) + itmpl * itmph);
+		hiword  = loword ^ ((temp ^ static_cast<uint32_t>(Mix2[i])) + itmpl * itmph);
 		loword  = hihold;
 	}
 	return static_cast<int>(hiword);
@@ -354,7 +354,7 @@ int Random3Class::operator() (int minval, int maxval)
 #define TEMPERING_SHIFT_T(y)  (y << 15)
 #define TEMPERING_SHIFT_L(y)  (y >> 18)
 
-Random4Class::Random4Class(unsigned int seed)
+Random4Class::Random4Class(uint32_t seed)
 {
     /* setting initial seeds to mt[N] using         */
     /* the generator Line 25 of Table 1 in          */
@@ -370,8 +370,8 @@ Random4Class::Random4Class(unsigned int seed)
 
 int Random4Class::operator() (void)
 {
-    unsigned int y;
-    static unsigned int mag01[2]={0x0, MATRIX_A};
+    uint32_t y;
+    static uint32_t mag01[2]={0x0, MATRIX_A};
     /* mag01[x] = x * MATRIX_A  for x=0,1 */
 
     if (mti >= N) { /* generate N words at one time */
@@ -410,7 +410,7 @@ int Random4Class::operator() (int minval, int maxval)
 float Random4Class::Get_Float()
 {
 	int x=(*this)();
-	unsigned int *y=(unsigned int *) &x;
+	uint32_t *y=(uint32_t *) &x;
 
 	return (*y)*2.3283064370807973754314699618685e-10f;
 }

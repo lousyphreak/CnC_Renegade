@@ -43,7 +43,7 @@
 #include <assert.h>
 
 
-static BOOL CALLBACK _thunk_dialog_proc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static int32_t CALLBACK _thunk_dialog_proc (HWND hWnd, uint32_t uMsg, uintptr_t wParam, intptr_t lParam);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -67,9 +67,9 @@ InputDlg::InputDlg (HWND hWndParent)
 int InputDlg::DoModal (void)
 {
 	// Put up the dialog box.
-	BOOL result = DialogBoxParam(AppInstance, MAKEINTRESOURCE(IDD),
+	int32_t result = DialogBoxParam(AppInstance, MAKEINTRESOURCE(IDD),
 							m_hWndParent, (DLGPROC)_thunk_dialog_proc,
-							(LPARAM)this);
+							(intptr_t)this);
 
 	// Return IDOK if the user accepted the new settings.
 	return (result == 1) ? IDOK : IDCANCEL;
@@ -112,7 +112,7 @@ void InputDlg::SetValue (const char *value)
 /////////////////////////////////////////////////////////////////////////////
 // InputDlg DialogProc
 
-BOOL CALLBACK _thunk_dialog_proc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+int32_t CALLBACK _thunk_dialog_proc (HWND hWnd, uint32_t uMsg, uintptr_t wParam, intptr_t lParam)
 {
 	static InputDlg *dialog = NULL;
 
@@ -128,7 +128,7 @@ BOOL CALLBACK _thunk_dialog_proc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 		return 0;
 }
 
-BOOL CALLBACK InputDlg::DialogProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+int32_t CALLBACK InputDlg::DialogProc (HWND hWnd, uint32_t uMsg, uintptr_t wParam, intptr_t lParam)
 {
 	int code = HIWORD(wParam);
 
@@ -176,7 +176,7 @@ BOOL CALLBACK InputDlg::DialogProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 /////////////////////////////////////////////////////////////////////////////
 // InputDlg message handlers
 
-LRESULT InputDlg::OnInitDialog (WPARAM wParam, LPARAM lParam)
+intptr_t InputDlg::OnInitDialog (uintptr_t wParam, intptr_t lParam)
 {
 	// Set the cursor to the normal arrow.
 	SetCursor(LoadCursor(NULL, IDC_ARROW));
@@ -200,7 +200,7 @@ LRESULT InputDlg::OnInitDialog (WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-BOOL InputDlg::OnOK (void)
+int32_t InputDlg::OnOK (void)
 {
 	// Update our copy of what the user typed.
 	HWND hEdit = GetDlgItem(m_hWnd, IDC_VALUE);

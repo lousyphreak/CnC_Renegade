@@ -52,7 +52,7 @@ typedef struct
 	VisStatusType	status[6];
 	int				direction_bits;
 	VisDirType		current_direction;
-	unsigned long	reserved[4];
+	uint32_t	reserved[4];
 } PERSISTENT_VIS_SAMPLE_INFO;
 
 

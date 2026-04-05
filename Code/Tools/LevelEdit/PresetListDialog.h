@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 #include "resource.h"
@@ -67,14 +69,14 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(PresetListDialogClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	virtual void OnOK();
 	afx_msg void OnAdd();
 	afx_msg void OnRemove();
-	afx_msg void OnDblclkPresetList(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnDblclkPresetTree(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnItemchangedPresetList(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnSelchangedPresetTree(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnDblclkPresetList(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnDblclkPresetTree(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnItemchangedPresetList(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnSelchangedPresetTree(NMHDR* pNMHDR, intptr_t* pResult);
 	afx_msg void OnDestroy();
 	afx_msg void OnSelendokTypeCombo();
 	afx_msg void OnSelchangeTypeCombo();
@@ -87,9 +89,9 @@ public:
 	//	Public methods
 	//////////////////////////////////////////////////////////////////
 	void			Set_Preset_List (DynamicVectorClass<int> *list)	{ m_List = list; }
-	void			Set_Class_ID (uint32 class_id)						{ m_RootClassID = class_id; }
-	void			Set_Selected_Class_ID (uint32 class_id)			{ m_ClassID = class_id; }
-	uint32		Get_Selected_Class_ID (void) const					{ return m_ClassID; }
+	void			Set_Class_ID (uint32_t class_id)						{ m_RootClassID = class_id; }
+	void			Set_Selected_Class_ID (uint32_t class_id)			{ m_ClassID = class_id; }
+	uint32_t		Get_Selected_Class_ID (void) const					{ return m_ClassID; }
 	void			Enable_Type_Selection (bool onoff)					{ m_EnableTypeSel = onoff; }
 
 protected:
@@ -104,7 +106,7 @@ protected:
 	void			Populate_Preset_Tree (void);
 	void			Fill_Tree (NTreeLeafClass<PresetClass *> *leaf, HTREEITEM parent_item);
 
-	void			Add_Factories_To_Combo (NTreeLeafClass<uint32> *leaf, int indent, int &index);
+	void			Add_Factories_To_Combo (NTreeLeafClass<uint32_t> *leaf, int indent, int &index);
 	void			Generate_Type_List (void);
 	
 
@@ -112,8 +114,8 @@ protected:
 	//	Protected member data
 	//////////////////////////////////////////////////////////////////
 	DynamicVectorClass<int> *		m_List;
-	uint32								m_ClassID;
-	uint32								m_RootClassID;
+	uint32_t								m_ClassID;
+	uint32_t								m_RootClassID;
 	bool									m_EnableTypeSel;
 };
 

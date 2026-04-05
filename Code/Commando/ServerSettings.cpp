@@ -73,7 +73,7 @@ char ServerSettingsClass::SettingsFile[MAX_PATH];
 bool ServerSettingsClass::IsActive = false;
 char ServerSettingsClass::MasterPassword[128];
 ServerSettingsClass::GameModeTypeEnum ServerSettingsClass::GameMode = MODE_NONE;
-unsigned long ServerSettingsClass::MasterBandwidth = 0;
+uint32_t ServerSettingsClass::MasterBandwidth = 0;
 char ServerSettingsClass::PreferredLoginServer[256];
 int ServerSettingsClass::DiskLogSize = -1;
 
@@ -437,7 +437,7 @@ bool ServerSettingsClass::Parse(bool apply)
 			** There may be an IP override specified.
 			*/
 			ini.Get_String(MasterServerSection, "RemoteAdminIP", "0.0.0.0", remote_admin_ip, sizeof(remote_admin_ip));
-			unsigned long admin_ip_long = ntohl(inet_addr(remote_admin_ip));
+			uint32_t admin_ip_long = ntohl(inet_addr(remote_admin_ip));
 			reg_remote.Set_Int(SERVER_CONTROL_IP_KEY, admin_ip_long);
 
 		} else {
@@ -634,7 +634,7 @@ bool ServerSettingsClass::Parse(bool apply)
 			** Apply the settings.
 			*/
 			if (apply) {
-				SlaveMaster.Add_Slave(enabled, slave_nick, slave_serial, (unsigned short)slave_port, slave_settings, slave_bw, slave_pass);
+				SlaveMaster.Add_Slave(enabled, slave_nick, slave_serial, (uint16_t)slave_port, slave_settings, slave_bw, slave_pass);
 			}
 		}
 		if (apply) {
@@ -669,7 +669,7 @@ void ServerSettingsClass::Encrypt_Serial(StringClass serial_in, StringClass &ser
 {
 	char *s;
 	int numberlength = serial_in.Get_Length();
-	DWORD bytesread = 0;
+	uint32_t bytesread = 0;
 	char stringbuffer[ENCRYPTION_STRING_LENGTH];
 	int p;
 
@@ -805,14 +805,14 @@ void ServerSettingsClass::Write_Server_List(const WWOnline::IRCServerList &serve
 		** the file back out with the server list in place.
 		*/
 		if (file.Is_Available()) {
-			unsigned long size = file.Size();
+			uint32_t size = file.Size();
 			if (size) {
 
 				/*
 				** Read the file.
 				*/
 				char *file_buffer = new char[size + 8192];
-				unsigned long read_size = file.Read(file_buffer, size);
+				uint32_t read_size = file.Read(file_buffer, size);
 				WWASSERT(read_size == size);
 				file.Close();
 
@@ -835,7 +835,7 @@ void ServerSettingsClass::Write_Server_List(const WWOnline::IRCServerList &serve
 					char *server_list_text = new char [8192];
 					strcpy(server_list_text, "\r\n;\r\n");
 
-					for (unsigned int i = 0; i < server_list.size(); i++)	{
+					for (uint32_t i = 0; i < server_list.size(); i++)	{
 						const RefPtr<WWOnline::IRCServerData> &server = server_list[i];
 						if (server->HasLanguageCode()) {
 							const char *server_name = server->GetName();

@@ -103,7 +103,7 @@ void cMsgStatListGroup::Increment_Num_Byte_Recd(int list_num, int message_type, 
 }
 
 //-----------------------------------------------------------------------------
-DWORD cMsgStatListGroup::Get_Num_Msg_Sent(int list_num, int message_type) const
+uint32_t cMsgStatListGroup::Get_Num_Msg_Sent(int list_num, int message_type) const
 {
 	if (list_num == ALL_LISTS) {
 		list_num = NumLists;
@@ -116,7 +116,7 @@ DWORD cMsgStatListGroup::Get_Num_Msg_Sent(int list_num, int message_type) const
 }
 
 //-----------------------------------------------------------------------------
-DWORD cMsgStatListGroup::Get_Num_Byte_Sent(int list_num, int message_type) const
+uint32_t cMsgStatListGroup::Get_Num_Byte_Sent(int list_num, int message_type) const
 {
 	if (list_num == ALL_LISTS) {
 		list_num = NumLists;
@@ -129,7 +129,7 @@ DWORD cMsgStatListGroup::Get_Num_Byte_Sent(int list_num, int message_type) const
 }
 
 //-----------------------------------------------------------------------------
-DWORD cMsgStatListGroup::Get_Num_Msg_Recd(int list_num, int message_type) const
+uint32_t cMsgStatListGroup::Get_Num_Msg_Recd(int list_num, int message_type) const
 {
 	if (list_num == ALL_LISTS) {
 		list_num = NumLists;
@@ -142,7 +142,7 @@ DWORD cMsgStatListGroup::Get_Num_Msg_Recd(int list_num, int message_type) const
 }
 
 //-----------------------------------------------------------------------------
-DWORD cMsgStatListGroup::Get_Num_Byte_Recd(int list_num, int message_type) const
+uint32_t cMsgStatListGroup::Get_Num_Byte_Recd(int list_num, int message_type) const
 {
 	if (list_num == ALL_LISTS) {
 		list_num = NumLists;
@@ -155,7 +155,7 @@ DWORD cMsgStatListGroup::Get_Num_Byte_Recd(int list_num, int message_type) const
 }
 
 //-----------------------------------------------------------------------------
-DWORD cMsgStatListGroup::Compute_Avg_Num_Byte_Sent(int list_num, int message_type) const
+uint32_t cMsgStatListGroup::Compute_Avg_Num_Byte_Sent(int list_num, int message_type) const
 {
 	if (list_num == ALL_LISTS) {
 		list_num = NumLists;
@@ -168,7 +168,7 @@ DWORD cMsgStatListGroup::Compute_Avg_Num_Byte_Sent(int list_num, int message_typ
 }
 
 //-----------------------------------------------------------------------------
-DWORD cMsgStatListGroup::Compute_Avg_Num_Byte_Recd(int list_num, int message_type) const
+uint32_t cMsgStatListGroup::Compute_Avg_Num_Byte_Recd(int list_num, int message_type) const
 {
 	if (list_num == ALL_LISTS) {
 		list_num = NumLists;

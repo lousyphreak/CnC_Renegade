@@ -75,7 +75,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CameraDistanceDialogClass::OnInitDialog (void) 
 {
 	CDialog::OnInitDialog ();
@@ -110,12 +110,12 @@ CameraDistanceDialogClass::OnOK (void)
 //	OnNotify
 //
 ////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CameraDistanceDialogClass::OnNotify
 (
-	WPARAM wParam,
-	LPARAM lParam,
-	LRESULT *pResult
+	uintptr_t wParam,
+	intptr_t lParam,
+	intptr_t *pResult
 ) 
 {
 	//

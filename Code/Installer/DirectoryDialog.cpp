@@ -251,7 +251,7 @@ void DirectoryDialogClass::On_Frame_Update (void)
  * HISTORY:                                                                                    *
  *   08/22/01    IML : Created.                                                                * 
  *=============================================================================================*/
-void DirectoryDialogClass::On_Command (int ctrl_id, int message_id, DWORD param)
+void DirectoryDialogClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	switch (ctrl_id)
 	{
@@ -405,7 +405,7 @@ void WOLDirectoryDialogClass::On_Init_Dialog()
  * HISTORY:                                                                                    *
  *   08/22/01    IML : Created.                                                                * 
  *=============================================================================================*/
-void WOLDirectoryDialogClass::On_Command (int ctrl_id, int message_id, DWORD param)
+void WOLDirectoryDialogClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	switch (ctrl_id)
 	{

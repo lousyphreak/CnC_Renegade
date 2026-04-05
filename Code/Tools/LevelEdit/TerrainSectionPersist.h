@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __TERRAIN_SECTION_PERSIST_H
@@ -129,11 +131,11 @@ public:
 	//	Accessors
 	//
 	const Vector3 &		Get_Position (void) const			{ return m_Position; }
-	uint32					Get_Def_ID (void) const				{ return m_DefinitionID; }
+	uint32_t					Get_Def_ID (void) const				{ return m_DefinitionID; }
 	int						Get_Instance_ID (void) const		{ return m_InstanceID; }
-	uint32					Get_Vis_Obj_ID (void) const		{ return m_VisObjectID; }
-	uint32					Get_Vis_Sector_ID (void) const	{ return m_VisSectorID; }
-	uint32					Get_Cull_Link (void) const			{ return m_CullLink; }
+	uint32_t					Get_Vis_Obj_ID (void) const		{ return m_VisObjectID; }
+	uint32_t					Get_Vis_Sector_ID (void) const	{ return m_VisSectorID; }
+	uint32_t					Get_Cull_Link (void) const			{ return m_CullLink; }
 	const StringClass &	Get_Name (void) const				{ return m_Name; }
 
 protected:
@@ -150,11 +152,11 @@ private:
 	//	Private member data
 	//////////////////////////////////////////////////////////////////
 	Vector3									m_Position;
-	uint32									m_DefinitionID;
+	uint32_t									m_DefinitionID;
 	int										m_InstanceID;
-	uint32									m_VisObjectID;
-	uint32									m_VisSectorID;
-	uint32									m_CullLink;
+	uint32_t									m_VisObjectID;
+	uint32_t									m_VisSectorID;
+	uint32_t									m_CullLink;
 	StringClass								m_Name;
 	TerrainSectionPersistListClass	m_TerrainSectionInfo;	
 };

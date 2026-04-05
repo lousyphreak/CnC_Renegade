@@ -106,7 +106,7 @@ ChunkSaveClass::ChunkSaveClass(FileClass * file) :
  * HISTORY:                                                                                    * 
  *   07/17/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-bool ChunkSaveClass::Begin_Chunk(uint32 id)
+bool ChunkSaveClass::Begin_Chunk(uint32_t id)
 {
 	ChunkHeader	chunkh;
 	int 			filepos;
@@ -195,7 +195,7 @@ bool ChunkSaveClass::End_Chunk(void)
  * HISTORY:                                                                                    *
  *   9/3/99     GTH : Created.                                                                 *
  *=============================================================================================*/
-bool ChunkSaveClass::Begin_Micro_Chunk(uint32 id)
+bool ChunkSaveClass::Begin_Micro_Chunk(uint32_t id)
 {
 	assert(id < 256);
 	assert(!InMicroChunk);
@@ -262,7 +262,7 @@ bool ChunkSaveClass::End_Micro_Chunk(void)
  * HISTORY:                                                                                    * 
  *   07/17/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-uint32 ChunkSaveClass::Write(const void * buf, uint32 nbytes)
+uint32_t ChunkSaveClass::Write(const void * buf, uint32_t nbytes)
 {
 	// If this assert hits, you mixed data and chunks within the same chunk NO NO!
 	assert(HeaderStack[StackIndex-1].Get_Sub_Chunk_Flag() == 0);
@@ -298,7 +298,7 @@ uint32 ChunkSaveClass::Write(const void * buf, uint32 nbytes)
  * HISTORY:                                                                                    *
  *   1/4/99     GTH : Created.                                                                 *
  *=============================================================================================*/
-uint32 ChunkSaveClass::Write(const IOVector2Struct & v)
+uint32_t ChunkSaveClass::Write(const IOVector2Struct & v)
 {
 	return Write(&v,sizeof(v));
 }
@@ -316,7 +316,7 @@ uint32 ChunkSaveClass::Write(const IOVector2Struct & v)
  * HISTORY:                                                                                    *
  *   1/4/99     GTH : Created.                                                                 *
  *=============================================================================================*/
-uint32 ChunkSaveClass::Write(const IOVector3Struct & v)
+uint32_t ChunkSaveClass::Write(const IOVector3Struct & v)
 {	
 	return Write(&v,sizeof(v));
 }
@@ -334,7 +334,7 @@ uint32 ChunkSaveClass::Write(const IOVector3Struct & v)
  * HISTORY:                                                                                    *
  *   1/4/99     GTH : Created.                                                                 *
  *=============================================================================================*/
-uint32 ChunkSaveClass::Write(const IOVector4Struct & v)
+uint32_t ChunkSaveClass::Write(const IOVector4Struct & v)
 {
 	return Write(&v,sizeof(v));
 }
@@ -351,7 +351,7 @@ uint32 ChunkSaveClass::Write(const IOVector4Struct & v)
  * HISTORY:                                                                                    *
  *   1/4/99     GTH : Created.                                                                 *
  *=============================================================================================*/
-uint32 ChunkSaveClass::Write(const IOQuaternionStruct & q)
+uint32_t ChunkSaveClass::Write(const IOQuaternionStruct & q)
 {
 	return Write(&q,sizeof(q));
 }
@@ -446,7 +446,7 @@ bool ChunkLoadClass::Open_Chunk()
  * HISTORY:                                                                                    *
  *   3/4/2002   gth : Created.                                                                 *
  *=============================================================================================*/
-bool ChunkLoadClass::Peek_Next_Chunk(uint32 * set_id,uint32 * set_size)
+bool ChunkLoadClass::Peek_Next_Chunk(uint32_t * set_id,uint32_t * set_size)
 {
 	// if user didn't close any micro chunks that he opened, bad things could happen
 	assert(InMicroChunk == false);							
@@ -526,7 +526,7 @@ bool ChunkLoadClass::Close_Chunk()
  * HISTORY:                                                                                    * 
  *   07/17/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-uint32 ChunkLoadClass::Cur_Chunk_ID()
+uint32_t ChunkLoadClass::Cur_Chunk_ID()
 {
 	assert(StackIndex >= 1);
 	return HeaderStack[StackIndex-1].Get_Type();
@@ -545,7 +545,7 @@ uint32 ChunkLoadClass::Cur_Chunk_ID()
  * HISTORY:                                                                                    * 
  *   07/17/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-uint32 ChunkLoadClass::Cur_Chunk_Length()
+uint32_t ChunkLoadClass::Cur_Chunk_Length()
 {
 	assert(StackIndex >= 1);
 	return HeaderStack[StackIndex-1].Get_Size();
@@ -664,7 +664,7 @@ bool ChunkLoadClass::Close_Micro_Chunk()
  * HISTORY:                                                                                    *
  *   9/3/99     GTH : Created.                                                                 *
  *=============================================================================================*/
-uint32 ChunkLoadClass::Cur_Micro_Chunk_ID()
+uint32_t ChunkLoadClass::Cur_Micro_Chunk_ID()
 {
 	assert(InMicroChunk);
 	return MCHeader.Get_Type();
@@ -685,14 +685,14 @@ uint32 ChunkLoadClass::Cur_Micro_Chunk_ID()
  * HISTORY:                                                                                    *
  *   9/3/99     GTH : Created.                                                                 *
  *=============================================================================================*/
-uint32 ChunkLoadClass::Cur_Micro_Chunk_Length()
+uint32_t ChunkLoadClass::Cur_Micro_Chunk_Length()
 {
 	assert(InMicroChunk);
 	return MCHeader.Get_Size();
 }
 
 // Seek over nbytes in the stream
-uint32 ChunkLoadClass::Seek(uint32 nbytes)
+uint32_t ChunkLoadClass::Seek(uint32_t nbytes)
 {
 	assert(StackIndex >= 1);
 
@@ -706,7 +706,7 @@ uint32 ChunkLoadClass::Seek(uint32 nbytes)
 		return 0;
 	}
 	
-	uint32 curpos=File->Tell();
+	uint32_t curpos=File->Tell();
 	if (File->Seek(nbytes,SEEK_CUR)-curpos != (int)nbytes) {
 		return 0;
 	}
@@ -734,7 +734,7 @@ uint32 ChunkLoadClass::Seek(uint32 nbytes)
  * HISTORY:                                                                                    * 
  *   07/17/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-uint32 ChunkLoadClass::Read(void * buf,uint32 nbytes)
+uint32_t ChunkLoadClass::Read(void * buf,uint32_t nbytes)
 {
 	assert(StackIndex >= 1);
 
@@ -776,7 +776,7 @@ uint32 ChunkLoadClass::Read(void * buf,uint32 nbytes)
  * HISTORY:                                                                                    *
  *   1/4/99     GTH : Created.                                                                 *
  *=============================================================================================*/
-uint32 ChunkLoadClass::Read(IOVector2Struct * v)
+uint32_t ChunkLoadClass::Read(IOVector2Struct * v)
 {
 	assert(v != NULL);
 	return Read(v,sizeof(v));
@@ -795,7 +795,7 @@ uint32 ChunkLoadClass::Read(IOVector2Struct * v)
  * HISTORY:                                                                                    *
  *   1/4/99     GTH : Created.                                                                 *
  *=============================================================================================*/
-uint32 ChunkLoadClass::Read(IOVector3Struct * v)
+uint32_t ChunkLoadClass::Read(IOVector3Struct * v)
 {
 	assert(v != NULL);
 	return Read(v,sizeof(v));
@@ -814,7 +814,7 @@ uint32 ChunkLoadClass::Read(IOVector3Struct * v)
  * HISTORY:                                                                                    *
  *   1/4/99     GTH : Created.                                                                 *
  *=============================================================================================*/
-uint32 ChunkLoadClass::Read(IOVector4Struct * v)
+uint32_t ChunkLoadClass::Read(IOVector4Struct * v)
 {
 	assert(v != NULL);
 	return Read(v,sizeof(v));
@@ -833,7 +833,7 @@ uint32 ChunkLoadClass::Read(IOVector4Struct * v)
  * HISTORY:                                                                                    *
  *   1/4/99     GTH : Created.                                                                 *
  *=============================================================================================*/
-uint32 ChunkLoadClass::Read(IOQuaternionStruct * q)
+uint32_t ChunkLoadClass::Read(IOQuaternionStruct * q)
 {
 	assert(q != NULL);
 	return Read(q,sizeof(q));

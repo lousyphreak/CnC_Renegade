@@ -39,6 +39,8 @@
 #ifndef VEHICLEPHYS_H
 #define VEHICLEPHYS_H
 
+#include <cstdint>
+
 #include "rbody.h"
 #include "simplevec.h"
 
@@ -201,7 +203,7 @@ public:
 	virtual ~VehiclePhysDefClass(void);
 	
 	// From DefinitionClass
-	virtual uint32								Get_Class_ID (void) const;
+	virtual uint32_t								Get_Class_ID (void) const;
 
 	// From PhysDefClass
 	virtual const char *						Get_Type_Name(void)						{ return "VehiclePhysDef"; }

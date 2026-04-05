@@ -111,7 +111,7 @@ EmitterUserPropPageClass::Initialize (void)
 //
 //  OnInitDialog
 //
-BOOL
+int32_t
 EmitterUserPropPageClass::OnInitDialog (void) 
 {
 	// Allow the base class to process this message
@@ -135,7 +135,7 @@ EmitterUserPropPageClass::OnInitDialog (void)
 //
 //  OnApply
 //
-BOOL
+int32_t
 EmitterUserPropPageClass::OnApply (void)
 {
 	// Get the settings from the controls

@@ -97,9 +97,9 @@ SubTitleClass::~SubTitleClass()
 *     Set the color the subtitle caption should be displayed in.
 *
 * INPUTS
-*     unsigned char red
-*     unsigned char green
-*     unsigned char blue
+*     uint8_t red
+*     uint8_t green
+*     uint8_t blue
 *
 * RESULTS
 *     NONE
@@ -107,15 +107,15 @@ SubTitleClass::~SubTitleClass()
 ******************************************************************************/
 
 void SubTitleClass::Set_RGB_Color(
-	unsigned char red, 
-	unsigned char green,
-	unsigned char blue)
+	uint8_t red, 
+	uint8_t green,
+	uint8_t blue)
 {
 	// Combine components as 8:8:8
 	mRGBColor = (
-		((unsigned long)red << 16) |
-		((unsigned long)green << 8) |
-		(unsigned long)blue);
+		((uint32_t)red << 16) |
+		((uint32_t)green << 8) |
+		(uint32_t)blue);
 }
 
 
@@ -145,7 +145,7 @@ void SubTitleClass::Set_Caption(wchar_t* string)
 
 	// Make a copy of caption
 	if (string != NULL) {
-		unsigned int length = wcslen(string);
+		uint32_t length = wcslen(string);
 		mCaption = new wchar_t[length + 1];
 		WWASSERT(mCaption != NULL);
 

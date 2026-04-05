@@ -55,7 +55,7 @@
  * HISTORY:                                                                                    * 
  *   06/09/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-void * W3dClassDesc::Create(BOOL)
+void * W3dClassDesc::Create(int32_t)
 {
 	return new W3dExportClass; 
 }

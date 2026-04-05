@@ -58,7 +58,7 @@ CollisionBoxSaveClass::CollisionBoxSaveClass
 	Object *       obj = inode->EvalWorldState(curtime).obj;
 	TriObject *    tri = (TriObject *)obj->ConvertToType(curtime, triObjectClassID);
 	Mesh           mesh = tri->mesh;
-	DWORD				wirecolor = inode->GetWireColor();
+	uint32_t				wirecolor = inode->GetWireColor();
 
 	if (mesh.getNumVerts() == 0) {
 		throw ErrorClass("Mesh %s has no vertices!\n",mesh_name);

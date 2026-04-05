@@ -174,7 +174,7 @@ HierarchySaveClass::HierarchySaveClass
 	int rootidx = add_node(NULL,-1);
  	assert(rootidx == 0);
 
-	for (unsigned int i = 0; i < rootlist->Num_Nodes(); i++) {
+	for (uint32_t i = 0; i < rootlist->Num_Nodes(); i++) {
 		add_tree((*rootlist)[i],rootidx);
 	}
 
@@ -875,7 +875,7 @@ bool HierarchySaveClass::save_pivots(ChunkSaveClass & csave)
 		return false;
 	}
 
-	for (uint32 i=0; i<HierarchyHeader.NumPivots; i++) {
+	for (uint32_t i=0; i<HierarchyHeader.NumPivots; i++) {
 		if (csave.Write(&Node[i].Pivot,sizeof(W3dPivotStruct)) != sizeof(W3dPivotStruct)) {
 			return false;
 		}
@@ -906,7 +906,7 @@ bool HierarchySaveClass::save_fixups(ChunkSaveClass & csave)
 		return false;
 	}
 
-	for (uint32 i=0; i<HierarchyHeader.NumPivots; i++) {
+	for (uint32_t i=0; i<HierarchyHeader.NumPivots; i++) {
 		if (csave.Write(&Node[i].Fixup,sizeof(W3dPivotFixupStruct)) != sizeof(W3dPivotFixupStruct)) {
 			return false;
 		}
@@ -981,7 +981,7 @@ bool HierarchySaveClass::load_header(ChunkLoadClass & cload)
  *=============================================================================================*/
 bool HierarchySaveClass::load_pivots(ChunkLoadClass & cload)
 {
-	for (uint32 i=0; i<HierarchyHeader.NumPivots; i++) {
+	for (uint32_t i=0; i<HierarchyHeader.NumPivots; i++) {
 		Node[i].MaxNode = NULL;
 		if (cload.Read(&Node[i].Pivot,sizeof(W3dPivotStruct)) != sizeof(W3dPivotStruct)) {
 			return false;
@@ -1004,7 +1004,7 @@ bool HierarchySaveClass::load_pivots(ChunkLoadClass & cload)
  *=============================================================================================*/
 bool HierarchySaveClass::load_fixups(ChunkLoadClass & cload)
 {
-	for (uint32 i=0; i<HierarchyHeader.NumPivots; i++) {
+	for (uint32_t i=0; i<HierarchyHeader.NumPivots; i++) {
 		if (cload.Read(&Node[i].Fixup,sizeof(W3dPivotFixupStruct)) != sizeof(W3dPivotFixupStruct)) {
 			return false;
 		}		

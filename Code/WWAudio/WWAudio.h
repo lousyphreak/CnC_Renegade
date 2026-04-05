@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __WWAUDIO_H
@@ -331,15 +333,15 @@ public:
 	//////////////////////////////////////////////////////////////////////
 	//	Update methods
 	//////////////////////////////////////////////////////////////////////
-	void					On_Frame_Update (unsigned int milliseconds = 0);
+	void					On_Frame_Update (uint32_t milliseconds = 0);
 
 	//////////////////////////////////////////////////////////////////////
 	//	Callback methods
 	//////////////////////////////////////////////////////////////////////
-	void					Register_EOS_Callback (LPFNEOSCALLBACK callback, DWORD user_param);
+	void					Register_EOS_Callback (LPFNEOSCALLBACK callback, uint32_t user_param);
 	void					UnRegister_EOS_Callback (LPFNEOSCALLBACK callback);
 
-	void					Register_Text_Callback (LPFNTEXTCALLBACK callback, DWORD user_param);
+	void					Register_Text_Callback (LPFNTEXTCALLBACK callback, uint32_t user_param);
 	void					UnRegister_Text_Callback (LPFNTEXTCALLBACK callback);
 
 	void					Fire_Text_Callback (AudibleSoundClass *sound_obj, const StringClass &text);
@@ -371,7 +373,7 @@ public:
 	//
 	AudibleSoundClass *		Create_Sound_Effect (FileClass &file, const char *string_id);
 	AudibleSoundClass *		Create_Sound_Effect (const char *filename);
-	AudibleSoundClass *		Create_Sound_Effect (const char *string_id, unsigned char *raw_wave_data, unsigned long bytes);
+	AudibleSoundClass *		Create_Sound_Effect (const char *string_id, uint8_t *raw_wave_data, uint32_t bytes);
 
 	//
 	//	Note:  3D sound effects should be inserted into the SoundScene.
@@ -388,7 +390,7 @@ public:
 	//
 	Sound3DClass *		Create_3D_Sound (FileClass &file, const char *string_id, int classid_hint = CLASSID_3D);
 	Sound3DClass *		Create_3D_Sound (const char *filename, int classid_hint = CLASSID_3D);
-	Sound3DClass *		Create_3D_Sound (const char *string_id, unsigned char *raw_wave_data, unsigned long bytes, int classid_hint = CLASSID_3D);
+	Sound3DClass *		Create_3D_Sound (const char *string_id, uint8_t *raw_wave_data, uint32_t bytes, int classid_hint = CLASSID_3D);
 
 
 	//////////////////////////////////////////////////////////////////////
@@ -421,17 +423,17 @@ public:
 	//
 	//	Sound creation methods
 	//
-	int						Create_Instant_Sound (int definition_id, const Matrix3D &tm, RefCountClass *user_obj = NULL, uint32 user_data = 0, int classid_hint = CLASSID_3D);
-	int						Create_Instant_Sound (const char *def_name, const Matrix3D &tm, RefCountClass *user_obj = NULL, uint32 user_data = 0, int classid_hint = CLASSID_3D);
-	AudibleSoundClass *	Create_Continuous_Sound (int definition_id, RefCountClass *user_obj = NULL, uint32 user_data = 0, int classid_hint = CLASSID_3D);
-	AudibleSoundClass *	Create_Continuous_Sound (const char *def_name, RefCountClass *user_obj = NULL, uint32 user_data = 0, int classid_hint = CLASSID_3D);
-	AudibleSoundClass *	Create_Sound (int definition_id, RefCountClass *user_obj = NULL, uint32 user_data = 0, int classid_hint = CLASSID_3D);
-	AudibleSoundClass *	Create_Sound (const char *def_name, RefCountClass *user_obj = NULL, uint32 user_data = 0, int classid_hint = CLASSID_3D);
+	int						Create_Instant_Sound (int definition_id, const Matrix3D &tm, RefCountClass *user_obj = NULL, uint32_t user_data = 0, int classid_hint = CLASSID_3D);
+	int						Create_Instant_Sound (const char *def_name, const Matrix3D &tm, RefCountClass *user_obj = NULL, uint32_t user_data = 0, int classid_hint = CLASSID_3D);
+	AudibleSoundClass *	Create_Continuous_Sound (int definition_id, RefCountClass *user_obj = NULL, uint32_t user_data = 0, int classid_hint = CLASSID_3D);
+	AudibleSoundClass *	Create_Continuous_Sound (const char *def_name, RefCountClass *user_obj = NULL, uint32_t user_data = 0, int classid_hint = CLASSID_3D);
+	AudibleSoundClass *	Create_Sound (int definition_id, RefCountClass *user_obj = NULL, uint32_t user_data = 0, int classid_hint = CLASSID_3D);
+	AudibleSoundClass *	Create_Sound (const char *def_name, RefCountClass *user_obj = NULL, uint32_t user_data = 0, int classid_hint = CLASSID_3D);
 
 	//////////////////////////////////////////////////////////////////////
 	//	Sound object lookup
 	//////////////////////////////////////////////////////////////////////
-	SoundSceneObjClass *	Find_Sound_Object (uint32 sound_obj_id);
+	SoundSceneObjClass *	Find_Sound_Object (uint32_t sound_obj_id);
 
 	//////////////////////////////////////////////////////////////////////
 	//	Sound scene methods (for 3D sounds)
@@ -584,7 +586,7 @@ protected:
 	SoundBufferClass *	Get_Sound_Buffer (const char *filename, bool is_3d);
 	SoundBufferClass *	Find_Cached_Buffer (const char *string_id);
 	SoundBufferClass *	Create_Sound_Buffer (FileClass &file, const char *string_id, bool is_3d);
-	SoundBufferClass *	Create_Sound_Buffer (unsigned char *file_image, unsigned long bytes, const char *string_id, bool is_3d);
+	SoundBufferClass *	Create_Sound_Buffer (uint8_t *file_image, uint32_t bytes, const char *string_id, bool is_3d);
 	bool						Cache_Buffer (SoundBufferClass *buffer, const char *string_id);
 	bool						Free_Cache_Space (int bytes);
 

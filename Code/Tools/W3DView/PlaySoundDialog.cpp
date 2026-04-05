@@ -112,7 +112,7 @@ PlaySoundDialogClass::OnCancel (void)
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 PlaySoundDialogClass::OnInitDialog (void) 
 {
 	CDialog::OnInitDialog ();

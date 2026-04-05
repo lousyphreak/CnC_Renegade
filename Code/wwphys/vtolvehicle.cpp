@@ -500,7 +500,7 @@ VTOLVehicleDefClass::VTOLVehicleDefClass(void) :
 	ANGLE_EDITABLE_PARAM(VTOLVehicleDefClass,RotorDeceleration,DEG_TO_RADF(0.01f),DEG_TO_RADF(640.0f));
 }
 
-uint32 VTOLVehicleDefClass::Get_Class_ID (void) const	
+uint32_t VTOLVehicleDefClass::Get_Class_ID (void) const	
 { 
 	return CLASSID_VTOLVEHICLEDEF; 
 }

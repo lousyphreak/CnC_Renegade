@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef VERTMATERIAL_H
@@ -203,7 +205,7 @@ public:
 	/*
 	** CRC, used by the loading code to build a list of the unique materials
 	*/
-	inline unsigned long Get_CRC(void) const
+	inline uint32_t Get_CRC(void) const
 	{
 		if (CRCDirty) {
 			CRC=Compute_CRC();
@@ -239,16 +241,16 @@ protected:
 	Vector3				Emissive;
 	float					Opacity;
 	float					Shininess;
-	unsigned int			Flags;
-	unsigned int			AmbientColorSource;
-	unsigned int			EmissiveColorSource;
-	unsigned int			DiffuseColorSource;
+	uint32_t			Flags;
+	uint32_t			AmbientColorSource;
+	uint32_t			EmissiveColorSource;
+	uint32_t			DiffuseColorSource;
 	StringClass				Name;
 	TextureMapperClass *	Mapper[MeshBuilderClass::MAX_STAGES];
-	unsigned int			UVSource[MeshBuilderClass::MAX_STAGES];
+	uint32_t			UVSource[MeshBuilderClass::MAX_STAGES];
 	bool						UseLighting;
-	unsigned int			UniqueID;
-	mutable unsigned long CRC;
+	uint32_t			UniqueID;
+	mutable uint32_t CRC;
 	mutable bool			CRCDirty;
 
 private:
@@ -260,7 +262,7 @@ private:
 	** Apply the render states corresponding to a NULL vetex material to D3D
 	*/
 	static void			Apply_Null(void);
-	unsigned long		Compute_CRC(void) const;
+	uint32_t		Compute_CRC(void) const;
 
 	static VertexMaterialClass *Presets[PRESET_COUNT];
 };

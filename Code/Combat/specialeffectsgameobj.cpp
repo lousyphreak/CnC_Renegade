@@ -117,7 +117,7 @@ SpecialEffectsGameObjDef::~SpecialEffectsGameObjDef (void)
 //	Get_Class_ID
 //
 ///////////////////////////////////////////////////////////////////////////
-uint32
+uint32_t
 SpecialEffectsGameObjDef::Get_Class_ID (void) const	
 { 
 	return CLASSID_GAME_OBJECT_DEF_SPECIAL_EFFECTS; 

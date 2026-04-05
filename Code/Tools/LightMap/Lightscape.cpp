@@ -84,7 +84,7 @@ LightscapeSolve::LightscapeSolve (const char *solvedirectoryname, const char *so
 	static char _messagebuffer	[1024];
 
 	CRect					 srect, trect;
-	BOOL					 success;
+	int32_t					 success;
 	StringBuilder		 errormessage (_messagebuffer, sizeof (_messagebuffer));
 	const char			*solvefilename;
 	LtTBuilderFactory *factory = NULL;

@@ -40,6 +40,8 @@
 #ifndef __PRESET_EXPORT_OPTIONS_DIALOG_H
 #define __PRESET_EXPORT_OPTIONS_DIALOG_H
 
+#include <cstdint>
+
 #include <windows.h>
 #include <max.h>
 #include "w3dutil.h"
@@ -89,16 +91,16 @@ private:
 	//////////////////////////////////////////////////////////////////
 	//	Static methods
 	//////////////////////////////////////////////////////////////////
-	static BOOL CALLBACK	Real_Message_Proc (HWND wnd, UINT message, WPARAM wparam, LPARAM lparam);
-	static BOOL CALLBACK	Settings_Pane_Message_Proc (HWND wnd, UINT message, WPARAM wparam, LPARAM lparam);
+	static int32_t CALLBACK	Real_Message_Proc (HWND wnd, uint32_t message, uintptr_t wparam, intptr_t lparam);
+	static int32_t CALLBACK	Settings_Pane_Message_Proc (HWND wnd, uint32_t message, uintptr_t wparam, intptr_t lparam);
 	
 	//////////////////////////////////////////////////////////////////
 	//	Private methods
 	//////////////////////////////////////////////////////////////////
-	BOOL			Message_Proc (UINT message, WPARAM wparam, LPARAM lparam);
-	BOOL			Pane_Message_Proc (UINT message, WPARAM wparam, LPARAM lparam);
-	BOOL			Settings_Message_Proc (UINT message, WPARAM wparam, LPARAM lparam);
-	BOOL			On_Command (WPARAM wparam, LPARAM lparam);
+	int32_t			Message_Proc (uint32_t message, uintptr_t wparam, intptr_t lparam);
+	int32_t			Pane_Message_Proc (uint32_t message, uintptr_t wparam, intptr_t lparam);
+	int32_t			Settings_Message_Proc (uint32_t message, uintptr_t wparam, intptr_t lparam);
+	int32_t			On_Command (uintptr_t wparam, intptr_t lparam);
 	void			Show_Settings_Pane (int pane_id);
 	void			Create_Settings_Panes (void);
 	void			Destroy_Settings_Panes (void);

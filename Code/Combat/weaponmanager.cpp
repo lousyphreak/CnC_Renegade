@@ -68,7 +68,7 @@ SimplePersistFactoryClass<WeaponDefinitionClass, CHUNKID_WEAPON_DEF>	_WeaponDefP
 
 DECLARE_DEFINITION_FACTORY(WeaponDefinitionClass, CLASSID_DEF_WEAPON, "Weapon") _WeaponDefDefFactory;
 
-uint32	WeaponDefinitionClass::Get_Class_ID (void) const	{ return CLASSID_DEF_WEAPON; }
+uint32_t	WeaponDefinitionClass::Get_Class_ID (void) const	{ return CLASSID_DEF_WEAPON; }
 const PersistFactoryClass & WeaponDefinitionClass::Get_Factory (void) const { return _WeaponDefPersistFactory; }
 
 WeaponDefinitionClass::WeaponDefinitionClass( void ) :
@@ -321,7 +321,7 @@ SimplePersistFactoryClass<AmmoDefinitionClass, CHUNKID_AMMO_DEF>	_AmmoDefPersist
 
 DECLARE_DEFINITION_FACTORY(AmmoDefinitionClass, CLASSID_DEF_AMMO, "Ammo") _AmmoDefDefFactory;
 
-uint32	AmmoDefinitionClass::Get_Class_ID (void) const	{ return CLASSID_DEF_AMMO; }
+uint32_t	AmmoDefinitionClass::Get_Class_ID (void) const	{ return CLASSID_DEF_AMMO; }
 const PersistFactoryClass & AmmoDefinitionClass::Get_Factory (void) const { return _AmmoDefPersistFactory; }
 
 AmmoDefinitionClass::AmmoDefinitionClass( void ) :

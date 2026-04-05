@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __DIALOG_MGR_H
@@ -99,13 +101,13 @@ public:
 	static IME::IMEManager* Get_IME(void)
 		{return Input->GetIME();}
 
-	static void Show_IME_Message(const wchar_t* message, uint32 duration);
+	static void Show_IME_Message(const wchar_t* message, uint32_t duration);
 
 	//
 	//	Keyboard Input
 	//
-	static BYTE *	Get_Keyboard_State (void)								{ return KeyboardState; }
-	static BYTE		Get_VKey_State (BYTE index)							{ return KeyboardState[index]; }
+	static uint8_t *	Get_Keyboard_State (void)								{ return KeyboardState; }
+	static uint8_t		Get_VKey_State (uint8_t index)							{ return KeyboardState[index]; }
 
 	static void Reset (void);
 
@@ -202,8 +204,8 @@ private:
 	//
 	//	Keyboard input
 	//
-	static bool		On_Key_Down (uint32 key_id, uint32 key_data);
-	static bool		On_Key_Up (uint32 key_id);
+	static bool		On_Key_Down (uint32_t key_id, uint32_t key_data);
+	static bool		On_Key_Up (uint32_t key_id);
 	static void		On_Unicode_Char(WCHAR unicode);
 
 	////////////////////////////////////////////////////////////////
@@ -216,7 +218,7 @@ private:
 	static bool												IsFirstRender;
 	static bool												IsInMenuMode;
 	static DialogBaseClass *							ActiveDialog;
-	static BYTE												KeyboardState[256];
+	static uint8_t												KeyboardState[256];
 	static bool												LastMouseButtonState[MB_COUNT];
 	static DialogControlClass *						InputCapture;
 	static DialogControlClass *						FocusControl;
@@ -226,15 +228,15 @@ private:
 	static DialogBaseClass *							TransitionDialog;
 	static DialogBaseClass *							PendingActiveDialog;
 
-	static uint32											CurrTime;
-	static uint32											LastFrameTime;
+	static uint32_t											CurrTime;
+	static uint32_t											LastFrameTime;
 
 	static Vector3											LastMousePos;
 
 	static bool IsFlushing;
 
 	static ToolTipClass* mIMEMessage;
-	static uint32 mIMEMessageTime;
+	static uint32_t mIMEMessageTime;
 
 	////////////////////////////////////////////////////////////////
 	//	Friend classes

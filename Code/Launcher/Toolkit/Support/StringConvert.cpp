@@ -58,7 +58,7 @@
 *
 ******************************************************************************/
 
-Char* UStringToANSI(const UString& string, Char* buffer, UInt bufferLength)
+char* UStringToANSI(const UString& string, char* buffer, uint32_t bufferLength)
 	{
 	return UnicodeToANSI(string.Get(), buffer, bufferLength);
 	}
@@ -82,7 +82,7 @@ Char* UStringToANSI(const UString& string, Char* buffer, UInt bufferLength)
 *
 ******************************************************************************/
 
-Char* UnicodeToANSI(const WChar* string, Char* buffer, UInt bufferLength)
+char* UnicodeToANSI(const wchar_t* string, char* buffer, uint32_t bufferLength)
 	{
 	if ((string == NULL) || (buffer == NULL))
 		{

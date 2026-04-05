@@ -56,7 +56,7 @@
 
 DynamicVectorClass<RadarMarkerClass>	RadarManager::Markers;
 Render2DClass						*	RadarManager::Renderer;
-unsigned long							RadarManager::BlipColors[ NUM_BLIP_COLOR_TYPES ];
+uint32_t							RadarManager::BlipColors[ NUM_BLIP_COLOR_TYPES ];
 const PhysicalGameObj				*	RadarManager::BracketObj = NULL;
 RectClass								RadarManager::BlipUV[ NUM_BLIP_TYPES ];
 bool										RadarManager::IsHidden = false;
@@ -311,7 +311,7 @@ bool	RadarManager::Load( ChunkLoadClass &cload )
 Vector2	OldRadarCenter(0.0f,0.0f);
 Vector2	RadarCenter(0.0f,0.0f);
 float	RadarIntensity;
-long	RadarColor;
+uint32_t	RadarColor;
 
 float	RadarManager::Add_Blip( const Vector3 & pos, int shape_type, int color_type, float intensity, bool bracket, bool altitude_fade ) 
 {
@@ -357,9 +357,9 @@ float	RadarManager::Add_Blip( const Vector3 & pos, int shape_type, int color_typ
 			}
 
 
-			unsigned int color = BlipColors[ color_type ];
+			uint32_t color = BlipColors[ color_type ];
 			color &= 0x00FFFFFF;
-			color |= (unsigned int)(RadarIntensity * color_alpha * 255) << 24;
+			color |= (uint32_t)(RadarIntensity * color_alpha * 255) << 24;
 			if ( Renderer ) {
 				RectClass	blip( -BLIP_SIZE, -BLIP_SIZE, BLIP_SIZE, BLIP_SIZE );
 				if ( altitude_fade ) {
@@ -372,7 +372,7 @@ float	RadarManager::Add_Blip( const Vector3 & pos, int shape_type, int color_typ
 
 				if ( bracket ) {
 					color = 0x0000FF00;	// Make Green
-					color |= (unsigned int)(RadarIntensity * alpha * 255) << 24;
+					color |= (uint32_t)(RadarIntensity * alpha * 255) << 24;
 					RectClass uv = BlipUV[ BLIP_BRACKET ];
 					Renderer->Add_Quad( blip, uv, color );
 				}
@@ -715,4 +715,3 @@ bool	RadarMarkerClass::Load( ChunkLoadClass &cload )
 	}
 	return true;
 }
-

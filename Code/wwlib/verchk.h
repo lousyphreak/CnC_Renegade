@@ -37,6 +37,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef __VERCHK_H
 #define __VERCHK_H
 
@@ -45,19 +47,19 @@
 #ifndef RENEGADE_COMPAT_VS_FIXEDFILEINFO_DEFINED
 #define RENEGADE_COMPAT_VS_FIXEDFILEINFO_DEFINED
 typedef struct tagVS_FIXEDFILEINFO {
-	DWORD dwSignature;
-	DWORD dwStrucVersion;
-	DWORD dwFileVersionMS;
-	DWORD dwFileVersionLS;
-	DWORD dwProductVersionMS;
-	DWORD dwProductVersionLS;
-	DWORD dwFileFlagsMask;
-	DWORD dwFileFlags;
-	DWORD dwFileOS;
-	DWORD dwFileType;
-	DWORD dwFileSubtype;
-	DWORD dwFileDateMS;
-	DWORD dwFileDateLS;
+	uint32_t dwSignature;
+	uint32_t dwStrucVersion;
+	uint32_t dwFileVersionMS;
+	uint32_t dwFileVersionLS;
+	uint32_t dwProductVersionMS;
+	uint32_t dwProductVersionLS;
+	uint32_t dwFileFlagsMask;
+	uint32_t dwFileFlags;
+	uint32_t dwFileOS;
+	uint32_t dwFileType;
+	uint32_t dwFileSubtype;
+	uint32_t dwFileDateMS;
+	uint32_t dwFileDateLS;
 } VS_FIXEDFILEINFO;
 #endif
 

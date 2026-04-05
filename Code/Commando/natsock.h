@@ -36,6 +36,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef NATSOCK_H
 #define NATSOCK_H
 
@@ -113,9 +115,9 @@ class SocketHandlerClass
 		/*
 		** Read, write.
 		*/
-		int Peek(void *buffer, int buffer_len, void *address, unsigned short *port, int packetnum = 0);
-		int Read(void *buffer, int buffer_len, void *address, unsigned short *port, int packetnum = 0);
-		void Write(void *buffer, int buffer_len, void *address, unsigned short port = 0);
+		int Peek(void *buffer, int buffer_len, void *address, uint16_t *port, int packetnum = 0);
+		int Read(void *buffer, int buffer_len, void *address, uint16_t *port, int packetnum = 0);
+		void Write(void *buffer, int buffer_len, void *address, uint16_t port = 0);
 
 		/*
 		** Service.
@@ -135,7 +137,7 @@ class SocketHandlerClass
 		int Get_Num_Queued_Receive_Packets(void) {return(InBuffers.Count());};
 		int Get_Num_Queued_Outgoing_Packets(void) {return(OutBuffers.Count());};
 		int Get_Num_Local_Addresses(void) {return (LocalAddresses.Count());};
-		unsigned char * Get_Local_Address (int a) {return (LocalAddresses[a]);};
+		uint8_t * Get_Local_Address (int a) {return (LocalAddresses[a]);};
 		int Get_Incoming_Port(void) {return(IncomingPort);};
 		SOCKET Get_Socket(void) {return(Socket);};
 
@@ -160,21 +162,21 @@ class SocketHandlerClass
 		/*
 		** List of local addresses.
 		*/
-		DynamicVectorClass <unsigned char *> LocalAddresses;
+		DynamicVectorClass <uint8_t *> LocalAddresses;
 
 		/*
 		** This struct contains the information needed for each incoming and outgoing packet.
 		** It acts as a temporary control for these packets.
 		*/
 		struct WinsockBufferType {
-			unsigned char		Address[4];		// Address. IN_ADDR
+			uint8_t		Address[4];		// Address. IN_ADDR
 			int					BufferLen;		// Length of data in buffer
 			bool					IsBroadcast;	// Flag to broadcast this packet
 			bool					InUse;			// Useage state of buffer
 			bool					IsAllocated;	// false means statically allocated.
-			unsigned short		Port;				// Override port. Send to this port if not 0. Save incoming port number.
-			unsigned long		CRC;				// CRC of packet for extra sanity.
-			unsigned char		Buffer[RECEIVE_BUFFER_LEN];	// Buffer to store packet in.
+			uint16_t		Port;				// Override port. Send to this port if not 0. Save incoming port number.
+			uint32_t		CRC;				// CRC of packet for extra sanity.
+			uint8_t		Buffer[RECEIVE_BUFFER_LEN];	// Buffer to store packet in.
 		};
 
 		/*
@@ -186,7 +188,7 @@ class SocketHandlerClass
 		/*
 		** Packet CRCs.
 		*/
-		void Add_CRC(unsigned long *crc, unsigned long val);
+		void Add_CRC(uint32_t *crc, uint32_t val);
 		virtual void Build_Packet_CRC(WinsockBufferType *packet);
 		virtual bool Passes_CRC_Check(WinsockBufferType *packet);
 
@@ -217,7 +219,7 @@ class SocketHandlerClass
 		/*
 		** Temporary receive buffer to use when querying Winsock for incoming packets.
 		*/
-		unsigned char ReceiveBuffer[RECEIVE_BUFFER_LEN];
+		uint8_t ReceiveBuffer[RECEIVE_BUFFER_LEN];
 
 		/*
 		** All instances of this class.

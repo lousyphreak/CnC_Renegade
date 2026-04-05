@@ -79,13 +79,13 @@ FormToolbarClass::~FormToolbarClass (void)
 //
 //  Create
 //
-BOOL
+int32_t
 FormToolbarClass::Create
 (
 	DockableFormClass *pCFormClass,
 	LPCTSTR pszWindowName,
 	CWnd *pCParentWnd,
-	UINT uiID
+	uint32_t uiID
 )
 {
 	ASSERT (pCFormClass);
@@ -93,7 +93,7 @@ FormToolbarClass::Create
 
 	// Allow the base class to process this message	
 	RECT rect = { 0 };
-	BOOL retval = CWnd::Create (NULL, pszWindowName, WS_CHILD | WS_VISIBLE, rect, pCParentWnd, uiID);
+	int32_t retval = CWnd::Create (NULL, pszWindowName, WS_CHILD | WS_VISIBLE, rect, pCParentWnd, uiID);
 	if (retval) {
 
 		// Ask the dockable form to create itself
@@ -127,7 +127,7 @@ FormToolbarClass::Create
 void
 FormToolbarClass::OnSize
 (
-	UINT nType,
+	uint32_t nType,
 	int cx,
 	int cy
 )
@@ -156,7 +156,7 @@ FormToolbarClass::OnSize
 //
 //  OnEraseBkgnd
 //
-BOOL
+int32_t
 FormToolbarClass::OnEraseBkgnd (CDC* pDC) 
 {
 	// Get the bounding rectangle

@@ -148,7 +148,7 @@ bool SocketHandlerClass::Open(int inport, int outport)
 	** Bind our UDP socket to our UDP port number
 	*/
 	addr.sin_family = AF_INET;
-	addr.sin_port = (unsigned short) htons((unsigned short)inport);
+	addr.sin_port = (uint16_t) htons((uint16_t)inport);
 	addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	DebugString(("SocketHandlerClass - About to bind the UDP socket to port %d\n", inport));
@@ -192,7 +192,7 @@ bool SocketHandlerClass::Open(int inport, int outport)
 	** Add all local IP addresses to the list. This list will be used to discard any packets that
 	** we send to ourselves by mistake.
 	*/
-	unsigned long **addresses = (unsigned long**) (host_info->h_addr_list);
+	uint32_t **addresses = (uint32_t**) (host_info->h_addr_list);
 
 	for ( ;; ) {
 		if ( !*addresses ) break;
@@ -200,14 +200,14 @@ bool SocketHandlerClass::Open(int inport, int outport)
 		/*
 		** Read the next address
 		*/
-		unsigned long address = **addresses++;
+		uint32_t address = **addresses++;
 		DebugString(("SocketHandlerClass - Found local address: %d.%d.%d.%d\n", address & 0xff, (address & 0xff00) >> 8, (address & 0xff0000) >> 16, (address & 0xff000000) >> 24));
 
 		/*
 		** Add it to the local address list.
 		*/
-		unsigned char *a = new unsigned char [4];
-		* ((unsigned long*) a) = address;
+		uint8_t *a = new uint8_t [4];
+		* ((uint32_t*) a) = address;
 		LocalAddresses.Add (a);
 	}
 
@@ -244,7 +244,7 @@ bool SocketHandlerClass::Open(int inport, int outport)
 	/*
 	** Set the blocking mode of the socket to non-blocking.
 	*/
-	unsigned long nonblocking = true;
+	uint32_t nonblocking = true;
 	err = ioctlsocket(Socket, FIONBIO, &nonblocking);
 	if (err) {
 		DebugString(("SocketHandlerClass - Failed to set socket to non-blocking - error code %d.\n", LAST_ERROR));
@@ -378,7 +378,7 @@ void SocketHandlerClass::Discard_Out_Buffers(void)
  *=============================================================================================*/
 void SocketHandlerClass::Clear_Socket_Error(void)
 {
-	unsigned long error_code;
+	uint32_t error_code;
 	int length = 4;
 
 	if (Socket != INVALID_SOCKET) {
@@ -405,7 +405,7 @@ void SocketHandlerClass::Clear_Socket_Error(void)
  * HISTORY:                                                                                    *
  *    3/1/00 11:51AM ST : Created                                                              *
  *=============================================================================================*/
-void SocketHandlerClass::Write(void *buffer, int buffer_len, void *address, unsigned short port)
+void SocketHandlerClass::Write(void *buffer, int buffer_len, void *address, uint16_t port)
 {
 	/*
 	** Create a temporary holding area for the packet.
@@ -455,7 +455,7 @@ void SocketHandlerClass::Write(void *buffer, int buffer_len, void *address, unsi
  * HISTORY:                                                                                    *
  *    3/8/00 1:12PM ST : Created                                                               *
  *=============================================================================================*/
-int SocketHandlerClass::Read(void *buffer, int buffer_len, void *address, unsigned short *port, int packetnum)
+int SocketHandlerClass::Read(void *buffer, int buffer_len, void *address, uint16_t *port, int packetnum)
 {
 	/*
 	** Call the Service function in case there are any outstanding unqueued packets.
@@ -548,7 +548,7 @@ int SocketHandlerClass::Read(void *buffer, int buffer_len, void *address, unsign
  * HISTORY:                                                                                    *
  *    3/8/00 1:12PM ST : Created                                                               *
  *=============================================================================================*/
-int SocketHandlerClass::Peek(void *buffer, int buffer_len, void *address, unsigned short *port, int packetnum)
+int SocketHandlerClass::Peek(void *buffer, int buffer_len, void *address, uint16_t *port, int packetnum)
 {
 	/*
 	** Call the Service function in case there are any outstanding unqueued packets.
@@ -616,8 +616,8 @@ void SocketHandlerClass::Build_Packet_CRC(WinsockBufferType *packet)
 
 	packet->CRC = 0;
 
-	unsigned long *crc_ptr = &(packet->CRC);
-	unsigned long *packetptr = (unsigned long*) &(packet->Buffer[0]);
+	uint32_t *crc_ptr = &(packet->CRC);
+	uint32_t *packetptr = (uint32_t*) &(packet->Buffer[0]);
 
 	for (int i=0 ; i<packet->BufferLen/4 ; i++) {
 		Add_CRC (crc_ptr, *packetptr++);
@@ -625,7 +625,7 @@ void SocketHandlerClass::Build_Packet_CRC(WinsockBufferType *packet)
 
 	int leftover = packet->BufferLen & 3;
 	if (leftover) {
-		unsigned long val = *packetptr;
+		uint32_t val = *packetptr;
 		val = val & (0xffffffff >> ((4-leftover) << 3));
 		Add_CRC (crc_ptr, val);
 	}
@@ -655,10 +655,10 @@ bool SocketHandlerClass::Passes_CRC_Check(WinsockBufferType *packet)
 		return (false);
 	}
 
-	unsigned long crc = 0;
+	uint32_t crc = 0;
 
-	unsigned long *crc_ptr = &crc;
-	unsigned long *packetptr = (unsigned long*) &(packet->Buffer[0]);
+	uint32_t *crc_ptr = &crc;
+	uint32_t *packetptr = (uint32_t*) &(packet->Buffer[0]);
 
 	for (int i=0 ; i<packet->BufferLen/4 ; i++) {
 		Add_CRC (crc_ptr, *packetptr++);
@@ -666,7 +666,7 @@ bool SocketHandlerClass::Passes_CRC_Check(WinsockBufferType *packet)
 
 	int leftover = packet->BufferLen & 3;
 	if (leftover) {
-		unsigned long val = *packetptr;
+		uint32_t val = *packetptr;
 		val = val & (0xffffffff >> ((4-leftover) << 3));
 		Add_CRC (crc_ptr, val);
 	}
@@ -833,12 +833,12 @@ void SocketHandlerClass::Service_All(void)
  *=============================================================================================*/
 void SocketHandlerClass::Service(void)
 {
-	unsigned long bytes;
+	uint32_t bytes;
 	struct sockaddr_in addr;
 	int addr_len;
 	WinsockBufferType *packet;
 	int result;
-	unsigned long timeout_check = TIMEGETTIME();
+	uint32_t timeout_check = TIMEGETTIME();
 	int times = 0;
 
 	if (!CanService) {
@@ -924,7 +924,7 @@ void SocketHandlerClass::Service(void)
 					** result is the number of bytes read.
 					*/
 					packet->BufferLen = result - sizeof(packet->CRC);
-					packet->CRC = *((unsigned long*) (&ReceiveBuffer[0]));
+					packet->CRC = *((uint32_t*) (&ReceiveBuffer[0]));
 					memcpy (packet->Buffer, ReceiveBuffer + sizeof(packet->CRC), packet->BufferLen);
 
 					/*
@@ -951,7 +951,7 @@ void SocketHandlerClass::Service(void)
 
 						memcpy (packet->Address, &addr.sin_addr.s_addr, 4);
 						packet->Port = ntohs(addr.sin_port);
-						DebugString(("SocketHandlerClass - recvfrom %s ; %d\n", IPAddressClass(packet->Address).As_String(), (unsigned int)((unsigned short)ntohs(addr.sin_port))));
+						DebugString(("SocketHandlerClass - recvfrom %s ; %d\n", IPAddressClass(packet->Address).As_String(), (uint32_t)((uint16_t)ntohs(addr.sin_port))));
 
 #ifdef SIM_BAD_CONNECTION
 						/*
@@ -1005,13 +1005,13 @@ void SocketHandlerClass::Service(void)
 		*/
 		addr.sin_family = AF_INET;
 		if (packet->Port == 0) {
-			addr.sin_port = (unsigned short) htons((unsigned short)OutgoingPort);
+			addr.sin_port = (uint16_t) htons((uint16_t)OutgoingPort);
 		} else {
 			addr.sin_port = htons(packet->Port);
 		}
 		memcpy (&addr.sin_addr.s_addr, packet->Address, 4);
 
-		DebugString(("SocketHandlerClass - sendto %s ; %d\n", IPAddressClass(packet->Address).As_String(), (unsigned int)((unsigned short)ntohs(addr.sin_port))));
+		DebugString(("SocketHandlerClass - sendto %s ; %d\n", IPAddressClass(packet->Address).As_String(), (uint32_t)((uint16_t)ntohs(addr.sin_port))));
 
 		/*
 		** Send it.
@@ -1061,7 +1061,7 @@ void SocketHandlerClass::Service(void)
  * HISTORY:                                                                                    *
  *   05/09/1995 BRR : Created                                                                  *
  *=============================================================================================*/
-void SocketHandlerClass::Add_CRC(unsigned long *crc, unsigned long val)
+void SocketHandlerClass::Add_CRC(uint32_t *crc, uint32_t val)
 {
 	int hibit;
 

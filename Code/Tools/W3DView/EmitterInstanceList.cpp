@@ -149,7 +149,7 @@ EmitterInstanceListClass::Set_Acceleration (const Vector3 &value)
 //
 /////////////////////////////////////////////////////////////////////
 void
-EmitterInstanceListClass::Set_Burst_Size (unsigned int count)
+EmitterInstanceListClass::Set_Burst_Size (uint32_t count)
 {
 	ParticleEmitterDefClass::Set_Burst_Size (count);
 
@@ -245,7 +245,7 @@ EmitterInstanceListClass::Set_Color_Keyframes (ParticlePropertyStruct<Vector3> &
 			(keyframes.Rand.Y != 0) ||
 			(keyframes.Rand.Z != 0))
 	{		
-		for (UINT index = 0; index < keyframes.NumKeyFrames; index ++) {
+		for (uint32_t index = 0; index < keyframes.NumKeyFrames; index ++) {
 			if ((keyframes.Values[index].X <= 0.000001F) &&
 				 (keyframes.Values[index].Y <= 0.000001F) &&
 				 (keyframes.Values[index].Z <= 0.000001F)) {
@@ -283,7 +283,7 @@ EmitterInstanceListClass::Set_Opacity_Keyframes (ParticlePropertyStruct<float> &
 	//
 	if (keyframes.Rand != 0)
 	{		
-		for (UINT index = 0; index < keyframes.NumKeyFrames; index ++) {
+		for (uint32_t index = 0; index < keyframes.NumKeyFrames; index ++) {
 			if (keyframes.Values[index] <= 0.000001F) {
 				keyframes.Values[index] = -keyframes.Rand;
 			}
@@ -317,7 +317,7 @@ EmitterInstanceListClass::Set_Size_Keyframes (ParticlePropertyStruct<float> &key
 	//
 	if (keyframes.Rand != 0)
 	{		
-		for (UINT index = 0; index < keyframes.NumKeyFrames; index ++) {
+		for (uint32_t index = 0; index < keyframes.NumKeyFrames; index ++) {
 			if (keyframes.Values[index] <= 0.000001F) {
 				keyframes.Values[index] = -keyframes.Rand;
 			}
@@ -411,7 +411,7 @@ EmitterInstanceListClass::Get_Color_Keyframes (ParticlePropertyStruct<Vector3> &
 	//
 	//	Normalize the data
 	//
-	for (UINT index = 0; index < keyframes.NumKeyFrames; index ++) {
+	for (uint32_t index = 0; index < keyframes.NumKeyFrames; index ++) {
 		if (keyframes.Values[index].X <= 0.000001F) {
 			keyframes.Values[index].X = 0;
 		}
@@ -439,7 +439,7 @@ EmitterInstanceListClass::Get_Opacity_Keyframes (ParticlePropertyStruct<float> &
 	//
 	//	Normalize the data
 	//
-	for (UINT index = 0; index < keyframes.NumKeyFrames; index ++) {
+	for (uint32_t index = 0; index < keyframes.NumKeyFrames; index ++) {
 		if (keyframes.Values[index] <= 0.000001F) {
 			keyframes.Values[index] = 0;
 		}
@@ -460,7 +460,7 @@ EmitterInstanceListClass::Get_Size_Keyframes (ParticlePropertyStruct<float> &key
 	//
 	//	Normalize the data
 	//
-	for (UINT index = 0; index < keyframes.NumKeyFrames; index ++) {
+	for (uint32_t index = 0; index < keyframes.NumKeyFrames; index ++) {
 		if (keyframes.Values[index] <= 0.000001F) {
 			keyframes.Values[index] = 0;
 		}

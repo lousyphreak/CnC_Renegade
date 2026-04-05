@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 #include "resource.h"
@@ -61,8 +63,8 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(ConversationPickerDialogClass)
-	afx_msg void OnSelchangedConversationTree(NMHDR* pNMHDR, LRESULT* pResult);
-	virtual BOOL OnInitDialog();
+	afx_msg void OnSelchangedConversationTree(NMHDR* pNMHDR, intptr_t* pResult);
+	virtual int32_t OnInitDialog();
 	virtual void OnOK();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()

@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __FLOODPROTECTIONMGR_H
@@ -84,7 +86,7 @@ private:
 	typedef struct
 	{
 		int		text_len;
-		uint32	time;
+		uint32_t	time;
 	} FLOOD_ENTRY;
 	
 

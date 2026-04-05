@@ -268,7 +268,7 @@ SoundPseudo3DClass::Free_Miles_Handle (void)
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////
 bool
-SoundPseudo3DClass::On_Frame_Update (unsigned int milliseconds)
+SoundPseudo3DClass::On_Frame_Update (uint32_t milliseconds)
 {	
 	// If necessary, update the volume based on the distance
 	// from the listener

@@ -69,7 +69,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CInertiaDialog message handlers
 
-BOOL CInertiaDialog::OnInitDialog() 
+int32_t CInertiaDialog::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
 	
@@ -91,7 +91,7 @@ BOOL CInertiaDialog::OnInitDialog()
 }
 
 
-BOOL CInertiaDialog::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult) 
+int32_t CInertiaDialog::OnNotify(uintptr_t wParam, intptr_t lParam, intptr_t* pResult) 
 {
 	// make the spin controls work...
 	switch(wParam) 

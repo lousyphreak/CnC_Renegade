@@ -25,6 +25,8 @@ gimex.h - Graphics IMport EXport (GIMEX) v2.26
 #ifndef __GIMEX_H
 #define __GIMEX_H 1
 
+#include <cstdint>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -44,21 +46,21 @@ extern "C" {
 
         typedef struct
         {
-            unsigned char b,g,r,a;
+            uint8_t b,g,r,a;
         } ARGB;
 
     #elif defined(SGI)
 
         typedef struct
         {
-            unsigned char a,b,g,r;
+            uint8_t a,b,g,r;
         } ARGB;
 
     #else /* Mac */
 
         typedef struct
         {
-            unsigned char a,r,g,b;
+            uint8_t a,r,g,b;
         } ARGB;
 
     #endif
@@ -75,8 +77,8 @@ extern "C" {
 
 typedef struct
 {
-    long signature;         /* signature of gimex ie 'tga ' (optional) */
-    long size;              /* size of GINFO structure */
+    int32_t signature;      /* signature of gimex ie 'tga ' (optional) */
+    int32_t size;           /* size of GINFO structure */
     int  version;           /* version number of GINFO structure (200) */
     int  framenum;          /* current frame */
     int  width;             /* width of bitmap in pixels */
@@ -113,8 +115,8 @@ typedef void GSTREAM;       /* handle used for file functions */
 
 typedef struct
 {
-    long signature;         /* signature of gimex ie 'tga ' (optional) */
-    long size;              /* size of GINSTANCE structure */
+    int32_t signature;      /* signature of gimex ie 'tga ' (optional) */
+    int32_t size;           /* size of GINSTANCE structure */
     int  frames;            /* Number of frames in file */
     int  framenum;          /* current frame (optional) */
     GSTREAM *gstream;       /* stream pointer for file */
@@ -135,33 +137,33 @@ typedef struct
 
 typedef struct
 {
-    long signature;                 /* signature of gimex ie 'tga ' (optional) */
-    long size;                      /* size of GABOUT structure */
+    int32_t signature;              /* signature of gimex ie 'tga ' (optional) */
+    int32_t size;                   /* size of GABOUT structure */
     int  version;                   /* version number of GABOUT structure (200) */
-    unsigned int canimport     :1;  /* supports importing */
-    unsigned int canexport     :1;  /* supports exporting */
-    unsigned int importpacked  :2;  /* max import packed field 0..3 */
-    unsigned int exportpacked  :2;  /* max export packed field 0..3  */
-    unsigned int import8       :1;  /* supports importing 8 bit indexed */
-    unsigned int export8       :1;  /* supports exporting 8 bit indexed */
-    unsigned int import32      :1;  /* supports importing 32 bit direct rgb */
-    unsigned int export32      :1;  /* supports exporting 32 bit direct rgb */
-    unsigned int multiframe    :1;  /* supports multiple frames */
-    unsigned int multifile     :1;  /* format requires additional files or resource fork */
-    unsigned int multisize     :1;  /* supports different size per frame */
-    unsigned int framebuffer   :1;  /* module requires memory to buffer entire frame */
-    unsigned int external      :1;  /* module requires external tool or plugin */
-    unsigned int usesfile      :1;  /* module is file based vs ads/printer/generator */
-    unsigned int singlepalette :1;  /* limited to a single palette per file */
-    unsigned int greyscale     :1;  /* use maxcolours for number of levels */
-    unsigned int startcolour   :1;  /* supports start colour */
-    unsigned int dotsubtype    :1;  /* subtype based on extension */
-    unsigned int resizable     :1;  /* read will respect ginfo width & height */
-    unsigned int pad           :11; /* pad bitfield to 32 bit boundary for inter compiler compatibility */
+    uint32_t canimport     :1;  /* supports importing */
+    uint32_t canexport     :1;  /* supports exporting */
+    uint32_t importpacked  :2;  /* max import packed field 0..3 */
+    uint32_t exportpacked  :2;  /* max export packed field 0..3  */
+    uint32_t import8       :1;  /* supports importing 8 bit indexed */
+    uint32_t export8       :1;  /* supports exporting 8 bit indexed */
+    uint32_t import32      :1;  /* supports importing 32 bit direct rgb */
+    uint32_t export32      :1;  /* supports exporting 32 bit direct rgb */
+    uint32_t multiframe    :1;  /* supports multiple frames */
+    uint32_t multifile     :1;  /* format requires additional files or resource fork */
+    uint32_t multisize     :1;  /* supports different size per frame */
+    uint32_t framebuffer   :1;  /* module requires memory to buffer entire frame */
+    uint32_t external      :1;  /* module requires external tool or plugin */
+    uint32_t usesfile      :1;  /* module is file based vs ads/printer/generator */
+    uint32_t singlepalette :1;  /* limited to a single palette per file */
+    uint32_t greyscale     :1;  /* use maxcolours for number of levels */
+    uint32_t startcolour   :1;  /* supports start colour */
+    uint32_t dotsubtype    :1;  /* subtype based on extension */
+    uint32_t resizable     :1;  /* read will respect ginfo width & height */
+    uint32_t pad           :11; /* pad bitfield to 32 bit boundary for inter compiler compatibility */
     int  maxcolours;                /* only use in 8 bit, 0 if module does not care */
     int  maxframename;              /* maximum characters in ginfo framename */
     int  defaultquality;            /* default pack quality */
-    long mactype[MAXMACTYPES];      /* mac file system types used */
+    int32_t mactype[MAXMACTYPES];   /* mac file system types used */
     char extensions[MAXEXTENSIONS][GIMEX_EXTENSION_SIZE]; /* null terminated extensions with '.' */
     char authorstr[GIMEX_AUTHORSTR_SIZE];        /* name of gimex module author */
     char versionstr[GIMEX_VERSIONSTR_SIZE];      /* version number of gimex module ie 1.00 */
@@ -179,7 +181,7 @@ typedef struct
     int   rowbytes;
 } GBITMAP;
 
-#define GMAKEID(a,b,c,d) (((long)(a)<<24)|((long)(b)<<16)|((long)(c)<<8)|(long)(d))
+#define GMAKEID(a,b,c,d) (static_cast<int32_t>((static_cast<uint32_t>(static_cast<uint8_t>(a)) << 24) | (static_cast<uint32_t>(static_cast<uint8_t>(b)) << 16) | (static_cast<uint32_t>(static_cast<uint8_t>(c)) << 8) | static_cast<uint32_t>(static_cast<uint8_t>(d))))
 
 #ifndef gmin
 #define gmin(a,b) ((a)<(b)?(a):(b))
@@ -239,20 +241,20 @@ int     GCALL wclosebmp(GINSTANCE *gx);
 GSTREAM * GCALL gopen(const char *pathname);
 GSTREAM * GCALL gwopen(const char *pathname);
 int       GCALL gclose(GSTREAM *g);
-int       GCALL gread(GSTREAM *g, void *buf, long size);
-int       GCALL gwrite(GSTREAM *g, void *buf, long size);
-int       GCALL gseek(GSTREAM *g, long offset);
-long      GCALL glen(GSTREAM *g);
-long      GCALL gtell(GSTREAM *g);
+int       GCALL gread(GSTREAM *g, void *buf, int32_t size);
+int       GCALL gwrite(GSTREAM *g, void *buf, int32_t size);
+int       GCALL gseek(GSTREAM *g, int32_t offset);
+int32_t   GCALL glen(GSTREAM *g);
+int32_t   GCALL gtell(GSTREAM *g);
 
 /* Memory Functions */
 
-void *  GCALL galloc(long size);
+void *  GCALL galloc(int32_t size);
 int     GCALL gfree(void *memptr);
-void          gputm(void *memptr, unsigned long val, int numbytes);
-void          gputi(void *memptr, unsigned long val, int numbytes);
-unsigned long ggetm(void *memptr, int numbytes);
-unsigned long ggeti(void *memptr, int numbytes);
+void          gputm(void *memptr, uint32_t val, int numbytes);
+void          gputi(void *memptr, uint32_t val, int numbytes);
+uint32_t ggetm(void *memptr, int numbytes);
+uint32_t ggeti(void *memptr, int numbytes);
 
 /****************************************************************************/
 /* Watcom Memory Functions                                                  */
@@ -279,21 +281,21 @@ unsigned long ggeti(void *memptr, int numbytes);
     modify [eax ecx] \
     value  [eax];
 
-unsigned long bswap(unsigned long val);
+uint32_t bswap(uint32_t val);
 #pragma aux bswap = "bswap eax" parm [eax] modify [eax] value [eax];
 
 #define gputm(putmdest,putmdata,putmbytes) \
-      (((int)(putmbytes)==4) ? ((void)(*((unsigned long *) (putmdest)) = bswap((unsigned long)(putmdata)))) \
-    : (((int)(putmbytes)==1) ? ((void)(*((unsigned char *) (putmdest)) = (unsigned char)(putmdata))) \
-    : (((int)(putmbytes)==2) ? ((void)(*((unsigned short *) (putmdest)) = (unsigned short)(bswap((unsigned long)(putmdata))>>16))) \
-    : (((int)(putmbytes)==3) ? ((void)(*((unsigned char *) (putmdest)+2) = (unsigned char)(putmdata)),(void)(*((unsigned short *) (putmdest)) = (unsigned short)(bswap((unsigned long)(putmdata))>>8))) \
+      (((int)(putmbytes)==4) ? ((void)(*((uint32_t *) (putmdest)) = bswap((uint32_t)(putmdata)))) \
+    : (((int)(putmbytes)==1) ? ((void)(*((uint8_t *) (putmdest)) = (uint8_t)(putmdata))) \
+    : (((int)(putmbytes)==2) ? ((void)(*((uint16_t *) (putmdest)) = (uint16_t)(bswap((uint32_t)(putmdata))>>16))) \
+    : (((int)(putmbytes)==3) ? ((void)(*((uint8_t *) (putmdest)+2) = (uint8_t)(putmdata)),(void)(*((uint16_t *) (putmdest)) = (uint16_t)(bswap((uint32_t)(putmdata))>>8))) \
     : (void)0))))
 
 #define gputi(putidest,putidata,putibytes) \
-      (((int)(putibytes)==4) ? ((void)(*((unsigned long *) (putidest)) = ((unsigned long)(putidata)))) \
-    : (((int)(putibytes)==1) ? ((void)(*((unsigned char *) (putidest)) = (unsigned char)(putidata))) \
-    : (((int)(putibytes)==2) ? ((void)(*((unsigned short *) (putidest)) = (unsigned short)(putidata))) \
-    : (((int)(putibytes)==3) ? ((void)(*((unsigned short *) (putidest)) = (unsigned short)(putidata)),(void)(*((unsigned char *) (putidest)+2) = (unsigned char)((unsigned long)(putidata)>>16))) \
+      (((int)(putibytes)==4) ? ((void)(*((uint32_t *) (putidest)) = ((uint32_t)(putidata)))) \
+    : (((int)(putibytes)==1) ? ((void)(*((uint8_t *) (putidest)) = (uint8_t)(putidata))) \
+    : (((int)(putibytes)==2) ? ((void)(*((uint16_t *) (putidest)) = (uint16_t)(putidata))) \
+    : (((int)(putibytes)==3) ? ((void)(*((uint16_t *) (putidest)) = (uint16_t)(putidata)),(void)(*((uint8_t *) (putidest)+2) = (uint8_t)((uint32_t)(putidata)>>16))) \
     : (void)0))))
 
 #endif /* __WATCOMC__ */
@@ -304,6 +306,5 @@ unsigned long bswap(unsigned long val);
 
 #endif /* __GIMEX_H */
 /* END ABSTRACT */
-
 
 

@@ -60,7 +60,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CCopyLockedDlg message handlers
 
-BOOL CCopyLockedDlg::OnInitDialog()
+int32_t CCopyLockedDlg::OnInitDialog()
 {
 	CDialog::OnInitDialog();
 
@@ -84,7 +84,7 @@ void CCopyLockedDlg::OnPaint()
 	{
 		CPaintDC dc(this); // device context for painting
 
-		SendMessage(WM_ICONERASEBKGND, (WPARAM) dc.GetSafeHdc(), 0);
+		SendMessage(WM_ICONERASEBKGND, (uintptr_t) dc.GetSafeHdc(), 0);
 
 		// Center icon in client rectangle
 		int cxIcon = GetSystemMetrics(SM_CXICON);
@@ -146,8 +146,8 @@ CCopyLockedDlg::OnOK()
 
 			HANDLE hfile = ::CreateFile (full_path, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
 			if (hfile != INVALID_HANDLE_VALUE) {
-				DWORD dwbyteswritten = 0L;
-				DWORD dwsizeofres = ::SizeofResource (::AfxGetInstanceHandle (), hresource);
+				uint32_t dwbyteswritten = 0L;
+				uint32_t dwsizeofres = ::SizeofResource (::AfxGetInstanceHandle (), hresource);
 				::WriteFile (hfile, pbuffer, dwsizeofres, &dwbyteswritten, NULL);
 				::CloseHandle (hfile);
 

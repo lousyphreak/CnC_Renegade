@@ -38,6 +38,8 @@
 #ifndef EXPORTALLDLG_H
 #define EXPORTALLDLG_H
 
+#include <cstdint>
+
 #include "dllmain.h"
 #include "resource.h"
 
@@ -58,11 +60,11 @@ public:
 	int DoModal (void);
 
 	// DialogProc
-	BOOL CALLBACK DialogProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	int32_t CALLBACK DialogProc (HWND hWnd, uint32_t uMsg, uintptr_t wParam, intptr_t lParam);
 
 	// Dialog data associated with GUI components.
 	char	m_Directory[_MAX_PATH];		// edit box
-	BOOL	m_Recursive;					// check box
+	int32_t	m_Recursive;					// check box
 
 	// Dialog data
 	enum			{ IDD = IDD_EXPORT_ALL };
@@ -74,7 +76,7 @@ protected:
 	// Message Handlers
 	void OnInitDialog (void);
 	void OnBrowse (void);
-	BOOL OnOK (void);		// TRUE if ok to close dialog
+	int32_t OnOK (void);		// TRUE if ok to close dialog
 };
 
 

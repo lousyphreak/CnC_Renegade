@@ -73,7 +73,7 @@ END_MESSAGE_MAP()
 //	OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 StringPickerMainDialogClass::OnInitDialog (void) 
 {
 	CDialog::OnInitDialog ();

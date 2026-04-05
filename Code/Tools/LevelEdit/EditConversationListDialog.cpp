@@ -81,7 +81,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 EditConversationListDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -189,7 +189,7 @@ EditConversationListDialogClass::Add_Conversation (ConversationClass *conversati
 	int item_index = m_ListCtrl.InsertItem (0xFFFF, conversation->Get_Name ());
 	if (item_index != -1) {
 		conversation->Add_Ref ();
-		m_ListCtrl.SetItemData (item_index, (DWORD)conversation);
+		m_ListCtrl.SetItemData (item_index, (uint32_t)conversation);
 	}
 
 	return ;
@@ -225,7 +225,7 @@ void
 EditConversationListDialogClass::OnDblclkConversationList
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 )
 {
 	(*pResult) = 0;
@@ -263,7 +263,7 @@ void
 EditConversationListDialogClass::OnDeleteitemConversationList
 (
 	NMHDR *	pNMHDR,
-	LRESULT* pResult
+	intptr_t* pResult
 )
 {
 	NM_LISTVIEW* pNMListView = (NM_LISTVIEW*)pNMHDR;
@@ -290,7 +290,7 @@ void
 EditConversationListDialogClass::OnKeydownConversationList
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 )
 {
 	LV_KEYDOWN* pLVKeyDow = (LV_KEYDOWN*)pNMHDR;

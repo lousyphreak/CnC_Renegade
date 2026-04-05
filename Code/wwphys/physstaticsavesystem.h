@@ -36,6 +36,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef PHYSSTATICSAVESYSTEM_H
 #define PHYSSTATICSAVESYSTEM_H
 
@@ -61,7 +63,7 @@ class PhysStaticDataSaveSystemClass : public SaveLoadSubSystemClass
 {
 public:
 	
-	virtual uint32				Chunk_ID (void) const;
+	virtual uint32_t				Chunk_ID (void) const;
 
 protected:
 
@@ -101,7 +103,7 @@ class PhysStaticObjectsSaveSystemClass : public SaveLoadSubSystemClass
 {
 public:
 	
-	virtual uint32				Chunk_ID (void) const;
+	virtual uint32_t				Chunk_ID (void) const;
 
 protected:
 

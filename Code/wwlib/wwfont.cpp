@@ -76,7 +76,7 @@
  * HISTORY:                                                                                    * 
  *   05/26/1997 JLB : Created.                                                                 * 
  *=============================================================================================*/
-WWFontClass::WWFontClass(void const * fontdata, bool isoutlined, int shadow, ConvertClass *convert, unsigned char *remap) : 
+WWFontClass::WWFontClass(void const * fontdata, bool isoutlined, int shadow, ConvertClass *convert, uint8_t *remap) : 
 	IsOutlinedData(isoutlined), 
 	Shadow(shadow),
 	Converter(convert),
@@ -130,7 +130,7 @@ void *WWFontClass::Set_Font_Data(void const * fontdata)
  *=============================================================================================*/
 int WWFontClass::Char_Pixel_Width(char c) const
 {
-	int raw = (*(((unsigned char *)FontData) + FontData->WidthBlockOffset + (unsigned char)c));
+	int raw = (*(((uint8_t *)FontData) + FontData->WidthBlockOffset + (uint8_t)c));
 	raw += FontXSpacing;
 	return(raw);
 }
@@ -189,7 +189,7 @@ int WWFontClass::String_Pixel_Width(char const * string) const
  *=============================================================================================*/
 int WWFontClass::Raw_Width(void) const
 {
-	return(*(((unsigned char *)FontData) + FontData->InfoBlockOffset + FONTINFOMAXWIDTH));
+	return(*(((uint8_t *)FontData) + FontData->InfoBlockOffset + FONTINFOMAXWIDTH));
 }
 
 
@@ -210,7 +210,7 @@ int WWFontClass::Raw_Width(void) const
  *=============================================================================================*/
 int WWFontClass::Raw_Height(void) const
 {
-	return(*(((unsigned char *)FontData) + FontData->InfoBlockOffset + FONTINFOMAXHEIGHT));
+	return(*(((uint8_t *)FontData) + FontData->InfoBlockOffset + FONTINFOMAXHEIGHT));
 }
 
 
@@ -368,7 +368,7 @@ int WWFontClass::Set_YSpacing(int y)
  *   01/24/2000 SKB : put in call for Get_Remap_Palette                                        * 
  *   01/24/2000 SKB : Put in call for get converer.                                            * 
  *=============================================================================================*/
-Point2D WWFontClass::Print(char const * string, Surface & surface, Rect const & cliprect, Point2D const & drawpoint, ConvertClass const & convertref, unsigned char const * remap) const
+Point2D WWFontClass::Print(char const * string, Surface & surface, Rect const & cliprect, Point2D const & drawpoint, ConvertClass const & convertref, uint8_t const * remap) const
 {
 	if (string == NULL) return(drawpoint);
 
@@ -385,7 +385,7 @@ Point2D WWFontClass::Print(char const * string, Surface & surface, Rect const & 
 	int yspacing = FontYSpacing + Raw_Width()/FUDGEDIV;
 		
 	// This font palette assumes that the font will be used as defined by converter.
-	static unsigned char const fontpalette[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+	static uint8_t const fontpalette[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
 	if (RemapPalette) {
 		remap = RemapPalette;
 	} else if (!remap) {
@@ -419,16 +419,16 @@ Point2D WWFontClass::Print(char const * string, Surface & surface, Rect const & 
 	void * buffer = surface.Lock();
 	if (buffer != NULL) {
 		int startx = xpos;
-		unsigned char * fontwidth = ((unsigned char*)FontData) + FontData->WidthBlockOffset;
-		unsigned short * fontheight = (unsigned short*)(((unsigned char*)FontData) + FontData->HeightOffset);
-		unsigned short * fontoffset = (unsigned short*)(((unsigned char*)FontData) + FontData->OffsetBlockOffset);
+		uint8_t * fontwidth = ((uint8_t*)FontData) + FontData->WidthBlockOffset;
+		uint16_t * fontheight = (uint16_t*)(((uint8_t*)FontData) + FontData->HeightOffset);
+		uint16_t * fontoffset = (uint16_t*)(((uint8_t*)FontData) + FontData->OffsetBlockOffset);
 		int bbp = surface.Bytes_Per_Pixel();
 
 		/*
 		**	Process the whole string. Stop when the string reaches the right margin.
 		*/
 		while (*string != '\0') {
-			unsigned char c = *string++;
+			uint8_t c = static_cast<uint8_t>(*string++);
 
 			/*
 			**	Certain control characters serve a formatting purpose. They merely
@@ -457,7 +457,7 @@ Point2D WWFontClass::Print(char const * string, Surface & surface, Rect const & 
 			/*
 			**	Build the character rectangle (surface relative coordinates).
 			*/
-			Rect crect(xpos, ypos, width+((xspacing > 0) ? xspacing : 0), *(((unsigned char *)FontData) + FontData->InfoBlockOffset + FONTINFOMAXHEIGHT) + ((yspacing > 0) ? yspacing : 0));
+			Rect crect(xpos, ypos, width+((xspacing > 0) ? xspacing : 0), *(((uint8_t *)FontData) + FontData->InfoBlockOffset + FONTINFOMAXHEIGHT) + ((yspacing > 0) ? yspacing : 0));
 
 			/*
 			**	Check to see if any part of this character would appear within the clipping
@@ -479,7 +479,7 @@ Point2D WWFontClass::Print(char const * string, Surface & surface, Rect const & 
 				**	data with clipping.
 				*/
 				if (FontData->FontCompress != (char) 2) { // if the font is the old style
-					unsigned char * dataptr = ((unsigned char *)FontData) + fontoffset[c];
+					uint8_t * dataptr = ((uint8_t *)FontData) + fontoffset[c];
 					void * drawbuff = (void*)(((char*)buffer) + ((ypos + firstrow) * surface.Stride()) + xpos * bbp);
 
 					for (int h = 0; h < dheight; h++) {
@@ -522,7 +522,7 @@ Point2D WWFontClass::Print(char const * string, Surface & surface, Rect const & 
 								if (dx >= cliprect.X && dx < cliprect.X+cliprect.Width) {
 									if (c1 != 0) {
 										if (bbp == 2) {
-											*(short *)drawbuff = (short)converter->Convert_Pixel(c1);
+											*reinterpret_cast<uint16_t *>(drawbuff) = static_cast<uint16_t>(converter->Convert_Pixel(c1));
 										} else {
 											*(char *)drawbuff = (char)converter->Convert_Pixel(c1);
 										}
@@ -540,7 +540,7 @@ Point2D WWFontClass::Print(char const * string, Surface & surface, Rect const & 
 								if (dx >= cliprect.X && dx < cliprect.X+cliprect.Width) {
 									if (c2 != 0) {
 										if (bbp == 2) {
-											*(short *)drawbuff = (short)converter->Convert_Pixel(c2);
+											*reinterpret_cast<uint16_t *>(drawbuff) = static_cast<uint16_t>(converter->Convert_Pixel(c2));
 										} else {
 											*(char *)drawbuff = (char)converter->Convert_Pixel(c2);
 										}
@@ -560,7 +560,7 @@ Point2D WWFontClass::Print(char const * string, Surface & surface, Rect const & 
 					}
 				} else {
 					// the font is of the new type
-					unsigned char * dataptr = ((unsigned char *)FontData) + fontoffset[c] + FontData->DataBlockOffset;
+					uint8_t * dataptr = ((uint8_t *)FontData) + fontoffset[c] + FontData->DataBlockOffset;
 					void * drawbuff = (void*)(((char*)buffer) + ((ypos + firstrow) * surface.Stride()) + xpos * bbp);
 
 					for (int h = 0; h < dheight; h++) {
@@ -601,7 +601,7 @@ Point2D WWFontClass::Print(char const * string, Surface & surface, Rect const & 
 								if (dx >= cliprect.X && dx < cliprect.X+cliprect.Width) {
 									if (c1 != 0) {
 										if (bbp == 2) {
-											*(short *)drawbuff = (short)converter->Convert_Pixel(c1);
+											*reinterpret_cast<uint16_t *>(drawbuff) = static_cast<uint16_t>(converter->Convert_Pixel(c1));
 										} else {
 											*(char *)drawbuff = (char)converter->Convert_Pixel(c1);
 										}

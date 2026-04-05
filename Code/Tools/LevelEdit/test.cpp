@@ -156,13 +156,13 @@ void *
 		// to the buffer.  We also need to initialize not one, but TWO
 		// members of the structure before it can be used.
 
-		BYTE symbol_buffer [sizeof(IMAGEHLP_SYMBOL) + 512];
+		uint8_t symbol_buffer [sizeof(IMAGEHLP_SYMBOL) + 512];
 		PIMAGEHLP_SYMBOL psymbol = (PIMAGEHLP_SYMBOL)symbol_buffer;
 		::memset (symbol_buffer, 0, sizeof (symbol_buffer));
 		psymbol->SizeOfStruct = sizeof(symbol_buffer);
 		psymbol->MaxNameLength = 512;
 
-		DWORD sym_displacement = 0;
+		uint32_t sym_displacement = 0;
 		if (::SymGetSymFromAddr (::GetCurrentProcess (),
 										 sf.AddrPC.Offset,
 										 &sym_displacement,
@@ -174,7 +174,7 @@ void *
 				debug_info[iframe-1].function_name[sizeof (debug_info[iframe-1].function_name)-1] = 0;
 			}
 		} else {
-			DWORD dwerror = ::GetLastError ();
+			uint32_t dwerror = ::GetLastError ();
 			int itest = 0;
 		}
 

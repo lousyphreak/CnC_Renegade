@@ -140,7 +140,7 @@ void DynamicAABTreeCullClass::Update_Culling(CullableClass * obj)
 }
 
 
-uint32 DynamicAABTreeCullClass::Get_Dynamic_Object_Vis_ID(const AABoxClass & obj_bounds,int * node_id)
+uint32_t DynamicAABTreeCullClass::Get_Dynamic_Object_Vis_ID(const AABoxClass & obj_bounds,int * node_id)
 {
 	bool is_big_obj = (	(obj_bounds.Extent.X > MaxObjRadius) || 
 								(obj_bounds.Extent.Y > MaxObjRadius) || 
@@ -938,7 +938,7 @@ void DynamicAABTreeCullClass::prune_child
 }
 
 
-void DynamicAABTreeCullClass::Merge_Vis_Object_IDs(uint32 id0,uint32 id1)
+void DynamicAABTreeCullClass::Merge_Vis_Object_IDs(uint32_t id0,uint32_t id1)
 {
 	/*
 	** Each node has a vis object id.  

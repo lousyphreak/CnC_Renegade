@@ -48,7 +48,7 @@
 
 
 // Forward declarations.
-unsigned int Check_Sum (char *str);
+uint32_t Check_Sum (char *str);
 
 
 // Static data.
@@ -132,7 +132,7 @@ void SerialDialogClass::On_Init_Dialog (void)
  * HISTORY:                                                                                    *
  *   08/22/01    IML : Created.                                                                * 
  *=============================================================================================*/
-void SerialDialogClass::On_Unicode_Char (uint16 unicode)
+void SerialDialogClass::On_Unicode_Char (uint16_t unicode)
 {
 
 	// Scan the edit controls for input focus...
@@ -237,7 +237,7 @@ void SerialDialogClass::On_Unicode_Char (uint16 unicode)
  * HISTORY:                                                                                    *
  *   08/22/01    IML : Created.                                                                * 
  *=============================================================================================*/
-void SerialDialogClass::On_Command (int ctrl_id, int message_id, DWORD param)
+void SerialDialogClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	bool valid = true;
 
@@ -279,7 +279,7 @@ void SerialDialogClass::On_Command (int ctrl_id, int message_id, DWORD param)
 						// Apply checksum test.
 						*(checksumstring.Peek_Buffer() + offset) = '\0';
 						checksum = Check_Sum (checksumstring.Peek_Buffer());
-						valid = (checksum == (uint32) atol (serialnumber.Peek_Buffer() + offset));
+						valid = (checksum == (uint32_t) atol (serialnumber.Peek_Buffer() + offset));
 					}
 				}
 			}
@@ -369,11 +369,11 @@ bool SerialDialogClass::Get_Serial_Number (StringClass &serialnumber)
  * HISTORY:																												  *
  *		10/30/1995	MML : Created.																					  *
  *=============================================================================================*/
-unsigned int Check_Sum (char *str)
+uint32_t Check_Sum (char *str)
 {
-	unsigned int counter	= 0;
-	unsigned int retval	= 0;
-	unsigned int group	= 0;
+	uint32_t counter	= 0;
+	uint32_t retval	= 0;
+	uint32_t group	= 0;
 	int	len	= strlen( str );
 	int	mult	= 0;
 	int	i;

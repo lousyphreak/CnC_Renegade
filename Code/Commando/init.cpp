@@ -234,7 +234,7 @@ void Append_To_Assert_History(const char * message)
 	HANDLE hfile = ::CreateFile(full_filename, 0, 0, NULL, OPEN_EXISTING, 0L, NULL);
 	if (hfile != INVALID_HANDLE_VALUE)
 	{
-		DWORD file_size = ::GetFileSize(hfile, NULL);
+		uint32_t file_size = ::GetFileSize(hfile, NULL);
 		::CloseHandle(hfile);
 		::sprintf(line, "Filesize:   %d\n", file_size);
 		::fwrite(line, 1, ::strlen(line), file);
@@ -365,7 +365,7 @@ void Commando_Assert_Handler(const char * message)
 /*
 **
 */
-void _stdcall AudioTextCallback(AudibleSoundClass *sound_obj, const StringClass &text, uint32 user_param)
+void _stdcall AudioTextCallback(AudibleSoundClass *sound_obj, const StringClass &text, uint32_t user_param)
 {
 	Vector3 red = Vector3( 1, 0.5f, 0.5f );
 	StringClass str;
@@ -421,7 +421,7 @@ LoggingFileFactoryClass		LoggingFileFactory;
 static void Add_Mix_File_Factories(FileFactoryListClass &factory_list, FileFactoryClass *base_factory, const char *pattern)
 {
 	WIN32_FIND_DATA find_info = { 0 };
-	BOOL keep_going = TRUE;
+	int32_t keep_going = TRUE;
 	HANDLE file_find = NULL;
 	for (file_find = ::FindFirstFile(pattern, &find_info);
 		 (file_find != INVALID_HANDLE_VALUE) && keep_going;
@@ -531,12 +531,12 @@ static void Copy_Log(const StringClass& folder,const char* filename,bool use_num
 		if (size) {
 			StringClass log_file_name(filename);
 			if (Create_Log_File_Name(folder,log_file_name,use_numbering)) {
-				DWORD written;
+				uint32_t written;
 				HANDLE file;
 				file = CreateFile(log_file_name, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 				if (INVALID_HANDLE_VALUE != file) {
 					raw_log_file.Open();
-					unsigned char* memory=new unsigned char[size];
+					uint8_t* memory=new uint8_t[size];
 					raw_log_file.Read(memory,size);
 					raw_log_file.Close();
 					WriteFile(file, memory, size, &written, NULL);
@@ -563,7 +563,7 @@ public:
 		// Write log to network folder
 
 		char computer_name[MAX_COMPUTERNAME_LENGTH + 1];
-		DWORD size = sizeof(computer_name);
+		uint32_t size = sizeof(computer_name);
 		::GetComputerName(computer_name, &size);
 
 		RegistryClass reg(APPLICATION_SUB_KEY_NAME_DEBUG);
@@ -635,12 +635,12 @@ bool RestartNeeded = true;
  * HISTORY:                                                                                    *
  *   12/3/2001 11:26PM ST : Created                                                            *
  *=============================================================================================*/
-void Get_Version_Number(unsigned long *major, unsigned long *minor)
+void Get_Version_Number(uint32_t *major, uint32_t *minor)
 {
 	// Version info removed per Legal review requirements. LFeenanEA - 8th February 2025
 	
-	unsigned long version_major = 0;
-	unsigned long version_minor = 0;
+	uint32_t version_major = 0;
+	uint32_t version_minor = 0;
 }
 
 
@@ -652,7 +652,7 @@ void Get_Version_Number(unsigned long *major, unsigned long *minor)
 #define	LAST_CHAR	'z'
 
 #include "realcrc.h"
-int	CRC_Next( unsigned char ** p, int length ) 
+int	CRC_Next( uint8_t ** p, int length ) 
 {
 	int ret = 0;
 	if ( length == -1 ) {
@@ -680,10 +680,10 @@ void CRC_Check( void )
 
 	int start = timeGetTime();
 
-	unsigned char string[MAX_STRING+1];
+	uint8_t string[MAX_STRING+1];
 	for ( int length = 1; length <= MAX_STRING; length++ ) 
 	{
-		unsigned char * p = &string[length-1];
+		uint8_t * p = &string[length-1];
 		string[length] = 0;
 		for ( int i = 0; i < length; i++ ) {
 			string[i] = FIRST_CHAR;

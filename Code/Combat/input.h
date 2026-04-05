@@ -37,6 +37,8 @@
 #ifndef	INPUT_H
 #define	INPUT_H
 
+#include <cstdint>
+
 #ifndef	ALWAYS_H
 	#include "always.h"
 #endif
@@ -378,9 +380,9 @@ private:
 
 	static	void	Free_Mappings( void );
 	static	float	Get_Value( int function_index, int input, float clamp );
-	static	short	Get_Function( const char *name );
-	static	short	Get_Key( const char *name );
-	static	const char * Get_Key_Name (short key_id);
+	static	int16_t	Get_Function( const char *name );
+	static	int16_t	Get_Key( const char *name );
+	static	const char * Get_Key_Name (int16_t key_id);
 };
 
 

@@ -12,7 +12,7 @@
 #include <cstring>
 #include <cstdio>
 
-static unsigned int unique=1;
+static uint32_t unique=1;
 
 VertexMaterialClass * VertexMaterialClass::Presets[VertexMaterialClass::PRESET_COUNT];
 
@@ -127,26 +127,26 @@ VertexMaterialClass & VertexMaterialClass::operator = (const VertexMaterialClass
 	return *this;
 }
 
-unsigned long VertexMaterialClass::Compute_CRC(void) const
+uint32_t VertexMaterialClass::Compute_CRC(void) const
 {
-	unsigned long crc = 0;
+	uint32_t crc = 0;
 
-	crc = CRC_Memory(reinterpret_cast<const unsigned char *>(&Diffuse), sizeof(Diffuse), crc);
-	crc = CRC_Memory(reinterpret_cast<const unsigned char *>(&Ambient), sizeof(Ambient), crc);
-	crc = CRC_Memory(reinterpret_cast<const unsigned char *>(&Specular), sizeof(Specular), crc);
-	crc = CRC_Memory(reinterpret_cast<const unsigned char *>(&Emissive), sizeof(Emissive), crc);
-	crc = CRC_Memory(reinterpret_cast<const unsigned char *>(&Opacity), sizeof(Opacity), crc);
-	crc = CRC_Memory(reinterpret_cast<const unsigned char *>(&Shininess), sizeof(Shininess), crc);
-	crc = CRC_Memory(reinterpret_cast<const unsigned char *>(&Flags), sizeof(Flags), crc);
-	crc = CRC_Memory(reinterpret_cast<const unsigned char *>(&DiffuseColorSource), sizeof(DiffuseColorSource), crc);
-	crc = CRC_Memory(reinterpret_cast<const unsigned char *>(&AmbientColorSource), sizeof(AmbientColorSource), crc);
-	crc = CRC_Memory(reinterpret_cast<const unsigned char *>(&EmissiveColorSource), sizeof(EmissiveColorSource), crc);
-	crc = CRC_Memory(reinterpret_cast<const unsigned char *>(&UVSource), sizeof(UVSource), crc);
-	crc = CRC_Memory(reinterpret_cast<const unsigned char *>(&UseLighting), sizeof(UseLighting), crc);
-	crc = CRC_Memory(reinterpret_cast<const unsigned char *>(&UniqueID), sizeof(UniqueID), crc);
+	crc = CRC_Memory(reinterpret_cast<const uint8_t *>(&Diffuse), sizeof(Diffuse), crc);
+	crc = CRC_Memory(reinterpret_cast<const uint8_t *>(&Ambient), sizeof(Ambient), crc);
+	crc = CRC_Memory(reinterpret_cast<const uint8_t *>(&Specular), sizeof(Specular), crc);
+	crc = CRC_Memory(reinterpret_cast<const uint8_t *>(&Emissive), sizeof(Emissive), crc);
+	crc = CRC_Memory(reinterpret_cast<const uint8_t *>(&Opacity), sizeof(Opacity), crc);
+	crc = CRC_Memory(reinterpret_cast<const uint8_t *>(&Shininess), sizeof(Shininess), crc);
+	crc = CRC_Memory(reinterpret_cast<const uint8_t *>(&Flags), sizeof(Flags), crc);
+	crc = CRC_Memory(reinterpret_cast<const uint8_t *>(&DiffuseColorSource), sizeof(DiffuseColorSource), crc);
+	crc = CRC_Memory(reinterpret_cast<const uint8_t *>(&AmbientColorSource), sizeof(AmbientColorSource), crc);
+	crc = CRC_Memory(reinterpret_cast<const uint8_t *>(&EmissiveColorSource), sizeof(EmissiveColorSource), crc);
+	crc = CRC_Memory(reinterpret_cast<const uint8_t *>(&UVSource), sizeof(UVSource), crc);
+	crc = CRC_Memory(reinterpret_cast<const uint8_t *>(&UseLighting), sizeof(UseLighting), crc);
+	crc = CRC_Memory(reinterpret_cast<const uint8_t *>(&UniqueID), sizeof(UniqueID), crc);
 
 	for (int i = 0; i < MeshBuilderClass::MAX_STAGES; i++) {
-		if (Mapper[i]) crc = CRC_Memory(reinterpret_cast<const unsigned char *>(&(Mapper[i])), sizeof(TextureMapperClass*), crc);
+		if (Mapper[i]) crc = CRC_Memory(reinterpret_cast<const uint8_t *>(&(Mapper[i])), sizeof(TextureMapperClass*), crc);
 	}
 
 	return crc;
@@ -368,8 +368,8 @@ WW3DErrorType VertexMaterialClass::Load_W3D(ChunkLoadClass & cload)
 
 	char *mapping0_arg_buffer = NULL;
 	char *mapping1_arg_buffer = NULL;
-	unsigned int mapping0_arg_len = 0U;
-	unsigned int mapping1_arg_len = 0U;
+	uint32_t mapping0_arg_len = 0U;
+	uint32_t mapping1_arg_len = 0U;
 
 	while (cload.Open_Chunk()) {
 		switch (cload.Cur_Chunk_ID()) {

@@ -37,6 +37,8 @@
 #ifndef	CONTROL_H
 #define	CONTROL_H
 
+#include <cstdint>
+
 #ifndef	ALWAYS_H
 	#include "always.h"
 #endif
@@ -124,15 +126,15 @@ public:
 	bool	Get_Boolean( BooleanControl control );
 
 	void	Clear_One_Time_Boolean( void )				{OneTimeBooleanBits = 0;}
-	unsigned	long Get_One_Time_Boolean_Bits(void)	{return OneTimeBooleanBits;}
-	unsigned	char Get_Continuous_Boolean_Bits(void) {return ContinuousBooleanBits;}
+	uint32_t Get_One_Time_Boolean_Bits(void)	{return OneTimeBooleanBits;}
+	uint8_t Get_Continuous_Boolean_Bits(void) {return ContinuousBooleanBits;}
 
 	// Analog Controls
 	void	Set_Analog( AnalogControl control, float value );
 	float	Get_Analog( AnalogControl control );
 	//float	Get_Clamp( AnalogControl control );
-   //unsigned char  Scale_Analog(float clamp, float unscaled);
-   //float Unscale_Analog(float clamp, unsigned char scaled);
+   //uint8_t  Scale_Analog(float clamp, float unscaled);
+   //float Unscale_Analog(float clamp, uint8_t scaled);
 
 	// Import & Export
    void	Import_Cs( BitStreamClass & packet );
@@ -143,10 +145,10 @@ public:
 	static void Set_Precision(void);
 
 private:
-	unsigned		long	OneTimeBooleanBits;
-	unsigned		long	PendingOneTimeBooleanBits;
-	unsigned		char	ContinuousBooleanBits;
-	unsigned		char	PendingContinuousBooleanBits;
+	uint32_t	OneTimeBooleanBits;
+	uint32_t	PendingOneTimeBooleanBits;
+	uint8_t	ContinuousBooleanBits;
+	uint8_t	PendingContinuousBooleanBits;
 	float			AnalogValues[ ANALOG_CONTROL_COUNT ];
 };
 

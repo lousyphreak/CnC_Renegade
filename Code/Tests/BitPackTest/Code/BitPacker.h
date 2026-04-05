@@ -37,15 +37,17 @@
 #ifndef _BITPACKER_H_
 #define _BITPACKER_H_
 
+#include <cstdint>
+
 class BitPacker
 	{
 	public:
 		BitPacker();
-		BitPacker(void* buffer, unsigned int bufferSize);
+		BitPacker(void* buffer, uint32_t bufferSize);
 		virtual ~BitPacker();
 
 		// Set the buffer to use for read / write of bit packed data.
-		void SetBuffer(void* buffer, unsigned int bufferSize);
+		void SetBuffer(void* buffer, uint32_t bufferSize);
 		
 		// Flush remainder bits to the stream.
 		// (This must be called when finished writting)
@@ -55,7 +57,7 @@ class BitPacker
 		void Reset(void);
 
 		// Retrieve the length of the packed stream (in bytes).
-		unsigned int GetPackedSize(void);
+		uint32_t GetPackedSize(void);
 
 		// Retrieve a bit from the stream,
 		int GetBit(void);
@@ -64,17 +66,17 @@ class BitPacker
 		bool PutBit(int value);
 
 		// Retrieve a series of bits from the stream (Max = 32)
-		int GetBits(unsigned long& outBits, unsigned int numBits);
+		int GetBits(uint32_t& outBits, uint32_t numBits);
 
 		// Write a series of bits to the stream (Max = 32)
-		int PutBits(unsigned long bits, unsigned int numBits);
+		int PutBits(uint32_t bits, uint32_t numBits);
 
 	private:
-		unsigned char* mBuffer;
-		unsigned int mBufferSize;
-		unsigned int mBytePosition;
-		unsigned int mBitMask;
-		unsigned char mStore;
+		uint8_t* mBuffer;
+		uint32_t mBufferSize;
+		uint32_t mBytePosition;
+		uint32_t mBitMask;
+		uint8_t mStore;
 	};
 
 #endif // _BITPACKER_H_

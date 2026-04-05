@@ -280,7 +280,7 @@ WheeledVehicleDefClass::WheeledVehicleDefClass(void) :
 	ANGLE_EDITABLE_PARAM(WheeledVehicleDefClass, MaxSteeringAngle, DEG_TO_RADF(0.0f), DEG_TO_RADF(90.0f));
 }
 
-uint32 WheeledVehicleDefClass::Get_Class_ID (void) const	
+uint32_t WheeledVehicleDefClass::Get_Class_ID (void) const	
 { 
 	return CLASSID_WHEELEDVEHICLEDEF; 
 }

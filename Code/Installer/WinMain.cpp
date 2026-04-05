@@ -66,7 +66,7 @@
 
 
 // Foward declarations.
-LRESULT CALLBACK WndProc (HWND, UINT, WPARAM, LPARAM);
+intptr_t CALLBACK WndProc (HWND, uint32_t, uintptr_t, intptr_t);
 ATOM				  MyRegisterClass (HINSTANCE hInstance);
 bool				  Is_Autorun_Running();
 bool				  Is_Application_Running();
@@ -235,14 +235,14 @@ ATOM MyRegisterClass (HINSTANCE hInstance)
  * HISTORY:                                                                                    *
  *   08/22/01    IML : Created.                                                                * 
  *=============================================================================================*/
-LRESULT CALLBACK WndProc (HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+intptr_t CALLBACK WndProc (HWND hWnd, uint32_t message, uintptr_t wParam, intptr_t lParam)
 {
 	//	Pass this message through to the input handler. If the message
 	//	was processed and requires no further action, then return with
 	//	this information.
 	if (_Installer.Get_Input() != NULL) {
 
-		LRESULT result = 0;
+		intptr_t result = 0;
 
 		if (_Installer.Get_Input()->ProcessMessage (hWnd, message, wParam, lParam, result)) {
 			return (result);
@@ -445,7 +445,7 @@ bool Is_Application_Running()
 bool Is_Win_95_Or_Above()
 {
 	OSVERSIONINFO versioninfo;
-	BOOL			  result;	
+	int32_t			  result;	
 	bool			  validos = false;
 
 	versioninfo.dwOSVersionInfoSize = sizeof (versioninfo);
@@ -474,7 +474,7 @@ bool Is_Win_95_Or_Above()
 bool Is_Win_2K_Or_Above()
 {
 	OSVERSIONINFO versioninfo;
-	BOOL			  result;	
+	int32_t			  result;	
 	bool			  validos = false;
 
 	versioninfo.dwOSVersionInfoSize = sizeof (versioninfo);
@@ -505,8 +505,8 @@ bool Running_As_Administrator()
 	bool			  fAdmin;
 	HANDLE		  hThread;
 	TOKEN_GROUPS *ptg = NULL;
-	DWORD			  cbTokenGroups;
-	DWORD			  dwGroup;
+	uint32_t			  cbTokenGroups;
+	uint32_t			  dwGroup;
 	PSID			  psidAdmin;
 
 	SID_IDENTIFIER_AUTHORITY SystemSidAuthority = SECURITY_NT_AUTHORITY;

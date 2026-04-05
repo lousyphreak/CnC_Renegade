@@ -93,7 +93,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // WeatherPropPageClass message handlers
 
-BOOL WeatherPropPageClass::OnInitDialog() 
+int32_t WeatherPropPageClass::OnInitDialog() 
 {
 	const int fogstartmax				 = 1000;
 	const int fogendmax					 = 5000;
@@ -218,7 +218,7 @@ void WeatherPropPageClass::OnFogColor()
 void WeatherPropPageClass::OnDrawItem (int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct) 
 {
 	Vector3 color;
-	UINT	  state = DFCS_BUTTONPUSH | DFCS_ADJUSTRECT;
+	uint32_t	  state = DFCS_BUTTONPUSH | DFCS_ADJUSTRECT;
 	CRect	  rect = lpDrawItemStruct->rcItem;
 	CDC	  dc;
 	int	  r, g, b;	
@@ -333,7 +333,7 @@ void WeatherPropPageClass::OnPrecipitationAsh()
 }
 
 
-void WeatherPropPageClass::OnHScroll (UINT sbcode, UINT pos, CScrollBar *scrollbar) 
+void WeatherPropPageClass::OnHScroll (uint32_t sbcode, uint32_t pos, CScrollBar *scrollbar) 
 {
 	Update_Lightning_Values();
 	Update_Wind_Values();

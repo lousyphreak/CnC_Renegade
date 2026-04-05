@@ -729,7 +729,7 @@ bool MotionClass::get_binary_movement(int node,int frame)
  *=============================================================================================*/
 bool MotionClass::Save(ChunkSaveClass & csave)
 {
-	uint32 chunk_anim_type = W3D_CHUNK_ANIMATION;
+	uint32_t chunk_anim_type = W3D_CHUNK_ANIMATION;
 
 	ExportLog::printf("\nBegin Save Motion Data\n");
 

@@ -69,7 +69,7 @@ static void AddPlayerStats(GameResPacket& stats, cPlayer* player, WOL::Locale lo
 *
 ******************************************************************************/
 
-void SendGameResults(unsigned long gameID, cGameData* theGame, SList<cPlayer>* playerList)
+void SendGameResults(uint32_t gameID, cGameData* theGame, SList<cPlayer>* playerList)
 	{
 	RefPtr<WWOnline::Session> session = WWOnline::Session::GetInstance(false);
 
@@ -90,7 +90,7 @@ void SendGameResults(unsigned long gameID, cGameData* theGame, SList<cPlayer>* p
 
 	// Product SKU
 	RefPtr<Product> product = Product::Current();
-	unsigned long gameSKU = product->GetSKU();
+	uint32_t gameSKU = product->GetSKU();
 	stats.Add_Field("GSKU", gameSKU);
 
 	// Version of executable.
@@ -119,10 +119,10 @@ void SendGameResults(unsigned long gameID, cGameData* theGame, SList<cPlayer>* p
 	// Amount of system memory on server
 	MEMORYSTATUS memStatus;
 	GlobalMemoryStatus(&memStatus);
-	stats.Add_Field("SMEM", (unsigned long)memStatus.dwTotalPhys);
+	stats.Add_Field("SMEM", (uint32_t)memStatus.dwTotalPhys);
 
 	// Video card information
-	DWORD cardInfo[4];
+	uint32_t cardInfo[4];
 	if (ConsoleBox.Is_Exclusive()) {
 		strcpy((char*)&cardInfo[0], "ConsoleMode");
 	} else {
@@ -160,11 +160,11 @@ void SendGameResults(unsigned long gameID, cGameData* theGame, SList<cPlayer>* p
 	stats.Add_Field("TIME", startTime);
 
 	// Duration of game
-	unsigned long duration = theGame->Get_Duration_Seconds();
+	uint32_t duration = theGame->Get_Duration_Seconds();
 	stats.Add_Field("DURA", duration);
 
 	// Average FPS
-	unsigned long fps = theGame->Get_Frame_Count();
+	uint32_t fps = theGame->Get_Frame_Count();
 
 	if (duration > 1)
 		{
@@ -198,8 +198,8 @@ void SendGameResults(unsigned long gameID, cGameData* theGame, SList<cPlayer>* p
 	// Include clan information
 	if (theGame->IsClanGame.Is_True())
 		{
-		unsigned long winningClan = 0;
-		unsigned long losingClan = 0;
+		uint32_t winningClan = 0;
+		uint32_t losingClan = 0;
 
 		int winner = theGame->Get_Winner_ID();
 
@@ -242,7 +242,7 @@ void SendGameResults(unsigned long gameID, cGameData* theGame, SList<cPlayer>* p
 	//---------------------------------------------------------------------------
 
 	// Determine the number of players in the game
-	unsigned long numPlayers = 0;
+	uint32_t numPlayers = 0;
 	SLNode<cPlayer>* playerNode = playerList->Head();
 
 	for (int index = 0; index < playerList->Get_Count(); index++)
@@ -285,9 +285,9 @@ void SendGameResults(unsigned long gameID, cGameData* theGame, SList<cPlayer>* p
 		playerNode = playerNode->Next();
 		}
 
-	unsigned long packetSize = 0;
-	unsigned long sig_offset = 0;
-	unsigned char* packet = stats.Create_Comms_Packet(packetSize, NULL, sig_offset);
+	uint32_t packetSize = 0;
+	uint32_t sig_offset = 0;
+	uint8_t* packet = stats.Create_Comms_Packet(packetSize, NULL, sig_offset);
 
 	WWDEBUG_SAY(("Sending game results packet. Size = %lu\n", packetSize));
 
@@ -299,7 +299,7 @@ void SendGameResults(unsigned long gameID, cGameData* theGame, SList<cPlayer>* p
 	if (INVALID_HANDLE_VALUE != file)
 		{
 		// Write generic contents
-		DWORD written;
+		uint32_t written;
 		WriteFile(file, packet, packetSize, &written, NULL);
 		CloseHandle(file);
 		}
@@ -342,12 +342,12 @@ void AddPlayerStats(GameResPacket& stats, cPlayer* player, WOL::Locale locale,
 		name[len] = 0;
 
 		stats.Add_Field("PNAM", name);
-		stats.Add_Field("PLOC", (unsigned long)locale);
+		stats.Add_Field("PLOC", (uint32_t)locale);
 
 		int playerType = player->Get_Player_Type();
 
 		// Team (bit 31:win/lose, bits 7-0:team (0 = none, 1 = GDI, 2= NOD)
-		unsigned long team = 0;
+		uint32_t team = 0;
 
 		if (isTeamed)
 			{
@@ -369,41 +369,41 @@ void AddPlayerStats(GameResPacket& stats, cPlayer* player, WOL::Locale locale,
 		stats.Add_Field("TEAM", team);
 
 		// Score and other information
-		unsigned long score = (unsigned long)max<int>(player->Get_Score(), 0);
+		uint32_t score = (uint32_t)max<int>(player->Get_Score(), 0);
 		stats.Add_Field("PSCR", score);
 
-		stats.Add_Field("PPTS",	(long)player->Get_Ladder_Points());
-		stats.Add_Field("PTIM", (unsigned long)player->Get_Game_Time());
-		stats.Add_Field("PHLT", (unsigned long)player->Get_Final_Health());
-		stats.Add_Field("PKIL", (unsigned long)player->Get_Deaths());
-		stats.Add_Field("EKIL", (unsigned long)player->Get_Enemies_Killed());
-		stats.Add_Field("AKIL", (unsigned long)player->Get_Allies_Killed());
-		stats.Add_Field("SHOT", (unsigned long)player->Get_Shots_Fired());
-		stats.Add_Field("HEDF", (unsigned long)player->Get_Head_Shots());
-		stats.Add_Field("TORF", (unsigned long)player->Get_Torso_Shots());
-		stats.Add_Field("ARMF", (unsigned long)player->Get_Arm_Shots());
-		stats.Add_Field("LEGF", (unsigned long)player->Get_Leg_Shots());
-		stats.Add_Field("CRTF", (unsigned long)player->Get_Crotch_Shots());
-		stats.Add_Field("PUPS", (unsigned long)player->Get_Powerups_Collected());
-		stats.Add_Field("VKIL", (unsigned long)player->Get_Vehiclies_Destroyed());
-		stats.Add_Field("VTIM", (unsigned long)player->Get_Vehicle_Time());
-		stats.Add_Field("NKFV", (unsigned long)player->Get_Kills_From_Vehicle());
-		stats.Add_Field("SQUI", (unsigned long)player->Get_Squishes());
-		stats.Add_Field("PCRD", (unsigned long)player->Get_Credit_Grant());
-		stats.Add_Field("BKIL", (unsigned long)player->Get_Building_Destroyed());
-		stats.Add_Field("HEDR", (unsigned long)player->Get_Head_Hit());
-		stats.Add_Field("TORR", (unsigned long)player->Get_Torso_Hit());
-		stats.Add_Field("ARMR", (unsigned long)player->Get_Arm_Hit());
-		stats.Add_Field("LEGR", (unsigned long)player->Get_Leg_Hit());
-		stats.Add_Field("CRTR", (unsigned long)player->Get_Crotch_Hit());
-		stats.Add_Field("FLGC", (unsigned long)0);//no more CTF! (unsigned long)player->Get_Flag_Caps());
+		stats.Add_Field("PPTS",	static_cast<int32_t>(player->Get_Ladder_Points()));
+		stats.Add_Field("PTIM", (uint32_t)player->Get_Game_Time());
+		stats.Add_Field("PHLT", (uint32_t)player->Get_Final_Health());
+		stats.Add_Field("PKIL", (uint32_t)player->Get_Deaths());
+		stats.Add_Field("EKIL", (uint32_t)player->Get_Enemies_Killed());
+		stats.Add_Field("AKIL", (uint32_t)player->Get_Allies_Killed());
+		stats.Add_Field("SHOT", (uint32_t)player->Get_Shots_Fired());
+		stats.Add_Field("HEDF", (uint32_t)player->Get_Head_Shots());
+		stats.Add_Field("TORF", (uint32_t)player->Get_Torso_Shots());
+		stats.Add_Field("ARMF", (uint32_t)player->Get_Arm_Shots());
+		stats.Add_Field("LEGF", (uint32_t)player->Get_Leg_Shots());
+		stats.Add_Field("CRTF", (uint32_t)player->Get_Crotch_Shots());
+		stats.Add_Field("PUPS", (uint32_t)player->Get_Powerups_Collected());
+		stats.Add_Field("VKIL", (uint32_t)player->Get_Vehiclies_Destroyed());
+		stats.Add_Field("VTIM", (uint32_t)player->Get_Vehicle_Time());
+		stats.Add_Field("NKFV", (uint32_t)player->Get_Kills_From_Vehicle());
+		stats.Add_Field("SQUI", (uint32_t)player->Get_Squishes());
+		stats.Add_Field("PCRD", (uint32_t)player->Get_Credit_Grant());
+		stats.Add_Field("BKIL", (uint32_t)player->Get_Building_Destroyed());
+		stats.Add_Field("HEDR", (uint32_t)player->Get_Head_Hit());
+		stats.Add_Field("TORR", (uint32_t)player->Get_Torso_Hit());
+		stats.Add_Field("ARMR", (uint32_t)player->Get_Arm_Hit());
+		stats.Add_Field("LEGR", (uint32_t)player->Get_Leg_Hit());
+		stats.Add_Field("CRTR", (uint32_t)player->Get_Crotch_Hit());
+		stats.Add_Field("FLGC", (uint32_t)0);//no more CTF! (uint32_t)player->Get_Flag_Caps());
 
 		// Weapon usage
 		int numWeapons = min<int>(255, player->Get_Weapon_Fired_Count());
 
 		for (int wepIndex = 0; wepIndex < numWeapons; wepIndex++)
 			{
-			unsigned long weaponInfo[2] = {0,0};
+			uint32_t weaponInfo[2] = {0,0};
 			player->Get_Weapon_Fired(wepIndex, weaponInfo[0], weaponInfo[1]);
 
 			char token[5];

@@ -19,6 +19,8 @@
 #ifndef CRITSEC_HEADER
 #define CRITSEC_HEADER
 
+#include <cstdint>
+
 #include "wstypes.h"
 #ifdef _WIN32
  #include <windows.h>
@@ -46,8 +48,8 @@ class CritSec
                 CritSec();
                ~CritSec();
     
-  sint32		lock(int *refcount=NULL) RO;
-  sint32		unlock(void) RO;
+  int32_t		lock(int *refcount=NULL) RO;
+  int32_t		unlock(void) RO;
 
  protected:
   #ifdef _WIN32

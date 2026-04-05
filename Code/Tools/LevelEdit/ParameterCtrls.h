@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __PARAMETER_CTRLS_H
@@ -86,8 +88,8 @@ public:
 	virtual int							Create (HWND parent_wnd, int id_start, LPRECT pos) = 0;
 	virtual void						Resize (const CRect &rect) = 0;
 	virtual void						Read_Data (HWND parent_wnd) { };
-	virtual bool						On_Command (HWND parent_wnd, WPARAM wparam, LPARAM lparam) { return false; }
-	virtual bool						On_DrawItem (HWND parent_wnd, WPARAM wparam, LPARAM lparam) { return false; }
+	virtual bool						On_Command (HWND parent_wnd, uintptr_t wparam, intptr_t lparam) { return false; }
+	virtual bool						On_DrawItem (HWND parent_wnd, uintptr_t wparam, intptr_t lparam) { return false; }
 	virtual void						On_Destroy (void) { };
 
 	virtual ParameterClass *		Get_Parameter (void) const = 0;
@@ -587,8 +589,8 @@ public:
 	int							Create (HWND parent_wnd, int id_start, LPRECT pos);
 	void							Resize (const CRect &rect);
 	void							Read_Data (HWND parent_wnd);
-	bool							On_Command (HWND parent_wnd, WPARAM wparam, LPARAM lparam);
-	bool							On_DrawItem (HWND parent_wnd, WPARAM wparam, LPARAM lparam);
+	bool							On_Command (HWND parent_wnd, uintptr_t wparam, intptr_t lparam);
+	bool							On_DrawItem (HWND parent_wnd, uintptr_t wparam, intptr_t lparam);
 
 	ParameterClass *			Get_Parameter (void) const { return m_Parameter; };
 	
@@ -628,7 +630,7 @@ public:
 	int							Create (HWND parent_wnd, int id_start, LPRECT pos);
 	void							Resize (const CRect &rect);
 	void							Read_Data (HWND parent_wnd);
-	bool							On_Command (HWND parent_wnd, WPARAM wparam, LPARAM lparam);
+	bool							On_Command (HWND parent_wnd, uintptr_t wparam, intptr_t lparam);
 
 	ParameterClass *			Get_Parameter (void) const { return m_Parameter; };
 	
@@ -676,7 +678,7 @@ protected:
 	////////////////////////////////////////////////////////////////////
 	//	Protected methods
 	////////////////////////////////////////////////////////////////////
-	virtual uint32				Get_Def_Class_ID (void) = 0;
+	virtual uint32_t				Get_Def_Class_ID (void) = 0;
 	virtual int					Get_Def_Icon (void) = 0;
 			
 	////////////////////////////////////////////////////////////////////
@@ -716,7 +718,7 @@ protected:
 	////////////////////////////////////////////////////////////////////
 	//	Protected methods
 	////////////////////////////////////////////////////////////////////
-	virtual uint32				Get_Def_Class_ID (void) { return ((GenericDefParameterClass *)m_Parameter)->Get_Class_ID (); }
+	virtual uint32_t				Get_Def_Class_ID (void) { return ((GenericDefParameterClass *)m_Parameter)->Get_Class_ID (); }
 	virtual int					Get_Def_Icon (void)		{ return OBJECT_ICON; }		
 };
 
@@ -747,7 +749,7 @@ protected:
 	////////////////////////////////////////////////////////////////////
 	//	Protected methods
 	////////////////////////////////////////////////////////////////////
-	virtual uint32				Get_Def_Class_ID (void) { return CLASSID_GAME_OBJECTS; }
+	virtual uint32_t				Get_Def_Class_ID (void) { return CLASSID_GAME_OBJECTS; }
 	virtual int					Get_Def_Icon (void)		{ return OBJECT_ICON; }		
 };
 
@@ -778,7 +780,7 @@ protected:
 	////////////////////////////////////////////////////////////////////
 	//	Protected methods
 	////////////////////////////////////////////////////////////////////
-	virtual uint32				Get_Def_Class_ID (void) { return CLASSID_DEF_WEAPON; }
+	virtual uint32_t				Get_Def_Class_ID (void) { return CLASSID_DEF_WEAPON; }
 	virtual int					Get_Def_Icon (void)		{ return OBJECT_ICON; }
 };
 
@@ -809,7 +811,7 @@ protected:
 	////////////////////////////////////////////////////////////////////
 	//	Protected methods
 	////////////////////////////////////////////////////////////////////
-	virtual uint32				Get_Def_Class_ID (void) { return CLASSID_DEF_AMMO; }
+	virtual uint32_t				Get_Def_Class_ID (void) { return CLASSID_DEF_AMMO; }
 	virtual int					Get_Def_Icon (void)		{ return OBJECT_ICON; }
 };
 
@@ -840,7 +842,7 @@ protected:
 	////////////////////////////////////////////////////////////////////
 	//	Protected methods
 	////////////////////////////////////////////////////////////////////
-	virtual uint32				Get_Def_Class_ID (void) { return CLASSID_DEF_EXPLOSION; }
+	virtual uint32_t				Get_Def_Class_ID (void) { return CLASSID_DEF_EXPLOSION; }
 	virtual int					Get_Def_Icon (void)		{ return OBJECT_ICON; }
 };
 
@@ -874,7 +876,7 @@ protected:
 	////////////////////////////////////////////////////////////////////
 	//	Protected methods
 	////////////////////////////////////////////////////////////////////
-	virtual uint32				Get_Def_Class_ID (void) { return CLASSID_SOUND; }
+	virtual uint32_t				Get_Def_Class_ID (void) { return CLASSID_SOUND; }
 	virtual int					Get_Def_Icon (void)		{ return SOUND_ICON; }
 		
 	////////////////////////////////////////////////////////////////////
@@ -908,7 +910,7 @@ public:
 	int							Create (HWND parent_wnd, int id_start, LPRECT pos);
 	void							Resize (const CRect &rect);
 	void							Read_Data (HWND parent_wnd);
-	bool							On_Command (HWND parent_wnd, WPARAM wparam, LPARAM lparam);
+	bool							On_Command (HWND parent_wnd, uintptr_t wparam, intptr_t lparam);
 
 	ParameterClass *			Get_Parameter (void) const { return m_Parameter; };
 
@@ -955,7 +957,7 @@ public:
 	int							Create (HWND parent_wnd, int id_start, LPRECT pos);
 	void							Resize (const CRect &rect);
 	void							Read_Data (HWND parent_wnd);
-	bool							On_Command (HWND parent_wnd, WPARAM wparam, LPARAM lparam);
+	bool							On_Command (HWND parent_wnd, uintptr_t wparam, intptr_t lparam);
 
 	ParameterClass *			Get_Parameter (void) const { return m_Parameter; };
 
@@ -995,7 +997,7 @@ public:
 	int							Create (HWND parent_wnd, int id_start, LPRECT pos);
 	void							Resize (const CRect &rect);
 	void							Read_Data (HWND parent_wnd);
-	bool							On_Command (HWND parent_wnd, WPARAM wparam, LPARAM lparam);
+	bool							On_Command (HWND parent_wnd, uintptr_t wparam, intptr_t lparam);
 
 	ParameterClass *			Get_Parameter (void) const { return m_Parameter; };
 
@@ -1035,7 +1037,7 @@ public:
 	int							Create (HWND parent_wnd, int id_start, LPRECT pos);
 	void							Resize (const CRect &rect);
 	void							Read_Data (HWND parent_wnd);
-	bool							On_Command (HWND parent_wnd, WPARAM wparam, LPARAM lparam);
+	bool							On_Command (HWND parent_wnd, uintptr_t wparam, intptr_t lparam);
 
 	ParameterClass *			Get_Parameter (void) const { return m_Parameter; };
 

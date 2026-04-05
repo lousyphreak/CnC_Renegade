@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -132,7 +134,7 @@ template<typename Event> class Notifier
 		//! Send event notification to all observers of this event.
 		virtual void NotifyObservers(Event& event)
 			{
-			for (unsigned int index = 0; index < mObservers.size(); index++)
+			for (uint32_t index = 0; index < mObservers.size(); index++)
 				{
 				mObservers[index]->HandleNotification(event);
 				}

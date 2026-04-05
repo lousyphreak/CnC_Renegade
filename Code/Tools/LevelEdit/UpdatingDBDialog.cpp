@@ -67,12 +67,12 @@ END_MESSAGE_MAP()
 //
 //	WindowProc
 //
-LRESULT
+intptr_t
 UpdatingDBDialogClass::WindowProc
 (
-	UINT message,
-	WPARAM wParam,
-	LPARAM lParam
+	uint32_t message,
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	// Is this the call to close the dialog?
@@ -109,7 +109,7 @@ UpdatingDBDialogClass::PostNcDestroy (void)
 //
 //	OnInitDialog
 //
-BOOL
+int32_t
 UpdatingDBDialogClass::OnInitDialog (void)
 {
 	// Allow the base class to process this message

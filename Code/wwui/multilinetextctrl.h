@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __MULTILINETEXTCTRL_H
@@ -83,7 +85,7 @@ protected:
 	//	Protected methods
 	///////////////////////////////////////////////////////////////////
 	void				Update_Client_Rect (void);
-	bool				On_Key_Down (uint32 key_id, uint32 key_data);
+	bool				On_Key_Down (uint32_t key_id, uint32_t key_data);
 	void				On_Mouse_Wheel (int direction);
 
 	void				Create_Control_Renderer (void);

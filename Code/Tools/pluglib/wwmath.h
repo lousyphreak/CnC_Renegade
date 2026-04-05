@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef WWMATH_H
@@ -108,11 +110,11 @@ static float		Max(float a, float b);
 static float		Lerp(float a, float b, float lerp );
 static double		Lerp(double a, double b, float lerp );
 
-static long			Float_To_Long(float f);
-static long			Float_To_Long(double f);
+static int32_t	Float_To_Long(float f);
+static int32_t	Float_To_Long(double f);
 
-static unsigned char Unit_Float_To_Byte(float f) { return (unsigned char)(f*255.0f); }
-static float			Byte_To_Unit_Float(unsigned char byte) { return ((float)byte) / 255.0f; }
+static uint8_t Unit_Float_To_Byte(float f) { return (uint8_t)(f*255.0f); }
+static float			Byte_To_Unit_Float(uint8_t byte) { return ((float)byte) / 255.0f; }
 
 static bool			Is_Valid_Float(float x);
 static bool			Is_Valid_Double(double x);
@@ -206,34 +208,34 @@ inline double	WWMath::Lerp(double a, double b, float lerp )
 }
 
 
-inline long WWMath::Float_To_Long	(float f)	
+inline int32_t WWMath::Float_To_Long	(float f)	
 {
 #if defined(_MSC_VER) && defined(_M_IX86)
-	long retval;
+	int32_t retval;
 	__asm fld	dword ptr [f]
 	__asm fistp dword ptr [retval]
 	return retval;
 #else 
-	return (long) f;
+	return static_cast<int32_t>(f);
 #endif
 }
 
-inline long WWMath::Float_To_Long	(double f)	
+inline int32_t WWMath::Float_To_Long	(double f)	
 {
 #if defined(_MSC_VER) && defined(_M_IX86)
-	long retval;
+	int32_t retval;
 	__asm fld	qword ptr [f]
 	__asm fistp dword ptr [retval]
 	return retval;
 #else 
-	return (long) f;
+	return static_cast<int32_t>(f);
 #endif
 }
 
 inline bool WWMath::Is_Valid_Float(float x)
 {
-	unsigned long * plong = (unsigned long *)(&x);
-	unsigned long exponent = ((*plong) & 0x7F800000) >> (32-9);
+	uint32_t * plong = (uint32_t *)(&x);
+	uint32_t exponent = ((*plong) & 0x7F800000) >> (32-9);
 
 	// if exponent is 0xFF, this is a NAN 
 	if (exponent == 0xFF) {
@@ -244,8 +246,8 @@ inline bool WWMath::Is_Valid_Float(float x)
 
 inline bool WWMath::Is_Valid_Double(double x)
 {
-	unsigned long * plong = (unsigned long *)(&x) + 1;
-	unsigned long exponent = ((*plong) & 0x7FF00000) >> (32-12);
+	uint32_t * plong = (uint32_t *)(&x) + 1;
+	uint32_t exponent = ((*plong) & 0x7FF00000) >> (32-12);
 
 	// if exponent is 0x7FF, this is a NAN 
 	if (exponent == 0x7FF) {

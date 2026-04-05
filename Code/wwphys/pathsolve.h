@@ -36,6 +36,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef __PATH_SOLVE_H
 #define __PATH_SOLVE_H
 
@@ -104,7 +106,7 @@ public:
 	//
 	//	Path evaluation
 	//
-	STATE_DESC			Timestep (unsigned int milliseconds = 2);
+	STATE_DESC			Timestep (uint32_t milliseconds = 2);
 
 	//
 	// Position methods
@@ -129,7 +131,7 @@ public:
 	//
 	//	Birth-time access
 	//
-	uint32				Get_Birth_Time (void) const	{ return m_BirthTime; }
+	uint32_t				Get_Birth_Time (void) const	{ return m_BirthTime; }
 
 	//
 	// Volume access
@@ -186,7 +188,7 @@ protected:
 	/////////////////////////////////////////////////////////////////////////
 	void		Initialize (float sector_fudge = 0);	
 
-	void		Resolve_Path (unsigned int milliseconds);
+	void		Resolve_Path (uint32_t milliseconds);
 	void		Process_Portals (PathNodeClass *node);
 	void		Submit_Node (float traversal_cost, PathNodeClass *current_node, PathfindPortalClass *portal, PathfindSectorClass *dest_sector, const Matrix3D &current_tm, const Matrix3D &ending_tm);
 	
@@ -222,7 +224,7 @@ private:
 	/////////////////////////////////////////////////////////////////////////
 	// Static members
 	/////////////////////////////////////////////////////////////////////////
-	static long long								_TicksPerMilliSec;
+	static int64_t								_TicksPerMilliSec;
 
 	/////////////////////////////////////////////////////////////////////////
 	// Private member data
@@ -231,7 +233,7 @@ private:
 	Vector3											m_DestPos;		
 	STATE_DESC										m_State;
 	float												m_Priority;
-	uint32											m_BirthTime;
+	uint32_t											m_BirthTime;
 
 	PathfindSectorClass *						m_StartSector;
 	PathfindSectorClass *						m_DestSector;

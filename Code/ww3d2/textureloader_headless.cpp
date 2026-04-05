@@ -26,10 +26,10 @@ namespace {
 
 constexpr uint32_t Make_FourCC(char a, char b, char c, char d)
 {
-return static_cast<uint32_t>(static_cast<unsigned char>(a)) |
-(static_cast<uint32_t>(static_cast<unsigned char>(b)) << 8) |
-(static_cast<uint32_t>(static_cast<unsigned char>(c)) << 16) |
-(static_cast<uint32_t>(static_cast<unsigned char>(d)) << 24);
+return static_cast<uint32_t>(static_cast<uint8_t>(a)) |
+(static_cast<uint32_t>(static_cast<uint8_t>(b)) << 8) |
+(static_cast<uint32_t>(static_cast<uint8_t>(c)) << 16) |
+(static_cast<uint32_t>(static_cast<uint8_t>(d)) << 24);
 }
 
 struct DDSBGRAColor
@@ -1280,7 +1280,7 @@ if (src_format == WW3D_FORMAT_UNKNOWN) return false;
 
 dest_format = Get_Format();
 
-char palette[256 * 4];
+uint8_t palette[256 * 4];
 targa.SetPalette(palette);
 
 unsigned src_width = targa.Header.Width;
@@ -1292,8 +1292,8 @@ if (TARGA_ERROR_HANDLER(targa.Load(Texture->Get_Full_Path(), TGAF_IMAGE, false),
 return false;
 }
 
-unsigned char *src_surface = (unsigned char *)targa.GetImage();
-unsigned char *converted_surface = NULL;
+uint8_t *src_surface = (uint8_t *)targa.GetImage();
+uint8_t *converted_surface = NULL;
 
 // Convert paletted/16-bit formats to A8R8G8B8, or if scaling is needed
 if (src_format == WW3D_FORMAT_A1R5G5B5 ||
@@ -1304,7 +1304,7 @@ src_format == WW3D_FORMAT_L8 ||
 src_width != width ||
 src_height != height) {
 
-converted_surface = new unsigned char[width * height * 4];
+converted_surface = new uint8_t[width * height * 4];
 BitmapHandlerClass::Copy_Image(
 converted_surface,
 width,
@@ -1316,7 +1316,7 @@ src_width,
 src_height,
 src_width * src_bpp,
 src_format,
-(unsigned char *)targa.GetPalette(),
+(uint8_t *)targa.GetPalette(),
 targa.Header.CMapDepth >> 3,
 false);
 
@@ -1369,20 +1369,20 @@ LockedSurfacePitch[0] = static_cast<unsigned>(tex->width) * BgfxCompat_Get_Pixel
 
 void TextureLoadTaskClass::Unlock_Surfaces(void)
 {
-for (unsigned int i = 0; i < TextureClass::MIP_LEVELS_MAX; ++i) {
+for (uint32_t i = 0; i < TextureClass::MIP_LEVELS_MAX; ++i) {
 LockedSurfacePtr[i] = NULL;
 LockedSurfacePitch[i] = 0;
 }
 }
 
-unsigned char *TextureLoadTaskClass::Get_Locked_Surface_Ptr(unsigned int level)
+uint8_t *TextureLoadTaskClass::Get_Locked_Surface_Ptr(uint32_t level)
 {
 WWASSERT(level < MipLevelCount);
 WWASSERT(LockedSurfacePtr[level]);
 return LockedSurfacePtr[level];
 }
 
-unsigned int TextureLoadTaskClass::Get_Locked_Surface_Pitch(unsigned int level) const
+uint32_t TextureLoadTaskClass::Get_Locked_Surface_Pitch(uint32_t level) const
 {
 WWASSERT(level < MipLevelCount);
 WWASSERT(LockedSurfacePtr[level]);

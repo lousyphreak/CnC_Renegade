@@ -39,6 +39,8 @@
 #ifndef GAMEMTLSHADERDLG_H
 #define GAMEMTLSHADERDLG_H
 
+#include <cstdint>
+
 #include <Max.h>
 #include "GameMtlForm.h"
 
@@ -54,9 +56,9 @@ public:
 	GameMtlShaderDlg(HWND parent, IMtlParams * imp, GameMtl * m, int pass);
 	~GameMtlShaderDlg();
 
-	virtual BOOL		Dialog_Proc (HWND dlg_wnd, UINT message, WPARAM wparam, LPARAM lparam);
+	virtual int32_t		Dialog_Proc (HWND dlg_wnd, uint32_t message, uintptr_t wparam, intptr_t lparam);
 
-	void					ActivateDlg(BOOL onOff);
+	void					ActivateDlg(int32_t onOff);
 	void					ReloadDialog(void);
 
 private:

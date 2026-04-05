@@ -117,7 +117,7 @@ VisWindowDialogClass::Create (void)
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL VisWindowDialogClass::OnInitDialog() 
+int32_t VisWindowDialogClass::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
 	
@@ -174,7 +174,7 @@ VisWindowDialogClass::Update_Display (VisRasterizerClass &rasterizer)
 	for (int row = 0; row < Height; row ++) {
 
 		//
-		//	DIB sections are aligned on DWORD boundaries, so ensure
+		//	DIB sections are aligned on uint32_t boundaries, so ensure
 		// our starting index for this row is mapped appropriately.
 		//
 		index = row * stride;
@@ -182,22 +182,22 @@ VisWindowDialogClass::Update_Display (VisRasterizerClass &rasterizer)
 		//
 		//	Get a pointer to the raw vis-render data for this row of the bitmap
 		//
-		const uint32 *pixel_ptr = rasterizer.Get_Pixel_Row (row, 0, Width - 1);
+		const uint32_t *pixel_ptr = rasterizer.Get_Pixel_Row (row, 0, Width - 1);
 
 		//
 		//	Loop over all the columns of the bitmap
 		//		
 		for (int col = 0; col < Width; col ++) {
 
-			unsigned int id			= pixel_ptr[col];// + 1;
-			unsigned int pixel		= Id_To_Pixel(id);
+			uint32_t id			= pixel_ptr[col];// + 1;
+			uint32_t pixel		= Id_To_Pixel(id);
 			
 			//
 			//	Convert the pixel into red, green, and blue components
 			//
-			BYTE red		= BYTE(pixel & 0x000000FF);
-			BYTE green	= BYTE((pixel & 0x0000FF00) >> 8);
-			BYTE blue	= BYTE((pixel & 0x00FF0000) >> 16);			
+			uint8_t red		= uint8_t(pixel & 0x000000FF);
+			uint8_t green	= uint8_t((pixel & 0x0000FF00) >> 8);
+			uint8_t blue	= uint8_t((pixel & 0x00FF0000) >> 16);			
 			
 			//
 			//	Store the pixel in the bitmap
@@ -255,7 +255,7 @@ VisWindowDialogClass::Create_DIB_Section (int width, int height)
 	//	Calculate what size to make the window
 	//
 	RECT rect	= { 0, 0, width * 2, height * 2 };
-	LONG style	= ::GetWindowLong (m_hWnd, GWL_STYLE);
+	int32_t style	= ::GetWindowLong (m_hWnd, GWL_STYLE);
 	::AdjustWindowRect (&rect, style, FALSE);
 
 	//
@@ -385,15 +385,15 @@ VisWindowDialogClass::Hit_Test(CPoint point) const
 	int stride	= (((Width * 3) + 3) & ~3);
 	int pixel_address = x * 3 + stride * y;
 
-	BYTE blue = BitmapBits[pixel_address ++];
-	BYTE green = BitmapBits[pixel_address ++];
-	BYTE red = BitmapBits[pixel_address ++];
+	uint8_t blue = BitmapBits[pixel_address ++];
+	uint8_t green = BitmapBits[pixel_address ++];
+	uint8_t red = BitmapBits[pixel_address ++];
 
 	// 
 	// Map the color back to a vis ID
 	// 
-	unsigned int color = red | (green<<8) | (blue<<16);
-	unsigned int id = Pixel_To_Id(color);
+	uint32_t color = red | (green<<8) | (blue<<16);
+	uint32_t id = Pixel_To_Id(color);
 	return id;
 }
 
@@ -402,10 +402,10 @@ VisWindowDialogClass::Hit_Test(CPoint point) const
 // Id_To_Pixel
 //
 /////////////////////////////////////////////////////////////////////////////
-unsigned int	
-VisWindowDialogClass::Id_To_Pixel(unsigned int id) const		
+uint32_t	
+VisWindowDialogClass::Id_To_Pixel(uint32_t id) const		
 { 
-	uint32 pixel = 0;
+	uint32_t pixel = 0;
 	pixel |= ((id & 0x0000000F) >>  0) << 20;		// LSN (Least Significant Nibble) goes into MSN of red
 	pixel |= ((id & 0x000000F0) >>  4) << 12;		// next LSN goes into MSN of green
 	pixel |= ((id & 0x00000F00) >>  8) << 4;		// next LSN goes into MSN of blue
@@ -421,10 +421,10 @@ VisWindowDialogClass::Id_To_Pixel(unsigned int id) const
 // Pixel_To_Id
 //
 /////////////////////////////////////////////////////////////////////////////
-unsigned int	
-VisWindowDialogClass::Pixel_To_Id(unsigned int pixel) const
+uint32_t	
+VisWindowDialogClass::Pixel_To_Id(uint32_t pixel) const
 { 
-	uint32 id = 0;
+	uint32_t id = 0;
 
 	id |= ((pixel & 0x0000000F) >>  0) << 20;		
 	id |= ((pixel & 0x000000F0) >>  4) << 8;		
@@ -442,7 +442,7 @@ VisWindowDialogClass::Pixel_To_Id(unsigned int pixel) const
 // PreTranslateMessage
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL 
+int32_t 
 VisWindowDialogClass::PreTranslateMessage(MSG* pMsg) 
 {
 	if (::IsWindow(ToolTip.m_hWnd) && pMsg->hwnd == m_hWnd)
@@ -468,11 +468,11 @@ VisWindowDialogClass::PreTranslateMessage(MSG* pMsg)
 // OnMouseMove
 //
 /////////////////////////////////////////////////////////////////////////////
-void VisWindowDialogClass::OnMouseMove(UINT nFlags, CPoint point) 
+void VisWindowDialogClass::OnMouseMove(uint32_t nFlags, CPoint point) 
 {
 	if (::IsWindow(ToolTip.m_hWnd))
 	{
-		unsigned int vis_id = Hit_Test(point);
+		uint32_t vis_id = Hit_Test(point);
 
 		if ((vis_id == -1) || (vis_id != CurToolTipVisId)) {
 			// Use Activate() to hide the tooltip.

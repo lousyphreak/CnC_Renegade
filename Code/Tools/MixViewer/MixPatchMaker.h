@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef _MIXPATCHMAKER_H
 #define _MIXPATCHMAKER_H
 
@@ -32,7 +34,7 @@ class MixPatchMakerClass
 	public:
 		MixPatchMakerClass(void);
 		void Make_Patch(char *old_input_file, char *new_input_file, char *output_file, char *old_art_dir, char *new_art_dir);
-		static unsigned int Do_Stuff(void *param);
+		static uint32_t Do_Stuff(void *param);
 		void Thread_Make(void);
 
 

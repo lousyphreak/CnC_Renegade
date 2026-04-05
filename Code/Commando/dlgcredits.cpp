@@ -87,7 +87,7 @@ CreditsMenuClass::On_Init_Dialog (void)
 			int len = ascii_text.Get_Length ();
 			for (int index = 0; index < len; index ++) {
 				if (ascii_text[index] != '\r') {
-					buffer[dest_index ++] = (unsigned char)ascii_text[index];
+					buffer[dest_index ++] = (uint8_t)ascii_text[index];
 				}
 			}
 			buffer[dest_index] = 0;
@@ -115,7 +115,7 @@ CreditsMenuClass::On_Init_Dialog (void)
 //
 ////////////////////////////////////////////////////////////////
 void
-CreditsMenuClass::On_Command (int ctrl_id, int message_id, DWORD param)
+CreditsMenuClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	MenuDialogClass::On_Command (ctrl_id, message_id, param);
 	return ;

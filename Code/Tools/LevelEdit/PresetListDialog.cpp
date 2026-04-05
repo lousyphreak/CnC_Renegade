@@ -96,7 +96,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 PresetListDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -328,7 +328,7 @@ void
 PresetListDialogClass::OnDblclkPresetList
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 ) 
 {
 	(*pResult) = 0;
@@ -347,7 +347,7 @@ void
 PresetListDialogClass::OnDblclkPresetTree
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 ) 
 {
 	(*pResult) = 0;
@@ -366,7 +366,7 @@ void
 PresetListDialogClass::OnItemchangedPresetList
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 ) 
 {
 	(*pResult) = 0;
@@ -385,7 +385,7 @@ void
 PresetListDialogClass::OnSelchangedPresetTree
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 ) 
 {
 	(*pResult) = 0;
@@ -453,14 +453,14 @@ PresetListDialogClass::Generate_Type_List (void)
 void
 PresetListDialogClass::Add_Factories_To_Combo
 (
-	NTreeLeafClass<uint32> *leaf,
+	NTreeLeafClass<uint32_t> *leaf,
 	int							indent,
 	int &							index
 )
 {
 	do
 	{
-		uint32 class_id = leaf->Get_Value ();
+		uint32_t class_id = leaf->Get_Value ();
 
 		//
 		//	Add this factory to the combobox
@@ -471,7 +471,7 @@ PresetListDialogClass::Add_Factories_To_Combo
 		item.iImage				= FOLDER_ICON;
 		item.iSelectedImage	= FOLDER_ICON;
 		item.iIndent			= indent;
-		item.lParam				= (long)class_id;
+		item.lParam				= static_cast<LPARAM>(class_id);
 		item.iItem				= index ++;
 		int item_index			= m_ComboBox.InsertItem (&item);
 		
@@ -485,7 +485,7 @@ PresetListDialogClass::Add_Factories_To_Combo
 		//
 		//	Recurse if necessary
 		//
-		NTreeLeafClass<uint32> *child = leaf->Peek_Child ();
+		NTreeLeafClass<uint32_t> *child = leaf->Peek_Child ();
 		if (child != NULL) {
 			Add_Factories_To_Combo (child, indent + 1, index);
 		}
@@ -584,7 +584,7 @@ PresetListDialogClass::Fill_Tree (NTreeLeafClass<PresetClass *> *leaf, HTREEITEM
 				//
 				//	Associate the preset with its tree entry
 				//
-				m_PresetTreeCtrl.SetItemData (new_item, (LONG)preset);
+				m_PresetTreeCtrl.SetItemData (new_item, (int32_t)preset);
 
 				//
 				//	Recurse if necessary
@@ -622,7 +622,7 @@ PresetListDialogClass::Fill_Tree (NTreeLeafClass<PresetClass *> *leaf, HTREEITEM
 		//	Add all the folder contents to the tree ctrl
 		//
 		PresetClass *preset = NULL;
-		uint32 factory_id = factory->Get_Class_ID ();
+		uint32_t factory_id = factory->Get_Class_ID ();
 		for (	preset = PresetMgrClass::Get_First (factory_id, PresetMgrClass::ID_CLASS);
 				preset != NULL;
 				preset = PresetMgrClass::Get_Next (preset, factory_id, PresetMgrClass::ID_CLASS))
@@ -635,7 +635,7 @@ PresetListDialogClass::Fill_Tree (NTreeLeafClass<PresetClass *> *leaf, HTREEITEM
 																					OBJECT_ICON,
 																					folder_item);
 			
-			m_PresetTreeCtrl.SetItemData (preset_item, (ULONG)preset);
+			m_PresetTreeCtrl.SetItemData (preset_item, (uint32_t)preset);
 		}
 	}
 
@@ -670,7 +670,7 @@ void PresetListDialogClass::OnSelchangeTypeCombo()
 		//
 		//	Repopulate the tree control if the type changed
 		//
-		uint32 new_class_id = m_ComboBox.GetItemData (cur_sel);
+		uint32_t new_class_id = m_ComboBox.GetItemData (cur_sel);
 		if (new_class_id != m_ClassID) {		
 			m_ClassID = new_class_id;
 			Populate_Preset_Tree ();

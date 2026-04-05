@@ -145,7 +145,7 @@ DefinitionClass::Load_Variables (ChunkLoadClass &cload)
 //
 //////////////////////////////////////////////////////////////////////////////////
 void
-DefinitionClass::Set_ID (uint32 id)
+DefinitionClass::Set_ID (uint32_t id)
 {
 	m_ID = id;
 

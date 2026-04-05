@@ -210,7 +210,7 @@ NodeScriptsPropPage::HandleInitDialog (void)
 			//
 			int item_index = m_ListCtrl.InsertItem (index, (LPCTSTR)script->Get_Name ());
 			m_ListCtrl.SetItemText (item_index, COL_PARAMS, (LPCTSTR)script->Get_Composite_String ());
-			m_ListCtrl.SetItemData (item_index, (DWORD)script->Clone ());
+			m_ListCtrl.SetItemData (item_index, (uint32_t)script->Clone ());
 		}
 	}
 
@@ -238,7 +238,7 @@ void
 NodeScriptsPropPage::OnItemChangedScriptList
 (
 	NMHDR*	pNMHDR,
-	LRESULT*	pResult
+	intptr_t*	pResult
 )
 {
 	NM_LISTVIEW* pNMListView = (NM_LISTVIEW*)pNMHDR;
@@ -325,7 +325,7 @@ NodeScriptsPropPage::OnAdd (void)
 		// Put this script into the list control
 		int index = m_ListCtrl.InsertItem (0xFFFF, (LPCTSTR)new_script->Get_Name ());
 		m_ListCtrl.SetItemText (index, COL_PARAMS, (LPCTSTR)new_script->Get_Composite_String ());
-		m_ListCtrl.SetItemData (index, (DWORD)new_script);
+		m_ListCtrl.SetItemData (index, (uint32_t)new_script);
 	}
 
 	return ;
@@ -432,7 +432,7 @@ void
 NodeScriptsPropPage::OnDeleteItemScriptList
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 )
 {
 	NM_LISTVIEW* pNMListView = (NM_LISTVIEW*)pNMHDR;
@@ -460,7 +460,7 @@ void
 NodeScriptsPropPage::OnDblclkScriptlist
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 )
 {
 	(*pResult) = 0;

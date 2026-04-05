@@ -26,6 +26,8 @@
 #ifndef __MOUSEMGR_H
 #define __MOUSEMGR_H
 
+#include <cstdint>
+
 
 #include "refcount.h"
 #include "Utils.h"
@@ -64,12 +66,12 @@ class MouseModeClass
 		//
 		//	Mouse message handlers
 		//
-		virtual void					Handle_LButton_Dblclk (UINT flags, CPoint point) { }
-		virtual void					Handle_LButton_Down (UINT flags, CPoint point);
-		virtual void					Handle_LButton_Up (UINT flags, CPoint point);
-		virtual void					Handle_RButton_Down (UINT flags, CPoint point);
-		virtual void					Handle_RButton_Up (UINT flags, CPoint point);
-		virtual void					Handle_Mouse_Move (UINT flags, CPoint point);
+		virtual void					Handle_LButton_Dblclk (uint32_t flags, CPoint point) { }
+		virtual void					Handle_LButton_Down (uint32_t flags, CPoint point);
+		virtual void					Handle_LButton_Up (uint32_t flags, CPoint point);
+		virtual void					Handle_RButton_Down (uint32_t flags, CPoint point);
+		virtual void					Handle_RButton_Up (uint32_t flags, CPoint point);
+		virtual void					Handle_Mouse_Move (uint32_t flags, CPoint point);
 
 		//
 		//	Misc virtuals
@@ -220,10 +222,10 @@ public:
 	//
 	//	Mouse message handlers
 	//
-	virtual void			Handle_LButton_Down (UINT flags, CPoint point);
-	virtual void			Handle_LButton_Up (UINT flags, CPoint point);
-	virtual void			Handle_RButton_Down (UINT flags, CPoint point);
-	virtual void			Handle_RButton_Up (UINT flags, CPoint point);	
+	virtual void			Handle_LButton_Down (uint32_t flags, CPoint point);
+	virtual void			Handle_LButton_Up (uint32_t flags, CPoint point);
+	virtual void			Handle_RButton_Down (uint32_t flags, CPoint point);
+	virtual void			Handle_RButton_Up (uint32_t flags, CPoint point);	
 
 	virtual void			On_Mode_Set (void);
 	virtual void			On_Mode_Exit (void);
@@ -253,10 +255,10 @@ public:
 	//
 	//	Mouse message handlers
 	//
-	virtual void					Handle_LButton_Down (UINT flags, CPoint point)	{ }
-	virtual void					Handle_LButton_Up (UINT flags, CPoint point)		{ }
-	virtual void					Handle_RButton_Down (UINT flags, CPoint point)	{ }
-	virtual void					Handle_RButton_Up (UINT flags, CPoint point)		{ }
+	virtual void					Handle_LButton_Down (uint32_t flags, CPoint point)	{ }
+	virtual void					Handle_LButton_Up (uint32_t flags, CPoint point)		{ }
+	virtual void					Handle_RButton_Down (uint32_t flags, CPoint point)	{ }
+	virtual void					Handle_RButton_Up (uint32_t flags, CPoint point)		{ }
 };
 
 
@@ -294,12 +296,12 @@ public:
 	//
 	//	Mouse message handlers
 	//
-	virtual void					Handle_LButton_Dblclk (UINT flags, CPoint point);
-	virtual void					Handle_LButton_Down (UINT flags, CPoint point);
-	virtual void					Handle_LButton_Up (UINT flags, CPoint point);
-	virtual void					Handle_RButton_Down (UINT flags, CPoint point);
-	virtual void					Handle_RButton_Up (UINT flags, CPoint point);
-	virtual void					Handle_Mouse_Move (UINT flags, CPoint point);
+	virtual void					Handle_LButton_Dblclk (uint32_t flags, CPoint point);
+	virtual void					Handle_LButton_Down (uint32_t flags, CPoint point);
+	virtual void					Handle_LButton_Up (uint32_t flags, CPoint point);
+	virtual void					Handle_RButton_Down (uint32_t flags, CPoint point);
+	virtual void					Handle_RButton_Up (uint32_t flags, CPoint point);
+	virtual void					Handle_Mouse_Move (uint32_t flags, CPoint point);
 	virtual void					On_Mode_Set (void);
 
 	void								Set_Move_Nodes_Mode (void);
@@ -342,7 +344,7 @@ private:
 
 	//class LinkLineClass **		m_pLinkLines;
 	//int								m_iLinkLineCount;
-	//BOOL								m_bValidLink;
+	//int32_t								m_bValidLink;
 };
 
 
@@ -369,10 +371,10 @@ public:
 	//
 	//	Mouse message handlers
 	//
-	virtual void					Handle_LButton_Down (UINT flags, CPoint point)	{ }
-	virtual void					Handle_LButton_Up (UINT flags, CPoint point)		{ }
-	virtual void					Handle_RButton_Down (UINT flags, CPoint point)	{ }
-	virtual void					Handle_RButton_Up (UINT flags, CPoint point)		{ }
+	virtual void					Handle_LButton_Down (uint32_t flags, CPoint point)	{ }
+	virtual void					Handle_LButton_Up (uint32_t flags, CPoint point)		{ }
+	virtual void					Handle_RButton_Down (uint32_t flags, CPoint point)	{ }
+	virtual void					Handle_RButton_Up (uint32_t flags, CPoint point)		{ }
 };
 
 
@@ -407,11 +409,11 @@ public:
 	//
 	//	Mouse message handlers
 	//
-	virtual void			Handle_LButton_Down (UINT flags, CPoint point);
-	virtual void			Handle_LButton_Up (UINT flags, CPoint point);
-	virtual void			Handle_RButton_Down (UINT flags, CPoint point);
-	virtual void			Handle_RButton_Up (UINT flags, CPoint point);
-	virtual void			Handle_Mouse_Move (UINT flags, CPoint point);
+	virtual void			Handle_LButton_Down (uint32_t flags, CPoint point);
+	virtual void			Handle_LButton_Up (uint32_t flags, CPoint point);
+	virtual void			Handle_RButton_Down (uint32_t flags, CPoint point);
+	virtual void			Handle_RButton_Up (uint32_t flags, CPoint point);
+	virtual void			Handle_Mouse_Move (uint32_t flags, CPoint point);
 	virtual void			On_Mode_Set (void);
 	virtual void			On_Mode_Exit (void);
 
@@ -465,12 +467,12 @@ public:
 	//
 	//	Mouse message handlers
 	//
-	virtual void					Handle_LButton_Dblclk (UINT flags, CPoint point) {}
-	virtual void					Handle_LButton_Down (UINT flags, CPoint point) {}
-	virtual void					Handle_LButton_Up (UINT flags, CPoint point);
-	virtual void					Handle_RButton_Down (UINT flags, CPoint point) {}
-	virtual void					Handle_RButton_Up (UINT flags, CPoint point) {}
-	virtual void					Handle_Mouse_Move (UINT flags, CPoint point);
+	virtual void					Handle_LButton_Dblclk (uint32_t flags, CPoint point) {}
+	virtual void					Handle_LButton_Down (uint32_t flags, CPoint point) {}
+	virtual void					Handle_LButton_Up (uint32_t flags, CPoint point);
+	virtual void					Handle_RButton_Down (uint32_t flags, CPoint point) {}
+	virtual void					Handle_RButton_Up (uint32_t flags, CPoint point) {}
+	virtual void					Handle_Mouse_Move (uint32_t flags, CPoint point);
 	virtual void					On_Mode_Set (void) { m_Node = NULL; }
 
 	//
@@ -533,12 +535,12 @@ public:
 	//
 	//	Mouse message handlers
 	//
-	void					Handle_LButton_Dblclk (UINT flags, CPoint point)	{ m_pModeObjects[m_MouseMode]->Handle_LButton_Dblclk (flags, point); }
-	void					Handle_LButton_Down (UINT flags, CPoint point)		{ m_pModeObjects[m_MouseMode]->Handle_LButton_Down (flags, point); IsLButtonDown = true; }
-	void					Handle_LButton_Up (UINT flags, CPoint point)			{ m_pModeObjects[m_MouseMode]->Handle_LButton_Up (flags, point); IsLButtonDown = false; }
-	void					Handle_RButton_Down (UINT flags, CPoint point)		{ m_pModeObjects[m_MouseMode]->Handle_RButton_Down (flags, point); IsRButtonDown = true; }
-	void					Handle_RButton_Up (UINT flags, CPoint point)			{ m_pModeObjects[m_MouseMode]->Handle_RButton_Up (flags, point); IsRButtonDown = false; }
-	void					Handle_Mouse_Move (UINT flags, CPoint point)			{ m_pModeObjects[m_MouseMode]->Handle_Mouse_Move (flags, point); }
+	void					Handle_LButton_Dblclk (uint32_t flags, CPoint point)	{ m_pModeObjects[m_MouseMode]->Handle_LButton_Dblclk (flags, point); }
+	void					Handle_LButton_Down (uint32_t flags, CPoint point)		{ m_pModeObjects[m_MouseMode]->Handle_LButton_Down (flags, point); IsLButtonDown = true; }
+	void					Handle_LButton_Up (uint32_t flags, CPoint point)			{ m_pModeObjects[m_MouseMode]->Handle_LButton_Up (flags, point); IsLButtonDown = false; }
+	void					Handle_RButton_Down (uint32_t flags, CPoint point)		{ m_pModeObjects[m_MouseMode]->Handle_RButton_Down (flags, point); IsRButtonDown = true; }
+	void					Handle_RButton_Up (uint32_t flags, CPoint point)			{ m_pModeObjects[m_MouseMode]->Handle_RButton_Up (flags, point); IsRButtonDown = false; }
+	void					Handle_Mouse_Move (uint32_t flags, CPoint point)			{ m_pModeObjects[m_MouseMode]->Handle_Mouse_Move (flags, point); }
 
 	//
 	//	Mouse point methods

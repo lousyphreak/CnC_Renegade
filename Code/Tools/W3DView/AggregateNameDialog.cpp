@@ -64,7 +64,7 @@ AggregateNameDialogClass::AggregateNameDialogClass (CWnd* pParent /*=NULL*/)
 //
 AggregateNameDialogClass::AggregateNameDialogClass
 (
-	UINT resource_id,
+	uint32_t resource_id,
 	const CString &def_name,
 	CWnd *pParent
 )
@@ -113,14 +113,14 @@ AggregateNameDialogClass::OnOK (void)
 //
 //	OnInitDialog
 //
-BOOL
+int32_t
 AggregateNameDialogClass::OnInitDialog (void)
 {
 	// Allow the base class to process this message
 	CDialog::OnInitDialog ();
 
 	// Restrict the amount of text a user can type into the control
-	SendDlgItemMessage (IDC_AGGREGATE_NAME, EM_LIMITTEXT, (WPARAM)W3D_NAME_LEN-1);
+	SendDlgItemMessage (IDC_AGGREGATE_NAME, EM_LIMITTEXT, (uintptr_t)W3D_NAME_LEN-1);
 	SetDlgItemText (IDC_AGGREGATE_NAME, m_Name);
 	return TRUE;
 }

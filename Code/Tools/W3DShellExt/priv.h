@@ -24,6 +24,8 @@
 
 #ifndef STRICT
 #define STRICT
+
+#include <cstdint>
 #endif
 
 #define INC_OLE2        // WIN32, get ole2 from windows.h
@@ -32,5 +34,5 @@
 #include <windowsx.h>
 #include <shlobj.h>
 
-#define ResultFromShort(i)  ResultFromScode(MAKE_SCODE(SEVERITY_SUCCESS, 0, (USHORT)(i)))
+#define ResultFromShort(i)  ResultFromScode(MAKE_SCODE(SEVERITY_SUCCESS, 0, (uint16_t)(i)))
 

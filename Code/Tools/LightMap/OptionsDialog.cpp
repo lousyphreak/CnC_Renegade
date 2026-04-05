@@ -138,7 +138,7 @@ END_MESSAGE_MAP()
  * HISTORY:                                                                                    *
  *   11/2/99    IML : Created.                                                                 * 
  *=============================================================================================*/
-BOOL OptionsDialog::OnInitDialog() 
+int32_t OptionsDialog::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
 
@@ -361,7 +361,7 @@ void OptionsDialog::On24BitsPerPixel()
  * HISTORY:                                                                                    *
  *   11/2/99    IML : Created.                                                                 * 
  *=============================================================================================*/
-void OptionsDialog::OnHScroll (UINT sbcode, UINT pos, CScrollBar *scrollbar) 
+void OptionsDialog::OnHScroll (uint32_t sbcode, uint32_t pos, CScrollBar *scrollbar) 
 {
 	int controlid = scrollbar->GetDlgCtrlID();
 
@@ -404,7 +404,7 @@ void OptionsDialog::OnHScroll (UINT sbcode, UINT pos, CScrollBar *scrollbar)
  * HISTORY:                                                                                    *
  *   08/16/00    IML : Created.                                                                * 
  *=============================================================================================*/
-void OptionsDialog::OnVScroll (UINT sbcode, UINT pos, CScrollBar *scrollbar) 
+void OptionsDialog::OnVScroll (uint32_t sbcode, uint32_t pos, CScrollBar *scrollbar) 
 {
 	int controlid = scrollbar->GetDlgCtrlID();
 

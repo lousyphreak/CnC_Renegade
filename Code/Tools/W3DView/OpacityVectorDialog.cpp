@@ -84,7 +84,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 OpacityVectorDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog();
@@ -289,8 +289,8 @@ OpacityVectorDialogClass::OnCancel (void)
 void
 OpacityVectorDialogClass::OnHScroll
 (
-	UINT				nSBCode,
-	UINT				nPos,
+	uint32_t				nSBCode,
+	uint32_t				nPos,
 	CScrollBar *	pScrollBar
 ) 
 {
@@ -309,12 +309,12 @@ OpacityVectorDialogClass::OnHScroll
 //  OnNotify
 //
 /////////////////////////////////////////////////////////////
-BOOL
+int32_t
 OpacityVectorDialogClass::OnNotify
 (
-	WPARAM wParam,
-	LPARAM lParam,
-	LRESULT *pResult
+	uintptr_t wParam,
+	intptr_t lParam,
+	intptr_t *pResult
 ) 
 {
 	CBR_NMHDR *color_bar_hdr = (CBR_NMHDR *)lParam;

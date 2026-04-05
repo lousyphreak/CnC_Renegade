@@ -38,6 +38,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef PROJECTORMANAGER_H
 #define PROJECTORMANAGER_H
 
@@ -80,8 +82,8 @@ protected:
 	
 	void											Free(void);
 
-	uint16										Flags;
-	uint16										ProjectorBoneIndex;
+	uint16_t										Flags;
+	uint16_t										ProjectorBoneIndex;
 	TexProjectClass *							Projector;
 
 };

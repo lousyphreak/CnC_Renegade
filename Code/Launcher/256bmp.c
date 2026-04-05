@@ -1,3 +1,4 @@
+#include <stdint.h>
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -20,39 +21,39 @@
 #include <windowsx.h>
 #include <alloc.h>
 
-DWORD GetDibInfoHeaderSize (BYTE huge *);
-WORD GetDibWidth (BYTE huge *);
-WORD GetDibHeight (BYTE huge *);
-BYTE huge * GetDibBitsAddr (BYTE huge *);
-BYTE huge * ReadDib(char *);
+uint32_t GetDibInfoHeaderSize (uint8_t huge *);
+uint16_t GetDibWidth (uint8_t huge *);
+uint16_t GetDibHeight (uint8_t huge *);
+uint8_t huge * GetDibBitsAddr (uint8_t huge *);
+uint8_t huge * ReadDib(char *);
 
 //-------------------------------------------------------------//
 
-DWORD GetDibInfoHeaderSize (BYTE huge * lpDib)
+uint32_t GetDibInfoHeaderSize (uint8_t huge * lpDib)
 {
 	return ((BITMAPINFOHEADER huge *) lpDib)->biSize ;
 }
 
-WORD GetDibWidth (BYTE huge * lpDib)
+uint16_t GetDibWidth (uint8_t huge * lpDib)
 {
 	if (GetDibInfoHeaderSize (lpDib) == sizeof (BITMAPCOREHEADER))
-		return (WORD) (((BITMAPCOREHEADER huge *) lpDib)->bcWidth) ;
+		return (uint16_t) (((BITMAPCOREHEADER huge *) lpDib)->bcWidth) ;
 	else
-		return (WORD) (((BITMAPINFOHEADER huge *) lpDib)->biWidth) ;
+		return (uint16_t) (((BITMAPINFOHEADER huge *) lpDib)->biWidth) ;
 }
 
-WORD GetDibHeight (BYTE huge * lpDib)
+uint16_t GetDibHeight (uint8_t huge * lpDib)
 {
 	if (GetDibInfoHeaderSize (lpDib) == sizeof (BITMAPCOREHEADER))
-		return (WORD) (((BITMAPCOREHEADER huge *) lpDib)->bcHeight) ;
+		return (uint16_t) (((BITMAPCOREHEADER huge *) lpDib)->bcHeight) ;
 	else
-		return (WORD) (((BITMAPINFOHEADER huge *) lpDib)->biHeight) ;
+		return (uint16_t) (((BITMAPINFOHEADER huge *) lpDib)->biHeight) ;
 }
 
-BYTE huge * GetDibBitsAddr (BYTE huge * lpDib)
+uint8_t huge * GetDibBitsAddr (uint8_t huge * lpDib)
 {
-	DWORD dwNumColors, dwColorTableSize ;
-	WORD  wBitCount ;
+	uint32_t dwNumColors, dwColorTableSize ;
+	uint16_t  wBitCount ;
 
 	if (GetDibInfoHeaderSize (lpDib) == sizeof (BITMAPCOREHEADER))
 	{
@@ -89,13 +90,13 @@ BYTE huge * GetDibBitsAddr (BYTE huge * lpDib)
 }
 
 // Read a DIB from a file into memory
-BYTE huge * ReadDib (char * szFileName)
+uint8_t huge * ReadDib (char * szFileName)
 {
 	BITMAPFILEHEADER bmfh ;
-	BYTE huge *      lpDib ;
-	DWORD            dwDibSize, dwOffset, dwHeaderSize ;
+	uint8_t huge *      lpDib ;
+	uint32_t            dwDibSize, dwOffset, dwHeaderSize ;
 	int              hFile ;
-	WORD             wDibRead ;
+	uint16_t             wDibRead ;
 
 	if (-1 == (hFile = _lopen (szFileName, OF_READ | OF_SHARE_DENY_WRITE)))
 		return NULL ;
@@ -107,7 +108,7 @@ BYTE huge * ReadDib (char * szFileName)
 		return NULL ;
 	}
 
-	if (bmfh.bfType != * (WORD *) "BM")
+	if (bmfh.bfType != * (uint16_t *) "BM")
 	{
 		  _lclose (hFile) ;
 		  return NULL ;
@@ -115,7 +116,7 @@ BYTE huge * ReadDib (char * szFileName)
 
 	dwDibSize = bmfh.bfSize - sizeof (BITMAPFILEHEADER) ;
 
-	lpDib = (BYTE huge * ) GlobalAllocPtr (GMEM_MOVEABLE, dwDibSize) ;
+	lpDib = (uint8_t huge * ) GlobalAllocPtr (GMEM_MOVEABLE, dwDibSize) ;
 
 	if (lpDib == NULL)
 	{
@@ -127,7 +128,7 @@ BYTE huge * ReadDib (char * szFileName)
 
 	while (dwDibSize > 0)
 	{
-		wDibRead = (WORD) min (32768ul, dwDibSize) ;
+		wDibRead = (uint16_t) min (32768ul, dwDibSize) ;
 
 		if (wDibRead != _lread (hFile, (LPSTR) (lpDib + dwOffset), wDibRead))
 		{
@@ -148,17 +149,17 @@ BYTE huge * ReadDib (char * szFileName)
 	return lpDib ;
 }
 
-long FAR PASCAL _export MainWndProc(HWND hWnd,UINT message,UINT wParam,LONG lParam)
+intptr_t FAR PASCAL _export MainWndProc(HWND hWnd,uint32_t message,uint32_t wParam,int32_t lParam)
 {
 	PAINTSTRUCT	ps;
 	HDC hdc;
 	RECT rect;
-	unsigned char r,g,b,x;
+	uint8_t r,g,b,x;
 	FILE *fi;
 	int i;
 
-	static BYTE huge *lpDib;
-	static BYTE huge *lpDibBits;
+	static uint8_t huge *lpDib;
+	static uint8_t huge *lpDibBits;
 	static int cxDib, cyDib;
 	static LPLOGPALETTE LogPal;
 	static HPALETTE hLogPal;

@@ -21,6 +21,8 @@
 
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 // GraphicView.h : header file
 //
@@ -65,7 +67,7 @@ public:
 	virtual void OnInitialUpdate();
 	protected:
 	virtual void OnDraw(CDC* pDC);      // overridden to draw this view
-	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+	virtual intptr_t WindowProc(uint32_t message, uintptr_t wParam, intptr_t lParam);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -80,13 +82,13 @@ protected:
 protected:
 	//{{AFX_MSG(CGraphicView)
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
-	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg void OnSize(uint32_t nType, int cx, int cy);
 	afx_msg void OnDestroy();
-	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
-	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
-	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
-	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
-	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonDown(uint32_t nFlags, CPoint point);
+	afx_msg void OnLButtonUp(uint32_t nFlags, CPoint point);
+	afx_msg void OnMouseMove(uint32_t nFlags, CPoint point);
+	afx_msg void OnRButtonUp(uint32_t nFlags, CPoint point);
+	afx_msg void OnRButtonDown(uint32_t nFlags, CPoint point);
 	afx_msg void OnGetMinMaxInfo(MINMAXINFO FAR* lpMMI);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
@@ -140,7 +142,7 @@ protected:
         //  Public Methods
         //
 
-        BOOL			InitializeGraphicView (void);
+        int32_t			InitializeGraphicView (void);
 
         //
 		  //	Initial display methods
@@ -151,8 +153,8 @@ protected:
 		  void			Load_Default_Dat (void);
 
         void			UpdateDisplay (void);
-        void			RepaintView (BOOL bUpdateAnimation = TRUE, DWORD ticks_to_use = 0);
-        void			SetActiveUpdate (BOOL bActive)
+        void			RepaintView (int32_t bUpdateAnimation = TRUE, uint32_t ticks_to_use = 0);
+        void			SetActiveUpdate (int32_t bActive)
 								{ m_bActive = bActive;
 								  if (!m_bActive) { ::SetProp (m_hWnd, "Inactive", (HANDLE)1); }
 								  else { RemoveProp (m_hWnd, "Inactive"); m_dwLastFrameUpdate = ::GetTickCount (); }
@@ -180,7 +182,7 @@ protected:
 		  void					Set_Camera_Distance (float dist);
 
 		  void					Set_Camera_Bone_Pos_X (bool onoff)			{ m_CameraBonePosX = onoff; }
-		  BOOL					Is_Camera_Bone_Pos_X (void) const			{ return m_CameraBonePosX; }
+		  int32_t					Is_Camera_Bone_Pos_X (void) const			{ return m_CameraBonePosX; }
 
         //
         // Object rotation methods
@@ -198,7 +200,7 @@ protected:
 			//
 			//	Fullscreen mode
 			//
-			BOOL					Is_Fullscreen (void) const						{ return !(BOOL)m_iWindowed; }
+			int32_t					Is_Fullscreen (void) const						{ return !(int32_t)m_iWindowed; }
 			void					Set_Fullscreen (bool fullscreen)				{ m_iWindowed = fullscreen ? 0 : 1; InitializeGraphicView (); }
 
 			//
@@ -228,26 +230,26 @@ protected:
         //
         //  Private Member Data
         //
-        BOOL					m_bInitialized;
-        BOOL					m_bActive;
-        UINT					m_TimerID;
+        int32_t					m_bInitialized;
+        int32_t					m_bActive;
+        uint32_t					m_TimerID;
         CameraClass	*		m_pCamera;
 		  RenderObjClass *	m_pLightMesh;
 		  bool					m_bLightMeshInScene;
 		  Vector3				m_ObjectCenter;
 		  SphereClass			m_ViewedSphere;		  
 
-        BOOL					m_bMouseDown;
-        BOOL					m_bRMouseDown;
+        int32_t					m_bMouseDown;
+        int32_t					m_bRMouseDown;
         POINT					m_lastPoint;
 		  int						m_iWindowed;
 		  int						m_UpdateCounter;
 		  float					m_CameraDistance;
-		  DWORD					m_ParticleCountUpdate;
-		  BOOL					m_CameraBonePosX;
+		  uint32_t					m_ParticleCountUpdate;
+		  int32_t					m_CameraBonePosX;
         
         // Animation data
-        DWORD					m_dwLastFrameUpdate;
+        uint32_t					m_dwLastFrameUpdate;
         float					m_animationSpeed;
         ANIMATION_STATE		m_animationState;
         OBJECT_ROTATION		m_objectRotation;

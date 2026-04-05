@@ -39,6 +39,7 @@
 #ifndef SMARTPTR_H
 #define SMARTPTR_H
 
+#include <cstdint>
 #include	"noinit.h"
 
 template<class T>
@@ -52,7 +53,7 @@ class SmartPtr
 
 		operator T * (void) const {return(Pointer);}
 
-		operator long (void) const {return((long)Pointer);}
+		operator intptr_t (void) const {return(reinterpret_cast<intptr_t>(Pointer));}
 
 		bool Is_Valid(void) const {return(Pointer != 0);}
 

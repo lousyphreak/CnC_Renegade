@@ -258,7 +258,7 @@ DynamicAnimPhysDefClass::DynamicAnimPhysDefClass(void) :
 	FLOAT_UNITS_PARAM(DynamicAnimPhysDefClass,ShadowFarZ, -1.0f,1000.0f, "meters (-1 for default)") 
 }
 
-uint32 DynamicAnimPhysDefClass::Get_Class_ID (void) const	
+uint32_t DynamicAnimPhysDefClass::Get_Class_ID (void) const	
 { 
 	return CLASSID_DYNAMICANIMPHYSDEF; 
 }

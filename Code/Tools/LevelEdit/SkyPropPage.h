@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // SkyPropPage.h : header file
 //
@@ -62,7 +64,7 @@ public:
 protected:
 	// Generated message map functions
 	//{{AFX_MSG(SkyPropPageClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	afx_msg void OnSkyLightMoon();
 	afx_msg void OnSkyLightSun();
 	afx_msg void OnSkyMoonFull();

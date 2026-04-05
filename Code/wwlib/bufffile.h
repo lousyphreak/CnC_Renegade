@@ -40,6 +40,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef BUFFFILE_H
 #define BUFFFILE_H
 
@@ -73,8 +75,8 @@ class BufferedFileClass : public RawFileClass
 		void					Reset_Buffer( void );
 		
 	private:
-		unsigned char *	Buffer;				// The read buffer 
-		unsigned int		BufferSize;			// The allocated size of the read buffer
+		uint8_t *	Buffer;				// The read buffer 
+		uint32_t		BufferSize;			// The allocated size of the read buffer
 		int					BufferAvailable;	// The amount of data in the read buffer
 		int					BufferOffset;		// The data already given out
 		static	int		_DesiredBufferSize;

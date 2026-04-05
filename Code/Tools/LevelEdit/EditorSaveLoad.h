@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __EDITOR_SAVE_LOAD_H
@@ -74,7 +76,7 @@ public:
 	//////////////////////////////////////////////////////////////
 	
 	// From SaveLoadSubSystemClass
-	virtual uint32				Chunk_ID (void) const;
+	virtual uint32_t				Chunk_ID (void) const;
 	virtual void				On_Post_Load (void);
 	virtual const char *		Name (void) const			{ return "EditorSaveLoadClass"; }
 
@@ -137,7 +139,7 @@ public:
 	//
 	// Inherited
 	//
-	virtual uint32				Chunk_ID (void) const	{ return CHUNKID_EDITOR_PATHFIND_IMPORTER_EXPORTER; }
+	virtual uint32_t				Chunk_ID (void) const	{ return CHUNKID_EDITOR_PATHFIND_IMPORTER_EXPORTER; }
 	virtual void				On_Post_Load (void)		{}
 	virtual const char *		Name (void) const			{ return "PathfindImportExportSaveLoadClass"; }
 

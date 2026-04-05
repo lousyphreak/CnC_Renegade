@@ -38,6 +38,8 @@
 #ifndef PS2GAMEMTLSHADERDLG_H
 #define PS2GAMEMTLSHADERDLG_H
 
+#include <cstdint>
+
 #include <Max.h>
 #include "GameMtlForm.h"
 
@@ -53,12 +55,12 @@ public:
 
 	PS2GameMtlShaderDlg(HWND parent, IMtlParams * imp, GameMtl * m, int pass);
 
-	virtual BOOL		Dialog_Proc (HWND dlg_wnd, UINT message, WPARAM wparam, LPARAM lparam);
+	virtual int32_t		Dialog_Proc (HWND dlg_wnd, uint32_t message, uintptr_t wparam, intptr_t lparam);
 
 	void					ReloadDialog(void);
 
 	// Pure virtual that must be defined.
-	void					ActivateDlg(BOOL onOff) {}
+	void					ActivateDlg(int32_t onOff) {}
 
 private:
 

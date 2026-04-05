@@ -32,6 +32,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __LOGICAL_LISTENER_H
@@ -67,8 +69,8 @@ class LogicalListenerClass : public SoundSceneObjClass
 		//////////////////////////////////////////////////////////////////////
 		//	LogicalSoundClass specific
 		//////////////////////////////////////////////////////////////////////		
-		virtual void			Set_Type_Mask (uint32 mask = 0)	{ m_TypeMask = mask; }
-		virtual uint32			Get_Type_Mask (void) const			{ return m_TypeMask; }
+		virtual void			Set_Type_Mask (uint32_t mask = 0)	{ m_TypeMask = mask; }
+		virtual uint32_t			Get_Type_Mask (void) const			{ return m_TypeMask; }
 
 		//////////////////////////////////////////////////////////////////////
 		//	Position/direction methods
@@ -119,14 +121,14 @@ class LogicalListenerClass : public SoundSceneObjClass
 		//////////////////////////////////////////////////////////////////////
 		//	Timestamp
 		//////////////////////////////////////////////////////////////////////				
-		uint32					Get_Timestamp (void) const		{ return m_Timestamp; }
+		uint32_t					Get_Timestamp (void) const		{ return m_Timestamp; }
 		void					Set_Timestamp (int timestamp)	{ m_Timestamp = timestamp; }
 
-		static uint32			Get_New_Timestamp (void)		{ return m_NewestTimestamp ++; }
-		static uint32			Get_Newest_Timestamp (void)		{ return m_NewestTimestamp - 1; }
+		static uint32_t			Get_New_Timestamp (void)		{ return m_NewestTimestamp ++; }
+		static uint32_t			Get_Newest_Timestamp (void)		{ return m_NewestTimestamp - 1; }
 
-		static uint32			Get_Oldest_Timestamp (void)				{ return m_OldestTimestamp; }
-		static void				Set_Oldest_Timestamp (uint32 timestamp)	{ WWASSERT (m_OldestTimestamp < timestamp); m_OldestTimestamp = timestamp; }
+		static uint32_t			Get_Oldest_Timestamp (void)				{ return m_OldestTimestamp; }
+		static void				Set_Oldest_Timestamp (uint32_t timestamp)	{ WWASSERT (m_OldestTimestamp < timestamp); m_OldestTimestamp = timestamp; }
 
 	protected:
 
@@ -141,11 +143,11 @@ class LogicalListenerClass : public SoundSceneObjClass
 		//////////////////////////////////////////////////////////////////////
 		static float			m_GlobalScale;
 		float						m_Scale;
-		uint32					m_TypeMask;
+		uint32_t					m_TypeMask;
 		Vector3					m_Position;
-		uint32					m_Timestamp;
-		static uint32			m_OldestTimestamp;
-		static uint32			m_NewestTimestamp;
+		uint32_t					m_Timestamp;
+		static uint32_t			m_OldestTimestamp;
+		static uint32_t			m_NewestTimestamp;
 };
 
 

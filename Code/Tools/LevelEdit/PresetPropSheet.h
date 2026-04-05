@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __PRESETPROPSHEET_H
@@ -72,9 +74,9 @@ public:
 	//
 	//	From CDialog
 	//
-	BOOL		OnInitDialog (void);
+	int32_t		OnInitDialog (void);
 	void		OnOk (void);
-	BOOL		OnCommand(WPARAM wParam, LPARAM lParam);
+	int32_t		OnCommand(uintptr_t wParam, intptr_t lParam);
 
 	//
 	//	From EditorPropSheetClass

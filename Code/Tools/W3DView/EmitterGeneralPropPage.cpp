@@ -132,9 +132,9 @@ EmitterGeneralPropPageClass::Add_Shader_To_Combo
 	LPCTSTR name
 )
 {
-	int index = SendDlgItemMessage (IDC_SHADER_COMBO, CB_ADDSTRING, 0, (LPARAM)name);
+	int index = SendDlgItemMessage (IDC_SHADER_COMBO, CB_ADDSTRING, 0, (intptr_t)name);
 	if (index != CB_ERR) {
-		SendDlgItemMessage (IDC_SHADER_COMBO, CB_SETITEMDATA, (WPARAM)index, (LPARAM)&shader);
+		SendDlgItemMessage (IDC_SHADER_COMBO, CB_SETITEMDATA, (uintptr_t)index, (intptr_t)&shader);
 
 		//
 		//	Is the blend mode of this shader the same as that of the
@@ -143,7 +143,7 @@ EmitterGeneralPropPageClass::Add_Shader_To_Combo
 		if ((shader.Get_Alpha_Test () == m_Shader.Get_Alpha_Test ()) &&
 			 (shader.Get_Dst_Blend_Func () == m_Shader.Get_Dst_Blend_Func ()) &&
 			 (shader.Get_Src_Blend_Func () == m_Shader.Get_Src_Blend_Func ())) {
-			SendDlgItemMessage (IDC_SHADER_COMBO, CB_SETCURSEL, (WPARAM)index);
+			SendDlgItemMessage (IDC_SHADER_COMBO, CB_SETCURSEL, (uintptr_t)index);
 		}
 	}
 
@@ -155,7 +155,7 @@ EmitterGeneralPropPageClass::Add_Shader_To_Combo
 //
 //  OnInitDialog
 //
-BOOL
+int32_t
 EmitterGeneralPropPageClass::OnInitDialog (void) 
 {
 	// Allow the base class to process this message
@@ -181,7 +181,7 @@ EmitterGeneralPropPageClass::OnInitDialog (void)
 	//
 	// Initialize the lifetime control
 	//
-	SendDlgItemMessage (IDC_PARTICLE_LIFETIME_CHECK, BM_SETCHECK, (WPARAM)(m_Lifetime < 100));
+	SendDlgItemMessage (IDC_PARTICLE_LIFETIME_CHECK, BM_SETCHECK, (uintptr_t)(m_Lifetime < 100));
 	if (m_Lifetime > 100) {
 		m_Lifetime = 0;
 	}
@@ -202,7 +202,7 @@ EmitterGeneralPropPageClass::OnInitDialog (void)
 //
 //  OnApply
 //
-BOOL
+int32_t
 EmitterGeneralPropPageClass::OnApply (void)
 {
 	// Get the data from the dialog controls
@@ -218,14 +218,14 @@ EmitterGeneralPropPageClass::OnApply (void)
 	//
 	int index = SendDlgItemMessage (IDC_SHADER_COMBO, CB_GETCURSEL);
 	if (index != CB_ERR) {
-		ShaderClass *shader = (ShaderClass *)SendDlgItemMessage (IDC_SHADER_COMBO, CB_GETITEMDATA, (WPARAM)index);
+		ShaderClass *shader = (ShaderClass *)SendDlgItemMessage (IDC_SHADER_COMBO, CB_GETITEMDATA, (uintptr_t)index);
 		if (shader != NULL) {
 			m_Shader = (*shader);
 		}
 	}
 
 	// Check to make sure the user entered a valid name for the emitter.
-	BOOL retval = FALSE;
+	int32_t retval = FALSE;
 	if (m_EmitterName.GetLength () == 0) {
 		::MessageBox (m_hWnd, "Invalid emitter name.  Please enter a new name.", "Invalid settings", MB_ICONEXCLAMATION | MB_OK);
 		m_bValid = false;
@@ -302,12 +302,12 @@ EmitterGeneralPropPageClass::OnChangeNameEdit (void)
 //
 //  OnNotify
 //
-BOOL
+int32_t
 EmitterGeneralPropPageClass::OnNotify
 (
-	WPARAM wParam,
-	LPARAM lParam,
-	LRESULT *pResult
+	uintptr_t wParam,
+	intptr_t lParam,
+	intptr_t *pResult
 )
 {
 	//
@@ -352,11 +352,11 @@ EmitterGeneralPropPageClass::OnSelchangeShaderCombo (void)
 //
 //  OnCommand
 //
-BOOL
+int32_t
 EmitterGeneralPropPageClass::OnCommand
 (
-	WPARAM wParam,
-	LPARAM lParam
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	switch (LOWORD (wParam)) {

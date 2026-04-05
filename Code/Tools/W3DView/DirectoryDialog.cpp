@@ -45,12 +45,12 @@
 //	Browse_For_Folder_Hook_Proc
 //
 ////////////////////////////////////////////////////////////////////////////
-UINT CALLBACK Browse_For_Folder_Hook_Proc
+uint32_t CALLBACK Browse_For_Folder_Hook_Proc
 (
 	HWND		hdlg,
-	UINT		message,
-	WPARAM	wparam,
-	LPARAM	lparam
+	uint32_t		message,
+	uintptr_t	wparam,
+	intptr_t	lparam
 )
 {
 	//

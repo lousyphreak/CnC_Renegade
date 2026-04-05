@@ -39,6 +39,8 @@
 #ifndef DYANMICANIMPHYS_H
 #define DYNAMICANIMPHYS_H
 
+#include <cstdint>
+
 #include "always.h"
 #include "decophys.h"
 #include "animcollisionmanager.h"
@@ -122,7 +124,7 @@ public:
 	DynamicAnimPhysDefClass(void);
 	
 	// From DefinitionClass
-	virtual uint32								Get_Class_ID (void) const;
+	virtual uint32_t								Get_Class_ID (void) const;
 	virtual PersistClass *					Create(void) const;
 
 	// From PhysDefClass

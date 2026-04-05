@@ -37,17 +37,17 @@ static char THIS_FILE[] = __FILE__;
 //	fnEditToFloatProc
 //
 /////////////////////////////////////////////////////////////////////////////
-LRESULT CALLBACK
+intptr_t CALLBACK
 fnEditToFloatProc
 (
 	HWND		hwnd,
-	UINT		message,
-	WPARAM	wparam,
-	LPARAM	lparam
+	uint32_t		message,
+	uintptr_t	wparam,
+	intptr_t	lparam
 )
 {
 	WNDPROC old_proc = (WNDPROC)::GetProp (hwnd, "OLD_WND_PROC");
-	LRESULT result = 0L;
+	intptr_t result = 0L;
 
 	if (message == WM_SETTEXT) {
 		
@@ -60,11 +60,11 @@ fnEditToFloatProc
 		if (::strchr (string, '.') != 0) {
 			result = ::CallWindowProc (old_proc, hwnd, message, wparam, lparam);
 		} else {
-			long value			= ::atol ((LPCTSTR)lparam);
+			int32_t value		= static_cast<int32_t>(::atol ((LPCTSTR)lparam));
 			float float_value	= value / 100.0F;
 			CString new_text;
 			new_text.Format ("%.2f", float_value);
-			result = ::CallWindowProc (old_proc, hwnd, message, wparam, (LPARAM)(LPCTSTR)new_text);
+			result = ::CallWindowProc (old_proc, hwnd, message, wparam, (intptr_t)(LPCTSTR)new_text);
 		}
 
 	} else if (message == WM_GETTEXT) {
@@ -79,10 +79,10 @@ fnEditToFloatProc
 		LPCTSTR string		= (LPCTSTR)lparam;
 		if (::strchr (string, '.') != 0) {
 			float float_value	= ::atof (string);
-			long int_value		= long(float_value * 100);
+			int32_t int_value	= static_cast<int32_t>(float_value * 100);
 			::itoa (int_value, (LPTSTR)lparam, 10);			
 		} else {
-			long int_value		= ::atol (string) * 100;
+			int32_t int_value	= static_cast<int32_t>(::atol (string) * 100);
 			::itoa (int_value, (LPTSTR)lparam, 10);						
 		}
 
@@ -118,7 +118,7 @@ fnEditToFloatProc
 void
 Make_Edit_Float_Ctrl (HWND edit_wnd)
 {
-	LONG old_proc = ::SetWindowLong (edit_wnd, GWL_WNDPROC, (LONG)fnEditToFloatProc);
+	int32_t old_proc = ::SetWindowLong (edit_wnd, GWL_WNDPROC, (int32_t)fnEditToFloatProc);
 	SetProp (edit_wnd, "OLD_WND_PROC", (HANDLE)old_proc);
 	return ;
 }
@@ -133,7 +133,7 @@ void
 SetDlgItemFloat
 (
 	HWND hdlg,
-	UINT child_id,
+	uint32_t child_id,
 	float value
 )
 {
@@ -155,7 +155,7 @@ float
 GetDlgItemFloat
 (
 	HWND hdlg,
-	UINT child_id
+	uint32_t child_id
 )
 {
 	// Get the string from the window
@@ -202,7 +202,7 @@ END_MESSAGE_MAP()
 // CRangeDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CRangeDialog::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();

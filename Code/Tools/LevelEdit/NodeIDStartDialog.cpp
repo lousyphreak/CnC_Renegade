@@ -76,7 +76,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 NodeIDStartDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog();
@@ -105,7 +105,7 @@ NodeIDStartDialogClass::OnOK (void)
 	//
 	//	Store the new value in the registry
 	//
-	UINT start_id = GetDlgItemInt (IDC_ID);
+	uint32_t start_id = GetDlgItemInt (IDC_ID);
 	theApp.WriteProfileInt (CONFIG_KEY, NODE_ID_START_VALUE, start_id);
 
 	//

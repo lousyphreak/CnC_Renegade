@@ -271,7 +271,7 @@ cPlayer * cPlayerManager::Find_Team_Mate(cPlayer * p_player1)
 cPlayer* cPlayerManager::Find_Clan_Mate(cPlayer* player)
 {
 	if (player != NULL) {
-		unsigned long clan = player->Get_WOL_ClanID();
+		uint32_t clan = player->Get_WOL_ClanID();
 		int playerID = player->Get_Id();
 
 		SLNode<cPlayer>* node = PlayerList.Head();
@@ -374,10 +374,10 @@ int cPlayerManager::Get_Average_Ladder_Points(void)
 }
 
 //------------------------------------------------------------------------------------
-unsigned short cPlayerManager::Get_Average_WOL_Points(void)
+uint16_t cPlayerManager::Get_Average_WOL_Points(void)
 {
-	unsigned long numPlayers = 0;
-	unsigned long totalPoints = 0;
+	uint32_t numPlayers = 0;
+	uint32_t totalPoints = 0;
 
 	SList<cPlayer>* playerList = Get_Player_Object_List();
 	SLNode<cPlayer>* playerNode = playerList->Head();
@@ -394,7 +394,7 @@ unsigned short cPlayerManager::Get_Average_WOL_Points(void)
 	}
 
 	if (numPlayers) {
-		return (unsigned short)(totalPoints / numPlayers);
+		return (uint16_t)(totalPoints / numPlayers);
 	}
 
 	return 0;
@@ -510,7 +510,7 @@ void cPlayerManager::Compute_Ladder_Points(int winning_team)
 
 	cPlayerManager::Sort_Players(false);
 
-	DWORD min_qualifying_time_ms = The_Game()->Get_Min_Qualifying_Time_Minutes() * 60 * 1000;
+	uint32_t min_qualifying_time_ms = The_Game()->Get_Min_Qualifying_Time_Minutes() * 60 * 1000;
 
 	int i = 0;
 
@@ -617,7 +617,7 @@ WideStringClass cPlayerManager::Determine_Mvp_Name(void)
 	WideStringClass mvp_name;
 
 	WWASSERT(The_Game() != NULL);
-	DWORD min_qualifying_time_ms = The_Game()->Get_Min_Qualifying_Time_Minutes() * 60 * 1000;
+	uint32_t min_qualifying_time_ms = The_Game()->Get_Min_Qualifying_Time_Minutes() * 60 * 1000;
 
 	//
 	// Find the top active, time-qualifying player.

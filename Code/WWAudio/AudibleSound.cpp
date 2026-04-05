@@ -692,7 +692,7 @@ AudibleSoundClass::Stop (bool remove_from_playlist)
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////
 void
-AudibleSoundClass::Seek (unsigned long milliseconds)
+AudibleSoundClass::Seek (uint32_t milliseconds)
 {
 	MMSLockClass lock;
 
@@ -1127,7 +1127,7 @@ AudibleSoundClass::Set_Priority (float priority)
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////
 bool
-AudibleSoundClass::On_Frame_Update (unsigned int milliseconds)
+AudibleSoundClass::On_Frame_Update (uint32_t milliseconds)
 {
 	//
 	// Do we need to track this sound's play-progress?
@@ -1170,7 +1170,7 @@ void
 AudibleSoundClass::Update_Play_Position (void)
 {
 	// Determine the current offset from the beginning of the sound buffer.
-	unsigned long play_time = TIMEGETTIME () - m_Timestamp;
+	uint32_t play_time = TIMEGETTIME () - m_Timestamp;
 	m_CurrentPosition = play_time;
 
 	// Have we gone past the end of a sounds play-time?
@@ -1623,7 +1623,7 @@ AudibleSoundDefinitionClass::AudibleSoundDefinitionClass (void)
 }
 
 // SKB: Put here because of conficts with CLASSID_???? with other projects.
-uint32 AudibleSoundDefinitionClass::Get_Class_ID (void) const
+uint32_t AudibleSoundDefinitionClass::Get_Class_ID (void) const
 {
 	return CLASSID_SOUND;
 }
@@ -1965,7 +1965,7 @@ AudibleSoundClass::Save (ChunkSaveClass &csave)
 		SoundSceneObjClass::Save (csave);
 	csave.End_Chunk ();
 
-	uint32 temp_position = 0;
+	uint32_t temp_position = 0;
 	csave.Begin_Chunk (CHUNKID_VARIABLES);
 		WRITE_MICRO_CHUNK (csave, VARID_STATE,						m_State);
 		WRITE_MICRO_CHUNK (csave, VARID_TYPE,						m_Type);

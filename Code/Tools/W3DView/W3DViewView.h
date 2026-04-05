@@ -25,6 +25,8 @@
 
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 
 class CW3DViewView : public CView
@@ -45,7 +47,7 @@ public:
 	//{{AFX_VIRTUAL(CW3DViewView)
 	public:
 	virtual void OnDraw(CDC* pDC);  // overridden to draw this view
-	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
+	virtual int32_t PreCreateWindow(CREATESTRUCT& cs);
 	protected:
 	//}}AFX_VIRTUAL
 

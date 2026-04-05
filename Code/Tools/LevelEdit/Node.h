@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __NODE_H
@@ -102,8 +104,8 @@ public:
 	virtual NODE_TYPE				Get_Type (void) const = 0;
 	virtual const char *			Get_Name (void) const;
 	virtual void					Set_Name (const char *name);
-	virtual uint32					Get_ID (void) const;
-	virtual void					Set_ID (uint32 id);
+	virtual uint32_t					Get_ID (void) const;
+	virtual void					Set_ID (uint32_t id);
 	virtual int						Get_Icon_Index (void) const = 0;
 	virtual const char *			Get_Comments (void) const;
 	virtual void					Set_Comments (const char *comments);
@@ -126,8 +128,8 @@ public:
 	virtual void					Remove_From_Scene (void);
 	virtual bool					In_Scene (void) const;
 	virtual void					Reload (void);
-	virtual uint32					Get_Cull_Link (void) const		{ return m_CullLink; }
-	virtual void					Set_Cull_Link (uint32 link)	{ m_CullLink = link; }
+	virtual uint32_t					Get_Cull_Link (void) const		{ return m_CullLink; }
+	virtual void					Set_Cull_Link (uint32_t link)	{ m_CullLink = link; }
 	virtual void					Update_Cached_Cull_Link (void);
 
 	//
@@ -174,7 +176,7 @@ public:
 	virtual LPCTSTR				Get_Model_Name (void) const;
 	void								Set_Preset (PresetClass *preset);
 	PresetClass *					Get_Preset (void) const;
-	uint32							Get_Preset_ID (void) const;
+	uint32_t							Get_Preset_ID (void) const;
 
 	//
 	//	Visibility methods
@@ -203,7 +205,7 @@ public:
 	
 	virtual bool					Is_Proxied (void) const						{ return m_IsProxied; }
 	virtual void					Set_Is_Proxied (bool onoff)				{ m_IsProxied = onoff; }
-	virtual uint32					Get_Container_Preset_ID (void) const	{ return m_ContainerPresetID; }
+	virtual uint32_t					Get_Container_Preset_ID (void) const	{ return m_ContainerPresetID; }
 	virtual void					Set_Container_Preset_ID (int id)			{ m_ContainerPresetID = id; }
 
 	//
@@ -266,20 +268,20 @@ protected:
 	//////////////////////////////////////////////////////////////
 	StringClass				m_Name;
 	StringClass				m_Comments;
-	uint32					m_ID;
-	uint32					m_PresetID;
+	uint32_t					m_ID;
+	uint32_t					m_PresetID;
 	bool						m_IsLocked;
 	bool						m_RotationRestricted;
 	bool						m_IsInScene;
 	bool						m_NeedsSave;
 	bool						m_IsProxied;
 	PresetClass *			m_Preset;
-	uint32					m_ContainerPresetID;
+	uint32_t					m_ContainerPresetID;
 	SelectionBoxClass *	m_SelectionBox;
 	Quaternion				m_Orientation;
 	Vector3					m_SelColor;	
 	Matrix3D					m_Transform;
-	uint32					m_CullLink;
+	uint32_t					m_CullLink;
 
 
 	// For hit-test feedback
@@ -387,7 +389,7 @@ NodeClass::Restrict_Rotation (bool restrict)
 //////////////////////////////////////////////////////////////////
 //	Get_Preset_ID
 //////////////////////////////////////////////////////////////////
-inline uint32
+inline uint32_t
 NodeClass::Get_Preset_ID (void) const
 {
 	return m_PresetID;
@@ -428,7 +430,7 @@ NodeClass::In_Scene (void) const
 //////////////////////////////////////////////////////////////////
 //	Get_ID
 //////////////////////////////////////////////////////////////////
-inline uint32
+inline uint32_t
 NodeClass::Get_ID (void) const
 {
 	return m_ID;
@@ -446,7 +448,7 @@ NodeClass::Peek_Collision_Obj (void) const
 
 INLINE_ACCESSOR_CONST (const Quaternion &,	NodeClass, Orientation);
 INLINE_ACCESSOR_CONST (const char *,			NodeClass, Name);
-//INLINE_ACCESSOR_CONST (uint32,					NodeClass, ID);
+//INLINE_ACCESSOR_CONST (uint32_t,					NodeClass, ID);
 INLINE_ACCESSOR_CONST (const char *,			NodeClass, Comments);
 
 

@@ -50,7 +50,7 @@ enum
 /////////////////////////////////////////////////////////////////////////////
 // Local prototypes
 /////////////////////////////////////////////////////////////////////////////
-static int CALLBACK VisSectorSortCompareFn (LPARAM param1, LPARAM param2, LPARAM column_id);
+static int CALLBACK VisSectorSortCompareFn (intptr_t param1, intptr_t param2, intptr_t column_id);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -100,7 +100,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 VisStatsDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -164,7 +164,7 @@ VisStatsDialogClass::OnInitDialog (void)
 				//
 				//	Add the goto-point to the item
 				//
-				m_SectorList.SetItemData (item_index, (DWORD)(new VisSectorStatsClass(sector_stats)));
+				m_SectorList.SetItemData (item_index, (uint32_t)(new VisSectorStatsClass(sector_stats)));
 			}
 		}
 	}	
@@ -182,7 +182,7 @@ void
 VisStatsDialogClass::OnDblclkSectorList
 (
 	NMHDR*	pNMHDR,
-	LRESULT* pResult
+	intptr_t* pResult
 )
 {
 	(*pResult) = 0;
@@ -190,14 +190,14 @@ VisStatsDialogClass::OnDblclkSectorList
 	//
 	// Determine what client-coord location was double-clicked on
 	//
-	DWORD mouse_pos = ::GetMessagePos ();
+	uint32_t mouse_pos = ::GetMessagePos ();
 	POINT hit_point = { GET_X_LPARAM (mouse_pos), GET_Y_LPARAM (mouse_pos) };
 	m_SectorList.ScreenToClient (&hit_point);
 
 	//
 	// Goto the sector that was double-clicked on (if possible)
 	//
-	UINT flags = 0;
+	uint32_t flags = 0;
 	int index = m_SectorList.HitTest (hit_point, &flags);
 	if ((index >= 0) && ((flags & LVHT_ONITEMLABEL) || (flags & LVHT_ONITEMICON))) {
 		
@@ -224,7 +224,7 @@ void
 VisStatsDialogClass::OnDeleteitemSectorList
 (
 	NMHDR *	pNMHDR,
-	LRESULT* pResult
+	intptr_t* pResult
 ) 
 {
 	NM_LISTVIEW* pNMListView = (NM_LISTVIEW*)pNMHDR;
@@ -250,7 +250,7 @@ void
 VisStatsDialogClass::OnColumnclickSectorList
 (
 	NMHDR*	pNMHDR,
-	LRESULT* pResult
+	intptr_t* pResult
 )
 {
 	NM_LISTVIEW* pNMListView = (NM_LISTVIEW*)pNMHDR;
@@ -274,14 +274,14 @@ VisStatsDialogClass::OnColumnclickSectorList
 //
 /////////////////////////////////////////////////////////////////////////////
 int CALLBACK
-VisSectorSortCompareFn (LPARAM param1, LPARAM param2, LPARAM sort_info)
+VisSectorSortCompareFn (intptr_t param1, intptr_t param2, intptr_t sort_info)
 {
 	int retval = 0;
 	VisSectorStatsClass *stats1 = (VisSectorStatsClass *)param1;
 	VisSectorStatsClass *stats2 = (VisSectorStatsClass *)param2;
 
-	LONG column_id = LOWORD (sort_info);
-	BOOL ascending	= HIWORD (sort_info);
+	int32_t column_id = LOWORD (sort_info);
+	int32_t ascending	= HIWORD (sort_info);
 
 	if (stats1 != NULL && stats2 != NULL) {
 		

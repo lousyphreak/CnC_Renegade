@@ -37,13 +37,15 @@
 #ifndef _SAFE_TIMER_H
 #define _SAFE_TIMER_H
 
+#include <cstdint>
+
 
 // Includes.
 #include "win.h"
 #include <mmsystem.h>
 
 
-// This timer increments at 1000Hz, is DWORD size and uses the OS timer timeGetTime().
+// This timer increments at 1000Hz, is uint32_t size and uses the OS timer timeGetTime().
 // Therefore it will wrap ~49 days after boot time. This class attempts to minimize
 // the possibility of the timer wrapping by offsetting time from the point at which
 // the application starts up.	It will still, however, fail if the application is
@@ -52,17 +54,17 @@
 class SafeTimerClass
 {
 	public:
-		long operator () (void) const;
-		operator long (void) const;
+		uint32_t operator () (void) const;
+		operator uint32_t (void) const;
 
 	private:
-		static DWORD _StartTime;
+		static uint32_t _StartTime;
 };
 
 
-inline long SafeTimerClass::operator () (void) const
+inline uint32_t SafeTimerClass::operator () (void) const
 {
-	DWORD time = timeGetTime();
+	uint32_t time = timeGetTime();
 
 	// Has the timer wrapped? 
 	if (time >= _StartTime) {
@@ -73,9 +75,9 @@ inline long SafeTimerClass::operator () (void) const
 }
 
 
-inline SafeTimerClass::operator long (void) const
+inline SafeTimerClass::operator uint32_t (void) const
 {
-	DWORD time = timeGetTime();
+	uint32_t time = timeGetTime();
 
 	// Has the timer wrapped? 
 	if (time >= _StartTime) {

@@ -100,7 +100,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 EditConversationRemarkDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -110,7 +110,7 @@ EditConversationRemarkDialogClass::OnInitDialog (void)
 	//
 	for (int index = 0; index < ORATOR_MAX; index ++) {		
 		HICON icon = ::LoadIcon (::AfxGetResourceHandle (), MAKEINTRESOURCE (ORATOR_BUTTONS[index].icon_id));
-		SendDlgItemMessage (ORATOR_BUTTONS[index].button_id, BM_SETIMAGE, IMAGE_ICON, (LPARAM)icon);
+		SendDlgItemMessage (ORATOR_BUTTONS[index].button_id, BM_SETIMAGE, IMAGE_ICON, (intptr_t)icon);
 
 		//
 		//	Disable this button if the user hasn't configured the orator

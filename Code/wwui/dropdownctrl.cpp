@@ -365,7 +365,7 @@ DropDownCtrlClass::On_Mouse_Move (const Vector2 &mouse_pos)
 //
 ////////////////////////////////////////////////////////////////
 bool
-DropDownCtrlClass::On_Key_Down (uint32 key_id, uint32 key_data)
+DropDownCtrlClass::On_Key_Down (uint32_t key_id, uint32_t key_data)
 {
 	bool handled = true;
 
@@ -532,7 +532,7 @@ int DropDownCtrlClass::Find_Closest_String(const WCHAR* string)
 //
 ////////////////////////////////////////////////////////////////
 void
-DropDownCtrlClass::Set_Item_Data (int index, uint32 data)
+DropDownCtrlClass::Set_Item_Data (int index, uint32_t data)
 {
 	//
 	//	Index into the list and set the user data
@@ -550,10 +550,10 @@ DropDownCtrlClass::Set_Item_Data (int index, uint32 data)
 //	Get_Item_Data
 //
 ////////////////////////////////////////////////////////////////
-uint32
+uint32_t
 DropDownCtrlClass::Get_Item_Data (int index)
 {
-	uint32 retval = 0;
+	uint32_t retval = 0;
 
 	//
 	//	Index into the list and return the user data to the caller

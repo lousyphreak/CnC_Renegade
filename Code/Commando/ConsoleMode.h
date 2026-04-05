@@ -117,7 +117,7 @@ class ConsoleModeClass
 		/*
 		** Input parsing variables.
 		*/
-		unsigned long LastKeypressTime;
+		uint32_t LastKeypressTime;
 		int		Pos;
 
 		/*
@@ -138,12 +138,12 @@ class ConsoleModeClass
 		/*
 		** Last profile text CRC.
 		*/
-		unsigned long LastProfileCRC;
+		uint32_t LastProfileCRC;
 
 		/*
 		** Last time we printed the profile.
 		*/
-		unsigned long LastProfilePrint;
+		uint32_t LastProfilePrint;
 
 };
 

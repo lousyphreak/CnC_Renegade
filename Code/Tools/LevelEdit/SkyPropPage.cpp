@@ -75,7 +75,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // SkyPropPageClass message handlers
 
-BOOL SkyPropPageClass::OnInitDialog() 
+int32_t SkyPropPageClass::OnInitDialog() 
 {
 	const CTime starttime (2000, 01, 01, 00, 00, 00, 0);
 	const CTime	endtime	 (2000, 01, 01, 23, 59, 00, 0);

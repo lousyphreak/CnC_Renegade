@@ -37,6 +37,8 @@
 #ifndef __DLGDOWNLOAD_H__
 #define __DLGDOWNLOAD_H__
 
+#include <cstdint>
+
 #include <WWUI\PopupDialog.h>
 #include <WWOnline\WOLDownload.h>
 
@@ -57,16 +59,16 @@ class DlgDownload :
 		bool FinalizeCreate(const WWOnline::DownloadList& files);
 
 		void On_Init_Dialog(void);
-		void On_Command(int ctrl, int message, DWORD param);
+		void On_Command(int ctrl, int message, uint32_t param);
 		void On_Periodic(void);
 
 		void UpdateProgress(WWOnline::DownloadEvent& event);
-		static void HandleCallback(WWOnline::DownloadEvent& event, unsigned long userdata);
+		static void HandleCallback(WWOnline::DownloadEvent& event, uint32_t userdata);
 
 	private:
 		RefPtr<WWOnline::DownloadWait> mWait;
 
-		unsigned long mStartTime;
+		uint32_t mStartTime;
 		bool mDownloading;
 		static bool mQuietMode;
 	};

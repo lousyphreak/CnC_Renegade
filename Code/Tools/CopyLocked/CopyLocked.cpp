@@ -57,7 +57,7 @@ CCopyLockedApp theApp;
 /////////////////////////////////////////////////////////////////////////////
 // CCopyLockedApp initialization
 
-BOOL CCopyLockedApp::InitInstance()
+int32_t CCopyLockedApp::InitInstance()
 {
 	// Standard initialization
 	// If you are not using these features and wish to reduce the size

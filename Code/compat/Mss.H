@@ -10,13 +10,13 @@
 #include <cstddef>
 #include <cstdint>
 
-using U32 = uint32;
-using S32 = sint32;
+using U32 = uint32_t;
+using S32 = int32_t;
 using HPROVIDER = void *;
 using HPROENUM = int;
 
 struct RENEGADE_MILES_DIG_DRIVER {
-	BOOL emulated_ds;
+	int32_t emulated_ds;
 };
 
 using HDIGDRIVER = RENEGADE_MILES_DIG_DRIVER *;
@@ -24,20 +24,20 @@ using HSAMPLE = void *;
 using H3DSAMPLE = void *;
 using HSTREAM = void *;
 using H3DPOBJECT = void *;
-using HTIMER = sint32;
+using HTIMER = int32_t;
 
 #ifndef _WIN32
 struct WAVEFORMAT {
-	WORD wFormatTag;
-	WORD nChannels;
-	DWORD nSamplesPerSec;
-	DWORD nAvgBytesPerSec;
-	WORD nBlockAlign;
+	uint16_t wFormatTag;
+	uint16_t nChannels;
+	uint32_t nSamplesPerSec;
+	uint32_t nAvgBytesPerSec;
+	uint16_t nBlockAlign;
 };
 
 struct PCMWAVEFORMAT {
 	WAVEFORMAT wf;
-	WORD wBitsPerSample;
+	uint16_t wBitsPerSample;
 };
 #endif
 

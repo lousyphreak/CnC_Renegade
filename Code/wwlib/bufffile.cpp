@@ -144,7 +144,7 @@ int BufferedFileClass::Read(void * buffer, int size)
 	// If we dont have a buffer, get one
 	if ( BufferSize == 0 ) {
 		BufferSize = desired_buffer_size;
-		Buffer = new unsigned char [BufferSize];
+		Buffer = new uint8_t [BufferSize];
 		BufferAvailable = 0;
 		BufferOffset = 0;
 	}

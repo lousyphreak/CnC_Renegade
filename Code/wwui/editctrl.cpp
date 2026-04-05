@@ -132,8 +132,8 @@ EditCtrlClass::Create_Text_Renderers (void)
 	//
 	//	Draw the text
 	//
-	uint32 color = StyleMgrClass::Get_Text_Color();
-	uint32 shadowColor = StyleMgrClass::Get_Text_Shadow_Color();
+	uint32_t color = StyleMgrClass::Get_Text_Color();
+	uint32_t shadowColor = StyleMgrClass::Get_Text_Shadow_Color();
 
 	if (IsEnabled == false) {
 		color = StyleMgrClass::Get_Disabled_Text_Color();
@@ -157,12 +157,12 @@ EditCtrlClass::Create_Text_Renderers (void)
 			Vector2 stopPos(startPos);
 			stopPos.X += compSize.X;
 
-			unsigned long underlineColor = StyleMgrClass::Get_Disabled_Line_Color();
+			uint32_t underlineColor = StyleMgrClass::Get_Disabled_Line_Color();
 			ControlRenderer.Add_Line(startPos, stopPos, 1.0f, underlineColor);
 
 			// Hilight the conversion target
-			unsigned long start = 0;
-			unsigned long end = 0;
+			uint32_t start = 0;
+			uint32_t end = 0;
 			mIME->GetTargetClause(start, end);
 
 			if (end > 0) {
@@ -472,7 +472,7 @@ EditCtrlClass::Update_Caret (void)
 	//
 	//	Blink the caret if necessary
 	//
-	uint32 curr_time = DialogMgrClass::Get_Time ();
+	uint32_t curr_time = DialogMgrClass::Get_Time ();
 
 	if ((curr_time - LastCaretBlink) > CaretBlinkDelay) {
 		IsCaretDisplayed	= !IsCaretDisplayed;
@@ -691,7 +691,7 @@ EditCtrlClass::On_Kill_Focus (DialogControlClass *focus)
 //
 ////////////////////////////////////////////////////////////////
 bool 
-EditCtrlClass::On_Key_Down (uint32 key_id, uint32 key_data)
+EditCtrlClass::On_Key_Down (uint32_t key_id, uint32_t key_data)
 {
 	bool handled = false;
 
@@ -1385,8 +1385,8 @@ void EditCtrlClass::PositionCandidateList(void)
 		//-------------------------------------------------------------------------
 		// Position the candidate window under the edit control
 		//-------------------------------------------------------------------------
-		unsigned long start = 0;
-		unsigned long end = 0;
+		uint32_t start = 0;
+		uint32_t end = 0;
 		mIME->GetTargetClause(start, end);
 		int caretPos = CaretPos + start;
 

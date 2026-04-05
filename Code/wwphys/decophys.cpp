@@ -269,7 +269,7 @@ DecorationPhysDefClass::DecorationPhysDefClass(void)
 {
 }
 
-uint32 DecorationPhysDefClass::Get_Class_ID (void) const
+uint32_t DecorationPhysDefClass::Get_Class_ID (void) const
 {
 	return CLASSID_DECOPHYSDEF; 
 }

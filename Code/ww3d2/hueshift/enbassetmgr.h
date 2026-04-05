@@ -38,6 +38,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef ENBASSETMGR_H
@@ -62,7 +64,7 @@ private:
 	void Make_HLOD_Unique(RenderObjClass *robj,bool geometry, bool colors);
 	void Make_Unique(RenderObjClass *robj,bool geometry, bool colors);
 	void Recolor_Vertex_Material(VertexMaterialClass *vmat,Vector3 &hsv_shift);
-	void Recolor_Vertices(unsigned int *color, int count, Vector3 &hsv_shift);	
+	void Recolor_Vertices(uint32_t *color, int count, Vector3 &hsv_shift);	
 	void Recolor_Mesh(RenderObjClass *robj,Vector3 &hsv_shift);
 	TextureClass * Recolor_Texture(TextureClass *texture, Vector3 &hsv_shift);
 	void Recolor_HLOD(RenderObjClass *robj,Vector3 &hsv_shift);

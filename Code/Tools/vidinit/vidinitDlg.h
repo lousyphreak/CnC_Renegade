@@ -24,6 +24,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 /////////////////////////////////////////////////////////////////////////////
@@ -40,7 +42,7 @@ public:
 	enum { IDD = IDD_VIDINIT_DIALOG };
 	CListBox	m_Resolutions;
 	CListBox	m_Drivers;
-	BOOL		m_RunFullScreen;
+	int32_t		m_RunFullScreen;
 	//}}AFX_DATA
 
 	// ClassWizard generated virtual function overrides
@@ -63,7 +65,7 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(CVidinitDlg)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	virtual void OnOK();
@@ -71,7 +73,7 @@ protected:
 	afx_msg void OnSelchangeDrivers();
 	afx_msg void OnTest();
 	//}}AFX_MSG
-	afx_msg LRESULT OnDeadBeef(WPARAM, LPARAM);
+	afx_msg intptr_t OnDeadBeef(uintptr_t, intptr_t);
 	DECLARE_MESSAGE_MAP()
 };
 

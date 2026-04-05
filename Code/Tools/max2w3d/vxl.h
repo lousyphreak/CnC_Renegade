@@ -39,6 +39,8 @@
 #ifndef VXL_H
 #define VXL_H
 
+#include <cstdint>
+
 #ifndef ALWAYS_H
 #include "always.h"
 #endif
@@ -86,7 +88,7 @@ public:
 	int		Get_Width() { return XDim; }
 	int		Get_Height() { return YDim; }
 	int		Num_Layers() { return ZDim; }
-	uint8		Is_Solid(int i,int j,int k);
+	uint8_t		Is_Solid(int i,int j,int k);
 
 	void		Compute_Physical_Properties(double Volume[1],double CM[3],double I[9]);
 	
@@ -100,7 +102,7 @@ private:
 	double	BlockYDim;
 	double	BlockZDim;
 
-	unsigned char	* VisData;
+	uint8_t	* VisData;
 
 	float				Resolution;			// resolution of the voxel grid
 	TimeValue		CurTime;
@@ -111,8 +113,8 @@ private:
 	Point3			BoxCorner[8];		// World-Space corners of the bounding box of the voxel space
 	Matrix3			ParentTM;			// coordinate system of the parent of this object.
 
-	void   raw_set_vis(int i,int j,int k,uint8 val);
-	uint8  raw_read_vis(int i,int j,int k);
+	void   raw_set_vis(int i,int j,int k,uint8_t val);
+	uint8_t  raw_read_vis(int i,int j,int k);
 
 	int    voxel_touches_space(int i,int j,int k);
 	void   purge_interior(void);
@@ -127,7 +129,7 @@ private:
 	void Set_Layer
 	(
 		VoxelLayerClass &		layer,
-		uint32					z
+		uint32_t					z
 	);
 	
 	// compute the bounding box

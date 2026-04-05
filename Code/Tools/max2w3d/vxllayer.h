@@ -39,6 +39,8 @@
 #ifndef VXLLAYER_H
 #define VXLLAYER_H
 
+#include <cstdint>
+
 #include <Max.h>
 
 
@@ -50,9 +52,9 @@
 #include "nodelist.h"
 #endif
 
-const sint8 VOXEL_VISIBLE = 0;			// voxels that are "outside" the object
-const sint8 VOXEL_SOLID = 1;				// voxels that are part of the object
-const sint8 VOXEL_UNKNOWN = -1;			// either inside or outside, don't know yet
+const int8_t VOXEL_VISIBLE = 0;			// voxels that are "outside" the object
+const int8_t VOXEL_SOLID = 1;				// voxels that are part of the object
+const int8_t VOXEL_UNKNOWN = -1;			// either inside or outside, don't know yet
 const int max_bitmap_width = 256;
 const int max_bitmap_height = 256;
 
@@ -78,7 +80,7 @@ public:
 
 	~VoxelLayerClass() {};
 
-	BOOL Is_Visible( int x, int y )
+	int32_t Is_Visible( int x, int y )
 	{
 		if (x < 0 || x >= bitmap_width || y < 0 || y >= bitmap_height) {
 			return TRUE;
@@ -91,7 +93,7 @@ public:
 		}
 	}
 
-	BOOL Is_Solid( int x, int y )
+	int32_t Is_Solid( int x, int y )
 	{
 		if (x < 0 || x >= bitmap_width || y < 0 || y >= bitmap_height) {
 			return FALSE;
@@ -104,8 +106,8 @@ public:
 		}
 	}
 
-	unsigned int Get_Width(void) { return bitmap_width; }
-	unsigned int Get_Height(void) { return bitmap_height; }
+	uint32_t Get_Width(void) { return bitmap_width; }
+	uint32_t Get_Height(void) { return bitmap_height; }
 
 protected:
 
@@ -134,7 +136,7 @@ protected:
 	// scan convert the polygon fragment in this voxel slab
 	void Scan_Triangle(Point3 a,Point3 b,Point3 c);
 
-	sint8		Solid[max_bitmap_width][max_bitmap_height];
+	int8_t		Solid[max_bitmap_width][max_bitmap_height];
 
 	float		SliceZ;
 	float		SliceH;

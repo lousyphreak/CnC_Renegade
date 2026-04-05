@@ -155,7 +155,7 @@ EditorPropSheetClass::Reposition_Buttons (int cx, int cy)
 void
 EditorPropSheetClass::OnSize
 (
-	UINT nType,
+	uint32_t nType,
 	int cx,
 	int cy
 )
@@ -221,7 +221,7 @@ void
 EditorPropSheetClass::OnSelchangeTabCtrl
 (
 	NMHDR* pNMHDR,
-	LRESULT* pResult
+	intptr_t* pResult
 ) 
 {
 	// Which tab is selected?
@@ -256,7 +256,7 @@ EditorPropSheetClass::OnSelchangeTabCtrl
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 EditorPropSheetClass::OnInitDialog (void) 
 {
 	// Allow the base class to process this message
@@ -339,11 +339,11 @@ EditorPropSheetClass::OnInitDialog (void)
 // OnCommand
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 EditorPropSheetClass::OnCommand
 (
-	WPARAM wParam,
-	LPARAM lParam
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	// Did the user hit the enter button?

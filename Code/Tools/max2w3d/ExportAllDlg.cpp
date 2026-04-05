@@ -45,7 +45,7 @@
 #include <shlobj.h>	// SHBrowseForFolder
 
 
-static BOOL CALLBACK _thunk_dialog_proc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static int32_t CALLBACK _thunk_dialog_proc (HWND hWnd, uint32_t uMsg, uintptr_t wParam, intptr_t lParam);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -68,9 +68,9 @@ ExportAllDlg::ExportAllDlg (Interface *max_interface)
 int ExportAllDlg::DoModal (void)
 {
 	// Put up the dialog box.
-	BOOL result = DialogBoxParam(AppInstance, MAKEINTRESOURCE(IDD_EXPORT_ALL),
+	int32_t result = DialogBoxParam(AppInstance, MAKEINTRESOURCE(IDD_EXPORT_ALL),
 							m_MaxInterface->GetMAXHWnd(), (DLGPROC)_thunk_dialog_proc,
-							(LPARAM)this);
+							(intptr_t)this);
 
 	// Return IDOK if the user accepted the new settings.
 	return (result == 1) ? IDOK : IDCANCEL;
@@ -79,7 +79,7 @@ int ExportAllDlg::DoModal (void)
 /////////////////////////////////////////////////////////////////////////////
 // ExportAllDlg DialogProc
 
-BOOL CALLBACK _thunk_dialog_proc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+int32_t CALLBACK _thunk_dialog_proc (HWND hWnd, uint32_t uMsg, uintptr_t wParam, intptr_t lParam)
 {
 	static ExportAllDlg *dialog = NULL;
 
@@ -95,7 +95,7 @@ BOOL CALLBACK _thunk_dialog_proc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 		return 0;
 }
 
-BOOL CALLBACK ExportAllDlg::DialogProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+int32_t CALLBACK ExportAllDlg::DialogProc (HWND hWnd, uint32_t uMsg, uintptr_t wParam, intptr_t lParam)
 {
 	int code = HIWORD(wParam);
 
@@ -192,7 +192,7 @@ void ExportAllDlg::OnBrowse()
 	}
 }
 
-BOOL ExportAllDlg::OnOK (void)
+int32_t ExportAllDlg::OnOK (void)
 {
 	// Get the directory chosen by the user. If none is entered,
 	// freak on the user.

@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __OBJECT_NODE_H
@@ -100,7 +102,7 @@ public:
 	bool			Show_Settings_Dialog (void);
 	void			Add_To_Scene (void);
 	void			Remove_From_Scene (void);
-	void			Set_ID (uint32 id);	
+	void			Set_ID (uint32_t id);	
 
 	//
 	//	From PersistClass

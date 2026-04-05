@@ -383,7 +383,7 @@ bool RLE_Blit(Surface & dest, Rect const & dcliprect, Rect const & ddrect, Surfa
 	**	by line basis because the length of each line is Variable.
 	*/
 	while (topmargin > 0) {
-		sbuffer = ((unsigned char *)sbuffer) + (*(unsigned short *)sbuffer);
+		sbuffer = ((uint8_t *)sbuffer) + (*(uint16_t *)sbuffer);
 		topmargin--;
 	}
 
@@ -397,12 +397,12 @@ bool RLE_Blit(Surface & dest, Rect const & dcliprect, Rect const & ddrect, Surfa
 		/*
 		**	Blit the correct sub-portion to the destination surface.
 		*/
-		blitter.Blit(dbuffer, ((unsigned short *)sbuffer)+1, srect.Width, leftmargin);
+		blitter.Blit(dbuffer, ((uint16_t *)sbuffer)+1, srect.Width, leftmargin);
 
 		/*
 		**	Advance the source and dest pointers for the next line processing.
 		*/
-		sbuffer = ((unsigned char *)sbuffer) + (*(unsigned short *)sbuffer);
+		sbuffer = ((uint8_t *)sbuffer) + (*(uint16_t *)sbuffer);
 		dbuffer = (void*)(((char*)dbuffer) + dstride);
 	}
 

@@ -62,7 +62,7 @@ BonePickerClass TheBonePicker;
  * HISTORY:                                                                                    * 
  *   10/26/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-BOOL BonePickerClass::Filter(INode *node)
+int32_t BonePickerClass::Filter(INode *node)
 {
 	if (BoneList == NULL) {
 		ObjectState os  = node->EvalWorldState(0);
@@ -91,7 +91,7 @@ BOOL BonePickerClass::Filter(INode *node)
  * HISTORY:                                                                                    * 
  *   10/26/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-BOOL BonePickerClass::HitTest(IObjParam *ip,HWND hwnd,ViewExp *vpt,IPoint2 m,int flags)
+int32_t BonePickerClass::HitTest(IObjParam *ip,HWND hwnd,ViewExp *vpt,IPoint2 m,int flags)
 {
 	if (ip->PickNode(hwnd,m,GetFilter())) {
 		return TRUE;
@@ -112,7 +112,7 @@ BOOL BonePickerClass::HitTest(IObjParam *ip,HWND hwnd,ViewExp *vpt,IPoint2 m,int
  * HISTORY:                                                                                    * 
  *   10/26/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-BOOL BonePickerClass::Pick(IObjParam *ip,ViewExp *vpt)
+int32_t BonePickerClass::Pick(IObjParam *ip,ViewExp *vpt)
 {
 	INode *node = vpt->GetClosestHit();
 	
@@ -135,7 +135,7 @@ BOOL BonePickerClass::Pick(IObjParam *ip,ViewExp *vpt)
 	return TRUE;
 }
 
-BOOL BonePickerClass::filter(INode * inode)
+int32_t BonePickerClass::filter(INode * inode)
 {
 	return Filter(inode);
 }

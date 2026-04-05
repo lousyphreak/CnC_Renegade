@@ -82,7 +82,7 @@ char W3dExportClass::CurrentExportPath[_MAX_DRIVE + _MAX_DIR + 1] = { '\000' };
 
 
 /* local functions */
-static DWORD WINAPI progress_callback( LPVOID arg);
+static uint32_t WINAPI progress_callback( LPVOID arg);
 static HierarchySaveClass * load_hierarchy_file(char * filename);
 static bool dupe_check(const INodeListClass & list);
 static bool check_lod_extensions (INodeListClass &list, INode *origin);
@@ -98,7 +98,7 @@ static bool check_lod_extensions (INodeListClass &list, INode *origin);
 */
 struct ExportInfoAppDataChunkStruct {
 	W3dExportOptionsStruct	ExportOptions;
-	unsigned char				Padding[93];
+	uint8_t				Padding[93];
 };
 
 
@@ -111,7 +111,7 @@ struct ExportInfoAppDataChunkStruct {
 class GeometryFilterClass : public INodeFilterClass
 {
 public:
-	virtual BOOL Accept_Node(INode * node, TimeValue time)
+	virtual int32_t Accept_Node(INode * node, TimeValue time)
 	{
 		Object * obj = node->EvalWorldState(time).obj;
 
@@ -149,7 +149,7 @@ class OriginFilterClass : public INodeFilterClass
 {
 public:
 
-	virtual BOOL Accept_Node(INode * node, TimeValue time)	{ return Is_Origin(node); }
+	virtual int32_t Accept_Node(INode * node, TimeValue time)	{ return Is_Origin(node); }
 };
 
 
@@ -165,7 +165,7 @@ class DamageRootFilterClass : public INodeFilterClass
 {
 public:
 
-	virtual BOOL Accept_Node(INode * node, TimeValue time)	{ return Is_Damage_Root(node); }
+	virtual int32_t Accept_Node(INode * node, TimeValue time)	{ return Is_Damage_Root(node); }
 };
 
 
@@ -180,7 +180,7 @@ class DamageRegionFilterClass : public INodeFilterClass
 public:
 	DamageRegionFilterClass(int region_id)						{ RegionId = region_id; }
 
-	virtual BOOL Accept_Node(INode * node, TimeValue time)
+	virtual int32_t Accept_Node(INode * node, TimeValue time)
 	{
 		if (!Is_Bone(node)) return FALSE;
 
@@ -219,8 +219,8 @@ int W3dExportClass::DoExport
 	const TCHAR *filename,
 	ExpInterface *export,
 	Interface *max, 
-	BOOL suppressPrompts, 
-	DWORD options
+	int32_t suppressPrompts, 
+	uint32_t options
 )
 {
 	ExportInterface = export;
@@ -371,7 +371,7 @@ void W3dExportClass::DoOriginBasedExport(char *rootname, ChunkSaveClass &csave)
 	*/
 	bool				is_base_object = false;
 	INodeListClass	*origin_list = get_origin_list();
-	unsigned int	i, count = origin_list->Num_Nodes();
+	uint32_t	i, count = origin_list->Num_Nodes();
 	INode				*base_origin = NULL;
 
 	for (i = 0; i < count; i++)
@@ -719,7 +719,7 @@ bool W3dExportClass::Export_Damage_Animations(char *name, ChunkSaveClass &csave,
 bool W3dExportClass::Export_Geometry(char * name,ChunkSaveClass & csave,Progress_Meter_Class & meter,
 												 INode *root,MeshConnectionsClass **out_connection)
 {
-	unsigned int i;
+	uint32_t i;
 
 	assert(root != NULL);
 	if (!ExportOptions.ExportGeometry) return true;
@@ -987,7 +987,7 @@ INodeListClass * W3dExportClass::get_origin_list(void)
  *   10/16/1997 GH  : Created.                                                                 * 
  *   9/30/1999  AJA : Added support for the MAX suppress_prompts flag.                         *
  *=============================================================================================*/
-bool W3dExportClass::get_export_options(BOOL suppress_prompts)
+bool W3dExportClass::get_export_options(int32_t suppress_prompts)
 {
 	int ticksperframe = GetTicksPerFrame();
 
@@ -1181,7 +1181,7 @@ bool W3dExportClass::get_base_object_tm (Matrix3 &tm)
 	if (!origin_list)
 		return false;
 
-	unsigned int	i, count = origin_list->Num_Nodes();
+	uint32_t	i, count = origin_list->Num_Nodes();
 	INode				*base_origin = NULL;
 	for (i = 0; i < count; i++)
 	{
@@ -1200,7 +1200,7 @@ bool W3dExportClass::get_base_object_tm (Matrix3 &tm)
 	return true;
 }
 
-static DWORD WINAPI progress_callback( LPVOID arg )
+static uint32_t WINAPI progress_callback( LPVOID arg )
 {
 	return 0;
 }

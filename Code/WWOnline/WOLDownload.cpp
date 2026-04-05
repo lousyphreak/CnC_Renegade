@@ -148,7 +148,7 @@ bool Download::CreateDownloadObject(void)
 	WWDEBUG_SAY(("WOL: Creating IID_IDownload object\n"));
 
 	WOL::IDownload* downloadObject = NULL;
-	HRESULT hr = CoCreateInstance(WOL::CLSID_Download, NULL, CLSCTX_INPROC_SERVER,
+	int32_t hr = CoCreateInstance(WOL::CLSID_Download, NULL, CLSCTX_INPROC_SERVER,
 			WOL::IID_IDownload, (void **)&downloadObject);
 
 	if (FAILED(hr))
@@ -194,7 +194,7 @@ void Download::ReleaseDownloadObject(void)
 	// No longer listen to download events.
 	if (mDownloadObject && mDownloadCookie != 0)
 		{
-		HRESULT hr = AtlUnadvise(mDownloadObject, WOL::IID_IDownloadEvent, mDownloadCookie);
+		int32_t hr = AtlUnadvise(mDownloadObject, WOL::IID_IDownloadEvent, mDownloadCookie);
 		mDownloadCookie = 0;
 
 		if (FAILED(hr))
@@ -280,11 +280,11 @@ bool Download::Start(void)
 	const char* regPath = product->GetRegistryPath();
 
 	WWDEBUG_SAY(("WOL: Downloading '%s' to '%s'\n", (const char*)downloadFile, (const char*)localFile));
-	HRESULT hr = mDownloadObject->DownloadFile(server, login, password, downloadFile, localFile, regPath);
+	int32_t hr = mDownloadObject->DownloadFile(server, login, password, downloadFile, localFile, regPath);
 
 	if (FAILED(hr))
 		{
-		WWDEBUG_SAY(("WOLERROR: DownloadFile() HRESULT = %s\n", GetDownloadErrorString(hr)));
+		WWDEBUG_SAY(("WOLERROR: DownloadFile() int32_t = %s\n", GetDownloadErrorString(hr)));
 		AtlUnadvise(mDownloadObject, WOL::IID_IDownloadEvent, mDownloadCookie);
 		SetError(DOWNLOADEVENT_COULDNOTCONNECT, GetOnErrorText(DOWNLOADEVENT_COULDNOTCONNECT));
 		return false;
@@ -324,11 +324,11 @@ void Download::Stop(void)
 			{
 			mState = DLAborted;
 
-			HRESULT hr = mDownloadObject->Abort();
+			int32_t hr = mDownloadObject->Abort();
 
 			if (FAILED(hr))
 				{
-				WWDEBUG_SAY(("WOLERROR: WOL::IDownload::Abort() HRESULT = %s\n", GetDownloadErrorString(hr)));
+				WWDEBUG_SAY(("WOLERROR: WOL::IDownload::Abort() int32_t = %s\n", GetDownloadErrorString(hr)));
 				}
 
 			DownloadEvent event(DownloadEvent::DOWNLOAD_STOPPED, this);
@@ -594,7 +594,7 @@ STDMETHODIMP Download::QueryInterface(const IID& iid, void** ppv)
 *
 ****************************************************************************/
 
-ULONG STDMETHODCALLTYPE Download::AddRef(void)
+uint32_t STDMETHODCALLTYPE Download::AddRef(void)
 	{
 	RefCounted::AddReference();
 	return RefCounted::ReferenceCount();
@@ -615,9 +615,9 @@ ULONG STDMETHODCALLTYPE Download::AddRef(void)
 *
 ****************************************************************************/
 
-ULONG STDMETHODCALLTYPE Download::Release(void)
+uint32_t STDMETHODCALLTYPE Download::Release(void)
 	{
-	ULONG refCount = RefCounted::ReferenceCount();
+	uint32_t refCount = RefCounted::ReferenceCount();
 	RefCounted::ReleaseReference();
 	return --refCount;
 	}
@@ -1020,7 +1020,7 @@ void DownloadWait::EndWait(WaitResult endResult, const wchar_t* endText)
 *
 ******************************************************************************/
 
-void DownloadWait::SetCallback(DownloadWaitCallback callback, unsigned long userdata)
+void DownloadWait::SetCallback(DownloadWaitCallback callback, uint32_t userdata)
 	{
 	mCallback = callback;
 	mUserdata = userdata;

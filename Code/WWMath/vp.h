@@ -44,6 +44,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef VECTORPROCESSOR_H
 #define VECTORPROCESSOR_H
 
@@ -65,12 +67,12 @@ public:
 	static void Copy(Vector4 *dst,const Vector3 *src, const float * srca, const int count);
 	static void Copy(Vector4 *dst,const Vector3 *src, const float srca, const int count);
 	static void Copy(Vector4 *dst,const Vector3 &src, const float * srca, const int count);
-	static void CopyIndexed(unsigned *dst,const unsigned *src, const unsigned int *index, const int count);
-	static void CopyIndexed(Vector2 *dst,const Vector2 *src, const unsigned int *index, const int count);
-	static void CopyIndexed(Vector3 *dst,const Vector3 *src, const unsigned int *index, const int count);
-	static void CopyIndexed(Vector4 *dst,const Vector4 *src, const unsigned int *index, const int count);
-	static void CopyIndexed(unsigned char* dst, const unsigned char* src, const unsigned int *index, int count);
-	static void CopyIndexed(float* dst, float* src, const unsigned int *index, int count);
+	static void CopyIndexed(unsigned *dst,const unsigned *src, const uint32_t *index, const int count);
+	static void CopyIndexed(Vector2 *dst,const Vector2 *src, const uint32_t *index, const int count);
+	static void CopyIndexed(Vector3 *dst,const Vector3 *src, const uint32_t *index, const int count);
+	static void CopyIndexed(Vector4 *dst,const Vector4 *src, const uint32_t *index, const int count);
+	static void CopyIndexed(uint8_t* dst, const uint8_t* src, const uint32_t *index, int count);
+	static void CopyIndexed(float* dst, float* src, const uint32_t *index, int count);
 	static void Clamp(Vector4 *dst,const Vector4 *src, const float min, const float max, const int count);
 	static void Clear (Vector3 *dst, const int count);
 	static void Normalize(Vector3 *dst, const int count);

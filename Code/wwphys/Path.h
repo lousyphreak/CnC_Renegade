@@ -36,6 +36,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef __COMMANDO_PATH_H
 #define __COMMANDO_PATH_H
 
@@ -135,7 +137,7 @@ public:
 	ACTION_ID			Get_Action_Type (void);
 	void					Get_Action_Destination (Vector3 &dest);
 	void					Get_Action_Entrance (Vector3 &position);
-	uint32				Get_Action_Mechanism (void);
+	uint32_t				Get_Action_Mechanism (void);
 
 	//
 	//	Velocity methods
@@ -207,7 +209,7 @@ protected:
 		float			next_time;
 		bool			tighten_spline;
 		ACTION_ID	action_id;
-		uint32		mechanism_id;
+		uint32_t		mechanism_id;
 		Vector3		dest_pos;
 		Vector3		pos;
 
@@ -333,10 +335,10 @@ PathClass::Get_Action_Entrance (Vector3 &position)
 /////////////////////////////////////////////////////////////////////////
 //	Get_Action_Mechanism
 /////////////////////////////////////////////////////////////////////////
-inline uint32
+inline uint32_t
 PathClass::Get_Action_Mechanism (void)
 {
-	uint32 mechanism_id = 0;
+	uint32_t mechanism_id = 0;
 
 	if (m_CurrentAction >= 0 && m_CurrentAction < m_PathActions.Count ()) {
 		mechanism_id = m_PathActions[m_CurrentAction].mechanism_id;

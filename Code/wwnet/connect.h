@@ -26,6 +26,8 @@
 //-----------------------------------------------------------------------------
 #if defined(_MSV_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef CONNECT_H
@@ -72,20 +74,20 @@ typedef enum {
 // Strictly speaking SEND_UNRELIABLE could be deduced by absense
 // of SEND_RELIABLE, but it's inclusion makes a clearer API.
 //
-const BYTE SEND_RELIABLE   = 0x01; // you must specify this or SEND_UNRELIABLE
-const BYTE SEND_UNRELIABLE = 0x02; // you must specify this or SEND_RELIABLE
-const BYTE SEND_MULTI      = 0x04; // For SEND_UNRELIABLE only. Default is single send.
+const uint8_t SEND_RELIABLE   = 0x01; // you must specify this or SEND_UNRELIABLE
+const uint8_t SEND_UNRELIABLE = 0x02; // you must specify this or SEND_RELIABLE
+const uint8_t SEND_MULTI      = 0x04; // For SEND_UNRELIABLE only. Default is single send.
 
 class cMsgStatList;
 
 typedef void (*Accept_Handler)(void);
 typedef void (*Refusal_Handler)(REFUSAL_CODE refusal_code);
-typedef void (*Server_Broken_Connection_Handler)(int broken_rhost_id);
+typedef void (*Server_Broken_Connection_Handler)(int32_t broken_rhost_id);
 typedef void (*Client_Broken_Connection_Handler)(void);
-typedef void (*Eviction_Handler)(int evicted_rhost_id);
-typedef void (*Conn_Handler)(int new_rhost_id);
+typedef void (*Eviction_Handler)(int32_t evicted_rhost_id);
+typedef void (*Conn_Handler)(int32_t new_rhost_id);
 typedef REFUSAL_CODE (*Application_Acceptance_Handler)(cPacket & packet);
-typedef void (*Server_Packet_Handler)(cPacket & packet, int rhost_id);
+typedef void (*Server_Packet_Handler)(cPacket & packet, int32_t rhost_id);
 typedef void (*Client_Packet_Handler)(cPacket & packet);
 
 extern char * Addr_As_String(sockaddr_in *addr);
@@ -101,17 +103,17 @@ class cConnection
 		cConnection();
 		~cConnection();
 
-      void Init_As_Client(ULONG server_ip, USHORT server_port, unsigned short my_port = 0);
-      void Init_As_Server(USHORT server_port, int max_players,
-			bool is_dedicated_server, ULONG addr = 0);
+      void Init_As_Client(uint32_t server_ip, uint16_t server_port, uint16_t my_port = 0);
+      void Init_As_Server(uint16_t server_port, int max_players,
+			bool is_dedicated_server, uint32_t addr = 0);
       void Connect_Cs(cPacket & app_data);
-      void Send_Packet_To_Individual(cPacket & packet, int addressee, BYTE send_flags);
+      void Send_Packet_To_Individual(cPacket & packet, int addressee, uint8_t send_flags);
       bool Have_Id() const {return LocalId != ID_UNKNOWN;}
       bool Is_Established() const;
 		void Service_Read();
 		void Service_Send(bool is_urgent = false);
-		ULONG Get_Bandwidth_Budget_Out() const {return BandwidthBudgetOut;}
-		void Set_Bandwidth_Budget_Out(ULONG bw_budget);
+		uint32_t Get_Bandwidth_Budget_Out() const {return BandwidthBudgetOut;}
+		void Set_Bandwidth_Budget_Out(uint32_t bw_budget);
       void Destroy_Connection(int rhost_id);
 		void Init_Stats();
       double Get_Threshold_Priority(int rhost_id);
@@ -119,7 +121,7 @@ class cConnection
       void Set_Packet_Duplication(double percent_duplicated);
       void Set_Packet_Latency_Range(int minimum_latency_ms, int maximum_latency_ms);
       void Set_Max_Acceptable_Packetloss_Pc(double max_packetloss_pc);
-      void Enable_Flow_Control(BOOL is_enabled) {IsFlowControlEnabled = is_enabled;}  // This should be called at startup.
+      void Enable_Flow_Control(int32_t is_enabled) {IsFlowControlEnabled = is_enabled;}  // This should be called at startup.
 	   SList<cPacket> * Get_Packet_List() {return &PacketList;}
 		void Clear_Resend_Counts();
 		int Get_Min_RHost()		{return MinRHost;}
@@ -131,10 +133,10 @@ class cConnection
 		double Get_Max_Acceptable_Packetloss_Pc() const {return MaxAcceptablePacketlossPc;}
 		cNetStats & Get_Combined_Stats() {return CombinedStats;}
 		cNetStats & Get_Averaged_Stats() {return AveragedStats;}
-      static BOOL Is_Flow_Control_Enabled() {return IsFlowControlEnabled;}
-		static UINT Get_Total_Compressed_Bytes_Sent(void)
+      static int32_t Is_Flow_Control_Enabled() {return IsFlowControlEnabled;}
+		static uint32_t Get_Total_Compressed_Bytes_Sent(void)
 			{return TotalCompressedBytesSent;}
-		static UINT Get_Total_Uncompressed_Bytes_Sent(void)
+		static uint32_t Get_Total_Uncompressed_Bytes_Sent(void)
 			{return TotalUncompressedBytesSent;}
 		cMsgStatList *	Get_Stat_List(void) {return PStatList;}
 		bool Is_Bad_Connection(void) {return(IsBadConnection);};
@@ -168,17 +170,17 @@ class cConnection
       cConnection(const cConnection& rhs); // Disallow copy (compile/link time)
       cConnection& operator=(const cConnection& rhs); // Disallow assignment (compile/link time)
 
-      void Init_As_Client(LPSOCKADDR_IN p_server_address, unsigned short my_port = 0);
+      void Init_As_Client(LPSOCKADDR_IN p_server_address, uint16_t my_port = 0);
       bool Demultiplex_R_Or_U_Packet(cPacket * p_packet, int rhost_id);
       void Send_Accept_Sc(int new_rhost_id);
-      bool Bind(USHORT port, ULONG addr = 0);
+      bool Bind(uint16_t port, uint32_t addr = 0);
       bool Receive_Packet();
 		int Low_Level_Send_Wrapper(cPacket & packet, LPSOCKADDR_IN p_address);
       int Send_Wrapper(cPacket & packet, LPSOCKADDR_IN p_address);
       int Send_Wrapper(cPacket & packet, int addressee);
 		int Low_Level_Receive_Wrapper(cPacket & packet);
       int Receive_Wrapper(cPacket & packet);
-      void Set_R_And_U_Packet_Id(cPacket & packet, int addressee, BYTE send_type);
+      void Set_R_And_U_Packet_Id(cPacket & packet, int addressee, uint8_t send_type);
       void R_And_U_Send(cPacket & packet, int addressee);
       void Send_Ack(LPSOCKADDR_IN p_address, int reliable_packet_id);
 		void Send_Refusal_Sc(LPSOCKADDR_IN p_address, REFUSAL_CODE refusal_code);
@@ -186,7 +188,7 @@ class cConnection
       void Send_Keepalives();
 		static LPCSTR Type_Translation(int type);
       bool Sender_Id_Tests(cPacket & packet);
-      USHORT Calculate_Packet_Bits(USHORT app_bytes);
+      uint16_t Calculate_Packet_Bits(uint16_t app_bytes);
       int Single_Player_sendto(cPacket & packet);
       int Single_Player_recvfrom(char * data);
       int Address_To_Rhostid(const SOCKADDR_IN* p_address);
@@ -194,23 +196,23 @@ class cConnection
 		bool Is_Packet_Too_Old(const cPacket *packet, cRemoteHost *rhost);
 
       int LocalId;		// Each client has a unique id
-      USHORT LocalPort; // port we are bound to.
+      uint16_t LocalPort; // port we are bound to.
 		double MaxAcceptablePacketlossPc;
 		cNetStats CombinedStats;
 		cNetStats AveragedStats;
-      unsigned long ThisFrameTimeMs; // to avoid excess timeGetTime clls
+      uint32_t ThisFrameTimeMs; // to avoid excess timeGetTime clls
       bool IsServer; // for C/S specific-code
       bool IsDedicatedServer; // for C/S specific-code
-      static BOOL IsFlowControlEnabled;
+      static int32_t IsFlowControlEnabled;
 		bool InitDone; // Used to ensure certain API's are used at the right time.
       SOCKET Sock;
-      USHORT SimulatedPacketLossPerRANDMAX;
-      USHORT SimulatedPacketDuplicationPerRANDMAX;
+      uint16_t SimulatedPacketLossPerRANDMAX;
+      uint16_t SimulatedPacketDuplicationPerRANDMAX;
       int MinimumLatencyMs;
       int MaximumLatencyMs;
       int RefusalPacketSendId; // server
       int HighestRefusalPacketRcvId; // client
-		ULONG BandwidthBudgetOut;
+		uint32_t BandwidthBudgetOut;
       SList<cPacket> PacketList;
 		int ServiceCount;
 		bool IsBadConnection;
@@ -219,11 +221,11 @@ class cConnection
 		int MaxRHost;
       int					NumRHosts;
 		bool					IsDestroy;
-		static UINT			TotalCompressedBytesSent;
-		static UINT			TotalUncompressedBytesSent;
+		static uint32_t			TotalCompressedBytesSent;
+		static uint32_t			TotalUncompressedBytesSent;
 		cMsgStatList *		PStatList;
-		unsigned long		ExtraTimeoutTime;
-		unsigned long		ExtraTimeoutTimeStarted;
+		uint32_t		ExtraTimeoutTime;
+		uint32_t		ExtraTimeoutTimeStarted;
 		bool					CanProcess;
 
 		Accept_Handler								AcceptHandler;
@@ -242,9 +244,9 @@ class cConnection
 		static int LatencyAddLow;
 		static int LatencyAddHigh;
 		static int CurrentLatencyAdd;
-		static unsigned long LastLatencyChange;
+		static uint32_t LastLatencyChange;
 		DynamicVectorClass<cPacket*>			LaggedPackets;
-		DynamicVectorClass<unsigned long>	LaggedPacketTimes;
+		DynamicVectorClass<uint32_t>	LaggedPacketTimes;
 		DynamicVectorClass<int>					LaggedPacketRetCodes;
 #endif //WWDEBUG
 
@@ -264,8 +266,8 @@ class cConnection
 
 
 
-      //void Init_As_Client(LPCSTR server_ip, USHORT server_port);
-      //void Send_Packet_To_All(cPacket & packet, BYTE send_flags); // send to all rhosts
+      //void Init_As_Client(LPCSTR server_ip, uint16_t server_port);
+      //void Send_Packet_To_All(cPacket & packet, uint8_t send_flags); // send to all rhosts
 		//cRemoteHost * PRHost[MAX_RHOSTS];
 		//virtual void Server_Broken_Connection_Handler(int rhost_id);
 		//virtual void Client_Broken_Connection_Handler();

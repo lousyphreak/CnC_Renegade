@@ -165,7 +165,7 @@ Sound3DClass::Play (bool alloc_handle)
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////
 bool
-Sound3DClass::On_Frame_Update (unsigned int milliseconds)
+Sound3DClass::On_Frame_Update (uint32_t milliseconds)
 {
 	Matrix3D prev_tm = m_PrevTransform;
 

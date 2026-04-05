@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // PresetDependencyTab.h : header file
 //
@@ -81,7 +83,7 @@ protected:
 	//{{AFX_MSG(PresetDependencyTabClass)
 	afx_msg void OnAdd();
 	afx_msg void OnRemove();
-	afx_msg void OnItemchangedDepencyList(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnItemchangedDepencyList(NMHDR* pNMHDR, intptr_t* pResult);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 

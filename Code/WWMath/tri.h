@@ -104,7 +104,7 @@ enum
 // initialized outside this function if its value is to be used.
 inline bool Point_In_Triangle_2D(const Vector3 &tri_point0, const Vector3 &tri_point1,
 	const Vector3 &tri_point2, const Vector3 &test_point, int axis_1, int axis_2,
-	unsigned char &flags)
+	uint8_t &flags)
 {
 	// The function is based on checking signs of determinants, or in a more visually intuitive
 	// sense, checking on which side of a line a point lies. For example, if the points run in
@@ -217,12 +217,12 @@ inline bool Point_In_Triangle_2D(const Vector3 &tri_point0, const Vector3 &tri_p
 inline bool Cast_Semi_Infinite_Axis_Aligned_Ray_To_Triangle(const Vector3 &tri_point0,
 	const Vector3 &tri_point1, const Vector3 &tri_point2, const Vector4 &tri_plane,
 	const Vector3 &ray_start, int axis_r, int axis_1, int axis_2, int direction,
-	unsigned char & flags)
+	uint8_t & flags)
 {
 	bool retval = false;
 
 	// First check infinite ray vs. triangle (2D check)
-	unsigned char flags_2d = TRI_RAYCAST_FLAG_NONE;
+	uint8_t flags_2d = TRI_RAYCAST_FLAG_NONE;
 	if (Point_In_Triangle_2D(tri_point0, tri_point1, tri_point2, ray_start, axis_1, axis_2, flags_2d)) {
 
 		// NOTE: SR plane equations, unlike WWMath's PlaneClass, use the Ax+By+Cz+D = 0

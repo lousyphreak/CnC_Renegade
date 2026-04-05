@@ -131,7 +131,7 @@ public:
 	/*
 	** Timing
 	*/
-	unsigned int	LastSyncTime;
+	uint32_t	LastSyncTime;
 	float				Time;
 	float				FrameSync;
 	bool				PrimaryKilled;
@@ -362,7 +362,7 @@ public:
 //		Commands->Debug_Message( "Cinematic Loading\n" );
 //		Commands->Debug_Message("Sync time is %d.\n", Commands->Get_Sync_Time());
 
-		unsigned int chunkID;
+		uint32_t chunkID;
 
 		while (Commands->Open_Chunk(loader, &chunkID)) {
 
@@ -941,7 +941,7 @@ public:
 
 	void	Parse_Commands( GameObject* obj ) {
 
-		unsigned int sync_diff = Commands->Get_Sync_Time() - LastSyncTime;
+		uint32_t sync_diff = Commands->Get_Sync_Time() - LastSyncTime;
 		LastSyncTime += sync_diff;
 
 		float bump_time = ((float)sync_diff) / 1000.0f;

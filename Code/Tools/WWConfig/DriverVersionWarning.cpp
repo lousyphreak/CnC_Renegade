@@ -186,7 +186,7 @@ void CheckDriverVersion()
 		for (int adapter_index=0; adapter_index<adapter_count; adapter_index++) {
 			D3DADAPTER_IDENTIFIER8 id;
 			::ZeroMemory(&id, sizeof(D3DADAPTER_IDENTIFIER8));
-			HRESULT res = d3d->GetAdapterIdentifier(adapter_index,D3DENUM_NO_WHQL_LEVEL,&id);
+			int32_t res = d3d->GetAdapterIdentifier(adapter_index,D3DENUM_NO_WHQL_LEVEL,&id);
 			// If device ok, check if it matches the currently set adapter name
 			if (res == D3D_OK) {
 				StringClass name(id.Description,true);
@@ -323,7 +323,7 @@ int DriverVersionWarning::DoModal()
 //
 /////////////////////////////////////////////////////////////////////////////
 
-BOOL DriverVersionWarning::OnInitDialog() 
+int32_t DriverVersionWarning::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
 

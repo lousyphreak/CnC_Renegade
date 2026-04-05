@@ -88,7 +88,7 @@ END_MESSAGE_MAP()
 //
 //  OnInitDialog
 //
-BOOL
+int32_t
 CAnimationPropPage::OnInitDialog (void) 
 {
 	// Allow the base class to process this message

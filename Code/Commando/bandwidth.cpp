@@ -45,7 +45,7 @@
 #include "bandwidthcheck.h"
 
 //-----------------------------------------------------------------------------
-ULONG cBandwidth::Get_Bandwidth_Bps_From_Type(BANDWIDTH_TYPE_ENUM bandwidth_type)
+uint32_t cBandwidth::Get_Bandwidth_Bps_From_Type(BANDWIDTH_TYPE_ENUM bandwidth_type)
 {
 	/*
 	WWASSERT(bandwidth_type >= BANDWIDTH_FIRST &&
@@ -71,7 +71,7 @@ ULONG cBandwidth::Get_Bandwidth_Bps_From_Type(BANDWIDTH_TYPE_ENUM bandwidth_type
 			return 2000000;
 		case BANDWIDTH_AUTO:
 		{
-			ULONG bps = BandwidthCheckerClass::Get_Upstream_Bandwidth();
+			uint32_t bps = BandwidthCheckerClass::Get_Upstream_Bandwidth();
 //			WWASSERT(bps > 0);
 			return bps;
 		}
@@ -82,7 +82,7 @@ ULONG cBandwidth::Get_Bandwidth_Bps_From_Type(BANDWIDTH_TYPE_ENUM bandwidth_type
 }
 
 //-----------------------------------------------------------------------------
-const unsigned short *cBandwidth::Get_Bandwidth_String_From_Type(BANDWIDTH_TYPE_ENUM bandwidth_type)
+const uint16_t *cBandwidth::Get_Bandwidth_String_From_Type(BANDWIDTH_TYPE_ENUM bandwidth_type)
 {
 	static char _bandwidth_auto_txt[128];
 	static WideStringClass s;
@@ -93,30 +93,30 @@ const unsigned short *cBandwidth::Get_Bandwidth_String_From_Type(BANDWIDTH_TYPE_
 
 	switch (bandwidth_type) {
 		case BANDWIDTH_MODEM_288:
-			return reinterpret_cast<const unsigned short *>(TRANSLATE(IDS_MP_CONNECTION_288));		//"BANDWIDTH_MODEM_288";
+			return reinterpret_cast<const uint16_t *>(TRANSLATE(IDS_MP_CONNECTION_288));		//"BANDWIDTH_MODEM_288";
 		case BANDWIDTH_MODEM_336:
-			return reinterpret_cast<const unsigned short *>(TRANSLATE(IDS_MP_CONNECTION_336));		//"BANDWIDTH_MODEM_336";
+			return reinterpret_cast<const uint16_t *>(TRANSLATE(IDS_MP_CONNECTION_336));		//"BANDWIDTH_MODEM_336";
 		case BANDWIDTH_MODEM_56:
-			return reinterpret_cast<const unsigned short *>(TRANSLATE(IDS_MP_CONNECTION_56));		//"BANDWIDTH_MODEM_56";
+			return reinterpret_cast<const uint16_t *>(TRANSLATE(IDS_MP_CONNECTION_56));		//"BANDWIDTH_MODEM_56";
 		case BANDWIDTH_ISDN:
-			return reinterpret_cast<const unsigned short *>(TRANSLATE(IDS_MP_CONNECTION_ISDN));		//"BANDWIDTH_ISDN";
+			return reinterpret_cast<const uint16_t *>(TRANSLATE(IDS_MP_CONNECTION_ISDN));		//"BANDWIDTH_ISDN";
 		case BANDWIDTH_CABLE:
-			return reinterpret_cast<const unsigned short *>(TRANSLATE(IDS_MP_CONNECTION_CABLE));	//"BANDWIDTH_CABLE";
+			return reinterpret_cast<const uint16_t *>(TRANSLATE(IDS_MP_CONNECTION_CABLE));	//"BANDWIDTH_CABLE";
 		case BANDWIDTH_LANT1:
-			return reinterpret_cast<const unsigned short *>(TRANSLATE(IDS_MP_CONNECTION_T1));		//"BANDWIDTH_LANT1";
+			return reinterpret_cast<const uint16_t *>(TRANSLATE(IDS_MP_CONNECTION_T1));		//"BANDWIDTH_LANT1";
 		case BANDWIDTH_CUSTOM:
-			return reinterpret_cast<const unsigned short *>(L"BANDWIDTH_CUSTOM");
+			return reinterpret_cast<const uint16_t *>(L"BANDWIDTH_CUSTOM");
 		case BANDWIDTH_AUTO:
 		{
 			//sprintf(_bandwidth_auto_txt, "BANDWIDTH_AUTO (%s)", BandwidthCheckerClass::Get_Bandwidth_As_String());
 			s.Format(TRANSLATE(IDS_MP_CONNECTION_T1), Get_Bandwidth_Bps_From_Type(bandwidth_type));
 			//wsprintf(_bandwidth_auto_txt, TRANSLATE(IDS_MP_CONNECTION_T1), Get_Bandwidth_Bps_From_Type(bandwidth_type));
 			//return ((const)_bandwidth_auto_txt);
-			return reinterpret_cast<const unsigned short *>(s.Peek_Buffer());
+			return reinterpret_cast<const uint16_t *>(s.Peek_Buffer());
 		}
 		default:
 			DIE;
-			return reinterpret_cast<const unsigned short *>(L"ERROR"); // to avoid compiler warning
+			return reinterpret_cast<const uint16_t *>(L"ERROR"); // to avoid compiler warning
    }
 }
 

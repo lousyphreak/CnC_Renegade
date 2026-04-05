@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -53,7 +55,7 @@ class WWFontClass : public FontClass
 		typedef FontClass BASECLASS;
 
 	public:
-		WWFontClass(void const * fontdata, bool isoutlined=false, int shadow=0, ConvertClass *convert = 0, unsigned char *remap = 0);
+		WWFontClass(void const * fontdata, bool isoutlined=false, int shadow=0, ConvertClass *convert = 0, uint8_t *remap = 0);
 		virtual ~WWFontClass(void) {}
 		
 		void *Set_Font_Data(void const * fontdata);
@@ -64,12 +66,12 @@ class WWFontClass : public FontClass
 		// User can setup a palette to use for this font.
 		// If set, this will override all other colors (even fore and background colors).
 		// User should reset to default when done.
-		unsigned char *Set_Remap_Palette(unsigned char *palette)  {
-			unsigned char *old = RemapPalette;
+		uint8_t *Set_Remap_Palette(uint8_t *palette)  {
+			uint8_t *old = RemapPalette;
 			RemapPalette = palette;
 			return(old);
 		}								
-		unsigned char *Get_Remap_Palette() const {
+		uint8_t *Get_Remap_Palette() const {
 			return(RemapPalette);
 		}				  
 
@@ -86,7 +88,7 @@ class WWFontClass : public FontClass
 		virtual int String_Pixel_Width(char const * string) const;
 		virtual int Get_Width(void) const;
 		virtual int Get_Height(void) const;
-		virtual Point2D Print(char const * string, Surface & surface, Rect const & cliprect, Point2D const & point, ConvertClass const & converter, unsigned char const * remap=NULL) const;
+		virtual Point2D Print(char const * string, Surface & surface, Rect const & cliprect, Point2D const & point, ConvertClass const & converter, uint8_t const * remap=NULL) const;
 
 		virtual int Set_XSpacing(int x);
 		virtual int Set_YSpacing(int y);
@@ -119,20 +121,20 @@ class WWFontClass : public FontClass
 		**	Header structure of the font data file.
 		*/
 		typedef struct FontType {
-			unsigned short FontLength;
-			unsigned char FontCompress;
-			unsigned char FontDataBlocks;
-			unsigned short InfoBlockOffset;
-			unsigned short OffsetBlockOffset;
-			unsigned short WidthBlockOffset;
-			unsigned short DataBlockOffset;
-			unsigned short HeightOffset;
+			uint16_t FontLength;
+			uint8_t FontCompress;
+			uint8_t FontDataBlocks;
+			uint16_t InfoBlockOffset;
+			uint16_t OffsetBlockOffset;
+			uint16_t WidthBlockOffset;
+			uint16_t DataBlockOffset;
+			uint16_t HeightOffset;
 		} FontType;
 		FontType const * FontData;	
 		
 							  
 		// Pointer to a font palette for the font.
-		unsigned char	*RemapPalette;
+		uint8_t	*RemapPalette;
 									
 		// Pointer to a converter.
 		ConvertClass 	*Converter;

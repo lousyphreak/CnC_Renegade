@@ -414,7 +414,7 @@ void PhysClass::Push_Effects(RenderInfoClass & rinfo)
 				DynamicIBAccessClass ibaccess(BUFFER_TYPE_DYNAMIC_DX8,2*3);
 				{
 					DynamicIBAccessClass::WriteLockClass lock(&ibaccess);
-					unsigned short * indices = lock.Get_Index_Array();
+					uint16_t * indices = lock.Get_Index_Array();
 
 					indices[0] = 0;
 					indices[1] = 1;

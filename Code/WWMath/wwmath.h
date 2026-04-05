@@ -116,7 +116,7 @@ static WWINLINE float Cos(float val);
 static WWINLINE float Sin(float val);
 static WWINLINE float Sqrt(float val);
 static WWINLINE float Inv_Sqrt(float a);
-static WWINLINE long Float_To_Long(float f);
+static WWINLINE int32_t Float_To_Long(float f);
 
 
 static WWINLINE float Fast_Sin(float val);
@@ -150,10 +150,10 @@ static float		Max(float a, float b);
 static float		Lerp(float a, float b, float lerp );
 static double		Lerp(double a, double b, float lerp );
 
-static long			Float_To_Long(double f);
+static int32_t	Float_To_Long(double f);
 
-static unsigned char Unit_Float_To_Byte(float f) { return (unsigned char)(f*255.0f); }
-static float			Byte_To_Unit_Float(unsigned char byte) { return ((float)byte) / 255.0f; }
+static uint8_t Unit_Float_To_Byte(float f) { return (uint8_t)(f*255.0f); }
+static float			Byte_To_Unit_Float(uint8_t byte) { return ((float)byte) / 255.0f; }
 
 static bool			Is_Valid_Float(float x);
 static bool			Is_Valid_Double(double x);
@@ -284,14 +284,14 @@ WWINLINE bool WWMath::Is_Valid_Double(double x)
 // Float to long
 // ----------------------------------------------------------------------------
 
-WWINLINE long WWMath::Float_To_Long(float f)
+WWINLINE int32_t WWMath::Float_To_Long(float f)
 {
-	return static_cast<long>(std::nearbyint(static_cast<double>(f)));
+	return static_cast<int32_t>(std::nearbyint(static_cast<double>(f)));
 }
 
-WWINLINE long WWMath::Float_To_Long(double f)	
+WWINLINE int32_t WWMath::Float_To_Long(double f)	
 {
-	return static_cast<long>(std::nearbyint(f));
+	return static_cast<int32_t>(std::nearbyint(f));
 }
 
 // ----------------------------------------------------------------------------
@@ -457,7 +457,7 @@ WWINLINE int WWMath::Float_To_Int_Chop(const float& f)
     int sign	= (a>>31);												// sign = 0xFFFFFFFF if original value is negative, 0 if positive
     int mantissa	= (a&((1<<23)-1))|(1<<23);						// extract mantissa and add the hidden bit
     int exponent	= ((a&0x7fffffff)>>23)-127;					// extract the exponent
-    int r	= ((unsigned int)(mantissa)<<8)>>(31-exponent);	// ((1<<exponent)*mantissa)>>24 -- (we know that mantissa > (1<<24))
+    int r	= ((uint32_t)(mantissa)<<8)>>(31-exponent);	// ((1<<exponent)*mantissa)>>24 -- (we know that mantissa > (1<<24))
     return ((r ^ (sign)) - sign ) &~ (exponent>>31);			// add original sign. If exponent was negative, make return value 0.
 }
 
@@ -471,7 +471,7 @@ WWINLINE int WWMath::Float_To_Int_Floor (const float& f)
 	int expsign	= ~(exponent>>31);									// 0xFFFFFFFF if exponent is positive, 0 otherwise
 	int imask		= ( (1<<(31-(exponent))))-1;					// mask for true integer values
 	int mantissa	= (a&((1<<23)-1));								// extract mantissa (without the hidden bit)
-	int r			= ((unsigned int)(mantissa|(1<<23))<<8)>>(31-exponent);	// ((1<<exponent)*(mantissa|hidden bit))>>24 -- (we know that mantissa > (1<<24))
+	int r			= ((uint32_t)(mantissa|(1<<23))<<8)>>(31-exponent);	// ((1<<exponent)*(mantissa|hidden bit))>>24 -- (we know that mantissa > (1<<24))
 
 	r = ((r & expsign) ^ (sign)) + ((!((mantissa<<8)&imask)&(expsign^((a-1)>>31)))&sign);	// if (fabs(value)<1.0) value = 0; copy sign; if (value < 0 && value==(int)(value)) value++;
 	return r;

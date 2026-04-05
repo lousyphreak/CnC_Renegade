@@ -281,7 +281,7 @@ void DlgWOLSettings::On_Destroy(void)
 *
 ******************************************************************************/
 
-void DlgWOLSettings::On_Command(int ctrl, int message, DWORD param)
+void DlgWOLSettings::On_Command(int ctrl, int message, uint32_t param)
 	{
 	switch (ctrl)
 		{
@@ -454,9 +454,9 @@ void DlgWOLSettings::InitPersonaCombo(void)
 		{
 		// Populate the persona combo box with the list of WWOnline logins.
 		const LoginInfoList& logins = LoginInfo::GetList();
-		const unsigned int count = logins.size();
+		const uint32_t count = logins.size();
 
-		for (unsigned int index = 0; index < count; ++index)
+		for (uint32_t index = 0; index < count; ++index)
 			{
 			RefPtr<LoginInfo> login = logins[index];
 			WWASSERT(login.IsValid());
@@ -470,7 +470,7 @@ void DlgWOLSettings::InitPersonaCombo(void)
 				if (item >= 0)
 					{
 					LoginProfile* profile = LoginProfile::Get(name, true);
-					combo->Set_Item_Data(item, (uint32)profile);
+					combo->Set_Item_Data(item, (uint32_t)profile);
 					}
 				}
 			}
@@ -706,9 +706,9 @@ void DlgWOLSettings::InitServersCombo(const IRCServerList& servers)
 		int tmpSel = -1;
 
 		// walk the list of servers and add them to the combo box
-		const unsigned int serverCount = servers.size();
+		const uint32_t serverCount = servers.size();
 
-		for (unsigned int index = 0; index < serverCount; ++index)
+		for (uint32_t index = 0; index < serverCount; ++index)
 			{
 			const RefPtr<IRCServerData>& server = servers[index];
 
@@ -732,9 +732,9 @@ void DlgWOLSettings::InitServersCombo(const IRCServerList& servers)
 						float serverLat = server->GetLattitude();
 
 						// Find the ping server with the best time that matches this server's lat/long
-						const unsigned int pingersCount = pingers.size();
+						const uint32_t pingersCount = pingers.size();
 
-						for (unsigned int pingindex = 0; pingindex < pingersCount; ++pingindex)
+						for (uint32_t pingindex = 0; pingindex < pingersCount; ++pingindex)
 							{
 							const RefPtr<PingServerData>& thisPing = pingers[pingindex];
 							float pingLong = thisPing->GetLongitude();
@@ -869,7 +869,7 @@ void DlgWOLSettings::InitSideCombo(void)
 
 			if (item >= 0)
 				{
-				combo->Set_Item_Data(item, (uint32)_teams[index].TeamID);
+				combo->Set_Item_Data(item, (uint32_t)_teams[index].TeamID);
 				}
 
 			++index;
@@ -914,7 +914,7 @@ void DlgWOLSettings::SetSideCombo(int side)
 
 		for (int index = 0; index < count; ++index)
 			{
-			if (combo->Get_Item_Data(index) == (uint32)side)
+			if (combo->Get_Item_Data(index) == (uint32_t)side)
 				{
 				combo->Set_Curr_Sel(index);
 				break;
@@ -951,9 +951,9 @@ void DlgWOLSettings::InitLocaleCombo(void)
 		std::vector<WideStringClass> localeNames;
 		mWOLSession->GetLocaleStrings(localeNames);
 
-		const unsigned int localeCount = localeNames.size();
+		const uint32_t localeCount = localeNames.size();
 
-		for (unsigned int index = 0; index < localeCount; ++index)
+		for (uint32_t index = 0; index < localeCount; ++index)
 			{
 			WideStringClass& locale = localeNames[index];
 			combo->Add_String(locale);

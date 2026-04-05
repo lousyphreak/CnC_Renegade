@@ -326,7 +326,7 @@ TDBObjClass::Set_English_String (const TCHAR *string)
 //
 /////////////////////////////////////////////////////////////////
 void
-TDBObjClass::Set_ID (uint32 id)
+TDBObjClass::Set_ID (uint32_t id)
 {
 	ID = id;
 	return ;
@@ -367,12 +367,12 @@ TDBObjClass::Get_String (void)
 //
 /////////////////////////////////////////////////////////////////
 const WideStringClass &
-TDBObjClass::Get_String (uint32 lang_id)
+TDBObjClass::Get_String (uint32_t lang_id)
 {
 	//
 	//	Default to english on error
 	//
-	if (lang_id >= (uint32)TranslatedStrings.Count ()) {
+	if (lang_id >= (uint32_t)TranslatedStrings.Count ()) {
 		lang_id = TranslateDBClass::LANGID_ENGLISH;
 	}
 
@@ -386,13 +386,13 @@ TDBObjClass::Get_String (uint32 lang_id)
 //
 /////////////////////////////////////////////////////////////////
 void
-TDBObjClass::Set_String (uint32 lang_id, const WCHAR *string)
+TDBObjClass::Set_String (uint32_t lang_id, const WCHAR *string)
 {
 	//
 	//	Grow the translated strings array until we have enough
 	// to cover the requested language
 	//
-	while ((uint32)TranslatedStrings.Count () <= lang_id) {
+	while ((uint32_t)TranslatedStrings.Count () <= lang_id) {
 		TranslatedStrings.Add (WideStringClass (L""));
 	}
 
@@ -418,7 +418,7 @@ TDBObjClass::Set_String (uint32 lang_id, const WCHAR *string)
 //
 /////////////////////////////////////////////////////////////////
 bool
-TDBObjClass::Contains_Translation (uint32 lang_id)
+TDBObjClass::Contains_Translation (uint32_t lang_id)
 {
 	bool retval = false;
 

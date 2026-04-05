@@ -73,7 +73,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CWheeledVehicleDialog message handlers
 
-BOOL CWheeledVehicleDialog::OnInitDialog() 
+int32_t CWheeledVehicleDialog::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
 	
@@ -94,7 +94,7 @@ BOOL CWheeledVehicleDialog::OnInitDialog()
 	return TRUE; 
 }
 
-BOOL CWheeledVehicleDialog::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult) 
+int32_t CWheeledVehicleDialog::OnNotify(uintptr_t wParam, intptr_t lParam, intptr_t* pResult) 
 {
 	// make the spin controls work...
 	switch(wParam) 

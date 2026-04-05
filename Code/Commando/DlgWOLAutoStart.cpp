@@ -133,7 +133,7 @@ void AutoRestartProgressDialogClass::On_Init_Dialog (void)
  * HISTORY:                                                                                    *
  *   11/6/2001 11:03AM ST : Created                                                            *
  *=============================================================================================*/
-void AutoRestartProgressDialogClass::On_Command (int ctrl_id, int message_id, DWORD param)
+void AutoRestartProgressDialogClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	switch (ctrl_id)
 	{
@@ -161,7 +161,7 @@ void AutoRestartProgressDialogClass::On_Command (int ctrl_id, int message_id, DW
  * HISTORY:                                                                                    *
  *   11/6/2001 11:04AM ST : Created                                                            *
  *=============================================================================================*/
-void AutoRestartProgressDialogClass::Add_Text(unsigned short *txt)
+void AutoRestartProgressDialogClass::Add_Text(uint16_t *txt)
 {
 	ListCtrlClass *list_ctrl = (ListCtrlClass *)Get_Dlg_Item(IDC_PROGRESS_INFO);
 	if (list_ctrl) {

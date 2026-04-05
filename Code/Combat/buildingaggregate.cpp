@@ -544,7 +544,7 @@ BuildingAggregateDefClass::BuildingAggregateDefClass( void ) :
  * HISTORY:                                                                                    *
  *   8/29/2000  gth : Created.                                                                 *
  *=============================================================================================*/
-uint32 BuildingAggregateDefClass::Get_Class_ID(void) const	
+uint32_t BuildingAggregateDefClass::Get_Class_ID(void) const	
 { 
 	return CLASSID_BUILDINGAGGREGATEDEF; 
 }

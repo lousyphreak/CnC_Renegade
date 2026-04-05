@@ -39,6 +39,8 @@
 #ifndef VXLDBG_H
 #define VXLDBG_H
 
+#include <cstdint>
+
 #ifndef ALWAYS_H
 #include "always.h"
 #endif
@@ -62,7 +64,7 @@ public:
 	~VoxelDebugWindowClass(void);
 
 	void	Display_Window(void);
-	bool	Dialog_Proc(HWND hWnd,UINT message,WPARAM wParam,LPARAM);
+	bool	Dialog_Proc(HWND hWnd,uint32_t message,uintptr_t wParam,intptr_t);
 
 private:
 

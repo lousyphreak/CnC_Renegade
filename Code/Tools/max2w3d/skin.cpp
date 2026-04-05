@@ -54,10 +54,10 @@ static GenSubObjType _SubObjectTypeVertex(1);
 /*
 ** Static functions
 */
-static BOOL CALLBACK _sot_dialog_proc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam);
-static BOOL CALLBACK _skeleton_dialog_thunk(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam);
-static BOOL CALLBACK _bone_influence_dialog_thunk(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam);
-static TriObject * Get_Tri_Object(TimeValue t,ObjectState & os,Interval & valid,BOOL & needsdel);
+static int32_t CALLBACK _sot_dialog_proc(HWND hWnd,uint32_t message,uintptr_t wParam,intptr_t lParam);
+static int32_t CALLBACK _skeleton_dialog_thunk(HWND hWnd,uint32_t message,uintptr_t wParam,intptr_t lParam);
+static int32_t CALLBACK _bone_influence_dialog_thunk(HWND hWnd,uint32_t message,uintptr_t wParam,intptr_t lParam);
+static TriObject * Get_Tri_Object(TimeValue t,ObjectState & os,Interval & valid,int32_t & needsdel);
 static float Bone_Distance(INode * bone,TimeValue time,const Point3 & vertex);
 
 /*
@@ -82,7 +82,7 @@ class SkinWSMObjectClassDesc:public ClassDesc
 public:
 
 	int 				IsPublic()								{ return 1; }
-	void *			Create(BOOL loading = FALSE)		{ return new SkinWSMObjectClass; }
+	void *			Create(int32_t loading = FALSE)		{ return new SkinWSMObjectClass; }
 	const TCHAR *	ClassName()								{ return _T("WWSkin"); }
 	SClass_ID		SuperClassID()							{ return WSM_OBJECT_CLASS_ID; }
 	Class_ID			ClassID()								{ return SKIN_OBJ_CLASS_ID; }
@@ -103,7 +103,7 @@ class SkinModClassDesc:public ClassDesc
 public:
 
 	int 				IsPublic()								{ return 0; }
-	void *			Create(BOOL loading = FALSE)		{ return new SkinModifierClass; }
+	void *			Create(int32_t loading = FALSE)		{ return new SkinModifierClass; }
 	const TCHAR *	ClassName()								{ return _T("WWSkin"); }
 	SClass_ID		SuperClassID()							{ return WSM_CLASS_ID; }
 	Class_ID			ClassID()								{ return SKIN_MOD_CLASS_ID; }
@@ -175,7 +175,7 @@ SkinWSMObjectClass::~SkinWSMObjectClass(void)
 	}
 }
 
-void SkinWSMObjectClass::BeginEditParams(IObjParam  *ip, ULONG flags,Animatable *prev)
+void SkinWSMObjectClass::BeginEditParams(IObjParam  *ip, uint32_t flags,Animatable *prev)
 {
 	OutputDebugString("BeginEditParams\n");
 	SimpleWSMObject::BeginEditParams(ip,flags,prev);
@@ -195,10 +195,10 @@ void SkinWSMObjectClass::BeginEditParams(IObjParam  *ip, ULONG flags,Animatable 
 					MAKEINTRESOURCE(IDD_SKIN_SOT),
 					_sot_dialog_proc,
 					Get_String(IDS_SOT), 
-					(LPARAM)InterfacePtr,
+					(intptr_t)InterfacePtr,
 					APPENDROLL_CLOSED);
 	} else {
-		SetWindowLong(SotHWND,GWL_USERDATA,(LPARAM)ip);
+		SetWindowLong(SotHWND,GWL_USERDATA,(intptr_t)ip);
 	}
 
 	/*
@@ -210,16 +210,16 @@ void SkinWSMObjectClass::BeginEditParams(IObjParam  *ip, ULONG flags,Animatable 
 					MAKEINTRESOURCE(IDD_SKELETON_PARAMETERS),
 					_skeleton_dialog_thunk,
 					Get_String(IDS_SKELETON_PARAMETERS), 
-					(LPARAM)this,
+					(intptr_t)this,
 					0);
 	} else {
-		SetWindowLong(SkeletonHWND,GWL_USERDATA,(LPARAM)this);
+		SetWindowLong(SkeletonHWND,GWL_USERDATA,(intptr_t)this);
 	}
 
 	Update_Bone_List();
 }
 
-void SkinWSMObjectClass::EndEditParams(IObjParam *ip, ULONG flags,Animatable *next)
+void SkinWSMObjectClass::EndEditParams(IObjParam *ip, uint32_t flags,Animatable *next)
 {
 	OutputDebugString("SkinWSMObjectClass::EndEditParams");
 	SimpleWSMObject::EndEditParams(ip,flags,next);
@@ -513,7 +513,7 @@ void SkinWSMObjectClass::Update_Bone_List(void)
 	*/
 	for (int i=0; i<BoneTab.Count(); i++) {
 		if (BoneTab[i] != NULL) {
-			SendMessage(BoneListHWND,LB_ADDSTRING,0,(LPARAM)BoneTab[i]->GetName());
+			SendMessage(BoneListHWND,LB_ADDSTRING,0,(intptr_t)BoneTab[i]->GetName());
 		}
 	}
 }
@@ -528,16 +528,16 @@ int SkinWSMObjectClass::Find_Bone(INode * node)
 
 IOResult SkinWSMObjectClass::Save(ISave * isave)
 {
-	ULONG nb;
+	uint32_t nb;
 	SimpleWSMObject::Save(isave);
 
 	/*
 	** Save the number of bones
 	*/
-	ULONG numbones = BoneTab.Count();
+	uint32_t numbones = BoneTab.Count();
 	if (numbones > 0) {
 		isave->BeginChunk(NUM_BONES_CHUNK);
-		isave->Write(&numbones,sizeof(ULONG),&nb);
+		isave->Write(&numbones,sizeof(uint32_t),&nb);
 		isave->EndChunk();
 	}
 	return IO_OK;
@@ -548,7 +548,7 @@ IOResult SkinWSMObjectClass::Load(ILoad * iload)
 	SimpleWSMObject::Load(iload);
 
 	IOResult res;
-	ULONG nb;
+	uint32_t nb;
 	int level = -1;
 
 	while (IO_OK==(res=iload->OpenChunk())) {
@@ -556,7 +556,7 @@ IOResult SkinWSMObjectClass::Load(ILoad * iload)
 		switch (iload->CurChunkID())  {
 
 			case NUM_BONES_CHUNK: {
-				ULONG numbones;
+				uint32_t numbones;
 				res = iload->Read(&numbones,sizeof(numbones),&nb);
 				BoneTab.SetCount(numbones);
 				for (int i=0; i<BoneTab.Count(); i++) {
@@ -647,7 +647,7 @@ RefTargetHandle SkinModifierClass::Clone(RemapDir & remap)
 }
 
 
-void SkinModifierClass::BeginEditParams(IObjParam * ip, ULONG flags,Animatable * prev)
+void SkinModifierClass::BeginEditParams(IObjParam * ip, uint32_t flags,Animatable * prev)
 {
 	OutputDebugString("SkinModifierClass::BeginEditParams\n");
 	static int i=0;
@@ -682,7 +682,7 @@ void SkinModifierClass::BeginEditParams(IObjParam * ip, ULONG flags,Animatable *
 }
 
 
-void SkinModifierClass::EndEditParams(IObjParam *ip, ULONG flags,Animatable *next)
+void SkinModifierClass::EndEditParams(IObjParam *ip, uint32_t flags,Animatable *next)
 {
 	OutputDebugString("SkinModifierClass::EndEditParams");
 	/*
@@ -887,15 +887,15 @@ void SkinModifierClass::ModifyObject(TimeValue t, ModContext & mc, ObjectState *
 
 IOResult SkinModifierClass::Save(ISave * isave)
 {
-	ULONG nb;
+	uint32_t nb;
 	Modifier::Save(isave);
 
 	/*
 	** Save the sub object selection level
 	*/
-	short sl = SubObjSelLevel;
+	int16_t sl = SubObjSelLevel;
 	isave->BeginChunk(SEL_LEVEL_CHUNK);
-	isave->Write(&sl,sizeof(short),&nb);
+	isave->Write(&sl,sizeof(int16_t),&nb);
 	isave->EndChunk();
 
 	return IO_OK;
@@ -906,7 +906,7 @@ IOResult SkinModifierClass::Load(ILoad * iload)
 	Modifier::Load(iload);
 
 	IOResult res;
-	ULONG nb;
+	uint32_t nb;
 	int level = -1;
 
 	while (IO_OK==(res=iload->OpenChunk())) {
@@ -914,8 +914,8 @@ IOResult SkinModifierClass::Load(ILoad * iload)
 		switch (iload->CurChunkID())  {
 
 			case SEL_LEVEL_CHUNK: {
-				short sl;
-				res = iload->Read(&sl,sizeof(short),&nb);
+				int16_t sl;
+				res = iload->Read(&sl,sizeof(int16_t),&nb);
 				SubObjSelLevel = sl;
 			}
 			break;
@@ -1074,7 +1074,7 @@ int SkinModifierClass::HitTest
 	return res;	
 }
 
-void SkinModifierClass::SelectSubComponent(HitRecord *hitRec, BOOL selected, BOOL all, BOOL invert)
+void SkinModifierClass::SelectSubComponent(HitRecord *hitRec, int32_t selected, int32_t all, int32_t invert)
 {
 	SkinDataClass * skindata = NULL;
 	int count = 0;
@@ -1473,7 +1473,7 @@ void SkinModifierClass::Install_Named_Selection_Sets(void)
 	}	
 }
 
-void SkinModifierClass::Auto_Attach_Verts(BOOL all)
+void SkinModifierClass::Auto_Attach_Verts(int32_t all)
 {
 	assert(InterfacePtr);
 
@@ -1496,7 +1496,7 @@ void SkinModifierClass::Auto_Attach_Verts(BOOL all)
 	** Get a triobject representing the object state in the base pose.
 	*/
 	Interval valid;
-	BOOL needsdel;
+	int32_t needsdel;
 
 	TimeValue basetime = WSMObjectRef->Get_Base_Pose_Time();
 	ObjectState os = nodes[0]->EvalWorldState(basetime);
@@ -1605,7 +1605,7 @@ void SkinModifierClass::Install_Bone_Influence_Dialog(void)
 				MAKEINTRESOURCE(IDD_BONE_INFLUENCE_PARAMS),
 				_bone_influence_dialog_thunk,
 				string, 
-				(LPARAM)this,
+				(intptr_t)this,
 				0);
 }
 
@@ -1626,7 +1626,7 @@ void SkinModifierClass::Remove_Bone_Influence_Dialog(void)
 * _sot_dialog_proc
 *
 *********************************************************************************/
-static BOOL CALLBACK _sot_dialog_proc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
+static int32_t CALLBACK _sot_dialog_proc(HWND hWnd,uint32_t message,uintptr_t wParam,intptr_t lParam)
 {
 	IObjParam *ip = (IObjParam*)GetWindowLong(hWnd,GWL_USERDATA);
 
@@ -1653,20 +1653,20 @@ static BOOL CALLBACK _sot_dialog_proc(HWND hWnd,UINT message,WPARAM wParam,LPARA
 * _skeleton_dialog_proc
 *
 *********************************************************************************/
-static BOOL CALLBACK _skeleton_dialog_thunk(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
+static int32_t CALLBACK _skeleton_dialog_thunk(HWND hWnd,uint32_t message,uintptr_t wParam,intptr_t lParam)
 {
-	SkinWSMObjectClass * skinobj = (SkinWSMObjectClass *)GetWindowLong(hWnd,GWL_USERDATA);
+	SkinWSMObjectClass * skinobj = reinterpret_cast<SkinWSMObjectClass *>(GetWindowLongPtr(hWnd,GWL_USERDATA));
 	if (!skinobj && message != WM_INITDIALOG) return FALSE;
 	
 	if (message == WM_INITDIALOG) {
 		skinobj = (SkinWSMObjectClass *)lParam;
-		SetWindowLong(hWnd,GWL_USERDATA,(LONG)skinobj);			
+		SetWindowLongPtr(hWnd,GWL_USERDATA,reinterpret_cast<intptr_t>(skinobj));			
 	}
 
 	return skinobj->Skeleton_Dialog_Proc(hWnd,message,wParam,lParam);
 }
 
-BOOL SkinWSMObjectClass::Skeleton_Dialog_Proc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
+int32_t SkinWSMObjectClass::Skeleton_Dialog_Proc(HWND hWnd,uint32_t message,uintptr_t wParam,intptr_t lParam)
 {
 	switch (message) {
 
@@ -1762,21 +1762,21 @@ BOOL SkinWSMObjectClass::Skeleton_Dialog_Proc(HWND hWnd,UINT message,WPARAM wPar
 * Bone_Influence_Dialog_Proc
 *
 *********************************************************************************/
-static BOOL CALLBACK _bone_influence_dialog_thunk(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
+static int32_t CALLBACK _bone_influence_dialog_thunk(HWND hWnd,uint32_t message,uintptr_t wParam,intptr_t lParam)
 {
-	SkinModifierClass * skinmod = (SkinModifierClass *)GetWindowLong(hWnd,GWL_USERDATA);
+	SkinModifierClass * skinmod = reinterpret_cast<SkinModifierClass *>(GetWindowLongPtr(hWnd,GWL_USERDATA));
 	if (!skinmod && message != WM_INITDIALOG) return FALSE;
 	
 	if (message == WM_INITDIALOG) {
 			skinmod = (SkinModifierClass *)lParam;
-			SetWindowLong(hWnd,GWL_USERDATA,(LONG)skinmod);			
+			SetWindowLongPtr(hWnd,GWL_USERDATA,reinterpret_cast<intptr_t>(skinmod));			
 	}
 
 	return skinmod->Bone_Influence_Dialog_Proc(hWnd,message,wParam,lParam);
 }
 
 
-BOOL SkinModifierClass::Bone_Influence_Dialog_Proc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
+int32_t SkinModifierClass::Bone_Influence_Dialog_Proc(HWND hWnd,uint32_t message,uintptr_t wParam,intptr_t lParam)
 {
 	switch (message) {
 
@@ -1866,7 +1866,7 @@ BOOL SkinModifierClass::Bone_Influence_Dialog_Proc(HWND hWnd,UINT message,WPARAM
 	}
 }
 
-static TriObject * Get_Tri_Object(TimeValue t,ObjectState & os,Interval & valid,BOOL & needsdel)
+static TriObject * Get_Tri_Object(TimeValue t,ObjectState & os,Interval & valid,int32_t & needsdel)
 {	
 	needsdel = FALSE;
 	valid &= os.Validity(t);

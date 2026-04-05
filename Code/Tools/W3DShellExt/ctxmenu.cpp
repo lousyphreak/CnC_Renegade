@@ -40,7 +40,7 @@
 
 
 //
-//  FUNCTION: CShellExt::QueryContextMenu(HMENU, UINT, UINT, UINT, UINT)
+//  FUNCTION: CShellExt::QueryContextMenu(HMENU, uint32_t, uint32_t, uint32_t, uint32_t)
 //
 //  PURPOSE: Called by the shell just before the context menu is displayed.
 //           This is where you add your specific menu items.
@@ -59,13 +59,13 @@
 //
 
 STDMETHODIMP CShellExt::QueryContextMenu(HMENU hMenu,
-                                         UINT indexMenu,
-                                         UINT idCmdFirst,
-                                         UINT idCmdLast,
-                                         UINT uFlags){
-    UINT idCmd = idCmdFirst;
+                                         uint32_t indexMenu,
+                                         uint32_t idCmdFirst,
+                                         uint32_t idCmdLast,
+                                         uint32_t uFlags){
+    uint32_t idCmd = idCmdFirst;
     char szMenuText[64];
-    BOOL bAppendItems=TRUE;
+    int32_t bAppendItems=TRUE;
     if ((uFlags & 0x000F) == CMF_NORMAL){  //Check == here, since CMF_NORMAL=0
         lstrcpy(szMenuText, "&Convert to P3D");
     } else{
@@ -94,14 +94,14 @@ STDMETHODIMP CShellExt::QueryContextMenu(HMENU hMenu,
 }
 STDMETHODIMP CShellExt::InvokeCommand(LPCMINVOKECOMMANDINFO lpcmi)
 {
-	HRESULT hr = E_INVALIDARG;
+	int32_t hr = E_INVALIDARG;
 
     //If HIWORD(lpcmi->lpVerb) then we have been called programmatically
     //and lpVerb is a command that should be invoked.  Otherwise, the shell
     //has called us, and LOWORD(lpcmi->lpVerb) is the menu ID the user has
     //selected.  Actually, it's (menu ID - idCmdFirst) from QueryContextMenu().
 	if (!HIWORD(lpcmi->lpVerb)){
-        UINT idCmd = LOWORD(lpcmi->lpVerb);
+        uint32_t idCmd = LOWORD(lpcmi->lpVerb);
         switch (idCmd){
 				case 0:{
                 hr = DoW3DMenu1(lpcmi->hwnd,lpcmi->lpDirectory,lpcmi->lpVerb,lpcmi->lpParameters, lpcmi->nShow);
@@ -111,11 +111,11 @@ STDMETHODIMP CShellExt::InvokeCommand(LPCMINVOKECOMMANDINFO lpcmi)
     }
     return hr;
 }
-STDMETHODIMP CShellExt::GetCommandString(UINT idCmd,
-                                         UINT uFlags,
-                                         UINT FAR *reserved,
+STDMETHODIMP CShellExt::GetCommandString(uint32_t idCmd,
+                                         uint32_t uFlags,
+                                         uint32_t FAR *reserved,
                                          LPSTR pszName,
-                                         UINT cchMax){
+                                         uint32_t cchMax){
     switch (idCmd){
         case 0:
             lstrcpy(pszName, "New menu item number 1");

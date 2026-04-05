@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 
@@ -60,10 +62,10 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(EditStringTwiddlerDialogClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	afx_msg void OnAddButton();
 	virtual void OnOK();
-	afx_msg void OnKeydownListctrl(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnKeydownListctrl(NMHDR* pNMHDR, intptr_t* pResult);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 

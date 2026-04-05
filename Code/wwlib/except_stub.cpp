@@ -5,9 +5,9 @@
 #include <mutex>
 #include <vector>
 
-unsigned long ExceptionReturnStack = 0;
-unsigned long ExceptionReturnAddress = 0;
-unsigned long ExceptionReturnFrame = 0;
+uint32_t ExceptionReturnStack = 0;
+uint32_t ExceptionReturnAddress = 0;
+uint32_t ExceptionReturnFrame = 0;
 
 namespace {
 bool g_trying_to_exit = false;
@@ -43,7 +43,7 @@ int Exception_Handler(int, EXCEPTION_POINTERS *)
     return 0;
 }
 
-int Stack_Walk(unsigned long *, int, CONTEXT *)
+int Stack_Walk(uint32_t *, int, CONTEXT *)
 {
     return 0;
 }
@@ -61,7 +61,7 @@ void Load_Image_Helper(void)
 {
 }
 
-void Register_Thread_ID(unsigned long thread_id, char * thread_name, bool main)
+void Register_Thread_ID(uint32_t thread_id, char * thread_name, bool main)
 {
     if (thread_name == nullptr) {
         return;
@@ -85,7 +85,7 @@ void Register_Thread_ID(unsigned long thread_id, char * thread_name, bool main)
     threads.push_back(thread);
 }
 
-void Unregister_Thread_ID(unsigned long thread_id, char * thread_name)
+void Unregister_Thread_ID(uint32_t thread_id, char * thread_name)
 {
     if (thread_name == nullptr) {
         return;
@@ -118,7 +118,7 @@ bool Is_Trying_To_Exit(void)
     return g_trying_to_exit;
 }
 
-unsigned long Get_Main_Thread_ID(void)
+uint32_t Get_Main_Thread_ID(void)
 {
     std::lock_guard<std::mutex> lock(Thread_List_Mutex());
     const std::vector<ThreadInfoType> & threads = Thread_List();

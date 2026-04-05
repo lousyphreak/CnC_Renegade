@@ -434,7 +434,7 @@ DX8TextureCategoryClass* DX8FVFCategoryContainer::Find_Matching_Texture_Category
 		if (dest_it.Peek_Obj()->Peek_Texture(stage)==texture) {
 			dest_tex_category=dest_it.Peek_Obj();
 			bool all_textures_same = true;
-			for (unsigned int s = 0; s < MeshMatDescClass::MAX_TEX_STAGES; s++) {
+			for (uint32_t s = 0; s < MeshMatDescClass::MAX_TEX_STAGES; s++) {
 				if (stage!=s) {
 					all_textures_same = all_textures_same && (dest_tex_category->Peek_Texture(s) == ref_category->Peek_Texture(s));
 				}
@@ -461,7 +461,7 @@ DX8TextureCategoryClass* DX8FVFCategoryContainer::Find_Matching_Texture_Category
 		if (Equal_Material(dest_it.Peek_Obj()->Peek_Material(),vmat)) {
 			dest_tex_category=dest_it.Peek_Obj();
 			bool all_textures_same = true;
-			for (unsigned int s = 0; s < MeshMatDescClass::MAX_TEX_STAGES; s++)
+			for (uint32_t s = 0; s < MeshMatDescClass::MAX_TEX_STAGES; s++)
 				all_textures_same = all_textures_same && (dest_tex_category->Peek_Texture(s) == ref_category->Peek_Texture(s));			
 			if (all_textures_same &&				
 				dest_tex_category->Get_Shader()==ref_category->Get_Shader()) {
@@ -640,7 +640,7 @@ void DX8FVFCategoryContainer::Change_Polygon_Renderer_Material(
 
 // ----------------------------------------------------------------------------
 
-unsigned DX8FVFCategoryContainer::Define_FVF(MeshModelClass* mmc,unsigned int * user_lighting,bool enable_lighting)
+unsigned DX8FVFCategoryContainer::Define_FVF(MeshModelClass* mmc,uint32_t * user_lighting,bool enable_lighting)
 {
 	if ((!!mmc->Get_Flag(MeshGeometryClass::SORT)) && WW3D::Is_Sorting_Enabled()) {
 		return dynamic_fvf_type;
@@ -926,9 +926,9 @@ public:
 		return mesh;
 	}
 
-	unsigned short* Get_Polygon_Array(unsigned pass)
+	uint16_t* Get_Polygon_Array(unsigned pass)
 	{
-		return (unsigned short*)polygon_array;
+		return (uint16_t*)polygon_array;
 	}
 };
 
@@ -964,8 +964,8 @@ void DX8RigidFVFCategoryContainer::Add_Mesh(MeshClass* mesh_)
 
 	VertexBufferClass::AppendLockClass l(vertex_buffer,used_vertices,split_table.Get_Vertex_Count());
 	const FVFInfoClass fi=vertex_buffer->FVF_Info();
-	unsigned char *vb=(unsigned char*) l.Get_Vertex_Array();
-	unsigned int i;
+	uint8_t *vb=(uint8_t*) l.Get_Vertex_Array();
+	uint32_t i;
 	const Vector3 *locs=split_table.Get_Vertex_Array();
 	const Vector3 *norms=split_table.Get_Vertex_Normal_Array();
 	const unsigned *diffuse=split_table.Get_Color_Array(0);
@@ -980,17 +980,17 @@ void DX8RigidFVFCategoryContainer::Add_Mesh(MeshClass* mesh_)
 
 		if ((FVF&D3DFVF_DIFFUSE)==D3DFVF_DIFFUSE) {
 			if (diffuse) {
-				*(unsigned int*)(vb+fi.Get_Diffuse_Offset())=diffuse[i];
+				*(uint32_t*)(vb+fi.Get_Diffuse_Offset())=diffuse[i];
 			} else {
-				*(unsigned int*)(vb+fi.Get_Diffuse_Offset()) = 0xFFFFFFFF;
+				*(uint32_t*)(vb+fi.Get_Diffuse_Offset()) = 0xFFFFFFFF;
 			}
 		}
 		
 		if ((FVF&D3DFVF_SPECULAR)==D3DFVF_SPECULAR) {
 			if (specular) {
-				*(unsigned int*)(vb+fi.Get_Specular_Offset())=specular[i];
+				*(uint32_t*)(vb+fi.Get_Specular_Offset())=specular[i];
 			} else {
-				*(unsigned int*)(vb+fi.Get_Specular_Offset()) = 0xFFFFFFFF;
+				*(uint32_t*)(vb+fi.Get_Specular_Offset()) = 0xFFFFFFFF;
 			}
 		}
 
@@ -1028,7 +1028,7 @@ void DX8RigidFVFCategoryContainer::Add_Mesh(MeshClass* mesh_)
 	}
 	
 	for (int j=0; j<uvcount; j++) {
-		unsigned char *vb=(unsigned char*) l.Get_Vertex_Array();
+		uint8_t *vb=(uint8_t*) l.Get_Vertex_Array();
 		const Vector2*uvs=split_table.Get_UV_Array(j);
 		if (uvs) {
 			for (i=0; i<split_table.Get_Vertex_Count(); i++)
@@ -1061,7 +1061,7 @@ void DX8FVFCategoryContainer::Insert_To_Texture_Category(
 	while (!it.Is_Done()) {
 		DX8TextureCategoryClass * tex_category=it.Peek_Obj();
 		bool all_textures_same = true;
-		for (unsigned int stage = 0; stage < MeshMatDescClass::MAX_TEX_STAGES; stage++) {
+		for (uint32_t stage = 0; stage < MeshMatDescClass::MAX_TEX_STAGES; stage++) {
 			all_textures_same = all_textures_same && (tex_category->Peek_Texture(stage) == texs[stage]);
 		}
 		if (all_textures_same && Equal_Material(tex_category->Peek_Material(),mat) && tex_category->Get_Shader()==shader) {
@@ -1113,7 +1113,7 @@ struct Textures_Material_And_Shader_Booking_Struct
 	{
 		for (unsigned a=0;a<added_type_count;++a) {
 			bool all_textures_same = true;
-			for (unsigned int stage = 0; stage < MeshMatDescClass::MAX_TEX_STAGES; stage++) {
+			for (uint32_t stage = 0; stage < MeshMatDescClass::MAX_TEX_STAGES; stage++) {
 				all_textures_same = all_textures_same && (texs[stage] == added_textures[stage][a]);
 			}
 			if (all_textures_same && Equal_Material(mat,added_materials[a]) && shd==added_shaders[a]) {
@@ -1121,7 +1121,7 @@ struct Textures_Material_And_Shader_Booking_Struct
 			}
 		}
 		WWASSERT(added_type_count<MAX_ADDED_TYPE_COUNT);
-		for (unsigned int stage = 0; stage < MeshMatDescClass::MAX_TEX_STAGES; stage++) {
+		for (uint32_t stage = 0; stage < MeshMatDescClass::MAX_TEX_STAGES; stage++) {
 			added_textures[stage][added_type_count]=texs[stage];
 		}
 		added_materials[added_type_count]=mat;
@@ -1393,7 +1393,7 @@ unsigned DX8TextureCategoryClass::Add_Mesh(
 
 	for (int i=0;i<poly_count;++i) {
 		bool all_textures_same = true;
-		for (unsigned int stage = 0; stage < MeshMatDescClass::MAX_TEX_STAGES; stage++) {
+		for (uint32_t stage = 0; stage < MeshMatDescClass::MAX_TEX_STAGES; stage++) {
 			all_textures_same = all_textures_same && (split_table.Peek_Texture(i, pass, stage) == textures[stage]);
 		}
 		VertexMaterialClass* mat=split_table.Peek_Material(i,pass);
@@ -1425,36 +1425,36 @@ unsigned DX8TextureCategoryClass::Add_Mesh(
 			PolygonRendererList.Add_Tail(p_renderer);
 
 			IndexBufferClass::AppendLockClass l(index_buffer,index_offset,index_count);
-			unsigned short* dst_indices=l.Get_Index_Array();
+			uint16_t* dst_indices=l.Get_Index_Array();
 
-			unsigned short vmin=0xffff;
-			unsigned short vmax=0;
+			uint16_t vmin=0xffff;
+			uint16_t vmax=0;
 
 			/*
 			** Iterate over the polys for this pass, adding each one that matches this texture+material+shader
 			*/
 			for (int i=0;i<poly_count;++i) {
 				bool all_textures_same = true;
-				for (unsigned int stage = 0; stage < MeshMatDescClass::MAX_TEX_STAGES; stage++) {
+				for (uint32_t stage = 0; stage < MeshMatDescClass::MAX_TEX_STAGES; stage++) {
 					all_textures_same = all_textures_same && (split_table.Peek_Texture(i, pass, stage) == textures[stage]);
 				}
 				VertexMaterialClass* mat=split_table.Peek_Material(i,pass);
 				ShaderClass shd=split_table.Peek_Shader(i,pass);
 
 				if (all_textures_same && Equal_Material(mat,material) && shd==shader) {
-					unsigned short idx;
+					uint16_t idx;
 
-					idx=(unsigned short)(src_indices[i][0]+vertex_offset);
+					idx=(uint16_t)(src_indices[i][0]+vertex_offset);
 					vmin=MIN(vmin,idx);
 					vmax=MAX(vmax,idx);
 					*dst_indices++=idx;
 
-					idx=(unsigned short)(src_indices[i][1]+vertex_offset);
+					idx=(uint16_t)(src_indices[i][1]+vertex_offset);
 					vmin=MIN(vmin,idx);
 					vmax=MAX(vmax,idx);
 					*dst_indices++=idx;
 
-					idx=(unsigned short)(src_indices[i][2]+vertex_offset);
+					idx=(uint16_t)(src_indices[i][2]+vertex_offset);
 					vmin=MIN(vmin,idx);
 					vmax=MAX(vmax,idx);
 					*dst_indices++=idx;
@@ -1775,7 +1775,7 @@ void DX8MeshRendererClass::Register_Mesh_Type(MeshClass* mesh)
 	
 	} else {
 
-		unsigned int * user_lighting = mesh->Get_User_Lighting_Array();
+		uint32_t * user_lighting = mesh->Get_User_Lighting_Array();
 		bool sorting = Requires_Sorting_Renderer_Registration(mmc);
 		MeshClass * existing_mesh = _RegisteredMeshTable.Get(MeshRegKeyStruct(mmc,user_lighting,sorting));
 		if (existing_mesh != NULL) {

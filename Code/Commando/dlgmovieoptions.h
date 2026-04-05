@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __DLGOPTIONSMOVIE_H
@@ -69,12 +71,12 @@ public:
 	//	Inherited
 	//
 	void		On_Init_Dialog (void);
-	void		On_Command (int ctrl_id, int mesage_id, DWORD param);
+	void		On_Command (int ctrl_id, int mesage_id, uint32_t param);
 	void		On_Frame_Update (void);
 	void		Render (void);
 	void		On_ListCtrl_Delete_Entry (ListCtrlClass *list_ctrl, int ctrl_id, int item_index);
 	void		On_ListCtrl_DblClk (ListCtrlClass *list_ctrl, int ctrl_id, int item_index);
-	bool		On_Key_Down (uint32 key_id, uint32 key_data);
+	bool		On_Key_Down (uint32_t key_id, uint32_t key_data);
 
 	//
 	//	Notification

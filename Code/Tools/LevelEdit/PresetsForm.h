@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // PresetsForm.h : header file
 //
@@ -99,15 +101,15 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(PresetsFormClass)
-	afx_msg void OnSize(UINT nType, int cx, int cy);
-	virtual BOOL OnInitDialog();
+	afx_msg void OnSize(uint32_t nType, int cx, int cy);
+	virtual int32_t OnInitDialog();
 	afx_msg void OnAdd();
-	afx_msg void OnDeleteitemPresetsTree(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnDeleteitemPresetsTree(NMHDR* pNMHDR, intptr_t* pResult);
 	afx_msg void OnModify();
 	afx_msg void OnMake();
 	afx_msg void OnAddTemp();
 	afx_msg void OnDelete();
-	afx_msg void OnSelchangedPresetsTree(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnSelchangedPresetsTree(NMHDR* pNMHDR, intptr_t* pResult);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 
@@ -130,10 +132,10 @@ protected:
 	//	Protected methods
 	/////////////////////////////////////////////////////////
 	void								Fill_In_Presets (HTREEITEM root_item);
-	void								Fill_In_Preset_Children (HTREEITEM root_item, uint32 parent_id);
+	void								Fill_In_Preset_Children (HTREEITEM root_item, uint32_t parent_id);
 
-	HTREEITEM						Find_Preset (HTREEITEM root_item, uint32 id);
-	HTREEITEM						Find_Factory (HTREEITEM root_item, uint32 id);
+	HTREEITEM						Find_Preset (HTREEITEM root_item, uint32_t id);
+	HTREEITEM						Find_Factory (HTREEITEM root_item, uint32_t id);
 
 	void								Set_Item_Data (HTREEITEM item, DefinitionFactoryClass *factory);
 	void								Set_Item_Data (HTREEITEM item, PresetClass *preset);

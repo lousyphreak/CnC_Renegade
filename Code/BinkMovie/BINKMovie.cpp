@@ -33,7 +33,7 @@ class BINKMovieClass
 		HBINK Bink;
 		bool FrameChanged;
 		unsigned TextureCount;
-		unsigned long TicksPerFrame;
+		uint32_t TicksPerFrame;
 
 		struct TextureInfoStruct {
 			TextureClass* Texture;
@@ -46,7 +46,7 @@ class BINKMovieClass
 		};
 
 		TextureInfoStruct* TextureInfos;
-		unsigned char* TempBuffer;
+		uint8_t* TempBuffer;
 		Render2DClass Renderer;
 		SubTitleManagerClass* SubTitleManager;
 
@@ -137,7 +137,7 @@ BINKMovieClass::BINKMovieClass(const char* filename, const char* subtitlename, F
 		return;
 	}
 
-	TempBuffer = new unsigned char[Bink->Width * Bink->Height*2];
+	TempBuffer = new uint8_t[Bink->Width * Bink->Height*2];
 
 	const D3DCAPS8& dx8caps = DX8Wrapper::Get_Current_Caps()->Get_DX8_Caps();
 	unsigned poweroftwowidth = 1;
@@ -213,7 +213,7 @@ BINKMovieClass::BINKMovieClass(const char* filename, const char* subtitlename, F
 	Renderer.Reset();
 
 	// Calculate the time per frame of video
-	unsigned int rate = (Bink->FrameRate / Bink->FrameRateDiv);
+	uint32_t rate = (Bink->FrameRate / Bink->FrameRateDiv);
 	TicksPerFrame = (60 / rate);
 
 	if (subtitlename && font) {
@@ -258,7 +258,7 @@ void BINKMovieClass::Update()
 }
 
 
-static unsigned char* Get_Tex_Address(unsigned char* buffer, int x, int y, int w, int h)
+static uint8_t* Get_Tex_Address(uint8_t* buffer, int x, int y, int w, int h)
 {
 	if (x < 0) {
 		x = 0;
@@ -293,7 +293,7 @@ void BINKMovieClass::Render()
 			IDirect3DTexture8* d3d_texture = TextureInfos[t].Texture->Peek_DX8_Texture();
 
 			if (d3d_texture) {
-				unsigned char* cur_tex_ptr = Get_Tex_Address(TempBuffer, TextureInfos[t].TextureLocX,
+				uint8_t* cur_tex_ptr = Get_Tex_Address(TempBuffer, TextureInfos[t].TextureLocX,
 					TextureInfos[t].TextureLocY, Bink->Width, Bink->Height);
 
 				unsigned w = TextureInfos[t].TextureWidth;
@@ -311,7 +311,7 @@ void BINKMovieClass::Render()
 				if (texture != NULL) {
 					const size_t row_bytes = static_cast<size_t>(w) * BgfxCompat_Get_Pixel_Size(texture->format);
 					for (unsigned y = 0; y < h; ++y) {
-						unsigned char *dest = texture->bytes.data() + static_cast<size_t>(y) * static_cast<size_t>(texture->width) * BgfxCompat_Get_Pixel_Size(texture->format);
+						uint8_t *dest = texture->bytes.data() + static_cast<size_t>(y) * static_cast<size_t>(texture->width) * BgfxCompat_Get_Pixel_Size(texture->format);
 						memcpy(dest, cur_tex_ptr, row_bytes);
 						cur_tex_ptr += Bink->Width * 2;
 					}
@@ -335,7 +335,7 @@ void BINKMovieClass::Render()
 	}
 
 	if (SubTitleManager) {
-		unsigned long movieTime = (Bink->FrameNum * TicksPerFrame);
+		uint32_t movieTime = (Bink->FrameNum * TicksPerFrame);
 		SubTitleManager->Process(movieTime);
 		SubTitleManager->Render();
 	}

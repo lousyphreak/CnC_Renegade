@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 #include "resource.h"
@@ -54,7 +56,7 @@ public:
 	//{{AFX_VIRTUAL(OpacityVectorDialogClass)
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-	virtual BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult);
+	virtual int32_t OnNotify(uintptr_t wParam, intptr_t lParam, intptr_t* pResult);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -62,10 +64,10 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(OpacityVectorDialogClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	virtual void OnOK();
 	virtual void OnCancel();
-	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
+	afx_msg void OnHScroll(uint32_t nSBCode, uint32_t nPos, CScrollBar* pScrollBar);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 

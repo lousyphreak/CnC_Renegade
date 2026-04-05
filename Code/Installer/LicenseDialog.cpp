@@ -102,7 +102,7 @@ void LicenseDialogClass::Load_License (const char *licensefilename)
 		if ((fileinformation.nFileSizeHigh == 0) && (fileinformation.nFileSizeLow >= sizeof (WCHAR))) {
 
 			int	 			length;
-			unsigned long  bytesreadcount;
+			uint32_t  bytesreadcount;
 			WCHAR			  *buffer;
 
 			length = fileinformation.nFileSizeLow / sizeof (WCHAR);
@@ -148,7 +148,7 @@ void LicenseDialogClass::Load_License (const char *licensefilename)
  * HISTORY:                                                                                    *
  *   08/22/01    IML : Created.                                                                * 
  *=============================================================================================*/
-void LicenseDialogClass::On_Command (int ctrl_id, int message_id, DWORD param)
+void LicenseDialogClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	switch (ctrl_id)
 	{

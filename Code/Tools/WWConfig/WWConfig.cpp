@@ -68,7 +68,7 @@ CWWConfigApp theApp;
 // CWWConfigApp initialization
 //	Modified: 12/06/2001 by	MML	- Retrieving strings from Locomoto file.
 
-BOOL CWWConfigApp::InitInstance()
+int32_t CWWConfigApp::InitInstance()
 {
 	AfxEnableControlContainer();
 

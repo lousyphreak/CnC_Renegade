@@ -67,7 +67,7 @@ void RCMenuClass::Init(RightClickMenuManager* manager, HWND hWnd, IPoint2 m)
 
 	if (SelNode) {
 		
-		UINT menuflags;
+		uint32_t menuflags;
 		W3DAppData2Struct * wdata = W3DAppData2Struct::Get_App_Data(SelNode);
 
 		/*
@@ -85,7 +85,7 @@ void RCMenuClass::Init(RightClickMenuManager* manager, HWND hWnd, IPoint2 m)
 		/*
 		** Add the pointer
 		*/
-//		sprintf(string,"0x%X",(unsigned long)SelNode);
+//		sprintf(string,"0x%X",(uint32_t)SelNode);
 //		manager->AddMenu(this, MF_STRING | MF_GRAYED, MENU_NODE_POINTER, string);
 
 		/*
@@ -123,7 +123,7 @@ void RCMenuClass::Init(RightClickMenuManager* manager, HWND hWnd, IPoint2 m)
  * HISTORY:                                                                                    * 
  *   10/26/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-void RCMenuClass::Selected(UINT id)
+void RCMenuClass::Selected(uint32_t id)
 {	
 	switch (id) {
 

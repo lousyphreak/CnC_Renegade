@@ -32,6 +32,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __LEVELFEATURE_H
@@ -82,8 +84,8 @@ public:
 	TYPE						Get_Type (void) const					{ return Type; }
 	void						Set_Type (TYPE type)						{ Type = type; }
 
-	uint32					Get_Mechanism_ID (void) const			{ return MechanismID; }
-	void						Set_Mechanism_ID (uint32 id)			{ MechanismID = id; }
+	uint32_t					Get_Mechanism_ID (void) const			{ return MechanismID; }
+	void						Set_Mechanism_ID (uint32_t id)			{ MechanismID = id; }
 
 	const OBBoxClass &	Get_Start (void) const					{ return StartZone; }
 	void						Set_Start (const OBBoxClass &zone);
@@ -113,7 +115,7 @@ private:
 	OBBoxClass				EndZone;
 	AABoxClass				TeleportZone;
 	Matrix3D					EndTM;
-	uint32					MechanismID;
+	uint32_t					MechanismID;
 };
 
 

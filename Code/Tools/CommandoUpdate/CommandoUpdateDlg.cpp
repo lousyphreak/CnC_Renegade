@@ -51,9 +51,9 @@ typedef struct
 	LPCTSTR	src;
 	LPCTSTR	default_dir;
 	LPCTSTR	reg_key;	
-	UINT		ctrl_id;
-	UINT		clean_ctrl_id;
-	UINT		dir_ctrl_id;
+	uint32_t		ctrl_id;
+	uint32_t		clean_ctrl_id;
+	uint32_t		dir_ctrl_id;
 	bool		clean_default;
 	bool		is_recursive;
 } APP_INFO;
@@ -133,7 +133,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CCommandoUpdateDlg message handlers
 
-BOOL CCommandoUpdateDlg::OnInitDialog()
+int32_t CCommandoUpdateDlg::OnInitDialog()
 {
 	CDialog::OnInitDialog();
 
@@ -158,13 +158,13 @@ BOOL CCommandoUpdateDlg::OnInitDialog()
 		//	Is this application installed?
 		//
 		if (::RegOpenKeyEx (HKEY_CURRENT_USER, reg_key_name, 0L, KEY_READ, &hreg_key) == ERROR_SUCCESS) {
-			SendDlgItemMessage (app_info.ctrl_id, BM_SETCHECK, (WPARAM)TRUE);
+			SendDlgItemMessage (app_info.ctrl_id, BM_SETCHECK, (uintptr_t)TRUE);
 			
 			//
 			//	Read the installation directory from the registry
 			//
-			DWORD size = sizeof (path);
-			::RegQueryValueEx (hreg_key, INSTALL_REG_VALUE, 0L, NULL, (BYTE *)path, &size);
+			uint32_t size = sizeof (path);
+			::RegQueryValueEx (hreg_key, INSTALL_REG_VALUE, 0L, NULL, (uint8_t *)path, &size);
 			::RegCloseKey (hreg_key);
 		} else {
 			::EnableWindow (::GetDlgItem (m_hWnd, app_info.clean_ctrl_id), false);
@@ -183,7 +183,7 @@ BOOL CCommandoUpdateDlg::OnInitDialog()
 		//	Check the clean option (by default) if necessary
 		//
 		if (app_info.clean_default) {
-			SendDlgItemMessage (app_info.clean_ctrl_id, BM_SETCHECK, (WPARAM)TRUE);
+			SendDlgItemMessage (app_info.clean_ctrl_id, BM_SETCHECK, (uintptr_t)TRUE);
 		}
 	}
 
@@ -200,7 +200,7 @@ void CCommandoUpdateDlg::OnPaint()
 	{
 		CPaintDC dc(this); // device context for painting
 
-		SendMessage(WM_ICONERASEBKGND, (WPARAM) dc.GetSafeHdc(), 0);
+		SendMessage(WM_ICONERASEBKGND, (uintptr_t) dc.GetSafeHdc(), 0);
 
 		// Center icon in client rectangle
 		int cxIcon = GetSystemMetrics(SM_CXICON);
@@ -329,7 +329,7 @@ CCommandoUpdateDlg::OnOK (void)
 												INSTALL_REG_VALUE,
 												0L,
 												REG_SZ,
-												(BYTE *)(LPCTSTR)local_path,
+												(uint8_t *)(LPCTSTR)local_path,
 												local_path.GetLength () + 1);
 						::RegCloseKey (hreg_key);
 					}
@@ -443,7 +443,7 @@ Delete_File (LPCTSTR filename)
 	if (filename != NULL) {
 
 		// Strip the readonly bit off if necessary
-		DWORD attributes = ::GetFileAttributes (filename);
+		uint32_t attributes = ::GetFileAttributes (filename);
 		if ((attributes != 0xFFFFFFFF) &&
 			 ((attributes & FILE_ATTRIBUTE_READONLY) == FILE_ATTRIBUTE_READONLY))
 		{
@@ -491,7 +491,7 @@ Copy_File
 		bool allow_copy = (::lstrcmpi (existing_filename, new_filename) != 0);
 		
 		// Strip the readonly bit off if necessary
-		DWORD attributes = ::GetFileAttributes (new_filename);
+		uint32_t attributes = ::GetFileAttributes (new_filename);
 		if (allow_copy &&
 		    (attributes != 0xFFFFFFFF) &&
 			 ((attributes & FILE_ATTRIBUTE_READONLY) == FILE_ATTRIBUTE_READONLY)) {
@@ -538,7 +538,7 @@ Clean_Directory (LPCTSTR local_dir, bool is_recursive)
 	// Loop through all the files in this directory and add them
 	// to our list
 	CStringList file_list;
-	BOOL bcontinue = TRUE;
+	int32_t bcontinue = TRUE;
 	WIN32_FIND_DATA find_info = { 0 };
 	for (HANDLE hfind = ::FindFirstFile (search_mask, &find_info);
 		  (hfind != INVALID_HANDLE_VALUE) && bcontinue;
@@ -619,7 +619,7 @@ Build_File_List (LPCTSTR search_path, CStringList &file_list)
 	// Loop through all the files in this directory and add them
 	// to our list
 	//
-	BOOL keep_going				= TRUE;
+	int32_t keep_going				= TRUE;
 	WIN32_FIND_DATA find_info	= { 0 };
 
 	for (HANDLE hfind = ::FindFirstFile (search_path, &find_info);
@@ -750,7 +750,7 @@ Update_App_Directory
 	// Loop through all the files in this directory and add them
 	// to our list
 	//
-	BOOL keep_going				= TRUE;
+	int32_t keep_going				= TRUE;
 	WIN32_FIND_DATA find_info	= { 0 };
 	CStringList file_list;
 
@@ -834,7 +834,7 @@ Update_App_Directory
 //	fnUpdateAppDirectory
 //
 //////////////////////////////////////////////////////////////////////////////////
-UINT
+uint32_t
 fnUpdateAppDirectory (LPVOID pParam)
 {
 	UPDATE_INFO *info	= (UPDATE_INFO *)pParam;
@@ -905,11 +905,11 @@ Update_App
 //	OnCommand
 //
 //////////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CCommandoUpdateDlg::OnCommand
 (
-	WPARAM wParam,
-	LPARAM lParam
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	bool found = false;

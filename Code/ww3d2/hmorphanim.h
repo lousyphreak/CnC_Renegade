@@ -38,6 +38,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef HMORPHANIM_H
@@ -101,7 +103,7 @@ public:
 	void							Get_Transform(Matrix3D& transform, int pividx,float frame) const;
 	bool							Get_Visibility(int pividx,float frame)		{ return true; }
 
-	void							Insert_Morph_Key (const int channel, uint32 morph_frame, uint32 pose_frame);
+	void							Insert_Morph_Key (const int channel, uint32_t morph_frame, uint32_t pose_frame);
 	void							Release_Keys (void);
 
 	bool							Is_Node_Motion_Present(int pividx)			{ return true; }
@@ -130,7 +132,7 @@ protected:
 
 	HAnimClass **					PoseData;		// pointer to pose for each morph channel
 	TimeCodedMorphKeysClass *	MorphKeyData;	// morph keys for each channel
-	uint32 *							PivotChannel;	// controlling channel for each pivot/bone
+	uint32_t *							PivotChannel;	// controlling channel for each pivot/bone
 	
 };
 
@@ -156,7 +158,7 @@ public:
 	bool					Save_W3D(ChunkSaveClass & csave);
 	void					Get_Morph_Info(float morph_frame,int * pose_frame0,int * pose_frame1,float * fraction);
 
-	void					Add_Key (uint32 morph_frame, uint32 pose_frame);
+	void					Add_Key (uint32_t morph_frame, uint32_t pose_frame);
 
 private:
 
@@ -166,21 +168,21 @@ private:
 			:	MorphFrame (0),
 				PoseFrame (0)			{}
 
-		MorphKeyStruct (uint32 _morph, uint32 _pose)
+		MorphKeyStruct (uint32_t _morph, uint32_t _pose)
 			:	MorphFrame (_morph),
 				PoseFrame (_pose)		{}
 
-		uint32	MorphFrame;				// morph animation frame index
-		uint32	PoseFrame;				// which pose frame to use at this time
+		uint32_t	MorphFrame;				// morph animation frame index
+		uint32_t	PoseFrame;				// which pose frame to use at this time
 	};
 	
 	SimpleDynVecClass<MorphKeyStruct>	Keys;	// morph key data
-	uint32				CachedIdx;					// last accessed index
+	uint32_t				CachedIdx;					// last accessed index
 
 	void 					Free(void);
 
-	uint32				get_index(float time);
-	uint32				binary_search_index(float time);
+	uint32_t				get_index(float time);
+	uint32_t				binary_search_index(float time);
 
 	friend class HMorphAnimClass;
 };

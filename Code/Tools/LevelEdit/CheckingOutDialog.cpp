@@ -61,12 +61,12 @@ END_MESSAGE_MAP()
 //
 // WindowProc
 //
-LRESULT
+intptr_t
 CheckingOutDialogClass::WindowProc
 (
-	UINT message,
-	WPARAM wParam,
-	LPARAM lParam
+	uint32_t message,
+	uintptr_t wParam,
+	intptr_t lParam
 ) 
 {
 	if (message == WM_USER+101) {
@@ -82,11 +82,11 @@ CheckingOutDialogClass::WindowProc
 //
 // OnCommand
 //
-BOOL
+int32_t
 CheckingOutDialogClass::OnCommand
 (
-	WPARAM wParam,
-	LPARAM lParam
+	uintptr_t wParam,
+	intptr_t lParam
 ) 
 {
 	// Don't let the dialog be closed by hitting enter or escape
@@ -103,7 +103,7 @@ CheckingOutDialogClass::OnCommand
 //
 // OnInitDialog
 //
-BOOL
+int32_t
 CheckingOutDialogClass::OnInitDialog (void) 
 {
 	// Allow the base class to process this message	

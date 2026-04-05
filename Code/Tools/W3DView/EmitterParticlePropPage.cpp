@@ -124,7 +124,7 @@ EmitterParticlePropPageClass::Initialize (void)
 //
 //  OnInitDialog
 //
-BOOL
+int32_t
 EmitterParticlePropPageClass::OnInitDialog (void) 
 {
 	// Allow the base class to process this message
@@ -142,7 +142,7 @@ EmitterParticlePropPageClass::OnInitDialog (void)
 	//
 	m_MaxParticlesSpin.SetRange (0, 10000);
 	m_MaxParticlesSpin.SetPos (m_MaxParticles);
-	SendDlgItemMessage (IDC_MAX_PARTICLES_CHECK, BM_SETCHECK, WPARAM(m_MaxParticles != 0));
+	SendDlgItemMessage (IDC_MAX_PARTICLES_CHECK, BM_SETCHECK, uintptr_t(m_MaxParticles != 0));
 	::EnableWindow (::GetDlgItem (m_hWnd, IDC_MAX_PARTICLES_EDIT), m_MaxParticles != 0);
 	::EnableWindow (::GetDlgItem (m_hWnd, IDC_MAX_PARTICLES_SPIN), m_MaxParticles != 0);
 	return TRUE;
@@ -153,7 +153,7 @@ EmitterParticlePropPageClass::OnInitDialog (void)
 //
 //  OnApply
 //
-BOOL
+int32_t
 EmitterParticlePropPageClass::OnApply (void)
 {
 	//
@@ -187,12 +187,12 @@ EmitterParticlePropPageClass::OnApply (void)
 //
 //  WindowProc
 //
-LRESULT
+intptr_t
 EmitterParticlePropPageClass::WindowProc
 (
-	UINT message,
-	WPARAM wParam,
-	LPARAM lParam
+	uint32_t message,
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	/*switch (message)
@@ -208,12 +208,12 @@ EmitterParticlePropPageClass::WindowProc
 //
 //  OnNotify
 //
-BOOL
+int32_t
 EmitterParticlePropPageClass::OnNotify
 (
-	WPARAM wParam,
-	LPARAM lParam,
-	LRESULT *pResult
+	uintptr_t wParam,
+	intptr_t lParam,
+	intptr_t *pResult
 )
 {
 	//
@@ -259,11 +259,11 @@ EmitterParticlePropPageClass::OnSpecifyCreationVolume (void)
 //  OnCommand
 //
 /////////////////////////////////////////////////////////////
-BOOL
+int32_t
 EmitterParticlePropPageClass::OnCommand
 (
-	WPARAM wParam,
-	LPARAM lParam
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	switch (LOWORD (wParam))
@@ -289,7 +289,7 @@ EmitterParticlePropPageClass::OnCommand
 void
 EmitterParticlePropPageClass::OnMaxParticlesCheck (void)
 {
-	BOOL enable = SendDlgItemMessage (IDC_MAX_PARTICLES_CHECK, BM_GETCHECK);
+	int32_t enable = SendDlgItemMessage (IDC_MAX_PARTICLES_CHECK, BM_GETCHECK);
 	::EnableWindow (::GetDlgItem (m_hWnd, IDC_MAX_PARTICLES_EDIT), enable);
 	::EnableWindow (::GetDlgItem (m_hWnd, IDC_MAX_PARTICLES_SPIN), enable);
 

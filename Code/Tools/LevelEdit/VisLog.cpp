@@ -52,9 +52,9 @@ enum
 
 typedef struct
 {
-	uint32	version;
-	uint32	count;
-	uint32	reserved[4];
+	uint32_t	version;
+	uint32_t	count;
+	uint32_t	reserved[4];
 } VIS_ERROR_HEADER;
 
 /*typedef struct
@@ -64,10 +64,10 @@ typedef struct
 	int		status[6];
 	int		direction_bits;
 	int		current_direction;
-	uint32	Reserved[4];
+	uint32_t	Reserved[4];
 } VIS_ERROR_INFO;*/
 
-static const uint32 CURRENT_VERSION	= 0x00010000;
+static const uint32_t CURRENT_VERSION	= 0x00010000;
 
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -172,7 +172,7 @@ VisLogClass::Load (ChunkLoadClass &chunk_load)
 				//
 				//	Read the list of points from the chunk
 				//
-				for (uint32 index = 0; (index < header.count) && retval; index ++) {				
+				for (uint32_t index = 0; (index < header.count) && retval; index ++) {				
 					VisSampleClass sample;
 					retval &= sample.Load (chunk_load);
 					

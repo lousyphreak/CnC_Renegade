@@ -76,7 +76,7 @@ class ResourceFileClass : public FileClass
 		virtual void Error(int error, int canretry = false, char const * filename=NULL);
 		virtual void Bias(int start, int length=-1) {}
 
-		virtual unsigned char *Peek_Data(void) const					{ return FileBytes; }
+		virtual uint8_t *Peek_Data(void) const					{ return FileBytes; }
 
 	protected:
 
@@ -84,9 +84,9 @@ class ResourceFileClass : public FileClass
 
 		HMODULE				hModule;
 		
-		unsigned char *	FileBytes;
-		unsigned char *	FilePtr;
-		unsigned char *	EndOfFile;
+		uint8_t *	FileBytes;
+		uint8_t *	FilePtr;
+		uint8_t *	EndOfFile;
 
 };
 

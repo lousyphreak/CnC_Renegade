@@ -40,6 +40,8 @@
 #ifndef DAMAGEABLESTATICPHYS_H
 #define DAMAGEABLESTATICPHYS_H
 
+#include <cstdint>
+
 #include "always.h"
 #include "staticanimphys.h"
 #include "damage.h"
@@ -112,7 +114,7 @@ class DamageableStaticPhysDefClass : public StaticAnimPhysDefClass
 public:
 	DamageableStaticPhysDefClass(void);
 	
-	virtual uint32								Get_Class_ID(void) const;
+	virtual uint32_t								Get_Class_ID(void) const;
 	virtual const char *						Get_Type_Name(void)				{ return "DamageableStaticPhysDef"; }
 	virtual bool								Is_Type(const char *);
 	virtual PersistClass *					Create(void) const ;

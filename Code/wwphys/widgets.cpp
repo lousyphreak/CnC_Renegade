@@ -49,8 +49,8 @@
 struct WidgetDefStruct
 {
 	int							Id;
-	const unsigned char *	Data;
-	unsigned int				Size;
+	const uint8_t *	Data;
+	uint32_t				Size;
 	const char *				Name;
 	RenderObjClass *			RObj;
 };

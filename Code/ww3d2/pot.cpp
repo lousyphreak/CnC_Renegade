@@ -89,7 +89,7 @@ int Find_POT(int val)
  * HISTORY:                                                               * 
  *   12/23/1998 NH : Created.                                             * 
  *========================================================================*/
-unsigned int Find_POT_Log2(unsigned int val)
+uint32_t Find_POT_Log2(uint32_t val)
 {
 	// clear out the recorded position and the recorded count
 	int recpos = 0;

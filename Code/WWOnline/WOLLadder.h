@@ -35,6 +35,8 @@
 #ifndef __WOLLADDER_H__
 #define __WOLLADDER_H__
 
+#include <cstdint>
+
 #pragma warning(disable : 4711)
 
 #include "RefCounted.h"
@@ -60,52 +62,52 @@ class LadderData :
 		public RefCounted
 	{
 	public:
-		static RefPtr<LadderData> Create(const WOL::Ladder& ladder, long time);
+		static RefPtr<LadderData> Create(const WOL::Ladder& ladder, int32_t time);
 
-		bool UpdateData(const WOL::Ladder& ladder, long time);
+		bool UpdateData(const WOL::Ladder& ladder, int32_t time);
 
 		const char* GetName(void) const
 			{return (const char*)mData.login_name;}
 
-		unsigned int GetWins(void) const
+		uint32_t GetWins(void) const
 			{return mData.wins;}
 			
-		unsigned int GetLosses(void) const
+		uint32_t GetLosses(void) const
 			{return mData.losses;}
 
-		unsigned int GetPoints(void) const
+		uint32_t GetPoints(void) const
 			{return mData.points;}
 
-		unsigned int GetKills(void) const
+		uint32_t GetKills(void) const
 			{return mData.kills;}
 
-		unsigned int GetRung(void) const
+		uint32_t GetRung(void) const
 			{return mData.rung;}
 
-		unsigned int GetReserved1(void) const
+		uint32_t GetReserved1(void) const
 			{return mData.reserved1;}
 
-		unsigned int GetReserved2(void) const
+		uint32_t GetReserved2(void) const
 			{return mData.reserved2;}
 
-		long GetTimeStamp(void) const
+		int32_t GetTimeStamp(void) const
 			{return mTimeStamp;}
 
 		WOL::Ladder& GetData()
 			{return mData;}
 
 	protected:
-		LadderData(const WOL::Ladder& ladder, long time);
+		LadderData(const WOL::Ladder& ladder, int32_t time);
 		virtual ~LadderData();
 
 		WOL::Ladder mData;
-		long mTimeStamp;
+		int32_t mTimeStamp;
 	};
 
 class LadderInfoEvent
 	{
 	public:
-		LadderInfoEvent(const wchar_t* requested, const WOL::Ladder& ladder, long time);
+		LadderInfoEvent(const wchar_t* requested, const WOL::Ladder& ladder, int32_t time);
 
 		virtual ~LadderInfoEvent()
 			{}
@@ -123,7 +125,7 @@ class LadderInfoEvent
 		const WOL::Ladder& GetWOLLadder(void) const
 			{return mWOLLadder;}
 
-		long GetTimeStamp(void) const
+		int32_t GetTimeStamp(void) const
 			{return mTimeStamp;}
 
 	protected:
@@ -133,7 +135,7 @@ class LadderInfoEvent
 
 		const wchar_t* mRequestedName;
 		const WOL::Ladder& mWOLLadder;
-		long mTimeStamp;
+		int32_t mTimeStamp;
 	};
 
 }

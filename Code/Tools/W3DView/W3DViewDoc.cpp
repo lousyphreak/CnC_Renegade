@@ -117,8 +117,8 @@ CW3DViewDoc::CW3DViewDoc (void)
 		m_bCompress_channel_Q(false)
 {
 	// Read the camera animation settings from the registry
-	m_bAnimateCamera = ((BOOL)theApp.GetProfileInt ("Config", "AnimateCamera", 0)) == TRUE;
-	m_bAutoCameraReset = ((BOOL)theApp.GetProfileInt ("Config", "ResetCamera", 1)) == TRUE;
+	m_bAnimateCamera = ((int32_t)theApp.GetProfileInt ("Config", "AnimateCamera", 0)) == TRUE;
+	m_bAutoCameraReset = ((int32_t)theApp.GetProfileInt ("Config", "ResetCamera", 1)) == TRUE;
 	return ;
 }
 
@@ -257,7 +257,7 @@ CW3DViewDoc::CleanupResources (void)
 //  OnNewDocument
 //
 ///////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CW3DViewDoc::OnNewDocument (void)
 {
 	if (!CDocument::OnNewDocument())
@@ -473,7 +473,7 @@ CW3DViewDoc::InitScene (void)
 //  OnOpenDocument
 //
 ///////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CW3DViewDoc::OnOpenDocument (LPCTSTR lpszPathName) 
 {
 	if (!CDocument::OnOpenDocument(lpszPathName))
@@ -547,7 +547,8 @@ CW3DViewDoc::LoadAssetsFromFile (LPCTSTR lpszPathName)
 	//
 	if (::strrchr (lpszPathName, '\\')) {
 		CString stringTemp = lpszPathName;
-		stringTemp = stringTemp.Left ((long)::strrchr (lpszPathName, '\\') - (long)lpszPathName);
+		const char *path_sep = ::strrchr (lpszPathName, '\\');
+		stringTemp = stringTemp.Left (static_cast<int>(path_sep - lpszPathName));
 		::SetCurrentDirectory (stringTemp);
 		_TheSimpleFileFactory->Append_Sub_Directory(stringTemp);
 	}
@@ -1313,11 +1314,11 @@ CW3DViewDoc::SetBackgroundBMP (LPCTSTR pszBackgroundBMP)
 //  LoadSettings
 //
 ///////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CW3DViewDoc::LoadSettings (LPCTSTR filename)
 {
 	// Assume failure
-	BOOL bReturn = FALSE;
+	int32_t bReturn = FALSE;
 
 	// Params OK?
 	ASSERT (filename != NULL);
@@ -1478,15 +1479,15 @@ CW3DViewDoc::LoadSettings (LPCTSTR filename)
 //  SaveSettings
 //
 ///////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CW3DViewDoc::SaveSettings
 (
     LPCTSTR pszFilename,
-    DWORD dwSettingsMask
+    uint32_t dwSettingsMask
 )
 {
     // Assume failure
-    BOOL bReturn = FALSE;
+    int32_t bReturn = FALSE;
     ASSERT (pszFilename);
     ASSERT (dwSettingsMask != 0L);
     ASSERT (m_pCScene);    
@@ -1649,7 +1650,7 @@ CW3DViewDoc::SaveSettings
                                          (LPCTSTR)stringCompleteFilename);
 
             // Write the end attenuation out to the file
-				BOOL atten_on = m_pCSceneLight->Get_Flag (LightClass::FAR_ATTENUATION);
+				int32_t atten_on = m_pCSceneLight->Get_Flag (LightClass::FAR_ATTENUATION);
 				stringValue.Format ("%d", atten_on);
             ::WritePrivateProfileString ("Settings",
 													  "SceneLightAttenOn",
@@ -2443,7 +2444,7 @@ CW3DViewDoc::Make_Movie (void)
 		
 		float frames = m_pCAnimation->Get_Num_Frames ();
 		float frame_inc = m_pCAnimation->Get_Frame_Rate () / 30.0F;
-		DWORD ticks = 1000 / 30;
+		uint32_t ticks = 1000 / 30;
 
 		// Loop through all the frames of animation
 		for (float frame = 0; frame <= (frames - 1.0F); frame += frame_inc) {

@@ -39,6 +39,8 @@
 #ifndef LOGDLG_H
 #define LOGDLG_H
 
+#include <cstdint>
+
 #include <windows.h>
 
 
@@ -58,7 +60,7 @@ public:
 	
 	void	updatebar(float position, float total);
    
-	bool	Dialog_Proc(HWND hWnd,UINT message,WPARAM wParam,LPARAM);
+	bool	Dialog_Proc(HWND hWnd,uint32_t message,uintptr_t wParam,intptr_t);
 
 public:
 // public variables
@@ -72,7 +74,7 @@ private:
 private:
 
 	HANDLE	ThreadHandle;
-	DWORD		ThreadID;
+	uint32_t		ThreadID;
 
 	int	last_buffer_index;
 	int	buffer_index;

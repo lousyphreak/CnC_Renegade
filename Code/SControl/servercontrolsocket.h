@@ -36,6 +36,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef SERVERCONTROLSOCKET_H
 #define SERVERCONTROLSOCKET_H
 
@@ -103,7 +105,7 @@ class ServerControlSocketClass
 		/*
 		** Startup, shutdown.
 		*/
-		bool Open(int port, bool loopback = false, unsigned long ip = 0);
+		bool Open(int port, bool loopback = false, uint32_t ip = 0);
 		void Close(void);
 		void Discard_In_Buffers(void);
 		void Discard_Out_Buffers(void);
@@ -112,9 +114,9 @@ class ServerControlSocketClass
 		/*
 		** Read, write.
 		*/
-		int Peek(void *buffer, int buffer_len, void *address, unsigned short *port, int packetnum = 0);
-		int Read(void *buffer, int buffer_len, void *address, unsigned short *port, int packetnum = 0);
-		void Write(void *buffer, int buffer_len, void *address, unsigned short port = 0);
+		int Peek(void *buffer, int buffer_len, void *address, uint16_t *port, int packetnum = 0);
+		int Read(void *buffer, int buffer_len, void *address, uint16_t *port, int packetnum = 0);
+		void Write(void *buffer, int buffer_len, void *address, uint16_t port = 0);
 
 		/*
 		** Service.
@@ -144,14 +146,14 @@ class ServerControlSocketClass
 		** It acts as a temporary control for these packets.
 		*/
 		struct WinsockBufferType {
-			unsigned char		Address[4];		// Address. IN_ADDR
+			uint8_t		Address[4];		// Address. IN_ADDR
 			int					BufferLen;		// Length of data in buffer
 			bool					IsBroadcast;	// Flag to broadcast this packet
 			bool					InUse;			// Useage state of buffer
 			bool					IsAllocated;	// false means statically allocated.
-			unsigned short		Port;				// Override port. Send to this port if not 0. Save incoming port number.
-			unsigned long		CRC;				// CRC of packet for extra sanity.
-			unsigned char		Buffer[SERVER_CONTROL_RECEIVE_BUFFER_LEN];	// Buffer to store packet in.
+			uint16_t		Port;				// Override port. Send to this port if not 0. Save incoming port number.
+			uint32_t		CRC;				// CRC of packet for extra sanity.
+			uint8_t		Buffer[SERVER_CONTROL_RECEIVE_BUFFER_LEN];	// Buffer to store packet in.
 		};
 
 		/*
@@ -163,15 +165,15 @@ class ServerControlSocketClass
 		/*
 		** Packet CRCs.
 		*/
-		void Add_CRC(unsigned long *crc, unsigned long val);
+		void Add_CRC(uint32_t *crc, uint32_t val);
 		virtual void Build_Packet_CRC(WinsockBufferType *packet);
 		virtual bool Passes_CRC_Check(WinsockBufferType *packet);
 
 		/*
 		** Encryption.
 		*/
-		void Encrypt(unsigned char *packet, int size);
-		void Decrypt(unsigned char *packet, int size);
+		void Encrypt(uint8_t *packet, int size);
+		void Decrypt(uint8_t *packet, int size);
 
 		/*
 		** Array of buffers to temporarily store incoming and outgoing packets.
@@ -200,7 +202,7 @@ class ServerControlSocketClass
 		/*
 		** Temporary receive buffer to use when querying Winsock for incoming packets.
 		*/
-		unsigned char ReceiveBuffer[SERVER_CONTROL_RECEIVE_BUFFER_LEN];
+		uint8_t ReceiveBuffer[SERVER_CONTROL_RECEIVE_BUFFER_LEN];
 
 		/*
 		** Encryption key, only 1st 8 bytes used. The rest is for safety.

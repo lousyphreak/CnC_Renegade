@@ -51,6 +51,7 @@
 #include <conio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <cstdint>
 
 #include "BandTest.h"
 
@@ -69,38 +70,38 @@
 ** IP header definition.
 */
 typedef struct tIPHeaderType {
-	unsigned char	Length : 4;		// length of the header
-	unsigned char	Version : 4;	// Version of IP (must be 4 for IP4)
-	unsigned char	TOS;				// Type of service (usually 0)
-	unsigned short	PacketLen;		// total length of the packet
-	unsigned short	ID;				// unique identifier
-	unsigned short	Flags;	  		// flags
-	unsigned char	TTL; 				// Time to live
-	unsigned char	Protocol;		// protocol (TCP, UDP etc)
-	unsigned short	Checksum;		// IP checksum
-	unsigned int	SourceIP;		// IP this packet came from
-	unsigned int	DestIP;        // IP this packet is going to
+	uint8_t	Length : 4;		// length of the header
+	uint8_t	Version : 4;	// Version of IP (must be 4 for IP4)
+	uint8_t	TOS;				// Type of service (usually 0)
+	uint16_t	PacketLen;		// total length of the packet
+	uint16_t	ID;				// unique identifier
+	uint16_t	Flags;	  		// flags
+	uint8_t	TTL; 				// Time to live
+	uint8_t	Protocol;		// protocol (TCP, UDP etc)
+	uint16_t	Checksum;		// IP checksum
+	uint32_t	SourceIP;		// IP this packet came from
+	uint32_t	DestIP;        // IP this packet is going to
 } IPHeaderType;
 
 /*
 ** ICMP packet header. Sits after the IP header when used.
 */
 typedef struct tICMPHeaderType {
-  char				Type;
-  char				Code;
-  unsigned short	Checksum;
-  unsigned short	ID;
-  unsigned short	Sequence;
+  int8_t				Type;
+  int8_t				Code;
+  uint16_t	Checksum;
+  uint16_t	ID;
+  uint16_t	Sequence;
 } ICMPHeaderType;
 
 /*
 ** UDP header. Sits after the IP header when used.
 */
 typedef struct tUDPHeaderType {
-	unsigned short SourcePort;
-	unsigned short DestPort;
-	unsigned short Length;
-	unsigned short Checksum;
+	uint16_t SourcePort;
+	uint16_t DestPort;
+	uint16_t Length;
+	uint16_t Checksum;
 } UDPHeaderType;
 
 
@@ -193,15 +194,15 @@ char DebugFileName[256];
 static bool Open_Raw_Sockets(int &failure_code);
 static void Close_Raw_Sockets(void);
 static bool Send_Ping(char *payload, int payload_size, SOCKET socket, struct sockaddr *address, int sequence_id);
-static bool Get_Ping_Response(SOCKET socket, int &seq_id, struct sockaddr *address, unsigned long validate_addr, unsigned long &my_address);
-static unsigned short Get_IP_Checksum(unsigned short *buffer, int size);
-static bool Send_Raw_UDP(char *payload, int payload_size, SOCKET socket, struct sockaddr *address, unsigned short source_port, unsigned short dest_port);
-static unsigned long Upstream_Detect(unsigned long server_ip, unsigned long my_ip, int &failure_code, unsigned long &downstream, BandtestSettingsStruct *settings);
-static int Ping_Host(unsigned long host_ip, unsigned long my_ip, int times, int payload_size, unsigned long *ping_times, unsigned long timeout);
-static float Average_Ping(int num_pings, unsigned long *ping_times, bool ignore_low_high);
-static float Lowest_Ping(int num_pings, unsigned long *ping_times);
-static int Get_Path_To_Server(unsigned long *path, unsigned long my_ip, unsigned long server_ip);
-static void Ping_Profile(SOCKADDR_IN *router_addr, unsigned long my_ip);
+static bool Get_Ping_Response(SOCKET socket, int &seq_id, struct sockaddr *address, uint32_t validate_addr, uint32_t &my_address);
+static uint16_t Get_IP_Checksum(uint16_t *buffer, int size);
+static bool Send_Raw_UDP(char *payload, int payload_size, SOCKET socket, struct sockaddr *address, uint16_t source_port, uint16_t dest_port);
+static uint32_t Upstream_Detect(uint32_t server_ip, uint32_t my_ip, int &failure_code, uint32_t &downstream, BandtestSettingsStruct *settings);
+static int Ping_Host(uint32_t host_ip, uint32_t my_ip, int times, int payload_size, uint32_t *ping_times, uint32_t timeout);
+static float Average_Ping(int num_pings, uint32_t *ping_times, bool ignore_low_high);
+static float Lowest_Ping(int num_pings, uint32_t *ping_times);
+static int Get_Path_To_Server(uint32_t *path, uint32_t my_ip, uint32_t server_ip);
+static void Ping_Profile(SOCKADDR_IN *router_addr, uint32_t my_ip);
 
 static bool Set_Registry_Int(const char *name, int value);
 static int Get_Registry_Int(const char *name, int def_value);
@@ -212,12 +213,12 @@ static void Close_Registry(void);
 #ifdef _DEBUG
 void DebugString (char const * string, ...);
 char * Addr_As_String2(struct sockaddr_in *addr);
-char * Addr_As_String(unsigned char *addr);
+char * Addr_As_String(uint8_t *addr);
 #else //_DEBUG
 #define DebugString
 //_forceinline void DebugString(char const *, ...) {};
 //inline char * Addr_As_String(sockaddr_in *) {};
-inline char * Addr_As_String(unsigned char *) {return NULL;};
+inline char * Addr_As_String(uint8_t *) {return NULL;};
 inline char * Addr_As_String2(struct sockaddr_in *){return NULL;};
 #endif //_DEBUG
 
@@ -256,7 +257,7 @@ BandtestSettingsStruct DefaultSettings = {
  * HISTORY:                                                                                    *
  *   10/3/2001 11:20AM ST : Created                                                            *
  *=============================================================================================*/
-bool APIENTRY DllMain(HANDLE, DWORD, void *)
+bool APIENTRY DllMain(HANDLE, uint32_t, void *)
 {
 	return(true);
 }
@@ -284,7 +285,7 @@ bool APIENTRY DllMain(HANDLE, DWORD, void *)
  * HISTORY:                                                                                    *
  *   10/3/2001 11:21AM ST : Created                                                            *
  *=============================================================================================*/
-BANDTEST_API unsigned long Detect_Bandwidth(unsigned long server_ip, unsigned long my_ip, int retries, int &failure_code, unsigned long &downstream, unsigned long api_version, BandtestSettingsStruct *settings, char *regpath)
+BANDTEST_API uint32_t Detect_Bandwidth(uint32_t server_ip, uint32_t my_ip, int retries, int &failure_code, uint32_t &downstream, uint32_t api_version, BandtestSettingsStruct *settings, char *regpath)
 {
 	if (api_version != BANDTEST_API_VERSION) {
 		return(BANDTEST_WRONG_API_VERSION);
@@ -402,7 +403,7 @@ BANDTEST_API unsigned long Detect_Bandwidth(unsigned long server_ip, unsigned lo
  * HISTORY:                                                                                    *
  *   10/3/2001 11:21AM ST : Created                                                            *
  *=============================================================================================*/
-unsigned long Upstream_Detect(unsigned long server_ip, unsigned long my_ip, int &failure_code, unsigned long &downstream, BandtestSettingsStruct *settings)
+uint32_t Upstream_Detect(uint32_t server_ip, uint32_t my_ip, int &failure_code, uint32_t &downstream, BandtestSettingsStruct *settings)
 {
 	struct sockaddr_in host_address;
 	struct sockaddr_in address;
@@ -410,18 +411,18 @@ unsigned long Upstream_Detect(unsigned long server_ip, unsigned long my_ip, int 
 	int seq_id;
 	int router_ttl = 0;
 	struct sockaddr_in router_addr;
-	unsigned short source_port = 1230;
+	uint16_t source_port = 1230;
 	int ttl;
-	unsigned short packet_sequencer = 0;
+	uint16_t packet_sequencer = 0;
 	float average_ping = 0.0f;
 	//float lowest_ping = 0.0f;
-	unsigned long ping_dest_address = 0;
-	unsigned long path_to_server[256];
+	uint32_t ping_dest_address = 0;
+	uint32_t path_to_server[256];
 	int hops_to_server = 0;
-	unsigned long upstream_bandwidth;
-	unsigned long ping_times[100];
-	unsigned long performance_timer = timeGetTime();
-	unsigned long detect_start_time = performance_timer;
+	uint32_t upstream_bandwidth;
+	uint32_t ping_times[100];
+	uint32_t performance_timer = timeGetTime();
+	uint32_t detect_start_time = performance_timer;
 	int i;
 
 
@@ -430,7 +431,7 @@ unsigned long Upstream_Detect(unsigned long server_ip, unsigned long my_ip, int 
 	*/
 	srand(timeGetTime());
 	for (int b=0 ; b<sizeof(temp_buffer) ; b++) {
-		temp_buffer[b] = (unsigned char) (rand() & 0xff);
+		temp_buffer[b] = (uint8_t) (rand() & 0xff);
 	}
 
 	/*
@@ -488,7 +489,7 @@ unsigned long Upstream_Detect(unsigned long server_ip, unsigned long my_ip, int 
 		/*
 		** Wait for a ping response.
 		*/
-		unsigned long start_time = timeGetTime();
+		uint32_t start_time = timeGetTime();
 		seq_id = -1;
 		while (seq_id == -1) {
 			Get_Ping_Response(ICMPRawSocket, seq_id, (struct sockaddr *) &address, ntohl(host_address.sin_addr.s_addr), ping_dest_address);
@@ -507,7 +508,7 @@ unsigned long Upstream_Detect(unsigned long server_ip, unsigned long my_ip, int 
 			my_ip = ping_dest_address;
 #ifdef _DEBUG
 			ping_dest_address = htonl(my_ip);
-			DebugString("Detected my IP as %s\n", Addr_As_String((unsigned char*)&ping_dest_address));
+			DebugString("Detected my IP as %s\n", Addr_As_String((uint8_t*)&ping_dest_address));
 #endif //_DEBUG
 		} else {
 			DebugString("Unexpected response to IP detect ping\n");
@@ -542,8 +543,8 @@ unsigned long Upstream_Detect(unsigned long server_ip, unsigned long my_ip, int 
 #ifdef _DEBUG
 	DebugString("Found path to server...\n");
 	for (i=0 ; i<hops_to_server ; i++) {
-		unsigned long temp = htonl(path_to_server[i]);
-		DebugString("   %02d : %s\n", i, Addr_As_String((unsigned char*)(&temp)));
+		uint32_t temp = htonl(path_to_server[i]);
+		DebugString("   %02d : %s\n", i, Addr_As_String((uint8_t*)(&temp)));
 	}
 #endif //_DEBUG
 
@@ -574,7 +575,7 @@ unsigned long Upstream_Detect(unsigned long server_ip, unsigned long my_ip, int 
 				router_addr.sin_family = AF_INET;
 
 				int num_pings = 15;
-				unsigned long timeout = ping_times[0] * 3;
+				uint32_t timeout = ping_times[0] * 3;
 				if (ping_times[0] < 50) {
 					num_pings = 50;
 					timeout = 100;
@@ -619,7 +620,7 @@ unsigned long Upstream_Detect(unsigned long server_ip, unsigned long my_ip, int 
 	** packets without taking tooooo long.
 	*/
 	int num_udp_packets = settings->SlowPingPackets;
-	unsigned long timeout = 8*TIMER_SECOND;
+	uint32_t timeout = 8*TIMER_SECOND;
 	if (average_ping < (float)(settings->FastPingThreshold)) {
 		num_udp_packets = settings->FastPingPackets;
 		timeout = 4*TIMER_SECOND;
@@ -653,7 +654,7 @@ unsigned long Upstream_Detect(unsigned long server_ip, unsigned long my_ip, int 
 	/*
 	** Make a note of the current time so we can see how long this whole process takes.
 	*/
-	unsigned long start_time = timeGetTime();
+	uint32_t start_time = timeGetTime();
 	int base_ttl = ttl;
 	int max_ttl = hops_to_server - 1;
 	if (max_ttl < base_ttl) {
@@ -688,7 +689,7 @@ unsigned long Upstream_Detect(unsigned long server_ip, unsigned long my_ip, int 
 		** do delta compression on the packets.
 		*/
 		for (int b=0 ; b<sizeof(temp_buffer) ; b++) {
-			temp_buffer[b] = (unsigned char) (rand() & 0xff);
+			temp_buffer[b] = (uint8_t) (rand() & 0xff);
 		}
 		if (settings->AlwaysICMP) {
 			Send_Ping(temp_buffer, 466, ICMPRawSocket, (struct sockaddr *) &host_address, 0);
@@ -714,9 +715,9 @@ unsigned long Upstream_Detect(unsigned long server_ip, unsigned long my_ip, int 
 	** Now see what the ping time to the router is. Since there are n UDP packets ahead of this ping before it goes out, the
 	** ping time will include the time taken to send the UDP packets.
 	*/
-	unsigned long new_router_ping_time = 0xffffffff;
+	uint32_t new_router_ping_time = 0xffffffff;
 	packet_sequencer = 5;
-	unsigned long second_start_time = timeGetTime();
+	uint32_t second_start_time = timeGetTime();
 	float total_time = 0.0f;
 
 	/*
@@ -733,7 +734,7 @@ unsigned long Upstream_Detect(unsigned long server_ip, unsigned long my_ip, int 
 		}
 	};
 	if (seq_id == packet_sequencer || seq_id == packet_sequencer + 1) {
-		unsigned long time_now = timeGetTime();
+		uint32_t time_now = timeGetTime();
 		new_router_ping_time = time_now - second_start_time;
 		total_time = (float)(time_now - start_time);
 		DebugString("Ping time to external router is now %d ms\n", new_router_ping_time);
@@ -757,12 +758,12 @@ unsigned long Upstream_Detect(unsigned long server_ip, unsigned long my_ip, int 
 		** Work out the bandwidth.
 		** Approx bps up = ((10000 + 28) * 8) / (time2 - time1).
 		*/
-		if (((unsigned long) total_time) == 0 || (total_time > ((float)0x10000000))) {
+		if (((uint32_t) total_time) == 0 || (total_time > ((float)0x10000000))) {
 			DebugString("Upstream bandwidth is huge :-)\n");
 			failure_code = BANDTEST_OK;
 			upstream_bandwidth =  0xffffffff;
 		} else {
-			unsigned long bw = (((num_udp_packets * 500) * 8) * 1000) / (unsigned long)total_time;
+			uint32_t bw = (((num_udp_packets * 500) * 8) * 1000) / (uint32_t)total_time;
 			if (bw > 100000) {
 				float floater = (float)bw / 1024;
 				DebugString("Upstream bandwidth to external router is %.1f kilobits per second\n", floater);
@@ -782,9 +783,9 @@ unsigned long Upstream_Detect(unsigned long server_ip, unsigned long my_ip, int 
 	** If the bandwidth in the registry is close to what we just calculated then use the old downstream calculation from the
 	** registry.
 	*/
-	unsigned long downstream_bandwidth = upstream_bandwidth;
+	uint32_t downstream_bandwidth = upstream_bandwidth;
 	int old_band = Get_Registry_Int("Up", 0);
-	unsigned long diff = abs(upstream_bandwidth - old_band);
+	uint32_t diff = abs(upstream_bandwidth - old_band);
 	bool calc_down = true;
 	if (diff < upstream_bandwidth / 10) {
 		downstream_bandwidth = Get_Registry_Int("Down", upstream_bandwidth);
@@ -837,7 +838,7 @@ unsigned long Upstream_Detect(unsigned long server_ip, unsigned long my_ip, int 
 			*/
 			seq_id = -1;
 			start_time = timeGetTime();
-			unsigned long last_icmp_in_time = start_time;
+			uint32_t last_icmp_in_time = start_time;
 
 			for (;;) {
 				Get_Ping_Response(ICMPRawSocket, seq_id, (struct sockaddr *) &address, ntohl(host_address.sin_addr.s_addr), ping_dest_address);
@@ -869,7 +870,7 @@ unsigned long Upstream_Detect(unsigned long server_ip, unsigned long my_ip, int 
 				** do delta compression on the packets.
 				*/
 				for (int b=0 ; b<sizeof(temp_buffer) ; b++) {
-					temp_buffer[b] = (unsigned char) (rand() & 0xff);
+					temp_buffer[b] = (uint8_t) (rand() & 0xff);
 				}
 				start_time = timeGetTime();
 				Send_Raw_UDP(temp_buffer, 540, RawSocket, (struct sockaddr *) &host_address, 1234, 4321);
@@ -879,11 +880,11 @@ unsigned long Upstream_Detect(unsigned long server_ip, unsigned long my_ip, int 
 					Get_Ping_Response(ICMPRawSocket, seq_id, (struct sockaddr *) &address, ntohl(host_address.sin_addr.s_addr), ping_dest_address);
 					if (seq_id != -1) {
 						seq_id = -1;
-						unsigned long ping_time = timeGetTime() - start_time;
+						uint32_t ping_time = timeGetTime() - start_time;
 						ping_times[num_pings++] = ping_time;
 						break;
 					}
-					if (timeGetTime() - start_time > (unsigned long)new_ping_timeout) {
+					if (timeGetTime() - start_time > (uint32_t)new_ping_timeout) {
 						break;
 					}
 				}
@@ -907,7 +908,7 @@ unsigned long Upstream_Detect(unsigned long server_ip, unsigned long my_ip, int 
 		*/
 		seq_id = -1;
 		start_time = timeGetTime();
-		unsigned long last_icmp_in_time = start_time;
+		uint32_t last_icmp_in_time = start_time;
 
 		for (;;) {
 			Get_Ping_Response(ICMPRawSocket, seq_id, (struct sockaddr *) &address, ntohl(host_address.sin_addr.s_addr), ping_dest_address);
@@ -958,7 +959,7 @@ unsigned long Upstream_Detect(unsigned long server_ip, unsigned long my_ip, int 
 			** Do more pings if the ping time is low. User a smaller timeout too.
 			*/
 			int num_pings = 15;
-			unsigned long timeout = ping_times[0] * 3;
+			uint32_t timeout = ping_times[0] * 3;
 			if (ping_times[0] < 100) {
 				num_pings = 50;
 				timeout = 200;
@@ -1069,10 +1070,10 @@ unsigned long Upstream_Detect(unsigned long server_ip, unsigned long my_ip, int 
 
 
 
-void Ping_Profile(SOCKADDR_IN *router_addr, unsigned long my_ip)
+void Ping_Profile(SOCKADDR_IN *router_addr, uint32_t my_ip)
 {
 	float ping_averages[1000];
-	unsigned long ping_times[100];
+	uint32_t ping_times[100];
 	char temp_buffer[128];
 	char temp_graph[30][80];
 
@@ -1143,7 +1144,7 @@ void Ping_Profile(SOCKADDR_IN *router_addr, unsigned long my_ip)
 			** Do more pings if the ping time is low. User a smaller timeout too.
 			*/
 			int num_pings = 15;
-			unsigned long timeout = ping_times[0] * 3;
+			uint32_t timeout = ping_times[0] * 3;
 			if (ping_times[0] < 100) {
 				num_pings = 30;
 				timeout = 200;
@@ -1235,7 +1236,7 @@ void Ping_Profile(SOCKADDR_IN *router_addr, unsigned long my_ip)
  * HISTORY:                                                                                    *
  *   10/8/2001 2:07PM ST : Created                                                             *
  *=============================================================================================*/
-int Get_Path_To_Server(unsigned long *path, unsigned long my_ip, unsigned long server_ip)
+int Get_Path_To_Server(uint32_t *path, uint32_t my_ip, uint32_t server_ip)
 {
 	char reg_name[128];
 	int path_size = 0;
@@ -1243,7 +1244,7 @@ int Get_Path_To_Server(unsigned long *path, unsigned long my_ip, unsigned long s
 	struct sockaddr_in address;
 	char temp_buffer[640];
 	int seq_id;
-	unsigned long ping_dest_address = htonl(my_ip);
+	uint32_t ping_dest_address = htonl(my_ip);
 
 	/*
 	** See if the path in the registry looks valid.
@@ -1256,13 +1257,13 @@ int Get_Path_To_Server(unsigned long *path, unsigned long my_ip, unsigned long s
 	/*
 	** If the ip at either end of the route has changed then the path isn't valid anymore.
 	*/
-	if (((unsigned long)reg_my_ip) == my_ip && ((unsigned long)reg_server_ip) == server_ip) {
+	if (((uint32_t)reg_my_ip) == my_ip && ((uint32_t)reg_server_ip) == server_ip) {
 
 		/*
 		** If the path is too old then we should probably not consider it valid.
 		*/
-		unsigned long time = timeGetTime();
-		unsigned long last_path_time = (unsigned long) reg_path_time;
+		uint32_t time = timeGetTime();
+		uint32_t last_path_time = (uint32_t) reg_path_time;
 
 		/*
 		** Lets only use it if it's less than 2 hours old.
@@ -1274,7 +1275,7 @@ int Get_Path_To_Server(unsigned long *path, unsigned long my_ip, unsigned long s
 			*/
 			for (int i=0 ; i<reg_path_length ; i++) {
 				sprintf(reg_name, "Path%02d", i);
-				path[i] = (unsigned long) Get_Registry_Int(reg_name, 0);
+				path[i] = (uint32_t) Get_Registry_Int(reg_name, 0);
 				if (path[i]) {
 					path_size++;
 				} else {
@@ -1321,7 +1322,7 @@ int Get_Path_To_Server(unsigned long *path, unsigned long my_ip, unsigned long s
 			return(0);
 		}
 
-		unsigned long start_time = timeGetTime();
+		uint32_t start_time = timeGetTime();
 
 		/*
 		** Send a ping with the previously set TTL.
@@ -1343,7 +1344,7 @@ int Get_Path_To_Server(unsigned long *path, unsigned long my_ip, unsigned long s
 		};
 
 		if (seq_id != -1) {
-			unsigned long long_router_addr = ntohl(address.sin_addr.s_addr);
+			uint32_t long_router_addr = ntohl(address.sin_addr.s_addr);
 			path[hops_to_server++] = long_router_addr;
 
 			/*
@@ -1399,14 +1400,14 @@ int Get_Path_To_Server(unsigned long *path, unsigned long my_ip, unsigned long s
  * HISTORY:                                                                                    *
  *   10/8/2001 2:09PM ST : Created                                                             *
  *=============================================================================================*/
-int Ping_Host(unsigned long host_ip, unsigned long my_ip, int times, int payload_size, unsigned long *ping_times, unsigned long timeout)
+int Ping_Host(uint32_t host_ip, uint32_t my_ip, int times, int payload_size, uint32_t *ping_times, uint32_t timeout)
 {
 	static int _packet_sequencer = 0;
 	int num_pings = 0;
 	char temp_buffer[640];
 	struct sockaddr_in host_addr;
 	struct sockaddr_in address;
-	unsigned long ping_dest_address = htonl(my_ip);
+	uint32_t ping_dest_address = htonl(my_ip);
 
 	/*
 	** Set the TTL back to max.
@@ -1428,13 +1429,13 @@ int Ping_Host(unsigned long host_ip, unsigned long my_ip, int times, int payload
 	for (int i=0 ; i<times ; i++) {
 
 		for (int b=0 ; b<sizeof(temp_buffer) ; b++) {
-			temp_buffer[b] = (unsigned char) (rand() & 0xff);
+			temp_buffer[b] = (uint8_t) (rand() & 0xff);
 		}
 
 		/*
 		** Record the time before sending the ping.
 		*/
-		unsigned long start_time = timeGetTime();
+		uint32_t start_time = timeGetTime();
 
 		/*
 		** Send the ping.
@@ -1460,7 +1461,7 @@ int Ping_Host(unsigned long host_ip, unsigned long my_ip, int times, int payload
 		** Check the time now and record it as a ping time.
 		*/
 		if (seq_id == _packet_sequencer) {
-			unsigned long router_ping_time = timeGetTime() - start_time;
+			uint32_t router_ping_time = timeGetTime() - start_time;
 			DebugString("Ping time %d to external router %s is %d ms\n", num_pings, Addr_As_String2(&host_addr), router_ping_time);
 			ping_times[num_pings++] = router_ping_time;
 		}
@@ -1473,7 +1474,7 @@ int Ping_Host(unsigned long host_ip, unsigned long my_ip, int times, int payload
 	if (num_pings > 5) {
 		NumPingsCheckedForConsistency += num_pings;
 
-		unsigned long *ping_copies = (unsigned long*) _alloca(num_pings * 4);
+		uint32_t *ping_copies = (uint32_t*) _alloca(num_pings * 4);
 		memcpy(ping_copies, ping_times, num_pings * 4);
 		float average_ping = Average_Ping(num_pings, ping_copies, true);
 		float error_permit = 0.25f;
@@ -1520,8 +1521,8 @@ int Ping_Host(unsigned long host_ip, unsigned long my_ip, int times, int payload
  *=============================================================================================*/
 int __cdecl Ping_Compare(const void *ping1, const void *ping2)
 {
-	unsigned long p1 = *((unsigned long*)ping1);
-	unsigned long p2 = *((unsigned long*)ping2);
+	uint32_t p1 = *((uint32_t*)ping1);
+	uint32_t p2 = *((uint32_t*)ping2);
 
 	if (p1 == p2) {
 		return(0);
@@ -1550,9 +1551,9 @@ int __cdecl Ping_Compare(const void *ping1, const void *ping2)
  * HISTORY:                                                                                    *
  *   10/8/2001 2:14PM ST : Created                                                             *
  *=============================================================================================*/
-void Sort_Pings(int num_pings, unsigned long *ping_times)
+void Sort_Pings(int num_pings, uint32_t *ping_times)
 {
-	qsort(ping_times, num_pings, sizeof(unsigned long), &Ping_Compare);
+	qsort(ping_times, num_pings, sizeof(uint32_t), &Ping_Compare);
 }
 
 
@@ -1572,7 +1573,7 @@ void Sort_Pings(int num_pings, unsigned long *ping_times)
  * HISTORY:                                                                                    *
  *   10/8/2001 2:14PM ST : Created                                                             *
  *=============================================================================================*/
-float Average_Ping(int num_pings, unsigned long *ping_times, bool ignore_low_high)
+float Average_Ping(int num_pings, uint32_t *ping_times, bool ignore_low_high)
 {
 	if (ignore_low_high && num_pings > 2) {
 		Sort_Pings(num_pings, ping_times);
@@ -1633,7 +1634,7 @@ float Average_Ping(int num_pings, unsigned long *ping_times, bool ignore_low_hig
  * HISTORY:                                                                                    *
  *   10/9/2001 5:03PM ST : Created                                                             *
  *=============================================================================================*/
-float Lowest_Ping(int num_pings, unsigned long *ping_times)
+float Lowest_Ping(int num_pings, uint32_t *ping_times)
 {
 	float lowest_ping = 1000000.0;
 	for (int i=0 ; i<num_pings ; i++) {
@@ -1666,7 +1667,7 @@ float Lowest_Ping(int num_pings, unsigned long *ping_times)
  * HISTORY:                                                                                    *
  *   10/3/2001 11:46AM ST : Created                                                            *
  *=============================================================================================*/
-bool Send_Raw_UDP(char *payload, int payload_size, SOCKET socket, struct sockaddr *address, unsigned short source_port, unsigned short dest_port)
+bool Send_Raw_UDP(char *payload, int payload_size, SOCKET socket, struct sockaddr *address, uint16_t source_port, uint16_t dest_port)
 {
 	/*
 	** Asserts.
@@ -1687,7 +1688,7 @@ bool Send_Raw_UDP(char *payload, int payload_size, SOCKET socket, struct sockadd
 	/*
 	** Build the header on the stack for convenience.
 	*/
-	unsigned char packetbuf[1024];
+	uint8_t packetbuf[1024];
 	UDPHeaderType *header = (UDPHeaderType*) packetbuf;
 
 	/*
@@ -1695,7 +1696,7 @@ bool Send_Raw_UDP(char *payload, int payload_size, SOCKET socket, struct sockadd
 	*/
 	header->SourcePort = source_port;
 	header->DestPort = htons(dest_port);
-	header->Length = (unsigned short) (sizeof(UDPHeaderType) + payload_size);
+	header->Length = (uint16_t) (sizeof(UDPHeaderType) + payload_size);
 	header->Checksum = 0;
 
 	/*
@@ -1708,7 +1709,7 @@ bool Send_Raw_UDP(char *payload, int payload_size, SOCKET socket, struct sockadd
 	** Fix up the UDP header checksum.
 	*/
 	int packet_size = payload_size + sizeof(*header);
-	header->Checksum = Get_IP_Checksum((unsigned short *)header, packet_size);
+	header->Checksum = Get_IP_Checksum((uint16_t *)header, packet_size);
 
 	/*
 	** Send it.
@@ -1769,7 +1770,7 @@ bool Send_Ping(char *payload, int payload_size, SOCKET socket, struct sockaddr *
 	/*
 	** Build the header on the stack for convenience.
 	*/
-	unsigned char packetbuf[1024];
+	uint8_t packetbuf[1024];
 	ICMPHeaderType *header = (ICMPHeaderType*) packetbuf;
 
 	/*
@@ -1777,9 +1778,9 @@ bool Send_Ping(char *payload, int payload_size, SOCKET socket, struct sockaddr *
 	*/
 	header->Type = ICMP_ECHO;
 	header->Code = 0;
-	header->ID = (unsigned short) (GetCurrentProcessId() & 0xffff);
+	header->ID = (uint16_t) (GetCurrentProcessId() & 0xffff);
 	header->Checksum = 0;
-	header->Sequence = (unsigned short) sequence_id;
+	header->Sequence = (uint16_t) sequence_id;
 
 	/*
 	** Copy the payload into position.
@@ -1791,7 +1792,7 @@ bool Send_Ping(char *payload, int payload_size, SOCKET socket, struct sockaddr *
 	** Fix up the checksum in the ICMP header.
 	*/
 	int packet_size = payload_size + sizeof(*header);
-	header->Checksum = Get_IP_Checksum((unsigned short *)header, packet_size);
+	header->Checksum = Get_IP_Checksum((uint16_t *)header, packet_size);
 
 	/*
 	** Send it.
@@ -1835,13 +1836,13 @@ bool Send_Ping(char *payload, int payload_size, SOCKET socket, struct sockaddr *
  * HISTORY:                                                                                    *
  *   10/3/2001 12:57PM ST : Created                                                            *
  *=============================================================================================*/
-bool Get_Ping_Response(SOCKET socket, int &seq_id, struct sockaddr *address, unsigned long validate_address, unsigned long &my_address)
+bool Get_Ping_Response(SOCKET socket, int &seq_id, struct sockaddr *address, uint32_t validate_address, uint32_t &my_address)
 {
 	struct sockaddr_in addr;
 	int addr_len;
 	char recv_buffer[1024];
 
-	unsigned long bytes;
+	uint32_t bytes;
 	int result = ioctlsocket(socket, FIONREAD, &bytes);
 
 	/*
@@ -1913,7 +1914,7 @@ bool Get_Ping_Response(SOCKET socket, int &seq_id, struct sockaddr *address, uns
 					*/
 					case ICMP_ECHO_REPLY:
 						//DebugString("Type is ICMP_ECHO_REPLY\n");
-						if (icmp_header->ID == (unsigned short)(GetCurrentProcessId() & 0xffff)) {
+						if (icmp_header->ID == (uint16_t)(GetCurrentProcessId() & 0xffff)) {
 							memcpy(address, &addr, addr_len);
 							seq_id = icmp_header->Sequence;
 							return(true);
@@ -1933,7 +1934,7 @@ bool Get_Ping_Response(SOCKET socket, int &seq_id, struct sockaddr *address, uns
 							*/
 							IPHeaderType *original_ip_header = (IPHeaderType*)(((char*)icmp_header) + 8);
 							if (ntohl(original_ip_header->DestIP) == validate_address) {
-								DebugString("Received ICMP_TIME_EXCEEDED from %s\n", Addr_As_String((unsigned char*)&ip_header->SourceIP));
+								DebugString("Received ICMP_TIME_EXCEEDED from %s\n", Addr_As_String((uint8_t*)&ip_header->SourceIP));
 								memcpy(address, &addr, addr_len);
 								seq_id = 100000;
 								return(true);
@@ -2020,7 +2021,7 @@ bool Open_Raw_Sockets(int &failure_code)
 	/*
 	** Get the group number.
 	*/
-	unsigned long group = 0;
+	uint32_t group = 0;
 	int length = 4;
 
 	if (use_group) {
@@ -2056,11 +2057,11 @@ bool Open_Raw_Sockets(int &failure_code)
 	/*
 	** Set the priority for the sockets.
 	*/
-	//unsigned long priority;
+	//uint32_t priority;
 	//getsockopt (RawSocket, SOL_SOCKET, SO_GROUP_PRIORITY, (char*)&priority, &length);
 	//getsockopt (ICMPRawSocket, SOL_SOCKET, SO_GROUP_PRIORITY, (char*)&priority, &length);
 
-	unsigned long new_priority = 50;
+	uint32_t new_priority = 50;
 	int result = setsockopt(RawSocket, SOL_SOCKET, SO_GROUP_PRIORITY, (char*)&new_priority, sizeof(new_priority));
 	if (result != 0) {
 		DebugString("Unable to set priority on UDP socket - error code %d\n", WSAGetLastError());
@@ -2123,25 +2124,25 @@ void Close_Raw_Sockets(void)
  * HISTORY:                                                                                    *
  *   10/3/2001 11:44AM ST : Created                                                            *
  *=============================================================================================*/
-unsigned short Get_IP_Checksum(unsigned short *buffer, int size)
+uint16_t Get_IP_Checksum(uint16_t *buffer, int size)
 {
-	unsigned long checksum = 0;
+	uint32_t checksum = 0;
 	int new_size = size;
-	unsigned short *bufptr = buffer;
+	uint16_t *bufptr = buffer;
 
 	while(new_size >1) {
 		checksum += *bufptr++;
-		new_size -= sizeof(unsigned short);
+		new_size -= sizeof(uint16_t);
 	}
 
 	if (new_size) {
-		checksum += *(unsigned char*) bufptr;
+		checksum += *(uint8_t*) bufptr;
 	}
 
 	checksum = (checksum >> 16) + (checksum & 0xffff);
 	checksum += (checksum >> 16);
 	checksum = ~checksum;
-	return ((unsigned short) checksum);
+	return ((uint16_t) checksum);
 }
 
 
@@ -2152,17 +2153,17 @@ unsigned short Get_IP_Checksum(unsigned short *buffer, int size)
 
 bool Set_Registry_Int(const char *name, int value)
 {
-	int result = RegSetValueEx(RegistryKey, name, 0, REG_DWORD, (unsigned char*)&value, sizeof(value));
+	int result = RegSetValueEx(RegistryKey, name, 0, REG_DWORD, (uint8_t*)&value, sizeof(value));
 	return((result == ERROR_SUCCESS) ? true : false);
 }
 
 int Get_Registry_Int(const char *name, int def_value)
 {
-	unsigned long type;
-	unsigned long data;
-	unsigned long data_size = sizeof(data);
+	uint32_t type;
+	uint32_t data;
+	uint32_t data_size = sizeof(data);
 
-	if (RegQueryValueEx(RegistryKey, name, NULL, &type, (unsigned char*)&data, &data_size) == ERROR_SUCCESS) {
+	if (RegQueryValueEx(RegistryKey, name, NULL, &type, (uint8_t*)&data, &data_size) == ERROR_SUCCESS) {
 		return(data);
 	}
 	return(def_value);
@@ -2172,8 +2173,8 @@ int Get_Registry_Int(const char *name, int def_value)
 bool Open_Registry(void)
 {
 	HKEY key;
-	unsigned long disposition;
-	long result = RegCreateKeyEx(HKEY_LOCAL_MACHINE, RegistryPath, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &key, &disposition);
+	uint32_t disposition;
+	int32_t result = RegCreateKeyEx(HKEY_LOCAL_MACHINE, RegistryPath, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &key, &disposition);
 	if (result == ERROR_SUCCESS) {
 		RegistryKey = key;
 		return(true);
@@ -2224,7 +2225,7 @@ void DebugString (char const * string, ...)
 	vsprintf(&buffer[10], string, va);
 	va_end(va);
 
-	DWORD	actual;
+	uint32_t	actual;
 	if (DebugFile == INVALID_HANDLE_VALUE) {
 		GetModuleFileName (GetModuleHandle(NULL), &path_to_exe[0], 512);
 		_splitpath(path_to_exe, drive, dir, NULL, NULL);
@@ -2299,7 +2300,7 @@ char * Addr_As_String2(struct sockaddr_in *addr)
  * HISTORY:                                                                                    *
  *   8/31/2001 3:48PM ST : Created                                                             *
  *=============================================================================================*/
-char * Addr_As_String(unsigned char *addr)
+char * Addr_As_String(uint8_t *addr)
 {
 	static char _string[128];
 	sprintf(_string, "%d.%d.%d.%d", 	(int)(addr[0]), (int)(addr[1]), (int)(addr[2]), (int)(addr[3]));
@@ -2342,7 +2343,7 @@ char * Addr_As_String(unsigned char *addr)
 				return(0);
 			}
 
-			unsigned long start_time = timeGetTime();
+			uint32_t start_time = timeGetTime();
 
 			/*
 			** Send a ping with the previously set TTL.
@@ -2366,7 +2367,7 @@ char * Addr_As_String(unsigned char *addr)
 			};
 
 			if (seq_id != -1) {
-				unsigned long long_router_addr = ntohl(address.sin_addr.s_addr);
+				uint32_t long_router_addr = ntohl(address.sin_addr.s_addr);
 				if (!found_whole_path) {
 					path_to_server[hops_to_server++] = long_router_addr;
 				}
@@ -2390,7 +2391,7 @@ char * Addr_As_String(unsigned char *addr)
 				if (router_ttl == 0 && (long_router_addr & 0xffff0000) != (my_ip & 0xffff0000)) {
 					memcpy(&router_addr, &address, sizeof(router_addr));
 					router_ttl = ttl;
-					DebugString("Found external router at %s - ttl = %d\n", Addr_As_String((unsigned char*)&address.sin_addr.s_addr), router_ttl);
+					DebugString("Found external router at %s - ttl = %d\n", Addr_As_String((uint8_t*)&address.sin_addr.s_addr), router_ttl);
 					if (found_whole_path || settings->TTLScatter == 0) {
 						break;
 					}
@@ -2439,7 +2440,7 @@ char * Addr_As_String(unsigned char *addr)
 
 		for (i=0 ; i<3 ; i++) {
 
-			unsigned long start_time = timeGetTime();
+			uint32_t start_time = timeGetTime();
 
 			Send_Ping((char*)temp_buffer, 0, ICMPRawSocket, (struct sockaddr *) &router_addr, packet_sequencer);
 
@@ -2459,7 +2460,7 @@ char * Addr_As_String(unsigned char *addr)
 			//assert(seq_id == packet_sequencer);
 			//assert(seq_id < 3);
 			if (seq_id == packet_sequencer) {
-				unsigned long router_ping_time = timeGetTime() - start_time;
+				uint32_t router_ping_time = timeGetTime() - start_time;
 				DebugString("Ping time %d to external router %s is %d ms\n", num_pings, Addr_As_String2(&router_addr), router_ping_time);
 				ping_times[num_pings++] = router_ping_time;
 			}

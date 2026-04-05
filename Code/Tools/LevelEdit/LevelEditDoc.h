@@ -25,6 +25,8 @@
 
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 
 
@@ -62,10 +64,10 @@ public:
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(CLevelEditDoc)
 	public:
-	virtual BOOL OnNewDocument();
+	virtual int32_t OnNewDocument();
 	virtual void Serialize(CArchive& ar);
-	virtual BOOL OnOpenDocument(LPCTSTR lpszPathName);
-	virtual BOOL OnSaveDocument(LPCTSTR lpszPathName);
+	virtual int32_t OnOpenDocument(LPCTSTR lpszPathName);
+	virtual int32_t OnSaveDocument(LPCTSTR lpszPathName);
 	virtual void PreCloseFrame( CFrameWnd* pFrame );
 	//}}AFX_VIRTUAL
 

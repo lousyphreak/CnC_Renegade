@@ -99,7 +99,7 @@ EmitterLineGroupPropPageClass::Initialize (void)
 		m_MaxBlurTime = WWMath::Max(m_BlurTimes.Start,1.0f);
 		m_MinBlurTime = WWMath::Min(m_BlurTimes.Start,0.0f);
 
-		for (UINT index = 0; index < m_BlurTimes.NumKeyFrames; index ++) {
+		for (uint32_t index = 0; index < m_BlurTimes.NumKeyFrames; index ++) {
 			if (m_BlurTimes.Values[index] > m_MaxBlurTime) {
 				m_MaxBlurTime = m_BlurTimes.Values[index];
 			}
@@ -115,7 +115,7 @@ EmitterLineGroupPropPageClass::Initialize (void)
 /////////////////////////////////////////////////////////////////////////////
 // EmitterLineGroupPropPageClass message handlers
 
-BOOL EmitterLineGroupPropPageClass::OnInitDialog() 
+int32_t EmitterLineGroupPropPageClass::OnInitDialog() 
 {
 	CPropertyPage::OnInitDialog();
 	
@@ -140,7 +140,7 @@ BOOL EmitterLineGroupPropPageClass::OnInitDialog()
 	//
 	// Load the current set of frame keyframes into the control
 	//
-	for (UINT index = 0; index < m_BlurTimes.NumKeyFrames; index ++) {
+	for (uint32_t index = 0; index < m_BlurTimes.NumKeyFrames; index ++) {
 		m_BlurTimeBar->Modify_Point (index + 1,
 										m_BlurTimes.KeyTimes[index] / m_Lifetime,
 										0,
@@ -213,7 +213,7 @@ EmitterLineGroupPropPageClass::On_Lifetime_Changed (float lifetime)
 		//
 		//	Rescale the sizes
 		//
-		for (UINT index = 0; index < m_BlurTimes.NumKeyFrames; index ++) {
+		for (uint32_t index = 0; index < m_BlurTimes.NumKeyFrames; index ++) {
 			m_BlurTimes.KeyTimes[index] *= conversion;
 		}
 
@@ -227,7 +227,7 @@ EmitterLineGroupPropPageClass::On_Lifetime_Changed (float lifetime)
 	return ;
 }
 
-BOOL EmitterLineGroupPropPageClass::OnCommand(WPARAM wParam, LPARAM lParam) 
+int32_t EmitterLineGroupPropPageClass::OnCommand(uintptr_t wParam, intptr_t lParam) 
 {
 	switch (LOWORD (wParam))
 	{
@@ -237,7 +237,7 @@ BOOL EmitterLineGroupPropPageClass::OnCommand(WPARAM wParam, LPARAM lParam)
 			if ((HIWORD (wParam) == EN_KILLFOCUS) &&
 				SendDlgItemMessage (LOWORD (wParam), EM_GETMODIFY)) 
 			{
-				SendDlgItemMessage (LOWORD (wParam), EM_SETMODIFY, (WPARAM)0);
+				SendDlgItemMessage (LOWORD (wParam), EM_SETMODIFY, (uintptr_t)0);
 				m_BlurTimes.Rand = ::GetDlgItemFloat (m_hWnd, IDC_BLUR_TIME_RANDOM_EDIT);
 				m_pEmitterList->Set_Blur_Time_Keyframes (m_BlurTimes);
 				SetModified ();
@@ -251,7 +251,7 @@ BOOL EmitterLineGroupPropPageClass::OnCommand(WPARAM wParam, LPARAM lParam)
 	return CPropertyPage::OnCommand(wParam, lParam);
 }
 
-BOOL EmitterLineGroupPropPageClass::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult) 
+int32_t EmitterLineGroupPropPageClass::OnNotify(uintptr_t wParam, intptr_t lParam, intptr_t* pResult) 
 {
 	CBR_NMHDR *color_bar_hdr = (CBR_NMHDR *)lParam;
 

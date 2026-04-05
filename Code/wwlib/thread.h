@@ -45,7 +45,7 @@ struct _EXCEPTION_POINTERS;
 class ThreadClass
 {
 public:
-	typedef int (*ExceptionHandlerType)(int exception_code, struct _EXCEPTION_POINTERS *e_info);
+	typedef int32_t (*ExceptionHandlerType)(int32_t exception_code, struct _EXCEPTION_POINTERS *e_info);
 
 	ThreadClass(const char *name = NULL, ExceptionHandlerType exception_handler = NULL);
 	virtual ~ThreadClass();

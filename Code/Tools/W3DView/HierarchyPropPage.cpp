@@ -91,7 +91,7 @@ END_MESSAGE_MAP()
 //
 //  OnInitDialog
 //
-BOOL
+int32_t
 CHierarchyPropPage::OnInitDialog (void) 
 {
 	// Allow the base class to process this message
@@ -161,7 +161,7 @@ void
 CHierarchyPropPage::OnDblclkSubObjectList
 (
     NMHDR* pNMHDR,
-    LRESULT* pResult
+    intptr_t* pResult
 )
 {    
     // Get the currently selected item

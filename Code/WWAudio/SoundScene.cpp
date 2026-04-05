@@ -141,7 +141,7 @@ SoundSceneClass::Collect_Logical_Sounds (int listener_count)
 {
 	WWPROFILE ("Collect_Logical_Sounds");
 
-	uint32 timestamp = TIMEGETTIME ();
+	uint32_t timestamp = TIMEGETTIME ();
 
 	//
 	//	Determine how many listeners to process
@@ -340,7 +340,7 @@ SoundSceneClass::Collect_Audible_Sounds
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////
 void
-SoundSceneClass::On_Frame_Update (unsigned int milliseconds)
+SoundSceneClass::On_Frame_Update (uint32_t milliseconds)
 {
 	WWPROFILE ("On_Frame_Update");
 

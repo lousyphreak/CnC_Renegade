@@ -37,6 +37,8 @@
 #ifndef	COMBAT_H
 #define	COMBAT_H
 
+#include <cstdint>
+
 #ifndef	ALWAYS_H
 	#include "always.h"
 #endif
@@ -170,10 +172,10 @@ public:
 	static	int	Get_My_Id( void )						{ return MyId; }
 
 	// Latency support
-	static	void	Set_Last_Round_Trip_Ping_Ms( DWORD ping )		{ LastRoundTripPingMs = ping; }
-	static	DWORD	Get_Last_Round_Trip_Ping_Ms( void )				{ return LastRoundTripPingMs; }
-	static	void	Set_Avg_Round_Trip_Ping_Ms( DWORD ping )		{ AvgRoundTripPingMs = ping; }
-	static	DWORD	Get_Avg_Round_Trip_Ping_Ms( void )				{ return AvgRoundTripPingMs; }
+	static	void	Set_Last_Round_Trip_Ping_Ms( uint32_t ping )		{ LastRoundTripPingMs = ping; }
+	static	uint32_t	Get_Last_Round_Trip_Ping_Ms( void )				{ return LastRoundTripPingMs; }
+	static	void	Set_Avg_Round_Trip_Ping_Ms( uint32_t ping )		{ AvgRoundTripPingMs = ping; }
+	static	uint32_t	Get_Avg_Round_Trip_Ping_Ms( void )				{ return AvgRoundTripPingMs; }
 
 	// Network Handler Functions
 	static	void	Set_Combat_Network_Handler( CombatNetworkHandlerClass * handler )	{ NetworkHandler = handler; }
@@ -337,8 +339,8 @@ private:
 	/*
 	** Latency Support
 	*/
-	static DWORD	LastRoundTripPingMs;
-	static DWORD	AvgRoundTripPingMs;
+	static uint32_t	LastRoundTripPingMs;
+	static uint32_t	AvgRoundTripPingMs;
 
 	static StringClass	LastLSDName;
 

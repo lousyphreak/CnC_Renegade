@@ -40,6 +40,8 @@
 #ifndef GAMEMTLDLG_H
 #define GAMEMTLDLG_H
 
+#include <cstdint>
+
 class GameMtl;
 class GameMtlPassDlg;
 
@@ -70,7 +72,7 @@ public:
 	void					DeleteThis() { delete this;  }	
 	void					SetTime(TimeValue t);
 	void					ReloadDialog(void);
-	void					ActivateDlg(BOOL onOff);
+	void					ActivateDlg(int32_t onOff);
 
 	void					Invalidate(void);
 	void					Update_Display(void)	{IParams->MtlChanged();}
@@ -83,9 +85,9 @@ public:
 protected:
 
 	void					Build_Dialog(HWND hParent = NULL);
-	BOOL					DisplacementMapProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-	BOOL					SurfaceTypeProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-	BOOL					PassCountProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+	int32_t					DisplacementMapProc(HWND hDlg, uint32_t message, uintptr_t wParam, intptr_t lParam);
+	int32_t					SurfaceTypeProc(HWND hDlg, uint32_t message, uintptr_t wParam, intptr_t lParam);
+	int32_t					PassCountProc(HWND hDlg, uint32_t message, uintptr_t wParam, intptr_t lParam);
 	void					Set_Pass_Count_Dialog(void);
 
 	enum { MAX_PASSES = 4 };
@@ -112,9 +114,9 @@ protected:
 	////////////////////////////////////////////////////////////////////////
 	TimeValue			CurTime;
 	int					IsActive;
-	friend BOOL CALLBACK DisplacementMapDlgProc(HWND, UINT, WPARAM,LPARAM);
-	friend BOOL CALLBACK SurfaceTypePanelDlgProc(HWND, UINT, WPARAM,LPARAM);
-	friend BOOL CALLBACK PassCountPanelDlgProc(HWND, UINT, WPARAM,LPARAM);
+	friend int32_t CALLBACK DisplacementMapDlgProc(HWND, uint32_t, uintptr_t,intptr_t);
+	friend int32_t CALLBACK SurfaceTypePanelDlgProc(HWND, uint32_t, uintptr_t,intptr_t);
+	friend int32_t CALLBACK PassCountPanelDlgProc(HWND, uint32_t, uintptr_t,intptr_t);
 	friend class GameMtl;
 };
 	GameMtl*				GetMtlFromSelection();

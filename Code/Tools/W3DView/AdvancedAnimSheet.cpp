@@ -56,7 +56,7 @@ static int anim_name_compare (const void *arg1, const void *arg2)
 
 IMPLEMENT_DYNAMIC(CAdvancedAnimSheet, CPropertySheet)
 
-CAdvancedAnimSheet::CAdvancedAnimSheet(CWnd* pParentWnd, UINT iSelectPage)
+CAdvancedAnimSheet::CAdvancedAnimSheet(CWnd* pParentWnd, uint32_t iSelectPage)
 :	CPropertySheet("Advanced Animation", pParentWnd, iSelectPage),
 	m_MixingPage(this),
 	m_ReportPage(this),

@@ -65,7 +65,7 @@ template<typename T> T CharToUpper(const T ch)
 
 
 // Check if character is one of the specified characters
-template<typename T>bool IsCharacter(WChar ch, const T* oneOf)
+template<typename T>bool IsCharacter(wchar_t ch, const T* oneOf)
 	{
 	assert(oneOf != NULL);
 
@@ -78,7 +78,7 @@ template<typename T>bool IsCharacter(WChar ch, const T* oneOf)
 
 	for (int index = 0; index < length; index++)
 		{
-		if (ch == (WChar)oneOf[index])
+		if (ch == (wchar_t)oneOf[index])
 			{
 			return true;
 			}
@@ -89,10 +89,10 @@ template<typename T>bool IsCharacter(WChar ch, const T* oneOf)
 
 
 // Strip all left side characters that are trim chars
-template<typename T> bool StripLeft(WChar* string, const T* trimChars)
+template<typename T> bool StripLeft(wchar_t* string, const T* trimChars)
 	{
 	// Strip leading trim characters from the string.
-	WChar* start = string;
+	wchar_t* start = string;
 
 	while ((*start != 0) && IsCharacter<T>(*start, trimChars))
 		{
@@ -109,7 +109,7 @@ template<typename T> bool StripLeft(WChar* string, const T* trimChars)
 
 
 // Strip all right side characters that are trim chars
-template<typename T> bool StripRight(WChar* string, const T* trimChars)
+template<typename T> bool StripRight(wchar_t* string, const T* trimChars)
 	{
 	int length = wcslen(string) - 1;
 	int index = length;
@@ -168,7 +168,7 @@ UString::UString()
 *
 ******************************************************************************/
 
-UString::UString(UInt capacity)
+UString::UString(uint32_t capacity)
 	: mData(NULL),
 	  mCapacity(0)
 	{
@@ -192,7 +192,7 @@ UString::UString(UInt capacity)
 *
 ******************************************************************************/
 
-UString::UString(const Char* s)
+UString::UString(const char* s)
 	: mData(NULL),
 	  mCapacity(0)
 	{
@@ -216,7 +216,7 @@ UString::UString(const Char* s)
 *
 ******************************************************************************/
 
-UString::UString(const WChar* ws)
+UString::UString(const wchar_t* ws)
 	: mData(NULL),
 	  mCapacity(0)
 	{
@@ -289,7 +289,7 @@ UString::~UString()
 *
 ******************************************************************************/
 
-UInt UString::Length(void) const
+uint32_t UString::Length(void) const
 	{
 	if (mData == NULL)
 		{
@@ -316,10 +316,10 @@ UInt UString::Length(void) const
 *
 ******************************************************************************/
 
-void UString::Copy(const Char* s)
+void UString::Copy(const char* s)
 	{
 	assert(s != NULL);
-	UInt length = strlen(s);
+	uint32_t length = strlen(s);
 
 	if (length == 0)
 		{
@@ -333,12 +333,12 @@ void UString::Copy(const Char* s)
 
 	// Copy and convert ansi string to unicode
 	assert(Capacity() >= length);
-	WChar* wsPtr = mData;
-	const Char* sPtr = s;
+	wchar_t* wsPtr = mData;
+	const char* sPtr = s;
 
 	while (length-- > 0)
 		{
-		*wsPtr++ = (WChar)*sPtr++;
+		*wsPtr++ = (wchar_t)*sPtr++;
 		}
 
 	*wsPtr = 0;
@@ -361,10 +361,10 @@ void UString::Copy(const Char* s)
 *
 ******************************************************************************/
 
-void UString::Copy(const WChar* ws)
+void UString::Copy(const wchar_t* ws)
 	{
 	assert(ws != NULL);
-	UInt length = wcslen(ws);
+	uint32_t length = wcslen(ws);
 
 	if (length == 0)
 		{
@@ -419,14 +419,14 @@ void UString::Copy(const UString& s)
 *
 ******************************************************************************/
 
-void UString::Concat(const Char* s)
+void UString::Concat(const char* s)
 	{
 	// Parameter check
 	assert(s != NULL);
 
-	UInt length = Length();
-	UInt additional = strlen(s);
-	UInt totalLength = (length + additional);
+	uint32_t length = Length();
+	uint32_t additional = strlen(s);
+	uint32_t totalLength = (length + additional);
 
 	// Resize the string if the combined size is to small
 	if (Capacity() < totalLength)
@@ -435,12 +435,12 @@ void UString::Concat(const Char* s)
 		}
 
 	// Concatenate and convert ansi string to unicode
-	WChar* wsPtr = &mData[length];
-	const Char* sPtr = s;
+	wchar_t* wsPtr = &mData[length];
+	const char* sPtr = s;
 
 	while (additional-- > 0)
 		{
-		*wsPtr++ = (WChar)*sPtr++;
+		*wsPtr++ = (wchar_t)*sPtr++;
 		}
 
 	*wsPtr = 0;
@@ -463,10 +463,10 @@ void UString::Concat(const Char* s)
 *
 ******************************************************************************/
 
-void UString::Concat(const WChar* ws)
+void UString::Concat(const wchar_t* ws)
 	{
 	assert(ws != NULL);
-	UInt length = (Length() + wcslen(ws));
+	uint32_t length = (Length() + wcslen(ws));
 
 	if (Capacity() < length)
 		{
@@ -517,7 +517,7 @@ void UString::Concat(const UString& s)
 *
 ******************************************************************************/
 
-Int UString::Compare(const Char* s) const
+int32_t UString::Compare(const char* s) const
 	{
 	// If comparing string is NULL and this string is NULL then strings are equal,
 	// otherwise comparing string is less than this string.
@@ -538,13 +538,13 @@ Int UString::Compare(const Char* s) const
 		}
 
 	// Compare each character
-	const WChar* ws = Get();
-	Int index = 0;
+	const wchar_t* ws = Get();
+	int32_t index = 0;
 
 	for (;;)
 		{
 		// Difference between characters
-		Int diff = ((WChar)s[index] - ws[index]);
+		int32_t diff = ((wchar_t)s[index] - ws[index]);
 
 		// If the difference is not zero then the characters differ
 		if (diff != 0)
@@ -584,7 +584,7 @@ Int UString::Compare(const Char* s) const
 *
 ******************************************************************************/
 
-Int UString::Compare(const WChar* ws) const
+int32_t UString::Compare(const wchar_t* ws) const
 	{
 	return wcscmp(ws, Get());
 	}
@@ -608,7 +608,7 @@ Int UString::Compare(const WChar* ws) const
 *
 ******************************************************************************/
 
-Int UString::Compare(const UString& s) const
+int32_t UString::Compare(const UString& s) const
 	{
 	return Compare(s.Get());
 	}
@@ -633,7 +633,7 @@ Int UString::Compare(const UString& s) const
 *
 ******************************************************************************/
 
-Int UString::CompareNoCase(const Char* s) const
+int32_t UString::CompareNoCase(const char* s) const
 	{
 	// If comparing string is NULL and this string is NULL then strings are
 	// equal, otherwise comparing string is less than this string.
@@ -654,17 +654,17 @@ Int UString::CompareNoCase(const Char* s) const
 		}
 
 	// Compare each character
-	const WChar* ws = Get();
-	Int index = 0;
+	const wchar_t* ws = Get();
+	int32_t index = 0;
 
 	for (;;)
 		{
 		// Convert to lowercase for compare
-		WChar sc = (WChar)CharToLower<Char>(s[index]);
-		WChar wc = CharToLower<WChar>(ws[index]);
+		wchar_t sc = (wchar_t)CharToLower<char>(s[index]);
+		wchar_t wc = CharToLower<wchar_t>(ws[index]);
 		
 		// Difference between characters.
-		Int diff = (sc - wc);
+		int32_t diff = (sc - wc);
 
 		// If the difference is not zero then the characters differ.
 		if (diff != 0)
@@ -705,7 +705,7 @@ Int UString::CompareNoCase(const Char* s) const
 *
 ******************************************************************************/
 
-Int UString::CompareNoCase(const WChar* ws) const
+int32_t UString::CompareNoCase(const wchar_t* ws) const
 	{
 	return wcsicmp(ws, Get());
 	}
@@ -730,7 +730,7 @@ Int UString::CompareNoCase(const WChar* ws) const
 *
 ******************************************************************************/
 
-Int UString::CompareNoCase(const UString& s) const
+int32_t UString::CompareNoCase(const UString& s) const
 	{
 	return CompareNoCase(s.Get());
 	}
@@ -745,16 +745,16 @@ Int UString::CompareNoCase(const UString& s) const
 *     Find the first occurance of character
 *
 * INPUTS
-*     Char - ANSI character to search for
+*     char - ANSI character to search for
 *
 * RESULT
 *     Position - Position of character (-1 if not found)
 *
 ******************************************************************************/
 
-Int UString::Find(Char c) const
+int32_t UString::Find(char c) const
 	{
-	return Find((WChar)c);
+	return Find((wchar_t)c);
 	}
 
 
@@ -767,16 +767,16 @@ Int UString::Find(Char c) const
 *     Find the first occurance of character
 *
 * INPUTS
-*     Char - Unicode character to search for.
+*     char - Unicode character to search for.
 *
 * RESULT
 *     Position - Position of character (-1 if not found)
 *
 ******************************************************************************/
 
-Int UString::Find(WChar c) const
+int32_t UString::Find(wchar_t c) const
 	{
-	WChar* ptr = wcschr(Get(), c);
+	wchar_t* ptr = wcschr(Get(), c);
 
 	// Not found?
 	if (ptr == NULL)
@@ -784,7 +784,7 @@ Int UString::Find(WChar c) const
 		return -1;
 		}
 
-	return ((ptr - mData) / sizeof(WChar));
+	return ((ptr - mData) / sizeof(wchar_t));
 	}
 
 
@@ -797,16 +797,16 @@ Int UString::Find(WChar c) const
 *     Find the last occurance of a character
 *
 * INPUTS
-*     Char - ANSI character
+*     char - ANSI character
 *
 * RESULT
 *     Position - Position of character (-1 if not found)
 *
 ******************************************************************************/
 
-Int UString::FindLast(Char c) const
+int32_t UString::FindLast(char c) const
 	{
-	return FindLast((WChar)c);
+	return FindLast((wchar_t)c);
 	}
 
 
@@ -819,17 +819,17 @@ Int UString::FindLast(Char c) const
 *     Find the last occurance of a character
 *
 * INPUTS
-*     Char - Unicode character
+*     char - Unicode character
 *
 * RESULT
 *     Position - Position of character (-1 if not found)
 *
 ******************************************************************************/
 
-Int UString::FindLast(WChar c) const
+int32_t UString::FindLast(wchar_t c) const
 	{
 	assert(mData != NULL);
-	WChar* ptr = wcsrchr(mData, (WChar)c);
+	wchar_t* ptr = wcsrchr(mData, (wchar_t)c);
 
 	// Not found?
 	if (ptr == NULL)
@@ -837,7 +837,7 @@ Int UString::FindLast(WChar c) const
 		return -1;
 		}
 
-	return ((ptr - mData) / sizeof(WChar));
+	return ((ptr - mData) / sizeof(wchar_t));
 	}
 
 
@@ -857,7 +857,7 @@ Int UString::FindLast(WChar c) const
 *
 ******************************************************************************/
 
-UString UString::SubString(const Char* s)
+UString UString::SubString(const char* s)
 	{
 	assert(false);
 	assert(s != NULL);
@@ -865,7 +865,7 @@ UString UString::SubString(const Char* s)
 	}
 
 
-UString UString::SubString(const WChar* ws)
+UString UString::SubString(const wchar_t* ws)
 	{
 	assert(false);
 	assert(ws != NULL);
@@ -896,7 +896,7 @@ UString UString::SubString(const UString& s)
 *
 ******************************************************************************/
 
-UString UString::Left(UInt count)
+UString UString::Left(uint32_t count)
 	{
 	assert(false);
 
@@ -927,7 +927,7 @@ UString UString::Left(UInt count)
 *
 ******************************************************************************/
 
-UString UString::Middle(UInt first, UInt count)
+UString UString::Middle(uint32_t first, uint32_t count)
 	{
 	assert(false);
 
@@ -958,9 +958,9 @@ UString UString::Middle(UInt first, UInt count)
 *
 ******************************************************************************/
 
-UString UString::Right(UInt count)
+UString UString::Right(uint32_t count)
 	{
-	UInt length = Length();
+	uint32_t length = Length();
 
 	// If the count is zero then return an empty string.
 	if ((length == 0) || (count == 0))
@@ -968,8 +968,8 @@ UString UString::Right(UInt count)
 		return UString("");
 		}
 
-	const WChar* ptr = Get();
-	UInt pos = (length - count);
+	const wchar_t* ptr = Get();
+	uint32_t pos = (length - count);
 
 	return UString(ptr[pos]);
 	}
@@ -1066,7 +1066,7 @@ void UString::Reverse(void)
 *
 ******************************************************************************/
 
-bool UString::Trim(const Char* trimChars)
+bool UString::Trim(const char* trimChars)
 	{
 	bool leftRemoved = TrimLeft(trimChars);
 	bool rightRemoved = TrimRight(trimChars);
@@ -1074,7 +1074,7 @@ bool UString::Trim(const Char* trimChars)
 	}
 
 
-bool UString::Trim(const WChar* trimChars)
+bool UString::Trim(const wchar_t* trimChars)
 	{
 	bool leftRemoved = TrimLeft(trimChars);
 	bool rightRemoved = TrimRight(trimChars);
@@ -1106,25 +1106,25 @@ bool UString::Trim(const UString& trimChars)
 *
 ******************************************************************************/
 
-bool UString::TrimLeft(const Char* trimChars)
+bool UString::TrimLeft(const char* trimChars)
 	{
 	if ((trimChars == NULL) || (strlen(trimChars) == 0))
 		{
 		return false;
 		}
 
-	return StripLeft<Char>(mData, trimChars);
+	return StripLeft<char>(mData, trimChars);
 	}
 
 
-bool UString::TrimLeft(const WChar* trimChars)
+bool UString::TrimLeft(const wchar_t* trimChars)
 	{
 	if ((trimChars == NULL) || (wcslen(trimChars) == 0))
 		{
 		return false;
 		}
 
-	return StripLeft<WChar>(mData, trimChars);
+	return StripLeft<wchar_t>(mData, trimChars);
 	}
 
 
@@ -1150,25 +1150,25 @@ bool UString::TrimLeft(const UString& trimChars)
 *
 ******************************************************************************/
 
-bool UString::TrimRight(const Char* trimChars)
+bool UString::TrimRight(const char* trimChars)
 	{
 	if ((trimChars == NULL) || (strlen(trimChars) == 0))
 		{
 		return false;
 		}
 
-	return StripRight<Char>(mData, trimChars);
+	return StripRight<char>(mData, trimChars);
 	}
 
 
-bool UString::TrimRight(const WChar* trimChars)
+bool UString::TrimRight(const wchar_t* trimChars)
 	{
 	if ((trimChars == NULL) || (wcslen(trimChars) == 0))
 		{
 		return false;
 		}
 
-	return StripRight<WChar>(mData, trimChars);
+	return StripRight<wchar_t>(mData, trimChars);
 	}
 
 
@@ -1195,7 +1195,7 @@ bool UString::TrimRight(const UString& trimChars)
 *
 ******************************************************************************/
 
-void UString::ConvertToANSI(Char* buffer, UInt bufferLength) const
+void UString::ConvertToANSI(char* buffer, uint32_t bufferLength) const
 	{
 	UStringToANSI(*this, buffer, bufferLength);
 	}
@@ -1217,14 +1217,14 @@ void UString::ConvertToANSI(Char* buffer, UInt bufferLength) const
 *
 ******************************************************************************/
 
-UInt UString::Size(void) const
+uint32_t UString::Size(void) const
 	{
 	if (mData == NULL)
 		{
 		return 0;
 		}
 
-	return ((Length() + 1) * sizeof(WChar));
+	return ((Length() + 1) * sizeof(wchar_t));
 	}
 
 
@@ -1244,7 +1244,7 @@ UInt UString::Size(void) const
 *
 ******************************************************************************/
 
-UInt UString::Capacity(void) const
+uint32_t UString::Capacity(void) const
 	{
 	return mCapacity;
 	}
@@ -1266,11 +1266,11 @@ UInt UString::Capacity(void) const
 *
 ******************************************************************************/
 
-bool UString::Resize(UInt size)
+bool UString::Resize(uint32_t size)
 	{
 	// Allocate new storage
 	assert(size > 0);
-	WChar* data = new WChar[size + 1];
+	wchar_t* data = new wchar_t[size + 1];
 	assert(data != NULL);
 
 	if (data == NULL)
@@ -1281,7 +1281,7 @@ bool UString::Resize(UInt size)
 	// Copy existing string into new storage buffer
 	if (mData != NULL)
 		{
-		UInt minSize = __min(Capacity(), size);
+		uint32_t minSize = __min(Capacity(), size);
 		wcsncpy(data, mData, minSize);
 		data[minSize] = 0;
 		delete mData;
@@ -1311,9 +1311,9 @@ bool UString::Resize(UInt size)
 *
 ******************************************************************************/
 
-bool UString::AllocString(UInt size)
+bool UString::AllocString(uint32_t size)
 	{
-	WChar* data = new WChar[size + 1];
+	wchar_t* data = new wchar_t[size + 1];
 	assert(data != NULL);
 
 	if (data == NULL)

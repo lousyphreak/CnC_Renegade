@@ -57,7 +57,7 @@ static char THIS_FILE[] = __FILE__;
 /////////////////////////////////////////////////////////////////////////
 //  Local Prototypes
 /////////////////////////////////////////////////////////////////////////
-void CALLBACK fnTimerCallback (UINT, UINT, DWORD, DWORD, DWORD);
+void CALLBACK fnTimerCallback (uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
 
 
 IMPLEMENT_DYNCREATE(CGraphicView, CView)
@@ -179,11 +179,11 @@ CGraphicView::OnCreate (LPCREATESTRUCT lpCreateStruct)
 //  InitializeGraphicView
 //
 ////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CGraphicView::InitializeGraphicView (void)
 {
 	// Assume failure
-	BOOL bReturn = FALSE;
+	int32_t bReturn = FALSE;
 	if (g_iDeviceIndex < 0) {
 		return FALSE;
 	}
@@ -258,11 +258,11 @@ CGraphicView::InitializeGraphicView (void)
 		// the display (kinda like a game loop iterator)
 		TIMECAPS caps = { 0 };
 		::timeGetDevCaps (&caps, sizeof (TIMECAPS));
-		UINT freq = max (caps.wPeriodMin, 16U);
-		m_TimerID = (UINT)::timeSetEvent (freq,
+		uint32_t freq = max (caps.wPeriodMin, 16U);
+		m_TimerID = (uint32_t)::timeSetEvent (freq,
 													 freq,
 													 fnTimerCallback,
-													 (DWORD)m_hWnd,
+													 (uint32_t)m_hWnd,
 													 TIME_PERIODIC);
     }
 
@@ -279,7 +279,7 @@ CGraphicView::InitializeGraphicView (void)
 void
 CGraphicView::OnSize
 (
-    UINT nType,
+    uint32_t nType,
     int cx,
     int cy
 )
@@ -335,7 +335,7 @@ CGraphicView::OnDestroy (void)
 	if (m_TimerID == 0) {
 
 		// Stop the timer
-		::timeKillEvent ((UINT)m_TimerID);
+		::timeKillEvent ((uint32_t)m_TimerID);
 		m_TimerID = 0;        
 	}
 
@@ -427,8 +427,8 @@ CGraphicView::Allow_Update (bool onoff)
 void
 CGraphicView::RepaintView
 (
-	BOOL bUpdateAnimation,
-	DWORD ticks_to_use
+	int32_t bUpdateAnimation,
+	uint32_t ticks_to_use
 )
 {
 	//
@@ -521,15 +521,15 @@ CGraphicView::RepaintView
 		//
 		// Render the main scene
 		//
-		DWORD pt_high = 0L;
+		uint32_t pt_high = 0L;
 
 		// Wait for all previous rendering to complete before starting benchmark.
-		DWORD profile_time = ::Get_CPU_Clock (pt_high);
+		uint32_t profile_time = ::Get_CPU_Clock (pt_high);
 
 		WW3D::Render (doc->GetScene (), m_pCamera, FALSE, FALSE);
 		
 		// Wait for all rendering to complete before stopping benchmark.
-		DWORD milliseconds = (::Get_CPU_Clock (pt_high) - profile_time) / 1000;
+		uint32_t milliseconds = (::Get_CPU_Clock (pt_high) - profile_time) / 1000;
 
 		//
 		// Render the cursor
@@ -609,12 +609,12 @@ CGraphicView::UpdateDisplay (void)
 //  WindowProc
 //
 ////////////////////////////////////////////////////////////////////////////
-LRESULT
+intptr_t
 CGraphicView::WindowProc
 (
-    UINT message,
-    WPARAM wParam,
-    LPARAM lParam
+    uint32_t message,
+    uintptr_t wParam,
+    intptr_t lParam
 )
 {
 	// Is this the repaint message we are expecting?
@@ -679,11 +679,11 @@ CGraphicView::WindowProc
 void CALLBACK
 fnTimerCallback
 (
-	UINT uID,
-	UINT uMsg,
-	DWORD dwUser,
-	DWORD dw1,
-	DWORD dw2
+	uint32_t uID,
+	uint32_t uMsg,
+	uint32_t dwUser,
+	uint32_t dw1,
+	uint32_t dw2
 )
 {
 	HWND hwnd = (HWND)dwUser;
@@ -713,7 +713,7 @@ fnTimerCallback
 void
 CGraphicView::OnLButtonDown
 (
-    UINT nFlags,
+    uint32_t nFlags,
     CPoint point
 )
 {
@@ -744,7 +744,7 @@ CGraphicView::OnLButtonDown
 void
 CGraphicView::OnLButtonUp
 (
-    UINT nFlags,
+    uint32_t nFlags,
     CPoint point
 )
 {
@@ -786,7 +786,7 @@ Quaternion rotation;
 void
 CGraphicView::OnMouseMove
 (
-    UINT nFlags,
+    uint32_t nFlags,
     CPoint point
 ) 
 {
@@ -1315,7 +1315,7 @@ CGraphicView::Load_Default_Dat (void)
 void
 CGraphicView::OnRButtonUp
 (
-    UINT nFlags,
+    uint32_t nFlags,
     CPoint point
 ) 
 {
@@ -1343,7 +1343,7 @@ CGraphicView::OnRButtonUp
 void
 CGraphicView::OnRButtonDown
 (
-    UINT nFlags,
+    uint32_t nFlags,
     CPoint point
 )
 {

@@ -37,6 +37,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef PHYS_H
 #define PHYS_H
 
@@ -369,8 +371,8 @@ public:
 	/*
 	** Instance ID related methods
 	*/
-	uint32							Get_ID(void) const											{ return InstanceID; }
-	void								Set_ID(uint32 id)												{ InstanceID = id; }
+	uint32_t							Get_ID(void) const											{ return InstanceID; }
+	void								Set_ID(uint32_t id)												{ InstanceID = id; }
 
 	/*
 	** Vis Object ID.  Every phys object can store a vis object id.  Static objects will
@@ -431,8 +433,8 @@ public:
 	** between 0 and 15.  Collisions between any two groups can be enabled/disabled through
 	** the physics system.
 	*/
-	void								Set_Collision_Group(unsigned char group)				{ group &= COLLISION_MASK; Flags &= ~COLLISION_MASK; Flags |= group; }
-	unsigned char					Get_Collision_Group(void) const							{ return Flags & COLLISION_MASK; }
+	void								Set_Collision_Group(uint8_t group)				{ group &= COLLISION_MASK; Flags &= ~COLLISION_MASK; Flags |= group; }
+	uint8_t					Get_Collision_Group(void) const							{ return Flags & COLLISION_MASK; }
 
 
 	/*
@@ -622,8 +624,8 @@ public:
 
 protected:
 
-	bool									Get_Flag(unsigned int flag) const 					{ return ((Flags & flag) == flag); }
-	void									Set_Flag(unsigned int flag,bool onoff)			 	{ (onoff ? Flags |= flag : Flags &= ~flag); }
+	bool									Get_Flag(uint32_t flag) const 					{ return ((Flags & flag) == flag); }
+	void									Set_Flag(uint32_t flag,bool onoff)			 	{ (onoff ? Flags |= flag : Flags &= ~flag); }
 	
 	void									Push_Effects(RenderInfoClass & rinfo);
 	void									Pop_Effects(RenderInfoClass & rinfo);
@@ -656,7 +658,7 @@ protected:
 	/*
 	** flags for things like whether this object is currently being considered immovable
 	*/
-	unsigned int					Flags;
+	uint32_t					Flags;
 	
 	/*
 	** Render model
@@ -671,14 +673,14 @@ protected:
 	/*
 	** Optional instance identifier (unique if non-zero)
 	*/
-	uint32							InstanceID;
+	uint32_t							InstanceID;
 
 	/*
 	** Vis Object ID.  Every phys object can store a vis object id.  Static objects will
 	** have constant ID's assigned by the vis generation process, dynamic objects will
 	** update their id based on their current location.
 	*/
-	uint32							VisObjectID;
+	uint32_t							VisObjectID;
 
 	/*
 	** Observer object 

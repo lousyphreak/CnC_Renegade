@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 
@@ -79,7 +81,7 @@ protected:
 	afx_msg void On2DRadio();
 	afx_msg void On3DRadio();
 	afx_msg void OnPlay();
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	virtual void OnOK();
 	virtual void OnCancel();
 	//}}AFX_MSG

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -43,10 +45,10 @@ public:
 		SecureRandomClass();
 		~SecureRandomClass();
 
-		unsigned long				Randval();				// get a 32 bit random value
+		uint32_t				Randval();				// get a 32 bit random value
 
 																	// Add randomness to the seed pool
-		void							Add_Seeds(unsigned char *values, int length);
+		void							Add_Seeds(uint8_t *values, int length);
 
 private:
 		void							Generate_Seed(void);	// Generate the inital seed
@@ -58,10 +60,10 @@ private:
 		};
 
 		static bool					Initialized;			// has the seed been initialized?
-		static unsigned char		Seeds[SeedLength];	// random seed values
-		static unsigned int		RandomCache[SHADigestBytes / sizeof(unsigned int)];
+		static uint8_t		Seeds[SeedLength];	// random seed values
+		static uint32_t		RandomCache[SHADigestBytes / sizeof(uint32_t)];
 		static int					RandomCacheEntries;
-		static unsigned int		Counter;
+		static uint32_t		Counter;
 
 		static Random3Class		RandomHelper;
 };

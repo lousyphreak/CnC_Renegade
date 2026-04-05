@@ -71,7 +71,7 @@ Make_String_Lower_Case (char *text)
 	}
 
 	for (; *text != 0; ++text) {
-		*text = static_cast<char>(SDL_tolower (static_cast<unsigned char>(*text)));
+		*text = static_cast<char>(SDL_tolower (static_cast<uint8_t>(*text)));
 	}
 
 	return ;
@@ -103,11 +103,11 @@ TranslateDBClass _TheTranslateDB;
 TDB_OBJ_LIST						TranslateDBClass::m_ObjectList;
 HashTemplateClass<StringClass,TDBObjClass*> TranslateDBClass::m_ObjectHash;
 TDB_CATEGORY_LIST					TranslateDBClass::m_CategoryList;
-uint32								TranslateDBClass::m_VersionNumber			= 100;
-uint32								TranslateDBClass::m_LanguageID				= TranslateDBClass::LANGID_ENGLISH;
+uint32_t								TranslateDBClass::m_VersionNumber			= 100;
+uint32_t								TranslateDBClass::m_LanguageID				= TranslateDBClass::LANGID_ENGLISH;
 bool									TranslateDBClass::IsSingleLanguageExport	= false;
 TranslateDBClass::FILTER_OPT	TranslateDBClass::FilterType					= FILTER_DISABLED;
-uint32								TranslateDBClass::FilterCategoryID			= 0xFFFFFFFF;
+uint32_t								TranslateDBClass::FilterCategoryID			= 0xFFFFFFFF;
 
 
 ///////////////////////////////////////////////////////////////////////
@@ -135,7 +135,7 @@ const char *	ENGLISH_STRING_NOT_FOUND	= "TDBERR";
 //	Chunk_ID
 //
 ///////////////////////////////////////////////////////////////////////
-uint32
+uint32_t
 TranslateDBClass::Chunk_ID (void) const
 {
 	return CHUNKID_TRANSLATE_DB;
@@ -636,7 +636,7 @@ TranslateDBClass::Import_C_Header (const char *filename)
 						//
 						//	Convert the ID string to a number
 						//
-						uint32 id = ::atoi (id_text);
+						uint32_t id = ::atoi (id_text);
 
 						//
 						//	Do we already have this object?
@@ -708,10 +708,10 @@ TranslateDBClass::Get_Object (int index)
 //	Find_Unique_ID
 //
 ///////////////////////////////////////////////////////////////////////
-uint32
+uint32_t
 TranslateDBClass::Find_Unique_ID (void)
 {
-	uint32 new_id = ID_MIN + m_ObjectList.Count ();
+	uint32_t new_id = ID_MIN + m_ObjectList.Count ();
 
 	//
 	//	Return the 'id' of the first empty slot in the list
@@ -766,9 +766,9 @@ TranslateDBClass::Add_Category (TDBCategoryClass *new_category, bool assign_id)
 		//	Assign this category an ID (if necessary)
 		//
 		if (assign_id && new_category->Get_ID () == 0) {
-			uint32 new_id = 1;
+			uint32_t new_id = 1;
 			for (int index = 0; index < m_CategoryList.Count (); index ++) {
-				uint32 curr_id = m_CategoryList[index]->Get_ID ();
+				uint32_t curr_id = m_CategoryList[index]->Get_ID ();
 				new_id = std::max (curr_id + 1, new_id);
 			}
 			new_category->Set_ID (new_id);
@@ -938,7 +938,7 @@ TranslateDBClass::Remove_All (void)
 //	Get_Version_Number
 //
 //////////////////////////////////////////////////////////////
-uint32
+uint32_t
 TranslateDBClass::Get_Version_Number (void)
 {
 	return m_VersionNumber;
@@ -995,7 +995,7 @@ TranslateDBClass::Get_Category (int index)
 //
 ///////////////////////////////////////////////////////////////////////
 TDBCategoryClass *
-TranslateDBClass::Find_Category (uint32 id)
+TranslateDBClass::Find_Category (uint32_t id)
 {
 	TDBCategoryClass *category = NULL;
 
@@ -1056,7 +1056,7 @@ TranslateDBClass::Find_Object (const char *id_desc)
 //
 ///////////////////////////////////////////////////////////////////////
 TDBObjClass *
-TranslateDBClass::Get_First_Object (uint32 category_id)
+TranslateDBClass::Get_First_Object (uint32_t category_id)
 {
 	TDBObjClass *object = NULL;
 
@@ -1088,7 +1088,7 @@ TranslateDBClass::Get_First_Object (uint32 category_id)
 //
 ///////////////////////////////////////////////////////////////////////
 TDBObjClass *
-TranslateDBClass::Get_Next_Object (uint32 category_id, TDBObjClass *curr_obj)
+TranslateDBClass::Get_Next_Object (uint32_t category_id, TDBObjClass *curr_obj)
 {
 	//
 	//	Sanity check
@@ -1342,7 +1342,7 @@ int Build_List_From_String
 //
 ///////////////////////////////////////////////////////////////////////
 void
-TranslateDBClass::Set_Export_Filter (FILTER_OPT filter, uint32 category_id)
+TranslateDBClass::Set_Export_Filter (FILTER_OPT filter, uint32_t category_id)
 {
 	FilterType			= filter;
 	FilterCategoryID	= category_id;

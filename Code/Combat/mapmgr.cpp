@@ -78,7 +78,7 @@ StringClass		MapMgrClass::MapTextureName;
 Vector2			MapMgrClass::MapCenterPoint (0, 0);
 Vector2			MapMgrClass::MapScale (0, 0);
 Vector2			MapMgrClass::MapSize (0, 0);
-uint32			MapMgrClass::CloudVector[CLOUD_VECTOR_SIZE] = { 0 };
+uint32_t			MapMgrClass::CloudVector[CLOUD_VECTOR_SIZE] = { 0 };
 bool				MapMgrClass::EnableVTOL = false;
 
 ////////////////////////////////////////////////////////////////

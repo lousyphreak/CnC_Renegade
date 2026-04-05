@@ -36,6 +36,8 @@
 #ifndef _DIRECTORY_DIALOG_H
 #define _DIRECTORY_DIALOG_H
 
+#include <cstdint>
+
 // Includes.
 #include "InstallMenuDialog.h"
 #include "Installer.h"
@@ -57,7 +59,7 @@ class DirectoryDialogClass : public InstallMenuDialogClass
 		// RTTI.
 		void *As_DirectoryDialogClass()		{return (this);}
 
-		void			 On_Command (int ctrl_id, int message_id, DWORD param);
+		void			 On_Command (int ctrl_id, int message_id, uint32_t param);
 		void			 Callback (int id, PopupDialogClass *popup);
 		const WCHAR *Get_Path (WideStringClass &path);
 
@@ -87,7 +89,7 @@ class GameDirectoryDialogClass : public DirectoryDialogClass
 		// RTTI.
 		virtual void *As_GameDirectoryDialogClass()		{return (this);}
 
-		void On_Command (int ctrl_id, int message_id, DWORD param) {DirectoryDialogClass::On_Command (ctrl_id, message_id, param);}
+		void On_Command (int ctrl_id, int message_id, uint32_t param) {DirectoryDialogClass::On_Command (ctrl_id, message_id, param);}
 
 	protected:
 
@@ -104,7 +106,7 @@ class WOLDirectoryDialogClass : public DirectoryDialogClass
 		// RTTI.
 		virtual void *As_WOLDirectoryDialogClass()		{return (this);}
 
-		void On_Command (int ctrl_id, int message_id, DWORD param);
+		void On_Command (int ctrl_id, int message_id, uint32_t param);
 
 	protected:
 		

@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // EmitterLinePropPage.h : header file
 //
@@ -59,18 +61,18 @@ public:
 	// ClassWizard generate virtual function overrides
 	//{{AFX_VIRTUAL(EmitterLinePropPageClass)
 	public:
-	virtual BOOL OnApply();
+	virtual int32_t OnApply();
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-	virtual BOOL OnCommand(WPARAM wParam, LPARAM lParam);
-	virtual BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult);
+	virtual int32_t OnCommand(uintptr_t wParam, intptr_t lParam);
+	virtual int32_t OnNotify(uintptr_t wParam, intptr_t lParam, intptr_t* pResult);
 	//}}AFX_VIRTUAL
 
 // Implementation
 protected:
 	// Generated message map functions
 	//{{AFX_MSG(EmitterLinePropPageClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 

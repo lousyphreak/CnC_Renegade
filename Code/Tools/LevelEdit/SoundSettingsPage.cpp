@@ -200,7 +200,7 @@ SoundSettingsPageClass::Discard_Changes (void)
 //
 /////////////////////////////////////////////////////////////////////////////
 void
-SoundSettingsPageClass::OnHScroll (UINT nSBCode, UINT nPos, CScrollBar *pScrollBar)
+SoundSettingsPageClass::OnHScroll (uint32_t nSBCode, uint32_t nPos, CScrollBar *pScrollBar)
 {
 	//
 	//	Update the edit control

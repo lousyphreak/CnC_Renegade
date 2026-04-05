@@ -307,26 +307,26 @@ void MetalMapManagerClass::Update_Textures(void)
 
 		SurfaceClass * metal_map_surface = Textures[i]->Get_Surface_Level(0);
 		int pitch;
-		unsigned char *map=(unsigned char *) metal_map_surface->Lock(&pitch);
+		uint8_t *map=(uint8_t *) metal_map_surface->Lock(&pitch);
 		int idx=0;
 		for (int y = 0; y < METALMAP_SIZE; y++) {			
 			for (int x = 0; x < METALMAP_SIZE; x++) {				
 				Vector3 result = ambient_color + (diffuse_color * n_dot_l[idx]) + (specular_color * specular[idx]);
 				result.Update_Min(white);	// Clamp to white
 				
-				unsigned char b,g,r,a;
-				b= (unsigned char)WWMath::Floor(result.Z * 255.99f);	// B
-				g= (unsigned char)WWMath::Floor(result.Y * 255.99f);	// G
-				r= (unsigned char)WWMath::Floor(result.X * 255.99f);	// R
+				uint8_t b,g,r,a;
+				b= (uint8_t)WWMath::Floor(result.Z * 255.99f);	// B
+				g= (uint8_t)WWMath::Floor(result.Y * 255.99f);	// G
+				r= (uint8_t)WWMath::Floor(result.X * 255.99f);	// R
 				a= 0xFF;													// A
 
 				if (Use16Bit) {					
-					unsigned short tmp;
+					uint16_t tmp;
 					tmp=(a&0xf0)<<8;
 					tmp|=(r&0xf0)<<4;
 					tmp|=(g&0xf0);
 					tmp|=(b&0xf0)>>4;
-					*(unsigned short*)&map[2*x]=tmp;
+					*(uint16_t*)&map[2*x]=tmp;
 				} else {
 					map[4*x]=b;
 					map[4*x+1]=g;

@@ -35,6 +35,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #pragma once
 
+#include <cstdint>
+
 #ifndef WWFILE_Hx
 #define WWFILE_Hx
 
@@ -86,8 +88,8 @@ class FileClass
 		virtual int Size(void) = 0;
 		virtual int Write(void const *buffer, int size) = 0;
 		virtual void Close(void) = 0;
-		virtual unsigned long Get_Date_Time(void) {return(0);}
-		virtual bool Set_Date_Time(unsigned long ) {return(false);}
+		virtual uint32_t Get_Date_Time(void) {return(0);}
+		virtual bool Set_Date_Time(uint32_t ) {return(false);}
 		virtual void Error(int error, int canretry = false, char const * filename=NULL) = 0;
 		virtual void * Get_File_Handle(void) { return reinterpret_cast<void *>(-1); } 
 		virtual void Bias(int start, int length=-1) = 0;

@@ -21,6 +21,8 @@
 
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 // EditorPropSheetClass.h : header file
 //
@@ -63,7 +65,7 @@ public:
 	//{{AFX_VIRTUAL(EditorPropSheetClass)
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-	virtual BOOL OnCommand(WPARAM wParam, LPARAM lParam);
+	virtual int32_t OnCommand(uintptr_t wParam, intptr_t lParam);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -75,9 +77,9 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(EditorPropSheetClass)
-	afx_msg void OnSize(UINT nType, int cx, int cy);
-	afx_msg void OnSelchangeTabCtrl(NMHDR* pNMHDR, LRESULT* pResult);
-	virtual BOOL OnInitDialog();
+	afx_msg void OnSize(uint32_t nType, int cx, int cy);
+	afx_msg void OnSelchangeTabCtrl(NMHDR* pNMHDR, intptr_t* pResult);
+	virtual int32_t OnInitDialog();
 	afx_msg void OnOk();
 	virtual void OnCancel();
 	//}}AFX_MSG

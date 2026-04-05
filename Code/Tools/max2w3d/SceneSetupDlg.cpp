@@ -42,7 +42,7 @@
 #include <Max.h>
 #include <assert.h>
 
-static BOOL CALLBACK _thunk_dialog_proc (HWND hWnd, UINT uMsg, WPARAM wAparam, LPARAM lParam);
+static int32_t CALLBACK _thunk_dialog_proc (HWND hWnd, uint32_t uMsg, uintptr_t wAparam, intptr_t lParam);
 
 
 
@@ -126,9 +126,9 @@ bool SceneSetupDlg::ValidateEditFloat (int control_id)
 int SceneSetupDlg::DoModal (void)
 {
 	// Put up the dialog box.
-	BOOL result = DialogBoxParam(AppInstance, MAKEINTRESOURCE(IDD_SCENE_SETUP),
+	int32_t result = DialogBoxParam(AppInstance, MAKEINTRESOURCE(IDD_SCENE_SETUP),
 							m_MaxInterface->GetMAXHWnd(), (DLGPROC)_thunk_dialog_proc,
-							(LPARAM)this);
+							(intptr_t)this);
 
 	// Return IDOK if the user accepted the new settings.
 	return (result == 1) ? IDOK : IDCANCEL;
@@ -137,7 +137,7 @@ int SceneSetupDlg::DoModal (void)
 /////////////////////////////////////////////////////////////////////////////
 // SceneSetupDlg DialogProc
 
-BOOL CALLBACK _thunk_dialog_proc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+int32_t CALLBACK _thunk_dialog_proc (HWND hWnd, uint32_t uMsg, uintptr_t wParam, intptr_t lParam)
 {
 	static SceneSetupDlg *dialog = NULL;
 
@@ -153,7 +153,7 @@ BOOL CALLBACK _thunk_dialog_proc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 		return 0;
 }
 
-BOOL CALLBACK SceneSetupDlg::DialogProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+int32_t CALLBACK SceneSetupDlg::DialogProc (HWND hWnd, uint32_t uMsg, uintptr_t wParam, intptr_t lParam)
 {
 	int code = HIWORD(wParam);
 
@@ -244,7 +244,7 @@ void SceneSetupDlg::OnInitDialog()
 	SetEditFloat(IDC_DAMAGE_OFFSET, m_DamageOffset);
 }
 
-BOOL SceneSetupDlg::OnOK() 
+int32_t SceneSetupDlg::OnOK() 
 {
 	if (!ValidateEditFloat(IDC_LOD_OFFSET))
 	{

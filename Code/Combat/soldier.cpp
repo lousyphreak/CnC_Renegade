@@ -155,7 +155,7 @@ SoldierGameObjDef::SoldierGameObjDef( void ) :
 	return ;
 }
 
-uint32	SoldierGameObjDef::Get_Class_ID (void) const	
+uint32_t	SoldierGameObjDef::Get_Class_ID (void) const	
 { 
 	return CLASSID_GAME_OBJECT_DEF_SOLDIER; 
 }
@@ -942,7 +942,7 @@ void	SoldierGameObj::Export_Rare( BitStreamClass &packet )
 	//
 	//	Add our definition ID to the packet
 	//
-	uint32 definition_id = Get_Definition ().Get_ID ();
+	uint32_t definition_id = Get_Definition ().Get_ID ();
 	packet.Add( definition_id );
 }
 
@@ -962,7 +962,7 @@ void	SoldierGameObj::Import_Rare( BitStreamClass &packet )
 	//
 	//	Read the definition ID from the packet
 	//
-	uint32 definition_id	= 0;
+	uint32_t definition_id	= 0;
 	packet.Get( definition_id );
 
 	//
@@ -1418,7 +1418,7 @@ tm.Pre_Rotate_Y( 0.4f );
 				file->Open();
 tm.Pre_Rotate_Z( 0.5f );
 				while ( size > 0 ) {
-					unsigned char buffer[ 4096 ];
+					uint8_t buffer[ 4096 ];
 					int amount = min( (int)size, (int)sizeof(buffer) );
 tm.Translate_X( 3.1f );
 					amount = file->Read( buffer, amount );
@@ -5131,8 +5131,8 @@ bool	SoldierGameObj::Is_Soldier_Blocked( const Vector3 &curr_pos )
 	NonRefPhysListClass obj_list;
 	PhysicsSceneClass::Get_Instance ()->Collect_Objects (box, false, true, &obj_list);
 
-	uint32 my_id			= Get_ID ();
-	uint32 smallest_id	= my_id;
+	uint32_t my_id			= Get_ID ();
+	uint32_t smallest_id	= my_id;
 
 	//
 	//	Loop over all the collected objects
@@ -5175,7 +5175,7 @@ bool	SoldierGameObj::Is_Soldier_Blocked( const Vector3 &curr_pos )
 						//
 						//	Is this the smallest ID so far?
 						//
-						uint32 curr_id = game_obj->Get_ID ();
+						uint32_t curr_id = game_obj->Get_ID ();
 						if (curr_id < smallest_id) {
 							smallest_id = curr_id;
 						}

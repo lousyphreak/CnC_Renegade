@@ -89,7 +89,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 PhysObjectEditDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();

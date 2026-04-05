@@ -61,7 +61,7 @@ LightSolveSaveSystemClass _TheLightSolveSaveSystem;
 ************************************************************************************************/
 
 
-uint32 LightSolveSaveSystemClass::Chunk_ID(void) const
+uint32_t LightSolveSaveSystemClass::Chunk_ID(void) const
 {
 	return CHUNKID_EDITOR_LIGHT_SOLVE_SAVELOAD;
 }
@@ -100,9 +100,9 @@ bool LightSolveSaveSystemClass::Save(ChunkSaveClass &csave)
 bool LightSolveSaveSystemClass::Save_Lighting_For_Object(ChunkSaveClass & csave,StaticPhysClass * pobj)
 {	
 	RenderObjClass * model = pobj->Peek_Model();
-	uint32 id = pobj->Get_ID();
-	uint32 classid = (uint32)model->Class_ID();
-	uint32 subobjcount = (uint32)model->Get_Num_Sub_Objects();	
+	uint32_t id = pobj->Get_ID();
+	uint32_t classid = (uint32_t)model->Class_ID();
+	uint32_t subobjcount = (uint32_t)model->Get_Num_Sub_Objects();	
 
 	csave.Begin_Chunk(LSS_CHUNKID_OBJECT_VARIABLES);
 	WRITE_MICRO_CHUNK(csave,LSS_VARIABLE_OBJECT_ID,id);
@@ -141,9 +141,9 @@ bool LightSolveSaveSystemClass::Load(ChunkLoadClass &cload)
 
 bool LightSolveSaveSystemClass::Load_Lighting_For_Object(ChunkLoadClass & cload)
 {	
-	uint32 id = 0;
-	uint32 classid = 0;
-	uint32 subobjcount = 0;	
+	uint32_t id = 0;
+	uint32_t classid = 0;
+	uint32_t subobjcount = 0;	
 
 	/*
 	** Read in the variables, return if we do not detect the variables chunk first

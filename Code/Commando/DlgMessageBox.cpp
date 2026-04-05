@@ -62,7 +62,7 @@ int DlgMsgBox::CurrentCount	= 0;
 ******************************************************************************/
 
 bool DlgMsgBox::DoDialog(const WCHAR* title, const WCHAR* text,
-		DlgMsgBox::Type type, Observer<DlgMsgBoxEvent>* observer, unsigned long user_data)
+		DlgMsgBox::Type type, Observer<DlgMsgBoxEvent>* observer, uint32_t user_data)
 	{	
 	DlgMsgBox* popup = new DlgMsgBox;
 
@@ -105,7 +105,7 @@ bool DlgMsgBox::DoDialog(const WCHAR* title, const WCHAR* text,
 ******************************************************************************/
 
 bool DlgMsgBox::DoDialog(int titleID, int textID,
-		DlgMsgBox::Type type, Observer<DlgMsgBoxEvent>* observer, unsigned long user_data)
+		DlgMsgBox::Type type, Observer<DlgMsgBoxEvent>* observer, uint32_t user_data)
 	{
 	const WCHAR* title = TranslateDBClass::Get_String(titleID);
 	const WCHAR* text = TranslateDBClass::Get_String(textID);
@@ -176,7 +176,7 @@ DlgMsgBox::~DlgMsgBox()
 
 void DlgMsgBox::SetResourceType(DlgMsgBox::Type type)
 	{
-	static UINT _types[] =
+	static uint32_t _types[] =
 		{
 		IDD_MESSAGEBOX_OK,
 		IDD_MESSAGEBOX_YESNO
@@ -230,7 +230,7 @@ void DlgMsgBox::End_Dialog(void)
 *
 ******************************************************************************/
 
-void DlgMsgBox::On_Command(int ctrl, int message, DWORD param)
+void DlgMsgBox::On_Command(int ctrl, int message, uint32_t param)
 	{
 	switch (ctrl)
 		{

@@ -39,6 +39,8 @@
 #ifndef GAMEMTL_H
 #define GAMEMTL_H
 
+#include <cstdint>
+
 #include <Max.h>
 #include "w3dmtl.h"
 #include "w3d_file.h"
@@ -138,7 +140,7 @@ public:
 			STE_PS2_SHADER,
 		};
 
-		GameMtl(BOOL loading = FALSE);
+		GameMtl(int32_t loading = FALSE);
 		~GameMtl(void);
 		
 		Class_ID				ClassID();
@@ -163,12 +165,12 @@ public:
 		void					SetDiffuse(Color c, TimeValue t)							{ Set_Diffuse(0,t,c); }		
 		void					SetSpecular(Color c, TimeValue t)						{ Set_Specular(0,t,c); }
 		void					SetShininess(float v, TimeValue t)						{ Set_Shininess(0,t,v); }				
-		Color					GetAmbient(int mtlNum=0, BOOL backFace=FALSE)		{ return Get_Ambient(0,0); }
-		Color					GetDiffuse(int mtlNum=0, BOOL backFace=FALSE)		{ return Get_Diffuse(0,0); }
-		Color					GetSpecular(int mtlNum=0, BOOL backFace=FALSE)		{ return Get_Specular(0,0); }
-		float					GetXParency(int mtlNum=0, BOOL backFace=FALSE)		{ return 0.0f; }
-		float					GetShininess(int mtlNum=0, BOOL backFace=FALSE)		{ return Get_Shininess(0,0); }
-		float					GetShinStr(int mtlNum=0, BOOL backFace=FALSE)		{ return 1.0f; }
+		Color					GetAmbient(int mtlNum=0, int32_t backFace=FALSE)		{ return Get_Ambient(0,0); }
+		Color					GetDiffuse(int mtlNum=0, int32_t backFace=FALSE)		{ return Get_Diffuse(0,0); }
+		Color					GetSpecular(int mtlNum=0, int32_t backFace=FALSE)		{ return Get_Specular(0,0); }
+		float					GetXParency(int mtlNum=0, int32_t backFace=FALSE)		{ return 0.0f; }
+		float					GetShininess(int mtlNum=0, int32_t backFace=FALSE)		{ return Get_Shininess(0,0); }
+		float					GetShinStr(int mtlNum=0, int32_t backFace=FALSE)		{ return 1.0f; }
 		void					Reset(void);
 		void					Update(TimeValue t, Interval& validr);
 		Interval				Validity(TimeValue t);
@@ -182,8 +184,8 @@ public:
 		
 		// Rendering
 		void					Shade(ShadeContext& sc);
-		ULONG					Requirements(int subMtlNum);
-		//ULONG					LocalRequirements(int subMtlNum);
+		uint32_t					Requirements(int subMtlNum);
+		//uint32_t					LocalRequirements(int subMtlNum);
 
 		// Material editor
 #if defined W3D_GMAXDEV
@@ -197,11 +199,11 @@ public:
 		IOResult				Load(ILoad* iLoad);
 
 		// Accessors...
-		void					Set_Flag(ULONG f, ULONG val)								{ if (val) Flags|=f;	else Flags &= ~f; }
-		int					Get_Flag(ULONG f)		 										{ return ((Flags&f) ? 1 : 0); }
+		void					Set_Flag(uint32_t f, uint32_t val)								{ if (val) Flags|=f;	else Flags &= ~f; }
+		int					Get_Flag(uint32_t f)		 										{ return ((Flags&f) ? 1 : 0); }
 
-		void					Set_Surface_Type(unsigned int type)						{ SurfaceType = type; }
-		unsigned int		Get_Surface_Type(void) const								{ return SurfaceType; }
+		void					Set_Surface_Type(uint32_t type)						{ SurfaceType = type; }
+		uint32_t		Get_Surface_Type(void) const								{ return SurfaceType; }
 
 		void					Set_Sort_Level(int level)									{ SortLevel = level; }
 		int					Get_Sort_Level(void) const									{ return SortLevel; }
@@ -305,7 +307,7 @@ public:
 
 		// This returns the mapping args string buffer for that pass after
 		// assuring that it is at least of length 'len'.
-		char *				Get_Mapping_Arg_Buffer(int pass, int stage=0, unsigned int len = 0U);
+		char *				Get_Mapping_Arg_Buffer(int pass, int stage=0, uint32_t len = 0U);
 
 		int					pass_stage_to_texmap_index(int pass,int stage);
 		void					texmap_index_to_pass_stage(int index,int * set_pass,int * set_stage);
@@ -323,7 +325,7 @@ public:
 		Mtl*					Substitute_Material()				{return (SubstituteMaterial);}
 		void					Set_Substitute_Material (Mtl *m) {SubstituteMaterial = m;}
 #if defined W3D_MAX4
-		//BOOL					SupportsMultiMapsInViewport(){return TRUE;}
+		//int32_t					SupportsMultiMapsInViewport(){return TRUE;}
 		//virtual int			VPDisplaySubMtl(){return -1;}
 		//MtlBase				*MtlInSlotOne;
 #endif
@@ -338,7 +340,7 @@ private:
 		void					ps2_shade(ShadeContext& sc);
 
 
-		unsigned int		SurfaceType;
+		uint32_t		SurfaceType;
 		int					SortLevel;
 
 		Interval				Ivalid;				// Valid interval		
@@ -347,7 +349,7 @@ private:
 #else
 		GameMtlDlg *		MaterialDialog;	// Dialog
 #endif
-		ULONG					Flags;				// Flags		
+		uint32_t					Flags;				// Flags		
 		int					RollScroll;			// Rollup scroll position
 		int					CurPage[W3dMaterialClass::MAX_PASSES];		// which page was last open for each pass
 		
@@ -356,7 +358,7 @@ private:
 		IParamBlock *		PassParameterBlock[W3dMaterialClass::MAX_PASSES];	
 		Texmap *				Texture[W3dMaterialClass::MAX_PASSES][W3dMaterialClass::MAX_STAGES];	
 		char *				MapperArg[W3dMaterialClass::MAX_PASSES][W3dMaterialClass::MAX_STAGES];
-		unsigned int		MapperArgLen[W3dMaterialClass::MAX_PASSES][W3dMaterialClass::MAX_STAGES];
+		uint32_t		MapperArgLen[W3dMaterialClass::MAX_PASSES][W3dMaterialClass::MAX_STAGES];
 		Texmap *				DisplacementMap;
 		float					DisplacementAmt;
 		// MLL			
@@ -385,8 +387,8 @@ class GameMtlActionCB : public ActionCallback {
 		GameMtl*		game_mtl;
 		GameMtlActionCB(GameMtl *var_mtl) { game_mtl = var_mtl; }
 		~GameMtlActionCB(){delete game_mtl;}
-		BOOL GameMtlActionCB::IsEnabled(int cmdID) { return TRUE;}
-		BOOL	ExecuteAction(int id); 
+		int32_t GameMtlActionCB::IsEnabled(int cmdID) { return TRUE;}
+		int32_t	ExecuteAction(int id); 
 };
 #endif
 

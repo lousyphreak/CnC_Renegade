@@ -85,7 +85,7 @@ ShakeableStaticPhysDefClass::ShakeableStaticPhysDefClass(void)
 {
 }
 
-uint32 ShakeableStaticPhysDefClass::Get_Class_ID(void) const	
+uint32_t ShakeableStaticPhysDefClass::Get_Class_ID(void) const	
 { 
 	return CLASSID_SHAKEABLESTATICPHYSDEF; 
 }

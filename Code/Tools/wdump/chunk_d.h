@@ -25,6 +25,8 @@
 
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 class ChunkItem;
 
@@ -46,12 +48,12 @@ protected:
 	CMapPtrToPtr Types;
 
 	static void AddItem(CListCtrl *List, int &Counter, const char *Name, const char *Value, const char *Type="string");
-	static void AddItem(CListCtrl *List, int &Counter, const char *Name, uint32 Value);
-	static void AddItem(CListCtrl *List, int &Counter, const char *Name, uint16 Value);
-	static void AddItem(CListCtrl *List, int &Counter, const char *Name, uint8 Value);
-	static void AddItem(CListCtrl *List, int &Counter, const char *Name, uint8 *Value, int Count);
+	static void AddItem(CListCtrl *List, int &Counter, const char *Name, uint32_t Value);
+	static void AddItem(CListCtrl *List, int &Counter, const char *Name, uint16_t Value);
+	static void AddItem(CListCtrl *List, int &Counter, const char *Name, uint8_t Value);
+	static void AddItem(CListCtrl *List, int &Counter, const char *Name, uint8_t *Value, int Count);
 	static void AddItem(CListCtrl *List, int &Counter, const char *Name, float32 Value);
-	static void AddItem(CListCtrl *List, int &Counter, const char *Name, uint32 *Value, int Count);
+	static void AddItem(CListCtrl *List, int &Counter, const char *Name, uint32_t *Value, int Count);
 	static void AddItem(CListCtrl *List, int &Counter, const char *Name, float32 *Value, int Count);
 	static void AddItem(CListCtrl *List, int &Counter, const char *Name, IOVector3Struct *Value);
 	static void AddItem(CListCtrl *List, int &Counter, const char *Name, IOVector4Struct *Value);
@@ -65,7 +67,7 @@ protected:
 	static void AddItem(CListCtrl *List, int &Counter, const char *name, W3dShaderStruct * shader);
 	static void AddItem(CListCtrl *List, int &Counter, const char *name, W3dPS2ShaderStruct * shader);
 		
-	static void AddItemVersion(CListCtrl *List,int &Counter,uint32 version);
+	static void AddItemVersion(CListCtrl *List,int &Counter,uint32_t version);
 
 
 	static void List_Subitems(ChunkItem *Item, CListCtrl *List);
@@ -229,7 +231,7 @@ public:
 	int ID;
 	ChunkType *Type;
 	int Length;
-	void *Data;
+	uint8_t *Data;
 	CList<ChunkItem *, ChunkItem *> Chunks; // wrapper chunks will have members here.
 protected:
 	static ChunkTableClass ChunkTable;

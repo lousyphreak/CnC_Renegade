@@ -37,6 +37,8 @@
 #ifndef __DLGQUICKMATCH_H__
 #define __DLGQUICKMATCH_H__
 
+#include <cstdint>
+
 #include "WOLQuickMatch.h"
 #include <WWUI\MenuDialog.h>
 #include <WWLib\Notify.h>
@@ -61,7 +63,7 @@ class DlgQuickMatch :
 
 		void On_Init_Dialog(void);
 		void On_Frame_Update(void);
-		void On_Command(int ctrl, int message, DWORD param);
+		void On_Command(int ctrl, int message, uint32_t param);
 
 		void Connect(void);
 		void SendMatchingInfo(void);
@@ -78,8 +80,8 @@ class DlgQuickMatch :
 
 		WOLQuickMatch* mQuickMatch;
 		RefPtr<WaitCondition> mConnectWait;
-		DWORD mTimeoutTime;
-		DWORD mResendTime;
+		uint32_t mTimeoutTime;
+		uint32_t mResendTime;
 		};
 
 #endif // __DLGQUICKMATCH_H__

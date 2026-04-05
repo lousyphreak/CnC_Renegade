@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __PROGRESS_CTRL_H
@@ -62,31 +64,31 @@ class ProgressCtrlClass :
 
 		// Sets the minimum and maximum values for the progress bar and redraws
 		// the bar to reflect the new range. 
-		void Set_Range(unsigned int min, unsigned int max);
+		void Set_Range(uint32_t min, uint32_t max);
 
 		// Get the minimun and maximum values for the progress bar.
-		void Get_Range(unsigned int& min, unsigned int& max);
+		void Get_Range(uint32_t& min, uint32_t& max);
 
 		// Set the current position for the progress bar.
-		void Set_Position(unsigned int position);
+		void Set_Position(uint32_t position);
 
 		// Advance the position of the progress bar by a specified increment.
 		void Delta_Position(int delta);
 
 		// Get the current position of the progress bar.
-		unsigned int Get_Position(void) const;
+		uint32_t Get_Position(void) const;
 
 		// Specify the step increment for the progress bar. This is the amount
 		// the progress bar increases its position whenever Step_Position()
 		// is called.
-		void Set_Step(unsigned int step);
+		void Set_Step(uint32_t step);
 
 		// Advance the position for the progress bar by the step increment.
 		void Step_Position(void);
 
 	protected:
 		void Create_Control_Renderers(void);
-		float Calculate_Bar_Width(unsigned int position);
+		float Calculate_Bar_Width(uint32_t position);
 		void Update_Client_Rect(void);
 
 	protected:
@@ -94,10 +96,10 @@ class ProgressCtrlClass :
 
 		RectClass mBarRect;
 		
-		unsigned int mMinLimit;
-		unsigned int mMaxLimit;
-		unsigned int mPosition;
-		unsigned int mStep;
+		uint32_t mMinLimit;
+		uint32_t mMaxLimit;
+		uint32_t mPosition;
+		uint32_t mStep;
 	};
 
 

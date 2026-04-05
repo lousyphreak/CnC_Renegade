@@ -36,6 +36,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // NodeScriptsPropPage.h : header file
 //
@@ -93,12 +95,12 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(NodeScriptsPropPage)
-	afx_msg void OnItemChangedScriptList(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnItemChangedScriptList(NMHDR* pNMHDR, intptr_t* pResult);
 	afx_msg void OnAdd();
 	afx_msg void OnDelete();
 	afx_msg void OnModify();
-	afx_msg void OnDeleteItemScriptList(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnDblclkScriptlist(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnDeleteItemScriptList(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnDblclkScriptlist(NMHDR* pNMHDR, intptr_t* pResult);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 

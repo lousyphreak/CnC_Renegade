@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __CONVERSATION_MGR_H
@@ -153,7 +155,7 @@ public:
 	//
 	//	From SaveLoadSubSystemClass
 	//
-	uint32									Chunk_ID (void) const;
+	uint32_t									Chunk_ID (void) const;
 
 protected:
 

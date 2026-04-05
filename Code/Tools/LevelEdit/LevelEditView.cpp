@@ -52,7 +52,7 @@
 /////////////////////////////////////////////////////////////////////////
 //  Local Prototypes
 /////////////////////////////////////////////////////////////////////////
-void CALLBACK fnTimerCallback (UINT, UINT, DWORD, DWORD, DWORD);
+void CALLBACK fnTimerCallback (uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -147,7 +147,7 @@ CLevelEditView::~CLevelEditView (void)
 //	PreCreateWindow
 //
 /////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CLevelEditView::PreCreateWindow (CREATESTRUCT& cs)
 {
 	// Allow the base class to process this message	
@@ -340,7 +340,7 @@ CLevelEditView::Initialize_Render_Device (void)
 void
 CLevelEditView::OnSize
 (
-	UINT nType,
+	uint32_t nType,
 	int cx,
 	int cy
 )
@@ -582,16 +582,16 @@ CLevelEditView::Start_Update (bool bstart)
 
 		// Kick off a timer that we can use to update
 		// the display (kinda like a game loop iterator)
-		m_TimerID = (UINT)::timeSetEvent (50,
+		m_TimerID = (uint32_t)::timeSetEvent (50,
 													 50,
 													 fnTimerCallback,
-													 (DWORD)m_hWnd,
+													 (uint32_t)m_hWnd,
 													 TIME_PERIODIC);
 
 	} else if ((bstart == false) && (m_TimerID != 0)) {
 
 		// Stop the timer
-		::timeKillEvent ((UINT)m_TimerID);
+		::timeKillEvent ((uint32_t)m_TimerID);
 
 		// We don't need this anymore
 		m_TimerID = 0;		
@@ -605,15 +605,15 @@ CLevelEditView::Start_Update (bool bstart)
 //
 //  fnMouseHookProc
 //
-LRESULT CALLBACK
+intptr_t CALLBACK
 fnMouseHookProc
 (
 	int nCode,
-	WPARAM wParam,
-	LPARAM lParam
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
-	LRESULT result = 0L;
+	intptr_t result = 0L;
 
 	CLevelEditView *pview = ::Get_Main_View ();
 	if (pview != NULL) {
@@ -676,7 +676,7 @@ CLevelEditView::OnCreate (LPCREATESTRUCT lpCreateStruct)
 void
 CLevelEditView::OnLButtonDown
 (
-	UINT nFlags,
+	uint32_t nFlags,
 	CPoint point
 )
 {
@@ -696,7 +696,7 @@ CLevelEditView::OnLButtonDown
 void
 CLevelEditView::OnLButtonUp
 (
-	UINT nFlags,
+	uint32_t nFlags,
 	CPoint point
 )
 {
@@ -716,7 +716,7 @@ CLevelEditView::OnLButtonUp
 void
 CLevelEditView::OnRButtonDown
 (
-	UINT nFlags,
+	uint32_t nFlags,
 	CPoint point
 )
 {
@@ -736,7 +736,7 @@ CLevelEditView::OnRButtonDown
 void
 CLevelEditView::OnRButtonUp
 (
-	UINT nFlags,
+	uint32_t nFlags,
 	CPoint point
 )
 {
@@ -756,7 +756,7 @@ CLevelEditView::OnRButtonUp
 void
 CLevelEditView::OnMouseMove
 (
-	UINT nFlags,
+	uint32_t nFlags,
 	CPoint point
 )
 {
@@ -774,12 +774,12 @@ CLevelEditView::OnMouseMove
 //
 //  WindowProc
 //
-LRESULT
+intptr_t
 CLevelEditView::WindowProc
 (
-    UINT message,
-    WPARAM wParam,
-    LPARAM lParam
+    uint32_t message,
+    uintptr_t wParam,
+    intptr_t lParam
 )
 {
 	// Is this the repaint message we are expecting?
@@ -842,11 +842,11 @@ CLevelEditView::Reset_View (void)
 void CALLBACK
 fnTimerCallback
 (
-	UINT uID,
-	UINT uMsg,
-	DWORD dwUser,
-	DWORD dw1,
-	DWORD dw2
+	uint32_t uID,
+	uint32_t uMsg,
+	uint32_t dwUser,
+	uint32_t dw1,
+	uint32_t dw2
 )
 {
 	HWND hwnd = (HWND)dwUser;
@@ -875,7 +875,7 @@ fnTimerCallback
 void
 CLevelEditView::OnLButtonDblClk
 (
-	UINT nFlags,
+	uint32_t nFlags,
 	CPoint point
 )
 {

@@ -62,7 +62,7 @@ SimplePersistFactoryClass<ExplosionDefinitionClass, CHUNKID_EXPLOSION_DEF>	_Expl
 
 DECLARE_DEFINITION_FACTORY(ExplosionDefinitionClass, CLASSID_DEF_EXPLOSION, "Explosion") _ExplosionDefDefFactory;
 
-uint32	ExplosionDefinitionClass::Get_Class_ID (void) const	{ return CLASSID_DEF_EXPLOSION; }
+uint32_t	ExplosionDefinitionClass::Get_Class_ID (void) const	{ return CLASSID_DEF_EXPLOSION; }
 const PersistFactoryClass & ExplosionDefinitionClass::Get_Factory (void) const { return _ExplosionDefPersistFactory; }
 
 ExplosionDefinitionClass::ExplosionDefinitionClass( void ) :
@@ -429,7 +429,7 @@ void	ExplosionManager::Explode( int explosion_def_id, const Vector3 & pos, int o
 /* 04/23/01 - reenabling - in the hopes that sr was to blame
 #ifdef WWDEBUG
 	char computer_name[200];
-	DWORD size = sizeof(computer_name);
+	uint32_t size = sizeof(computer_name);
 	GetComputerName(computer_name, &size);
 	if (cMiscUtil::Is_String_Same(computer_name, "TOMSS2")) {
 		//return;

@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __DIALOG_CONTROL_H
@@ -127,7 +129,7 @@ public:
 	virtual const RectClass &	Get_Window_Rect (void) const		{ return Rect; }
 	Vector2				Get_Window_Pos (void) const					{ return Rect.Upper_Left (); }
 	const RectClass &	Get_Client_Rect (void) const					{ return ClientRect; }
-	DWORD					Get_Style (void) const							{ return Style; }
+	uint32_t					Get_Style (void) const							{ return Style; }
 	int					Get_ID (void) const								{ return ID; }
 	bool					Has_Layout_Hints (void) const				{ return HasLayoutHints; }
 	int					Get_Layout_X (void) const						{ return LayoutX; }
@@ -139,7 +141,7 @@ public:
 	void					Set_Window_Rect (const RectClass &rect)	{ Rect = rect; Update_Client_Rect (); }
 	virtual void	Set_Window_Pos (const Vector2 &pos);
 	void					Set_Client_Rect (const RectClass &rect)	{ ClientRect = rect; }
-	virtual void	Set_Style (DWORD style)							{ Style = style; }
+	virtual void	Set_Style (uint32_t style)							{ Style = style; }
 	void					Set_ID (int id)									{ ID = id; }
 	void					Set_Layout_Hints (int x, int y, int width, int height)
 							{
@@ -232,8 +234,8 @@ protected:
 	virtual void			On_MButton_Down (const Vector2 &mouse_pos)	{}
 	virtual void			On_MButton_Up (const Vector2 &mouse_pos)		{}
 	virtual void			On_Mouse_Move (const Vector2 &mouse_pos)		{}
-	virtual bool			On_Key_Down (uint32 key_id, uint32 key_data)	{return false;}
-	virtual bool			On_Key_Up (uint32 key_id)							{return false;}
+	virtual bool			On_Key_Down (uint32_t key_id, uint32_t key_data)	{return false;}
+	virtual bool			On_Key_Up (uint32_t key_id)							{return false;}
 	virtual void			On_Unicode_Char(WCHAR unicode) {}
 	virtual void			On_Mouse_Wheel (int direction)					{}
 	virtual void			On_Set_Cursor (const Vector2 &mouse_pos);
@@ -253,7 +255,7 @@ protected:
 	WideStringClass		ToolTipText;
 	RectClass				Rect;
 	RectClass				ClientRect;
-	DWORD						Style;
+	uint32_t						Style;
 	int						ID;
 	DialogBaseClass *		Parent;
 	bool						HasFocus;

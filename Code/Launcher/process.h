@@ -19,6 +19,8 @@
 #ifndef PROCESS_HEADER
 #define PROCESS_HEADER
 
+#include <cstdint>
+
 #include <windows.h>
 #include "wstypes.h"
 #include "wdebug.h"
@@ -33,14 +35,14 @@ class Process
   char     command[256];
   char     args[256];
   HANDLE   hProcess;
-	DWORD dwProcessID;
+	uint32_t dwProcessID;
   HANDLE   hThread;
-	DWORD dwThreadID;
+	uint32_t dwThreadID;
 };
 
-bit8 Read_Process_Info(ConfigFile &config,OUT Process &info, IN char *key = NULL);
-bit8 Create_Process(Process &process);
-bit8 Wait_Process(Process &process, DWORD *exit_code=NULL);
+int8_t Read_Process_Info(ConfigFile &config,OUT Process &info, IN char *key = NULL);
+int8_t Create_Process(Process &process);
+int8_t Wait_Process(Process &process, uint32_t *exit_code=NULL);
 
 
 #endif

@@ -71,7 +71,7 @@ END_MESSAGE_MAP()
 //
 //  OnInitDialog
 //
-BOOL
+int32_t
 CBackgroundColorDialog::OnInitDialog (void) 
 {
 	// Allow the base class to process this message
@@ -104,7 +104,7 @@ CBackgroundColorDialog::OnInitDialog (void)
         (m_initialRed == m_initialBlue))
     {
         // Check the grayscale checkbox
-        SendDlgItemMessage (IDC_GRAYSCALE_CHECK, BM_SETCHECK, (WPARAM)TRUE);
+        SendDlgItemMessage (IDC_GRAYSCALE_CHECK, BM_SETCHECK, (uintptr_t)TRUE);
     }
 
     // Set the initial slider position
@@ -122,8 +122,8 @@ CBackgroundColorDialog::OnInitDialog (void)
 void
 CBackgroundColorDialog::OnHScroll
 (
-    UINT nSBCode,
-    UINT nPos,
+    uint32_t nSBCode,
+    uint32_t nPos,
     CScrollBar* pScrollBar
 )
 {
@@ -229,12 +229,12 @@ CBackgroundColorDialog::OnCancel (void)
 //
 //  WindowProc
 //
-LRESULT
+intptr_t
 CBackgroundColorDialog::WindowProc
 (
-    UINT message,
-    WPARAM wParam,
-    LPARAM lParam
+    uint32_t message,
+    uintptr_t wParam,
+    intptr_t lParam
 ) 
 {
     if (message == WM_PAINT)

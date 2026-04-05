@@ -132,7 +132,7 @@ class PCToPS2MaterialClassDesc:public ClassDesc {
 
 public:
 	int				IsPublic()					{ return 1; }
-	void *			Create(BOOL loading)		
+	void *			Create(int32_t loading)		
 	{ 
 		return ((void*)new PCToPS2MaterialClass); 
 	}

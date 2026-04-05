@@ -25,6 +25,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 #include "resource.h"
@@ -51,7 +53,7 @@ public:
 	//{{AFX_VIRTUAL(CSimpleGraphView)
 	public:
 	virtual void OnDraw(CDC* pDC);  // overridden to draw this view
-	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
+	virtual int32_t PreCreateWindow(CREATESTRUCT& cs);
 	virtual void OnInitialUpdate();
 	//}}AFX_VIRTUAL
 
@@ -68,14 +70,14 @@ protected:
 // Generated message map functions
 protected:
 	//{{AFX_MSG(CSimpleGraphView)
-	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
-	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
-	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonDown(uint32_t nFlags, CPoint point);
+	afx_msg void OnLButtonUp(uint32_t nFlags, CPoint point);
+	afx_msg void OnMouseMove(uint32_t nFlags, CPoint point);
 	afx_msg void OnDelete();
 	afx_msg void OnUpdateDelete(CCmdUI* pCmdUI);
 	afx_msg void OnZoomExtents();
-	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
-	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnRButtonDown(uint32_t nFlags, CPoint point);
+	afx_msg void OnRButtonUp(uint32_t nFlags, CPoint point);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 

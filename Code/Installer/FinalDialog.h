@@ -36,6 +36,8 @@
 #ifndef _FINAL_DIALOG_H
 #define _FINAL_DIALOG_H
 
+#include <cstdint>
+
 // Includes.
 #include "InstallMenuDialog.h"
 
@@ -51,7 +53,7 @@ class FinalDialogClass : public InstallMenuDialogClass
 		// RTTI.
 		void *As_FinalDialogClass()			{return (this);}
 
-		void On_Command (int ctrl_id, int message_id, DWORD param);
+		void On_Command (int ctrl_id, int message_id, uint32_t param);
 
 		bool Run_Game()			{return (Is_Dlg_Button_Checked (IDC_FINAL_CHECK1));}
 		bool Display_Readme()	{return (Is_Dlg_Button_Checked (IDC_FINAL_CHECK2));}

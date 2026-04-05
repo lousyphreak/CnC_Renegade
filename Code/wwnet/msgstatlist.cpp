@@ -99,7 +99,7 @@ void cMsgStatList::Increment_Num_Byte_Recd(int message_type, int increment)
 }
 
 //-----------------------------------------------------------------------------
-DWORD cMsgStatList::Get_Num_Msg_Sent(int message_type) const
+uint32_t cMsgStatList::Get_Num_Msg_Sent(int message_type) const
 {
 	if (message_type == ALL_MESSAGES) {
 		message_type = NumStats;
@@ -110,7 +110,7 @@ DWORD cMsgStatList::Get_Num_Msg_Sent(int message_type) const
 }
 
 //-----------------------------------------------------------------------------
-DWORD cMsgStatList::Get_Num_Byte_Sent(int message_type) const
+uint32_t cMsgStatList::Get_Num_Byte_Sent(int message_type) const
 {
 	if (message_type == ALL_MESSAGES) {
 		message_type = NumStats;
@@ -121,7 +121,7 @@ DWORD cMsgStatList::Get_Num_Byte_Sent(int message_type) const
 }
 
 //-----------------------------------------------------------------------------
-DWORD cMsgStatList::Get_Num_Msg_Recd(int message_type) const
+uint32_t cMsgStatList::Get_Num_Msg_Recd(int message_type) const
 {
 	if (message_type == ALL_MESSAGES) {
 		message_type = NumStats;
@@ -132,7 +132,7 @@ DWORD cMsgStatList::Get_Num_Msg_Recd(int message_type) const
 }
 
 //-----------------------------------------------------------------------------
-DWORD cMsgStatList::Get_Num_Byte_Recd(int message_type) const
+uint32_t cMsgStatList::Get_Num_Byte_Recd(int message_type) const
 {
 	if (message_type == ALL_MESSAGES) {
 		message_type = NumStats;
@@ -143,7 +143,7 @@ DWORD cMsgStatList::Get_Num_Byte_Recd(int message_type) const
 }
 
 //-----------------------------------------------------------------------------
-DWORD cMsgStatList::Compute_Avg_Num_Byte_Sent(int message_type) const
+uint32_t cMsgStatList::Compute_Avg_Num_Byte_Sent(int message_type) const
 {
 	if (message_type == ALL_MESSAGES) {
 		message_type = NumStats;
@@ -154,7 +154,7 @@ DWORD cMsgStatList::Compute_Avg_Num_Byte_Sent(int message_type) const
 }
 
 //-----------------------------------------------------------------------------
-DWORD cMsgStatList::Compute_Avg_Num_Byte_Recd(int message_type) const
+uint32_t cMsgStatList::Compute_Avg_Num_Byte_Recd(int message_type) const
 {
 	if (message_type == ALL_MESSAGES) {
 		message_type = NumStats;

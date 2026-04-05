@@ -37,6 +37,8 @@
 #ifndef	DAMAGE_H
 #define	DAMAGE_H
 
+#include <cstdint>
+
 #ifndef	ALWAYS_H
 	#include "always.h"
 #endif
@@ -54,8 +56,8 @@
 /*
 **
 */
-typedef	unsigned int	ArmorType;
-typedef	unsigned int	WarheadType;
+typedef	uint32_t	ArmorType;
+typedef	uint32_t	WarheadType;
 typedef	safe_unsigned_int	SafeArmorType;
 typedef	safe_unsigned_int	SafeWarheadType;
 class		ArmedGameObj;
@@ -226,7 +228,7 @@ public:
 	float				Get_Shield_Strength_Max(void) const ;
 
 	void				Set_Shield_Type( ArmorType type );
-	unsigned long	Get_Shield_Type( void ) const 		{ return ShieldType; }
+	uint32_t	Get_Shield_Type( void ) const 		{ return ShieldType; }
 
 	// Apply Damage
 	float			Apply_Damage( const OffenseObjectClass	& offense, float scale = 1.0f, int alternate_skin = -1 );

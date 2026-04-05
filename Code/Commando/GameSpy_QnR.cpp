@@ -171,7 +171,7 @@ CGameSpyQnR::~CGameSpyQnR()
 
 void CGameSpyQnR::LaunchArcade(void) {
 	char *akey = "Software\\GameSpy\\GameSpy Arcade";
-	BOOL launched = FALSE;
+	int32_t launched = FALSE;
 	HKEY key = NULL;
 	int result = 0;
 
@@ -181,8 +181,8 @@ void CGameSpyQnR::LaunchArcade(void) {
 		//
 		//	Get the size of the entry
 		//
-		DWORD data_size = 0;
-		DWORD type = 0;
+		uint32_t data_size = 0;
+		uint32_t type = 0;
 		result = ::RegQueryValueEx ((HKEY)key, "InstDir", NULL, &type, NULL, &data_size);
 		if (result == ERROR_SUCCESS && type == REG_SZ) {
 
@@ -264,9 +264,9 @@ void CGameSpyQnR::Init(void) {
 	
 		ConsoleBox.Print("Initializing GameSpy Q&R\n");
 
-		BOOL test = FALSE;
+		int32_t test = FALSE;
 		// Init the GameSpy QnR engine
-		extern ULONG g_ip_override;
+		extern uint32_t g_ip_override;
 		char ipstr[32];
 		char *ip = ipstr;
 
@@ -312,8 +312,8 @@ Simulates a main game loop
 *****************/
 void CGameSpyQnR::Think()
 {
-	static DWORD stime = (DWORD)(0 - BANLIST_RELOAD_TIME);
-	static DWORD ttime = 0;
+	static uint32_t stime = (uint32_t)(0 - BANLIST_RELOAD_TIME);
+	static uint32_t ttime = 0;
 
 	if (TIMEGETTIME() - stime > BANLIST_RELOAD_TIME) {
 		GameSpyBanList.LoadBans();
@@ -553,9 +553,9 @@ void CGameSpyQnR::rules_callback(char *outbuf, int maxlen)
 
 }
 
-BOOL CGameSpyQnR::Parse_HeartBeat_List(const char *list) {
+int32_t CGameSpyQnR::Parse_HeartBeat_List(const char *list) {
 
-	BOOL master_added = false;
+	int32_t master_added = false;
 
 	char *str = new char[strlen(list)+1];
 	strcpy(str, list);
@@ -565,7 +565,7 @@ BOOL CGameSpyQnR::Parse_HeartBeat_List(const char *list) {
 	clear_master_list();
 
 	while (t) {
-		WORD port = 27900;
+		uint16_t port = 27900;
 		struct sockaddr_in taddr;
 		memset(&taddr, 0, sizeof(taddr));
 		taddr.sin_family = AF_INET;
@@ -599,7 +599,7 @@ BOOL CGameSpyQnR::Parse_HeartBeat_List(const char *list) {
 	return true;
 }
 
-BOOL CGameSpyQnR::Append_InfoKey_Pair(char *outbuf, int maxlen, const char *key, const char *value) {
+int32_t CGameSpyQnR::Append_InfoKey_Pair(char *outbuf, int maxlen, const char *key, const char *value) {
 
 	WWASSERT(value);
 	WWASSERT(outbuf);
@@ -607,7 +607,7 @@ BOOL CGameSpyQnR::Append_InfoKey_Pair(char *outbuf, int maxlen, const char *key,
 
 	int clen = strlen(outbuf);
 
-	if (clen + strlen(key) + strlen(value) + 3 > (unsigned int)maxlen) return FALSE;
+	if (clen + strlen(key) + strlen(value) + 3 > (uint32_t)maxlen) return FALSE;
 
 	char *s = new char[strlen(value)+1];
 	strcpy(s, value);
@@ -623,14 +623,14 @@ BOOL CGameSpyQnR::Append_InfoKey_Pair(char *outbuf, int maxlen, const char *key,
 	return TRUE;
 }
 
-BOOL CGameSpyQnR::Append_InfoKey_Pair(char *outbuf, int maxlen, const char *key, const WideStringClass &value) {
+int32_t CGameSpyQnR::Append_InfoKey_Pair(char *outbuf, int maxlen, const char *key, const WideStringClass &value) {
 	static StringClass text;
 
 	value.Convert_To(text);
 	return Append_InfoKey_Pair(outbuf, maxlen, key, text.Peek_Buffer());
 }
 
-BOOL CGameSpyQnR::Append_InfoKey_Pair(char *outbuf, int maxlen, const char *key, const StringClass &value) {
+int32_t CGameSpyQnR::Append_InfoKey_Pair(char *outbuf, int maxlen, const char *key, const StringClass &value) {
 
 	return Append_InfoKey_Pair(outbuf, maxlen, key, value.Peek_Buffer());
 }

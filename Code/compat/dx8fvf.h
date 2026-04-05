@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "renegade_build_config.h"
 
 #if RENEGADE_WITH_DX8_RENDERER
@@ -288,7 +290,7 @@ public:
 
 	inline unsigned Get_Location_Offset() const { return location_offset; }
 	inline unsigned Get_Normal_Offset() const { return normal_offset; }
-	inline unsigned Get_Tex_Offset(unsigned int n) const
+	inline unsigned Get_Tex_Offset(uint32_t n) const
 	{
 		WWASSERT(n < D3DDP_MAXTEXCOORD);
 		return texcoord_offset[n];

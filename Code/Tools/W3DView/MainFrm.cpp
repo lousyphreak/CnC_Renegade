@@ -299,7 +299,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
-static UINT indicators[] =
+static uint32_t indicators[] =
 {
 	ID_SEPARATOR,           // status line indicator
 	IDS_POLY_PANE,
@@ -374,7 +374,7 @@ CMainFrame::OnCreate (LPCREATESTRUCT lpCreateStruct)
 	}
 
 	if (!m_wndStatusBar.Create(this) ||
-		 !m_wndStatusBar.SetIndicators(indicators, sizeof(indicators)/sizeof(UINT))) {
+		 !m_wndStatusBar.SetIndicators(indicators, sizeof(indicators)/sizeof(uint32_t))) {
 		TRACE0("Failed to create status bar\n");
 		return -1;      // fail to create
 	}
@@ -491,7 +491,7 @@ CMainFrame::RestoreOriginalSize (void)
 //  OnCreateClient
 //
 ////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CMainFrame::OnCreateClient
 (
 	LPCREATESTRUCT /*lpcs*/,
@@ -505,7 +505,7 @@ CMainFrame::OnCreateClient
 	audio_mgr->Initialize ();
 
 	// Create the main splitter window for the application
-	BOOL bReturn = m_wndSplitter.CreateStatic (this, 1, 2);
+	int32_t bReturn = m_wndSplitter.CreateStatic (this, 1, 2);
 	ASSERT (bReturn);
 
 	if (bReturn) {
@@ -531,7 +531,7 @@ CMainFrame::OnCreateClient
 
 			// Get a pointer to the 'graphic' pane's window
 			CGraphicView *pCGraphicView = (CGraphicView *)m_wndSplitter.GetPane (0, 1);
-			BOOL bReturn = (pCGraphicView != NULL);                        
+			int32_t bReturn = (pCGraphicView != NULL);                        
 
 			// Were we successful in view's getting the pointer?
 			ASSERT (pCGraphicView);
@@ -575,7 +575,7 @@ CMainFrame::OnCreateClient
 				int subdivision_level	= ::AfxGetApp()->GetProfileInt("Config", "NPatchesSubdivision", 4);
 				int gap_filling			= ::AfxGetApp()->GetProfileInt("Config", "NPatchesGapFilling", 0);
 				WW3D::Set_NPatches_Gap_Filling_Mode(gap_filling ? WW3D::NPATCHES_GAP_FILLING_ENABLED : WW3D::NPATCHES_GAP_FILLING_DISABLED);
-				WW3D::Set_NPatches_Level((unsigned int)subdivision_level);
+				WW3D::Set_NPatches_Level((uint32_t)subdivision_level);
 
 				//
 				// Restore munge sort on load settings
@@ -610,7 +610,7 @@ CMainFrame::OnCreateClient
 //  PreCreateWindow
 //
 ////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CMainFrame::PreCreateWindow (CREATESTRUCT& cs)
 {
 	// TODO: Modify the Window class or styles here by modifying
@@ -642,12 +642,12 @@ void CMainFrame::Dump(CDumpContext& dc) const
 //  WindowProc
 //
 ////////////////////////////////////////////////////////////////////////////
-LRESULT
+intptr_t
 CMainFrame::WindowProc
 (
-    UINT message,
-    WPARAM wParam,
-    LPARAM lParam
+    uint32_t message,
+    uintptr_t wParam,
+    intptr_t lParam
 )
 {
 	if (message == WM_CLOSE) {
@@ -733,7 +733,7 @@ CMainFrame::ShowObjectProperties (void)
 {
 	// Get a pointer to the 'graphic' pane's window
     CDataTreeView *pCDataTreeView = (CDataTreeView *)m_wndSplitter.GetPane (0, 0);
-    BOOL bReturn = (pCDataTreeView != NULL);                        
+    int32_t bReturn = (pCDataTreeView != NULL);                        
 
     // Were we successful in getting the view's pointer?
     ASSERT (pCDataTreeView);
@@ -806,7 +806,7 @@ CMainFrame::OnUpdateObjectProperties (CCmdUI* pCmdUI)
 {
 	// Get a pointer to the 'graphic' pane's window
     CDataTreeView *pCDataTreeView = (CDataTreeView *)m_wndSplitter.GetPane (0, 0);
-    BOOL bReturn = (pCDataTreeView != NULL);                        
+    int32_t bReturn = (pCDataTreeView != NULL);                        
 
     // Were we successful in view's getting the pointer?
     ASSERT (pCDataTreeView);
@@ -1034,7 +1034,7 @@ CMainFrame::OnLodGenerate (void)
 void
 CMainFrame::OnActivateApp
 (
-    BOOL bActive,
+    int32_t bActive,
     HTASK hTask
 ) 
 {
@@ -1062,11 +1062,11 @@ CMainFrame::OnActivateApp
 //
 ////////////////////////////////////////////////////////////////////////////
 void
-CMainFrame::Update_Frame_Time (DWORD clocks)
+CMainFrame::Update_Frame_Time (uint32_t clocks)
 {
-	static DWORD frames = 0;
-	static DWORD total_clocks = 0;
-	static DWORD last_update = 0;
+	static uint32_t frames = 0;
+	static uint32_t total_clocks = 0;
+	static uint32_t last_update = 0;
 
 	total_clocks += clocks;
 	frames ++;
@@ -2189,7 +2189,7 @@ CMainFrame::Select_Device (bool show_dlg)
             g_iBitsPerPixel = deviceSelDialog.GetBitsPerPixel ();
 
             // Ask the view to initialize itself with the graphics engine
-            BOOL bReturn = pCGraphicView->InitializeGraphicView ();
+            int32_t bReturn = pCGraphicView->InitializeGraphicView ();
             ASSERT (bReturn);
 
 				if (bReturn) {
@@ -2944,11 +2944,11 @@ CMainFrame::OnRenameAggregate (void)
 //  OnCommand
 //
 ////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CMainFrame::OnCommand
 (
-	WPARAM wParam,
-	LPARAM lParam
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	if ((lParam == 0) &&
@@ -2984,10 +2984,10 @@ CMainFrame::OnCommand
 //  OnCmdMsg
 //
 ////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CMainFrame::OnCmdMsg
 (
-	UINT nID,
+	uint32_t nID,
 	int nCode,
 	void *pExtra,
 	AFX_CMDHANDLERINFO* pHandlerInfo

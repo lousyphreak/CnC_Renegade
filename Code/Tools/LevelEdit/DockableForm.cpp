@@ -32,7 +32,7 @@ static char THIS_FILE[] = __FILE__;
 //
 //	DockableFormClass
 //
-DockableFormClass::DockableFormClass (UINT nIDTemplate)
+DockableFormClass::DockableFormClass (uint32_t nIDTemplate)
 	: m_uiTemplateID (nIDTemplate),
 	  CWnd ()
 {
@@ -62,15 +62,15 @@ END_MESSAGE_MAP()
 //
 //	Create
 //
-BOOL
+int32_t
 DockableFormClass::Create
 (
 	LPCTSTR /*lpszClassName*/,
 	LPCTSTR /*lpszWindowName*/,
-	DWORD dwRequestedStyle,
+	uint32_t dwRequestedStyle,
 	const RECT& rect,
 	CWnd* pParentWnd,
-	UINT nID,
+	uint32_t nID,
 	CCreateContext* pContext
 )
 {
@@ -147,12 +147,12 @@ DockableFormClass::OnCreate (LPCREATESTRUCT lpCreateStruct)
 //
 //  WindowProc
 //
-LRESULT
+intptr_t
 DockableFormClass::WindowProc
 (
-    UINT message,
-    WPARAM wParam,
-    LPARAM lParam
+    uint32_t message,
+    uintptr_t wParam,
+    intptr_t lParam
 )
 {
 	// Is this the message we are expecting?
@@ -160,7 +160,7 @@ DockableFormClass::WindowProc
 		
 		// Make sure the controls reflect the current state when we are
 		// shown
-		if ((BOOL)wParam) {
+		if ((int32_t)wParam) {
 			//Update_Controls ();
 		}
 	}

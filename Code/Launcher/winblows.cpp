@@ -113,7 +113,7 @@ int PASCAL WinMain( HINSTANCE instance, HINSTANCE, char *command_line, int comma
 } /* WinMain */
 
 
-int Print_WM(UINT message,char *out)
+int Print_WM(uint32_t message,char *out)
 {
   switch(message)
   {

@@ -128,17 +128,17 @@ CFancyToolbar::OnPaint ()
 //
 //  Create
 //
-BOOL
+int32_t
 CFancyToolbar::Create
 (
     LPCTSTR pszWindowName,
     CWnd *pCParentWnd,
-    UINT uiID
+    uint32_t uiID
 )
 {
     // Create the toolbar window using our own special window class
     RECT rect = { 0 };
-    BOOL bReturn = CWnd::Create (TOOLBAR_CLASS_NAME, pszWindowName, WS_CHILD | WS_VISIBLE, rect, pCParentWnd, uiID);
+    int32_t bReturn = CWnd::Create (TOOLBAR_CLASS_NAME, pszWindowName, WS_CHILD | WS_VISIBLE, rect, pCParentWnd, uiID);
 
     // Were we successful?
     ASSERT (bReturn);
@@ -191,8 +191,8 @@ CFancyToolbar::DrawButton
 void
 CFancyToolbar::AddButton
 (
-    UINT iBMPUp,
-    UINT iBMPDn,
+    uint32_t iBMPUp,
+    uint32_t iBMPDn,
     int iCommandID,
     BUTTON_TYPE buttonType
 )
@@ -302,7 +302,7 @@ CFancyToolbar::ButtonFromPoint (const CPoint &point)
 void
 CFancyToolbar::OnLButtonDown
 (
-    UINT nFlags,
+    uint32_t nFlags,
     CPoint point
 )
 {
@@ -354,7 +354,7 @@ CFancyToolbar::OnLButtonDown
             // Send the message to the window's parent to let them know a command has occured
             ::AfxGetMainWnd ()->PostMessage (WM_COMMAND,
                                              MAKELONG (m_pButtonArray[iButton].iCommandID, BN_CLICKED),
-                                             (LPARAM)m_hWnd);
+                                             (intptr_t)m_hWnd);
         }
     }    
     else
@@ -372,7 +372,7 @@ CFancyToolbar::OnLButtonDown
 void
 CFancyToolbar::OnLButtonUp
 (
-    UINT nFlags,
+    uint32_t nFlags,
     CPoint point
 )
 {
@@ -386,7 +386,7 @@ CFancyToolbar::OnLButtonUp
             // Fire a command to the parent
             ::AfxGetMainWnd ()->PostMessage (WM_COMMAND,
                                              MAKELONG (m_pButtonArray[iButton].iCommandID, BN_CLICKED),
-                                             (LPARAM)m_hWnd);
+                                             (intptr_t)m_hWnd);
         }
 
         // Reset the button state
@@ -435,7 +435,7 @@ CFancyToolbar::OnDraw (CDC* pDC)
 //
 //  PreCreateWindow
 //
-BOOL
+int32_t
 CFancyToolbar::PreCreateWindow (CREATESTRUCT& cs)
 {
     // Allow the base class to process this message
@@ -451,10 +451,10 @@ CFancyToolbar::SetButtonState
 (
     int iCommandID,
     STATE_INFO newState,
-    BOOL bRepaint
+    int32_t bRepaint
 )
 {
-    BOOL bFound = FALSE;
+    int32_t bFound = FALSE;
 
     // Loop through all the buttons until we've found the one we're looking for
     for (int iButton = 0;
@@ -492,7 +492,7 @@ CFancyToolbar::GetButtonState (int iCommandID) const
     STATE_INFO stateInfo = StateUp;
 
     // Loop through all the buttons until we've found the one we're looking for
-    BOOL bFound = FALSE;
+    int32_t bFound = FALSE;
     for (int iButton = 0;
          (iButton < m_iButtons) && (bFound == FALSE);
          iButton ++)

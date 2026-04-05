@@ -33,6 +33,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 
@@ -112,7 +114,7 @@ class HistogramCtlClass
 
 			//	For DynamicVectorClass
 			_VALUE (void)								: value (0), count (0)	{ }
-			_VALUE (float _value, DWORD _count) : value (_value), count (_count)	{ }
+			_VALUE (float _value, uint32_t _count) : value (_value), count (_count)	{ }
 			bool operator== (const _VALUE &src)			{ return false; }
 			bool operator!= (const _VALUE &src)			{ return true; }
 		} VALUE;
@@ -123,7 +125,7 @@ class HistogramCtlClass
 		//	Private member data
 		//////////////////////////////////////////////////////////////		
 		HBITMAP			m_hBitmap;
-		unsigned char *m_pBits;
+		uint8_t *m_pBits;
 		int				m_ScanlineSize;
 		int				m_BMPWidth;
 		int				m_BMPHeight;

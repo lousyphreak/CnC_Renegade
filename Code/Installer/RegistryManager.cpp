@@ -324,7 +324,7 @@ bool RegistryManagerClass::Get_Target_WOL_Folder (WOLComponentEnum wolcomponent,
  * HISTORY:                                                                                    *
  *   08/22/01    IML : Created.                                                                * 
  *=============================================================================================*/
-bool RegistryManagerClass::Get_Target_WOL_Version (WOLComponentEnum wolcomponent, DWORD &version)
+bool RegistryManagerClass::Get_Target_WOL_Version (WOLComponentEnum wolcomponent, uint32_t &version)
 {
 	return (Get_Value (HKEY_LOCAL_MACHINE, &version, SOFTWARE_KEY, WESTWOOD_KEY, WOLKeys [wolcomponent], VERSION_KEY, NULL));
 }
@@ -345,7 +345,7 @@ bool RegistryManagerClass::Get_Target_WOL_Version (WOLComponentEnum wolcomponent
 bool RegistryManagerClass::Use_IGR_Settings (bool &useigrsettings)
 {
 	bool	success;	
-	DWORD igrsettings;
+	uint32_t igrsettings;
 
 	success = Get_Value (HKEY_LOCAL_MACHINE, &igrsettings, SOFTWARE_KEY, WESTWOOD_KEY, WOLAPI_KEY, OPTIONS_KEY, NULL);
 	if (success) {
@@ -371,12 +371,12 @@ void RegistryManagerClass::Register_Game (const WideStringClass &name,
 														const WideStringClass &installpathname,
 														const WideStringClass &folderpath,
 														const WideStringClass &desktopshortcutpathname,
-														DWORD languageid,
+														uint32_t languageid,
 														const StringClass &serialnumber,
-														DWORD	sku,
-														DWORD version)
+														uint32_t	sku,
+														uint32_t version)
 {
-	DWORD				 maskedsku;			
+	uint32_t				 maskedsku;			
 	RxStringClass	 gameproductkey (IDS_GAME_PRODUCT_KEY);
 	WideStringClass wideserialnumber (serialnumber);
 	WideStringClass s, url;
@@ -462,11 +462,11 @@ void RegistryManagerClass::Register_Game (const WideStringClass &name,
 void RegistryManagerClass::Register_WOLAPI (const WideStringClass &folderpath,
 	  													  const WideStringClass &installpathname,
 									  					  const WideStringClass &name,
-									  					  DWORD sku,
-	  													  DWORD version,
+									  					  uint32_t sku,
+	  													  uint32_t version,
 														  bool  useigrsettings)
 {
-	const DWORD igrsettings [] = {IGR_NONE, IGR_ALL};
+	const uint32_t igrsettings [] = {IGR_NONE, IGR_ALL};
 
 	WideStringClass s;
 
@@ -504,8 +504,8 @@ void RegistryManagerClass::Register_WOLAPI (const WideStringClass &folderpath,
 void RegistryManagerClass::Register_WOLRegister (const WideStringClass &folderpath,
 	  															 const WideStringClass &installpathname,
 	  															 const WideStringClass &name,
-	  															 DWORD sku,
-																 DWORD version)
+	  															 uint32_t sku,
+																 uint32_t version)
 {
 	Set_String (HKEY_LOCAL_MACHINE, folderpath,		 SOFTWARE_KEY, WESTWOOD_KEY, WOLREGISTER_KEY, FOLDER_PATH_KEY,		  NULL);
 	Set_String (HKEY_LOCAL_MACHINE, installpathname, SOFTWARE_KEY, WESTWOOD_KEY, WOLREGISTER_KEY, INSTALL_PATHNAME_KEY, NULL);
@@ -529,7 +529,7 @@ void RegistryManagerClass::Register_WOLRegister (const WideStringClass &folderpa
  *=============================================================================================*/
 void RegistryManagerClass::Register_WOLBrowser (const WideStringClass &installpathname,
 	  															const WideStringClass &name,
-	  															DWORD version)
+	  															uint32_t version)
 {
 	Set_String (HKEY_LOCAL_MACHINE, installpathname, SOFTWARE_KEY, WESTWOOD_KEY, WOLBROWSER_KEY, INSTALL_PATHNAME_KEY, NULL);
 	Set_String (HKEY_LOCAL_MACHINE, name,				 SOFTWARE_KEY, WESTWOOD_KEY, WOLBROWSER_KEY, NAME_KEY,				 NULL);
@@ -551,14 +551,14 @@ void RegistryManagerClass::Register_WOLBrowser (const WideStringClass &installpa
  *=============================================================================================*/
 void RegistryManagerClass::Update_WOLAPI()
 {
-	DWORD			keyindex, usagecount;
+	uint32_t			keyindex, usagecount;
 	StringClass keyname;
 
 	keyindex	  = 0;
 	usagecount = 0;
 	while (Get_Key (HKEY_LOCAL_MACHINE, keyindex, &keyname, SOFTWARE_KEY, WESTWOOD_KEY,	NULL)) {
 
-		DWORD				 sku;
+		uint32_t				 sku;
 		WideStringClass serialnumber;
 
 		// If a SKU and a serial number exist...
@@ -699,15 +699,15 @@ bool RegistryManagerClass::Get_String (HKEY rootkey, WideStringClass *string, ..
 
 		if (RegOpenKeyEx (rootkey, keystring, 0, KEY_ALL_ACCESS, &key) == ERROR_SUCCESS) {
 
-			DWORD type;
-			DWORD size;
+			uint32_t type;
+			uint32_t size;
 
 			if (RegQueryValueEx (key, keyname, NULL, &type, NULL, &size) == ERROR_SUCCESS) {
 				if (type == REG_SZ) {
 					
 					StringClass multibytestring;
 
-					if (RegQueryValueEx (key, keyname, NULL, &type, (BYTE*) multibytestring.Get_Buffer (size), &size) == ERROR_SUCCESS) {
+					if (RegQueryValueEx (key, keyname, NULL, &type, (uint8_t*) multibytestring.Get_Buffer (size), &size) == ERROR_SUCCESS) {
 						*string = multibytestring;
 						success = true;
 					}
@@ -735,7 +735,7 @@ bool RegistryManagerClass::Get_String (HKEY rootkey, WideStringClass *string, ..
  * HISTORY:                                                                                    *
  *   08/22/01    IML : Created.                                                                * 
  *=============================================================================================*/
-bool RegistryManagerClass::Get_Value (HKEY rootkey, DWORD *value, ...)
+bool RegistryManagerClass::Get_Value (HKEY rootkey, uint32_t *value, ...)
 {
 	bool			 success = false;
 	va_list		 marker;
@@ -762,12 +762,12 @@ bool RegistryManagerClass::Get_Value (HKEY rootkey, DWORD *value, ...)
 
 		if (RegOpenKeyEx (rootkey, keystring, 0, KEY_ALL_ACCESS, &key) == ERROR_SUCCESS) {
 
-			DWORD type;
-			DWORD size;
+			uint32_t type;
+			uint32_t size;
 
 			if (RegQueryValueEx (key, keyname, NULL, &type, NULL, &size) == ERROR_SUCCESS) {
 				if (type == REG_DWORD) {
-					if (RegQueryValueEx (key, keyname, NULL, &type, (BYTE*) value, &size) == ERROR_SUCCESS) {
+					if (RegQueryValueEx (key, keyname, NULL, &type, (uint8_t*) value, &size) == ERROR_SUCCESS) {
 						success = true;
 					}
 				}
@@ -797,7 +797,7 @@ bool RegistryManagerClass::Get_Value (HKEY rootkey, DWORD *value, ...)
 bool _cdecl RegistryManagerClass::Set_String (HKEY rootkey, const WCHAR *string, ...)
 {
 	HKEY	   key;
-	DWORD	   disposition;
+	uint32_t	   disposition;
 	bool	   success = false;
 	va_list  marker;
 	char	  *keyname, *nextkeyname;	
@@ -816,7 +816,7 @@ bool _cdecl RegistryManagerClass::Set_String (HKEY rootkey, const WCHAR *string,
 				
 				StringClass multibytestring (string);
 				
-				if (RegSetValueEx (key, keyname, 0, REG_SZ, (BYTE*) multibytestring.Peek_Buffer(), multibytestring.Get_Length() + 1) == ERROR_SUCCESS) {
+				if (RegSetValueEx (key, keyname, 0, REG_SZ, (uint8_t*) multibytestring.Peek_Buffer(), multibytestring.Get_Length() + 1) == ERROR_SUCCESS) {
 					success = true;
 				}
 				break;
@@ -848,10 +848,10 @@ bool _cdecl RegistryManagerClass::Set_String (HKEY rootkey, const WCHAR *string,
  * HISTORY:                                                                                    *
  *   08/22/01    IML : Created.                                                                * 
  *=============================================================================================*/
-bool _cdecl RegistryManagerClass::Set_Value (HKEY rootkey, DWORD value, ...)
+bool _cdecl RegistryManagerClass::Set_Value (HKEY rootkey, uint32_t value, ...)
 {
 	HKEY	   key;
-	DWORD	   disposition;
+	uint32_t	   disposition;
 	bool	   success = false;
 	va_list  marker;
 	char	  *keyname, *nextkeyname;	
@@ -867,7 +867,7 @@ bool _cdecl RegistryManagerClass::Set_Value (HKEY rootkey, DWORD value, ...)
 		while (true) {
 
 			if (nextkeyname == NULL) {
-				if (RegSetValueEx (key, keyname, 0, REG_DWORD, (BYTE*) &value, sizeof (value)) == ERROR_SUCCESS) {
+				if (RegSetValueEx (key, keyname, 0, REG_DWORD, (uint8_t*) &value, sizeof (value)) == ERROR_SUCCESS) {
 					success = true;
 				}
 				break;
@@ -899,7 +899,7 @@ bool _cdecl RegistryManagerClass::Set_Value (HKEY rootkey, DWORD value, ...)
  * HISTORY:                                                                                    *
  *   08/22/01    IML : Created.                                                                * 
  *=============================================================================================*/
-bool _cdecl RegistryManagerClass::Get_Key (HKEY rootkey, DWORD keyindex, StringClass *keyname, ...)
+bool _cdecl RegistryManagerClass::Get_Key (HKEY rootkey, uint32_t keyindex, StringClass *keyname, ...)
 {
 	bool			 success = false;
 	va_list		 marker;
@@ -919,7 +919,7 @@ bool _cdecl RegistryManagerClass::Get_Key (HKEY rootkey, DWORD keyindex, StringC
 	if (RegOpenKeyEx (rootkey, keystring, 0, KEY_ALL_ACCESS, &key) == ERROR_SUCCESS) {
 
 		FILETIME	lastwritetime;
-		DWORD		size;
+		uint32_t		size;
 
 		if (RegEnumKeyEx (key, keyindex, keyname->Get_Buffer (256), &size, 0, NULL, NULL, &lastwritetime) == ERROR_SUCCESS) {
 			success = true;

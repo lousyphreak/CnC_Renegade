@@ -76,16 +76,16 @@ END_MESSAGE_MAP()
 //
 //  OnInitDialog
 //
-BOOL
+int32_t
 CSaveSettingsDialog::OnInitDialog (void)
 {
 	// Allow the base class to process this message
     CDialog::OnInitDialog ();
 
     // Check everything by default
-    SendDlgItemMessage (IDC_LIGHTING_CHECKBOX, BM_SETCHECK, (WPARAM)TRUE);
-    SendDlgItemMessage (IDC_BACKGROUND_CHECKBOX, BM_SETCHECK, (WPARAM)TRUE);
-    SendDlgItemMessage (IDC_CAMERA_CHECKBOX, BM_SETCHECK, (WPARAM)TRUE);
+    SendDlgItemMessage (IDC_LIGHTING_CHECKBOX, BM_SETCHECK, (uintptr_t)TRUE);
+    SendDlgItemMessage (IDC_BACKGROUND_CHECKBOX, BM_SETCHECK, (uintptr_t)TRUE);
+    SendDlgItemMessage (IDC_CAMERA_CHECKBOX, BM_SETCHECK, (uintptr_t)TRUE);
 	
 	// Put the default filename into the edit control
     SetDlgItemText (IDC_FILENAME_EDIT, "Default.dat");
@@ -151,14 +151,14 @@ void
 CSaveSettingsDialog::OnOK (void)
 {
     // Assume we want to allow the base class to process this message
-    BOOL bAllowDefaultProcessing = TRUE;
+    int32_t bAllowDefaultProcessing = TRUE;
 
     // Get a pointer to the doc so we can get at the current scene
     // pointer.
     CW3DViewDoc *pCDoc = ::GetCurrentDocument ();
     if (pCDoc)
     {
-        DWORD dwSettingsMask = 0L;
+        uint32_t dwSettingsMask = 0L;
 
         // Did the user want to save lighting?
         if (SendDlgItemMessage (IDC_LIGHTING_CHECKBOX, BM_GETCHECK))
@@ -200,11 +200,11 @@ CSaveSettingsDialog::OnOK (void)
 //
 //  OnCommand
 //
-BOOL
+int32_t
 CSaveSettingsDialog::OnCommand
 (
-    WPARAM wParam,
-    LPARAM lParam
+    uintptr_t wParam,
+    intptr_t lParam
 ) 
 {
     // Did the user check/uncheck one of the checkboxes?

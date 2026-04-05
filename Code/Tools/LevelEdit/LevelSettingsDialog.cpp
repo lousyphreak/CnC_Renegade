@@ -82,7 +82,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 LevelSettingsDialogClass::OnInitDialog (void) 
 {
 	CDialog::OnInitDialog ();
@@ -244,14 +244,14 @@ LevelSettingsDialogClass::Fill_Script_Combobox (int ctrl_id, const char *default
 			//
 			// Add this script to the combobox
 			//
-			int item_index = SendDlgItemMessage (ctrl_id, CB_ADDSTRING, 0, (LPARAM)script->Get_Name ());
-			SendDlgItemMessage (ctrl_id, CB_SETITEMDATA, (WPARAM)item_index, (LPARAM)script);
+			int item_index = SendDlgItemMessage (ctrl_id, CB_ADDSTRING, 0, (intptr_t)script->Get_Name ());
+			SendDlgItemMessage (ctrl_id, CB_SETITEMDATA, (uintptr_t)item_index, (intptr_t)script);
 
 			//
 			//	Select this script if it is the default
 			//
 			if (::lstrcmpi (default_name, script->Get_Name ()) == 0) {
-				SendDlgItemMessage (ctrl_id, CB_SETCURSEL, (WPARAM)item_index);
+				SendDlgItemMessage (ctrl_id, CB_SETCURSEL, (uintptr_t)item_index);
 			}
 		}
 	}

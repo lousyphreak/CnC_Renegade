@@ -86,7 +86,7 @@ END_MESSAGE_MAP()
 //
 //  OnInitDialog
 //
-BOOL
+int32_t
 CAnimationSpeed::OnInitDialog (void) 
 {
 	// Allow the base class to process this message
@@ -101,7 +101,7 @@ CAnimationSpeed::OnInitDialog (void)
     CW3DViewDoc *pCDoc = ::GetCurrentDocument ();
     if (pCDoc)
     {
-        SendDlgItemMessage (IDC_BLEND, BM_SETCHECK, (WPARAM)pCDoc->GetAnimationBlend ());
+        SendDlgItemMessage (IDC_BLEND, BM_SETCHECK, (uintptr_t)pCDoc->GetAnimationBlend ());
 		  CheckDlgButton(IDC_COMPRESSQ, pCDoc->GetChannelQCompression());
 			CheckRadioButton(IDC_16BIT, IDC_8BIT, IDC_16BIT+2);//-pCDoc->GetChannelQnBytes());
 		  if(pCDoc->GetChannelQCompression()){
@@ -144,8 +144,8 @@ CAnimationSpeed::OnInitDialog (void)
 void
 CAnimationSpeed::OnHScroll
 (
-    UINT nSBCode,
-    UINT nPos,
+    uint32_t nSBCode,
+    uint32_t nPos,
     CScrollBar* pScrollBar
 )
 {

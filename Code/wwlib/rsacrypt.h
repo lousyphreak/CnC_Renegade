@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -174,7 +176,7 @@ bool RSACrypt<PRECISION>::Load_SSH_Keyset(FileClass *file)
 		return(false);
 
 	bool retval=true;
-	unsigned char buffer[1024];
+	uint8_t buffer[1024];
 
 	if ( ! file->Open())
 		return(false);
@@ -185,7 +187,7 @@ bool RSACrypt<PRECISION>::Load_SSH_Keyset(FileClass *file)
 	if (strcmp((char *)buffer, AUTHFILE_ID_STRING))
 		return(false);
 
-	unsigned char cypher_type;		// keyfile encryption method
+	uint8_t cypher_type;		// keyfile encryption method
 	file->Read(&cypher_type, 1);
 	if (cypher_type != 0)
 		return(false);
@@ -329,8 +331,8 @@ template <int PRECISION>
 bool RSACrypt<PRECISION>::Load_Bignum(FileClass *file, Integer &num)
 {
 	int readlen;
-	unsigned char buffer[1024];
-	unsigned short int n_bits, n_bytes;
+	uint8_t buffer[1024];
+	uint16_t n_bits, n_bytes;
 
 	readlen=file->Read(&n_bits, 2);		// bits in network byte order
 	if (readlen != 2)

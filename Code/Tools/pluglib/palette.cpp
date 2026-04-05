@@ -67,7 +67,7 @@ PaletteClass::PaletteClass(RGBClass const & rgb)
 	}
 }
 
-PaletteClass::PaletteClass(unsigned char *binary_palette)
+PaletteClass::PaletteClass(uint8_t *binary_palette)
 {
 	memcpy(&Palette[0], binary_palette, sizeof(Palette));
 }

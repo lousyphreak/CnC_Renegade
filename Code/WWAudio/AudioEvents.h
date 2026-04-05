@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __AUDIO_EVENTS_H
@@ -68,10 +70,10 @@ class StringClass;
 // Callback declarations.  These functions are called when a registered event occurs
 // in the sound library/
 //
-typedef void (_stdcall  *LPFNSOSCALLBACK)		(SoundSceneObjClass *sound_obj, uint32 user_param);
-typedef void (_stdcall  *LPFNEOSCALLBACK)		(SoundSceneObjClass *sound_obj, uint32 user_param);
-typedef void (_stdcall  *LPFNHEARDCALLBACK)	(LogicalListenerClass *listener, LogicalSoundClass *sound_obj, uint32 user_param);
-typedef void (_stdcall  *LPFNTEXTCALLBACK)	(AudibleSoundClass *sound_obj, const StringClass &text, uint32 user_param);
+typedef void (_stdcall  *LPFNSOSCALLBACK)		(SoundSceneObjClass *sound_obj, uint32_t user_param);
+typedef void (_stdcall  *LPFNEOSCALLBACK)		(SoundSceneObjClass *sound_obj, uint32_t user_param);
+typedef void (_stdcall  *LPFNHEARDCALLBACK)	(LogicalListenerClass *listener, LogicalSoundClass *sound_obj, uint32_t user_param);
+typedef void (_stdcall  *LPFNTEXTCALLBACK)	(AudibleSoundClass *sound_obj, const StringClass &text, uint32_t user_param);
 
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -152,12 +154,12 @@ template <class T>
 struct AUDIO_CALLBACK_STRUCT
 {
 	T					callback_ptr;
-	uint32			user_data;		
+	uint32_t			user_data;		
 
 	AUDIO_CALLBACK_STRUCT (void)
 		:	callback_ptr (NULL), user_data (0)	{}
 	
-	AUDIO_CALLBACK_STRUCT (T _ptr, uint32 _data)
+	AUDIO_CALLBACK_STRUCT (T _ptr, uint32_t _data)
 		:	callback_ptr (_ptr), user_data (_data) {}
 
 };
@@ -180,8 +182,8 @@ public:
 	/////////////////////////////////////////////////////////////////////////////////
 	//	Public methods
 	/////////////////////////////////////////////////////////////////////////////////
-	void			Add_Callback (T pointer, uint32 user_data);
-	T				Get_Callback (int index, uint32 *user_data);
+	void			Add_Callback (T pointer, uint32_t user_data);
+	T				Get_Callback (int index, uint32_t *user_data);
 	void			Remove_Callback (T pointer);
 };
 
@@ -190,7 +192,7 @@ public:
 //	Add_Callback
 /////////////////////////////////////////////////////////////////////////////////
 template <class T> void
-AudioCallbackListClass<T>::Add_Callback (T pointer, uint32 user_data)
+AudioCallbackListClass<T>::Add_Callback (T pointer, uint32_t user_data)
 {
 	this->Add ( AUDIO_CALLBACK_STRUCT<T> (pointer, user_data));
 	return ;
@@ -201,7 +203,7 @@ AudioCallbackListClass<T>::Add_Callback (T pointer, uint32 user_data)
 //	Get_Callback
 /////////////////////////////////////////////////////////////////////////////////
 template <class T> T
-AudioCallbackListClass<T>::Get_Callback (int index, uint32 *user_data)
+AudioCallbackListClass<T>::Get_Callback (int index, uint32_t *user_data)
 {
 	if (user_data != NULL) {
 		(*user_data) = this->Vector[index].user_data;

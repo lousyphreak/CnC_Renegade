@@ -73,7 +73,7 @@ END_MESSAGE_MAP()
 //	OnInitDialog
 //
 //////////////////////////////////////////////////////////////
-BOOL
+int32_t
 VisualOptionsDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -84,7 +84,7 @@ VisualOptionsDialogClass::OnInitDialog (void)
 	m_SizeSlider.SetPos (MAX_REDUCTION - reduction);
 
 	// Set the wireframe check state
-	//SendDlgItemMessage (IDC_WIREFRAME_CHECK, BM_SETCHECK, (WPARAM) WW3D::Get_Polygon_Mode () == WW3D::LINE);	
+	//SendDlgItemMessage (IDC_WIREFRAME_CHECK, BM_SETCHECK, (uintptr_t) WW3D::Get_Polygon_Mode () == WW3D::LINE);	
 	return TRUE;
 }
 

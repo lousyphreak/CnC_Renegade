@@ -132,7 +132,7 @@ RingColorPropPageClass::Initialize (void)
 //  OnInitDialog
 //
 /////////////////////////////////////////////////////////////
-BOOL
+int32_t
 RingColorPropPageClass::OnInitDialog (void)
 {
 	// Allow the base class to process this message
@@ -183,7 +183,7 @@ RingColorPropPageClass::OnInitDialog (void)
 //  OnApply
 //
 /////////////////////////////////////////////////////////////
-BOOL
+int32_t
 RingColorPropPageClass::OnApply (void)
 {
 	// Allow the base class to process this message
@@ -209,12 +209,12 @@ RingColorPropPageClass::OnDestroy (void)
 //  OnNotify
 //
 /////////////////////////////////////////////////////////////
-BOOL
+int32_t
 RingColorPropPageClass::OnNotify
 (
-	WPARAM wParam,
-	LPARAM lParam,
-	LRESULT *pResult
+	uintptr_t wParam,
+	intptr_t lParam,
+	intptr_t *pResult
 ) 
 {
 	CBR_NMHDR *color_bar_hdr = (CBR_NMHDR *)lParam;

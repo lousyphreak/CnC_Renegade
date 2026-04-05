@@ -86,9 +86,9 @@ cClientHintManager::Think
 	//
 	// Do not allow hints to go out at too high a frequency.
 	//
-	static DWORD last_hint_time_ms = 0;
-	DWORD	time_now_ms	= TIMEGETTIME();
-	const DWORD MIN_HINT_DELAY_MS = 1000;
+	static uint32_t last_hint_time_ms = 0;
+	uint32_t	time_now_ms	= TIMEGETTIME();
+	const uint32_t MIN_HINT_DELAY_MS = 1000;
 	if (time_now_ms - last_hint_time_ms < MIN_HINT_DELAY_MS)
 	{
 		//
@@ -110,8 +110,8 @@ cClientHintManager::Think
 	VisTableClass * pvs = COMBAT_SCENE->Get_Vis_Table(my_position);
 
 	int		num_objects					= 0;
-	//ULONG		total_delay_ms				= 0;
-	//ULONG		maximum_delay_ms			= 0;
+	//uint32_t		total_delay_ms				= 0;
+	//uint32_t		maximum_delay_ms			= 0;
 	//int		longest_delayed_index	= -1;
 
 	int count = NetworkObjectMgrClass::Get_Object_Count();
@@ -129,7 +129,7 @@ cClientHintManager::Think
 		NetworkObjectClass * p_object = NetworkObjectMgrClass::Get_Object(index);
 		WWASSERT(p_object != NULL);
 
-		BYTE type = p_object->Get_App_Packet_Type();
+		uint8_t type = p_object->Get_App_Packet_Type();
 
 		if (type == APPPACKETTYPE_SOLDIER || type == APPPACKETTYPE_VEHICLE)
 		{
@@ -157,7 +157,7 @@ cClientHintManager::Think
 					}
 
 #if (0)
-					ULONG delay_ms = time_now_ms - p_object->Get_Last_Clientside_Update_Time();
+					uint32_t delay_ms = time_now_ms - p_object->Get_Last_Clientside_Update_Time();
 
 					total_delay_ms += delay_ms;
 					num_objects++;
@@ -180,7 +180,7 @@ cClientHintManager::Think
 	//
 	// Sort the object list. Lowest priority first.
 	//
-	qsort(object_list, num_objects, sizeof(unsigned long), (int (__cdecl *)(const void *,const void *)) &Priority_Compare);
+	qsort(object_list, num_objects, sizeof(uint32_t), (int (__cdecl *)(const void *,const void *)) &Priority_Compare);
 
 
 	//
@@ -190,7 +190,7 @@ cClientHintManager::Think
 	//
 	int most_broken_object_index = -1;
 	int worst_percentage = 0;
-	unsigned long time = TIMEGETTIME();
+	uint32_t time = TIMEGETTIME();
 	for (int i=1 ; i<num_objects ; i++) {
 		int higher_priority_rate = object_list[i]->Get_Clientside_Update_Frequency();
 

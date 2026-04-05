@@ -70,7 +70,7 @@
  * HISTORY:                                                                                    *
  *   08/19/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-long Obfuscate(char const * string)
+uint32_t Obfuscate(char const * string)
 {
 	char buffer[128];
 
@@ -124,13 +124,13 @@ long Obfuscate(char const * string)
 	**	Transform the buffer into a number. This transformation is character
 	**	order dependant.
 	*/
-	long code = CRCEngine()(buffer, length);
+	uint32_t code = CRCEngine()(buffer, length);
 
 	/*
 	**	Record a copy of this initial transformation to be used in a later
 	**	self referential transformation.
 	*/
-	long copy = code;
+	uint32_t copy = code;
 
 	/*
 	**	Reverse the character string and combine with the previous transformation.
@@ -153,11 +153,11 @@ long Obfuscate(char const * string)
 	*/
 	strrev(buffer);		// Restore original string order.
 	for (int index2 = 0; index2 < length; index2++) {
-		code ^= (unsigned char)buffer[index2];
-		unsigned char temp = (unsigned char)code;
+		code ^= (uint8_t)buffer[index2];
+		uint8_t temp = (uint8_t)code;
 		buffer[index2] ^= temp;
 		code >>= 8;
-		code |= (((long)temp)<<24);
+		code |= (static_cast<uint32_t>(temp) << 24);
 	}
 
 	/*
@@ -166,8 +166,8 @@ long Obfuscate(char const * string)
 	**	unconventional attacks, the loss is limited to less than 10%.
 	*/
 	for (int index3 = 0; index3 < length; index3++) {
-		static unsigned char _lossbits[] = {0x00,0x08,0x00,0x20,0x00,0x04,0x10,0x00};
-		static unsigned char _addbits[] = {0x10,0x00,0x00,0x80,0x40,0x00,0x00,0x04};
+		static uint8_t _lossbits[] = {0x00,0x08,0x00,0x20,0x00,0x04,0x10,0x00};
+		static uint8_t _addbits[] = {0x10,0x00,0x00,0x80,0x40,0x00,0x00,0x04};
 
 		buffer[index3] |= _addbits[index3 % (sizeof(_addbits)/sizeof(_addbits[0]))];
 		buffer[index3] &= (char)(~_lossbits[index3 % (sizeof(_lossbits)/sizeof(_lossbits[0]))]);
@@ -183,24 +183,24 @@ long Obfuscate(char const * string)
 	**	to discourage even the most determined hackers.
 	*/
 	for (int index4 = 0; index4 < length; index4 += 4) {
-		short key1 = buffer[index4];
-		short key2 = buffer[index4+1];
-		short key3 = buffer[index4+2];
-		short key4 = buffer[index4+3];
-		short val1 = key1;
-		short val2 = key2;
-		short val3 = key3;
-		short val4 = key4;
+		int16_t key1 = buffer[index4];
+		int16_t key2 = buffer[index4+1];
+		int16_t key3 = buffer[index4+2];
+		int16_t key4 = buffer[index4+3];
+		int16_t val1 = key1;
+		int16_t val2 = key2;
+		int16_t val3 = key3;
+		int16_t val4 = key4;
 
 		val1 *= key1;
 		val2 += key2;
 		val3 += key3;
 		val4 *= key4;
 
-		short s3 = val3;
+		int16_t s3 = val3;
 		val3 ^= val1;
 		val3 *= key1;
-		short s2 = val2;
+		int16_t s2 = val2;
 		val2 ^= val4;
 		val2 += val3;
 		val2 *= key3;
@@ -229,5 +229,3 @@ long Obfuscate(char const * string)
 	*/
 	return(code);
 }
-
-

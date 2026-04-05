@@ -66,7 +66,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CAddToLineupDialog message handlers
 
-BOOL CAddToLineupDialog::OnInitDialog() 
+int32_t CAddToLineupDialog::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
 	

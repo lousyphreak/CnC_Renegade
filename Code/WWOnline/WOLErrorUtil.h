@@ -35,13 +35,15 @@
 #ifndef __WOLERROR_H__
 #define __WOLERROR_H__
 
+#include <cstdint>
+
 #include <objbase.h>
 
 namespace WWOnline {
 
-const char* const GetChatErrorString(HRESULT hr);
-const char* const GetNetUtilErrorString(HRESULT hr);
-const char* const GetDownloadErrorString(HRESULT hr);
+const char* const GetChatErrorString(int32_t hr);
+const char* const GetNetUtilErrorString(int32_t hr);
+const char* const GetDownloadErrorString(int32_t hr);
 
 }
 

@@ -37,6 +37,8 @@
 #ifndef _DATASAFE_H
 #define _DATASAFE_H
 
+#include <cstdint>
+
 /*
 ** Adapted from original code by Jeff Brown
 **
@@ -233,11 +235,11 @@
 */
 #ifdef PARAM_EDITING_ON
 
-#define safe_int int
-#define safe_unsigned_int unsigned int
+#define safe_int int32_t
+#define safe_unsigned_int uint32_t
 
-#define safe_long long
-#define safe_unsigned_long unsigned long
+#define safe_long int32_t
+#define safe_unsigned_long uint32_t
 
 #define safe_float float
 
@@ -245,11 +247,11 @@
 
 #else //PARAM_EDITING_ON
 
-#define safe_int SafeDataClass<int>
-#define safe_unsigned_int SafeDataClass<unsigned int>
+#define safe_int SafeDataClass<int32_t>
+#define safe_unsigned_int SafeDataClass<uint32_t>
 
-#define safe_long SafeDataClass<int>
-#define safe_unsigned_long SafeDataClass<unsigned int>
+#define safe_long SafeDataClass<int32_t>
+#define safe_unsigned_long SafeDataClass<uint32_t>
 
 #define safe_float SafeDataClass<float>
 
@@ -288,7 +290,7 @@ class DataSafeHandleClass
 		/*
 		** Consturctor.
 		*/
-		DataSafeHandleClass(uint32 val = 0) {
+		DataSafeHandleClass(uint32_t val = 0) {
 			Handle.Whole.WholeHandle = val;
 		};
 
@@ -302,29 +304,25 @@ class DataSafeHandleClass
 		/*
 		** Convenience functions and operators to handle setting or getting a handle using an int.
 		*/
-		inline uint32 operator = (const uint32 &val) {
+		inline uint32_t operator = (const uint32_t &val) {
 			Handle.Whole.WholeHandle = val;
 			return(val);
 		};
 
-		inline operator uint32 (void) {
+		inline operator uint32_t (void) {
 			return(Handle.Whole.WholeHandle);
 		}
 
-		inline operator uint32 (void) const {
+		inline operator uint32_t (void) const {
 			return(Handle.Whole.WholeHandle);
 		}
 
-		inline uint32 &operator () (void) {
+		inline uint32_t &operator () (void) {
 			return(Handle.Whole.WholeHandle);
 		}
 
-		inline DataSafeHandleClass operator ^ (uint32 key) const {
+		inline DataSafeHandleClass operator ^ (uint32_t key) const {
 			return DataSafeHandleClass(Handle.Whole.WholeHandle ^ key);
-		}
-
-		inline DataSafeHandleClass operator ^ (unsigned long key) const {
-			return (*this) ^ static_cast<uint32>(key);
 		}
 
 		/*
@@ -335,7 +333,7 @@ class DataSafeHandleClass
 				/*
 				** All the handle components conveniently together in an int.
 				*/
-				uint32 WholeHandle;
+				uint32_t WholeHandle;
 			} Whole;
 
 			struct {
@@ -345,17 +343,17 @@ class DataSafeHandleClass
 				** than that since an ID can be re-used after the original user is removed from the
 				** list but the whole list is searched for a matching ID when retrieving anyway.
 				*/
-				unsigned char ID;
+				uint8_t ID;
 
 				/*
 				** The type of object this handle represents.
 				*/
-				unsigned char Type;
+				uint8_t Type;
 
 				/*
 				** The list number where we can find this object.
 				*/
-				unsigned short List;
+				uint16_t List;
 			} Part;
 
 		} Handle;
@@ -399,7 +397,7 @@ class DataSafeEntryClass
 		/*
 		** Size of data.
 		*/
-		unsigned long Size;
+		uint32_t Size;
 
 		/*
 		** Is this a slop (fake, to allow swapping with only 1 real entry) entry?
@@ -491,7 +489,7 @@ class DataSafeEntryTypeClass
 		/*
 		** A unique number used to match and assign type IDs. This can come from anywhere as long as it's different for every type.
 		*/
-		unsigned long TypeCode;
+		uint32_t TypeCode;
 
 		/*
 		** This is the user friendly ID that is stored along with entries in the data safe and returned in the handle that's
@@ -565,9 +563,9 @@ class GenericDataSafeClass
 
 
 #ifdef THREAD_SAFE_DATA_SAFE
-		static void Set_Preferred_Thread(unsigned int){};
+		static void Set_Preferred_Thread(uint32_t){};
 #else //THREAD_SAFE_DATA_SAFE
-		static void Set_Preferred_Thread(unsigned int thread_id) {PreferredThread = thread_id;};
+		static void Set_Preferred_Thread(uint32_t thread_id) {PreferredThread = thread_id;};
 #endif //THREAD_SAFE_DATA_SAFE
 
 	protected:
@@ -587,8 +585,8 @@ class GenericDataSafeClass
 		*/
 		static void Shuffle(bool forced = false);
 		static void Swap_Entries(DataSafeEntryClass *first, DataSafeEntryClass *second, int type);
-		static void Encrypt(void *data, int size, uint32 key = SimpleKey, bool do_checksum = true);
-		static void Decrypt(void *data, int size, uint32 key = SimpleKey, bool do_checksum = true);
+		static void Encrypt(void *data, int size, uint32_t key = SimpleKey, bool do_checksum = true);
+		static void Decrypt(void *data, int size, uint32_t key = SimpleKey, bool do_checksum = true);
 		static void Mem_Copy_Encrypt(void *dest, void *src, int size, bool do_checksum);
 		static void Mem_Copy_Decrypt(void *dest, void *src, int size, bool do_checksum);
 		static __forceinline void Security_Check(void);
@@ -657,7 +655,7 @@ class GenericDataSafeClass
 #endif //WWDEBUG
 		};
 
-		static unsigned int PreferredThread;
+		static uint32_t PreferredThread;
 #endif //THREAD_SAFE_DATA_SAFE
 
 		friend ThreadLockClass;
@@ -672,12 +670,12 @@ class GenericDataSafeClass
 		/*
 		** Simple key value used for xoring.
 		*/
-		static uint32 SimpleKey;
+		static uint32_t SimpleKey;
 
 		/*
 		** Key used for encrypting handles.
 		*/
-		static uint32 HandleKey;
+		static uint32_t HandleKey;
 
 		/*
 		** Number of valid entries in the Safe list.
@@ -694,17 +692,17 @@ class GenericDataSafeClass
 		/*
 		** Integrity check.
 		*/
-		static uint32 Checksum;
+		static uint32_t Checksum;
 
 		/*
 		** Shuffle delay.
 		*/
-		static unsigned long ShuffleDelay;
+		static uint32_t ShuffleDelay;
 
 		/*
 		** Security check delay.
 		*/
-		static unsigned long SecurityCheckDelay;
+		static uint32_t SecurityCheckDelay;
 
 		/*
 		** List of types that are stored in the data safe.
@@ -735,7 +733,7 @@ class GenericDataSafeClass
 		** Statistics - debug only.
 		*/
 #ifdef WWDEBUG
-		static unsigned long LastDump;
+		static uint32_t LastDump;
 		static int NumSwaps;
 		static int NumFetches;
 		static int SlopCount;
@@ -771,7 +769,7 @@ class DataSafeClass : public GenericDataSafeClass
 			if (ptr) {
 				void *temp = (void*)ptr;
 				if (temp >= &ReturnList[0][0] && temp < &ReturnList[MAX_OBJECT_COPIES][0]) {
-					if (((unsigned long) temp - (unsigned long)(&ReturnList[0][0])) % sizeof(T) == 0) {
+					if (((uint32_t) temp - (uint32_t)(&ReturnList[0][0])) % sizeof(T) == 0) {
 						return(true);
 					}
 				}
@@ -801,8 +799,8 @@ class DataSafeClass : public GenericDataSafeClass
 		/*
 		** Type identification.
 		*/
-		static int Get_Type_ID(unsigned long type_code, int size);
-		static unsigned long Get_Type_Code(void);
+		static int Get_Type_ID(uint32_t type_code, int size);
+		static uint32_t Get_Type_Code(void);
 
 		/*
 		** Type of this DataSafe.
@@ -889,10 +887,8 @@ class SafeDataClass
 		inline T &operator = (T const &data);
 		inline T &operator = (SafeDataClass<T> &safedata);
 
-		inline operator int(void) const;
-		inline operator unsigned int(void) const;
-		inline operator long(void) const;
-		inline operator unsigned long(void) const;
+		inline operator int32_t(void) const;
+		inline operator uint32_t(void) const;
 		inline operator float(void) const;
 		inline operator double(void) const;
 
@@ -1092,7 +1088,7 @@ __forceinline void GenericDataSafeClass::Security_Check(void)
 	/*
 	** Only check the time every n calls.
 	*/
-	static unsigned long _calls = 0;
+	static uint32_t _calls = 0;
 	_calls++;
 	if (_calls < DATASAFE_TIME_CHECK_CALLS) {
 		return;
@@ -1122,7 +1118,7 @@ __forceinline void GenericDataSafeClass::Security_Check(void)
 	** Since we are going through the whole safe here, we might as well make a note of where slop
 	** needs to be added or removed and count how many total slop entries we have.
 	*/
-	unsigned long time = TIMEGETTIME();
+	uint32_t time = TIMEGETTIME();
 	if (time < SecurityCheckDelay || (time | SecurityCheckDelay) == 0 || (time - SecurityCheckDelay) > SECURITY_CHECK_TIME) {
 
 #ifdef WWDEBUG
@@ -1138,7 +1134,7 @@ __forceinline void GenericDataSafeClass::Security_Check(void)
 			_checking = true;
 			//WWDEBUG_SAY(("Data Safe: Performing security check\n"));
 			SecurityCheckDelay = time;
-			unsigned long checkey = ~SimpleKey;
+			uint32_t checkey = ~SimpleKey;
 
 			/*
 			** Loop through every list.
@@ -1151,11 +1147,11 @@ __forceinline void GenericDataSafeClass::Security_Check(void)
 					** Dereference stuff - make sure the list makes sense.
 					*/
 					DataSafeEntryClass *entry_ptr = Safe[i]->SafeList;
-					uint32 *data = NULL;
+					uint32_t *data = NULL;
 					ds_assert(entry_ptr != NULL);
 					int data_size = entry_ptr->Size;
 					ds_assert((data_size & 3) == 0);
-					data_size = data_size / static_cast<int>(sizeof(uint32));
+					data_size = data_size / static_cast<int>(sizeof(uint32_t));
 
 					if (entry_ptr) {
 
@@ -1179,7 +1175,7 @@ __forceinline void GenericDataSafeClass::Security_Check(void)
 							/*
 							** Add in the data.
 							*/
-							data = reinterpret_cast<uint32 *>(((char*)entry_ptr) + sizeof(*entry_ptr));
+							data = reinterpret_cast<uint32_t *>(((char*)entry_ptr) + sizeof(*entry_ptr));
 							for (int z=0 ; z<data_size ; z++) {
 								checkey ^= *data++;
 							}
@@ -1377,10 +1373,10 @@ DataSafeClass<T>::~DataSafeClass(void)
  *   7/2/2001 11:17AM ST : Created                                                             *
  *=============================================================================================*/
 template <class T>
-unsigned long DataSafeClass<T>::Get_Type_Code(void)
+uint32_t DataSafeClass<T>::Get_Type_Code(void)
 {
 	static int type_marker = 0;
-	unsigned long instruction_pointer = (unsigned long)(uintptr_t)&type_marker;
+	uint32_t instruction_pointer = (uint32_t)(uintptr_t)&type_marker;
 	ds_assert(instruction_pointer != 0);
 	return(instruction_pointer);
 }
@@ -1405,7 +1401,7 @@ unsigned long DataSafeClass<T>::Get_Type_Code(void)
  *   6/27/2001 12:44PM ST : Created                                                            *
  *=============================================================================================*/
 template <class T>
-int DataSafeClass<T>::Get_Type_ID(unsigned long type_code, int size)
+int DataSafeClass<T>::Get_Type_ID(uint32_t type_code, int size)
 {
 	int id = 0;
 
@@ -4031,18 +4027,18 @@ inline T &SafeDataClass<T>::operator () (void) const
  *   7/6/2001 11:47AM ST : Created                                                             *
  *=============================================================================================*/
 template <class T>
-inline SafeDataClass<T>::operator int (void) const
+inline SafeDataClass<T>::operator int32_t (void) const
 {
-	ds_assert(sizeof(T) == sizeof(int));
+	ds_assert(sizeof(T) == sizeof(int32_t));
 
 	T *data_ptr = NULL;
 
 #ifdef WWDEBUG
 	/*
-	** Check that T is safe to return as an int
+	** Check that T is safe to return as an int32_t
 	*/
 	T x = 0;
-	int y = (T)x;
+	int32_t y = (T)x;
 	ds_assert(x == y);
 #endif	//WWDEBUG
 
@@ -4057,27 +4053,27 @@ inline SafeDataClass<T>::operator int (void) const
 			DataSafeClass<T>::Get(Handle, data_ptr);
 		ds_assert(ok);
 		if (data_ptr) {
-			return(*((int*)data_ptr));
+			return(*((int32_t*)data_ptr));
 		}
 	}
 
 	/*
 	** Error case. Need to return some valid value.
 	*/
-	static int oh_dear;
+	static int32_t oh_dear;
 	return(oh_dear);
 }
 
 
 
 /***********************************************************************************************
- * SafeDataClass::operator unsigned int -- Return the data for this class as an unsigned int   *
+ * SafeDataClass::operator uint32_t -- Return the data for this class as an uint32_t   *
  *                                                                                             *
  *                                                                                             *
  *                                                                                             *
  * INPUT:    Nothing                                                                           *
  *                                                                                             *
- * OUTPUT:   Data cast to unsigned int                                                         *
+ * OUTPUT:   Data cast to uint32_t                                                         *
  *                                                                                             *
  * WARNINGS: None                                                                              *
  *                                                                                             *
@@ -4085,18 +4081,18 @@ inline SafeDataClass<T>::operator int (void) const
  *   7/6/2001 11:47AM ST : Created                                                             *
  *=============================================================================================*/
 template <class T>
-inline SafeDataClass<T>::operator unsigned int (void) const
+inline SafeDataClass<T>::operator uint32_t (void) const
 {
-	ds_assert(sizeof(T) == sizeof(unsigned int));
+	ds_assert(sizeof(T) == sizeof(uint32_t));
 
 	T *data_ptr = NULL;
 
 #ifdef WWDEBUG
 	/*
-	** Check that T is safe to return as an unsigned int
+	** Check that T is safe to return as an uint32_t
 	*/
 	T x = 0;
-	unsigned int y = (T)x;
+	uint32_t y = (T)x;
 	ds_assert(x == y);
 #endif	//WWDEBUG
 
@@ -4111,128 +4107,33 @@ inline SafeDataClass<T>::operator unsigned int (void) const
 			DataSafeClass<T>::Get(Handle, data_ptr);
 		ds_assert(ok);
 		if (data_ptr) {
-			return(*((unsigned int*)data_ptr));
+			return(*((uint32_t*)data_ptr));
 		}
 	}
 
 	/*
 	** Error case. Need to return some valid value.
 	*/
-	static unsigned int oh_dear;
+	static uint32_t oh_dear;
 	return(oh_dear);
 }
 
 
 
 /***********************************************************************************************
- * SafeDataClass::operator long -- Return the data for this class as a long                    *
+ * SafeDataClass::operator int -- Return the data for this class as an uint32_t           *
  *                                                                                             *
  *                                                                                             *
  *                                                                                             *
  * INPUT:    Nothing                                                                           *
  *                                                                                             *
- * OUTPUT:   Data cast to long                                                                 *
+ * OUTPUT:   Data cast to uint32_t                                                        *
  *                                                                                             *
  * WARNINGS: None                                                                              *
  *                                                                                             *
  * HISTORY:                                                                                    *
  *   7/6/2001 11:47AM ST : Created                                                             *
  *=============================================================================================*/
-template <class T>
-inline SafeDataClass<T>::operator long (void) const
-{
-	ds_assert(sizeof(T) == sizeof(long));
-
-	T *data_ptr = NULL;
-
-#ifdef WWDEBUG
-	/*
-	** Check that T is safe to return as a long
-	*/
-	T x = 0;
-	long y = (T)x;
-	ds_assert(x == y);
-#endif	//WWDEBUG
-
-	/*
-	** If the handle we have is valid then use it to get a pointer to a temporary copy of the data safe contents for this
-	** handle.
-	*/
-	if (Handle.Is_Valid()) {
-#ifdef WWDEBUG
-		bool ok =
-#endif //WWDEBUG
-			DataSafeClass<T>::Get(Handle, data_ptr);
-		ds_assert(ok);
-		if (data_ptr) {
-			return(*((long*)data_ptr));
-		}
-	}
-
-	/*
-	** Error case. Need to return some valid value.
-	*/
-	static long oh_dear;
-	return(oh_dear);
-}
-
-
-
-
-/***********************************************************************************************
- * SafeDataClass::operator int -- Return the data for this class as an unsigned long           *
- *                                                                                             *
- *                                                                                             *
- *                                                                                             *
- * INPUT:    Nothing                                                                           *
- *                                                                                             *
- * OUTPUT:   Data cast to unsigned long                                                        *
- *                                                                                             *
- * WARNINGS: None                                                                              *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *   7/6/2001 11:47AM ST : Created                                                             *
- *=============================================================================================*/
-template <class T>
-inline SafeDataClass<T>::operator unsigned long (void) const
-{
-	ds_assert(sizeof(T) == sizeof(unsigned long));
-
-	T *data_ptr = NULL;
-
-#ifdef WWDEBUG
-	/*
-	** Check that T is safe to return as an unsigned long
-	*/
-	T x = 0;
-	unsigned long y = (T)x;
-	ds_assert(x == y);
-#endif	//WWDEBUG
-
-	/*
-	** If the handle we have is valid then use it to get a pointer to a temporary copy of the data safe contents for this
-	** handle.
-	*/
-	if (Handle.Is_Valid()) {
-#ifdef WWDEBUG
-		bool ok =
-#endif //WWDEBUG
-			DataSafeClass<T>::Get(Handle, data_ptr);
-		ds_assert(ok);
-		if (data_ptr) {
-			return(*((unsigned long*)data_ptr));
-		}
-	}
-
-	/*
-	** Error case. Need to return some valid value.
-	*/
-	static unsigned long oh_dear;
-	return(oh_dear);
-}
-
-
-
 /***********************************************************************************************
  * SafeDataClass::operator int -- Return the data for this class as a float                    *
  *                                                                                             *

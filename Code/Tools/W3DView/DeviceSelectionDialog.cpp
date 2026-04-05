@@ -45,7 +45,7 @@ static char THIS_FILE[] = __FILE__;
 //
 CDeviceSelectionDialog::CDeviceSelectionDialog
 (
-    BOOL bLookupCachedInfo,
+    int32_t bLookupCachedInfo,
     CWnd* pParent /*=NULL*/
 )
 	: m_iDeviceIndex (1),
@@ -89,7 +89,7 @@ END_MESSAGE_MAP()
 //
 //  OnInitDialog
 //
-BOOL
+int32_t
 CDeviceSelectionDialog::OnInitDialog (void)
 {
 	CDialog::OnInitDialog();
@@ -115,7 +115,7 @@ CDeviceSelectionDialog::OnInitDialog (void)
 	}
 
 	// Check the '16bpp' radio by default
-	SendDlgItemMessage (IDC_COLORDEPTH_16, BM_SETCHECK, (WPARAM)TRUE);
+	SendDlgItemMessage (IDC_COLORDEPTH_16, BM_SETCHECK, (uintptr_t)TRUE);
 
 	// Force the first entry in the combobox to be selected.
 	//m_deviceListComboBox.SetCurSel (0);
@@ -205,7 +205,7 @@ CDeviceSelectionDialog::OnOK (void)
 int
 CDeviceSelectionDialog::DoModal (void)
 {
-	BOOL bFoundDevice = FALSE;
+	int32_t bFoundDevice = FALSE;
 	int iReturn = IDOK;
 
 	// Get the name of the last used device driver from the registry

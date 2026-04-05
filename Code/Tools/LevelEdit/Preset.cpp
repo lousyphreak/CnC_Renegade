@@ -151,7 +151,7 @@ PresetClass::~PresetClass (void)
 	//	Unlink this definition from its preset (if possible or necessary)
 	//
 	DefinitionClass *definition = DefinitionMgrClass::Find_Definition (m_DefinitionID, false);
-	if (definition != NULL && (definition->Get_User_Data () == (uint32)this)) {
+	if (definition != NULL && (definition->Get_User_Data () == (uint32_t)this)) {
 		definition->Set_User_Data (NULL);
 	}
 
@@ -250,7 +250,7 @@ PresetClass::Show_Properties (bool read_only)
 	//
 	// Show the property sheet
 	//
-	UINT ret_code = prop_sheet.DoModal ();
+	uint32_t ret_code = prop_sheet.DoModal ();
 	
 	// Return true if the user clicked OK
 	return (ret_code == IDOK);
@@ -434,7 +434,7 @@ PresetClass::Load_Variables (ChunkLoadClass &cload)
 	//	Associate this preset with the definition
 	//
 	if (m_Definition != NULL) {
-		m_Definition->Set_User_Data ((uint32)this);
+		m_Definition->Set_User_Data ((uint32_t)this);
 	}
 
 	if (m_DefinitionID == 0 || m_Definition == NULL) {
@@ -496,7 +496,7 @@ PresetClass::Create (void)
 	StringClass error_message;
 	if (m_Definition != NULL && m_Definition->Is_Valid_Config (error_message)) {
 		
-		uint32 class_id = m_Definition->Get_Class_ID ();
+		uint32_t class_id = m_Definition->Get_Class_ID ();
 		switch (::SuperClassID_From_ClassID (class_id))
 		{			
 			case CLASSID_TERRAIN:
@@ -971,7 +971,7 @@ PresetClass::Is_Valid_Sound_Preset (void)
 		//	Does this preset point to a file?
 		//
 		CString filename = definition->Get_Filename ();
-		DWORD file_attrs = ::GetFileAttributes (definition->Get_Filename ());
+		uint32_t file_attrs = ::GetFileAttributes (definition->Get_Filename ());
 		if (	filename.GetLength () > 0 && 
 				(file_attrs == 0xFFFFFFFF ||
 				 file_attrs != FILE_ATTRIBUTE_DIRECTORY))
@@ -1045,7 +1045,7 @@ PresetClass::Get_Icon_Index (void) const
 	//
 	//	What type is it?
 	//
-	uint32 class_id = m_Definition->Get_Class_ID ();
+	uint32_t class_id = m_Definition->Get_Class_ID ();
 	switch (::SuperClassID_From_ClassID (class_id))
 	{			
 		case CLASSID_TERRAIN:
@@ -1302,7 +1302,7 @@ PresetClass::Set_Definition (DefinitionClass *definition)
 	// quickly find the preset given its definition
 	//
 	if (m_Definition != NULL) {
-		m_Definition->Set_User_Data ((uint32)this);
+		m_Definition->Set_User_Data ((uint32_t)this);
 		m_DefinitionID = m_Definition->Get_ID ();
 	}
 

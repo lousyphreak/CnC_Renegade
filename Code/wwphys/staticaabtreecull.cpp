@@ -604,7 +604,7 @@ bool StaticAABTreeCullClass::Is_Child_Visible
 	return false;
 }
 
-void StaticAABTreeCullClass::Merge_Vis_Object_IDs(uint32 id0,uint32 id1)
+void StaticAABTreeCullClass::Merge_Vis_Object_IDs(uint32_t id0,uint32_t id1)
 {
 	/*
 	** Each node and each staticphys object has a vis object id.  
@@ -622,7 +622,7 @@ void StaticAABTreeCullClass::Merge_Vis_Object_IDs(uint32 id0,uint32 id1)
 
 		StaticPhysClass * obj = get_first_object(node);
 		while (obj) {
-			uint32 obj_id = obj->Get_Vis_Object_ID();
+			uint32_t obj_id = obj->Get_Vis_Object_ID();
 			if (obj_id != 0xFFFFFFFF) {
 				if (obj_id == id1) {
 					obj_id = id0;
@@ -637,7 +637,7 @@ void StaticAABTreeCullClass::Merge_Vis_Object_IDs(uint32 id0,uint32 id1)
 	}
 }
 
-void StaticAABTreeCullClass::Merge_Vis_Sector_IDs(uint32 id0,uint32 id1)
+void StaticAABTreeCullClass::Merge_Vis_Sector_IDs(uint32_t id0,uint32_t id1)
 {
 	/*
 	** Each staticphys object may have a vis sector id.
@@ -651,7 +651,7 @@ void StaticAABTreeCullClass::Merge_Vis_Sector_IDs(uint32 id0,uint32 id1)
 		StaticPhysClass * obj = get_first_object(node);
 		while (obj) {
 
-			uint32 sector_id = obj->Get_Vis_Sector_ID();
+			uint32_t sector_id = obj->Get_Vis_Sector_ID();
 			if (sector_id != 0xFFFFFFFF) {
 				if (sector_id == id1) {
 					sector_id = id0;

@@ -139,7 +139,7 @@ GameMtlVertexMaterialDlg::~GameMtlVertexMaterialDlg()
  * HISTORY:                                                                                    *
  *   11/23/98   GTH : Created.                                                                 *
  *=============================================================================================*/
-BOOL GameMtlVertexMaterialDlg::Dialog_Proc(HWND dlg_wnd, UINT message, WPARAM wparam, LPARAM lparam)
+int32_t GameMtlVertexMaterialDlg::Dialog_Proc(HWND dlg_wnd, uint32_t message, uintptr_t wparam, intptr_t lparam)
 { 
 	int val;
 	int id = LOWORD(wparam);
@@ -375,7 +375,7 @@ void GameMtlVertexMaterialDlg::ReloadDialog(void)
  * HISTORY:                                                                                    *
  *   11/23/98   GTH : Created.                                                                 *
  *=============================================================================================*/
-void GameMtlVertexMaterialDlg::ActivateDlg(BOOL onoff)
+void GameMtlVertexMaterialDlg::ActivateDlg(int32_t onoff)
 {
 	if (AmbientSwatch) {
 		AmbientSwatch->Activate(onoff);

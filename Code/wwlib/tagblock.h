@@ -37,6 +37,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef TAGBLOCK_H
 #define TAGBLOCK_H
 
@@ -89,7 +91,7 @@ class TagBlockFile : protected RawFileClass
 			return(Find_Block(tagname) != NULL);
 		}						
 		
-		virtual unsigned long Get_Date_Time(void)  {
+		virtual uint32_t Get_Date_Time(void)  {
 			return(FileTime);
 		}
 
@@ -169,7 +171,7 @@ class TagBlockFile : protected RawFileClass
 		int					NumOpenHandles;
 										  
 		// Last time file was written to before we opened it.
-		unsigned long 		FileTime;
+		uint32_t 		FileTime;
 
 		// Keep list of all blocks in file.  This list is sorted by CRC value.
 		// TagBlockIndex is defined in TagBlock.cpp.

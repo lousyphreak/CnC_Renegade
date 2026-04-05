@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 #include "resource.h"
@@ -61,9 +63,9 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(PresetRemapDialogClass)
-	virtual BOOL OnInitDialog();
-	afx_msg void OnDblclkListCtrl(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnDeleteitemListCtrl(NMHDR* pNMHDR, LRESULT* pResult);
+	virtual int32_t OnInitDialog();
+	afx_msg void OnDblclkListCtrl(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnDeleteitemListCtrl(NMHDR* pNMHDR, intptr_t* pResult);
 	virtual void OnOK();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()

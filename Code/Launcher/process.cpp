@@ -28,7 +28,7 @@ Process::Process()
 }
 
 // Create a process
-bit8 Create_Process(Process &process)
+int8_t Create_Process(Process &process)
 {
     int                      retval;
     STARTUPINFO              si;
@@ -50,9 +50,9 @@ bit8 Create_Process(Process &process)
 #endif
 
     DBGMSG("("<<retval<<") New process:  HANDLE " << (void *)piProcess.hProcess << "   ID "
-      << (DWORD)piProcess.dwProcessId);
+      << (uint32_t)piProcess.dwProcessId);
     DBGMSG("("<<retval<<") New thread:  HANDLE " << (void *)piProcess.hThread << "   ID "
-      << (DWORD)piProcess.dwThreadId);
+      << (uint32_t)piProcess.dwThreadId);
     if (retval==0)
     {
       char message_buffer[256];
@@ -69,9 +69,9 @@ bit8 Create_Process(Process &process)
 //
 // Wait for a process to complete, and fill in the exit code
 //
-bit8 Wait_Process(Process &process, DWORD *exit_code)
+int8_t Wait_Process(Process &process, uint32_t *exit_code)
 {
-  DWORD retval;
+  uint32_t retval;
   retval=WaitForSingleObject(process.hProcess,INFINITE);
   if (exit_code != NULL)
     *exit_code=-1;
@@ -89,7 +89,7 @@ bit8 Wait_Process(Process &process, DWORD *exit_code)
 //
 // Get the process to run from the config object
 //
-bit8 Read_Process_Info(ConfigFile &config,OUT Process &info, IN char *key)
+int8_t Read_Process_Info(ConfigFile &config,OUT Process &info, IN char *key)
 {
 
  Wstring keyStr = "RUN";
@@ -124,7 +124,7 @@ bit8 Read_Process_Info(ConfigFile &config,OUT Process &info, IN char *key)
 /*********************************************************
   FILE     *in;
   char      string[256];
-  bit8      found_space;
+  int8_t      found_space;
   int       i;
 
   if ((in=fopen(config,"r"))==NULL)

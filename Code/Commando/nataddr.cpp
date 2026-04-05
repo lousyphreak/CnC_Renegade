@@ -93,9 +93,9 @@ IPAddressClass::IPAddressClass(void)
  * HISTORY:                                                                                    *
  *   3/9/00 12:59PM ST : Created                                                               *
  *=============================================================================================*/
-IPAddressClass::IPAddressClass(unsigned char *address, unsigned short port)
+IPAddressClass::IPAddressClass(uint8_t *address, uint16_t port)
 {
-	WholeAddress = *((unsigned long*)address);
+	WholeAddress = *((uint32_t*)address);
 	Port = port;
 	IsValid = true;
 }
@@ -115,7 +115,7 @@ IPAddressClass::IPAddressClass(unsigned char *address, unsigned short port)
  * HISTORY:                                                                                    *
  *   3/9/00 1:00PM ST : Created                                                                *
  *=============================================================================================*/
-IPAddressClass::IPAddressClass(unsigned long address, unsigned short port)
+IPAddressClass::IPAddressClass(uint32_t address, uint16_t port)
 {
 	WholeAddress = address;
 	Port = port;
@@ -139,9 +139,9 @@ IPAddressClass::IPAddressClass(unsigned long address, unsigned short port)
  * HISTORY:                                                                                    *
  *   3/9/00 1:01PM ST : Created                                                                *
  *=============================================================================================*/
-void IPAddressClass::Set_Address(unsigned char *address, unsigned short port)
+void IPAddressClass::Set_Address(uint8_t *address, uint16_t port)
 {
-	WholeAddress = *((unsigned long*)address);
+	WholeAddress = *((uint32_t*)address);
 	Port = port;
 	IsValid = true;
 }
@@ -162,7 +162,7 @@ void IPAddressClass::Set_Address(unsigned char *address, unsigned short port)
  * HISTORY:                                                                                    *
  *   3/9/00 1:01PM ST : Created                                                                *
  *=============================================================================================*/
-void IPAddressClass::Set_Address(unsigned long address, unsigned short port)
+void IPAddressClass::Set_Address(uint32_t address, uint16_t port)
 {
 	WholeAddress = address;
 	Port = port;
@@ -185,10 +185,10 @@ void IPAddressClass::Set_Address(unsigned long address, unsigned short port)
  * HISTORY:                                                                                    *
  *   3/9/00 1:03PM ST : Created                                                                *
  *=============================================================================================*/
-void IPAddressClass::Get_Address(unsigned char *address, unsigned short *port)
+void IPAddressClass::Get_Address(uint8_t *address, uint16_t *port)
 {
 	fw_assert(IsValid);
-	*((unsigned long*)address) = WholeAddress;
+	*((uint32_t*)address) = WholeAddress;
 	if (port) {
 		*port = Port;
 	}
@@ -211,7 +211,7 @@ void IPAddressClass::Get_Address(unsigned char *address, unsigned short *port)
  * HISTORY:                                                                                    *
  *   3/9/00 1:03PM ST : Created                                                                *
  *=============================================================================================*/
-unsigned long IPAddressClass::Get_Address(void)
+uint32_t IPAddressClass::Get_Address(void)
 {
 	fw_assert(IsValid);
 	return (WholeAddress);
@@ -233,7 +233,7 @@ unsigned long IPAddressClass::Get_Address(void)
  * HISTORY:                                                                                    *
  *   10/24/00 11:51AM ST : Created                                                             *
  *=============================================================================================*/
-unsigned short IPAddressClass::Get_Port(void)
+uint16_t IPAddressClass::Get_Port(void)
 {
 	fw_assert(IsValid);
 	return(Port);
@@ -283,7 +283,7 @@ bool IPAddressClass::Is_Broadcast(void)
 char *IPAddressClass::As_String(void)
 {
 	static char _addr_str[128];
-	sprintf (_addr_str, "%d.%d.%d.%d ; %d", Address[0], Address[1], Address[2], Address[3], (unsigned int)Port);
+	sprintf (_addr_str, "%d.%d.%d.%d ; %d", Address[0], Address[1], Address[2], Address[3], (uint32_t)Port);
 	return (_addr_str);
 }
 
@@ -435,4 +435,3 @@ bool IPAddressClass::operator = (const IPAddressClass &address)
 	}
 	return(IsValid);
 }
-

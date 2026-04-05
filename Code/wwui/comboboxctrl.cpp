@@ -94,7 +94,7 @@ ComboBoxCtrlClass::~ComboBoxCtrlClass (void)
 }
 
 
-void ComboBoxCtrlClass::Set_Style(DWORD style)
+void ComboBoxCtrlClass::Set_Style(uint32_t style)
 {
 	DialogControlClass::Set_Style(style);
 
@@ -473,7 +473,7 @@ ComboBoxCtrlClass::On_Kill_Focus (DialogControlClass *focus)
 //
 ////////////////////////////////////////////////////////////////
 bool
-ComboBoxCtrlClass::On_Key_Down (uint32 key_id, uint32 key_data)
+ComboBoxCtrlClass::On_Key_Down (uint32_t key_id, uint32_t key_data)
 {
 	bool handled = false;
 	bool is_dirty = true;
@@ -763,7 +763,7 @@ ComboBoxCtrlClass::On_EditCtrl_Change(EditCtrlClass* edit, int)
 //
 ////////////////////////////////////////////////////////////////
 bool
-ComboBoxCtrlClass::On_EditCtrl_Key_Down (EditCtrlClass *edit, uint32 key_id, uint32 key_data)
+ComboBoxCtrlClass::On_EditCtrl_Key_Down (EditCtrlClass *edit, uint32_t key_id, uint32_t key_data)
 {
 	if (edit != &EditControl) {
 		return false;

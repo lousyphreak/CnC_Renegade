@@ -36,6 +36,8 @@
 #ifndef _REVIEW_DIALOG_H
 #define _REVIEW_DIALOG_H
 
+#include <cstdint>
+
 // Includes.
 #include "InstallMenuDialog.h"
 
@@ -48,7 +50,7 @@ class ReviewDialogClass : public InstallMenuDialogClass
 	public:
 		ReviewDialogClass() : InstallMenuDialogClass (IDD_DIALOG_REVIEW) {}
 
-		void On_Command (int ctrl_id, int message_id, DWORD param);
+		void On_Command (int ctrl_id, int message_id, uint32_t param);
 
 		// RTTI.
 		void *As_ReviewDialogClass()		{return (this);}

@@ -35,6 +35,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #pragma once
 
+#include <cstdint>
+
 #ifndef BOUND_H
 #define BOUND_H
 
@@ -47,7 +49,7 @@ T Bound(T original, T minval, T maxval)
 };
 #if defined(__WATCOMC__)
 //int Bound(int, int, int);
-//signed int Bound(signed int, signed int, signed int);
+//int32_t Bound(int32_t, int32_t, int32_t);
 //unsigned Bound(unsigned, unsigned, unsigned);
 //long Bound(long, long, long);
 //float Bound(float, float, float);

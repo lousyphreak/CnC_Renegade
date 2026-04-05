@@ -21,6 +21,8 @@
 
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 // DataTreeView.h : header file
 //
@@ -57,7 +59,7 @@ public:
 	virtual void OnInitialUpdate();
 	protected:
 	virtual void OnDraw(CDC* pDC);      // overridden to draw this view
-	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
+	virtual int32_t PreCreateWindow(CREATESTRUCT& cs);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -72,9 +74,9 @@ protected:
 protected:
 	//{{AFX_MSG(CDataTreeView)
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
-	afx_msg void OnSelChanged(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnDeleteItem(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnDblclk(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnSelChanged(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnDeleteItem(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnDblclk(NMHDR* pNMHDR, intptr_t* pResult);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 

@@ -68,11 +68,11 @@ const float PIP_VIEW = 0.2f;		// size of the pip viewport
 //
 void CALLBACK TimerCallback
 (
-	UINT uID,
-	UINT uMsg,
-	DWORD dwUser,
-	DWORD dw1,
-	DWORD dw2
+	uint32_t uID,
+	uint32_t uMsg,
+	uint32_t dwUser,
+	uint32_t dw1,
+	uint32_t dw2
 )
 {
 	HWND hwnd = (HWND)dwUser;
@@ -95,11 +95,11 @@ void CALLBACK TimerCallback
 //
 //  WindowProc
 //
-LRESULT CGraphicView::WindowProc
+intptr_t CGraphicView::WindowProc
 (
-    UINT message,
-    WPARAM wParam,
-    LPARAM lParam
+    uint32_t message,
+    uintptr_t wParam,
+    intptr_t lParam
 )
 {
 	// Is this the repaint message we are expecting?
@@ -159,7 +159,7 @@ CGraphicView::~CGraphicView()
 	REF_PTR_RELEASE(Axes);
 }
 
-BOOL CGraphicView::PreCreateWindow(CREATESTRUCT& cs)
+int32_t CGraphicView::PreCreateWindow(CREATESTRUCT& cs)
 {
 	// TODO: Modify the Window class or styles here by modifying
 	//  the CREATESTRUCT cs
@@ -167,10 +167,10 @@ BOOL CGraphicView::PreCreateWindow(CREATESTRUCT& cs)
 	return CView::PreCreateWindow(cs);
 }
 
-BOOL CGraphicView::Initialize_WW3D(int device,int bits)
+int32_t CGraphicView::Initialize_WW3D(int device,int bits)
 {
 	// Assume failure
-	BOOL ok = FALSE;
+	int32_t ok = FALSE;
 	if (device < 0) {
 		return FALSE;
 	}
@@ -253,16 +253,16 @@ BOOL CGraphicView::Initialize_WW3D(int device,int bits)
 	// the display (kinda like a game loop iterator)
 	if (TimerID == 0) {
 #if 0
-		TimerID = (UINT)::timeSetEvent(	50,
+		TimerID = (uint32_t)::timeSetEvent(	50,
 													50,
 													TimerCallback,
-													(DWORD)m_hWnd,
+													(uint32_t)m_hWnd,
 													TIME_PERIODIC);
 #else
-		TimerID = (UINT)::timeSetEvent(	66,						// only update 15 times a second
+		TimerID = (uint32_t)::timeSetEvent(	66,						// only update 15 times a second
 													50,
 													TimerCallback,
-													(DWORD)m_hWnd,
+													(uint32_t)m_hWnd,
 													TIME_PERIODIC);
 #endif
 	}
@@ -343,7 +343,7 @@ CPhysTestDoc* CGraphicView::GetDocument() // non-debug version is inline
 /////////////////////////////////////////////////////////////////////////////
 // CGraphicView message handlers
 
-void CGraphicView::OnSize(UINT nType, int cx, int cy) 
+void CGraphicView::OnSize(uint32_t nType, int cx, int cy) 
 {
 	CView::OnSize(nType, cx, cy);
 	
@@ -396,8 +396,8 @@ void CGraphicView::Timestep(void)
 
 	// Compute the amount of time elapsed for this frame.
 	CPhysTestDoc * doc = (CPhysTestDoc *)GetDocument();
-	DWORD curtime = ::GetTickCount();
-	DWORD elapsedtime = curtime - doc->LastTime;
+	uint32_t curtime = ::GetTickCount();
+	uint32_t elapsedtime = curtime - doc->LastTime;
 	if (elapsedtime > 100) {
 		elapsedtime = 100;
 	}
@@ -547,7 +547,7 @@ void CGraphicView::OnDestroy()
 	// Is there an update thread running?
 	if (TimerID == 0) {
 		// Stop the timer
-		::timeKillEvent((UINT)TimerID);
+		::timeKillEvent((uint32_t)TimerID);
 		TimerID = 0;        
 	}
 
@@ -555,7 +555,7 @@ void CGraphicView::OnDestroy()
 }
 
 
-void CGraphicView::OnLButtonDown(UINT nFlags, CPoint point) 
+void CGraphicView::OnLButtonDown(uint32_t nFlags, CPoint point) 
 {
 	// Capture all mouse messages
 	SetCapture();
@@ -568,7 +568,7 @@ void CGraphicView::OnLButtonDown(UINT nFlags, CPoint point)
 	CView::OnLButtonDown(nFlags, point);
 }
 
-void CGraphicView::OnLButtonUp(UINT nFlags, CPoint point) 
+void CGraphicView::OnLButtonUp(uint32_t nFlags, CPoint point) 
 {
 	// if both buttons are now up, release the mouse
 	if (!RMouseDown) {
@@ -581,7 +581,7 @@ void CGraphicView::OnLButtonUp(UINT nFlags, CPoint point)
 	CView::OnLButtonUp(nFlags, point);
 }
 
-void CGraphicView::OnRButtonDown(UINT nFlags, CPoint point) 
+void CGraphicView::OnRButtonDown(uint32_t nFlags, CPoint point) 
 {
 	// Capture all mouse messages
 	SetCapture();
@@ -593,7 +593,7 @@ void CGraphicView::OnRButtonDown(UINT nFlags, CPoint point)
 	CView::OnRButtonDown(nFlags, point);
 }
 
-void CGraphicView::OnRButtonUp(UINT nFlags, CPoint point) 
+void CGraphicView::OnRButtonUp(uint32_t nFlags, CPoint point) 
 {
 	// if both buttons are now up, release the mouse
 	if (!LMouseDown) {
@@ -607,7 +607,7 @@ void CGraphicView::OnRButtonUp(UINT nFlags, CPoint point)
 }
 
 
-void CGraphicView::OnMouseMove(UINT nFlags, CPoint point) 
+void CGraphicView::OnMouseMove(uint32_t nFlags, CPoint point) 
 {
 	// Get the document to display
 	CPhysTestDoc * doc = (CPhysTestDoc *)GetDocument();

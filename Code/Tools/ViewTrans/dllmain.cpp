@@ -65,7 +65,7 @@ int controlsInit = FALSE;
  * HISTORY:                                                                                    * 
  *   02/25/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-BOOL WINAPI DllMain(HINSTANCE hinstDLL,ULONG fdwReason,LPVOID lpvReserved) 
+int32_t WINAPI DllMain(HINSTANCE hinstDLL,uint32_t fdwReason,LPVOID lpvReserved) 
 {	
 	// Hang on to this DLL's instance handle.
 	hInstance = hinstDLL;
@@ -92,6 +92,6 @@ LibNumberClasses() { return 1; }
 __declspec(dllexport) ClassDesc* 
 LibClassDesc(int i) { return &UtilityDesc; }
 
-__declspec(dllexport) ULONG 
+__declspec(dllexport) uint32_t 
 LibVersion() { return VERSION_3DSMAX; }
 

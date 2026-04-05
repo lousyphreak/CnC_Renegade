@@ -70,7 +70,7 @@ UtilityClassDesc	UtilityDesc;
  * HISTORY:                                                                                    * 
  *   02/25/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-BOOL CALLBACK UtilityDlgProc(HWND hDlg, UINT message, WPARAM wParam,LPARAM lParam)
+int32_t CALLBACK UtilityDlgProc(HWND hDlg, uint32_t message, uintptr_t wParam,intptr_t lParam)
 {
 	TransViewerUtility *to = &TheUtility;
 
@@ -148,7 +148,7 @@ void TransViewerUtility::BeginEditParams(Interface *ip, IUtil *iu)
 		MAKEINTRESOURCE(IDD_VIEWTRANS),
 		UtilityDlgProc,
 		ROLLUP_PAGE_TITLE, 
-		(LPARAM)this);		
+		(intptr_t)this);		
 
 	
 	// update the display
@@ -189,7 +189,7 @@ void TransViewerUtility::EndEditParams(Interface *ip, IUtil *iu)
  * HISTORY:                                                                                    * 
  *   02/25/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-void TransViewerUtility::OnInitDialog(HWND hDlg, LPARAM lParam)
+void TransViewerUtility::OnInitDialog(HWND hDlg, intptr_t lParam)
 {
 	
 }

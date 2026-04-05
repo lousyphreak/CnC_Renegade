@@ -35,6 +35,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #pragma once
 
+#include <cstdint>
+
 #ifndef CONVERT_H
 #define CONVERT_H
 
@@ -90,8 +92,8 @@ class ConvertClass
 		**	Convert from source pixel to dest screen pixel.
 		*/
 		int Convert_Pixel(int pixel) const {
-			if (BBP == 1) return(((unsigned char const *)Translator)[pixel]);
-			return(((unsigned short const *)Translator)[pixel]);
+			if (BBP == 1) return(((uint8_t const *)Translator)[pixel]);
+			return(((uint16_t const *)Translator)[pixel]);
 		}
 
 		/*
@@ -117,7 +119,7 @@ class ConvertClass
 		**	Sets the dynamic remap table so that the remapping blitters will use
 		**	it without having to recreate the blitter objects.
 		*/
-		void Set_Remap(unsigned char const * remap) {RemapTable = remap;}
+		void Set_Remap(uint8_t const * remap) {RemapTable = remap;}
 
 	protected:
 		/*
@@ -158,14 +160,14 @@ class ConvertClass
 		/*
 		**	This will shade an 8 bit pixel to about 1/2 intensity.
 		*/
-		unsigned char * ShadowTable;
+		uint8_t * ShadowTable;
 
 		/*
 		**	Remap table pointer used for blits that require remapping. This value
 		**	will change according to the draw parameter. The blitting routines keep track
 		**	of this member object and use it to determine the remap table to use.
 		*/
-		mutable unsigned char const * RemapTable;
+		mutable uint8_t const * RemapTable;
 };
 
 #endif

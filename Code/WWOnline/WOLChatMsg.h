@@ -36,6 +36,8 @@
 #ifndef __WOLCHATMSG_H__
 #define __WOLCHATMSG_H__
 
+#include <cstdint>
+
 #include <wwlib/widestring.h>
 
 #ifdef _MSC_VER
@@ -81,15 +83,15 @@ class ChatMessage
 		bool IsSenderMyself(void) const;
 		bool IsSenderChannelOwner(void) const;
 		bool IsSenderSquelched(void) const;
-		bool IsSenderInClan(unsigned long clanID) const;
+		bool IsSenderInClan(uint32_t clanID) const;
 
 	protected:
 		WideStringClass mSenderName;
 		WideStringClass mMessage;
 		bool mIsPrivate;
 		bool mIsAction;
-		unsigned long mSenderFlags;
-		unsigned long mSenderClanID;
+		uint32_t mSenderFlags;
+		uint32_t mSenderClanID;
 	};
 
 typedef std::vector<ChatMessage> ChatMessageList;

@@ -54,6 +54,7 @@
 #define __SLIST_H__
 
 #include "slnode.h"
+#include <cstdint>
 
 #ifndef NULL
 #define NULL 0L
@@ -107,7 +108,7 @@ class SList {
 
 		// Could possibly implement an InsertAfter that operates on a whole list
 		virtual bool Is_Empty(void)   const;      // True if list is empty
-		virtual long Get_Count(void) const;    // Returns number of nodes in list
+		virtual int32_t Get_Count(void) const;    // Returns number of nodes in list
 };
 
 
@@ -341,9 +342,9 @@ T *SList<T>::Remove_Tail(void)
  *   03/11/1997 PWG : Created.                                            * 
  *========================================================================*/
 template<class T>
-inline long SList<T>::Get_Count(void) const
+inline int32_t SList<T>::Get_Count(void) const
 {
-	long count = 0;
+	int32_t count = 0;
 	for (SLNode<T> *cur = HeadNode; cur; cur = cur->Next())
 		count++;
 	return count;

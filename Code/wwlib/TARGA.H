@@ -18,6 +18,8 @@
 
 #ifndef _TARGA_H_
 #define _TARGA_H_
+
+#include <cstdint>
 /****************************************************************************
 *
 *         C O N F I D E N T I A L --- W E S T W O O D   S T U D I O S
@@ -43,7 +45,7 @@
 // If you wish to display loading error messages call targa functions inside of
 // the following macro - for example TARGA_ERROR_HANDLER(targa.Open(filename, TGA_READMODE));
 // The error code is returned back from the handler so it can be used in an expression.
-long Targa_Error_Handler(long error_code,const char* filename);
+int32_t Targa_Error_Handler(int32_t error_code,const char* filename);
 #define TARGA_ERROR_HANDLER(call,filename) Targa_Error_Handler(call,filename)
 
 /*---------------------------------------------------------------------------
@@ -67,18 +69,18 @@ long Targa_Error_Handler(long error_code,const char* filename);
  */
 typedef struct _TGAHeader
 	{
-	char  IDLength;
-	char  ColorMapType;
-	char  ImageType;
-	short CMapStart;
-	short CMapLength;
-	char  CMapDepth;
-	short XOffset;
-	short YOffset;
-	short Width;
-	short Height;
-	char  PixelDepth;
-	char  ImageDescriptor;
+	uint8_t  IDLength;
+	uint8_t  ColorMapType;
+	uint8_t  ImageType;
+	int16_t CMapStart;
+	int16_t CMapLength;
+	uint8_t  CMapDepth;
+	int16_t XOffset;
+	int16_t YOffset;
+	int16_t Width;
+	int16_t Height;
+	uint8_t  PixelDepth;
+	uint8_t  ImageDescriptor;
 	} TGAHeader;
 
 /* ImageType definiton */
@@ -133,15 +135,15 @@ typedef struct _TGAHeader
  */
 typedef struct _TGA2Footer
 	{
-	long Extension;
-	long Developer;
+	uint32_t Extension;
+	uint32_t Developer;
 	char Signature[16];
 	char RsvdChar;
 	char BZST;
 	_TGA2Footer() {}
 	} TGA2Footer;
 
-/* TGA2DateStamp - A series of 3 WORD values which define the integer value
+/* TGA2DateStamp - A series of 3 uint16_t values which define the integer value
  *                 for the date the image was saved.
  *
  * Month - Month number (1 - 12)
@@ -150,12 +152,12 @@ typedef struct _TGA2Footer
  */
 typedef struct _TGA2DateStamp
 	{
-	short Month;
-	short Day;
-	short Year;
+	int16_t Month;
+	int16_t Day;
+	int16_t Year;
 	} TGA2DateStamp;
 
-/* TGA2TimeStamp - A series of 3 WORD values which define the integer value
+/* TGA2TimeStamp - A series of 3 uint16_t values which define the integer value
  *                 for the time the image was saved.
  *
  * Hour   - Hour number, military time (0 - 23)
@@ -164,9 +166,9 @@ typedef struct _TGA2DateStamp
  */
 typedef struct _TGA2TimeStamp
 	{
-	short Hour;
-	short Minute;
-	short Second;
+	int16_t Hour;
+	int16_t Minute;
+	int16_t Second;
 	} TGA2TimeStamp;
 
 /* TGA2SoftVer - Define the version of the software used to generate file.
@@ -176,7 +178,7 @@ typedef struct _TGA2TimeStamp
  */
 typedef struct _TGA2SoftVer
 	{
-	short Number;
+	int16_t Number;
 	char  Letter;
 	} TGA2SoftVer;
 
@@ -188,8 +190,8 @@ typedef struct _TGA2SoftVer
  */
 typedef struct _TGA2Ratio
 	{
-	short Numer;
-	short Denom;
+	int16_t Numer;
+	int16_t Denom;
 	} TGA2Ratio;
 
 /* TGA2Extension - Extension area, provided for additional file information.
@@ -215,7 +217,7 @@ typedef struct _TGA2Ratio
  */
 typedef struct _TGA2Extension
 	{
-	short         ExtSize;
+	int16_t       ExtSize;
 	char          AuthName[41];
 	char          AuthComment[324];
 	TGA2DateStamp Date;
@@ -224,13 +226,13 @@ typedef struct _TGA2Extension
 	TGA2TimeStamp JobTime;
 	char          SoftID[41];
 	TGA2SoftVer   SoftVer;
-	long          KeyColor;
+	uint32_t      KeyColor;
 	TGA2Ratio     Aspect;
 	TGA2Ratio     Gamma;
-	long          ColorCor;
-	long          PostStamp;
-	long          ScanLine;
-	char          Attributes;
+	uint32_t      ColorCor;
+	uint32_t      PostStamp;
+	uint32_t      ScanLine;
+	uint8_t       Attributes;
 	} TGA2Extension;
 
 /* Alpha channel attributes (Extension Area) */
@@ -264,21 +266,21 @@ class Targa
 		~Targa();
 
 		/* Function prototypes. */
-		long Open(const char* name, long mode);
+		int32_t Open(const char* name, int32_t mode);
 		void Close(void);
 
-		long Load(const char* name, char* palette, char* image,bool invert_image=true);
-		long Load(const char* name, long flags, bool invert_image=true);
-		long Save(const char* name, long flags, bool addextension = false);
+		int32_t Load(const char* name, uint8_t* palette, uint8_t* image,bool invert_image=true);
+		int32_t Load(const char* name, int32_t flags, bool invert_image=true);
+		int32_t Save(const char* name, int32_t flags, bool addextension = false);
 		
 		void XFlip(void);
 		void YFlip(void);
 
-		char* SetImage(char* buffer);
-		char* GetImage(void) const {return (mImage);}
+		uint8_t* SetImage(uint8_t* buffer);
+		uint8_t* GetImage(void) const {return (mImage);}
 		
-		char* SetPalette(char* buffer);
-		char* GetPalette(void) const {return (mPalette);}
+		uint8_t* SetPalette(uint8_t* buffer);
+		uint8_t* GetPalette(void) const {return (mPalette);}
 		
 		bool IsCompressed(void);
 
@@ -290,18 +292,18 @@ class Targa
 #ifdef TGA_USES_WWLIB_FILE_CLASSES
 		FileClass *TGAFile;
 #else
-		long mFH;
+		int32_t mFH;
 #endif
-		long mAccess;
-		long mFlags;
-		char* mImage;
-		char* mPalette;
+		int32_t mAccess;
+		int32_t mFlags;
+		uint8_t* mImage;
+		uint8_t* mPalette;
 		TGA2Extension mExtension;
 
 	private:
 		// Utility functions
-		long DecodeImage(void);
-		long EncodeImage(void);
+		int32_t DecodeImage(void);
+		int32_t EncodeImage(void);
 		void InvertImage(void);
 
 		// These functions are for ease of ifdef'ing between standard io calls
@@ -317,4 +319,3 @@ class Targa
 	};
 
 #endif /* _TARGA_H_ */
-

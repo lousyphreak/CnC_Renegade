@@ -58,7 +58,7 @@ void MixPatchMakerClass::Make_Patch(char *old_input_file, char *new_input_file, 
 
 
 
-unsigned int MixPatchMakerClass::Do_Stuff(void *param)
+uint32_t MixPatchMakerClass::Do_Stuff(void *param)
 {
 	((MixPatchMakerClass*)param)->Thread_Make();
 	return(1);
@@ -282,7 +282,7 @@ bool MixPatchMakerClass::Compare_File(MixFileFactoryClass *src_mix, MixFileFacto
 	** Read the source file into memory.
 	*/
 	src_file->Open();
-	unsigned char *src_data = new unsigned char [size + 32];
+	uint8_t *src_data = new uint8_t [size + 32];
 	src_file->Read(src_data, size);
 	src_file->Close();
 
@@ -290,7 +290,7 @@ bool MixPatchMakerClass::Compare_File(MixFileFactoryClass *src_mix, MixFileFacto
 	** Read the dest file into memory.
 	*/
 	dest_file->Open();
-	unsigned char *dest_data = new unsigned char [size + 32];
+	uint8_t *dest_data = new uint8_t [size + 32];
 	dest_file->Read(dest_data, size);
 	dest_file->Close();
 
@@ -362,8 +362,8 @@ bool MixPatchMakerClass::Compare_Source_Art_File(char *filename)
 
 				int size = file1.Size();
 
-				unsigned char * buf1 = new unsigned char [size + 1024];
-				unsigned char * buf2 = new unsigned char [size + 1024];
+				uint8_t * buf1 = new uint8_t [size + 1024];
+				uint8_t * buf2 = new uint8_t [size + 1024];
 
 				file1.Read(buf1, size);
 				file2.Read(buf2, size);

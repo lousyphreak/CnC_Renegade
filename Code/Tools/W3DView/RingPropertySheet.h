@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __RING_PROPERTY_SHEET_H
@@ -64,8 +66,8 @@ class RingPropertySheetClass : public CPropertySheet
 
 // Construction
 public:
-	RingPropertySheetClass (RingRenderObjClass *ring, UINT nIDCaption, CWnd* pParentWnd = NULL, UINT iSelectPage = 0);
-	RingPropertySheetClass (RingRenderObjClass *ring, LPCTSTR pszCaption, CWnd* pParentWnd = NULL, UINT iSelectPage = 0);
+	RingPropertySheetClass (RingRenderObjClass *ring, uint32_t nIDCaption, CWnd* pParentWnd = NULL, uint32_t iSelectPage = 0);
+	RingPropertySheetClass (RingRenderObjClass *ring, LPCTSTR pszCaption, CWnd* pParentWnd = NULL, uint32_t iSelectPage = 0);
 
 // Attributes
 public:
@@ -77,7 +79,7 @@ public:
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(RingPropertySheetClass)
 	protected:
-	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+	virtual intptr_t WindowProc(uint32_t message, uintptr_t wParam, intptr_t lParam);
 	//}}AFX_VIRTUAL
 
 // Implementation

@@ -39,6 +39,8 @@
 #ifndef SEGLINERENDERER_H
 #define SEGLINERENDERER_H
 
+#include <cstdint>
+
 #include "always.h"
 #include "shader.h"
 #include "texture.h"
@@ -87,7 +89,7 @@ public:
 	float					Get_Opacity(void) const									{ return Opacity; }
 	float					Get_Noise_Amplitude(void) const						{ return NoiseAmplitude; }
 	float					Get_Merge_Abort_Factor(void) const					{ return MergeAbortFactor; }
-	unsigned int		Get_Current_Subdivision_Level(void)	const			{ return SubdivisionLevel; }
+	uint32_t		Get_Current_Subdivision_Level(void)	const			{ return SubdivisionLevel; }
 	TextureMapMode		Get_Texture_Mapping_Mode(void) const;
 	float					Get_Texture_Tile_Factor(void) const					{ return TextureTileFactor; }
 	Vector2				Get_UV_Offset_Rate(void) const;
@@ -104,7 +106,7 @@ public:
 	void					Set_Opacity(float opacity)								{ Opacity = opacity; }
 	void					Set_Noise_Amplitude(float amplitude)				{ NoiseAmplitude = amplitude; }
 	void					Set_Merge_Abort_Factor(float factor)				{ MergeAbortFactor = factor; }
-	void					Set_Current_Subdivision_Level(unsigned int lv)	{ SubdivisionLevel = lv; }
+	void					Set_Current_Subdivision_Level(uint32_t lv)	{ SubdivisionLevel = lv; }
 	void					Set_Texture_Mapping_Mode(TextureMapMode mode);
 	// WARNING! Do NOT set the tile factor to be too high (should be less than 8) or negative
 	//performance impact will result!
@@ -119,7 +121,7 @@ public:
 	
 	void					Render(	RenderInfoClass & rinfo,
 										const Matrix3D & transform,
-										unsigned int point_count,
+										uint32_t point_count,
 										Vector3 * points,
 										const SphereClass & obj_sphere);
 
@@ -128,8 +130,8 @@ public:
 private:
 
 	// Utility functions
-	void								subdivision_util(unsigned int point_cnt, const Vector3 *xformed_pts,
-											const float *base_tex_v, unsigned int *p_sub_point_cnt,
+	void								subdivision_util(uint32_t point_cnt, const Vector3 *xformed_pts,
+											const float *base_tex_v, uint32_t *p_sub_point_cnt,
 											Vector3 *xformed_subdiv_pts, float *subdiv_tex_v);
 
 	// Global properties
@@ -140,7 +142,7 @@ private:
 	float								Opacity;
 	
 	// Subdivision properties
-	unsigned int					SubdivisionLevel;	
+	uint32_t					SubdivisionLevel;	
 	float								NoiseAmplitude;
 
 	// If >0, will abort a merge which causes an intersection to move
@@ -154,7 +156,7 @@ private:
 	float								TextureTileFactor;
 
 	// Used for texture coordinate animation
-	unsigned int					LastUsedSyncTime;		// Last sync time used	
+	uint32_t					LastUsedSyncTime;		// Last sync time used	
 	Vector2							CurrentUVOffset;		// Current UV offset
 	Vector2							UVOffsetDeltaPerMS;	// Amount to increase offset each millisec
 	
@@ -173,7 +175,7 @@ private:
 
 		DEFAULT_BITS = MERGE_INTERSECTIONS | (UNIFORM_WIDTH_TEXTURE_MAP << TEXTURE_MAP_MODE_OFFSET)
 	};
-	unsigned int					Bits;
+	uint32_t					Bits;
 
 	friend class SegmentedLineClass;
 };

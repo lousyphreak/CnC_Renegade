@@ -63,7 +63,7 @@ char *ErrorList[13] = {
 
 #define NUM_BANDS 12
 
-unsigned long Bandwidths [NUM_BANDS * 2] = {
+uint32_t Bandwidths [NUM_BANDS * 2] = {
 	 12000,	14400,
 	 25000,	28800,
 	 33600,	33600,
@@ -109,12 +109,12 @@ BandtestSettingsStruct DefaultSettings = {
 
 
 
-ULONG Enumerate_Nics(ULONG * addresses, ULONG max_nics)
+uint32_t Enumerate_Nics(uint32_t * addresses, uint32_t max_nics)
 {
 	assert(addresses != NULL);
 	assert(max_nics > 0);
 
-	ULONG num_addresses = 0;
+	uint32_t num_addresses = 0;
 
 	//
 	// Get the local hostname
@@ -148,7 +148,7 @@ ULONG Enumerate_Nics(ULONG * addresses, ULONG max_nics)
 
 
 
-char * Addr_As_String(unsigned char *addr)
+char * Addr_As_String(uint8_t *addr)
 {
 	static char _string[128];
 	sprintf(_string, "%d.%d.%d.%d", 	(int)(addr[0]), (int)(addr[1]), (int)(addr[2]), (int)(addr[3]));
@@ -161,7 +161,7 @@ char * Addr_As_String(unsigned char *addr)
 int main(int argc, char **argv)
 {
 
-	unsigned long my_addresses[8];
+	uint32_t my_addresses[8];
 	int use_addr = -1;
 	int retries = 3;
 	int failure_code = BANDTEST_OK;
@@ -199,7 +199,7 @@ int main(int argc, char **argv)
 	printf("Available IPs : ");
 
 	for (int i=0 ; i<nics ; i++) {
-		printf("%d - %s\n                ", i, Addr_As_String((unsigned char*)&my_addresses[i]));
+		printf("%d - %s\n                ", i, Addr_As_String((uint8_t*)&my_addresses[i]));
 	}
 	printf("\n");
 	//WSACleanup();
@@ -280,8 +280,8 @@ int main(int argc, char **argv)
 	memcpy(&(address.sin_addr), host->h_addr, host->h_length);
 	printf("Detecting bandwidth - please wait\n");
 
-	unsigned long downstream = 0;
-	unsigned long bw = Detect_Bandwidth(ntohl(address.sin_addr.s_addr), (use_addr == -1) ? 0 : ntohl(my_addresses[use_addr]), retries, failure_code, downstream, BANDTEST_API_VERSION, settings);
+	uint32_t downstream = 0;
+	uint32_t bw = Detect_Bandwidth(ntohl(address.sin_addr.s_addr), (use_addr == -1) ? 0 : ntohl(my_addresses[use_addr]), retries, failure_code, downstream, BANDTEST_API_VERSION, settings);
 
 	if (bw == 0) {
 		printf("Failed to get bandwidth - error code %s\n", ErrorList[failure_code]);

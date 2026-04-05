@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 #include "resource.h"
@@ -63,10 +65,10 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(SelectPresetDialogClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	virtual void OnOK();
 	afx_msg void OnDestroy();
-	afx_msg void OnSelchangedPresetTree(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnSelchangedPresetTree(NMHDR* pNMHDR, intptr_t* pResult);
 	afx_msg void OnInfo();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()

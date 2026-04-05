@@ -25,6 +25,8 @@
 
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 
 #include "DataTreeView.H"
@@ -48,12 +50,12 @@ public:
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(CMainFrame)
 	public:
-	virtual BOOL OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext);
-	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
-	virtual BOOL OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo);
+	virtual int32_t OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext);
+	virtual int32_t PreCreateWindow(CREATESTRUCT& cs);
+	virtual int32_t OnCmdMsg(uint32_t nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo);
 	protected:
-	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
-	virtual BOOL OnCommand(WPARAM wParam, LPARAM lParam);
+	virtual intptr_t WindowProc(uint32_t message, uintptr_t wParam, intptr_t lParam);
+	virtual int32_t OnCommand(uintptr_t wParam, intptr_t lParam);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -75,7 +77,7 @@ protected:
 	afx_msg void OnObjectProperties();
 	afx_msg void OnUpdateObjectProperties(CCmdUI* pCmdUI);
 	afx_msg void OnLodGenerate();
-	afx_msg void OnActivateApp(BOOL bActive, HTASK hTask);
+	afx_msg void OnActivateApp(int32_t bActive, HTASK hTask);
 	afx_msg void OnFileOpen();
 	afx_msg void OnAniSpeed();
 	afx_msg void OnAniStop();
@@ -252,7 +254,7 @@ public:
 
 	void	OnSelectionChanged (ASSET_TYPE newAssetType);
 
-	void	Update_Frame_Time (DWORD milliseconds);
+	void	Update_Frame_Time (uint32_t milliseconds);
 	void	UpdatePolygonCount (int iPolygons);
 	void	Update_Particle_Count (int particles);
 	void	UpdateCameraDistance (float cameraDistance);
@@ -278,10 +280,10 @@ private:
 	ASSET_TYPE m_currentAssetType;
 	CFancyToolbar m_objectToolbar;
 	CFancyToolbar m_animationToolbar;
-	BOOL m_bShowAnimationBar;
+	int32_t m_bShowAnimationBar;
 	RECT m_OrigRect;
 	HMENU m_hEmittersSubMenu;
-	BOOL m_bInitialized;
+	int32_t m_bInitialized;
 };
 
 /////////////////////////////////////////////////////////////////////////////

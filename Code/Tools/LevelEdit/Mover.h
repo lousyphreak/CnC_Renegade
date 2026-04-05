@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __MOVER_H
@@ -123,8 +125,8 @@ public:
 	static void			Get_LOS_Ray (float length, Vector3 &start, Vector3 &end);
 	static void			Get_Mouse_Ray (const POINT &mouse_pos, float length, Vector3 &start, Vector3 &end);
 	static void			Get_Mouse_Ray (float length, Vector3 &start, Vector3 &end);
-	static PhysClass *Cast_Ray (CastResultStruct &result, const Vector3 &start, const Vector3 &end, uint32 group = DEF_COLLISION_GROUP, uint32 type = COLLISION_TYPE_PHYSICAL | COLLISION_TYPE_PROJECTILE | COLLISION_TYPE_6);
-	static PhysClass *Cast_Box (CastResultStruct &result, const AABoxClass &box, const Vector3 &move, uint32 group = DEF_COLLISION_GROUP, uint32 type = COLLISION_TYPE_PHYSICAL | COLLISION_TYPE_PROJECTILE | COLLISION_TYPE_6);
+	static PhysClass *Cast_Ray (CastResultStruct &result, const Vector3 &start, const Vector3 &end, uint32_t group = DEF_COLLISION_GROUP, uint32_t type = COLLISION_TYPE_PHYSICAL | COLLISION_TYPE_PROJECTILE | COLLISION_TYPE_6);
+	static PhysClass *Cast_Box (CastResultStruct &result, const AABoxClass &box, const Vector3 &move, uint32_t group = DEF_COLLISION_GROUP, uint32_t type = COLLISION_TYPE_PHYSICAL | COLLISION_TYPE_PROJECTILE | COLLISION_TYPE_6);
 
 protected:
 	
@@ -152,8 +154,8 @@ MoverClass::Cast_Ray
 	CastResultStruct &	result,
 	const Vector3 &		start,
 	const Vector3 &		end,
-	uint32				group,
-	uint32				type
+	uint32_t				group,
+	uint32_t				type
 )
 {
 	bool retval = false;
@@ -184,8 +186,8 @@ MoverClass::Cast_Box
 	CastResultStruct &	result,
 	const AABoxClass &	box,
 	const Vector3 &		move,
-	uint32					group,
-	uint32					type
+	uint32_t					group,
+	uint32_t					type
 )
 {
 	bool retval = false;

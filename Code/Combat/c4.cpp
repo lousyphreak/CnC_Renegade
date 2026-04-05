@@ -75,7 +75,7 @@ C4GameObjDef::C4GameObjDef( void ) :
 	EDITABLE_PARAM (C4GameObjDef, ParameterClass::TYPE_FLOAT,	ThrowVelocity);
 }
 
-uint32	C4GameObjDef::Get_Class_ID (void) const	
+uint32_t	C4GameObjDef::Get_Class_ID (void) const	
 { 
 	return CLASSID_GAME_OBJECT_DEF_C4; 
 }
@@ -416,7 +416,7 @@ bool	C4GameObj::Save( ChunkSaveClass & csave )
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_STUCK_BONE, StuckBone );
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_STUCK_TO_OBJECT, StuckToObject );
 		if (StuckStaticAnimObj != NULL) {
-			uint32 id = StuckStaticAnimObj->Get_ID();
+			uint32_t id = StuckStaticAnimObj->Get_ID();
 			WRITE_MICRO_CHUNK( csave, MICROCHUNKID_STUCK_STATIC_ANIM_OBJ_ID, id);
 		}
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_AGE, Age );
@@ -440,7 +440,7 @@ bool	C4GameObj::Save( ChunkSaveClass & csave )
 bool	C4GameObj::Load( ChunkLoadClass &cload )
 {
 	REF_PTR_RELEASE(StuckStaticAnimObj);
-	uint32 static_anim_obj_id = 0xFFFFFFFF;
+	uint32_t static_anim_obj_id = 0xFFFFFFFF;
 
 	while (cload.Open_Chunk()) {
 		switch(cload.Cur_Chunk_ID()) {
@@ -810,7 +810,7 @@ void	C4GameObj::Import_Rare( BitStreamClass &packet )
 		packet.Get(stuck_static_anim);
 		if (stuck_static_anim) {
 			
-			uint32 static_anim_obj_id = 0;
+			uint32_t static_anim_obj_id = 0;
 			packet.Get(static_anim_obj_id);
 
 			if (static_anim_obj_id != 0xFFFFFFFF) {

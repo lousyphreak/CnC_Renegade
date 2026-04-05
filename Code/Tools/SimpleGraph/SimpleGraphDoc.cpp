@@ -62,7 +62,7 @@ CSimpleGraphDoc::~CSimpleGraphDoc()
 	delete m_Spline;
 }
 
-BOOL CSimpleGraphDoc::OnNewDocument()
+int32_t CSimpleGraphDoc::OnNewDocument()
 {
 	if (!CDocument::OnNewDocument())
 		return FALSE;

@@ -19,6 +19,8 @@
 #ifndef UDP_HEADER
 #define UDP_HEADER
 
+#include <cstdint>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -57,9 +59,9 @@ class UDP
 {
  // DATA
  private:
-  sint32       fd; 
-  uint32       myIP;
-  uint16       myPort;
+  int32_t       fd; 
+  uint32_t       myIP;
+  uint16_t       myPort;
   struct       sockaddr_in  addr;
   
   // These defines specify a system independent way to
@@ -88,25 +90,25 @@ class UDP
 
 // CODE
  private:
-  sint32           SetBlocking(bit8 block);
+  int32_t           SetBlocking(int8_t block);
 
  public:
                    UDP();
                   ~UDP();
-  sint32           Bind(uint32 IP,uint16 port);
-  sint32           Bind(char *Host,uint16 port);
-  sint32           Write(uint8 *msg,uint32 len,uint32 IP,uint16 port);
-  sint32           Read(uint8 *msg,uint32 len,sockaddr_in *from);
+  int32_t           Bind(uint32_t IP,uint16_t port);
+  int32_t           Bind(char *Host,uint16_t port);
+  int32_t           Write(uint8_t *msg,uint32_t len,uint32_t IP,uint16_t port);
+  int32_t           Read(uint8_t *msg,uint32_t len,sockaddr_in *from);
   sockStat         GetStatus(void);
   void             ClearStatus(void);
-  int              Wait(sint32 sec,sint32 usec,fd_set &returnSet);
-  int              Wait(sint32 sec,sint32 usec,fd_set &givenSet,fd_set &returnSet);
+  int              Wait(int32_t sec,int32_t usec,fd_set &returnSet);
+  int              Wait(int32_t sec,int32_t usec,fd_set &givenSet,fd_set &returnSet);
 
-  bit8             getLocalAddr(uint32 &ip, uint16 &port);
-  sint32           getFD(void) { return(fd); }
+  int8_t             getLocalAddr(uint32_t &ip, uint16_t &port);
+  int32_t           getFD(void) { return(fd); }
  
-  bit8             SetInputBuffer(uint32 bytes);
-  bit8             SetOutputBuffer(uint32 bytes);
+  int8_t             SetInputBuffer(uint32_t bytes);
+  int8_t             SetOutputBuffer(uint32_t bytes);
   int              GetInputBuffer(void);
   int              GetOutputBuffer(void);
 };

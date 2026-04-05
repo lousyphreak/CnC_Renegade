@@ -82,7 +82,7 @@ void BitStreamClass::Add(bool value)
 //-----------------------------------------------------------------------------
 bool BitStreamClass::Get(bool & value)
 {
-	ULONG u_value;
+	uint32_t u_value;
 	if (cEncoderList::Is_Compression_Enabled()) {
 		Get_Bits(u_value, 1);
 	} else {
@@ -94,7 +94,7 @@ bool BitStreamClass::Get(bool & value)
 }
 
 //-----------------------------------------------------------------------------
-void BitStreamClass::Add_Raw_Data(LPCSTR data, USHORT data_size)
+void BitStreamClass::Add_Raw_Data(LPCSTR data, uint16_t data_size)
 {
 	WWASSERT(data != NULL);
 	WWASSERT(data_size >= 0);
@@ -105,7 +105,7 @@ void BitStreamClass::Add_Raw_Data(LPCSTR data, USHORT data_size)
 }
 
 //-----------------------------------------------------------------------------
-void BitStreamClass::Get_Raw_Data(char * buffer, USHORT buffer_size, USHORT data_size)
+void BitStreamClass::Get_Raw_Data(char * buffer, uint16_t buffer_size, uint16_t data_size)
 {
 	WWASSERT(buffer != NULL);
 	WWASSERT(data_size >= 0);
@@ -124,7 +124,7 @@ void BitStreamClass::Add_Terminated_String(LPCSTR string, bool permit_empty)
 	//
 	// The terminating null is not transmitted.
 	//
-	USHORT len = (USHORT) strlen(string);
+	uint16_t len = (uint16_t) strlen(string);
 	if (!permit_empty) {
 		WWASSERT(len > 0);
 	}
@@ -136,12 +136,12 @@ void BitStreamClass::Add_Terminated_String(LPCSTR string, bool permit_empty)
 }
 
 //-----------------------------------------------------------------------------
-void BitStreamClass::Get_Terminated_String(char * buffer, USHORT buffer_size, bool permit_empty)
+void BitStreamClass::Get_Terminated_String(char * buffer, uint16_t buffer_size, bool permit_empty)
 {
 	WWASSERT(buffer != NULL);
 	WWASSERT(buffer_size > 0);
 
-	USHORT len;
+	uint16_t len;
 	Get(len);
 	WWASSERT(len < buffer_size);
 	if (!permit_empty) {
@@ -174,25 +174,25 @@ void BitStreamClass::Add_Wide_Terminated_String(const WCHAR *string, bool permit
 	//
 	// The terminating null is not transmitted.
 	//
-	USHORT len = (USHORT)wcslen (string);
+	uint16_t len = (uint16_t)wcslen (string);
 	if (!permit_empty) {
 		WWASSERT(len > 0 && "Empty string not permitted");
 	}
 
 	Add(len);
 	for (int i = 0; i < len; i++) {
-		USHORT wire_char = static_cast<USHORT>(string[i]);
+		uint16_t wire_char = static_cast<uint16_t>(string[i]);
 		Add(wire_char);
 	}
 }
 
 //-----------------------------------------------------------------------------
-void BitStreamClass::Get_Wide_Terminated_String(WCHAR *buffer, USHORT buffer_len, bool permit_empty)
+void BitStreamClass::Get_Wide_Terminated_String(WCHAR *buffer, uint16_t buffer_len, bool permit_empty)
 {
 	WWASSERT(buffer != NULL);
 	WWASSERT(buffer_len > 0);
 
-	USHORT len;
+	uint16_t len;
 	Get(len);
 	WWASSERT(len < buffer_len && "String length exceeds provided buffer");
 	if (!permit_empty) {
@@ -202,7 +202,7 @@ void BitStreamClass::Get_Wide_Terminated_String(WCHAR *buffer, USHORT buffer_len
 	WCHAR temp = L'?';
 	int i = 0;
 	for (i = 0; i < len; i++) {
-		USHORT wire_char = 0;
+		uint16_t wire_char = 0;
 		Get(wire_char);
 		temp = static_cast<WCHAR>(wire_char);
 		if (i < buffer_len - 1) {
@@ -219,16 +219,16 @@ void BitStreamClass::Get_Wide_Terminated_String(WCHAR *buffer, USHORT buffer_len
 
 
 //-----------------------------------------------------------------------------
-UINT BitStreamClass::Get_Compressed_Size_Bytes() const
+uint32_t BitStreamClass::Get_Compressed_Size_Bytes() const
 {
-	return (UINT) ceil(Get_Bit_Write_Position() / 8.0f);
+	return (uint32_t) ceil(Get_Bit_Write_Position() / 8.0f);
 }
 
 //-----------------------------------------------------------------------------
-UINT BitStreamClass::Get_Compression_Pc() const
+uint32_t BitStreamClass::Get_Compression_Pc() const
 {
-	UINT c_size = Get_Compressed_Size_Bytes();
-	UINT u_size = Get_Uncompressed_Size_Bytes();
+	uint32_t c_size = Get_Compressed_Size_Bytes();
+	uint32_t u_size = Get_Uncompressed_Size_Bytes();
 
 	if (cEncoderList::Is_Compression_Enabled()) {
 		WWASSERT(c_size <= u_size);
@@ -238,7 +238,7 @@ UINT BitStreamClass::Get_Compression_Pc() const
 
 	WWASSERT(u_size > 0);
 
-	UINT compression_pc = (UINT) cMathUtil::Round(100 * c_size / (float) u_size);
+	uint32_t compression_pc = (uint32_t) cMathUtil::Round(100 * c_size / (float) u_size);
 	WWASSERT(compression_pc >= 0 && compression_pc <= 100);
 
 	return compression_pc;

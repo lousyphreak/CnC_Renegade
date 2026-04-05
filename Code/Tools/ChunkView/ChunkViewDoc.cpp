@@ -76,7 +76,7 @@ CChunkViewDoc::~CChunkViewDoc()
 {
 }
 
-BOOL CChunkViewDoc::OnNewDocument()
+int32_t CChunkViewDoc::OnNewDocument()
 {
 	if (!CDocument::OnNewDocument())
 		return FALSE;

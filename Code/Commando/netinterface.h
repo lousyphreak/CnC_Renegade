@@ -26,6 +26,8 @@
 //-----------------------------------------------------------------------------
 #if defined(_MSV_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef NETINTERFACE_H
@@ -35,8 +37,8 @@
 #include "widestring.h"
 
 //GAMESPY - allow 30 chars + ( + 2 chars for collision (add 2..99) + ) + NULL
-//const USHORT MAX_NICKNAME_LENGTH = 17; // Includes NULL.
-const USHORT MAX_NICKNAME_LENGTH = 35;
+//const uint16_t MAX_NICKNAME_LENGTH = 17; // Includes NULL.
+const uint16_t MAX_NICKNAME_LENGTH = 35;
 
 //-----------------------------------------------------------------------------
 class cNetInterface

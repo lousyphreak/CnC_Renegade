@@ -301,7 +301,7 @@ WeatherSystemClass::WeatherSystemClass	(PhysicsSceneClass *scene,
 	#endif
 	{
 		SortingIndexBufferClass::WriteLockClass lock (IndexBuffer);
-		unsigned short *indices = lock.Get_Index_Array();
+		uint16_t *indices = lock.Get_Index_Array();
 
 		for (unsigned i = 0; i < MAX_IB_PARTICLE_COUNT * VERTICES_PER_TRIANGLE; i++) {
 			*indices++ = i;

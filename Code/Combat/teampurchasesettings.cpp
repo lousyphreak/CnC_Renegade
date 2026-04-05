@@ -187,7 +187,7 @@ TeamPurchaseSettingsDefClass::~TeamPurchaseSettingsDefClass (void)
 //	Get_Class_ID
 //
 ///////////////////////////////////////////////////////////////////////////////////////////
-uint32
+uint32_t
 TeamPurchaseSettingsDefClass::Get_Class_ID (void) const
 { 
 	return CLASSID_GLOBAL_SETTINGS_DEF_TEAM_PURCHASE; 

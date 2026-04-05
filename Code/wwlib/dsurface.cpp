@@ -69,9 +69,9 @@ int DSurface::BlueLeft = 0;
 int DSurface::GreenRight = 0;
 int DSurface::GreenLeft = 0;
 
-unsigned short DSurface::HalfbrightMask = 0;
-unsigned short DSurface::QuarterbrightMask = 0;
-unsigned short DSurface::EighthbrightMask = 0;
+uint16_t DSurface::HalfbrightMask = 0;
+uint16_t DSurface::QuarterbrightMask = 0;
+uint16_t DSurface::EighthbrightMask = 0;
 
 DDPIXELFORMAT DSurface::PixelFormat;
 
@@ -282,7 +282,7 @@ DSurface::DSurface(void) :
 HDC DSurface::GetDC(void)
 {
 	HDC hdc = NULL;
-	HRESULT hr;
+	int32_t hr;
 
 
 	// We have to remove all current locks to get the device context unfortunately...
@@ -328,7 +328,7 @@ HDC DSurface::GetDC(void)
  *=============================================================================================*/
 int DSurface::ReleaseDC(HDC hdc)
 {
-	HRESULT hr;
+	int32_t hr;
 
 	hr = SurfacePtr->ReleaseDC(hdc);
 	assert(hr == DD_OK);
@@ -387,7 +387,7 @@ DSurface * DSurface::Create_Primary(DSurface ** backsurface1)
 		surface->Description->dwFlags |= DDSD_BACKBUFFERCOUNT;
 		surface->Description->dwBackBufferCount = backcount;
 	}
-	HRESULT result = DirectDrawObject->CreateSurface(surface->Description, &surface->SurfacePtr, NULL);
+	int32_t result = DirectDrawObject->CreateSurface(surface->Description, &surface->SurfacePtr, NULL);
 
 	/*
 	**	If the primary surface object was created, then fetch a pointer to the
@@ -488,9 +488,9 @@ DSurface * DSurface::Create_Primary(DSurface ** backsurface1)
 			/*
 			**	Create the halfbright mask.
 			*/
-			HalfbrightMask = (unsigned short)Build_Hicolor_Pixel(127, 127, 127);
-			QuarterbrightMask = (unsigned short)Build_Hicolor_Pixel(63, 63, 63);
-			EighthbrightMask = (unsigned short)Build_Hicolor_Pixel(31, 31, 31);
+			HalfbrightMask = (uint16_t)Build_Hicolor_Pixel(127, 127, 127);
+			QuarterbrightMask = (uint16_t)Build_Hicolor_Pixel(63, 63, 63);
+			EighthbrightMask = (uint16_t)Build_Hicolor_Pixel(31, 31, 31);
 		}
 
 	} else {
@@ -527,7 +527,7 @@ DSurface::DSurface(LPDIRECTDRAWSURFACE surfaceptr) :
 		Description = new DDSURFACEDESC;
 		memset(Description, '\0', sizeof(DDSURFACEDESC));
 		Description->dwSize = sizeof(DDSURFACEDESC);
-		HRESULT result = SurfacePtr->GetSurfaceDesc(Description);
+		int32_t result = SurfacePtr->GetSurfaceDesc(Description);
 		if (result == DD_OK) {
 			BytesPerPixel = (Description->ddpfPixelFormat.dwRGBBitCount+7)/8;
 //			Window.Set(Rect(0, 0, Description->dwWidth, Description->dwHeight));
@@ -609,7 +609,7 @@ void * DSurface::Lock(Point2D point) const
 		DDSURFACEDESC desc;
 		memset(&desc, '\0', sizeof(desc));
 		desc.dwSize = sizeof(desc);
-		HRESULT result = SurfacePtr->Lock(NULL, &desc, DDLOCK_SURFACEMEMORYPTR|DDLOCK_WAIT, NULL);
+		int32_t result = SurfacePtr->Lock(NULL, &desc, DDLOCK_SURFACEMEMORYPTR|DDLOCK_WAIT, NULL);
    	if (result != DD_OK) return(NULL);
 		memcpy(Description, &desc, sizeof(DDSURFACEDESC));
 		BytesPerPixel = (Description->ddpfPixelFormat.dwRGBBitCount+7)/8;
@@ -774,7 +774,7 @@ bool DSurface::Blit_From(Rect const & dcliprect, Rect const & destrect, Surface 
 		xsrcrect.right = srect.X+swindow.X+srect.Width;
 		xsrcrect.bottom = srect.Y+swindow.Y+srect.Height;
 
-		HRESULT result = SurfacePtr->Blt(&xdestrect, source.SurfacePtr, &xsrcrect, DDBLT_WAIT, NULL);
+		int32_t result = SurfacePtr->Blt(&xdestrect, source.SurfacePtr, &xsrcrect, DDBLT_WAIT, NULL);
 		return(result == DD_OK);
 	}
 	return(false);
@@ -867,7 +867,7 @@ bool DSurface::Fill_Rect(Rect const & cliprect, Rect const & fillrect, int color
 	memset(&fx, '\0', sizeof(fx));
 	fx.dwSize = sizeof(fx);
 	fx.dwFillColor = color;
-	HRESULT result = SurfacePtr->Blt(&rect, NULL, NULL, DDBLT_WAIT|DDBLT_COLORFILL, &fx);
+	int32_t result = SurfacePtr->Blt(&rect, NULL, NULL, DDBLT_WAIT|DDBLT_COLORFILL, &fx);
 	return(result == DD_OK);
 }
 
@@ -916,7 +916,7 @@ int DSurface::Build_Hicolor_Pixel(int red, int green, int blue)
  * HISTORY:                                                                                    * 
  *   05/27/1997 JLB : Created.                                                                 * 
  *=============================================================================================*/
-void DSurface::Build_Remap_Table(unsigned short * table, PaletteClass const & palette)
+void DSurface::Build_Remap_Table(uint16_t * table, PaletteClass const & palette)
 {
 	assert(table != NULL);
 
@@ -924,7 +924,7 @@ void DSurface::Build_Remap_Table(unsigned short * table, PaletteClass const & pa
 	**	Build the hicolor index table according to the palette.
 	*/
 	for (int index = 0; index < 256; index++) {
-		table[index] = (unsigned short)Build_Hicolor_Pixel(palette[index].Get_Red(), palette[index].Get_Green(), palette[index].Get_Blue());
+		table[index] = (uint16_t)Build_Hicolor_Pixel(palette[index].Get_Red(), palette[index].Get_Green(), palette[index].Get_Blue());
 	}
 }
 

@@ -22,6 +22,7 @@
 #include "stdafx.h"
 #include "phystest.h"
 #include "VJoyDialog.h"
+#include <cstdint>
 #include "vector2.h"
 #include "vector3.h"
 
@@ -77,7 +78,7 @@ END_MESSAGE_MAP()
 ** Joystick Window Proc
 */
 
-LRESULT CALLBACK JoystickWndProc(HWND hwnd,unsigned int message,WPARAM wparam,LPARAM lparam)
+intptr_t CALLBACK JoystickWndProc(HWND hwnd,uint32_t message,uintptr_t wparam,intptr_t lparam)
 {
 	Vector2 point;
 	const int RADIUS = 4;
@@ -98,8 +99,8 @@ LRESULT CALLBACK JoystickWndProc(HWND hwnd,unsigned int message,WPARAM wparam,LP
 		if (wparam & MK_LBUTTON) {
 			
 			float ex,ey,cx,cy;
-			short x = LOWORD(lparam);
-			short y = HIWORD(lparam);
+			int16_t x = LOWORD(lparam);
+			int16_t y = HIWORD(lparam);
 
 			RECT rect;
 			GetClientRect(hwnd,&rect);
@@ -116,7 +117,7 @@ LRESULT CALLBACK JoystickWndProc(HWND hwnd,unsigned int message,WPARAM wparam,LP
 			point.X = ((float)x - cx) / ex;
 			point.Y = ((float)y - cy) / ey;
 			
-			::SendMessage(GetParent(hwnd),JOYSTICK_UPDATE_COMMAND,GetWindowLong(hwnd,GWL_ID),(long)&point);
+			::SendMessage(GetParent(hwnd),JOYSTICK_UPDATE_COMMAND,GetWindowLong(hwnd,GWL_ID),reinterpret_cast<LPARAM>(&point));
 			::InvalidateRect(hwnd,NULL,FALSE);
 			::UpdateWindow(hwnd);
 
@@ -162,22 +163,22 @@ LRESULT CALLBACK JoystickWndProc(HWND hwnd,unsigned int message,WPARAM wparam,LP
 /////////////////////////////////////////////////////////////////////////////
 // CVJoyDialog message handlers
 
-BOOL CVJoyDialog::OnInitDialog() 
+int32_t CVJoyDialog::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
 	RECT rect;
 	
 	HWND movexy_wnd = ::GetDlgItem(m_hWnd,IDC_MOVEXY_STATIC);	
-	long oldproc = SetWindowLong(movexy_wnd,GWL_WNDPROC,(long)JoystickWndProc);
-	SetProp(movexy_wnd,"OldWndProc",(void*)oldproc);
+	intptr_t oldproc = SetWindowLongPtr(movexy_wnd,GWL_WNDPROC,reinterpret_cast<intptr_t>(JoystickWndProc));
+	SetProp(movexy_wnd,"OldWndProc",reinterpret_cast<void *>(oldproc));
 	
 	::GetClientRect(movexy_wnd,&rect);
 	SetProp(movexy_wnd,"XCOORD",(HANDLE)(rect.right/2));
 	SetProp(movexy_wnd,"YCOORD",(HANDLE)(rect.bottom/2));
 
 	HWND turnxy_wnd = ::GetDlgItem(m_hWnd,IDC_TURNXY_STATIC);
-	oldproc = SetWindowLong(turnxy_wnd,GWL_WNDPROC,(long)JoystickWndProc);
-	SetProp(turnxy_wnd,"OldWndProc",(void*)oldproc);
+	oldproc = SetWindowLongPtr(turnxy_wnd,GWL_WNDPROC,reinterpret_cast<intptr_t>(JoystickWndProc));
+	SetProp(turnxy_wnd,"OldWndProc",reinterpret_cast<void *>(oldproc));
 
 	::GetClientRect(movexy_wnd,&rect);
 	SetProp(turnxy_wnd,"XCOORD",(HANDLE)(rect.right/2));
@@ -190,7 +191,7 @@ BOOL CVJoyDialog::OnInitDialog()
 }
 
 
-LRESULT CVJoyDialog::WindowProc(UINT message, WPARAM wParam, LPARAM lParam) 
+intptr_t CVJoyDialog::WindowProc(uint32_t message, uintptr_t wParam, intptr_t lParam) 
 {
 	if (message == JOYSTICK_UPDATE_COMMAND) {
 		Vector2 * point = (Vector2*)lParam;
@@ -205,7 +206,7 @@ LRESULT CVJoyDialog::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 	return CDialog::WindowProc(message, wParam, lParam);
 }
 
-void CVJoyDialog::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar) 
+void CVJoyDialog::OnVScroll(uint32_t nSBCode, uint32_t nPos, CScrollBar* pScrollBar) 
 {
 	if (pScrollBar == GetDlgItem(IDC_MOVEZ_SLIDER)) {
 		Controller.Set_Move_Up(1.0f - 2.0f * (float)m_MoveZSlider.GetPos() / (float)SLIDER_RESOLUTION);

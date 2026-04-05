@@ -41,6 +41,8 @@
 #ifndef __REFCOUNTED_H__
 #define __REFCOUNTED_H__
 
+#include <cstdint>
+
 #include <assert.h>
 
 class RefCounted
@@ -55,7 +57,7 @@ class RefCounted
 			{if (--mRefCount == 0) delete this;}
 
 		//! Retrieve current reference count.
-		inline unsigned long ReferenceCount(void) const
+		inline uint32_t ReferenceCount(void) const
 			{return mRefCount;}
 
 	protected:
@@ -81,7 +83,7 @@ class RefCounted
 			{return false;}
 
 	private:
-		unsigned long mRefCount;
+		uint32_t mRefCount;
 	};
 
 #endif // __REFCOUNTED_H__

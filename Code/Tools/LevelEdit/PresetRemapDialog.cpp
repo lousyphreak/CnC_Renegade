@@ -96,7 +96,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 PresetRemapDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -150,7 +150,7 @@ PresetRemapDialogClass::OnInitDialog (void)
 				//
 				int item_index = m_ListCtrl.InsertItem (0xFF, name);
 				if (item_index >= 0) {
-					m_ListCtrl.SetItemData (item_index, (DWORD)node);
+					m_ListCtrl.SetItemData (item_index, (uint32_t)node);
 
 					//
 					//	Take a best guess at a preset name for the object
@@ -187,7 +187,7 @@ void
 PresetRemapDialogClass::OnDblclkListCtrl
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 )	 
 {
 	(*pResult) = 0;
@@ -224,7 +224,7 @@ PresetRemapDialogClass::OnDblclkListCtrl
 				//
 				if (MessageBox ("Would you like to propagate this preset to all other nodes of the same original preset?", "Propagate", MB_YESNO | MB_ICONQUESTION)) {
 
-					uint32 preset_id_to_change = node->Get_Preset_ID ();
+					uint32_t preset_id_to_change = node->Get_Preset_ID ();
 					int count = m_ListCtrl.GetItemCount ();
 					
 					//
@@ -267,7 +267,7 @@ void
 PresetRemapDialogClass::OnDeleteitemListCtrl
 (
 	NMHDR *	pNMHDR,
-	LRESULT* pResult
+	intptr_t* pResult
 )
 {
 	NM_LISTVIEW* pNMListView = (NM_LISTVIEW*)pNMHDR;	

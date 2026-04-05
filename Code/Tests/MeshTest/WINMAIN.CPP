@@ -66,8 +66,8 @@ extern "C"
 //----------------------------------------------------------------------------
 //	Local functions
 //----------------------------------------------------------------------------
-static BOOL Create_Main_Window(HANDLE hInstance, int nCmdShow);
-long FAR PASCAL Main_Window_Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+static int32_t Create_Main_Window(HANDLE hInstance, int nCmdShow);
+intptr_t FAR PASCAL Main_Window_Proc(HWND hwnd, uint32_t message, uintptr_t wParam, intptr_t lParam);
 void Focus_Loss(void);
 void Focus_Restore(void);
 void Split_Command_Line_Args(HINSTANCE instance, char *path_to_exe, char *command_line);
@@ -141,7 +141,7 @@ int PASCAL WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
  * HISTORY:                                                                                    * 
  *   07/18/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-long FAR PASCAL Main_Window_Proc( HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam )
+intptr_t FAR PASCAL Main_Window_Proc( HWND hwnd, uint32_t message, uintptr_t wParam, intptr_t lParam )
 {
 	PAINTSTRUCT ps;
 	HDC         hdc;
@@ -262,10 +262,10 @@ long FAR PASCAL Main_Window_Proc( HWND hwnd, UINT message, WPARAM wParam, LPARAM
  * HISTORY:                                                                                    * 
  *   07/18/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-static BOOL Create_Main_Window(HANDLE hInstance, int nCmdShow)
+static int32_t Create_Main_Window(HANDLE hInstance, int nCmdShow)
 {
 	WNDCLASS    wc;
-	BOOL        rc;
+	int32_t        rc;
 
 	ProgramInstance = (HINSTANCE)hInstance;
 
@@ -385,4 +385,3 @@ void Set_Working_Directory(char *old_path, char *new_path)
 	_makepath(path, drive, dir, NULL, NULL);
 	SetCurrentDirectory(path);
 }
-

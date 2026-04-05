@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 #include "resource.h"
@@ -48,7 +50,7 @@ public:
 	//{{AFX_VIRTUAL(CameraDistanceDialogClass)
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-	virtual BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult);
+	virtual int32_t OnNotify(uintptr_t wParam, intptr_t lParam, intptr_t* pResult);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -56,7 +58,7 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(CameraDistanceDialogClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	virtual void OnOK();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()

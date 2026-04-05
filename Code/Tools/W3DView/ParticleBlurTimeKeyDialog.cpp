@@ -62,7 +62,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // ParticleBlurTimeKeyDialogClass message handlers
 
-BOOL ParticleBlurTimeKeyDialogClass::OnInitDialog() 
+int32_t ParticleBlurTimeKeyDialogClass::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
 	
@@ -72,7 +72,7 @@ BOOL ParticleBlurTimeKeyDialogClass::OnInitDialog()
 	              // EXCEPTION: OCX Property Pages should return FALSE
 }
 
-BOOL ParticleBlurTimeKeyDialogClass::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult) 
+int32_t ParticleBlurTimeKeyDialogClass::OnNotify(uintptr_t wParam, intptr_t lParam, intptr_t* pResult) 
 {
 	//
 	//	Update the spinner control if necessary

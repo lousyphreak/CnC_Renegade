@@ -79,7 +79,7 @@ END_MESSAGE_MAP()
 void
 CheckinStyleDialogClass::OnOK (void)
 {
-	UINT ret_code = IDC_UPDATE_NOW;
+	uint32_t ret_code = IDC_UPDATE_NOW;
 	CString cache_value = REG_NOW;
 
 	if (SendDlgItemMessage (IDC_UPDATE_LATER, BM_GETCHECK) == 1) {
@@ -102,11 +102,11 @@ CheckinStyleDialogClass::OnOK (void)
 //
 // OnCommand
 //
-BOOL
+int32_t
 CheckinStyleDialogClass::OnCommand
 (
-	WPARAM wParam,
-	LPARAM lParam
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	// Don't allow the user to cancel out of this dialog
@@ -126,7 +126,7 @@ CheckinStyleDialogClass::OnCommand
 int
 CheckinStyleDialogClass::DoModal (void)
 {	
-	UINT ret_code = IDC_UPDATE_NOW;
+	uint32_t ret_code = IDC_UPDATE_NOW;
 
 	// Get the cached 'checkin' style if possible
 	CString checkin_style = theApp.GetProfileString (CONFIG_KEY, CHECKIN_STYLE_VALUE, REG_NOT_CACHED);
@@ -149,13 +149,13 @@ CheckinStyleDialogClass::DoModal (void)
 //
 // OnInitDialog
 //
-BOOL
+int32_t
 CheckinStyleDialogClass::OnInitDialog (void) 
 {
 	// Allow the base class to process this message
 	CDialog::OnInitDialog ();
 
 	// Check 'update now' by default
-	SendDlgItemMessage (IDC_UPDATE_NOW, BM_SETCHECK, (WPARAM)TRUE);
+	SendDlgItemMessage (IDC_UPDATE_NOW, BM_SETCHECK, (uintptr_t)TRUE);
 	return TRUE;
 }

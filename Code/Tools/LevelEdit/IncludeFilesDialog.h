@@ -36,6 +36,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 #include "FilePicker.H"
@@ -69,9 +71,9 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(IncludeFilesDialogClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	virtual void OnOK();
-	afx_msg void OnSelchangedIncludeTree(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnSelchangedIncludeTree(NMHDR* pNMHDR, intptr_t* pResult);
 	afx_msg void OnChangeSpecEdit();
 	afx_msg void OnAddRemoveButton();
 	afx_msg void OnDestroy();

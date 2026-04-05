@@ -70,7 +70,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CPhysicsConstantsDialog message handlers
 
-BOOL CPhysicsConstantsDialog::OnInitDialog() 
+int32_t CPhysicsConstantsDialog::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
 	
@@ -89,7 +89,7 @@ BOOL CPhysicsConstantsDialog::OnInitDialog()
 	return TRUE;	
 }
 
-BOOL CPhysicsConstantsDialog::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult) 
+int32_t CPhysicsConstantsDialog::OnNotify(uintptr_t wParam, intptr_t lParam, intptr_t* pResult) 
 {
 	// make the spin controls work...
 	switch(wParam) 

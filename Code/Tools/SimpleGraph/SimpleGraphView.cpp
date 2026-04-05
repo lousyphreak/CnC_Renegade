@@ -66,7 +66,7 @@ CSimpleGraphView::~CSimpleGraphView()
 {
 }
 
-BOOL CSimpleGraphView::PreCreateWindow(CREATESTRUCT& cs)
+int32_t CSimpleGraphView::PreCreateWindow(CREATESTRUCT& cs)
 {
 	// TODO: Modify the Window class or styles here by modifying
 	//  the CREATESTRUCT cs
@@ -463,7 +463,7 @@ CSimpleGraphView::Hit_Test (const CPoint &point, int *hit_pt)
 //
 ///////////////////////////////////////////////////////////////////////
 void
-CSimpleGraphView::OnLButtonDown (UINT nFlags, CPoint point) 
+CSimpleGraphView::OnLButtonDown (uint32_t nFlags, CPoint point) 
 {
 	if ((nFlags & MK_RBUTTON) == 0 && m_DraggingPt == -1) {
 		
@@ -494,7 +494,7 @@ CSimpleGraphView::OnLButtonDown (UINT nFlags, CPoint point)
 //
 ///////////////////////////////////////////////////////////////////////
 void
-CSimpleGraphView::OnLButtonUp (UINT nFlags, CPoint point) 
+CSimpleGraphView::OnLButtonUp (uint32_t nFlags, CPoint point) 
 {
 	if (m_DraggingPt >= 0) {		
 		::ReleaseCapture ();
@@ -513,7 +513,7 @@ CSimpleGraphView::OnLButtonUp (UINT nFlags, CPoint point)
 //
 ///////////////////////////////////////////////////////////////////////
 void
-CSimpleGraphView::OnMouseMove (UINT nFlags, CPoint point) 
+CSimpleGraphView::OnMouseMove (uint32_t nFlags, CPoint point) 
 {
 	if (nFlags & MK_LBUTTON && nFlags & MK_RBUTTON) {
 
@@ -906,7 +906,7 @@ CSimpleGraphView::OnZoomExtents (void)
 //
 ///////////////////////////////////////////////////////////////////////
 void
-CSimpleGraphView::OnRButtonDown (UINT nFlags, CPoint point) 
+CSimpleGraphView::OnRButtonDown (uint32_t nFlags, CPoint point) 
 {
 	if (m_IsZooming == false) {
 		m_ZoomPt = point;
@@ -925,7 +925,7 @@ CSimpleGraphView::OnRButtonDown (UINT nFlags, CPoint point)
 //
 ///////////////////////////////////////////////////////////////////////
 void
-CSimpleGraphView::OnRButtonUp (UINT nFlags, CPoint point) 
+CSimpleGraphView::OnRButtonUp (uint32_t nFlags, CPoint point) 
 {
 	if (m_IsZooming) {
 		m_IsZooming = false;

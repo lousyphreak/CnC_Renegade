@@ -36,6 +36,8 @@
 #ifndef __IMEMANAGER_H__
 #define __IMEMANAGER_H__
 
+#include <cstdint>
+
 #include "refcount.h"
 #include "IMECandidate.h"
 #include "Notify.h"
@@ -102,10 +104,10 @@ class IMEManager :
 		const wchar_t* GetDescription(void) const
 			{return mIMEDescription;}
 
-		WORD GetLanguageID(void) const
+		uint16_t GetLanguageID(void) const
 			{return mLangID;}
 
-		UINT GetCodePage(void) const
+		uint32_t GetCodePage(void) const
 			{return mCodePage;}
 
 		const wchar_t* GetResultString(void) const
@@ -114,7 +116,7 @@ class IMEManager :
 		const wchar_t* GetCompositionString(void) const
 			{return mCompositionString;}
 
-		long GetCompositionCursorPos(void) const
+		int32_t GetCompositionCursorPos(void) const
 			{return mCompositionCursorPos;}
 
 		const wchar_t* GetReadingString(void) const
@@ -125,16 +127,16 @@ class IMEManager :
 			{return mTypingString;}
 		#endif
 
-		void GetTargetClause(unsigned long& start, unsigned long& end);
+		void GetTargetClause(uint32_t& start, uint32_t& end);
 
 		bool GetCompositionFont(LPLOGFONT lpFont);
 
 		const IMECandidateCollection GetCandidateColl(void) const
 			{return mCandidateColl;}
 
-		unsigned long GetGuideline(wchar_t* outString, int length);
+		uint32_t GetGuideline(wchar_t* outString, int length);
 
-		bool ProcessMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam, LRESULT& result);
+		bool ProcessMessage(HWND hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam, intptr_t& result);
 
 	protected:
 		IMEManager();
@@ -142,32 +144,32 @@ class IMEManager :
 
 		bool FinalizeCreate(HWND hwnd);
 
-		LRESULT IMENotify(WPARAM wParam, LPARAM lParam);
+		intptr_t IMENotify(uintptr_t wParam, intptr_t lParam);
 		
 		HKL InputLanguageChangeRequest(HKL hkl);
 		void InputLanguageChanged(HKL hkl);
 
 		void ResetComposition(void);
 		void StartComposition(void);
-		void DoComposition(unsigned int dbcsChar, long changeFlag);
+		void DoComposition(uint32_t dbcsChar, int32_t changeFlag);
 		void EndComposition(void);
 
-		bool ReadCompositionString(HIMC imc, unsigned long flag, wchar_t* buffer, int length);
-		long ReadReadingAttr(HIMC imc, unsigned char* attr, int length);
-		long ReadReadingClause(HIMC imc, unsigned long* clause, int length);
-		long ReadCompositionAttr(HIMC imc, unsigned char* attr, int length);
-		long ReadCompositionClause(HIMC imc, unsigned long* clause, int length);
-		long ReadCursorPos(HIMC imc);
+		bool ReadCompositionString(HIMC imc, uint32_t flag, wchar_t* buffer, int length);
+		int32_t ReadReadingAttr(HIMC imc, uint8_t* attr, int length);
+		int32_t ReadReadingClause(HIMC imc, uint32_t* clause, int length);
+		int32_t ReadCompositionAttr(HIMC imc, uint8_t* attr, int length);
+		int32_t ReadCompositionClause(HIMC imc, uint32_t* clause, int length);
+		int32_t ReadCursorPos(HIMC imc);
 
-		void OpenCandidate(unsigned long candList);
-		void ChangeCandidate(unsigned long candList);
-		void CloseCandidate(unsigned long candList);
+		void OpenCandidate(uint32_t candList);
+		void ChangeCandidate(uint32_t candList);
+		void CloseCandidate(uint32_t candList);
 
-		bool IMECharHandler(unsigned short dbcs);
-		bool CharHandler(unsigned short ch);
+		bool IMECharHandler(uint16_t dbcs);
+		bool CharHandler(uint16_t ch);
 
-		long ConvertAttrForUnicode(unsigned char* mbcs, unsigned char* attr);
-		long ConvertClauseForUnicode(unsigned char* mbcs, long length, unsigned long* clause);
+		int32_t ConvertAttrForUnicode(uint8_t* mbcs, uint8_t* attr);
+		int32_t ConvertClauseForUnicode(uint8_t* mbcs, int32_t length, uint32_t* clause);
 
 		DECLARE_NOTIFIER(IMEEvent)
 		DECLARE_NOTIFIER(UnicodeChar)
@@ -184,12 +186,12 @@ class IMEManager :
 		HIMC mHIMC;
 
 		HIMC mDisabledHIMC;
-		unsigned long mDisableCount;
+		uint32_t mDisableCount;
 
-		WORD mLangID;
-		UINT mCodePage;
+		uint16_t mLangID;
+		uint32_t mCodePage;
 		WideStringClass mIMEDescription;
-		DWORD mIMEProperties;
+		uint32_t mIMEProperties;
 
 		bool mHilite;
 		bool mStartCandListFrom1;
@@ -199,14 +201,14 @@ class IMEManager :
 
 		#ifdef SHOW_IME_TYPING
 		wchar_t mTypingString[IME_MAX_TYPING_LEN];
-		long mTypingCursorPos;
+		int32_t mTypingCursorPos;
 		#endif
 		
 		wchar_t mCompositionString[IME_MAX_STRING_LEN];
-		unsigned char mCompositionAttr[IME_MAX_STRING_LEN];
-		unsigned long mCompositionClause[IME_MAX_STRING_LEN / 2];
+		uint8_t mCompositionAttr[IME_MAX_STRING_LEN];
+		uint32_t mCompositionClause[IME_MAX_STRING_LEN / 2];
 
-		long mCompositionCursorPos;
+		int32_t mCompositionCursorPos;
 
 		wchar_t mReadingString[IME_MAX_STRING_LEN * 2];
 		wchar_t mResultString[IME_MAX_STRING_LEN];
@@ -273,28 +275,28 @@ class IMEManager :
 		bool IsDisabled(void) const { return true; }
 
 		const wchar_t* GetDescription(void) const { return L""; }
-		WORD GetLanguageID(void) const { return 0; }
-		UINT GetCodePage(void) const { return CP_ACP; }
+		uint16_t GetLanguageID(void) const { return 0; }
+		uint32_t GetCodePage(void) const { return CP_ACP; }
 		const wchar_t* GetResultString(void) const { return L""; }
 		const wchar_t* GetCompositionString(void) const { return L""; }
-		long GetCompositionCursorPos(void) const { return 0; }
+		int32_t GetCompositionCursorPos(void) const { return 0; }
 		const wchar_t* GetReadingString(void) const { return L""; }
 
 		#ifdef SHOW_IME_TYPING
 		const wchar_t* GetTypingString(void) const { return L""; }
 		#endif
 
-		void GetTargetClause(unsigned long& start, unsigned long& end) { start = 0; end = 0; }
+		void GetTargetClause(uint32_t& start, uint32_t& end) { start = 0; end = 0; }
 		bool GetCompositionFont(LPLOGFONT) { return false; }
 		const IMECandidateCollection GetCandidateColl(void) const { return IMECandidateCollection(); }
-		unsigned long GetGuideline(wchar_t* outString, int length)
+		uint32_t GetGuideline(wchar_t* outString, int length)
 		{
 			if (outString != NULL && length > 0) {
 				outString[0] = 0;
 			}
 			return GL_LEVEL_NOGUIDELINE;
 		}
-		bool ProcessMessage(HWND, UINT, WPARAM, LPARAM, LRESULT&) { return false; }
+		bool ProcessMessage(HWND, uint32_t, uintptr_t, intptr_t, intptr_t&) { return false; }
 	};
 
 } // namespace IME

@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // SurrenderWnd.h : header file
 //
@@ -54,7 +56,7 @@ public:
 	int					m_MotionTime;
 	HWND				m_RenderHWnd;
 	int					m_FrameRate;
-	LONG					m_SubClass;
+	int32_t					m_SubClass;
 // Operations
 public:
 
@@ -72,7 +74,7 @@ protected:
 	//{{AFX_MSG(CSurrenderWnd)
 	afx_msg void OnPaint();
 	afx_msg void OnClose();
-	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+	afx_msg void OnKeyDown(uint32_t nChar, uint32_t nRepCnt, uint32_t nFlags);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };

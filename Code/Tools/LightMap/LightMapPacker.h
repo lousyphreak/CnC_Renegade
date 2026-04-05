@@ -37,6 +37,8 @@
 #ifndef _LIGHTMAPPACKER_H
 #define _LIGHTMAPPACKER_H
 
+#include <cstdint>
+
 // Includes.
 #include "ProceduralTexture.h"
 #include "StringBuilder.h"
@@ -58,7 +60,7 @@
 class ColorSurface : public srColorSurface
 {
 	public:
-		ColorSurface (srPixelConvert::e_surfaceType pixelformat, short width, short height)
+		ColorSurface (srPixelConvert::e_surfaceType pixelformat, int16_t width, int16_t height)
 			: srColorSurface (pixelformat, width, height)
 		{}
 };
@@ -113,12 +115,12 @@ class TrueColorTarga : public Targa
   		struct UnpackedTexelStruct {
 
 			UnpackedTexelStruct () {}
-			UnpackedTexelStruct (unsigned char r, unsigned char g, unsigned char b, unsigned char a)
+			UnpackedTexelStruct (uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 			{
 				Set (r, g, b, a);
 			} 
 			
-			void Set (unsigned char r, unsigned char g, unsigned char b, unsigned char a)
+			void Set (uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 			{
 				Byte [0] = a;
 				Byte [1] = r;
@@ -126,15 +128,15 @@ class TrueColorTarga : public Targa
 				Byte [3] = b;
 			}
 
-			unsigned char Alpha() const	{return (Byte [0]);}
-			unsigned char Red() const		{return (Byte [1]);}
-			unsigned char Green() const	{return (Byte [2]);}
-			unsigned char Blue()	const 	{return (Byte [3]);}
+			uint8_t Alpha() const	{return (Byte [0]);}
+			uint8_t Red() const		{return (Byte [1]);}
+			uint8_t Green() const	{return (Byte [2]);}
+			uint8_t Blue()	const 	{return (Byte [3]);}
 
 			// Equality operator.
 			bool operator == (const UnpackedTexelStruct &t) {
-				ASSERT (sizeof (unsigned long) == sizeof (Byte));
-				return (*((unsigned long*) Byte) == *((unsigned long*) t.Byte));
+				ASSERT (sizeof (uint32_t) == sizeof (Byte));
+				return (*((uint32_t*) Byte) == *((uint32_t*) t.Byte));
 			}
 
 			// Inequality operator.
@@ -153,7 +155,7 @@ class TrueColorTarga : public Targa
 			}
 
 			// Public data.
-			unsigned char Byte [UNPACKED_TEXEL_BYTE_COUNT];
+			uint8_t Byte [UNPACKED_TEXEL_BYTE_COUNT];
 		};
 
 		struct PointStruct {
@@ -178,9 +180,9 @@ class TrueColorTarga : public Targa
 	private:		
 	
 		// Inlines.
-		unsigned char		  *Get_Texel (int x, int y) const;
-		UnpackedTexelStruct *Unpack_Texel (unsigned char *packedtexelptr, unsigned packedbytespertexel, UnpackedTexelStruct &unpackedtexel) const;
-		void						Pack_Texel (const UnpackedTexelStruct &unpackedtexel, unsigned char *packedtexelptr, unsigned packedbytespertexel);
+		uint8_t		  *Get_Texel (int x, int y) const;
+		UnpackedTexelStruct *Unpack_Texel (uint8_t *packedtexelptr, unsigned packedbytespertexel, UnpackedTexelStruct &unpackedtexel) const;
+		void						Pack_Texel (const UnpackedTexelStruct &unpackedtexel, uint8_t *packedtexelptr, unsigned packedbytespertexel);
 
 		// Static functions.
 		static srPixelConvert::e_surfaceType Pixel_Format (unsigned pixeldepth);
@@ -409,7 +411,7 @@ class TrianglePacker {
 						r = sampleptr->Red * oocount;
 						g = sampleptr->Green * oocount;
 						b = sampleptr->Blue * oocount;
-						color.Set ((uint8) MIN (r, UCHAR_MAX), (uint8) MIN (g, UCHAR_MAX), (uint8) MIN (b, UCHAR_MAX));
+						color.Set ((uint8_t) MIN (r, UCHAR_MAX), (uint8_t) MIN (g, UCHAR_MAX), (uint8_t) MIN (b, UCHAR_MAX));
 						return (true);
 					} else {
 						return (false);
@@ -574,7 +576,7 @@ class LightmapPacker {
 inline bool TrueColorTarga::Get_Color (const Vector2 &t, W3dRGBStruct &color)	const
 {
 	int						x, y;
-	unsigned char		  *texelptr;
+	uint8_t		  *texelptr;
 	UnpackedTexelStruct  unpackedtexel;
 	
 	x = t.U * Width();
@@ -603,7 +605,7 @@ inline bool TrueColorTarga::Set_Color (unsigned x, unsigned y, const W3dRGBStruc
 {
 	UnpackedTexelStruct unpackedtexel (color.R, color.G, color.B, 0);
 
-	unsigned char *texelptr;
+	uint8_t *texelptr;
 
 	texelptr = Get_Texel (x, y);
 	if (texelptr != NULL) {
@@ -627,13 +629,13 @@ inline bool TrueColorTarga::Set_Color (unsigned x, unsigned y, const W3dRGBStruc
  * HISTORY:                                                                                    *
  *   9/27/99    IML : Created.                                                                 * 
  *=============================================================================================*/
-inline unsigned char *TrueColorTarga::Get_Texel (int x, int y) const
+inline uint8_t *TrueColorTarga::Get_Texel (int x, int y) const
 {
 	// Check for (x, y) out of range.
 	if ((x < 0) || (x >= ((int) Width ()))) return (NULL);
 	if ((y < 0) || (y >= ((int) Height()))) return (NULL);
 
-	return ((unsigned char*) GetImage()) + (((Width() * y) + x) * TGA_BytesPerPixel (Pixel_Depth()));
+	return ((uint8_t*) GetImage()) + (((Width() * y) + x) * TGA_BytesPerPixel (Pixel_Depth()));
 }
 
 
@@ -649,7 +651,7 @@ inline unsigned char *TrueColorTarga::Get_Texel (int x, int y) const
  * HISTORY:                                                                                    *
  *   9/27/99    IML : Created.                                                                 * 
  *=============================================================================================*/
-inline TrueColorTarga::UnpackedTexelStruct *TrueColorTarga::Unpack_Texel (unsigned char *packedtexelptr, unsigned packedbytespertexel, UnpackedTexelStruct &unpackedtexel) const
+inline TrueColorTarga::UnpackedTexelStruct *TrueColorTarga::Unpack_Texel (uint8_t *packedtexelptr, unsigned packedbytespertexel, UnpackedTexelStruct &unpackedtexel) const
 {
 	switch (packedbytespertexel) {
 
@@ -671,9 +673,9 @@ inline TrueColorTarga::UnpackedTexelStruct *TrueColorTarga::Unpack_Texel (unsign
 
 		case 2:
 			{			
-				static unsigned char _alpha [2] = {0x00, 0xff};
+				static uint8_t _alpha [2] = {0x00, 0xff};
 
-				unsigned short packedtexel = *((unsigned short*) packedtexelptr);
+				uint16_t packedtexel = *((uint16_t*) packedtexelptr);
 
 				// Unpack to ordering ARGB. Bit replicate	Alpha.
 				unpackedtexel.Byte [0] = _alpha [packedtexel >> 15];				// Alpha
@@ -705,7 +707,7 @@ inline TrueColorTarga::UnpackedTexelStruct *TrueColorTarga::Unpack_Texel (unsign
  * HISTORY:                                                                                    *
  *   9/27/99    IML : Created.                                                                 * 
  *=============================================================================================*/
-inline void TrueColorTarga::Pack_Texel (const UnpackedTexelStruct &unpackedtexel, unsigned char *packedtexelptr, unsigned packedbytespertexel)
+inline void TrueColorTarga::Pack_Texel (const UnpackedTexelStruct &unpackedtexel, uint8_t *packedtexelptr, unsigned packedbytespertexel)
 {
 	switch (packedbytespertexel) {
 
@@ -733,7 +735,7 @@ inline void TrueColorTarga::Pack_Texel (const UnpackedTexelStruct &unpackedtexel
 				r =  MIN (0x1f, (unpackedtexel.Byte [1] >> 3) + ((unpackedtexel.Byte [1] & 0x4) >> 2));
 				g =  MIN (0x1f, (unpackedtexel.Byte [2] >> 3) + ((unpackedtexel.Byte [2] & 0x4) >> 2));
 				b =  MIN (0x1f, (unpackedtexel.Byte [3] >> 3) + ((unpackedtexel.Byte [3] & 0x4) >> 2));
-				*((unsigned short*) packedtexelptr) = ((a << 15) | (r << 10) | (g << 5) | b);
+				*((uint16_t*) packedtexelptr) = ((a << 15) | (r << 10) | (g << 5) | b);
 			}
 			break;
 

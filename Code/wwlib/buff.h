@@ -38,6 +38,8 @@
 #ifndef CCBUFF_H
 #define CCBUFF_H
 
+#include <cstdint>
+
 
 /*
 **	The "bool" integral type was defined by the C++ committee in
@@ -53,10 +55,10 @@
 */
 class Buffer {
 	public:
-		Buffer(char * ptr, long size=0);
-		Buffer(void * ptr=0, long size=0);
-		Buffer(void const * ptr, long size=0);
-		Buffer(long size);
+		Buffer(char * ptr, int32_t size=0);
+		Buffer(void * ptr=0, int32_t size=0);
+		Buffer(void const * ptr, int32_t size=0);
+		Buffer(int32_t size);
 		Buffer(Buffer const & buffer);
 		~Buffer(void);
 
@@ -66,7 +68,7 @@ class Buffer {
 
 		void Reset(void);
 		void * Get_Buffer(void) const {return(BufferPtr);}
-		long Get_Size(void) const {return(Size);}
+		int32_t Get_Size(void) const {return(Size);}
 		bool Is_Valid(void) const {return(BufferPtr != 0);}
 
 	protected:
@@ -79,7 +81,7 @@ class Buffer {
 		/*
 		**	The size of the buffer memory.
 		*/
-		long Size;
+		int32_t Size;
 
 		/*
 		**	Was the buffer allocated by this class? If so, then this class

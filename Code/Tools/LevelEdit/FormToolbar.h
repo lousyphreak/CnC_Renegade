@@ -28,6 +28,8 @@
 #ifndef __FORMTOOLBARCLASS_H
 #define __FORMTOOLBARCLASS_H
 
+#include <cstdint>
+
 //////////////////////////////////////////////////////////////
 //
 //  FormToolbarClass
@@ -48,8 +50,8 @@ public:
 
 	// Generated message map functions
 	//{{AFX_MSG(FormToolbarClass)
-	afx_msg void OnSize(UINT nType, int cx, int cy);
-	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+	afx_msg void OnSize(uint32_t nType, int cx, int cy);
+	afx_msg int32_t OnEraseBkgnd(CDC* pDC);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 
@@ -71,8 +73,8 @@ public:
         //
         //  Required methods
         //
-        CSize CalcFixedLayout (BOOL, BOOL) { return CSize (100, 100); }
-        CSize CalcDynamicLayout( int nLength, DWORD dwMode )
+        CSize CalcFixedLayout (int32_t, int32_t) { return CSize (100, 100); }
+        CSize CalcDynamicLayout( int nLength, uint32_t dwMode )
         {
             if (dwMode & LM_VERTDOCK)
             {                
@@ -108,7 +110,7 @@ public:
         }
 
         void									OnUpdateCmdUI (class CFrameWnd*, int) {}
-        BOOL									Create (class DockableFormClass *pCFormClass, LPCTSTR pszWindowName, CWnd *pCParentWnd, UINT uiID);        
+        int32_t									Create (class DockableFormClass *pCFormClass, LPCTSTR pszWindowName, CWnd *pCParentWnd, uint32_t uiID);        
 
 		  class DockableFormClass *		Get_Form (void) const { return m_pCForm; }
 

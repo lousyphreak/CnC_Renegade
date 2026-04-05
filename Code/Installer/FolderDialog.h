@@ -36,6 +36,8 @@
 #ifndef _FOLDER_DIALOG_H
 #define _FOLDER_DIALOG_H
 
+#include <cstdint>
+
 // Includes.
 #include "InstallMenuDialog.h"
 
@@ -53,7 +55,7 @@ class FolderDialogClass : public InstallMenuDialogClass
 		void *As_FolderDialogClass()		{return (this);}
 
 		void			 On_ListCtrl_Sel_Change (ListCtrlClass *list_ctrl, int ctrl_id, int old_index, int new_index);
-		void			 On_Command (int ctrl_id, int message_id, DWORD param);
+		void			 On_Command (int ctrl_id, int message_id, uint32_t param);
 		const WCHAR *Get_Folder (WideStringClass &folder);
 
 	protected:
@@ -68,7 +70,7 @@ class GameFolderDialogClass : public FolderDialogClass
 		// RTTI.
 		virtual void *As_GameFolderDialogClass()		{return (this);}
 
-		void On_Command (int ctrl_id, int message_id, DWORD param) {FolderDialogClass::On_Command (ctrl_id, message_id, param);}
+		void On_Command (int ctrl_id, int message_id, uint32_t param) {FolderDialogClass::On_Command (ctrl_id, message_id, param);}
 
 	protected:
 		void On_Init_Dialog (void);
@@ -82,7 +84,7 @@ class WOLFolderDialogClass : public FolderDialogClass
 		// RTTI.
 		virtual void *As_WOLFolderDialogClass()		{return (this);}
 
-		void On_Command (int ctrl_id, int message_id, DWORD param) {FolderDialogClass::On_Command (ctrl_id, message_id, param);}
+		void On_Command (int ctrl_id, int message_id, uint32_t param) {FolderDialogClass::On_Command (ctrl_id, message_id, param);}
 
 	protected:
 		void On_Init_Dialog (void);

@@ -128,7 +128,7 @@ void VectorProcessorClass::Copy(Vector4 *dst,const Vector3 &src, const float * s
 	}
 }
 
-void VectorProcessorClass::CopyIndexed (unsigned *dst,const unsigned *src, const unsigned int *index, int count)
+void VectorProcessorClass::CopyIndexed (unsigned *dst,const unsigned *src, const uint32_t *index, int count)
 {
 	if (count<=0) return;
 	int i;
@@ -139,7 +139,7 @@ void VectorProcessorClass::CopyIndexed (unsigned *dst,const unsigned *src, const
 	}
 }
 
-void VectorProcessorClass::CopyIndexed (Vector2 *dst,const Vector2 *src, const unsigned int *index, int count)
+void VectorProcessorClass::CopyIndexed (Vector2 *dst,const Vector2 *src, const uint32_t *index, int count)
 {
 	if (count<=0) return;
 	int i;
@@ -150,7 +150,7 @@ void VectorProcessorClass::CopyIndexed (Vector2 *dst,const Vector2 *src, const u
 	}
 }
 
-void VectorProcessorClass::CopyIndexed (Vector3 *dst,const Vector3 *src, const unsigned int *index, int count)
+void VectorProcessorClass::CopyIndexed (Vector3 *dst,const Vector3 *src, const uint32_t *index, int count)
 {
 	if (count<=0) return;
 	int i;
@@ -161,7 +161,7 @@ void VectorProcessorClass::CopyIndexed (Vector3 *dst,const Vector3 *src, const u
 	}
 }
 
-void VectorProcessorClass::CopyIndexed (Vector4 *dst,const Vector4 *src, const unsigned int *index, int count)
+void VectorProcessorClass::CopyIndexed (Vector4 *dst,const Vector4 *src, const uint32_t *index, int count)
 {
 	if (count<=0) return;
 	int i;
@@ -172,7 +172,7 @@ void VectorProcessorClass::CopyIndexed (Vector4 *dst,const Vector4 *src, const u
 	}
 }
 
-void VectorProcessorClass::CopyIndexed(unsigned char* dst, const unsigned char* src, const unsigned int *index, int count)
+void VectorProcessorClass::CopyIndexed(uint8_t* dst, const uint8_t* src, const uint32_t *index, int count)
 {
 	if (count<=0) return;
 	int i;
@@ -183,7 +183,7 @@ void VectorProcessorClass::CopyIndexed(unsigned char* dst, const unsigned char* 
 	}
 }
 
-void VectorProcessorClass::CopyIndexed(float* dst, float* src, const unsigned int *index, int count)
+void VectorProcessorClass::CopyIndexed(float* dst, float* src, const uint32_t *index, int count)
 {
 	if (count<=0) return;
 	int i;

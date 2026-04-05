@@ -266,7 +266,7 @@ void
 PresetZoneTabClass::OnDblclkZoneList
 (
 	NMHDR *	pNMHDR,
-	LRESULT *pResult
+	intptr_t *pResult
 )
 {
 	(*pResult) = 0;

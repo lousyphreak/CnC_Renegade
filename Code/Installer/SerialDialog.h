@@ -36,6 +36,8 @@
 #ifndef _SERIAL_DIALOG_H
 #define _SERIAL_DIALOG_H
 
+#include <cstdint>
+
 // Includes.
 #include "InstallMenuDialog.h"
 
@@ -51,14 +53,14 @@ class SerialDialogClass : public InstallMenuDialogClass
 		// RTTI.
 		void *As_SerialDialogClass() {return (this);}
 
-		void On_Command (int ctrl_id, int message_id, DWORD param);
+		void On_Command (int ctrl_id, int message_id, uint32_t param);
 
 		bool Get_Serial_Number (StringClass &serialnumber);
 
 	protected:
 		
 		void On_Init_Dialog (void);
-		void On_Unicode_Char (uint16 unicode);
+		void On_Unicode_Char (uint16_t unicode);
 };
 
 

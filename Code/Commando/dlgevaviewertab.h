@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __DLG_EVA_VIEWER_TAB_H
@@ -176,7 +178,7 @@ protected:
 	////////////////////////////////////////////////////////////////
 	//	Static methods
 	////////////////////////////////////////////////////////////////
-	static int CALLBACK ListSortCallback (ListCtrlClass *list_ctrl, int item_index1, int item_index2, uint32 user_param);
+	static int CALLBACK ListSortCallback (ListCtrlClass *list_ctrl, int item_index1, int item_index2, uint32_t user_param);
 
 	////////////////////////////////////////////////////////////////
 	//	Protected member data

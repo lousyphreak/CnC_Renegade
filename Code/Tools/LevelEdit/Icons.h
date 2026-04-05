@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 
@@ -76,7 +78,7 @@ typedef enum
 
 } ICON_INDEX;
 
-extern const UINT ICON_RESOURCE_IDS[ICON_COUNT];
+extern const uint32_t ICON_RESOURCE_IDS[ICON_COUNT];
 
 #endif //__ICONS_H
 

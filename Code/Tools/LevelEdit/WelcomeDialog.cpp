@@ -100,14 +100,14 @@ WelcomeDialogClass::DoModal (void)
 //
 //	OnInitDialog
 //
-BOOL
+int32_t
 WelcomeDialogClass::OnInitDialog (void) 
 {
 	// Allow the base class to process this message
 	CDialog::OnInitDialog ();
 
 	// Check the 'yes' button by default
-	SendDlgItemMessage (IDC_YES_RADIO, BM_SETCHECK, (WPARAM)TRUE);	
+	SendDlgItemMessage (IDC_YES_RADIO, BM_SETCHECK, (uintptr_t)TRUE);	
 
 	// Put the base path in its dialog control
 	SetDlgItemText (IDC_ASSET_TREE_LOCATION, ::Get_File_Mgr()->Get_Base_Path ());

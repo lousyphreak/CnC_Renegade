@@ -157,7 +157,7 @@ NodeInfoPageClass::Apply_Changes (void)
 	
 	// If the ID was changed then verify that it is unique before actually
 	// changing it for the object.
-	uint32 id = GetDlgItemInt(IDC_ID_EDIT, NULL, FALSE);	
+	uint32_t id = GetDlgItemInt(IDC_ID_EDIT, NULL, FALSE);	
 	if (m_pNode->Get_ID() != id) {
 
 		//
@@ -168,8 +168,8 @@ NodeInfoPageClass::Apply_Changes (void)
 			//
 			//	Is this ID in the range you were assigned?
 			//
-			uint32 min_id = 0;
-			uint32 max_id = 0;
+			uint32_t min_id = 0;
+			uint32_t max_id = 0;
 			NodeMgrClass::Get_ID_Range (m_pNode->Get_Type (), &min_id, &max_id);
 			if (id >= min_id && id < max_id) {
 				m_pNode->Set_ID (id);

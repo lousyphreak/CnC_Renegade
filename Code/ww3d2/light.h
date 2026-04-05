@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef LIGHT_H
@@ -164,7 +166,7 @@ public:
 protected:
 
 	LightType				Type;
-	unsigned int			Flags;
+	uint32_t			Flags;
 	bool						CastShadows;
 
 	float						Intensity;

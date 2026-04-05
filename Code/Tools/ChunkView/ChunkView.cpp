@@ -82,7 +82,7 @@ CChunkViewApp theApp;
 /////////////////////////////////////////////////////////////////////////////
 // CChunkViewApp initialization
 
-BOOL CChunkViewApp::InitInstance()
+int32_t CChunkViewApp::InitInstance()
 {
 	AfxEnableControlContainer();
 

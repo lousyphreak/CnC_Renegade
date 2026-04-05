@@ -75,8 +75,8 @@ extern BigInt Generate_Prime<BigInt>(Straw &, int, BigInt const *);
  *=============================================================================================*/
 PKey::PKey(void const * exponent, void const * modulus)
 {
-	Modulus.DERDecode((unsigned char *)modulus);
-	Exponent.DERDecode((unsigned char *)exponent);
+	Modulus.DERDecode((uint8_t *)modulus);
+	Exponent.DERDecode((uint8_t *)exponent);
 	BitPrecision = Modulus.BitCount()-1;
 }
 
@@ -102,7 +102,7 @@ int PKey::Encode_Modulus(void * buffer) const
 	if (buffer == NULL) {
 		return(0);
 	}
-	return(Modulus.DEREncode((unsigned char *)buffer));
+	return(Modulus.DEREncode((uint8_t *)buffer));
 }
 
 
@@ -127,7 +127,7 @@ int PKey::Encode_Exponent(void * buffer) const
 	if (buffer == NULL) {
 		return(0);
 	}
-	return(Exponent.DEREncode((unsigned char *)buffer));
+	return(Exponent.DEREncode((uint8_t *)buffer));
 }
 
 
@@ -148,7 +148,7 @@ int PKey::Encode_Exponent(void * buffer) const
  *=============================================================================================*/
 void PKey::Decode_Modulus(void * buffer)
 {
-	Modulus.DERDecode((unsigned char *)buffer);
+	Modulus.DERDecode((uint8_t *)buffer);
 	BitPrecision = Modulus.BitCount()-1;
 }
 
@@ -170,7 +170,7 @@ void PKey::Decode_Modulus(void * buffer)
  *=============================================================================================*/
 void PKey::Decode_Exponent(void * buffer)
 {
-	Exponent.DERDecode((unsigned char *)buffer);
+	Exponent.DERDecode((uint8_t *)buffer);
 }
 
 
@@ -224,7 +224,7 @@ void PKey::Generate(Straw & random, int bits, PKey & fastkey, PKey & slowkey)
 		*/
 		BigInt e = Fast_Exponent();
 		BigInt n = p * q;
-		BigInt pqmin = (p-(unsigned short)1)*(q-(unsigned short)1);
+		BigInt pqmin = (p-(uint16_t)1)*(q-(uint16_t)1);
 		BigInt d = e.Inverse(pqmin);
 
 		/*

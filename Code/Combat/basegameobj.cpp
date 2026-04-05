@@ -56,7 +56,7 @@ class NetworkGameObjectFactoryClass : public NetworkObjectFactoryClass
 public:
 	virtual NetworkObjectClass *	Create (cPacket &packet) const;
 	virtual void						Prep_Packet (NetworkObjectClass *object, cPacket &packet) const;
-	virtual uint32						Get_Class_ID (void) const { return NETCLASSID_GAMEOBJ; }
+	virtual uint32_t						Get_Class_ID (void) const { return NETCLASSID_GAMEOBJ; }
 };
 
 //////////////////////////////////////////////////////////////

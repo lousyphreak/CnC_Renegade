@@ -39,6 +39,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
+#include <cstdint>
 #ifndef _WINDOWS
 #include <netinet/in.h>
 #else
@@ -102,18 +103,18 @@ void PacketClass::Add_Field(FieldClass *field)
  * HISTORY:                                                               * 
  *   04/22/1996 PWG : Created.                                            * 
  *========================================================================*/
-PacketClass::PacketClass(char *curbuf)
+PacketClass::PacketClass(uint8_t *curbuf)
 {
   int remaining_size;
   //
   // Pull the size and packet ID out of the linear packet stream.
   //
-  Size = *((unsigned short *)curbuf);
-  curbuf += sizeof(unsigned short);
+  memcpy(&Size, curbuf, sizeof(Size));
+  curbuf += sizeof(uint16_t);
   Size = ntohs(Size);
-  ID   = *((short *)curbuf);
-  curbuf += sizeof(unsigned short);
-  ID   = ntohs(ID);
+  memcpy(&ID, curbuf, sizeof(ID));
+  curbuf += sizeof(uint16_t);
+  ID   = static_cast<int16_t>(ntohs(static_cast<uint16_t>(ID)));
   Head = NULL;
 
   //
@@ -141,7 +142,7 @@ PacketClass::PacketClass(char *curbuf)
     // Copy the data into the buffer
     //
     int size      = ntohs(field->Size);
-    field->Data    = new char[size];
+    field->Data    = new uint8_t[size];
     memcpy(field->Data, curbuf, size);
     curbuf      += size;
     remaining_size  -= size;
@@ -170,7 +171,7 @@ PacketClass::PacketClass(char *curbuf)
  * CREATE_COMMS_PACKET -- Walks field list creating a packet              * 
  *                                                                        * 
  * INPUT:    short - the id of the packet so the server can identify it *
- *          unsigned short & - the size of the packet returned here    *
+ *          uint16_t & - the size of the packet returned here    *
  *                                                                        * 
  * OUTPUT:     void * pointer to the linear packet data                   * 
  *                                                                        * 
@@ -180,7 +181,7 @@ PacketClass::PacketClass(char *curbuf)
  * HISTORY:                                                               * 
  *   04/22/1996 PWG : Created.                                            * 
  *========================================================================*/
-char *PacketClass::Create_Comms_Packet(int &size)
+uint8_t *PacketClass::Create_Comms_Packet(int &size)
 {
   FieldClass *current;
 
@@ -195,7 +196,7 @@ char *PacketClass::Create_Comms_Packet(int &size)
   //
   for (current = Head; current; current=current->Next)
   {
-    size += (unsigned short)FIELD_HEADER_SIZE;      // add in packet header size
+    size += (uint16_t)FIELD_HEADER_SIZE;      // add in packet header size
     size += current->Size;        // add in data size
     size += (4 - (size & 3)) & 3;   // add in pad value to dword align next packet
   }
@@ -204,16 +205,18 @@ char *PacketClass::Create_Comms_Packet(int &size)
   // Now that we know the size allocate a buffer big enough to hold the 
   // packet.
   //
-  char *retval = new char[size];
-  char *curbuf = retval;
+  uint8_t *retval = new uint8_t[size];
+  uint8_t *curbuf = retval;
 
   //
   // write the size into the packet header
   //
-  *((unsigned short *)curbuf) = (unsigned short)htons(size);
-  curbuf += sizeof(unsigned short);
-  *((short *)curbuf) = htons(ID);
-  curbuf += sizeof(unsigned short);
+  const uint16_t net_size = static_cast<uint16_t>(htons(size));
+  memcpy(curbuf, &net_size, sizeof(net_size));
+  curbuf += sizeof(uint16_t);
+  const uint16_t net_id = static_cast<uint16_t>(htons(static_cast<uint16_t>(ID)));
+  memcpy(curbuf, &net_id, sizeof(net_id));
+  curbuf += sizeof(uint16_t);
 
   //
   // Ok now that the actual header information has been written we need to write out
@@ -309,7 +312,7 @@ int PacketClass::Get_Num_Fields()
  * HISTORY:                                                               * 
  *   04/23/1996 PWG : Created.                                            * 
  *========================================================================*/
-bit8 PacketClass::Get_Field(char *id, char &data)
+int8_t PacketClass::Get_Field(char *id, char &data)
 {
   FieldClass *field = Find_Field(id);
   if (field) {
@@ -323,7 +326,7 @@ bit8 PacketClass::Get_Field(char *id, char &data)
  * GET_FIELD -- Find specified name and returns data                      * 
  *                                                                        * 
  * INPUT:    char *   - the id of the field that holds the data.          *
- *           unsigned char &   - the reference to store the data into     *
+ *           uint8_t &   - the reference to store the data into     *
  *                                                                        * 
  * OUTPUT:    true if the field was found, false if it was not.           *
  *                                                                        * 
@@ -333,11 +336,11 @@ bit8 PacketClass::Get_Field(char *id, char &data)
  * HISTORY:                                                               * 
  *   04/23/1996 PWG : Created.                                            * 
  *========================================================================*/
-bit8 PacketClass::Get_Field(char *id, unsigned char &data)
+int8_t PacketClass::Get_Field(char *id, uint8_t &data)
 {
   FieldClass *field = Find_Field(id);
   if (field) {
-    data = *((unsigned char *)field->Data);
+    data = *((uint8_t *)field->Data);
   }
   return((field) ? true : false);
 }  
@@ -357,11 +360,11 @@ bit8 PacketClass::Get_Field(char *id, unsigned char &data)
  * HISTORY:                                                               * 
  *   04/23/1996 PWG : Created.                                            * 
  *========================================================================*/
-bit8 PacketClass::Get_Field(char *id, short &data)
+int8_t PacketClass::Get_Field(char *id, int16_t &data)
 {
   FieldClass *field = Find_Field(id);
   if (field) {
-    data = *((short *)field->Data);
+    memcpy(&data, field->Data, sizeof(data));
   }
   return((field) ? true : false);
 }  
@@ -371,7 +374,7 @@ bit8 PacketClass::Get_Field(char *id, short &data)
  * GET_FIELD -- Find specified name and returns data                      * 
  *                                                                        * 
  * INPUT:    char *   - the id of the field that holds the data.          *
- *           unsigned short &   - the reference to store the data into    *
+ *           uint16_t &   - the reference to store the data into    *
  *                                                                        * 
  * OUTPUT:    true if the field was found, false if it was not.           *
  *                                                                        * 
@@ -381,11 +384,11 @@ bit8 PacketClass::Get_Field(char *id, short &data)
  * HISTORY:                                                               * 
  *   04/23/1996 PWG : Created.                                            * 
  *========================================================================*/
-bit8 PacketClass::Get_Field(char *id, unsigned short &data)
+int8_t PacketClass::Get_Field(char *id, uint16_t &data)
 {
   FieldClass *field = Find_Field(id);
   if (field) {
-    data = *((unsigned short *)field->Data);
+    data = *((uint16_t *)field->Data);
   }
   return((field) ? true : false);
 }  
@@ -405,18 +408,18 @@ bit8 PacketClass::Get_Field(char *id, unsigned short &data)
  * HISTORY:                                                               * 
  *   04/23/1996 PWG : Created.                                            * 
  *========================================================================*/
-bit8 PacketClass::Get_Field(char *id, long &data)
+int8_t PacketClass::Get_Field(char *id, int32_t &data)
 {
   FieldClass *field = Find_Field(id);
   if (field) {
-    data = *((long *)field->Data);
+    memcpy(&data, field->Data, sizeof(data));
   }
   return((field) ? true : false);
 }  
 
 
 
-bit8 PacketClass::Get_Field(char *id, int &data)
+int8_t PacketClass::Get_Field(char *id, int &data)
 {
   FieldClass *field = Find_Field(id);
   if (field) {
@@ -442,7 +445,7 @@ bit8 PacketClass::Get_Field(char *id, int &data)
  * HISTORY:                                                               * 
  *   04/23/1996 PWG : Created.                                            * 
  *========================================================================*/
-bit8 PacketClass::Get_Field(char *id, char *data)
+int8_t PacketClass::Get_Field(char *id, char *data)
 {
   FieldClass *field = Find_Field(id);
   if (field) {
@@ -455,7 +458,7 @@ bit8 PacketClass::Get_Field(char *id, char *data)
  * GET_FIELD -- Find specified name and returns data                      * 
  *                                                                        * 
  * INPUT:    char *   - the id of the field that holds the data.          *
- *          unsigned long &   - the reference to store the data into      *
+ *          uint32_t &   - the reference to store the data into      *
  *                                                                        * 
  * OUTPUT:    true if the field was found, false if it was not.           *
  *                                                                        * 
@@ -465,16 +468,16 @@ bit8 PacketClass::Get_Field(char *id, char *data)
  * HISTORY:                                                               * 
  *   04/23/1996 PWG : Created.                                            * 
  *========================================================================*/
-bit8 PacketClass::Get_Field(char *id, unsigned long &data)
+int8_t PacketClass::Get_Field(char *id, uint32_t &data)
 {
   FieldClass *field = Find_Field(id);
   if (field) {
-    data = *((unsigned long *)field->Data);
+    data = *((uint32_t *)field->Data);
   }
   return((field) ? true : false);
 }  
 
-bit8 PacketClass::Get_Field(char *id, unsigned  &data)
+int8_t PacketClass::Get_Field(char *id, unsigned  &data)
 {
   FieldClass *field = Find_Field(id);
   if (field) {
@@ -500,7 +503,7 @@ bit8 PacketClass::Get_Field(char *id, unsigned  &data)
  * HISTORY:                                                               *
  *   6/4/96 4:46PM ST : Created                                           *
  *========================================================================*/
-bit8 PacketClass::Get_Field(char *id, void *data, int &length)
+int8_t PacketClass::Get_Field(char *id, void *data, int &length)
 {
    FieldClass *field = Find_Field(id);
    if (field) {
@@ -511,7 +514,7 @@ bit8 PacketClass::Get_Field(char *id, void *data, int &length)
 }
 
 
-unsigned short PacketClass::Get_Field_Size(char* id)
+uint16_t PacketClass::Get_Field_Size(char* id)
 {
    FieldClass *field = Find_Field(id);
    if (field) 
@@ -519,4 +522,3 @@ unsigned short PacketClass::Get_Field_Size(char* id)
    else
 	return 0;
 }
-

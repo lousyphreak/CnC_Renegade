@@ -25,6 +25,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 class CGraphicView;
@@ -51,10 +53,10 @@ public:
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(CPhysTestDoc)
 	public:
-	virtual BOOL OnNewDocument();
+	virtual int32_t OnNewDocument();
 	virtual void Serialize(CArchive& ar);
-	virtual BOOL OnOpenDocument(LPCTSTR lpszPathName);
-	virtual BOOL OnSaveDocument(LPCTSTR lpszPathName);
+	virtual int32_t OnOpenDocument(LPCTSTR lpszPathName);
+	virtual int32_t OnSaveDocument(LPCTSTR lpszPathName);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -80,7 +82,7 @@ public:
 	PhysicsSceneClass *	Scene;
 	LightClass *			Light;
 	RenderObjClass *		Origin;
-	DWORD						LastTime;		
+	uint32_t						LastTime;		
 
 protected:
 

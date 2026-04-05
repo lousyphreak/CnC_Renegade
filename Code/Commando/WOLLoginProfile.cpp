@@ -392,7 +392,7 @@ void LoginProfile::SetSidePreference(int side)
 *
 ******************************************************************************/
 
-void LoginProfile::SetGamesPlayed(unsigned long played)
+void LoginProfile::SetGamesPlayed(uint32_t played)
 	{
 	mGamesPlayed = played;
 	}

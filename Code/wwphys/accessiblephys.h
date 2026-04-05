@@ -36,6 +36,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef __ACCESSIBLE_PHYS_H
 #define __ACCESSIBLE_PHYS_H
 
@@ -127,7 +129,7 @@ public:
 	//
 	// From DefinitionClass
 	//
-	uint32								Get_Class_ID (void) const;
+	uint32_t								Get_Class_ID (void) const;
 	PersistClass *						Create (void) const;
 
 	//

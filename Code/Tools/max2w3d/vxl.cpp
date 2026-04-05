@@ -95,7 +95,7 @@ VoxelClass::VoxelClass
 	assert(ZDim < 256);
 	
 	// Allocate visibility flags array
-	VisData = new uint8[XDim * YDim * ZDim];
+	VisData = new uint8_t[XDim * YDim * ZDim];
 	if (VisData == NULL) {
 		throw ErrorClass("out of memory!");
 	}
@@ -254,7 +254,7 @@ void VoxelClass::Quantize_Meshes
 void VoxelClass::Set_Layer
 (
 	VoxelLayerClass & vlayer,
-	uint32 z
+	uint32_t z
 )
 {
 	// bitmap must have same x&y dimensions as the voxel space
@@ -479,7 +479,7 @@ void VoxelClass::Compute_Visiblity
 * none
 *
 ************************************************************************/
-uint8  VoxelClass::raw_read_vis
+uint8_t  VoxelClass::raw_read_vis
 (
 	int i,
 	int j,
@@ -513,7 +513,7 @@ void VoxelClass::raw_set_vis(
 	int i,
 	int j,
 	int k,
-	uint8 val
+	uint8_t val
 )
 {
 	if (i<0) return;
@@ -543,7 +543,7 @@ void compute_dimensions
 	Point3 max;
 	float surface_area = 0.0;
 
-	BOOL first = TRUE;
+	int32_t first = TRUE;
 
 	for ( unsigned i = 0; i < meshlist.Num_Nodes() ; ++ i )
 	{
@@ -608,7 +608,7 @@ void compute_dimensions
 	*set_max = max;
 }
 
-uint8	VoxelClass::Is_Solid(int i,int j,int k)
+uint8_t	VoxelClass::Is_Solid(int i,int j,int k)
 {
 	return (raw_read_vis(i,j,k) == VIS_SOLID); 
 }

@@ -71,7 +71,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 StringsCategoryNameDialogClass::OnInitDialog (void) 
 {
 	CDialog::OnInitDialog ();

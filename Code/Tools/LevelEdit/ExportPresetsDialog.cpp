@@ -78,7 +78,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 ExportPresetsDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -114,7 +114,7 @@ ExportPresetsDialogClass::OnBrowse (void)
 		//	Check to make sure the destination filename is not read-only
 		//
 		CString path				= dialog.GetPathName ();
-		DWORD file_attributes	= ::GetFileAttributes (path);
+		uint32_t file_attributes	= ::GetFileAttributes (path);
 		if (file_attributes != 0xFFFFFFFF && file_attributes & FILE_ATTRIBUTE_READONLY) {
 			::MessageBox (::AfxGetMainWnd ()->m_hWnd, "File is read-only, export operation can not complete.", "File Error", MB_ICONERROR | MB_OK);
 		} else {
@@ -206,7 +206,7 @@ ExportPresetsDialogClass::Fill_Tree (void)
 				if (factory->Is_Displayed ()) {
 					LPCTSTR name = factory->Get_Name ();
 					HTREEITEM child_item = m_TreeCtrl.InsertItem (factory->Get_Name (), FOLDER_ICON, FOLDER_ICON, tree_item);
-					m_TreeCtrl.SetItemData (child_item, (DWORD)factory->Get_Class_ID ());
+					m_TreeCtrl.SetItemData (child_item, (uint32_t)factory->Get_Class_ID ());
 				}
 			}
 
@@ -215,7 +215,7 @@ ExportPresetsDialogClass::Fill_Tree (void)
 			//
 			m_TreeCtrl.SortChildren (tree_item);
 		} else {
-			m_TreeCtrl.SetItemData (tree_item, (DWORD)PRESET_CATEGORIES[index].clsid);
+			m_TreeCtrl.SetItemData (tree_item, (uint32_t)PRESET_CATEGORIES[index].clsid);
 		}
 	}
 

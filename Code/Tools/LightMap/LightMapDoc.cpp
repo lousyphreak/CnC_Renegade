@@ -160,7 +160,7 @@ LightMapDoc::~LightMapDoc()
  * HISTORY:                                                                                    *
  *   6/1/99    IML : Created.                                                                  * 
  *=============================================================================================*/
-BOOL LightMapDoc::OnNewDocument()
+int32_t LightMapDoc::OnNewDocument()
 {
 	if (!CDocument::OnNewDocument()) {
 		return (FALSE);
@@ -182,7 +182,7 @@ BOOL LightMapDoc::OnNewDocument()
  * HISTORY:                                                                                    *
  *   6/1/99    IML : Created.                                                                  * 
  *=============================================================================================*/
-BOOL LightMapDoc::OnOpenDocument (LPCTSTR pathname)
+int32_t LightMapDoc::OnOpenDocument (LPCTSTR pathname)
 {
 	const char *openedtext    = "Document opened";		// Status bar messages.
 	const char *notopenedtext = "Document not opened";
@@ -319,9 +319,9 @@ bool LightMapDoc::Check_Document()
 			// Is this a mesh chunk?
 			if (w3dchunk.Cur_Chunk_ID() == W3D_CHUNK_MESH) {
 
-				char *meshfilebuffer;
+				uint8_t *meshfilebuffer;
 
-				meshfilebuffer = new char [w3dchunk.Cur_Chunk_Length()];
+				meshfilebuffer = new uint8_t [w3dchunk.Cur_Chunk_Length()];
 				ASSERT (meshfilebuffer != NULL);
 				if (w3dchunk.Read (meshfilebuffer, w3dchunk.Cur_Chunk_Length()) != w3dchunk.Cur_Chunk_Length()) throw ("Cannot read data in W3D_CHUNK_MESH.");
 
@@ -738,8 +738,8 @@ LightMapDoc::MeshInfoStruct::~MeshInfoStruct()
  *=============================================================================================*/
 LightMapDoc::MeshAnomalyStruct::MeshAnomalyStruct (const MeshInfoStruct &meshinfo)
 {
-	const W3dRGBStruct black ((uint8) 0x00, (uint8) 0x00, (uint8) 0x00);
-	const W3dRGBStruct white ((uint8) 0xff, (uint8) 0xff, (uint8) 0xff);
+	const W3dRGBStruct black ((uint8_t) 0x00, (uint8_t) 0x00, (uint8_t) 0x00);
+	const W3dRGBStruct white ((uint8_t) 0xff, (uint8_t) 0xff, (uint8_t) 0xff);
 
 	// Initialize the member fields.
 	MeshAnomalies = 0;
@@ -805,12 +805,12 @@ LightMapDoc::MeshAnomalyStruct::MeshAnomalyStruct (const MeshInfoStruct &meshinf
 
 	// Determine if there is destination blending in pass 0.
 	if ((meshinfo.ShaderChunk [PrelitModeEnum::UNLIT] != NULL) && (meshinfo.ShaderIdChunk [PrelitModeEnum::UNLIT] [0] != NULL)) {
-		for (unsigned s = 0; s < meshinfo.ShaderIdChunk [PrelitModeEnum::UNLIT] [0]->Get_Size() / sizeof (uint32); s++) {
+		for (unsigned s = 0; s < meshinfo.ShaderIdChunk [PrelitModeEnum::UNLIT] [0]->Get_Size() / sizeof (uint32_t); s++) {
 											
-			uint32			  shaderid;
+			uint32_t			  shaderid;
 			W3dShaderStruct *shaderptr;
 
-			shaderid  = *((uint32*) meshinfo.ShaderIdChunk [PrelitModeEnum::UNLIT][0]->Get_Data() + s);
+			shaderid  = *((uint32_t*) meshinfo.ShaderIdChunk [PrelitModeEnum::UNLIT][0]->Get_Data() + s);
 			shaderptr = ((W3dShaderStruct*) meshinfo.ShaderChunk [PrelitModeEnum::UNLIT]->Get_Data()) + shaderid;
 		
 			if (shaderptr->DestBlend != W3DSHADER_DESTBLENDFUNC_ZERO) MeshAnomalies |= (1 << MESH_PASS_ZERO_DESTBLEND);
@@ -848,10 +848,10 @@ LightMapDoc::SplitVertexInfoStruct::SplitVertexInfoStruct (const MeshInfoStruct 
 	worstcasevertexcount = MAX (vertexcount, facevertexcount);
 
 	// Allocate a remap table of worst case size ie. assume 3 vertices per triangle.
-	RemapTable = new uint32 [worstcasevertexcount];
+	RemapTable = new uint32_t [worstcasevertexcount];
 	ASSERT (RemapTable != NULL);
 
-	IndexTable = new uint32 [facevertexcount];
+	IndexTable = new uint32_t [facevertexcount];
 	ASSERT (IndexTable != NULL);
 
 	// Allocate and copy a table of lightmap UV's.
@@ -887,7 +887,7 @@ LightMapDoc::SplitVertexInfoStruct::SplitVertexInfoStruct (const MeshInfoStruct 
 		// For each face vertex...
 		for (v = 0; v < verticesperface; v++) {
 
-			uint32 vertexindex;
+			uint32_t vertexindex;
 
 			vertexindex = triangles [f].Vindex [v];
 			ASSERT (vertexindex < vertexcount);
@@ -1020,7 +1020,7 @@ cannot be inserted.",
 ": mesh has vertex coloring. Is this what you intended?"
 }};
 	
-	unsigned long meshanomalies = MeshStatus [meshindex].MeshAnomalies;
+	uint32_t meshanomalies = MeshStatus [meshindex].MeshAnomalies;
 
 	if (verbose) {
 		string.Copy ("");
@@ -1541,7 +1541,7 @@ void LightMapDoc::Optimize_Prelit_Vertex_Material_Pass (ChunkLoadClass &w3dchunk
 		for (unsigned v = 0; v < digschunk [i]->Get_Size() / sizeof (*digs); v++) {
 
 			W3dRGBStruct  blendcolor;
-			unsigned char alpha;
+			uint8_t alpha;
 			W3dRGBAStruct outputcolor;
 
 			blendcolor = digs [v]; 
@@ -1634,7 +1634,7 @@ void LightMapDoc::OnFileSaveAs()
  * HISTORY:                                                                                    *
  *   6/1/99    IML : Created.                                                                  * 
  *=============================================================================================*/
-BOOL LightMapDoc::OnSaveDocument (LPCTSTR pathname) 
+int32_t LightMapDoc::OnSaveDocument (LPCTSTR pathname) 
 {
 	const char *savingmodeltext  = "Step 1/3: Saving Westwood 3D file (.W3D)";
 	const char *savinglightstext = "Step 2/3: Saving Westwood light file (.WLT)";
@@ -1694,7 +1694,7 @@ BOOL LightMapDoc::OnSaveDocument (LPCTSTR pathname)
 			{
 				CProgressCtrl progressbar;
 				CRect			  srect, trect;
-				BOOL			  success;
+				int32_t			  success;
 		
 				statusptr->GetItemRect (0, &srect);
 				statusptr->SetPaneText (0, savingmodeltext);
@@ -2382,7 +2382,7 @@ void LightMapDoc::Insert_Solve (const char *solvedirectoryname, const char *solv
 	const char *notinsertedtext  = " not inserted";								// Status bar message.
 
 	char  temporarypathname [_MAX_PATH];
-	char *meshfilebuffer = NULL;
+	uint8_t *meshfilebuffer = NULL;
 
 	ASSERT (CanInsertSolve);
 	ASSERT (SolveCount < MAX_SOLVE_COUNT);
@@ -2418,7 +2418,7 @@ void LightMapDoc::Insert_Solve (const char *solvedirectoryname, const char *solv
 		ChunkSaveClass solvechunk (solvefile);
 		CProgressCtrl  progressbar;
 		CRect			   srect, trect;
-		BOOL			   success;
+		int32_t			   success;
 		unsigned		   meshindex;	
 		unsigned		   anomalycount;	
 
@@ -2445,7 +2445,7 @@ void LightMapDoc::Insert_Solve (const char *solvedirectoryname, const char *solv
 				bool includemesh;
 
 				// Currently, nothing has been inserted.
-				unsigned long insertedflags = 0;
+				uint32_t insertedflags = 0;
 
 				// If this mesh name contains the inclusion character (if not null) and if a vertex solve and/or a lightmap solve can be inserted...
 				if (inclusionstring == NULL) {
@@ -2456,10 +2456,10 @@ void LightMapDoc::Insert_Solve (const char *solvedirectoryname, const char *solv
 				}
 				if (includemesh && (MeshStatus [meshindex].Can_Insert_Vertex_Solve() || MeshStatus [meshindex].Can_Insert_Multi_Pass_Solve() || MeshStatus [meshindex].Can_Insert_Multi_Texture_Solve())) {
 				
-					unsigned long	fileposition;
+					uint32_t	fileposition;
 					ChunkLoadClass meshchunk (w3dchunk);
 
-					meshfilebuffer = new char [w3dchunk.Cur_Chunk_Length()];
+					meshfilebuffer = new uint8_t [w3dchunk.Cur_Chunk_Length()];
 					ASSERT (meshfilebuffer != NULL);
 					fileposition = W3dFile->Seek (0, SEEK_CUR);
 					if (meshchunk.Read (meshfilebuffer, w3dchunk.Cur_Chunk_Length()) != w3dchunk.Cur_Chunk_Length()) throw ("Cannot read data in W3D_CHUNK_MESH.");
@@ -2469,7 +2469,7 @@ void LightMapDoc::Insert_Solve (const char *solvedirectoryname, const char *solv
 					MeshInfoStruct		    meshinfo (meshfile);
 					LightscapeMeshSolve   meshsolve (solve, *meshinfo.TriangleChunk, *meshinfo.VertexChunk);
 					SplitVertexInfoStruct splitvertexinfo (meshinfo, meshsolve);
-					unsigned long		    prelitflags;
+					uint32_t		    prelitflags;
 
 					// Update the status for this mesh.
 					// Analyze the mesh status to see if it is compatible with each solve type (vertex, lightmap or both).
@@ -2688,7 +2688,7 @@ void LightMapDoc::Insert_Solve (const char *solvedirectoryname, const char *solv
  * HISTORY:                                                                                    *
  *   6/1/99    IML : Created.                                                                  * 
  *=============================================================================================*/
-void LightMapDoc::Translate_Mesh_Header3 (ChunkLoadClass &w3dchunk, unsigned long prelitflags, ChunkSaveClass &solvechunk, const SplitVertexInfoStruct &splitvertexinfo)
+void LightMapDoc::Translate_Mesh_Header3 (ChunkLoadClass &w3dchunk, uint32_t prelitflags, ChunkSaveClass &solvechunk, const SplitVertexInfoStruct &splitvertexinfo)
 {
 	W3dMeshHeader3Struct header;
 	
@@ -2866,16 +2866,16 @@ void LightMapDoc::Translate_Triangles (ChunkLoadClass &w3dchunk, ChunkSaveClass 
 void LightMapDoc::Translate_Vertex_Shade_Indices (ChunkLoadClass &w3dchunk, ChunkSaveClass &solvechunk, const SplitVertexInfoStruct &splitvertexinfo)
 {
 	ChunkClass *vertexshadeindiceschunk;
-	uint32	  *vertexshadeindices;
+	uint32_t	  *vertexshadeindices;
 
 	vertexshadeindiceschunk = new ChunkClass (w3dchunk);
 	ASSERT (vertexshadeindiceschunk != NULL);
 
-	vertexshadeindices = (uint32*) vertexshadeindiceschunk->Get_Data();
+	vertexshadeindices = (uint32_t*) vertexshadeindiceschunk->Get_Data();
 
 	solvechunk.Begin_Chunk (w3dchunk.Cur_Chunk_ID());
 	for (unsigned v = 0; v < splitvertexinfo.Vertex_Count(); v++) {
-		solvechunk.Write (vertexshadeindices + splitvertexinfo.Remap (v), sizeof (uint32));
+		solvechunk.Write (vertexshadeindices + splitvertexinfo.Remap (v), sizeof (uint32_t));
 	}
 	solvechunk.End_Chunk();
 
@@ -3115,8 +3115,8 @@ void LightMapDoc::Translate_Vertex_Materials (PrelitModeEnum inputmode, ChunkLoa
 
 	if (inputmode == UNLIT) {
 	
-		const W3dRGBStruct black ((uint8) 0x00, (uint8) 0x00, (uint8) 0x00);
-		const W3dRGBStruct white ((uint8) 0xff, (uint8) 0xff, (uint8) 0xff);
+		const W3dRGBStruct black ((uint8_t) 0x00, (uint8_t) 0x00, (uint8_t) 0x00);
+		const W3dRGBStruct white ((uint8_t) 0xff, (uint8_t) 0xff, (uint8_t) 0xff);
 
 		W3dVertexMaterialStruct vertexmaterialinfo;
 
@@ -3148,10 +3148,10 @@ void LightMapDoc::Translate_Vertex_Materials (PrelitModeEnum inputmode, ChunkLoa
 
 							case MULTI_TEXTURE:
 							{
-								char *argbuffer;
+								uint8_t *argbuffer;
 
 								// Any args in stage 0 must be moved to stage 1 because the base texture is in stage 1.
-								argbuffer = new char [w3dchunk.Cur_Chunk_Length()];
+								argbuffer = new uint8_t [w3dchunk.Cur_Chunk_Length()];
 								if (w3dchunk.Read (argbuffer, w3dchunk.Cur_Chunk_Length()) != w3dchunk.Cur_Chunk_Length()) {
 									throw ("Cannot read data in W3D_CHUNK_VERTEX_MAPPER_ARGS.");
 								}
@@ -3185,7 +3185,7 @@ void LightMapDoc::Translate_Vertex_Materials (PrelitModeEnum inputmode, ChunkLoa
 
 							case MULTI_TEXTURE:
 							{	
-								uint32 stage0attributes, stage1attributes;
+								uint32_t stage0attributes, stage1attributes;
 
 								// If there are any mappers in stage 0 it must be shifted to stage 1 because
 								// the base texture is now in stage 1.
@@ -3456,7 +3456,7 @@ void LightMapDoc::Add_Lightmap_Textures (ChunkSaveClass &solvechunk, const Light
 	// NOTE: The allowable no. of mip-map levels is dependant upon and increases with the
 	//			edge blend thickness specified in the lightmap packer.
 	textureinfo.Attributes = W3DTEXTURE_MIP_LEVELS_2 | W3DTEXTURE_CLAMP_U | W3DTEXTURE_CLAMP_V;
-	textureinfo.AnimType	  = (uint16) undefined;
+	textureinfo.AnimType	  = (uint16_t) undefined;
 	textureinfo.FrameCount = 1;
 	textureinfo.FrameRate  = (float32) undefined;
 	for (unsigned l = 0; l < meshsolve.Lightmap_Count(); l++) {
@@ -3675,37 +3675,37 @@ void LightMapDoc::Add_DIGs (PrelitModeEnum inputmode, unsigned materialpass, Chu
 void LightMapDoc::Translate_Vertex_Material_IDs (PrelitModeEnum inputmode, ChunkLoadClass &w3dchunk, ChunkSaveClass &solvechunk, const MeshInfoStruct &meshinfo, const SplitVertexInfoStruct &splitvertexinfo)
 {
 	ChunkClass *vertexmaterialidchunk;
-	uint32	  *vertexmaterialids;
+	uint32_t	  *vertexmaterialids;
 	unsigned		vertexmaterialidcount;
 
 	vertexmaterialidchunk = new ChunkClass (w3dchunk);
 	ASSERT (vertexmaterialidchunk != NULL);
-	vertexmaterialidcount = vertexmaterialidchunk->Get_Size() / sizeof (uint32);
+	vertexmaterialidcount = vertexmaterialidchunk->Get_Size() / sizeof (uint32_t);
 
-	vertexmaterialids = (uint32*) vertexmaterialidchunk->Get_Data();
+	vertexmaterialids = (uint32_t*) vertexmaterialidchunk->Get_Data();
 
 	solvechunk.Begin_Chunk (w3dchunk.Cur_Chunk_ID());
 	if (vertexmaterialidcount == 1) {
-		solvechunk.Write (vertexmaterialids, sizeof (uint32));
+		solvechunk.Write (vertexmaterialids, sizeof (uint32_t));
 	} else {
 		for (unsigned v = 0; v < splitvertexinfo.Vertex_Count(); v++) {
-			solvechunk.Write (vertexmaterialids + splitvertexinfo.Remap (v), sizeof (uint32));
+			solvechunk.Write (vertexmaterialids + splitvertexinfo.Remap (v), sizeof (uint32_t));
 		}
 	}
 	solvechunk.End_Chunk();
 
 	if (inputmode != UNLIT) {
 
-		uint32 expandedid;
+		uint32_t expandedid;
 
 		solvechunk.Begin_Chunk (w3dchunk.Cur_Chunk_ID());
 		if (vertexmaterialidcount == 1) {
 			expandedid = (*vertexmaterialids) + meshinfo.MaterialInfo [inputmode].VertexMaterialCount;
-			solvechunk.Write (&expandedid, sizeof (uint32));
+			solvechunk.Write (&expandedid, sizeof (uint32_t));
 		} else {
 			for (unsigned v = 0; v < splitvertexinfo.Vertex_Count(); v++) {
 				expandedid = *(vertexmaterialids + splitvertexinfo.Remap (v)) + meshinfo.MaterialInfo [inputmode].VertexMaterialCount;
-				solvechunk.Write (&expandedid, sizeof (uint32));
+				solvechunk.Write (&expandedid, sizeof (uint32_t));
 			}
 		}
 		solvechunk.End_Chunk();
@@ -3797,8 +3797,8 @@ void LightMapDoc::Translate_Stage_Texcoords (ChunkLoadClass &w3dchunk, ChunkSave
  *=============================================================================================*/
 void LightMapDoc::Add_Lightmap_Material_Pass (PrelitModeEnum inputmode, unsigned materialpass, ChunkSaveClass &solvechunk, const MeshInfoStruct &meshinfo, const LightscapeMeshSolve &meshsolve, const SplitVertexInfoStruct &splitvertexinfo)
 {
-	uint32 vertexmaterialid;
-	uint32 shaderid;	
+	uint32_t vertexmaterialid;
+	uint32_t shaderid;	
 
 	// This routine only supports unlit meshes.
 	ASSERT (inputmode == UNLIT);
@@ -3820,8 +3820,8 @@ void LightMapDoc::Add_Lightmap_Material_Pass (PrelitModeEnum inputmode, unsigned
 		solvechunk.Write (&shaderid, sizeof (shaderid));
 	} else {
 		ASSERT (meshinfo.ShaderIdChunk [inputmode][materialpass] != NULL);
-		for (unsigned s = 0; s < meshinfo.ShaderIdChunk [inputmode][materialpass]->Get_Size() / sizeof (uint32); s++) {
-			shaderid = meshinfo.MaterialInfo [inputmode].ShaderCount + *((uint32*) meshinfo.ShaderIdChunk [inputmode][materialpass]->Get_Data() + s);
+		for (unsigned s = 0; s < meshinfo.ShaderIdChunk [inputmode][materialpass]->Get_Size() / sizeof (uint32_t); s++) {
+			shaderid = meshinfo.MaterialInfo [inputmode].ShaderCount + *((uint32_t*) meshinfo.ShaderIdChunk [inputmode][materialpass]->Get_Data() + s);
 			solvechunk.Write (&shaderid, sizeof (shaderid));
 		}
 	}
@@ -3986,7 +3986,7 @@ ChunkClass::ChunkClass (ChunkLoadClass &loadchunk)	: ChunkHeader (loadchunk.Cur_
 	ChunkType = loadchunk.Cur_Chunk_ID();
 	ChunkSize = loadchunk.Cur_Chunk_Length();
 
-	Data = new char [ChunkSize];
+	Data = new uint8_t [ChunkSize];
 	ASSERT (Data != NULL);
 	
 	if (loadchunk.Read (Data, ChunkSize) != ChunkSize) {

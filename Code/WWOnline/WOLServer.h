@@ -41,6 +41,8 @@
 #ifndef __WOLSERVER_H__
 #define __WOLSERVER_H__
 
+#include <cstdint>
+
 #include "RefCounted.h"
 #include "RefPtr.h"
 #include "WOLString.h"
@@ -120,7 +122,7 @@ class HostPortServerData :
 		inline const char* GetHostAddress(void) const
 			{return mHostAddress;}
 
-		inline unsigned int GetPort(void) const
+		inline uint32_t GetPort(void) const
 			{return mHostPort;}
 
 	protected:
@@ -130,7 +132,7 @@ class HostPortServerData :
 
 	private:
 		StringClass mHostAddress;
-		unsigned int mHostPort;
+		uint32_t mHostPort;
 	};
 
 
@@ -226,7 +228,7 @@ class PingServerData :
 class ServerError
 	{
 	public:
-		ServerError(int code, const char* description, unsigned long data = 0) :
+		ServerError(int code, const char* description, uint32_t data = 0) :
 				mCode(code),
 				mDescription(description),
 				mData(data)
@@ -238,7 +240,7 @@ class ServerError
 		inline const wchar_t* GetDescription(void) const
 	 		{return WOLSTRING(mDescription);}
 
-		inline unsigned int GetData(void) const
+		inline uint32_t GetData(void) const
 			{return mData;}
 
 	private:
@@ -247,7 +249,7 @@ class ServerError
 
 		int mCode;
 		StringClass mDescription;
-		unsigned long mData;
+		uint32_t mData;
 	};
 
 } // namespace WWOnline

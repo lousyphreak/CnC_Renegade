@@ -552,7 +552,7 @@ void RingRenderObjClass::render_ring(RenderInfoClass & rinfo,const Vector3 & cen
 	DynamicIBAccessClass ib(BUFFER_TYPE_DYNAMIC_SORTING,ring.face_ct*3);
 	{
 		DynamicIBAccessClass::WriteLockClass Lock(&ib);
-		unsigned short *mem=Lock.Get_Index_Array();
+		uint16_t *mem=Lock.Get_Index_Array();
 		for (int i=0; i<ring.face_ct; i++)
 		{
 			mem[3*i]=ring.tri_poly[i].I;
@@ -654,7 +654,7 @@ void RingRenderObjClass::Render(RenderInfoClass & rinfo)
 	
 	// If static sort lists are enabled and this mesh has a sort level, put it on the list instead
 	// of rendering it.
-	unsigned int sort_level = (unsigned int)Get_Sort_Level();
+	uint32_t sort_level = (uint32_t)Get_Sort_Level();
 
 	if (WW3D::Are_Static_Sort_Lists_Enabled() && sort_level != SORT_LEVEL_NONE) {
 

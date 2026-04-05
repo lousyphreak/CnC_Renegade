@@ -73,7 +73,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CVidinitDlg message handlers
 
-BOOL CVidinitDlg::OnInitDialog()
+int32_t CVidinitDlg::OnInitDialog()
 {
 	CDialog::OnInitDialog();
 
@@ -130,7 +130,7 @@ void CVidinitDlg::OnPaint()
 	{
 		CPaintDC dc(this); // device context for painting
 
-		SendMessage(WM_ICONERASEBKGND, (WPARAM) dc.GetSafeHdc(), 0);
+		SendMessage(WM_ICONERASEBKGND, (uintptr_t) dc.GetSafeHdc(), 0);
 
 		// Center icon in client rectangle
 		int cxIcon = GetSystemMetrics(SM_CXICON);
@@ -245,7 +245,7 @@ void CVidinitDlg::OnTest()
 }
 
 
-LRESULT CVidinitDlg::OnDeadBeef(WPARAM wParam, LPARAM lParam) 
+intptr_t CVidinitDlg::OnDeadBeef(uintptr_t wParam, intptr_t lParam) 
 {
 	if (m_TestCWnd && wParam == 0xDEADBEEF && lParam == 0xDEADBEEF) {
 		WW3D::Restore_Display_Mode();

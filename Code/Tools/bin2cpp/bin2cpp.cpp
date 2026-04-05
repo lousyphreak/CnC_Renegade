@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	DWORD inputsize = GetFileSize(inputfile,NULL);
+	uint32_t inputsize = GetFileSize(inputfile,NULL);
 
 	/*
 	** Open up the two output files
@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
 	/*
 	** Write the cpp file
 	*/
-	Write(cppfile,"\n\nconst unsigned char %s[%d] = \n",fname,inputsize);
+	Write(cppfile,"\n\nconst uint8_t %s[%d] = \n",fname,inputsize);
 	Write(cppfile,"{\n");
 
 	/*
@@ -91,12 +91,12 @@ int main(int argc, char* argv[])
 	*/
 	const int LINELEN = 16;
 	char bytes[LINELEN];
-	DWORD bytesread = 0;
+	uint32_t bytesread = 0;
 	
 	while(bytesread < inputsize) {
 		
-		DWORD readsize = min(LINELEN,inputsize - bytesread);
-		DWORD actualread;
+		uint32_t readsize = min(LINELEN,inputsize - bytesread);
+		uint32_t actualread;
 
 		ReadFile(inputfile,bytes,readsize,&actualread,NULL);
 		assert(actualread == readsize);
@@ -114,7 +114,7 @@ int main(int argc, char* argv[])
 	/*
 	** Write the h file
 	*/
-	Write(hfile,"\n\nextern const unsigned char %s[%d];\n\n",fname,inputsize);
+	Write(hfile,"\n\nextern const uint8_t %s[%d];\n\n",fname,inputsize);
 
 	/*
 	** Close the files
@@ -134,7 +134,7 @@ void Write(HANDLE file,const char * format,...)
 	assert((strlen(_StringBuf) < sizeof(_StringBuf)));
 	va_end(va);
 
-	unsigned long byteswritten;
+	uint32_t byteswritten;
 	WriteFile(file,_StringBuf,strlen(_StringBuf),&byteswritten,NULL);
 }
 
@@ -142,7 +142,7 @@ void Write_Bytes(HANDLE file,const char * bytes,int bytecount)
 {
 	Write(file,"\t");
 	for (int i=0;i<bytecount;i++) {
-		unsigned char val = (unsigned char)bytes[i];
+		uint8_t val = (uint8_t)bytes[i];
 		Write(file,"0x%2.2X,",val);
 	}
 	Write(file,"\n");

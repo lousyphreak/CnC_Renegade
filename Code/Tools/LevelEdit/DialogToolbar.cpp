@@ -84,7 +84,7 @@ DialogToolbarClass::Enable_Button
 {
 	// Get the button's style (we enable by using a style bit)
 	int index = CommandToIndex (id);	
-	UINT style = GetButtonStyle (index) & (~TBBS_DISABLED);
+	uint32_t style = GetButtonStyle (index) & (~TBBS_DISABLED);
 	
 	// If we are disabling the button, set the 
 	// disabled style bit.
@@ -106,8 +106,8 @@ DialogToolbarClass::Enable_Button
 //
 //	OnIdleUpdateCmdUI
 //
-LRESULT
-DialogToolbarClass::OnIdleUpdateCmdUI (WPARAM, LPARAM)
+intptr_t
+DialogToolbarClass::OnIdleUpdateCmdUI (uintptr_t, intptr_t)
 {
 	return 0L;
 }
@@ -128,12 +128,12 @@ DialogToolbarClass::OnInitialUpdate (void)
 //
 //	OnNotify
 //
-BOOL
+int32_t
 DialogToolbarClass::OnNeedToolTipText
 (
-	UINT id,
+	uint32_t id,
 	NMHDR *pTTTStruct,
-	LRESULT *pResult
+	intptr_t *pResult
 )
 {
 	if (pTTTStruct->code == TTN_NEEDTEXTA) {

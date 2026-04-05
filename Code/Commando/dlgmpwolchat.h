@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __DLG_MP_WOL_CHAT_H
@@ -100,7 +102,7 @@ protected:
 
 	void		Set_Focus_To_Chat_Edit_Ctrl(void);
 
-	void		On_Command(int ctrl_id, int mesage_id, DWORD param);
+	void		On_Command(int ctrl_id, int mesage_id, uint32_t param);
 	void		On_ListCtrl_Sel_Change(ListCtrlClass *list_ctrl, int ctrl_id, int old_index, int new_index);
 	void		On_ListCtrl_Mouse_Over(ListCtrlClass *list_ctrl, int ctrl_id, int index);
 	void		On_EditCtrl_Enter_Pressed (EditCtrlClass *edit_ctrl, int ctrl_id);

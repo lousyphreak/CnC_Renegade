@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 #include "resource.h"
@@ -66,10 +68,10 @@ public:
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(TransitionEditDialogClass)
 	public:
-	virtual BOOL PreTranslateMessage(MSG* pMsg);
+	virtual int32_t PreTranslateMessage(MSG* pMsg);
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+	virtual intptr_t WindowProc(uint32_t message, uintptr_t wParam, intptr_t lParam);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -77,7 +79,7 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(TransitionEditDialogClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	virtual void OnOK();
 	afx_msg void OnDestroy();
 	afx_msg void OnTop();
@@ -118,7 +120,7 @@ protected:
 	void						Load_Object (void);
 	void						Render_View (void);
 	void						Insert_Zone (void);
-	static void CALLBACK fnUpdateTimer (UINT, UINT, DWORD, DWORD, DWORD);
+	static void CALLBACK fnUpdateTimer (uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
 
 	void						Fill_Trigger_List (void);
 	void						Fill_Animation_List (void);
@@ -128,17 +130,17 @@ protected:
 	void						Update_Animation (void);
 	void						Update_Status (void);
 
-	static LRESULT CALLBACK fn3DWindow (HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
-	void						Handle_LBUTTON_DOWN (WPARAM wparam, LPARAM lparam);
-	void						Handle_LBUTTON_UP (WPARAM wparam, LPARAM lparam);
-	void						Handle_MOUSEMOVE (WPARAM wparam, LPARAM lparam);
+	static intptr_t CALLBACK fn3DWindow (HWND hwnd, uint32_t message, uintptr_t wparam, intptr_t lparam);
+	void						Handle_LBUTTON_DOWN (uintptr_t wparam, intptr_t lparam);
+	void						Handle_LBUTTON_UP (uintptr_t wparam, intptr_t lparam);
+	void						Handle_MOUSEMOVE (uintptr_t wparam, intptr_t lparam);
 
 private:
 
 	/////////////////////////////////////////////////////////////////////////
 	//	Private member data
 	/////////////////////////////////////////////////////////////////////////
-	UINT						m_TimerID;
+	uint32_t						m_TimerID;
 	SimpleSceneClass *	m_Scene;
 	CameraClass *			m_Camera;
 	IDirect3DSwapChain8 *m_SwapChain;
@@ -157,7 +159,7 @@ private:
 	bool						m_IsAnimating;
 	bool						m_IsSizingZone;
 	float						m_CurrFrame;
-	DWORD						m_LastAnimUpdate;
+	uint32_t						m_LastAnimUpdate;
 	CPoint					m_LastPoint;
 
 	DialogToolbarClass	m_Toolbar;

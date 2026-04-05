@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -71,6 +73,7 @@
 
 
 #include	<limits.h>             /* CHAR_BIT, UINT_MAX, ULONG_MAX */
+#include	<cstdint>
 #if !defined(CHAR_BIT) || (CHAR_BIT != 8)
 #  error invalid CHAR_BIT
 #endif
@@ -98,12 +101,12 @@
 
 /* Unsigned type with 32 bits or more */
 #if (UINT_MAX >= 0xffffffffL)
-   typedef unsigned int     lzo_uint;
-   typedef int              lzo_int;
+   typedef uint32_t     lzo_uint;
+   typedef int32_t          lzo_int;
 #  define LZO_UINT_MAX      UINT_MAX
 #elif (ULONG_MAX >= 0xffffffffL)
-   typedef unsigned long    lzo_uint;
-   typedef long             lzo_int;
+   typedef uint32_t    lzo_uint;
+   typedef int32_t          lzo_int;
 #  define LZO_UINT_MAX      ULONG_MAX
 #else
 #  error lzo_uint
@@ -126,9 +129,9 @@
 
 
 /* no typedef here because of const-pointer issues */
-#define lzo_byte            unsigned char __LZO_MMODEL
+#define lzo_byte            uint8_t __LZO_MMODEL
 #define lzo_voidp           void __LZO_MMODEL *
-#define lzo_bytep           unsigned char __LZO_MMODEL *
+#define lzo_bytep           uint8_t __LZO_MMODEL *
 #define lzo_uintp           lzo_uint __LZO_MMODEL *
 #define lzo_intp            lzo_int __LZO_MMODEL *
 #define lzo_voidpp          lzo_voidp __LZO_MMODEL *
@@ -136,7 +139,7 @@
 
 
 /* Unsigned type that can store all bits of a lzo_voidp */
-typedef unsigned long       lzo_ptr_t;
+typedef uint32_t       lzo_ptr_t;
 
 /* Align a pointer on a boundary that is a multiple of 'size' */
 #define LZO_ALIGN(ptr,size) \
@@ -166,15 +169,15 @@ typedef unsigned long       lzo_ptr_t;
 #endif
 
 
-typedef int __LZO_ENTRY
+typedef int32_t __LZO_ENTRY
 (__LZO_EXPORT *lzo_compress_t)  ( const lzo_byte *src, lzo_uint  src_len,
-                                        lzo_byte *dst, lzo_uint *dst_len,
-                                        lzo_voidp wrkmem );
+                                         lzo_byte *dst, lzo_uint *dst_len,
+                                         lzo_voidp wrkmem );
 
-typedef int __LZO_ENTRY
+typedef int32_t __LZO_ENTRY
 (__LZO_EXPORT *lzo_decompress_t)( const lzo_byte *src, lzo_uint  src_len,
-                                        lzo_byte *dst, lzo_uint *dst_len,
-                                        lzo_voidp wrkmem );
+                                         lzo_byte *dst, lzo_uint *dst_len,
+                                         lzo_voidp wrkmem );
 
 
 /* a progress indicator callback function */

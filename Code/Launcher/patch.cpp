@@ -39,7 +39,7 @@ This is where all the code is for applying various types of patches.
 //
 // For the text box showing patch info
 //
-BOOL CALLBACK Update_Info_Proc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
+int32_t CALLBACK Update_Info_Proc(HWND hwnd, uint32_t iMsg, uintptr_t wParam, intptr_t lParam)
 {
 
   static int unselectText=0;
@@ -74,9 +74,9 @@ BOOL CALLBACK Update_Info_Proc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lPara
         // ...and add back the gunk that windows likes
         strcat(line,"\r\r\n");
 
-	     SendDlgItemMessage(hwnd, IDC_TEXT, EM_SETSEL, (WPARAM)lastsel, (LPARAM)lastsel );
-	     SendDlgItemMessage(hwnd, IDC_TEXT, EM_REPLACESEL, 0, (LPARAM)(line) );
-	     SendDlgItemMessage(hwnd, IDC_TEXT, EM_GETSEL, (WPARAM)NULL, (LPARAM)&lastsel );
+	     SendDlgItemMessage(hwnd, IDC_TEXT, EM_SETSEL, (uintptr_t)lastsel, (intptr_t)lastsel );
+	     SendDlgItemMessage(hwnd, IDC_TEXT, EM_REPLACESEL, 0, (intptr_t)(line) );
+	     SendDlgItemMessage(hwnd, IDC_TEXT, EM_GETSEL, (uintptr_t)NULL, (intptr_t)&lastsel );
       }
       unselectText=1;
       fclose(in);
@@ -123,15 +123,15 @@ BOOL CALLBACK Update_Info_Proc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lPara
 void Shutdown_Computer_Now(void);
 
 
-__declspec(dllexport) LPVOID CALLBACK PatchCallBack(UINT ID, LPVOID Param);
+__declspec(dllexport) LPVOID CALLBACK PatchCallBack(uint32_t ID, LPVOID Param);
 
-typedef LPVOID (CALLBACK* PATCHCALLBACK)(UINT, LPVOID);
-typedef	UINT (CALLBACK *PATCHFUNC)( LPSTR, PATCHCALLBACK, BOOL);
+typedef LPVOID (CALLBACK* PATCHCALLBACK)(uint32_t, LPVOID);
+typedef	uint32_t (CALLBACK *PATCHFUNC)( LPSTR, PATCHCALLBACK, int32_t);
 
 int rtpErrCode = -1;
 
 
-DWORD CALLBACK ApplyPatchThread(LPVOID _file) {
+uint32_t CALLBACK ApplyPatchThread(LPVOID _file) {
 
 	char *patchfile = (char *)_file;
 
@@ -192,8 +192,8 @@ void Apply_Patch(char *patchfile,ConfigFile &config,int skuIndex, bool show_dial
   {
     // Set this as a run once service thing
     HKEY   regKey;
-    LONG   regRetval;
-    DWORD  regPrevious;
+    int32_t   regRetval;
+    uint32_t  regPrevious;
     regRetval=RegCreateKeyEx(
       HKEY_LOCAL_MACHINE,
       "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RunOnce",
@@ -207,7 +207,7 @@ void Apply_Patch(char *patchfile,ConfigFile &config,int skuIndex, bool show_dial
 
     if (regRetval==ERROR_SUCCESS)
     {
-      RegSetValueEx(regKey,"EXEPatch",0,REG_SZ,(const uint8*)patchfile,strlen(patchfile)+1);
+      RegSetValueEx(regKey,"EXEPatch",0,REG_SZ,(const uint8_t*)patchfile,strlen(patchfile)+1);
 
       char message[256];
       LoadString(NULL,IDS_SYS_RESTART,message,256);
@@ -242,12 +242,12 @@ void Apply_Patch(char *patchfile,ConfigFile &config,int skuIndex, bool show_dial
 
     DBGMSG("Patch SKU = "<<skuIndex);
 
-	DWORD patchID = 0;
+	uint32_t patchID = 0;
 	HANDLE patchThread = CreateThread(NULL, 0, ApplyPatchThread, (LPVOID)patchfile, 0, &patchID);
 
 	int dotcnt = 9;
-	DWORD last_time = GetTickCount();
-	BOOL forward = FALSE;
+	uint32_t last_time = GetTickCount();
+	int32_t forward = FALSE;
 	char worktext[256];
     LoadString(NULL,IDS_WORKING_TEXT,worktext,sizeof(worktext)-12);
 	int scnt = strlen(worktext)+1;
@@ -294,7 +294,7 @@ void Apply_Patch(char *patchfile,ConfigFile &config,int skuIndex, bool show_dial
     // The version# starts after the last '\' char
     char   *cptr=patchfile;
     char   *tempPtr;
-    DWORD   version;
+    uint32_t   version;
     while( (tempPtr=strchr(cptr,'\\')) !=NULL)
       cptr=tempPtr+1;
     if (cptr)
@@ -322,12 +322,12 @@ void Apply_Patch(char *patchfile,ConfigFile &config,int skuIndex, bool show_dial
       path.remove(0,1);
     // Open the registry key for modifying now...
     HKEY regKey;
-    LONG regRetval;
+    int32_t regRetval;
     regRetval=RegOpenKeyEx(HKEY_LOCAL_MACHINE,path.get(),0,
         KEY_ALL_ACCESS,&regKey);
     if (regRetval!=ERROR_SUCCESS)
       DBGMSG("Can't open reg key for writing");
-    regRetval=RegSetValueEx(regKey,"Version",0,REG_DWORD,(uint8 *)&version,
+    regRetval=RegSetValueEx(regKey,"Version",0,REG_DWORD,(uint8_t *)&version,
         sizeof(version));
 
 
@@ -434,7 +434,7 @@ void Shutdown_Computer_Now(void)
 //
 // Callback during the patching process
 //
-__declspec(dllexport) LPVOID CALLBACK PatchCallBack(UINT Id, LPVOID Param)
+__declspec(dllexport) LPVOID CALLBACK PatchCallBack(uint32_t Id, LPVOID Param)
 {
   char         string[128];
   static int   fileCount=0;    // number of files to be patched
@@ -456,7 +456,7 @@ __declspec(dllexport) LPVOID CALLBACK PatchCallBack(UINT Id, LPVOID Param)
 //  }
 
   LPVOID RetVal="";
-  bit8 Abort=FALSE;
+  int8_t Abort=FALSE;
 
   //// using the global Dialog pointer, set the current "error" code
   //g_DlgPtr->SetRTPErrCode(Id);
@@ -510,15 +510,15 @@ __declspec(dllexport) LPVOID CALLBACK PatchCallBack(UINT Id, LPVOID Param)
     case 5:
 	  // % completed
 	  // so adjust the progress bar using the global Dialog pointer
-	  /////////g_DlgPtr->SetProgressBar((int)((float)(*(UINT *)Parm)/(float)0x8000*(float)100));
-      percent=((*(UINT *)Param)*100)/0x8000;
+	  /////////g_DlgPtr->SetProgressBar((int)((float)(*(uint32_t *)Parm)/(float)0x8000*(float)100));
+      percent=((*(uint32_t *)Param)*100)/0x8000;
       PostMessage(GetDlgItem(PatchDialog,IDC_PROGRESS2),PBM_SETPOS,percent,0);
 	break;
 
 	case 6:
 	  // Number of patch files
-      DBGMSG("6: "<<*((uint32 *)Param));
-      fileCount=*((uint32 *)Param);
+      DBGMSG("6: "<<*((uint32_t *)Param));
+      fileCount=*((uint32_t *)Param);
       currFile=0;
 	break;
 
@@ -532,7 +532,7 @@ __declspec(dllexport) LPVOID CALLBACK PatchCallBack(UINT Id, LPVOID Param)
 	  //fileModified = true;
 
       DBGMSG("7: "<<(char *)Param);
-//      PostMessage(GetDlgItem(PatchDialog,IDC_FILENAME),WM_SETTEXT,0,(LPARAM)Param);
+//      PostMessage(GetDlgItem(PatchDialog,IDC_FILENAME),WM_SETTEXT,0,(intptr_t)Param);
       SetWindowText(GetDlgItem(PatchDialog,IDC_FILENAME),(char *)Param);
       percent=0;
       PostMessage(GetDlgItem(PatchDialog,IDC_PROGRESS2),PBM_SETPOS,percent,0);
@@ -542,7 +542,7 @@ __declspec(dllexport) LPVOID CALLBACK PatchCallBack(UINT Id, LPVOID Param)
       LoadString(NULL,IDS_FILE_X_OF_Y,xofy,64);
       sprintf(string,xofy,currFile,fileCount);
       SetWindowText(GetDlgItem(PatchDialog,IDC_CAPTION),string);
-//      PostMessage(GetDlgItem(PatchDialog,IDC_CAPTION),WM_SETTEXT,0,(LPARAM)string);
+//      PostMessage(GetDlgItem(PatchDialog,IDC_CAPTION),WM_SETTEXT,0,(intptr_t)string);
 
 	break;
 

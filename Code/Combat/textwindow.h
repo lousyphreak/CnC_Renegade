@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __TEXT_WINDOW_H
@@ -110,8 +112,8 @@ public:
 	int				Insert_Item (int index, const WCHAR *text);	
 	bool				Set_Item_Text (int index, int col_index, const WCHAR *text);
 	bool				Set_Item_Color (int index, int col_index, const Vector3 &color);
-	bool				Set_Item_Data (int index, uint32 user_data);
-	uint32			Get_Item_Data (int index);
+	bool				Set_Item_Data (int index, uint32_t user_data);
+	uint32_t			Get_Item_Data (int index);
 	bool				Delete_Item (int index);
 	void				Delete_All_Items (void);
 	int				Get_Item_Count (void) const;
@@ -229,8 +231,8 @@ public:
 	//
 	//	Color access
 	//
-	uint32				Get_User_Data (void) const			{ return UserData; }
-	void					Set_User_Data (uint32 user_data)	{ UserData = user_data; }
+	uint32_t				Get_User_Data (void) const			{ return UserData; }
+	void					Set_User_Data (uint32_t user_data)	{ UserData = user_data; }
 
 private:
 
@@ -239,7 +241,7 @@ private:
 	////////////////////////////////////////////////////////////////
 	WideStringClass	Name;
 	Vector3				Color;
-	uint32				UserData;
+	uint32_t				UserData;
 };
 
 
@@ -296,8 +298,8 @@ public:
 	void					Set_Item_Color (int index, const Vector3 &color)	{ Items[index]->Set_Color (color); }
 	const Vector3 &	Get_Item_Color (int index) const							{ return Items[index]->Get_Color (); }
 
-	void					Set_Item_Data (int index, uint32 data)					{ Items[index]->Set_User_Data (data); }
-	uint32				Get_Item_Data (int index) const							{ return Items[index]->Get_User_Data (); }
+	void					Set_Item_Data (int index, uint32_t data)					{ Items[index]->Set_User_Data (data); }
+	uint32_t				Get_Item_Data (int index) const							{ return Items[index]->Get_User_Data (); }
 
 	//
 	//	Cleanup

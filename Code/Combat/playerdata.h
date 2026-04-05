@@ -37,6 +37,8 @@
 #ifndef	PLAYERDATA_H
 #define	PLAYERDATA_H
 
+#include <cstdint>
+
 #ifndef	ALWAYS_H
 	#include "always.h"
 #endif
@@ -156,7 +158,7 @@ public:
 	int				Get_Crotch_Hit(void) const					{return StatCrotchHits;}
 
 	int				Get_Weapon_Fired_Count( void ) const;
-	bool				Get_Weapon_Fired( int index, unsigned long& weaponID, unsigned long& firedCount) const;
+	bool				Get_Weapon_Fired( int index, uint32_t& weaponID, uint32_t& firedCount) const;
 
 	float				Get_Punish_Timer( void )					{return PunishTimer;}
 	void				Inc_Punish_Timer( float amount )			{PunishTimer += amount;}

@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 
@@ -86,8 +88,8 @@ class StringsMgrClass
 		//
 		//	Translation database import/export
 		//
-		static void		Export_For_Translation (const char *filename, uint32 lang_id);
-		static void		Import_From_Translation (const char *filename, uint32 lang_id);
+		static void		Export_For_Translation (const char *filename, uint32_t lang_id);
+		static void		Import_From_Translation (const char *filename, uint32_t lang_id);
 
 		//
 		//	Editor support

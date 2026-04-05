@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef	__NETWORKOBJECT_H
@@ -115,7 +117,7 @@ public:
 	//
 	//	Class ID support
 	//
-	virtual uint32		Get_Network_Class_ID (void) const						{ return 0; }
+	virtual uint32_t		Get_Network_Class_ID (void) const						{ return 0; }
 
 	//
 	//	Server-to-client data importing/exporting
@@ -146,8 +148,8 @@ public:
 	//
 	// Record application packet type
 	//
-	void					Set_App_Packet_Type (BYTE type)	{ AppPacketType = type; }
-	BYTE					Get_App_Packet_Type (void)			{ return AppPacketType; }
+	void					Set_App_Packet_Type (uint8_t type)	{ AppPacketType = type; }
+	uint8_t					Get_App_Packet_Type (void)			{ return AppPacketType; }
 
 	//
 	//	Dirty bit support
@@ -156,12 +158,12 @@ public:
 	virtual void		Set_Object_Dirty_Bit (int client_id, DIRTY_BIT dirty_bit, bool onoff);
 	virtual void		Clear_Object_Dirty_Bits (void);
 	virtual bool		Get_Object_Dirty_Bit (int client_id, DIRTY_BIT dirty_bit);
-	virtual BYTE		Get_Object_Dirty_Bits (int client_id);
-	virtual void		Set_Object_Dirty_Bits (int client_id, BYTE bits);
+	virtual uint8_t		Get_Object_Dirty_Bits (int client_id);
+	virtual void		Set_Object_Dirty_Bits (int client_id, uint8_t bits);
 	virtual bool		Is_Client_Dirty (int client_id);
 
 	inline bool			Get_Object_Dirty_Bit_2 (int client_id, DIRTY_BIT dirty_bit);
-	inline BYTE			Get_Object_Dirty_Bits_2 (int client_id);
+	inline uint8_t			Get_Object_Dirty_Bits_2 (int client_id);
 
 	//
 	//	Filtering support
@@ -176,14 +178,14 @@ public:
 	void					Reset_Client_Hint_Count(int client_id);
 	void					Increment_Client_Hint_Count(int client_id);
 	void					Hint_To_All_Clients(void);
-	BYTE					Get_Client_Hint_Count(int client_id);
-	inline BYTE			Get_Client_Hint_Count_2(int client_id);
+	uint8_t					Get_Client_Hint_Count(int client_id);
+	inline uint8_t			Get_Client_Hint_Count_2(int client_id);
 	void					Reset_Import_State_Count (void)					{ ImportStateCount = 0; }
 	void					Increment_Import_State_Count (void)				{ ImportStateCount ++; }
 	int					Get_Import_State_Count (void)						{ return ImportStateCount; }
 	void					Reset_Last_Clientside_Update_Time (void);
-	void					Set_Last_Clientside_Update_Time (ULONG time);
-	ULONG					Get_Last_Clientside_Update_Time (void)			{ return LastClientsideUpdateTime; }
+	void					Set_Last_Clientside_Update_Time (uint32_t time);
+	uint32_t					Get_Last_Clientside_Update_Time (void)			{ return LastClientsideUpdateTime; }
 	int					Get_Clientside_Update_Frequency(void);
 
 	//
@@ -194,12 +196,12 @@ public:
 	//
 	// Per client update functions.
 	//
-	unsigned char		Get_Frequent_Update_Export_Size(void)						{return(FrequentExportPacketSize);}
-	void					Set_Frequent_Update_Export_Size(unsigned char size)	{FrequentExportPacketSize = size;}
-	unsigned long		Get_Last_Update_Time(int client_id);
-	unsigned short		Get_Update_Rate(int client_id);
-	void					Set_Last_Update_Time(int client_id, unsigned long time);
-	void					Set_Update_Rate(int client_id, unsigned short rate);
+	uint8_t		Get_Frequent_Update_Export_Size(void)						{return(FrequentExportPacketSize);}
+	void					Set_Frequent_Update_Export_Size(uint8_t size)	{FrequentExportPacketSize = size;}
+	uint32_t		Get_Last_Update_Time(int client_id);
+	uint16_t		Get_Update_Rate(int client_id);
+	void					Set_Last_Update_Time(int client_id, uint32_t time);
+	void					Set_Update_Rate(int client_id, uint16_t rate);
 
 	//
 	//	Diagnostics
@@ -247,19 +249,19 @@ private:
 	// Per client update information. Bandwidth will be allocated per object, per client.
 	//
 	struct PerClientUpdateInfoStruct {
-		unsigned long	LastUpdateTime;
-		unsigned short	UpdateRate;
-		BYTE				ClientHintCount;
+		uint32_t	LastUpdateTime;
+		uint16_t	UpdateRate;
+		uint8_t				ClientHintCount;
 	} UpdateInfo [MAX_CLIENT_COUNT];
 
-	BYTE					ClientStatus[MAX_CLIENT_COUNT];
+	uint8_t					ClientStatus[MAX_CLIENT_COUNT];
 	int					ImportStateCount;
-	ULONG					LastClientsideUpdateTime;
-	ULONG					ClientsideUpdateFrequencySampleStartTime;
+	uint32_t					LastClientsideUpdateTime;
+	uint32_t					ClientsideUpdateFrequencySampleStartTime;
 	int					ClientsideUpdateFrequencySampleCount;
 	int					ClientsideUpdateRate;
 	bool					IsDeletePending;
-	BYTE					AppPacketType;
+	uint8_t					AppPacketType;
 
 	int					LastObjectIdIDamaged;
 	int					LastObjectIdIGotDamagedBy;
@@ -268,7 +270,7 @@ private:
 	// The size of this objects FREQUENT tier export. Used as a starting point for bandwidth calculation.
 	// It better not be exporting more than 255 bytes!
 	//
-	unsigned char		FrequentExportPacketSize;
+	uint8_t		FrequentExportPacketSize;
 
 	float					CachedPriority;
 	float					CachedPriority_2[MAX_CLIENT_COUNT];
@@ -320,7 +322,7 @@ inline bool NetworkObjectClass::Get_Object_Dirty_Bit_2 (int client_id, DIRTY_BIT
 //	Get_Object_Dirty_Bits
 //
 ////////////////////////////////////////////////////////////////
-inline BYTE NetworkObjectClass::Get_Object_Dirty_Bits_2 (int client_id)
+inline uint8_t NetworkObjectClass::Get_Object_Dirty_Bits_2 (int client_id)
 {
 	return ClientStatus[client_id];
 }
@@ -331,7 +333,7 @@ inline BYTE NetworkObjectClass::Get_Object_Dirty_Bits_2 (int client_id)
 //	Get_Client_Hint_Count
 //
 ////////////////////////////////////////////////////////////////
-inline BYTE NetworkObjectClass::Get_Client_Hint_Count_2(int client_id)
+inline uint8_t NetworkObjectClass::Get_Client_Hint_Count_2(int client_id)
 {
 	return UpdateInfo[client_id].ClientHintCount;
 }

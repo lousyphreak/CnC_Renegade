@@ -27,10 +27,11 @@ Last Update : Jul 20, 1999
 ------------------------------------------------------------------------------
  
 A simple encryption system for game results packets.  Specifically designed
-to work only with unsigned char buffers of least 15 bytes long.
+to work only with uint8_t buffers of least 15 bytes long.
  
 \****************************************************************************/
 #include <string.h>
+#include <cstdint>
 #include <sys/types.h>
 #include <time.h>
 
@@ -42,7 +43,7 @@ to work only with unsigned char buffers of least 15 bytes long.
 #include "wnet/packet.h"
 
 /*extern "C" {
-	extern unsigned char* PrepareEncryptedPacket(unsigned char* packet, int* size);
+	extern uint8_t* PrepareEncryptedPacket(uint8_t* packet, int* size);
 }*/
 /*------------------------------------------------------------------------------.
 | FUNCTION:  PrepareEncryptedPacket()											|
@@ -53,15 +54,15 @@ to work only with unsigned char buffers of least 15 bytes long.
 | to wrap our encrypted buffer in a packet with one big data field and pass		|
 | it's Comms Packet output back.												|
 `------------------------------------------------------------------------------*/
-unsigned char* PrepareEncryptedPacket(unsigned char* packet, int* size)
+uint8_t* PrepareEncryptedPacket(uint8_t* packet, int* size)
 {
-	unsigned char*	rlebuf = NULL;
-	unsigned char*	encbuf = NULL;
+	uint8_t*	rlebuf = NULL;
+	uint8_t*	encbuf = NULL;
 	PacketClass		wrap;
 	static char		field[5] = { "CNTL" };
 
 
-	rlebuf = (unsigned char *) malloc((*size)*2);
+	rlebuf = (uint8_t *) malloc((*size)*2);
 
 
 	// Run length encode
@@ -79,7 +80,7 @@ unsigned char* PrepareEncryptedPacket(unsigned char* packet, int* size)
 	free(encbuf);
 
 
-	return (unsigned char*)(wrap.Create_Comms_Packet(*size));
+	return (uint8_t*)(wrap.Create_Comms_Packet(*size));
 }
 
 
@@ -89,10 +90,10 @@ unsigned char* PrepareEncryptedPacket(unsigned char* packet, int* size)
 | negative integer corresponding to an error in wencrypt.h                      |
 `------------------------------------------------------------------------------*/
 #ifndef __CLIENT__
-unsigned char*  DecryptPacket(unsigned char* encbuf, int* size)
+uint8_t*  DecryptPacket(uint8_t* encbuf, int* size)
 {
-	unsigned char* rlebuf;
-	unsigned char* packet;
+	uint8_t* rlebuf;
+	uint8_t* packet;
 
 
         rlebuf = SimpleDecrypt(encbuf, size);
@@ -125,14 +126,14 @@ unsigned char*  DecryptPacket(unsigned char* encbuf, int* size)
 | original, being that we choose the lowest frequency value as the escape, but	|
 | there will never be a memory overrun this way, and gameres packets are tiny.	|
 `------------------------------------------------------------------------------*/
-void RLEncode(unsigned char* src, unsigned char* dst, int* size)
+void RLEncode(uint8_t* src, uint8_t* dst, int* size)
 {
 	int 		i, j, k;
 	int		frequencies[256];
 	int		lowest;
-	unsigned char	escape;
-	unsigned char 	currtally = 1;
-	unsigned char	curr;
+	uint8_t	escape;
+	uint8_t 	currtally = 1;
+	uint8_t	curr;
 
 
 	// Determine what we should use for the escape code.  Ideally it's a value
@@ -146,13 +147,13 @@ void RLEncode(unsigned char* src, unsigned char* dst, int* size)
 	{
 		if( frequencies[i] == 0 )
 		{
-			escape = (unsigned char)i;
+			escape = (uint8_t)i;
 			break;
 		}
 		if( frequencies[i] < lowest )
 		{
 			lowest = frequencies[i];
-			escape = (unsigned char)i;
+			escape = (uint8_t)i;
 		}
 	}
 	dst[0] = escape;
@@ -197,12 +198,12 @@ void RLEncode(unsigned char* src, unsigned char* dst, int* size)
 | and the size will contain a negative number indicating the error code.		|
 `------------------------------------------------------------------------------*/
 #ifndef __CLIENT__
-unsigned char* RLDecode(unsigned char* src, int* size)
+uint8_t* RLDecode(uint8_t* src, int* size)
 {
 	int		i, j, k;
 	int		dstsize = 0;
-	unsigned char 	escape = src[0];
-	unsigned char*	dst;
+	uint8_t 	escape = src[0];
+	uint8_t*	dst;
 
 
 	// How big will the resultant buffer be?
@@ -254,7 +255,7 @@ unsigned char* RLDecode(unsigned char* src, int* size)
 		else if( src[i] == escape && i == (*size-1) )
 		{
 			*size = ERR_SPURIOUS_ESCAPE;
-			delete[] dst;
+			free(dst);
 			return NULL;
 		}
 		else
@@ -271,12 +272,12 @@ unsigned char* RLDecode(unsigned char* src, int* size)
 | FUNCTION:  ran3()                                                                     |
 | From 'Numerical Recipies In C', Chapter 7, 'Portable Random Number Generators'.       |
 `--------------------------------------------------------------------------------------*/
-float ran3(long* idnum)
+float ran3(int32_t* idnum)
 {
         static int      inext, inextp;
-        static long     ma[66];
+        static int32_t  ma[66];
         static int      iff = 0;
-        long            mj, mk;
+        int32_t         mj, mk;
         int             i, ii, k;
  
  
@@ -321,11 +322,11 @@ float ran3(long* idnum)
 | Make a key the same length as the buffer.  Gameres packets are typically		|
 | < 600 bytes so period isn't a concern.										|
 `------------------------------------------------------------------------------*/
-void GenerateKey(unsigned char* key, int len, long seed)
+void GenerateKey(uint8_t* key, int len, int32_t seed)
 {
 	int     i;
         float   running;
-	long	num;
+	int32_t	num;
  
  
         if( seed > 0 )  seed *= -1;             // Initial val must be negative
@@ -333,9 +334,9 @@ void GenerateKey(unsigned char* key, int len, long seed)
  
         for(i = 0; i < len; i++)
         {
-                num = (long)(running * (float)255.0);
+                num = static_cast<int32_t>(running * 255.0f);
                 if( num < 0 )  num *= -1;
-		key[i] = (unsigned char)num;
+		key[i] = (uint8_t)num;
                 running = ran3(&seed);
         }
 }
@@ -351,21 +352,21 @@ void GenerateKey(unsigned char* key, int len, long seed)
 | the len value will be filled with a negative number 			|
 | indicating the error code.									|
 `--------------------------------------------------------------*/
-unsigned char* SimpleEncrypt(const unsigned char* src, int* len)
+uint8_t* SimpleEncrypt(const uint8_t* src, int* len)
 {
 	int		i, j;
-	unsigned char*	key;
-	unsigned char*	dst;
-	unsigned char	offset = 0;
-	long		offsetseed = 0;
-	unsigned long	netseed;
-	long		seed;
+	uint8_t*	key;
+	uint8_t*	dst;
+	uint8_t	offset = 0;
+	int32_t	offsetseed = 0;
+	uint32_t	netseed;
+	int32_t	seed;
 	float		limit;
 
 
-	key = (unsigned char *) malloc( *len );
+	key = (uint8_t *) malloc( *len );
 
-	dst = (unsigned char *) malloc( (*len)+5 );
+	dst = (uint8_t *) malloc( (*len)+5 );
 
 	if( *len < 15 )
 	{
@@ -376,21 +377,21 @@ unsigned char* SimpleEncrypt(const unsigned char* src, int* len)
 	}
 	
 	// Generate the random stuff
-	seed = (long)time(NULL);
+	seed = static_cast<int32_t>(time(NULL));
 	if( seed > 0 )  seed *= -1;			// Don't check for seed == 0 because a ligit
 							// packet builder should never set a seed of
 							// 0 and it's another mistake a cracker could 
 							// possibly make.
-	netseed = htonl((unsigned long)seed);
+	netseed = htonl((uint32_t)seed);
 	GenerateKey(key, *len, seed);
 
 	// We want the offset to be somewhere between byte 10 and byte (255-14), or
 	// (*len - 4), whichever is smaller
-	offsetseed = (long)time(NULL);
+	offsetseed = static_cast<int32_t>(time(NULL));
 	if( offsetseed > 0 )  offsetseed *= -1;
 	limit = ((*len) < 241) ? (float)((*len)-14) : (float)241.0;
-	offset = (unsigned char)(ran3(&offsetseed) * limit);
-	offset += (unsigned char)10;
+	offset = (uint8_t)(ran3(&offsetseed) * limit);
+	offset += (uint8_t)10;
 
 	
 	// Construct the buffer
@@ -421,14 +422,14 @@ unsigned char* SimpleEncrypt(const unsigned char* src, int* len)
 | decrypt.														|
 `--------------------------------------------------------------*/
 #ifndef __CLIENT__
-unsigned char* SimpleDecrypt(unsigned char* src, int* len)
+uint8_t* SimpleDecrypt(uint8_t* src, int* len)
 {
 	int             i, j;
-        unsigned char*  key;
-        unsigned char*  dst;
-        unsigned char   offset = 0;
-        unsigned long  	netseed;
-        long   		seed;
+        uint8_t*  key;
+        uint8_t*  dst;
+        uint8_t   offset = 0;
+        uint32_t  	netseed;
+        int32_t	seed;
 
 
 
@@ -441,7 +442,7 @@ unsigned char* SimpleDecrypt(unsigned char* src, int* len)
 	{
 		*len = -2;
 		delete[] key;
-		delete[] dst;
+		free(dst);
 		return NULL;
 	}
  
@@ -449,12 +450,12 @@ unsigned char* SimpleDecrypt(unsigned char* src, int* len)
 	// Generate the key
 	offset = src[5];
 	memcpy(&netseed, &src[offset], 4);
-	seed = (long)ntohl(netseed);
+	seed = static_cast<int32_t>(ntohl(netseed));
 	if( seed > 0 )
 	{
 		*len = -3;
 		delete[] key;
-		delete[] dst;
+		free(dst);
 		return NULL;
 	}
 	GenerateKey(key, (*len)-5, seed);
@@ -465,7 +466,7 @@ unsigned char* SimpleDecrypt(unsigned char* src, int* len)
         {
                 if( i == 5 )
 			continue;
-                else if( i >= (int)offset && i <= (int)(offset+(unsigned char)3) )
+                else if( i >= (int)offset && i <= (int)(offset+(uint8_t)3) )
 			continue;
                 else
 		{

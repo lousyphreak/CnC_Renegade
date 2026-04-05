@@ -1077,7 +1077,7 @@ FileMgrClass::Find_Files
 
 	// Find all files that match this wildcard
 	WIN32_FIND_DATA find_info = { 0 };
-	BOOL bcontinue = TRUE;
+	int32_t bcontinue = TRUE;
 	for (HANDLE hfile_find = ::FindFirstFile (file_spec, &find_info);
 		  (hfile_find != INVALID_HANDLE_VALUE) && bcontinue;
 		  bcontinue = ::FindNextFile (hfile_find, &find_info)) {
@@ -1550,7 +1550,7 @@ FileMgrClass::Remove_Asset (LPCTSTR filename)
 //
 /////////////////////////////////////////////////////////////////
 void
-FileMgrClass::Get_Preset_Library_Path (uint32 class_id, bool is_temp, CString &path)
+FileMgrClass::Get_Preset_Library_Path (uint32_t class_id, bool is_temp, CString &path)
 {
 	CString directory	= Make_Full_Path (PRESETS_PATH);
 	

@@ -68,7 +68,7 @@ END_MESSAGE_MAP()
 //	OnInitDialog
 //
 //////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 GenerateVisDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -82,7 +82,7 @@ GenerateVisDialogClass::OnInitDialog (void)
 	SetDlgItemInt (IDC_SAMPLEHEIGHT_EDIT, 10);
 
 	bool bcheck = ::Get_Scene_Editor ()->Is_Vis_Quick_And_Dirty();
-	SendDlgItemMessage (IDC_IGNORE_TRANSPARENCY_CHECK, BM_SETCHECK, (WPARAM)bcheck);
+	SendDlgItemMessage (IDC_IGNORE_TRANSPARENCY_CHECK, BM_SETCHECK, (uintptr_t)bcheck);
 	return TRUE;
 }
 
@@ -95,8 +95,8 @@ GenerateVisDialogClass::OnInitDialog (void)
 void
 GenerateVisDialogClass::OnHScroll
 (
-	UINT nSBCode,
-	UINT nPos,
+	uint32_t nSBCode,
+	uint32_t nPos,
 	CScrollBar* pScrollBar
 ) 
 {
@@ -120,21 +120,21 @@ GenerateVisDialogClass::OnOK (void)
 	//
 	//	Enable quick and dirty mode (if necessary)
 	//
-	BOOL is_quick_and_dirty = SendDlgItemMessage (IDC_IGNORE_TRANSPARENCY_CHECK, BM_GETCHECK);
+	int32_t is_quick_and_dirty = SendDlgItemMessage (IDC_IGNORE_TRANSPARENCY_CHECK, BM_GETCHECK);
 	scene->Set_Vis_Quick_And_Dirty (is_quick_and_dirty == TRUE);	
 
 	//
 	//	Read the settings from the dialog
 	//
-	BOOL ignore_bias		= SendDlgItemMessage (IDC_IGNORE_VIS_BIAS, BM_GETCHECK);
-	BOOL selection_only	= SendDlgItemMessage (IDC_SELECTION_ONLY, BM_GETCHECK);
+	int32_t ignore_bias		= SendDlgItemMessage (IDC_IGNORE_VIS_BIAS, BM_GETCHECK);
+	int32_t selection_only	= SendDlgItemMessage (IDC_SELECTION_ONLY, BM_GETCHECK);
 	float granularity		= (float)m_GranularitySlider.GetPos ();
 	float sample_height	= (float)m_SampleHeightSlider.GetPos ();
 
 	// 
 	// Record the time when the vis preprocessing is started
 	//
-	DWORD start_time = ::GetTickCount();
+	uint32_t start_time = ::GetTickCount();
 
 	//
 	// Reset the vis data (which also causes the culling systems to re-partition)
@@ -173,7 +173,7 @@ GenerateVisDialogClass::OnOK (void)
 	//
 	// Display the total elapsed time to the user
 	//
-	DWORD elapsed_time = ::GetTickCount() - start_time;
+	uint32_t elapsed_time = ::GetTickCount() - start_time;
 	int hours = elapsed_time / (1000 * 60 * 60);
 	elapsed_time -= hours * (1000 * 60 * 60);
 	int minutes = elapsed_time / (1000 * 60);

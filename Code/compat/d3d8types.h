@@ -3,8 +3,6 @@
 #include <cstdint>
 #include "bittype.h"
 
-using D3DCOLOR = uint32;
-using HRESULT = long;
 using FLOAT = float;
 
 struct D3DADAPTER_IDENTIFIER8 {
@@ -20,7 +18,7 @@ struct D3DADAPTER_IDENTIFIER8 {
 		std::uint32_t Data1 = 0;
 		std::uint16_t Data2 = 0;
 		std::uint16_t Data3 = 0;
-		unsigned char Data4[8] = {0};
+		uint8_t Data4[8] = {0};
 	} DeviceIdentifier;
-	unsigned long WHQLLevel = 0;
+	uint32_t WHQLLevel = 0;
 };

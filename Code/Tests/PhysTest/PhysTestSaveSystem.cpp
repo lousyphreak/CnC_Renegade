@@ -45,7 +45,7 @@
 PhysTestSaveSystemClass _PhysTestSaveSystem;
 
 
-uint32 PhysTestSaveSystemClass::Chunk_ID(void) const
+uint32_t PhysTestSaveSystemClass::Chunk_ID(void) const
 {
 	return PHYSTEST_CHUNKID_SUBSYSTEM;
 }

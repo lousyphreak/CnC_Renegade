@@ -36,6 +36,8 @@
 #ifndef __WOLLOGINPROFILE_H__
 #define __WOLLOGINPROFILE_H__
 
+#include <cstdint>
+
 #include <wwlib/refcount.h>
 #include <wwlib/wwstring.h>
 #include <wwlib/widestring.h>
@@ -47,12 +49,12 @@ class LoginProfile :
 	public:
 		struct Ranking
 			{
-			unsigned int Wins;
-			unsigned int Losses;
-			unsigned int Deaths;
-			unsigned int Kills;
-			unsigned int Points;
-			unsigned int Rank;
+			uint32_t Wins;
+			uint32_t Losses;
+			uint32_t Deaths;
+			uint32_t Kills;
+			uint32_t Points;
+			uint32_t Rank;
 			};
 
 		static void EnableSaving(bool);
@@ -89,9 +91,9 @@ class LoginProfile :
 		int GetSidePreference(void) const
 			{return mSidePref;}
 
-		void SetGamesPlayed(unsigned long);
+		void SetGamesPlayed(uint32_t);
 
-		unsigned long GetGamesPlayed(void) const
+		uint32_t GetGamesPlayed(void) const
 			{return mGamesPlayed;}
 
 		// Get cached ranking
@@ -122,7 +124,7 @@ class LoginProfile :
 		StringClass mServer;
 		WOL::Locale mLocale;
 		int mSidePref;
-		unsigned long mGamesPlayed;
+		uint32_t mGamesPlayed;
 
 		Ranking mTeamRank;
 		Ranking mClanRank;

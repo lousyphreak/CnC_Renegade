@@ -111,7 +111,7 @@ lzo1x_1_compress        ( const lzo_byte *src, lzo_uint  src_len,
 // better compression ratio at the cost of more memory and time
 ************************************************************************/
 
-#define LZO1X_999_MEM_COMPRESS  ((lzo_uint) (14 * 16384L * sizeof(short)))
+#define LZO1X_999_MEM_COMPRESS  ((lzo_uint) (14 * 16384u * sizeof(uint16_t)))
 
 LZO_EXTERN(int)
 lzo1x_999_compress      ( const lzo_byte *src, lzo_uint  src_len,

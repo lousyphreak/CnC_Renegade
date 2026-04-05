@@ -239,7 +239,7 @@ END_MESSAGE_MAP()
 void
 ConversationPageClass::OnSize
 (
-	UINT	nType,
+	uint32_t	nType,
 	int	cx,
 	int	cy
 ) 
@@ -318,7 +318,7 @@ ConversationPageClass::OnDestroy (void)
 //  OnInitDialog
 //
 ////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 ConversationPageClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -357,7 +357,7 @@ void
 ConversationPageClass::OnDeleteItemConversationTree
 (
 	NMHDR *	pNMHDR,
-	LRESULT *pResult
+	intptr_t *pResult
 ) 
 {
 	NM_TREEVIEW* pNMTreeView = (NM_TREEVIEW*)pNMHDR;
@@ -404,7 +404,7 @@ ConversationPageClass::Insert_Entry (ConversationClass *conversation, bool sort_
 		//
 		//	Associate the conversation with the entry in the tree
 		//
-		m_TreeCtrl.SetItemData (tree_item, (DWORD)conversation);
+		m_TreeCtrl.SetItemData (tree_item, (uint32_t)conversation);
 
 		//
 		//	Sort the items
@@ -473,20 +473,20 @@ void
 ConversationPageClass::OnDblclkConversationTree
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 ) 
 {
 	//
 	// Determine what client-coord location was double-clicked on
 	//
-	DWORD mouse_pos = ::GetMessagePos ();
+	uint32_t mouse_pos = ::GetMessagePos ();
 	POINT hit_point = { GET_X_LPARAM (mouse_pos), GET_Y_LPARAM (mouse_pos) };
 	m_TreeCtrl.ScreenToClient (&hit_point);
 
 	//
 	// Goto the node that was double-clicked on (if possible)
 	//
-	UINT flags				= 0;
+	uint32_t flags				= 0;
 	HTREEITEM tree_item	= m_TreeCtrl.HitTest (hit_point, &flags);
 	if (tree_item != NULL && flags & TVHT_ONITEMLABEL) {
 		
@@ -514,7 +514,7 @@ void
 ConversationPageClass::OnItemexpandedConversationTree
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 )
 {
 	NM_TREEVIEW* pNMTreeView = (NM_TREEVIEW*)pNMHDR;

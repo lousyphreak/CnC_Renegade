@@ -39,6 +39,8 @@
 #ifndef VCHANNEL_H
 #define VCHANNEL_H
 
+#include <cstdint>
+
 #ifndef ALWAYS_H
 #include "always.h"
 #endif
@@ -79,7 +81,7 @@ class VectorChannelClass
 {
 public:
 
-	VectorChannelClass(uint32 id,int maxframes,uint32 flags,int vectorlength,float32 * identvec);
+	VectorChannelClass(uint32_t id,int maxframes,uint32_t flags,int vectorlength,float32 * identvec);
 	~VectorChannelClass(void);
 
 	void		Set_Vector(int framenumber,float32 * vector);
@@ -91,8 +93,8 @@ public:
 
 private:
 
-	uint32		ID;
-	uint32		Flags;
+	uint32_t		ID;
+	uint32_t		Flags;
 	int	  		MaxFrames;
 	int	  		VectorLen;
 	bool			IsEmpty;
@@ -125,13 +127,13 @@ private:
 
 	// compress functions
 	void		compress(W3dTimeCodedAnimChannelStruct * c);
-   float		compress(int filter_index, float scale, float value1, float *indata, unsigned char *pPacket, float *outdata);
+   float		compress(int filter_index, float scale, float value1, float *indata, uint8_t *pPacket, float *outdata);
    float		test_compress(int filter_index, float scale, float value1, float *indata, float *outdata);
-	uint32	find_useless_packet(W3dTimeCodedAnimChannelStruct * c, double tolerance);
-	uint32	find_useless_packetQ(W3dTimeCodedAnimChannelStruct * c, double tolerance);
-	uint32	find_least_useful_packet(W3dTimeCodedAnimChannelStruct *c);
-	uint32	find_least_useful_packetQ(W3dTimeCodedAnimChannelStruct *c);
-	void		remove_packet(W3dTimeCodedAnimChannelStruct * c, uint32 packet_idx);
+	uint32_t	find_useless_packet(W3dTimeCodedAnimChannelStruct * c, double tolerance);
+	uint32_t	find_useless_packetQ(W3dTimeCodedAnimChannelStruct * c, double tolerance);
+	uint32_t	find_least_useful_packet(W3dTimeCodedAnimChannelStruct *c);
+	uint32_t	find_least_useful_packetQ(W3dTimeCodedAnimChannelStruct *c);
+	void		remove_packet(W3dTimeCodedAnimChannelStruct * c, uint32_t packet_idx);
 	bool		SaveTimeCoded(ChunkSaveClass & csave, BitChannelClass *binmov);
 	bool		SaveAdaptiveDelta(ChunkSaveClass & csave, BitChannelClass *binmov);
   

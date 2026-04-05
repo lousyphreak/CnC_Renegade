@@ -191,14 +191,14 @@ DynamicSpeechAnimClass::Generate_Animation (const char *text, float duration)
 		//	Now add all the poses to the animation
 		//
 		for (int index = 0; index < pose_count; index ++) {
-			Insert_Morph_Key (CHANNEL0, uint32(curr_frame + 0.5F), pose_table[index] + 1);
+			Insert_Morph_Key (CHANNEL0, uint32_t(curr_frame + 0.5F), pose_table[index] + 1);
 			curr_frame += frame_inc;
 		}
 
 		//
 		// Always end the mouth sentence with a closed mouth
 		//
-		Insert_Morph_Key (CHANNEL0, uint32(curr_frame + (frame_inc * 2) + 0.5F), 0);
+		Insert_Morph_Key (CHANNEL0, uint32_t(curr_frame + (frame_inc * 2) + 0.5F), 0);
 
 		//
 		//	Add in some eyebrow animation

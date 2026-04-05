@@ -320,7 +320,7 @@ void DisconnectWait::WaitBeginning(void)
 	mSession->AddObserver(*static_cast<Observer<ConnectionStatus> *>(this));
 
 	WWASSERT((mSession->GetChatObject() != NULL) && "DisconnectWait");
-	HRESULT hr = mSession->GetChatObject()->RequestLogout();
+	int32_t hr = mSession->GetChatObject()->RequestLogout();
 
 	if (SUCCEEDED(hr))
 		{
@@ -533,7 +533,7 @@ void ConnectWait::WaitBeginning(void)
 	wcstombs((char*)server.password, (const WCHAR*)mLogin->GetPassword(), sizeof(server.password));
 
 	WWASSERT((mSession->GetChatObject() != NULL) && "ConnectWait");
-	HRESULT hr = mSession->GetChatObject()->RequestConnection(&server, 20, !mLogin->IsPasswordEncrypted());
+	int32_t hr = mSession->GetChatObject()->RequestConnection(&server, 20, !mLogin->IsPasswordEncrypted());
 
 	if (SUCCEEDED(hr))
 		{
@@ -1413,7 +1413,7 @@ void CreateChannelWait::WaitBeginning(void)
 	wcstombs((char*)channel.key, (const WCHAR*)mPassword, sizeof(channel.key));
 
 	WWASSERT((mSession->GetChatObject() != NULL) && "CreateChannelWait");
-	HRESULT hr = mSession->GetChatObject()->RequestChannelCreate(&channel);
+	int32_t hr = mSession->GetChatObject()->RequestChannelCreate(&channel);
 
 	if (FAILED(hr))
 		{

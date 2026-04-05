@@ -36,6 +36,8 @@
 #ifndef __FIREWALLWAIT_H__
 #define __FIREWALLWAIT_H__
 
+#include <cstdint>
+
 #include <WWOnline\WaitCondition.h>
 #include <windows.h>
 
@@ -68,7 +70,7 @@ class FirewallDetectWait :
 		const FirewallDetectWait& operator=(const FirewallDetectWait&);
 
 		RefPtr<WWOnline::Session> mWOLSession;
-		unsigned int mPingsRemaining;
+		uint32_t mPingsRemaining;
 
 		HANDLE mEvent;
 	};
@@ -98,7 +100,7 @@ class FirewallConnectWait :
 		const FirewallConnectWait& operator=(const FirewallConnectWait&);
 
 		RefPtr<WWOnline::Session> mWOLSession;
-		unsigned int mPingsRemaining;
+		uint32_t mPingsRemaining;
 
 		HANDLE mEvent;
 		HANDLE mCancelEvent;
@@ -111,9 +113,9 @@ class FirewallConnectWait :
 		/*
 		** How many players in the queue ahead of us?
 		*/
-		unsigned int mQueueCount;
-		unsigned int mLastQueueCount;
-		unsigned long mStartTime;
+		uint32_t mQueueCount;
+		uint32_t mLastQueueCount;
+		uint32_t mStartTime;
 	};
 
 #endif // __FIREWALLWAIT_H__

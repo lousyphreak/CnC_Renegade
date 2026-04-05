@@ -123,7 +123,7 @@ EmitterSizePropPageClass::Initialize (void)
 		//	Determine what the largest size is
 		//
 		m_MaxSize = m_OrigSizes.Start;
-		for (UINT index = 0; index < m_OrigSizes.NumKeyFrames; index ++) {
+		for (uint32_t index = 0; index < m_OrigSizes.NumKeyFrames; index ++) {
 			if (m_OrigSizes.Values[index] > m_MaxSize) {
 				m_MaxSize = m_OrigSizes.Values[index];
 			}
@@ -139,7 +139,7 @@ EmitterSizePropPageClass::Initialize (void)
 //  OnInitDialog
 //
 /////////////////////////////////////////////////////////////
-BOOL
+int32_t
 EmitterSizePropPageClass::OnInitDialog (void) 
 {
 	// Allow the base class to process this message
@@ -164,7 +164,7 @@ EmitterSizePropPageClass::OnInitDialog (void)
 	//
 	//	Set-up the color bar
 	//
-	for (UINT index = 0; index < m_OrigSizes.NumKeyFrames; index ++) {
+	for (uint32_t index = 0; index < m_OrigSizes.NumKeyFrames; index ++) {
 		m_SizeBar->Modify_Point (index + 1,
 										m_OrigSizes.KeyTimes[index] / m_Lifetime,
 										0,
@@ -182,7 +182,7 @@ EmitterSizePropPageClass::OnInitDialog (void)
 //  OnApply
 //
 /////////////////////////////////////////////////////////////
-BOOL
+int32_t
 EmitterSizePropPageClass::OnApply (void)
 {
 	/*SAFE_DELETE_ARRAY (m_OrigSizes.KeyTimes);
@@ -203,12 +203,12 @@ EmitterSizePropPageClass::OnApply (void)
 //  OnNotify
 //
 /////////////////////////////////////////////////////////////
-BOOL
+int32_t
 EmitterSizePropPageClass::OnNotify
 (
-	WPARAM wParam,
-	LPARAM lParam,
-	LRESULT *pResult
+	uintptr_t wParam,
+	intptr_t lParam,
+	intptr_t *pResult
 )
 {
 	CBR_NMHDR *color_bar_hdr = (CBR_NMHDR *)lParam;
@@ -355,11 +355,11 @@ EmitterSizePropPageClass::Update_Sizes (void)
 //  OnCommand
 //
 /////////////////////////////////////////////////////////////
-BOOL
+int32_t
 EmitterSizePropPageClass::OnCommand
 (
-	WPARAM wParam,
-	LPARAM lParam
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	switch (LOWORD (wParam))
@@ -369,7 +369,7 @@ EmitterSizePropPageClass::OnCommand
 			// Update the emitter
 			if ((HIWORD (wParam) == EN_KILLFOCUS) &&
 				 SendDlgItemMessage (LOWORD (wParam), EM_GETMODIFY)) {
-				SendDlgItemMessage (LOWORD (wParam), EM_SETMODIFY, (WPARAM)0);
+				SendDlgItemMessage (LOWORD (wParam), EM_SETMODIFY, (uintptr_t)0);
 
 				m_CurrentSizes.Rand = ::GetDlgItemFloat (m_hWnd, IDC_SIZE_RANDOM_EDIT);
 				m_pEmitterList->Set_Size_Keyframes (m_CurrentSizes);
@@ -399,7 +399,7 @@ EmitterSizePropPageClass::On_Lifetime_Changed (float lifetime)
 		//
 		//	Rescale the sizes
 		//
-		for (UINT index = 0; index < m_CurrentSizes.NumKeyFrames; index ++) {
+		for (uint32_t index = 0; index < m_CurrentSizes.NumKeyFrames; index ++) {
 			m_CurrentSizes.KeyTimes[index] *= conversion;
 		}
 

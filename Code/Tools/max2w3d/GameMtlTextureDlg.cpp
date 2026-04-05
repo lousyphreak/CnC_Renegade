@@ -151,7 +151,7 @@ GameMtlTextureDlg::~GameMtlTextureDlg()
  *   11/23/98   GTH : Created.                                                                 *
  *   10/6/1999 MLL: Turned off the display button when the texture is turned off.              *
  *=============================================================================================*/
-BOOL GameMtlTextureDlg::Dialog_Proc (HWND dlg_wnd, UINT message, WPARAM wparam, LPARAM lparam) 
+int32_t GameMtlTextureDlg::Dialog_Proc (HWND dlg_wnd, uint32_t message, uintptr_t wparam, intptr_t lparam) 
 { 
 	int cursel;
 	int id = LOWORD(wparam);
@@ -304,7 +304,7 @@ BOOL GameMtlTextureDlg::Dialog_Proc (HWND dlg_wnd, UINT message, WPARAM wparam, 
 						texture = NewDefaultBitmapTex();
 						if (texture) {
 
-							BOOL disp = TheMtl->Get_Texture_Display(PassIndex,0);
+							int32_t disp = TheMtl->Get_Texture_Display(PassIndex,0);
 							if (disp) {
 								TheMtl->Set_Texture_Display(PassIndex,0,FALSE);
 							}
@@ -332,7 +332,7 @@ BOOL GameMtlTextureDlg::Dialog_Proc (HWND dlg_wnd, UINT message, WPARAM wparam, 
 						texture = NewDefaultBitmapTex();
 						if (texture) {
 							
-							BOOL disp = TheMtl->Get_Texture_Display(PassIndex,1);
+							int32_t disp = TheMtl->Get_Texture_Display(PassIndex,1);
 							if (disp) {
 								TheMtl->Set_Texture_Display(PassIndex,1,FALSE);
 							}
@@ -561,7 +561,7 @@ void GameMtlTextureDlg::ReloadDialog(void)
  * HISTORY:                                                                                    *
  *   11/23/98   GTH : Created.                                                                 *
  *=============================================================================================*/
-void GameMtlTextureDlg::ActivateDlg(BOOL onOff)
+void GameMtlTextureDlg::ActivateDlg(int32_t onOff)
 {
 	// no color swatches to activate.
 }
@@ -579,7 +579,7 @@ void GameMtlTextureDlg::ActivateDlg(BOOL onOff)
  * HISTORY:                                                                                    *
  *   11/23/98   GTH : Created.                                                                 *
  *=============================================================================================*/
-void GameMtlTextureDlg::Enable_Stage(int stage,BOOL onoff)
+void GameMtlTextureDlg::Enable_Stage(int stage,int32_t onoff)
 {
 	assert((stage >= 0) && (stage < W3dMaterialClass::MAX_STAGES));
 	TheMtl->Set_Texture_Enable(PassIndex,stage,(onoff == TRUE ? true : false));

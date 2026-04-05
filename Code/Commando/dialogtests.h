@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __DIALOG_TESTS_H
@@ -78,7 +80,7 @@ public:
 	//
 	void		On_Init_Dialog (void);
 	void		On_Frame_Update (void);
-	void		On_Command (int ctrl_id, int mesage_id, DWORD param);
+	void		On_Command (int ctrl_id, int mesage_id, uint32_t param);
 
 	//
 	//	Static accessors
@@ -114,7 +116,7 @@ public:
 	//
 	void		On_Init_Dialog (void);
 	void		On_Frame_Update (void);
-	void		On_Command (int ctrl_id, int mesage_id, DWORD param);
+	void		On_Command (int ctrl_id, int mesage_id, uint32_t param);
 
 private:
 	////////////////////////////////////////////////////////////////
@@ -145,7 +147,7 @@ public:
 	//	Inherited
 	//
 	void		On_Init_Dialog(void);
-	void		On_Command (int ctrl_id, int mesage_id, DWORD param);
+	void		On_Command (int ctrl_id, int mesage_id, uint32_t param);
 	void		On_Last_Menu_Ending (void);
 	void		On_Frame_Update (void);
 
@@ -188,7 +190,7 @@ public:
 	//	Inherited
 	//
 	void		On_Init_Dialog(void);
-	void		On_Command (int ctrl_id, int mesage_id, DWORD param);
+	void		On_Command (int ctrl_id, int mesage_id, uint32_t param);
 	//void		On_Last_Menu_Ending (void);
 
 	//
@@ -226,7 +228,7 @@ public:
 	//	Inherited
 	//
 	void		On_Init_Dialog(void);
-	void		On_Command (int ctrl_id, int mesage_id, DWORD param);
+	void		On_Command (int ctrl_id, int mesage_id, uint32_t param);
 	//void		On_Last_Menu_Ending (void);
 
 	//
@@ -259,7 +261,7 @@ public:
 	StartSPGameDialogClass (void);	
 	
 	void			On_Init_Dialog (void);
-	void			On_Command (int ctrl_id, int mesage_id, DWORD param);
+	void			On_Command (int ctrl_id, int mesage_id, uint32_t param);
 
 	//void	On_TreeCtrl_Needs_Children (TreeCtrlClass *list_ctrl, int ctrl_id, TreeItemClass *parent_item);
 };
@@ -282,7 +284,7 @@ public:
 	//
 	//	Inherited
 	//
-	void					On_Command (int ctrl_id, int mesage_id, DWORD param);
+	void					On_Command (int ctrl_id, int mesage_id, uint32_t param);
 	void					On_Menu_Activate (bool onoff);
 	void					On_Frame_Update (void);
 
@@ -309,7 +311,7 @@ public:
 	//
 	//	Inherited
 	//
-	void			On_Command (int ctrl_id, int mesage_id, DWORD param);
+	void			On_Command (int ctrl_id, int mesage_id, uint32_t param);
 };
 
 
@@ -410,7 +412,7 @@ public:
 		MenuDialogClass (IDD_MULTIPLAY_CS_SEL)	{}
 
 	void	On_Init_Dialog (void);
-	void	On_Command (int ctrl_id, int mesage_id, DWORD param);
+	void	On_Command (int ctrl_id, int mesage_id, uint32_t param);
 	void	On_Destroy (void);
 };
 
@@ -440,7 +442,7 @@ public:
 	MPGameMenuClass (void)	:
 		MenuDialogClass (IDD_MULTIPLAY_GAME_TYPE)	{}
 
-	void	On_Command (int ctrl_id, int mesage_id, DWORD param);
+	void	On_Command (int ctrl_id, int mesage_id, uint32_t param);
 };
 
 
@@ -456,7 +458,7 @@ public:
 		MenuDialogClass (IDD_MULTIPLAY_SERVER_CONFIG)	{}
 
 	void	On_Init_Dialog (void);
-	void	On_Command (int ctrl_id, int mesage_id, DWORD param);
+	void	On_Command (int ctrl_id, int mesage_id, uint32_t param);
 };
 
 
@@ -474,7 +476,7 @@ public:
 			
 
 	void	On_Init_Dialog (void);
-	void	On_Command (int ctrl_id, int mesage_id, DWORD param);
+	void	On_Command (int ctrl_id, int mesage_id, uint32_t param);
 	void	Start_Game (void);
 
 	//bool	IsServer;
@@ -494,7 +496,7 @@ public:
 		MenuDialogClass (IDD_MULTIPLAY_JOIN_GAME)	{}
 
 	void	On_Init_Dialog (void);
-	void	On_Command (int ctrl_id, int mesage_id, DWORD param);
+	void	On_Command (int ctrl_id, int mesage_id, uint32_t param);
 	void	Update_Game_List (void);
 	void	On_Frame_Update (void);
 };
@@ -516,7 +518,7 @@ public:
 		PopupDialogClass (IDD_DEATH_OPTIONS)	{}
 
 	void	On_Init_Dialog (void);
-	void	On_Command (int ctrl_id, int mesage_id, DWORD param);
+	void	On_Command (int ctrl_id, int mesage_id, uint32_t param);
 };
 
 ////////////////////////////////////////////////////////////////
@@ -535,7 +537,7 @@ public:
 		PopupDialogClass (IDD_FAILED_OPTIONS)	{}
 
 	void	On_Init_Dialog (void);
-	void	On_Command (int ctrl_id, int mesage_id, DWORD param);
+	void	On_Command (int ctrl_id, int mesage_id, uint32_t param);
 };
 
 
@@ -554,7 +556,7 @@ public:
 	~EditWheeledVehicleDialogClass(void);
 
 	void	On_Init_Dialog (void);
-	void	On_Command (int ctrl_id, int mesage_id, DWORD param);
+	void	On_Command (int ctrl_id, int mesage_id, uint32_t param);
 
 protected:
 
@@ -577,7 +579,7 @@ public:
 	~EditTrackedVehicleDialogClass(void);
 
 	void	On_Init_Dialog (void);
-	void	On_Command (int ctrl_id, int mesage_id, DWORD param);
+	void	On_Command (int ctrl_id, int mesage_id, uint32_t param);
 
 protected:
 

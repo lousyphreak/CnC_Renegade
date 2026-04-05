@@ -26,6 +26,8 @@
 //-----------------------------------------------------------------------------
 #if defined(_MSV_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef MSGSTATLIST_H
@@ -53,13 +55,13 @@ class cMsgStatList
 		void		Increment_Num_Msg_Recd(		int message_type, int increment = 1);
 		void		Increment_Num_Byte_Recd(	int message_type, int increment);
 
-		DWORD		Get_Num_Msg_Sent(		int message_type) const;
-		DWORD		Get_Num_Byte_Sent(	int message_type) const;
-		DWORD		Get_Num_Msg_Recd(		int message_type) const;
-		DWORD		Get_Num_Byte_Recd(	int message_type) const;
+		uint32_t		Get_Num_Msg_Sent(		int message_type) const;
+		uint32_t		Get_Num_Byte_Sent(	int message_type) const;
+		uint32_t		Get_Num_Msg_Recd(		int message_type) const;
+		uint32_t		Get_Num_Byte_Recd(	int message_type) const;
 
-		DWORD		Compute_Avg_Num_Byte_Sent(	int message_type) const;
-		DWORD		Compute_Avg_Num_Byte_Recd(	int message_type) const;
+		uint32_t		Compute_Avg_Num_Byte_Sent(	int message_type) const;
+		uint32_t		Compute_Avg_Num_Byte_Recd(	int message_type) const;
 
 		cMsgStat & Get_Stat(int message_type);
 		int		Get_Num_Stats(void) const		{return NumStats;}

@@ -111,8 +111,8 @@ int						shatter=0;
 
 // Foward declarations of functions included in this code module:
 ATOM						MyRegisterClass(HINSTANCE hInstance);
-LRESULT CALLBACK		WndProc(HWND, UINT, WPARAM, LPARAM);
-LRESULT CALLBACK		About(HWND, UINT, WPARAM, LPARAM);
+intptr_t CALLBACK		WndProc(HWND, uint32_t, uintptr_t, intptr_t);
+intptr_t CALLBACK		About(HWND, uint32_t, uintptr_t, intptr_t);
 void						Enable_Alternate_Materials(RenderObjClass * model,bool onoff);
 void						Render();
 void						Render2();
@@ -468,7 +468,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 
 // ----------------------------------------------------------------------------
 //
-//  FUNCTION: WndProc(HWND, unsigned, WORD, LONG)
+//  FUNCTION: WndProc(HWND, unsigned, uint16_t, int32_t)
 //
 //  PURPOSE:  Processes messages for the main window.
 //
@@ -479,7 +479,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //
 // ----------------------------------------------------------------------------
 
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+intptr_t CALLBACK WndProc(HWND hWnd, uint32_t message, uintptr_t wParam, intptr_t lParam)
 {
 	int wmId, wmEvent;
 	PAINTSTRUCT ps;
@@ -612,7 +612,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 
 // Mesage handler for about box.
-LRESULT CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+intptr_t CALLBACK About(HWND hDlg, uint32_t message, uintptr_t wParam, intptr_t lParam)
 {
 	switch (message)
 	{

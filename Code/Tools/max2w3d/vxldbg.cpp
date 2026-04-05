@@ -43,7 +43,7 @@
 /*
 ** Static functions
 */
-static BOOL CALLBACK		_dialog_proc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam);
+static int32_t CALLBACK		_dialog_proc(HWND hWnd,uint32_t message,uintptr_t wParam,intptr_t lParam);
 
 static PaletteClass _VoxelPalette;
 
@@ -72,7 +72,7 @@ void VoxelDebugWindowClass::Display_Window(void)
 							MAKEINTRESOURCE (IDD_VOXEL_DEBUG_DIALOG),
 							NULL,
 							(DLGPROC) _dialog_proc,
-							(LPARAM) this
+							(intptr_t) this
 						);
 }
 
@@ -80,9 +80,9 @@ void VoxelDebugWindowClass::Display_Window(void)
 bool VoxelDebugWindowClass::Dialog_Proc
 (
 	HWND hWnd,
-	UINT message,
-	WPARAM wParam,
-	LPARAM 
+	uint32_t message,
+	uintptr_t wParam,
+	intptr_t 
 )
 {
 	RECT crect;
@@ -233,12 +233,12 @@ void VoxelDebugWindowClass::update_display(void)
 }
 
 
-BOOL CALLBACK _dialog_proc
+int32_t CALLBACK _dialog_proc
 (
 	HWND hWnd,
-	UINT message,
-	WPARAM wParam,
-	LPARAM lParam
+	uint32_t message,
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	static VoxelDebugWindowClass * window = NULL;

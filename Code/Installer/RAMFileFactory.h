@@ -52,7 +52,7 @@ class	RAMFileFactoryClass : public FileFactoryClass {
 		void		  Return_File (FileClass *file);
 
 	protected:
-		unsigned char *FileBuffer;
+		uint8_t *FileBuffer;
 		unsigned			FileBufferSize;
 		StringClass		FileName;
 };

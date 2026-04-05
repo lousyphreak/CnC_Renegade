@@ -82,7 +82,7 @@ CinematicGameObjDef::CinematicGameObjDef( void ) :
 	EDITABLE_PARAM( CinematicGameObjDef, ParameterClass::TYPE_BOOL,	CameraRelative );
 }
 
-uint32	CinematicGameObjDef::Get_Class_ID (void) const	
+uint32_t	CinematicGameObjDef::Get_Class_ID (void) const	
 { 
 	return CLASSID_GAME_OBJECT_DEF_CINEMATIC; 
 }

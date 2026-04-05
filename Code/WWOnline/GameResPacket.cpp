@@ -34,6 +34,7 @@
 
 #include "GameResPacket.h"
 #include <assert.h>
+#include <cstdint>
 #include <string.h>
 #include <winsock.h>
 
@@ -92,23 +93,23 @@ void GameResPacket::Add_Field(GameResField *field)
  * HISTORY:                                                               *
  *   04/22/1996 PWG : Created.                                            *
  *========================================================================*/
-GameResPacket::GameResPacket(unsigned char* curbuf)
+GameResPacket::GameResPacket(uint8_t* curbuf)
 	{
 	// Pull the size and packet ID out of the linear packet stream.
-	mSize = ntohl(*(unsigned long*)curbuf);
+	mSize = ntohl(*(uint32_t*)curbuf);
 	curbuf += sizeof(mSize);
 
-	mID = ntohs(*(unsigned short*)curbuf);
+	mID = ntohs(*(uint16_t*)curbuf);
 	curbuf += sizeof(mID);
 	
-	mReserved = ntohs(*(unsigned short*)curbuf);
+	mReserved = ntohs(*(uint16_t*)curbuf);
 	curbuf += sizeof(mReserved);
 
 	mHead = NULL;
 
 	// Calculate the remaining size so that we can loop through the
 	// packets and extract them.
-	unsigned long remaining_size = (mSize - (sizeof(mSize) + sizeof(mID) + sizeof(mReserved)));
+	uint32_t remaining_size = (mSize - (sizeof(mSize) + sizeof(mID) + sizeof(mReserved)));
 
 	// Loop through the linear packet until we run out of room and
 	// create a field for each.
@@ -122,8 +123,8 @@ GameResPacket::GameResPacket(unsigned char* curbuf)
 		remaining_size -= GAMERESFIELD_HEADER_SIZE;
 
 		// Copy the data into the buffer
-		unsigned short size = ntohs(field->mSize);
-		field->mData = new unsigned char[size];
+		uint16_t size = ntohs(field->mSize);
+		field->mData = new uint8_t[size];
 		memcpy(field->mData, curbuf, size);
 		curbuf += size;
 		remaining_size -= size;
@@ -147,7 +148,7 @@ GameResPacket::GameResPacket(unsigned char* curbuf)
  * CREATE_COMMS_PACKET -- Walks field list creating a packet              *
  *                                                                        *
  * INPUT:      short - the id of the packet so the server can identify it *
- *               unsigned short & - the size of the packet returned here  *
+ *               uint16_t & - the size of the packet returned here  *
  *                                                                        *
  * OUTPUT:     void * pointer to the linear packet data                   *
  *                                                                        *
@@ -157,7 +158,7 @@ GameResPacket::GameResPacket(unsigned char* curbuf)
  * HISTORY:                                                               *
  *   04/22/1996 PWG : Created.                                            *
  *========================================================================*/
-unsigned char* GameResPacket::Create_Comms_Packet(unsigned long& size, char* sig_name, unsigned long& sig_offset)
+uint8_t* GameResPacket::Create_Comms_Packet(uint32_t& size, char* sig_name, uint32_t& sig_offset)
 	{
 	GameResField* current;
 	sig_offset = 0;
@@ -169,25 +170,25 @@ unsigned char* GameResPacket::Create_Comms_Packet(unsigned long& size, char* sig
 	// are building.
 	for (current = mHead; current; current = current->mNext)
 		{
-		size += (unsigned long)GAMERESFIELD_HEADER_SIZE;			// add in packet header size
+		size += (uint32_t)GAMERESFIELD_HEADER_SIZE;			// add in packet header size
 		size += current->mSize;				// add in data size
 		size += (4 - (current->mSize & 3)) & 3;		// add in pad value to dword align next packet
 		}
 
 	// Now that we know the size allocate a buffer big enough to hold the
 	// packet.
-	unsigned char* bufferStart = new unsigned char[size];
-	unsigned char* curbuf = bufferStart;
+	uint8_t* bufferStart = new uint8_t[size];
+	uint8_t* curbuf = bufferStart;
 
 	// write the size into the packet header
-	*(unsigned long*)curbuf = htonl(size);
-	curbuf += sizeof(unsigned long);
+	*(uint32_t*)curbuf = htonl(size);
+	curbuf += sizeof(uint32_t);
 
-	*(unsigned short*)curbuf = htons(mID);
-	curbuf += sizeof(unsigned short);
+	*(uint16_t*)curbuf = htons(mID);
+	curbuf += sizeof(uint16_t);
 
-	*(unsigned short*)curbuf = htons(mReserved);
-	curbuf += sizeof(unsigned short);
+	*(uint16_t*)curbuf = htons(mReserved);
+	curbuf += sizeof(uint16_t);
 
 	// Ok now that the actual header information has been written we need to write out
 	// field information.
@@ -197,7 +198,7 @@ unsigned char* GameResPacket::Create_Comms_Packet(unsigned long& size, char* sig
 		current->DebugDump();
 		#endif
 
-		unsigned short fieldSize = current->mSize;
+		uint16_t fieldSize = current->mSize;
 
 		// Temporarily convert the packet to net format (this saves alot of
 		// effort, and seems safe...)
@@ -273,13 +274,13 @@ GameResField *GameResPacket::Find_Field(char *id)
  * HISTORY:                                                               *
  *   04/23/1996 PWG : Created.                                            *
  *========================================================================*/
-bool GameResPacket::Get_Field(char *id, char &data)
+bool GameResPacket::Get_Field(char *id, int8_t &data)
 	{
 	GameResField *field = Find_Field(id);
 
 	if (field)
 		{
-		data = *((char*)field->mData);
+		data = *((int8_t*)field->mData);
 		}
 
 	return((field) ? true : false);
@@ -290,7 +291,7 @@ bool GameResPacket::Get_Field(char *id, char &data)
  * GET_FIELD -- Find specified name and returns data                      *
  *                                                                        *
  * INPUT:      char *   - the id of the field that holds the data.        *
- *               unsigned char &   - the reference to store the data into *
+ *               uint8_t &   - the reference to store the data into *
  *                                                                        *
  * OUTPUT:      true if the field was found, false if it was not.         *
  *                                                                        *
@@ -300,13 +301,13 @@ bool GameResPacket::Get_Field(char *id, char &data)
  * HISTORY:                                                               *
  *   04/23/1996 PWG : Created.                                            *
  *========================================================================*/
-bool GameResPacket::Get_Field(char *id, unsigned char &data)
+bool GameResPacket::Get_Field(char *id, uint8_t &data)
 {
 	GameResField *field = Find_Field(id);
 
 	if (field)
 		{
-		data = *((unsigned char *)field->mData);
+		data = *((uint8_t *)field->mData);
 		}
 
 	return((field) ? true : false);
@@ -327,13 +328,13 @@ bool GameResPacket::Get_Field(char *id, unsigned char &data)
  * HISTORY:                                                               *
  *   04/23/1996 PWG : Created.                                            *
  *========================================================================*/
-bool GameResPacket::Get_Field(char *id, short &data)
+bool GameResPacket::Get_Field(char *id, int16_t &data)
 	{
 	GameResField *field = Find_Field(id);
 
 	if (field)
 		{
-		data = *((short *)field->mData);
+		memcpy(&data, field->mData, sizeof(data));
 		}
 
 	return((field) ? true : false);
@@ -344,7 +345,7 @@ bool GameResPacket::Get_Field(char *id, short &data)
  * GET_FIELD -- Find specified name and returns data                      *
  *                                                                        *
  * INPUT:      char *   - the id of the field that holds the data.        *
- *               unsigned short &   - the reference to store the data into*
+ *               uint16_t &   - the reference to store the data into*
  *                                                                        *
  * OUTPUT:      true if the field was found, false if it was not.         *
  *                                                                        *
@@ -354,13 +355,13 @@ bool GameResPacket::Get_Field(char *id, short &data)
  * HISTORY:                                                               *
  *   04/23/1996 PWG : Created.                                            *
  *========================================================================*/
-bool GameResPacket::Get_Field(char *id, unsigned short &data)
+bool GameResPacket::Get_Field(char *id, uint16_t &data)
 	{
 	GameResField *field = Find_Field(id);
 
 	if (field)
 		{
-		data = *((unsigned short *)field->mData);
+		data = *((uint16_t *)field->mData);
 		}
 
 	return((field) ? true : false);
@@ -381,13 +382,13 @@ bool GameResPacket::Get_Field(char *id, unsigned short &data)
  * HISTORY:                                                               *
  *   04/23/1996 PWG : Created.                                            *
  *========================================================================*/
-bool GameResPacket::Get_Field(char *id, long &data)
+bool GameResPacket::Get_Field(char *id, int32_t &data)
 	{
 	GameResField *field = Find_Field(id);
 
 	if (field)
 		{
-		data = *((long *)field->mData);
+		memcpy(&data, field->mData, sizeof(data));
 		}
 
 	return((field) ? true : false);
@@ -427,7 +428,7 @@ bool GameResPacket::Get_Field(char *id, char *data)
  * GET_FIELD -- Find specified name and returns data                      *
  *                                                                        *
  * INPUT:    char *   - the id of the field that holds the data           *
- *           unsigned long &   - the reference to store the data into     *
+ *           uint32_t &   - the reference to store the data into     *
  *                                                                        *
  * OUTPUT:   true if the field was found, false if it was not.            *
  *                                                                        *
@@ -437,13 +438,13 @@ bool GameResPacket::Get_Field(char *id, char *data)
  * HISTORY:                                                               *
  *   04/23/1996 PWG : Created.                                            *
  *========================================================================*/
-bool GameResPacket::Get_Field(char *id, unsigned long &data)
+bool GameResPacket::Get_Field(char *id, uint32_t &data)
 	{
 	GameResField *field = Find_Field(id);
 
 	if (field)
 		{
-		data = *((unsigned long *)field->mData);
+		data = *((uint32_t *)field->mData);
 		}
 
 	return((field) ? true : false);

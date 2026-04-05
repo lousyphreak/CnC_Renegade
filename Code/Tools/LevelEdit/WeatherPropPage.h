@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // WeatherPropPage.h : header file
 //
@@ -70,11 +72,11 @@ public:
 protected:
 	// Generated message map functions
 	//{{AFX_MSG(WeatherPropPageClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	afx_msg void OnFogCheck();
 	afx_msg void OnFogColor();
 	afx_msg void OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct);
-	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
+	afx_msg void OnHScroll(uint32_t nSBCode, uint32_t nPos, CScrollBar* pScrollBar);
 	afx_msg void OnPrecipitationNone();
 	afx_msg void OnPrecipitationRain();
 	afx_msg void OnPrecipitationSnow();

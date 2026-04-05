@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef _DLG_SERVER_SAVELOAD_H
@@ -76,7 +78,7 @@ public:
 	//	Inherited
 	//
 	void		On_Init_Dialog (void);
-	void		On_Command (int ctrl_id, int message_id, DWORD param);
+	void		On_Command (int ctrl_id, int message_id, uint32_t param);
 	void		On_ListCtrl_Delete_Entry (ListCtrlClass *list_ctrl, int ctrl_id, int item_index);
 	void		On_ListCtrl_Sel_Change (ListCtrlClass *list_ctrl, int	ctrl_id, int old_index, int	new_index);
 	void		On_EditCtrl_Enter_Pressed (EditCtrlClass *edit_ctrl, int ctrl_id);
@@ -90,7 +92,7 @@ private:
 	////////////////////////////////////////////////////////////////
 	//	Static methods
 	////////////////////////////////////////////////////////////////
-	static int CALLBACK ListSortCallback (ListCtrlClass *list_ctrl, int item_index1, int item_index2, uint32 user_param);
+	static int CALLBACK ListSortCallback (ListCtrlClass *list_ctrl, int item_index1, int item_index2, uint32_t user_param);
 
 	//////////////////////////////////////////////////////////////
 	//	Private methods
@@ -118,7 +120,7 @@ class ServerSettingsClass
 {
 	public:
 
-		ServerSettingsClass(char *filename = "svrcfg_cnc.ini", unsigned short *configname = (unsigned short*)TRANSLATE(IDS_SERVER_SAVELOAD_DEFAULT), int file_number = 0);
+		ServerSettingsClass(char *filename = "svrcfg_cnc.ini", uint16_t *configname = (uint16_t*)TRANSLATE(IDS_SERVER_SAVELOAD_DEFAULT), int file_number = 0);
 		ServerSettingsClass(ServerSettingsClass *other);
 		bool Is_Default(void) {return(FileNumber == 0);}
 		bool Is_Default_Custom(void) {return(FileNumber == 1);}

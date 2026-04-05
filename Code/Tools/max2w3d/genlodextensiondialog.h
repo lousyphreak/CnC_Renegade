@@ -39,6 +39,8 @@
 #ifndef GENLODEXTENSIONDIALOG_H
 #define GENLODEXTENSIONDIALOG_H
 
+#include <cstdint>
+
 #include <windows.h>
 
 class Interface;
@@ -67,7 +69,7 @@ public:
 	};
 
 	bool Get_Options(OptionsStruct * options);
-	bool Dialog_Proc(HWND hWnd,UINT message,WPARAM wParam,LPARAM);
+	bool Dialog_Proc(HWND hWnd,uint32_t message,uintptr_t wParam,intptr_t);
 		
 private:
 
@@ -84,7 +86,7 @@ private:
 	Interface *						MaxInterface;
 	ISpinnerControl *				LodIndexSpin;
 
-	friend BOOL CALLBACK			_gen_lod_ext_dialog_proc(HWND Hwnd,UINT message,WPARAM wParam,LPARAM lParam);
+	friend int32_t CALLBACK			_gen_lod_ext_dialog_proc(HWND Hwnd,uint32_t message,uintptr_t wParam,intptr_t lParam);
 
 };
 

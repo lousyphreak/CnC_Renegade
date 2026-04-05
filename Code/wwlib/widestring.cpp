@@ -349,7 +349,7 @@ bool WideStringClass::Is_ANSI(void)
 	{
 	if (m_Buffer) {
 		for (int index = 0; m_Buffer[index] != 0; index++) {
-			unsigned short value = m_Buffer[index];
+			uint16_t value = m_Buffer[index];
 
 			if (value > 255) {
 				return false;

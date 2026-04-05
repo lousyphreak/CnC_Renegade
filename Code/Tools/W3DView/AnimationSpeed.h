@@ -21,6 +21,8 @@
 
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 // AnimationSpeed.h : header file
 //
@@ -53,8 +55,8 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(CAnimationSpeed)
-	virtual BOOL OnInitDialog();
-	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
+	virtual int32_t OnInitDialog();
+	afx_msg void OnHScroll(uint32_t nSBCode, uint32_t nPos, CScrollBar* pScrollBar);
 	afx_msg void OnDestroy();
 	afx_msg void OnBlend();
 	afx_msg void OnCompressq();

@@ -38,6 +38,8 @@
 #ifndef SKIN_H
 #define SKIN_H
 
+#include <cstdint>
+
 #include <Max.h>
 #include "simpmod.h"
 #include "simpobj.h"
@@ -77,8 +79,8 @@ public:
 	** From Animatable		
 	*/
 	void DeleteThis() { 	OutputDebugString("Deleting SkinWSMObjectClass");delete this; }		
-	void BeginEditParams(IObjParam  *ip, ULONG flags,Animatable *prev);
-	void EndEditParams(IObjParam *ip, ULONG flags,Animatable *next);
+	void BeginEditParams(IObjParam  *ip, uint32_t flags,Animatable *prev);
+	void EndEditParams(IObjParam *ip, uint32_t flags,Animatable *next);
 	TCHAR * GetObjectName() { return _T("WWSkin"); }		
 	Class_ID ClassID() { return SKIN_OBJ_CLASS_ID; }		
 				
@@ -121,7 +123,7 @@ public:
 	/*
 	** Dialog box message processing
 	*/
-	BOOL SkinWSMObjectClass::Skeleton_Dialog_Proc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam);
+	int32_t SkinWSMObjectClass::Skeleton_Dialog_Proc(HWND hWnd,uint32_t message,uintptr_t wParam,intptr_t lParam);
 	
 	/*
 	** Bone picking.
@@ -177,7 +179,7 @@ public:
 	/*
 	** flag for whether we need to build the bones mesh for this object
 	*/
-	BOOL				MeshBuilt;					
+	int32_t				MeshBuilt;					
 
 	/*
 	** Bone Selection!
@@ -208,7 +210,7 @@ public:
 	/*
 	** Friend functions
 	*/
-	friend BOOL CALLBACK _skeleton_dialog_thunk(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam);
+	friend int32_t CALLBACK _skeleton_dialog_thunk(HWND hWnd,uint32_t message,uintptr_t wParam,intptr_t lParam);
 };
 
 /*
@@ -237,8 +239,8 @@ public:
 	Class_ID							ClassID() { return SKIN_MOD_CLASS_ID; } 		
 	RefTargetHandle				Clone(RemapDir& remap = NoRemap());
 	RefResult						NotifyRefChanged(Interval changeInt, RefTargetHandle hTarget, PartID& partID, RefMessage message);
-	void								BeginEditParams(IObjParam  *ip, ULONG flags,Animatable *prev);
-	void								EndEditParams(IObjParam *ip, ULONG flags,Animatable *next);
+	void								BeginEditParams(IObjParam  *ip, uint32_t flags,Animatable *prev);
+	void								EndEditParams(IObjParam *ip, uint32_t flags,Animatable *next);
 	CreateMouseCallBack *		GetCreateMouseCallBack() { return NULL; }
 
 	/*
@@ -272,7 +274,7 @@ public:
 	** the topology of its input is changed things will no longer work correctly.  Therefore,
 	** we tell max that we depend on the topology remaining the same.
 	*/
-	virtual BOOL DependOnTopology(ModContext &mc) { return TRUE; }
+	virtual int32_t DependOnTopology(ModContext &mc) { return TRUE; }
 
 	/*
 	** What types of objects can we modify:  The skin modifier will only work with TRIOBJ's
@@ -298,7 +300,7 @@ public:
 	void ActivateSubobjSel(int level, XFormModes& modes);
 
 	int HitTest(TimeValue t, INode* inode, int type, int crossing, int flags, IPoint2 *p, ViewExp *vpt, ModContext* mc);
-	void SelectSubComponent(HitRecord *hitRec, BOOL selected, BOOL all, BOOL invert=FALSE);
+	void SelectSubComponent(HitRecord *hitRec, int32_t selected, int32_t all, int32_t invert=FALSE);
 	void ClearSelection(int selLevel);//
 	void SelectAll(int selLevel);
 	void InvertSelection(int selLevel);
@@ -310,7 +312,7 @@ public:
 	** sub-object selection set drop down.
 	** The following methods implement named sub-obj selection sets 
 	*/
-	virtual BOOL SupportsNamedSubSels() { return TRUE; }
+	virtual int32_t SupportsNamedSubSels() { return TRUE; }
 	virtual void ActivateSubSelSet(TSTR &setName);
 	virtual void NewSetFromCurSel(TSTR &setName);
 	virtual void RemoveSubSelSet(TSTR &setName);
@@ -329,7 +331,7 @@ public:
 	/*
 	** Auto-Attach vertices to nearest bone
 	*/
-	void Auto_Attach_Verts(BOOL all = FALSE);					
+	void Auto_Attach_Verts(int32_t all = FALSE);					
 	
 	/*
 	** Unlink selected verts (links them to the root or origin)
@@ -344,7 +346,7 @@ private:
 	void Install_Bone_Influence_Dialog(void);
 	void Remove_Bone_Influence_Dialog(void);
 
-	BOOL Bone_Influence_Dialog_Proc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam);
+	int32_t Bone_Influence_Dialog_Proc(HWND hWnd,uint32_t message,uintptr_t wParam,intptr_t lParam);
 	
 public:
 
@@ -395,7 +397,7 @@ public:
 	/*
 	** Friend "thunking" functions for the dialog handling.
 	*/
-	friend BOOL CALLBACK _bone_influence_dialog_thunk(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam);
+	friend int32_t CALLBACK _bone_influence_dialog_thunk(HWND hWnd,uint32_t message,uintptr_t wParam,intptr_t lParam);
 };
 
 

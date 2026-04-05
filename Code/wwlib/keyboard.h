@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -68,15 +70,15 @@ class WWKeyboardClass
 		WWKeyboardClass();
 
 		/* Define the functions which work with the Keyboard Class				*/
-		unsigned short Check(void) const;
-		unsigned short Get(void);
-		bool Put(unsigned short key);
+		uint16_t Check(void) const;
+		uint16_t Get(void);
+		bool Put(uint16_t key);
 		void Clear(void);
-		char To_ASCII(unsigned short num);
-		bool Down(unsigned short key);
+		char To_ASCII(uint16_t num);
+		bool Down(uint16_t key);
 
 		/* Define the main hook for the message processing loop.					*/
-		bool Message_Handler(HWND hwnd, UINT message, UINT wParam, LONG lParam);
+		bool Message_Handler(HWND hwnd, uint32_t message, uint32_t wParam, int32_t lParam);
 
 		/* Define the public access variables which are used with the			*/
 		/*   Keyboard Class.																	*/
@@ -89,24 +91,24 @@ class WWKeyboardClass
 		**	This is a keyboard state array that is used to aid in translating
 		**	KN_ keys into KA_ keys.
 		*/
-		unsigned char KeyState[256];
+		uint8_t KeyState[256];
 
 		/*
 		**	This is the circular keyboard holding buffer. It holds the VK key and
 		**	the current shift state at the time the key was added to the queue.
 		*/
-		unsigned short Buffer[256];		// buffer which holds actual keypresses
+		uint16_t Buffer[256];		// buffer which holds actual keypresses
 
-		unsigned short Buff_Get(void);
-		unsigned short Fetch_Element(void);
-		unsigned short Peek_Element(void) const;
-		bool Put_Element(unsigned short val);
+		uint16_t Buff_Get(void);
+		uint16_t Fetch_Element(void);
+		uint16_t Peek_Element(void) const;
+		bool Put_Element(uint16_t val);
 		bool Is_Buffer_Full(void) const;
 		bool Is_Buffer_Empty(void) const;
-		static bool Is_Mouse_Key(unsigned short key);
+		static bool Is_Mouse_Key(uint16_t key);
 		void Fill_Buffer_From_System(void);
-		bool Put_Key_Message(unsigned short vk_key, bool release = false);
-		bool Put_Mouse_Message(unsigned short vk_key, int x, int y, bool release = false);
+		bool Put_Key_Message(uint16_t vk_key, bool release = false);
+		bool Put_Mouse_Message(uint16_t vk_key, int x, int y, bool release = false);
 		int Available_Buffer_Room(void) const;
 
 		/*
@@ -666,9 +668,9 @@ struct KeyboardClass : public WWKeyboardClass
 	KeyboardClass() : IsLibrary(true) {}
 	KeyNumType Get(void) {return ((KeyNumType)WWKeyboardClass::Get());};
 	KeyNumType Check(void) {return ((KeyNumType)WWKeyboardClass::Check());};
-	KeyASCIIType To_ASCII(KeyNumType key) {return((KeyASCIIType)WWKeyboardClass::To_ASCII((unsigned short)key));};
+	KeyASCIIType To_ASCII(KeyNumType key) {return((KeyASCIIType)WWKeyboardClass::To_ASCII((uint16_t)key));};
 	void Clear(void) {WWKeyboardClass::Clear();};
-	int Down(KeyNumType key) {return(WWKeyboardClass::Down((unsigned short)key));};
+	int Down(KeyNumType key) {return(WWKeyboardClass::Down((uint16_t)key));};
 
 	int Mouse_X(void) {return(Get_Mouse_X());};
 	int Mouse_Y(void) {return(Get_Mouse_Y());};

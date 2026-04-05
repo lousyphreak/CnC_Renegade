@@ -447,7 +447,7 @@ void CompositeRenderObjClass::Create_Decal(DecalGeneratorClass * generator)
  * HISTORY:                                                                                    *
  *   1/26/00    gth : Created.                                                                 *
  *=============================================================================================*/
-void CompositeRenderObjClass::Delete_Decal(uint32 decal_id)
+void CompositeRenderObjClass::Delete_Decal(uint32_t decal_id)
 {
 	for (int i=0; i<Get_Num_Sub_Objects(); i++) {
 		RenderObjClass * robj = Get_Sub_Object(i);

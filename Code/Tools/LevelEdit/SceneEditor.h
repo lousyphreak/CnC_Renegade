@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __SCENEEDITOR_H
@@ -89,7 +91,7 @@ class SceneEditorClass : public PhysicsSceneClass
 		//	Object creation/destruction
 		//
 		virtual void						Add_Node (NodeClass *node);
-		virtual NodeClass *				Create_Node (PresetClass *preset, Matrix3D *transform = NULL, DWORD obj_id = 0, bool add_to_scene = true);
+		virtual NodeClass *				Create_Node (PresetClass *preset, Matrix3D *transform = NULL, uint32_t obj_id = 0, bool add_to_scene = true);
 		virtual NodeClass *				Clone_Node (NodeClass *node);
 		virtual bool						Delete_Node (NodeClass *node, bool allow_undo = true);
 		virtual void						Delete_Nodes (void);
@@ -289,7 +291,7 @@ class SceneEditorClass : public PhysicsSceneClass
 		//SkyClass *							m_Sky;
 		SelectionMgrClass *				m_SelectionMgr;
 		UndoMgrClass						m_UndoMgr;
-		UINT									m_uiClipboardFormat;
+		uint32_t									m_uiClipboardFormat;
 		GROUP_LIST							m_GroupsList;
 		DynamicVectorClass<NodeClass *>	m_LocalClipboard;
 		bool									m_bLightsOn;

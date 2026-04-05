@@ -37,6 +37,8 @@
 #ifndef __BACKGROUNDMGR_H
 #define __BACKGROUNDMGR_H
 
+#include <cstdint>
+
 
 // Includes.
 #include "combat.h"
@@ -396,8 +398,8 @@ class	SkyClass : public RenderObjClass
 			LIGHTNING_COUNT = 2
 		};
 
-		Vector3  Interpolate_Color (const unsigned char colortable [][3], unsigned colorcount, float interpolant);
-		float    Interpolate_Scalar (const unsigned char scalartable [], unsigned scalarcount, float interpolant);
+		Vector3  Interpolate_Color (const uint8_t colortable [][3], unsigned colorcount, float interpolant);
+		float    Interpolate_Scalar (const uint8_t scalartable [], unsigned scalarcount, float interpolant);
 		unsigned	Lightning_Delay();
 		unsigned War_Blitz_Delay();
 
@@ -470,7 +472,7 @@ class	BackgroundMgrClass : public SaveLoadSubSystemClass, public NetworkObjectCl
 		 BackgroundMgrClass();
 		~BackgroundMgrClass() {}
 
-		uint32		Chunk_ID() const	{return (CHUNKID_BACKGROUND_MGR);}
+		uint32_t		Chunk_ID() const	{return (CHUNKID_BACKGROUND_MGR);}
 		const char *Name() const		{return ("BackgroundMgrClass");}
 		void			Delete (void)		{}
 		virtual void Set_Delete_Pending (void) {};

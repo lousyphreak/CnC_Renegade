@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 
@@ -74,12 +76,12 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(PositionPageClass)
-	afx_msg void OnDeltaPosXPosSpin(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnDeltaPosXRotSpin(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnDeltaPosYPosSpin(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnDeltaPosYRotSpin(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnDeltaPosZPosSpin(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnDeltaPosZRotSpin(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnDeltaPosXPosSpin(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnDeltaPosXRotSpin(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnDeltaPosYPosSpin(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnDeltaPosYRotSpin(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnDeltaPosZPosSpin(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnDeltaPosZRotSpin(NMHDR* pNMHDR, intptr_t* pResult);
 	afx_msg void OnChangeZRotEdit();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()

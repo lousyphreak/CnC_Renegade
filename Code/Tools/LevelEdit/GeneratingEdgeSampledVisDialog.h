@@ -39,6 +39,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 #include "resource.h"
@@ -78,8 +80,8 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(GeneratingEdgeSampledVisDialogClass)
-	virtual BOOL OnInitDialog();
-	afx_msg void OnTimer(UINT nIDEvent);
+	virtual int32_t OnInitDialog();
+	afx_msg void OnTimer(uint32_t nIDEvent);
 	virtual void OnCancel();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
@@ -118,7 +120,7 @@ private:
 	VisGenProgressClass *	m_ProgressObj;
 	bool							m_IsCancelled;
 	bool							m_IsFinished;
-	DWORD							m_StartTime;
+	uint32_t							m_StartTime;
 
 	bool							m_FarmMode;
 	CString						m_StatusFilename;

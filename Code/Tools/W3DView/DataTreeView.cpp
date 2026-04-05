@@ -159,7 +159,7 @@ void CDataTreeView::Dump(CDumpContext& dc) const
 //
 //  PreCreateWindow
 //
-BOOL
+int32_t
 CDataTreeView::PreCreateWindow (CREATESTRUCT& cs) 
 {
     // Modify the style bits for the window so it will
@@ -272,8 +272,8 @@ CDataTreeView::Load_Materials_Into_Tree (void)
 
 			// Allocate a new asset information class to associate with this entry
 			ptexture->Add_Ref ();
-			AssetInfoClass *asset_info = new AssetInfoClass (texture_name, TypeMaterial, NULL, (DWORD)ptexture);
-			GetTreeCtrl ().SetItemData (tree_item, (ULONG)asset_info);
+			AssetInfoClass *asset_info = new AssetInfoClass (texture_name, TypeMaterial, NULL, (uint32_t)ptexture);
+			GetTreeCtrl ().SetItemData (tree_item, (uint32_t)asset_info);
 		}
 	}
 
@@ -308,7 +308,7 @@ CDataTreeView::LoadAssetsIntoTree (void)
 			LPCTSTR pszItemName = pObjEnum->Current_Item_Name ();
 			if (WW3DAssetManager::Get_Instance()->Render_Obj_Exists (pszItemName)) {
 				
-				BOOL bInsert = FALSE;
+				int32_t bInsert = FALSE;
 				HTREEITEM hParentNode = NULL;
 				ASSET_TYPE assetType = TypeUnknown;
 				int iIconIndex = -1;
@@ -401,7 +401,7 @@ CDataTreeView::LoadAssetsIntoTree (void)
 
 						// Allocate a new asset information class to associate with this entry
 						AssetInfoClass *asset_info = new AssetInfoClass (pszItemName, assetType);
-						GetTreeCtrl ().SetItemData (hItem, (ULONG)asset_info);
+						GetTreeCtrl ().SetItemData (hItem, (uint32_t)asset_info);
 					}
 				}
 			}
@@ -480,7 +480,7 @@ CDataTreeView::LoadAnimationsIntoTree (void)
                         ASSERT (hAnimationNode != NULL);
                                     
                         // Associate the items name with its entry
-                        GetTreeCtrl ().SetItemData (hAnimationNode, (ULONG)new AssetInfoClass (pszAnimName, TypeAnimation));
+                        GetTreeCtrl ().SetItemData (hAnimationNode, (uint32_t)new AssetInfoClass (pszAnimName, TypeAnimation));
                     }
                 }
 
@@ -498,7 +498,7 @@ CDataTreeView::LoadAnimationsIntoTree (void)
                         ASSERT (hAnimationNode != NULL);
                                     
                         // Associate the items name with its entry
-                        GetTreeCtrl ().SetItemData (hAnimationNode, (ULONG)new AssetInfoClass (pszAnimName, TypeAnimation));
+                        GetTreeCtrl ().SetItemData (hAnimationNode, (uint32_t)new AssetInfoClass (pszAnimName, TypeAnimation));
                     }
                 }
 
@@ -516,7 +516,7 @@ CDataTreeView::LoadAnimationsIntoTree (void)
                         ASSERT (hAnimationNode != NULL);
                                     
                         // Associate the items name with its entry
-                        GetTreeCtrl ().SetItemData (hAnimationNode, (ULONG)new AssetInfoClass (pszAnimName, TypeAnimation));
+                        GetTreeCtrl ().SetItemData (hAnimationNode, (uint32_t)new AssetInfoClass (pszAnimName, TypeAnimation));
                     }
                 }
 
@@ -578,7 +578,7 @@ CDataTreeView::LoadAnimationsIntoTree (HTREEITEM hItem)
                         ASSERT (hAnimationNode != NULL);
                                     
                         // Associate the items name with its entry
-                        GetTreeCtrl ().SetItemData (hAnimationNode, (ULONG)new AssetInfoClass (pszAnimName, TypeAnimation));
+                        GetTreeCtrl ().SetItemData (hAnimationNode, (uint32_t)new AssetInfoClass (pszAnimName, TypeAnimation));
                     }
                 }
 
@@ -777,7 +777,7 @@ CDataTreeView::Add_Asset_To_Tree
 			
 			// Associate the render object with its entry in the tree
 			AssetInfoClass *asset_info = new AssetInfoClass (name, type);
-			GetTreeCtrl ().SetItemData (htree_item, (ULONG)asset_info);
+			GetTreeCtrl ().SetItemData (htree_item, (uint32_t)asset_info);
 
 			// Load the object's animations into the tree (if necessary)
 			if (asset_info->Can_Asset_Have_Animations ()) {
@@ -959,7 +959,7 @@ void
 CDataTreeView::OnSelChanged
 (
     NMHDR* pNMHDR,
-    LRESULT* pResult
+    intptr_t* pResult
 )
 {
 	// Display the new selection
@@ -1087,7 +1087,7 @@ void
 CDataTreeView::OnDeleteItem
 (
 	NMHDR *pNMHDR,
-	LRESULT *pResult
+	intptr_t *pResult
 ) 
 {
 	// Get the information object for this asset
@@ -1217,7 +1217,7 @@ void
 CDataTreeView::OnDblclk
 (
     NMHDR* pNMHDR,
-    LRESULT* pResult
+    intptr_t* pResult
 )
 {
     // Get the main window of our app

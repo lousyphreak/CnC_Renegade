@@ -36,6 +36,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef VISRENDERCONTEXT_H
 #define VISRENDERCONTEXT_H
 
@@ -65,7 +67,7 @@ public:
 	VisRenderContextClass(CameraClass & cam,VisTableClass & vtab);
 	~VisRenderContextClass(void);
 
-	void						Set_Vis_ID(uint32 id);
+	void						Set_Vis_ID(uint32_t id);
 	void						Set_Resolution(int resx,int resy);
 	void						Get_Resolution(int * set_resx,int * set_resy);
 

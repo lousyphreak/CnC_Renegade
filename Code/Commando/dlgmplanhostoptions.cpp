@@ -181,7 +181,7 @@ MPLanHostOptionsMenuClass::On_Periodic (void)
 //
 ////////////////////////////////////////////////////////////////
 void
-MPLanHostOptionsMenuClass::On_Command (int ctrl_id, int message_id, DWORD param)
+MPLanHostOptionsMenuClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	switch (ctrl_id) {
 		case IDC_MENU_MP_LAN_START_BUTTON:
@@ -382,9 +382,9 @@ MPLanHostBasicOptionsTabClass::On_Init_Dialog (void)
 
 	if (nic_combobox != NULL) {
 
-		ULONG * nics = NULL;
+		uint32_t * nics = NULL;
 		int nic_count = 0;
-		ULONG preferred_nick;
+		uint32_t preferred_nick;
 		if (!cGameSpyAdmin::Get_Is_Server_Gamespy_Listed()) {
 			 nics = cNicEnum::Get_Nics();
 			 nic_count = cNicEnum::Get_Num_Nics();
@@ -398,7 +398,7 @@ MPLanHostBasicOptionsTabClass::On_Init_Dialog (void)
 
 		int current_index = -1;
 
-		for (USHORT index = 0; index < nic_count; index++) {
+		for (uint16_t index = 0; index < nic_count; index++) {
 			WideStringClass nic_string;
 			nic_string.Convert_From(cNetUtil::Address_To_String(nics[index]));
 			nic_combobox->Add_String( nic_string );
@@ -475,7 +475,7 @@ void MPLanHostBasicOptionsTabClass::InitSideChoiceCombo(int sidePref)
 			int item = combo->Add_String(_teams[index].TeamName);
 
 			if (item >= 0) {
-				combo->Set_Item_Data(item, (uint32)_teams[index].TeamID);
+				combo->Set_Item_Data(item, (uint32_t)_teams[index].TeamID);
 			}
 
 			if (_teams[index].TeamID == sidePref) {
@@ -526,7 +526,7 @@ MPLanHostBasicOptionsTabClass::On_Apply (void)
 			int curr_sel = nic_combobox->Get_Curr_Sel ();
 			WWASSERT(curr_sel < cNicEnum::Get_Num_Nics());
 			if (curr_sel >= 0) {
-				ULONG * nics = cNicEnum::Get_Nics();
+				uint32_t * nics = cNicEnum::Get_Nics();
 				WWASSERT(nics != NULL);
 				cUserOptions::PreferredLanNic.Set(nics[curr_sel]);
 				The_Game()->Set_Ip_Address(nics[curr_sel]);
@@ -538,7 +538,7 @@ MPLanHostBasicOptionsTabClass::On_Apply (void)
 			int curr_sel = nic_combobox->Get_Curr_Sel ();
 			WWASSERT(curr_sel < cNicEnum::Get_Num_GameSpy_Nics());
 			if (curr_sel >= 0) {
-				ULONG * nics = cNicEnum::Get_GameSpy_Nics();
+				uint32_t * nics = cNicEnum::Get_GameSpy_Nics();
 				WWASSERT(nics != NULL);
 				cUserOptions::PreferredGameSpyNic.Set(nics[curr_sel]);
 				The_Game()->Set_Ip_Address(nics[curr_sel]);
@@ -550,7 +550,7 @@ MPLanHostBasicOptionsTabClass::On_Apply (void)
 			int curr_sel = nic_combobox->Get_Curr_Sel ();
 			WWASSERT(curr_sel < cNicEnum::Get_Num_GameSpy_Nics());
 			if (curr_sel >= 0) {
-				ULONG * nics = cNicEnum::Get_GameSpy_Nics();
+				uint32_t * nics = cNicEnum::Get_GameSpy_Nics();
 				WWASSERT(nics != NULL);
 				cUserOptions::PreferredGameSpyNic.Set(nics[curr_sel]);
 				The_Game()->Set_Ip_Address(nics[curr_sel]);
@@ -759,7 +759,7 @@ MPLanHostAdvancedOptionsTabClass::On_Apply (void)
 //
 ////////////////////////////////////////////////////////////////
 void
-MPLanHostAdvancedOptionsTabClass::On_Command (int ctrl_id, int message_id, DWORD param)
+MPLanHostAdvancedOptionsTabClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	bool restart_enabled = true;
 
@@ -1225,7 +1225,7 @@ MPLanHostMapCycleOptionsTabClass::Build_Mod_Package_List (void)
 
 			int item_index = combobx_ctrl->Add_String (curr_name);
 			if (item_index != -1) {
-				combobx_ctrl->Set_Item_Data (item_index, (uint32)package);
+				combobx_ctrl->Set_Item_Data (item_index, (uint32_t)package);
 
 				//
 				//	Is this the default entry?  If so select it...
@@ -1307,7 +1307,7 @@ MPLanHostMapCycleOptionsTabClass::Remove_Map (void)
 //
 ////////////////////////////////////////////////////////////////
 void
-MPLanHostMapCycleOptionsTabClass::On_Command (int ctrl_id, int message_id, DWORD param)
+MPLanHostMapCycleOptionsTabClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	switch (ctrl_id)
 	{
@@ -1540,7 +1540,7 @@ MPLanHostMapCycleOptionsTabClass::Build_Map_List (void)
 	MapList.Delete_All ();
 
 	WIN32_FIND_DATA find_info	= { 0 };
-	BOOL keep_going				= TRUE;
+	int32_t keep_going				= TRUE;
 	HANDLE file_find				= NULL;
 
 	//
@@ -1699,7 +1699,7 @@ MPLanHostVictoryOptionsTabClass::Update_Enable_State (void)
 //
 ////////////////////////////////////////////////////////////////
 void
-MPLanHostVictoryOptionsTabClass::On_Command (int ctrl_id, int message_id, DWORD param)
+MPLanHostVictoryOptionsTabClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	/*
 	switch (ctrl_id)

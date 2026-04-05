@@ -111,7 +111,7 @@ END_MESSAGE_MAP()
 //
 //	Modified: 12/06/2001 by	MML	- Retrieving strings from Locomoto file.
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 AudioConfigDialogClass::OnInitDialog (void) 
 {
 	char string [_MAX_PATH];
@@ -142,23 +142,23 @@ AudioConfigDialogClass::OnInitDialog (void)
 	Locale_GetString( IDS_QUALITY, string );
 	SetDlgItemText( IDC_QUALITY, string ); 
 	SendDlgItemMessage (IDC_QUALITY_COMBO, CB_RESETCONTENT, 0, 0);
-	SendDlgItemMessage (IDC_QUALITY_COMBO, CB_ADDSTRING, 0, (LPARAM)Locale_GetString (IDS_8_BIT, string));
-	SendDlgItemMessage (IDC_QUALITY_COMBO, CB_ADDSTRING, 0, (LPARAM)Locale_GetString (IDS_16_BIT, string));
+	SendDlgItemMessage (IDC_QUALITY_COMBO, CB_ADDSTRING, 0, (intptr_t)Locale_GetString (IDS_8_BIT, string));
+	SendDlgItemMessage (IDC_QUALITY_COMBO, CB_ADDSTRING, 0, (intptr_t)Locale_GetString (IDS_16_BIT, string));
 
 	Locale_GetString( IDS_PLAYBACK_RATE, string );
 	SetDlgItemText( IDC_PLAYBACK_RATE, string );
 	SendDlgItemMessage (IDC_RATE_COMBO, CB_RESETCONTENT, 0, 0);
-	SendDlgItemMessage (IDC_RATE_COMBO, CB_ADDSTRING, 0, (LPARAM)Locale_GetString (IDS_11_KHZ, string));
-	SendDlgItemMessage (IDC_RATE_COMBO, CB_ADDSTRING, 0, (LPARAM)Locale_GetString (IDS_22_KHZ, string));
-	SendDlgItemMessage (IDC_RATE_COMBO, CB_ADDSTRING, 0, (LPARAM)Locale_GetString (IDS_44_KHZ, string));
+	SendDlgItemMessage (IDC_RATE_COMBO, CB_ADDSTRING, 0, (intptr_t)Locale_GetString (IDS_11_KHZ, string));
+	SendDlgItemMessage (IDC_RATE_COMBO, CB_ADDSTRING, 0, (intptr_t)Locale_GetString (IDS_22_KHZ, string));
+	SendDlgItemMessage (IDC_RATE_COMBO, CB_ADDSTRING, 0, (intptr_t)Locale_GetString (IDS_44_KHZ, string));
 
 	Locale_GetString( IDS_SPEAKER_SETUP, string );
 	SetDlgItemText( IDC_SPEAKER_SETUP, string );
 	SendDlgItemMessage (IDC_SPEAKER_COMBO, CB_RESETCONTENT, 0, 0);
-	SendDlgItemMessage (IDC_SPEAKER_COMBO, CB_ADDSTRING, 0, (LPARAM)Locale_GetString (IDS_2_SPEAKER, string));
-	SendDlgItemMessage (IDC_SPEAKER_COMBO, CB_ADDSTRING, 0, (LPARAM)Locale_GetString (IDS_HEADPHONE, string));
-	SendDlgItemMessage (IDC_SPEAKER_COMBO, CB_ADDSTRING, 0, (LPARAM)Locale_GetString (IDS_SURROUND_SOUND, string));
-	SendDlgItemMessage (IDC_SPEAKER_COMBO, CB_ADDSTRING, 0, (LPARAM)Locale_GetString (IDS_4_SPEAKER, string));
+	SendDlgItemMessage (IDC_SPEAKER_COMBO, CB_ADDSTRING, 0, (intptr_t)Locale_GetString (IDS_2_SPEAKER, string));
+	SendDlgItemMessage (IDC_SPEAKER_COMBO, CB_ADDSTRING, 0, (intptr_t)Locale_GetString (IDS_HEADPHONE, string));
+	SendDlgItemMessage (IDC_SPEAKER_COMBO, CB_ADDSTRING, 0, (intptr_t)Locale_GetString (IDS_SURROUND_SOUND, string));
+	SendDlgItemMessage (IDC_SPEAKER_COMBO, CB_ADDSTRING, 0, (intptr_t)Locale_GetString (IDS_4_SPEAKER, string));
 
 	Locale_GetString( IDS_STEREO, string );
 	SetDlgItemText( IDC_STEREO_CHECK, string );
@@ -196,33 +196,33 @@ AudioConfigDialogClass::OnInitDialog (void)
 	//
 	m_SoundVolSlider.SetRange (0, 100);
 	m_SoundVolSlider.SetPos (static_cast<int>(sound_vol * 100));
-	SendDlgItemMessage (IDC_SOUND_EFFECTS_CHECK, BM_SETCHECK, (WPARAM)sound_on);
+	SendDlgItemMessage (IDC_SOUND_EFFECTS_CHECK, BM_SETCHECK, (uintptr_t)sound_on);
 
 	//
 	//	Setup the music volume controls
 	//
 	m_MusicVolSlider.SetRange (0, 100);
 	m_MusicVolSlider.SetPos (static_cast<int>(music_vol * 100));
-	SendDlgItemMessage (IDC_MUSIC_CHECK, BM_SETCHECK, (WPARAM)music_on);
+	SendDlgItemMessage (IDC_MUSIC_CHECK, BM_SETCHECK, (uintptr_t)music_on);
 
 	//
 	//	Setup the dialog volume controls
 	//
 	m_DialogVolSlider.SetRange (0, 100);
 	m_DialogVolSlider.SetPos (static_cast<int>(dialog_vol * 100));
-	SendDlgItemMessage (IDC_DIALOG_CHECK, BM_SETCHECK, (WPARAM)dialog_on);
+	SendDlgItemMessage (IDC_DIALOG_CHECK, BM_SETCHECK, (uintptr_t)dialog_on);
 
 	//
 	//	Setup the cinematic volume controls
 	//
 	m_CinematicVolSlider.SetRange (0, 100);
 	m_CinematicVolSlider.SetPos (static_cast<int>(cinematic_vol * 100));
-	SendDlgItemMessage (IDC_CINEMATIC_CHECK, BM_SETCHECK, (WPARAM)cinematic_on);
+	SendDlgItemMessage (IDC_CINEMATIC_CHECK, BM_SETCHECK, (uintptr_t)cinematic_on);
 
 	//
 	//	Check the stereo box if necessary
 	//
-	SendDlgItemMessage (IDC_STEREO_CHECK, BM_SETCHECK, (WPARAM)is_stereo);
+	SendDlgItemMessage (IDC_STEREO_CHECK, BM_SETCHECK, (uintptr_t)is_stereo);
 
 	//
 	//	Select the appropriate quality combobox entry
@@ -230,12 +230,12 @@ AudioConfigDialogClass::OnInitDialog (void)
 	switch (bits)
 	{
 		case 8:
-			SendDlgItemMessage (IDC_QUALITY_COMBO, CB_SETCURSEL, (WPARAM)0);
+			SendDlgItemMessage (IDC_QUALITY_COMBO, CB_SETCURSEL, (uintptr_t)0);
 			break;
 
 		default:
 		case 16:
-			SendDlgItemMessage (IDC_QUALITY_COMBO, CB_SETCURSEL, (WPARAM)1);
+			SendDlgItemMessage (IDC_QUALITY_COMBO, CB_SETCURSEL, (uintptr_t)1);
 			break;
 	}
 
@@ -246,16 +246,16 @@ AudioConfigDialogClass::OnInitDialog (void)
 	switch (hertz)
 	{
 		case 11025:
-			SendDlgItemMessage (IDC_RATE_COMBO, CB_SETCURSEL, (WPARAM)0);
+			SendDlgItemMessage (IDC_RATE_COMBO, CB_SETCURSEL, (uintptr_t)0);
 			break;
 
 		case 22050:
-			SendDlgItemMessage (IDC_RATE_COMBO, CB_SETCURSEL, (WPARAM)1);
+			SendDlgItemMessage (IDC_RATE_COMBO, CB_SETCURSEL, (uintptr_t)1);
 			break;
 
 		default:
 		case 44100:
-			SendDlgItemMessage (IDC_RATE_COMBO, CB_SETCURSEL, (WPARAM)2);
+			SendDlgItemMessage (IDC_RATE_COMBO, CB_SETCURSEL, (uintptr_t)2);
 			break;
 	}
 
@@ -264,19 +264,19 @@ AudioConfigDialogClass::OnInitDialog (void)
 
 		default:
 		case 0:
-			SendDlgItemMessage (IDC_SPEAKER_COMBO, CB_SETCURSEL, (WPARAM)0);
+			SendDlgItemMessage (IDC_SPEAKER_COMBO, CB_SETCURSEL, (uintptr_t)0);
 			break;
 
 		case 1:
-			SendDlgItemMessage (IDC_SPEAKER_COMBO, CB_SETCURSEL, (WPARAM)1);
+			SendDlgItemMessage (IDC_SPEAKER_COMBO, CB_SETCURSEL, (uintptr_t)1);
 			break;
 		
 		case 2:
-			SendDlgItemMessage (IDC_SPEAKER_COMBO, CB_SETCURSEL, (WPARAM)2);
+			SendDlgItemMessage (IDC_SPEAKER_COMBO, CB_SETCURSEL, (uintptr_t)2);
 			break;
 	
 		case 3:
-			SendDlgItemMessage (IDC_SPEAKER_COMBO, CB_SETCURSEL, (WPARAM)3);
+			SendDlgItemMessage (IDC_SPEAKER_COMBO, CB_SETCURSEL, (uintptr_t)3);
 			break;
 	}
 
@@ -312,7 +312,7 @@ AudioConfigDialogClass::OnInitDialog (void)
 			//
 			int item_index = m_ListCtrl.InsertItem (0xFF, driver_info->name);
 			if (item_index >= 0) {
-				m_ListCtrl.SetItemData (item_index, (DWORD)driver_info->driver);
+				m_ListCtrl.SetItemData (item_index, (uint32_t)driver_info->driver);
 
 				//
 				//	Select this entry if its the default
@@ -452,12 +452,12 @@ AudioConfigDialogClass::Apply_Changes (void)
 // WindowProc
 //
 /////////////////////////////////////////////////////////////////////////////
-LRESULT
+intptr_t
 AudioConfigDialogClass::WindowProc
 (
-	UINT		message,
-	WPARAM	wParam,
-	LPARAM	lParam
+	uint32_t		message,
+	uintptr_t	wParam,
+	intptr_t	lParam
 )
 {
 	if (message == (WM_USER + 101)) {
@@ -476,10 +476,10 @@ AudioConfigDialogClass::WindowProc
 void
 AudioConfigDialogClass::Update_Slider_Enable_State (void)
 {
-	BOOL sound_enabled	  = IsDlgButtonChecked (IDC_SOUND_EFFECTS_CHECK);
-	BOOL music_enabled	  = IsDlgButtonChecked (IDC_MUSIC_CHECK);
-	BOOL dialog_enabled	  = IsDlgButtonChecked (IDC_DIALOG_CHECK);
-	BOOL cinematic_enabled = IsDlgButtonChecked (IDC_CINEMATIC_CHECK);
+	int32_t sound_enabled	  = IsDlgButtonChecked (IDC_SOUND_EFFECTS_CHECK);
+	int32_t music_enabled	  = IsDlgButtonChecked (IDC_MUSIC_CHECK);
+	int32_t dialog_enabled	  = IsDlgButtonChecked (IDC_DIALOG_CHECK);
+	int32_t cinematic_enabled = IsDlgButtonChecked (IDC_CINEMATIC_CHECK);
 
 	//
 	//	Enable the slider's based on the state of the check boxes
@@ -498,8 +498,8 @@ AudioConfigDialogClass::Update_Slider_Enable_State (void)
 // OnCommand
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
-AudioConfigDialogClass::OnCommand (WPARAM wParam, LPARAM lParam)
+int32_t
+AudioConfigDialogClass::OnCommand (uintptr_t wParam, intptr_t lParam)
 {
 	switch (LOWORD (wParam)) {
 

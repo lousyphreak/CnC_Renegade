@@ -37,6 +37,8 @@
 #ifndef	__CNCMODESETTINGS_H__
 #define	__CNCMODESETTINGS_H__
 
+#include <cstdint>
+
 #include "always.h"
 #include "definition.h"
 
@@ -49,7 +51,7 @@ class CNCModeSettingsDef :
 		CNCModeSettingsDef(void);
 		virtual ~CNCModeSettingsDef(void);
 
-		virtual uint32 Get_Class_ID(void) const;
+		virtual uint32_t Get_Class_ID(void) const;
 
 		virtual PersistClass* Create(void) const;
 		

@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 
@@ -59,7 +61,7 @@ class NodeClass;
 /////////////////////////////////////////////////////////////////////////
 //	Typedefs
 /////////////////////////////////////////////////////////////////////////
-typedef bool (*VIS_POINT_RENDERED_CALLBACK) (DWORD milliseconds, DWORD param);
+typedef bool (*VIS_POINT_RENDERED_CALLBACK) (uint32_t milliseconds, uint32_t param);
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -86,7 +88,7 @@ class VisMgrClass
 		//	Vis generation
 		//
 		static void		Build_Node_List (DynamicVectorClass<NodeClass *> &node_list, bool selection_only = false);
-		static void		Render_Manual_Vis_Points (bool farm_mode = false, int processor_index = 0, int total_processors = 1, VIS_POINT_RENDERED_CALLBACK callback = NULL, DWORD param = 0);
+		static void		Render_Manual_Vis_Points (bool farm_mode = false, int processor_index = 0, int total_processors = 1, VIS_POINT_RENDERED_CALLBACK callback = NULL, uint32_t param = 0);
 
 	protected:
 

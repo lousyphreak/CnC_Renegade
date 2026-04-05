@@ -123,8 +123,8 @@ MPSettingsMgrClass::Load_Settings (void)
 		RegistryClass skuReg(APPLICATION_SUB_KEY_NAME, false);
 
 		if (skuReg.Is_Valid()) {
-			unsigned long sku = skuReg.Get_Int("SKU", RENEGADE_BASE_SKU);
-			unsigned long lang = (sku & 0xFF);
+			uint32_t sku = skuReg.Get_Int("SKU", RENEGADE_BASE_SKU);
+			uint32_t lang = (sku & 0xFF);
 
 			// If this is not an Asian language region then use the Western defaults
 			#if RENEGADE_WITH_LEGACY_WOL

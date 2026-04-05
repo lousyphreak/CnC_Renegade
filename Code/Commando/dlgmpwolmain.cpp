@@ -139,11 +139,11 @@ bool MPWolMainMenuClass::CheckWOLVersion(void)
 	}
 
 	// WOLAPI version 1.19.3 or better required.
-	const LONG minVersion = MAKELONG(19,1);
-	const LONG minBuild = MAKELONG(0,3);
+	const int32_t minVersion = MAKELONG(19,1);
+	const int32_t minBuild = MAKELONG(0,3);
 
-	unsigned long wolVersion = 0;
-	unsigned long wolBuild = 0;
+	uint32_t wolVersion = 0;
+	uint32_t wolBuild = 0;
 	wolSession->GetChatObject()->GetVersion(&wolVersion);
 
 	WideStringClass wolText(255, true);
@@ -159,7 +159,7 @@ bool MPWolMainMenuClass::CheckWOLVersion(void)
 
 	char buildString[32] = {0};
 	LPCSTR value = (LPCSTR)(&buildString[0]);
-	HRESULT hr = wolSession->GetChatObject()->GetAttributeValue("BuildNumber", &value);
+	int32_t hr = wolSession->GetChatObject()->GetAttributeValue("BuildNumber", &value);
 
 	if (SUCCEEDED(hr)) {
 		wolBuild = atol(buildString);
@@ -213,7 +213,7 @@ MPWolMainMenuClass::On_Frame_Update (void)
 //
 ////////////////////////////////////////////////////////////////
 void
-MPWolMainMenuClass::On_Command (int ctrl_id, int message_id, DWORD param)
+MPWolMainMenuClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	switch (ctrl_id)
 	{

@@ -238,7 +238,7 @@ void StaticAnimPhysClass::Debug_Display_Shadow(const Vector2 & v0,const Vector2 
 			DynamicIBAccessClass ibaccess(BUFFER_TYPE_DYNAMIC_DX8,2*3);
 			{
 				DynamicIBAccessClass::WriteLockClass lock(&ibaccess);
-				unsigned short * indices = lock.Get_Index_Array();
+				uint16_t * indices = lock.Get_Index_Array();
 
 				indices[0] = 0;
 				indices[1] = 1;
@@ -479,7 +479,7 @@ StaticAnimPhysDefClass::StaticAnimPhysDefClass(void) :
 
 }
 
-uint32 StaticAnimPhysDefClass::Get_Class_ID (void) const	
+uint32_t StaticAnimPhysDefClass::Get_Class_ID (void) const	
 { 
 	return CLASSID_STATICANIMPHYSDEF; 
 }

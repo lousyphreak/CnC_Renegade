@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __MESSAGE_WINDOW_H
@@ -110,8 +112,8 @@ public:
 	//
 	//	Decay control
 	//
-	uint32			Get_Decay_Time (void) const	{ return DecayTime; }
-	void				Set_Decay_Time (uint32 time)	{ DecayTime = time; }
+	uint32_t			Get_Decay_Time (void) const	{ return DecayTime; }
+	void				Set_Decay_Time (uint32_t time)	{ DecayTime = time; }
 
 	//
 	//	Message log support
@@ -130,7 +132,7 @@ private:
 	////////////////////////////////////////////////////////////////
 	//	Private member data
 	////////////////////////////////////////////////////////////////
-	uint32				DecayTime;
+	uint32_t				DecayTime;
 	TextWindowClass *	TextWindow;
 	Render2DClass		IconRenderer;
 	RectClass			CurrentRect;

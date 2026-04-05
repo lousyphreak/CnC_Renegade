@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __DUPLICATE_REMOVER_H
@@ -92,7 +94,7 @@ private:
 	void			Close_Mix_Files (DynamicVectorClass<MixFileFactoryClass *> &list);
 	void			Internal_Process (void);	
 
-	static UINT	fnThreadProc (LPVOID pParam);
+	static uint32_t	fnThreadProc (LPVOID pParam);
 
 
 	//

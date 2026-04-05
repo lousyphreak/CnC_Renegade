@@ -38,6 +38,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef DX8_WRAPPER_H
@@ -166,7 +168,7 @@ public:
 #define D3DTSS_BUMPENVMAT10 9
 #define D3DTSS_BUMPENVMAT11 10
 
-using D3DTRANSFORMSTATETYPE = int;
+using D3DTRANSFORMSTATETYPE = int32_t;
 
 enum {
 	BUFFER_TYPE_DX8,
@@ -190,7 +192,7 @@ public:
 	static void Begin_Scene(void);
 	static void End_Scene(bool flip_frame = true);
 	static void Flip_To_Primary(void);
-	static void Clear(bool clear_color, bool clear_z_stencil, const Vector3 &color, float z = 1.0f, unsigned int stencil = 0);
+	static void Clear(bool clear_color, bool clear_z_stencil, const Vector3 &color, float z = 1.0f, uint32_t stencil = 0);
 	static void Set_Viewport(const RenderViewportClass &viewport);
 
 	static bool Set_Any_Render_Device(void);
@@ -242,11 +244,11 @@ public:
 	static void Set_Projection_Transform_With_Z_Bias(const Matrix4 &matrix, float znear, float zfar);
 	static void Set_Vertex_Buffer(const VertexBufferClass *vb);
 	static void Set_Vertex_Buffer(const DynamicVBAccessClass &vba);
-	static void Set_Index_Buffer(const IndexBufferClass *ib, unsigned short index_base_offset);
-	static void Set_Index_Buffer(const DynamicIBAccessClass &iba, unsigned short index_base_offset);
+	static void Set_Index_Buffer(const IndexBufferClass *ib, uint16_t index_base_offset);
+	static void Set_Index_Buffer(const DynamicIBAccessClass &iba, uint16_t index_base_offset);
 	static void Set_Index_Buffer_Index_Offset(unsigned offset);
-	static void Draw_Triangles(unsigned buffer_type, unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count);
-	static void Draw_Triangles(unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count);
+	static void Draw_Triangles(unsigned buffer_type, uint16_t start_index, uint16_t polygon_count, uint16_t min_vertex_index, uint16_t vertex_count);
+	static void Draw_Triangles(uint16_t start_index, uint16_t polygon_count, uint16_t min_vertex_index, uint16_t vertex_count);
 	static void Set_Texture(unsigned stage, TextureClass *texture);
 	static void Set_Material(const VertexMaterialClass *material);
 	static void Set_Shader(const ShaderClass &shader);
@@ -258,10 +260,10 @@ public:
 	static void Release_Render_State();
 	static void Apply_Render_State_Changes();
 
-	static void Set_Alpha(const float alpha, unsigned int &color)
+	static void Set_Alpha(const float alpha, uint32_t &color)
 	{
-		unsigned char *component = reinterpret_cast<unsigned char *>(&color);
-		component[3] = static_cast<unsigned char>(255.0f * alpha);
+		uint8_t *component = reinterpret_cast<uint8_t *>(&color);
+		component[3] = static_cast<uint8_t>(255.0f * alpha);
 	}
 
 	static void Set_World_Identity();
@@ -288,7 +290,7 @@ public:
 	static void _Copy_DX8_Rects(
 		IDirect3DSurface8 *pSourceSurface,
 		const RECT *pSourceRectsArray,
-		UINT cRects,
+		uint32_t cRects,
 		IDirect3DSurface8 *pDestinationSurface,
 		const POINT *pDestPointsArray);
 
@@ -302,11 +304,11 @@ public:
 			static_cast<float>((color >> 24) & 0xFF) * inv);
 	}
 
-	static unsigned int Convert_Color(const Vector4 &color)
+	static uint32_t Convert_Color(const Vector4 &color)
 	{
-		auto clamp = [](float value) -> unsigned long {
+		auto clamp = [](float value) -> uint32_t {
 			const float scaled = value < 0.0f ? 0.0f : (value > 1.0f ? 255.0f : value * 255.0f);
-			return static_cast<unsigned long>(scaled + 0.5f);
+			return static_cast<uint32_t>(scaled + 0.5f);
 		};
 
 		return (clamp(color.W) << 24) |
@@ -315,12 +317,12 @@ public:
 			clamp(color.Z);
 	}
 
-	static unsigned int Convert_Color(const Vector3 &color, float alpha)
+	static uint32_t Convert_Color(const Vector3 &color, float alpha)
 	{
 		return Convert_Color(Vector4(color.X, color.Y, color.Z, alpha));
 	}
 
-	static unsigned int Convert_Color_Clamp(const Vector4 &color)
+	static uint32_t Convert_Color_Clamp(const Vector4 &color)
 	{
 		return Convert_Color(color);
 	}

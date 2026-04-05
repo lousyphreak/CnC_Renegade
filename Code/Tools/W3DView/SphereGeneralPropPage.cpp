@@ -129,9 +129,9 @@ SphereGeneralPropPageClass::Add_Shader_To_Combo
 	LPCTSTR			name
 )
 {
-	int index = SendDlgItemMessage (IDC_SHADER_COMBO, CB_ADDSTRING, 0, (LPARAM)name);
+	int index = SendDlgItemMessage (IDC_SHADER_COMBO, CB_ADDSTRING, 0, (intptr_t)name);
 	if (index != CB_ERR) {
-		SendDlgItemMessage (IDC_SHADER_COMBO, CB_SETITEMDATA, (WPARAM)index, (LPARAM)&shader);
+		SendDlgItemMessage (IDC_SHADER_COMBO, CB_SETITEMDATA, (uintptr_t)index, (intptr_t)&shader);
 
 		//
 		//	Is the blend mode of this shader the same as that of the
@@ -141,7 +141,7 @@ SphereGeneralPropPageClass::Add_Shader_To_Combo
 			 (shader.Get_Dst_Blend_Func () == m_Shader.Get_Dst_Blend_Func ()) &&
 			 (shader.Get_Src_Blend_Func () == m_Shader.Get_Src_Blend_Func ()))
 		{
-			SendDlgItemMessage (IDC_SHADER_COMBO, CB_SETCURSEL, (WPARAM)index);
+			SendDlgItemMessage (IDC_SHADER_COMBO, CB_SETCURSEL, (uintptr_t)index);
 		}
 	}
 
@@ -154,7 +154,7 @@ SphereGeneralPropPageClass::Add_Shader_To_Combo
 //  OnInitDialog
 //
 /////////////////////////////////////////////////////////////
-BOOL
+int32_t
 SphereGeneralPropPageClass::OnInitDialog (void) 
 {
 	// Allow the base class to process this message
@@ -190,7 +190,7 @@ SphereGeneralPropPageClass::OnInitDialog (void)
 //  OnApply
 //
 /////////////////////////////////////////////////////////////
-BOOL
+int32_t
 SphereGeneralPropPageClass::OnApply (void)
 {
 	// Get the data from the dialog controls
@@ -203,14 +203,14 @@ SphereGeneralPropPageClass::OnApply (void)
 	//
 	int index = SendDlgItemMessage (IDC_SHADER_COMBO, CB_GETCURSEL);
 	if (index != CB_ERR) {
-		ShaderClass *shader = (ShaderClass *)SendDlgItemMessage (IDC_SHADER_COMBO, CB_GETITEMDATA, (WPARAM)index);
+		ShaderClass *shader = (ShaderClass *)SendDlgItemMessage (IDC_SHADER_COMBO, CB_GETITEMDATA, (uintptr_t)index);
 		if (shader != NULL) {
 			m_Shader = (*shader);
 		}
 	}
 
 	// Check to make sure the user entered a valid name for the object
-	BOOL retval = FALSE;
+	int32_t retval = FALSE;
 	if (m_Name.GetLength () == 0) {
 		::MessageBox (m_hWnd, "Invalid sphere name.  Please enter a new name.", "Invalid settings", MB_ICONEXCLAMATION | MB_OK);
 		m_bValid = false;
@@ -301,12 +301,12 @@ SphereGeneralPropPageClass::OnChangeNameEdit (void)
 //  OnNotify
 //
 /////////////////////////////////////////////////////////////
-BOOL
+int32_t
 SphereGeneralPropPageClass::OnNotify
 (
-	WPARAM		wParam,
-	LPARAM		lParam,
-	LRESULT *	pResult
+	uintptr_t		wParam,
+	intptr_t		lParam,
+	intptr_t *	pResult
 )
 {
 	//
@@ -354,11 +354,11 @@ SphereGeneralPropPageClass::OnSelchangeShaderCombo (void)
 //  OnCommand
 //
 /////////////////////////////////////////////////////////////
-BOOL
+int32_t
 SphereGeneralPropPageClass::OnCommand
 (
-	WPARAM wParam,
-	LPARAM lParam
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	switch (LOWORD (wParam))

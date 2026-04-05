@@ -64,39 +64,39 @@
  * HISTORY:                                                                                    *
  *   07/29/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-Buffer::Buffer(void * buffer, long size) :
+Buffer::Buffer(void * buffer, int32_t size) :
 	BufferPtr(buffer),
 	Size(size),
 	IsAllocated(false)
 {
 	if (buffer == NULL && size > 0) {
-		BufferPtr = new char[size];
+		BufferPtr = new uint8_t[size];
 		IsAllocated = true;
 	}
 }
 
 
 // Alternate constructor for char * pointer.
-Buffer::Buffer(char * buffer, long size) :
+Buffer::Buffer(char * buffer, int32_t size) :
 	BufferPtr(buffer),
 	Size(size),
 	IsAllocated(false)
 {
 	if (buffer == NULL && size > 0) {
-		BufferPtr = new char[size];
+		BufferPtr = new uint8_t[size];
 		IsAllocated = true;
 	}
 }
 
 
 // Alternate constructor for void const * pointer.
-Buffer::Buffer(void const * buffer, long size) :
+Buffer::Buffer(void const * buffer, int32_t size) :
 	BufferPtr((void*)buffer),
 	Size(size),
 	IsAllocated(false)
 {
 	if (buffer == NULL && size > 0) {
-		BufferPtr = new char[size];
+		BufferPtr = new uint8_t[size];
 		IsAllocated = true;
 	}
 }
@@ -119,13 +119,13 @@ Buffer::Buffer(void const * buffer, long size) :
  * HISTORY:                                                                                    *
  *   07/29/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-Buffer::Buffer(long size) :
+Buffer::Buffer(int32_t size) :
 	BufferPtr(NULL),
 	Size(size),
 	IsAllocated(false)
 {
 	if (size > 0) {
-		BufferPtr = new char[size];
+		BufferPtr = new uint8_t[size];
 		IsAllocated = true;
 	}
 }

@@ -147,7 +147,7 @@ LoadSPGameMenuClass::Build_List (const char *search_string, int start_index)
 	ListCtrlClass *list_ctrl = (ListCtrlClass *)Get_Dlg_Item (IDC_LOAD_GAME_LIST_CTRL);
 
 	WIN32_FIND_DATA find_info	= { 0 };
-	BOOL keep_going				= TRUE;
+	int32_t keep_going				= TRUE;
 	HANDLE file_find			= NULL;
 
 	//
@@ -406,7 +406,7 @@ LoadSPGameMenuClass::Get_Entry_Metadata (ListCtrlClass *list_ctrl, int item_inde
 		return NULL;
 	}
 
-	const uint32 handle = list_ctrl->Get_Entry_Data (item_index, 0);
+	const uint32_t handle = list_ctrl->Get_Entry_Data (item_index, 0);
 	if (handle == 0) {
 		return NULL;
 	}
@@ -446,7 +446,7 @@ LoadSPGameMenuClass::On_ListCtrl_Delete_Entry
 //
 ////////////////////////////////////////////////////////////////
 int CALLBACK
-LoadSPGameMenuClass::LoadListSortCallback (ListCtrlClass *list_ctrl, int item_index1, int item_index2, uint32 user_param)
+LoadSPGameMenuClass::LoadListSortCallback (ListCtrlClass *list_ctrl, int item_index1, int item_index2, uint32_t user_param)
 {
 	int retval = 0;
 
@@ -454,7 +454,7 @@ LoadSPGameMenuClass::LoadListSortCallback (ListCtrlClass *list_ctrl, int item_in
 	//	Get the sorting params
 	//
 	int	sort_col_index = LOWORD (user_param);
-	BOOL	sort_ascending	= HIWORD (user_param);
+	int32_t	sort_ascending	= HIWORD (user_param);
 
 	if (sort_col_index == 0 || sort_col_index == 1) {
 		
@@ -496,7 +496,7 @@ LoadSPGameMenuClass::LoadListSortCallback (ListCtrlClass *list_ctrl, int item_in
 //
 ////////////////////////////////////////////////////////////////
 void
-LoadSPGameMenuClass::On_Command (int ctrl_id, int message_id, DWORD param)
+LoadSPGameMenuClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	switch (ctrl_id)
 	{

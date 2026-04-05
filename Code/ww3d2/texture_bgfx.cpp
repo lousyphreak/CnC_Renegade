@@ -30,7 +30,7 @@ uint8_t Expand_6_To_8(uint8_t value)
 	return static_cast<uint8_t>((value << 2) | (value >> 4));
 }
 
-void Decode_Pixel(const unsigned char *pixel, WW3DFormat format, uint8_t &r, uint8_t &g, uint8_t &b, uint8_t &a)
+void Decode_Pixel(const uint8_t *pixel, WW3DFormat format, uint8_t &r, uint8_t &g, uint8_t &b, uint8_t &a)
 {
 	r = g = b = 255;
 	a = 255;
@@ -138,7 +138,7 @@ void Load_Texture_From_Surface(BgfxCompatTexture *texture, SurfaceClass *surface
 	int width = 0;
 	int height = 0;
 	int pixel_size = 0;
-	unsigned char *copy = surface->CreateCopy(&width, &height, &pixel_size, false);
+	uint8_t *copy = surface->CreateCopy(&width, &height, &pixel_size, false);
 	if (copy != NULL) {
 		std::memcpy(texture->bytes.data(), copy, texture->bytes.size());
 		delete [] copy;
@@ -185,9 +185,9 @@ unsigned BgfxCompat_Get_Pixel_Size(WW3DFormat format)
 	}
 }
 
-std::vector<unsigned char> BgfxCompat_Convert_Surface_To_RGBA8(const BgfxCompatSurface &surface)
+std::vector<uint8_t> BgfxCompat_Convert_Surface_To_RGBA8(const BgfxCompatSurface &surface)
 {
-	std::vector<unsigned char> rgba;
+	std::vector<uint8_t> rgba;
 	rgba.resize(static_cast<size_t>(surface.width) * static_cast<size_t>(surface.height) * 4U, 0);
 	const unsigned pixel_size = BgfxCompat_Get_Pixel_Size(surface.format);
 	for (unsigned y = 0; y < surface.height; ++y) {
@@ -222,7 +222,7 @@ bgfx::TextureHandle BgfxCompat_Get_Texture_Handle(TextureClass *texture)
 	}
 
 	const BgfxCompatSurface temp_surface{static_cast<unsigned>(std::max(backend->width, 1)), static_cast<unsigned>(std::max(backend->height, 1)), backend->format, backend->bytes};
-	std::vector<unsigned char> rgba = BgfxCompat_Convert_Surface_To_RGBA8(temp_surface);
+	std::vector<uint8_t> rgba = BgfxCompat_Convert_Surface_To_RGBA8(temp_surface);
 	bgfx::Memory const *memory = bgfx::copy(rgba.data(), static_cast<uint32_t>(rgba.size()));
 	if (bgfx::isValid(backend->handle)) {
 		bgfx::destroy(backend->handle);
@@ -394,7 +394,7 @@ void TextureClass::Set_Texture_Name(const char *name)
 	Name = name != NULL ? name : "";
 }
 
-unsigned int TextureClass::Get_Mip_Level_Count(void)
+uint32_t TextureClass::Get_Mip_Level_Count(void)
 {
 	return 1;
 }
@@ -405,7 +405,7 @@ void TextureClass::Init()
 	LastAccessed = WW3D::Get_Sync_Time();
 }
 
-SurfaceClass *TextureClass::Get_Surface_Level(unsigned int)
+SurfaceClass *TextureClass::Get_Surface_Level(uint32_t)
 {
 	BgfxCompatTexture *backend = BgfxCompat_To_Texture(D3DTexture);
 	if (backend == NULL) {
@@ -416,17 +416,17 @@ SurfaceClass *TextureClass::Get_Surface_Level(unsigned int)
 	return surface;
 }
 
-IDirect3DSurface8 *TextureClass::Get_D3D_Surface_Level(unsigned int)
+IDirect3DSurface8 *TextureClass::Get_D3D_Surface_Level(uint32_t)
 {
 	return NULL;
 }
 
-unsigned int TextureClass::Get_Priority(void)
+uint32_t TextureClass::Get_Priority(void)
 {
 	return 0;
 }
 
-unsigned int TextureClass::Set_Priority(unsigned int)
+uint32_t TextureClass::Set_Priority(uint32_t)
 {
 	return 0;
 }
@@ -487,7 +487,7 @@ void TextureClass::Apply_New_Surface(IDirect3DTexture8 *tex, bool initialized)
 	Initialized = initialized;
 }
 
-void TextureClass::Apply(unsigned int)
+void TextureClass::Apply(uint32_t)
 {
 }
 
@@ -496,7 +496,7 @@ void TextureClass::Load_Locked_Surface()
 	Initialized = false;
 }
 
-void TextureClass::Apply_Null(unsigned int)
+void TextureClass::Apply_Null(uint32_t)
 {
 }
 

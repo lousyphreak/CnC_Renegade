@@ -108,7 +108,7 @@ EvaObjectivesTabClass::On_Init_Dialog (void)
 //
 ////////////////////////////////////////////////////////////////
 void
-EvaObjectivesTabClass::On_Command (int ctrl_id, int message_id, DWORD param)
+EvaObjectivesTabClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	ChildDialogClass::On_Command (ctrl_id, message_id, param);
 	return ;
@@ -260,7 +260,7 @@ EvaObjectivesTabClass::ListSortCallback
 	ListCtrlClass *	list_ctrl,
 	int					item_index1,
 	int					item_index2,
-	uint32				user_param
+	uint32_t				user_param
 )
 {
 	int count = list_ctrl->Get_Entry_Count ();

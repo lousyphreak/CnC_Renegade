@@ -705,7 +705,7 @@ const char *LightmapPacker::Asset_Directory (const char *filename)
 void LightmapPacker::Delete_Assets()
 {
 	char			pathname [_MAX_PATH];
-	long			handle;
+	intptr_t		handle;
 	_finddata_t	fileinfo;
 
 	// Attempt to delete every file in the asset directory.
@@ -755,7 +755,7 @@ void LightmapPacker::Copy_Assets (const char *pathname)
 	char			loadpathname [_MAX_PATH];
 	char			savepath [_MAX_PATH];
 	char			savepathname [_MAX_PATH];
-	long			handle;
+	intptr_t		handle;
 	_finddata_t	fileinfo;
 	
 	// Attempt to copy every file in the load directory to the save directory.
@@ -1735,10 +1735,10 @@ void TrueColorTarga::Clear (const TrueColorTarga::UnpackedTexelStruct &cleartexe
 {
 	const unsigned bytespertexel = TGA_BytesPerPixel (Pixel_Depth());
 
-	unsigned char *texelptr;
+	uint8_t *texelptr;
 
 	for (unsigned y = 0; y < Height(); y++) {
-		texelptr = ((unsigned char*) GetImage()) + (Width() * y * bytespertexel);
+		texelptr = ((uint8_t*) GetImage()) + (Width() * y * bytespertexel);
 		for (unsigned x = 0; x < Width(); x++) {
 			Pack_Texel (cleartexel, texelptr, bytespertexel);
 			texelptr += bytespertexel;
@@ -1769,7 +1769,7 @@ char *TrueColorTarga::Load (const char *pathname)
 
 	static char _messagebuffer [256];
 
-	long			   error;
+	int32_t		   error;
 	bool			   valid;
 	StringBuilder  errormessage (_messagebuffer, sizeof (_messagebuffer));
 	
@@ -1811,7 +1811,7 @@ char *TrueColorTarga::Save (const char *pathname)
 
 	static char _messagebuffer [256];
 
-	long			   error;
+	int32_t		   error;
 	StringBuilder  errormessage (_messagebuffer, sizeof (_messagebuffer));
 
 	error = Targa::Save (pathname, TGAF_IMAGE);
@@ -1841,7 +1841,7 @@ void TrueColorTarga::Blit (TrueColorTarga &destination, unsigned x, unsigned y)
 {
 	unsigned			sourcebytespertexel, destbytespertexel;
 	unsigned			maxc, maxr;
-	unsigned char *sourceptr, *destptr;
+	uint8_t *sourceptr, *destptr;
 
 	sourcebytespertexel = TGA_BytesPerPixel (Pixel_Depth()); 
 	destbytespertexel   = TGA_BytesPerPixel (destination.Pixel_Depth());
@@ -1869,8 +1869,8 @@ void TrueColorTarga::Blit (TrueColorTarga &destination, unsigned x, unsigned y)
 
 	// For each row...
 	for (unsigned r = 0; r < maxr; r++) {
-		sourceptr = ((unsigned char*) GetImage()) + (Width() * r * sourcebytespertexel);
-		destptr = ((unsigned char*) destination.GetImage()) + (((destination.Width() * (y + r)) + x) * destbytespertexel);
+		sourceptr = ((uint8_t*) GetImage()) + (Width() * r * sourcebytespertexel);
+		destptr = ((uint8_t*) destination.GetImage()) + (((destination.Width() * (y + r)) + x) * destbytespertexel);
 
 		// For each column...
 		for (unsigned c = 0; c < maxc; c++) {
@@ -2032,7 +2032,7 @@ void TrueColorTarga::Transpose (TrueColorTarga &destination)
 	unsigned			bytespertexel;
 	size_t			size;
 	unsigned			sourcestride;
-	unsigned char *sourceptr, *destinationptr, *stagingbuffer;
+	uint8_t *sourceptr, *destinationptr, *stagingbuffer;
 
 	// Image data must exist.
 	ASSERT (GetImage() != NULL);
@@ -2043,14 +2043,14 @@ void TrueColorTarga::Transpose (TrueColorTarga &destination)
 	bytespertexel = TGA_BytesPerPixel (Pixel_Depth());
 	size = Width() * Height() * bytespertexel;
 	
-	stagingbuffer = new unsigned char [size];
+	stagingbuffer = new uint8_t [size];
 	ASSERT (stagingbuffer != NULL);
 
 	// Write transposed image data to staging buffer.
 	sourcestride	= Width() * bytespertexel;
 	destinationptr = stagingbuffer;
 	for (unsigned y = 0; y < Width(); y++) {
-		sourceptr = ((unsigned char*) GetImage()) + (y * bytespertexel);
+		sourceptr = ((uint8_t*) GetImage()) + (y * bytespertexel);
 		for (unsigned x = 0; x < Height(); x++) {
 			for (unsigned b = 0; b < bytespertexel; b++) {
 				*destinationptr++ = *(sourceptr + b);
@@ -2088,7 +2088,7 @@ int TrueColorTarga::Compare (TrueColorTarga &comparison, float epsilon)
 	int	 			 epsilondelta;
 	float				 xscale, yscale;	
 	int				 result;	
-	unsigned char	*imageptr;
+	uint8_t	*imageptr;
 
 	ASSERT ((epsilon >= 0.0f) && (epsilon <= 1.0f));
 
@@ -2102,7 +2102,7 @@ int TrueColorTarga::Compare (TrueColorTarga &comparison, float epsilon)
 	yscale = ((float) comparison.Height()) / Height();
 
 	// For each texel in this targa measure the delta for the corresponding texel in the comparison targa.
-	imageptr = (unsigned char*) GetImage();
+	imageptr = (uint8_t*) GetImage();
 	for (unsigned y = 0; y < Height(); y++) {
 
 		unsigned	ys;
@@ -2113,14 +2113,14 @@ int TrueColorTarga::Compare (TrueColorTarga &comparison, float epsilon)
 		for (unsigned x = 0; x < Width(); x++) {
 
 			unsigned					xs;
-			unsigned char		  *comparisonimageptr;
+			uint8_t		  *comparisonimageptr;
 			int					   delta;
 			UnpackedTexelStruct  texel, comparisontexel;
 
 			// NOTE: Position sample point at center of texel.
 			xs = MIN ((unsigned) ((x + 0.5f) * xscale), (unsigned) comparison.Width() - 1);
 
-			comparisonimageptr = ((unsigned char*) comparison.GetImage()) + (((ys * comparison.Width()) + xs) * comparisonbytespertexel);
+			comparisonimageptr = ((uint8_t*) comparison.GetImage()) + (((ys * comparison.Width()) + xs) * comparisonbytespertexel);
 			Unpack_Texel (imageptr, bytespertexel, texel);
 			Unpack_Texel (comparisonimageptr, comparisonbytespertexel, comparisontexel);
 
@@ -2166,7 +2166,7 @@ int TrueColorTarga::Compare (TrueColorTarga &comparison, unsigned x, unsigned y,
 	unsigned			 bytespertexel, comparisonbytespertexel;
 	int	 			 epsilondelta;
 	int				 result;	
-	unsigned char	*imageptr, *comparisonptr;
+	uint8_t	*imageptr, *comparisonptr;
 
 	ASSERT ((epsilon >= 0.0f) && (epsilon <= 1.0f));
 
@@ -2181,8 +2181,8 @@ int TrueColorTarga::Compare (TrueColorTarga &comparison, unsigned x, unsigned y,
 
 	// For each row...
 	for (unsigned r = 0; r < Height(); r++) {
-		imageptr		  = ((unsigned char*) GetImage()) + (Width() * r * bytespertexel);
-		comparisonptr = ((unsigned char*) comparison.GetImage()) + (((comparison.Width() * (y + r)) + x) * comparisonbytespertexel);
+		imageptr		  = ((uint8_t*) GetImage()) + (Width() * r * bytespertexel);
+		comparisonptr = ((uint8_t*) comparison.GetImage()) + (((comparison.Width() * (y + r)) + x) * comparisonbytespertexel);
 
 		// For each column...
 		for (unsigned c = 0; c < Width(); c++) {
@@ -2299,7 +2299,7 @@ bool TrueColorTarga::Fill_Four_Connected (unsigned x, unsigned y, const Unpacked
 	static const int offsety [fourconnectedcount] = { 0,  0, -1, +1};
 	
 	UnpackedTexelStruct  unpackedtexel;
-	unsigned char		  *texelptr;
+	uint8_t		  *texelptr;
 
 	// Is texel (x, y) the fill color (ie. not already filled)?  
 	texelptr = Get_Texel (x, y);
@@ -2319,7 +2319,7 @@ bool TrueColorTarga::Fill_Four_Connected (unsigned x, unsigned y, const Unpacked
 		for (adj = 0; adj < fourconnectedcount; adj++) {
 
 			int				adjx, adjy;
-			unsigned char *adjtexelptr;
+			uint8_t *adjtexelptr;
 
 			fourconnected [adj] = false;
 			adjx = ((int) x) + offsetx [adj];
@@ -2398,10 +2398,10 @@ void TrueColorTarga::Add (TrueColorTarga &targa)
 	targabytespertexel = TGA_BytesPerPixel (targa.Pixel_Depth());
 	for (unsigned r = 0; r < height; r++) {
 	
-		unsigned char *thisptr, *targaptr;
+		uint8_t *thisptr, *targaptr;
 		
-		thisptr  = ((unsigned char*) GetImage()) + (width * r * thisbytespertexel);
-		targaptr = ((unsigned char*) targa.GetImage()) + (width * r * targabytespertexel);
+		thisptr  = ((uint8_t*) GetImage()) + (width * r * thisbytespertexel);
+		targaptr = ((uint8_t*) targa.GetImage()) + (width * r * targabytespertexel);
 
 		// For each column...
 		for (unsigned c = 0; c < width; c++) {
@@ -2456,7 +2456,7 @@ void TrueColorTarga::Rasterize (TrueColorTarga &destination, const W3dRGBStruct 
 	Vector2				   i, j;	
 	float						oowidthminustwo, ooheightminustwo;
 	unsigned				   bytespertexel;	
-	unsigned char		  *destptr;			
+	uint8_t		  *destptr;			
 	W3dRGBStruct		   colors [edgecount];	
 	float					   oowidth, ooheight;
 	unsigned					n;
@@ -2513,7 +2513,7 @@ void TrueColorTarga::Rasterize (TrueColorTarga &destination, const W3dRGBStruct 
 	bytespertexel	  = TGA_BytesPerPixel (Pixel_Depth());
 	oowidthminustwo  = 1.0f / (destination.Width()  - 2);
 	ooheightminustwo = 1.0f / (destination.Height() - 2);
-	destptr			  = (unsigned char*) destination.GetImage();
+	destptr			  = (uint8_t*) destination.GetImage();
 	for (unsigned v = 0; v < destination.Height(); v++) {
 		for (unsigned u = 0; u < destination.Width(); u++) {
 			
@@ -2570,7 +2570,7 @@ void TrueColorTarga::Rasterize (TrueColorTarga &destination, const W3dRGBStruct 
 						Vector2				   p;
 						unsigned				   x, y;
 						UnpackedTexelStruct  unpackedtexel;
-						unsigned char		  *sourceptr;
+						uint8_t		  *sourceptr;
 
 						// Calculate source coordinates.
 						p = vertexuvs [(longestedge + 2) % 3] + (fu * i) + (fv * j);
@@ -2578,7 +2578,7 @@ void TrueColorTarga::Rasterize (TrueColorTarga &destination, const W3dRGBStruct 
 						y = (unsigned) MIN (MAX ((int) (p.Y * Height()), 0), ((int) Height()) - 1);
 
 						// Sample the source.
-						sourceptr = ((unsigned char*) GetImage()) + (((Width() * y) + x) * bytespertexel);
+						sourceptr = ((uint8_t*) GetImage()) + (((Width() * y) + x) * bytespertexel);
 						Unpack_Texel (sourceptr, bytespertexel, unpackedtexel);
 						r += unpackedtexel.Red();
 						g += unpackedtexel.Green();
@@ -2809,7 +2809,7 @@ bool TrianglePacker::SampleSurface::Sample (const Vector2 &samplepoint, const Pr
 
 			p = (alpha * projectiontriangle.Points [1]) + (beta * projectiontriangle.Points [2]) + projectiontriangle.Points [0];
 			v = BlendTexture->Value (p);
-			color.Set ((uint8) (color.R * v), (uint8) (color.G * v), (uint8) (color.B * v));
+			color.Set ((uint8_t) (color.R * v), (uint8_t) (color.G * v), (uint8_t) (color.B * v));
 		}
 		
 		// Add the sample.
@@ -2871,7 +2871,7 @@ bool TrianglePacker::SampleSurface::Sample (float alpha, float beta, const Proje
 
 		p = (alpha * projectiontriangle.Points [1]) + (beta * projectiontriangle.Points [2]) + projectiontriangle.Points [0];
 		v = BlendTexture->Value (p);
-		color.Set ((uint8) (color.R * v), (uint8) (color.G * v), (uint8) (color.B * v));
+		color.Set ((uint8_t) (color.R * v), (uint8_t) (color.G * v), (uint8_t) (color.B * v));
 	}
 
 	// Add the sample.
@@ -3384,4 +3384,3 @@ bool Page::Contains (const Region &testregion)
 	// Test region is not contained by a region in the list.
 	return (false);
 }
-

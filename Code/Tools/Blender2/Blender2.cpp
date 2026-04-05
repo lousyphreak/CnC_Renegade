@@ -50,7 +50,7 @@ public:
 
 private:
 
-	BOOL Is_Root ( INode * node );
+	int32_t Is_Root ( INode * node );
 	float Heading_Delta_From_Quat ( Quat q );
 	void Set_Data_Chunk ( INode * node, const Blender_Data_Chunk & new_data );
 	void Remove_Data_Chunk ( INode * node );
@@ -84,7 +84,7 @@ class Blender_Desc_Class:public ClassDesc
 {
 public:
 	int 			IsPublic()     {return 1;}
-	void *			Create(BOOL)   {return &the_blender;}
+	void *			Create(int32_t)   {return &the_blender;}
 	const TCHAR *	ClassName()    {return _T("Key Blender");}
 	SClass_ID		SuperClassID() {return UTILITY_CLASS_ID;}
 	Class_ID		ClassID()      {return Blender_Class_ID;}
@@ -107,12 +107,12 @@ ClassDesc* BlenderDesc() {return &blender_desc;}
 // BlenderDlgProc
 //----------------------------------------------------------------------------
 
-static BOOL CALLBACK BlenderDlgProc
+static int32_t CALLBACK BlenderDlgProc
 (
 	HWND hWnd,
-	UINT msg,
-	WPARAM wParam,
-	LPARAM lParam
+	uint32_t msg,
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	switch (msg)
@@ -328,7 +328,7 @@ void Blender_Class::Blend_Keys ()
 
 	float t_scale = 1.0f / (float) (end_time - start_time);
 
-	BOOL bad_controller_found = FALSE;
+	int32_t bad_controller_found = FALSE;
 
 	theHold.Begin ();
 
@@ -632,7 +632,7 @@ void Blender_Class::Blend_Keys ()
 // Blender_Class::Is_Root
 //----------------------------------------------------------------------------
 
-BOOL Blender_Class::Is_Root ( INode * node )
+int32_t Blender_Class::Is_Root ( INode * node )
 {
 	node = node->GetParentNode ();
 

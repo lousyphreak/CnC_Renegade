@@ -96,7 +96,7 @@ GotoObjectByIDDialogClass::OnOK (void)
 		//	Return focus to the edit control so the user can re-enter the ID
 		//
 		::SetFocus (::GetDlgItem (m_hWnd, IDC_OBJECT_ID_EDIT));
-		SendDlgItemMessage (IDC_OBJECT_ID_EDIT, EM_SETSEL, (WPARAM)0, (LPARAM)-1);
+		SendDlgItemMessage (IDC_OBJECT_ID_EDIT, EM_SETSEL, (uintptr_t)0, (intptr_t)-1);
 	} else {
 
 		//

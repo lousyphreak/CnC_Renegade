@@ -35,6 +35,8 @@
 #ifndef __PINGPROFILE_H__
 #define __PINGPROFILE_H__
 
+#include <cstdint>
+
 #include <WWOnline\WaitCondition.h>
 
 namespace WWOnline
@@ -43,10 +45,10 @@ class RawPing;
 class Session;
 }
 
-typedef struct {unsigned char Pings[8];} PingProfile;
+typedef struct {uint8_t Pings[8];} PingProfile;
 
 const PingProfile& GetLocalPingProfile(void);
-long ComparePingProfile(const PingProfile& ping1, const PingProfile& ping2);
+int32_t ComparePingProfile(const PingProfile& ping1, const PingProfile& ping2);
 int EncodePingProfile(const PingProfile& pings, char* buffer);
 void DecodePingProfile(const char* buffer, PingProfile& pings);
 
@@ -70,7 +72,7 @@ class PingProfileWait :
 
 	private:
 		RefPtr<WWOnline::Session> mWOLSession;
-		unsigned int mCount;
+		uint32_t mCount;
 	};
 
 #endif // __PINGPROFILE_H__

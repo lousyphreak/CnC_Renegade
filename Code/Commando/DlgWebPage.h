@@ -37,6 +37,8 @@
 #ifndef __DLGWEBPAGE_H__
 #define __DLGWEBPAGE_H__
 
+#include <cstdint>
+
 #include "dialogbase.h"
 #include "Notify.h"
 
@@ -82,7 +84,7 @@ class DlgWebPage :
 	private:
 		WebBrowser* mBrowser;
 		char* mPage;
-		unsigned long mTimer;
+		uint32_t mTimer;
 	};
 
 #endif // __DLGWEBPAGE_H__

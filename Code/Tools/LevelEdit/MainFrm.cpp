@@ -416,7 +416,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
-static UINT indicators[] =
+static uint32_t indicators[] =
 {
 	ID_SEPARATOR,           // status line indicator
 	IDS_CAM_LOCATION,
@@ -465,7 +465,7 @@ CMainFrame::OnCreate (LPCREATESTRUCT lpCreateStruct)
 	
 	if (!m_wndStatusBar.Create(this) ||
 		!m_wndStatusBar.SetIndicators(indicators,
-		  sizeof(indicators)/sizeof(UINT)))
+		  sizeof(indicators)/sizeof(uint32_t)))
 	{
 		TRACE0("Failed to create status bar\n");
 		return -1;      // fail to create
@@ -685,7 +685,7 @@ CMainFrame::Create_Toolbars (void)
 //
 //  PreCreateWindow
 //
-BOOL
+int32_t
 CMainFrame::PreCreateWindow (CREATESTRUCT& cs)
 {
 	// Allow the base class to process this message
@@ -724,7 +724,7 @@ CMainFrame::OnFinalRelease (void)
 
 
 void CALLBACK
-PatsTextCallback (AudibleSoundClass *sound_obj, const StringClass &text, uint32 user_param)
+PatsTextCallback (AudibleSoundClass *sound_obj, const StringClass &text, uint32_t user_param)
 {
 	CString message;
 	message.Format ("Got text callback: %s\tUser = %d\r\n", (LPCTSTR)text, user_param);
@@ -738,7 +738,7 @@ PatsTextCallback (AudibleSoundClass *sound_obj, const StringClass &text, uint32 
 //
 //  OnCreateClient
 //
-BOOL
+int32_t
 CMainFrame::OnCreateClient
 (
     LPCREATESTRUCT lpcs,
@@ -749,7 +749,7 @@ CMainFrame::OnCreateClient
     theApp.m_pMainWnd = this;
 
 	// Allow the base class to process this message
-	BOOL retval = CFrameWnd::OnCreateClient (lpcs, pContext);
+	int32_t retval = CFrameWnd::OnCreateClient (lpcs, pContext);
 
 	// Get the path where this exe was run from
 	TCHAR filename[MAX_PATH];
@@ -785,7 +785,7 @@ CMainFrame::OnCreateClient
 
 		// Initialize the WW3D engine using the window handle from
 		// the main view
-		BOOL retval = (WW3D::Init ((HWND)*pview) == WW3D_ERROR_OK);
+		int32_t retval = (WW3D::Init ((HWND)*pview) == WW3D_ERROR_OK);
 		ASSERT (retval);
 
 		// Show a dialog to the user asking them which
@@ -962,7 +962,7 @@ CMainFrame::OnUpdateObjectManipulate (CCmdUI* pCmdUI)
 	// Were we succesful in getting the mouse manager?
 	ASSERT (pmousemgr != NULL);
 	if (pmousemgr != NULL) {
-		pCmdUI->SetCheck ((BOOL)pmousemgr->Get_Mouse_Mode () == MouseMgrClass::MODE_OBJECT_MANIPULATE);
+		pCmdUI->SetCheck ((int32_t)pmousemgr->Get_Mouse_Mode () == MouseMgrClass::MODE_OBJECT_MANIPULATE);
 	}
 
 	return ;	
@@ -1002,7 +1002,7 @@ CMainFrame::OnUpdateModeCamera (CCmdUI* pCmdUI)
 	// Were we succesful in getting the mouse manager?
 	ASSERT (pmousemgr != NULL);
 	if (pmousemgr != NULL) {
-		pCmdUI->SetCheck ((BOOL)pmousemgr->Get_Mouse_Mode () == MouseMgrClass::MODE_CAMERA_DEFAULT);
+		pCmdUI->SetCheck ((int32_t)pmousemgr->Get_Mouse_Mode () == MouseMgrClass::MODE_CAMERA_DEFAULT);
 	}
 
 	return ;	
@@ -1052,7 +1052,7 @@ CMainFrame::OnUpdateModeOrbit (CCmdUI* pCmdUI)
 	// Were we succesful in getting the mouse manager?
 	ASSERT (pmousemgr != NULL);
 	if (pmousemgr != NULL) {
-		pCmdUI->SetCheck ((BOOL)pmousemgr->Get_Mouse_Mode () == MouseMgrClass::MODE_CAMERA_ORBIT);
+		pCmdUI->SetCheck ((int32_t)pmousemgr->Get_Mouse_Mode () == MouseMgrClass::MODE_CAMERA_ORBIT);
 	}
 
 	return ;	
@@ -1358,7 +1358,7 @@ CMainFrame::OnUpdateModeWalkthrough (CCmdUI* pCmdUI)
 	// Were we succesful in getting the mouse manager?
 	ASSERT (pmousemgr != NULL);
 	if (pmousemgr != NULL) {
-		pCmdUI->SetCheck ((BOOL)pmousemgr->Get_Mouse_Mode () == MouseMgrClass::MODE_CAMERA_WALK);
+		pCmdUI->SetCheck ((int32_t)pmousemgr->Get_Mouse_Mode () == MouseMgrClass::MODE_CAMERA_WALK);
 	}
 
 	return ;	
@@ -1461,7 +1461,7 @@ void
 CMainFrame::OnViewAmbientLightDlg (void) 
 {
 	// Toggle the visiblity state of the toolbar
-	BOOL show_dlg = !m_AmbientLightToolbar.IsWindowVisible ();	
+	int32_t show_dlg = !m_AmbientLightToolbar.IsWindowVisible ();	
 	ShowControlBar (&m_AmbientLightToolbar, show_dlg, FALSE);
 	return ;
 }
@@ -1488,7 +1488,7 @@ void
 CMainFrame::OnViewToolbarCameraSettings (void) 
 {
 	// Toggle the visiblity state of the toolbar
-	BOOL show_dlg = !m_CameraSettingsToolbar.IsWindowVisible ();	
+	int32_t show_dlg = !m_CameraSettingsToolbar.IsWindowVisible ();	
 	ShowControlBar (&m_CameraSettingsToolbar, show_dlg, FALSE);
 
 	// Get a pointer to the camera settings dialog
@@ -1607,11 +1607,11 @@ CMainFrame::OnUpdateSavePresets (CCmdUI *pCmdUI)
 //
 //  OnCommand
 //
-BOOL
+int32_t
 CMainFrame::OnCommand
 (
-	WPARAM wParam,
-	LPARAM lParam
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	if ((LOWORD (wParam) == ID_FILE_SAVE_AS) ||
@@ -1800,12 +1800,12 @@ CMainFrame::OnChangeBase (void)
 //
 //  WindowProc
 //
-LRESULT
+intptr_t
 CMainFrame::WindowProc
 (
-	UINT message,
-	WPARAM wParam,
-	LPARAM lParam
+	uint32_t message,
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	if (message == WM_USER+109) {
@@ -1859,9 +1859,9 @@ void CMainFrame::OnCamReset (void)
 void
 CMainFrame::OnKeyDown
 (
-	UINT nChar,
-	UINT nRepCnt,
-	UINT nFlags
+	uint32_t nChar,
+	uint32_t nRepCnt,
+	uint32_t nFlags
 )
 {
 
@@ -1902,7 +1902,7 @@ CMainFrame::OnToggleVisWindow (void)
 {
 	HWND hchild = ::GetDlgItem (::GetDesktopWindow (), 777);
 	if (::IsWindow (hchild)) {
-		UINT vis = ::IsWindowVisible (hchild) ? SW_HIDE : SW_SHOW;
+		uint32_t vis = ::IsWindowVisible (hchild) ? SW_HIDE : SW_SHOW;
 		::ShowWindow (hchild, vis);
 	}
 
@@ -1917,7 +1917,7 @@ CMainFrame::OnToggleVisWindow (void)
 void
 CMainFrame::Show_Ani_Toolbar (bool bshow) 
 {
-	ShowControlBar (&m_AniToolbar, (BOOL)bshow, FALSE);
+	ShowControlBar (&m_AniToolbar, (int32_t)bshow, FALSE);
 	return ;
 }
 
@@ -2069,8 +2069,8 @@ CMainFrame::OnAniStop (void)
 void
 CMainFrame::Update_Poly_Count (void)
 {
-	static DWORD last_update = ::GetTickCount ();
-	DWORD current_ticks = ::GetTickCount ();
+	static uint32_t last_update = ::GetTickCount ();
+	uint32_t current_ticks = ::GetTickCount ();
 
 	if ((current_ticks - last_update) > 500) {
 		CString message;
@@ -2091,8 +2091,8 @@ CMainFrame::Update_Poly_Count (void)
 void
 CMainFrame::Update_Texture_Mem (void)
 {
-	static DWORD last_update = ::GetTickCount ();
-	DWORD current_ticks = ::GetTickCount ();
+	static uint32_t last_update = ::GetTickCount ();
+	uint32_t current_ticks = ::GetTickCount ();
 
 	if ((current_ticks - last_update) > 500) {
 
@@ -2168,7 +2168,7 @@ void
 CMainFrame::OnUpdateEditUndo (CCmdUI *pCmdUI) 
 {
 	// Enable/disable the menu option
-	pCmdUI->Enable (BOOL(::Get_Scene_Editor ()->Get_Undo_Mgr ().Get_Possible_Undo_Count () > 0));
+	pCmdUI->Enable (int32_t(::Get_Scene_Editor ()->Get_Undo_Mgr ().Get_Possible_Undo_Count () > 0));
 
 	// Determine what text to display for the undo operation
 	CString text;	
@@ -4309,7 +4309,7 @@ CMainFrame::OnUpdateDecreaseSphere (CCmdUI *pCmdUI)
 void
 CMainFrame::Adjust_Growth_Rate (void)
 {
-	DWORD curr_time = ::GetTickCount ();
+	uint32_t curr_time = ::GetTickCount ();
 	
 	//
 	//	Reset the growth rate if too much time has elapsed
@@ -5387,7 +5387,7 @@ CMainFrame::OnExportStringTable (void)
 		//	Check to make sure the destination filename is not read-only
 		//
 		CString path				= dialog.GetPathName ();
-		DWORD file_attributes	= ::GetFileAttributes (path);
+		uint32_t file_attributes	= ::GetFileAttributes (path);
 		if (file_attributes != 0xFFFFFFFF && file_attributes & FILE_ATTRIBUTE_READONLY) {
 			::MessageBox (::AfxGetMainWnd ()->m_hWnd, "File is read-only, export operation can not complete.", "File Error", MB_ICONERROR | MB_ICONEXCLAMATION);
 		} else {
@@ -6016,7 +6016,7 @@ CMainFrame::OnExportLanguage (void)
 //
 //////////////////////////////////////////////////////////////////////////
 void
-CMainFrame::OnInitMenuPopup (CMenu *popup_menu, UINT nIndex, BOOL bSysMenu) 
+CMainFrame::OnInitMenuPopup (CMenu *popup_menu, uint32_t nIndex, int32_t bSysMenu) 
 {
 	CFrameWnd::OnInitMenuPopup (popup_menu, nIndex, bSysMenu);
 
@@ -6396,7 +6396,7 @@ CMainFrame::OnUpdateModeHeightEdit (CCmdUI *pCmdUI)
 	//	Update the toolbar
 	//
 	if (mouse_mgr != NULL) {
-		pCmdUI->SetCheck ((BOOL)::Get_Mouse_Mgr ()->Get_Mouse_Mode () == MouseMgrClass::MODE_HEIGHTFIELD_EDIT);
+		pCmdUI->SetCheck ((int32_t)::Get_Mouse_Mgr ()->Get_Mouse_Mode () == MouseMgrClass::MODE_HEIGHTFIELD_EDIT);
 	}
 
 	return ;	

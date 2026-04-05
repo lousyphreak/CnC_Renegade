@@ -135,7 +135,7 @@ ModPackageClass::Build_Level_List (DynamicVectorClass<StringClass> &list) const
 //
 //////////////////////////////////////////////////////////////////////
 bool
-ModPackageClass::Find_Map_From_CRC (uint32 crc, StringClass *map_name) const
+ModPackageClass::Find_Map_From_CRC (uint32_t crc, StringClass *map_name) const
 {
 	bool retval = false;
 
@@ -188,7 +188,7 @@ ModPackageClass::Compute_CRC (void)
 			//	Crc the contents of the file
 			//
 			int file_size = file->Size ();
-			uint8 buffer[4096];
+			uint8_t buffer[4096];
 			while (file_size > 0) {
 				
 				//
@@ -233,7 +233,7 @@ ModPackageClass::Compute_CRC (void)
 //	Get_CRC
 //
 //////////////////////////////////////////////////////////////////////
-uint32
+uint32_t
 ModPackageClass::Get_CRC (void)
 {
 	if (FileCRC == 0) {

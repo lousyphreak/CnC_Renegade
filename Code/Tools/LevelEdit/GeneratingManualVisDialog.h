@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 
@@ -50,7 +52,7 @@ public:
 	//{{AFX_VIRTUAL(GeneratingManualVisDialogClass)
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+	virtual intptr_t WindowProc(uint32_t message, uintptr_t wParam, intptr_t lParam);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -58,7 +60,7 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(GeneratingManualVisDialogClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	virtual void OnCancel();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
@@ -77,13 +79,13 @@ private:
 	//	Private methods
 	///////////////////////////////////////////////////////////////////////////////
 	int			Get_Manual_Point_Count (void);
-	bool			On_Manual_Vis_Point_Render (DWORD milliseconds);
+	bool			On_Manual_Vis_Point_Render (uint32_t milliseconds);
 	void			Update_Time (void);
 
 	///////////////////////////////////////////////////////////////////////////////
 	//	Static methods
 	///////////////////////////////////////////////////////////////////////////////
-	static bool	ManualVisPointCallback (DWORD milliseconds, DWORD param);
+	static bool	ManualVisPointCallback (uint32_t milliseconds, uint32_t param);
 
 
 	///////////////////////////////////////////////////////////////////////////////
@@ -96,7 +98,7 @@ private:
 	int			m_TotalPoints;
 	int			m_TotalTime;
 	int			m_CurrentPoint;
-	DWORD			m_StartTime;
+	uint32_t			m_StartTime;
 
 	CString		m_StatusSection;
 	CString		m_StatusFilename;

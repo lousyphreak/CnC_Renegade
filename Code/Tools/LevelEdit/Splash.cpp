@@ -44,7 +44,7 @@
 ///////////////////////////////////////////////////////////////////////
 //	Forward declarations
 ///////////////////////////////////////////////////////////////////////
-UINT fnSplashScreenThread (DWORD, DWORD, DWORD, HRESULT *, HWND *phmain_wnd);
+uint32_t fnSplashScreenThread (uint32_t, uint32_t, uint32_t, int32_t *, HWND *phmain_wnd);
 
 
 ///////////////////////////////////////////////////////////////////////
@@ -80,7 +80,7 @@ void
 SplashClass::Set_Status_Text (LPCTSTR text)
 {
 	if (m_hThreadWnd != NULL) {
-		::PostMessage (m_hThreadWnd, WM_USER+102, 0, (LPARAM)text);
+		::PostMessage (m_hThreadWnd, WM_USER+102, 0, (intptr_t)text);
 	}
 
 	return ;
@@ -144,13 +144,13 @@ SplashClass::Close (void)
 // fnSplashScreenThread
 //
 ////////////////////////////////////////////////////////////////////////////
-UINT
+uint32_t
 fnSplashScreenThread
 (
-	DWORD /*dwparam1*/,
-	DWORD /*dwparam2*/,
-	DWORD /*dwparam3*/,
-	HRESULT* /*presult*/,
+	uint32_t /*dwparam1*/,
+	uint32_t /*dwparam2*/,
+	uint32_t /*dwparam3*/,
+	int32_t* /*presult*/,
 	HWND* phmain_wnd
 )
 {

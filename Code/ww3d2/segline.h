@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef SEGLINE_H
@@ -69,19 +71,19 @@ class SegmentedLineClass : public RenderObjClass
 
 		// These are segment points, and include the start and end point of the
 		// entire line. Therefore there must be at least two.
-		void					Set_Points(unsigned int num_points, Vector3 *locs);
+		void					Set_Points(uint32_t num_points, Vector3 *locs);
 		int					Get_Num_Points(void);
 
 		// Set object-space location for a given point.
 		// NOTE: If given position beyond end of point list, do nothing.
-		void					Set_Point_Location(unsigned int point_idx, const Vector3 &location);
+		void					Set_Point_Location(uint32_t point_idx, const Vector3 &location);
 
 		// Get object-space location for a given point.
-		void					Get_Point_Location(unsigned int point_idx, Vector3 &loc);
+		void					Get_Point_Location(uint32_t point_idx, Vector3 &loc);
 
 		// Modify the line by adding and removing points
 		void					Add_Point(const Vector3 & location);
-		void					Delete_Point(unsigned int point_idx);
+		void					Delete_Point(uint32_t point_idx);
 
 		// Get/set global properties (which affect all line segments)
 		TextureClass *		Get_Texture(void);
@@ -92,7 +94,7 @@ class SegmentedLineClass : public RenderObjClass
 		float					Get_Opacity(void);
 		float					Get_Noise_Amplitude(void);
 		float					Get_Merge_Abort_Factor(void);
-		unsigned int		Get_Subdivision_Levels(void);
+		uint32_t		Get_Subdivision_Levels(void);
 		SegLineRendererClass::TextureMapMode		Get_Texture_Mapping_Mode(void);
 		float					Get_Texture_Tile_Factor(void);
 		Vector2				Get_UV_Offset_Rate(void);
@@ -108,7 +110,7 @@ class SegmentedLineClass : public RenderObjClass
 		void					Set_Opacity(float opacity);
 		void					Set_Noise_Amplitude(float amplitude);
 		void					Set_Merge_Abort_Factor(float factor);
-		void					Set_Subdivision_Levels(unsigned int levels);
+		void					Set_Subdivision_Levels(uint32_t levels);
 		void					Set_Texture_Mapping_Mode(SegLineRendererClass::TextureMapMode mode);
 		// WARNING! Do NOT set the tile factor to be too high (should be less than 8) or negative
 		//performance impact will result!
@@ -167,7 +169,7 @@ class SegmentedLineClass : public RenderObjClass
 	private:
 
 		// Subdivision properties
-		unsigned int					MaxSubdivisionLevels;
+		uint32_t					MaxSubdivisionLevels;
 
 		// Normalized screen area - used for LOD purposes
 		float								NormalizedScreenArea;

@@ -40,6 +40,7 @@
 #include "translatedb.h"
 #include <commctrl.h>
 #include <cstdint>
+#include <limits>
 
 #if !defined(_WIN32)
 #include <algorithm>
@@ -56,14 +57,14 @@
 //////////////////////////////////////////////////////////////////////////////
 //	Macros
 //////////////////////////////////////////////////////////////////////////////
-#define ALIGN_WORD_PTR(p)	(reinterpret_cast<WORD *>((reinterpret_cast<uintptr_t>(p) + 1u) & ~static_cast<uintptr_t>(1u)))
-#define ALIGN_DWORD_PTR(p) (reinterpret_cast<DWORD *>((reinterpret_cast<uintptr_t>(p) + 3u) & ~static_cast<uintptr_t>(3u)))
+#define ALIGN_WORD_PTR(p)	(reinterpret_cast<uint16_t *>((reinterpret_cast<uintptr_t>(p) + 1u) & ~static_cast<uintptr_t>(1u)))
+#define ALIGN_DWORD_PTR(p) (reinterpret_cast<uint32_t *>((reinterpret_cast<uintptr_t>(p) + 3u) & ~static_cast<uintptr_t>(3u)))
 
 
 //////////////////////////////////////////////////////////////////////////////
 //	Local prototypes
 //////////////////////////////////////////////////////////////////////////////
-WORD *Skip_Dlg_Field (WORD *src, WCHAR *buffer = NULL, int buffer_len = 0, WORD *ctrl_type = NULL);
+uint16_t *Skip_Dlg_Field (uint16_t *src, WCHAR *buffer = NULL, int buffer_len = 0, uint16_t *ctrl_type = NULL);
 
 #if !defined(_WIN32)
 namespace {
@@ -151,7 +152,7 @@ std::string Strip_Line_Comment(const std::string &line)
 
 std::string To_Upper_Copy(std::string value)
 {
-	std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch) { return static_cast<char>(std::toupper(ch)); });
+	std::transform(value.begin(), value.end(), value.begin(), [](uint8_t ch) { return static_cast<char>(std::toupper(ch)); });
 	return value;
 }
 
@@ -162,8 +163,11 @@ bool Try_Parse_Int(const std::string &token, int *value)
 	}
 
 	char *end = NULL;
-	const long parsed = std::strtol(token.c_str(), &end, 0);
+	const int64_t parsed = std::strtoll(token.c_str(), &end, 0);
 	if (end == token.c_str() || *end != '\0') {
+		return false;
+	}
+	if (parsed < std::numeric_limits<int>::min() || parsed > std::numeric_limits<int>::max()) {
 		return false;
 	}
 
@@ -288,7 +292,7 @@ const std::unordered_map<std::string, int> &Get_Defines()
 	return defines;
 }
 
-uint32 Resolve_Style_Token(const std::string &token)
+uint32_t Resolve_Style_Token(const std::string &token)
 {
 	const std::string upper = To_Upper_Copy(token);
 	if (upper == "WS_BORDER") return WS_BORDER;
@@ -319,7 +323,7 @@ uint32 Resolve_Style_Token(const std::string &token)
 	return 0;
 }
 
-uint32 Parse_Style_Expression(const std::string &expression)
+uint32_t Parse_Style_Expression(const std::string &expression)
 {
 	std::string normalized = expression;
 	std::replace(normalized.begin(), normalized.end(), '|', ' ');
@@ -327,7 +331,7 @@ uint32 Parse_Style_Expression(const std::string &expression)
 
 	std::istringstream stream(normalized);
 	std::string token;
-	uint32 value = 0;
+	uint32_t value = 0;
 	while (stream >> token) {
 		value |= Resolve_Style_Token(token);
 	}
@@ -611,19 +615,19 @@ bool Parse_Template_From_Rc_Source(int res_id, int *dlg_width, int *dlg_height, 
 //	Skip_Dlg_Field
 //
 //////////////////////////////////////////////////////////////////////////////
-WORD *
-Skip_Dlg_Field (WORD *src, WCHAR *buffer, int buffer_len, WORD *ctrl_type)
+uint16_t *
+Skip_Dlg_Field (uint16_t *src, WCHAR *buffer, int buffer_len, uint16_t *ctrl_type)
 {
 	//
 	//	These fields always start on the next word boundary, so align
 	//	the source pointer on this boundary.
 	//
-	WORD *retval = ALIGN_WORD_PTR(src);
+	uint16_t *retval = ALIGN_WORD_PTR(src);
 
 	//
 	//	Note:  The field codes are as follows:
 	//
-	//		0xFFFF		- The following WORD is an ordinal value of a system class.
+	//		0xFFFF		- The following uint16_t is an ordinal value of a system class.
 	//		0x0000		- Empty field
 	//		Otherwise	- The remaining data is a NULL terminated WCHAR string.
 	//
@@ -748,7 +752,7 @@ DialogParserClass::Parse_Template
 		//
 		//	Move past the DLGTEMPLATE header to the other fields
 		//
-		WORD *buffer = (WORD *)(((char *)res_buffer) + sizeof (DLGTEMPLATE));
+		uint16_t *buffer = (uint16_t *)(((char *)res_buffer) + sizeof (DLGTEMPLATE));
 		
 		//
 		//	Skip the menu, and window class
@@ -785,14 +789,14 @@ DialogParserClass::Parse_Template
 		//	Loop over each control and gather information about them
 		//
 		for (int index = 0; index < dlg_template->cdit; index ++) {
-			DLGITEMTEMPLATE *dlg_item_template = (DLGITEMTEMPLATE *)ALIGN_DWORD_PTR((DWORD *)buffer);
-			buffer = (WORD *)(((char *)dlg_item_template) + sizeof (DLGITEMTEMPLATE));
+			DLGITEMTEMPLATE *dlg_item_template = (DLGITEMTEMPLATE *)ALIGN_DWORD_PTR((uint32_t *)buffer);
+			buffer = (uint16_t *)(((char *)dlg_item_template) + sizeof (DLGITEMTEMPLATE));
 
 			//
 			//	Read the ctrl type
 			//
 			WCHAR text_buffer[256]	= { 0 };
-			WORD ctrl_type				= 0x0000;
+			uint16_t ctrl_type				= 0x0000;
 			buffer = Skip_Dlg_Field (buffer, text_buffer, 256, &ctrl_type);
 			
 			//
@@ -857,10 +861,10 @@ DialogParserClass::Parse_Template
 			//
 			//	Skip past the extra data
 			//
-			WORD extra_data_size = *buffer;
+			uint16_t extra_data_size = *buffer;
 			buffer ++;
 			if (extra_data_size > 0) {
-				buffer = (WORD *)(((char *)ALIGN_WORD_PTR(buffer)) + extra_data_size);
+				buffer = (uint16_t *)(((char *)ALIGN_WORD_PTR(buffer)) + extra_data_size);
 			}
 		}
 	}

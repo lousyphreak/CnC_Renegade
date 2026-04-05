@@ -66,16 +66,16 @@ bool Delete_Int_Vector_Index(DynamicVectorClass<int> &vector, int index)
 int cConnection::LatencyAddLow = 0;
 int cConnection::LatencyAddHigh = 0;
 int cConnection::CurrentLatencyAdd = 0;
-unsigned long cConnection::LastLatencyChange = 0;
+uint32_t cConnection::LastLatencyChange = 0;
 
 #endif //WWDEBUG
 
 //
 // class statics
 //
-BOOL cConnection::IsFlowControlEnabled				= true;
-UINT cConnection::TotalCompressedBytesSent		= 0;
-UINT cConnection::TotalUncompressedBytesSent		= 0;
+int32_t cConnection::IsFlowControlEnabled				= true;
+uint32_t cConnection::TotalCompressedBytesSent		= 0;
+uint32_t cConnection::TotalUncompressedBytesSent		= 0;
 
 static const int		INVALID_RHOST_ID			= -1;
 
@@ -98,7 +98,7 @@ static const int		INVALID_RHOST_ID			= -1;
 char * Addr_As_String(sockaddr_in *addr)
 {
 	static char _string[128];
-	const uint32 address = ntohl(addr->sin_addr.s_addr);
+	const uint32_t address = ntohl(addr->sin_addr.s_addr);
 	sprintf(_string, "%d.%d.%d.%d ; %d",
 		(int)((address >> 24) & 0xFF),
 		(int)((address >> 16) & 0xFF),
@@ -158,8 +158,8 @@ cConnection::cConnection() :
       //
       // Make socket non-blocking
       //
-      u_long arg = 1L;
-      WSA_CHECK(ioctlsocket(Sock, FIONBIO, (u_long *) &arg));
+      ww_u_long arg = 1;
+      WSA_CHECK(ioctlsocket(Sock, FIONBIO, &arg));
 
       //
       // Increase the send and rcv buffer sizes a bit
@@ -240,7 +240,7 @@ void cConnection::Init_Stats()
 }
 
 //------------------------------------------------------------------------------------
-void cConnection::Init_As_Client(LPSOCKADDR_IN p_server_address, unsigned short my_port)
+void cConnection::Init_As_Client(LPSOCKADDR_IN p_server_address, uint16_t my_port)
 {
    WWASSERT(p_server_address != NULL);
    WWASSERT(!InitDone);
@@ -287,7 +287,7 @@ void cConnection::Init_As_Client(LPSOCKADDR_IN p_server_address, unsigned short 
 }
 
 //------------------------------------------------------------------------------------
-void cConnection::Init_As_Client(ULONG server_ip, USHORT server_port, unsigned short my_port)
+void cConnection::Init_As_Client(uint32_t server_ip, uint16_t server_port, uint16_t my_port)
 {
    WWDEBUG_SAY(("cConnection::Init_As_Client(%s, %d, %d)\n",
 		cNetUtil::Address_To_String(server_ip), server_port, my_port));
@@ -309,8 +309,8 @@ void cConnection::Init_As_Client(ULONG server_ip, USHORT server_port, unsigned s
 }
 
 //------------------------------------------------------------------------------------
-void cConnection::Init_As_Server(USHORT server_port, int max_players,
-	bool is_dedicated_server, ULONG addr)
+void cConnection::Init_As_Server(uint16_t server_port, int max_players,
+	bool is_dedicated_server, uint32_t addr)
 {
    WWDEBUG_SAY(("cConnection::Init_As_Server\n"));
 
@@ -365,7 +365,7 @@ void cConnection::Init_As_Server(USHORT server_port, int max_players,
 }
 
 //------------------------------------------------------------------------------------
-bool cConnection::Bind(USHORT port, ULONG addr)
+bool cConnection::Bind(uint16_t port, uint32_t addr)
 {
    WWASSERT(!cSinglePlayerData::Is_Single_Player());
 
@@ -443,7 +443,7 @@ bool cConnection::Sender_Id_Tests(cPacket & packet)
 		// This can happen when the connection is broken... packets in-the-air
 		// may still arrive
 		//
-		BYTE packet_type;
+		uint8_t packet_type;
 		packet_type = packet.Get_Type();
 		WWASSERT(packet_type >= PACKETTYPE_FIRST && packet_type <= PACKETTYPE_LAST);
 		WWDEBUG_SAY(("Packet from broken connection discarded: type %d, id %d, sender %d\n",
@@ -472,9 +472,9 @@ bool cConnection::Sender_Id_Tests(cPacket & packet)
 }
 
 //------------------------------------------------------------------------------------
-USHORT cConnection::Calculate_Packet_Bits(USHORT app_bytes)
+uint16_t cConnection::Calculate_Packet_Bits(uint16_t app_bytes)
 {
-   //USHORT packet_bits = 0;
+   //uint16_t packet_bits = 0;
 
    //
    // From the app bytes, work out an approximate expected number
@@ -506,7 +506,7 @@ USHORT cConnection::Calculate_Packet_Bits(USHORT app_bytes)
 	//
 	//HeaderBytes = 33;
 
-   USHORT packet_bits = (USHORT)((app_bytes + 33) * 11.328125);
+   uint16_t packet_bits = (uint16_t)((app_bytes + 33) * 11.328125);
 
    return packet_bits;
 }
@@ -521,7 +521,7 @@ void cConnection::Set_Packet_Loss(double percent_lost)
 
    WWASSERT(percent_lost >= 0 && percent_lost <= 100);
 
-   SimulatedPacketLossPerRANDMAX = (UINT) cMathUtil::Round(
+   SimulatedPacketLossPerRANDMAX = (uint32_t) cMathUtil::Round(
 		percent_lost / 100.0 * RAND_MAX);
 
 	WWDEBUG_SAY(("cConnection::Set_Packet_Loss: %d / %d\n", SimulatedPacketLossPerRANDMAX, RAND_MAX));
@@ -541,7 +541,7 @@ void cConnection::Set_Packet_Duplication(double percent_duplicated)
    //
    // Globally:
    //
-   SimulatedPacketDuplicationPerRANDMAX = (UINT) cMathUtil::Round(
+   SimulatedPacketDuplicationPerRANDMAX = (uint32_t) cMathUtil::Round(
 		percent_duplicated / 100.0 * RAND_MAX);
 
 	WWDEBUG_SAY(("cConnection::Set_Packet_Duplication: %d / %d\n",  SimulatedPacketDuplicationPerRANDMAX, RAND_MAX));
@@ -618,7 +618,7 @@ bool cConnection::Receive_Packet()
 	// See if there are any old packets with simulated lag whos time has come.
 	//
 	if (LaggedPacketTimes.Count()) {
-		unsigned long time_now = TIMEGETTIME();
+		uint32_t time_now = TIMEGETTIME();
 		for (int p=0 ; p<LaggedPacketTimes.Count() ; p++) {
 			if (LaggedPacketTimes[p] <= time_now) {
 				packet = *LaggedPackets[p];
@@ -663,7 +663,7 @@ bool cConnection::Receive_Packet()
 		if (LatencyAddLow || LatencyAddHigh) {
 			cPacket *new_packet = new cPacket;
 			*new_packet = packet;
-			unsigned long time = TIMEGETTIME();
+			uint32_t time = TIMEGETTIME();
 
 			const int latency_adjust_delay = 1000 * 10;
 			if (time - LastLatencyChange > latency_adjust_delay) {
@@ -709,7 +709,7 @@ bool cConnection::Receive_Packet()
    //
 	// Measurement stats
 	//
-	USHORT packet_bits = Calculate_Packet_Bits(ret_code);
+	uint16_t packet_bits = Calculate_Packet_Bits(ret_code);
 
    int addressee = Address_To_Rhostid(&packet.Get_From_Address_Wrapper()->FromAddress);
    if (addressee != INVALID_RHOST_ID) {
@@ -1119,9 +1119,9 @@ int cConnection::Address_To_Rhostid(const SOCKADDR_IN* p_address)
 
 
 //#include "packetmgr.h"
-//unsigned char last_packet[1024];
-//unsigned char delta_packet[1024];
-//unsigned char fixed_packet[1024];
+//uint8_t last_packet[1024];
+//uint8_t delta_packet[1024];
+//uint8_t fixed_packet[1024];
 //int last_packet_len = 0;
 
 //------------------------------------------------------------------------------------
@@ -1133,7 +1133,7 @@ int cConnection::Low_Level_Send_Wrapper(cPacket & packet, LPSOCKADDR_IN p_addres
 
 #if (0)
 if (last_packet_len == (int)packet.Get_Compressed_Size_Bytes()) {
-	int delta_size = PacketManagerClass::Build_Delta_Packet_Patch(last_packet, (unsigned char*)packet.Get_Data(), delta_packet, last_packet_len, last_packet_len);
+	int delta_size = PacketManagerClass::Build_Delta_Packet_Patch(last_packet, (uint8_t*)packet.Get_Data(), delta_packet, last_packet_len, last_packet_len);
 	if (delta_size != -1) {
 		WWDEBUG_SAY(("Packet size = %d, last packet delta = %d\n", last_packet_len, delta_size));
 	}
@@ -1156,7 +1156,7 @@ memcpy(last_packet, packet.Get_Data(), last_packet_len);
 		//
 		// Just pass the packet to the packet manager for deltaing and coagulation.
 		//
-		bool took = PacketManager.Take_Packet((unsigned char *)packet.Get_Data(), packet.Get_Compressed_Size_Bytes(), (unsigned char*)&p_address->sin_addr.s_addr, p_address->sin_port, Sock);
+		bool took = PacketManager.Take_Packet((uint8_t *)packet.Get_Data(), packet.Get_Compressed_Size_Bytes(), (uint8_t*)&p_address->sin_addr.s_addr, p_address->sin_port, Sock);
 
 		if (!took) {
 			WWDEBUG_SAY(("Low_Level_Send_Wrapper - Failed to pass packet to packet manager\n"));
@@ -1172,7 +1172,7 @@ memcpy(last_packet, packet.Get_Data(), last_packet_len);
 			}
 		}
 
-			//unsigned long bytes;
+			//uint32_t bytes;
 			//int result = ioctlsocket(Sock, FIONREAD, &bytes);
 			//if (result == 0 && bytes != 0) {
 			//	WWDEBUG_SAY(("ioctlsocket - bytes left to read = %d\n", bytes));
@@ -1194,7 +1194,7 @@ int cConnection::Send_Wrapper(cPacket & packet, LPSOCKADDR_IN p_address)
 	//
 	// Update stats
 	//
-	BYTE packet_type = packet.Get_Type();
+	uint8_t packet_type = packet.Get_Type();
 	WWASSERT(packet_type >= PACKETTYPE_FIRST && packet_type <= PACKETTYPE_LAST);
 	PStatList->Increment_Num_Msg_Sent(packet_type);
 	PStatList->Increment_Num_Byte_Sent(packet_type, full_packet.Get_Compressed_Size_Bytes());
@@ -1242,11 +1242,11 @@ int cConnection::Low_Level_Receive_Wrapper(cPacket & packet)
 		// do this and just fail then we fall out of the receive packet loop and no more packets are received this frame. 15 of
 		// these a second and we don't get any packets in at all.
 		//
-		unsigned char ip_address[4];
-		unsigned short port = 0;
+		uint8_t ip_address[4];
+		uint16_t port = 0;
 
 		while (error_count < max_errors) {
-			bytes = PacketManager.Get_Packet(Sock, (unsigned char *)packet.Get_Data(), packet.Get_Max_Size(), ip_address, port);
+			bytes = PacketManager.Get_Packet(Sock, (uint8_t *)packet.Get_Data(), packet.Get_Max_Size(), ip_address, port);
 
 			//
 			// A return value of less than 0 indicates a fatal socket error. Try and ditch the offending client.
@@ -1318,7 +1318,7 @@ int cConnection::Low_Level_Receive_Wrapper(cPacket & packet)
 		// diagnostic
 		//
 		if (ret_code > 0) {
-			ULONG ip = packet.Get_From_Address_Wrapper()->FromAddress.sin_addr.s_addr;
+			uint32_t ip = packet.Get_From_Address_Wrapper()->FromAddress.sin_addr.s_addr;
 			WWDEBUG_SAY(("cConnection::Low_Level_Receive_Wrapper: %s\n",
 				cNetUtil::Address_To_String(ip)));
 		}
@@ -1350,7 +1350,7 @@ int cConnection::Receive_Wrapper(cPacket & packet)
 			//
 			// Update receive stats
 			//
-			BYTE packet_type = packet.Get_Type();
+			uint8_t packet_type = packet.Get_Type();
 			WWASSERT(packet_type >= PACKETTYPE_FIRST && packet_type <= PACKETTYPE_LAST);
 			PStatList->Increment_Num_Msg_Recd(packet_type);
 			PStatList->Increment_Num_Byte_Recd(packet_type, ret_code);
@@ -1480,7 +1480,7 @@ void cConnection::Send_Packet_To_Address(cPacket & packet, LPSOCKADDR_IN p_addre
 			TotalCompressedBytesSent	+= packet.Get_Compressed_Size_Bytes();
 			TotalUncompressedBytesSent += packet.Get_Uncompressed_Size_Bytes();
 
-         USHORT bits_sent = Calculate_Packet_Bits(packet.Get_Compressed_Size_Bytes());
+         uint16_t bits_sent = Calculate_Packet_Bits(packet.Get_Compressed_Size_Bytes());
 
          if (rhost_id != INVALID_RHOST_ID) {
             PRHost[rhost_id]->Get_Stats().StatSample[STAT_PktSent]++;
@@ -1493,7 +1493,7 @@ void cConnection::Send_Packet_To_Address(cPacket & packet, LPSOCKADDR_IN p_addre
 }
 
 //------------------------------------------------------------------------------------
-void cConnection::Set_R_And_U_Packet_Id(cPacket & packet, int addressee, BYTE send_type)
+void cConnection::Set_R_And_U_Packet_Id(cPacket & packet, int addressee, uint8_t send_type)
 {
 	WWASSERT(PRHost[addressee] != NULL);
 
@@ -1524,7 +1524,7 @@ void cConnection::R_And_U_Send(
 }
 
 //------------------------------------------------------------------------------------
-void cConnection::Send_Packet_To_Individual(cPacket & packet, int addressee, BYTE send_flags)
+void cConnection::Send_Packet_To_Individual(cPacket & packet, int addressee, uint8_t send_flags)
 {
    WWASSERT(InitDone);
 
@@ -1565,7 +1565,7 @@ void cConnection::Send_Packet_To_Individual(cPacket & packet, int addressee, BYT
 
 /*
 //------------------------------------------------------------------------------------
-void cConnection::Send_Packet_To_All(cPacket & packet, BYTE send_flags)
+void cConnection::Send_Packet_To_All(cPacket & packet, uint8_t send_flags)
 {
    WWASSERT(InitDone);
 
@@ -1722,7 +1722,7 @@ void cConnection::Send_Ack(LPSOCKADDR_IN p_address, int packet_id)
       PRHost[addressee]->Get_Stats().StatSample[STAT_UByteSent] += packet.Get_Compressed_Size_Bytes();
    }
 
-	//unsigned long time = TIMEGETTIME() / 1000;
+	//uint32_t time = TIMEGETTIME() / 1000;
 	//WWDEBUG_SAY(("Sending ack at %d\n", time));
 
    Send_Packet_To_Address(packet, p_address);
@@ -2012,7 +2012,7 @@ void cConnection::Service_Read()
 
 			//broken PRHost[rhost_id]->Set_List_Packet_Size(UNRELIABLE_RCV_LIST, 0);
 
-			unsigned long list_processing_start = TIMEGETTIME();
+			uint32_t list_processing_start = TIMEGETTIME();
 
 	      for (SLNode<cPacket> * objnode = PRHost[rhost_id]->Get_Packet_List(UNRELIABLE_RCV_LIST).Head();
             objnode != NULL; objnode = objnode->Next()) {
@@ -2034,7 +2034,7 @@ void cConnection::Service_Read()
 
             } else {
 
-               //WWASSERT(p_packet->Get_Type() == (BYTE) PACKETTYPE_UNRELIABLE);
+               //WWASSERT(p_packet->Get_Type() == (uint8_t) PACKETTYPE_UNRELIABLE);
 
 					{
 					//WWPROFILE("Demultiplex_R_Or_U_Packet");
@@ -2097,7 +2097,7 @@ void cConnection::Service_Read()
 }
 
 //-----------------------------------------------------------------------------
-void cConnection::Set_Bandwidth_Budget_Out(ULONG bw_budget)
+void cConnection::Set_Bandwidth_Budget_Out(uint32_t bw_budget)
 {
 	//WWASSERT(bw_budget >= 0);
 	BandwidthBudgetOut = bw_budget;
@@ -2180,7 +2180,7 @@ void cConnection::Service_Send(bool is_urgent)
 			BandwidthBalancer.Adjust(this, IsDedicatedServer);
 		} else {
 
-			ULONG bps_per_rhost = (ULONG) (BandwidthBudgetOut / (float) num_real_remote_hosts);
+			uint32_t bps_per_rhost = (uint32_t) (BandwidthBudgetOut / (float) num_real_remote_hosts);
 
 			for (int rhost_id = MinRHost; rhost_id <= MaxRHost; rhost_id++) {
 				if (PRHost[rhost_id] != NULL) {
@@ -2550,7 +2550,7 @@ bool cConnection::Is_Time_To_Resend_Packet_To_Remote_Host(const cPacket *packet,
 		return(false);
 	}
 
-	unsigned long last_send_time = packet->Get_Send_Time();
+	uint32_t last_send_time = packet->Get_Send_Time();
 	if (last_send_time == cPacket::Get_Default_Send_Time()) {
 		return(true);
 	}
@@ -2581,7 +2581,7 @@ bool cConnection::Is_Time_To_Resend_Packet_To_Remote_Host(const cPacket *packet,
 	//
 	total_timeout = min(total_timeout, 3000.0f);
 
-	if (ThisFrameTimeMs - packet->Get_Send_Time() >= (unsigned long)total_timeout) {
+	if (ThisFrameTimeMs - packet->Get_Send_Time() >= (uint32_t)total_timeout) {
 		//WWDEBUG_SAY(("Time to resend packet %d, age = %d, timeout = %d, resend count = %d\n", packet->Get_Id(), (int)(ThisFrameTimeMs - packet->Get_Send_Time()), (int)total_timeout, packet->Get_Resend_Count()));
 		return(true);
 	}
@@ -2605,7 +2605,7 @@ bool cConnection::Is_Packet_Too_Old(const cPacket *packet, cRemoteHost *rhost)
 		return(false);
 	}
 
-	unsigned long timeout = 0;
+	uint32_t timeout = 0;
 
 	if (IsServer) {
 

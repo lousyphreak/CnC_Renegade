@@ -39,6 +39,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef DX8_RENDERER_H
@@ -181,7 +183,7 @@ public:
 	DX8FVFCategoryContainer(unsigned FVF,bool sorting);
 	virtual ~DX8FVFCategoryContainer();
 
-	static unsigned Define_FVF(MeshModelClass* mmc,unsigned int * user_lighting,bool enable_lighting);
+	static unsigned Define_FVF(MeshModelClass* mmc,uint32_t * user_lighting,bool enable_lighting);
 	bool Is_Sorting() const { return sorting; }
 
 	void Change_Polygon_Renderer_Texture(
@@ -291,7 +293,7 @@ private:
 
 	void Reset();
 
-	unsigned int								VisibleVertexCount;
+	uint32_t								VisibleVertexCount;
 	MeshClass *									VisibleSkinHead;
 
 };
@@ -307,18 +309,18 @@ private:
 struct MeshRegKeyStruct
 {
 	MeshRegKeyStruct(void) : Model(NULL), UserLighting(NULL), Sorting(false) {}
-	MeshRegKeyStruct(MeshModelClass * mdl,unsigned int * lighting,bool sorting) : Model(mdl), UserLighting(lighting), Sorting(sorting) {}
+	MeshRegKeyStruct(MeshModelClass * mdl,uint32_t * lighting,bool sorting) : Model(mdl), UserLighting(lighting), Sorting(sorting) {}
 	bool operator == (const MeshRegKeyStruct & that) { return ((Model == that.Model) && (UserLighting == that.UserLighting) && (Sorting == that.Sorting)); }
 
 	MeshModelClass *	Model;
-	unsigned int *		UserLighting;
+	uint32_t *		UserLighting;
 	bool				Sorting;
 };
 
 
-template <> inline unsigned int HashTemplateKeyClass<MeshRegKeyStruct>::Get_Hash_Value(const MeshRegKeyStruct& key)
+template <> inline uint32_t HashTemplateKeyClass<MeshRegKeyStruct>::Get_Hash_Value(const MeshRegKeyStruct& key)
 {
-	unsigned int hval = static_cast<unsigned int>(reinterpret_cast<std::uintptr_t>(key.Model) + reinterpret_cast<std::uintptr_t>(key.UserLighting));
+	uint32_t hval = static_cast<uint32_t>(reinterpret_cast<std::uintptr_t>(key.Model) + reinterpret_cast<std::uintptr_t>(key.UserLighting));
 	hval ^= key.Sorting ? 0x9e3779b9U : 0U;
 	hval = hval + (hval>>5) + (hval>>10) + (hval >> 20);
 	return hval;

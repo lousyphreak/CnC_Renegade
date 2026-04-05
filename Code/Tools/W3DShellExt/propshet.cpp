@@ -32,14 +32,14 @@
 
 //===============================================================
 //          ***********   G L O B A L S  ************************
-extern  UINT g_DllRefCount;         // Reference count of this DLL.
+extern  uint32_t g_DllRefCount;         // Reference count of this DLL.
 extern	HINSTANCE g_DllInstance; // Handle to this DLL itself.
 //===============================================================
 //          ***********   F U N C T I O N S  *********************
 
 ///////////////////////////////////////
-UINT CALLBACK W3DPageCallback(HWND hWnd,
-                UINT uMessage,
+uint32_t CALLBACK W3DPageCallback(HWND hWnd,
+                uint32_t uMessage,
                 LPPROPSHEETPAGE  ppsp){
     switch(uMessage){
         case PSPCB_CREATE:
@@ -67,7 +67,7 @@ void ShowHideControls(HWND hDlg, bool show){
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void GetItemName(ChunkItem *pItem, int id_of_interest, void* pInfo, int sizeof_struct, int& found ){
 	if(pItem->ID == id_of_interest){
-		BYTE *byte_ptr = (BYTE*) pInfo;
+		uint8_t *byte_ptr = (uint8_t*) pInfo;
 		byte_ptr += sizeof_struct* found;
 		memcpy(byte_ptr,pItem->Data,pItem->Length);
 		found ++;
@@ -80,9 +80,9 @@ void GetItemName(ChunkItem *pItem, int id_of_interest, void* pInfo, int sizeof_s
 	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-BOOL CALLBACK AnimPageDlgProc(HWND hDlg,UINT uMessage, WPARAM wParam, LPARAM lParam){
+int32_t CALLBACK AnimPageDlgProc(HWND hDlg,uint32_t uMessage, uintptr_t wParam, intptr_t lParam){
 	LPPROPSHEETPAGE psp=(LPPROPSHEETPAGE)GetWindowLong(hDlg, DWL_USER);
-	UINT iIndex=0;
+	uint32_t iIndex=0;
 	LPCSHELLEXT lpcs;
 	char buf[MAX_PATH];
     switch (uMessage){
@@ -203,9 +203,9 @@ void SetDlgMeshParams(HWND hDlg, W3dMeshHeader3Struct*pInfo){
 	SetDlgItemText(hDlg, IDC_VERSION, msg);
 }
 //==========================================================================================================
-BOOL CALLBACK MeshPageDlgProc(HWND hDlg,UINT uMessage, WPARAM wParam, LPARAM lParam){
+int32_t CALLBACK MeshPageDlgProc(HWND hDlg,uint32_t uMessage, uintptr_t wParam, intptr_t lParam){
 	LPPROPSHEETPAGE psp=(LPPROPSHEETPAGE)GetWindowLong(hDlg, DWL_USER);
-	UINT iIndex=0;
+	uint32_t iIndex=0;
 	LPCSHELLEXT lpcs;
 
     switch (uMessage){
@@ -244,14 +244,14 @@ BOOL CALLBACK MeshPageDlgProc(HWND hDlg,UINT uMessage, WPARAM wParam, LPARAM lPa
 					for(int t_count(0); t_count < found_textures; t_count ++){
 						if(lpcs->NotAdded(&(pTextureInfo[t_count*MAX_TEXUTRE_NAME_LEN]))){
 							char* text = lpcs->m_Textures[lpcs->m_NumAdded-1].LockBuffer();
-							SendDlgItemMessage(hDlg, IDC_TEXTURELIST, LB_ADDSTRING,(WPARAM) 0L, (LPARAM)text);//(pTextureInfo[t_count].name)) ;
+							SendDlgItemMessage(hDlg, IDC_TEXTURELIST, LB_ADDSTRING,(uintptr_t) 0L, (intptr_t)text);//(pTextureInfo[t_count].name)) ;
 							lpcs->m_Textures[lpcs->m_NumAdded-1].ReleaseBuffer();
 						}
 					}
 					SetDlgItemInt(hDlg,IDC_NUM_MESHES, lpcs->m_FoundMeshes,FALSE);
 					SetDlgMeshParams(hDlg, pInfo);
 					//Set Spin range
-					SendDlgItemMessage(hDlg, IDC_MESHSPIN, UDM_SETRANGE, (WPARAM)0L, (LPARAM)MAKELONG(lpcs->m_FoundMeshes-1,0));
+					SendDlgItemMessage(hDlg, IDC_MESHSPIN, UDM_SETRANGE, (uintptr_t)0L, (intptr_t)MAKELONG(lpcs->m_FoundMeshes-1,0));
 				}
 				ShowHideControls(hDlg, lpcs->m_FoundMeshes != 0);
          break;
@@ -299,10 +299,10 @@ BOOL CALLBACK MeshPageDlgProc(HWND hDlg,UINT uMessage, WPARAM wParam, LPARAM lPa
 }
 
 /////////////////////////////////////////////////////////////
-BOOL CALLBACK PreviewPageDlgProc(HWND hDlg, UINT uMessage, WPARAM wParam, LPARAM lParam){
+int32_t CALLBACK PreviewPageDlgProc(HWND hDlg, uint32_t uMessage, uintptr_t wParam, intptr_t lParam){
 
 	LPPROPSHEETPAGE psp=(LPPROPSHEETPAGE)GetWindowLong(hDlg, DWL_USER);
-    UINT iIndex(0);
+    uint32_t iIndex(0);
     LPCSHELLEXT lpcs;
     switch (uMessage){
 		case WM_INITDIALOG:{
@@ -353,24 +353,24 @@ BOOL CALLBACK PreviewPageDlgProc(HWND hDlg, UINT uMessage, WPARAM wParam, LPARAM
 
 //  PURPOSE: Called by the shell just before the property sheet is displayed.
 STDMETHODIMP CShellExt::AddPages(LPFNADDPROPSHEETPAGE lpfnAddPage,	//Pointer to the Shell's AddPage function
-											LPARAM lParam){							//Passed as second parameter to lpfnAddPage
+											intptr_t lParam){							//Passed as second parameter to lpfnAddPage
 	 m_FileInMemory = false;
     PROPSHEETPAGE psp;
     HPROPSHEETPAGE hpage;
     FORMATETC fmte = {CF_HDROP,(DVTARGETDEVICE FAR *)NULL,DVASPECT_CONTENT,-1, TYMED_HGLOBAL };
     STGMEDIUM medium;
-	HRESULT hres = 0;
+	int32_t hres = 0;
 //	char buf[MAX_PATH];
 	if (m_pDataObj){  //Paranoid check, m_pDataObj should have something by now...
        hres = m_pDataObj->GetData(&fmte, &medium);
 	}
     if (SUCCEEDED(hres)){
         //Find out how many files the user has selected...
-        UINT cbFiles = 0;
+        uint32_t cbFiles = 0;
         LPCSHELLEXT lpcsext = this;
 
         if (medium.hGlobal){
-            cbFiles = DragQueryFile((HDROP)medium.hGlobal, (UINT)-1, 0, 0);
+            cbFiles = DragQueryFile((HDROP)medium.hGlobal, (uint32_t)-1, 0, 0);
 		  }
         if (cbFiles < 2){
 			  if (cbFiles){
@@ -385,7 +385,7 @@ STDMETHODIMP CShellExt::AddPages(LPFNADDPROPSHEETPAGE lpfnAddPage,	//Pointer to 
             psp.pfnDlgProc  = MeshPageDlgProc;
             psp.pcRefParent = &g_DllRefCount;
             psp.pfnCallback = W3DPageCallback;
-            psp.lParam      = (LPARAM)lpcsext;
+            psp.lParam      = (intptr_t)lpcsext;
             AddRef();
             hpage = CreatePropertySheetPage(&psp);
              if(hpage){
@@ -423,8 +423,8 @@ STDMETHODIMP CShellExt::AddPages(LPFNADDPROPSHEETPAGE lpfnAddPage,	//Pointer to 
     return NOERROR;
 }
 //  PURPOSE: Called by the shell only for Control Panel property sheet 
-STDMETHODIMP CShellExt::ReplacePage(UINT uPageID,									//ID of page to be replaced
+STDMETHODIMP CShellExt::ReplacePage(uint32_t uPageID,									//ID of page to be replaced
                                     LPFNADDPROPSHEETPAGE lpfnReplaceWith,  //Pointer to the Shell's Replace function
-                                    LPARAM lParam){									//Passed as second parameter to lpfnReplaceWith
+                                    intptr_t lParam){									//Passed as second parameter to lpfnReplaceWith
     return E_FAIL;//we don't support this function.  It should never be
 }

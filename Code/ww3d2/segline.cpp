@@ -96,7 +96,7 @@ void SegmentedLineClass::Reset_Line(void)
 
 // These are segment points, and include the start and end point of the
 // entire line. Therefore there must be at least two.
-void SegmentedLineClass::Set_Points(unsigned int num_points, Vector3 *locs)
+void SegmentedLineClass::Set_Points(uint32_t num_points, Vector3 *locs)
 {
 	if (num_points < 2 || !locs) {
 		WWASSERT(0);
@@ -104,7 +104,7 @@ void SegmentedLineClass::Set_Points(unsigned int num_points, Vector3 *locs)
 	}
 
 	PointLocations.Delete_All();
-	for (unsigned int i=0; i<num_points; i++) {
+	for (uint32_t i=0; i<num_points; i++) {
 		PointLocations.Add(locs[i],num_points);
 	}
 
@@ -120,9 +120,9 @@ int SegmentedLineClass::Get_Num_Points(void)
 
 // Set object-space location for a given point.
 // NOTE: If given position beyond end of point list, do nothing.
-void SegmentedLineClass::Set_Point_Location(unsigned int point_idx, const Vector3 &location)
+void SegmentedLineClass::Set_Point_Location(uint32_t point_idx, const Vector3 &location)
 {
-	if (point_idx < (unsigned int)PointLocations.Count()) {
+	if (point_idx < (uint32_t)PointLocations.Count()) {
 		PointLocations[point_idx] = location;
 	}
 	Invalidate_Cached_Bounding_Volumes();
@@ -130,9 +130,9 @@ void SegmentedLineClass::Set_Point_Location(unsigned int point_idx, const Vector
 
 // Get object-space location of a given point (if position beyond end of
 // point list, will return 0,0,0).
-void SegmentedLineClass::Get_Point_Location(unsigned int point_idx, Vector3 &loc)
+void SegmentedLineClass::Get_Point_Location(uint32_t point_idx, Vector3 &loc)
 {
-	if (point_idx < (unsigned int)PointLocations.Count()) {
+	if (point_idx < (uint32_t)PointLocations.Count()) {
 		loc.Set(PointLocations[point_idx]);
 	} else {
 		loc.Set(0, 0, 0);
@@ -144,9 +144,9 @@ void SegmentedLineClass::Add_Point(const Vector3 & location)
 	PointLocations.Add(location);
 }
 
-void SegmentedLineClass::Delete_Point(unsigned int point_idx)
+void SegmentedLineClass::Delete_Point(uint32_t point_idx)
 {
-	if (point_idx < (unsigned int)PointLocations.Count()) {
+	if (point_idx < (uint32_t)PointLocations.Count()) {
 		PointLocations.Delete(point_idx);
 	}
 }
@@ -182,7 +182,7 @@ float SegmentedLineClass::Get_Merge_Abort_Factor(void)
 	return LineRenderer.Get_Merge_Abort_Factor();
 }
 
-unsigned int SegmentedLineClass::Get_Subdivision_Levels(void)
+uint32_t SegmentedLineClass::Get_Subdivision_Levels(void)
 {
 	return MaxSubdivisionLevels;
 }
@@ -268,7 +268,7 @@ void SegmentedLineClass::Set_Merge_Abort_Factor(float factor)
 	LineRenderer.Set_Merge_Abort_Factor(factor);
 }
 
-void SegmentedLineClass::Set_Subdivision_Levels(unsigned int levels)
+void SegmentedLineClass::Set_Subdivision_Levels(uint32_t levels)
 {
 	MaxSubdivisionLevels = MIN(levels, MAX_SEGLINE_SUBDIV_LEVELS);
 
@@ -335,7 +335,7 @@ void SegmentedLineClass::Render(RenderInfoClass & rinfo)
 	// Process texture reductions:
 //	if (LineRenderer.Peek_Texture()) LineRenderer.Peek_Texture()->Process_Reduction();
 
-	unsigned int sort_level = SORT_LEVEL_NONE;
+	uint32_t sort_level = SORT_LEVEL_NONE;
 
 	if (!WW3D::Is_Sorting_Enabled())	
 		sort_level=Get_Shader().Guess_Sort_Level();	
@@ -361,7 +361,7 @@ void SegmentedLineClass::Get_Obj_Space_Bounding_Sphere(SphereClass & sphere) con
 
 void SegmentedLineClass::Get_Obj_Space_Bounding_Box(AABoxClass & box) const
 {
-	unsigned int num_points = PointLocations.Count();
+	uint32_t num_points = PointLocations.Count();
 	
 	// Line must have at least two points to be valid
 	
@@ -370,7 +370,7 @@ void SegmentedLineClass::Get_Obj_Space_Bounding_Box(AABoxClass & box) const
 		// Find object-space axis-aligned bounding box
 		Vector3 max_coords;
 		Vector3 min_coords;
-		unsigned int i;
+		uint32_t i;
 
 		// We create two bounding boxes; one from the points, and if we have random noise
 		// subdivision we create another one from the midpoints and factor the noise amplitude
@@ -433,7 +433,7 @@ void SegmentedLineClass::Prepare_LOD(CameraClass &camera)
 //   Set_Texture_Reduction_Factor(Calculate_Texture_Reduction_Factor(NormalizedScreenArea));
 
 	// Ensure subdivision level is legal
-	unsigned int lvl = LineRenderer.Get_Current_Subdivision_Level();
+	uint32_t lvl = LineRenderer.Get_Current_Subdivision_Level();
 	lvl = MIN(lvl, MaxSubdivisionLevels);
 	LineRenderer.Set_Current_Subdivision_Level(lvl);
 
@@ -449,7 +449,7 @@ void SegmentedLineClass::Prepare_LOD(CameraClass &camera)
 
 void SegmentedLineClass::Increment_LOD(void)
 {
-	unsigned int lvl = LineRenderer.Get_Current_Subdivision_Level();
+	uint32_t lvl = LineRenderer.Get_Current_Subdivision_Level();
 	
 	lvl = MIN(lvl+1,MaxSubdivisionLevels);
 	
@@ -499,7 +499,7 @@ void SegmentedLineClass::Set_LOD_Level(int lod)
 	lod = MAX(0, lod);
 	lod = MIN(lod, (int)MaxSubdivisionLevels);
 
-	LineRenderer.Set_Current_Subdivision_Level((unsigned int)lod);
+	LineRenderer.Set_Current_Subdivision_Level((uint32_t)lod);
 }
 
 int SegmentedLineClass::Get_LOD_Level(void) const
@@ -547,7 +547,7 @@ bool SegmentedLineClass::Cast_Ray(RayCollisionTestClass & raytest)
 	//	Check each line segment against the ray
 	//
 	float fraction = 1.0F;
-	for (uint32 index = 1; index < (unsigned int)PointLocations.Count(); index ++) {
+	for (uint32_t index = 1; index < (uint32_t)PointLocations.Count(); index ++) {
 		Vector3 curr_start	= Transform * PointLocations[index-1];
 		Vector3 curr_end		= Transform * PointLocations[index];
 		LineSegClass line_seg (curr_start, curr_end);

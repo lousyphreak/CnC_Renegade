@@ -35,6 +35,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 
 #ifndef WIN_H
@@ -76,7 +78,7 @@ extern bool GameInFocus;
 
 #ifdef _DEBUG
 
-void __cdecl Print_Win32Error(unsigned long win32Error);
+void __cdecl Print_Win32Error(uint32_t win32Error);
 
 #else // _DEBUG
 

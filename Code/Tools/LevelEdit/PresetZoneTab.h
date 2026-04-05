@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 #ifndef __AFXEXT_H__
@@ -82,7 +84,7 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(PresetZoneTabClass)
-	afx_msg void OnDblclkZoneList(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnDblclkZoneList(NMHDR* pNMHDR, intptr_t* pResult);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 

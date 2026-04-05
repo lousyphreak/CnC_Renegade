@@ -38,6 +38,8 @@
 #ifndef RCMENU_H
 #define RCMENU_H
 
+#include <cstdint>
+
 #include "Max.h"
 #include "dllmain.h"
 #include "resource.h"
@@ -61,13 +63,13 @@ public:
 	void Bind(Interface * ipi, W3DUtilityClass * eni) { InterfacePtr = ipi; UtilityPtr = eni; }
 
 	void Init(RightClickMenuManager* manager, HWND hWnd, IPoint2 m);
-	void Selected(UINT id);
+	void Selected(uint32_t id);
 	void Toggle_Hierarchy(INode * node);
 	void Toggle_Geometry(INode * node);
 
 public:
 
-	BOOL Installed;
+	int32_t Installed;
 
 private:
 

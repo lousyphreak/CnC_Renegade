@@ -234,7 +234,7 @@ LightNodeClass::Show_Settings_Dialog (void)
 	prop_sheet.Add_Page (&settings_tab);
 
 	// Show the property sheet
-	UINT ret_code = prop_sheet.DoModal ();
+	uint32_t ret_code = prop_sheet.DoModal ();
 	if (ret_code == IDOK) {
 		Update_Light ();
 		m_UsePreset = false;
@@ -647,7 +647,7 @@ LightNodeClass::Peek_Light (void)
 //
 //////////////////////////////////////////////////////////////////////
 void
-LightNodeClass::Set_Vis_Sector_ID (uint32 vis_id)
+LightNodeClass::Set_Vis_Sector_ID (uint32_t vis_id)
 {
 	m_VisSectorID = vis_id;
 

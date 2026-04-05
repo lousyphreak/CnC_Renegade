@@ -49,6 +49,7 @@
 #include "vehicle.h"
 #include "combat.h"
 #include "ccamera.h"
+#include <cstdint>
 
 #include "dinput.h"
 
@@ -109,7 +110,7 @@ const char *DEFAULT_INPUT_FILENAME = "DEFAULT_INPUT.CFG";
 
 
 typedef struct {
-	short	ID;
+	int16_t	ID;
 	char	*Name;
 } StringID;
 
@@ -611,7 +612,7 @@ int	FunctionKeyStates[ NUM_FUNCTIONS ] =
 class	AcceleratedKeyDef {
 public:
 	float	Value;
-	short	Function;
+	int16_t	Function;
 	float	Min;
 	float	Max;
 	float	Acceleration;
@@ -1100,7 +1101,7 @@ float	Input::Get_Value( int function_index, int input, float clamp )
 /*
 **
 */
-short	Input::Get_Function( const char *name )
+int16_t	Input::Get_Function( const char *name )
 {
 	if ( name && name[0] ) {
 		// find function
@@ -1118,7 +1119,7 @@ short	Input::Get_Function( const char *name )
 /*
 **
 */
-const char *Input::Get_Key_Name( short key_id )
+const char *Input::Get_Key_Name( int16_t key_id )
 {
 	//
 	// Check each button name
@@ -1145,7 +1146,7 @@ const char *Input::Get_Key_Name( short key_id )
 /*
 **
 */
-short	Input::Get_Key( const char *name )
+int16_t	Input::Get_Key( const char *name )
 {
 	if (name != NULL && name[0] != 0) {
 

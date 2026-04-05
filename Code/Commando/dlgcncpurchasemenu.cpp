@@ -216,7 +216,7 @@ CNCPurchaseMenuClass::On_Init_Dialog (void)
 //
 ////////////////////////////////////////////////////////////////
 void
-CNCPurchaseMenuClass::On_Command (int ctrl_id, int message_id, DWORD param)
+CNCPurchaseMenuClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	switch (ctrl_id)
 	{
@@ -660,7 +660,7 @@ CNCPurchaseMenuClass::On_Frame_Update (void)
 //
 ////////////////////////////////////////////////////////////////
 bool
-CNCPurchaseMenuClass::On_Key_Down (uint32 key_id, uint32 key_data)
+CNCPurchaseMenuClass::On_Key_Down (uint32_t key_id, uint32_t key_data)
 {
 	bool retval = true;
 	

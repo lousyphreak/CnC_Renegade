@@ -63,9 +63,9 @@ void * Load_Alloc_Data(FileClass & file)
 {
 	void * ptr = NULL;
 	if (file.Is_Available()) {
-		long size = file.Size();
+		int32_t size = file.Size();
 
-		ptr = new char[size];
+		ptr = new uint8_t[size];
 		if (ptr != NULL) {
 			file.Read(ptr, size);
 		}
@@ -97,9 +97,9 @@ void * Load_Alloc_Data(FileClass & file)
  * HISTORY:                                                                                    *
  *   10/17/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-long Load_Uncompress(FileClass & file, Buffer & uncomp_buff, Buffer & dest_buff, void * reserved_data)
+int32_t Load_Uncompress(FileClass & file, Buffer & uncomp_buff, Buffer & dest_buff, void * reserved_data)
 {
-	unsigned short	size;
+	uint16_t	size;
 	void	* sptr = uncomp_buff.Get_Buffer();
 	void	* dptr = dest_buff.Get_Buffer();
 	int	opened = false;
@@ -127,7 +127,7 @@ long Load_Uncompress(FileClass & file, Buffer & uncomp_buff, Buffer & dest_buff,
 	**	and skip data (among other things).
 	*/
 	file.Read(&header, sizeof(header));
-	size -= (unsigned short)sizeof(header);
+	size -= (uint16_t)sizeof(header);
 
 	/*
 	**	If there are skip bytes then they must be processed. Either read
@@ -150,7 +150,7 @@ long Load_Uncompress(FileClass & file, Buffer & uncomp_buff, Buffer & dest_buff,
 	**	the buffer and decompressed at the beginning.
 	*/
 	if (uncomp_buff.Get_Buffer() == dest_buff.Get_Buffer()) {
-		sptr = (char *)sptr + uncomp_buff.Get_Size()-(size+sizeof(header));
+		sptr = (uint8_t *)sptr + uncomp_buff.Get_Size()-(size+sizeof(header));
 	}
 
 	/*
@@ -158,12 +158,12 @@ long Load_Uncompress(FileClass & file, Buffer & uncomp_buff, Buffer & dest_buff,
 	*/
 	memmove(sptr, &header, sizeof(header));
 //	Mem_Copy(&header, sptr, sizeof(header));
-	file.Read((char *)sptr + sizeof(header), size);
+	file.Read((uint8_t *)sptr + sizeof(header), size);
 
 	/*
 	**	Decompress the data.
 	*/
-	size = (unsigned short) Uncompress_Data(sptr, dptr);
+	size = (uint16_t) Uncompress_Data(sptr, dptr);
 
 	/*
 	**	Close the file if necessary.
@@ -171,7 +171,7 @@ long Load_Uncompress(FileClass & file, Buffer & uncomp_buff, Buffer & dest_buff,
 	if (opened) {
 		file.Close();
 	}
-	return((long)size);
+	return(static_cast<int32_t>(size));
 }
 
 
@@ -285,7 +285,7 @@ void const * Fetch_Resource(LPCSTR resname, LPCSTR restype)
 }
 
 
-int Load_Picture(FileClass & file, Buffer & scratchbuf, Buffer & destbuf, unsigned char * palette, PicturePlaneType )
+int Load_Picture(FileClass & file, Buffer & scratchbuf, Buffer & destbuf, uint8_t * palette, PicturePlaneType )
 {
 	return(Load_Uncompress(file, scratchbuf, destbuf,  palette ) / 8000);
 }
@@ -314,7 +314,7 @@ void * Hires_Load(FileClass & file)
 	if (file.Is_Available()) {
 
 		length = file.Size();
-		return_ptr = new char[length];
+		return_ptr = new uint8_t[length];
 		file.Read(return_ptr, length);
 		return (return_ptr);
 
@@ -322,5 +322,4 @@ void * Hires_Load(FileClass & file)
 		return (NULL);
 	}
 }
-
 

@@ -62,7 +62,7 @@ bool Strings_Match_Case_Insensitive(const std::string &lhs, const std::string &r
 	}
 
 	for (size_t index = 0; index < lhs.size(); ++index) {
-		if (std::tolower(static_cast<unsigned char>(lhs[index])) != std::tolower(static_cast<unsigned char>(rhs[index]))) {
+		if (std::tolower(static_cast<uint8_t>(lhs[index])) != std::tolower(static_cast<uint8_t>(rhs[index]))) {
 			return false;
 		}
 	}

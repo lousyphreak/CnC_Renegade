@@ -151,7 +151,7 @@ Vector3DialogClass::Create (CWnd *parent)
 //	OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 Vector3DialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog();

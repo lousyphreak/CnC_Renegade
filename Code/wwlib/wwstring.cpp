@@ -322,7 +322,7 @@ bool StringClass::Copy_Wide (const WCHAR *source)
 	if (source != NULL) {
 
 		int  length;
-		BOOL unmapped;
+		int32_t unmapped;
 			
 		length = WideCharToMultiByte (CP_ACP, 0 , source, -1, NULL, 0, NULL, &unmapped);
 		if (length > 0) {

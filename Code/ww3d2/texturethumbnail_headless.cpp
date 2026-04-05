@@ -5,7 +5,7 @@ DLListClass<ThumbnailManagerClass> ThumbnailManagerClass::ThumbnailManagerList;
 ThumbnailClass::ThumbnailClass(
     ThumbnailManagerClass *manager,
     const char *name,
-    unsigned char *bitmap,
+    uint8_t *bitmap,
     unsigned w,
     unsigned h,
     unsigned original_w,
@@ -13,7 +13,7 @@ ThumbnailClass::ThumbnailClass(
     unsigned original_mip_level_count,
     WW3DFormat original_format,
     bool allocated,
-    unsigned long date_time)
+    uint32_t date_time)
     : Name(name, true),
       Bitmap(bitmap),
       Width(w),

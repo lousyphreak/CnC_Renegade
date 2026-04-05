@@ -28,6 +28,8 @@
 #ifndef __DLGMPCONNECTIONREFUSED_H__
 #define __DLGMPCONNECTIONREFUSED_H__
 
+#include <cstdint>
+
 #include "popupdialog.h"
 
 class DlgMPConnectionRefused :
@@ -41,7 +43,7 @@ class DlgMPConnectionRefused :
 		DlgMPConnectionRefused(const WCHAR * text, bool show_splash_screen);
 		virtual ~DlgMPConnectionRefused();
 
-		void On_Command(int ctrl, int message, DWORD param);
+		void On_Command(int ctrl, int message, uint32_t param);
 
 	private:
 		// Prevent copy and assignment

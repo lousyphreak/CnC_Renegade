@@ -108,7 +108,7 @@ cGameSpyAuthMgr::Think
 
 			case GAMESPY_AUTH_STATE_CHALLENGED:
 			{
-				DWORD time_now_ms = TIMEGETTIME();
+				uint32_t time_now_ms = TIMEGETTIME();
 				if (time_now_ms - p_player->Get_GameSpy_Auth_State_Entry_Time_Ms() >
 					CHALLENGE_RESPONSE_TIMEOUT_MS)
 				{
@@ -147,7 +147,7 @@ cGameSpyAuthMgr::Think
 
 			case GAMESPY_AUTH_STATE_REJECTING:
 			{
-				DWORD time_now_ms = TIMEGETTIME();
+				uint32_t time_now_ms = TIMEGETTIME();
 				if (time_now_ms - p_player->Get_GameSpy_Auth_State_Entry_Time_Ms() >
 					REJECTION_DELAY_MS)
 				{

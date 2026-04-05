@@ -470,7 +470,7 @@ ListCtrlClass::Sort_Alphabetically (int col_index, SORT_TYPE type)
 	//
 	//	Sort the entries
 	//
-	Sort (Default_Sort_Callback, MAKELONG ((WORD)col_index, (WORD)type));
+	Sort (Default_Sort_Callback, MAKELONG ((uint16_t)col_index, (uint16_t)type));
 
 	//
 	//	Update the sort marker
@@ -486,7 +486,7 @@ ListCtrlClass::Sort_Alphabetically (int col_index, SORT_TYPE type)
 //
 ////////////////////////////////////////////////////////////////
 int CALLBACK
-ListCtrlClass::Default_Sort_Callback (ListCtrlClass *list_ctrl, int item_index1, int item_index2, uint32 user_param)
+ListCtrlClass::Default_Sort_Callback (ListCtrlClass *list_ctrl, int item_index1, int item_index2, uint32_t user_param)
 {
 	//
 	//	Get the sorting params
@@ -1021,7 +1021,7 @@ ListCtrlClass::On_Kill_Focus (DialogControlClass *focus)
 //
 ////////////////////////////////////////////////////////////////
 bool
-ListCtrlClass::On_Key_Down (uint32 key_id, uint32 key_data)
+ListCtrlClass::On_Key_Down (uint32_t key_id, uint32_t key_data)
 {
 	bool handled = true;
 
@@ -1090,7 +1090,7 @@ ListCtrlClass::On_Key_Down (uint32 key_id, uint32 key_data)
 //
 ////////////////////////////////////////////////////////////////
 void
-ListCtrlClass::Sort (LISTCTRL_SORT_CALLBACK sort_callback, uint32 user_param)
+ListCtrlClass::Sort (LISTCTRL_SORT_CALLBACK sort_callback, uint32_t user_param)
 {
 	//
 	//	Quick sort the data
@@ -1119,7 +1119,7 @@ ListCtrlClass::Quick_Sort
 	int							start_index,
 	int							end_index,
 	LISTCTRL_SORT_CALLBACK	sort_callback,
-	uint32						user_param
+	uint32_t						user_param
 )
 {
 	//
@@ -1885,7 +1885,7 @@ ListCtrlClass::Set_Entry_Color (int index, int col_index, const Vector3 &color)
 //
 ////////////////////////////////////////////////////////////////
 bool
-ListCtrlClass::Set_Entry_Data (int index, int col_index, uint32 user_data)
+ListCtrlClass::Set_Entry_Data (int index, int col_index, uint32_t user_data)
 {
 	//
 	//	Store the user data in the first column
@@ -1900,10 +1900,10 @@ ListCtrlClass::Set_Entry_Data (int index, int col_index, uint32 user_data)
 //	Get_Entry_Data
 //
 ////////////////////////////////////////////////////////////////
-uint32
+uint32_t
 ListCtrlClass::Get_Entry_Data (int index, int col_index)
 {
-	uint32 user_data = 0;
+	uint32_t user_data = 0;
 
 	//
 	//	Lookup the user data

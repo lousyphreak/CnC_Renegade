@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __LISTENER_H
@@ -91,7 +93,7 @@ class Listener3DClass : public Sound3DClass
 		virtual bool			Pause (void)	{ return false; }
 		virtual bool			Resume (void)	{ return false; }
 		virtual bool			Stop (bool /*remove*/)		{ return false; }
-		virtual void			Seek (unsigned long milliseconds) { }
+		virtual void			Seek (uint32_t milliseconds) { }
 		virtual SOUND_STATE	Get_State (void) const	{ return STATE_STOPPED; }
 
 

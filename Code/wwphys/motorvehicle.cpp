@@ -369,7 +369,7 @@ MotorVehicleDefClass::~MotorVehicleDefClass(void)
 	REF_PTR_RELEASE(EngineTorqueCurve);
 }
 
-uint32 MotorVehicleDefClass::Get_Class_ID (void) const	
+uint32_t MotorVehicleDefClass::Get_Class_ID (void) const	
 { 
 	return CLASSID_MOTORVEHICLEDEF; 
 }

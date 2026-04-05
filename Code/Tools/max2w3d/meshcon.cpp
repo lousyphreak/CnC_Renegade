@@ -68,7 +68,7 @@ MeshConnectionsClass::MeshConnectionsClass
 	CurTime(context.CurTime),
 	Origin(context.Origin)
 {
-	unsigned int i;
+	uint32_t i;
 	assert(Origin != NULL);
 
 	/*

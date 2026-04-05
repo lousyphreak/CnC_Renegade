@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #include "SnapPoints.h"
@@ -51,7 +53,7 @@ class PointFilterClass : public INodeFilterClass
 public:
 	PointFilterClass(void) { }
 
-	virtual BOOL Accept_Node(INode * node, TimeValue time)
+	virtual int32_t Accept_Node(INode * node, TimeValue time)
 	{
 		if (node == NULL) return FALSE;
 		Object * obj = node->EvalWorldState(time).obj;
@@ -82,7 +84,7 @@ void SnapPointsClass::Export_Points(INode * scene_root,TimeValue time,ChunkSaveC
 
 		csave.Begin_Chunk(W3D_CHUNK_POINTS);
 
-		for (unsigned int ci=0; ci<pointlist.Num_Nodes(); ci++) {
+		for (uint32_t ci=0; ci<pointlist.Num_Nodes(); ci++) {
 
 			W3dVectorStruct vect;
 			Point3 pos = pointlist[ci]->GetNodeTM(time).GetTrans();

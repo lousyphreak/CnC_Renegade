@@ -36,6 +36,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 #include "resource.h"
@@ -78,7 +80,7 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(UpdatePresetDialogClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	afx_msg void OnBrowse();
 	afx_msg void OnChangeFilenameEdit();
 	virtual void OnOK();

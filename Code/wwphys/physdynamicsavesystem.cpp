@@ -52,7 +52,7 @@
 PhysDynamicSaveSystemClass _PhysDynamicSaveSystem;
 
 
-uint32 PhysDynamicSaveSystemClass::Chunk_ID(void) const
+uint32_t PhysDynamicSaveSystemClass::Chunk_ID(void) const
 {
 	return PHYSICS_CHUNKID_DYNAMIC_DATA_SUBSYSTEM;
 }

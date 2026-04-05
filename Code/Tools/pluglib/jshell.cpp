@@ -63,12 +63,12 @@
  *=============================================================================================*/
 void Set_Bit(void * array, int bit, int value)
 {
-	unsigned char mask = (unsigned char)(1 << (bit % 8));
+	uint8_t mask = (uint8_t)(1 << (bit % 8));
 
 	if (value != 0) {
-		*((unsigned char *)array + (bit/8)) |= mask;
+		*((uint8_t *)array + (bit/8)) |= mask;
 	} else {
-		*((unsigned char *)array + (bit/8)) &= (unsigned char)~mask;
+		*((uint8_t *)array + (bit/8)) &= (uint8_t)~mask;
 	}
 }
 
@@ -92,8 +92,8 @@ void Set_Bit(void * array, int bit, int value)
  *=============================================================================================*/
 int Get_Bit(void const * array, int bit)
 {
-	unsigned char mask = (unsigned char)(1 << (bit % 8));
-	return((*((unsigned char *)array + (bit/8)) & mask) != 0);
+	uint8_t mask = (uint8_t)(1 << (bit % 8));
+	return((*((uint8_t *)array + (bit/8)) & mask) != 0);
 }
 
 
@@ -117,7 +117,7 @@ int Get_Bit(void const * array, int bit)
 int First_True_Bit(void const * array)
 {
 	int index = 0;
-	while (*((unsigned char *)array) == 0) {
+	while (*((uint8_t *)array) == 0) {
 		index++;
 		array = ((char*)array) + 1;
 	}
@@ -149,7 +149,7 @@ int First_True_Bit(void const * array)
 int First_False_Bit(void const * array)
 {
 	int index = 0;
-	while (*((unsigned char *)array) == 0xFF) {
+	while (*((uint8_t *)array) == 0xFF) {
 		index++;
 		array = ((char*)array) + 1;
 	}

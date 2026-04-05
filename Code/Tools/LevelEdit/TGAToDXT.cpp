@@ -55,7 +55,7 @@ TGAToDXTClass::TGAToDXTClass()
 	  BufferSize (1024),
 	  BufferCount (0)
 {
-	Buffer = new unsigned char [BufferSize];
+	Buffer = new uint8_t [BufferSize];
 	ASSERT (Buffer != NULL);
 }
 
@@ -81,7 +81,7 @@ bool TGAToDXTClass::Convert (const char *inputpathname, const char *outputpathna
 {
 	bool  success;
 	Targa targa;
-	long	error;
+	int32_t	error;
 
 	WriteTimePtr = writetimeptr;
 	redundantalpha = false;
@@ -103,8 +103,8 @@ bool TGAToDXTClass::Convert (const char *inputpathname, const char *outputpathna
 		validaspect	  = ((float) MAX (targa.Header.Width, targa.Header.Height)) / ((float) MIN (targa.Header.Width, targa.Header.Height)) <= 8.0f; 
 		if (validbitdepth && validsize && validaspect) {
 			
-			unsigned char *byte;
-			HRESULT			errorcode;
+			uint8_t *byte;
+			int32_t			errorcode;
 
 			targa.YFlip();
 
@@ -112,10 +112,10 @@ bool TGAToDXTClass::Convert (const char *inputpathname, const char *outputpathna
 			if (targa.Header.PixelDepth == 32) {
 				
 				// Analyse the alpha channel and ignore it if it contains redundant data (ie. is either all black or all white).
-				byte = (unsigned char*) targa.GetImage();
+				byte = (uint8_t*) targa.GetImage();
 				if ((*(byte + 3) == 0x00) || (*(byte + 3) == 0xff)) {
 
-					const unsigned char alpha = *(byte + 3);
+					const uint8_t alpha = *(byte + 3);
 
 					redundantalpha = true;
 					for (unsigned p = 0; p < ((unsigned) targa.Header.Width) * ((unsigned) targa.Header.Height); p++) {
@@ -126,17 +126,17 @@ bool TGAToDXTClass::Convert (const char *inputpathname, const char *outputpathna
 
 				if (!redundantalpha) {
 
-					errorcode = ::nvDXTcompress ((unsigned char*) targa.GetImage(), targa.Header.Width, targa.Header.Height, TF_DXT5, true, false, 4);
+					errorcode = ::nvDXTcompress ((uint8_t*) targa.GetImage(), targa.Header.Width, targa.Header.Height, TF_DXT5, true, false, 4);
 
 				} else {
 
-					unsigned char *nonalphaimage, *nonalphabyte;
+					uint8_t *nonalphaimage, *nonalphabyte;
 
 					// Remove the alpha channel and swizel the pixel data.
-					nonalphaimage = new unsigned char [3 * ((unsigned) targa.Header.Width) * ((unsigned) targa.Header.Height)];
+					nonalphaimage = new uint8_t [3 * ((unsigned) targa.Header.Width) * ((unsigned) targa.Header.Height)];
 					nonalphabyte  = nonalphaimage;
 					
-					byte = (unsigned char*) targa.GetImage();
+					byte = (uint8_t*) targa.GetImage();
 					for (unsigned p = 0; p < ((unsigned) targa.Header.Width) * ((unsigned) targa.Header.Height); p++) {
 
 						*(nonalphabyte + 0) = *(byte + 0);
@@ -152,7 +152,7 @@ bool TGAToDXTClass::Convert (const char *inputpathname, const char *outputpathna
 
 			} else {
 
-				errorcode = ::nvDXTcompress ((unsigned char*) targa.GetImage(), targa.Header.Width, targa.Header.Height, TF_DXT1, true, false, 3);
+				errorcode = ::nvDXTcompress ((uint8_t*) targa.GetImage(), targa.Header.Width, targa.Header.Height, TF_DXT1, true, false, 3);
 			}
 
 			// Was the image compressed successfully?
@@ -176,7 +176,7 @@ bool TGAToDXTClass::Convert (const char *inputpathname, const char *outputpathna
 void TGAToDXTClass::Write (const char *outputpathname)
 {
 	HANDLE hfile;
-	DWORD  bytecountwritten;
+	uint32_t  bytecountwritten;
 	
 	hfile = ::CreateFile (outputpathname, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, 0L, NULL);
 	if (hfile != INVALID_HANDLE_VALUE) {
@@ -202,7 +202,7 @@ void TGAToDXTClass::Write (const char *outputpathname)
 //	ReadDTXnFile
 //
 ///////////////////////////////////////////////////////////////////////////////
-void ReadDTXnFile (DWORD datacount, void *data)
+void ReadDTXnFile (uint32_t datacount, void *data)
 {
 	// Not implemented.
 	ASSERT (false);
@@ -214,16 +214,16 @@ void ReadDTXnFile (DWORD datacount, void *data)
 //	WriteDTXnFile
 //
 ///////////////////////////////////////////////////////////////////////////////
-void WriteDTXnFile (DWORD datacount, void *data)
+void WriteDTXnFile (uint32_t datacount, void *data)
 {
 	// Ensure that the buffer is large enough.
 	if (_TGAToDXTConverter.BufferSize < _TGAToDXTConverter.BufferCount + datacount) {
 
 		unsigned			newbuffersize;
-		unsigned char *newbuffer;
+		uint8_t *newbuffer;
 
 		newbuffersize = MAX (_TGAToDXTConverter.BufferSize * 2, _TGAToDXTConverter.BufferCount + datacount);
-		newbuffer	  = new unsigned char [newbuffersize];
+		newbuffer	  = new uint8_t [newbuffersize];
 		ASSERT (newbuffer != NULL);
 		memcpy (newbuffer, _TGAToDXTConverter.Buffer, _TGAToDXTConverter.BufferCount);
 		delete [] _TGAToDXTConverter.Buffer;
@@ -235,4 +235,3 @@ void WriteDTXnFile (DWORD datacount, void *data)
 	memcpy (_TGAToDXTConverter.Buffer + _TGAToDXTConverter.BufferCount, data, datacount);
 	_TGAToDXTConverter.BufferCount += datacount;
 }
-

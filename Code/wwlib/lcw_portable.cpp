@@ -58,11 +58,11 @@
  * INPUT:                                                                  *
  *      void * source ptr                                                  *
  *      void * destination ptr                                             *
- *      unsigned long length of uncompressed data                          *
+ *      uint32_t length of uncompressed data                          *
  *                                                                         *
  *                                                                         *
  * OUTPUT:                                                                 *
- *     unsigned long # of destination bytes written                        *
+ *     uint32_t # of destination bytes written                        *
  *                                                                         *
  * WARNINGS:                                                               *
  *     3rd argument is dummy. It exists to provide cross-platform          *
@@ -72,17 +72,17 @@
  * HISTORY:                                                                *
  *    03/20/1995 IML : Created.                                            *
  *=========================================================================*/
-int LCW_Uncomp(void const * source, void * dest, unsigned long )
+int LCW_Uncomp(void const * source, void * dest, uint32_t )
 {
-	unsigned char * source_ptr, * dest_ptr, * copy_ptr;
-	unsigned char op_code, data;
+	uint8_t * source_ptr, * dest_ptr, * copy_ptr;
+	uint8_t op_code, data;
 	unsigned count;
 	unsigned * word_dest_ptr;
 	unsigned word_data;
 
 	/* Copy the source and destination ptrs. */
-	source_ptr = (unsigned char*) source;
-	dest_ptr   = (unsigned char*) dest;
+	source_ptr = (uint8_t*) source;
+	dest_ptr   = (uint8_t*) dest;
 
 	for (;;) {
 
@@ -104,7 +104,7 @@ int LCW_Uncomp(void const * source, void * dest, unsigned long )
 				if (op_code == 0x80) {
 
 					/* Return # of destination bytes written. */
-					return ((unsigned long) (dest_ptr - (unsigned char*) dest));
+					return static_cast<int>(dest_ptr - static_cast<const uint8_t *>(dest));
 
 				} else {
 
@@ -147,7 +147,7 @@ int LCW_Uncomp(void const * source, void * dest, unsigned long )
 
 						/* Do a long copy from destination. */
 						count = *source_ptr + ((unsigned) *(source_ptr + 1) << 8);
-						copy_ptr = (unsigned char*) dest + *(source_ptr + 2) + ((unsigned) *(source_ptr + 3) << 8);
+						copy_ptr = (uint8_t*) dest + *(source_ptr + 2) + ((unsigned) *(source_ptr + 3) << 8);
 						source_ptr += 4;
 
 						while (count--) *dest_ptr++ = *copy_ptr++;
@@ -156,7 +156,7 @@ int LCW_Uncomp(void const * source, void * dest, unsigned long )
 
 						/* Do a medium copy from destination. */
 						count = (op_code & 0x3f) + 3;
-						copy_ptr = (unsigned char*) dest + *source_ptr + ((unsigned) *(source_ptr + 1) << 8);
+						copy_ptr = (uint8_t*) dest + *source_ptr + ((unsigned) *(source_ptr + 1) << 8);
 						source_ptr += 2;
 
 						while (count--) *dest_ptr++ = *copy_ptr++;
@@ -192,14 +192,14 @@ int LCW_Comp(void const * source, void * dest, int datasize)
 		return 0;
 	}
 
-	const unsigned char * src       = static_cast<const unsigned char *>(source);
-	const unsigned char * src_start = src;
-	const unsigned char * src_end   = src + datasize;
-	unsigned char       * dst       = static_cast<unsigned char *>(dest);
-	unsigned char * const dst_start = dst;
+	const uint8_t * src       = static_cast<const uint8_t *>(source);
+	const uint8_t * src_start = src;
+	const uint8_t * src_end   = src + datasize;
+	uint8_t       * dst       = static_cast<uint8_t *>(dest);
+	uint8_t * const dst_start = dst;
 
 	// Write initial 1-byte literal packet, mirroring the original's "0x81, first_byte" prologue.
-	unsigned char * len_ptr = dst;
+	uint8_t * len_ptr = dst;
 	*dst++ = 0x81;
 	*dst++ = *src++;
 	bool in_literal = true;
@@ -209,8 +209,8 @@ int LCW_Comp(void const * source, void * dest, int datasize)
 		// --- Long run-length check (0xFE packet) ---
 		// Quick filter mirrors original: test src[0] == src[64] before doing the full scan.
 		if (src + 64 < src_end && *src == src[64]) {
-			const unsigned char run_byte  = *src;
-			const unsigned char * run_end = src + 1;
+			const uint8_t run_byte  = *src;
+			const uint8_t * run_end = src + 1;
 			while (run_end < src_end && *run_end == run_byte)
 				++run_end;
 
@@ -220,8 +220,8 @@ int LCW_Comp(void const * source, void * dest, int datasize)
 			if (emit_count >= 65) {
 				in_literal = false;
 				*dst++ = 0xFE;
-				*dst++ = static_cast<unsigned char>(emit_count & 0xFF);
-				*dst++ = static_cast<unsigned char>((emit_count >> 8) & 0xFF);
+				*dst++ = static_cast<uint8_t>(emit_count & 0xFF);
+				*dst++ = static_cast<uint8_t>((emit_count >> 8) & 0xFF);
 				*dst++ = run_byte;
 				src += emit_count;
 				continue;
@@ -229,12 +229,12 @@ int LCW_Comp(void const * source, void * dest, int datasize)
 		}
 
 		// --- Pattern match: search [src_start, src) for the longest match ---
-		const unsigned char * best_match = nullptr;
+		const uint8_t * best_match = nullptr;
 		int best_len = 2; // must beat 2 to prefer a back-ref over a literal
 
 		const int max_len = static_cast<int>(src_end - src);
 		if (max_len > best_len) {
-			for (const unsigned char * s = src_start; s < src; ++s) {
+			for (const uint8_t * s = src_start; s < src; ++s) {
 				if (*s != *src)
 					continue;
 
@@ -274,25 +274,25 @@ int LCW_Comp(void const * source, void * dest, int datasize)
 		} else {
 			// --- Emit back-reference ---
 			in_literal = false;
-			unsigned int back    = static_cast<unsigned int>(src - best_match);
-			unsigned int abs_off = static_cast<unsigned int>(best_match - src_start);
+			uint32_t back    = static_cast<uint32_t>(src - best_match);
+			uint32_t abs_off = static_cast<uint32_t>(best_match - src_start);
 
 			if (best_len <= 10 && back <= 0xFFFu) {
 				// Short back-ref: 2 bytes, backward offset (1-4095), length 3-10.
-				*dst++ = static_cast<unsigned char>(((best_len - 3) << 4) | (back >> 8));
-				*dst++ = static_cast<unsigned char>(back & 0xFFu);
+				*dst++ = static_cast<uint8_t>(((best_len - 3) << 4) | (back >> 8));
+				*dst++ = static_cast<uint8_t>(back & 0xFFu);
 			} else if (best_len <= 64) {
 				// Medium back-ref: 3 bytes, absolute offset, length 3-64.
-				*dst++ = static_cast<unsigned char>(0xC0u | static_cast<unsigned int>(best_len - 3));
-				*dst++ = static_cast<unsigned char>(abs_off & 0xFFu);
-				*dst++ = static_cast<unsigned char>((abs_off >> 8) & 0xFFu);
+				*dst++ = static_cast<uint8_t>(0xC0u | static_cast<uint32_t>(best_len - 3));
+				*dst++ = static_cast<uint8_t>(abs_off & 0xFFu);
+				*dst++ = static_cast<uint8_t>((abs_off >> 8) & 0xFFu);
 			} else {
 				// Long back-ref: 5 bytes, absolute offset, length 65+.
 				*dst++ = 0xFF;
-				*dst++ = static_cast<unsigned char>(best_len & 0xFF);
-				*dst++ = static_cast<unsigned char>((best_len >> 8) & 0xFF);
-				*dst++ = static_cast<unsigned char>(abs_off & 0xFFu);
-				*dst++ = static_cast<unsigned char>((abs_off >> 8) & 0xFFu);
+				*dst++ = static_cast<uint8_t>(best_len & 0xFF);
+				*dst++ = static_cast<uint8_t>((best_len >> 8) & 0xFF);
+				*dst++ = static_cast<uint8_t>(abs_off & 0xFFu);
+				*dst++ = static_cast<uint8_t>((abs_off >> 8) & 0xFFu);
 			}
 			src += best_len;
 		}

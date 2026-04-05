@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __MENU_ENTRY_CTRL_H
@@ -88,8 +90,8 @@ protected:
 	void					On_Create (void);	
 	void					On_Set_Focus (void);
 	void					On_Kill_Focus (DialogControlClass *);
-	bool					On_Key_Down (uint32 key_id, uint32 key_data);
-	bool					On_Key_Up (uint32 key_id);
+	bool					On_Key_Down (uint32_t key_id, uint32_t key_data);
+	bool					On_Key_Up (uint32_t key_id);
 	void					On_Mouse_Wheel (int direction);
 	void					On_Frame_Update (void);
 	void					Update_Client_Rect (void);

@@ -85,7 +85,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CameraSettingsDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -97,8 +97,8 @@ CameraSettingsDialogClass::OnInitDialog (void)
 	//
 	//	Enable/disable the group boxes
 	//
-	SendDlgItemMessage (IDC_FOV_CHECK, BM_SETCHECK, (WPARAM)doc->Is_FOV_Manual ());
-	SendDlgItemMessage (IDC_CLIP_PLANE_CHECK, BM_SETCHECK, (WPARAM)doc->Are_Clip_Planes_Manual ());
+	SendDlgItemMessage (IDC_FOV_CHECK, BM_SETCHECK, (uintptr_t)doc->Is_FOV_Manual ());
+	SendDlgItemMessage (IDC_CLIP_PLANE_CHECK, BM_SETCHECK, (uintptr_t)doc->Are_Clip_Planes_Manual ());
 
 	float znear = 0;
 	float zfar = 0;
@@ -277,12 +277,12 @@ CameraSettingsDialogClass::OnReset (void)
 //	OnNotify
 //
 ////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CameraSettingsDialogClass::OnNotify
 (
-	WPARAM wParam,
-	LPARAM lParam,
-	LRESULT *pResult
+	uintptr_t wParam,
+	intptr_t lParam,
+	intptr_t *pResult
 ) 
 {
 	//
@@ -370,11 +370,11 @@ CameraSettingsDialogClass::Update_FOV (void)
 //	Update_FOV
 //
 ////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CameraSettingsDialogClass::OnCommand
 (
-	WPARAM wParam,
-	LPARAM lParam
+	uintptr_t wParam,
+	intptr_t lParam
 ) 
 {
 	static bool updating = false;

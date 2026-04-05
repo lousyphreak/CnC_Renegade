@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __SOUND3DOBJ_H
@@ -172,7 +174,7 @@ class Sound3DClass : public AudibleSoundClass
 		//////////////////////////////////////////////////////////////////////
 		//	Update methods
 		//////////////////////////////////////////////////////////////////////
-		virtual bool					On_Frame_Update (unsigned int milliseconds = 0);		
+		virtual bool					On_Frame_Update (uint32_t milliseconds = 0);		
 		void								Update_Edge_Volume (void);
 
 		//////////////////////////////////////////////////////////////////////
@@ -195,7 +197,7 @@ class Sound3DClass : public AudibleSoundClass
 		Vector3					m_CurrentVelocity;		
 		float						m_MaxVolRadius;		
 		bool						m_IsStatic;
-		unsigned int			m_LastUpdate;
+		uint32_t			m_LastUpdate;
 };
 
 

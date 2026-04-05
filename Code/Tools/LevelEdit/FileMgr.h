@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __FILEMGR_H
@@ -123,7 +125,7 @@ struct LevelFileStruct
 		//	Public fields
 		//////////////////////////////////////////////////////////
 		CString				m_Filename;
-		ULONG					m_RefCount;
+		uint32_t					m_RefCount;
 		bool					m_SubdirImportant;
 };
 
@@ -187,7 +189,7 @@ class FileMgrClass
 		//
 		//	Preset library information
 		//
-		void						Get_Preset_Library_Path (uint32 class_id, bool is_temp, CString &path);
+		void						Get_Preset_Library_Path (uint32_t class_id, bool is_temp, CString &path);
 
 		//
 		// Texture methods
@@ -255,7 +257,7 @@ class FileMgrClass
 		CString					m_CurrentFile;
 		void						Add_Files_To_Database (void);		
 
-		friend UINT				fnUpdateVSSThread (LPVOID pParam);
+		friend uint32_t				fnUpdateVSSThread (LPVOID pParam);
 
 	private:
 

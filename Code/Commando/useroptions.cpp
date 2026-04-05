@@ -120,7 +120,7 @@ bool cUserOptions::Parse_Command_Line(LPCSTR command)
 
 		// Look for ip override.
 		if (strstr(cmd, "IP=")) {
-			extern ULONG g_ip_override;
+			extern uint32_t g_ip_override;
 			g_ip_override = ::inet_addr(strstr(cmd, "IP=") + 3);
 			continue;
 		}
@@ -205,8 +205,8 @@ bool cUserOptions::Parse_Command_Line(LPCSTR command)
 	if (ip_param != NULL) {
 		ip_param += ::strlen("+connect");
 
-		USHORT port = 4848;
-		DWORD addr = 0;
+		uint16_t port = 4848;
+		uint32_t addr = 0;
 		char ipaddr[300] = "";
 		::sscanf(ip_param, "%s", ipaddr);
 		strtrim(ipaddr);
@@ -349,11 +349,11 @@ void cUserOptions::Set_Bandwidth_Type(BANDWIDTH_TYPE_ENUM bandwidth_type)
 
 	if (bandwidth_type != BANDWIDTH_CUSTOM) {
 		if (bandwidth_type == BANDWIDTH_AUTO && BandwidthCheckerClass::Got_Bandwidth()) {
-			ULONG bps = BandwidthCheckerClass::Get_Upstream_Bandwidth();
+			uint32_t bps = BandwidthCheckerClass::Get_Upstream_Bandwidth();
 			WWASSERT(bps > 0);
 			BandwidthBps.Set(bps);
 		} else {
-			ULONG bps = cBandwidth::Get_Bandwidth_Bps_From_Type(bandwidth_type);
+			uint32_t bps = cBandwidth::Get_Bandwidth_Bps_From_Type(bandwidth_type);
 			WWASSERT(bps > 0);
 			BandwidthBps.Set(bps);
 		}
@@ -431,7 +431,7 @@ cRegistryBool cUserOptions::GameListFilterShowOnlyGamesIRankFor(	APPLICATION_SUB
 		value = ::strstr(cmd, param);
 		if (value != NULL) {
 			value += ::strlen(param);
-			ULONG ip = ::inet_addr(value);
+			uint32_t ip = ::inet_addr(value);
 			cGameSpyAdmin::Set_Game_Host_Ip(ip);
 			cGameSpyAdmin::Set_Is_Launch_From_Gamespy_Requested(true);
 			continue;
@@ -441,7 +441,7 @@ cRegistryBool cUserOptions::GameListFilterShowOnlyGamesIRankFor(	APPLICATION_SUB
 		value = ::strstr(cmd, param);
 		if (value != NULL) {
 			value += ::strlen(param);
-			USHORT port = (USHORT)::atol(value);
+			uint16_t port = (uint16_t)::atol(value);
 			cGameSpyAdmin::Set_Game_Host_Port(port);
 			cGameSpyAdmin::Set_Is_Launch_From_Gamespy_Requested(true);
 			continue;

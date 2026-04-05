@@ -90,7 +90,7 @@ END_MESSAGE_MAP()
 //
 //  OnInitDialog
 //
-BOOL
+int32_t
 CEditLODDialog::OnInitDialog (void) 
 {
 	// Allow the base class to process this message
@@ -230,7 +230,7 @@ void
 CEditLODDialog::OnDeltaposSwitchUpSpin
 (
     NMHDR* pNMHDR,
-    LRESULT* pResult
+    intptr_t* pResult
 )
 {
 	NM_UPDOWN* pNMUpDown = (NM_UPDOWN*)pNMHDR;
@@ -264,7 +264,7 @@ void
 CEditLODDialog::OnDeltaposSwitchDnSpin
 (
     NMHDR* pNMHDR,
-    LRESULT* pResult
+    intptr_t* pResult
 )
 {
 	NM_UPDOWN* pNMUpDown = (NM_UPDOWN*)pNMHDR;
@@ -298,7 +298,7 @@ void
 CEditLODDialog::OnItemChangedHierarchyList
 (
     NMHDR* pNMHDR,
-    LRESULT* pResult
+    intptr_t* pResult
 )
 {
 	// Did the 'state' of the entry change?
@@ -382,7 +382,7 @@ CEditLODDialog::ResetControls (int iIndex)
 //  EnableControls
 //
 void
-CEditLODDialog::EnableControls (BOOL bEnable)
+CEditLODDialog::EnableControls (int32_t bEnable)
 {    
     // Enable or disable the windows
     ::EnableWindow (::GetDlgItem (m_hWnd, IDC_SETTINGS_GROUP), bEnable);

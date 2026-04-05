@@ -38,6 +38,8 @@
 #ifndef W3DEXP_H
 #define W3DEXP_H
 
+#include <cstdint>
+
 #include "always.h"
 #include <Max.h>
 #include "dllmain.h"
@@ -65,10 +67,10 @@ public:
 	const TCHAR *	CopyrightMessage()	{ return Get_String(IDS_COPYRIGHT_NOTICE); };		
 	const TCHAR *	OtherMessage1()		{ return _T(""); };		
 	const TCHAR *	OtherMessage2()		{ return _T(""); };		
-	unsigned int	Version()				{ return 100; };				
+	uint32_t	Version()				{ return 100; };				
 	
 	void				ShowAbout(HWND hWnd)	{};	
-	int				DoExport(const TCHAR *name,ExpInterface *ei,Interface *i, BOOL suppressPrompts=FALSE, DWORD options=0);	// Export file
+	int				DoExport(const TCHAR *name,ExpInterface *ei,Interface *i, int32_t suppressPrompts=FALSE, uint32_t options=0);	// Export file
 
 protected:
 
@@ -76,7 +78,7 @@ protected:
 
 public:
 
-	friend BOOL CALLBACK ExportOptionsDlgProc(HWND hDlg,UINT message,WPARAM wParam,LPARAM lParam);
+	friend int32_t CALLBACK ExportOptionsDlgProc(HWND hDlg,uint32_t message,uintptr_t wParam,intptr_t lParam);
 
 	static char CurrentExportPath[_MAX_DRIVE + _MAX_DIR + 1];	// Used to communicate from the exporter to the dialog.
 	char CurrentScenePath[_MAX_DRIVE + _MAX_DIR + 1]; // directory where the current .max file is stored
@@ -99,7 +101,7 @@ private:
 
 	HierarchySaveClass *	HierarchyTree;
 		
-	bool get_export_options(BOOL suppress_prompts = FALSE);
+	bool get_export_options(int32_t suppress_prompts = FALSE);
 	INodeListClass * get_origin_list(void);
 	INodeListClass * get_damage_root_list(void);
 	HierarchySaveClass * get_hierarchy_tree(void);

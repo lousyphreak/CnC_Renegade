@@ -228,7 +228,7 @@ PathfindSectorBuilderClass::Generate_Sectors (const Vector3 &start_pos)
 	m_CurrentSector = Mark_Sector (normalized_start_pos);
 	Floodfill (normalized_start_pos);
 
-	DWORD start_ticks = TIMEGETTIME ();
+	uint32_t start_ticks = TIMEGETTIME ();
 
 	//
 	//	Process all the sectors in our queue
@@ -243,9 +243,9 @@ PathfindSectorBuilderClass::Generate_Sectors (const Vector3 &start_pos)
 	//
 	//	Compress the sectors into the largest possible rectangular regions
 	//
-	DWORD before_ticks = TIMEGETTIME ();
+	uint32_t before_ticks = TIMEGETTIME ();
 	Compress_Sectors ();
-	DWORD after_ticks = TIMEGETTIME ();
+	uint32_t after_ticks = TIMEGETTIME ();
 
 	CString message;
 	message.Format ("Time spent compressing: %d secs.\r\n", (after_ticks-before_ticks)/1000);

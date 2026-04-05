@@ -21,6 +21,8 @@
 
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 // DockableFormClass.h : header file
 //
@@ -37,7 +39,7 @@
 class DockableFormClass : public CWnd
 {
 	public:
-		DockableFormClass (UINT nIDTemplate);
+		DockableFormClass (uint32_t nIDTemplate);
 		virtual ~DockableFormClass ();
         
 
@@ -51,7 +53,7 @@ public:
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(DockableFormClass)
 	protected:
-	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+	virtual intptr_t WindowProc(uint32_t message, uintptr_t wParam, intptr_t lParam);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -69,8 +71,8 @@ protected:
 		//
 		//	Protected methods
 		//
-		BOOL Create(LPCTSTR /*lpszClassName*/, LPCTSTR /*lpszWindowName*/,
-						DWORD dwRequestedStyle, const RECT& rect, CWnd* pParentWnd, UINT nID,
+		int32_t Create(LPCTSTR /*lpszClassName*/, LPCTSTR /*lpszWindowName*/,
+						uint32_t dwRequestedStyle, const RECT& rect, CWnd* pParentWnd, uint32_t nID,
 						CCreateContext* pContext);
 
 	public:
@@ -79,7 +81,7 @@ protected:
 		//
 		//	Public Methods
 		//
-		BOOL				Create (CWnd *pCParentWnd, UINT uiID)	{ return Create (NULL, NULL, WS_CHILD | WS_VISIBLE, CRect (0, 0, 100, 100), pCParentWnd, uiID, NULL); }
+		int32_t				Create (CWnd *pCParentWnd, uint32_t uiID)	{ return Create (NULL, NULL, WS_CHILD | WS_VISIBLE, CRect (0, 0, 100, 100), pCParentWnd, uiID, NULL); }
 		virtual void	HandleInitDialog (void) {}
 		virtual bool	Apply_Changes (void) { return true; }
 		virtual void	Discard_Changes (void) {}
@@ -96,7 +98,7 @@ protected:
 		//
 		//	Private member data
 		//
-		UINT m_uiTemplateID;
+		uint32_t m_uiTemplateID;
 		CRect m_rectForm;
 };
 

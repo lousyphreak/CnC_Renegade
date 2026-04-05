@@ -37,6 +37,8 @@
 #ifndef LIGHTMAPDOC_H
 #define LIGHTMAPDOC_H
 
+#include <cstdint>
+
 // Includes.
 #include "Rawfile.h"
 #include "w3d_file.h"
@@ -61,7 +63,7 @@ class LightMapDoc : public CDocument
 		};
 
 		// Flags for anomalies in a W3D model.
-		// WARNING: Do not exceed no. of bits in unsigned long.
+		// WARNING: Do not exceed no. of bits in uint32_t.
 		enum MeshFlagsEnum {
 				
 			// Unconditional errors.
@@ -178,7 +180,7 @@ class LightMapDoc : public CDocument
 
 				MeshAnomalyStruct (const MeshInfoStruct &meshinfo);
 
-				unsigned long MeshAnomalies;
+				uint32_t MeshAnomalies;
 		};
 
 		struct MeshStatusStruct {
@@ -195,7 +197,7 @@ class LightMapDoc : public CDocument
 
 			MeshStatusStruct() {}
 
-			MeshStatusStruct (const char *name, unsigned trianglecount, unsigned long meshanomalies)
+			MeshStatusStruct (const char *name, unsigned trianglecount, uint32_t meshanomalies)
 			{
 				strcpy (Name, name);
 				TriangleCount = trianglecount;
@@ -219,9 +221,9 @@ class LightMapDoc : public CDocument
 			bool Inserted_Multi_Pass_Solve()		{return ((InsertedFlags & W3D_MESH_FLAG_PRELIT_LIGHTMAP_MULTI_PASS) != 0);}
 			bool Inserted_Multi_Texture_Solve() {return ((InsertedFlags & W3D_MESH_FLAG_PRELIT_LIGHTMAP_MULTI_TEXTURE) != 0);}
 
-			unsigned long Prelit_Flags() {
+			uint32_t Prelit_Flags() {
 
-				unsigned long prelitflags;
+				uint32_t prelitflags;
 
 				// If a vertex solve cannot be inserted substitute an unlit solve.
 				if (Can_Insert_Vertex_Solve()) {
@@ -236,8 +238,8 @@ class LightMapDoc : public CDocument
 
 			char				 Name [W3D_NAME_LEN];
 			unsigned			 TriangleCount;	
-			unsigned long	 MeshAnomalies;
-			unsigned long	 InsertedFlags;			// Which prelit mode types were inserted with the most recent solve?
+			uint32_t	 MeshAnomalies;
+			uint32_t	 InsertedFlags;			// Which prelit mode types were inserted with the most recent solve?
 			SolveStatistics SolveStatistics;
 		};
 
@@ -248,8 +250,8 @@ class LightMapDoc : public CDocument
 				~SplitVertexInfoStruct();
 
 				unsigned				 Vertex_Count() const	  {return (VertexCount);}
-				uint32				 Remap (unsigned v) const {ASSERT (v < Vertex_Count());	 return (RemapTable [v]);}
-				uint32				 Index (unsigned v) const {ASSERT (v < FaceVertexCount);	 return (IndexTable [v]);}
+				uint32_t				 Remap (unsigned v) const {ASSERT (v < Vertex_Count());	 return (RemapTable [v]);}
+				uint32_t				 Index (unsigned v) const {ASSERT (v < FaceVertexCount);	 return (IndexTable [v]);}
 				W3dTexCoordStruct	*UV	 (unsigned v) const {ASSERT (v < Vertex_Count());	 return (UVPtrTable [v]);}
 
 			private:
@@ -257,8 +259,8 @@ class LightMapDoc : public CDocument
 
 				unsigned				  VertexCount;
 				unsigned				  FaceVertexCount;	
-				uint32				 *RemapTable;
-				uint32				 *IndexTable;
+				uint32_t				 *RemapTable;
+				uint32_t				 *IndexTable;
 				W3dTexCoordStruct	 *UVTable;
 				W3dTexCoordStruct **UVPtrTable;
 		};	
@@ -298,7 +300,7 @@ class LightMapDoc : public CDocument
 		
 		void Save_Lights (const char *pathname);
 
- 		void Translate_Mesh_Header3 (ChunkLoadClass &w3dchunk, unsigned long prelitflags, ChunkSaveClass &solvechunk, const SplitVertexInfoStruct &splitvertexinfo);
+ 		void Translate_Mesh_Header3 (ChunkLoadClass &w3dchunk, uint32_t prelitflags, ChunkSaveClass &solvechunk, const SplitVertexInfoStruct &splitvertexinfo);
 		void Translate_Vertices (ChunkLoadClass &w3dchunk, ChunkSaveClass &solvechunk, const SplitVertexInfoStruct &splitvertexinfo);
 		void Translate_Vertex_Normals (ChunkLoadClass &w3dchunk, ChunkSaveClass &solvechunk, const SplitVertexInfoStruct &splitvertexinfo);
 		void Translate_Vertex_Influences (ChunkLoadClass &w3dchunk, ChunkSaveClass &solvechunk, const SplitVertexInfoStruct &splitvertexinfo);
@@ -355,10 +357,10 @@ public:
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(LightMapDoc)
 	public:
-	virtual BOOL OnNewDocument();
-	virtual BOOL OnOpenDocument(LPCTSTR lpszPathName);
+	virtual int32_t OnNewDocument();
+	virtual int32_t OnOpenDocument(LPCTSTR lpszPathName);
 	virtual void Serialize(CArchive& ar);
-	virtual BOOL OnSaveDocument(LPCTSTR lpszPathName);
+	virtual int32_t OnSaveDocument(LPCTSTR lpszPathName);
 	virtual void DeleteContents();
 	//}}AFX_VIRTUAL
 

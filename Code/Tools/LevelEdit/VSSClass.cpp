@@ -47,7 +47,7 @@
 
 typedef struct tagVSS_ERROR
 {
-	HRESULT hresult;
+	int32_t hresult;
 	LPCTSTR description;
 } VSS_ERROR;
 
@@ -233,7 +233,7 @@ VSSClass::Get_VSS_Interface (void)
 	
 		// Attempt to create an instance of the VSS Database interface
 		LPUNKNOWN punknown = NULL;
-		HRESULT hresult = ::CoCreateInstance (CLSID_VSSDatabase,
+		int32_t hresult = ::CoCreateInstance (CLSID_VSSDatabase,
 														  NULL,
 														  CLSCTX_INPROC_SERVER,
 														  IID_IVSSDatabase,
@@ -303,7 +303,7 @@ VSSClass::Open_Database
 				
 				LPCTSTR local_path	= ::Get_File_Mgr ()->Get_Base_Path ();
 				BSTR bstr_local_path	= ::Alloc_Sys_String (local_path);
-				HRESULT result			= root_item->put_LocalSpec (bstr_local_path);
+				int32_t result			= root_item->put_LocalSpec (bstr_local_path);
 				ASSERT (SUCCEEDED (result));
 				::SysFreeString (bstr_local_path);
 
@@ -389,7 +389,7 @@ VSSClass::Get_VSS_Item (LPCTSTR vss_path)
 															  var_arg,
 															  &result);		*/
 	
-		HRESULT result = m_pIVSSDatabase->get_VSSItem (bstr_vss_path, 0, &pitem);
+		int32_t result = m_pIVSSDatabase->get_VSSItem (bstr_vss_path, 0, &pitem);
 		if (FAILED (result)) {
 			pitem = NULL;
 		}
@@ -523,7 +523,7 @@ VSSClass::Get
 			//	Get the file
 			//
 			VARIANT_BOOL is_different = 0;
-			HRESULT hresult = pitem->get_IsDifferent (bstr_filename, &is_different);
+			int32_t hresult = pitem->get_IsDifferent (bstr_filename, &is_different);
 			if (!SUCCEEDED (hresult) || (is_different != 0)) {
 				retval = SUCCEEDED (pitem->Get (&bstr_filename, VSSFLAG_TIMEMOD | VSSFLAG_REPREPLACE));
 			}
@@ -539,7 +539,7 @@ VSSClass::Get
 		//	Only do the 'get' if the vss-version and local versions are different.
 		//
 		/*VARIANT_BOOL is_different = 0;
-		HRESULT hresult = pitem->get_IsDifferent (bstr_filename, &is_different);
+		int32_t hresult = pitem->get_IsDifferent (bstr_filename, &is_different);
 		if (!SUCCEEDED (hresult) || (is_different != 0)) {
 
 			//	Get the last mod time of the version in VSS
@@ -859,10 +859,10 @@ VSSClass::Destroy (LPCTSTR local_filename)
 //
 //	Get_File_Version
 //
-long
+int32_t
 VSSClass::Get_File_Version (LPCTSTR local_filename)
 {
-	long version = 0L;
+	int32_t version = 0;
 
 	// Get a pointer to this 'item' inside the VSS database.
 	IVSSItem *pitem = Get_VSS_Item_From_Local_Path (local_filename);
@@ -946,21 +946,21 @@ VSSClass::Get_File_Date
 	if (pitem != NULL) {
 
 		// Determine which version number we want the date for.
-		long current_ver_num = 0;
+		int32_t current_ver_num = 0;
 		pitem->get_VersionNumber (&current_ver_num);
 
 		//
 		//	Get the 'versions' list for this item
 		//
 		IVSSVersions *pversions = NULL;
-		HRESULT hresult = pitem->get_Versions (VSSFLAG_HISTIGNOREFILES, &pversions);
+		int32_t hresult = pitem->get_Versions (VSSFLAG_HISTIGNOREFILES, &pversions);
 		if (SUCCEEDED (hresult) && (pversions != NULL)) {
 
 			//
 			// Get the version enumerator for this item
 			//
 			IUnknown *penum_variant = NULL;
-			HRESULT hresult = pversions->_NewEnum (&penum_variant);
+			int32_t hresult = pversions->_NewEnum (&penum_variant);
 			if (SUCCEEDED (hresult)) {
 				
 				//
@@ -982,7 +982,7 @@ VSSClass::Get_File_Date
 						if (pversion != NULL) {
 							
 							// Get this version's number
-							long ver_num = 0L;
+							int32_t ver_num = 0;
 							pversion->get_VersionNumber (&ver_num);
 
 							// Is this the version we were looking for?
@@ -1046,7 +1046,7 @@ VSSClass::Get_File_Status
 (
 	LPCTSTR		local_filename,
 	LPTSTR		checked_out_username,
-	DWORD			buffer_size,
+	uint32_t			buffer_size,
 	IVSSItem *	item_to_use
 )
 {
@@ -1138,7 +1138,7 @@ VSSClass::Get_File_Status
 //	Get_Error_Description
 //
 LPCTSTR
-VSSClass::Get_Error_Description (HRESULT hresult)
+VSSClass::Get_Error_Description (int32_t hresult)
 {
 	LPCTSTR description = NULL;
 
@@ -1393,7 +1393,7 @@ VSSClass::Get_File_Status (LPCTSTR local_filename, StringClass *checked_out_user
 	AssetDatabaseClass::FILE_STATUS retval = AssetDatabaseClass::UNKNOWN;
 
 	LPTSTR username		= NULL;
-	DWORD buffer_size		= 0;
+	uint32_t buffer_size		= 0;
 
 	if (checked_out_user_name != NULL) {
 		username		= checked_out_user_name->Get_Buffer (64);
@@ -1436,4 +1436,3 @@ VSSClass::Get_File (LPCTSTR local_filename)
 	file_obj->Set_Name (local_filename);
 	return file_obj;
 }
-

@@ -82,7 +82,7 @@ BitPacker::BitPacker()
 *
 ******************************************************************************/
 
-BitPacker::BitPacker(void* buffer, unsigned int bufferSize)
+BitPacker::BitPacker(void* buffer, uint32_t bufferSize)
 	: mBuffer(NULL),
 	  mBufferSize(0),
 		mBytePosition(0),
@@ -131,10 +131,10 @@ BitPacker::~BitPacker()
 *
 ******************************************************************************/
 
-void BitPacker::SetBuffer(void* buffer, unsigned int bufferSize)
+void BitPacker::SetBuffer(void* buffer, uint32_t bufferSize)
 {
 	assert(buffer != NULL);
-	mBuffer = (unsigned char*)buffer;
+	mBuffer = (uint8_t*)buffer;
 
 	assert(bufferSize > 0);
 	mBufferSize = bufferSize;
@@ -199,13 +199,13 @@ void BitPacker::Reset(void)
 *     NONE
 *
 * RESULTS
-*     unsigned int
+*     uint32_t
 *
 ******************************************************************************/
 
-unsigned int BitPacker::GetPackedSize(void)
+uint32_t BitPacker::GetPackedSize(void)
 {
-	unsigned int size = mBytePosition;
+	uint32_t size = mBytePosition;
 
 	if (mBitMask != 0x80) {
 		size++;
@@ -302,11 +302,11 @@ bool BitPacker::PutBit(int value)
 *
 ******************************************************************************/
 
-int BitPacker::GetBits(unsigned long& outBits, unsigned int numBits)
+int BitPacker::GetBits(uint32_t& outBits, uint32_t numBits)
 {
 	outBits = 0;
 
-	unsigned long mask = (1L << (numBits - 1));
+	uint32_t mask = (1L << (numBits - 1));
 
 	while (mask != 0) {
 		if (mBitMask == 0x80) {
@@ -348,9 +348,9 @@ int BitPacker::GetBits(unsigned long& outBits, unsigned int numBits)
 *
 ******************************************************************************/
 
-int BitPacker::PutBits(unsigned long bits, unsigned int numBits)
+int BitPacker::PutBits(uint32_t bits, uint32_t numBits)
 {
-	unsigned long mask = (1L << (numBits - 1));
+	uint32_t mask = (1L << (numBits - 1));
 
 	while (mask != 0) {
 		if (bits & mask) {

@@ -285,11 +285,11 @@ void TrackedVehicleClass::Add_Track_Mappers(MeshClass * mesh,int track_type)
 #if 0 //Paranoid debug logging
 						WWDEBUG_SAY(("Grabbing Track Mesh! \r\n"));
 						WWDEBUG_SAY(("  container: 0x%X mesh: 0x%X vmtl: 0x%X mapper 0x%X\r\n",
-							(unsigned int)mesh->Get_Container(),
-							(unsigned int)mesh,
-							(unsigned int)vmtl,
-							(unsigned int)mapper));
-						WWDEBUG_SAY(("  tracked vehicle: 0x%X\r\n",(unsigned int)this));
+							(uint32_t)mesh->Get_Container(),
+							(uint32_t)mesh,
+							(uint32_t)vmtl,
+							(uint32_t)mapper));
+						WWDEBUG_SAY(("  tracked vehicle: 0x%X\r\n",(uint32_t)this));
 						WWDEBUG_SAY(("  Name = %s\r\n",mesh->Get_Name()));
 #endif
 					}
@@ -448,7 +448,7 @@ TrackedVehicleDefClass::TrackedVehicleDefClass(void) :
 	FLOAT_EDITABLE_PARAM(TrackedVehicleDefClass, TurnTorqueScaleFactor, 0.0f, 1.0f);
 }
 
-uint32 TrackedVehicleDefClass::Get_Class_ID (void) const	
+uint32_t TrackedVehicleDefClass::Get_Class_ID (void) const	
 { 
 	return CLASSID_TRACKEDVEHICLEDEF; 
 }

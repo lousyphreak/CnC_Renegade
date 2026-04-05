@@ -95,37 +95,37 @@ struct ChunkHeader
 {
 	// Functions.
 	ChunkHeader() : ChunkType(0), ChunkSize(0) {}
-	ChunkHeader(uint32 type, uint32 size) {ChunkType = type; ChunkSize = size;}
+	ChunkHeader(uint32_t type, uint32_t size) {ChunkType = type; ChunkSize = size;}
 
 	// Use these accessors to ensure you correctly deal with the data in the chunk header
-	void		Set_Type(uint32 type)					{ ChunkType = type; }
-	uint32	Get_Type(void)								{ return ChunkType; }
-	void		Set_Size(uint32 size)					{ ChunkSize &= 0x80000000; ChunkSize |= (size & 0x7FFFFFFF); }
-	void		Add_Size(uint32 add)						{ Set_Size(Get_Size() + add); }
-	uint32	Get_Size(void)								{ return (ChunkSize & 0x7FFFFFFF); }
+	void		Set_Type(uint32_t type)					{ ChunkType = type; }
+	uint32_t	Get_Type(void)								{ return ChunkType; }
+	void		Set_Size(uint32_t size)					{ ChunkSize &= 0x80000000; ChunkSize |= (size & 0x7FFFFFFF); }
+	void		Add_Size(uint32_t add)						{ Set_Size(Get_Size() + add); }
+	uint32_t	Get_Size(void)								{ return (ChunkSize & 0x7FFFFFFF); }
 	void		Set_Sub_Chunk_Flag(bool onoff)		{ if (onoff) { ChunkSize |= 0x80000000; } else { ChunkSize &= 0x7FFFFFFF; } }
 	int		Get_Sub_Chunk_Flag(void)				{ return (ChunkSize & 0x80000000); }
 
 	// Chunk type and size.
 	// Note: MSB of ChunkSize is used to indicate whether this chunk
 	// contains other chunks or data.
-	uint32 ChunkType;
-	uint32 ChunkSize;
+	uint32_t ChunkType;
+	uint32_t ChunkSize;
 };
 
 struct MicroChunkHeader
 {
 	MicroChunkHeader() {}
-	MicroChunkHeader(uint8 type, uint8 size) { ChunkType = type, ChunkSize = size; }
+	MicroChunkHeader(uint8_t type, uint8_t size) { ChunkType = type, ChunkSize = size; }
 
-	void		Set_Type(uint8 type)						{ ChunkType = type; }
-	uint8		Get_Type(void)								{ return ChunkType; }
-	void		Set_Size(uint8 size)						{ ChunkSize = size; }
-	void		Add_Size(uint8 add)						{ Set_Size(Get_Size() + add); }
-	uint8		Get_Size(void)								{ return ChunkSize; }
+	void		Set_Type(uint8_t type)						{ ChunkType = type; }
+	uint8_t		Get_Type(void)								{ return ChunkType; }
+	void		Set_Size(uint8_t size)						{ ChunkSize = size; }
+	void		Add_Size(uint8_t add)						{ Set_Size(Get_Size() + add); }
+	uint8_t		Get_Size(void)								{ return ChunkSize; }
 
-	uint8	ChunkType;
-	uint8	ChunkSize;
+	uint8_t	ChunkType;
+	uint8_t	ChunkSize;
 };
 
 
@@ -142,20 +142,20 @@ public:
 	ChunkSaveClass(FileClass * file);
 
 	// Chunk methods
-	bool					Begin_Chunk(uint32 id);
+	bool					Begin_Chunk(uint32_t id);
 	bool					End_Chunk();
 	int					Cur_Chunk_Depth();
 
 	// Micro chunk methods
-	bool					Begin_Micro_Chunk(uint32 id);
+	bool					Begin_Micro_Chunk(uint32_t id);
 	bool					End_Micro_Chunk();
 
 	// Write data into the file
-	uint32				Write(const void *buf, uint32 nbytes);
-	uint32				Write(const IOVector2Struct & v);
-	uint32				Write(const IOVector3Struct & v);
-	uint32				Write(const IOVector4Struct & v);
-	uint32				Write(const IOQuaternionStruct & q);
+	uint32_t				Write(const void *buf, uint32_t nbytes);
+	uint32_t				Write(const IOVector2Struct & v);
+	uint32_t				Write(const IOVector3Struct & v);
+	uint32_t				Write(const IOVector4Struct & v);
+	uint32_t				Write(const IOQuaternionStruct & q);
 
 private:
 
@@ -191,30 +191,30 @@ public:
 	// Chunk methods
 	bool					Open_Chunk();
 	bool					Close_Chunk();
-	uint32				Cur_Chunk_ID();
-	uint32				Cur_Chunk_Length();
+	uint32_t				Cur_Chunk_ID();
+	uint32_t				Cur_Chunk_Length();
 	int					Cur_Chunk_Depth();
 	int					Contains_Chunks();
 
 	// Micro Chunk methods
 	bool					Open_Micro_Chunk();
 	bool					Close_Micro_Chunk();
-	uint32				Cur_Micro_Chunk_ID();
-	uint32				Cur_Micro_Chunk_Length();
+	uint32_t				Cur_Micro_Chunk_ID();
+	uint32_t				Cur_Micro_Chunk_Length();
 
 	// Read a block of bytes from the output stream.
-	uint32				Read(void *buf, uint32 nbytes);
-	uint32				Read(IOVector2Struct * v);
-	uint32				Read(IOVector3Struct * v);
-	uint32				Read(IOVector4Struct * v);
-	uint32				Read(IOQuaternionStruct * q);
+	uint32_t				Read(void *buf, uint32_t nbytes);
+	uint32_t				Read(IOVector2Struct * v);
+	uint32_t				Read(IOVector3Struct * v);
+	uint32_t				Read(IOVector4Struct * v);
+	uint32_t				Read(IOQuaternionStruct * q);
 
 	// Seek over a block of bytes in the stream (same as Read but don't copy the data to a buffer)
-	uint32				Seek(uint32 nbytes);
+	uint32_t				Seek(uint32_t nbytes);
 
 	// Sneak peek at the next chunk that will be opened.  Beware, if you need
 	// this, then you are probably hacking so be careful!
-	bool					Peek_Next_Chunk(uint32 * set_id,uint32 * set_size);
+	bool					Peek_Next_Chunk(uint32_t * set_id,uint32_t * set_size);
 
 private:
 
@@ -224,7 +224,7 @@ private:
 
 	// Chunk reading support
 	int					StackIndex;
-	uint32				PositionStack[MAX_STACK_DEPTH];
+	uint32_t				PositionStack[MAX_STACK_DEPTH];
 	ChunkHeader			HeaderStack[MAX_STACK_DEPTH];
 
 	// Micro-chunk reading support
@@ -240,15 +240,15 @@ private:
 ** on 64-bit builds by serializing opaque 32-bit tokens rather than native
 ** pointer widths.
 */
-inline std::unordered_map<const void *, uint32> & SaveLoad_Pointer_Token_Map()
+inline std::unordered_map<const void *, uint32_t> & SaveLoad_Pointer_Token_Map()
 {
-	static std::unordered_map<const void *, uint32> token_map;
+	static std::unordered_map<const void *, uint32_t> token_map;
 	return token_map;
 }
 
-inline uint32 & SaveLoad_Next_Pointer_Token()
+inline uint32_t & SaveLoad_Next_Pointer_Token()
 {
-	static uint32 next_token = 1;
+	static uint32_t next_token = 1;
 	return next_token;
 }
 
@@ -258,21 +258,21 @@ inline void SaveLoad_Reset_Pointer_Tokens()
 	SaveLoad_Next_Pointer_Token() = 1;
 }
 
-inline uint32 SaveLoad_Encode_Pointer_Token(const void * pointer)
+inline uint32_t SaveLoad_Encode_Pointer_Token(const void * pointer)
 {
 	if (pointer == NULL) {
 		return 0;
 	}
 
-	uint32 & next_token = SaveLoad_Next_Pointer_Token();
-	std::unordered_map<const void *, uint32> & token_map = SaveLoad_Pointer_Token_Map();
+	uint32_t & next_token = SaveLoad_Next_Pointer_Token();
+	std::unordered_map<const void *, uint32_t> & token_map = SaveLoad_Pointer_Token_Map();
 
-	std::unordered_map<const void *, uint32>::const_iterator existing = token_map.find(pointer);
+	std::unordered_map<const void *, uint32_t>::const_iterator existing = token_map.find(pointer);
 	if (existing != token_map.end()) {
 		return existing->second;
 	}
 
-	const uint32 token = next_token++;
+	const uint32_t token = next_token++;
 	if (next_token == 0) {
 		next_token = 1;
 	}
@@ -285,46 +285,46 @@ inline uint32 SaveLoad_Encode_Pointer_Token(const void * pointer)
 ** The load path converts those IDs into pointer-shaped keys so the legacy
 ** PointerRemapClass can continue to match them without assuming pointer width.
 */
-inline void * SaveLoad_Pointer_Token_To_Remap_Key(uint32 token)
+inline void * SaveLoad_Pointer_Token_To_Remap_Key(uint32_t token)
 {
 	return reinterpret_cast<void *>(static_cast<std::uintptr_t>(token));
 }
 
-inline void * SaveLoad_Decode_Pointer_Token(uint32 token)
+inline void * SaveLoad_Decode_Pointer_Token(uint32_t token)
 {
 	return SaveLoad_Pointer_Token_To_Remap_Key(token);
 }
 
 template <class T>
-inline uint32 ChunkIO_Write_Value(ChunkSaveClass & csave, const T & value)
+inline uint32_t ChunkIO_Write_Value(ChunkSaveClass & csave, const T & value)
 {
 	return csave.Write(&value, sizeof(value));
 }
 
 template <class T>
-inline uint32 ChunkIO_Write_Value(ChunkSaveClass & csave, T * const & value)
+inline uint32_t ChunkIO_Write_Value(ChunkSaveClass & csave, T * const & value)
 {
-	const uint32 token = SaveLoad_Encode_Pointer_Token(value);
+	const uint32_t token = SaveLoad_Encode_Pointer_Token(value);
 	return csave.Write(&token, sizeof(token));
 }
 
 template <class T>
-inline uint32 ChunkIO_Read_Value(ChunkLoadClass & cload, T & value)
+inline uint32_t ChunkIO_Read_Value(ChunkLoadClass & cload, T & value)
 {
 	return cload.Read(&value, sizeof(value));
 }
 
 template <class T>
-inline uint32 ChunkIO_Read_Value(ChunkLoadClass & cload, T *& value)
+inline uint32_t ChunkIO_Read_Value(ChunkLoadClass & cload, T *& value)
 {
-	uint32 token = 0;
-	const uint32 bytes_read = cload.Read(&token, sizeof(token));
+	uint32_t token = 0;
+	const uint32_t bytes_read = cload.Read(&token, sizeof(token));
 	value = reinterpret_cast<T *>(SaveLoad_Decode_Pointer_Token(token));
 	return bytes_read;
 }
 
-uint32 ChunkIO_Write_WideString(ChunkSaveClass & csave, const WideStringClass & value);
-uint32 ChunkIO_Read_WideString(ChunkLoadClass & cload, uint32 byte_count, WideStringClass & value);
+uint32_t ChunkIO_Write_WideString(ChunkSaveClass & csave, const WideStringClass & value);
+uint32_t ChunkIO_Read_WideString(ChunkLoadClass & cload, uint32_t byte_count, WideStringClass & value);
 
 /*
 ** WRITE_WWSTRING_CHUNK	- use this one-line macro to easily create a chunk to save a potentially

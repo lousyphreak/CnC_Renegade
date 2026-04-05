@@ -72,7 +72,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CAnimMixingPage message handlers
 
-BOOL CAnimMixingPage::OnInitDialog() 
+int32_t CAnimMixingPage::OnInitDialog() 
 {
 	CPropertyPage::OnInitDialog();
 
@@ -142,7 +142,7 @@ void CAnimMixingPage::OnOK()
 	CPropertyPage::OnOK();
 }
 
-BOOL CAnimMixingPage::OnKillActive() 
+int32_t CAnimMixingPage::OnKillActive() 
 {
 	/*
 	** Update the parent with info on the current selection.

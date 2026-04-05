@@ -27,7 +27,7 @@ Last Update :
 ------------------------------------------------------------------------------
  
 A simple encryption system for game results packets.  Specifically designed
-to work only with unsigned char buffers of least 15 bytes long.
+to work only with uint8_t buffers of least 15 bytes long.
  
 \****************************************************************************/
 
@@ -52,18 +52,20 @@ to work only with unsigned char buffers of least 15 bytes long.
 `------------------------------------------------------------------------------*/
 
 #ifndef __CLIENT__
-unsigned char*	DecryptPacket(unsigned char* encbuf, int* size);
+uint8_t*	DecryptPacket(uint8_t* encbuf, int* size);
 #endif
 
+#include <cstdint>
+
 // These are for munching the data
-unsigned char* PrepareEncryptedPacket(unsigned char* packet, int* size);
-void 		RLEncode(unsigned char* src, unsigned char* dst, int* size);
-float 		ran3(long* idnum);
-void 		GenerateKey(unsigned char* key, int len, long seed);
-unsigned char* 	SimpleEncrypt(const unsigned char* src, int* len);
+uint8_t* PrepareEncryptedPacket(uint8_t* packet, int* size);
+void 		RLEncode(uint8_t* src, uint8_t* dst, int* size);
+float 		ran3(int32_t* idnum);
+void 		GenerateKey(uint8_t* key, int len, int32_t seed);
+uint8_t* 	SimpleEncrypt(const uint8_t* src, int* len);
 #ifndef __CLIENT__
-unsigned char* 	RLDecode(unsigned char* src, int* size);
-unsigned char*	SimpleDecrypt(unsigned char* buf, int* len);
+uint8_t* 	RLDecode(uint8_t* src, int* size);
+uint8_t*	SimpleDecrypt(uint8_t* buf, int* len);
 #endif
 
 
@@ -93,4 +95,3 @@ unsigned char*	SimpleDecrypt(unsigned char* buf, int* len);
 
 
 #endif
-

@@ -165,7 +165,7 @@ void RunGame(char *thePath, ConfigFile &config, Process &proc)
 #endif
 #endif // COPY_PROTECT
 
-			DWORD exit_code;
+			uint32_t exit_code;
 			Wait_Process(proc, &exit_code);
 
 			// Relaunch if the game crashed unexpectedly (the auto restart flag is set).
@@ -274,7 +274,7 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
-	bit8 ok = config.readFile(in);
+	int8_t ok = config.readFile(in);
 	fclose(in);
 
 	if (ok == FALSE)
@@ -516,9 +516,9 @@ bool Get_Restart_Flag(Process &proc, bool &slave)
 
 	if (result == ERROR_SUCCESS) {
 
-		unsigned long type;
-		unsigned long data = 0;
-		unsigned long data_len = sizeof(data);
+		uint32_t type;
+		uint32_t data = 0;
+		uint32_t data_len = sizeof(data);
 
 		if ((RegQueryValueEx(key, APPLICATION_SUB_KEY_NAME_AUTOSTART, NULL, &type, (LPBYTE)&data, &data_len) == ERROR_SUCCESS) && (type == REG_DWORD)) {
 			return((data != 0) ? true : false);

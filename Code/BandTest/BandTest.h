@@ -78,35 +78,35 @@ typedef struct tBandtestSettingsStruct {
 	/*
 	** Use ICMP packets instead of UDP packets when testing bandwidth.
 	*/
-	unsigned int AlwaysICMP				: 1;
+	uint32_t AlwaysICMP				: 1;
 
 	/*
 	** Use various values of TTL when testing bandwidth.
 	*/
-	unsigned int TTLScatter				: 1;
+	uint32_t TTLScatter				: 1;
 
 	/*
 	** Max number of packets to send for slow pings.
 	*/
-	unsigned int FastPingPackets		: 7;
+	uint32_t FastPingPackets		: 7;
 
 	/*
 	** Max number of packets to send for fast pings.
 	*/
-	unsigned int SlowPingPackets  	: 7;
+	uint32_t SlowPingPackets  	: 7;
 
 	/*
 	** Pings over this time in ms use smaller number of packets for bandwidth discovery.
 	*/
-	unsigned int FastPingThreshold	: 5;
+	uint32_t FastPingThreshold	: 5;
 
 	/*
 	** Tell bandtest.dll to do a ping profile.
 	*/
-	unsigned int PingProfile			: 1;
+	uint32_t PingProfile			: 1;
 
 } BandtestSettingsStruct;
 
 #define BANDTEST_API_VERSION 0x101
 
-BANDTEST_API unsigned long Detect_Bandwidth(unsigned long server_ip, unsigned long my_ip, int retries, int &failure_code, unsigned long &downstream, unsigned long api_version, BandtestSettingsStruct *settings = NULL, char *regpath = NULL);
+BANDTEST_API uint32_t Detect_Bandwidth(uint32_t server_ip, uint32_t my_ip, int retries, int &failure_code, uint32_t &downstream, uint32_t api_version, BandtestSettingsStruct *settings = NULL, char *regpath = NULL);

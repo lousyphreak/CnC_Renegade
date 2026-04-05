@@ -37,6 +37,8 @@
 #ifndef __DLGMESSAGEBOX_H__
 #define __DLGMESSAGEBOX_H__
 
+#include <cstdint>
+
 #include "popupdialog.h"
 #include "Notify.h"
 
@@ -60,13 +62,13 @@ class DlgMsgBoxEvent :
 			{return mEvent;}
 
 		//! User data access
-		inline unsigned long Get_User_Data(void) const
+		inline uint32_t Get_User_Data(void) const
 			{return mUserData;}
 
-		inline void Set_User_Data(unsigned long data)
+		inline void Set_User_Data(uint32_t data)
 			{mUserData = data;}
 
-		DlgMsgBoxEvent(EventID event, DlgMsgBox* object, unsigned long user_data) :
+		DlgMsgBoxEvent(EventID event, DlgMsgBox* object, uint32_t user_data) :
 				TypedEventPtr<DlgMsgBoxEvent, DlgMsgBox>(object),
 			  mEvent(event), mUserData (user_data)
 			{}
@@ -78,7 +80,7 @@ class DlgMsgBoxEvent :
 
 	private:
 		EventID mEvent;
-		unsigned long mUserData;
+		uint32_t mUserData;
 	};
 
 
@@ -95,15 +97,15 @@ class DlgMsgBox :
 
 		static bool DoDialog(const WCHAR* title, const WCHAR* text,
 			DlgMsgBox::Type type = DlgMsgBox::Okay, Observer<DlgMsgBoxEvent>* observer = NULL,
-			unsigned long user_data = 0);
+			uint32_t user_data = 0);
 
 		static bool DoDialog(int titleID, int textID, DlgMsgBox::Type type = DlgMsgBox::Okay,
-			Observer<DlgMsgBoxEvent>* observer = NULL, unsigned long user_data = 0);
+			Observer<DlgMsgBoxEvent>* observer = NULL, uint32_t user_data = 0);
 
-		void Set_User_Data(unsigned long user_data)
+		void Set_User_Data(uint32_t user_data)
 			{mUserData = user_data;}
 
-		unsigned long Get_User_Data(void) const
+		uint32_t Get_User_Data(void) const
 			{return mUserData;}
 
 		static int Get_Current_Count(void)
@@ -115,7 +117,7 @@ class DlgMsgBox :
 
 		void SetResourceType(DlgMsgBox::Type type);
 		void End_Dialog(void);
-		void On_Command(int ctrl, int message, DWORD param);
+		void On_Command(int ctrl, int message, uint32_t param);
 
 		DECLARE_NOTIFIER(DlgMsgBoxEvent)
 
@@ -125,7 +127,7 @@ class DlgMsgBox :
 		const DlgMsgBox& operator=(const DlgMsgBox&);
 
 		static int CurrentCount;
-		unsigned long mUserData;
+		uint32_t mUserData;
 	};
 
 #endif // __DLGMESSAGEBOX_H__

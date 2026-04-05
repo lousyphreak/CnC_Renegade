@@ -92,7 +92,7 @@ ValueListDialogClass::OnUpdateListEdit (void)
 //
 //	OnInitDialog
 //
-BOOL
+int32_t
 ValueListDialogClass::OnInitDialog (void)
 {
 	// Allow the base class to process this message

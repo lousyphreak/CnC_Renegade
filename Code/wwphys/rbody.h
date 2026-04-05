@@ -19,6 +19,8 @@
 #ifndef RBODY_H
 #define RBODY_H
 
+#include <cstdint>
+
 #include "always.h"
 #include "movephys.h"
 #include "ode.h"
@@ -329,7 +331,7 @@ public:
 	RigidBodyDefClass(void);
 	
 	// From DefinitionClass
-	virtual uint32								Get_Class_ID (void) const;
+	virtual uint32_t								Get_Class_ID (void) const;
 	virtual PersistClass *					Create(void) const;
 
 	// From PhysDefClass

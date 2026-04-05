@@ -285,7 +285,7 @@ RefPtr<WaitCondition> WOLQuickMatch::Disconnect(void)
 
 bool WOLQuickMatch::SendClientInfo(void)
 	{
-	unsigned long ver = cNetwork::Get_Exe_Key();
+	uint32_t ver = cNetwork::Get_Exe_Key();
 
 	// Legacy CPU-speed heuristics were removed.
 	int speed = 0;
@@ -293,7 +293,7 @@ bool WOLQuickMatch::SendClientInfo(void)
 	// Get amount of physical memory
 	MEMORYSTATUS memStatus;
 	GlobalMemoryStatus(&memStatus);
-	unsigned long memory = (memStatus.dwTotalPhys / 1048576);
+	uint32_t memory = (memStatus.dwTotalPhys / 1048576);
 
 	//-------------------------------------------------------------------------
 	// Gather pings
@@ -314,7 +314,7 @@ bool WOLQuickMatch::SendClientInfo(void)
 		}
 
 	int tpoints = 0;
-	unsigned int played = 0;
+	uint32_t played = 0;
 
 	RefPtr<LadderData> ladder = client->GetTeamLadder();
 

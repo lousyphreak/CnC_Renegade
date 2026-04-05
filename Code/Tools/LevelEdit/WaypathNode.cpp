@@ -1005,7 +1005,7 @@ WaypathNodeClass::Show_Settings_Dialog (void)
 	prop_sheet.Add_Page (&pos_tab);
 
 	// Show the property sheet
-	UINT ret_code = prop_sheet.DoModal ();
+	uint32_t ret_code = prop_sheet.DoModal ();
 	
 	// Return true if the user clicked OK
 	return (ret_code == IDOK);

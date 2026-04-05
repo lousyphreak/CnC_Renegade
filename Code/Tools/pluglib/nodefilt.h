@@ -39,6 +39,8 @@
 #ifndef NODEFILT_H
 #define NODEFILT_H
 
+#include <cstdint>
+
 #include "always.h"
 #include <Max.h>
 
@@ -56,7 +58,7 @@
 class INodeFilterClass 
 {
 public:
-	virtual BOOL Accept_Node(INode * node, TimeValue time) = 0;
+	virtual int32_t Accept_Node(INode * node, TimeValue time) = 0;
 };
 
 
@@ -70,7 +72,7 @@ public:
 class AnyINodeFilter	: public INodeFilterClass
 {
 public:
-	virtual BOOL Accept_Node(INode * node, TimeValue time) { return TRUE; }
+	virtual int32_t Accept_Node(INode * node, TimeValue time) { return TRUE; }
 };
 
 
@@ -84,7 +86,7 @@ public:
 class HelperINodeFilter : public INodeFilterClass
 {
 public:
-	virtual BOOL Accept_Node(INode * node, TimeValue time);
+	virtual int32_t Accept_Node(INode * node, TimeValue time);
 };
 
 
@@ -98,7 +100,7 @@ public:
 class MeshINodeFilter : public INodeFilterClass
 {
 public:
-	virtual BOOL Accept_Node(INode * node, TimeValue time);
+	virtual int32_t Accept_Node(INode * node, TimeValue time);
 };
 
 /***************************************************************
@@ -112,7 +114,7 @@ public:
 class VisibleMeshINodeFilter : public INodeFilterClass
 {
 public:
-	virtual BOOL Accept_Node(INode * node, TimeValue time);
+	virtual int32_t Accept_Node(INode * node, TimeValue time);
 };
 
 /***************************************************************
@@ -126,7 +128,7 @@ public:
 class VisibleHelperINodeFilter : public INodeFilterClass
 {
 public:
-	virtual BOOL Accept_Node(INode * node, TimeValue time);
+	virtual int32_t Accept_Node(INode * node, TimeValue time);
 };
 
 
@@ -141,7 +143,7 @@ public:
 class VisibleMeshOrHelperINodeFilter : public INodeFilterClass
 {
 public:
-	virtual BOOL Accept_Node(INode * node, TimeValue time);
+	virtual int32_t Accept_Node(INode * node, TimeValue time);
 };
 
 
@@ -156,7 +158,7 @@ public:
 class AnimatedINodeFilter : public INodeFilterClass
 {
 public:
-	virtual BOOL Accept_Node(INode * node, TimeValue time);
+	virtual int32_t Accept_Node(INode * node, TimeValue time);
 };
 
 
@@ -170,7 +172,7 @@ public:
 class VisibleSelectedINodeFilter : public INodeFilterClass
 {
 public:
-	virtual BOOL Accept_Node(INode * node, TimeValue time);
+	virtual int32_t Accept_Node(INode * node, TimeValue time);
 };
 
 

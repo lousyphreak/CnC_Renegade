@@ -89,7 +89,7 @@ Protect::Protect()
 		return;
 		}
 
-	UInt32 fileSize = file.GetLength();
+	uint32_t fileSize = file.GetLength();
 
 	SECURITY_ATTRIBUTES security;
 	security.nLength = sizeof(security);
@@ -119,14 +119,14 @@ Protect::Protect()
 
 	// Decrypt protected file contents to mapping file
 	void* buffer = NULL;
-	UInt32 bufferSize = 0;
+	uint32_t bufferSize = 0;
 	file.Load(buffer, bufferSize);
 
 	if ((buffer != NULL) && (bufferSize > 0))
 		{
 	 	// Retrieve protection key
 		RefPtr<UString> passKey = GetPassKey();
-		Char key[64];
+		char key[64];
 		passKey->ConvertToANSI(key, sizeof(key));
 		DebugPrint("Retrieved PassKey: %s\n", key);
 
@@ -189,7 +189,7 @@ Protect::~Protect()
 *
 ******************************************************************************/
 
-void Protect::SendMappedFileHandle(HANDLE process, DWORD threadID) const
+void Protect::SendMappedFileHandle(HANDLE process, uint32_t threadID) const
 	{
 	DebugPrint("SendMappedFileHandle()\n");
 
@@ -206,16 +206,16 @@ void Protect::SendMappedFileHandle(HANDLE process, DWORD threadID) const
 	DebugPrint("Waiting for game (timeout in %.02f seconds)...\n", ((float)((5 * 60) * 1000) * 0.001));
 
 	#ifdef _DEBUG
-	unsigned long start = timeGetTime();
+	uint32_t start = timeGetTime();
 	#endif
 
 	HANDLE handles[2];
 	handles[0] = event;
 	handles[1] = process;
-	DWORD waitResult = WaitForMultipleObjects(2, &handles[0], FALSE, ((5 * 60) * 1000));
+	uint32_t waitResult = WaitForMultipleObjects(2, &handles[0], FALSE, ((5 * 60) * 1000));
 
 	#ifdef _DEBUG
-	unsigned long stop = timeGetTime();
+	uint32_t stop = timeGetTime();
 	#endif
 
 	DebugPrint("WaitResult = %ld (WAIT_OBJECT_0 = %ld)\n", waitResult, WAIT_OBJECT_0);
@@ -225,7 +225,7 @@ void Protect::SendMappedFileHandle(HANDLE process, DWORD threadID) const
 		if (mMappedFile != NULL)
 			{
 			DebugPrint("Sending game the beef. (%lx)\n", mMappedFile);
-			BOOL sent = PostThreadMessage(threadID, 0xBEEF, 0, (LPARAM)mMappedFile);
+			int32_t sent = PostThreadMessage(threadID, 0xBEEF, 0, (intptr_t)mMappedFile);
 			assert(sent == TRUE);
 			}
 		}
@@ -260,25 +260,25 @@ RefPtr<UString> Protect::GetPassKey(void) const
 
 	if (passKey.IsValid())
 		{
-		unsigned char installPath[MAX_PATH];
+		char installPath[MAX_PATH];
 		installPath[0] = '\0';
 
 		// Get game information
 		HKEY hKey;
 		
 		/*
-		LONG result = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+		int32_t result = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
 			"Software\\Westwood\\Red Alert 2", 0, KEY_READ, &hKey);
 		*/
 
 #if	defined(FREEDEDICATEDSERVER)
-		LONG result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Westwood\\RenegadeFDS", 0, KEY_READ, &hKey);
+		int32_t result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Westwood\\RenegadeFDS", 0, KEY_READ, &hKey);
 #elif defined(MULTIPLAYERDEMO)
-		LONG result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Westwood\\RenegadeMPDemo", 0, KEY_READ, &hKey);
+		int32_t result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Westwood\\RenegadeMPDemo", 0, KEY_READ, &hKey);
 #elif defined(BETACLIENT)
-		LONG result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Westwood\\RenegadeBeta", 0, KEY_READ, &hKey);
+		int32_t result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Westwood\\RenegadeBeta", 0, KEY_READ, &hKey);
 #else
-		LONG result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Westwood\\Renegade", 0, KEY_READ, &hKey);
+		int32_t result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Westwood\\Renegade", 0, KEY_READ, &hKey);
 #endif
 
 		if (result != ERROR_SUCCESS)
@@ -290,8 +290,8 @@ RefPtr<UString> Protect::GetPassKey(void) const
 		if (result == ERROR_SUCCESS)
 			{
 			// Retrieve install path
-			DWORD type;
-			DWORD sizeOfBuffer = sizeof(installPath);
+			uint32_t type;
+			uint32_t sizeOfBuffer = sizeof(installPath);
 			result = RegQueryValueEx(hKey, "InstallPath", NULL, &type, installPath, &sizeOfBuffer);
 
 			if (result != ERROR_SUCCESS)
@@ -312,10 +312,10 @@ RefPtr<UString> Protect::GetPassKey(void) const
 			_splitpath((const char*)installPath, drive, NULL, NULL, NULL);
 			strcat(drive, "\\");
 
-			DWORD volumeSerialNumber = 0;
-			DWORD maxComponentLength;
-			DWORD fileSystemFlags;
-			BOOL volInfoSuccess = GetVolumeInformation((const char*)drive, NULL, 0,
+			uint32_t volumeSerialNumber = 0;
+			uint32_t maxComponentLength;
+			uint32_t fileSystemFlags;
+			int32_t volInfoSuccess = GetVolumeInformation((const char*)drive, NULL, 0,
 				&volumeSerialNumber, &maxComponentLength, &fileSystemFlags, NULL, 0);
 
 			if (volInfoSuccess == FALSE)
@@ -331,7 +331,7 @@ RefPtr<UString> Protect::GetPassKey(void) const
 			*passKey += volumeSN;
 
 			// Retrieve game serial #
-			unsigned char gameSerialNumber[64];
+			char gameSerialNumber[64];
 			gameSerialNumber[0] = '\0';
 			sizeOfBuffer = sizeof(gameSerialNumber);
 			result = RegQueryValueEx(hKey, "Serial", NULL, &type, gameSerialNumber, &sizeOfBuffer);
@@ -368,11 +368,11 @@ RefPtr<UString> Protect::GetPassKey(void) const
 		if (result == ERROR_SUCCESS)
 			{
 			// Retrieve Windows Product ID
-			unsigned char winProductID[64];
+			char winProductID[64];
 			winProductID[0] = '\0';
 
-			DWORD type;
-			DWORD sizeOfBuffer = sizeof(winProductID);
+			uint32_t type;
+			uint32_t sizeOfBuffer = sizeof(winProductID);
 			result = RegQueryValueEx(hKey, "ProductID", NULL, &type, winProductID, &sizeOfBuffer);
 
 			if (result != ERROR_SUCCESS)
@@ -432,7 +432,7 @@ void InitializeProtect(void)
 		return;
 		}
 
-	UInt32 fileSize = file.GetLength();
+	uint32_t fileSize = file.GetLength();
 
 	SECURITY_ATTRIBUTES security;
 	security.nLength = sizeof(security);
@@ -454,7 +454,7 @@ void InitializeProtect(void)
 
 CDAPFN_DECLARE_GLOBAL(SendProtectMessage, CDAPFN_OVERHEAD_L5, CDAPFN_CONSTRAINT_NONE);
 
-void SendProtectMessage(HANDLE process, DWORD threadID)
+void SendProtectMessage(HANDLE process, uint32_t threadID)
 	{
 	// Decrypt protected file contents to mapping file
 	File file("Conquer.dat", Rights_ReadOnly);
@@ -475,7 +475,7 @@ void SendProtectMessage(HANDLE process, DWORD threadID)
 		}
 
 	void* buffer = NULL;
-	UInt32 bufferSize = 0;
+	uint32_t bufferSize = 0;
 	file.Load(buffer, bufferSize);
 
 	if (buffer && (bufferSize > 0))
@@ -491,20 +491,20 @@ void SendProtectMessage(HANDLE process, DWORD threadID)
 
 /*
 #ifdef FREEDEDICATEDSERVER
-		LONG result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Westwood\\RenegadeFDS", 0, KEY_READ, &hKey);
+		int32_t result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Westwood\\RenegadeFDS", 0, KEY_READ, &hKey);
 #else  //FREEDEDICATEDSERVER
-		LONG result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Westwood\\Renegade", 0, KEY_READ, &hKey);
+		int32_t result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Westwood\\Renegade", 0, KEY_READ, &hKey);
 #endif //FREEDEDICATEDSERVER
 */
 
 #if	defined(FREEDEDICATEDSERVER)
-		LONG result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Westwood\\RenegadeFDS", 0, KEY_READ, &hKey);
+		int32_t result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Westwood\\RenegadeFDS", 0, KEY_READ, &hKey);
 #elif defined(MULTIPLAYERDEMO)
-		LONG result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Westwood\\RenegadeMPDemo", 0, KEY_READ, &hKey);
+		int32_t result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Westwood\\RenegadeMPDemo", 0, KEY_READ, &hKey);
 #elif defined(BETACLIENT)
-		LONG result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Westwood\\RenegadeBeta", 0, KEY_READ, &hKey);
+		int32_t result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Westwood\\RenegadeBeta", 0, KEY_READ, &hKey);
 #else
-		LONG result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Westwood\\Renegade", 0, KEY_READ, &hKey);
+		int32_t result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Westwood\\Renegade", 0, KEY_READ, &hKey);
 #endif
 
 		assert((result == ERROR_SUCCESS) && "Failed to open game registry key");
@@ -512,9 +512,9 @@ void SendProtectMessage(HANDLE process, DWORD threadID)
 		if (result == ERROR_SUCCESS)
 			{
 			// Retrieve install path
-			unsigned char installPath[MAX_PATH];
-			DWORD type;
-			DWORD sizeOfBuffer = sizeof(installPath);
+			char installPath[MAX_PATH];
+			uint32_t type;
+			uint32_t sizeOfBuffer = sizeof(installPath);
 			result = RegQueryValueEx(hKey, "InstallPath", NULL, &type, installPath, &sizeOfBuffer);
 
 			assert((result == ERROR_SUCCESS) && "Failed to obtain game install path!");
@@ -526,10 +526,10 @@ void SendProtectMessage(HANDLE process, DWORD threadID)
 			_splitpath((const char*)installPath, drive, NULL, NULL, NULL);
 			strcat(drive, "\\");
 
-			DWORD volumeSerialNumber = 0;
-			DWORD maxComponentLength;
-			DWORD fileSystemFlags;
-			BOOL volInfoSuccess = GetVolumeInformation((const char*)drive, NULL, 0,
+			uint32_t volumeSerialNumber = 0;
+			uint32_t maxComponentLength;
+			uint32_t fileSystemFlags;
+			int32_t volInfoSuccess = GetVolumeInformation((const char*)drive, NULL, 0,
 					&volumeSerialNumber, &maxComponentLength, &fileSystemFlags, NULL, 0);
 
 			if (volInfoSuccess == FALSE)
@@ -545,7 +545,7 @@ void SendProtectMessage(HANDLE process, DWORD threadID)
 			strcat(passKey, volumeSN);
 
 			// Retrieve game serial #
-			unsigned char gameSerialNumber[64];
+			char gameSerialNumber[64];
 			gameSerialNumber[0] = '\0';
 			sizeOfBuffer = sizeof(gameSerialNumber);
 			result = RegQueryValueEx(hKey, "Serial", NULL, &type, gameSerialNumber, &sizeOfBuffer);
@@ -567,11 +567,11 @@ void SendProtectMessage(HANDLE process, DWORD threadID)
 		if (result == ERROR_SUCCESS)
 			{
 			// Retrieve Windows Product ID
-			unsigned char winProductID[64];
+			char winProductID[64];
 			winProductID[0] = '\0';
 
-			DWORD type;
-			DWORD sizeOfBuffer = sizeof(winProductID);
+			uint32_t type;
+			uint32_t sizeOfBuffer = sizeof(winProductID);
 			result = RegQueryValueEx(hKey, "ProductID", NULL, &type, winProductID, &sizeOfBuffer);
 
 			assert((result == ERROR_SUCCESS) && "Failed to obtain windows product ID!");
@@ -618,16 +618,16 @@ void SendProtectMessage(HANDLE process, DWORD threadID)
 	DebugPrint("Waiting for game (timeout in %.02f seconds)...\n", ((float)((5 * 60) * 1000) * 0.001));
 
 	#ifdef _DEBUG
-	unsigned long start = timeGetTime();
+	uint32_t start = timeGetTime();
 	#endif
 
 	HANDLE handles[2];
 	handles[0] = event;
 	handles[1] = process;
-	DWORD waitResult = WaitForMultipleObjects(2, &handles[0], FALSE, ((5 * 60) * 1000));
+	uint32_t waitResult = WaitForMultipleObjects(2, &handles[0], FALSE, ((5 * 60) * 1000));
 
 	#ifdef _DEBUG
-	unsigned long stop = timeGetTime();
+	uint32_t stop = timeGetTime();
 	#endif
 
 	DebugPrint("WaitResult = %ld (WAIT_OBJECT_0 = %ld)\n", waitResult, WAIT_OBJECT_0);
@@ -637,7 +637,7 @@ void SendProtectMessage(HANDLE process, DWORD threadID)
 		if (mMappedFile != NULL)
 			{
 			DebugPrint("Sending game the beef. (%lx)\n", mMappedFile);
-			BOOL sent = PostThreadMessage(threadID, 0xBEEF, 0, (LPARAM)mMappedFile);
+			int32_t sent = PostThreadMessage(threadID, 0xBEEF, 0, (intptr_t)mMappedFile);
 			assert(sent == TRUE);
 			}
 		}

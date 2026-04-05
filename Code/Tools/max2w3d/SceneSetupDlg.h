@@ -38,6 +38,8 @@
 #ifndef SCENESETUPDLG_H
 #define SCENESETUPDLG_H
 
+#include <cstdint>
+
 // SceneSetupDlg.h : header file
 //
 
@@ -61,7 +63,7 @@ public:
 	int DoModal (void);
 
 	// DialogProc
-	BOOL CALLBACK DialogProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	int32_t CALLBACK DialogProc (HWND hWnd, uint32_t uMsg, uintptr_t wParam, intptr_t lParam);
 
 	// Dialog data associated with GUI components.
 	enum	{ IDD = IDD_SCENE_SETUP };
@@ -79,7 +81,7 @@ protected:
 
 	// Message Handlers
 	void OnInitDialog (void);
-	BOOL OnOK (void);		// TRUE if ok to close dialog
+	int32_t OnOK (void);		// TRUE if ok to close dialog
 
 	// Protected Methods
 	void  SetEditInt   (int control_id, int value);

@@ -102,7 +102,7 @@ FileClass *RAMFileFactoryClass::Get_File (const char *filename)
 
 		bufferfile = new BufferedFileClass (filename);
 		if ((bufferfile != NULL) && bufferfile->Is_Available()) {
-			FileBuffer = new unsigned char [bufferfile->Size()];
+			FileBuffer = new uint8_t [bufferfile->Size()];
 			bufferfile->Open();
 			bufferfile->Read (FileBuffer, bufferfile->Size());
 		}

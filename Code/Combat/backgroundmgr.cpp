@@ -105,7 +105,7 @@ HazeClass::HazeClass (float radius)
 	unsigned			v;
 	float				latitude;
 	float				x, y, z;
-	unsigned short i;
+	uint16_t i;
 
 	VertexCount	  = (RowCount + 1) * segmentcount;
 	TriangleCount = segmentcount * (RowCount * 2);
@@ -129,7 +129,7 @@ HazeClass::HazeClass (float radius)
 	IndexBuffer = NEW_REF (DX8IndexBufferClass, (TriangleCount * VERTICES_PER_TRIANGLE));
 	{
 		DX8IndexBufferClass::WriteLockClass lock (IndexBuffer);
-		unsigned short *indices = lock.Get_Index_Array();
+		uint16_t *indices = lock.Get_Index_Array();
 
 		i = 0;
 		for (row = 0; row < RowCount; row++) {
@@ -377,9 +377,9 @@ StarfieldClass::StarfieldClass (float extent, unsigned starcount)
 	IndexBuffer = NEW_REF (DX8IndexBufferClass, (VertexCount));
 	{
 		DX8IndexBufferClass::WriteLockClass lock (IndexBuffer);
-		unsigned short *indices = lock.Get_Index_Array();
+		uint16_t *indices = lock.Get_Index_Array();
 
-		for (unsigned short i = 0; i < VertexCount; i++) {
+		for (uint16_t i = 0; i < VertexCount; i++) {
 			indices [i] = i;
 		}
 	}
@@ -694,12 +694,12 @@ SkyObjectClass::SkyObjectClass (ShaderClass shader)
 	// NOTE: For simplicity, assume that there are exactly 8 vertices and 6 triangles.
 	IndexBuffer = NEW_REF (DX8IndexBufferClass, (TriangleCount * VERTICES_PER_TRIANGLE));
 	{
-		static const unsigned short _indices [] = {0, 4, 5, 5, 1, 0, 1, 5, 6, 6, 2, 1, 2, 6, 7, 7, 3, 2};
+		static const uint16_t _indices [] = {0, 4, 5, 5, 1, 0, 1, 5, 6, 6, 2, 1, 2, 6, 7, 7, 3, 2};
 
 		DX8IndexBufferClass::WriteLockClass lock (IndexBuffer);
-		unsigned short *indices = lock.Get_Index_Array();
+		uint16_t *indices = lock.Get_Index_Array();
 
-		for (unsigned short i = 0; i < TriangleCount * VERTICES_PER_TRIANGLE; i++) {
+		for (uint16_t i = 0; i < TriangleCount * VERTICES_PER_TRIANGLE; i++) {
 			indices [i] = _indices [i];
 		}
 	}
@@ -1001,7 +1001,7 @@ CloudLayerClass::CloudLayerClass (float maxdistance, const char *texturename, co
 
 	unsigned			row, segment;
 	unsigned			v;
-	unsigned short i;
+	uint16_t i;
 	float				longitude, latitude;
 	float				x, y, z;
 	float				scale;
@@ -1029,7 +1029,7 @@ CloudLayerClass::CloudLayerClass (float maxdistance, const char *texturename, co
 	IndexBuffer = NEW_REF (DX8IndexBufferClass, (TriangleCount * VERTICES_PER_TRIANGLE));
 	{
 		DX8IndexBufferClass::WriteLockClass lock (IndexBuffer);
-		unsigned short *indices = lock.Get_Index_Array();
+		uint16_t *indices = lock.Get_Index_Array();
 
 		i = 0;
 		for (row = 0; row < RowCount; row++) {
@@ -1353,7 +1353,7 @@ SkyGlowClass::SkyGlowClass (float radius)
 	unsigned			v;
 	float				latitude;
 	float				x, y, z;
-	unsigned short i;
+	uint16_t i;
 
 	VertexCount	  = (RowCount + 1) * segmentcount;
 	TriangleCount = segmentcount * (RowCount * 2);
@@ -1380,7 +1380,7 @@ SkyGlowClass::SkyGlowClass (float radius)
 	IndexBuffer = NEW_REF (DX8IndexBufferClass, (TriangleCount * VERTICES_PER_TRIANGLE));
 	{
 		DX8IndexBufferClass::WriteLockClass lock (IndexBuffer);
-		unsigned short *indices = lock.Get_Index_Array();
+		uint16_t *indices = lock.Get_Index_Array();
 
 		i = 0;
 		for (row = 0; row < RowCount; row++) {
@@ -2321,7 +2321,7 @@ void SkyClass::Set_Time_Of_Day (unsigned hours, unsigned minutes)
 	const unsigned colorcount = 24;
 	const unsigned alphacount = 24;
 
-	static const unsigned char _warmskycolors [colorcount][3] = {
+	static const uint8_t _warmskycolors [colorcount][3] = {
 
 	{ 36,  36,  40},	// 0000 hrs
 	{ 36,  36,  40},	// 0100 hrs
@@ -2348,7 +2348,7 @@ void SkyClass::Set_Time_Of_Day (unsigned hours, unsigned minutes)
 	{ 36,  36,  40},	//	2200 hrs
 	{ 36,  36,  40}};	//	2300 hrs
 
-	static const unsigned char _coldskycolors [colorcount][3] = {
+	static const uint8_t _coldskycolors [colorcount][3] = {
 
 	{ 36,  36,  40},	// 0000 hrs
 	{ 36,  36,  40},	// 0100 hrs
@@ -2375,7 +2375,7 @@ void SkyClass::Set_Time_Of_Day (unsigned hours, unsigned minutes)
 	{ 36,  36,  40},	//	2200 hrs
 	{ 36,  36,  40}};	//	2300 hrs
 
-	static const unsigned char _suncolors [colorcount][3] = {
+	static const uint8_t _suncolors [colorcount][3] = {
 
 	{  0,   0,   0},	// 0000 hrs
 	{  0,   0,   0},	// 0100 hrs
@@ -2402,7 +2402,7 @@ void SkyClass::Set_Time_Of_Day (unsigned hours, unsigned minutes)
 	{  0,   0,   0},	//	2200 hrs
 	{  0,   0,   0}};	//	2300 hrs
 
-	static const unsigned char _sunhalocolors [colorcount][3] = {
+	static const uint8_t _sunhalocolors [colorcount][3] = {
 
 	{  0,   0,   0},	// 0000 hrs
 	{  0,   0,   0},	// 0100 hrs
@@ -2429,7 +2429,7 @@ void SkyClass::Set_Time_Of_Day (unsigned hours, unsigned minutes)
 	{  0,   0,   0},	//	2200 hrs
 	{  0,   0,   0}};	//	2300 hrs
 
-	static const unsigned char _moonhalocolors [colorcount][3] = {
+	static const uint8_t _moonhalocolors [colorcount][3] = {
 
 	{192, 192, 192},	// 0000 hrs
 	{192, 192, 192},	// 0100 hrs
@@ -2456,7 +2456,7 @@ void SkyClass::Set_Time_Of_Day (unsigned hours, unsigned minutes)
 	{192, 192, 192},	//	2200 hrs
 	{192, 192, 192}};	//	2300 hrs
 
-	static const unsigned char _starfieldalphas [alphacount] = {
+	static const uint8_t _starfieldalphas [alphacount] = {
 
 	255,	// 0000 hrs
 	255,	// 0100 hrs
@@ -2594,7 +2594,7 @@ void SkyClass::Set_Color()
 	const Vector3	tintcolor (1.0f, 0.0f, 0.0f);
 	const unsigned colorcount = 24;
 
-	static const unsigned char _skycolors [colorcount][3] = {
+	static const uint8_t _skycolors [colorcount][3] = {
 
 	{  4,  12,  18},	// 0000 hrs
 	{	4,  12,  18},	// 0100 hrs
@@ -2621,7 +2621,7 @@ void SkyClass::Set_Color()
 	{	4,  12,  18},	//	2200 hrs
 	{	4,  12,  18}};	//	2300 hrs
 
-	static const unsigned char _gloominesscolors [colorcount][3] = {
+	static const uint8_t _gloominesscolors [colorcount][3] = {
 
 	{  4,  12,  18},	// 0000 hrs
 	{	4,  12,  18},	// 0100 hrs
@@ -2691,7 +2691,7 @@ void SkyClass::Set_Moon_Type (MoonTypeEnum moontype)
  * HISTORY:                                                                                    *
  *   09/15/00    IML : Created.                                                                *
  *=============================================================================================*/
-Vector3 SkyClass::Interpolate_Color (const unsigned char colortable [][3], unsigned colorcount, float interpolant)
+Vector3 SkyClass::Interpolate_Color (const uint8_t colortable [][3], unsigned colorcount, float interpolant)
 {
 	const float ooucharmax = 1.0f / UCHAR_MAX;
 
@@ -2728,7 +2728,7 @@ Vector3 SkyClass::Interpolate_Color (const unsigned char colortable [][3], unsig
  * HISTORY:                                                                                    *
  *   09/15/00    IML : Created.                                                                *
  *=============================================================================================*/
-float SkyClass::Interpolate_Scalar (const unsigned char scalartable [], unsigned scalarcount, float interpolant)
+float SkyClass::Interpolate_Scalar (const uint8_t scalartable [], unsigned scalarcount, float interpolant)
 {
 	const float ooucharmax = 1.0f / UCHAR_MAX;
 

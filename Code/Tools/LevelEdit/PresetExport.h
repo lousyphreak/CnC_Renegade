@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __PRESET_EXPORT_H
@@ -78,7 +80,7 @@ public:
 	//	Static methods
 	//
 	static void			Import (const char *filename);
-	static void			Export (uint32 class_id, const char *filename);
+	static void			Export (uint32_t class_id, const char *filename);
 
 private:
 
@@ -86,7 +88,7 @@ private:
 	//	Private methods
 	/////////////////////////////////////////////////////////////////////
 	static bool			Can_Export_Parameter (ParameterClass *parameter);
-	static void			Write_Column_Headers (uint32 class_id, TextFileClass &file);
+	static void			Write_Column_Headers (uint32_t class_id, TextFileClass &file);
 	static void			Export_Preset (TextFileClass &file, PresetClass *preset);
 	static int			Find_Header (TextFileClass &file);
 

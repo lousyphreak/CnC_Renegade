@@ -105,7 +105,7 @@ void
 PhysObjEditTabClass::HandleInitDialog (void)
 {
 	DefinitionClass *default_definition = DefinitionMgrClass::Find_Definition (m_DefinitionID, false);
-	uint32 default_classid = 0;
+	uint32_t default_classid = 0;
 	
 	if (default_definition != NULL) {
 		default_classid = default_definition->Get_Class_ID ();
@@ -125,7 +125,7 @@ PhysObjEditTabClass::HandleInitDialog (void)
 		//
 		if (default_classid == factory->Get_Class_ID ()) {
 			int index = m_ObjTypeCombo.AddString (factory->Get_Name ());
-			m_ObjTypeCombo.SetItemData (index, (ULONG)default_definition);			
+			m_ObjTypeCombo.SetItemData (index, (uint32_t)default_definition);			
 			m_ObjTypeCombo.SetCurSel (index);
 		} else {
 
@@ -138,7 +138,7 @@ PhysObjEditTabClass::HandleInitDialog (void)
 				//
 				if (((PhysDefClass *)definition)->Is_Type (m_FilterString)) {
 					int index = m_ObjTypeCombo.AddString (factory->Get_Name ());
-					m_ObjTypeCombo.SetItemData (index, (ULONG)definition);				
+					m_ObjTypeCombo.SetItemData (index, (uint32_t)definition);				
 				} else {
 					SAFE_DELETE (definition);
 				}

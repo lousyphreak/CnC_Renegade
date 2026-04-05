@@ -160,7 +160,7 @@ PresetSettingsTabClass::Apply_Changes (void)
 //
 /////////////////////////////////////////////////////////////////////////////
 void
-PresetSettingsTabClass::OnSize (UINT nType, int cx, int cy) 
+PresetSettingsTabClass::OnSize (uint32_t nType, int cx, int cy) 
 {
 	if ((m_ParamSheet != NULL) && (cx > 0) && (cy > 0)) {
 

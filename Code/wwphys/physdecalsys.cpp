@@ -172,7 +172,7 @@ int PhysDecalSysClass::Create_Decal
 	return return_id;
 }
 
-bool PhysDecalSysClass::Remove_Decal(uint32 id)
+bool PhysDecalSysClass::Remove_Decal(uint32_t id)
 {
 	return internal_remove_decal(id,NULL);
 }
@@ -210,7 +210,7 @@ void PhysDecalSysClass::Unlock_Decal_Generator(DecalGeneratorClass * generator)
 	DecalSystemClass::Unlock_Decal_Generator(generator);
 }
 
-void PhysDecalSysClass::Decal_Mesh_Destroyed(uint32 decal_id,DecalMeshClass * mesh)	
+void PhysDecalSysClass::Decal_Mesh_Destroyed(uint32_t decal_id,DecalMeshClass * mesh)	
 { 
 	/*
 	** Must remove this mesh from any decals
@@ -239,7 +239,7 @@ void PhysDecalSysClass::Set_Temporary_Decal_Pool_Size(int count)
 	/*
 	** Make sure that our NextTempDecalIndex is valid, if not wrap it around
 	*/
-	if (NextTempDecalIndex >= (uint32)TempDecals.Length()) {
+	if (NextTempDecalIndex >= (uint32_t)TempDecals.Length()) {
 		NextTempDecalIndex = 0;
 	}
 }
@@ -249,9 +249,9 @@ int PhysDecalSysClass::Get_Temporary_Decal_Pool_Size(void)
 	return TempDecals.Length();
 }
 
-uint32 PhysDecalSysClass::Generate_Decal_Id(void)
+uint32_t PhysDecalSysClass::Generate_Decal_Id(void)
 {
-	uint32 id;
+	uint32_t id;
 	if (CreatePermanentDecals) {
 		
 		id = Generate_Unique_Global_Decal_Id() & 0x7FFFFFFF;
@@ -265,7 +265,7 @@ uint32 PhysDecalSysClass::Generate_Decal_Id(void)
 	return id;
 }
 
-bool PhysDecalSysClass::is_decal_id_permanent(uint32 id)
+bool PhysDecalSysClass::is_decal_id_permanent(uint32_t id)
 {
 	if (id & 0x80000000) {
 		return true;
@@ -293,7 +293,7 @@ void PhysDecalSysClass::release_resources(void)
 	REF_PTR_RELEASE(DecalMaterial);
 }
 
-bool PhysDecalSysClass::internal_remove_decal(uint32 id,MeshClass * deleted_mesh)
+bool PhysDecalSysClass::internal_remove_decal(uint32_t id,MeshClass * deleted_mesh)
 {
 	bool success = false;
 	if (is_decal_id_permanent(id)) {
@@ -333,7 +333,7 @@ bool PhysDecalSysClass::internal_remove_decal(uint32 id,MeshClass * deleted_mesh
 		** Temporary decals use their index as the id
 		*/
 		WWASSERT(id >= 0);
-		WWASSERT(id < (uint32)TempDecals.Length());
+		WWASSERT(id < (uint32_t)TempDecals.Length());
 
 		if (deleted_mesh != NULL) {
 			TempDecals[id].Meshes.Delete(deleted_mesh);

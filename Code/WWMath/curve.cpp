@@ -381,7 +381,7 @@ int Curve1DClass::Key_Count(void)
 	return Keys.Count();
 }
 
-void Curve1DClass::Get_Key(int i,float * set_point,float * set_t,unsigned int * extra)
+void Curve1DClass::Get_Key(int i,float * set_point,float * set_t,uint32_t * extra)
 {
 	assert(i >= 0);
 	assert(i < Keys.Count());
@@ -396,7 +396,7 @@ void Curve1DClass::Get_Key(int i,float * set_point,float * set_t,unsigned int * 
 	}
 }
 
-void Curve1DClass::Set_Key(int i,float point,unsigned int extra)
+void Curve1DClass::Set_Key(int i,float point,uint32_t extra)
 {
 	assert(i >= 0);
 	assert(i < Keys.Count());
@@ -405,7 +405,7 @@ void Curve1DClass::Set_Key(int i,float point,unsigned int extra)
 }	
 
 
-int Curve1DClass::Add_Key(float point,float t,unsigned int extra)
+int Curve1DClass::Add_Key(float point,float t,uint32_t extra)
 {
 	int idx = 0;
 	while (idx < Keys.Count() && Keys[idx].Time < t) {

@@ -146,7 +146,7 @@ CharacterOptionsMenuClass::On_Init_Dialog (void)
 //
 ////////////////////////////////////////////////////////////////
 void
-CharacterOptionsMenuClass::On_Command (int ctrl_id, int message_id, DWORD param)
+CharacterOptionsMenuClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	MenuDialogClass::On_Command (ctrl_id, message_id, param);
 	return ;
@@ -249,7 +249,7 @@ CharacterOptionsMenuClass::On_Character_Selected (int index)
 	//
 	//	Display the model for this purchase
 	//
-	uint32 definition_id	= combo_box->Get_Item_Data (index);	
+	uint32_t definition_id	= combo_box->Get_Item_Data (index);	
 	Display_Default_Model (definition_id);
 	return ;
 }

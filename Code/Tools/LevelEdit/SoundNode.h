@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __SOUND_NODE_H
@@ -108,7 +110,7 @@ public:
 	bool			Is_Rotation_Restricted (void) const	{ return false; }
 	void			Add_To_Scene (void);
 	void			Remove_From_Scene (void);
-	void			Set_ID (uint32 id);
+	void			Set_ID (uint32_t id);
 	bool			Show_Settings_Dialog (void);
 	
 	bool			Is_Attenuation_Sphere_Shown (void)	{ return (Sphere != NULL); }

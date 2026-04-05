@@ -160,7 +160,7 @@ bool File_Exists (LPCSTR filename)
 // InitInstance
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CLevelEditApp::InitInstance (void)
 {
 	//
@@ -303,7 +303,7 @@ CLevelEditApp::InitInstance (void)
 								INSTALL_VALUE,
 								0L,
 								REG_SZ,
-								(BYTE *)install_path,
+								(uint8_t *)install_path,
 								::lstrlen (install_path) + 1);
 		::RegCloseKey (reg_key);
 	}
@@ -527,7 +527,7 @@ CLevelEditApp::OnFileOpen (void)
 void
 Register_Light_Icon (void)
 {
-	DWORD disp		= 0;
+	uint32_t disp		= 0;
 	HKEY reg_key	= NULL;
 
 	const char *LIGHT_ICON_APP_NAME	= "W3D Light";
@@ -549,7 +549,7 @@ Register_Light_Icon (void)
 		//
 		//	Write the name of the application under this extension's default value
 		//
-		::RegSetValueEx (reg_key, NULL, 0, REG_SZ, (const BYTE *)LIGHT_ICON_APP_NAME, ::lstrlen (LIGHT_ICON_APP_NAME) + 1);
+		::RegSetValueEx (reg_key, NULL, 0, REG_SZ, (const uint8_t *)LIGHT_ICON_APP_NAME, ::lstrlen (LIGHT_ICON_APP_NAME) + 1);
 		::RegCloseKey (reg_key);
 
 		//
@@ -578,7 +578,7 @@ Register_Light_Icon (void)
 			//
 			//	Write the icon's location under this key
 			//
-			::RegSetValueEx (reg_key, NULL, 0, REG_SZ, (const BYTE *)(LPCTSTR)icon_path, ::lstrlen (icon_path) + 1);
+			::RegSetValueEx (reg_key, NULL, 0, REG_SZ, (const uint8_t *)(LPCTSTR)icon_path, ::lstrlen (icon_path) + 1);
 			::RegCloseKey (reg_key);
 		}
 	}
@@ -595,10 +595,10 @@ Register_Light_Icon (void)
 // processed even if we are in one of the sidebar windows.
 //
 /////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CLevelEditApp::PreTranslateMessage (MSG *pMsg) 
 {
-	BOOL retval = false;
+	int32_t retval = false;
 
 	//
 	//	Is this window registered for global translation?

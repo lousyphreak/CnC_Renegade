@@ -80,7 +80,7 @@
  * HISTORY:                                                                                    * 
  *   05/27/1997 JLB : Created.                                                                 * 
  *=============================================================================================*/
-void Draw_Shape(Surface & surface, ConvertClass & convert, ShapeSet const * shapefile, int shapenum, Point2D const & point, Rect const & window, ShapeFlags_Type flags, unsigned char const * remap)
+void Draw_Shape(Surface & surface, ConvertClass & convert, ShapeSet const * shapefile, int shapenum, Point2D const & point, Rect const & window, ShapeFlags_Type flags, uint8_t const * remap)
 {
 	assert((flags & SHAPE_PREDATOR) == 0);	// Not yet supported.
 	assert(shapefile != NULL);
@@ -174,7 +174,7 @@ void Draw_Shape(Surface & surface, ConvertClass & convert, ShapeSet const * shap
  * HISTORY:                                                                                    * 
  *   05/27/1997 JLB : Created.                                                                 * 
  *=============================================================================================*/
-void Blit_Block(Surface & surface, ConvertClass & convert, Surface const & source, Rect const & sourcerect, Point2D const & point, Rect const & window, unsigned char const * remap, Blitter const * blitter)
+void Blit_Block(Surface & surface, ConvertClass & convert, Surface const & source, Rect const & sourcerect, Point2D const & point, Rect const & window, uint8_t const * remap, Blitter const * blitter)
 {
 	convert.Set_Remap(remap);
 

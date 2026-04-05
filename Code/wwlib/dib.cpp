@@ -1,3 +1,4 @@
+#include <cstdint>
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -65,7 +66,7 @@ DIB8Class::DIB8Class(HWND hwnd,int width,int height,PaletteClass & pal):
 	Surface(NULL)
 {
 	// Allocate a BITMAPINFO structure
-	Info = (BITMAPINFO *) new char [sizeof(BITMAPINFO) + 256*sizeof(RGBQUAD)];
+	Info = (BITMAPINFO *) new uint8_t [sizeof(BITMAPINFO) + 256*sizeof(RGBQUAD)];
 
 	if (Info == NULL) {
 		IsZombie = true;
@@ -87,9 +88,9 @@ DIB8Class::DIB8Class(HWND hwnd,int width,int height,PaletteClass & pal):
 
 	// Fill in the DIB's palette.
 	for (int i=0; i<256; i++) {
-		Info->bmiColors[i].rgbBlue =		(unsigned char)pal[i].Get_Blue();
-		Info->bmiColors[i].rgbGreen =		(unsigned char)pal[i].Get_Green();
-		Info->bmiColors[i].rgbRed =		(unsigned char)pal[i].Get_Red();
+		Info->bmiColors[i].rgbBlue =		(uint8_t)pal[i].Get_Blue();
+		Info->bmiColors[i].rgbGreen =		(uint8_t)pal[i].Get_Green();
+		Info->bmiColors[i].rgbRed =		(uint8_t)pal[i].Get_Red();
 		Info->bmiColors[i].rgbReserved =	0;
 	}
 	
@@ -165,10 +166,9 @@ DIB8Class::~DIB8Class(void)
  * HISTORY:                                                                                    * 
  *   04/18/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-void DIB8Class::Clear(unsigned char color)
+void DIB8Class::Clear(uint8_t color)
 {
 	if (Pixels) {
 		memset(Pixels, color, Width*Height);
 	}
 }
-

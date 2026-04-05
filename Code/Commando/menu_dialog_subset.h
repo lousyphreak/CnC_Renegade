@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "dialogresource.h"
 #include "menudialog.h"
 #include "popupdialog.h"
@@ -23,7 +25,7 @@ public:
 	ClientStartSPGameDialogClass();
 
 	void On_Init_Dialog() override;
-	void On_Command(int ctrl_id, int message_id, DWORD param) override;
+	void On_Command(int ctrl_id, int message_id, uint32_t param) override;
 };
 
 class ClientDifficultyMenuClass : public MenuDialogClass
@@ -33,7 +35,7 @@ public:
 	void Set_Replay(const char *filename) { ReplayFilename = filename; }
 
 	void On_Frame_Update() override;
-	void On_Command(int ctrl_id, int message_id, DWORD param) override;
+	void On_Command(int ctrl_id, int message_id, uint32_t param) override;
 
 private:
 	StringClass ReplayFilename;

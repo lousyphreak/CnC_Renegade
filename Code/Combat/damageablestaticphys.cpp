@@ -130,7 +130,7 @@ DamageableStaticPhysDefClass::DamageableStaticPhysDefClass(void) :
 	DEFENSEOBJECTDEF_EDITABLE_PARAMS(DamageableStaticPhysDefClass, DefenseObjectDef);
 }
 
-uint32 DamageableStaticPhysDefClass::Get_Class_ID(void) const	
+uint32_t DamageableStaticPhysDefClass::Get_Class_ID(void) const	
 { 
 	return CLASSID_DAMAGEABLESTATICPHYSDEF; 
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "dx8fvf.h"
 #include "refcount.h"
 
@@ -31,7 +33,7 @@ public:
 class VertexBufferClass : public RefCountClass
 {
 protected:
-	VertexBufferClass(unsigned buffer_type, unsigned fvf, unsigned short vertex_count)
+	VertexBufferClass(unsigned buffer_type, unsigned fvf, uint16_t vertex_count)
 		: type(buffer_type),
 		  VertexCount(vertex_count),
 		  engine_refs(0),
@@ -51,12 +53,12 @@ public:
 		return fvf_info;
 	}
 
-	unsigned short Get_Vertex_Count() const
+	uint16_t Get_Vertex_Count() const
 	{
 		return VertexCount;
 	}
 
-	const unsigned char *Get_Vertex_Data() const
+	const uint8_t *Get_Vertex_Data() const
 	{
 		return Storage.data();
 	}
@@ -108,16 +110,16 @@ public:
 
 protected:
 	unsigned type;
-	unsigned short VertexCount;
+	uint16_t VertexCount;
 	mutable unsigned engine_refs;
 	FVFInfoClass fvf_info;
-	std::vector<unsigned char> Storage;
+	std::vector<uint8_t> Storage;
 };
 
 class DX8VertexBufferClass : public VertexBufferClass
 {
 public:
-	DX8VertexBufferClass(unsigned fvf = 0, unsigned short vertex_count = 0)
+	DX8VertexBufferClass(unsigned fvf = 0, uint16_t vertex_count = 0)
 		: VertexBufferClass(0, fvf, vertex_count)
 	{
 	}
@@ -128,7 +130,7 @@ class SortingVertexBufferClass : public VertexBufferClass
 public:
 	VertexFormatXYZNDUV2* VertexBuffer;
 
-	explicit SortingVertexBufferClass(unsigned short vertex_count = 0)
+	explicit SortingVertexBufferClass(uint16_t vertex_count = 0)
 		: VertexBufferClass(1, dynamic_fvf_type, vertex_count),
 		  VertexBuffer(reinterpret_cast<VertexFormatXYZNDUV2*>(Storage.data()))
 	{
@@ -145,7 +147,7 @@ public:
 	DynamicVBAccessClass(int type, int vertex_count)
 		: FVFInfo(dynamic_fvf_type),
 		  Type(static_cast<unsigned>(type)),
-		  VertexCount(static_cast<unsigned short>(vertex_count)),
+		  VertexCount(static_cast<uint16_t>(vertex_count)),
 		  BackingBuffer(NULL)
 	{
 		Attach_Shared_Buffer(type);
@@ -154,7 +156,7 @@ public:
 	DynamicVBAccessClass(int type, int, int vertex_count)
 		: FVFInfo(dynamic_fvf_type),
 		  Type(static_cast<unsigned>(type)),
-		  VertexCount(static_cast<unsigned short>(vertex_count)),
+		  VertexCount(static_cast<uint16_t>(vertex_count)),
 		  BackingBuffer(NULL)
 	{
 		Attach_Shared_Buffer(type);
@@ -175,12 +177,12 @@ public:
 		return Type;
 	}
 
-	unsigned short Get_Vertex_Count() const
+	uint16_t Get_Vertex_Count() const
 	{
 		return VertexCount;
 	}
 
-	const unsigned char *Get_Vertex_Data() const
+	const uint8_t *Get_Vertex_Data() const
 	{
 		return BackingBuffer != NULL ? BackingBuffer->Get_Vertex_Data() : NULL;
 	}
@@ -200,7 +202,7 @@ public:
 
 		void * Get_Vertex_Array()
 		{
-			return Access != nullptr && Access->BackingBuffer != NULL ? const_cast<unsigned char*>(Access->BackingBuffer->Get_Vertex_Data()) : nullptr;
+			return Access != nullptr && Access->BackingBuffer != NULL ? const_cast<uint8_t*>(Access->BackingBuffer->Get_Vertex_Data()) : nullptr;
 		}
 
 		VertexFormatXYZNDUV2 * Get_Formatted_Vertex_Array()
@@ -242,6 +244,6 @@ private:
 
 	FVFInfoClass FVFInfo;
 	unsigned Type;
-	unsigned short VertexCount;
+	uint16_t VertexCount;
 	VertexBufferClass * BackingBuffer;
 };

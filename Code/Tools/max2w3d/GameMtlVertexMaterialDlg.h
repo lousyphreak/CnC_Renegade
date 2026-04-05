@@ -39,6 +39,8 @@
 #ifndef GAMEMTLVERTEXMATERIALDLG_H
 #define GAMEMTLVERTEXMATERIALDLG_H
 
+#include <cstdint>
+
 #include <Max.h>
 #include "GameMtlForm.h"
 
@@ -52,9 +54,9 @@ public:
 	GameMtlVertexMaterialDlg(HWND parent, IMtlParams * imp, GameMtl * m, int pass);
 	~GameMtlVertexMaterialDlg();
 
-	virtual BOOL		Dialog_Proc (HWND dlg_wnd, UINT message, WPARAM wparam, LPARAM lparam);
+	virtual int32_t		Dialog_Proc (HWND dlg_wnd, uint32_t message, uintptr_t wparam, intptr_t lparam);
 
-	void					ActivateDlg(BOOL onoff);
+	void					ActivateDlg(int32_t onoff);
 	void					ReloadDialog(void);
 
 private:

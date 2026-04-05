@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // HeightfieldMaterialSettingsDialog.h : header file
 //
@@ -53,7 +55,7 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(HeightfieldMaterialSettingsDialogClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	virtual void OnOK();
 	afx_msg void OnBrowse();
 	//}}AFX_MSG

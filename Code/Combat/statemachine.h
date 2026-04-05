@@ -175,7 +175,7 @@ public:
 	//	Public typedefs
 	///////////////////////////////////////////////////////////////////
 	typedef void (T::*THINK_PTR)			(void);
-	typedef bool (T::*REQUEST_END_PTR)	(int new_state);
+	typedef bool (T::*REQUEST_END_PTR)	(int32_t new_state);
 	typedef void (T::*BEGIN_PTR)			(void);
 	typedef void (T::*END_PTR)				(void);
 

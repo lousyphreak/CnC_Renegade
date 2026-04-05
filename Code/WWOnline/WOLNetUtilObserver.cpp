@@ -153,7 +153,7 @@ STDMETHODIMP NetUtilObserver::QueryInterface(const IID& iid, void** ppv)
 *
 ****************************************************************************/
 
-ULONG STDMETHODCALLTYPE NetUtilObserver::AddRef(void)
+uint32_t STDMETHODCALLTYPE NetUtilObserver::AddRef(void)
 	{
 	InterlockedIncrement((LPLONG)&mRefCount);
 	return mRefCount;
@@ -174,7 +174,7 @@ ULONG STDMETHODCALLTYPE NetUtilObserver::AddRef(void)
 *
 ****************************************************************************/
 
-ULONG STDMETHODCALLTYPE NetUtilObserver::Release(void)
+uint32_t STDMETHODCALLTYPE NetUtilObserver::Release(void)
 	{
 	InterlockedDecrement((LPLONG)&mRefCount);
 
@@ -206,7 +206,7 @@ ULONG STDMETHODCALLTYPE NetUtilObserver::Release(void)
 *
 ******************************************************************************/
 
-STDMETHODIMP NetUtilObserver::OnPing(HRESULT result, int time, unsigned long ip, int handle)
+STDMETHODIMP NetUtilObserver::OnPing(int32_t result, int time, uint32_t ip, int handle)
 	{
 	if (mOuter == NULL)
 		{
@@ -224,7 +224,7 @@ STDMETHODIMP NetUtilObserver::OnPing(HRESULT result, int time, unsigned long ip,
 	// Find the ping request
 	int pingIndex = -1;
 
-	for (unsigned int index = 0; index < mOuter->mPingRequests.size(); index++)
+	for (uint32_t index = 0; index < mOuter->mPingRequests.size(); index++)
 		{
 		if (mOuter->mPingRequests[index].GetHandle() == handle)
 			{
@@ -280,8 +280,8 @@ STDMETHODIMP NetUtilObserver::OnPing(HRESULT result, int time, unsigned long ip,
 *
 ******************************************************************************/
 
-STDMETHODIMP NetUtilObserver::OnLadderList(HRESULT result, WOL::Ladder* list,
-			int rungCount, long timeStamp, int keyRung)
+STDMETHODIMP NetUtilObserver::OnLadderList(int32_t result, WOL::Ladder* list,
+			int rungCount, int32_t timeStamp, int keyRung)
 	{
 	if (mOuter == NULL)
 		{
@@ -315,7 +315,7 @@ STDMETHODIMP NetUtilObserver::OnLadderList(HRESULT result, WOL::Ladder* list,
 		// If there are no pending ladders then remove the satisfied requests
 		if ((mOuter->mLadderPending & LADDERTYPE_MASK) == 0)
 			{
-			for (unsigned int count = 0; count < mOuter->mLadderPending; count++)
+			for (uint32_t count = 0; count < mOuter->mLadderPending; count++)
 				{
 				mOuter->mLadderRequests.pop_front();
 				}
@@ -374,7 +374,7 @@ STDMETHODIMP NetUtilObserver::OnLadderList(HRESULT result, WOL::Ladder* list,
 *
 ******************************************************************************/
 
-void NetUtilObserver::ProcessLadderListResults(WOL::Ladder* list, long timeStamp)
+void NetUtilObserver::ProcessLadderListResults(WOL::Ladder* list, int32_t timeStamp)
 	{
 	if (mOuter->mLadderPending)
 		{
@@ -390,7 +390,7 @@ void NetUtilObserver::ProcessLadderListResults(WOL::Ladder* list, long timeStamp
 			}
 
 		Session::LadderRequestList::iterator request = mOuter->mLadderRequests.begin();
-		unsigned int ladderCount = 0;
+		uint32_t ladderCount = 0;
 
 		while (wolLadder)
 			{
@@ -479,7 +479,7 @@ void NetUtilObserver::ProcessLadderListResults(WOL::Ladder* list, long timeStamp
 			{
 			WWASSERT(ladderCount == mOuter->mLadderPending && "LadderInfo received doesn't match number requested");
 
-			for (unsigned int count = 0; count < mOuter->mLadderPending; ++count)
+			for (uint32_t count = 0; count < mOuter->mLadderPending; ++count)
 				{
 				mOuter->mLadderRequests.pop_front();
 				}
@@ -492,9 +492,9 @@ void NetUtilObserver::ProcessLadderListResults(WOL::Ladder* list, long timeStamp
 
 void NetUtilObserver::NotifyClanLadderUpdate(const UserList& users, const RefPtr<SquadData>& squad)
 	{
-	const unsigned int userCount = users.size();
+	const uint32_t userCount = users.size();
 
-	for (unsigned int index = 0; index < userCount; ++index)
+	for (uint32_t index = 0; index < userCount; ++index)
 		{
 		const RefPtr<UserData>& user = users[index];
 
@@ -521,7 +521,7 @@ void NetUtilObserver::NotifyClanLadderUpdate(const UserList& users, const RefPtr
 *
 ******************************************************************************/
 
-STDMETHODIMP NetUtilObserver::OnGameresSent(HRESULT)
+STDMETHODIMP NetUtilObserver::OnGameresSent(int32_t)
 	{
 	WWDEBUG_SAY(("WOLWARNING: OnGameresSent() not implemented\n"));
 	return S_OK;
@@ -541,7 +541,7 @@ STDMETHODIMP NetUtilObserver::OnGameresSent(HRESULT)
 *
 ******************************************************************************/
 
-STDMETHODIMP NetUtilObserver::OnNewNick(HRESULT result, LPCSTR message, LPCSTR nickname, LPCSTR password)
+STDMETHODIMP NetUtilObserver::OnNewNick(int32_t result, LPCSTR message, LPCSTR nickname, LPCSTR password)
 	{
 	if (mOuter == NULL)
 		{
@@ -583,7 +583,7 @@ STDMETHODIMP NetUtilObserver::OnNewNick(HRESULT result, LPCSTR message, LPCSTR n
 *
 ******************************************************************************/
 
-STDMETHODIMP NetUtilObserver::OnAgeCheck(HRESULT result, int years, int consent)
+STDMETHODIMP NetUtilObserver::OnAgeCheck(int32_t result, int years, int consent)
 	{
 	if (mOuter == NULL)
 		{
@@ -618,7 +618,7 @@ STDMETHODIMP NetUtilObserver::OnAgeCheck(HRESULT result, int years, int consent)
 *
 ******************************************************************************/
 
-STDMETHODIMP NetUtilObserver::OnWDTState(HRESULT result, unsigned char* , int )
+STDMETHODIMP NetUtilObserver::OnWDTState(int32_t result, uint8_t* , int )
 	{
 	WWDEBUG_SAY(("WOLWARNING: OnWDTState not implemented\n"));
 	return S_OK;
@@ -638,8 +638,8 @@ STDMETHODIMP NetUtilObserver::OnWDTState(HRESULT result, unsigned char* , int )
 *
 ******************************************************************************/
 
-STDMETHODIMP NetUtilObserver::OnHighscore(HRESULT result, WOL::Highscore* list,
-		int count, long time, int keyRung)
+STDMETHODIMP NetUtilObserver::OnHighscore(int32_t result, WOL::Highscore* list,
+		int count, int32_t time, int keyRung)
 	{
 	WWDEBUG_SAY(("WOLWARNING: OnHighscore not implemented\n"));
 	return S_OK;

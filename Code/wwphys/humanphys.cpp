@@ -733,7 +733,7 @@ HumanPhysDefClass::HumanPhysDefClass(void)
 {
 }
 
-uint32 HumanPhysDefClass::Get_Class_ID (void) const	
+uint32_t HumanPhysDefClass::Get_Class_ID (void) const	
 { 
 	return CLASSID_HUMANPHYSDEF; 
 }

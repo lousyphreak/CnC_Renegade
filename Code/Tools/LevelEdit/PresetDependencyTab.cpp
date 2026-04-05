@@ -285,7 +285,7 @@ void
 PresetDependencyTabClass::OnItemchangedDepencyList
 (
 	NMHDR *	pNMHDR,
-	LRESULT* pResult
+	intptr_t* pResult
 )
 {
 	NM_LISTVIEW* pNMListView = (NM_LISTVIEW*)pNMHDR;

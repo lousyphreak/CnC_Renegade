@@ -277,7 +277,7 @@ void MeshGeometryClass::Reset_Geometry(int polycount,int vertcount)
 	// allocate new geometry arrays
 	if ((polycount != 0) && (vertcount != 0)) {
 		Poly = NEW_REF(ShareBufferClass<TriIndex>,(PolyCount));
-		PolySurfaceType = NEW_REF(ShareBufferClass<uint8>,(PolyCount));
+		PolySurfaceType = NEW_REF(ShareBufferClass<uint8_t>,(PolyCount));
 		Vertex = NEW_REF(ShareBufferClass<Vector3>,(VertexCount));
 
 		Poly->Clear();
@@ -436,7 +436,7 @@ void MeshGeometryClass::Get_Bounding_Sphere(SphereClass * set_sphere)
  * HISTORY:                                                                                    *
  *   5/10/2001  gth : Created.                                                                 *
  *=============================================================================================*/
-void MeshGeometryClass::Generate_Rigid_APT(const Vector3 & view_dir, SimpleDynVecClass<uint32> & apt)
+void MeshGeometryClass::Generate_Rigid_APT(const Vector3 & view_dir, SimpleDynVecClass<uint32_t> & apt)
 {
 	const Vector3 * loc = Get_Vertex_Array();
 	const Vector4 * norms = Get_Plane_Array();
@@ -471,7 +471,7 @@ void MeshGeometryClass::Generate_Rigid_APT(const Vector3 & view_dir, SimpleDynVe
  * HISTORY:                                                                                    *
  *   11/9/2000  gth : Created.                                                                 *
  *=============================================================================================*/
-void MeshGeometryClass::Generate_Rigid_APT(const OBBoxClass & local_box, SimpleDynVecClass<uint32> & apt)
+void MeshGeometryClass::Generate_Rigid_APT(const OBBoxClass & local_box, SimpleDynVecClass<uint32_t> & apt)
 {
 	if (CullTree != NULL) {
 		CullTree->Generate_APT(local_box, apt);
@@ -510,7 +510,7 @@ void MeshGeometryClass::Generate_Rigid_APT(const OBBoxClass & local_box, SimpleD
  * HISTORY:                                                                                    *
  *   5/10/2001  gth : Created.                                                                 *
  *=============================================================================================*/
-void MeshGeometryClass::Generate_Rigid_APT(const OBBoxClass & local_box,const Vector3 & viewdir,SimpleDynVecClass<uint32> & apt)
+void MeshGeometryClass::Generate_Rigid_APT(const OBBoxClass & local_box,const Vector3 & viewdir,SimpleDynVecClass<uint32_t> & apt)
 {
 	if (CullTree != NULL) {
 		CullTree->Generate_APT(local_box, viewdir,apt);
@@ -552,7 +552,7 @@ void MeshGeometryClass::Generate_Rigid_APT(const OBBoxClass & local_box,const Ve
  * HISTORY:                                                                                    *
  *   11/9/2000  gth : Created.                                                                 *
  *=============================================================================================*/
-void MeshGeometryClass::Generate_Skin_APT(const OBBoxClass & world_box, SimpleDynVecClass<uint32> & apt, const Vector3 *world_vertex_locs)
+void MeshGeometryClass::Generate_Skin_APT(const OBBoxClass & world_box, SimpleDynVecClass<uint32_t> & apt, const Vector3 *world_vertex_locs)
 {
 	WWASSERT(world_vertex_locs);
 
@@ -608,7 +608,7 @@ bool MeshGeometryClass::Contains(const Vector3 &point)
 	float yes = 0.0f;	// weighted sum of rays indicating the point is contained in the mesh
 	float no = 0.0f;	// weighted sum of rays indicating the point is not contained in the mesh
 	for (int axis_dir = 0; axis_dir < 6; axis_dir++) {
-		unsigned char flags = TRI_RAYCAST_FLAG_NONE;
+		uint8_t flags = TRI_RAYCAST_FLAG_NONE;
 		int intersections = cast_semi_infinite_axis_aligned_ray(point, axis_dir, flags);
 		if (flags & TRI_RAYCAST_FLAG_START_IN_TRI) return true;
 		float weight = flags & TRI_RAYCAST_FLAG_HIT_EDGE ? 0.1f : 1.0f;
@@ -819,7 +819,7 @@ bool MeshGeometryClass::Cast_World_Space_AABox(AABoxCollisionTestClass & boxtest
  *   11/9/2000  gth : Created.                                                                 *
  *=============================================================================================*/
 int MeshGeometryClass::cast_semi_infinite_axis_aligned_ray(const Vector3 & start_point, int axis_dir,
-	unsigned char & flags)
+	uint8_t & flags)
 {
 	int count = 0;
 	if (CullTree) {
@@ -859,7 +859,7 @@ int MeshGeometryClass::cast_semi_infinite_axis_aligned_ray(const Vector3 & start
 			const Vector4 &tri_plane = plane[poly_counter];
 
 			// Since (int)true is defined as 1, and (int)false as 0:
-			count += (unsigned int)Cast_Semi_Infinite_Axis_Aligned_Ray_To_Triangle(v0,	v1, v2,
+			count += (uint32_t)Cast_Semi_Infinite_Axis_Aligned_Ray_To_Triangle(v0,	v1, v2,
 				tri_plane, start_point, axis_r[axis_dir], axis_1[axis_dir], axis_2[axis_dir],
 				direction[axis_dir], flags);
 		}
@@ -1291,7 +1291,7 @@ void MeshGeometryClass::Compute_Vertex_Normals(Vector3 * vnorm)
 
 	const Vector4 * peq = Get_Plane_Array();
 	TriIndex * poly = Poly->Get_Array();
-	const uint32 * shadeIx	= Get_Vertex_Shade_Index_Array(false);
+	const uint32_t * shadeIx	= Get_Vertex_Shade_Index_Array(false);
 
 	// Two cases, with or without vertex shade indices.  The vertex shade indices
 	// implicitly contain the smoothing groups information from the original mesh.
@@ -1658,7 +1658,7 @@ WW3DErrorType MeshGeometryClass::Load_W3D(ChunkLoadClass & cload)
 	*/
 	if ((header.Version < W3D_MAKE_VERSION(3,0)) && (Get_Flag(SKIN))) {
 
-		uint16 * links = get_bone_links();
+		uint16_t * links = get_bone_links();
 		WWASSERT(links);
 		
 		for (int bi = 0; bi < Get_Vertex_Count(); bi++) {
@@ -1842,7 +1842,7 @@ WW3DErrorType MeshGeometryClass::read_triangles(ChunkLoadClass & cload)
 	TriIndex * vi = get_polys();
 	Set_Flag(DIRTY_PLANES,false);
 	Vector4 * peq = get_planes();
-	uint8 * surface_types = Get_Poly_Surface_Type_Array();
+	uint8_t * surface_types = Get_Poly_Surface_Type_Array();
 
 	// read in each polygon one by one
 	for (int i=0; i<Get_Polygon_Count(); i++) {
@@ -1864,7 +1864,7 @@ WW3DErrorType MeshGeometryClass::read_triangles(ChunkLoadClass & cload)
 
 		// set the surface type
 		WWASSERT(tri.Attributes < 256);
-		surface_types[i] = (uint8)(tri.Attributes);
+		surface_types[i] = (uint8_t)(tri.Attributes);
 	}
 
 	return WW3D_ERROR_OK;	
@@ -1885,7 +1885,7 @@ WW3DErrorType MeshGeometryClass::read_triangles(ChunkLoadClass & cload)
  *=============================================================================================*/
 WW3DErrorType MeshGeometryClass::read_user_text(ChunkLoadClass & cload)
 {
-	unsigned int textlen = cload.Cur_Chunk_Length();
+	uint32_t textlen = cload.Cur_Chunk_Length();
 
 	/*
 	** This shouldn't happen but if there are more than one
@@ -1925,7 +1925,7 @@ WW3DErrorType MeshGeometryClass::read_user_text(ChunkLoadClass & cload)
 WW3DErrorType MeshGeometryClass::read_vertex_influences(ChunkLoadClass & cload)
 {
 	W3dVertInfStruct vinf;
-	uint16 * links = get_bone_links(true);
+	uint16_t * links = get_bone_links(true);
 	WWASSERT(links);
 
 	for (int i=0; i<Get_Vertex_Count(); i++) {
@@ -1955,11 +1955,11 @@ WW3DErrorType MeshGeometryClass::read_vertex_influences(ChunkLoadClass & cload)
  *=============================================================================================*/
 WW3DErrorType MeshGeometryClass::read_vertex_shade_indices(ChunkLoadClass & cload)
 {
-	uint32 * shade_index = get_shade_indices(true);
-	uint32 si;
+	uint32_t * shade_index = get_shade_indices(true);
+	uint32_t si;
 
 	for (int i=0; i<Get_Vertex_Count(); i++) {
-		if (cload.Read(&si,sizeof(uint32)) != sizeof(uint32)) {
+		if (cload.Read(&si,sizeof(uint32_t)) != sizeof(uint32_t)) {
 			return WW3D_ERROR_LOAD_FAILED;
 		}
 		shade_index[i] = si;

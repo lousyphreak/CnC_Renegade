@@ -72,7 +72,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 MixCombiningDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();

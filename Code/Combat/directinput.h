@@ -115,7 +115,7 @@ public:
 	static	int	Get_Keyboard_Button(	int button )	{	return DIKeyboardButtons[ button & 0xFF ]; }
 	static	int	Get_Mouse_Button(	int button )		{	return DIMouseButtons[ button & 0xFF ]; }
 	static	int	Get_Joystick_Button(	int button )	{	return DIJoystickButtons[ button & 0xFF ]; }
-	static	long	Get_Mouse_Axis( MouseAxis axis )		{	return DIMouseAxis[axis]; }
+	static	int32_t	Get_Mouse_Axis( MouseAxis axis )		{	return DIMouseAxis[axis]; }
 
 	/*
 	**
@@ -123,7 +123,7 @@ public:
 	static	void	Eat_Mouse_Held_States (void);
 
 	// Still non-buffered
-	static	long	Get_Joystick_Axis_State( JoystickAxis axis );
+	static	int32_t	Get_Joystick_Axis_State( JoystickAxis axis );
 
 	//
 	//	Cursor support
@@ -153,9 +153,9 @@ private:
 	//
 	static	char						DIKeyboardButtons[NUM_KEYBOARD_BUTTONS];
 	static	char						DIMouseButtons[NUM_MOUSE_BUTTONS];
-	static	long						DIMouseAxis[NUM_MOUSE_AXIS];
+	static	int32_t					DIMouseAxis[NUM_MOUSE_AXIS];
 	static	char					DIJoystickButtons[NUM_JOYSTICK_BUTTONS];
-	static	long					DIJoystickAxis[2];
+	static	int32_t				DIJoystickAxis[2];
 	static	float						ButtonLastHitTime[NUM_KEYBOARD_BUTTONS];
 
 	static	Vector3					CursorPos;
@@ -190,7 +190,7 @@ DirectInput::Get_Button_Value (int button_id)
 	return retval;
 }
 
-WWINLINE long
+WWINLINE int32_t
 DirectInput::Get_Joystick_Axis_State( JoystickAxis axis )
 {
 	return DIJoystickAxis[axis];

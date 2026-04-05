@@ -40,6 +40,8 @@
 #ifndef MATRIXMAPPER_H
 #define MATRIXMAPPER_H
 
+#include <cstdint>
+
 #include "always.h"
 #include "bittype.h"
 #include "matrix4.h"
@@ -79,8 +81,8 @@ public:
 	/*
 	** Interface
 	*/
-	void						Set_Flag(uint32 flag,bool onoff);
-	bool						Get_Flag(uint32 flag) const;	
+	void						Set_Flag(uint32_t flag,bool onoff);
+	bool						Get_Flag(uint32_t flag) const;	
 	
 	void						Set_Type(MappingType type);
 	MappingType				Get_Type(void);
@@ -102,7 +104,7 @@ protected:
 	
 	void						Update_View_To_Pixel_Transform(float texsize);
 
-	uint32					Flags;
+	uint32_t					Flags;
 	MappingType				Type;
 	Matrix4					ViewToTexture;
 	Matrix4					ViewToPixel;
@@ -110,7 +112,7 @@ protected:
 	float						GradientUCoord;
 };
 
-inline void MatrixMapperClass::Set_Flag(uint32 flag,bool onoff)	
+inline void MatrixMapperClass::Set_Flag(uint32_t flag,bool onoff)	
 { 
 	if (onoff) { 
 		Flags |= flag; 
@@ -119,7 +121,7 @@ inline void MatrixMapperClass::Set_Flag(uint32 flag,bool onoff)
 	} 
 }
 
-inline bool MatrixMapperClass::Get_Flag(uint32 flag) const
+inline bool MatrixMapperClass::Get_Flag(uint32_t flag) const
 { 
 	return (Flags & flag) == flag; 
 }

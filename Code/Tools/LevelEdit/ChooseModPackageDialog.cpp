@@ -76,7 +76,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 ChooseModPackageDialogClass::OnInitDialog (void) 
 {
 	CDialog::OnInitDialog ();
@@ -206,7 +206,7 @@ ChooseModPackageDialogClass::OnNewButton (void)
 //
 /////////////////////////////////////////////////////////////////////////////
 void
-ChooseModPackageDialogClass::OnDblclkModListCtrl (NMHDR *pNMHDR, LRESULT *pResult)
+ChooseModPackageDialogClass::OnDblclkModListCtrl (NMHDR *pNMHDR, intptr_t *pResult)
 {
 	(*pResult) = 0;
 	

@@ -132,7 +132,7 @@ void ChunkImageClass::Load(ChunkLoadClass & cload)
 	} else {
 		
 		if (Length > 0) {
-			Data = new uint8[Length];
+			Data = new uint8_t[Length];
 			cload.Read(Data,Length);
 		}
 	

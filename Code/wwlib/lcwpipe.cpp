@@ -73,8 +73,8 @@ LCWPipe::LCWPipe(CompControl control, int blocksize) :
 	const int legacy_safety_margin = BlockSize / 128 + 1;
 	const int literal_only_safety_margin = ((BlockSize + 62) / 63) + 1;
 	SafetyMargin = MAX(legacy_safety_margin, literal_only_safety_margin);
-	Buffer = new char[BlockSize+SafetyMargin];
-	Buffer2 = new char[BlockSize+SafetyMargin];
+	Buffer = new uint8_t[BlockSize+SafetyMargin];
+	Buffer2 = new uint8_t[BlockSize+SafetyMargin];
 	BlockHeader.CompCount = 0xFFFF;
 }
 
@@ -201,8 +201,8 @@ int LCWPipe::Put(void const * source, int slen)
 			if (Counter == BlockSize) {
 				int len = LCW_Comp(Buffer, Buffer2, BlockSize);
 
-				BlockHeader.CompCount = (unsigned short)len;
-				BlockHeader.UncompCount = (unsigned short)BlockSize;
+				BlockHeader.CompCount = (uint16_t)len;
+				BlockHeader.UncompCount = (uint16_t)BlockSize;
 				total += Pipe::Put(&BlockHeader, sizeof(BlockHeader));
 				total += Pipe::Put(Buffer2, len);
 				Counter = 0;
@@ -219,8 +219,8 @@ int LCWPipe::Put(void const * source, int slen)
 			source = ((char *)source) + BlockSize;
 			slen -= BlockSize;
 
-			BlockHeader.CompCount = (unsigned short)len;
-			BlockHeader.UncompCount = (unsigned short)BlockSize;
+			BlockHeader.CompCount = (uint16_t)len;
+			BlockHeader.UncompCount = (uint16_t)BlockSize;
 			total += Pipe::Put(&BlockHeader, sizeof(BlockHeader));
 			total += Pipe::Put(Buffer2, len);
 		}
@@ -301,8 +301,8 @@ int LCWPipe::Flush(void)
 			*/
 			int len = LCW_Comp(Buffer, Buffer2, Counter);
 
-			BlockHeader.CompCount = (unsigned short)len;
-			BlockHeader.UncompCount = (unsigned short)Counter;
+			BlockHeader.CompCount = (uint16_t)len;
+			BlockHeader.UncompCount = (uint16_t)Counter;
 			total += Pipe::Put(&BlockHeader, sizeof(BlockHeader));
 			total += Pipe::Put(Buffer2, len);
 			Counter = 0;

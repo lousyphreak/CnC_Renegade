@@ -136,7 +136,7 @@ AirStripGameObjDef::~AirStripGameObjDef (void)
 //	Get_Class_ID
 //
 ////////////////////////////////////////////////////////////////
-uint32
+uint32_t
 AirStripGameObjDef::Get_Class_ID (void) const	
 { 
 	return CLASSID_GAME_OBJECT_DEF_AIRSTRIP;

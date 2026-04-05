@@ -26,6 +26,8 @@
 #ifndef __FANCYTOOLBAR_H
 #define __FANCYTOOLBAR_H
 
+#include <cstdint>
+
 
 //////////////////////////////////////////////////////////////
 //
@@ -56,7 +58,7 @@ class CFancyToolbar : public CControlBar
 	//{{AFX_VIRTUAL(CFancyToolbar)
 	public:
 	virtual void OnDraw(CDC* pDC);  // overridden to draw this view
-	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
+	virtual int32_t PreCreateWindow(CREATESTRUCT& cs);
 	protected:
 	//}}AFX_VIRTUAL
 
@@ -95,10 +97,10 @@ class CFancyToolbar : public CControlBar
         //
         //  Required methods
         //
-        CSize CalcFixedLayout (BOOL, BOOL)
+        CSize CalcFixedLayout (int32_t, int32_t)
             { return CSize (m_iButtons*BUTTON_WIDTH + BORDER_LEFT + BORDER_RIGHT, BUTTON_HEIGHT + BORDER_TOP + BORDER_BOTTOM); }
         
-        CSize CalcDynamicLayout( int nLength, DWORD dwMode )
+        CSize CalcDynamicLayout( int nLength, uint32_t dwMode )
             { return CSize (m_iButtons*BUTTON_WIDTH + BORDER_LEFT + BORDER_RIGHT, BUTTON_HEIGHT + BORDER_TOP + BORDER_BOTTOM); }
 
         void OnUpdateCmdUI (class CFrameWnd*, int) {}
@@ -106,13 +108,13 @@ class CFancyToolbar : public CControlBar
         //
         //  Creation routines
         //
-        void AddButton (UINT iBMPUp, UINT iBMPDn, int iCommandID, BUTTON_TYPE buttonType = TypeNormal);
-        BOOL Create (LPCTSTR pszWindowName, CWnd *pCParentWnd, UINT uiID);        
+        void AddButton (uint32_t iBMPUp, uint32_t iBMPDn, int iCommandID, BUTTON_TYPE buttonType = TypeNormal);
+        int32_t Create (LPCTSTR pszWindowName, CWnd *pCParentWnd, uint32_t uiID);        
 
         //
         //  State management routines
         //
-        void SetButtonState (int iCommandID, STATE_INFO newState, BOOL bRepaint = TRUE);
+        void SetButtonState (int iCommandID, STATE_INFO newState, int32_t bRepaint = TRUE);
         STATE_INFO GetButtonState (int iCommandID) const;
 
     protected:
@@ -128,8 +130,8 @@ class CFancyToolbar : public CControlBar
 
 	    //{{AFX_MSG(CFancyToolbar)
         afx_msg void OnPaint();
-	    afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
-	    afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
+	    afx_msg void OnLButtonDown(uint32_t nFlags, CPoint point);
+	    afx_msg void OnLButtonUp(uint32_t nFlags, CPoint point);
 	    //}}AFX_MSG
         DECLARE_MESSAGE_MAP()
 
@@ -137,7 +139,7 @@ class CFancyToolbar : public CControlBar
         //
         //  Static Methods
         //
-        static LRESULT CALLBACK fnMessageProc (HWND hWnd, UINT uiMessage, WPARAM wParam, LPARAM lParam);
+        static intptr_t CALLBACK fnMessageProc (HWND hWnd, uint32_t uiMessage, uintptr_t wParam, intptr_t lParam);
 
     private:
                
@@ -152,7 +154,7 @@ class CFancyToolbar : public CControlBar
             int iCommandID;
             STATE_INFO currentState;
             BUTTON_TYPE buttonType;
-            BOOL bVisible;
+            int32_t bVisible;
         } BUTTON_INFO;
 
         

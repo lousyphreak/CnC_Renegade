@@ -53,7 +53,7 @@ namespace WWOnline {
 *
 ******************************************************************************/
 
-const char* const GetChatErrorString(HRESULT hr)
+const char* const GetChatErrorString(int32_t hr)
 	{
 	switch (hr)
 		{
@@ -106,7 +106,7 @@ const char* const GetChatErrorString(HRESULT hr)
 *
 ******************************************************************************/
 
-const char* const GetNetUtilErrorString(HRESULT hr)
+const char* const GetNetUtilErrorString(int32_t hr)
 	{
 	switch (hr)
 		{
@@ -134,7 +134,7 @@ const char* const GetNetUtilErrorString(HRESULT hr)
 *
 ******************************************************************************/
 
-const char* const GetDownloadErrorString(HRESULT hr)
+const char* const GetDownloadErrorString(int32_t hr)
 	{
 	switch (hr)
 		{

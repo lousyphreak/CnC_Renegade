@@ -70,7 +70,7 @@ MPWolQuickMatchMenuClass::On_Init_Dialog (void)
 //
 ////////////////////////////////////////////////////////////////
 void
-MPWolQuickMatchMenuClass::On_Command (int ctrl_id, int message_id, DWORD param)
+MPWolQuickMatchMenuClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	switch (ctrl_id)
 	{

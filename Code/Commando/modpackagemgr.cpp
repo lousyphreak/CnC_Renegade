@@ -247,7 +247,7 @@ ModPackageMgrClass::Find_Package (const char *name)
 bool
 ModPackageMgrClass::Get_Mod_Map_Name_From_CRC_Index
 (
-	uint32			mod_file_crc,
+	uint32_t			mod_file_crc,
 	int				map_index,
 	StringClass *	mod_name,
 	StringClass *	map_name
@@ -297,8 +297,8 @@ ModPackageMgrClass::Get_Mod_Map_Name_From_CRC_Index
 bool
 ModPackageMgrClass::Get_Mod_Map_Name_From_CRC
 (
-	uint32			mod_name_crc,
-	uint32			map_name_crc,
+	uint32_t			mod_name_crc,
+	uint32_t			map_name_crc,
 	StringClass *	mod_name,
 	StringClass *	map_name
 )
@@ -351,7 +351,7 @@ bool
 ModPackageMgrClass::Find_Filename_From_CRC
 (
 	const char *	search_mask,
-	uint32			filename_crc,
+	uint32_t			filename_crc,
 	StringClass *	filename
 )
 {
@@ -403,7 +403,7 @@ ModPackageMgrClass::Find_Filename_From_CRC
 bool
 ModPackageMgrClass::Find_Package_From_CRC
 (
-	uint32			file_crc,
+	uint32_t			file_crc,
 	StringClass *	filename
 )
 {

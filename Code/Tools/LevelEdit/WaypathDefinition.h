@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 
@@ -69,7 +71,7 @@ public:
 	virtual ~WaypathDefinitionClass (void);
 
 	// From DefinitionClass
-	virtual uint32								Get_Class_ID (void) const { return CLASSID_WAYPATH; }
+	virtual uint32_t								Get_Class_ID (void) const { return CLASSID_WAYPATH; }
 
 	// From PersistClass
 	virtual const PersistFactoryClass &	Get_Factory (void) const;

@@ -34,6 +34,8 @@ for sending to a WOL game results server.
 #ifndef __RENGAMERES_H_
 #define __RENGAMERES_H_
 
+#include <cstdint>
+
 
 /*----------------------------------------------------------------------.
 | MACROS                                                                |
@@ -41,8 +43,8 @@ for sending to a WOL game results server.
 //#define GRSETTING_USING_WOLAPI				// Uncomment if the class is
 												// being used with the game
 												// (as opposed to the test applet)
-static unsigned long GR_SCORE_SCALE = 10000000;
-static unsigned int GR_BASE_SKU = 8704;
+static uint32_t GR_SCORE_SCALE = 10000000;
+static uint32_t GR_BASE_SKU = 8704;
 
 // Errors
 static const int GR_ERROR_BIND_FAILED		= -100;
@@ -134,21 +136,21 @@ public:
 		strcpy(_host, host); 
 	}
 	void setPort(int val)						{ _port = val; }
-	void setGameID(long unsigned int val)		{ _game_id = val; }	
-	void setPlayerCount(unsigned char val)		{ _player_count = val; }	
-	void setClanGame(unsigned char val)			{ _clan_game = val; }	
-	void setDuration(long unsigned int val)		{ _duration = val; }	
+	void setGameID(uint32_t val)		{ _game_id = val; }	
+	void setPlayerCount(uint8_t val)		{ _player_count = val; }	
+	void setClanGame(uint8_t val)			{ _clan_game = val; }	
+	void setDuration(uint32_t val)		{ _duration = val; }	
 	void setMapName(const char* val);
 	void setSKU(Language lang)					{ _sku = GR_BASE_SKU | lang; }	
-	void setStyle(GameStyle val)				{ _style = (unsigned char)val; }	
-	void setNumClans(unsigned char val)			{ _num_clans = val; }	
-	void setStartTime(long unsigned int val)	{ _start_time = val; }	
-	void setTournament(unsigned char val)		{ _tournament = val; }	
+	void setStyle(GameStyle val)				{ _style = (uint8_t)val; }	
+	void setNumClans(uint8_t val)			{ _num_clans = val; }	
+	void setStartTime(uint32_t val)	{ _start_time = val; }	
+	void setTournament(uint8_t val)		{ _tournament = val; }	
 
-	void addPlayer(const char* login = "INVALID", double score = 0.0, long unsigned int clan_id = 0,
-				   long unsigned int duration = 0, long unsigned int ip = 0, 
-				   long unsigned int deaths = 0, long unsigned int kills = 0, 
-				   long unsigned int selfkills = 0, long unsigned int damagepoints = 0);
+	void addPlayer(const char* login = "INVALID", double score = 0.0, uint32_t clan_id = 0,
+				   uint32_t duration = 0, uint32_t ip = 0, 
+				   uint32_t deaths = 0, uint32_t kills = 0, 
+				   uint32_t selfkills = 0, uint32_t damagepoints = 0);
 
 	int sendResults();
 
@@ -157,7 +159,7 @@ public:
 private:	
 	// METHODS
 	char** _addToArr(char** arr, const char* item);
-	long unsigned int* _addToArr(long unsigned int* arr, long unsigned int item);
+	uint32_t* _addToArr(uint32_t* arr, uint32_t item);
 
 
 	// MEMBERS
@@ -166,27 +168,27 @@ private:
 	int					_myplayercount;
 
 	// Game Specific
-	long unsigned int	_game_id;
-	unsigned char		_player_count;
-	unsigned char		_clan_game;				// Boolean
-	long unsigned int	_duration;				// Secs since epoch
+	uint32_t	_game_id;
+	uint8_t		_player_count;
+	uint8_t		_clan_game;				// Boolean
+	uint32_t	_duration;				// Secs since epoch
 	char*				_map_name;				// Must be NULL terminated
-	long unsigned int	_sku;
-	unsigned char		_style;					// Will be converted to an unsigned char
-	unsigned char		_num_clans;
-	long unsigned int	_start_time;			// Secs since epoch
-	unsigned char		_tournament;			// Boolean
+	uint32_t	_sku;
+	uint8_t		_style;					// Will be converted to an uint8_t
+	uint8_t		_num_clans;
+	uint32_t	_start_time;			// Secs since epoch
+	uint8_t		_tournament;			// Boolean
 
 	// Player Specific  (These are all arrays)
 	char**				_logins;				// Must be NULL terminated
-	long unsigned int*	_scores;
-	long unsigned int*	_clan_ids;
-	long unsigned int*	_durations;				// Secs since epoch
-	long unsigned int*	_ips;					// As integers, not dotted quads
-	long unsigned int*	_deaths;
-	long unsigned int*	_kills;
-	long unsigned int*	_selfkills;
-	long unsigned int*	_damagepoints;	
+	uint32_t*	_scores;
+	uint32_t*	_clan_ids;
+	uint32_t*	_durations;				// Secs since epoch
+	uint32_t*	_ips;					// As integers, not dotted quads
+	uint32_t*	_deaths;
+	uint32_t*	_kills;
+	uint32_t*	_selfkills;
+	uint32_t*	_damagepoints;	
 };
 
 

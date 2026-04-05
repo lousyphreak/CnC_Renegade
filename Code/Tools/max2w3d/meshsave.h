@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef MESHSAVE_H
@@ -72,8 +74,8 @@ struct VertStruct
 	Point2					TexCoord;
 	Color						Color;
 
-	uint32					MaxVertIdx;			// index of the MAX vertex that this vert came from
-	uint32					MaxFaceIdx;			// index of the MAX face that this vert came from
+	uint32_t					MaxVertIdx;			// index of the MAX vertex that this vert came from
+	uint32_t					MaxFaceIdx;			// index of the MAX face that this vert came from
 	VertStruct *			Next;					// used by the hash table...
 };
 
@@ -84,13 +86,13 @@ struct VertStruct
 *******************************************************************************************/
 struct FaceStruct
 {
-	uint32					MaxVidx[3];			// original 3ds-MAX vertex index (for smoothing computations)
-	uint32					OurVidx[3];			// vertex, vertex normal, and texture coord indices
-	uint32					MaterialIdx; 		// material index
-	uint32					SmGroup;				// smoothing group (not really needed, normals pre-calced)
+	uint32_t					MaxVidx[3];			// original 3ds-MAX vertex index (for smoothing computations)
+	uint32_t					OurVidx[3];			// vertex, vertex normal, and texture coord indices
+	uint32_t					MaterialIdx; 		// material index
+	uint32_t					SmGroup;				// smoothing group (not really needed, normals pre-calced)
 	Point3					Normal;		 		// Face normal
 	float32					Dist;			 		// Plane distance
-	uint32					Attributes;			// collision flags, sort method, etc
+	uint32_t					Attributes;			// collision flags, sort method, etc
 };
 
 /*******************************************************************************************
@@ -157,7 +159,7 @@ private:
 
 	// create the materials
 	int  scan_used_materials(Mesh & mesh, Mtl * nodemtl);
-	void create_materials(Mtl * nodemtl,DWORD wirecolor);
+	void create_materials(Mtl * nodemtl,uint32_t wirecolor);
 
 	// creating damage stages
 	void add_damage_stage(MeshSaveClass * damage_mesh);

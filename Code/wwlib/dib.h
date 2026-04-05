@@ -57,17 +57,17 @@ public:
 	int			Get_Height(void)	{ return Height; }
 	Surface &	Get_Surface(void)	{ return *Surface; }
 
-	void		Clear(unsigned char color);
+		void		Clear(uint8_t color);
 
 private:
 
 	bool				IsZombie;	// object constructor failed, its a living-dead object!
 	BITMAPINFO *		Info;		// info used in creating the dib + the palette.
 	HBITMAP				Handle;		// handle to the actual dib
-	unsigned char *		Pixels;		// address of memory containing the pixel data
+		uint8_t *		Pixels;		// address of memory containing the pixel data
 	int					Width;		// width of the dib
 	int					Height;		// height of the dib
-	unsigned char *		PixelBase;	// address of upper left pixel (this and DIBPitch abstract up/down DIBS)
+		uint8_t *		PixelBase;	// address of upper left pixel (this and DIBPitch abstract up/down DIBS)
 	int					Pitch;		// offset from DIBPixelBase to next row (can be negative for bottom-up DIBS)
 
 	BSurface *			Surface;	// Bsurface wrapped around the pixel buffer.

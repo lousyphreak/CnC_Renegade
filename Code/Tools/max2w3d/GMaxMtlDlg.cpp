@@ -53,16 +53,16 @@
 extern GMaxMtlDlg * GMaxMaterialDialog;
 #include <pshpack1.h>
 typedef struct DLGTEMPLATEEX{
-    WORD dlgVer;
-    WORD signature;
-    DWORD helpID;
-    DWORD exStyle;
-    DWORD style;
-    WORD cDlgItems;
-    short x;
-    short y;
-    short cx;
-    short cy;
+    uint16_t dlgVer;
+    uint16_t signature;
+    uint32_t helpID;
+    uint32_t exStyle;
+    uint32_t style;
+    uint16_t cDlgItems;
+    int16_t x;
+    int16_t y;
+    int16_t cx;
+    int16_t cy;
 } DLGTEMPLATEEX, *LPDLGTEMPLATEEX;
 #include <poppack.h>
 
@@ -71,10 +71,10 @@ typedef struct DLGTEMPLATEEX{
 
 #define WM_USER_UPDATE_MULTIMTL (WM_USER+141)
 
-static BOOL CALLBACK DisplacementMapDlgProc(HWND hwndDlg, UINT msg, WPARAM wPara,LPARAM lParam);
-static BOOL CALLBACK SurfaceTypePanelDlgProc(HWND hwndDlg, UINT msg, WPARAM wPara,LPARAM lParam);
-static BOOL CALLBACK PassCountPanelDlgProc(HWND hwndDlg, UINT msg, WPARAM wPara,LPARAM lParam);
-static BOOL CALLBACK PassCountDialogDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,LPARAM lParam);
+static int32_t CALLBACK DisplacementMapDlgProc(HWND hwndDlg, uint32_t msg, uintptr_t wPara,intptr_t lParam);
+static int32_t CALLBACK SurfaceTypePanelDlgProc(HWND hwndDlg, uint32_t msg, uintptr_t wPara,intptr_t lParam);
+static int32_t CALLBACK PassCountPanelDlgProc(HWND hwndDlg, uint32_t msg, uintptr_t wPara,intptr_t lParam);
+static int32_t CALLBACK PassCountDialogDlgProc(HWND hwndDlg, uint32_t msg, uintptr_t wParam,intptr_t lParam);
 static _Num_Of_NoNames(0); //Tracks the number addded to new material name
 GameMtl* ConvertStdMtl(Mtl* stdmtl);
 bool _UsingLargeFonts(false);
@@ -194,7 +194,7 @@ void GMaxMtlDlg::ReloadDialog()
 
 // GMaxMtlDlg::ActivateDlg -- Activates and deactivates the dialog                              
 //============================================================================================
-void GMaxMtlDlg::ActivateDlg(BOOL onoff){
+void GMaxMtlDlg::ActivateDlg(int32_t onoff){
 	for(int i = 0; i < TheMtl->Get_Pass_Count(); i++){
 		assert(PassDialog[i]);
 		PassDialog[i]->ActivateDlg(onoff);
@@ -210,7 +210,7 @@ void GMaxMtlDlg::Invalidate(){
 	#endif //WANT_DISPLACEMENT_MAPS
 	InvalidateRect(HwndPassCount,NULL,0);
 }
-BOOL	GMaxMtlDlg::DisplacementMapProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam){
+int32_t	GMaxMtlDlg::DisplacementMapProc(HWND hDlg, uint32_t message, uintptr_t wParam, intptr_t lParam){
 	switch (message){
 		case WM_INITDIALOG:
 		case WM_USER + 101:{
@@ -231,7 +231,7 @@ BOOL	GMaxMtlDlg::DisplacementMapProc(HWND hDlg, UINT message, WPARAM wParam, LPA
 			switch(LOWORD(wParam)){
 			case IDC_TEXTURE_BUTTON:
 				if(HIWORD(wParam) == BN_CLICKED){					
-					PostMessage(HwndEdit, WM_TEXMAP_BUTTON, TheMtl->Get_Displacement_Map_Index (), (LPARAM)TheMtl);
+					PostMessage(HwndEdit, WM_TEXMAP_BUTTON, TheMtl->Get_Displacement_Map_Index (), (intptr_t)TheMtl);
 				}
 			break;
 		}
@@ -239,12 +239,12 @@ BOOL	GMaxMtlDlg::DisplacementMapProc(HWND hDlg, UINT message, WPARAM wParam, LPA
 	return FALSE;
 }
 //============================================================================================
-BOOL	GMaxMtlDlg::SurfaceTypeProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam){
+int32_t	GMaxMtlDlg::SurfaceTypeProc(HWND hDlg, uint32_t message, uintptr_t wParam, intptr_t lParam){
 	switch (message){
 		case WM_INITDIALOG:{
 			//	Fill the combobox with the names of the different surface types
 			for (int index = 0; index < SURFACE_TYPE_MAX; index ++){
-				::SendDlgItemMessage (	hDlg,IDC_SURFACE_TYPE_COMBO,CB_ADDSTRING,0,(LPARAM)SURFACE_TYPE_STRINGS[index]);
+				::SendDlgItemMessage (	hDlg,IDC_SURFACE_TYPE_COMBO,CB_ADDSTRING,0,(intptr_t)SURFACE_TYPE_STRINGS[index]);
 			}
 			// Limit the range of the static sort level spinner to 0 - MAX_SORT_LEVEL.
 			int sort_level = TheMtl->Get_Sort_Level();
@@ -270,7 +270,7 @@ BOOL	GMaxMtlDlg::SurfaceTypeProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		}
 		case WM_USER + 101:{
 			//	Select the current surface type
-			::SendDlgItemMessage (	hDlg,IDC_SURFACE_TYPE_COMBO,CB_SETCURSEL,(WPARAM)TheMtl->Get_Surface_Type (),	0L);
+			::SendDlgItemMessage (	hDlg,IDC_SURFACE_TYPE_COMBO,CB_SETCURSEL,(uintptr_t)TheMtl->Get_Surface_Type (),	0L);
 			// Set the correct sort level
 			int sort_level = TheMtl->Get_Sort_Level();
 			ISpinnerControl *spinner = GetISpinner(::GetDlgItem(hDlg, IDC_SORT_LEVEL_SPIN));
@@ -309,7 +309,7 @@ BOOL	GMaxMtlDlg::SurfaceTypeProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			switch(LOWORD(wParam)){
 				case IDC_SURFACE_TYPE_COMBO:{
 					if(HIWORD(wParam) == CBN_SELCHANGE){
-						unsigned int type = ::SendDlgItemMessage (hDlg, IDC_SURFACE_TYPE_COMBO, CB_GETCURSEL, 0, 0L);
+						uint32_t type = ::SendDlgItemMessage (hDlg, IDC_SURFACE_TYPE_COMBO, CB_GETCURSEL, 0, 0L);
 						TheMtl->Set_Surface_Type (type);
 					}
 					break;
@@ -433,7 +433,7 @@ BOOL	GMaxMtlDlg::SurfaceTypeProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	return FALSE;
 }
 //============================================================================================
-BOOL	GMaxMtlDlg::PassCountProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam){
+int32_t	GMaxMtlDlg::PassCountProc(HWND hDlg, uint32_t message, uintptr_t wParam, intptr_t lParam){
 	switch (message){		
 		case WM_INITDIALOG:
 			break;
@@ -453,32 +453,32 @@ BOOL	GMaxMtlDlg::PassCountProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 }
 
 //============================================================================================
-static BOOL CALLBACK DisplacementMapDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,LPARAM lParam){
+static int32_t CALLBACK DisplacementMapDlgProc(HWND hwndDlg, uint32_t msg, uintptr_t wParam,intptr_t lParam){
 	GMaxMtlDlg * theDlg;
 	if (msg == WM_INITDIALOG) {
 		lParam = ((PROPSHEETPAGE*)lParam)->lParam;
 		theDlg = (GMaxMtlDlg*)lParam;
 		theDlg->HwndDisplacementMap = hwndDlg;
-		SetWindowLong(hwndDlg, GWL_USERDATA,(LPARAM)theDlg);
+		SetWindowLong(hwndDlg, GWL_USERDATA,(intptr_t)theDlg);
 	} else {
 		if ((theDlg = (GMaxMtlDlg *)GetWindowLong(hwndDlg, GWL_USERDATA) ) == NULL) {
 			return FALSE; 
 		}
 	}
 	theDlg->IsActive = 1;
-	BOOL res = theDlg->DisplacementMapProc(hwndDlg,msg,wParam,lParam);
+	int32_t res = theDlg->DisplacementMapProc(hwndDlg,msg,wParam,lParam);
 	theDlg->IsActive = 0;
 	return res;
 }
 
 //============================================================================================
-static BOOL CALLBACK SurfaceTypePanelDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,LPARAM lParam){
+static int32_t CALLBACK SurfaceTypePanelDlgProc(HWND hwndDlg, uint32_t msg, uintptr_t wParam,intptr_t lParam){
 	GMaxMtlDlg * theDlg;
 	if (msg == WM_INITDIALOG) {
 		lParam = ((PROPSHEETPAGE*)lParam)->lParam;
 		theDlg = (GMaxMtlDlg*)lParam;
 		theDlg->HwndSurfaceType = hwndDlg;
-		SetWindowLong(hwndDlg, GWL_USERDATA,(LPARAM)theDlg);
+		SetWindowLong(hwndDlg, GWL_USERDATA,(intptr_t)theDlg);
 		// Set HwndPassCount to HwndSurfaceType
 		theDlg->HwndPassCount = theDlg->HwndSurfaceType;
 		PropSheet_Changed(GetParent(hwndDlg), hwndDlg); //Enable the "Apply" at all time
@@ -488,21 +488,21 @@ static BOOL CALLBACK SurfaceTypePanelDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 		}
 	}
 	theDlg->IsActive = 1;
-	BOOL res = theDlg->SurfaceTypeProc(hwndDlg,msg,wParam,lParam);
+	int32_t res = theDlg->SurfaceTypeProc(hwndDlg,msg,wParam,lParam);
 	theDlg->IsActive = 0;
 
 	return res;
 }
 
 //============================================================================================
-static BOOL CALLBACK PassCountPanelDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,LPARAM lParam){
+static int32_t CALLBACK PassCountPanelDlgProc(HWND hwndDlg, uint32_t msg, uintptr_t wParam,intptr_t lParam){
 	GMaxMtlDlg * theDlg = (GMaxMtlDlg *)GetWindowLong(hwndDlg, GWL_USERDATA);
 	switch(msg){
 		case WM_INITDIALOG: {
 			lParam = ((PROPSHEETPAGE*)lParam)->lParam;
 			theDlg = (GMaxMtlDlg*)lParam;
 			theDlg->HwndPassCount = hwndDlg;
-			SetWindowLong(hwndDlg, GWL_USERDATA,(LPARAM)theDlg);
+			SetWindowLong(hwndDlg, GWL_USERDATA,(intptr_t)theDlg);
 			return FALSE;
 		}
 	}
@@ -510,7 +510,7 @@ static BOOL CALLBACK PassCountPanelDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam
 		return FALSE; 
 	}
 	theDlg->IsActive = 1;
-	BOOL res = theDlg->PassCountProc(hwndDlg,msg,wParam,lParam);
+	int32_t res = theDlg->PassCountProc(hwndDlg,msg,wParam,lParam);
 	theDlg->IsActive = 0;
 	return res;
 }
@@ -521,7 +521,7 @@ void GMaxMtlDlg::Set_Pass_Count_Dialog(void){
 		MAKEINTRESOURCE(IDD_GAMEMTL_PASS_COUNT_DIALOG),
 		HwndPassCount,
 		PassCountDialogDlgProc,
-		(LPARAM)TheMtl->Get_Pass_Count());
+		(intptr_t)TheMtl->Get_Pass_Count());
 	if (res>=0){
 		if(res<=0){
 			res = 1;
@@ -550,7 +550,7 @@ void GMaxMtlDlg::Set_Pass_Count_Dialog(void){
 }
 
 //============================================================================================
-static BOOL CALLBACK PassCountDialogDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,LPARAM lParam){
+static int32_t CALLBACK PassCountDialogDlgProc(HWND hwndDlg, uint32_t msg, uintptr_t wParam,intptr_t lParam){
 	switch (msg){
 		case WM_INITDIALOG:{
 			ISpinnerControl *spin =	SetupIntSpinner(hwndDlg,IDC_PASSCOUNT_SPIN, IDC_PASSCOUNT_EDIT,1,4,(int)lParam);
@@ -602,7 +602,7 @@ void GMaxMtlDlg::Build_Dialog(HWND hParent)// = NULL
 
 }
 //================================================
-int CALLBACK GameMtl_PropSheetProc( HWND hDlg, UINT msg, LPARAM lParam){
+int CALLBACK GameMtl_PropSheetProc( HWND hDlg, uint32_t msg, intptr_t lParam){
 	switch(msg){
 		case PSCB_INITIALIZED:{
 			ShowWindow(GetDlgItem(hDlg,IDCANCEL), SW_HIDE);
@@ -642,7 +642,7 @@ void GMaxMtlDlg::Make_PropertySheet(HWND hParent){
     ps_Pages[pos].pszIcon = MAKEINTRESOURCE(IDI_ICONW3D);
     ps_Pages[pos].pfnDlgProc = SurfaceTypePanelDlgProc;
     ps_Pages[pos].pszTitle = MAKEINTRESOURCE(IDS_GMAXSURFACE_TYPE);
-    ps_Pages[pos].lParam = (LPARAM)this;
+    ps_Pages[pos].lParam = (intptr_t)this;
     ps_Pages[pos].pfnCallback = NULL;
 	 pos++;
 	#ifdef WANT_DISPLACEMENT_MAPS
@@ -654,7 +654,7 @@ void GMaxMtlDlg::Make_PropertySheet(HWND hParent){
     ps_Pages[pos].pszIcon = MAKEINTRESOURCE(IDI_ICONW3D);
     ps_Pages[pos].pfnDlgProc = DisplacementMapDlgProc;
     ps_Pages[pos].pszTitle = MAKEINTRESOURCE(IDS_DISPLACEMENT_MAP);
-    ps_Pages[pos].lParam = (LPARAM)this;
+    ps_Pages[pos].lParam = (intptr_t)this;
     ps_Pages[pos].pfnCallback = NULL;
 	 pos++;
 	#endif //WANT_DISPLACEMENT_MAPS
@@ -689,7 +689,7 @@ void GMaxMtlDlg::Make_PropertySheet(HWND hParent){
 	PropSheet_SetCurSel(HwndEdit,NULL, 0);
 }
 //================================================
-static BOOL CALLBACK GmaxMaterialDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,LPARAM lParam){
+static int32_t CALLBACK GmaxMaterialDlgProc(HWND hwndDlg, uint32_t msg, uintptr_t wParam,intptr_t lParam){
 	return FALSE;
 }
 //================================================
@@ -729,7 +729,7 @@ void GMaxMtlDlg::Reinitialize(GameMtl* new_mtl, bool update_multimtl){// = false
 	::SendDlgItemMessage(HwndSurfaceType, IDC_ENABLE_SORT_LEVEL, BM_SETCHECK,
 		sort_level == SORT_LEVEL_NONE ? BST_UNCHECKED : BST_CHECKED, 0);
 	//Surfface type combo
-	::SendDlgItemMessage (HwndSurfaceType,IDC_SURFACE_TYPE_COMBO,CB_SETCURSEL,(WPARAM)TheMtl->Get_Surface_Type (),0L);
+	::SendDlgItemMessage (HwndSurfaceType,IDC_SURFACE_TYPE_COMBO,CB_SETCURSEL,(uintptr_t)TheMtl->Get_Surface_Type (),0L);
 	//==== ShowHide multimaterial stuff
 	if(update_multimtl){
 		::SendMessage(HwndSurfaceType, WM_USER_UPDATE_MULTIMTL, 0, 0);
@@ -761,7 +761,7 @@ void GMaxMtlDlg::Reset(GameMtl* new_mtl){
 }
 //============================================================================================
 //Adds a tooltip to a control
-void GMaxMtlDlg::AddToolTip(HWND hControl, UINT strID){
+void GMaxMtlDlg::AddToolTip(HWND hControl, uint32_t strID){
 
 	char str[MAX_PATH];
 	TOOLINFO    ti;
@@ -776,7 +776,7 @@ void GMaxMtlDlg::AddToolTip(HWND hControl, UINT strID){
 	HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS,  NULL,  WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,		
         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,CW_USEDEFAULT, hControl,NULL ,AppInstance, NULL  );
 	SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0,   0,    0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-   int res = SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM) (LPTOOLINFO) &ti);	
+   int res = SendMessage(hwndTT, TTM_ADDTOOL, 0, (intptr_t) (LPTOOLINFO) &ti);	
 }
 //============================================================================================
 void GMaxMtlDlg::LoadButtonBitmaps(HWND hDlg){
@@ -785,7 +785,7 @@ void GMaxMtlDlg::LoadButtonBitmaps(HWND hDlg){
 		HGetMtlBmp = LoadBitmap(AppInstance, MAKEINTRESOURCE(IDB_GETMTL));
 	}
 	if(NULL != HGetMtlBmp){
-		SendDlgItemMessage(hDlg,IDC_GETMTL, BM_SETIMAGE,(WPARAM) IMAGE_BITMAP, (LPARAM)HGetMtlBmp);
+		SendDlgItemMessage(hDlg,IDC_GETMTL, BM_SETIMAGE,(uintptr_t) IMAGE_BITMAP, (intptr_t)HGetMtlBmp);
 		AddToolTip(GetDlgItem(hDlg,IDC_GETMTL), IDS_GETMTL);
 	}
 	//Browse 
@@ -793,7 +793,7 @@ void GMaxMtlDlg::LoadButtonBitmaps(HWND hDlg){
 		HBrowseMtlBmp = LoadBitmap(AppInstance, MAKEINTRESOURCE(IDB_BROWSE));
 	}
 	if(NULL != HBrowseMtlBmp){
-		SendDlgItemMessage(hDlg,IDC_NAVIGATOR, BM_SETIMAGE,(WPARAM) IMAGE_BITMAP, (LPARAM)HBrowseMtlBmp);
+		SendDlgItemMessage(hDlg,IDC_NAVIGATOR, BM_SETIMAGE,(uintptr_t) IMAGE_BITMAP, (intptr_t)HBrowseMtlBmp);
 		AddToolTip(GetDlgItem(hDlg,IDC_NAVIGATOR), IDS_NAVIGATOR);
 	}
 	//Assign 
@@ -801,7 +801,7 @@ void GMaxMtlDlg::LoadButtonBitmaps(HWND hDlg){
 		HAssignMtlBmp = LoadBitmap(AppInstance, MAKEINTRESOURCE(IDB_ASSIGN));
 	}
 	if(NULL != HAssignMtlBmp){
-		SendDlgItemMessage(hDlg,IDC_ASSIGN, BM_SETIMAGE,(WPARAM) IMAGE_BITMAP, (LPARAM)HAssignMtlBmp);
+		SendDlgItemMessage(hDlg,IDC_ASSIGN, BM_SETIMAGE,(uintptr_t) IMAGE_BITMAP, (intptr_t)HAssignMtlBmp);
 		AddToolTip(GetDlgItem(hDlg,IDC_ASSIGN), IDS_ASSIGNMTL);
 	}
 	//Delete 
@@ -809,7 +809,7 @@ void GMaxMtlDlg::LoadButtonBitmaps(HWND hDlg){
 		HDeleteMtlBmp = LoadBitmap(AppInstance, MAKEINTRESOURCE(IDB_DELETEMTL));
 	}
 	if(NULL != HDeleteMtlBmp){
-		SendDlgItemMessage(hDlg,IDC_DELETEMTL, BM_SETIMAGE,(WPARAM) IMAGE_BITMAP, (LPARAM)HDeleteMtlBmp);
+		SendDlgItemMessage(hDlg,IDC_DELETEMTL, BM_SETIMAGE,(uintptr_t) IMAGE_BITMAP, (intptr_t)HDeleteMtlBmp);
 		AddToolTip(GetDlgItem(hDlg,IDC_DELETEMTL), IDS_DELETEMTL);
 	}
 	//New
@@ -817,7 +817,7 @@ void GMaxMtlDlg::LoadButtonBitmaps(HWND hDlg){
 		HNewMtlBmp = LoadBitmap(AppInstance, MAKEINTRESOURCE(IDB_NEWMTL));
 	}
 	if(NULL != HNewMtlBmp){
-		SendDlgItemMessage(hDlg,IDC_NEWMTL, BM_SETIMAGE,(WPARAM) IMAGE_BITMAP, (LPARAM)HNewMtlBmp);
+		SendDlgItemMessage(hDlg,IDC_NEWMTL, BM_SETIMAGE,(uintptr_t) IMAGE_BITMAP, (intptr_t)HNewMtlBmp);
 		AddToolTip(GetDlgItem(hDlg,IDC_NEWMTL), IDS_NEWMTL);
 	}
 	//Next Siblling
@@ -825,7 +825,7 @@ void GMaxMtlDlg::LoadButtonBitmaps(HWND hDlg){
 		HNextSiblingBmp = LoadBitmap(AppInstance, MAKEINTRESOURCE(IDB_NEXTSIBLING));
 	}
 	if(NULL != HNextSiblingBmp){
-		SendDlgItemMessage(hDlg,IDC_NEXTSIBLING, BM_SETIMAGE,(WPARAM) IMAGE_BITMAP, (LPARAM)HNextSiblingBmp);
+		SendDlgItemMessage(hDlg,IDC_NEXTSIBLING, BM_SETIMAGE,(uintptr_t) IMAGE_BITMAP, (intptr_t)HNextSiblingBmp);
 		AddToolTip(GetDlgItem(hDlg,IDC_NEXTSIBLING), IDS_NEXTSIBLING);
 	}
 	//Previous Siblling
@@ -833,7 +833,7 @@ void GMaxMtlDlg::LoadButtonBitmaps(HWND hDlg){
 		HPreviousSiblingBmp = LoadBitmap(AppInstance, MAKEINTRESOURCE(IDB_PREVIOUSSIBLING));
 	}
 	if(NULL != HPreviousSiblingBmp){
-		SendDlgItemMessage(hDlg,IDC_PREVIOUSSIBLING, BM_SETIMAGE,(WPARAM) IMAGE_BITMAP, (LPARAM)HPreviousSiblingBmp);
+		SendDlgItemMessage(hDlg,IDC_PREVIOUSSIBLING, BM_SETIMAGE,(uintptr_t) IMAGE_BITMAP, (intptr_t)HPreviousSiblingBmp);
 		AddToolTip(GetDlgItem(hDlg,IDC_PREVIOUSSIBLING), IDS_PREVIOUSSIBLING);
 	}
 /*
@@ -842,14 +842,14 @@ void GMaxMtlDlg::LoadButtonBitmaps(HWND hDlg){
 		HHavocBmp = LoadBitmap(AppInstance, MAKEINTRESOURCE(IDB_HAVOC));
 	}
 	if(NULL != HHavocBmp){
-		SendDlgItemMessage(hDlg,IDC_HAVOC, BM_SETIMAGE,(WPARAM) IMAGE_BITMAP, (LPARAM)HHavocBmp);
+		SendDlgItemMessage(hDlg,IDC_HAVOC, BM_SETIMAGE,(uintptr_t) IMAGE_BITMAP, (intptr_t)HHavocBmp);
 	}
 	//Banner Siblling
 	if(NULL == HBannerBmp){
 		HBannerBmp = LoadBitmap(AppInstance, MAKEINTRESOURCE(IDB_BANNER));
 	}
 	if(NULL != HHavocBmp){
-		SendDlgItemMessage(hDlg,IDC_BANNER, BM_SETIMAGE,(WPARAM) IMAGE_BITMAP, (LPARAM)HBannerBmp);
+		SendDlgItemMessage(hDlg,IDC_BANNER, BM_SETIMAGE,(uintptr_t) IMAGE_BITMAP, (intptr_t)HBannerBmp);
 	}
 */
 }
@@ -932,7 +932,7 @@ void GMaxMtlDlg::DeleteAllSceneMtl(){
 	MtlBaseLib* scene_mtls = Ip->GetSceneMtls();
 	if(scene_mtls){
 		if(!DontShowDeleteAll){
-			DWORD ret;
+			uint32_t ret;
 			char msg[MAX_PATH];
 			char title[MAX_PATH];
 			LoadString(AppInstance, IDS_DELETE_ALLMTLS, msg, MAX_PATH);
@@ -984,7 +984,7 @@ void GMaxMtlDlg::ShowHideControls(){
 		ShowWindow(GetDlgItem(HwndSurfaceType,IDC_SUBMTL_STATIC), SW_SHOW);
 		ShowWindow(GetDlgItem(HwndSurfaceType,IDC_SUBMTL_NUM), SW_SHOW);
 		int n_subs = Game_multi_mtl->NumSubMtls();
-		SendDlgItemMessage(HwndSurfaceType,IDC_SUBMTL_SPIN, UDM_SETRANGE,(WPARAM)0, MAKELONG(n_subs, 1));
+		SendDlgItemMessage(HwndSurfaceType,IDC_SUBMTL_SPIN, UDM_SETRANGE,(uintptr_t)0, MAKELONG(n_subs, 1));
 		ICustEdit* pEdit = GetICustEdit(GetDlgItem(HwndSurfaceType, IDC_SUBMTL_NUM));
 		pEdit->SetText(1);
 		ReleaseICustEdit(pEdit);
@@ -1013,7 +1013,7 @@ void GMaxMtlDlg::NextSibling(){
 				ReleaseICustEdit(pEdit);
 			}else{
 				if(!DontShowMtlType){
-					DWORD ret;
+					uint32_t ret;
 					char msg[MAX_PATH];
 					char title[MAX_PATH];
 					LoadString(AppInstance, IDS_NOTAGAMEMTL, msg, MAX_PATH);
@@ -1050,7 +1050,7 @@ void GMaxMtlDlg::PreviousSibling(){
 				Reinitialize((GameMtl*)new_mtl, false);
 			}else{
 				if(!DontShowMtlType){
-					DWORD ret;
+					uint32_t ret;
 					char msg[MAX_PATH];
 					char title[MAX_PATH];
 					LoadString(AppInstance, IDS_NOTAGAMEMTL, msg, MAX_PATH);
@@ -1065,7 +1065,7 @@ void GMaxMtlDlg::PreviousSibling(){
 	}
 }
 //============================================================================================
-BOOL CALLBACK GameMtlMainProc(HWND hMainDlg, UINT msg, WPARAM wParam, LPARAM lParam){
+int32_t CALLBACK GameMtlMainProc(HWND hMainDlg, uint32_t msg, uintptr_t wParam, intptr_t lParam){
 	switch(msg){
 		case WM_INITDIALOG:{
 				break;
@@ -1212,4 +1212,3 @@ GameMtl* GMaxMtlDlg::ConvertStdMtl(Mtl* stdmtl){
 	return gmtl;
 }
 #endif
-

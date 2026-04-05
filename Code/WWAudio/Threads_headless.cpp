@@ -17,11 +17,11 @@ HANDLE WWAudioThreadsClass::Create_Delayed_Release_Thread(LPVOID)
     return m_hDelayedReleaseThread;
 }
 
-void WWAudioThreadsClass::End_Delayed_Release_Thread(DWORD)
+void WWAudioThreadsClass::End_Delayed_Release_Thread(uint32_t)
 {
 }
 
-void WWAudioThreadsClass::Add_Delayed_Release_Object(RefCountClass *object, DWORD)
+void WWAudioThreadsClass::Add_Delayed_Release_Object(RefCountClass *object, uint32_t)
 {
     REF_PTR_RELEASE(object);
 }

@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // UpdatingDBDialog.h : header file
 //
@@ -46,7 +48,7 @@ public:
 	//{{AFX_VIRTUAL(UpdatingDBDialogClass)
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+	virtual intptr_t WindowProc(uint32_t message, uintptr_t wParam, intptr_t lParam);
 	virtual void PostNcDestroy();
 	//}}AFX_VIRTUAL
 
@@ -55,7 +57,7 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(UpdatingDBDialogClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };

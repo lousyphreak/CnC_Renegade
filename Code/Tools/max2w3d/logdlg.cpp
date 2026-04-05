@@ -47,8 +47,8 @@
 /*
 ** Static functions
 */
-static BOOL CALLBACK		_logdata_dialog_proc(HWND Hwnd,UINT message,WPARAM wParam,LPARAM lParam);
-static DWORD WINAPI		_logdata_thread_function(LPVOID log_obj_ptr);
+static int32_t CALLBACK		_logdata_dialog_proc(HWND Hwnd,uint32_t message,uintptr_t wParam,intptr_t lParam);
+static uint32_t WINAPI		_logdata_thread_function(LPVOID log_obj_ptr);
 
 
 /*********************************************************************************************** 
@@ -115,7 +115,7 @@ void LogDataDialogClass::printf(char * text, const va_list & args)
 	HWND ctrlHwnd = GetDlgItem(Hwnd, IDC_ANIM_LOG_RICHEDIT);
 
 	SendMessage(ctrlHwnd, EM_SETSEL, -1, -1 );
-	SendMessage(ctrlHwnd, EM_REPLACESEL, FALSE, (long)string_buffer);
+	SendMessage(ctrlHwnd, EM_REPLACESEL, FALSE, reinterpret_cast<LPARAM>(string_buffer));
 
 	last_buffer_index = buffer_index;
 	buffer_index+=strlen(string_buffer);
@@ -159,7 +159,7 @@ void LogDataDialogClass::rprintf(char *text, const va_list & args)
 	HWND ctrlHwnd = GetDlgItem(Hwnd, IDC_ANIM_LOG_RICHEDIT);
 
 	SendMessage(ctrlHwnd, EM_SETSEL, last_buffer_index, buffer_index );
-	SendMessage(ctrlHwnd, EM_REPLACESEL, FALSE, (long)string_buffer);
+	SendMessage(ctrlHwnd, EM_REPLACESEL, FALSE, reinterpret_cast<LPARAM>(string_buffer));
 
 	buffer_index = strlen(string_buffer) + last_buffer_index;
 
@@ -237,9 +237,9 @@ void LogDataDialogClass::Wait_OK()
 bool LogDataDialogClass::Dialog_Proc
 (
 	HWND hwnd,
-	UINT message,
-	WPARAM wParam,
-	LPARAM 
+	uint32_t message,
+	uintptr_t wParam,
+	intptr_t 
 )
 {
 	int code = HIWORD(wParam);
@@ -341,12 +341,12 @@ void LogDataDialogClass::Dialog_Init()
  * HISTORY:                                                                                    * 
  *   02/09/2000 JGA  : Created.                                                                 * 
  *=============================================================================================*/
-BOOL CALLBACK _logdata_dialog_proc
+int32_t CALLBACK _logdata_dialog_proc
 (
 	HWND hwnd,
-	UINT message,
-	WPARAM wParam,
-	LPARAM lParam
+	uint32_t message,
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	if (message == WM_INITDIALOG) {
@@ -370,14 +370,14 @@ BOOL CALLBACK _logdata_dialog_proc
 } // _logdata_dialog_proc
 
 
-DWORD WINAPI _logdata_thread_function(LPVOID log_obj_ptr)
+uint32_t WINAPI _logdata_thread_function(LPVOID log_obj_ptr)
 {
 	// put logdata dialog box (lpParameter is the "this" pointer of the object)
 	DialogBoxParam( AppInstance,
    					 MAKEINTRESOURCE(IDD_W3D_LOG),
 						 ((LogDataDialogClass*)log_obj_ptr)->ParentHwnd,
                    (DLGPROC) _logdata_dialog_proc,
-                   (LPARAM) log_obj_ptr);
+                   (intptr_t) log_obj_ptr);
  
 
 	// When this exits it should terminate the thread

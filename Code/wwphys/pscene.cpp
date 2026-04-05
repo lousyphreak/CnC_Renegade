@@ -1858,7 +1858,7 @@ void PhysicsSceneClass::Per_Frame_Statistics_Update(void)
 	CurrentStats.FrameCount ++;
 
 	if (CurrentStats.FrameCount >= STATISTICS_FRAMES) {
-		const auto clamp_stat = [](long long value) -> int
+		const auto clamp_stat = [](int64_t value) -> int
 		{
 			if (value > INT_MAX) {
 				return INT_MAX;
@@ -1876,10 +1876,10 @@ void PhysicsSceneClass::Per_Frame_Statistics_Update(void)
 		const AABTreeCullSystemClass::StatsStruct & static_stats = StaticCullingSystem->Get_Statistics();
 		const AABTreeCullSystemClass::StatsStruct & light_stats = StaticLightingSystem->Get_Statistics();
 
-		CurrentStats.CullNodeCount = clamp_stat(static_cast<long long>(dyn_stats.NodeCount) + static_cast<long long>(static_stats.NodeCount) + static_cast<long long>(light_stats.NodeCount));
-		CurrentStats.CullNodesAccepted = clamp_stat(static_cast<long long>(dyn_stats.NodesAccepted) + static_cast<long long>(static_stats.NodesAccepted) + static_cast<long long>(light_stats.NodesAccepted));
-		CurrentStats.CullNodesTriviallyAccepted = clamp_stat(static_cast<long long>(dyn_stats.NodesTriviallyAccepted) + static_cast<long long>(static_stats.NodesTriviallyAccepted) + static_cast<long long>(light_stats.NodesTriviallyAccepted));
-		CurrentStats.CullNodesRejected = clamp_stat(static_cast<long long>(dyn_stats.NodesRejected) + static_cast<long long>(static_stats.NodesRejected) + static_cast<long long>(light_stats.NodesRejected));
+		CurrentStats.CullNodeCount = clamp_stat(static_cast<int64_t>(dyn_stats.NodeCount) + static_cast<int64_t>(static_stats.NodeCount) + static_cast<int64_t>(light_stats.NodeCount));
+		CurrentStats.CullNodesAccepted = clamp_stat(static_cast<int64_t>(dyn_stats.NodesAccepted) + static_cast<int64_t>(static_stats.NodesAccepted) + static_cast<int64_t>(light_stats.NodesAccepted));
+		CurrentStats.CullNodesTriviallyAccepted = clamp_stat(static_cast<int64_t>(dyn_stats.NodesTriviallyAccepted) + static_cast<int64_t>(static_stats.NodesTriviallyAccepted) + static_cast<int64_t>(light_stats.NodesTriviallyAccepted));
+		CurrentStats.CullNodesRejected = clamp_stat(static_cast<int64_t>(dyn_stats.NodesRejected) + static_cast<int64_t>(static_stats.NodesRejected) + static_cast<int64_t>(light_stats.NodesRejected));
 
 		DynamicCullingSystem->Reset_Statistics();
 		StaticCullingSystem->Reset_Statistics();
@@ -2160,4 +2160,3 @@ void Force_Link_Modules(void)
 	FORCE_LINK(shakeablestaticphys);
 	FORCE_LINK(RenegadeTerrainPatch);
 }
-

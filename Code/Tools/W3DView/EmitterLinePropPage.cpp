@@ -114,7 +114,7 @@ EmitterLinePropPageClass::Initialize (void)
 	return ;
 }
 
-BOOL EmitterLinePropPageClass::OnInitDialog() 
+int32_t EmitterLinePropPageClass::OnInitDialog() 
 {
 	CPropertyPage::OnInitDialog();
 	
@@ -132,9 +132,9 @@ BOOL EmitterLinePropPageClass::OnInitDialog()
 	m_MapModeCombo.SetCurSel(m_MappingMode);
 
 	// Set the checkboxes
-	SendDlgItemMessage (IDC_MERGE_INTERSECTIONS_CHECK, BM_SETCHECK, (WPARAM)(m_MergeIntersections != 0));
-	SendDlgItemMessage (IDC_END_CAPS_CHECK, BM_SETCHECK, (WPARAM)(m_EndCaps != 0));
-	SendDlgItemMessage (IDC_DISABLE_SORTING_CHECK, BM_SETCHECK, (WPARAM)(m_DisableSorting != 0));
+	SendDlgItemMessage (IDC_MERGE_INTERSECTIONS_CHECK, BM_SETCHECK, (uintptr_t)(m_MergeIntersections != 0));
+	SendDlgItemMessage (IDC_END_CAPS_CHECK, BM_SETCHECK, (uintptr_t)(m_EndCaps != 0));
+	SendDlgItemMessage (IDC_DISABLE_SORTING_CHECK, BM_SETCHECK, (uintptr_t)(m_DisableSorting != 0));
 
 	bool enable = (m_pEmitterList->Get_Render_Mode() == W3D_EMITTER_RENDER_MODE_LINE);
 	::Enable_Dialog_Controls(m_hWnd,enable);
@@ -142,7 +142,7 @@ BOOL EmitterLinePropPageClass::OnInitDialog()
 	return TRUE;
 }
 
-BOOL EmitterLinePropPageClass::OnApply() 
+int32_t EmitterLinePropPageClass::OnApply() 
 {
 	//
 	//	Get the data from the controls
@@ -179,7 +179,7 @@ BOOL EmitterLinePropPageClass::OnApply()
 }
 
 
-BOOL EmitterLinePropPageClass::OnCommand(WPARAM wParam, LPARAM lParam) 
+int32_t EmitterLinePropPageClass::OnCommand(uintptr_t wParam, intptr_t lParam) 
 {
 	switch (LOWORD (wParam))
 	{
@@ -214,7 +214,7 @@ BOOL EmitterLinePropPageClass::OnCommand(WPARAM wParam, LPARAM lParam)
 	return CPropertyPage::OnCommand(wParam, lParam);
 }
 
-BOOL EmitterLinePropPageClass::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult) 
+int32_t EmitterLinePropPageClass::OnNotify(uintptr_t wParam, intptr_t lParam, intptr_t* pResult) 
 {
 	//
 	//	Update the spinner control if necessary

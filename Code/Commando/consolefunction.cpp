@@ -1902,7 +1902,7 @@ public:
 	virtual	void Activate( const char * input ) {
       WWASSERT(input != NULL);
       int delay = atoi(input);
-		PacketManager.Set_Flush_Frequency((unsigned long) delay);
+		PacketManager.Set_Flush_Frequency((uint32_t) delay);
 		if (delay) {
 			Print("Packets will be sent no more than %d times per second.\n", 1000 / delay);
 		} else {
@@ -3316,7 +3316,7 @@ public:
 
 	virtual	void Activate( const char * input ) {
       WWASSERT(input != NULL);
-      ULONG bbo = (ULONG) ::atol(input);
+      uint32_t bbo = (uint32_t) ::atol(input);
 		if (bbo > 0) {
 
       	if (cNetwork::I_Am_Server()) {
@@ -3588,7 +3588,7 @@ public:
 			}
 		}
 
-		unsigned char sign;
+		uint8_t sign;
 		if (sscanf (input, "%c", &sign) == 1 && (sign=='+' || sign=='-')) {
 
 			if (sign=='+') i++;
@@ -3916,10 +3916,10 @@ public:
 
 				if (active && The_Game()) {
 
-					unsigned long time = The_Game()->Get_Time_Remaining_Seconds();
-					unsigned long seconds = time % 60;
-					unsigned long minutes = (time / 60) % 60;
-					unsigned long hours = (time / (60*60));
+					uint32_t time = The_Game()->Get_Time_Remaining_Seconds();
+					uint32_t seconds = time % 60;
+					uint32_t minutes = (time / 60) % 60;
+					uint32_t hours = (time / (60*60));
 
 
 					if (The_Game()->Is_Gameplay_Permitted()) {
@@ -3972,8 +3972,8 @@ public:
 
 		if (cNetwork::I_Am_Server() && The_Game() && The_Game()->IsDedicated.Is_True() && cNetwork::PServerConnection != NULL) {
 
-			unsigned long time = TIMEGETTIME();
-			unsigned long bw = 0;
+			uint32_t time = TIMEGETTIME();
+			uint32_t bw = 0;
 
 			if (cNetwork::PServerConnection->Get_Num_RHosts() == 0) {
 				ConsoleBox.Print("No players\n");
@@ -3997,17 +3997,17 @@ public:
 							strcpy(temp_name, short_name.Peek_Buffer());
 							strncat(temp_name, "                    ", 14-len);
 
-							unsigned long dur = (time - client->Get_Creation_Time()) / 1000;
+							uint32_t dur = (time - client->Get_Creation_Time()) / 1000;
 
-							unsigned long seconds = dur % 60;
-							unsigned long minutes = (dur / 60) % 60;
-							unsigned long hours = (dur / (60*60));
+							uint32_t seconds = dur % 60;
+							uint32_t minutes = (dur / 60) % 60;
+							uint32_t hours = (dur / (60*60));
 
 							bw += PacketManager.Get_Compressed_Bandwidth_Out(&client->Get_Address());
 
 							char addr_string[128];
 							sockaddr_in *addr = &client->Get_Address();
-							const uint32 address = ntohl(addr->sin_addr.s_addr);
+							const uint32_t address = ntohl(addr->sin_addr.s_addr);
 							sprintf(addr_string, "%d.%d.%d.%d;%u",
 								(int)((address >> 24) & 0xFF),
 								(int)((address >> 16) & 0xFF),
@@ -4249,7 +4249,7 @@ public:
 	virtual	const char * Get_Help( void )	{ return "PAGE Nickname Message - Page a Westwood Online user."; }
 	virtual	void Activate( const char * input ) {
 
-		static unsigned long last_page = 0;
+		static uint32_t last_page = 0;
 
 		#if !RENEGADE_WITH_LEGACY_WOL
 		(void)input;
@@ -4265,7 +4265,7 @@ public:
 			RefPtr<WWOnline::Session> wol_session = WWOnline::Session::GetInstance(false);
 			if (wol_session.IsValid()) {
 				
-				unsigned long time = TIMEGETTIME();
+				uint32_t time = TIMEGETTIME();
 				if (time < last_page || time - last_page > 1000) {
 					last_page = time;
 
@@ -4718,7 +4718,7 @@ public:
 		   Print(Get_Help());
 		} else {
 
-			ULONG ip = p_player->Get_Ip_Address();
+			uint32_t ip = p_player->Get_Ip_Address();
 			HOSTENT * p_host = ::gethostbyaddr((char *) &ip, sizeof(ip), AF_INET);
 			char resolved_ip[100] = "";
 			if (p_host != NULL) {

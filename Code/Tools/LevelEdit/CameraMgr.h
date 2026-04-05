@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 
@@ -159,7 +161,7 @@ class CameraMgr
 		///////////////////////////////////////////////////
 		//	Friends
 		///////////////////////////////////////////////////
-		friend LRESULT CALLBACK fnCameraKeyboardHook (int code, WPARAM wParam, LPARAM lParam);
+		friend intptr_t CALLBACK fnCameraKeyboardHook (int code, uintptr_t wParam, intptr_t lParam);
 		friend class CLevelEditView;
 
 		///////////////////////////////////////////////////
@@ -210,7 +212,7 @@ class CameraMgr
 		HermiteSpline3DClass		m_FlyToSpline;
 		Matrix3D						m_FlyToStartTransform;
 		Matrix3D						m_FlyToEndTransform;
-		DWORD							m_FlyToStartTime;
+		uint32_t							m_FlyToStartTime;
 
 		SoldierGameObj *			m_WalkThruObj;
 		SoldierGameObjDef *		m_WalkThruDef;

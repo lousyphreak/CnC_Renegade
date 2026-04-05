@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __ENCYCLOPEDIAMGR_H
@@ -118,7 +120,7 @@ public:
 	//
 	//	Inherited
 	//
-	uint32				Chunk_ID (void) const			{ return CHUNKID_ENCYCLOPEDIAMGR; }
+	uint32_t				Chunk_ID (void) const			{ return CHUNKID_ENCYCLOPEDIAMGR; }
 	
 private:
 	

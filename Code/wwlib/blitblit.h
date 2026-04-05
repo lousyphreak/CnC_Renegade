@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -121,8 +123,8 @@ class BlitPlainXlat : public Blitter {
 		virtual void BlitForward(void * dest, void const * source, int len) const
 		{
 			for (int index = 0; index < len; index++) {
-				unsigned char color = *(unsigned char const *)source;
-				source = ((unsigned char const *)source)+1;
+				uint8_t color = *(uint8_t const *)source;
+				source = ((uint8_t const *)source)+1;
 				*((T *)dest) = TranslateTable[color];
 				dest = ((T *)dest) + 1;
 			}
@@ -152,8 +154,8 @@ class BlitTransXlat : public Blitter {
 		virtual void BlitForward(void * dest, void const * source, int len) const
 		{
 			for (int index = 0; index < len; index++) {
-				unsigned char color = *(unsigned char const *)source;
-				source = ((unsigned char const *)source)+1;
+				uint8_t color = *(uint8_t const *)source;
+				source = ((uint8_t const *)source)+1;
 				if (color != 0) {
 					*((T *)dest) = TranslateTable[color];
 				}
@@ -182,12 +184,12 @@ class BlitTransXlat : public Blitter {
 template<class T>
 class BlitTransRemapXlat : public Blitter {
 	public:
-		BlitTransRemapXlat(unsigned char const * remapper, T const * translator) : RemapTable(remapper), TranslateTable(translator) {assert(RemapTable != NULL);assert(TranslateTable != NULL);}
+		BlitTransRemapXlat(uint8_t const * remapper, T const * translator) : RemapTable(remapper), TranslateTable(translator) {assert(RemapTable != NULL);assert(TranslateTable != NULL);}
 		virtual void BlitForward(void * dest, void const * source, int length) const
 		{
 			for (int index = 0; index < length; index++) {
-				unsigned char color = *(unsigned char const *)source;
-				source = ((unsigned char const *)source)+1;
+				uint8_t color = *(uint8_t const *)source;
+				source = ((uint8_t const *)source)+1;
 				if (color != 0) {
 					*((T *)dest) = TranslateTable[RemapTable[color]];
 				}
@@ -203,7 +205,7 @@ class BlitTransRemapXlat : public Blitter {
 		virtual void BlitBackward(void * dest, void const * source, int length) const {BlitForward(dest, source, length);}
 
 	private:
-		unsigned char const * RemapTable;
+		uint8_t const * RemapTable;
 		T const * TranslateTable;
 };
 
@@ -218,13 +220,13 @@ class BlitTransRemapXlat : public Blitter {
 template<class T>
 class BlitTransZRemapXlat : public Blitter {
 	public:
-		BlitTransZRemapXlat(unsigned char const * const * remapper, T const * translator) : RemapTable(remapper), TranslateTable(translator) {assert(RemapTable != NULL);assert(TranslateTable != NULL);}
+		BlitTransZRemapXlat(uint8_t const * const * remapper, T const * translator) : RemapTable(remapper), TranslateTable(translator) {assert(RemapTable != NULL);assert(TranslateTable != NULL);}
 		virtual void BlitForward(void * dest, void const * source, int length) const
 		{
-			unsigned char const * rtable = *RemapTable;
+			uint8_t const * rtable = *RemapTable;
 			for (int index = 0; index < length; index++) {
-				unsigned char color = *(unsigned char const *)source;
-				source = ((unsigned char const *)source)+1;
+				uint8_t color = *(uint8_t const *)source;
+				source = ((uint8_t const *)source)+1;
 				if (color != 0) {
 					*((T *)dest) = TranslateTable[rtable[color]];
 				}
@@ -240,7 +242,7 @@ class BlitTransZRemapXlat : public Blitter {
 		virtual void BlitBackward(void * dest, void const * source, int length) const {BlitForward(dest, source, length);}
 
 	private:
-		unsigned char const * const * RemapTable;
+		uint8_t const * const * RemapTable;
 		T const * TranslateTable;
 };
 
@@ -258,8 +260,8 @@ class BlitTransDarken : public Blitter {
 		virtual void BlitForward(void * dest, void const * source, int length) const
 		{
 			for (int index = 0; index < length; index++) {
-				unsigned char color = *(unsigned char const *)source;
-				source = ((unsigned char const *)source)+1;
+				uint8_t color = *(uint8_t const *)source;
+				source = ((uint8_t const *)source)+1;
 				if (color != 0) {
 					*((T *)dest) = (T)((((*(T *)dest) >> 1) & Mask));
 				}
@@ -291,8 +293,8 @@ class BlitTransRemapDest : public Blitter {
 		virtual void BlitForward(void * dest, void const * source, int length) const
 		{
 			for (int index = 0; index < length; index++) {
-				unsigned char color = *(unsigned char const *)source;
-				source = ((unsigned char const *)source)+1;
+				uint8_t color = *(uint8_t const *)source;
+				source = ((uint8_t const *)source)+1;
 				if (color != 0) {
 					*((T *)dest) = RemapTable[*((T *)dest)];
 				}
@@ -353,8 +355,8 @@ class BlitTransLucent50 : public Blitter {
 		virtual void BlitForward(void * dest, void const * source, int length) const
 		{
 			for (int index = 0; index < length; index++) {
-				unsigned char color = *(unsigned char const *)source;
-				source = ((unsigned char *)source) + 1;
+				uint8_t color = *(uint8_t const *)source;
+				source = ((uint8_t *)source) + 1;
 				if (color != 0) {
 					*((T *)dest) = (T)((((*(T *)dest) >> 1) & Mask) + ((TranslateTable[color] >> 1) & Mask));
 				}
@@ -386,8 +388,8 @@ class BlitTransLucent25 : public Blitter {
 		virtual void BlitForward(void * dest, void const * source, int length) const
 		{
 			for (int index = 0; index < length; index++) {
-				unsigned char color = *(unsigned char const *)source;
-				source = ((unsigned char *)source) + 1;
+				uint8_t color = *(uint8_t const *)source;
+				source = ((uint8_t *)source) + 1;
 				if (color != 0) {
 					T qsource = (T)(((TranslateTable[color] >> 2) & Mask));
 					T qdest = (T)((((*(T *)dest) >> 2) & Mask));
@@ -422,8 +424,8 @@ class BlitTransLucent75 : public Blitter {
 		virtual void BlitForward(void * dest, void const * source, int length) const
 		{
 			for (int index = 0; index < length; index++) {
-				unsigned char color = *(unsigned char const *)source;
-				source = ((unsigned char *)source) + 1;
+				uint8_t color = *(uint8_t const *)source;
+				source = ((uint8_t *)source) + 1;
 				if (color != 0) {
 					T qsource = (T)(((TranslateTable[color] >> 2) & Mask));
 					T qdest = (T)(((*(T *)dest) >> 2) & Mask);
@@ -454,7 +456,7 @@ class BlitTransLucent75 : public Blitter {
 */
 #if defined(_MSC_VER) && defined(_M_IX86) && RENEGADE_WITH_X86_ASM
 
-inline void BlitTrans<unsigned char>::BlitForward(void * dest, void const * source, int len) const
+inline void BlitTrans<uint8_t>::BlitForward(void * dest, void const * source, int len) const
 {
 	__asm {
 		mov	esi,[source]
@@ -479,9 +481,9 @@ fini:;
 }
 
 
-inline void BlitTransXlat<unsigned short>::BlitForward(void * dest, void const * source, int len) const
+inline void BlitTransXlat<uint16_t>::BlitForward(void * dest, void const * source, int len) const
 {
-	unsigned short const * xlator = TranslateTable;
+	uint16_t const * xlator = TranslateTable;
 
 	__asm {
 		mov	ebx,[xlator]
@@ -509,10 +511,10 @@ over:;
 }
 
 
-inline void BlitTransRemapXlat<unsigned short>::BlitForward(void * dest, void const * source, int len) const
+inline void BlitTransRemapXlat<uint16_t>::BlitForward(void * dest, void const * source, int len) const
 {
-	unsigned short const * translator = TranslateTable;
-	unsigned char const * remapper = RemapTable;
+	uint16_t const * translator = TranslateTable;
+	uint8_t const * remapper = RemapTable;
 
 	__asm {
 		mov	ecx,[len]
@@ -546,10 +548,10 @@ over:;
 }
 
 
-inline void BlitTransZRemapXlat<unsigned short>::BlitForward(void * dest, void const * source, int len) const
+inline void BlitTransZRemapXlat<uint16_t>::BlitForward(void * dest, void const * source, int len) const
 {
-	unsigned short const * translator = TranslateTable;
-	unsigned char const * remapper = *RemapTable;
+	uint16_t const * translator = TranslateTable;
+	uint8_t const * remapper = *RemapTable;
 
 	__asm {
 		mov	ecx,[len]
@@ -583,9 +585,9 @@ over:;
 }
 
 
-inline void BlitPlainXlat<unsigned short>::BlitForward(void * dest, void const * source, int len) const
+inline void BlitPlainXlat<uint16_t>::BlitForward(void * dest, void const * source, int len) const
 {
-	unsigned short const * remapper = TranslateTable;
+	uint16_t const * remapper = TranslateTable;
 	__asm {
 		mov	ebx,[remapper]
 		mov	ecx,[len]

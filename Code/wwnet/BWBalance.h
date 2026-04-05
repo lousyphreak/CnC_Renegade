@@ -35,6 +35,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #pragma once
+
+#include <cstdint>
 #ifndef _BWBALANCE_H
 
 class cConnection;
@@ -63,7 +65,7 @@ class BandwidthBalancerClass
 
 	private:
 
-		unsigned long Allocate_Bandwidth(float average_priority, int bw_adjust, unsigned long total_server_bbo);
+		uint32_t Allocate_Bandwidth(float average_priority, int bw_adjust, uint32_t total_server_bbo);
 		void Allocate_Client_Structs(int num_structs);
 		void Adjust_Connection_Budget(cConnection *connection);
 
@@ -73,10 +75,10 @@ class BandwidthBalancerClass
 		*/
 		struct ClientInfoStruct {
 			float AveragePriority;
-			unsigned long MaxBpsDown;
-			unsigned long AllocatedBBO;
+			uint32_t MaxBpsDown;
+			uint32_t AllocatedBBO;
 			bool IsLoading;
-			unsigned long ID;
+			uint32_t ID;
 			bool IsDone;
 		};
 

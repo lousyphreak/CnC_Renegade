@@ -62,12 +62,12 @@ END_MESSAGE_MAP()
 //	WindowProc
 //
 //////////////////////////////////////////////////////////////////////////////
-LRESULT
+intptr_t
 FileCopyDialogClass::WindowProc
 (
-	UINT		message,
-	WPARAM	wParam,
-	LPARAM	lParam
+	uint32_t		message,
+	uintptr_t	wParam,
+	intptr_t	lParam
 )
 {	
 	if (message == WM_USER + 101) {
@@ -83,7 +83,7 @@ FileCopyDialogClass::WindowProc
 //	OnInitDialog
 //
 //////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 FileCopyDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog();

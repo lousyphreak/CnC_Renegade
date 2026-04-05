@@ -36,6 +36,8 @@
 #ifndef _REGISTRY_MANAGER_H
 #define _REGISTRY_MANAGER_H
 
+#include <cstdint>
+
 // Includes
 #include "Registry.h"
 
@@ -67,23 +69,23 @@ class RegistryManagerClass {
       bool Get_Target_WOL_Pathname (WOLComponentEnum wolcomponent, WideStringClass &pathname);
 		bool Get_Target_WOL_Path (WOLComponentEnum wolcomponent, WideStringClass &path);
 		bool Get_Target_WOL_Folder (WOLComponentEnum wolcomponent, WideStringClass &folder);
-		bool Get_Target_WOL_Version (WOLComponentEnum wolcomponent, DWORD &version);
+		bool Get_Target_WOL_Version (WOLComponentEnum wolcomponent, uint32_t &version);
 		bool Use_IGR_Settings (bool &useigrsettings);
 		
 		void Register_Game (const WideStringClass &name,
 								  const WideStringClass &installpathname,
 								  const WideStringClass &folderpath,
 								  const WideStringClass &desktopshortcutpathname,
-								  DWORD languageid,
+								  uint32_t languageid,
 								  const StringClass &serialnumber,
-								  DWORD sku,
-								  DWORD version);
+								  uint32_t sku,
+								  uint32_t version);
 
 		void Register_WOLAPI (const WideStringClass &folderpath,
 			  						 const WideStringClass &installpathname,
 			  						 const WideStringClass &name,
-			  						 DWORD sku,
-			  						 DWORD version,
+			  						 uint32_t sku,
+			  						 uint32_t version,
 									 bool	 useigrsettings);
 
 		void Update_WOLAPI();
@@ -91,12 +93,12 @@ class RegistryManagerClass {
 		void Register_WOLRegister (const WideStringClass &folderpath,
 			  								const WideStringClass &installpathname,
 			  								const WideStringClass &name,
-			  								DWORD sku,
-											DWORD version);
+			  								uint32_t sku,
+											uint32_t version);
 
 		void Register_WOLBrowser (const WideStringClass &installpathname,
 			  							  const WideStringClass &name,
-			  							  DWORD version);
+			  							  uint32_t version);
 
 		bool Get_WOL_Account (unsigned index, WideStringClass &name, WideStringClass &password);
 		void Set_Preferred_WOL_Account (const WideStringClass &accountname);
@@ -105,10 +107,10 @@ class RegistryManagerClass {
 	protected:
 		
 		bool _cdecl Get_String (HKEY rootkey, WideStringClass *string, ...);
-		bool _cdecl Get_Value (HKEY rootkey, DWORD *value, ...);
+		bool _cdecl Get_Value (HKEY rootkey, uint32_t *value, ...);
 		bool _cdecl Set_String (HKEY rootkey, const WCHAR *string, ...);
-		bool _cdecl Set_Value (HKEY rootkey, DWORD value, ...);
-		bool _cdecl Get_Key (HKEY rootkey, DWORD keyindex, StringClass *keyname, ...);
+		bool _cdecl Set_Value (HKEY rootkey, uint32_t value, ...);
+		bool _cdecl Get_Key (HKEY rootkey, uint32_t keyindex, StringClass *keyname, ...);
 
 		char *WOLKeys [COMPONENT_COUNT];
 };

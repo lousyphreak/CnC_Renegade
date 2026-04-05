@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef _SUBTITLEPARSER_H_
@@ -73,12 +75,12 @@ private:
 	bool Parse_Sub_Title(wchar_t* string, SubTitleClass* subTitle);
 	void Parse_Token(wchar_t* token, wchar_t* param, SubTitleClass* subTitle);
 	wchar_t* Get_Next_Line(void);
-	unsigned int Get_Line_Number(void) const	{return mLineNumber;}
+	uint32_t Get_Line_Number(void) const	{return mLineNumber;}
 
 	static TokenHook mTokenHooks[];
 	Straw& mInput;
 	wchar_t mBuffer[LINE_MAX];
-	unsigned int mLineNumber;
+	uint32_t mLineNumber;
 };
 
 #endif // _SUBTITLEPARSER_H_

@@ -76,7 +76,7 @@
 							 }
 
 
-Surface * Read_PCX_File(FileClass & file_handle, PaletteClass * palette, void * Buff, long Size)
+Surface * Read_PCX_File(FileClass & file_handle, PaletteClass * palette, void * Buff, int32_t Size)
 {
 	unsigned					i, j;
 	unsigned					rle;
@@ -164,5 +164,4 @@ Surface * Read_PCX_File(FileClass & file_handle, PaletteClass * palette, void * 
 	file_handle.Close();
 	return pic;
 }
-
 

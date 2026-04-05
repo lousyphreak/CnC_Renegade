@@ -60,8 +60,8 @@ static const int MAX_USERNAME_LEN = 64;
 
 static const WCHAR INVITE_CMD[] = L"<WWINVITE>";
 static const WCHAR DECLINE_CMD[] = L"<WWDECLINE>";
-static const unsigned long INVITE_CMD_LEN = ((sizeof(INVITE_CMD) / sizeof(WCHAR)) - 1);
-static const unsigned long DECLINE_CMD_LEN = ((sizeof(DECLINE_CMD) / sizeof(WCHAR)) - 1);
+static const uint32_t INVITE_CMD_LEN = ((sizeof(INVITE_CMD) / sizeof(WCHAR)) - 1);
+static const uint32_t DECLINE_CMD_LEN = ((sizeof(DECLINE_CMD) / sizeof(WCHAR)) - 1);
 
 WOLBuddyMgr* WOLBuddyMgr::_mInstance = NULL;
 
@@ -208,21 +208,21 @@ void WOLBuddyMgr::LoadIgnoreList(void)
 	mIgnoreList.clear();
 
 	HKEY hKey;
-	LONG result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, APPLICATION_SUB_KEY_NAME_IGNORE_LIST, 0, KEY_READ, &hKey);
+	int32_t result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, APPLICATION_SUB_KEY_NAME_IGNORE_LIST, 0, KEY_READ, &hKey);
 
 	if (ERROR_SUCCESS == result)
 		{
 		// Build a list of users to ignore
 		char valueName[128];
-		unsigned long valueSize = sizeof(valueName);
+		uint32_t valueSize = sizeof(valueName);
 		int index = 0;
 
 		while (RegEnumValue(hKey, index, valueName, &valueSize, 0, NULL, NULL, NULL) == ERROR_SUCCESS)
 			{
-			DWORD type = 0;
+			uint32_t type = 0;
 			char name[MAX_USERNAME_LEN];
-			DWORD nameSize = sizeof(name);
-			result = RegQueryValueEx(hKey, valueName, NULL, &type, (LPBYTE)name, (DWORD*)&nameSize);
+			uint32_t nameSize = sizeof(name);
+			result = RegQueryValueEx(hKey, valueName, NULL, &type, (LPBYTE)name, (uint32_t*)&nameSize);
 
 			if ((ERROR_SUCCESS == result) && (REG_SZ == type) && strlen(name))
 				{
@@ -271,7 +271,7 @@ void WOLBuddyMgr::SaveIgnoreList(void)
 			{
 			reg.Deleta_All_Values();
 
-			for (unsigned int index = 0; index < mIgnoreList.size(); ++index)
+			for (uint32_t index = 0; index < mIgnoreList.size(); ++index)
 				{
 				char valueName[64];
 				sprintf(valueName, "Ignore%d", (index + 1));
@@ -420,9 +420,9 @@ bool WOLBuddyMgr::IsBuddy(const WCHAR* name) const
 void WOLBuddyMgr::RefreshBuddyInfo(void)
 	{
 	const UserList& buddies = mWOLSession->GetBuddyList();
-	const unsigned int count = buddies.size();
+	const uint32_t count = buddies.size();
 
-	for (unsigned int index = 0; index < count; ++index)
+	for (uint32_t index = 0; index < count; ++index)
 		{
 		const RefPtr<UserData>& buddy = buddies[index];
 		mWOLSession->RequestLocateUser(buddy);
@@ -625,7 +625,7 @@ void WOLBuddyMgr::RemoveIgnore(const WCHAR* name)
 
 bool WOLBuddyMgr::IsIgnored(const WCHAR* name) const
 	{
-	for (unsigned int index = 0; index < mIgnoreList.size(); index++)
+	for (uint32_t index = 0; index < mIgnoreList.size(); index++)
 		{
 		const WideStringClass& ignore = mIgnoreList[index];
 
@@ -1227,9 +1227,9 @@ void WOLBuddyMgr::HandleNotification(BuddyEvent& event)
 	if ((event.GetEvent() == BuddyEvent::NewList) || (event.GetEvent() == BuddyEvent::Added))
 		{
 		const UserList& buddies = event.Subject();
-		unsigned int count = buddies.size();
+		uint32_t count = buddies.size();
 
-		for (unsigned int index = 0; index < count; ++index)
+		for (uint32_t index = 0; index < count; ++index)
 			{
 			const RefPtr<UserData>& buddy = buddies[index];
 
@@ -1456,7 +1456,7 @@ void WOLBuddyMgr::HandleNotification(PageMessage& page)
 void WOLBuddyMgr::HandleNotification(PageSendStatus& pageStatus)
 	{
 	WOLPagedAction action = PAGE_ERROR;
-	uint32 msgID = 0;
+	uint32_t msgID = 0;
 
 	switch (pageStatus)
 		{

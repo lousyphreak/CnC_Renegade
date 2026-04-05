@@ -35,6 +35,8 @@
 #ifndef __WOLJOINGAME_H__
 #define __WOLJOINGAME_H__
 
+#include <cstdint>
+
 #include <wwlib/refcount.h>
 #include <WWLib\Notify.h>
 #include <WWLib\Signaler.h>
@@ -98,7 +100,7 @@ class WOLJoinGame :
 		RefPtr<WWOnline::ChannelData> mTheChannel;
 
 		int mTeamChoice;
-		unsigned long mClanID;
+		uint32_t mClanID;
 	};
 
 #endif __WOLJOINGAME_H__

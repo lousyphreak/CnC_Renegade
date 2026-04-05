@@ -39,6 +39,8 @@
 #ifndef VEHICLEDAZZLE_H
 #define VEHICLEDAZZLE_H
 
+#include <cstdint>
+
 #include "always.h"
 
 class RenderObjClass;
@@ -72,7 +74,7 @@ private:
 	DazzleRenderObjClass *		Model;
 	float								BlinkRate;		//(blinks per minute)
 	
-	unsigned int					CreationTime;
+	uint32_t					CreationTime;
 	
 	// Not Implemented
 	VehicleDazzleClass(const VehicleDazzleClass & that);

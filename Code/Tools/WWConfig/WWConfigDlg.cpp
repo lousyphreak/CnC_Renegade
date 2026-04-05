@@ -85,7 +85,7 @@ END_MESSAGE_MAP()
 //
 //	Modified: 12/06/2001 by	MML	- Retrieving strings from Locomoto file.
 ///////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CWWConfigDlg::OnInitDialog (void)
 {
 	char string[ _MAX_PATH ];
@@ -181,7 +181,7 @@ CWWConfigDlg::OnPaint (void)
 	{
 		CPaintDC dc(this);
 
-		SendMessage(WM_ICONERASEBKGND, (WPARAM) dc.GetSafeHdc(), 0);
+		SendMessage(WM_ICONERASEBKGND, (uintptr_t) dc.GetSafeHdc(), 0);
 
 		// Center icon in client rectangle
 		int cxIcon = GetSystemMetrics(SM_CXICON);
@@ -245,7 +245,7 @@ void
 CWWConfigDlg::OnSelchangeTabCtrl
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 )
 {
 	(*pResult) = 0;

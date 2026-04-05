@@ -37,7 +37,7 @@ static char THIS_FILE[] = __FILE__;
 /////////////////////////////////////////////////////////////////////////////
 //	Local prototypes
 /////////////////////////////////////////////////////////////////////////////
-static int CALLBACK MixFilenamesListSortCallback (LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
+static int CALLBACK MixFilenamesListSortCallback (intptr_t lParam1, intptr_t lParam2, intptr_t lParamSort);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -81,7 +81,7 @@ CMixViewerView::~CMixViewerView (void)
 //	PreCreateWindow
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CMixViewerView::PreCreateWindow (CREATESTRUCT &cs)
 {
 	cs.style |= LVS_REPORT;
@@ -179,7 +179,7 @@ CMixViewerView::Reload (const char *filename)
 		for (int index = 0; index < FilenameList.Count (); index ++) {
 			int item_index = GetListCtrl ().InsertItem (index, FilenameList[index]);
 			if (item_index != -1) {
-				GetListCtrl ().SetItemData (item_index, (DWORD)new StringClass (FilenameList[index]));
+				GetListCtrl ().SetItemData (item_index, (uint32_t)new StringClass (FilenameList[index]));
 			}
 		}
 
@@ -246,9 +246,9 @@ CMixViewerView::OnCreate (LPCREATESTRUCT lpCreateStruct)
 int CALLBACK
 MixFilenamesListSortCallback
 (
-	LPARAM lParam1,
-	LPARAM lParam2,
-   LPARAM lParamSort
+	intptr_t lParam1,
+	intptr_t lParam2,
+   intptr_t lParamSort
 )
 {
 	int retval = 0;
@@ -287,7 +287,7 @@ MixFilenamesListSortCallback
 //
 /////////////////////////////////////////////////////////////////////////////
 void
-CMixViewerView::OnDeleteitem (NMHDR *pNMHDR, LRESULT *pResult) 
+CMixViewerView::OnDeleteitem (NMHDR *pNMHDR, intptr_t *pResult) 
 {
 	NM_LISTVIEW* pNMListView = (NM_LISTVIEW *)pNMHDR;
 	*pResult = 0;

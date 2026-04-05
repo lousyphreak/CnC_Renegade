@@ -270,7 +270,7 @@ bool ChatMessage::IsSenderSquelched(void) const
 *
 ******************************************************************************/
 
-bool ChatMessage::IsSenderInClan(unsigned long clanID) const
+bool ChatMessage::IsSenderInClan(uint32_t clanID) const
 	{
 	return (mSenderClanID == clanID);
 	}
@@ -296,7 +296,7 @@ bool IsAnsiText(const wchar_t* text)
 	{
 	for (int index = 0; text[index] != 0; index ++)
 		{
-		unsigned short value = text[index];
+		uint16_t value = text[index];
 
 		if (value > 255)
 			{

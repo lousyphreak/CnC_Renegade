@@ -81,7 +81,7 @@ extern bool _UsingLargeFonts;
  * HISTORY:                                                                                    *
  *   11/23/98   GTH : Created.                                                                 *
  *=============================================================================================*/
-static BOOL CALLBACK PassDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+static int32_t CALLBACK PassDlgProc(HWND hwndDlg, uint32_t msg, uintptr_t wParam, intptr_t lParam) 
 {
 	GameMtlPassDlg *theDlg;
 
@@ -129,7 +129,7 @@ GameMtlPassDlg::GameMtlPassDlg(HWND hwMtlEdit, IMtlParams *imp, GameMtl *m,int p
 		MAKEINTRESOURCE(IDD_GAMEMTL_PASS),
 		PassDlgProc,
 		title,
-		(LPARAM)this,
+		(intptr_t)this,
 		TheMtl->Get_Flag(_Pass_Index_To_Flag[PassIndex]) ? 0 : APPENDROLL_CLOSED
 	);
 #else
@@ -145,7 +145,7 @@ GameMtlPassDlg::GameMtlPassDlg(HWND hwMtlEdit, IMtlParams *imp, GameMtl *m,int p
 	ps_Page.pszIcon		= MAKEINTRESOURCE(IDI_ICONW3D);
 	ps_Page.pfnDlgProc	= PassDlgProc;
 	ps_Page.pszTitle	= title;
-	ps_Page.lParam		= (LPARAM)this;
+	ps_Page.lParam		= (intptr_t)this;
 	ps_Page.pfnCallback= NULL;
 	HPROPSHEETPAGE hPage = CreatePropertySheetPage(&ps_Page);
 	PropSheet_AddPage(HwndEdit,hPage);
@@ -188,7 +188,7 @@ GameMtlPassDlg::~GameMtlPassDlg()
  * HISTORY:                                                                                    *
  *   11/23/98   GTH : Created.                                                                 *
  *=============================================================================================*/
-BOOL GameMtlPassDlg::DialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+int32_t GameMtlPassDlg::DialogProc(HWND hDlg, uint32_t message, uintptr_t wParam, intptr_t lParam)
 {
 	int i=0;
 	int id = LOWORD(wParam);
@@ -458,7 +458,7 @@ void GameMtlPassDlg::SetThing(ReferenceTarget* target)
  * HISTORY:                                                                                    *
  *   11/23/98   GTH : Created.                                                                 *
  *=============================================================================================*/
-void GameMtlPassDlg::ActivateDlg(BOOL onoff)
+void GameMtlPassDlg::ActivateDlg(int32_t onoff)
 {
 	for (int i=0; i<PAGE_COUNT; i++) {
 		Page[i]->ActivateDlg(onoff);

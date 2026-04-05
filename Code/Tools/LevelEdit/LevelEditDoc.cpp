@@ -474,7 +474,7 @@ CLevelEditDoc::CleanupResources (void)
 //
 //	OnNewDocument
 //
-BOOL
+int32_t
 CLevelEditDoc::OnNewDocument (void)
 {
 	// Allow the base class to process this message
@@ -818,12 +818,12 @@ CLevelEditDoc::Get_Coord_System_Transform (NodeClass *node)
 //  OnOpenDocument
 //
 ///////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CLevelEditDoc::OnOpenDocument (LPCTSTR path) 
 {
 	::Get_Main_View ()->Allow_Repaint (false);
 
-	DWORD start_time = ::GetTickCount ();
+	uint32_t start_time = ::GetTickCount ();
 	
 	//
 	// Start a new document
@@ -874,7 +874,7 @@ CLevelEditDoc::Set_Current_Path (const char *path)
 //  OnSaveDocument
 //
 ///////////////////////////////////////////////////////////////
-BOOL
+int32_t
 CLevelEditDoc::OnSaveDocument (LPCTSTR path) 
 {	
 	theApp.WriteProfileString (CONFIG_KEY,

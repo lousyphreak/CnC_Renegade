@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // VolumeRandomDialog.h : header file
 //
@@ -56,7 +58,7 @@ public:
 	//{{AFX_VIRTUAL(VolumeRandomDialogClass)
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-	virtual BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult);
+	virtual int32_t OnNotify(uintptr_t wParam, intptr_t lParam, intptr_t* pResult);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -65,7 +67,7 @@ protected:
 	// Generated message map functions
 	//{{AFX_MSG(VolumeRandomDialogClass)
 	virtual void OnOK();
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	afx_msg void OnBoxRadio();
 	afx_msg void OnCylinderRadio();
 	afx_msg void OnSphereRadio();

@@ -36,6 +36,8 @@
 #ifndef _INSTALLER_H
 #define _INSTALLER_H
 
+#include <cstdint>
+
 // Includes.
 #include "RegistryManager.h"
 #include "Utilities.h"
@@ -73,7 +75,7 @@ class InstallerUIInputClass : public WWUIInputClass
 
 		InstallerUIInputClass()	: WWUIInputClass(), MousePosition (Vector3 (0.0f, 0.0f, 0.0f)) {}
 
-		void Add_Mouse_Wheel (short delta)
+		void Add_Mouse_Wheel (int16_t delta)
 		{
 			MousePosition.Z += delta;
 		}	
@@ -155,7 +157,7 @@ class InstallerClass
 		void Cancel_Introduction()			  {CancelIntroduction = true;}
 
 		void Install (MixFileFactoryClass *mixfilefactory);
-		void Dialog_Callback (DialogBaseClass *dialog, int ctrl_id, int message_id, DWORD param);
+		void Dialog_Callback (DialogBaseClass *dialog, int ctrl_id, int message_id, uint32_t param);
 		void On_Prog_End();
 
   		// Main interface.

@@ -32,7 +32,7 @@ SlaveServerClass::SlaveServerClass(void) :
 
 SlaveServerClass::~SlaveServerClass(void) = default;
 
-void SlaveServerClass::Set(bool enable, char *nick, char *serial, unsigned short port, char *settings_file, int bandwidth, char *password)
+void SlaveServerClass::Set(bool enable, char *nick, char *serial, uint16_t port, char *settings_file, int bandwidth, char *password)
 {
     Enable = enable;
     Port = port;
@@ -69,7 +69,7 @@ void SlaveServerClass::Set(bool enable, char *nick, char *serial, unsigned short
     }
 }
 
-void SlaveServerClass::Get(bool &enable, char *nick, char *serial, unsigned short &port, char *settings_file, int &bandwidth, char *password)
+void SlaveServerClass::Get(bool &enable, char *nick, char *serial, uint16_t &port, char *settings_file, int &bandwidth, char *password)
 {
     enable = Enable;
     port = Port;
@@ -166,7 +166,7 @@ int SlaveMasterClass::Get_Num_Enabled_Slaves(void)
     return enabled_count;
 }
 
-void SlaveMasterClass::Add_Slave(bool enable, char *nick, char *serial, unsigned short port, char *settings_file, int bandwidth, char *password)
+void SlaveMasterClass::Add_Slave(bool enable, char *nick, char *serial, uint16_t port, char *settings_file, int bandwidth, char *password)
 {
     if (NumSlaveServers >= MAX_SLAVES) {
         return;
@@ -250,8 +250,8 @@ bool cGameSpyAdmin::IsUnderGamespyMenuing = false;
 bool cGameSpyAdmin::IsLaunchFromGamespyRequested = false;
 bool cGameSpyAdmin::IsLaunchedFromGamespy = false;
 bool cGameSpyAdmin::IsServerGamespyListed = false;
-ULONG cGameSpyAdmin::GameHostIp = 0;
-USHORT cGameSpyAdmin::GameHostPort = 0;
+uint32_t cGameSpyAdmin::GameHostIp = 0;
+uint16_t cGameSpyAdmin::GameHostPort = 0;
 WideStringClass cGameSpyAdmin::PasswordAttempt;
 
 void cGameSpyAdmin::Think(void)
@@ -269,12 +269,12 @@ void cGameSpyAdmin::Reset(void)
     PasswordAttempt = L"";
 }
 
-void cGameSpyAdmin::Set_Game_Host_Ip(ULONG ip)
+void cGameSpyAdmin::Set_Game_Host_Ip(uint32_t ip)
 {
     GameHostIp = ip;
 }
 
-void cGameSpyAdmin::Set_Game_Host_Port(USHORT port)
+void cGameSpyAdmin::Set_Game_Host_Port(uint16_t port)
 {
     GameHostPort = port;
 }
@@ -326,7 +326,7 @@ void CGameSpyQnR::Shutdown(void)
     m_GSEnabled = false;
 }
 
-BOOL CGameSpyQnR::Parse_HeartBeat_List(const char *)
+int32_t CGameSpyQnR::Parse_HeartBeat_List(const char *)
 {
     return false;
 }
@@ -341,12 +341,12 @@ const char *CGameSpyQnR::Get_Default_HeartBeat_List(void)
     return "";
 }
 
-void CGameSpyQnR::Enable_Reporting(BOOL enable)
+void CGameSpyQnR::Enable_Reporting(int32_t enable)
 {
     m_GSEnabled = enable;
 }
 
-BOOL CGameSpyQnR::IsEnabled(void)
+int32_t CGameSpyQnR::IsEnabled(void)
 {
     return m_GSEnabled;
 }
@@ -447,11 +447,11 @@ void cGameSpyBanList::Think(void)
 {
 }
 
-void cGameSpyBanList::Ban_User(const char *, const char *, ULONG)
+void cGameSpyBanList::Ban_User(const char *, const char *, uint32_t)
 {
 }
 
-bool cGameSpyBanList::Is_User_Banned(const char *, const char *, ULONG)
+bool cGameSpyBanList::Is_User_Banned(const char *, const char *, uint32_t)
 {
     return false;
 }
@@ -469,7 +469,7 @@ void CCDKeyAuth::DisconnectUser(int)
 {
 }
 
-void CCDKeyAuth::AuthenticateUser(int, ULONG, char *, char *)
+void CCDKeyAuth::AuthenticateUser(int, uint32_t, char *, char *)
 {
 }
 
@@ -719,8 +719,8 @@ void WolGameModeClass::Locate_WOL_User(const wchar_t *) {}
 void WolGameModeClass::Invite_WOL_User(const wchar_t *, const wchar_t *) {}
 void WolGameModeClass::Join_WOL_User(const wchar_t *) {}
 bool WolGameModeClass::Kick_Player(const wchar_t *) { return false; }
-void WolGameModeClass::Ban_Player(const wchar_t *, unsigned long) {}
-bool WolGameModeClass::Is_Banned(const char *, unsigned long) { return false; }
+void WolGameModeClass::Ban_Player(const wchar_t *, uint32_t) {}
+bool WolGameModeClass::Is_Banned(const char *, uint32_t) { return false; }
 void WolGameModeClass::Read_Kick_List(void) {}
 void WolGameModeClass::Auto_Kick(void) {}
 void WolGameModeClass::System_Timer_Reset(void) {}

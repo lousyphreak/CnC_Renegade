@@ -35,6 +35,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #pragma once
 
+#include <cstdint>
+
 #ifndef CRC_H
 #define CRC_H
 
@@ -54,21 +56,20 @@ class CRCEngine {
 	public:
 
 		// Constructor for CRC engine (it can have an override initial CRC value).
-		CRCEngine(long initial=0) : CRC(initial), Index(0) {
+		CRCEngine(uint32_t initial=0) : CRC(initial), Index(0) {
 			StagingBuffer.Composite = 0;
 		};
 
 		// Fetches CRC value.
-		long operator() (void) const {return(Value());};
+		uint32_t operator() (void) const {return(Value());};
 
 		// Submits one byte sized datum to the CRC accumulator.
 		void operator() (char datum);
 
 		// Submits an arbitrary buffer to the CRC accumulator.
-		long operator() (void const * buffer, int length);
+		uint32_t operator() (void const * buffer, int length);
 
-		// Implicit conversion operator so this object appears like a 'long integer'.
-		operator long(void) const {return(Value());};
+		operator uint32_t(void) const {return(Value());};
 
 	protected:
 
@@ -76,7 +77,7 @@ class CRCEngine {
 			return(Index != 0);
 		};
 
-		long Value(void) const {
+		uint32_t Value(void) const {
 			if (Buffer_Needs_Data()) {
 				return(_lrotl(CRC, 1) + StagingBuffer.Composite);
 			}
@@ -87,7 +88,7 @@ class CRCEngine {
 		**	Current accumulator of the CRC value. This value doesn't take into
 		**	consideration any pending data in the staging buffer.
 		*/
-		long CRC;
+		uint32_t CRC;
 
 		/*
 		**	This is the sub index into the staging buffer used to keep track of
@@ -101,8 +102,8 @@ class CRCEngine {
 		**	in preparation for additional data.
 		*/
 		union {
-			long Composite;
-			char Buffer[sizeof(long)];
+			uint32_t Composite;
+			char Buffer[sizeof(uint32_t)];
 		} StagingBuffer;
 };
 
@@ -113,20 +114,19 @@ class CRCEngine {
 //
 // 12/09/97 EHC - converted from c to c++ static class and added to crc.h and crc.cpp
 //
-#define CRC32(c,crc) (CRC::_Table[((unsigned long)(crc) ^ (c)) & 0xFFL] ^ (((crc) >> 8) & 0x00FFFFFFL))
+#define CRC32(c,crc) (CRC::_Table[((uint32_t)(crc) ^ (c)) & 0xFFL] ^ (((crc) >> 8) & 0x00FFFFFFL))
 class CRC {
 
 	// CRC for poly 0x04C11DB7
-	static unsigned long _Table[256];
+	static uint32_t _Table[256];
 
 public:
 
 	// get the CRC of a block of memory
-	static unsigned long	Memory( unsigned char *data, unsigned long length, unsigned long crc = 0 );
+	static uint32_t	Memory( uint8_t *data, uint32_t length, uint32_t crc = 0 );
 
 	// get the CRC of a null-terminated string
-	static unsigned long	String( const char *string, unsigned long crc = 0 );
+	static uint32_t	String( const char *string, uint32_t crc = 0 );
 };
 
 #endif
-

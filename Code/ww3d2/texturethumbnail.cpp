@@ -65,7 +65,7 @@ static void Create_Hash_Name(StringClass& name, const StringClass& thumb_name)
 ThumbnailClass::ThumbnailClass(
 	ThumbnailManagerClass* manager,
 	const char* name,
-	unsigned char* bitmap,
+	uint8_t* bitmap,
 	unsigned w,
 	unsigned h,
 	unsigned original_w,
@@ -73,7 +73,7 @@ ThumbnailClass::ThumbnailClass(
 	unsigned original_mip_level_count,
 	WW3DFormat original_format,
 	bool allocated,
-	unsigned long date_time)
+	uint32_t date_time)
 	:
 	Manager(manager),
 	Name(name),
@@ -138,7 +138,7 @@ ThumbnailClass::ThumbnailClass(ThumbnailManagerClass* manager, const StringClass
 		OriginalTextureMipLevelCount=dds_file.Get_Mip_Level_Count();
 		Width=dds_file.Get_Width(0);
 		Height=dds_file.Get_Height(0);
-		Bitmap=new unsigned char[Width*Height*2];
+		Bitmap=new uint8_t[Width*Height*2];
 		Allocated=true;
 		dds_file.Copy_Level_To_Surface(
 			0,			// Level
@@ -203,7 +203,7 @@ ThumbnailClass::ThumbnailClass(ThumbnailManagerClass* manager, const StringClass
 		unsigned src_height=targa.Header.Height;
 
 		// NOTE: We load the palette but we do not yet support paletted textures!
-		char palette[256*4];
+		uint8_t palette[256*4];
 		targa.SetPalette(palette);
 		if (TARGA_ERROR_HANDLER(targa.Load(filename, TGAF_IMAGE, false),filename)) return;
 
@@ -216,7 +216,7 @@ ThumbnailClass::ThumbnailClass(ThumbnailManagerClass* manager, const StringClass
 			my_tga_file->Close();
 		}
 
-		unsigned char* src_surface=(unsigned char*)targa.GetImage();
+		uint8_t* src_surface=(uint8_t*)targa.GetImage();
 
 		int len=Name.Get_Length();
 		WWASSERT(len>4);
@@ -224,7 +224,7 @@ ThumbnailClass::ThumbnailClass(ThumbnailManagerClass* manager, const StringClass
 		Name[len-2]='g';
 		Name[len-1]='a';
 
-		Bitmap=new unsigned char[Width*Height*2];
+		Bitmap=new uint8_t[Width*Height*2];
 		Allocated=true;
 
 		dest_format=WW3D_FORMAT_A8R8G8B8;
@@ -239,7 +239,7 @@ ThumbnailClass::ThumbnailClass(ThumbnailManagerClass* manager, const StringClass
 			src_height,
 			src_width*src_bpp,
 			src_format,
-			(unsigned char*)targa.GetPalette(),
+			(uint8_t*)targa.GetPalette(),
 			targa.Header.CMapDepth>>3,
 			false);
 	}
@@ -305,7 +305,7 @@ void ThumbnailManagerClass::Load()
 			thumb_file->Read(&total_data_length,sizeof(int));
 			if (total_thumb_count) {
 				WWASSERT(total_data_length && total_header_length);
-				ThumbnailMemory=new unsigned char[total_data_length];
+				ThumbnailMemory=new uint8_t[total_data_length];
 				// Load thumbs
 				for (int i=0;i<total_thumb_count;++i) {
 					char name[256];
@@ -317,8 +317,8 @@ void ThumbnailManagerClass::Load()
 					int original_mip_level_count;
 					WW3DFormat original_format;
 					int name_len;
-					unsigned long date_time;
-					thumb_file->Read(&date_time,sizeof(unsigned long));
+					uint32_t date_time;
+					thumb_file->Read(&date_time,sizeof(uint32_t));
 					thumb_file->Read(&offset,sizeof(int));
 					thumb_file->Read(&width,sizeof(int));
 					thumb_file->Read(&height,sizeof(int));
@@ -428,9 +428,9 @@ void ThumbnailManagerClass::Save(bool force)
 		int original_height=thumb->Get_Original_Texture_Height();
 		int original_mip_level_count=thumb->Get_Original_Texture_Mip_Level_Count();
 		WW3DFormat original_format=thumb->Get_Original_Texture_Format();
-		unsigned long date_time=thumb->Get_Date_Time();
+		uint32_t date_time=thumb->Get_Date_Time();
 
-		thumb_file->Write(&date_time,sizeof(unsigned long));
+		thumb_file->Write(&date_time,sizeof(uint32_t));
 		thumb_file->Write(&offset,sizeof(int));
 		thumb_file->Write(&width,sizeof(int));
 		thumb_file->Write(&height,sizeof(int));
@@ -586,9 +586,9 @@ void ThumbnailManagerClass::Update_Thumbnail_File(const char* mix_file_name,bool
 		return;
 	}
 
-	unsigned long mix_date_time=mix_file->Get_Date_Time();
+	uint32_t mix_date_time=mix_file->Get_Date_Time();
 	if (thumb_file->Is_Available()) {
-		unsigned long thumb_date_time=thumb_file->Get_Date_Time();
+		uint32_t thumb_date_time=thumb_file->Get_Date_Time();
 		if (mix_date_time!=thumb_date_time) {
 			thumb_file->Delete();
 		}

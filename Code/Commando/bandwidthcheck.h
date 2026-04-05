@@ -42,6 +42,8 @@
 #ifndef _BANDWIDTHCHECK_H
 #define _BANDWIDTHCHECK_H
 
+#include <cstdint>
+
 #include "renegade_build_config.h"
 #include <WWOnline/RefPtr.h>
 
@@ -75,13 +77,13 @@ class BandwidthCheckerClass
 		#pragma pack(push)
 		#pragma pack(1)
 		typedef struct tInternalPackedBandwidthType {
-			unsigned char Up		: 4;
-			unsigned char Down	: 4;
+			uint8_t Up		: 4;
+			uint8_t Down	: 4;
 		} InternalPackedBandwidthType;
 
 		typedef union tPackedBandwidthType {
 			InternalPackedBandwidthType Bandwidth;
-			unsigned char RawBandwidth;
+			uint8_t RawBandwidth;
 		} PackedBandwidthType;
 		#pragma pack(pop)
 
@@ -89,15 +91,15 @@ class BandwidthCheckerClass
 		static void Check_Now(HANDLE event);
 
 		static bool Got_Bandwidth(void) {return(GotBandwidth);};
-		static void Force_Upstream_Bandwidth(unsigned int up);
-		static unsigned long Get_Upstream_Bandwidth(void);
-		static unsigned long Get_Reported_Upstream_Bandwidth(void);
-		static unsigned short *Get_Upstream_Bandwidth_As_String(void);
-		static unsigned long Get_Downstream_Bandwidth(void);
-		static unsigned long Get_Reported_Downstream_Bandwidth(void);
-		static unsigned short *Get_Downstream_Bandwidth_As_String(void);
-		static unsigned short *Get_Bandwidth_As_String(void);
-		static unsigned short *Get_Bandwidth_As_String(PackedBandwidthType bandwidth);
+		static void Force_Upstream_Bandwidth(uint32_t up);
+		static uint32_t Get_Upstream_Bandwidth(void);
+		static uint32_t Get_Reported_Upstream_Bandwidth(void);
+		static uint16_t *Get_Upstream_Bandwidth_As_String(void);
+		static uint32_t Get_Downstream_Bandwidth(void);
+		static uint32_t Get_Reported_Downstream_Bandwidth(void);
+		static uint16_t *Get_Downstream_Bandwidth_As_String(void);
+		static uint16_t *Get_Bandwidth_As_String(void);
+		static uint16_t *Get_Bandwidth_As_String(PackedBandwidthType bandwidth);
 		static PackedBandwidthType Get_Packed_Bandwidth(void);
 		static bool Failed_Due_To_No_Connection(void) {return(FailureCode == BANDTEST_NO_IP_DETECT);}
 		static void Get_Compact_Log(StringClass &log_string);
@@ -116,18 +118,18 @@ class BandwidthCheckerClass
 		friend BandwidthCheckerThreadClass;
 
 		static HANDLE EventNotify;
-		static unsigned long UpstreamBandwidth;
-		static unsigned long ReportedUpstreamBandwidth;
-		static unsigned long DownstreamBandwidth;
-		static unsigned long ReportedDownstreamBandwidth;
-		static unsigned short *UpstreamBandwidthString;
-		static unsigned short *DownstreamBandwidthString;
+		static uint32_t UpstreamBandwidth;
+		static uint32_t ReportedUpstreamBandwidth;
+		static uint32_t DownstreamBandwidth;
+		static uint32_t ReportedDownstreamBandwidth;
+		static uint16_t *UpstreamBandwidthString;
+		static uint16_t *DownstreamBandwidthString;
 
 		#define NUM_BANDS 12
 
 		static char *ErrorList[13];
-		static unsigned long Bandwidths[NUM_BANDS * 2];
-		static unsigned short *BandwidthNames[NUM_BANDS + 1];
+		static uint32_t Bandwidths[NUM_BANDS * 2];
+		static uint16_t *BandwidthNames[NUM_BANDS + 1];
 		static int FailureCode;
 		static bool GotBandwidth;
 		static const char *DefaultServerName;
@@ -158,7 +160,7 @@ class BandwidthDetectWait : public SingleWait
 		const BandwidthDetectWait& operator = (const BandwidthDetectWait&);
 
 		RefPtr<WWOnline::Session> WOLSession;
-		unsigned int mPingsRemaining;
+		uint32_t mPingsRemaining;
 		HANDLE mEvent;
 
 
@@ -183,28 +185,28 @@ class BandwidthCheckerClass
 		#pragma pack(push)
 		#pragma pack(1)
 		typedef struct tInternalPackedBandwidthType {
-			unsigned char Up		: 4;
-			unsigned char Down	: 4;
+			uint8_t Up		: 4;
+			uint8_t Down	: 4;
 		} InternalPackedBandwidthType;
 
 		typedef union tPackedBandwidthType {
 			InternalPackedBandwidthType Bandwidth;
-			unsigned char RawBandwidth;
+			uint8_t RawBandwidth;
 		} PackedBandwidthType;
 		#pragma pack(pop)
 
 		static RefPtr<WaitCondition> Detect(void) { return RefPtr<WaitCondition>(); }
 		static void Check_Now(HANDLE) {}
 		static bool Got_Bandwidth(void) { return true; }
-		static void Force_Upstream_Bandwidth(unsigned int) {}
-		static unsigned long Get_Upstream_Bandwidth(void) { return 0; }
-		static unsigned long Get_Reported_Upstream_Bandwidth(void) { return 0; }
-		static unsigned short *Get_Upstream_Bandwidth_As_String(void) { static unsigned short empty[] = {0}; return empty; }
-		static unsigned long Get_Downstream_Bandwidth(void) { return 0; }
-		static unsigned long Get_Reported_Downstream_Bandwidth(void) { return 0; }
-		static unsigned short *Get_Downstream_Bandwidth_As_String(void) { static unsigned short empty[] = {0}; return empty; }
-		static unsigned short *Get_Bandwidth_As_String(void) { static unsigned short empty[] = {0}; return empty; }
-		static unsigned short *Get_Bandwidth_As_String(PackedBandwidthType) { static unsigned short empty[] = {0}; return empty; }
+		static void Force_Upstream_Bandwidth(uint32_t) {}
+		static uint32_t Get_Upstream_Bandwidth(void) { return 0; }
+		static uint32_t Get_Reported_Upstream_Bandwidth(void) { return 0; }
+		static uint16_t *Get_Upstream_Bandwidth_As_String(void) { static uint16_t empty[] = {0}; return empty; }
+		static uint32_t Get_Downstream_Bandwidth(void) { return 0; }
+		static uint32_t Get_Reported_Downstream_Bandwidth(void) { return 0; }
+		static uint16_t *Get_Downstream_Bandwidth_As_String(void) { static uint16_t empty[] = {0}; return empty; }
+		static uint16_t *Get_Bandwidth_As_String(void) { static uint16_t empty[] = {0}; return empty; }
+		static uint16_t *Get_Bandwidth_As_String(PackedBandwidthType) { static uint16_t empty[] = {0}; return empty; }
 		static PackedBandwidthType Get_Packed_Bandwidth(void) { PackedBandwidthType packed = {}; return packed; }
 		static bool Failed_Due_To_No_Connection(void) { return false; }
 		static void Get_Compact_Log(StringClass &) {}

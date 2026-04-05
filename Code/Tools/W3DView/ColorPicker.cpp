@@ -145,13 +145,13 @@ RegisterColorPicker (HINSTANCE hinst)
 //
 // fnColorPickerProc
 //
-LRESULT WINAPI
+intptr_t WINAPI
 fnColorPickerProc
 (
 	HWND hwnd,
-	UINT message,
-	WPARAM wparam,
-	LPARAM lparam
+	uint32_t message,
+	uintptr_t wparam,
+	intptr_t lparam
 )
 {
 	//static ColorPickerClass *pwnd = NULL;
@@ -166,7 +166,7 @@ fnColorPickerProc
 
 				// Should we create a new class manager for this window?
 				ColorPickerClass *pwnd = (ColorPickerClass *)pcreate_info->lpCreateParams;
-				BOOL created = FALSE;
+				int32_t created = FALSE;
 				if (pwnd == NULL) {
 					pwnd = new ColorPickerClass;
 					created = TRUE;
@@ -180,14 +180,14 @@ fnColorPickerProc
 
 				WNDPROC *pOldWndProc = pwnd->GetSuperWndProcAddr ();
 				if (pOldWndProc) {
-					WNDPROC pold_proc = (WNDPROC)::SetWindowLong (hwnd, GWL_WNDPROC, (DWORD)::AfxGetAfxWndProc ());
+					WNDPROC pold_proc = (WNDPROC)::SetWindowLong (hwnd, GWL_WNDPROC, (uint32_t)::AfxGetAfxWndProc ());
 					ASSERT (pold_proc != NULL);
 					(*pOldWndProc) = pold_proc;
 				}
 
 				// Store some information in the window handle
 				::SetProp (hwnd, "CLASSPOINTER", (HANDLE)pwnd);
-				::SetProp (hwnd, "CREATED", (HANDLE)created);
+				::SetProp (hwnd, "CREATED", reinterpret_cast<HANDLE>(static_cast<intptr_t>(created)));
 			}
 		}
 		break;			
@@ -198,7 +198,7 @@ fnColorPickerProc
 
 			WNDPROC *pOldWndProc = pwnd->GetSuperWndProcAddr ();
 			if (pOldWndProc) {
-				::SetWindowLong (hwnd, GWL_WNDPROC, (DWORD)(*pOldWndProc));
+				::SetWindowLongPtr (hwnd, GWL_WNDPROC, reinterpret_cast<intptr_t>(*pOldWndProc));
 				(*pOldWndProc) = NULL;
 			}
 
@@ -209,14 +209,14 @@ fnColorPickerProc
 
 			// Get the creation information from the window handle
 			ColorPickerClass *pwnd = (ColorPickerClass *)::GetProp (hwnd, "CLASSPOINTER");
-			BOOL created = (BOOL)::GetProp (hwnd, "CREATED");
+			const bool created = reinterpret_cast<intptr_t>(::GetProp (hwnd, "CREATED")) != 0;
 
 			if (pwnd != NULL) {
 				pwnd->Detach ();
 
 				WNDPROC *pOldWndProc = pwnd->GetSuperWndProcAddr ();
 				if (pOldWndProc) {
-					::SetWindowLong (hwnd, GWL_WNDPROC, (DWORD)(*pOldWndProc));
+					::SetWindowLongPtr (hwnd, GWL_WNDPROC, reinterpret_cast<intptr_t>(*pOldWndProc));
 					(*pOldWndProc) = NULL;
 				}
 
@@ -256,15 +256,15 @@ ColorPickerClass::OnCreate (LPCREATESTRUCT lpCreateStruct)
 // Create
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 ColorPickerClass::Create
 (
 	LPCTSTR /*lpszClassName*/,
 	LPCTSTR lpszWindowName,
-	DWORD dwStyle,
+	uint32_t dwStyle,
 	const RECT &rect,
 	CWnd *pparent_wnd,
-	UINT nID,
+	uint32_t nID,
 	CCreateContext * /*pContext*/
 )
 {
@@ -345,15 +345,15 @@ ColorPickerClass::Create_Bitmap (void)
 void
 ColorPickerClass::Fill_Rect
 (
-	UCHAR *pbits,
+	uint8_t *pbits,
 	const RECT &rect,
 	COLORREF color,
 	int scanline_size
 )
 {
-	UCHAR red = GetRValue (color);
-	UCHAR green = GetRValue (color);
-	UCHAR blue = GetRValue (color);
+	uint8_t red = GetRValue (color);
+	uint8_t green = GetRValue (color);
+	uint8_t blue = GetRValue (color);
 
 	for (int irow = rect.top; irow < rect.bottom; irow ++) {				
 		int index = irow * scanline_size;
@@ -388,7 +388,7 @@ ColorPickerClass::Color_From_Point
 	if ((x >= 0) && (x < m_iWidth) &&
 		 (y >= 0) && (y < m_iHeight)) {
 
-		// Window's bitmaps are DWORD aligned, so make sure
+		// Window's bitmaps are uint32_t aligned, so make sure
 		// we take that into account.
 		int alignment_offset = (m_iWidth * 3) % 4;
 		alignment_offset = (alignment_offset != 0) ? (4 - alignment_offset) : 0;
@@ -506,7 +506,7 @@ RGB_to_Hue (int red_val, int green_val, int blue_val, float &hue, float &value)
 CPoint
 ColorPickerClass::Point_From_Color (COLORREF color)
 {
-	// Window's bitmaps are DWORD aligned, so make sure
+	// Window's bitmaps are uint32_t aligned, so make sure
 	// we take that into account.
 	int alignment_offset = (m_iWidth * 3) % 4;
 	alignment_offset = (alignment_offset != 0) ? (4 - alignment_offset) : 0;
@@ -557,10 +557,10 @@ ColorPickerClass::Paint_DIB
 (
 	int width,
 	int height,
-	UCHAR *pbits
+	uint8_t *pbits
 )
 {
-	// Window's bitmaps are DWORD aligned, so make sure
+	// Window's bitmaps are uint32_t aligned, so make sure
 	// we take that into account.
 	int alignment_offset = (width * 3) % 4;
 	alignment_offset = (alignment_offset != 0) ? (4 - alignment_offset) : 0;
@@ -570,7 +570,7 @@ ColorPickerClass::Paint_DIB
 	//	Paint the border (if any)
 	//
 	CRect rect (0, 0, width, height);	
-	LONG lstyle = ::GetWindowLong (m_hWnd, GWL_STYLE);
+	int32_t lstyle = ::GetWindowLong (m_hWnd, GWL_STYLE);
 	if (lstyle & CPS_SUNKEN) {
 		::Draw_Sunken_Rect (pbits, rect, scanline_size);
 		rect.DeflateRect (1, 1);
@@ -638,9 +638,9 @@ ColorPickerClass::Paint_DIB
 		for (int irow = rect.top; irow < rect.bottom; irow ++) {
 										
 			// Put these values into the bitmap
-			pbits[bitmap_index]		= UCHAR(((int)curr_blue) & 0xFF);
-			pbits[bitmap_index + 1] = UCHAR(((int)curr_green) & 0xFF);
-			pbits[bitmap_index + 2]	= UCHAR(((int)curr_red) & 0xFF);				
+			pbits[bitmap_index]		= uint8_t(((int)curr_blue) & 0xFF);
+			pbits[bitmap_index + 1] = uint8_t(((int)curr_green) & 0xFF);
+			pbits[bitmap_index + 2]	= uint8_t(((int)curr_red) & 0xFF);				
 
 			// Determine the current red, green, and blue values
 			curr_red = curr_red + red_dec;
@@ -711,7 +711,7 @@ ColorPickerClass::Free_Bitmap (void)
 void
 ColorPickerClass::OnSize
 (
-	UINT nType,
+	uint32_t nType,
 	int cx,
 	int cy
 ) 
@@ -734,7 +734,7 @@ ColorPickerClass::OnSize
 // OnEraseBkgnd
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 ColorPickerClass::OnEraseBkgnd (CDC * /*pDC*/)
 {
 	return TRUE;
@@ -749,7 +749,7 @@ ColorPickerClass::OnEraseBkgnd (CDC * /*pDC*/)
 void
 ColorPickerClass::OnLButtonDown
 (
-	UINT nFlags,
+	uint32_t nFlags,
 	CPoint point
 )
 {
@@ -770,7 +770,7 @@ ColorPickerClass::OnLButtonDown
 	//	Notify the parent window that the user double-clicked
 	// one of the keyframes
 	//
-	LONG id = ::GetWindowLong (m_hWnd, GWL_ID);
+	int32_t id = ::GetWindowLong (m_hWnd, GWL_ID);
 	CP_NMHDR notify_hdr = { 0 };
 	notify_hdr.hdr.hwndFrom = m_hWnd;
 	notify_hdr.hdr.idFrom = id;
@@ -782,7 +782,7 @@ ColorPickerClass::OnLButtonDown
 	::SendMessage (::GetParent (m_hWnd),
 						WM_NOTIFY,
 						id,
-						(LPARAM)&notify_hdr);
+						(intptr_t)&notify_hdr);
 
 	Paint_Marker ();
 
@@ -800,7 +800,7 @@ ColorPickerClass::OnLButtonDown
 void
 ColorPickerClass::OnLButtonUp
 (
-	UINT nFlags,
+	uint32_t nFlags,
 	CPoint point
 )
 {
@@ -824,7 +824,7 @@ ColorPickerClass::OnLButtonUp
 void
 ColorPickerClass::OnMouseMove
 (
-	UINT nFlags,
+	uint32_t nFlags,
 	CPoint point
 )
 {
@@ -838,7 +838,7 @@ ColorPickerClass::OnMouseMove
 		//	Notify the parent window that the user double-clicked
 		// one of the keyframes
 		//
-		LONG id = ::GetWindowLong (m_hWnd, GWL_ID);
+		int32_t id = ::GetWindowLong (m_hWnd, GWL_ID);
 		CP_NMHDR notify_hdr = { 0 };
 		notify_hdr.hdr.hwndFrom = m_hWnd;
 		notify_hdr.hdr.idFrom = id;
@@ -850,7 +850,7 @@ ColorPickerClass::OnMouseMove
 		::SendMessage (::GetParent (m_hWnd),
 							WM_NOTIFY,
 							id,
-							(LPARAM)&notify_hdr);
+							(intptr_t)&notify_hdr);
 
 		Paint_Marker ();
 	}
@@ -871,7 +871,7 @@ ColorPickerClass::Calc_Display_Rect (RECT &rect)
 {
 	GetClientRect (&rect);
 
-	LONG lstyle = ::GetWindowLong (m_hWnd, GWL_STYLE);
+	int32_t lstyle = ::GetWindowLong (m_hWnd, GWL_STYLE);
 	if ((lstyle & CPS_SUNKEN) || (lstyle & CPS_RAISED) || (lstyle & WS_BORDER)) {
 		rect.left += 1;
 		rect.right -= 1;

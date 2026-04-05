@@ -37,6 +37,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef VISTABLEMGR_H
 #define VISTABLEMGR_H
 
@@ -105,7 +107,7 @@ protected:
 
 	SimpleDynVecClass<CompressedVisTableClass *>		VisTables;
 	VisDecompressionCacheClass *							Cache;	
-	unsigned int												FrameCounter;
+	uint32_t												FrameCounter;
 };
 
 

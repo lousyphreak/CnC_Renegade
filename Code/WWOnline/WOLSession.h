@@ -39,6 +39,8 @@
 #ifndef __WOLSESSION_H__
 #define __WOLSESSION_H__
 
+#include <cstdint>
+
 #include <atlbase.h>
 #include "WOLLoginInfo.h"
 #include "WOLUser.h"
@@ -305,13 +307,13 @@ class Session :
 		bool PageUser(const wchar_t* userName, const wchar_t* message);
 
 		// Request a users online location
-		unsigned long GetAutoRequestFlags(void) const
+		uint32_t GetAutoRequestFlags(void) const
 			{return mAutoRequestFlags;}
 
-		void SetAutoRequestFlags(unsigned long flags)
+		void SetAutoRequestFlags(uint32_t flags)
 			{mAutoRequestFlags = flags;}
 
-		void RequestUserDetails(const RefPtr<UserData>& user, unsigned long requestFlags);
+		void RequestUserDetails(const RefPtr<UserData>& user, uint32_t requestFlags);
 
 		void RequestLocateUser(const wchar_t* userName);
 		void RequestLocateUser(const RefPtr<UserData>& user);
@@ -320,7 +322,7 @@ class Session :
 		void RequestUserLocale(const wchar_t* userName);
 
 		// Request information about a squad by Squad ID
-		void RequestSquadInfoByID(unsigned long squadID);
+		void RequestSquadInfoByID(uint32_t squadID);
 
 		// Request information about a squad by member name
 		void RequestSquadInfoByMemberName(const wchar_t* memberName);
@@ -329,7 +331,7 @@ class Session :
 		void RequestTeamInfo(const wchar_t* userName);
 
 		// Request users ladder information
-		void RequestLadderInfo(const wchar_t* name, unsigned long type);
+		void RequestLadderInfo(const wchar_t* name, uint32_t type);
 
 		//-------------------------------------------------------------------------
 		// Buddy Methods
@@ -378,10 +380,10 @@ class Session :
 		void EnablePinging(bool enable);
 		void RequestPing(const char* address, int timeout = 1000);
 
-		unsigned int GetPendingPingCount(void) const
+		uint32_t GetPendingPingCount(void) const
 			{return mPingsPending;}
 
-		bool SendGameResults(unsigned char* packet, unsigned long length);
+		bool SendGameResults(uint8_t* packet, uint32_t length);
 
 		bool RequestUserIP(char *user_name);
 
@@ -466,11 +468,11 @@ class Session :
 
 		CComPtr<WOL::IChat> mChat;
 		CComPtr<WOL::IChatEvent> mChatEvents;
-		unsigned long mChatCookie;
+		uint32_t mChatCookie;
 
 		CComPtr<WOL::INetUtil> mNetUtil;
 		CComPtr<WOL::INetUtilEvent> mNetUtilEvents;
-		unsigned long mNetUtilCookie;
+		uint32_t mNetUtilCookie;
 
 		CComPtr<WOL::IIGROptions> mIGRObject;
 
@@ -520,7 +522,7 @@ class Session :
 
 		UserList mBuddies;
 
-		unsigned long mAutoRequestFlags;
+		uint32_t mAutoRequestFlags;
 
       // Squad Request queues
 		typedef std::vector<WideStringClass> SquadRequestColl;
@@ -535,16 +537,16 @@ class Session :
 
 		typedef std::list<WideStringClass> LadderRequestList;
 		LadderRequestList mLadderRequests;
-		unsigned long mLadderPending;
+		uint32_t mLadderPending;
 
 		// Misc.
 		WideStringClass mMessageOfTheDay;
 
 		std::vector<RawPing> mPingRequests;
-		unsigned int mPingsPending;
+		uint32_t mPingsPending;
 		int mPingEnable;
 
-		unsigned long mLastUserDataRequestTime;
+		uint32_t mLastUserDataRequestTime;
 		static RefPtr<Session> _mInstance;
 	};
 
@@ -564,7 +566,7 @@ class ChatAdvisement :
 		const ChatAdvisement& operator=(const ChatAdvisement&);
 
 		CComPtr<WOL::IChat> mChat;
-		unsigned long mChatCookie;
+		uint32_t mChatCookie;
 	};
 
 } // using namespace WWOnline

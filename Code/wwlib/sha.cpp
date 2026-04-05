@@ -66,7 +66,15 @@
  * HISTORY:                                                                                    *
  *   07/03/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-void SHAEngine::Process_Partial(void const * & data, long & length)
+namespace
+{
+inline uint32_t Reverse_U32(uint32_t value)
+{
+	return ((value >> 24) & 0x000000FFu) | ((value >> 8) & 0x0000FF00u) | ((value << 8) & 0x00FF0000u) | ((value << 24) & 0xFF000000u);
+}
+}
+
+void SHAEngine::Process_Partial(void const * & data, int32_t & length)
 {
 	if (length == 0 || data == NULL) return;
 
@@ -93,7 +101,7 @@ void SHAEngine::Process_Partial(void const * & data, long & length)
 	*/
 	if (PartialCount == SRC_BLOCK_SIZE) {
 		Process_Block(&Partial[0], Acc);
-		Length += (long)SRC_BLOCK_SIZE;
+		Length += static_cast<uint32_t>(SRC_BLOCK_SIZE);
 		PartialCount = 0;
 	}
 }
@@ -117,7 +125,7 @@ void SHAEngine::Process_Partial(void const * & data, long & length)
  * HISTORY:                                                                                    *
  *   07/03/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-void SHAEngine::Hash(void const * data, long length)
+void SHAEngine::Hash(void const * data, int32_t length)
 {
 	IsCached = false;
 
@@ -136,13 +144,13 @@ void SHAEngine::Hash(void const * data, long length)
 	/*
 	**	First process all the whole blocks available in the source data.
 	*/
-	long blocks = (length / SRC_BLOCK_SIZE);
-	long const * source = (long const *)data;
+	int32_t blocks = (length / SRC_BLOCK_SIZE);
+	char const * source = static_cast<char const *>(data);
 	for (int bcount = 0; bcount < blocks; bcount++) {
 		Process_Block(source, Acc);
-		Length += (long)SRC_BLOCK_SIZE;
-		source = reinterpret_cast<long const *>(reinterpret_cast<char const *>(source) + SRC_BLOCK_SIZE);
-		length -= (long)SRC_BLOCK_SIZE;
+		Length += static_cast<uint32_t>(SRC_BLOCK_SIZE);
+		source += SRC_BLOCK_SIZE;
+		length -= SRC_BLOCK_SIZE;
 	}
 
 	/*
@@ -152,9 +160,6 @@ void SHAEngine::Hash(void const * data, long length)
 	data = source;
 	Process_Partial(data, length);
 }
-
-
-#define	Reverse_LONG(a)	((a>>24)&0x000000FFL) | ((a>>8)&0x0000FF00L) | ((a<<8)&0x00FF0000L) | ((a<<24)&0xFF000000L)
 
 
 /***********************************************************************************************
@@ -183,15 +188,15 @@ int SHAEngine::Result(void * result) const
 		memcpy(result, &FinalResult, sizeof(FinalResult));
 	}
 
-	long length = Length + PartialCount;
+	uint32_t length = Length + static_cast<uint32_t>(PartialCount);
 	int partialcount = PartialCount;
-	unsigned char partial[SRC_BLOCK_SIZE];
+	uint8_t partial[SRC_BLOCK_SIZE];
 	memcpy(partial, Partial, sizeof(Partial));
 
 	/*
 	**	Cap the end of the source data stream with a 1 bit.
 	*/
-	partial[partialcount] = (unsigned char)0x80;
+	partial[partialcount] = (uint8_t)0x80;
 
 	/*
 	**	Determine if there is insufficient room to append the
@@ -216,16 +221,18 @@ int SHAEngine::Result(void * result) const
 	**	last 8 bytes of the pseudo-source data.
 	*/
 	memset(&partial[partialcount], '\0', SRC_BLOCK_SIZE - partialcount);
-	*(long *)(&partial[SRC_BLOCK_SIZE-4]) = Reverse_LONG((length*8));
+	const uint32_t bit_length = Reverse_U32(length * 8u);
+	std::memcpy(&partial[SRC_BLOCK_SIZE - sizeof(bit_length)], &bit_length, sizeof(bit_length));
 	Process_Block(&partial[0], acc);
 
-	memcpy((char *)&FinalResult, &acc, sizeof(acc));
-	for (int index = 0; index < sizeof(FinalResult)/sizeof(long); index++) {
-//	for (int index = 0; index < SRC_BLOCK_SIZE/sizeof(long); index++) {
-		(long &)FinalResult.Long[index] = Reverse_LONG(FinalResult.Long[index]);
+	SHADigest final_result;
+	memcpy(&final_result, &acc, sizeof(acc));
+	for (int index = 0; index < static_cast<int>(sizeof(final_result) / sizeof(uint32_t)); index++) {
+		final_result.Long[index] = Reverse_U32(final_result.Long[index]);
 	}
-	(bool&)IsCached = true;
-	memcpy(result, &FinalResult, sizeof(FinalResult));
+	const_cast<SHADigest &>(FinalResult) = final_result;
+	const_cast<bool &>(IsCached) = true;
+	memcpy(result, &final_result, sizeof(final_result));
 	return(sizeof(FinalResult));
 }
 
@@ -244,19 +251,14 @@ T _rotl(T X, int n)
 {
 	return(T)( ( X << n ) | ( (unsigned)X >> ((sizeof(T)*8) - n) ) );
 }
-inline long _rotl(long X, int n)
+inline uint32_t _rotl(uint32_t X, int n)
 {
-	return(long)( ( X << n ) | ( (unsigned)X >> ((sizeof(long)*8) - n) ) );
+	return static_cast<uint32_t>((X << n) | (X >> ((sizeof(uint32_t) * 8) - n)));
 }
 
-inline unsigned long _rotl(unsigned long X, int n)
-{
-	return(unsigned long)( ( X << n ) | ( (unsigned)X >> ((sizeof(unsigned long)*8) - n) ) );
-}
-
-//unsigned long _RTLENTRY _rotl(unsigned long X, int n)
+//uint32_t _RTLENTRY _rotl(uint32_t X, int n)
 //{
-//	return(unsigned long)( (unsigned long)( (unsigned long)( (unsigned long)X ) << (int)n ) | (unsigned long)( ((unsigned long) X ) >> ( (int)((int)(sizeof(long)*(long)8) - (long)n) ) ) );
+//	return(uint32_t)( (uint32_t)( (uint32_t)( (uint32_t)X ) << (int)n ) | (uint32_t)( ((uint32_t) X ) >> ( (int)((int)(sizeof(long)*(long)8) - (long)n) ) ) );
 //}
 void memrev(char * buffer, size_t length);
 
@@ -285,19 +287,21 @@ void SHAEngine::Process_Block(void const * source, SHADigest & acc) const
 	**	The hash is generated by performing operations on a
 	**	block of generated/seeded data.
 	*/
-	long block[PROC_BLOCK_SIZE/sizeof(long)];
+	uint32_t block[PROC_BLOCK_SIZE / sizeof(uint32_t)];
 
 	/*
 	**	Expand the source data into a large 80 * 32bit buffer. This is the working
 	**	data that will be transformed by the secure hash algorithm.
 	*/
-	long const * data = (long const *)source;
+	char const * data = static_cast<char const *>(source);
 	int index;
-	for (index = 0; index < SRC_BLOCK_SIZE/sizeof(long); index++) {
-		block[index] = Reverse_LONG(data[index]);
+	for (index = 0; index < SRC_BLOCK_SIZE / static_cast<int>(sizeof(uint32_t)); index++) {
+		uint32_t word = 0;
+		std::memcpy(&word, data + (index * sizeof(uint32_t)), sizeof(word));
+		block[index] = Reverse_U32(word);
 	}
 
-	for (index = SRC_BLOCK_SIZE/sizeof(long); index < PROC_BLOCK_SIZE/sizeof(long); index++) {
+	for (index = SRC_BLOCK_SIZE / static_cast<int>(sizeof(uint32_t)); index < PROC_BLOCK_SIZE / static_cast<int>(sizeof(uint32_t)); index++) {
 //		block[index] = _rotl(block[(index-3)&15] ^ block[(index-8)&15] ^ block[(index-14)&15] ^ block[(index-16)&15], 1);
 		block[index] = _rotl(block[index-3] ^ block[index-8] ^ block[index-14] ^ block[index-16], 1);
 	}
@@ -307,8 +311,8 @@ void SHAEngine::Process_Block(void const * source, SHADigest & acc) const
 	**	transformation of 512 bit source data with a 2560 bit intermediate buffer.
 	*/
 	SHADigest alt = acc;
-	for (index = 0; index < PROC_BLOCK_SIZE/sizeof(long); index++) {
-		long temp = _rotl(alt.Long[0], 5) + Do_Function(index, alt.Long[1], alt.Long[2], alt.Long[3]) + alt.Long[4] + block[index] + Get_Constant(index);
+	for (index = 0; index < PROC_BLOCK_SIZE / static_cast<int>(sizeof(uint32_t)); index++) {
+		uint32_t temp = _rotl(alt.Long[0], 5) + Do_Function(index, alt.Long[1], alt.Long[2], alt.Long[3]) + alt.Long[4] + block[index] + Get_Constant(index);
 		alt.Long[4] = alt.Long[3];
 		alt.Long[3] = alt.Long[2];
 		alt.Long[2] = _rotl(alt.Long[1], 30);
@@ -321,4 +325,3 @@ void SHAEngine::Process_Block(void const * source, SHADigest & acc) const
 	acc.Long[3] += alt.Long[3];
 	acc.Long[4] += alt.Long[4];
 }
-

@@ -6,7 +6,7 @@
 StaticAudioSaveLoadClass _StaticAudioSaveLoadSubsystem;
 DynamicAudioSaveLoadClass _DynamicAudioSaveLoadSubsystem;
 
-uint32 StaticAudioSaveLoadClass::Chunk_ID(void) const
+uint32_t StaticAudioSaveLoadClass::Chunk_ID(void) const
 {
 	return CHUNKID_STATIC_SAVELOAD;
 }
@@ -29,7 +29,7 @@ bool StaticAudioSaveLoadClass::Load(ChunkLoadClass &cload)
 	return true;
 }
 
-uint32 DynamicAudioSaveLoadClass::Chunk_ID(void) const
+uint32_t DynamicAudioSaveLoadClass::Chunk_ID(void) const
 {
 	return CHUNKID_DYNAMIC_SAVELOAD;
 }

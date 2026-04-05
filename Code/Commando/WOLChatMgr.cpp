@@ -457,7 +457,7 @@ bool WOLChatMgr::IsLobbyValid(const RefPtr<ChannelData>& lobby)
 	if (lobby.IsValid())
 		{
 		const int unwantedFlags = CHAN_MODE_SECRET | CHAN_MODE_INVITEONLY | CHAN_MODE_BAN;
-		unsigned int lobbyFlags = lobby->GetFlags();
+		uint32_t lobbyFlags = lobby->GetFlags();
 
 		// Lobbies without these flags are valid chat lobbies.
 		if ((lobbyFlags & unwantedFlags) == 0)
@@ -876,7 +876,7 @@ bool WOLChatMgr::PassesFilters(const ChatMessage& msg)
 		
 		if (user.IsValid())
 			{
-			unsigned long clanID = user->GetSquadID();
+			uint32_t clanID = user->GetSquadID();
 			passesClan = ((clanID == 0) || msg.IsSenderInClan(clanID));
 			}
 		}

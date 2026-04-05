@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // GeneratingLightVisDialog.h : header file
 //
@@ -46,7 +48,7 @@ public:
 	//{{AFX_VIRTUAL(GeneratingLightVisDialogClass)
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+	virtual intptr_t WindowProc(uint32_t message, uintptr_t wParam, intptr_t lParam);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -54,7 +56,7 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(GeneratingLightVisDialogClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	virtual void OnCancel();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
@@ -79,7 +81,7 @@ protected:
 		//	Private member data
 		/////////////////////////////////////////////////////////////////////////////////
 		bool			m_IsCancelled;
-		DWORD			m_StartTicks;
+		uint32_t			m_StartTicks;
 		int			m_CurrentLight;
 		int			m_FirstLight;
 		int			m_LastLight;

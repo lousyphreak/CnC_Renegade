@@ -81,7 +81,7 @@ File::File()
 *
 ******************************************************************************/
 
-File::File(const Char* name, ERights rights)
+File::File(const char* name, ERights rights)
 	: mRights(rights),
 		mHandle(INVALID_HANDLE)
 	{
@@ -547,7 +547,7 @@ File::EFileError File::Delete(void)
 *
 ******************************************************************************/
 
-File::EFileError File::Load(void*& outBuffer, UInt32& outSize)
+File::EFileError File::Load(void*& outBuffer, uint32_t& outSize)
 	{
 	outBuffer = NULL;
 	outSize = 0;
@@ -578,7 +578,7 @@ File::EFileError File::Load(void*& outBuffer, UInt32& outSize)
 		}
 
 	// Get the size of the file
-	UInt32 size = GetFileSize(mHandle, NULL);
+	uint32_t size = GetFileSize(mHandle, NULL);
 
 	if (size == 0xFFFFFFFF)
 		{
@@ -599,7 +599,7 @@ File::EFileError File::Load(void*& outBuffer, UInt32& outSize)
 			// Fill the buffer with the file contents
 			while (size > 0)
 				{
-				unsigned long bytesRead = 0;
+				uint32_t bytesRead = 0;
 
 				// Read in some bytes.
 				if (ReadFile(mHandle, outBuffer, size, &bytesRead, NULL) == 0)
@@ -655,7 +655,7 @@ File::EFileError File::Load(void*& outBuffer, UInt32& outSize)
 *
 ******************************************************************************/
 
-File::EFileError File::Save(const void* buffer, UInt32 size)
+File::EFileError File::Save(const void* buffer, uint32_t size)
 	{
 	// Enforce access control
 	if (mRights == Rights_ReadOnly)
@@ -684,7 +684,7 @@ File::EFileError File::Save(const void* buffer, UInt32 size)
 		SetMarker(0, EStreamFrom::FromStart);
 
 		// Write the data to the file.
-		unsigned long bytesWritten = 0;
+		uint32_t bytesWritten = 0;
 
 		if (WriteFile(mHandle, buffer, size, &bytesWritten, NULL) == 0)
 			{
@@ -765,7 +765,7 @@ bool File::OnFileError(EFileError error, bool)
 *
 ******************************************************************************/
 
-UInt32 File::GetLength(void)
+uint32_t File::GetLength(void)
 	{
 	// If the file is not open then it must be opened first.
 	bool openedHere = false;
@@ -780,7 +780,7 @@ UInt32 File::GetLength(void)
 		openedHere = true;
 		}
 
-	UInt32 length = GetFileSize(mHandle, NULL);
+	uint32_t length = GetFileSize(mHandle, NULL);
 
 	if (length == 0xFFFFFFFF)
 		{
@@ -813,10 +813,10 @@ UInt32 File::GetLength(void)
 *
 ******************************************************************************/
 
-void File::SetLength(UInt32 length)
+void File::SetLength(uint32_t length)
 	{
 	// Get the current file position
-	UInt32 position = SetFilePointer(mHandle, 0, NULL, FILE_CURRENT);
+	uint32_t position = SetFilePointer(mHandle, 0, NULL, FILE_CURRENT);
 
 	// Extend the file size by positioning the Win32 file pointer to the
 	// specified location then setting the end of file.
@@ -844,7 +844,7 @@ void File::SetLength(UInt32 length)
 *
 ******************************************************************************/
 
-UInt32 File::GetMarker(void)
+uint32_t File::GetMarker(void)
 	{
 	return SetFilePointer(mHandle, 0, NULL, FILE_CURRENT);
 	}
@@ -867,7 +867,7 @@ UInt32 File::GetMarker(void)
 *
 ******************************************************************************/
 
-void File::SetMarker(Int32 offset, EStreamFrom from)
+void File::SetMarker(int32_t offset, EStreamFrom from)
 	{
 	// The file must be open before we can seek into it.
 	if (IsOpen() == false)
@@ -876,7 +876,7 @@ void File::SetMarker(Int32 offset, EStreamFrom from)
 		}
 	else
 		{
-		unsigned long dir;
+		uint32_t dir;
 
 		switch (from)
 			{
@@ -943,7 +943,7 @@ bool File::AtEnd(void)
 *
 ******************************************************************************/
 
-UInt32 File::GetBytes(void* ptr, UInt32 bytes)
+uint32_t File::GetBytes(void* ptr, uint32_t bytes)
 	{
 	// Parameter check; Null pointers are bad!
 	assert(ptr != NULL);
@@ -965,12 +965,12 @@ UInt32 File::GetBytes(void* ptr, UInt32 bytes)
 		}
 
 	// Zero total bytes read count
-	UInt32 totalRead = 0;
-	UInt32 bytesToRead = bytes;
+	uint32_t totalRead = 0;
+	uint32_t bytesToRead = bytes;
 
 	while (bytesToRead > 0)
 		{
-		unsigned long read;
+		uint32_t read;
 
 		if (ReadFile(mHandle, ptr, bytesToRead, &read, NULL) == 0)
 			{
@@ -1012,7 +1012,7 @@ UInt32 File::GetBytes(void* ptr, UInt32 bytes)
 *
 ******************************************************************************/
 
-UInt32 File::PutBytes(const void* ptr, UInt32 bytes)
+uint32_t File::PutBytes(const void* ptr, uint32_t bytes)
 	{
 	// Parameter check; Null pointers are bad!
 	assert(ptr != NULL);
@@ -1034,12 +1034,12 @@ UInt32 File::PutBytes(const void* ptr, UInt32 bytes)
 		}
 
 	// Zero total bytes written count
-	UInt32 totalWritten = 0;
-	UInt32 bytesToWrite = bytes;
+	uint32_t totalWritten = 0;
+	uint32_t bytesToWrite = bytes;
 
 	while (bytesToWrite > 0)
 		{
-		unsigned long written;
+		uint32_t written;
 
 		if (WriteFile(mHandle, ptr, bytes, &written, NULL) == 0)
 			{
@@ -1074,16 +1074,16 @@ UInt32 File::PutBytes(const void* ptr, UInt32 bytes)
 *
 ******************************************************************************/
 
-UInt32 File::PeekBytes(void* ptr, UInt32 bytes)
+uint32_t File::PeekBytes(void* ptr, uint32_t bytes)
 	{
 	// Parameter check; NULL pointers are bad!
 	assert(ptr != NULL);
 
 	// Get current position
-	UInt32 pos = GetMarker();
+	uint32_t pos = GetMarker();
 
 	// Get bytes
-	UInt32 bytesPeeked = GetBytes(ptr, bytes);
+	uint32_t bytesPeeked = GetBytes(ptr, bytes);
 	
 	// Restore previous position
 	SetMarker(pos, Stream::FromStart);

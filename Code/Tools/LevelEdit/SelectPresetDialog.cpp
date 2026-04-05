@@ -87,7 +87,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 SelectPresetDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -181,7 +181,7 @@ SelectPresetDialogClass::Fill_Tree (NTreeLeafClass<PresetClass *> *leaf, HTREEIT
 				//
 				//	Associate the preset with its tree entry
 				//
-				m_TreeCtrl.SetItemData (new_item, (LONG)preset);
+				m_TreeCtrl.SetItemData (new_item, (int32_t)preset);
 
 				//
 				//	Recurse if necessary
@@ -363,7 +363,7 @@ void
 SelectPresetDialogClass::OnSelchangedPresetTree
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 )
 {
 	NM_TREEVIEW* pNMTreeView = (NM_TREEVIEW*)pNMHDR;

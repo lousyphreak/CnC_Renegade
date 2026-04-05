@@ -54,7 +54,7 @@ class HSVClass
 
 	public:
 		HSVClass(void) : Hue(0), Saturation(0), Value(0) {};
-		HSVClass(unsigned char hue, unsigned char saturation, unsigned char value) :
+		HSVClass(uint8_t hue, uint8_t saturation, uint8_t value) :
 				Hue(hue),
 				Saturation(saturation),
 				Value(value)
@@ -70,14 +70,14 @@ class HSVClass
 		int Get_Hue(void) const {return(Hue);};
 		int Get_Saturation(void) const {return(Saturation);};
 		int Get_Value(void) const {return(Value);};
-		void Set_Hue(unsigned char value) {Hue = value;}
-		void Set_Saturation(unsigned char value) {Saturation = value;}
-		void Set_Value(unsigned char value) {Value = value;}
+		void Set_Hue(uint8_t value) {Hue = value;}
+		void Set_Saturation(uint8_t value) {Saturation = value;}
+		void Set_Value(uint8_t value) {Value = value;}
 
 	private:
-		unsigned char Hue;
-		unsigned char Saturation;
-		unsigned char Value;
+		uint8_t Hue;
+		uint8_t Saturation;
+		uint8_t Value;
 };
 
 #endif

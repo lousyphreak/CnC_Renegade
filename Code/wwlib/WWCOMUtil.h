@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -42,15 +44,15 @@
 #include <oaidl.h>
 
 //! Invoke PropertyGet on IDispatch interface.
-HRESULT STDMETHODCALLTYPE Dispatch_GetProperty(IDispatch* object,
+int32_t STDMETHODCALLTYPE Dispatch_GetProperty(IDispatch* object,
 		const OLECHAR* propName, VARIANT* result);
 
 //! Invoke PropertyPut on IDispatch interface.
-HRESULT STDMETHODCALLTYPE Dispatch_PutProperty(IDispatch* object,
+int32_t STDMETHODCALLTYPE Dispatch_PutProperty(IDispatch* object,
 		const OLECHAR* propName, VARIANT* propValue);
 
 //! Invoke Method on IDispatch interface.
-HRESULT STDMETHODCALLTYPE Dispatch_InvokeMethod(IDispatch* object,
+int32_t STDMETHODCALLTYPE Dispatch_InvokeMethod(IDispatch* object,
 		const OLECHAR* methodName, DISPPARAMS* params, VARIANT* result);
 
 //! Register COM in-process DLL server

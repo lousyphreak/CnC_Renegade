@@ -50,7 +50,7 @@
  * HISTORY:                                                                                    *
  *   08/22/01    IML : Created.                                                                * 
  *=============================================================================================*/
-void WOL1DialogClass::On_Command (int ctrl_id, int message_id, DWORD param)
+void WOL1DialogClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	switch (ctrl_id) {
 

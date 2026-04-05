@@ -32,6 +32,8 @@
 /* verify that the <rpcndr.h> version is high enough to compile this file*/
 #ifndef __REQUIRED_RPCNDR_H_VERSION__
 #define __REQUIRED_RPCNDR_H_VERSION__ 440
+
+#include <cstdint>
 #endif
 
 #include "rpc.h"
@@ -107,47 +109,47 @@ EXTERN_C const IID IID_IWOLBrowserEvent;
     IWOLBrowserEvent : public IUnknown
     {
     public:
-        virtual HRESULT STDMETHODCALLTYPE OnScriptQuit( void) = 0;
+        virtual int32_t STDMETHODCALLTYPE OnScriptQuit( void) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE OnBeforeNavigate( 
+        virtual int32_t STDMETHODCALLTYPE OnBeforeNavigate( 
             const wchar_t __RPC_FAR *url,
             const wchar_t __RPC_FAR *targetFrame) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE OnDocumentComplete( 
+        virtual int32_t STDMETHODCALLTYPE OnDocumentComplete( 
             const wchar_t __RPC_FAR *url,
-            BOOL isTopFrame) = 0;
+            int32_t isTopFrame) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE OnDownloadBegin( void) = 0;
+        virtual int32_t STDMETHODCALLTYPE OnDownloadBegin( void) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE OnProgressChange( 
-            LONG progress,
-            LONG progressMax) = 0;
+        virtual int32_t STDMETHODCALLTYPE OnProgressChange( 
+            int32_t progress,
+            int32_t progressMax) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE OnDownloadComplete( void) = 0;
+        virtual int32_t STDMETHODCALLTYPE OnDownloadComplete( void) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE OnNavigateComplete( 
+        virtual int32_t STDMETHODCALLTYPE OnNavigateComplete( 
             const wchar_t __RPC_FAR *url) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE OnStatusTextChange( 
+        virtual int32_t STDMETHODCALLTYPE OnStatusTextChange( 
             const wchar_t __RPC_FAR *statusText) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE OnTitleChange( 
+        virtual int32_t STDMETHODCALLTYPE OnTitleChange( 
             const wchar_t __RPC_FAR *title) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE OnNewWindow( void) = 0;
+        virtual int32_t STDMETHODCALLTYPE OnNewWindow( void) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE OnShowMessage( 
+        virtual int32_t STDMETHODCALLTYPE OnShowMessage( 
             const wchar_t __RPC_FAR *text,
             const wchar_t __RPC_FAR *caption,
-            ULONG type,
-            LONG __RPC_FAR *result) = 0;
+            uint32_t type,
+            int32_t __RPC_FAR *result) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE OnFailedPageCertification( void) = 0;
+        virtual int32_t STDMETHODCALLTYPE OnFailedPageCertification( void) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE OnErrorMsg( 
+        virtual int32_t STDMETHODCALLTYPE OnErrorMsg( 
             const wchar_t __RPC_FAR *error) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE OnRegisterLogin( 
+        virtual int32_t STDMETHODCALLTYPE OnRegisterLogin( 
             const wchar_t __RPC_FAR *nick,
             const wchar_t __RPC_FAR *pass) = 0;
         
@@ -159,71 +161,71 @@ EXTERN_C const IID IID_IWOLBrowserEvent;
     {
         BEGIN_INTERFACE
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *QueryInterface )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *QueryInterface )( 
             IWOLBrowserEvent __RPC_FAR * This,
             /* [in] */ REFIID riid,
             /* [iid_is][out] */ void __RPC_FAR *__RPC_FAR *ppvObject);
         
-        ULONG ( STDMETHODCALLTYPE __RPC_FAR *AddRef )( 
+        uint32_t ( STDMETHODCALLTYPE __RPC_FAR *AddRef )( 
             IWOLBrowserEvent __RPC_FAR * This);
         
-        ULONG ( STDMETHODCALLTYPE __RPC_FAR *Release )( 
+        uint32_t ( STDMETHODCALLTYPE __RPC_FAR *Release )( 
             IWOLBrowserEvent __RPC_FAR * This);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *OnScriptQuit )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *OnScriptQuit )( 
             IWOLBrowserEvent __RPC_FAR * This);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *OnBeforeNavigate )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *OnBeforeNavigate )( 
             IWOLBrowserEvent __RPC_FAR * This,
             const wchar_t __RPC_FAR *url,
             const wchar_t __RPC_FAR *targetFrame);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *OnDocumentComplete )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *OnDocumentComplete )( 
             IWOLBrowserEvent __RPC_FAR * This,
             const wchar_t __RPC_FAR *url,
-            BOOL isTopFrame);
+            int32_t isTopFrame);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *OnDownloadBegin )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *OnDownloadBegin )( 
             IWOLBrowserEvent __RPC_FAR * This);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *OnProgressChange )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *OnProgressChange )( 
             IWOLBrowserEvent __RPC_FAR * This,
-            LONG progress,
-            LONG progressMax);
+            int32_t progress,
+            int32_t progressMax);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *OnDownloadComplete )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *OnDownloadComplete )( 
             IWOLBrowserEvent __RPC_FAR * This);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *OnNavigateComplete )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *OnNavigateComplete )( 
             IWOLBrowserEvent __RPC_FAR * This,
             const wchar_t __RPC_FAR *url);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *OnStatusTextChange )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *OnStatusTextChange )( 
             IWOLBrowserEvent __RPC_FAR * This,
             const wchar_t __RPC_FAR *statusText);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *OnTitleChange )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *OnTitleChange )( 
             IWOLBrowserEvent __RPC_FAR * This,
             const wchar_t __RPC_FAR *title);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *OnNewWindow )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *OnNewWindow )( 
             IWOLBrowserEvent __RPC_FAR * This);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *OnShowMessage )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *OnShowMessage )( 
             IWOLBrowserEvent __RPC_FAR * This,
             const wchar_t __RPC_FAR *text,
             const wchar_t __RPC_FAR *caption,
-            ULONG type,
-            LONG __RPC_FAR *result);
+            uint32_t type,
+            int32_t __RPC_FAR *result);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *OnFailedPageCertification )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *OnFailedPageCertification )( 
             IWOLBrowserEvent __RPC_FAR * This);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *OnErrorMsg )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *OnErrorMsg )( 
             IWOLBrowserEvent __RPC_FAR * This,
             const wchar_t __RPC_FAR *error);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *OnRegisterLogin )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *OnRegisterLogin )( 
             IWOLBrowserEvent __RPC_FAR * This,
             const wchar_t __RPC_FAR *nick,
             const wchar_t __RPC_FAR *pass);
@@ -300,7 +302,7 @@ EXTERN_C const IID IID_IWOLBrowserEvent;
 
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowserEvent_OnScriptQuit_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowserEvent_OnScriptQuit_Proxy( 
     IWOLBrowserEvent __RPC_FAR * This);
 
 
@@ -308,10 +310,10 @@ void __RPC_STUB IWOLBrowserEvent_OnScriptQuit_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowserEvent_OnBeforeNavigate_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowserEvent_OnBeforeNavigate_Proxy( 
     IWOLBrowserEvent __RPC_FAR * This,
     const wchar_t __RPC_FAR *url,
     const wchar_t __RPC_FAR *targetFrame);
@@ -321,23 +323,23 @@ void __RPC_STUB IWOLBrowserEvent_OnBeforeNavigate_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowserEvent_OnDocumentComplete_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowserEvent_OnDocumentComplete_Proxy( 
     IWOLBrowserEvent __RPC_FAR * This,
     const wchar_t __RPC_FAR *url,
-    BOOL isTopFrame);
+    int32_t isTopFrame);
 
 
 void __RPC_STUB IWOLBrowserEvent_OnDocumentComplete_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowserEvent_OnDownloadBegin_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowserEvent_OnDownloadBegin_Proxy( 
     IWOLBrowserEvent __RPC_FAR * This);
 
 
@@ -345,23 +347,23 @@ void __RPC_STUB IWOLBrowserEvent_OnDownloadBegin_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowserEvent_OnProgressChange_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowserEvent_OnProgressChange_Proxy( 
     IWOLBrowserEvent __RPC_FAR * This,
-    LONG progress,
-    LONG progressMax);
+    int32_t progress,
+    int32_t progressMax);
 
 
 void __RPC_STUB IWOLBrowserEvent_OnProgressChange_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowserEvent_OnDownloadComplete_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowserEvent_OnDownloadComplete_Proxy( 
     IWOLBrowserEvent __RPC_FAR * This);
 
 
@@ -369,10 +371,10 @@ void __RPC_STUB IWOLBrowserEvent_OnDownloadComplete_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowserEvent_OnNavigateComplete_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowserEvent_OnNavigateComplete_Proxy( 
     IWOLBrowserEvent __RPC_FAR * This,
     const wchar_t __RPC_FAR *url);
 
@@ -381,10 +383,10 @@ void __RPC_STUB IWOLBrowserEvent_OnNavigateComplete_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowserEvent_OnStatusTextChange_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowserEvent_OnStatusTextChange_Proxy( 
     IWOLBrowserEvent __RPC_FAR * This,
     const wchar_t __RPC_FAR *statusText);
 
@@ -393,10 +395,10 @@ void __RPC_STUB IWOLBrowserEvent_OnStatusTextChange_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowserEvent_OnTitleChange_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowserEvent_OnTitleChange_Proxy( 
     IWOLBrowserEvent __RPC_FAR * This,
     const wchar_t __RPC_FAR *title);
 
@@ -405,10 +407,10 @@ void __RPC_STUB IWOLBrowserEvent_OnTitleChange_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowserEvent_OnNewWindow_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowserEvent_OnNewWindow_Proxy( 
     IWOLBrowserEvent __RPC_FAR * This);
 
 
@@ -416,25 +418,25 @@ void __RPC_STUB IWOLBrowserEvent_OnNewWindow_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowserEvent_OnShowMessage_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowserEvent_OnShowMessage_Proxy( 
     IWOLBrowserEvent __RPC_FAR * This,
     const wchar_t __RPC_FAR *text,
     const wchar_t __RPC_FAR *caption,
-    ULONG type,
-    LONG __RPC_FAR *result);
+    uint32_t type,
+    int32_t __RPC_FAR *result);
 
 
 void __RPC_STUB IWOLBrowserEvent_OnShowMessage_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowserEvent_OnFailedPageCertification_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowserEvent_OnFailedPageCertification_Proxy( 
     IWOLBrowserEvent __RPC_FAR * This);
 
 
@@ -442,10 +444,10 @@ void __RPC_STUB IWOLBrowserEvent_OnFailedPageCertification_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowserEvent_OnErrorMsg_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowserEvent_OnErrorMsg_Proxy( 
     IWOLBrowserEvent __RPC_FAR * This,
     const wchar_t __RPC_FAR *error);
 
@@ -454,10 +456,10 @@ void __RPC_STUB IWOLBrowserEvent_OnErrorMsg_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowserEvent_OnRegisterLogin_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowserEvent_OnRegisterLogin_Proxy( 
     IWOLBrowserEvent __RPC_FAR * This,
     const wchar_t __RPC_FAR *nick,
     const wchar_t __RPC_FAR *pass);
@@ -467,7 +469,7 @@ void __RPC_STUB IWOLBrowserEvent_OnRegisterLogin_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
 
@@ -506,72 +508,72 @@ EXTERN_C const IID IID_IWOLBrowser;
     IWOLBrowser : public IUnknown
     {
     public:
-        virtual HRESULT STDMETHODCALLTYPE Startup( 
+        virtual int32_t STDMETHODCALLTYPE Startup( 
             HWND parent,
             LPRECT rect) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE Shutdown( void) = 0;
+        virtual int32_t STDMETHODCALLTYPE Shutdown( void) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE AddObserver( 
+        virtual int32_t STDMETHODCALLTYPE AddObserver( 
             IWOLBrowserEvent __RPC_FAR *observer) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE RemoveObserver( 
+        virtual int32_t STDMETHODCALLTYPE RemoveObserver( 
             IWOLBrowserEvent __RPC_FAR *observer) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE Show( void) = 0;
+        virtual int32_t STDMETHODCALLTYPE Show( void) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE Hide( void) = 0;
+        virtual int32_t STDMETHODCALLTYPE Hide( void) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE Reposition( 
+        virtual int32_t STDMETHODCALLTYPE Reposition( 
             LPRECT rect) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE SetUIFlags( 
-            ULONG uiFlags) = 0;
+        virtual int32_t STDMETHODCALLTYPE SetUIFlags( 
+            uint32_t uiFlags) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE SetDownloadControl( 
-            ULONG dlFlags) = 0;
+        virtual int32_t STDMETHODCALLTYPE SetDownloadControl( 
+            uint32_t dlFlags) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE ExecuteScript( 
+        virtual int32_t STDMETHODCALLTYPE ExecuteScript( 
             const wchar_t __RPC_FAR *script,
             DISPPARAMS __RPC_FAR *params,
             VARIANT __RPC_FAR *result) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE ExecuteScriptInFrame( 
+        virtual int32_t STDMETHODCALLTYPE ExecuteScriptInFrame( 
             const wchar_t __RPC_FAR *frame,
             const wchar_t __RPC_FAR *script,
             DISPPARAMS __RPC_FAR *params,
             VARIANT __RPC_FAR *result) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE SetPageCertificate( 
+        virtual int32_t STDMETHODCALLTYPE SetPageCertificate( 
             const wchar_t __RPC_FAR *certificate) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE AllowPageCertification( 
-            BOOL allow) = 0;
+        virtual int32_t STDMETHODCALLTYPE AllowPageCertification( 
+            int32_t allow) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE Navigate( 
+        virtual int32_t STDMETHODCALLTYPE Navigate( 
             const wchar_t __RPC_FAR *url,
-            long flags,
+            int32_t flags,
             const wchar_t __RPC_FAR *targetFrame) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE Stop( void) = 0;
+        virtual int32_t STDMETHODCALLTYPE Stop( void) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE Refresh( void) = 0;
+        virtual int32_t STDMETHODCALLTYPE Refresh( void) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE GoBack( void) = 0;
+        virtual int32_t STDMETHODCALLTYPE GoBack( void) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE GoForward( void) = 0;
+        virtual int32_t STDMETHODCALLTYPE GoForward( void) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE GoHome( void) = 0;
+        virtual int32_t STDMETHODCALLTYPE GoHome( void) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE GoSearch( void) = 0;
+        virtual int32_t STDMETHODCALLTYPE GoSearch( void) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE GetLocationName( 
+        virtual int32_t STDMETHODCALLTYPE GetLocationName( 
             wchar_t __RPC_FAR *locationName,
-            LONG size) = 0;
+            int32_t size) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE GetLocationURL( 
+        virtual int32_t STDMETHODCALLTYPE GetLocationURL( 
             wchar_t __RPC_FAR *locationURL,
-            LONG size) = 0;
+            int32_t size) = 0;
         
     };
     
@@ -581,105 +583,105 @@ EXTERN_C const IID IID_IWOLBrowser;
     {
         BEGIN_INTERFACE
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *QueryInterface )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *QueryInterface )( 
             IWOLBrowser __RPC_FAR * This,
             /* [in] */ REFIID riid,
             /* [iid_is][out] */ void __RPC_FAR *__RPC_FAR *ppvObject);
         
-        ULONG ( STDMETHODCALLTYPE __RPC_FAR *AddRef )( 
+        uint32_t ( STDMETHODCALLTYPE __RPC_FAR *AddRef )( 
             IWOLBrowser __RPC_FAR * This);
         
-        ULONG ( STDMETHODCALLTYPE __RPC_FAR *Release )( 
+        uint32_t ( STDMETHODCALLTYPE __RPC_FAR *Release )( 
             IWOLBrowser __RPC_FAR * This);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *Startup )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *Startup )( 
             IWOLBrowser __RPC_FAR * This,
             HWND parent,
             LPRECT rect);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *Shutdown )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *Shutdown )( 
             IWOLBrowser __RPC_FAR * This);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *AddObserver )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *AddObserver )( 
             IWOLBrowser __RPC_FAR * This,
             IWOLBrowserEvent __RPC_FAR *observer);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *RemoveObserver )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *RemoveObserver )( 
             IWOLBrowser __RPC_FAR * This,
             IWOLBrowserEvent __RPC_FAR *observer);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *Show )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *Show )( 
             IWOLBrowser __RPC_FAR * This);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *Hide )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *Hide )( 
             IWOLBrowser __RPC_FAR * This);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *Reposition )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *Reposition )( 
             IWOLBrowser __RPC_FAR * This,
             LPRECT rect);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *SetUIFlags )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *SetUIFlags )( 
             IWOLBrowser __RPC_FAR * This,
-            ULONG uiFlags);
+            uint32_t uiFlags);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *SetDownloadControl )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *SetDownloadControl )( 
             IWOLBrowser __RPC_FAR * This,
-            ULONG dlFlags);
+            uint32_t dlFlags);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *ExecuteScript )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *ExecuteScript )( 
             IWOLBrowser __RPC_FAR * This,
             const wchar_t __RPC_FAR *script,
             DISPPARAMS __RPC_FAR *params,
             VARIANT __RPC_FAR *result);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *ExecuteScriptInFrame )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *ExecuteScriptInFrame )( 
             IWOLBrowser __RPC_FAR * This,
             const wchar_t __RPC_FAR *frame,
             const wchar_t __RPC_FAR *script,
             DISPPARAMS __RPC_FAR *params,
             VARIANT __RPC_FAR *result);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *SetPageCertificate )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *SetPageCertificate )( 
             IWOLBrowser __RPC_FAR * This,
             const wchar_t __RPC_FAR *certificate);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *AllowPageCertification )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *AllowPageCertification )( 
             IWOLBrowser __RPC_FAR * This,
-            BOOL allow);
+            int32_t allow);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *Navigate )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *Navigate )( 
             IWOLBrowser __RPC_FAR * This,
             const wchar_t __RPC_FAR *url,
-            long flags,
+            int32_t flags,
             const wchar_t __RPC_FAR *targetFrame);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *Stop )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *Stop )( 
             IWOLBrowser __RPC_FAR * This);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *Refresh )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *Refresh )( 
             IWOLBrowser __RPC_FAR * This);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *GoBack )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *GoBack )( 
             IWOLBrowser __RPC_FAR * This);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *GoForward )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *GoForward )( 
             IWOLBrowser __RPC_FAR * This);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *GoHome )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *GoHome )( 
             IWOLBrowser __RPC_FAR * This);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *GoSearch )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *GoSearch )( 
             IWOLBrowser __RPC_FAR * This);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *GetLocationName )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *GetLocationName )( 
             IWOLBrowser __RPC_FAR * This,
             wchar_t __RPC_FAR *locationName,
-            LONG size);
+            int32_t size);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *GetLocationURL )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *GetLocationURL )( 
             IWOLBrowser __RPC_FAR * This,
             wchar_t __RPC_FAR *locationURL,
-            LONG size);
+            int32_t size);
         
         END_INTERFACE
     } IWOLBrowserVtbl;
@@ -777,7 +779,7 @@ EXTERN_C const IID IID_IWOLBrowser;
 
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowser_Startup_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowser_Startup_Proxy( 
     IWOLBrowser __RPC_FAR * This,
     HWND parent,
     LPRECT rect);
@@ -787,10 +789,10 @@ void __RPC_STUB IWOLBrowser_Startup_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowser_Shutdown_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowser_Shutdown_Proxy( 
     IWOLBrowser __RPC_FAR * This);
 
 
@@ -798,10 +800,10 @@ void __RPC_STUB IWOLBrowser_Shutdown_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowser_AddObserver_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowser_AddObserver_Proxy( 
     IWOLBrowser __RPC_FAR * This,
     IWOLBrowserEvent __RPC_FAR *observer);
 
@@ -810,10 +812,10 @@ void __RPC_STUB IWOLBrowser_AddObserver_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowser_RemoveObserver_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowser_RemoveObserver_Proxy( 
     IWOLBrowser __RPC_FAR * This,
     IWOLBrowserEvent __RPC_FAR *observer);
 
@@ -822,10 +824,10 @@ void __RPC_STUB IWOLBrowser_RemoveObserver_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowser_Show_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowser_Show_Proxy( 
     IWOLBrowser __RPC_FAR * This);
 
 
@@ -833,10 +835,10 @@ void __RPC_STUB IWOLBrowser_Show_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowser_Hide_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowser_Hide_Proxy( 
     IWOLBrowser __RPC_FAR * This);
 
 
@@ -844,10 +846,10 @@ void __RPC_STUB IWOLBrowser_Hide_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowser_Reposition_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowser_Reposition_Proxy( 
     IWOLBrowser __RPC_FAR * This,
     LPRECT rect);
 
@@ -856,34 +858,34 @@ void __RPC_STUB IWOLBrowser_Reposition_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowser_SetUIFlags_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowser_SetUIFlags_Proxy( 
     IWOLBrowser __RPC_FAR * This,
-    ULONG uiFlags);
+    uint32_t uiFlags);
 
 
 void __RPC_STUB IWOLBrowser_SetUIFlags_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowser_SetDownloadControl_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowser_SetDownloadControl_Proxy( 
     IWOLBrowser __RPC_FAR * This,
-    ULONG dlFlags);
+    uint32_t dlFlags);
 
 
 void __RPC_STUB IWOLBrowser_SetDownloadControl_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowser_ExecuteScript_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowser_ExecuteScript_Proxy( 
     IWOLBrowser __RPC_FAR * This,
     const wchar_t __RPC_FAR *script,
     DISPPARAMS __RPC_FAR *params,
@@ -894,10 +896,10 @@ void __RPC_STUB IWOLBrowser_ExecuteScript_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowser_ExecuteScriptInFrame_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowser_ExecuteScriptInFrame_Proxy( 
     IWOLBrowser __RPC_FAR * This,
     const wchar_t __RPC_FAR *frame,
     const wchar_t __RPC_FAR *script,
@@ -909,10 +911,10 @@ void __RPC_STUB IWOLBrowser_ExecuteScriptInFrame_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowser_SetPageCertificate_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowser_SetPageCertificate_Proxy( 
     IWOLBrowser __RPC_FAR * This,
     const wchar_t __RPC_FAR *certificate);
 
@@ -921,25 +923,25 @@ void __RPC_STUB IWOLBrowser_SetPageCertificate_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowser_AllowPageCertification_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowser_AllowPageCertification_Proxy( 
     IWOLBrowser __RPC_FAR * This,
-    BOOL allow);
+    int32_t allow);
 
 
 void __RPC_STUB IWOLBrowser_AllowPageCertification_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowser_Navigate_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowser_Navigate_Proxy( 
     IWOLBrowser __RPC_FAR * This,
     const wchar_t __RPC_FAR *url,
-    long flags,
+    int32_t flags,
     const wchar_t __RPC_FAR *targetFrame);
 
 
@@ -947,10 +949,10 @@ void __RPC_STUB IWOLBrowser_Navigate_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowser_Stop_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowser_Stop_Proxy( 
     IWOLBrowser __RPC_FAR * This);
 
 
@@ -958,10 +960,10 @@ void __RPC_STUB IWOLBrowser_Stop_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowser_Refresh_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowser_Refresh_Proxy( 
     IWOLBrowser __RPC_FAR * This);
 
 
@@ -969,10 +971,10 @@ void __RPC_STUB IWOLBrowser_Refresh_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowser_GoBack_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowser_GoBack_Proxy( 
     IWOLBrowser __RPC_FAR * This);
 
 
@@ -980,10 +982,10 @@ void __RPC_STUB IWOLBrowser_GoBack_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowser_GoForward_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowser_GoForward_Proxy( 
     IWOLBrowser __RPC_FAR * This);
 
 
@@ -991,10 +993,10 @@ void __RPC_STUB IWOLBrowser_GoForward_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowser_GoHome_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowser_GoHome_Proxy( 
     IWOLBrowser __RPC_FAR * This);
 
 
@@ -1002,10 +1004,10 @@ void __RPC_STUB IWOLBrowser_GoHome_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowser_GoSearch_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowser_GoSearch_Proxy( 
     IWOLBrowser __RPC_FAR * This);
 
 
@@ -1013,33 +1015,33 @@ void __RPC_STUB IWOLBrowser_GoSearch_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowser_GetLocationName_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowser_GetLocationName_Proxy( 
     IWOLBrowser __RPC_FAR * This,
     wchar_t __RPC_FAR *locationName,
-    LONG size);
+    int32_t size);
 
 
 void __RPC_STUB IWOLBrowser_GetLocationName_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowser_GetLocationURL_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowser_GetLocationURL_Proxy( 
     IWOLBrowser __RPC_FAR * This,
     wchar_t __RPC_FAR *locationURL,
-    LONG size);
+    int32_t size);
 
 
 void __RPC_STUB IWOLBrowser_GetLocationURL_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
 
@@ -1061,18 +1063,18 @@ EXTERN_C const IID IID_IWOLBrowserScript;
     IWOLBrowserScript : public IDispatch
     {
     public:
-        virtual HRESULT STDMETHODCALLTYPE Quit( void) = 0;
+        virtual int32_t STDMETHODCALLTYPE Quit( void) = 0;
         
-        virtual /* [propput] */ HRESULT STDMETHODCALLTYPE put_ErrorMsg( 
+        virtual /* [propput] */ int32_t STDMETHODCALLTYPE put_ErrorMsg( 
             /* [in] */ BSTR error) = 0;
         
-        virtual /* [propget] */ HRESULT STDMETHODCALLTYPE get_BackURL( 
+        virtual /* [propget] */ int32_t STDMETHODCALLTYPE get_BackURL( 
             /* [out][retval] */ BSTR __RPC_FAR *url) = 0;
         
-        virtual /* [propput] */ HRESULT STDMETHODCALLTYPE put_BackURL( 
+        virtual /* [propput] */ int32_t STDMETHODCALLTYPE put_BackURL( 
             /* [in] */ BSTR url) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE RegisterLogin( 
+        virtual int32_t STDMETHODCALLTYPE RegisterLogin( 
             /* [in] */ BSTR nickname,
             /* [in] */ BSTR password) = 0;
         
@@ -1084,62 +1086,62 @@ EXTERN_C const IID IID_IWOLBrowserScript;
     {
         BEGIN_INTERFACE
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *QueryInterface )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *QueryInterface )( 
             IWOLBrowserScript __RPC_FAR * This,
             /* [in] */ REFIID riid,
             /* [iid_is][out] */ void __RPC_FAR *__RPC_FAR *ppvObject);
         
-        ULONG ( STDMETHODCALLTYPE __RPC_FAR *AddRef )( 
+        uint32_t ( STDMETHODCALLTYPE __RPC_FAR *AddRef )( 
             IWOLBrowserScript __RPC_FAR * This);
         
-        ULONG ( STDMETHODCALLTYPE __RPC_FAR *Release )( 
+        uint32_t ( STDMETHODCALLTYPE __RPC_FAR *Release )( 
             IWOLBrowserScript __RPC_FAR * This);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *GetTypeInfoCount )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *GetTypeInfoCount )( 
             IWOLBrowserScript __RPC_FAR * This,
-            /* [out] */ UINT __RPC_FAR *pctinfo);
+            /* [out] */ uint32_t __RPC_FAR *pctinfo);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *GetTypeInfo )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *GetTypeInfo )( 
             IWOLBrowserScript __RPC_FAR * This,
-            /* [in] */ UINT iTInfo,
+            /* [in] */ uint32_t iTInfo,
             /* [in] */ LCID lcid,
             /* [out] */ ITypeInfo __RPC_FAR *__RPC_FAR *ppTInfo);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *GetIDsOfNames )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *GetIDsOfNames )( 
             IWOLBrowserScript __RPC_FAR * This,
             /* [in] */ REFIID riid,
             /* [size_is][in] */ LPOLESTR __RPC_FAR *rgszNames,
-            /* [in] */ UINT cNames,
+            /* [in] */ uint32_t cNames,
             /* [in] */ LCID lcid,
             /* [size_is][out] */ DISPID __RPC_FAR *rgDispId);
         
-        /* [local] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *Invoke )( 
+        /* [local] */ int32_t ( STDMETHODCALLTYPE __RPC_FAR *Invoke )( 
             IWOLBrowserScript __RPC_FAR * This,
             /* [in] */ DISPID dispIdMember,
             /* [in] */ REFIID riid,
             /* [in] */ LCID lcid,
-            /* [in] */ WORD wFlags,
+            /* [in] */ uint16_t wFlags,
             /* [out][in] */ DISPPARAMS __RPC_FAR *pDispParams,
             /* [out] */ VARIANT __RPC_FAR *pVarResult,
             /* [out] */ EXCEPINFO __RPC_FAR *pExcepInfo,
-            /* [out] */ UINT __RPC_FAR *puArgErr);
+            /* [out] */ uint32_t __RPC_FAR *puArgErr);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *Quit )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *Quit )( 
             IWOLBrowserScript __RPC_FAR * This);
         
-        /* [propput] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *put_ErrorMsg )( 
+        /* [propput] */ int32_t ( STDMETHODCALLTYPE __RPC_FAR *put_ErrorMsg )( 
             IWOLBrowserScript __RPC_FAR * This,
             /* [in] */ BSTR error);
         
-        /* [propget] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *get_BackURL )( 
+        /* [propget] */ int32_t ( STDMETHODCALLTYPE __RPC_FAR *get_BackURL )( 
             IWOLBrowserScript __RPC_FAR * This,
             /* [out][retval] */ BSTR __RPC_FAR *url);
         
-        /* [propput] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *put_BackURL )( 
+        /* [propput] */ int32_t ( STDMETHODCALLTYPE __RPC_FAR *put_BackURL )( 
             IWOLBrowserScript __RPC_FAR * This,
             /* [in] */ BSTR url);
         
-        HRESULT ( STDMETHODCALLTYPE __RPC_FAR *RegisterLogin )( 
+        int32_t ( STDMETHODCALLTYPE __RPC_FAR *RegisterLogin )( 
             IWOLBrowserScript __RPC_FAR * This,
             /* [in] */ BSTR nickname,
             /* [in] */ BSTR password);
@@ -1202,7 +1204,7 @@ EXTERN_C const IID IID_IWOLBrowserScript;
 
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowserScript_Quit_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowserScript_Quit_Proxy( 
     IWOLBrowserScript __RPC_FAR * This);
 
 
@@ -1210,10 +1212,10 @@ void __RPC_STUB IWOLBrowserScript_Quit_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-/* [propput] */ HRESULT STDMETHODCALLTYPE IWOLBrowserScript_put_ErrorMsg_Proxy( 
+/* [propput] */ int32_t STDMETHODCALLTYPE IWOLBrowserScript_put_ErrorMsg_Proxy( 
     IWOLBrowserScript __RPC_FAR * This,
     /* [in] */ BSTR error);
 
@@ -1222,10 +1224,10 @@ void __RPC_STUB IWOLBrowserScript_put_ErrorMsg_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-/* [propget] */ HRESULT STDMETHODCALLTYPE IWOLBrowserScript_get_BackURL_Proxy( 
+/* [propget] */ int32_t STDMETHODCALLTYPE IWOLBrowserScript_get_BackURL_Proxy( 
     IWOLBrowserScript __RPC_FAR * This,
     /* [out][retval] */ BSTR __RPC_FAR *url);
 
@@ -1234,10 +1236,10 @@ void __RPC_STUB IWOLBrowserScript_get_BackURL_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-/* [propput] */ HRESULT STDMETHODCALLTYPE IWOLBrowserScript_put_BackURL_Proxy( 
+/* [propput] */ int32_t STDMETHODCALLTYPE IWOLBrowserScript_put_BackURL_Proxy( 
     IWOLBrowserScript __RPC_FAR * This,
     /* [in] */ BSTR url);
 
@@ -1246,10 +1248,10 @@ void __RPC_STUB IWOLBrowserScript_put_BackURL_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
-HRESULT STDMETHODCALLTYPE IWOLBrowserScript_RegisterLogin_Proxy( 
+int32_t STDMETHODCALLTYPE IWOLBrowserScript_RegisterLogin_Proxy( 
     IWOLBrowserScript __RPC_FAR * This,
     /* [in] */ BSTR nickname,
     /* [in] */ BSTR password);
@@ -1259,7 +1261,7 @@ void __RPC_STUB IWOLBrowserScript_RegisterLogin_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
+    uint32_t *_pdwStubPhase);
 
 
 

@@ -36,6 +36,8 @@
 #ifndef _WOL2_DIALOG_H
 #define _WOL2_DIALOG_H
 
+#include <cstdint>
+
 // Includes.
 #include "InstallMenuDialog.h"
 
@@ -51,7 +53,7 @@ class WOL2DialogClass : public InstallMenuDialogClass
 		// RTTI.
 		void *As_WOL2DialogClass()			{return (this);}
 
-		void On_Command (int ctrl_id, int message_id, DWORD param);
+		void On_Command (int ctrl_id, int message_id, uint32_t param);
 
 	protected:
 

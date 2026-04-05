@@ -91,10 +91,10 @@ enum
 ///////////////////////////////////////////////////////////////////////
 NodeClass * NodeMgrClass::_NodeListHead	= NULL;
 
-uint32 NodeMgrClass::_NextObjectNodeID		= FIRST_OBJECT_NODE_ID;
-uint32 NodeMgrClass::_NextStaticNodeID		= FIRST_STATIC_NODE_ID;
-uint32 NodeMgrClass::_NextLightNodeID		= FIRST_LIGHT_NODE_ID;
-uint32 NodeMgrClass::_NextMiscNodeID		= FIRST_MISC_NODE_ID;
+uint32_t NodeMgrClass::_NextObjectNodeID		= FIRST_OBJECT_NODE_ID;
+uint32_t NodeMgrClass::_NextStaticNodeID		= FIRST_STATIC_NODE_ID;
+uint32_t NodeMgrClass::_NextLightNodeID		= FIRST_LIGHT_NODE_ID;
+uint32_t NodeMgrClass::_NextMiscNodeID		= FIRST_MISC_NODE_ID;
 
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -113,7 +113,7 @@ NodeMgrClass::~NodeMgrClass (void)
 //	Chunk_ID
 //
 //////////////////////////////////////////////////////////////////////////////////////////
-uint32
+uint32_t
 NodeMgrClass::Chunk_ID (void) const
 {
 	return CHUNKID_NODEMGR;
@@ -171,7 +171,7 @@ NodeMgrClass::Setup_Node_Identity (NodeClass &node)
 //
 //////////////////////////////////////////////////////////////////////////////////////////
 NodeClass *
-NodeMgrClass::Create_Node (PresetClass *preset, uint32 id)
+NodeMgrClass::Create_Node (PresetClass *preset, uint32_t id)
 {
 	NodeClass *node = preset->Create ();
 	if (node != NULL) {
@@ -362,7 +362,7 @@ NodeMgrClass::Free_Nodes (void)
 	//
 	//	Reset the node ID ranges
 	//
-	uint32 foo = 0;
+	uint32_t foo = 0;
 	Get_ID_Range (NODE_TYPE_OBJECT,		&_NextObjectNodeID,	&foo);
 	Get_ID_Range (NODE_TYPE_TERRAIN,		&_NextStaticNodeID,	&foo);
 	Get_ID_Range (NODE_TYPE_LIGHT,		&_NextLightNodeID,	&foo);
@@ -386,7 +386,7 @@ NodeMgrClass::Free_Nodes (void)
 //
 ///////////////////////////////////////////////////////////////////////
 NodeClass *
-NodeMgrClass::Find_Node (uint32 id)
+NodeMgrClass::Find_Node (uint32_t id)
 {
 	NodeClass *req_node = NULL;
 
@@ -530,7 +530,7 @@ NodeMgrClass::Get_First (PresetClass *preset)
 //
 ///////////////////////////////////////////////////////////////////////
 NodeClass *
-NodeMgrClass::Find_First (uint32 class_id)
+NodeMgrClass::Find_First (uint32_t class_id)
 {
 	NodeClass *req_node = NULL;
 
@@ -568,7 +568,7 @@ NodeMgrClass::Find_First (uint32 class_id)
 //
 ///////////////////////////////////////////////////////////////////////
 NodeClass *
-NodeMgrClass::Find_Next (NodeClass *current, uint32 class_id)
+NodeMgrClass::Find_Next (NodeClass *current, uint32_t class_id)
 {
 	NodeClass *req_node = NULL;
 
@@ -946,7 +946,7 @@ NodeMgrClass::Reload_Nodes (void)
 			//
 			//	Lookup the preset and re-assign it to this node
 			//
-			uint32 preset_id		= node->Get_Preset_ID ();
+			uint32_t preset_id		= node->Get_Preset_ID ();
 			PresetClass *preset	= PresetMgrClass::Find_Preset (preset_id);
 			node->Set_Preset (preset);
 		}
@@ -1092,7 +1092,7 @@ NodeMgrClass::Remove_Static_Objects (NODE_LIST &static_obj_list)
 //	Get_Max_Used_ID
 //
 ///////////////////////////////////////////////////////////////////////
-uint32
+uint32_t
 NodeMgrClass::Get_Max_Used_ID (void)
 {
 	//
@@ -1101,7 +1101,7 @@ NodeMgrClass::Get_Max_Used_ID (void)
 	DynamicVectorClass<NodeClass *> full_node_list;
 	Build_Full_Node_List (full_node_list);
 
-	uint32 max_used = 0;
+	uint32_t max_used = 0;
 
 	//
 	//	Determine what the largest used ID is
@@ -1121,7 +1121,7 @@ NodeMgrClass::Get_Max_Used_ID (void)
 //
 ///////////////////////////////////////////////////////////////////////
 bool
-NodeMgrClass::Verify_Unique_ID(uint32 id)
+NodeMgrClass::Verify_Unique_ID(uint32_t id)
 {
 	NodeClass* node = Get_First();
 
@@ -1334,14 +1334,14 @@ NodeMgrClass::Reset_New_ID (void)
 //	Find_Max_Used_ID
 //
 ///////////////////////////////////////////////////////////////////////
-uint32
+uint32_t
 NodeMgrClass::Find_Max_Used_ID (NODE_TYPE type)
 {
 	//
 	//	Determine what our minimum ID is
 	//
-	uint32 min_id = 0;
-	uint32 max_id = 0;
+	uint32_t min_id = 0;
+	uint32_t max_id = 0;
 	Get_ID_Range (type, &min_id, &max_id);
 
 	//
@@ -1354,7 +1354,7 @@ NodeMgrClass::Find_Max_Used_ID (NODE_TYPE type)
 	//	Loop over all the nodes in the level and find the largest ID
 	// in our range
 	//
-	uint32 largest_id = min_id;
+	uint32_t largest_id = min_id;
 	for (int index = 0; index < node_list.Count (); index ++) {
 		NodeClass *node = node_list[index];
 		if (node != NULL) {
@@ -1362,7 +1362,7 @@ NodeMgrClass::Find_Max_Used_ID (NODE_TYPE type)
 			//
 			//	Is this the largest ID in our range?
 			//
-			uint32 curr_id = node->Get_ID ();
+			uint32_t curr_id = node->Get_ID ();
 			if (curr_id >= min_id && curr_id < max_id) {
 				largest_id = max (largest_id, curr_id);
 			}
@@ -1378,10 +1378,10 @@ NodeMgrClass::Find_Max_Used_ID (NODE_TYPE type)
 //	Get_Node_ID
 //
 //////////////////////////////////////////////////////////////////////////////////////////
-uint32
+uint32_t
 NodeMgrClass::Get_Node_ID (NODE_TYPE type)
 {
-	uint32 new_id = 0;
+	uint32_t new_id = 0;
 
 	switch (type)
 	{
@@ -1446,7 +1446,7 @@ NodeMgrClass::Get_Node_ID (NODE_TYPE type)
 //
 ///////////////////////////////////////////////////////////////////////
 void
-NodeMgrClass::Get_ID_Range (NODE_TYPE type, uint32 *min_id, uint32 *max_id)
+NodeMgrClass::Get_ID_Range (NODE_TYPE type, uint32_t *min_id, uint32_t *max_id)
 {
 	switch (type)
 	{

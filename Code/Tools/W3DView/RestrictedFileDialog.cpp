@@ -36,8 +36,8 @@ static char THIS_FILE[] = __FILE__;
 
 IMPLEMENT_DYNAMIC(RestrictedFileDialogClass, CFileDialog)
 
-RestrictedFileDialogClass::RestrictedFileDialogClass(BOOL bOpenFileDialog, LPCTSTR lpszDefExt, LPCTSTR lpszFileName,
-		DWORD dwFlags, LPCTSTR lpszFilter, CWnd* pParentWnd) :
+RestrictedFileDialogClass::RestrictedFileDialogClass(int32_t bOpenFileDialog, LPCTSTR lpszDefExt, LPCTSTR lpszFileName,
+		uint32_t dwFlags, LPCTSTR lpszFilter, CWnd* pParentWnd) :
 		CFileDialog(bOpenFileDialog, lpszDefExt, lpszFileName, dwFlags, lpszFilter, pParentWnd)
 {
 	m_ExpectedFilename = lpszFileName;
@@ -69,7 +69,7 @@ RestrictedFileDialogClass::OnFileNameChange (void)
 //
 //	OnFileNameOK
 //
-BOOL
+int32_t
 RestrictedFileDialogClass::OnFileNameOK (void)
 {
 	// Force the original filename into the filename control

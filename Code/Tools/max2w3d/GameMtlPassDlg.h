@@ -40,6 +40,8 @@
 #ifndef GAMEMTLPASSDLG_H
 #define GAMEMTLPASSDLG_H
 
+#include <cstdint>
+
 #include <Max.h>
 
 class GameMtl;
@@ -57,7 +59,7 @@ public:
 	GameMtlPassDlg(HWND hwMtlEdit, IMtlParams *imp, GameMtl *m,int pass); 
 	~GameMtlPassDlg();
 
-	BOOL					DialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+	int32_t					DialogProc(HWND hDlg, uint32_t message, uintptr_t wParam, intptr_t lParam);
 
 	void					Invalidate();		
 	void					UpdateMtlDisplay()						{ IParams->MtlChanged(); }
@@ -68,7 +70,7 @@ public:
 	ReferenceTarget *	GetThing()									{ return (ReferenceTarget *)TheMtl; }
 	void					DeleteThis()								{ delete this;  }	
 	void					SetTime(TimeValue t);
-	void					ActivateDlg(BOOL onOff);
+	void					ActivateDlg(int32_t onOff);
 
 	enum { PAGE_COUNT = 3 };
 
@@ -89,7 +91,7 @@ public:
 	////////////////////////////////////////////////////////////////////////
 	int					PassIndex;
 	int					CurPage;
-	BOOL					Valid;
+	int32_t					Valid;
 
 	GameMtlFormClass*	Page[PAGE_COUNT];
 };

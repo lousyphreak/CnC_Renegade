@@ -34,6 +34,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __SOUND_SCENE_OBJ_H
@@ -66,8 +68,8 @@ class AudibleSoundClass;
 /////////////////////////////////////////////////////////////////////////////////
 //	Constants
 /////////////////////////////////////////////////////////////////////////////////
-const uint32	SOUND_OBJ_DEFAULT_ID	= 0;
-const uint32	SOUND_OBJ_START_ID	= 1000000000;
+const uint32_t	SOUND_OBJ_DEFAULT_ID	= 0;
+const uint32_t	SOUND_OBJ_START_ID	= 1000000000;
 
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -117,13 +119,13 @@ class SoundSceneObjClass : public MultiListObjectClass, public PersistClass, pub
 		//////////////////////////////////////////////////////////////////////
 		//	Identification methods
 		//////////////////////////////////////////////////////////////////////
-		virtual uint32			Get_ID (void) const	{ return m_ID; }
-		virtual void			Set_ID (uint32 id);
+		virtual uint32_t			Get_ID (void) const	{ return m_ID; }
+		virtual void			Set_ID (uint32_t id);
 
 		//////////////////////////////////////////////////////////////////////
 		//	Update methods
 		//////////////////////////////////////////////////////////////////////
-		virtual bool			On_Frame_Update (unsigned int milliseconds = 0);
+		virtual bool			On_Frame_Update (uint32_t milliseconds = 0);
 
 		//////////////////////////////////////////////////////////////////////
 		//	Event handling
@@ -151,8 +153,8 @@ class SoundSceneObjClass : public MultiListObjectClass, public PersistClass, pub
 		//////////////////////////////////////////////////////////////////////
 		//	User data methods
 		//////////////////////////////////////////////////////////////////////
-		virtual void			Set_User_Data (RefCountClass *user_obj = NULL, uint32 user = 0)	{ REF_PTR_SET (m_UserObj, user_obj); m_UserData = user; }
-		virtual uint32			Get_User_Data (void) const														{ return m_UserData; }
+		virtual void			Set_User_Data (RefCountClass *user_obj = NULL, uint32_t user = 0)	{ REF_PTR_SET (m_UserObj, user_obj); m_UserData = user; }
+		virtual uint32_t			Get_User_Data (void) const														{ return m_UserData; }
 		virtual RefCountClass *Peek_User_Obj (void) const													{ return m_UserObj; }
 
 		//////////////////////////////////////////////////////////////////////
@@ -200,7 +202,7 @@ class SoundSceneObjClass : public MultiListObjectClass, public PersistClass, pub
 		//////////////////////////////////////////////////////////////////////
 		static void				Register_Sound_Object (SoundSceneObjClass *sound_obj);
 		static void				Unregister_Sound_Object (SoundSceneObjClass *sound_obj);		
-		static bool				Find_Sound_Object (uint32 id_to_find, int *index);
+		static bool				Find_Sound_Object (uint32_t id_to_find, int *index);
 
 		//////////////////////////////////////////////////////////////////////
 		//	Protected member data
@@ -209,15 +211,15 @@ class SoundSceneObjClass : public MultiListObjectClass, public PersistClass, pub
 		SoundCullObjClass *			m_PhysWrapper;
 		AudioCallbackClass *			m_pCallback;
 		AudioCallbackClass::EVENTS	m_RegisteredEvents;
-		uint32							m_ID;
+		uint32_t							m_ID;
 
 		RenderObjClass *				m_AttachedObject;
 		int								m_AttachedBone;
-		uint32							m_UserData;
+		uint32_t							m_UserData;
 		RefCountClass *				m_UserObj;
 
 		static DynamicVectorClass<SoundSceneObjClass *>	m_GlobalSoundList;
-		static uint32												m_NextAvailableID;
+		static uint32_t												m_NextAvailableID;
 		static CriticalSectionClass							m_IDListMutex;
 };
 

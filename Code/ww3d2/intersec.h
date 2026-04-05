@@ -49,6 +49,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef INTERSEC_H
@@ -61,7 +63,7 @@
 
 
 class RenderObjClass;
-typedef unsigned short POLYGONINDEX;
+typedef uint16_t POLYGONINDEX;
 
 
 /*

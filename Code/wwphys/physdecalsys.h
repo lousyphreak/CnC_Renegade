@@ -39,6 +39,8 @@
 #ifndef PHYSDECALSYS_H
 #define PHYSDECALSYS_H
 
+#include <cstdint>
+
 #include "always.h"
 #include "vector.h"
 #include "simplevec.h"
@@ -82,7 +84,7 @@ public:
 																		bool					apply_to_translucent_meshes,
 																		PhysClass *			only_this_obj);
 	
-	bool										Remove_Decal(uint32 id);
+	bool										Remove_Decal(uint32_t id);
 
 	/*
 	**	Create and release DecalGenerators.  Note that this is the point at which the 
@@ -97,7 +99,7 @@ public:
 	** When a decal-mesh is destroyed, it must inform the DecalSystem.  Otherwise, systems 
 	** which track decals can get dangling pointers.
 	*/
-	virtual void							Decal_Mesh_Destroyed(uint32 decal_id,DecalMeshClass * mesh);
+	virtual void							Decal_Mesh_Destroyed(uint32_t decal_id,DecalMeshClass * mesh);
 
 	/*
 	** Control over the size of the temporary decal array.  When this array is filled, the
@@ -108,9 +110,9 @@ public:
 
 protected:
 
-	virtual uint32							Generate_Decal_Id(void);
-	bool										is_decal_id_permanent(uint32 id);
-	bool										internal_remove_decal(uint32 id,MeshClass * mesh);
+	virtual uint32_t							Generate_Decal_Id(void);
+	bool										is_decal_id_permanent(uint32_t id);
+	bool										internal_remove_decal(uint32_t id,MeshClass * mesh);
 
 	void										allocate_resources(void);
 	void										release_resources(void);
@@ -133,14 +135,14 @@ protected:
 		void										Reset(void);
 		void										Init(DecalGeneratorClass * gen);
 
-		uint32									DecalID;
+		uint32_t									DecalID;
 		SimpleDynVecClass<MeshClass *>	Meshes;
 	};
 
 	PhysicsSceneClass *						ParentScene;				// scene that this decal system works with
 	bool											CreatePermanentDecals;	// internal setting, are we creating permanent or temporary decals
 
-	uint32										NextTempDecalIndex;		// index of the next temporary decal
+	uint32_t										NextTempDecalIndex;		// index of the next temporary decal
 	VectorClass<LogicalDecalClass>		TempDecals;					// array of logical decals for 
 	MultiListClass<LogicalDecalClass>	PermanentDecals;			// linked list of permanent decals
 

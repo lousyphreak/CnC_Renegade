@@ -37,6 +37,8 @@
 #ifndef	COMBATSAVELOAD_H
 #define	COMBATSAVELOAD_H
 
+#include <cstdint>
+
 #ifndef	ALWAYS_H
 	#include "always.h"
 #endif
@@ -58,7 +60,7 @@ public:
 	CombatSaveLoadClass(void) {}
 	virtual ~CombatSaveLoadClass(void) {}
 
-	virtual uint32	Chunk_ID (void) const { return CHUNKID_COMBAT; }
+	virtual uint32_t	Chunk_ID (void) const { return CHUNKID_COMBAT; }
 
 protected:
 	virtual bool	Save( ChunkSaveClass &csave );

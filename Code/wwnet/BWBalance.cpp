@@ -148,7 +148,7 @@ void BandwidthBalancerClass::Allocate_Client_Structs(int num_structs)
  *=============================================================================================*/
 void BandwidthBalancerClass::Adjust(cConnection *connection, bool is_dedicated)
 {
-	static unsigned long _last_adjustment = 0;	//TIMEGETTIME();
+	static uint32_t _last_adjustment = 0;	//TIMEGETTIME();
 
 	/*
 	**
@@ -222,13 +222,13 @@ void BandwidthBalancerClass::Adjust(cConnection *connection, bool is_dedicated)
 				average_priority = average_priority / NumClients;
 				int bw_adjust = 100;
 
-				unsigned long total_bbo_allocated = Allocate_Bandwidth(average_priority, bw_adjust, connection->Get_Bandwidth_Budget_Out());
+				uint32_t total_bbo_allocated = Allocate_Bandwidth(average_priority, bw_adjust, connection->Get_Bandwidth_Budget_Out());
 
 				/*
 				** Ok, we have a rough bandwidth allocation. If we allocated too much or too little then we will need to do
 				** some fine tuning.
 				*/
-				unsigned long total_bbo = connection->Get_Bandwidth_Budget_Out();
+				uint32_t total_bbo = connection->Get_Bandwidth_Budget_Out();
 				int diff = total_bbo - total_bbo_allocated;
 				int percent_diff = (100 * abs(diff)) / total_bbo;
 				diff = total_bbo - total_bbo_allocated;
@@ -293,7 +293,7 @@ void BandwidthBalancerClass::Adjust(cConnection *connection, bool is_dedicated)
  * HISTORY:                                                                                    *
  *   10/21/2001 8:49PM ST : Created                                                            *
  *=============================================================================================*/
-unsigned long BandwidthBalancerClass::Allocate_Bandwidth(float average_priority, int bw_adjust, unsigned long total_server_bbo)
+uint32_t BandwidthBalancerClass::Allocate_Bandwidth(float average_priority, int bw_adjust, uint32_t total_server_bbo)
 {
 	WWASSERT(bw_adjust != 0);
 	WWASSERT(average_priority >= 0.0f);
@@ -302,9 +302,9 @@ unsigned long BandwidthBalancerClass::Allocate_Bandwidth(float average_priority,
 	/*
 	** Get our total bandwidth budget out. This has to be split between all clients.
 	*/
-	unsigned long total_bbo = total_server_bbo;
-	unsigned long bbo_per_client = total_bbo / NumClients;
-	unsigned long total_bbo_allocated = 0;
+	uint32_t total_bbo = total_server_bbo;
+	uint32_t bbo_per_client = total_bbo / NumClients;
+	uint32_t total_bbo_allocated = 0;
 
 	/*
 	** Loop through and assign bandwidth based on average priority and other metrics.
@@ -351,8 +351,8 @@ unsigned long BandwidthBalancerClass::Allocate_Bandwidth(float average_priority,
 		new_client_bbo = min(new_client_bbo, (int)client->MaxBpsDown);
 		new_client_bbo = max(new_client_bbo, MIN_ACCEPTABLE_BANDWIDTH);
 
-		client->AllocatedBBO = (unsigned long) new_client_bbo;
-		total_bbo_allocated += (unsigned long) new_client_bbo;
+		client->AllocatedBBO = (uint32_t) new_client_bbo;
+		total_bbo_allocated += (uint32_t) new_client_bbo;
 	}
 
 	return(total_bbo_allocated);
@@ -378,8 +378,8 @@ unsigned long BandwidthBalancerClass::Allocate_Bandwidth(float average_priority,
  *=============================================================================================*/
 void BandwidthBalancerClass::Adjust_Connection_Budget(cConnection *connection)
 {
-	static unsigned long _last_time = 0;
-	unsigned long time = TIMEGETTIME();
+	static uint32_t _last_time = 0;
+	uint32_t time = TIMEGETTIME();
 
 	/*
 	** Check every n seconds and see if we had any send errors that would be caused by sending too much data.
@@ -387,8 +387,8 @@ void BandwidthBalancerClass::Adjust_Connection_Budget(cConnection *connection)
 	if (PacketManager.Get_Error_State() == PacketManagerClass::STATE_WS_BUFFERS_FULL) {
 		if (time - _last_time > 10000) {
 			_last_time = time;
-			ULONG bbo = connection->Get_Bandwidth_Budget_Out();
-			ULONG new_bbo = (bbo * 9) / 10;
+			uint32_t bbo = connection->Get_Bandwidth_Budget_Out();
+			uint32_t new_bbo = (bbo * 9) / 10;
 			connection->Set_Bandwidth_Budget_Out(new_bbo);
 			WWDEBUG_SAY(("*** WARNING BandwidthBalancerClass - Adjusting Server connection BBO from %d to %d due to send overflow ***\n", bbo, new_bbo));
 		}

@@ -38,6 +38,8 @@
 #pragma once
 #endif
 
+#include <cstdint>
+
 #ifndef __MOUSE_MGR_H
 #define __MOUSE_MGR_H
 
@@ -104,8 +106,7 @@ private:
 	static ScreenCursorClass *		MouseCursor;
 	static CURSOR_TYPE				CursorType;
 
-	static unsigned int CursorWaitCount;
+	static uint32_t CursorWaitCount;
 };
 
 #endif //__MOUSE_MGR_H
-

@@ -37,54 +37,16 @@
 #ifndef UTYPES_H
 #define UTYPES_H
 
-//! Signed integer value
-typedef int Int;
+#include <cstdint>
 
-//! Unsigned integer value
-typedef unsigned int UInt;
-
-//! Signed 8bit value (-127 - 128)
-typedef char Int8;
-
-//! Unsigned 8bit value (0 - 255)
-typedef unsigned char UInt8;
-
-//! Signed 16bit value (-32767 - 32768)
-typedef short Int16;
-
-//! Unsigned 16bit value (0 - 65535)
-typedef unsigned short UInt16;
-
-//! Signed 32bit value
-typedef long Int32;
-
-//! Unsigned 32bit value
-typedef unsigned long UInt32;
-
-//! Signed character (ASCII)
-typedef char Char;
-
-//! Unsigned character (ANSI)
-typedef unsigned char UChar;
-
-//! Wide character (Unicode)
-typedef unsigned short WChar;
-
-//! 32bit floating point value
-typedef float Float32;
-
-//! 64bit floating point value
-typedef double Float64;
-
-//! Floating point value
-typedef Float32 Float;
+#include <cstddef>
 
 //! TriState
-typedef enum {OFF = false, ON = true, PENDING = -1} TriState;
+enum TriState : int32_t {OFF = false, ON = true, PENDING = -1};
 
 //! Empty pointer
 #ifndef NULL
-#define NULL (0L)
+#define NULL (0)
 #endif
 
 #endif // UTYPES_H

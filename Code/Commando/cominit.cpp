@@ -47,7 +47,7 @@ cComInit::cComInit
 	void
 )
 {
-	HRESULT hres = ::CoInitialize(NULL);
+	int32_t hres = ::CoInitialize(NULL);
 	if (!SUCCEEDED(hres))
 	{
 		::MessageBox(NULL, "Unable to initialize COM.", "Error:", MB_OK | MB_ICONERROR);

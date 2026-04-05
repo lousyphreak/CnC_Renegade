@@ -113,7 +113,7 @@ enum
 */
 struct IOSunLightStruct
 {
-	uint32				Enabled;
+	uint32_t				Enabled;
 	float32				Yaw;
 	float32				Pitch;
 	float32				Intensity;
@@ -650,8 +650,8 @@ void PhysicsSceneClass::Save_Static_Object_States(ChunkSaveClass & csave)
 
 		if (((StaticPhysClass*)it.Peek_Obj())->Has_Dynamic_State()) {
 			csave.Begin_Chunk(PSCENE_DD_CHUNK_STATIC_OBJECT_ID);
-			uint32 id = it.Peek_Obj()->Get_ID();
-			csave.Write(&id,sizeof(uint32));
+			uint32_t id = it.Peek_Obj()->Get_ID();
+			csave.Write(&id,sizeof(uint32_t));
 			csave.End_Chunk();
 
 			csave.Begin_Chunk(PSCENE_DD_CHUNK_STATIC_OLD_PTR);
@@ -672,8 +672,8 @@ void PhysicsSceneClass::Load_Static_Object_States(ChunkLoadClass & cload)
 {
 	while (cload.Open_Chunk()) {
 		WWASSERT(cload.Cur_Chunk_ID()==PSCENE_DD_CHUNK_STATIC_OBJECT_ID);
-		uint32 id;
-		cload.Read(&id,sizeof(uint32));
+		uint32_t id;
+		cload.Read(&id,sizeof(uint32_t));
 		cload.Close_Chunk();
 
 		StaticPhysClass * sphys = Get_Static_Object_By_ID(id);
@@ -715,7 +715,7 @@ void PhysicsSceneClass::Post_Load_Level_Dynamic_Data(void)
 	Invalidate_Static_Shadow_Projectors();
 }
 
-StaticPhysClass * PhysicsSceneClass::Get_Static_Object_By_ID(uint32 id)
+StaticPhysClass * PhysicsSceneClass::Get_Static_Object_By_ID(uint32_t id)
 {
 	RefPhysListIterator it(&StaticObjList);
 	while (!it.Is_Done()) {

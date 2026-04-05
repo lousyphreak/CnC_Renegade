@@ -206,7 +206,7 @@ void MPWolBuddiesMenuClass::On_Frame_Update(void)
 //
 ////////////////////////////////////////////////////////////////
 void
-MPWolBuddiesMenuClass::On_Command (int ctrl_id, int message_id, DWORD param)
+MPWolBuddiesMenuClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	switch (ctrl_id) {
 		case IDC_MP_WOL_BUDDIES_PAGE_BUTTON:
@@ -371,9 +371,9 @@ MPWolBuddiesMenuClass::Refresh_Buddy_List (void)
 
 	//	Loop over all the buddies
 	const WWOnline::UserList& buddies = mBuddyMgr->GetBuddyList();
-	const unsigned int count = buddies.size();
+	const uint32_t count = buddies.size();
 
-	for (unsigned int index = 0; index < count; ++index) {
+	for (uint32_t index = 0; index < count; ++index) {
 		//	Add the buddy to the list control
 		int item_index = list_ctrl->Insert_Entry(list_ctrl->Get_Entry_Count() , L"");
 		WWASSERT(item_index != -1);
@@ -409,9 +409,9 @@ void MPWolBuddiesMenuClass::Update_Buddy_List(void)
 
 		//	Loop over all the buddies
 		const WWOnline::UserList& buddies = mBuddyMgr->GetBuddyList();
-		unsigned int count = buddies.size();
+		uint32_t count = buddies.size();
 
-		for (unsigned int index = 0; index < count; ++index) {
+		for (uint32_t index = 0; index < count; ++index) {
 			const RefPtr<WWOnline::UserData>& buddy = buddies[index];
 
 			// Add the buddy to the list control

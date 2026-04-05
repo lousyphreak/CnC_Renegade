@@ -78,7 +78,7 @@ int
 AnimationCompressionSettingsDialogClass::Do_Modal (void)
 {
 	int retval = ::DialogBoxParam (AppInstance, MAKEINTRESOURCE (IDD_ANIMATION_COMPRESSION),
-													ParentWnd, Real_Message_Proc, (LPARAM)this);
+													ParentWnd, Real_Message_Proc, (intptr_t)this);
 	return retval;
 }
 
@@ -88,13 +88,13 @@ AnimationCompressionSettingsDialogClass::Do_Modal (void)
 //	Real_Message_Proc
 //
 ////////////////////////////////////////////////////////////////////////////////////////
-BOOL CALLBACK
+int32_t CALLBACK
 AnimationCompressionSettingsDialogClass::Real_Message_Proc
 (
 	HWND		wnd,
-	UINT		message,
-	WPARAM	wparam,
-	LPARAM	lparam
+	uint32_t		message,
+	uintptr_t	wparam,
+	intptr_t	lparam
 )
 {
 	AnimationCompressionSettingsDialogClass *dialog_obj = NULL;
@@ -114,7 +114,7 @@ AnimationCompressionSettingsDialogClass::Real_Message_Proc
 	//
 	//	Allow the instance to handle the call
 	//
-	BOOL retval = FALSE;
+	int32_t retval = FALSE;
 	if (dialog_obj != NULL) {
 		retval = dialog_obj->Message_Proc (message, wparam, lparam);
 	}
@@ -135,15 +135,15 @@ AnimationCompressionSettingsDialogClass::Real_Message_Proc
 //	Message_Proc
 //
 ////////////////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 AnimationCompressionSettingsDialogClass::Message_Proc
 (
-	UINT		message,
-	WPARAM	wparam,
-	LPARAM	lparam
+	uint32_t		message,
+	uintptr_t	wparam,
+	intptr_t	lparam
 )
 {
-	BOOL retval = FALSE;
+	int32_t retval = FALSE;
 
 	switch (message)
 	{

@@ -39,11 +39,11 @@
 
 typedef struct
 {
-    unsigned int   ChunkID;        /* 'LOCH' LOCALEFILE_HEADERCHUNKID */
-    unsigned int   ChunkSize;      /* size of chunk in bytes */
-    unsigned int   Flags;          /* 0=no index chunk present,1=index chunk present */
-    unsigned int   LanguageCount;  /* number of language chunks in this file */
-/*  unsigned int   LanguageOffset[LanguageCount]; \\ offsets in bytes from start of file to language chunk */
+    uint32_t   ChunkID;        /* 'LOCH' LOCALEFILE_HEADERCHUNKID */
+    uint32_t   ChunkSize;      /* size of chunk in bytes */
+    uint32_t   Flags;          /* 0=no index chunk present,1=index chunk present */
+    uint32_t   LanguageCount;  /* number of language chunks in this file */
+/*  uint32_t   LanguageOffset[LanguageCount]; \\ offsets in bytes from start of file to language chunk */
 } LOCALEFILE_HEADERCHUNK;
 
 /* offset LOCALEFILE_HEADERCHUNK_LANGUAGE_OFFSET bytes from the start of the chunk to the language offset table */
@@ -52,14 +52,14 @@ typedef struct
 
 typedef struct
 {
-    unsigned int   ChunkID;        /* 'LOCI' LOCALEFILE_INDEXCHUNKID */
-    unsigned int   ChunkSize;      /* size of chunk in bytes */
-    unsigned int   StringCount;    /* number of string ids in this chunk (same value in all language chunks) */
-    unsigned int   pad;            /* must be zero */
+    uint32_t   ChunkID;        /* 'LOCI' LOCALEFILE_INDEXCHUNKID */
+    uint32_t   ChunkSize;      /* size of chunk in bytes */
+    uint32_t   StringCount;    /* number of string ids in this chunk (same value in all language chunks) */
+    uint32_t   pad;            /* must be zero */
 /*  STRINGID StringID[StringCount];  */
 /*  { */
-/*      unsigned short ID;          \\ id that user gives to look up value */
-/*      unsigned short Index;       \\ index to look up value in language chunks */
+/*      uint16_t ID;          \\ id that user gives to look up value */
+/*      uint16_t Index;       \\ index to look up value in language chunks */
 /*  } */
 } LOCALEFILE_INDEXCHUNK;
 
@@ -69,11 +69,11 @@ typedef struct
 
 typedef struct
 {
-    unsigned int   ChunkID;        /* 'LOCL' LOCALEFILE_LANGUAGECHUNKID */
-    unsigned int   ChunkSize;      /* size of chunk in bytes including this header and all string data */
-    unsigned int   LanguageID;     /* language strings are in for this bank */
-    unsigned int   StringCount;    /* number of strings in this chunk */
-/*  unsigned int   StringOffset[StringCount];   \\ offsets in bytes from start of chunk to string */
+    uint32_t   ChunkID;        /* 'LOCL' LOCALEFILE_LANGUAGECHUNKID */
+    uint32_t   ChunkSize;      /* size of chunk in bytes including this header and all string data */
+    uint32_t   LanguageID;     /* language strings are in for this bank */
+    uint32_t   StringCount;    /* number of strings in this chunk */
+/*  uint32_t   StringOffset[StringCount];   \\ offsets in bytes from start of chunk to string */
 /*  const char*    Data[StringCount];           \\ StringCount null terminated strings */
 } LOCALEFILE_LANGUAGECHUNK;
 
@@ -497,7 +497,7 @@ static int readheader( GSTREAM* g )
 		}
 
         /* alloc and read index chunk */
-        lx->pIndex[lx->BankIndex] = (LOCALEFILE_INDEXCHUNK *)galloc((long)IndexChunkSize );
+        lx->pIndex[lx->BankIndex] = (LOCALEFILE_INDEXCHUNK *)galloc(IndexChunkSize);
         if (lx->pIndex[lx->BankIndex]) {
 
 //			VERIFY(gseek(g, IndexChunkPos));
@@ -555,7 +555,7 @@ static int readstrings( GSTREAM* g, int LanguageID )
 	}   
 
     /* alloc and read language chunk */
-    lx->pBank[lx->BankIndex] = (LOCALEFILE_LANGUAGECHUNK *)galloc((long)LanguageChunkSize);
+    lx->pBank[lx->BankIndex] = (LOCALEFILE_LANGUAGECHUNK *)galloc(LanguageChunkSize);
     if (lx->pBank[lx->BankIndex]) {
 
 //		VERIFY(gseek(g, LanguageChunkPos));
@@ -731,8 +731,8 @@ void LOCALE_freetable(void)
 
 static int compare ( const void* arg1, const void* arg2 )
 {
-    const unsigned short* s1 = (const unsigned short*)(arg1);
-    const unsigned short* s2 = (const unsigned short*)(arg2);
+    const uint16_t* s1 = (const uint16_t*)(arg1);
+    const uint16_t* s2 = (const uint16_t*)(arg2);
     return (*s1) - (*s2);
 }
 
@@ -742,11 +742,11 @@ static int compare ( const void* arg1, const void* arg2 )
 //
 /////////////////////////////////////////////////////////////////////////////
 
-static int getstringbyindex( unsigned short key, const INDEX* pIndex )
+static int getstringbyindex( uint16_t key, const INDEX* pIndex )
 {
     int index = 0;
-    unsigned short* result;
-    unsigned char*  base;			/* pointer to base of string id table */
+    uint16_t* result;
+    uint8_t*  base;			/* pointer to base of string id table */
 
     ASSERT(LOCALE_isinitialized()); /* must call LOCALE_init before calling this function */
     ASSERT(pIndex != NULL);			/* index not loaded - .loc file must have index created (use -i option) */
@@ -757,11 +757,11 @@ static int getstringbyindex( unsigned short key, const INDEX* pIndex )
 	if( pIndex == NULL )
 		return -1;
 
-    base	= ((unsigned char*)pIndex) + LOCALEFILE_INDEXCHUNK_STRINGID_OFFSET;
-    result	= (unsigned short*)bsearch((unsigned char *)&key, base, pIndex->StringCount, 4, compare);
+    base	= ((uint8_t*)pIndex) + LOCALEFILE_INDEXCHUNK_STRINGID_OFFSET;
+    result	= (uint16_t*)bsearch((uint8_t *)&key, base, pIndex->StringCount, 4, compare);
 
     if (result != NULL) {
-        /* index is the second unsigned short */
+        /* index is the second uint16_t */
         ++result;
         index = *result;
     } else {
@@ -787,15 +787,15 @@ const char* LOCALE_getstring( int StringID )
 
     /* get string array index from the index if it exists */
     if ( lx->pIndex[ lx->BankIndex ] != NULL ) {
-        StringID = getstringbyindex((unsigned short)StringID, lx->pIndex[lx->BankIndex]);
+        StringID = getstringbyindex((uint16_t)StringID, lx->pIndex[lx->BankIndex]);
     }
 
     if ((StringID >= 0) && (StringID < (int)(lx->pBank[lx->BankIndex]->StringCount ))) {
 
-        unsigned int offset;
+        uint32_t offset;
 
         p = (const char*)(lx->pBank[lx->BankIndex]);
-        offset = *(unsigned int*)(p + LOCALEFILE_LANGUAGECHUNK_STRING_OFFSET + StringID*4);
+        offset = *(uint32_t*)(p + LOCALEFILE_LANGUAGECHUNK_STRING_OFFSET + StringID*4);
         p += offset;
 
     } else {
@@ -873,22 +873,22 @@ const char* LOCALE_getstr( const void* pLocFile, int StringID )
     if( pHeader->Flags == 1 ) {
 
         /* file has an index */
-        INDEX* pIndex = (INDEX*)((unsigned char*)(pLocFile) + pHeader->ChunkSize);
-        StringID = getstringbyindex((unsigned short)StringID, pIndex);
+        INDEX* pIndex = (INDEX*)((uint8_t*)(pLocFile) + pHeader->ChunkSize);
+        StringID = getstringbyindex((uint16_t)StringID, pIndex);
     }
 
     /* get pointer to string bank */
     {
         int offset = *((int*)(pLocFile) + 4 + LOCALElanguageid); 
-        pBank = (BANK*)((unsigned char*)(pLocFile) + offset);
+        pBank = (BANK*)((uint8_t*)(pLocFile) + offset);
     }
     
     if ((StringID >= 0) && (StringID < (int)(pBank->StringCount))) {
 
-        unsigned int offset;
+        uint32_t offset;
 
         p = (const char*)(pBank);
-        offset = *(unsigned int*)(p + LOCALEFILE_LANGUAGECHUNK_STRING_OFFSET + StringID*4);
+        offset = *(uint32_t*)(p + LOCALEFILE_LANGUAGECHUNK_STRING_OFFSET + StringID*4);
         p += offset;
 
     } else {
@@ -897,4 +897,3 @@ const char* LOCALE_getstr( const void* pLocFile, int StringID )
 
     return p;
 }
-

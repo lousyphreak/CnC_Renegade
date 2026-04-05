@@ -564,7 +564,7 @@ PresetExportClass::Find_Header (TextFileClass &file)
 //
 ///////////////////////////////////////////////////////////////////////
 void
-PresetExportClass::Export (uint32 class_id, const char *filename)
+PresetExportClass::Export (uint32_t class_id, const char *filename)
 {
 	//
 	//	Try to open the log file
@@ -645,7 +645,7 @@ PresetExportClass::Can_Export_Parameter (ParameterClass *parameter)
 //
 ///////////////////////////////////////////////////////////////////////
 void
-PresetExportClass::Write_Column_Headers (uint32 class_id, TextFileClass &file)
+PresetExportClass::Write_Column_Headers (uint32_t class_id, TextFileClass &file)
 {
 	//
 	//	Write the column headers

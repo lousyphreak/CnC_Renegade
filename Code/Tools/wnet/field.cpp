@@ -62,31 +62,31 @@ FieldClass::FieldClass(char *id, char data)
   Set(id,data);
 }
  
-FieldClass::FieldClass(char *id, unsigned char data)
+FieldClass::FieldClass(char *id, uint8_t data)
 {
   Data=NULL;
   Set(id,data);
 }
  
-FieldClass::FieldClass(char *id, short data)
+FieldClass::FieldClass(char *id, int16_t data)
 {
   Data=NULL;
   Set(id,data);
 }
  
-FieldClass::FieldClass(char *id, unsigned short data)
+FieldClass::FieldClass(char *id, uint16_t data)
 {
   Data=NULL;
   Set(id,data);
 }
  
-FieldClass::FieldClass(char *id, long data)
+FieldClass::FieldClass(char *id, int32_t data)
 {
   Data=NULL;
   Set(id,data);
 }
  
-FieldClass::FieldClass(char *id, unsigned long data)
+FieldClass::FieldClass(char *id, uint32_t data)
 {
   Data=NULL;
   Set(id,data);
@@ -112,67 +112,67 @@ void FieldClass::Set(char *id, char data)
   strncpy(ID, id, sizeof(ID));
   DataType      = TYPE_CHAR;
   Size		= sizeof(data);
-  Data		= new char[Size];
+  Data		= new uint8_t[Size];
   memcpy(Data, &data, Size);
   Next		= Nextsave;
 }
 
-void FieldClass::Set(char *id, unsigned char data)
+void FieldClass::Set(char *id, uint8_t data)
 {
   FieldClass     *Nextsave=Next;
   Clear();
   strncpy(ID, id, sizeof(ID));
   DataType = TYPE_UNSIGNED_CHAR;
   Size     = sizeof(data);
-  Data     = new char[Size];
+  Data     = new uint8_t[Size];
   memcpy(Data, &data, Size);
   Next     = Nextsave;
 }
 
-void FieldClass::Set(char *id, short data)
+void FieldClass::Set(char *id, int16_t data)
 {
   FieldClass     *Nextsave=Next;
   Clear();
   strncpy(ID, id, sizeof(ID));
   DataType = TYPE_SHORT;
   Size    = sizeof(data);
-  Data    = new char[Size];
+  Data    = new uint8_t[Size];
   memcpy(Data, &data, Size);
   Next    = Nextsave;
 }
 
-void FieldClass::Set(char *id, unsigned short data)
+void FieldClass::Set(char *id, uint16_t data)
 {
   FieldClass     *Nextsave=Next;
   Clear();
   strncpy(ID, id, sizeof(ID));
   DataType = TYPE_UNSIGNED_SHORT;
   Size    = sizeof(data);
-  Data    = new char[Size];
+  Data    = new uint8_t[Size];
   memcpy(Data, &data, Size);
   Next    = Nextsave;
 }
 
-void FieldClass::Set(char *id, long data)
+void FieldClass::Set(char *id, int32_t data)
 {
   FieldClass     *Nextsave=Next;
   Clear();
   strncpy(ID, id, sizeof(ID));
   DataType = TYPE_LONG;
   Size    = sizeof(data);
-  Data    = new char[Size];
+  Data    = new uint8_t[Size];
   memcpy(Data, &data, Size);
   Next    = Nextsave;
 }
 
-void FieldClass::Set(char *id, unsigned long data)
+void FieldClass::Set(char *id, uint32_t data)
 {
   FieldClass     *Nextsave=Next;
   Clear();
   strncpy(ID, id, sizeof(ID));
   DataType = TYPE_UNSIGNED_LONG;
   Size    = sizeof(data);
-  Data    = new char[Size];
+  Data    = new uint8_t[Size];
   memcpy(Data, &data, Size);
   Next    = Nextsave;
 }
@@ -183,8 +183,8 @@ void FieldClass::Set(char *id, char *data)
   Clear();
   strncpy(ID, id, sizeof(ID));
   DataType = TYPE_STRING;
-  Size    = (unsigned short)(strlen(data)+1);
-  Data    = new char[Size];
+  Size    = (uint16_t)(strlen(data)+1);
+  Data    = new uint8_t[Size];
   memcpy(Data, data, Size);
   Next    = Nextsave;
 }
@@ -196,8 +196,8 @@ void FieldClass::Set(char *id, void *data, int length)
   Clear();
   strncpy(ID, id, sizeof(ID));
   DataType = TYPE_CHUNK;
-  Size    = (unsigned short)length;
-  Data    = new char[Size];
+  Size    = (uint16_t)length;
+  Data    = new uint8_t[Size];
   memcpy(Data, data, Size);
   Next    = Nextsave;
 }
@@ -248,12 +248,12 @@ void FieldClass::Host_To_Net(void)
 
     case TYPE_SHORT:
     case TYPE_UNSIGNED_SHORT:
-      *((unsigned short *)Data) = htons(*((unsigned short *)Data));
+      *((uint16_t *)Data) = htons(*((uint16_t *)Data));
       break;
 
     case TYPE_LONG:
     case TYPE_UNSIGNED_LONG:
-      *((unsigned long *)Data) = htonl(*((unsigned long *)Data));
+      *((uint32_t *)Data) = htonl(*((uint32_t *)Data));
       break;
 
     //
@@ -300,12 +300,12 @@ void FieldClass::Net_To_Host(void)
 
     case TYPE_SHORT:
     case TYPE_UNSIGNED_SHORT:
-      *((unsigned short *)Data) = ntohs(*((unsigned short *)Data));
+      *((uint16_t *)Data) = ntohs(*((uint16_t *)Data));
       break;
 
     case TYPE_LONG:
     case TYPE_UNSIGNED_LONG:
-      *((unsigned long *)Data) = ntohl(*((unsigned long *)Data));
+      *((uint32_t *)Data) = ntohl(*((uint32_t *)Data));
       break;
 
     //
@@ -316,4 +316,3 @@ void FieldClass::Net_To_Host(void)
       break;
   }
 }
-

@@ -88,7 +88,7 @@ int
 PresetExportOptionsDialogClass::Do_Modal (void)
 {
 	int retval = ::DialogBoxParam (AppInstance, MAKEINTRESOURCE (IDD_W3D_PRESET_EXPORT_OPTIONS),
-													ParentWnd, Real_Message_Proc, (LPARAM)this);
+													ParentWnd, Real_Message_Proc, (intptr_t)this);
 	return retval;
 }
 
@@ -98,13 +98,13 @@ PresetExportOptionsDialogClass::Do_Modal (void)
 //	Real_Message_Proc
 //
 ////////////////////////////////////////////////////////////////////////////////////////
-BOOL CALLBACK
+int32_t CALLBACK
 PresetExportOptionsDialogClass::Real_Message_Proc
 (
 	HWND		wnd,
-	UINT		message,
-	WPARAM	wparam,
-	LPARAM	lparam
+	uint32_t		message,
+	uintptr_t	wparam,
+	intptr_t	lparam
 )
 {
 	PresetExportOptionsDialogClass *dialog_obj = NULL;
@@ -124,7 +124,7 @@ PresetExportOptionsDialogClass::Real_Message_Proc
 	//
 	//	Allow the instance to handle the call
 	//
-	BOOL retval = FALSE;
+	int32_t retval = FALSE;
 	if (dialog_obj != NULL) {
 		retval = dialog_obj->Message_Proc (message, wparam, lparam);
 	}
@@ -145,13 +145,13 @@ PresetExportOptionsDialogClass::Real_Message_Proc
 //	Settings_Pane_Message_Proc
 //
 ////////////////////////////////////////////////////////////////////////////////////////
-BOOL CALLBACK
+int32_t CALLBACK
 PresetExportOptionsDialogClass::Settings_Pane_Message_Proc
 (
 	HWND		wnd,
-	UINT		message,
-	WPARAM	wparam,
-	LPARAM	lparam
+	uint32_t		message,
+	uintptr_t	wparam,
+	intptr_t	lparam
 )
 {
 	PresetExportOptionsDialogClass *dialog_obj = NULL;
@@ -170,7 +170,7 @@ PresetExportOptionsDialogClass::Settings_Pane_Message_Proc
 	//
 	//	Allow the instance to handle the call
 	//
-	BOOL retval = FALSE;
+	int32_t retval = FALSE;
 	if (dialog_obj != NULL) {
 		retval = dialog_obj->Pane_Message_Proc (message, wparam, lparam);
 	}
@@ -191,15 +191,15 @@ PresetExportOptionsDialogClass::Settings_Pane_Message_Proc
 //	Pane_Message_Proc
 //
 ////////////////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 PresetExportOptionsDialogClass::Pane_Message_Proc
 (
-	UINT		message,
-	WPARAM	wparam,
-	LPARAM	lparam
+	uint32_t		message,
+	uintptr_t	wparam,
+	intptr_t	lparam
 )
 {
-	BOOL retval = FALSE;
+	int32_t retval = FALSE;
 
 	switch (message)
 	{
@@ -379,15 +379,15 @@ PresetExportOptionsDialogClass::Pane_Message_Proc
 //	Message_Proc
 //
 ////////////////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 PresetExportOptionsDialogClass::Message_Proc
 (
-	UINT		message,
-	WPARAM	wparam,
-	LPARAM	lparam
+	uint32_t		message,
+	uintptr_t	wparam,
+	intptr_t	lparam
 )
 {
-	BOOL retval = FALSE;
+	int32_t retval = FALSE;
 
 	switch (message)
 	{
@@ -432,10 +432,10 @@ PresetExportOptionsDialogClass::Message_Proc
 //	On_Command
 //
 ////////////////////////////////////////////////////////////////////////////////////////
-BOOL
-PresetExportOptionsDialogClass::On_Command (WPARAM wparam, LPARAM lparam)
+int32_t
+PresetExportOptionsDialogClass::On_Command (uintptr_t wparam, intptr_t lparam)
 {
-	BOOL retval = FALSE;
+	int32_t retval = FALSE;
 
 	switch (LOWORD (wparam))
 	{
@@ -511,22 +511,22 @@ void
 PresetExportOptionsDialogClass::Create_Settings_Panes (void)
 {
 	PaneWnds[PANE_HLOD] = ::CreateDialogParam (AppInstance, MAKEINTRESOURCE (IDD_EXPORT_PANE_HLOD),
-										Wnd, Settings_Pane_Message_Proc, (LPARAM)this);
+										Wnd, Settings_Pane_Message_Proc, (intptr_t)this);
 
 	PaneWnds[PANE_ANIM_HLOD] = ::CreateDialogParam (AppInstance, MAKEINTRESOURCE (IDD_EXPORT_PANE_ANIMATED_HLOD),
-																		Wnd, Settings_Pane_Message_Proc, (LPARAM)this);
+																		Wnd, Settings_Pane_Message_Proc, (intptr_t)this);
 
 	PaneWnds[PANE_ANIM] = ::CreateDialogParam (AppInstance, MAKEINTRESOURCE (IDD_EXPORT_PANE_ANIMATION),
-										Wnd, Settings_Pane_Message_Proc, (LPARAM)this);
+										Wnd, Settings_Pane_Message_Proc, (intptr_t)this);
 
 	PaneWnds[PANE_TERRAIN] = ::CreateDialogParam (AppInstance, MAKEINTRESOURCE (IDD_EXPORT_PANE_TERRAIN),
-																	Wnd, Settings_Pane_Message_Proc, (LPARAM)this);
+																	Wnd, Settings_Pane_Message_Proc, (intptr_t)this);
 
 	PaneWnds[PANE_SKELETON] = ::CreateDialogParam (AppInstance, MAKEINTRESOURCE (IDD_EXPORT_PANE_SKELETON),
-																		Wnd, Settings_Pane_Message_Proc, (LPARAM)this);
+																		Wnd, Settings_Pane_Message_Proc, (intptr_t)this);
 
 	PaneWnds[PANE_MESH] = ::CreateDialogParam (AppInstance, MAKEINTRESOURCE (IDD_EXPORT_PANE_MESH),
-																Wnd, Settings_Pane_Message_Proc, (LPARAM)this);
+																Wnd, Settings_Pane_Message_Proc, (intptr_t)this);
 
 	
 	//
@@ -604,7 +604,7 @@ PresetExportOptionsDialogClass::Determine_Preset_Type (void)
 		//	Select the terrain UI
 		//
 		Show_Settings_Pane (PANE_TERRAIN);
-		SendDlgItemMessage (Wnd, IDC_TERRAIN_RADIO, BM_SETCHECK, (WPARAM)TRUE, 0L);
+		SendDlgItemMessage (Wnd, IDC_TERRAIN_RADIO, BM_SETCHECK, (uintptr_t)TRUE, 0L);
 
 	} else if (Options->ExportGeometry == false) {
 
@@ -614,14 +614,14 @@ PresetExportOptionsDialogClass::Determine_Preset_Type (void)
 			//	Select the skeleton UI
 			//
 			Show_Settings_Pane (PANE_SKELETON);
-			SendDlgItemMessage (Wnd, IDC_SKELETON_RADIO, BM_SETCHECK, (WPARAM)TRUE, 0L);
+			SendDlgItemMessage (Wnd, IDC_SKELETON_RADIO, BM_SETCHECK, (uintptr_t)TRUE, 0L);
 		} else {
 
 			//
 			//	Select the anim UI
 			//
 			Show_Settings_Pane (PANE_ANIM);
-			SendDlgItemMessage (Wnd, IDC_ANIM_RADIO, BM_SETCHECK, (WPARAM)TRUE, 0L);
+			SendDlgItemMessage (Wnd, IDC_ANIM_RADIO, BM_SETCHECK, (uintptr_t)TRUE, 0L);
 		}
 	
 	} else if (Options->ExportHierarchy == false && Options->LoadHierarchy == false) {
@@ -630,7 +630,7 @@ PresetExportOptionsDialogClass::Determine_Preset_Type (void)
 		//	Select the mesh UI
 		//
 		Show_Settings_Pane (PANE_MESH);
-		SendDlgItemMessage (Wnd, IDC_MESH_RADIO, BM_SETCHECK, (WPARAM)TRUE, 0L);
+		SendDlgItemMessage (Wnd, IDC_MESH_RADIO, BM_SETCHECK, (uintptr_t)TRUE, 0L);
 
 	} else if (Options->ExportAnimation == false) {
 
@@ -638,7 +638,7 @@ PresetExportOptionsDialogClass::Determine_Preset_Type (void)
 		//	Select the HLOD UI
 		//
 		Show_Settings_Pane (PANE_HLOD);
-		SendDlgItemMessage (Wnd, IDC_HLOD_RADIO, BM_SETCHECK, (WPARAM)TRUE, 0L);
+		SendDlgItemMessage (Wnd, IDC_HLOD_RADIO, BM_SETCHECK, (uintptr_t)TRUE, 0L);
 
 	} else {
 
@@ -646,7 +646,7 @@ PresetExportOptionsDialogClass::Determine_Preset_Type (void)
 		//	Select the HLOD anim UI
 		//
 		Show_Settings_Pane (PANE_ANIM_HLOD);
-		SendDlgItemMessage (Wnd, IDC_ANIM_HLOD_RADIO, BM_SETCHECK, (WPARAM)TRUE, 0L);	
+		SendDlgItemMessage (Wnd, IDC_ANIM_HLOD_RADIO, BM_SETCHECK, (uintptr_t)TRUE, 0L);	
 	}
 
 	return ;

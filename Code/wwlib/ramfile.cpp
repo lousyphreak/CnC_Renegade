@@ -78,7 +78,7 @@
  *   07/03/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
 RAMFileClass::RAMFileClass(void * buffer, int len) :
-	Buffer((char *)buffer),
+	Buffer((uint8_t *)buffer),
 	MaxLength(len),
 	Length(len),
 	Offset(0),
@@ -87,7 +87,7 @@ RAMFileClass::RAMFileClass(void * buffer, int len) :
 	IsAllocated(false)
 {
 	if (buffer == NULL && len > 0) {
-		Buffer = new char[len];
+		Buffer = new uint8_t[len];
 		IsAllocated = true;
 	}
 }

@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __NODEMGR_H
@@ -84,12 +86,12 @@ public:
 	//////////////////////////////////////////////////////////////
 	
 	// From SaveLoadSubSystemClass
-	virtual uint32				Chunk_ID (void) const;	
+	virtual uint32_t				Chunk_ID (void) const;	
 	virtual void				On_Post_Load (void);
 	virtual const char *		Name (void) const			{ return "NodeMgrClass"; }
 	
 	// List management
-	static NodeClass *		Create_Node (PresetClass *preset, uint32 id);
+	static NodeClass *		Create_Node (PresetClass *preset, uint32_t id);
 	static void					Add_Node (NodeClass *node);
 	static void					Remove_Node (NodeClass *node);
 	static void					Free_Nodes (void);
@@ -97,27 +99,27 @@ public:
 	static void					Reload_Nodes (PresetClass *preset);
 
 	// Enumeration
-	static NodeClass *		Find_Node (uint32 id);
+	static NodeClass *		Find_Node (uint32_t id);
 	static NodeClass *		Find_Node (const char *name);
 	static NodeClass *		Get_First (void);
 	static NodeClass *		Get_First (NODE_TYPE type);
 	static NodeClass *		Get_First (PresetClass *preset);
-	static NodeClass *		Find_First (uint32 class_id);
+	static NodeClass *		Find_First (uint32_t class_id);
 	static NodeClass *		Get_Next (NodeClass *current);	
 	static NodeClass *		Get_Next (NodeClass *current, NODE_TYPE type);
 	static NodeClass *		Get_Next (NodeClass *current, PresetClass *preset);
-	static NodeClass *		Find_Next (NodeClass *current, uint32 class_id);
+	static NodeClass *		Find_Next (NodeClass *current, uint32_t class_id);
 
 	// Identification
 	static void					Reset_New_ID (void);
-	static uint32				Get_Node_ID (NODE_TYPE type);
-	static uint32				Get_Max_Used_ID (void);
+	static uint32_t				Get_Node_ID (NODE_TYPE type);
+	static uint32_t				Get_Max_Used_ID (void);
 	static void					Setup_Node_Identity (NodeClass &node);
-	static bool					Verify_Unique_ID(uint32 id);
+	static bool					Verify_Unique_ID(uint32_t id);
 	static void					Build_ID_Collision_List (NODE_LIST &node_list);
 	static void					Build_Unimportant_ID_Collision_List (NODE_LIST &node_list);
-	static void					Get_ID_Range (NODE_TYPE type, uint32 *min_id, uint32 *max_id);
-	static uint32				Find_Max_Used_ID (NODE_TYPE type);
+	static void					Get_ID_Range (NODE_TYPE type, uint32_t *min_id, uint32_t *max_id);
+	static uint32_t				Find_Max_Used_ID (NODE_TYPE type);
 
 	static void					Put_Objects_Back (const NODE_LIST &dynamic_obj_list);
 	static void					Remove_Dynamic_Objects (NODE_LIST &dynamic_obj_list);
@@ -166,10 +168,10 @@ private:
 	//	Static member data
 	/////////////////////////////////////////////////////////////////////	
 	static NodeClass *		_NodeListHead;
-	static uint32				_NextObjectNodeID;
-	static uint32				_NextStaticNodeID;
-	static uint32				_NextLightNodeID;
-	static uint32				_NextMiscNodeID;
+	static uint32_t				_NextObjectNodeID;
+	static uint32_t				_NextStaticNodeID;
+	static uint32_t				_NextLightNodeID;
+	static uint32_t				_NextMiscNodeID;
 };
 
 

@@ -48,7 +48,7 @@
 #include "w3d_file.h"
 #include <Max.h>
 
-static BOOL CALLBACK _gen_mtl_names_dialog_proc(HWND Hwnd,UINT message,WPARAM wParam,LPARAM lParam);
+static int32_t CALLBACK _gen_mtl_names_dialog_proc(HWND Hwnd,uint32_t message,uintptr_t wParam,intptr_t lParam);
 
 
 /**********************************************************************************************
@@ -115,13 +115,13 @@ bool GenMtlNamesDialogClass::Get_Options(OptionsStruct * options)
 	Options = options;
 
 	// Put up the options dialog box.
-	BOOL result = DialogBoxParam
+	int32_t result = DialogBoxParam
 						(
 							AppInstance,
 							MAKEINTRESOURCE (IDD_GENERATE_MTL_NAMES_DIALOG),
 							MaxInterface->GetMAXHWnd(),
 							(DLGPROC) _gen_mtl_names_dialog_proc,
-							(LPARAM) this
+							(intptr_t) this
 						);
 
 	if (result == TRUE) {
@@ -173,7 +173,7 @@ bool GenMtlNamesDialogClass::Ok_To_Exit(void)
  * HISTORY:                                                                                    *
  *   10/10/2000 gth : Created.                                                                 *
  *=============================================================================================*/
-bool GenMtlNamesDialogClass::Dialog_Proc(HWND hWnd,UINT message,WPARAM wParam,LPARAM)
+bool GenMtlNamesDialogClass::Dialog_Proc(HWND hWnd,uint32_t message,uintptr_t wParam,intptr_t)
 {
 	switch (message )	{
 
@@ -242,7 +242,7 @@ bool GenMtlNamesDialogClass::Dialog_Proc(HWND hWnd,UINT message,WPARAM wParam,LP
  * HISTORY:                                                                                    *
  *   10/10/2000 gth : Created.                                                                 *
  *=============================================================================================*/
-static BOOL CALLBACK _gen_mtl_names_dialog_proc(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
+static int32_t CALLBACK _gen_mtl_names_dialog_proc(HWND hwnd,uint32_t message,uintptr_t wparam,intptr_t lparam)
 {
 	static GenMtlNamesDialogClass * dialog = NULL;
 

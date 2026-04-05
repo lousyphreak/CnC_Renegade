@@ -57,8 +57,8 @@
 
 using namespace WWOnline;
 
-static void PrintableSize(unsigned long size, WideStringClass& printable);
-static void PrintableTime(unsigned long seconds, WideStringClass& printable);
+static void PrintableSize(uint32_t size, WideStringClass& printable);
+static void PrintableTime(uint32_t seconds, WideStringClass& printable);
 
 bool DlgDownload::mQuietMode = false;
 
@@ -202,7 +202,7 @@ void DlgDownload::On_Init_Dialog(void)
 	Set_Dlg_Item_Text(IDC_TRANSFERTEXT, text);
 
 	// Start the wait condition
-	mWait->SetCallback(DlgDownload::HandleCallback, (unsigned long)this);
+	mWait->SetCallback(DlgDownload::HandleCallback, (uint32_t)this);
 	mWait->WaitBeginning();
 
 	PopupDialogClass::On_Init_Dialog();
@@ -227,7 +227,7 @@ void DlgDownload::On_Init_Dialog(void)
 *
 ******************************************************************************/
 
-void DlgDownload::On_Command(int ctrl, int message, DWORD param)
+void DlgDownload::On_Command(int ctrl, int message, uint32_t param)
 	{
 	if (ctrl == IDCANCEL)
 		{
@@ -330,8 +330,8 @@ void DlgDownload::UpdateProgress(DownloadEvent& event)
 					}
 
 				// Calculate the transfer rate
-				unsigned long transferRate = read;
-				unsigned long elapsedTime = ((TIMEGETTIME() - mStartTime) / 1000);
+				uint32_t transferRate = read;
+				uint32_t elapsedTime = ((TIMEGETTIME() - mStartTime) / 1000);
 				if (elapsedTime > 0)
 					{
 					transferRate = (read / elapsedTime);
@@ -363,8 +363,8 @@ void DlgDownload::UpdateProgress(DownloadEvent& event)
 				//-----------------------------------------------------------------------
 
 				// Calculate the transfer rate
-				unsigned long transferRate = read;
-				unsigned long elapsedTime = ((TIMEGETTIME() - mStartTime) / 1000);
+				uint32_t transferRate = read;
+				uint32_t elapsedTime = ((TIMEGETTIME() - mStartTime) / 1000);
 
 				if (elapsedTime > 0)
 					{
@@ -380,7 +380,7 @@ void DlgDownload::UpdateProgress(DownloadEvent& event)
 				Set_Dlg_Item_Text(IDC_TRANSFERTEXT, text);
 
 				// Calculate estimated time based on the current transfer rate.
-				unsigned long estimatedTime = 0;
+				uint32_t estimatedTime = 0;
 
 				if (transferRate > 0)
 					{
@@ -452,7 +452,7 @@ void DlgDownload::UpdateProgress(DownloadEvent& event)
 *
 ******************************************************************************/
 
-void DlgDownload::HandleCallback(DownloadEvent& event, unsigned long userdata)
+void DlgDownload::HandleCallback(DownloadEvent& event, uint32_t userdata)
 	{
 	DlgDownload* dialog = (DlgDownload*)userdata;
 
@@ -479,7 +479,7 @@ void DlgDownload::HandleCallback(DownloadEvent& event, unsigned long userdata)
 *
 ******************************************************************************/
 
-void PrintableSize(unsigned long size, WideStringClass& printable)
+void PrintableSize(uint32_t size, WideStringClass& printable)
 	{
 	float value = ((float)size / (float)(1024 * 1024));
 
@@ -517,10 +517,10 @@ void PrintableSize(unsigned long size, WideStringClass& printable)
 *
 ******************************************************************************/
 
-void PrintableTime(unsigned long time, WideStringClass& printable)
+void PrintableTime(uint32_t time, WideStringClass& printable)
 	{
-	unsigned long minutes = (time / 60);
-	unsigned long seconds = (time % 60);
+	uint32_t minutes = (time / 60);
+	uint32_t seconds = (time % 60);
 
 	if (minutes > 0)
 		{
@@ -528,7 +528,7 @@ void PrintableTime(unsigned long time, WideStringClass& printable)
 		}
 	else
 		{
-		seconds = max<unsigned long>(seconds, 1);
+		seconds = max<uint32_t>(seconds, 1);
 		printable.Format(TRANSLATE(IDS_MENU_TRANSFER_SEC_FORMAT), seconds);
 		}
 	}

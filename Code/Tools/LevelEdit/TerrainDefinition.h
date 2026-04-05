@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 
@@ -70,7 +72,7 @@ public:
 	virtual ~TerrainDefinitionClass (void);
 
 	// From DefinitionClass
-	virtual uint32								Get_Class_ID (void) const { return CLASSID_TERRAIN; }
+	virtual uint32_t								Get_Class_ID (void) const { return CLASSID_TERRAIN; }
 
 	// From PersistClass
 	virtual const PersistFactoryClass &	Get_Factory (void) const;
@@ -96,7 +98,7 @@ private:
 	//////////////////////////////////////////////////////////////
 	//	Private member data
 	//////////////////////////////////////////////////////////////
-	DynamicVectorClass<unsigned int>	m_DistanceList;
+	DynamicVectorClass<uint32_t>	m_DistanceList;
 	StringClass								m_ModelName;
 	StringClass								m_LightFilename;
 

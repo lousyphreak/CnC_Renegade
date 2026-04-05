@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "win.h"
 
 #ifndef SPI_GETWHEELSCROLLLINES
@@ -10,10 +12,10 @@
 #define WHEEL_DELTA 120
 #endif
 
-inline BOOL SystemParametersInfo(UINT action, UINT, void * value, UINT)
+inline int32_t SystemParametersInfo(uint32_t action, uint32_t, void * value, uint32_t)
 {
 	if (action == SPI_GETWHEELSCROLLLINES && value != nullptr) {
-		*reinterpret_cast<UINT *>(value) = 3;
+		*reinterpret_cast<uint32_t *>(value) = 3;
 	}
 	return TRUE;
 }

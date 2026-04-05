@@ -188,7 +188,7 @@ void VehicleDazzleClass::Pre_Render_Update(VehiclePhysClass * parent)
 
 			case BLINKLIGHT_TYPE:
 			{
-				unsigned int elapsed_time = (WW3D::Get_Sync_Time() - CreationTime) & 0x000003FF;
+				uint32_t elapsed_time = (WW3D::Get_Sync_Time() - CreationTime) & 0x000003FF;
 				Model->Set_Hidden(elapsed_time > 0x0000001FF);
 //Model->Set_Hidden(true);
 				break;

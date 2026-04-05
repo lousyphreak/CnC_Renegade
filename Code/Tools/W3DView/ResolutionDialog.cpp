@@ -80,7 +80,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 ResolutionDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -114,7 +114,7 @@ ResolutionDialogClass::OnInitDialog (void)
 	int curr_bpp			= 0;
 	bool curr_windowed	= false;
 	WW3D::Get_Device_Resolution (curr_width, curr_height, curr_bpp, curr_windowed);
-	SendDlgItemMessage (IDC_FULLSCREEN_CHECK, BM_SETCHECK, (WPARAM)(curr_windowed == false));
+	SendDlgItemMessage (IDC_FULLSCREEN_CHECK, BM_SETCHECK, (uintptr_t)(curr_windowed == false));
 
 	//
 	//	Loop over all the resolutions available to us
@@ -228,7 +228,7 @@ void
 ResolutionDialogClass::OnDblclkResolutionListCtrl
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 )
 {
 	int list_index = m_ListCtrl.GetNextItem (-1, LVNI_ALL | LVNI_SELECTED);

@@ -23,6 +23,8 @@
 #ifndef THREADFAC_HEADER
 #define THREADFAC_HEADER
 
+#include <cstdint>
+
 #ifdef _WIN32
   #include <process.h>
 #endif
@@ -74,8 +76,8 @@ class Runnable;
 class ThreadFactory
 {
  public:
-  static bit8    startThread(void (*start_func)(void *), void *data);
-  static bit8    startThread(Runnable &runable, void *data, bit8 destroy=FALSE);
+  static int8_t    startThread(void (*start_func)(void *), void *data);
+  static int8_t    startThread(Runnable &runable, void *data, int8_t destroy=FALSE);
 };
 
 
@@ -104,13 +106,13 @@ class Runnable
 
    virtual void run(void *data)=0;       // Thread entry point
 
-           void startThread(void *data,bit8 destroy=FALSE)  // nice way to start a thread
+           void startThread(void *data,int8_t destroy=FALSE)  // nice way to start a thread
            {
              ThreadFactory::startThread(*this,data,destroy);
            };
 
            // Is there a thread running in this class?
-           static bit8 isRunning(void);
+           static int8_t isRunning(void);
 
            // Get the count of threads running inside this class
            static int    getThreadCount();

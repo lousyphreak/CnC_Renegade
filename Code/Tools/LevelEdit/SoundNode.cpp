@@ -396,7 +396,7 @@ SoundNodeClass::Show_Attenuation_Spheres (bool onoff)
 //
 /////////////////////////////////////////////////////////////////
 void
-SoundNodeClass::Set_ID (uint32 id)
+SoundNodeClass::Set_ID (uint32_t id)
 {
 	NodeClass::Set_ID (id);
 	if (SoundObj != NULL) {
@@ -519,7 +519,7 @@ SoundNodeClass::Show_Settings_Dialog (void)
 	//
 	// Show the property sheet
 	//
-	UINT ret_code = prop_sheet.DoModal ();
+	uint32_t ret_code = prop_sheet.DoModal ();
 	if (ret_code == IDOK) {
 		OverridePreset = true;
 		Update_Sound ();		

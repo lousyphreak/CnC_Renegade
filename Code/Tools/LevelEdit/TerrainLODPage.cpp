@@ -124,7 +124,7 @@ TerrainLODPageClass::HandleInitDialog (void)
 	//	Loop through all the distances and add them to the list control.
 	//
 	for (int index = 0; index < m_SettingsList.Count (); index ++) {
-		unsigned int distance = m_SettingsList[index];
+		uint32_t distance = m_SettingsList[index];
 		
 		CString text;
 		text.Format ("LOD %d", index + 1);
@@ -157,7 +157,7 @@ TerrainLODPageClass::Apply_Changes (void)
 	//	Build a list of switching distances (could just be an array, but I'm feeling lazy).
 	//
 	for (int index = 0; index < m_LODListCtrl.GetItemCount (); index ++) {
-		m_SettingsList.Add ((unsigned int)m_LODListCtrl.GetItemData (index));
+		m_SettingsList.Add ((uint32_t)m_LODListCtrl.GetItemData (index));
 	}
 
 	return true;
@@ -173,7 +173,7 @@ void
 TerrainLODPageClass::OnDblclkLodList
 (
 	NMHDR *pNMHDR,
-	LRESULT *pResult
+	intptr_t *pResult
 ) 
 {
 	(*pResult) = 0;
@@ -183,7 +183,7 @@ TerrainLODPageClass::OnDblclkLodList
 	//
 	int index = m_LODListCtrl.GetNextItem (-1, LVNI_ALL | LVNI_SELECTED);
 	if (index >= 0) {
-		unsigned int distance = (unsigned int)m_LODListCtrl.GetItemData (index);
+		uint32_t distance = (uint32_t)m_LODListCtrl.GetItemData (index);
 
 		//
 		//	Display the dialog

@@ -38,6 +38,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef GRIDEFFECT_H
 #define GRIDEFFECT_H
 
@@ -97,7 +99,7 @@ protected:
 	float					CurrentParameter;
 	float					TargetParameter;
 	float					ParameterRate;
-	unsigned int		LastRenderTime;
+	uint32_t		LastRenderTime;
 
 	Matrix3D				GridTransform;
 

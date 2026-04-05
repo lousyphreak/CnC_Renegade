@@ -31,13 +31,13 @@
 #ifndef BITTYPE_H
 #define BITTYPE_H
 
-typedef unsigned char	uint8;
-typedef unsigned short	uint16;
-typedef unsigned long	uint32;
+#include <cstdint>
 
-typedef signed char		sint8;
-typedef signed short	sint16;
-typedef signed long		sint32;
+typedef uint16_t	uint16_t;
+typedef uint32_t	uint32_t;
+
+typedef int16_t	int16_t;
+typedef int32_t		int32_t;
 
 typedef float			float32;
 typedef double			float64;

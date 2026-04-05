@@ -51,7 +51,7 @@
 /*
 ** Static functions
 */
-static BOOL CALLBACK		_options_dialog_proc(HWND Hwnd,UINT message,WPARAM wParam,LPARAM lParam);
+static int32_t CALLBACK		_options_dialog_proc(HWND Hwnd,uint32_t message,uintptr_t wParam,intptr_t lParam);
 static void					_init_ofn(void);
 
 /*
@@ -97,13 +97,13 @@ bool W3dOptionsDialogClass::Get_Export_Options(W3dExportOptionsStruct * options)
 	Options = options;
 
 	// Put up the options dialog box.
-	/*BOOL result = DialogBoxParam
+	/*int32_t result = DialogBoxParam
 						(
 							AppInstance,
 							MAKEINTRESOURCE (IDD_W3D_EXPORT_OPTIONS),
 							MaxInterface->GetMAXHWnd(),
 							(DLGPROC) _options_dialog_proc,
-							(LPARAM) this
+							(intptr_t) this
 						);*/
 
 	PresetExportOptionsDialogClass dialog (MaxInterface, MaxInterface->GetMAXHWnd ());
@@ -134,9 +134,9 @@ bool W3dOptionsDialogClass::Get_Export_Options(W3dExportOptionsStruct * options)
 bool W3dOptionsDialogClass::Dialog_Proc
 (
 	HWND hwnd,
-	UINT message,
-	WPARAM wParam,
-	LPARAM 
+	uint32_t message,
+	uintptr_t wParam,
+	intptr_t 
 )
 {
 	int code = HIWORD(wParam);
@@ -433,7 +433,7 @@ void W3dOptionsDialogClass::Dialog_Init()
 #endif
 }
 
-BOOL W3dOptionsDialogClass::Dialog_Ok()
+int32_t W3dOptionsDialogClass::Dialog_Ok()
 {
 	bool changed = false;
 
@@ -751,12 +751,12 @@ void W3dOptionsDialogClass::WHA_Compression_Flavor_Changed()
  * HISTORY:                                                                                    * 
  *   07/24/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-BOOL CALLBACK _options_dialog_proc
+int32_t CALLBACK _options_dialog_proc
 (
 	HWND hwnd,
-	UINT message,
-	WPARAM wParam,
-	LPARAM lParam
+	uint32_t message,
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	static W3dOptionsDialogClass * optdialog = NULL;

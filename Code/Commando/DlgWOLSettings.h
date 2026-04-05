@@ -37,6 +37,8 @@
 #ifndef __DLGWOLSETTINGS_H__
 #define __DLGWOLSETTINGS_H__
 
+#include <cstdint>
+
 #include "DlgWOLWait.h"
 #include <WWUI\MenuDialog.h>
 #include <WWLib\Notify.h>
@@ -60,7 +62,7 @@ class DlgWOLSettings :
 
 		void On_Init_Dialog(void);
 		void On_Destroy(void);
-		void On_Command(int ctrl, int message, DWORD param);
+		void On_Command(int ctrl, int message, uint32_t param);
 
 		bool SaveSettings(void);
 

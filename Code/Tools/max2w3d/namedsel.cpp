@@ -170,8 +170,8 @@ IOResult NamedSelSetList::Load_Set(ILoad * iload)
 	BitArray set;
 	TCHAR * name;
 
-	BOOL gotset = FALSE;
-	BOOL gotname = FALSE;
+	int32_t gotset = FALSE;
+	int32_t gotname = FALSE;
 
 	res = iload->OpenChunk();
 		

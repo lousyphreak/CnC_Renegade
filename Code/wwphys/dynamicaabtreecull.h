@@ -38,6 +38,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef DYNAMICAABTREECULL_H
 #define DYNAMICAABTREECULL_H
 
@@ -87,7 +89,7 @@ public:
 	** variable will be modified with the updated node id.  The first time this method is called, 
 	** initialize the node_id to zero.
 	*/
-	uint32				Get_Dynamic_Object_Vis_ID(const AABoxClass & obj_bounds,int * node_id = NULL);
+	uint32_t				Get_Dynamic_Object_Vis_ID(const AABoxClass & obj_bounds,int * node_id = NULL);
 
 	/*
 	** DynamicObjCullClass adds a new re-partitioning interface to AABTreeCullSystemClass
@@ -136,7 +138,7 @@ public:
 	void					Assign_Vis_IDs(void);
 	void					Evaluate_Non_Occluder_Visibility(VisRenderContextClass & context);
 	void					Prune_Redundant_Leaf_Nodes(VisOptimizationContextClass & context);
-	void					Merge_Vis_Object_IDs(uint32 id0,uint32 id1);
+	void					Merge_Vis_Object_IDs(uint32_t id0,uint32_t id1);
 
 	/*
 	** Save/Load system.

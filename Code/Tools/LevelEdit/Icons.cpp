@@ -39,7 +39,7 @@
 #include "Icons.H"
 
 
-const UINT ICON_RESOURCE_IDS[ICON_COUNT] =
+const uint32_t ICON_RESOURCE_IDS[ICON_COUNT] =
 {
 	IDI_FOLDER,
 	IDI_OPENFOLDER,

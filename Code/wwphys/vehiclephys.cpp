@@ -490,7 +490,7 @@ void VehiclePhysClass::Create_Wheels(void)
 				new_wheel->Set_Spring_Length(def->SpringLength);
 
 				// parse any flag characters
-				unsigned int index = WHEEL_FLAG_CHAR0;
+				uint32_t index = WHEEL_FLAG_CHAR0;
 				while (index < strlen(wpname)) {
 					switch (wpname[index]) {
 					case WHEEL_FLAG_STEERING:
@@ -802,7 +802,7 @@ VehiclePhysDefClass::~VehiclePhysDefClass(void)
 {
 }
 
-uint32 VehiclePhysDefClass::Get_Class_ID (void) const	
+uint32_t VehiclePhysDefClass::Get_Class_ID (void) const	
 { 
 	return CLASSID_VEHICLEPHYSDEF; 
 }

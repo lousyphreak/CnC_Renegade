@@ -51,7 +51,7 @@ static char THIS_FILE[] = __FILE__;
 //
 //	Local prototypes
 //
-BOOL CALLBACK fnTopLevelWindowSearch (HWND hwnd, LPARAM lParam);
+int32_t CALLBACK fnTopLevelWindowSearch (HWND hwnd, intptr_t lParam);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -108,7 +108,7 @@ WinMain
 		//::AfxInitialize (FALSE, _MFC_VER);
 
 		AFX_MODULE_STATE* pModuleState = AfxGetModuleState();
-		pModuleState->m_bDLL = (BYTE)FALSE;
+		pModuleState->m_bDLL = (uint8_t)FALSE;
 	#ifdef _MBCS
 		// set correct multi-byte code-page for Win32 apps
 		_setmbcp(_MB_CP_ANSI);
@@ -159,7 +159,7 @@ Do_Version_Check (void)
 //
 // InitInstance
 //
-BOOL CW3DViewApp::InitInstance (void)
+int32_t CW3DViewApp::InitInstance (void)
 {
 	// Standard initialization
 	// If you are not using these features and wish to reduce the size
@@ -179,7 +179,7 @@ BOOL CW3DViewApp::InitInstance (void)
 
 	// Is there already an instance of the viewer running?
 	HWND hprev_instance = NULL;
-	::EnumWindows (fnTopLevelWindowSearch, (LPARAM)&hprev_instance);
+	::EnumWindows (fnTopLevelWindowSearch, (intptr_t)&hprev_instance);
 	if (hprev_instance == NULL) {
 
 		// Change the registry key under which our settings are stored.
@@ -272,7 +272,7 @@ public:
 // Implementation
 protected:
 	//{{AFX_MSG(CAboutDlg)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };
@@ -406,14 +406,14 @@ CW3DViewApp::ExitInstance()
 //
 //	fnTopLevelWindowSearch
 //
-BOOL CALLBACK
+int32_t CALLBACK
 fnTopLevelWindowSearch
 (
 	HWND hwnd,
-	LPARAM lParam
+	intptr_t lParam
 )
 {
-	BOOL bcontinue = TRUE;
+	int32_t bcontinue = TRUE;
 
 	// Is this a viewer window?
 	if (::GetProp (hwnd, "WW3DVIEWER") != 0) {
@@ -430,31 +430,31 @@ fnTopLevelWindowSearch
 //
 //	OnInitDialog
 //
-BOOL
+int32_t
 CAboutDlg::OnInitDialog (void)
 {
 	// Allow the base class to process this message
 	CDialog::OnInitDialog ();
 
 	// Version 1.0 by default
-	DWORD version_major = 1;
-	DWORD version_minor = 0;
+	uint32_t version_major = 1;
+	uint32_t version_minor = 0;
 
 	// Get the name and path of the currently executing application
 	TCHAR filename[MAX_PATH];
 	::GetModuleFileName (NULL, filename, sizeof (filename));
 
 	// Get the version information for this file
-	DWORD dummy_var = 0;
-	DWORD version_size = ::GetFileVersionInfoSize (filename, &dummy_var);
+	uint32_t dummy_var = 0;
+	uint32_t version_size = ::GetFileVersionInfoSize (filename, &dummy_var);
 	if (version_size > 0) {
 
 		// Get the file version block
-		LPBYTE pblock = new BYTE[version_size];
+		LPBYTE pblock = new uint8_t[version_size];
 		if (::GetFileVersionInfo (filename, 0L, version_size, pblock)) {
 
 			// Query the block for the file version information
-			UINT version_len = 0;
+			uint32_t version_len = 0;
 			VS_FIXEDFILEINFO *pversion_info = NULL;
 			if (::VerQueryValue (pblock, "\\", (LPVOID *)&pversion_info, &version_len)) {
 				version_major = pversion_info->dwFileVersionMS;

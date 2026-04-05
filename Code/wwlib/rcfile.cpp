@@ -54,7 +54,7 @@ ResourceFileClass::ResourceFileClass(HMODULE hmodule, char const *filename) :
 	if (hresource) {
 		HGLOBAL hglob = LoadResource(hmodule,hresource);
 		if (hglob) {
-			FileBytes = (unsigned char *)LockResource(hglob);
+			FileBytes = (uint8_t *)LockResource(hglob);
 			if (FileBytes) {
 				FilePtr = FileBytes;
 				EndOfFile = FileBytes + SizeofResource(hmodule,hresource);

@@ -25,6 +25,8 @@
 
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 
 
@@ -48,11 +50,11 @@ public:
 	//{{AFX_VIRTUAL(CLevelEditView)
 	public:
 	virtual void OnDraw(CDC* pDC);  // overridden to draw this view
-	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
+	virtual int32_t PreCreateWindow(CREATESTRUCT& cs);
 	virtual void OnFinalRelease();
 	virtual void OnInitialUpdate();
 	protected:
-	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+	virtual intptr_t WindowProc(uint32_t message, uintptr_t wParam, intptr_t lParam);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -68,15 +70,15 @@ protected:
 // Generated message map functions
 protected:
 	//{{AFX_MSG(CLevelEditView)
-	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg void OnSize(uint32_t nType, int cx, int cy);
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
-	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
-	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
-	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
-	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
-	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonDown(uint32_t nFlags, CPoint point);
+	afx_msg void OnLButtonUp(uint32_t nFlags, CPoint point);
+	afx_msg void OnRButtonDown(uint32_t nFlags, CPoint point);
+	afx_msg void OnRButtonUp(uint32_t nFlags, CPoint point);
+	afx_msg void OnMouseMove(uint32_t nFlags, CPoint point);
 	afx_msg void OnDestroy();
-	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonDblClk(uint32_t nFlags, CPoint point);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 
@@ -140,7 +142,7 @@ protected:
 		class CameraMgr *			m_pCameraMgr;
 		class MouseMgrClass *	m_pMouseMgr;
 		CPoint						m_LastMousePoint;
-		UINT							m_TimerID;
+		uint32_t							m_TimerID;
 		int							m_iWindowed;
 		double						m_HorzFOV;
 		double						m_VertFOV;

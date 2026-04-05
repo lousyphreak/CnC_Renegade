@@ -70,8 +70,8 @@ int RLEEngine::Compress(void const * source, void * dest, int length) const
 	assert(length > 0);
 
 	int outlen = 0;
-	unsigned char const * sptr = (unsigned char const *) source;
-	unsigned char * dptr = (unsigned char *)dest;
+	uint8_t const * sptr = (uint8_t const *) source;
+	uint8_t * dptr = (uint8_t *)dest;
 	while (length > 0) {
 
 		/*
@@ -94,7 +94,7 @@ int RLEEngine::Compress(void const * source, void * dest, int length) const
 			runcount = MIN(runcount, 255);
 			if (dptr != NULL) {
 				*dptr++ = '\0';
-				*dptr++ = (unsigned char)runcount;
+				*dptr++ = (uint8_t)runcount;
 			}
 			outlen += 2;
 			sptr += runcount;
@@ -154,9 +154,9 @@ int RLEEngine::Line_Compress(void const * source, void * dest, int length) const
 	**	into the buffer.
 	*/
 	if (dest != NULL) {
-		unsigned short * sizeptr = (unsigned short *)dest;
-		int complen = Compress(source, sizeptr+1, length) + sizeof(short);
-		*sizeptr = (unsigned short)complen;
+		uint16_t * sizeptr = (uint16_t *)dest;
+		int complen = Compress(source, sizeptr+1, length) + sizeof(uint16_t);
+		*sizeptr = (uint16_t)complen;
 		return(complen);
 	}
 
@@ -164,7 +164,7 @@ int RLEEngine::Line_Compress(void const * source, void * dest, int length) const
 	**	Since no output buffer was specifed, this call merely determins how
 	**	many bytes would be consumed in the output buffer.
 	*/
-	return(Compress(source, NULL, length) + sizeof(short));
+	return(Compress(source, NULL, length) + sizeof(uint16_t));
 }
 
 
@@ -193,8 +193,8 @@ int RLEEngine::Decompress(void const * source, void * dest, int length) const
 	assert(dest != NULL);
 	assert(length > 0);
 
-	unsigned char * dptr = (unsigned char *)dest;
-	unsigned char const * sptr = (unsigned char const *)source;
+	uint8_t * dptr = (uint8_t *)dest;
+	uint8_t const * sptr = (uint8_t const *)source;
 
 	/*
 	**	Process the RLE data normally.
@@ -205,7 +205,7 @@ int RLEEngine::Decompress(void const * source, void * dest, int length) const
 		**	Detect if a zero-run code is present. If so, then dump the desired
 		**	number of bytes. Otherwise output the pixel in untranslated form.
 		*/
-		unsigned char value = *sptr++;
+		uint8_t value = *sptr++;
 		length--;
 		if (value == '\0') {
 			int outlen = *sptr++;
@@ -223,7 +223,7 @@ int RLEEngine::Decompress(void const * source, void * dest, int length) const
 	/*
 	**	Return with the number of bytes stored into the output buffer.
 	*/
-	return(dptr - (unsigned char const *)dest);
+	return(dptr - (uint8_t const *)dest);
 }
 
 
@@ -250,13 +250,12 @@ int RLEEngine::Line_Decompress(void const * source, void * dest) const
 	assert(source != NULL);
 	assert(dest != NULL);
 
-	unsigned short const * sptr = (unsigned short const *)source;
+	uint16_t const * sptr = (uint16_t const *)source;
 
 	int datalen = *sptr++;
 
 	/*
 	**	Process the RLE data normally.
 	*/
-	return(Decompress(sptr, dest, datalen - sizeof(short)));
+	return(Decompress(sptr, dest, datalen - sizeof(uint16_t)));
 }
-

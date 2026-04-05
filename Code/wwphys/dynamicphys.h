@@ -39,6 +39,8 @@
 #ifndef DYNAMICPHYS_H
 #define DYNAMICPHYS_H
 
+#include <cstdint>
+
 #include "always.h"
 #include "phys.h"
 
@@ -90,7 +92,7 @@ protected:
 
 	bool											DirtyVisObjectID;			// dirty flag for the vis object id
 	int											VisNodeID;					// ID of the node this object is in for temporal coherence
-	unsigned int								VisStatusLastUpdated;	// tickcount of last vis update
+	uint32_t								VisStatusLastUpdated;	// tickcount of last vis update
 	
 private:
 

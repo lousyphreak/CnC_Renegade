@@ -71,12 +71,12 @@ ConvertClass::ConvertClass(PaletteClass const & artpalette, PaletteClass const &
 		**	Build the shadow table by creating a slightly darker version of
 		**	the color and then finding the closest match to it.
 		*/
-		ShadowTable = new unsigned char [256];
+		ShadowTable = new uint8_t [256];
 		ShadowTable[0] = 0;
 		for (int shadow = 1; shadow < 256; shadow++) {
 			HSVClass hsv = artpalette[shadow];
-			hsv.Set_Value((unsigned char)(hsv.Get_Value() / 2));
-			ShadowTable[shadow] = (unsigned char)artpalette.Closest_Color(hsv);
+			hsv.Set_Value((uint8_t)(hsv.Get_Value() / 2));
+			ShadowTable[shadow] = (uint8_t)artpalette.Closest_Color(hsv);
 		}
 
 		/*
@@ -84,10 +84,10 @@ ConvertClass::ConvertClass(PaletteClass const & artpalette, PaletteClass const &
 		**	in the display palette from each color in the source art
 		**	palette.
 		*/
-		unsigned char * trans = new unsigned char [256];
+		uint8_t * trans = new uint8_t [256];
 		trans[0] = 0;
 		for (int index = 1; index < 256; index++) {
-			trans[index] = (unsigned char)screenpalette.Closest_Color(artpalette[index]);
+			trans[index] = (uint8_t)screenpalette.Closest_Color(artpalette[index]);
 		}
 		Translator = (void *)trans;
 
@@ -95,23 +95,23 @@ ConvertClass::ConvertClass(PaletteClass const & artpalette, PaletteClass const &
 		**	Construct all the blitter objects necessary to support the functionality
 		**	required for the draw permutations.
 		*/
-		PlainBlitter = new BlitPlainXlat<unsigned char>((unsigned char const *)Translator);
-		TransBlitter = new BlitTransXlat<unsigned char>((unsigned char const *)Translator);
-		RemapBlitter = new BlitTransZRemapXlat<unsigned char>(&RemapTable, (unsigned char const *)Translator);
-		ShadowBlitter = new BlitTransRemapDest<unsigned char>(ShadowTable);
-		Translucent1Blitter = new BlitTransRemapXlat<unsigned char>(ShadowTable, (unsigned char const *)Translator);
-		Translucent2Blitter = new BlitTransRemapXlat<unsigned char>(ShadowTable, (unsigned char const *)Translator);
-		Translucent3Blitter = new BlitTransRemapXlat<unsigned char>(ShadowTable, (unsigned char const *)Translator);
+		PlainBlitter = new BlitPlainXlat<uint8_t>((uint8_t const *)Translator);
+		TransBlitter = new BlitTransXlat<uint8_t>((uint8_t const *)Translator);
+		RemapBlitter = new BlitTransZRemapXlat<uint8_t>(&RemapTable, (uint8_t const *)Translator);
+		ShadowBlitter = new BlitTransRemapDest<uint8_t>(ShadowTable);
+		Translucent1Blitter = new BlitTransRemapXlat<uint8_t>(ShadowTable, (uint8_t const *)Translator);
+		Translucent2Blitter = new BlitTransRemapXlat<uint8_t>(ShadowTable, (uint8_t const *)Translator);
+		Translucent3Blitter = new BlitTransRemapXlat<uint8_t>(ShadowTable, (uint8_t const *)Translator);
 
 		/*
 		**	Create the RLE aware blitter objects.
 		*/
-		RLETransBlitter = new RLEBlitTransXlat<unsigned char>((unsigned char const *)Translator);
-		RLERemapBlitter = new RLEBlitTransZRemapXlat<unsigned char>(&RemapTable, (unsigned char const *)Translator);
-		RLEShadowBlitter = new RLEBlitTransRemapDest<unsigned char>(ShadowTable);
-		RLETranslucent1Blitter = new RLEBlitTransRemapXlat<unsigned char>(ShadowTable, (unsigned char const *)Translator);
-		RLETranslucent2Blitter = new RLEBlitTransRemapXlat<unsigned char>(ShadowTable, (unsigned char const *)Translator);
-		RLETranslucent3Blitter = new RLEBlitTransRemapXlat<unsigned char>(ShadowTable, (unsigned char const *)Translator);
+		RLETransBlitter = new RLEBlitTransXlat<uint8_t>((uint8_t const *)Translator);
+		RLERemapBlitter = new RLEBlitTransZRemapXlat<uint8_t>(&RemapTable, (uint8_t const *)Translator);
+		RLEShadowBlitter = new RLEBlitTransRemapDest<uint8_t>(ShadowTable);
+		RLETranslucent1Blitter = new RLEBlitTransRemapXlat<uint8_t>(ShadowTable, (uint8_t const *)Translator);
+		RLETranslucent2Blitter = new RLEBlitTransRemapXlat<uint8_t>(ShadowTable, (uint8_t const *)Translator);
+		RLETranslucent3Blitter = new RLEBlitTransRemapXlat<uint8_t>(ShadowTable, (uint8_t const *)Translator);
 
 	} else {
 
@@ -120,8 +120,8 @@ ConvertClass::ConvertClass(PaletteClass const & artpalette, PaletteClass const &
 		**	format of the display and the source art palette.
 		*/
 		//assert(surface.Is_Direct_Draw());
-		Translator = new unsigned short [256];
-		((DSurface &)surface).Build_Remap_Table((unsigned short *)Translator, artpalette);
+		Translator = new uint16_t [256];
+		((DSurface &)surface).Build_Remap_Table((uint16_t *)Translator, artpalette);
 
 		/*
 		**	Fetch the pixel mask values to be used for the various algorithmic
@@ -134,23 +134,23 @@ ConvertClass::ConvertClass(PaletteClass const & artpalette, PaletteClass const &
 		**	Construct all the blitter objects necessary to support the functionality
 		**	required for the draw permutations.
 		*/
-		PlainBlitter = new BlitPlainXlat<unsigned short>((unsigned short const *)Translator);
-		TransBlitter = new BlitTransXlat<unsigned short>((unsigned short const *)Translator);
-		RemapBlitter = new BlitTransZRemapXlat<unsigned short>(&RemapTable, (unsigned short const *)Translator);
-		ShadowBlitter = new BlitTransDarken<unsigned short>((unsigned short)maskhalf);
-		Translucent1Blitter = new BlitTransLucent75<unsigned short>((unsigned short const *)Translator, (unsigned short)maskquarter);
-		Translucent2Blitter = new BlitTransLucent50<unsigned short>((unsigned short const *)Translator, (unsigned short)maskhalf);
-		Translucent3Blitter = new BlitTransLucent25<unsigned short>((unsigned short const *)Translator, (unsigned short)maskquarter);
+		PlainBlitter = new BlitPlainXlat<uint16_t>((uint16_t const *)Translator);
+		TransBlitter = new BlitTransXlat<uint16_t>((uint16_t const *)Translator);
+		RemapBlitter = new BlitTransZRemapXlat<uint16_t>(&RemapTable, (uint16_t const *)Translator);
+		ShadowBlitter = new BlitTransDarken<uint16_t>((uint16_t)maskhalf);
+		Translucent1Blitter = new BlitTransLucent75<uint16_t>((uint16_t const *)Translator, (uint16_t)maskquarter);
+		Translucent2Blitter = new BlitTransLucent50<uint16_t>((uint16_t const *)Translator, (uint16_t)maskhalf);
+		Translucent3Blitter = new BlitTransLucent25<uint16_t>((uint16_t const *)Translator, (uint16_t)maskquarter);
 
 		/*
 		**	Create the RLE aware blitter objects.
 		*/
-		RLETransBlitter = new RLEBlitTransXlat<unsigned short>((unsigned short const *)Translator);
-		RLERemapBlitter = new RLEBlitTransZRemapXlat<unsigned short>(&RemapTable, (unsigned short const *)Translator);
-		RLEShadowBlitter = new RLEBlitTransDarken<unsigned short>((unsigned short)maskhalf);
-		RLETranslucent1Blitter = new RLEBlitTransLucent75<unsigned short>((unsigned short const *)Translator, (unsigned short)maskquarter);
-		RLETranslucent2Blitter = new RLEBlitTransLucent50<unsigned short>((unsigned short const *)Translator, (unsigned short)maskhalf);
-		RLETranslucent3Blitter = new RLEBlitTransLucent25<unsigned short>((unsigned short const *)Translator, (unsigned short)maskquarter);
+		RLETransBlitter = new RLEBlitTransXlat<uint16_t>((uint16_t const *)Translator);
+		RLERemapBlitter = new RLEBlitTransZRemapXlat<uint16_t>(&RemapTable, (uint16_t const *)Translator);
+		RLEShadowBlitter = new RLEBlitTransDarken<uint16_t>((uint16_t)maskhalf);
+		RLETranslucent1Blitter = new RLEBlitTransLucent75<uint16_t>((uint16_t const *)Translator, (uint16_t)maskquarter);
+		RLETranslucent2Blitter = new RLEBlitTransLucent50<uint16_t>((uint16_t const *)Translator, (uint16_t)maskhalf);
+		RLETranslucent3Blitter = new RLEBlitTransLucent25<uint16_t>((uint16_t const *)Translator, (uint16_t)maskquarter);
 	}
 }
 
@@ -260,7 +260,6 @@ RLEBlitter const * ConvertClass::RLEBlitter_From_Flags(ShapeFlags_Type flags) co
 
 	return(RLETransBlitter);
 }
-
 
 
 

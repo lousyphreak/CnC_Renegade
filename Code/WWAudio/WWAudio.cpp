@@ -722,8 +722,8 @@ WWAudioClass::Create_Sound_Buffer
 SoundBufferClass *
 WWAudioClass::Create_Sound_Buffer
 (
-	unsigned char *	file_image,
-	unsigned long		bytes,
+	uint8_t *	file_image,
+	uint32_t		bytes,
 	const char *		string_id,
 	bool					is_3d
 )
@@ -825,8 +825,8 @@ AudibleSoundClass *
 WWAudioClass::Create_Sound_Effect
 (
 	const char *	string_id,
-	unsigned char *raw_wave_data,
-	unsigned long	bytes
+	uint8_t *raw_wave_data,
+	uint32_t	bytes
 )
 {
 	WWPROFILE ("Create_Sound_Effect");
@@ -952,8 +952,8 @@ Sound3DClass *
 WWAudioClass::Create_3D_Sound
 (
 	const char *		string_id,
-	unsigned char *	raw_wave_data,
-	unsigned long		bytes,
+	uint8_t *	raw_wave_data,
+	uint32_t		bytes,
 	int					classid_hint
 )
 {
@@ -1002,7 +1002,7 @@ WWAudioClass::Create_Sound
 (
 	int				definition_id,
 	RefCountClass *user_obj,
-	uint32			user_data,
+	uint32_t			user_data,
 	int				classid_hint
 )
 {
@@ -1046,7 +1046,7 @@ WWAudioClass::Create_Sound
 (
 	const char *	def_name,
 	RefCountClass *user_obj,
-	uint32			user_data,
+	uint32_t			user_data,
 	int				classid_hint
 )
 {
@@ -1090,7 +1090,7 @@ WWAudioClass::Create_Continuous_Sound
 (
 	int				definition_id,
 	RefCountClass *user_obj,
-	uint32			user_data,
+	uint32_t			user_data,
 	int				classid_hint
 )
 {
@@ -1122,7 +1122,7 @@ WWAudioClass::Create_Instant_Sound
 	int					definition_id,
 	const Matrix3D &	tm,
 	RefCountClass *	user_obj,
-	uint32				user_data,
+	uint32_t				user_data,
 	int					classid_hint
 )
 {
@@ -1160,7 +1160,7 @@ WWAudioClass::Create_Continuous_Sound
 (
 	const char *	def_name,
 	RefCountClass *user_obj,
-	uint32			user_data,
+	uint32_t			user_data,
 	int				classid_hint
 )
 {
@@ -1193,7 +1193,7 @@ WWAudioClass::Create_Instant_Sound
 	const char *		def_name,
 	const Matrix3D &	tm,
 	RefCountClass *	user_obj,
-	uint32				user_data,
+	uint32_t				user_data,
 	int					classid_hint
 )
 {
@@ -1419,7 +1419,7 @@ WWAudioClass::Remove_From_Playlist (AudibleSoundClass *sound_obj)
 		//
 		if (sound_obj->Get_Loop_Count () != INFINITE_LOOPS) {
 			for (int index = 0; index < m_EOSCallbackList.Count (); index ++) {
-				uint32 user_data				= NULL;
+				uint32_t user_data				= NULL;
 				LPFNEOSCALLBACK callback	= m_EOSCallbackList.Get_Callback (index, &user_data);
 				if (callback != NULL) {
 					(*callback) (sound_obj, user_data);
@@ -1505,7 +1505,7 @@ WWAudioClass::Reprioritize_Playlist (void)
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////
 void
-WWAudioClass::On_Frame_Update (unsigned int milliseconds)
+WWAudioClass::On_Frame_Update (uint32_t milliseconds)
 {
 	//
 	// Free any sounds we completed last frame
@@ -1515,7 +1515,7 @@ WWAudioClass::On_Frame_Update (unsigned int milliseconds)
 	//
 	// Calculate the time in ms since the last frame
 	//
-	unsigned int time_delta = milliseconds;
+	uint32_t time_delta = milliseconds;
 	if (time_delta == 0) {
 		time_delta = WW3D::Get_Frame_Time ();
 	}
@@ -2542,7 +2542,7 @@ WWAudioClass::Shutdown (void)
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////
 void
-WWAudioClass::Register_EOS_Callback (LPFNEOSCALLBACK callback, DWORD user_param)
+WWAudioClass::Register_EOS_Callback (LPFNEOSCALLBACK callback, uint32_t user_param)
 {
 	m_EOSCallbackList.Add_Callback (callback, user_param);
 	return;
@@ -2568,7 +2568,7 @@ WWAudioClass::UnRegister_EOS_Callback (LPFNEOSCALLBACK callback)
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////
 void
-WWAudioClass::Register_Text_Callback (LPFNTEXTCALLBACK callback, DWORD user_param)
+WWAudioClass::Register_Text_Callback (LPFNTEXTCALLBACK callback, uint32_t user_param)
 {
 	m_TextCallbackList.Add_Callback (callback, user_param);
 	return;
@@ -2602,7 +2602,7 @@ WWAudioClass::Fire_Text_Callback (AudibleSoundClass *sound_obj, const StringClas
 		//	Loop over all the text-callbacks that have been registered
 		//
 		for (int index = 0; index < m_TextCallbackList.Count (); index ++) {
-			uint32 user_data				= 0L;
+			uint32_t user_data				= 0L;
 			LPFNTEXTCALLBACK callback	= m_TextCallbackList.Get_Callback (index, &user_data);
 			if (callback != NULL) {
 
@@ -2978,7 +2978,7 @@ WWAudioClass::Get_Logical_Type (int index, StringClass &name)
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 SoundSceneObjClass *
-WWAudioClass::Find_Sound_Object (uint32 sound_obj_id)
+WWAudioClass::Find_Sound_Object (uint32_t sound_obj_id)
 {
 	SoundSceneObjClass *sound_obj = NULL;
 

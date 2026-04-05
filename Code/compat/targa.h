@@ -1,19 +1,21 @@
 #pragma once
 
+#include <cstdint>
+
 struct TargaHeader
 {
-	unsigned short Width = 0;
-	unsigned short Height = 0;
-	unsigned char PixelDepth = 0;
-	unsigned char ImageType = 0;
-	unsigned char ColorMapType = 0;
+	uint16_t Width = 0;
+	uint16_t Height = 0;
+	uint8_t PixelDepth = 0;
+	uint8_t ImageType = 0;
+	uint8_t ColorMapType = 0;
 };
 
 struct Targa
 {
 	TargaHeader Header;
 
-	void SetImage(char *)
+	void SetImage(uint8_t *)
 	{
 	}
 

@@ -38,6 +38,8 @@
 #pragma once
 #endif
 
+#include <cstdint>
+
 #ifndef __SOUNDOBJ_H
 #define __SOUNDOBJ_H
 
@@ -74,7 +76,7 @@ class SoundHandleClass;
 //
 //	Typedefs
 //
-typedef unsigned long MILES_HANDLE;
+typedef uintptr_t MILES_HANDLE;
 
 typedef enum
 {
@@ -155,7 +157,7 @@ class AudibleSoundClass : public SoundSceneObjClass
 		//////////////////////////////////////////////////////////////////////
 		//	Update methods
 		//////////////////////////////////////////////////////////////////////
-		virtual bool				On_Frame_Update (unsigned int milliseconds = 0);
+		virtual bool				On_Frame_Update (uint32_t milliseconds = 0);
 
 		//////////////////////////////////////////////////////////////////////
 		//	State control methods
@@ -164,14 +166,14 @@ class AudibleSoundClass : public SoundSceneObjClass
 		virtual bool				Pause (void);
 		virtual bool				Resume (void);
 		virtual bool				Stop (bool remove_from_playlist = true);
-		virtual void				Seek (unsigned long milliseconds);
+		virtual void				Seek (uint32_t milliseconds);
 		virtual SOUND_STATE		Get_State (void) const	{ return m_State; }
 
 		virtual void				Fade_Out (int time_in_ms);
 		virtual void				Fade_In (int time_in_ms);
 
 		// The timestamp represents when the sound started playing
-		virtual unsigned long	Get_Timestamp (void) const { return m_Timestamp; }
+		virtual uint32_t	Get_Timestamp (void) const { return m_Timestamp; }
 
 		//////////////////////////////////////////////////////////////////////
 		//	Virtual channel support
@@ -240,10 +242,10 @@ class AudibleSoundClass : public SoundSceneObjClass
 		// can either be set as a normalized value from 0 to 1 or a millisecond
 		// offset from the start of the sound.
 		//
-		virtual unsigned long	Get_Duration (void) const								{ return m_Length; }
-		virtual unsigned long	Get_Play_Position (void) const						{ return m_CurrentPosition; }
+		virtual uint32_t	Get_Duration (void) const								{ return m_Length; }
+		virtual uint32_t	Get_Play_Position (void) const						{ return m_CurrentPosition; }
 		virtual void				Set_Play_Position (float position)					{ Seek (position * m_Length); }
-		virtual void				Set_Play_Position (unsigned long milliseconds)	{ Seek (milliseconds); }
+		virtual void				Set_Play_Position (uint32_t milliseconds)	{ Seek (milliseconds); }
 
 		virtual void				Set_Start_Offset (float offset)						{ m_StartOffset = offset; }
 		virtual float				Get_Start_Offset (void) const							{ return m_StartOffset; }
@@ -358,7 +360,7 @@ class AudibleSoundClass : public SoundSceneObjClass
 		//	Protected member data
 		//////////////////////////////////////////////////////////////////////
 		SoundHandleClass *	m_SoundHandle;
-		unsigned long			m_Timestamp;
+		uint32_t			m_Timestamp;
 		SOUND_STATE				m_State;
 		SOUND_TYPE				m_Type;
 		FADE_TYPE				m_FadeType;
@@ -379,8 +381,8 @@ class AudibleSoundClass : public SoundSceneObjClass
 		int						m_LoopsLeft;
 
 		// Offset and length information (in milliseconds)
-		unsigned long			m_Length;
-		unsigned long			m_CurrentPosition;
+		uint32_t			m_Length;
+		uint32_t			m_CurrentPosition;
 		float						m_StartOffset;
 		float						m_PitchFactor;
 
@@ -425,7 +427,7 @@ public:
 	virtual ~AudibleSoundDefinitionClass (void) { }
 
 	// From DefinitionClass
-	virtual uint32								Get_Class_ID (void) const;
+	virtual uint32_t								Get_Class_ID (void) const;
 
 	// From PersistClass
 	virtual const PersistFactoryClass &	Get_Factory (void) const;

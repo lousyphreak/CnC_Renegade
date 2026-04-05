@@ -26,6 +26,8 @@
 //-----------------------------------------------------------------------------
 #if defined(_MSV_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef MSGSTAT_H
@@ -51,13 +53,13 @@ class cMsgStat
 		void		Increment_Num_Msg_Recd(		int increment = 1);
 		void		Increment_Num_Byte_Recd(	int increment);
 
-		DWORD		Get_Num_Msg_Sent(void)	const	{return NumMsgSent;}
-		DWORD		Get_Num_Byte_Sent(void)	const	{return NumByteSent;}
-		DWORD		Get_Num_Msg_Recd(void)	const	{return NumMsgRecd;}
-		DWORD		Get_Num_Byte_Recd(void)	const	{return NumByteRecd;}
+		uint32_t		Get_Num_Msg_Sent(void)	const	{return NumMsgSent;}
+		uint32_t		Get_Num_Byte_Sent(void)	const	{return NumByteSent;}
+		uint32_t		Get_Num_Msg_Recd(void)	const	{return NumMsgRecd;}
+		uint32_t		Get_Num_Byte_Recd(void)	const	{return NumByteRecd;}
 
-		DWORD		Compute_Avg_Num_Byte_Sent(void) const;
-		DWORD		Compute_Avg_Num_Byte_Recd(void) const;
+		uint32_t		Compute_Avg_Num_Byte_Sent(void) const;
+		uint32_t		Compute_Avg_Num_Byte_Recd(void) const;
 
 		void		Set_Name(LPCSTR name);
 		LPCSTR	Get_Name(void) const				{return Name;}
@@ -66,10 +68,10 @@ class cMsgStat
       cMsgStat(const cMsgStat& source);					// disallow
       cMsgStat& operator=(const cMsgStat& source);	// disallow
 
-		DWORD		NumMsgSent;
-		DWORD		NumByteSent;
-		DWORD		NumMsgRecd;
-		DWORD		NumByteRecd;
+		uint32_t		NumMsgSent;
+		uint32_t		NumByteSent;
+		uint32_t		NumMsgRecd;
+		uint32_t		NumByteRecd;
 
 		char		Name[30];
 };

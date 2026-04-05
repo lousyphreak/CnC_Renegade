@@ -37,6 +37,8 @@
 #ifndef	WEAPONMANAGER_H
 #define	WEAPONMANAGER_H
 
+#include <cstdint>
+
 #ifndef	ALWAYS_H
 	#include "always.h"
 #endif
@@ -64,7 +66,7 @@ class	WeaponDefinitionClass : public DefinitionClass {
 public:
 	WeaponDefinitionClass( void );
 
-	virtual uint32								Get_Class_ID( void ) const;
+	virtual uint32_t								Get_Class_ID( void ) const;
 	virtual PersistClass *					Create( void ) const					{ WWASSERT( 0 ); return NULL; }
 	virtual bool								Save( ChunkSaveClass &csave );
 	virtual bool								Load( ChunkLoadClass &cload );
@@ -127,7 +129,7 @@ public:
 
 	AmmoDefinitionClass( void );
 
-	virtual uint32								Get_Class_ID( void ) const;
+	virtual uint32_t								Get_Class_ID( void ) const;
 	virtual PersistClass *					Create( void ) const					{ WWASSERT( 0 ); return NULL; }
 	virtual bool								Save( ChunkSaveClass &csave );
 	virtual bool								Load( ChunkLoadClass &cload );

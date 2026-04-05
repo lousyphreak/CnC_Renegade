@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef W3DMTL_H
@@ -99,7 +101,7 @@ public:
 	/*
 	** Manual Construction
 	*/
-	void								Set_Surface_Type(unsigned int type);
+	void								Set_Surface_Type(uint32_t type);
 	void								Set_Sort_Level(int level);
 	void								Set_Pass_Count(int count);
 	void								Set_Vertex_Material(const W3dVertexMaterialStruct & vmat,int pass = 0);
@@ -111,7 +113,7 @@ public:
 	/*
 	** Inspection
 	*/
-	unsigned int					Get_Surface_Type(void) const;
+	uint32_t					Get_Surface_Type(void) const;
 	int								Get_Sort_Level(void) const;
 	int								Get_Pass_Count(void) const;
 	W3dVertexMaterialStruct *	Get_Vertex_Material(int pass = 0) const;
@@ -126,7 +128,7 @@ protected:
 	
 	void								Free(void);	
 	
-	unsigned int					SurfaceType;
+	uint32_t					SurfaceType;
 	int								SortLevel;
 	int								PassCount;	
 	
@@ -215,10 +217,10 @@ private:
 	int								Add_Vertex_Material(W3dVertexMaterialStruct * vmat,const char *mapper_args0,const char *mapper_args1,int pass,const char * name);
 	int								Add_Shader(const W3dShaderStruct & shader,int pass);
 	int								Add_Texture(W3dMapClass * map,int pass,int stage);
-	unsigned long					Compute_Crc(const W3dVertexMaterialStruct & vmat,const char *mapper_args0,const char *mapper_args1);
-	unsigned long					Compute_Crc(const W3dShaderStruct & shader);
-	unsigned long					Compute_Crc(const W3dMapClass & map);
-	unsigned long					Add_String_To_Crc(const char *str, unsigned long crc);
+	uint32_t					Compute_Crc(const W3dVertexMaterialStruct & vmat,const char *mapper_args0,const char *mapper_args1);
+	uint32_t					Compute_Crc(const W3dShaderStruct & shader);
+	uint32_t					Compute_Crc(const W3dMapClass & map);
+	uint32_t					Add_String_To_Crc(const char *str, uint32_t crc);
 
 	/*
 	** MaterialRemapClass

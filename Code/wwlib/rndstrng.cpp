@@ -50,7 +50,7 @@ const char * RandomStringClass::Get_String( void )
 	if ( Strings.Count() == 0 ) {
 		return NULL;
 	}
-	unsigned int index = Randomizer();
+	uint32_t index = Randomizer();
 	index %= Strings.Count();
 	return Strings[index];
 }

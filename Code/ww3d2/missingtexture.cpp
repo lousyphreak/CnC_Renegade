@@ -26,7 +26,7 @@ static unsigned missing_image_height=128;
 static unsigned missing_image_depth=24;
 static unsigned missing_image_run_count=7331;
 
-extern unsigned char missing_image_run_lengths[];
+extern uint8_t missing_image_run_lengths[];
 extern unsigned missing_image_color_values[];
 
 static IDirect3DTexture8 * _MissingTexture = NULL;
@@ -130,7 +130,7 @@ void MissingTexture::_Deinit()
 	_MissingTexture=0;
 }
 
-unsigned char missing_image_run_lengths[]={
+uint8_t missing_image_run_lengths[]={
 0x7f,0x7f,0x7f,0x7f,0x04,0x00,0x03,0x00,
 0x00,0x73,0x04,0x00,0x04,0x00,0x00,0x72,
 0x04,0x00,0x00,0x00,0x00,0x00,0x00,0x00,

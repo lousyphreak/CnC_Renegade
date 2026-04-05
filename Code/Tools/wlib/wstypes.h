@@ -31,6 +31,8 @@ Standard type definitions for the sake of portability and readability.
 #ifndef WSTYPES_HEADER
 #define WSTYPES_HEADER
 
+#include <cstdint>
+
 #ifdef _REENTRANT   // reentrant = threaded
 // Headers with non threadsafe libs need to come before my hacky
 //  threadsafe.h otherwise they won't compile
@@ -90,14 +92,6 @@ Standard type definitions for the sake of portability and readability.
 
 // Used to declare a function or method as const or Read Only
 #define RO const
-
-typedef char               bit8;
-typedef char               sint8;
-typedef unsigned char      uint8;
-typedef signed short int   sint16;
-typedef unsigned short int uint16;
-typedef signed int         sint32;
-typedef unsigned int       uint32;
 
 typedef float              float32;
 typedef double             float64;

@@ -36,6 +36,8 @@
 #ifndef _CARD_SELECTION_DIALOG_H
 #define _CARD_SELECTION_DIALOG_H
 
+#include <cstdint>
+
 
 // Includes.
 #include "MenuDialog.h"
@@ -51,7 +53,7 @@ class CardSelectionDialogClass : public CallbackMenuDialogClass
 		 CardSelectionDialogClass (bool showmessage) : CallbackMenuDialogClass (IDD_DIALOG_CARD_SELECTION), CardSelection (-1), CancelApplication (false), ShowMessage (showmessage) {}
 		~CardSelectionDialogClass() {}
 
-		void On_Command (int ctrl_id, int message_id, DWORD param);
+		void On_Command (int ctrl_id, int message_id, uint32_t param);
 		void Callback (int id, PopupDialogClass *popup);
 
 		int  Get_Card_Count()		{return (WW3D::Get_Render_Device_Count());}

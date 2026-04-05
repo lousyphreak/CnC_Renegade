@@ -34,6 +34,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef __GAMERESFIELD_H__
 #define __GAMERESFIELD_H__
 
@@ -61,12 +63,12 @@ class GameResField {
 		// Define constructors to be able to create all the different kinds
 		// of fields.
 		GameResField(void) {};
-		GameResField(char *id, char data);
-		GameResField(char *id, unsigned char data);
-		GameResField(char *id, short data);
-		GameResField(char *id, unsigned short data);
-		GameResField(char *id, long data);
-		GameResField(char *id, unsigned long data);
+		GameResField(char *id, int8_t data);
+		GameResField(char *id, uint8_t data);
+		GameResField(char *id, int16_t data);
+		GameResField(char *id, uint16_t data);
+		GameResField(char *id, int32_t data);
+		GameResField(char *id, uint32_t data);
 		GameResField(char *id, char *data);
 		GameResField(char *id, void *data, int length);
 
@@ -81,8 +83,8 @@ class GameResField {
 
 	private:
 		char mID[4];
-		unsigned short mDataType;
-		unsigned short mSize;
+		uint16_t mDataType;
+		uint16_t mSize;
 		void* mData;
 		GameResField* mNext;
 };

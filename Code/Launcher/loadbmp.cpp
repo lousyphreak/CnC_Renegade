@@ -17,6 +17,7 @@
 */
 
 #include"loadbmp.h"
+#include <cstdint>
 
 
 LoadBmp::LoadBmp()
@@ -35,11 +36,11 @@ LoadBmp::~LoadBmp()
 //
 //  Load a specified bitmap for later display on a window
 //
-bit8 LoadBmp::init(char *filename,HWND hwnd)
+int8_t LoadBmp::init(char *filename,HWND hwnd)
 {
   int                  i;
   HANDLE               hBitmapFile;
-  DWORD                dwRead;
+  uint32_t                dwRead;
   BITMAPFILEHEADER     bitmapHeader;
   BITMAPINFOHEADER     bitmapInfoHeader;
   LPLOGPALETTE         lpLogPalette;
@@ -48,7 +49,7 @@ bit8 LoadBmp::init(char *filename,HWND hwnd)
   LPVOID               lpvBits;
   HDC                  hdc;
   HPALETTE             select;
-  UINT                 realize;
+  uint32_t                 realize;
   RECT                 rect;
 
 
@@ -106,12 +107,12 @@ bit8 LoadBmp::init(char *filename,HWND hwnd)
     &dwRead, (LPOVERLAPPED) NULL); 
 
 
-  lpLogPalette=(LPLOGPALETTE)new char[(sizeof(LOGPALETTE)+
+  lpLogPalette=(LPLOGPALETTE)new uint8_t[(sizeof(LOGPALETTE)+
       sizeof(PALETTEENTRY)*256)];
   lpLogPalette->palVersion=0x300;
   lpLogPalette->palNumEntries=256;
 
-  palData=(char *)lpHeaderMem->bmiColors;
+  palData=(uint8_t *)lpHeaderMem->bmiColors;
 
   for (i=0; i<256; i++)
   {
@@ -166,7 +167,7 @@ bit8 LoadBmp::init(char *filename,HWND hwnd)
 }
 
 
-bit8 LoadBmp::drawBmp(void)
+int8_t LoadBmp::drawBmp(void)
 {
   // Paint the window (and draw the bitmap). 
  
@@ -189,7 +190,7 @@ bit8 LoadBmp::drawBmp(void)
     sprintf(string,"Select Pal Fail: %d",GetLastError());
     MessageBox(NULL,string,"OK",MB_OK);
   }
-  UINT realize=RealizePalette(ps.hdc);
+  uint32_t realize=RealizePalette(ps.hdc);
   if (realize==GDI_ERROR)
   {
     sprintf(string,"Realize Pal Fail: %d",GetLastError());

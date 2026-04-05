@@ -41,12 +41,12 @@ TextureClass::TextureClass(IDirect3DTexture8 * d3d_texture)
 TextureClass::~TextureClass(void) {}
 
 void TextureClass::Set_Texture_Name(const char * name) { Name = name != NULL ? name : ""; }
-unsigned int TextureClass::Get_Mip_Level_Count(void) { return MipLevelCount == MIP_LEVELS_ALL ? 1U : static_cast<unsigned int>(MipLevelCount); }
+uint32_t TextureClass::Get_Mip_Level_Count(void) { return MipLevelCount == MIP_LEVELS_ALL ? 1U : static_cast<uint32_t>(MipLevelCount); }
 void TextureClass::Init() { Initialized = true; }
-SurfaceClass * TextureClass::Get_Surface_Level(unsigned int) { return NEW_REF(SurfaceClass, (Width > 0 ? Width : 1, Height > 0 ? Height : 1, TextureFormat)); }
-IDirect3DSurface8 * TextureClass::Get_D3D_Surface_Level(unsigned int) { return NULL; }
-unsigned int TextureClass::Get_Priority(void) { return 0; }
-unsigned int TextureClass::Set_Priority(unsigned int) { return 0; }
+SurfaceClass * TextureClass::Get_Surface_Level(uint32_t) { return NEW_REF(SurfaceClass, (Width > 0 ? Width : 1, Height > 0 ? Height : 1, TextureFormat)); }
+IDirect3DSurface8 * TextureClass::Get_D3D_Surface_Level(uint32_t) { return NULL; }
+uint32_t TextureClass::Get_Priority(void) { return 0; }
+uint32_t TextureClass::Set_Priority(uint32_t) { return 0; }
 void TextureClass::Set_Mip_Mapping(FilterType mipmap) { MipMapFilter = mipmap; }
 unsigned TextureClass::Get_Texture_Memory_Usage() const { return static_cast<unsigned>(Width > 0 && Height > 0 ? Width * Height * 4 : 0); }
 int TextureClass::_Get_Total_Locked_Surface_Size() { return 0; }

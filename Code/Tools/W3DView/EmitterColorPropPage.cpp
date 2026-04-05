@@ -155,7 +155,7 @@ EmitterColorPropPageClass::Initialize (void)
 //  OnInitDialog
 //
 /////////////////////////////////////////////////////////////
-BOOL
+int32_t
 EmitterColorPropPageClass::OnInitDialog (void) 
 {
 	// Allow the base class to process this message
@@ -201,7 +201,7 @@ EmitterColorPropPageClass::OnInitDialog (void)
 	//
 	//	Set-up the color bar
 	//
-	for (UINT index = 0; index < m_OrigColors.NumKeyFrames; index ++) {
+	for (uint32_t index = 0; index < m_OrigColors.NumKeyFrames; index ++) {
 		m_ColorBar->Modify_Point (index + 1,
 											m_OrigColors.KeyTimes[index] / m_Lifetime,
 											m_OrigColors.Values[index].X * 255,
@@ -236,7 +236,7 @@ EmitterColorPropPageClass::OnInitDialog (void)
 //  OnApply
 //
 /////////////////////////////////////////////////////////////
-BOOL
+int32_t
 EmitterColorPropPageClass::OnApply (void)
 {
 	/*SAFE_DELETE_ARRAY (m_OrigColors.KeyTimes);
@@ -273,12 +273,12 @@ EmitterColorPropPageClass::OnDestroy (void)
 //  OnNotify
 //
 /////////////////////////////////////////////////////////////
-BOOL
+int32_t
 EmitterColorPropPageClass::OnNotify
 (
-	WPARAM wParam,
-	LPARAM lParam,
-	LRESULT *pResult
+	uintptr_t wParam,
+	intptr_t lParam,
+	intptr_t *pResult
 ) 
 {
 	CBR_NMHDR *color_bar_hdr = (CBR_NMHDR *)lParam;
@@ -533,11 +533,11 @@ EmitterColorPropPageClass::Update_Colors (void)
 //  OnCommand
 //
 /////////////////////////////////////////////////////////////
-BOOL
+int32_t
 EmitterColorPropPageClass::OnCommand
 (
-	WPARAM wParam,
-	LPARAM lParam
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	switch (LOWORD (wParam))
@@ -551,7 +551,7 @@ EmitterColorPropPageClass::OnCommand
 			// Update the emitter
 			if ((HIWORD (wParam) == EN_KILLFOCUS) &&
 				 SendDlgItemMessage (LOWORD (wParam), EM_GETMODIFY)) {
-				SendDlgItemMessage (LOWORD (wParam), EM_SETMODIFY, (WPARAM)0);
+				SendDlgItemMessage (LOWORD (wParam), EM_SETMODIFY, (uintptr_t)0);
 
 				m_CurrentColors.Rand.X = ((float)GetDlgItemInt (IDC_RED_RANDOM_EDIT)) / 255;
 				m_pEmitterList->Set_Color_Keyframes (m_CurrentColors);
@@ -569,7 +569,7 @@ EmitterColorPropPageClass::OnCommand
 			// Update the emitter
 			if ((HIWORD (wParam) == EN_KILLFOCUS) &&
 				 SendDlgItemMessage (LOWORD (wParam), EM_GETMODIFY)) {
-				SendDlgItemMessage (LOWORD (wParam), EM_SETMODIFY, (WPARAM)0);
+				SendDlgItemMessage (LOWORD (wParam), EM_SETMODIFY, (uintptr_t)0);
 
 				m_CurrentColors.Rand.Y = ((float)GetDlgItemInt (IDC_GREEN_RANDOM_EDIT)) / 255;
 				m_pEmitterList->Set_Color_Keyframes (m_CurrentColors);
@@ -587,7 +587,7 @@ EmitterColorPropPageClass::OnCommand
 			// Update the emitter
 			if ((HIWORD (wParam) == EN_KILLFOCUS) &&
 				 SendDlgItemMessage (LOWORD (wParam), EM_GETMODIFY)) {
-				SendDlgItemMessage (LOWORD (wParam), EM_SETMODIFY, (WPARAM)0);
+				SendDlgItemMessage (LOWORD (wParam), EM_SETMODIFY, (uintptr_t)0);
 
 				m_CurrentColors.Rand.Z = ((float)GetDlgItemInt (IDC_BLUE_RANDOM_EDIT)) / 255;
 				m_pEmitterList->Set_Color_Keyframes (m_CurrentColors);				
@@ -605,7 +605,7 @@ EmitterColorPropPageClass::OnCommand
 			// Update the emitter
 			if ((HIWORD (wParam) == EN_KILLFOCUS) &&
 				 SendDlgItemMessage (LOWORD (wParam), EM_GETMODIFY)) {
-				SendDlgItemMessage (LOWORD (wParam), EM_SETMODIFY, (WPARAM)0);
+				SendDlgItemMessage (LOWORD (wParam), EM_SETMODIFY, (uintptr_t)0);
 
 				m_CurrentOpacities.Rand = ((float)GetDlgItemInt (IDC_OPACITY_RANDOM_EDIT)) / 100;
 				m_pEmitterList->Set_Opacity_Keyframes (m_CurrentOpacities);
@@ -618,7 +618,7 @@ EmitterColorPropPageClass::OnCommand
 	return CPropertyPage::OnCommand (wParam, lParam);
 }
 
-void EmitterColorPropPageClass::OnDeltaposRedRandomSpin(NMHDR* pNMHDR, LRESULT* pResult) 
+void EmitterColorPropPageClass::OnDeltaposRedRandomSpin(NMHDR* pNMHDR, intptr_t* pResult) 
 {
 	NM_UPDOWN* pNMUpDown = (NM_UPDOWN*)pNMHDR;
 	// TODO: Add your control notification handler code here
@@ -643,7 +643,7 @@ EmitterColorPropPageClass::On_Lifetime_Changed (float lifetime)
 		//
 		//	Rescale the colors
 		//
-		for (UINT index = 0; index < m_CurrentColors.NumKeyFrames; index ++) {
+		for (uint32_t index = 0; index < m_CurrentColors.NumKeyFrames; index ++) {
 			m_CurrentColors.KeyTimes[index] *= conversion;
 		}
 		

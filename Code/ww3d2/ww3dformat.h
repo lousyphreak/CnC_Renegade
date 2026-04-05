@@ -40,6 +40,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef WW3DFORMAT_H
@@ -152,13 +154,13 @@ inline int Alpha_Bits(WW3DFormat format) {
 
 // Color convertion routines
 
-// The color will be returned as an unsigned int always
+// The color will be returned as an uint32_t always
 // any unused bits will be garbage
-void Vector4_to_Color(unsigned int *outc,const Vector4 &inc,const WW3DFormat format);
+void Vector4_to_Color(uint32_t *outc,const Vector4 &inc,const WW3DFormat format);
 
 // If the format does not support alpha
 // the alpha will be garbage
-void Color_to_Vector4(Vector4* outc,const unsigned int inc,const WW3DFormat format);
+void Color_to_Vector4(Vector4* outc,const uint32_t inc,const WW3DFormat format);
 
 // Define matching WW3D format based from Targa header.
 //

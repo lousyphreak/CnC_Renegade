@@ -722,7 +722,7 @@ INISection * INIClass::Find_Section(char const * section) const
 {
 	if (section != NULL) {
 //		long crc = CRCEngine()(section, strlen(section));
-		long crc = CRC(section);
+		uint32_t crc = CRC(section);
 
 		if (SectionIndex->Is_Present(crc)) {
 			return((*SectionIndex)[crc]);
@@ -994,11 +994,11 @@ int INIClass::Get_UUBlock(char const * section, void * block, int len) const
  * HISTORY:                                                                                    *
  *    11/6/2001 4:27PM ST : Created                                                            *
  *=============================================================================================*/
-const WideStringClass& INIClass::Get_Wide_String(WideStringClass& new_string, char const * section, char const * entry, unsigned short const * defvalue) const
+const WideStringClass& INIClass::Get_Wide_String(WideStringClass& new_string, char const * section, char const * entry, uint16_t const * defvalue) const
 {
-	unsigned short out[1024];
+	uint16_t out[1024];
 	char buffer[1024];
-	auto assign_wide = [&new_string](const unsigned short * source) {
+	auto assign_wide = [&new_string](const uint16_t * source) {
 		int length = 0;
 		if (source != NULL) {
 			while (source[length] != 0) {
@@ -1024,7 +1024,7 @@ const WideStringClass& INIClass::Get_Wide_String(WideStringClass& new_string, ch
 		int outcount = b64pipe.Put(buffer, length);
 		outcount += b64pipe.End();
 		const int max_chars = static_cast<int>(sizeof(out) / sizeof(out[0])) - 1;
-		const int decoded_chars = std::min(outcount / static_cast<int>(sizeof(unsigned short)), max_chars);
+		const int decoded_chars = std::min(outcount / static_cast<int>(sizeof(uint16_t)), max_chars);
 		out[decoded_chars] = 0;
 		assign_wide(out);
 	}
@@ -1050,7 +1050,7 @@ const WideStringClass& INIClass::Get_Wide_String(WideStringClass& new_string, ch
  * HISTORY:                                                                                    *
  *   11/6/2001 4:29PM ST : Created                                                             *
  *=============================================================================================*/
-bool INIClass::Put_Wide_String(char const * section, char const * entry, const unsigned short * string)
+bool INIClass::Put_Wide_String(char const * section, char const * entry, const uint16_t * string)
 {
 	if (section == NULL || entry == NULL || string == NULL) {
 		return(false);
@@ -2286,7 +2286,7 @@ PKey INIClass::Get_PKey(bool fast) const
 	*/
 	if (fast) {
 		BigInt exp = PKey::Fast_Exponent();
-		exp.DEREncode((unsigned char *)buffer);
+		exp.DEREncode((uint8_t *)buffer);
 		key.Decode_Exponent(buffer);
 	} else {
 		Get_UUBlock("PrivateKey", buffer, sizeof(buffer));
@@ -2386,4 +2386,3 @@ void	INIClass::Keep_Blank_Entries (bool keep_blanks)
 {
 	KeepBlankEntries = keep_blanks;
 }
-

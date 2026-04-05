@@ -37,6 +37,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef AABTREECULL_H
 #define AABTREECULL_H
 
@@ -265,13 +267,13 @@ public:
 	int						Object_Count(void);
 	CullableClass *		Peek_Object(int index);
 
-	uint32					Index;				// Index of this node
+	uint32_t					Index;				// Index of this node
 	AABoxClass				Box;					// Bounding box of the node
 	AABTreeNodeClass *	Parent;				// parent of this node
 	AABTreeNodeClass *	Front;				// front node
 	AABTreeNodeClass *	Back;					// back node
 	CullableClass *		Object;				// objects in this node
-	uint32					UserData;			// 32bit field for the user, initialized to 0
+	uint32_t					UserData;			// 32bit field for the user, initialized to 0
 
 	/*
 	** Construction support:

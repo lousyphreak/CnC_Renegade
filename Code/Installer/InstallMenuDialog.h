@@ -36,6 +36,8 @@
 #ifndef _INSTALL_MENU_DIALOG_H
 #define _INSTALL_MENU_DIALOG_H
 
+#include <cstdint>
+
 // Includes.
 #include "MenuDialog.h"
 #include "Resource.h"
@@ -66,7 +68,7 @@ class InstallMenuDialogClass : public CallbackMenuDialogClass
 		virtual void *As_WOL1DialogClass()					{return (NULL);}
 		virtual void *As_WOL2DialogClass()					{return (NULL);}
 
-		void On_Command (int ctrl_id, int message_id, DWORD param);
+		void On_Command (int ctrl_id, int message_id, uint32_t param);
 };
 
 

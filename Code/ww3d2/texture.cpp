@@ -502,7 +502,7 @@ void TextureClass::Set_Texture_Name(const char * name)
 
 // ----------------------------------------------------------------------------
 
-unsigned int TextureClass::Get_Mip_Level_Count(void)
+uint32_t TextureClass::Get_Mip_Level_Count(void)
 {
 	if (!D3DTexture) {
 		WWASSERT_PRINT(0, "Get_Mip_Level_Count: D3DTexture is NULL!\n");
@@ -514,7 +514,7 @@ unsigned int TextureClass::Get_Mip_Level_Count(void)
 
 // ----------------------------------------------------------------------------
 
-SurfaceClass *TextureClass::Get_Surface_Level(unsigned int level)
+SurfaceClass *TextureClass::Get_Surface_Level(uint32_t level)
 {
 	if (!D3DTexture) {
 		WWASSERT_PRINT(0, "Get_Surface_Level: D3DTexture is NULL!\n");
@@ -530,7 +530,7 @@ SurfaceClass *TextureClass::Get_Surface_Level(unsigned int level)
 
 // ----------------------------------------------------------------------------
 
-IDirect3DSurface8 *TextureClass::Get_D3D_Surface_Level(unsigned int level)
+IDirect3DSurface8 *TextureClass::Get_D3D_Surface_Level(uint32_t level)
 {
 	if (!D3DTexture) {
 		WWASSERT_PRINT(0, "Get_D3D_Surface_Level: D3DTexture is NULL!\n");
@@ -544,7 +544,7 @@ IDirect3DSurface8 *TextureClass::Get_D3D_Surface_Level(unsigned int level)
 
 // ----------------------------------------------------------------------------
 
-unsigned int TextureClass::Get_Priority(void)
+uint32_t TextureClass::Get_Priority(void)
 {
 	if (!D3DTexture) {
 		WWASSERT_PRINT(0, "Get_Priority: D3DTexture is NULL!\n");
@@ -556,7 +556,7 @@ unsigned int TextureClass::Get_Priority(void)
 
 // ----------------------------------------------------------------------------
 
-unsigned int TextureClass::Set_Priority(unsigned int priority)
+uint32_t TextureClass::Set_Priority(uint32_t priority)
 {
 	if (!D3DTexture) {
 		WWASSERT_PRINT(0, "Set_Priority: D3DTexture is NULL!\n");
@@ -590,7 +590,7 @@ unsigned TextureClass::Get_Reduction() const
 
 // ----------------------------------------------------------------------------
 
-void TextureClass::Apply(unsigned int stage)
+void TextureClass::Apply(uint32_t stage)
 {
 	if (!Initialized) {
 		Init();
@@ -637,7 +637,7 @@ void TextureClass::Apply(unsigned int stage)
 
 // ----------------------------------------------------------------------------
 
-void TextureClass::Apply_Null(unsigned int stage)
+void TextureClass::Apply_Null(uint32_t stage)
 {
 	// This function sets the render states for a "NULL" texture
 	DX8Wrapper::Set_DX8_Texture(stage, NULL);

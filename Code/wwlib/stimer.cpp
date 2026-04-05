@@ -39,13 +39,13 @@
 #include	"systimer.h"
 
 
-long SystemTimerClass::operator () (void) const
+uint32_t SystemTimerClass::operator () (void) const
 {
 	return TIMEGETTIME()/16;
 }
 
 
-SystemTimerClass::operator long (void) const
+SystemTimerClass::operator uint32_t (void) const
 {
 	return TIMEGETTIME()/16;
 }

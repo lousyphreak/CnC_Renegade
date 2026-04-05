@@ -170,7 +170,7 @@ OutputFormClass::HandleInitDialog (void)
 void
 OutputFormClass::OnSize
 (
-	UINT nType,
+	uint32_t nType,
 	int cx,
 	int cy
 )

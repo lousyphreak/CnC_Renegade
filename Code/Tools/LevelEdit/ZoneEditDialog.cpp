@@ -132,7 +132,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 ZoneEditDialogClass::OnInitDialog (void)
 {
 	CWaitCursor wait_cursor;
@@ -143,7 +143,7 @@ ZoneEditDialogClass::OnInitDialog (void)
 	//
 	//	Subclass the 3D window for mouse-tracking
 	//
-	SetWindowLong (::GetDlgItem (m_hWnd, IDC_3D_WINDOW), GWL_WNDPROC, (LONG)fn3DWindow);
+	SetWindowLong (::GetDlgItem (m_hWnd, IDC_3D_WINDOW), GWL_WNDPROC, (int32_t)fn3DWindow);
 	::SetProp (::GetDlgItem (m_hWnd, IDC_3D_WINDOW), "ZONE_DIALOG", (HANDLE)this);
 
 	//
@@ -190,8 +190,8 @@ ZoneEditDialogClass::OnInitDialog (void)
 	//
 	//	Select the default UI
 	//
-	SendDlgItemMessage (IDC_TOP, BM_SETCHECK, (WPARAM)TRUE);
-	SendDlgItemMessage (IDC_EDIT_ZONE, BM_SETCHECK, (WPARAM)TRUE);	
+	SendDlgItemMessage (IDC_TOP, BM_SETCHECK, (uintptr_t)TRUE);
+	SendDlgItemMessage (IDC_EDIT_ZONE, BM_SETCHECK, (uintptr_t)TRUE);	
 	OnTop ();
 	OnEditZone ();
 	Update_Status ();
@@ -214,7 +214,7 @@ ZoneEditDialogClass::OnInitDialog (void)
 	m_TimerID = ::timeSetEvent (	50,
 											50,
 											fnUpdateTimer,
-											(DWORD)m_hWnd,
+											(uint32_t)m_hWnd,
 											TIME_PERIODIC);	
 		
 	m_Initialized = true;
@@ -348,11 +348,11 @@ ZoneEditDialogClass::Render_View (void)
 void CALLBACK
 ZoneEditDialogClass::fnUpdateTimer
 (
-	UINT	uID,
-	UINT	uMsg,
-	DWORD	user_data,
-	DWORD	dw1,
-	DWORD	dw2
+	uint32_t	uID,
+	uint32_t	uMsg,
+	uint32_t	user_data,
+	uint32_t	dw1,
+	uint32_t	dw2
 )
 {
 	HWND hwnd = (HWND)user_data;
@@ -376,12 +376,12 @@ ZoneEditDialogClass::fnUpdateTimer
 //  WindowProc
 //
 /////////////////////////////////////////////////////////////////////////////
-LRESULT
+intptr_t
 ZoneEditDialogClass::WindowProc
 (
-	UINT		message,
-	WPARAM	wParam,
-	LPARAM	lParam
+	uint32_t		message,
+	uintptr_t	wParam,
+	intptr_t	lParam
 )
 {
 	if (message == (WM_USER + 101)) {
@@ -762,13 +762,13 @@ ZoneEditDialogClass::OnEditZone (void)
 //  fn3DWindow
 //
 /////////////////////////////////////////////////////////////////////////////
-LRESULT CALLBACK
+intptr_t CALLBACK
 ZoneEditDialogClass::fn3DWindow
 (
 	HWND		hwnd,
-	UINT		message,
-	WPARAM	wparam,
-	LPARAM	lparam
+	uint32_t		message,
+	uintptr_t	wparam,
+	intptr_t	lparam
 )
 {
 	if (message == WM_LBUTTONDOWN) {
@@ -795,7 +795,7 @@ ZoneEditDialogClass::fn3DWindow
 //
 /////////////////////////////////////////////////////////////////////////////
 void
-ZoneEditDialogClass::Handle_LBUTTON_DOWN (WPARAM wparam, LPARAM lparam)
+ZoneEditDialogClass::Handle_LBUTTON_DOWN (uintptr_t wparam, intptr_t lparam)
 {
 	if (m_Initialized == false) {
 		return ;
@@ -814,7 +814,7 @@ ZoneEditDialogClass::Handle_LBUTTON_DOWN (WPARAM wparam, LPARAM lparam)
 //
 /////////////////////////////////////////////////////////////////////////////
 void
-ZoneEditDialogClass::Handle_LBUTTON_UP (WPARAM wparam, LPARAM lparam)
+ZoneEditDialogClass::Handle_LBUTTON_UP (uintptr_t wparam, intptr_t lparam)
 {
 	::ReleaseCapture ();
 	return ;
@@ -827,7 +827,7 @@ ZoneEditDialogClass::Handle_LBUTTON_UP (WPARAM wparam, LPARAM lparam)
 //
 /////////////////////////////////////////////////////////////////////////////
 void
-ZoneEditDialogClass::Handle_MOUSEMOVE (WPARAM wparam, LPARAM lparam)
+ZoneEditDialogClass::Handle_MOUSEMOVE (uintptr_t wparam, intptr_t lparam)
 {
 	if (m_Initialized == false) {
 		return ;
@@ -944,7 +944,7 @@ Trackball_Camera
 //  PreTranslateMessage
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 ZoneEditDialogClass::PreTranslateMessage (MSG *pMsg)
 {
 	if (pMsg->message == WM_KEYDOWN || pMsg->message == WM_KEYUP) {
@@ -993,8 +993,8 @@ ZoneEditDialogClass::OnSizeZone (void)
 void
 ZoneEditDialogClass::OnLastFrame (void) 
 {
-	SendDlgItemMessage (IDC_FIRST_FRAME, BM_SETCHECK, (WPARAM)FALSE);
-	SendDlgItemMessage (IDC_LAST_FRAME, BM_SETCHECK, (WPARAM)TRUE);
+	SendDlgItemMessage (IDC_FIRST_FRAME, BM_SETCHECK, (uintptr_t)FALSE);
+	SendDlgItemMessage (IDC_LAST_FRAME, BM_SETCHECK, (uintptr_t)TRUE);
 
 	if (m_PhysObj == NULL) {
 		return ;
@@ -1028,8 +1028,8 @@ ZoneEditDialogClass::OnLastFrame (void)
 void
 ZoneEditDialogClass::OnFirstFrame (void)
 {
-	SendDlgItemMessage (IDC_FIRST_FRAME, BM_SETCHECK, (WPARAM)TRUE);
-	SendDlgItemMessage (IDC_LAST_FRAME, BM_SETCHECK, (WPARAM)FALSE);
+	SendDlgItemMessage (IDC_FIRST_FRAME, BM_SETCHECK, (uintptr_t)TRUE);
+	SendDlgItemMessage (IDC_LAST_FRAME, BM_SETCHECK, (uintptr_t)FALSE);
 
 	if (m_PhysObj == NULL) {
 		return ;

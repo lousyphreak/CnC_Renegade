@@ -103,7 +103,7 @@ void	SystemSettings::Add_Console_Functions( DynamicVectorClass<ConsoleFunctionCl
 }
 
 
-/** BOOL ENTRY *********************************************************************************/
+/** int32_t ENTRY *********************************************************************************/
 
 class ConsoleFunctionSettingBool : public ConsoleFunctionClass {
 public:

@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __DLG_MP_WOL_GAME_LIST_H
@@ -75,15 +77,15 @@ class MPWolGameListMenuClass :
 		const MPWolGameListMenuClass& operator=(const MPWolGameListMenuClass&);
 	
 		void On_Init_Dialog(void);
-		void On_Command(int id, int mesage_id, DWORD param);
+		void On_Command(int id, int mesage_id, uint32_t param);
 		void On_Last_Menu_Ending(void);
-		bool On_Key_Down(uint32 key_id, uint32 key_data);
+		bool On_Key_Down(uint32_t key_id, uint32_t key_data);
 
 		void Join_Game(void);
 		void ReceiveSignal(DlgPasswordPrompt&);
 
 		void RequestGameList(void);
-		void SortGameChannels(int column, bool isAscending, unsigned long param);
+		void SortGameChannels(int column, bool isAscending, uint32_t param);
 
 		void On_ListCtrl_Column_Click(ListCtrlClass* list, int id, int column);
 		void On_ListCtrl_DblClk(ListCtrlClass* list, int id, int index);
@@ -108,7 +110,7 @@ class MPWolGameListMenuClass :
 
 		int mSortColumn;
 		bool mIsSortAscending;
-		unsigned long mSortFlags;
+		uint32_t mSortFlags;
 
 		WOLGameInfo mSelectedGame;
 

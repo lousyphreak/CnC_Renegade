@@ -168,11 +168,11 @@ Targa::~Targa(void)
 *
 ****************************************************************************/
 
-long Targa::Open(const char* name, long mode)
+int32_t Targa::Open(const char* name, int32_t mode)
 {
 	TGA2Footer	footer;
-	long			size;
-	long			error = 0;
+	int32_t		size;
+	int32_t		error = 0;
 
 	/* File already open? */
 	if (Is_File_Open() && (mAccess == mode)) {
@@ -350,11 +350,11 @@ void Targa::Close(void)
 *
 ****************************************************************************/
 
-long Targa::Load(const char* name, char* palette, char* image,bool invert_image)
+int32_t Targa::Load(const char* name, uint8_t* palette, uint8_t* image,bool invert_image)
 {
-	long size;
-	long depth;
-	long error = 0;
+	int32_t size;
+	int32_t depth;
+	int32_t error = 0;
 
 	/* Open the Targa */
 	if (Open(name, TGA_READMODE) == NULL) {
@@ -484,10 +484,10 @@ long Targa::Load(const char* name, char* palette, char* image,bool invert_image)
 *
 ****************************************************************************/
 
-long Targa::Load(const char* name, long flags, bool invert_image)
+int32_t Targa::Load(const char* name, int32_t flags, bool invert_image)
 {
-	long size;
-	long error = 0;
+	int32_t size;
+	int32_t error = 0;
 
 	/* Open the file to get the header. */
 	if (Open(name, TGA_READMODE) == 0) {
@@ -510,7 +510,7 @@ long Targa::Load(const char* name, long flags, bool invert_image)
 
 				if (size != 0) {
 					/* Allocate memory for the palette. */
-					if ((mPalette = (char *)malloc(size)) != NULL) {
+					if ((mPalette = (uint8_t *)malloc(size)) != NULL) {
 						mFlags |= TGAF_PAL; /* We allocated the palette. */
 					} else {
 						error = TGAERR_NOMEM;
@@ -536,7 +536,7 @@ long Targa::Load(const char* name, long flags, bool invert_image)
 				size = ((Header.Width * Header.Height) * TGA_BytesPerPixel(Header.PixelDepth));
 				if (size != 0) {
 					/* Allocate memory for the image. */
-					if ((mImage = (char *)malloc(size)) != NULL) {
+					if ((mImage = (uint8_t *)malloc(size)) != NULL) {
 						mFlags |= TGAF_IMAGE; /* We allocated the image. */
 					} else {
 						error = TGAERR_NOMEM;
@@ -582,16 +582,16 @@ long Targa::Load(const char* name, long flags, bool invert_image)
 *
 ****************************************************************************/
 
-long Targa::Save(const char* name, long flags, bool addextension)
+int32_t Targa::Save(const char* name, int32_t flags, bool addextension)
 	{
-	long size;
-	long depth;
-	char *palette;
-	char *temppal;
-	char *ptr;
+	int32_t size;
+	int32_t depth;
+	uint8_t *palette;
+	uint8_t *temppal;
+	uint8_t *ptr;
 	//long i,n;
-	//char c;
-	long error = 0;
+	//uint8_t c;
+	int32_t error = 0;
 	TGA2Footer footer;
 
 	/* Open the Targa for write. */
@@ -640,7 +640,7 @@ long Targa::Save(const char* name, long flags, bool addextension)
 			size = (Header.CMapLength * depth);
 
 			/* Allocate temporary buffer for palette manipulation. */
-			if ((temppal = (char *)malloc(size)) != NULL)
+			if ((temppal = (uint8_t *)malloc(size)) != NULL)
 				{
 				memcpy(temppal, palette, size);
 				ptr = temppal;
@@ -773,10 +773,10 @@ long Targa::Save(const char* name, long flags, bool addextension)
 
 void Targa::XFlip(void)
 	{
-	char *ptr,*ptr1;
-	long  x,y,d;
-	char  v,v1;
-	char  depth;
+	uint8_t *ptr,*ptr1;
+	int32_t  x,y,d;
+	uint8_t  v,v1;
+	uint8_t  depth;
 
 	/* Pixel depth in bytes. */
 	depth = TGA_BytesPerPixel(Header.PixelDepth);
@@ -826,10 +826,10 @@ void Targa::XFlip(void)
 
 void Targa::YFlip(void)
 	{
-	char *ptr,*ptr1;
-	long  x,y;
-	char  v,v1;
-	char  depth;
+	uint8_t *ptr,*ptr1;
+	int32_t  x,y;
+	uint8_t  v,v1;
+	uint8_t  depth;
 
 	/* Pixel depth in bytes. */
 	depth = TGA_BytesPerPixel(Header.PixelDepth);
@@ -876,9 +876,9 @@ void Targa::YFlip(void)
 *
 ****************************************************************************/
 
-char *Targa::SetImage(char *buffer)
+uint8_t *Targa::SetImage(uint8_t *buffer)
 {
-	char *oldbuffer = NULL;
+	uint8_t *oldbuffer = NULL;
 
 	/* Free any image buffer before assigning another. */
 	if ((mImage != NULL) && (mFlags & TGAF_IMAGE))
@@ -919,9 +919,9 @@ char *Targa::SetImage(char *buffer)
 *
 ****************************************************************************/
 
-char *Targa::SetPalette(char *buffer)
+uint8_t *Targa::SetPalette(uint8_t *buffer)
 {
-	char *oldbuffer = NULL;
+	uint8_t *oldbuffer = NULL;
 
 	/* Free any image buffer before assigning another. */
 	if ((mPalette != NULL) && (mFlags & TGAF_PAL))
@@ -1004,16 +1004,16 @@ TGA2Extension *Targa::GetExtension(void)
 *
 ****************************************************************************/
 
-long Targa::DecodeImage()
+int32_t Targa::DecodeImage()
 	{
-	char          *image;
-	char          *color;
-	unsigned char count;
-	unsigned char depth;
-	unsigned long pixel_count;
-	unsigned long size;
-	unsigned long c,i;
-	long          error = 0;
+	uint8_t       *image;
+	uint8_t       *color;
+	uint8_t count;
+	uint8_t depth;
+	uint32_t pixel_count;
+	uint32_t size;
+	uint32_t c,i;
+	int32_t       error = 0;
 
 	/* Initialize */
 	image = mImage;
@@ -1096,24 +1096,24 @@ long Targa::DecodeImage()
 *
 ****************************************************************************/
 
-long Targa::EncodeImage()
+int32_t Targa::EncodeImage()
 	{
-	char *packet;
-	long packet_index;
-	char *start;
-	char *end;
-	long depth;
-	long pixels;
-	long count;
-	long match;
-	long i;
-	long error = 0;
+	uint8_t *packet;
+	int32_t packet_index;
+	uint8_t *start;
+	uint8_t *end;
+	int32_t depth;
+	int32_t pixels;
+	int32_t count;
+	int32_t match;
+	int32_t i;
+	int32_t error = 0;
 
 	/* Initialize variables. */
 	depth = TGA_BytesPerPixel(Header.PixelDepth);
 
 	/* Allocate packet buffer to hold maximum encoded data run. */
-	if ((packet = (char *)malloc(128 * depth)) != NULL)
+	if ((packet = (uint8_t *)malloc(128 * depth)) != NULL)
 		{
 		pixels = Header.Width * Header.Height;
 		start = mImage;
@@ -1241,11 +1241,11 @@ long Targa::EncodeImage()
 
 void Targa::InvertImage(void)
 	{
-	char *buffer;
-	long depth;
-	long pixel_count;
-	long i;
-	char c;
+	uint8_t *buffer;
+	int32_t depth;
+	int32_t pixel_count;
+	int32_t i;
+	uint8_t c;
 
 	/* Initialize */
 	buffer = mImage;
@@ -1368,7 +1368,7 @@ int Targa::File_Write(void *buffer, int size)
 //
 // ----------------------------------------------------------------------------
 
-long Targa_Error_Handler(long load_err,const char* filename)
+int32_t Targa_Error_Handler(int32_t load_err,const char* filename)
 {
 	switch (load_err) {
 	case 0:

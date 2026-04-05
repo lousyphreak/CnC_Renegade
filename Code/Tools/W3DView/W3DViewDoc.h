@@ -25,6 +25,8 @@
 
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 
 #include "scene.h"
@@ -40,9 +42,9 @@
 //
 //  Constants
 //
-const DWORD SAVE_SETTINGS_LIGHT     = 0x00000001;
-const DWORD SAVE_SETTINGS_BACK      = 0x00000002;
-const DWORD SAVE_SETTINGS_CAMERA    = 0x00000004;
+const uint32_t SAVE_SETTINGS_LIGHT     = 0x00000001;
+const uint32_t SAVE_SETTINGS_BACK      = 0x00000002;
+const uint32_t SAVE_SETTINGS_CAMERA    = 0x00000004;
 
 
 // Forward declarations
@@ -86,9 +88,9 @@ public:
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(CW3DViewDoc)
 	public:
-	virtual BOOL OnNewDocument();
+	virtual int32_t OnNewDocument();
 	virtual void Serialize(CArchive& ar);
-	virtual BOOL OnOpenDocument(LPCTSTR lpszPathName);
+	virtual int32_t OnOpenDocument(LPCTSTR lpszPathName);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -137,8 +139,8 @@ public:
 	void					Reload_Displayed_Object (void);
 	void					Display_Emitter (ParticleEmitterClass *pemitter = NULL, bool use_global_reset_flag = true, bool allow_reset = true);
 	void					DisplayObject (RenderObjClass *pCModel = NULL, bool use_global_reset_flag = true, bool allow_reset = true, bool add_ghost = false);
-	BOOL					SaveSettings (LPCTSTR pszFilename, DWORD dwSettingsMask);
-	BOOL					LoadSettings (LPCTSTR pszFileName);
+	int32_t					SaveSettings (LPCTSTR pszFilename, uint32_t dwSettingsMask);
+	int32_t					LoadSettings (LPCTSTR pszFileName);
 	CGraphicView *		GetGraphicView (void);
 	CDataTreeView *	GetDataTreeView (void);
 
@@ -153,11 +155,11 @@ public:
 	void					PlayAnimation (RenderObjClass *pobj, LPCTSTR panim_name = NULL, bool use_global_reset_flag = true, bool allow_reset = true);
 	void					PlayAnimation (RenderObjClass *pobj, HAnimComboClass *pcombo, bool use_global_reset_flag = true, bool allow_reset = true);
 	void					UpdateFrame (float time_slice);
-	void					SetAnimationBlend (BOOL bBlend)	{ m_bAnimBlend = bBlend; }
+	void					SetAnimationBlend (int32_t bBlend)	{ m_bAnimBlend = bBlend; }
 	bool					GetChannelQCompression(){ return m_bCompress_channel_Q;}
 	int					GetChannelQnBytes(){return m_nChannelQnBytes;}
 	void					SetChannelQnBytes(int n_bytes){m_nChannelQnBytes = n_bytes;}
-	BOOL					GetAnimationBlend (void) const	{ return m_bAnimBlend; }
+	int32_t					GetAnimationBlend (void) const	{ return m_bAnimBlend; }
 	bool					Is_Camera_Animated (void) const	{ return m_bAnimateCamera; }
 	void					Animate_Camera (bool banimate);
 	void					Import_Facial_Animation (const CString &hierarchy_name, const CString &filename);
@@ -316,7 +318,7 @@ private:
 	int						m_nChannelQnBytes;
 	float						m_CurrentFrame;
 	float						m_animTime;
-	BOOL						m_bAnimBlend;
+	int32_t						m_bAnimBlend;
 	bool						m_bAnimateCamera;
 	bool						m_bAutoCameraReset;
 	bool						m_bOneTimeReset;

@@ -57,7 +57,7 @@ CW3DUpdateApp theApp;
 /////////////////////////////////////////////////////////////////////////////
 // CW3DUpdateApp initialization
 
-BOOL CW3DUpdateApp::InitInstance()
+int32_t CW3DUpdateApp::InitInstance()
 {
 	// Standard initialization
 	// If you are not using these features and wish to reduce the size

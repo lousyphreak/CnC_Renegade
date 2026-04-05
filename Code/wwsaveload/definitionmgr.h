@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 
@@ -81,15 +83,15 @@ public:
 	/////////////////////////////////////////////////////////////////////
 
 	// From SaveLoadSubSystemClass
-	virtual uint32					Chunk_ID (void) const;
+	virtual uint32_t					Chunk_ID (void) const;
 	
 	// Type identification
-	static DefinitionClass *	Find_Definition (uint32 id, bool twiddle = true);
+	static DefinitionClass *	Find_Definition (uint32_t id, bool twiddle = true);
 	static DefinitionClass *	Find_Named_Definition (const char *name, bool twiddle = true);
-	static DefinitionClass *	Find_Typed_Definition (const char *name, uint32 class_id, bool twiddle = true);
+	static DefinitionClass *	Find_Typed_Definition (const char *name, uint32_t class_id, bool twiddle = true);
    static void                List_Available_Definitions (void); 
    static void                List_Available_Definitions (int superclass_id); 	
-	static uint32					Get_New_ID (uint32 class_id);
+	static uint32_t					Get_New_ID (uint32_t class_id);
 
 	// Definition registration
 	static void						Register_Definition (DefinitionClass *definition);
@@ -105,9 +107,9 @@ public:
 	} ID_TYPE;
 
 	static DefinitionClass *	Get_First (void);
-	static DefinitionClass *	Get_First (uint32 id, ID_TYPE type = ID_CLASS);
+	static DefinitionClass *	Get_First (uint32_t id, ID_TYPE type = ID_CLASS);
 	static DefinitionClass *	Get_Next (DefinitionClass *curr_def);
-	static DefinitionClass *	Get_Next (DefinitionClass *curr_def, uint32 id, ID_TYPE type = ID_CLASS);
+	static DefinitionClass *	Get_Next (DefinitionClass *curr_def, uint32_t id, ID_TYPE type = ID_CLASS);
 
 	static void						Free_Definitions (void);
 
@@ -154,7 +156,7 @@ private:
 /////////////////////////////////////////////////////////////////////
 //	Chunk_ID
 /////////////////////////////////////////////////////////////////////
-inline uint32
+inline uint32_t
 DefinitionMgrClass::Chunk_ID (void) const
 {
 	return CHUNKID_SAVELOAD_DEFMGR;

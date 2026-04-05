@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __DLGCNCREFERENCE_H
@@ -65,7 +67,7 @@ public:
 	///////////////////////////////////////////////////////////////////
 	void		On_Init_Dialog (void);
 	void		On_Destroy (void);
-	void		On_Command (int ctrl_id, int mesage_id, DWORD param);
+	void		On_Command (int ctrl_id, int mesage_id, uint32_t param);
 	void		On_Menu_Activate (bool onoff);
 	void		On_Frame_Update(void);
 
@@ -93,8 +95,8 @@ private:
 	float										Timer;
 
 	enum				{ACTION_TIMEOUT_MS = 10000};
-	static DWORD	LastSuicideTimeMs;
-	static DWORD	LastChangeTeamTimeMs;
+	static uint32_t	LastSuicideTimeMs;
+	static uint32_t	LastChangeTeamTimeMs;
 };
 
 

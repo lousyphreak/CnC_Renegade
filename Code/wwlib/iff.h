@@ -35,6 +35,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #pragma once
 
+#include <cstdint>
+
 #ifndef IFF_H
 #define IFF_H
 
@@ -44,6 +46,7 @@
 
 #include	"buff.h"
 #include	<stddef.h>
+#include	<cstdint>
 
 #define LZW_SUPPORTED			FALSE
 
@@ -51,7 +54,7 @@
 /* Iff and Load Picture system defines and enumerations							*/
 /*=========================================================================*/
 
-#define 	MAKE_ID(a,b,c,d)			((long) ((long) d << 24) | ((long) c << 16) | ((long) b <<  8) | (long)(a))
+#define 	MAKE_ID(a,b,c,d)			(static_cast<int32_t>((static_cast<uint32_t>(static_cast<uint8_t>(d)) << 24) | (static_cast<uint32_t>(static_cast<uint8_t>(c)) << 16) | (static_cast<uint32_t>(static_cast<uint8_t>(b)) <<  8) | static_cast<uint32_t>(static_cast<uint8_t>(a))))
 #define	IFFize_WORD(a)			Reverse_Word(a)
 #define	IFFize_LONG(a)			Reverse_Long(a)
 
@@ -87,8 +90,8 @@ typedef enum {
 typedef struct {
 	char	Method;		// Compression method (CompressionType).
 	char	pad;			// Reserved pad byte (always 0).
-	long	Size;			// Size of the uncompressed data.
-	short	Skip;			// Number of bytes to skip before data.
+	int32_t	Size;			// Size of the uncompressed data.
+	int16_t	Skip;			// Number of bytes to skip before data.
 } CompHeaderType;
 
 
@@ -98,34 +101,34 @@ typedef struct {
 
 int __cdecl Open_Iff_File(char const *filename);
 void __cdecl Close_Iff_File(int fh);
-unsigned long __cdecl Get_Iff_Chunk_Size(int fh, long id);
-unsigned long __cdecl Read_Iff_Chunk(int fh, long id, void *buffer, unsigned long maxsize);
-void __cdecl Write_Iff_Chunk(int file, long id, void *buffer, long length);
+uint32_t __cdecl Get_Iff_Chunk_Size(int fh, int32_t id);
+uint32_t __cdecl Read_Iff_Chunk(int fh, int32_t id, void *buffer, uint32_t maxsize);
+void __cdecl Write_Iff_Chunk(int file, int32_t id, void *buffer, int32_t length);
 
 
 /*=========================================================================*/
 /* The following prototypes are for the file: LOADPICT.CPP						*/
 /*=========================================================================*/
 
-//int __cdecl Load_Picture(char const *filename, BufferClass& scratchbuf, BufferClass& destbuf, unsigned char *palette=NULL, PicturePlaneType format=BM_DEFAULT);
+//int __cdecl Load_Picture(char const *filename, BufferClass& scratchbuf, BufferClass& destbuf, uint8_t *palette=NULL, PicturePlaneType format=BM_DEFAULT);
 
 
 /*=========================================================================*/
 /* The following prototypes are for the file: LOAD.CPP							*/
 /*=========================================================================*/
 
-unsigned long __cdecl Load_Data(char const *name, void *ptr, unsigned long size);
-unsigned long __cdecl Write_Data(char const *name, void *ptr, unsigned long size);
+uint32_t __cdecl Load_Data(char const *name, void *ptr, uint32_t size);
+uint32_t __cdecl Write_Data(char const *name, void *ptr, uint32_t size);
 //void * __cdecl Load_Alloc_Data(char const *name, MemoryFlagType flags);
-unsigned long __cdecl Load_Uncompress(char const *file, Buffer & uncomp_buff, Buffer & dest_buff, void *reserved_data=NULL);
-unsigned long __cdecl Uncompress_Data(void const *src, void *dst);
+uint32_t __cdecl Load_Uncompress(char const *file, Buffer & uncomp_buff, Buffer & dest_buff, void *reserved_data=NULL);
+uint32_t __cdecl Uncompress_Data(void const *src, void *dst);
 void __cdecl Set_Uncomp_Buffer(int buffer_segment, int size_of_buffer);
 
 /*=========================================================================*/
 /* The following prototypes are for the file: WRITELBM.CPP						*/
 /*=========================================================================*/
 
-//bool Write_LBM_File(int lbmhandle, BufferClass& buff, int bitplanes, unsigned char *palette);
+//bool Write_LBM_File(int lbmhandle, BufferClass& buff, int bitplanes, uint8_t *palette);
 
 
 
@@ -145,13 +148,13 @@ extern void __cdecl Pack_2_Plane(void *buffer, void * pageptr, int planebit);
 /* The following prototypes are for the file: LCWCOMP.ASM						*/
 /*=========================================================================*/
 
-extern unsigned long __cdecl LCW_Compress(void *source, void *dest, unsigned long length);
+extern uint32_t __cdecl LCW_Compress(void *source, void *dest, uint32_t length);
 
 /*=========================================================================*/
 /* The following prototypes are for the file: LCWUNCMP.ASM						*/
 /*=========================================================================*/
 
-extern unsigned long __cdecl LCW_Uncompress(void *source, void *dest, unsigned long length);
+extern uint32_t __cdecl LCW_Uncompress(void *source, void *dest, uint32_t length);
 
 #ifdef __cplusplus
 }

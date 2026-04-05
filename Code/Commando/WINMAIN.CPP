@@ -112,8 +112,8 @@ extern "C"
 //----------------------------------------------------------------------------
 //	Local functions
 //----------------------------------------------------------------------------
-static BOOL Create_Main_Window(HANDLE hInstance, int nCmdShow);
-long FAR PASCAL Main_Window_Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+static int32_t Create_Main_Window(HANDLE hInstance, int nCmdShow);
+intptr_t FAR PASCAL Main_Window_Proc(HWND hwnd, uint32_t message, uintptr_t wParam, intptr_t lParam);
 void On_Focus_Loss(void);
 void On_Focus_Restore(void);
 void Split_Command_Line_Args(HINSTANCE instance, char *path_to_exe, char *command_line);
@@ -124,7 +124,7 @@ void Set_Working_Directory(HINSTANCE hInstance);
 #include "packet.h"
 
 #ifndef _MSC_VER
-long Top_Level_Exception_Filter(EXCEPTION_POINTERS *e_info)
+int32_t Top_Level_Exception_Filter(EXCEPTION_POINTERS *e_info)
 {
 	return(Exception_Handler(e_info->ExceptionRecord->ExceptionCode, e_info));
 }
@@ -170,7 +170,7 @@ int PASCAL WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	** Leak test
 	*/
 	//char *flibble = new char [1024];
-	//unsigned long *flibble2 = new unsigned long;
+	//uint32_t *flibble2 = new uint32_t;
 	//void *flibble3 = malloc(128);
 
 	//flibble = flibble;
@@ -250,7 +250,7 @@ static bool Graphics_Settings_Trouble_Shooting()
 			&startup_info,
 			&process_info);
 
-		unsigned long exit_code=STILL_ACTIVE;
+		uint32_t exit_code=STILL_ACTIVE;
 		unsigned res=0;
 		do {
 			res=GetExitCodeProcess(process_info.hProcess,&exit_code);
@@ -265,7 +265,7 @@ static bool Graphics_Settings_Trouble_Shooting()
 	return true;
 }
 
-typedef IDirect3D8* (WINAPI *Direct3DCreate8Type) (UINT SDKVersion);
+typedef IDirect3D8* (WINAPI *Direct3DCreate8Type) (uint32_t SDKVersion);
 static Direct3DCreate8Type	Direct3DCreate8Ptr = NULL;
 static HINSTANCE D3D8Lib = NULL;
 
@@ -317,7 +317,7 @@ static bool Video_Card_Driver_Check()
 	for (int adapter_index=0; adapter_index<adapter_count; adapter_index++) {
 		D3DADAPTER_IDENTIFIER8 id;
 		::ZeroMemory(&id, sizeof(D3DADAPTER_IDENTIFIER8));
-		HRESULT res = d3d->GetAdapterIdentifier(adapter_index,D3DENUM_NO_WHQL_LEVEL,&id);
+		int32_t res = d3d->GetAdapterIdentifier(adapter_index,D3DENUM_NO_WHQL_LEVEL,&id);
 		// If device ok, check if it matches the currently set adapter name
 		if (res == D3D_OK) {
 			StringClass name(id.Description,true);
@@ -387,7 +387,7 @@ static bool Video_Card_Driver_Check()
 		return true;
 	}
 
-	unsigned long exit_code=STILL_ACTIVE;
+	uint32_t exit_code=STILL_ACTIVE;
 	unsigned res=0;
 	do {
 		res=GetExitCodeProcess(process_info.hProcess,&exit_code);
@@ -520,7 +520,7 @@ int Start_Application( HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /
  * HISTORY:                                                                                    *
  *   07/18/1997 GH  : Created.                                                                 *
  *=============================================================================================*/
-long FAR PASCAL Main_Window_Proc( HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam )
+intptr_t FAR PASCAL Main_Window_Proc( HWND hwnd, uint32_t message, uintptr_t wParam, intptr_t lParam )
 {
 	static bool _reset = false;
 
@@ -530,7 +530,7 @@ long FAR PASCAL Main_Window_Proc( HWND hwnd, UINT message, WPARAM wParam, LPARAM
 	**	this information.
 	*/
 	if (_TheWWUIInput && Input::Is_Console_Enabled () == false) {
-		LRESULT result = 0;
+		intptr_t result = 0;
 
 		//DialogWalker->Process_Message(hwnd, message, wParam, lParam, result);
 
@@ -697,10 +697,10 @@ long FAR PASCAL Main_Window_Proc( HWND hwnd, UINT message, WPARAM wParam, LPARAM
  * HISTORY:                                                                                    *
  *   07/18/1997 GH  : Created.                                                                 *
  *=============================================================================================*/
-static BOOL Create_Main_Window(HANDLE hInstance, int nCmdShow)
+static int32_t Create_Main_Window(HANDLE hInstance, int nCmdShow)
 {
 	WNDCLASS    wc;
-	BOOL        rc;
+	int32_t        rc;
 
 	ProgramInstance = (HINSTANCE)hInstance;
 

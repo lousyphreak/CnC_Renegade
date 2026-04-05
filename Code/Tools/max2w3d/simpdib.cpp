@@ -1,3 +1,4 @@
+#include <cstdint>
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -48,7 +49,7 @@ SimpleDIBClass::SimpleDIBClass(HWND hwnd,int width,int height,PaletteClass & pal
 	Pitch(NULL)
 {
 	// Allocate a BITMAPINFO structure
-	Info = (BITMAPINFO *) new char [sizeof(BITMAPINFO) + 256*sizeof(RGBQUAD)];
+	Info = (BITMAPINFO *) new uint8_t [sizeof(BITMAPINFO) + 256*sizeof(RGBQUAD)];
 
 	if (Info == NULL) {
 		IsZombie = true;
@@ -70,9 +71,9 @@ SimpleDIBClass::SimpleDIBClass(HWND hwnd,int width,int height,PaletteClass & pal
 
 	// Fill in the DIB's palette.
 	for (int i=0; i<256; i++) {
-		Info->bmiColors[i].rgbBlue =		(unsigned char)pal[i].Get_Blue();
-		Info->bmiColors[i].rgbGreen =		(unsigned char)pal[i].Get_Green();
-		Info->bmiColors[i].rgbRed =		(unsigned char)pal[i].Get_Red();
+		Info->bmiColors[i].rgbBlue =		(uint8_t)pal[i].Get_Blue();
+		Info->bmiColors[i].rgbGreen =		(uint8_t)pal[i].Get_Green();
+		Info->bmiColors[i].rgbRed =		(uint8_t)pal[i].Get_Red();
 		Info->bmiColors[i].rgbReserved =	0;
 	}
 	
@@ -113,14 +114,14 @@ SimpleDIBClass::~SimpleDIBClass(void)
 }
 
 
-void SimpleDIBClass::Clear(unsigned char color)
+void SimpleDIBClass::Clear(uint8_t color)
 {
 	if (Pixels) {
 		memset(Pixels, color, abs(Pitch)*Height);
 	}
 }
 
-void SimpleDIBClass::Set_Pixel(int i,int j,unsigned char color)
+void SimpleDIBClass::Set_Pixel(int i,int j,uint8_t color)
 {
 	if ((i < 0) || (j < 0) || (i >= Width) || (j >= Height)) {
 		return;

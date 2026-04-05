@@ -71,7 +71,7 @@ bool Wstring::operator<(IN Wstring &other) RO
 	return ( strcmp(str, other.str) < 0 );
 }
 
-bit8 Wstring::operator==(IN char *other) RO
+int8_t Wstring::operator==(IN char *other) RO
 {
   if ((str==NULL)&&(other==NULL))
     return(TRUE);
@@ -81,7 +81,7 @@ bit8 Wstring::operator==(IN char *other) RO
    return(TRUE);
 }
 
-bit8 Wstring::operator==(IN Wstring &other) RO
+int8_t Wstring::operator==(IN Wstring &other) RO
 {
  if((str == NULL) && (other.str == NULL))
    return(TRUE);
@@ -96,7 +96,7 @@ bit8 Wstring::operator==(IN Wstring &other) RO
 }
 
 
-bit8 Wstring::operator!=(IN char *other) RO
+int8_t Wstring::operator!=(IN char *other) RO
 {
  if(strcmp(str, other) != 0)
    return(TRUE);
@@ -105,7 +105,7 @@ bit8 Wstring::operator!=(IN char *other) RO
 }
 
 
-bit8 Wstring::operator!=(IN Wstring &other) RO
+int8_t Wstring::operator!=(IN Wstring &other) RO
 {
  if((str == NULL) && (other.str == NULL))
    return(FALSE);
@@ -137,9 +137,9 @@ Wstring &Wstring::operator=(IN Wstring &other)
 }
 
 
-bit8 Wstring::cat(IN char *s)
+int8_t Wstring::cat(IN char *s)
 {
-  uint32   len;
+  uint32_t   len;
 
   if (s==NULL)   // it's OK to cat nothing
     return(TRUE);
@@ -158,9 +158,9 @@ bit8 Wstring::cat(IN char *s)
 }
 
 
-bit8 Wstring::cat(uint32 size, IN char *s)
+int8_t Wstring::cat(uint32_t size, IN char *s)
 {
-  uint32   len;
+  uint32_t   len;
 
   // Determine the length of the resultant string.
   len = size + 1;
@@ -176,7 +176,7 @@ bit8 Wstring::cat(uint32 size, IN char *s)
   return(TRUE);
 }
 
-bit8 Wstring::cat(IN Wstring &other)
+int8_t Wstring::cat(IN Wstring &other)
 {
   return cat(other.get());
 }
@@ -214,12 +214,12 @@ Wstring Wstring::operator+(IN Wstring &s)
 // Otherwise, TRUE is returned.  Note: count has a default value of 1.
 //
 //
-char Wstring::remove(sint32 pos,sint32 count)
+char Wstring::remove(int32_t pos,int32_t count)
 {
   //char    *s;
-  sint32   len;
+  int32_t   len;
 
-  len = (sint32)strlen(str);
+  len = (int32_t)strlen(str);
 
   if(pos+count > len)
     pos = len - count;
@@ -237,11 +237,11 @@ char Wstring::remove(sint32 pos,sint32 count)
 }
 
 // Remove all instances of a char from the string
-bit8 Wstring::removeChar(char c)
+int8_t Wstring::removeChar(char c)
 {
   int     len=0;
   char   *cptr=NULL;
-  bit8    removed=FALSE; 
+  int8_t    removed=FALSE; 
 
   if (str==NULL)
     return(FALSE);
@@ -272,7 +272,7 @@ void Wstring::clear(void)
 }
 
 // This is usually used for raw storage instead of string ops...
-void Wstring::setSize(sint32 size)
+void Wstring::setSize(int32_t size)
 {
   clear();
   if (size<0)
@@ -283,12 +283,12 @@ void Wstring::setSize(sint32 size)
   memset(str,0,size);
 }
 
-void Wstring::cellCopy(char *dest, uint32 len)
+void Wstring::cellCopy(char *dest, uint32_t len)
 {
-  uint32 i;
+  uint32_t i;
 
   strncpy(dest, str, len);
-  for(i = (uint32)strlen(str); i < len; i++)
+  for(i = (uint32_t)strlen(str); i < len; i++)
     dest[i] = ' ';
   dest[len] = 0;
 }
@@ -300,23 +300,23 @@ char *Wstring::get(void) RO
   return str;
 }
 
-char Wstring::get(uint32 index) RO
+char Wstring::get(uint32_t index) RO
 {
  if(index < strlen(str))
    return str[index];
  return(0);
 }
 
-uint32 Wstring::length(void) RO
+uint32_t Wstring::length(void) RO
 {
   if(str == NULL)
     return(0);
-  return((uint32)strlen(str));
+  return((uint32_t)strlen(str));
 }
 
 
 // Insert at given position and shift old stuff to right
-bit8 Wstring::insert(char *instring, uint32 pos)
+int8_t Wstring::insert(char *instring, uint32_t pos)
 {
   if (str==NULL)
     return(set(instring)); 
@@ -334,7 +334,7 @@ bit8 Wstring::insert(char *instring, uint32 pos)
 // position indexed by `pos'.  If `pos' is >= the length of the string, it is
 // appended to the string.  If an error occurs, FALSE is returned.  Otherwise,
 // TRUE is returned.
-bit8 Wstring::insert(char k, uint32 pos)
+int8_t Wstring::insert(char k, uint32_t pos)
 {
   char temp[2];
   temp[0]=k;
@@ -346,7 +346,7 @@ bit8 Wstring::insert(char k, uint32 pos)
 // Joe Howes (05/19/2000):  This function inserts commas to nicely format a 
 // large number (i.e.  1234567890 -> 1,234,567,890).  It doesn't really care
 // if the string is really a number or not.
-bit8 Wstring::beautifyNumber()
+int8_t Wstring::beautifyNumber()
 {
 	int len = length();
 	int accum = 3 - (len % 3);
@@ -371,11 +371,11 @@ bit8 Wstring::beautifyNumber()
 // This function replaces any occurences of the string pointed to by
 // `replaceThis' with the string pointed to by `withThis'.  If an error
 // occurs, FALSE is returned.  Otherwise, TRUE is returned.
-bit8 Wstring::replace(IN char *replaceThis,IN char *withThis)
+int8_t Wstring::replace(IN char *replaceThis,IN char *withThis)
 {
   Wstring  dest;
   char    *foundStr, *src;
-  uint32   len;
+  uint32_t   len;
 
   src=get();
   while(src && src[0])
@@ -383,7 +383,7 @@ bit8 Wstring::replace(IN char *replaceThis,IN char *withThis)
     foundStr = strstr(src, replaceThis);
     if(foundStr)
     {
-      len = (uint32)foundStr - (uint32)src;
+      len = (uint32_t)foundStr - (uint32_t)src;
       if(len)
       {
         if(!dest.cat(len, src))
@@ -405,9 +405,9 @@ bit8 Wstring::replace(IN char *replaceThis,IN char *withThis)
 }
 
 
-bit8 Wstring::set(IN char *s)
+int8_t Wstring::set(IN char *s)
 {
- //uint32 len;
+ //uint32_t len;
 
  strgrow(strlen(s)+1);
  strcpy(str,s);
@@ -416,9 +416,9 @@ bit8 Wstring::set(IN char *s)
 }
 
 
-bit8 Wstring::set(char c, uint32 index)
+int8_t Wstring::set(char c, uint32_t index)
 {
- if(index >= (uint32)strlen(str))
+ if(index >= (uint32_t)strlen(str))
    return FALSE;
 
  str[index] = c;
@@ -427,9 +427,9 @@ bit8 Wstring::set(char c, uint32 index)
 }
 
 
-char Wstring::set(uint32 size, IN char *string)
+char Wstring::set(uint32_t size, IN char *string)
 {
- //uint32 len;
+ //uint32_t len;
 
  strgrow(size+1);
  strncpy(str,string,size);
@@ -466,13 +466,13 @@ char Wstring::setFormatted(IN char *msg, ...)
 // case.
 void Wstring::toLower(void)
 {
-  uint32 i;
+  uint32_t i;
   int    strlength=length();
 
-  for(i = 0; i < (uint32)strlength; i++)
+  for(i = 0; i < (uint32_t)strlength; i++)
   {
     if((str[i] >= 'A') && (str[i] <= 'Z'))
-      str[i] = (sint8)tolower(str[i]);
+      str[i] = (int8_t)tolower(str[i]);
   }
 }
 
@@ -481,20 +481,20 @@ void Wstring::toLower(void)
 // case.
 void Wstring::toUpper(void)
 {
-  uint32 i;
+  uint32_t i;
   int    strlength=length();
 
-  for(i = 0; i < (uint32)strlength; i++)
+  for(i = 0; i < (uint32_t)strlength; i++)
   {
     if((str[i] >= 'a') && (str[i] <= 'z'))
-      str[i] = (sint8)toupper(str[i]);
+      str[i] = (int8_t)toupper(str[i]);
   }
 }
 
 
 //  This function truncates the string so its length will match the specified
 // `len'.  If an error occurs, FALSE is returned.  Otherwise, TRUE is returned.
-bit8 Wstring::truncate(uint32 len)
+int8_t Wstring::truncate(uint32_t len)
 {
   strgrow(len+1);
   str[len]=0;
@@ -503,9 +503,9 @@ bit8 Wstring::truncate(uint32 len)
 
 // Truncate the string after the character 'c' (gets rid of 'c' as well)
 //   Do nothing if 'c' isn't in the string
-bit8 Wstring::truncate(char c)
+int8_t Wstring::truncate(char c)
 {
-  sint32  len;
+  int32_t  len;
  
   if (str==NULL)
     return(FALSE);
@@ -513,18 +513,18 @@ bit8 Wstring::truncate(char c)
   char   *cptr=strchr(str,c);
   if (cptr==NULL)
     return(FALSE);
-  len=(sint32)(cptr-str); 
-  truncate((uint32)len);
+  len=(int32_t)(cptr-str); 
+  truncate((uint32_t)len);
   return(TRUE);
 }
 
 // Get a token from this string that's seperated by one or more
 //  chars from the 'delim' string , start at offset & return offset
-sint32 Wstring::getToken(int offset,char *delim,Wstring &out) RO
+int32_t Wstring::getToken(int offset,char *delim,Wstring &out) RO
 {
   int i;
-  sint32 start;
-  sint32 stop;
+  int32_t start;
+  int32_t stop;
 
   if (offset<0)  // check for bad input
     return(-1);
@@ -543,19 +543,19 @@ sint32 Wstring::getToken(int offset,char *delim,Wstring &out) RO
   }
   stop=i-1; 
   out.set(str+start);
-  out.truncate((uint32)stop-start+1);
+  out.truncate((uint32_t)stop-start+1);
   return(stop+1);
 }
 
 // Get the first line of text after offset.  Lines are terminated by '\r\n' or '\n'
-sint32 Wstring::getLine(int offset, Wstring &out)
+int32_t Wstring::getLine(int offset, Wstring &out)
 {
   int i;
-  sint32 start;
-  sint32 stop;
+  int32_t start;
+  int32_t stop;
 
   start=i=offset;
-  if (start >= (sint32)length())
+  if (start >= (int32_t)length())
     return(-1);
  
   for (; i<(int)length(); i++) {
@@ -567,7 +567,7 @@ sint32 Wstring::getLine(int offset, Wstring &out)
     stop++;
 
   out.set(str+start);
-  out.truncate((uint32)stop-start+1);
+  out.truncate((uint32_t)stop-start+1);
   return(stop+1);
 }
 

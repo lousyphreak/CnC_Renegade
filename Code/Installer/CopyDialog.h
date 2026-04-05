@@ -36,6 +36,8 @@
 #ifndef _COPY_DIALOG_H
 #define _COPY_DIALOG_H
 
+#include <cstdint>
+
 // Includes.
 #include "CopyThread.h"
 #include "InstallMenuDialog.h"
@@ -63,7 +65,7 @@ class CopyDialogClass : public InstallMenuDialogClass
 
 		void End_Dialog (void);
 		void Callback (int id, PopupDialogClass *popup);
-		void On_Command (int ctrl_id, int message_id, DWORD param);
+		void On_Command (int ctrl_id, int message_id, uint32_t param);
 
 	protected:
 

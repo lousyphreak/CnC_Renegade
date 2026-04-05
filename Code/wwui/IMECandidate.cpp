@@ -105,7 +105,7 @@ IMECandidate::~IMECandidate()
 *
 ******************************************************************************/
 
-void IMECandidate::Open(int id, HWND hwnd, UINT codepage, bool unicode, bool startFrom1)
+void IMECandidate::Open(int id, HWND hwnd, uint32_t codepage, bool unicode, bool startFrom1)
 	{
 	mIndex = id;
 	mHWND = hwnd;
@@ -137,7 +137,7 @@ void IMECandidate::Read(void)
 
 	if (imc)
 		{
-		DWORD size = 0;
+		uint32_t size = 0;
 
 		// Get the size of the candidate list
 		if (mUseUnicode)
@@ -159,7 +159,7 @@ void IMECandidate::Read(void)
 				}
 
 			// Allocate a new buffer to hold the candidates
-			mCandidates = (CANDIDATELIST*)(new unsigned char[size]);
+			mCandidates = (CANDIDATELIST*)(new uint8_t[size]);
 			mCandidateSize = size;
 			}
 
@@ -272,7 +272,7 @@ int IMECandidate::GetIndex(void) const
 *
 ******************************************************************************/
 
-unsigned long IMECandidate::GetStyle(void) const
+uint32_t IMECandidate::GetStyle(void) const
 	{
 	WWASSERT(mCandidates != NULL);
 	return mCandidates->dwStyle;
@@ -292,7 +292,7 @@ unsigned long IMECandidate::GetStyle(void) const
 *
 ******************************************************************************/
 
-unsigned long IMECandidate::GetPageStart(void) const
+uint32_t IMECandidate::GetPageStart(void) const
 	{
 	WWASSERT(mCandidates != NULL);
 	return mCandidates->dwPageStart;
@@ -313,7 +313,7 @@ unsigned long IMECandidate::GetPageStart(void) const
 *
 ******************************************************************************/
 
-void IMECandidate::SetPageStart(unsigned long start)
+void IMECandidate::SetPageStart(uint32_t start)
 	{
 	WWASSERT((start >=0) && (start < GetCount()));
 
@@ -349,7 +349,7 @@ void IMECandidate::SetPageStart(unsigned long start)
 *
 ******************************************************************************/
 
-unsigned long IMECandidate::GetPageSize(void) const
+uint32_t IMECandidate::GetPageSize(void) const
 	{
 	WWASSERT(mCandidates != NULL);
 	return mCandidates->dwPageSize;
@@ -372,7 +372,7 @@ unsigned long IMECandidate::GetPageSize(void) const
 ******************************************************************************/
 
 // Get the number of candidates in the list.
-unsigned long IMECandidate::GetCount(void) const
+uint32_t IMECandidate::GetCount(void) const
 	{
 	if (mCandidates)
 		{
@@ -398,7 +398,7 @@ unsigned long IMECandidate::GetCount(void) const
 *
 ******************************************************************************/
 
-unsigned long IMECandidate::GetSelection(void) const
+uint32_t IMECandidate::GetSelection(void) const
 	{
 	WWASSERT(mCandidates != NULL);
 	return mCandidates->dwSelection;
@@ -442,7 +442,7 @@ bool IMECandidate::IsStartFrom1(void) const
 *
 ******************************************************************************/
 
-const wchar_t* IMECandidate::GetCandidate(unsigned long index)
+const wchar_t* IMECandidate::GetCandidate(uint32_t index)
 	{
 	if (index < GetCount())
 		{
@@ -454,7 +454,7 @@ const wchar_t* IMECandidate::GetCandidate(unsigned long index)
 		// text representations of individual DBCS character values in hexadecimal notation.
 		if ((IME_CAND_CODE == GetStyle()) && (1 == GetCount()))
 			{
-			unsigned long dbcs = mCandidates->dwOffset[0];
+			uint32_t dbcs = mCandidates->dwOffset[0];
 
 			// If this char has a lead byte then it is double byte. Swap the bytes
 			// for generate string order
@@ -470,7 +470,7 @@ const wchar_t* IMECandidate::GetCandidate(unsigned long index)
 			return mTempString;
 			}
 
-		DWORD offset = mCandidates->dwOffset[index];
+		uint32_t offset = mCandidates->dwOffset[index];
 		const char* candString = ((const char*)mCandidates + offset);
 
 		if (mUseUnicode)
@@ -503,7 +503,7 @@ const wchar_t* IMECandidate::GetCandidate(unsigned long index)
 *
 ******************************************************************************/
 
-void IMECandidate::SelectCandidate(unsigned long selection)
+void IMECandidate::SelectCandidate(uint32_t selection)
 	{
 	HIMC imc = ImmGetContext(mHWND);
 
@@ -531,7 +531,7 @@ void IMECandidate::SelectCandidate(unsigned long selection)
 *
 ******************************************************************************/
 
-void IMECandidate::SetView(unsigned long topIndex, unsigned long bottomIndex)
+void IMECandidate::SetView(uint32_t topIndex, uint32_t bottomIndex)
 	{
 	HIMC imc = ImmGetContext(mHWND);
 

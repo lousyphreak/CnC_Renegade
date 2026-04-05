@@ -59,7 +59,7 @@ TransitionGameObjDef::~TransitionGameObjDef( void )
 	Free_Transition_List();
 }
 
-uint32	TransitionGameObjDef::Get_Class_ID (void) const	
+uint32_t	TransitionGameObjDef::Get_Class_ID (void) const	
 { 
 	return CLASSID_GAME_OBJECT_DEF_TRANSITION; 
 }

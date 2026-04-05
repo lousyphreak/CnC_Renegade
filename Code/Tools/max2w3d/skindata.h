@@ -39,6 +39,8 @@
 #ifndef SKINDATA_H
 #define SKINDATA_H
 
+#include <cstdint>
+
 #include "Max.h"
 #include "namedsel.h"
 
@@ -91,7 +93,7 @@ public:
 
 	void Invalidate() { Valid = FALSE; }
 
-	BOOL IsValid() { return Valid; }
+	int32_t IsValid() { return Valid; }
 
 	void Validate(Mesh *mesh)
 	{
@@ -128,8 +130,8 @@ public:
 
 public:
 
-	BOOL							Valid;
-	BOOL							Held;
+	int32_t							Valid;
+	int32_t							Held;
 	
 	/*
 	** Current selection

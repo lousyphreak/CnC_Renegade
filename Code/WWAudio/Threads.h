@@ -32,6 +32,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __WWAUDIO_THREADS_H
@@ -71,8 +73,8 @@ class WWAudioThreadsClass
 		//	Delayed release mechanism
 		//
 		static HANDLE		Create_Delayed_Release_Thread (LPVOID param = NULL);
-		static void			End_Delayed_Release_Thread (DWORD timeout = 20000);
-		static void			Add_Delayed_Release_Object (RefCountClass *object, DWORD delay = 2000);
+		static void			End_Delayed_Release_Thread (uint32_t timeout = 20000);
+		static void			Add_Delayed_Release_Object (RefCountClass *object, uint32_t delay = 2000);
 		static void			Flush_Delayed_Release_Objects (void);
 
 	private:
@@ -88,7 +90,7 @@ class WWAudioThreadsClass
 		typedef struct _DELAYED_RELEASE_INFO
 		{
 			RefCountClass *	object;
-			DWORD					time;
+			uint32_t					time;
 
 			_DELAYED_RELEASE_INFO *next;
 			_DELAYED_RELEASE_INFO *prev;

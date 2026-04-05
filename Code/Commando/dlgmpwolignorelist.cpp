@@ -97,7 +97,7 @@ MPWolIgnoreListPopupClass::On_Init_Dialog (void)
 //
 ////////////////////////////////////////////////////////////////
 void
-MPWolIgnoreListPopupClass::On_Command (int ctrl_id, int message_id, DWORD param)
+MPWolIgnoreListPopupClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	switch (ctrl_id) {
 		case IDC_ADD_BUTTON:
@@ -154,7 +154,7 @@ MPWolIgnoreListPopupClass::Refresh_List (void)
 	//	Loop over the entries
 	const WOLBuddyMgr::IgnoreList& ignore = mBuddyMgr->GetIngoreList();
 
-	for (unsigned int index = 0; index < ignore.size(); index++) {
+	for (uint32_t index = 0; index < ignore.size(); index++) {
 		const WideStringClass& name = ignore[index];
 
 		int pos = list_ctrl->Insert_Entry(0xFFFF, name);

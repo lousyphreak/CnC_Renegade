@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -75,8 +77,8 @@ class LCWPipe : public Pipe
 		/*
 		**	Pointer to the working buffer that compression/decompression will use.
 		*/
-		char * Buffer;
-		char * Buffer2;
+		uint8_t * Buffer;
+		uint8_t * Buffer2;
 
 		/*
 		**	The working block size. Data will be compressed in chunks of this size.
@@ -93,8 +95,8 @@ class LCWPipe : public Pipe
 		**	Each block has a header of this format.
 		*/
 		struct {
-			unsigned short CompCount;		// Size of data block (compressed).
-			unsigned short UncompCount;	// Bytes of uncompressed data it represents.
+			uint16_t CompCount;		// Size of data block (compressed).
+			uint16_t UncompCount;	// Bytes of uncompressed data it represents.
 		} BlockHeader;
 
 		LCWPipe(LCWPipe & rvalue);

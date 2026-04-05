@@ -37,6 +37,8 @@
 #ifndef	RADAR_H
 #define	RADAR_H
 
+#include <cstdint>
+
 #ifndef	ALWAYS_H
 	#include "always.h"
 #endif
@@ -155,7 +157,7 @@ private:
 	static	Render2DClass						*	Renderer;
 	static	Render2DSentenceClass *				CompassRenderers[8];
 	static	int										CurrentCompassRendererIndex;
-	static	unsigned long							BlipColors[ NUM_BLIP_COLOR_TYPES ];
+	static	uint32_t							BlipColors[ NUM_BLIP_COLOR_TYPES ];
 	static	const PhysicalGameObj				*	BracketObj;
 	static	RectClass								BlipUV[ NUM_BLIP_TYPES ];
 	static	bool									IsHidden;

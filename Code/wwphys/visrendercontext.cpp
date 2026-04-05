@@ -100,11 +100,11 @@ VisRenderContextClass::~VisRenderContextClass(void)
  * HISTORY:                                                                                    *
  *   7/18/2000  gth : Created.                                                                 *
  *=============================================================================================*/
-void VisRenderContextClass::Set_Vis_ID(uint32 id)
+void VisRenderContextClass::Set_Vis_ID(uint32_t id)
 {
 	WWASSERT(id < BACKFACE_VIS_ID);
 	_VisRasterizer.Set_Frontface_ID(id);
-	_VisRasterizer.Set_Backface_ID((uint32)BACKFACE_VIS_ID);
+	_VisRasterizer.Set_Backface_ID((uint32_t)BACKFACE_VIS_ID);
 }
 
 
@@ -215,7 +215,7 @@ void VisRenderContextClass::Scan_Frame_Buffer
 	int maxy = MIN(max.Y * height , height-1);
 	int backface_count = 0;
 
-	const uint32 * pixel_row = NULL;
+	const uint32_t * pixel_row = NULL;
 
 	/*
 	** Loop over the pixels, counting backfaces and enabling the visibility of

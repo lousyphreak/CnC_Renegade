@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __VSSCLASS_H
@@ -117,10 +119,10 @@ class VSSClass : public AssetDatabaseClass
 		//	File information methods
 		//
 		
-		VSSFileStatus			Get_File_Status (LPCTSTR local_filename, LPTSTR checked_out_username = NULL, DWORD buffer_size = 0, IVSSItem *item_to_use = NULL);
+		VSSFileStatus			Get_File_Status (LPCTSTR local_filename, LPTSTR checked_out_username = NULL, uint32_t buffer_size = 0, IVSSItem *item_to_use = NULL);
 		FILE_STATUS				Get_File_Status (LPCTSTR local_filename, StringClass *checked_out_user_name);
 
-		long						Get_File_Version (LPCTSTR local_filename);
+		int32_t					Get_File_Version (LPCTSTR local_filename);
 		bool						Is_File_Different (LPCTSTR local_filename);
 		bool						Does_File_Exist (LPCTSTR local_filename);
 		bool						Get_File_Date (IVSSItem *pitem, SYSTEMTIME &system_time);
@@ -129,7 +131,7 @@ class VSSClass : public AssetDatabaseClass
 		//
 		// User information
 		//
-		BOOL						Is_Read_Only (void) const	{ return m_bReadOnly; }
+		int32_t						Is_Read_Only (void) const	{ return m_bReadOnly; }
 
 
 	protected:
@@ -141,7 +143,7 @@ class VSSClass : public AssetDatabaseClass
 		void						Get_VSS_Interface (void);
 		IVSSItem *				Get_VSS_Item_From_Local_Path (LPCTSTR local_filename);
 		IVSSItem *				Get_VSS_Item (LPCTSTR vss_path);
-		LPCTSTR					Get_Error_Description (HRESULT hresult);
+		LPCTSTR					Get_Error_Description (int32_t hresult);
 
 		
 	private:
@@ -151,8 +153,7 @@ class VSSClass : public AssetDatabaseClass
 		//	Private member data
 		//
 		IVSSDatabase *		m_pIVSSDatabase;
-		BOOL					m_bReadOnly;
+		int32_t					m_bReadOnly;
 };
 
 #endif //__VSSCLASS_H
-

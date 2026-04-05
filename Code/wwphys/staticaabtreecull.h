@@ -39,6 +39,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef STATICAABTREECULL_H
 #define STATICAABTREECULL_H
 
@@ -154,8 +156,8 @@ protected:
 	/*
 	** Visibility Optimization support (preprocessing still)
 	*/
-	void					Merge_Vis_Object_IDs(uint32 id0,uint32 id1);
-	void					Merge_Vis_Sector_IDs(uint32 id0,uint32 id1);
+	void					Merge_Vis_Object_IDs(uint32_t id0,uint32_t id1);
+	void					Merge_Vis_Sector_IDs(uint32_t id0,uint32_t id1);
 
 	/*
 	** Making Physics Scene a friend so that some of the more ugly vis-system interfaces

@@ -1278,7 +1278,7 @@ ActiveConversationClass::Get_Conversation_Time (void)
 			//
 			//	Create the sound object
 			//
-			uint32 sound_def_id = translate_obj->Get_Sound_ID ();
+			uint32_t sound_def_id = translate_obj->Get_Sound_ID ();
 			if (sound_def_id != 0) {
 				
 				//

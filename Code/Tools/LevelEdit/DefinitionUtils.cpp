@@ -146,8 +146,8 @@ Copy_Definition (DefinitionClass *src_def, DefinitionClass *dest_def, bool is_te
 	//
 	//	Make sure the definitions are of the same type.
 	//
-	uint32 class_id1 = dest_def->Get_Class_ID ();
-	uint32 class_id2 = src_def->Get_Class_ID ();
+	uint32_t class_id1 = dest_def->Get_Class_ID ();
+	uint32_t class_id2 = src_def->Get_Class_ID ();
 	if (class_id1 == class_id2) {
 		
 		//

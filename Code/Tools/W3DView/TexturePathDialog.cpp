@@ -77,7 +77,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 TexturePathDialogClass::OnInitDialog (void) 
 {
 	CDialog::OnInitDialog ();

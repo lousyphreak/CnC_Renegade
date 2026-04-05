@@ -26,6 +26,8 @@
 #ifndef __UTILS_H
 #define __UTILS_H
 
+#include <cstdint>
+
 #include "vector.h"
 
 // Forward declarations
@@ -119,14 +121,14 @@ class CGraphicView;
 //
 class CW3DViewDoc *	GetCurrentDocument (void);
 CGraphicView *			Get_Graphic_View (void);
-void						Paint_Gradient (HWND hWnd, BYTE baseRed, BYTE baseGreen, BYTE baseBlue);
+void						Paint_Gradient (HWND hWnd, uint8_t baseRed, uint8_t baseGreen, uint8_t baseBlue);
 void						CenterDialogAroundTreeView (HWND hDlg);
 
 //
 // Dialog routines
 //
-void						SetDlgItemFloat (HWND hdlg, UINT child_id, float value);
-float						GetDlgItemFloat (HWND hdlg, UINT child_id);
+void						SetDlgItemFloat (HWND hdlg, uint32_t child_id, float value);
+float						GetDlgItemFloat (HWND hdlg, uint32_t child_id);
 void						SetWindowFloat (HWND hwnd, float value);
 float						GetWindowFloat (HWND hwnd);
 void						Initialize_Spinner (CSpinButtonCtrl &ctrl, float pos = 0, float min = 0, float max = 1);

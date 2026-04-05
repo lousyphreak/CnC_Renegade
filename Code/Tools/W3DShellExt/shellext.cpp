@@ -36,12 +36,12 @@
 #pragma data_seg()
 // Global variables
 //
-UINT      g_DllRefCount = 0;    // Reference count of this DLL.
+uint32_t      g_DllRefCount = 0;    // Reference count of this DLL.
 HINSTANCE g_DllInstance = NULL;	// Handle to this DLL itself.
 
 //===============================================================
 extern "C" int APIENTRY
-	DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved){
+	DllMain(HINSTANCE hInstance, uint32_t dwReason, LPVOID lpReserved){
 	if (dwReason == DLL_PROCESS_ATTACH){
 		g_DllInstance = hInstance;
 	}else 
@@ -95,12 +95,12 @@ STDMETHODIMP CShellExtClassFactory::QueryInterface(REFIID riid, LPVOID FAR *ppv)
     return E_NOINTERFACE;
 }	
 //======================================================================================
-STDMETHODIMP_(ULONG) CShellExtClassFactory::AddRef()
+STDMETHODIMP_(uint32_t) CShellExtClassFactory::AddRef()
 {
     return ++m_cRef;
 }
 
-STDMETHODIMP_(ULONG) CShellExtClassFactory::Release()
+STDMETHODIMP_(uint32_t) CShellExtClassFactory::Release()
 {
     if (--m_cRef)
         return m_cRef;
@@ -124,7 +124,7 @@ STDMETHODIMP CShellExtClassFactory::CreateInstance(LPUNKNOWN pUnkOuter,REFIID ri
 }
 
 
-STDMETHODIMP CShellExtClassFactory::LockServer(BOOL fLock)
+STDMETHODIMP CShellExtClassFactory::LockServer(int32_t fLock)
 {
     return NOERROR;
 }
@@ -179,12 +179,12 @@ STDMETHODIMP CShellExt::QueryInterface(REFIID riid, LPVOID FAR *ppv)
 	return E_NOINTERFACE;
 }
 
-STDMETHODIMP_(ULONG) CShellExt::AddRef()
+STDMETHODIMP_(uint32_t) CShellExt::AddRef()
 {
     return ++m_cRef;
 }
 
-STDMETHODIMP_(ULONG) CShellExt::Release()
+STDMETHODIMP_(uint32_t) CShellExt::Release()
 {
 	if (--m_cRef){
        return m_cRef;

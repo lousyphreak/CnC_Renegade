@@ -19,9 +19,9 @@
 #ifndef TEXTURETHUMBNAIL_H
 #define TEXTURETHUMBNAIL_H
 
-#if defined(_MSC_VER)
 #pragma once
-#endif
+
+#include <cstdint>
 
 #include "always.h"
 #include "wwstring.h"
@@ -38,21 +38,21 @@ class ThumbnailClass
 	friend ThumbnailManagerClass;
 
 	StringClass Name;
-	unsigned char* Bitmap;
+	uint8_t* Bitmap;
 	unsigned Width;
 	unsigned Height;
 	unsigned OriginalTextureWidth;
 	unsigned OriginalTextureHeight;
 	unsigned OriginalTextureMipLevelCount;
 	WW3DFormat OriginalTextureFormat;
-	unsigned long DateTime;
+	uint32_t DateTime;
 	bool Allocated;	// if true, destructor will free the memory
 	ThumbnailManagerClass* Manager;
 
 	ThumbnailClass(
 		ThumbnailManagerClass* manager,
 		const char* name, 
-		unsigned char* bitmap, 
+		uint8_t* bitmap, 
 		unsigned w, 
 		unsigned h, 
 		unsigned original_w, 
@@ -60,14 +60,14 @@ class ThumbnailClass
 		unsigned original_mip_level_count,
 		WW3DFormat original_format,
 		bool allocated,
-		unsigned long date_time);
+		uint32_t date_time);
 	ThumbnailClass(
 		ThumbnailManagerClass* manager,
 		const StringClass& filename);
 	~ThumbnailClass();
 public:
 
-	unsigned char* Peek_Bitmap() { return Bitmap; }
+	uint8_t* Peek_Bitmap() { return Bitmap; }
 	WW3DFormat Get_Format() { return WW3D_FORMAT_A4R4G4B4; }
 	unsigned Get_Width() const { return Width; }
 	unsigned Get_Height() const { return Height; }
@@ -75,7 +75,7 @@ public:
 	unsigned Get_Original_Texture_Height() const { return OriginalTextureHeight; }
 	unsigned Get_Original_Texture_Mip_Level_Count() const { return OriginalTextureMipLevelCount; }
 	WW3DFormat Get_Original_Texture_Format() const { return OriginalTextureFormat; }
-	unsigned long Get_Date_Time() const { return DateTime; }
+	uint32_t Get_Date_Time() const { return DateTime; }
 	const StringClass& Get_Name() const { return Name; }
 
 };
@@ -91,9 +91,9 @@ class ThumbnailManagerClass : public DLNodeClass<ThumbnailManagerClass>
 	StringClass ThumbnailFileName;
 	StringClass MixFileName;
 	HashTemplateClass<StringClass,ThumbnailClass*> ThumbnailHash;
-	unsigned char* ThumbnailMemory;
+	uint8_t* ThumbnailMemory;
 	bool Changed;
-	unsigned long DateTime;
+	uint32_t DateTime;
 
 	static DLListClass<ThumbnailManagerClass> ThumbnailManagerList;
 

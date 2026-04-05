@@ -35,6 +35,8 @@
 #ifndef __WOLCHATOBSERVER_H__
 #define __WOLCHATOBSERVER_H__
 
+#include <cstdint>
+
 #include <objbase.h>
 #include "RefPtr.h"
 #include "WOLUser.h"
@@ -60,108 +62,108 @@ class ChatObserver :
 		//---------------------------------------------------------------------------
 		// IUnknown methods
 		//---------------------------------------------------------------------------
-		virtual HRESULT STDMETHODCALLTYPE QueryInterface(const IID& iid, void** ppv);
-		virtual ULONG STDMETHODCALLTYPE AddRef(void);
-		virtual ULONG STDMETHODCALLTYPE Release(void);
+		virtual int32_t STDMETHODCALLTYPE QueryInterface(const IID& iid, void** ppv);
+		virtual uint32_t STDMETHODCALLTYPE AddRef(void);
+		virtual uint32_t STDMETHODCALLTYPE Release(void);
 
 		//---------------------------------------------------------------------------
 		// IChatEvent Methods
 		//---------------------------------------------------------------------------
-		STDMETHOD(OnServerList)(HRESULT hr, WOL::Server* servers);
+		STDMETHOD(OnServerList)(int32_t hr, WOL::Server* servers);
         
-		STDMETHOD(OnUpdateList)(HRESULT hr, WOL::Update* updates);
+		STDMETHOD(OnUpdateList)(int32_t hr, WOL::Update* updates);
     
-		STDMETHOD(OnServerError)(HRESULT hr, LPCSTR ircmsg);
+		STDMETHOD(OnServerError)(int32_t hr, LPCSTR ircmsg);
     
-		STDMETHOD(OnConnection)(HRESULT hr, LPCSTR motd);
+		STDMETHOD(OnConnection)(int32_t hr, LPCSTR motd);
     
-		STDMETHOD(OnMessageOfTheDay)(HRESULT hr, LPCSTR motd);
+		STDMETHOD(OnMessageOfTheDay)(int32_t hr, LPCSTR motd);
     
-		STDMETHOD(OnChannelList)(HRESULT hr, WOL::Channel* channels);
+		STDMETHOD(OnChannelList)(int32_t hr, WOL::Channel* channels);
     
-		STDMETHOD(OnChannelCreate)(HRESULT hr, WOL::Channel* channel);
+		STDMETHOD(OnChannelCreate)(int32_t hr, WOL::Channel* channel);
     
-		STDMETHOD(OnChannelJoin)(HRESULT hr, WOL::Channel* channel, WOL::User* user);
+		STDMETHOD(OnChannelJoin)(int32_t hr, WOL::Channel* channel, WOL::User* user);
     
-		STDMETHOD(OnChannelLeave)(HRESULT hr, WOL::Channel* channel, WOL::User* user);
+		STDMETHOD(OnChannelLeave)(int32_t hr, WOL::Channel* channel, WOL::User* user);
     
-		STDMETHOD(OnChannelTopic)(HRESULT hr, WOL::Channel* channel, LPCSTR topic);
+		STDMETHOD(OnChannelTopic)(int32_t hr, WOL::Channel* channel, LPCSTR topic);
     
-		STDMETHOD(OnPrivateAction)(HRESULT hr, WOL::User* user, LPCSTR action);
+		STDMETHOD(OnPrivateAction)(int32_t hr, WOL::User* user, LPCSTR action);
     
-		STDMETHOD(OnPublicAction)(HRESULT hr, WOL::Channel* channel, WOL::User* user, LPCSTR action);
+		STDMETHOD(OnPublicAction)(int32_t hr, WOL::Channel* channel, WOL::User* user, LPCSTR action);
     
-		STDMETHOD(OnUserList)(HRESULT hr, WOL::Channel* channel, WOL::User* users);
+		STDMETHOD(OnUserList)(int32_t hr, WOL::Channel* channel, WOL::User* users);
     
-		STDMETHOD(OnPublicMessage)(HRESULT hr, WOL::Channel* channel, WOL::User* user, LPCSTR message);
+		STDMETHOD(OnPublicMessage)(int32_t hr, WOL::Channel* channel, WOL::User* user, LPCSTR message);
     
-		STDMETHOD(OnPrivateMessage)(HRESULT hr, WOL::User* user, LPCSTR message);
+		STDMETHOD(OnPrivateMessage)(int32_t hr, WOL::User* user, LPCSTR message);
     
-		STDMETHOD(OnSystemMessage)(HRESULT hr, LPCSTR message);
+		STDMETHOD(OnSystemMessage)(int32_t hr, LPCSTR message);
     
-		STDMETHOD(OnNetStatus)(HRESULT hr);
+		STDMETHOD(OnNetStatus)(int32_t hr);
     
-		STDMETHOD(OnLogout)(HRESULT status, WOL::User* user);
+		STDMETHOD(OnLogout)(int32_t status, WOL::User* user);
     
-		STDMETHOD(OnPrivateGameOptions)(HRESULT hr, WOL::User* user, LPCSTR options);
+		STDMETHOD(OnPrivateGameOptions)(int32_t hr, WOL::User* user, LPCSTR options);
     
-		STDMETHOD(OnPublicGameOptions)(HRESULT hr, WOL::Channel* channel, WOL::User* user, LPCSTR options);
+		STDMETHOD(OnPublicGameOptions)(int32_t hr, WOL::Channel* channel, WOL::User* user, LPCSTR options);
     
-		STDMETHOD(OnGameStart)(HRESULT hr, WOL::Channel* channel, WOL::User* users, int gameid);
+		STDMETHOD(OnGameStart)(int32_t hr, WOL::Channel* channel, WOL::User* users, int gameid);
     
-		STDMETHOD(OnUserKick)(HRESULT hr, WOL::Channel* channel, WOL::User* kicked, WOL::User* kicker);
+		STDMETHOD(OnUserKick)(int32_t hr, WOL::Channel* channel, WOL::User* kicked, WOL::User* kicker);
     
-		STDMETHOD(OnUserIP)(HRESULT hr, WOL::User* user);
+		STDMETHOD(OnUserIP)(int32_t hr, WOL::User* user);
     
-		STDMETHOD(OnFind)(HRESULT hr, WOL::Channel* chan);
+		STDMETHOD(OnFind)(int32_t hr, WOL::Channel* chan);
     
-		STDMETHOD(OnPageSend)(HRESULT hr);
+		STDMETHOD(OnPageSend)(int32_t hr);
     
-		STDMETHOD(OnPaged)(HRESULT hr, WOL::User* user, LPCSTR message);
+		STDMETHOD(OnPaged)(int32_t hr, WOL::User* user, LPCSTR message);
     
-		STDMETHOD(OnServerBannedYou)(HRESULT hr, WOL::time_t bannedTill);
+		STDMETHOD(OnServerBannedYou)(int32_t hr, WOL::time_t bannedTill);
     
-		STDMETHOD(OnUserFlags)(HRESULT hr, LPCSTR name, unsigned int flags, unsigned int mask);
+		STDMETHOD(OnUserFlags)(int32_t hr, LPCSTR name, uint32_t flags, uint32_t mask);
     
-		STDMETHOD(OnChannelBan)(HRESULT hr, LPCSTR name, int banned);
+		STDMETHOD(OnChannelBan)(int32_t hr, LPCSTR name, int banned);
     
-		STDMETHOD(OnSquadInfo)(HRESULT hr, unsigned long id, WOL::Squad* squad);
+		STDMETHOD(OnSquadInfo)(int32_t hr, uint32_t id, WOL::Squad* squad);
     
-		STDMETHOD(OnUserLocale)(HRESULT hr, WOL::User* users);
+		STDMETHOD(OnUserLocale)(int32_t hr, WOL::User* users);
     
-		STDMETHOD(OnUserTeam)(HRESULT hr, WOL::User* users);
+		STDMETHOD(OnUserTeam)(int32_t hr, WOL::User* users);
     
-		STDMETHOD(OnSetLocale)(HRESULT hr, WOL::Locale newlocale);
+		STDMETHOD(OnSetLocale)(int32_t hr, WOL::Locale newlocale);
     
-		STDMETHOD(OnSetTeam)(HRESULT hr, int newteam);
+		STDMETHOD(OnSetTeam)(int32_t hr, int newteam);
 
-		STDMETHOD(OnBuddyList)(HRESULT hr, WOL::User* buddyList);
+		STDMETHOD(OnBuddyList)(int32_t hr, WOL::User* buddyList);
         
-		STDMETHOD(OnBuddyAdd)(HRESULT hr, WOL::User* buddyAdded);
+		STDMETHOD(OnBuddyAdd)(int32_t hr, WOL::User* buddyAdded);
         
-		STDMETHOD(OnBuddyDelete)(HRESULT hr, WOL::User* buddyDeleted);
+		STDMETHOD(OnBuddyDelete)(int32_t hr, WOL::User* buddyDeleted);
 
-		STDMETHOD(OnPublicUnicodeMessage)(HRESULT hr, WOL::Channel* channel, WOL::User* user, const unsigned short* message);
+		STDMETHOD(OnPublicUnicodeMessage)(int32_t hr, WOL::Channel* channel, WOL::User* user, const uint16_t* message);
         
-		STDMETHOD(OnPrivateUnicodeMessage)(HRESULT hr, WOL::User* user, const unsigned short* message);
+		STDMETHOD(OnPrivateUnicodeMessage)(int32_t hr, WOL::User* user, const uint16_t* message);
         
-		STDMETHOD(OnPrivateUnicodeAction)(HRESULT hr, WOL::User* user, const unsigned short* action);
+		STDMETHOD(OnPrivateUnicodeAction)(int32_t hr, WOL::User* user, const uint16_t* action);
         
-		STDMETHOD(OnPublicUnicodeAction)(HRESULT hr, WOL::Channel* channel, WOL::User* user, const unsigned short* action);
+		STDMETHOD(OnPublicUnicodeAction)(int32_t hr, WOL::Channel* channel, WOL::User* user, const uint16_t* action);
         
-		STDMETHOD(OnPagedUnicode)(HRESULT hr, WOL::User* user, const unsigned short* message);
+		STDMETHOD(OnPagedUnicode)(int32_t hr, WOL::User* user, const uint16_t* message);
         
-		STDMETHOD(OnServerTime)(HRESULT hr, WOL::time_t stime);
+		STDMETHOD(OnServerTime)(int32_t hr, WOL::time_t stime);
         
-		STDMETHOD(OnInsiderStatus)(HRESULT hr, WOL::User* users);
+		STDMETHOD(OnInsiderStatus)(int32_t hr, WOL::User* users);
         
-		STDMETHOD(OnSetLocalIP)(HRESULT hr, LPCSTR message);
+		STDMETHOD(OnSetLocalIP)(int32_t hr, LPCSTR message);
 
-		STDMETHOD(OnChannelListBegin)(HRESULT hr);
+		STDMETHOD(OnChannelListBegin)(int32_t hr);
         
-		STDMETHOD(OnChannelListEntry)(HRESULT hr, WOL::Channel* channel);
+		STDMETHOD(OnChannelListEntry)(int32_t hr, WOL::Channel* channel);
         
-		STDMETHOD(OnChannelListEnd)(HRESULT hr);
+		STDMETHOD(OnChannelListEnd)(int32_t hr);
 
 	protected:
 		virtual ~ChatObserver();
@@ -176,7 +178,7 @@ class ChatObserver :
 
 
 	private:
-		ULONG mRefCount;
+		uint32_t mRefCount;
 		Session* mOuter;
 	};
 

@@ -46,56 +46,56 @@ class UString
 	public:
 		// Constructors
 		UString();
-		UString(UInt capacity);
-		UString(const Char* s);
-		UString(const WChar* ws);
+		UString(uint32_t capacity);
+		UString(const char* s);
+		UString(const wchar_t* ws);
 		UString(const UString& s);
 		virtual ~UString();
 
 		//! Get the length of the string
-		UInt Length(void) const;
+		uint32_t Length(void) const;
 
 		//! Copy string
-		void Copy(const Char* s);
-		void Copy(const WChar* ws);
+		void Copy(const char* s);
+		void Copy(const wchar_t* ws);
 		void Copy(const UString& s);
 
 		//! Concatenate string
-		void Concat(const Char* s);
-		void Concat(const WChar* ws);
+		void Concat(const char* s);
+		void Concat(const wchar_t* ws);
 		void Concat(const UString& s);
 
 		//! Compare strings
-		Int Compare(const Char* s) const;
-		Int Compare(const WChar* s) const;
-		Int Compare(const UString& s) const;
+		int32_t Compare(const char* s) const;
+		int32_t Compare(const wchar_t* s) const;
+		int32_t Compare(const UString& s) const;
 
 		//! Compare strings not case-sensitive
-		Int CompareNoCase(const Char* s) const;
-		Int CompareNoCase(const WChar* ws) const;
-		Int CompareNoCase(const UString& s) const;
+		int32_t CompareNoCase(const char* s) const;
+		int32_t CompareNoCase(const wchar_t* ws) const;
+		int32_t CompareNoCase(const UString& s) const;
 
 		//! Find the first occurance of character
-		Int Find(Char c) const;
-		Int Find(WChar wc) const;
+		int32_t Find(char c) const;
+		int32_t Find(wchar_t wc) const;
 
 		//! Find the last occurance of a character
-		Int FindLast(Char c) const;
-		Int FindLast(WChar c) const;
+		int32_t FindLast(char c) const;
+		int32_t FindLast(wchar_t c) const;
 
 		//! Find a substring
-		UString SubString(const Char* s);
-		UString SubString(const WChar* ws);
+		UString SubString(const char* s);
+		UString SubString(const wchar_t* ws);
 		UString SubString(const UString& s);
 
 		//! Extract left part of the string
-		UString Left(UInt count);
+		UString Left(uint32_t count);
 
 		//! Extract middle part of the string.
-		UString Middle(UInt first, UInt count);
+		UString Middle(uint32_t first, uint32_t count);
 
 		//! Extract right part of the string.
-		UString Right(UInt count);
+		UString Right(uint32_t count);
 
 		//! Convert string to uppercase
 		void ToUpper(void);
@@ -108,132 +108,132 @@ class UString
 
 		//! Remove leading and trailing characters from string.
 		//  Returns true if any characters removed
-		bool Trim(const Char* trimChars);
-		bool Trim(const WChar* trimChars);
+		bool Trim(const char* trimChars);
+		bool Trim(const wchar_t* trimChars);
 		bool Trim(const UString& trimChars);
 
 		//! Remove characters from left side of string
 		//  Returns true if any characters removed
-		bool TrimLeft(const Char* trimChars);
-		bool TrimLeft(const WChar* trimChars);
+		bool TrimLeft(const char* trimChars);
+		bool TrimLeft(const wchar_t* trimChars);
 		bool TrimLeft(const UString& trimChars);
 
 		//! Remove characters from right side of string
 		//  Returns true if any characters removed
-		bool TrimRight(const Char* trimChars);
-		bool TrimRight(const WChar* trimChars);
+		bool TrimRight(const char* trimChars);
+		bool TrimRight(const wchar_t* trimChars);
 		bool TrimRight(const UString& trimChars);
 
 		// Convert string to ANSI
-		void ConvertToANSI(Char* buffer, UInt bufferLength) const;
+		void ConvertToANSI(char* buffer, uint32_t bufferLength) const;
 
 		//! Get the size (in bytes) of the string.
-		UInt Size(void) const;
+		uint32_t Size(void) const;
 
 		//! Get the maximum number of characters this string can hold.
-		UInt Capacity(void) const;
+		uint32_t Capacity(void) const;
 
 		//! Resize the string
-		bool Resize(UInt size);
+		bool Resize(uint32_t size);
 
-		const WChar* Get(void) const
+		const wchar_t* Get(void) const
 			{return (mData != NULL) ? mData : L"";}
 
 		//! Assignment operator
-		UString operator=(const Char* s)
+		UString operator=(const char* s)
 			{Copy(s); return *this;};
 
-		UString operator=(const WChar* ws)
+		UString operator=(const wchar_t* ws)
 			{Copy(ws); return *this;};
 		
 		UString operator=(const UString& s)
 			{Copy(s); return *this;};
 
 		//! Addition operator (concatenate)
-		UString operator+(const Char* s)
+		UString operator+(const char* s)
 			{UString ns(*this); ns += s; return ns;}
 
-		UString operator+(const WChar* ws)
+		UString operator+(const wchar_t* ws)
 			{UString ns(*this); ns += ws; return ns;}
 
 		UString operator+(const UString& s)
 			{UString ns(*this); ns += s; return ns;}
 
-		UString operator+=(const Char* s)
+		UString operator+=(const char* s)
 			{Concat(s); return *this;}
 
-		UString operator+=(const WChar* ws)
+		UString operator+=(const wchar_t* ws)
 			{Concat(ws); return *this;}
 
 		UString operator+=(const UString& s)
 			{Concat(s); return *this;}
 
 		//! Equal operator (case sensitive compare)
-		bool operator==(const Char* s)
+		bool operator==(const char* s)
 			{return (Compare(s) == 0);}
 
-		bool operator==(const WChar* ws)
+		bool operator==(const wchar_t* ws)
 			{return (Compare(ws) == 0);}
 
 		bool operator==(const UString& s)
 			{return (Compare(s) == 0);}
 
-		bool operator!=(const Char* s)
+		bool operator!=(const char* s)
 			{return (Compare(s) != 0);}
 
-		bool operator!=(const WChar* ws)
+		bool operator!=(const wchar_t* ws)
 			{return (Compare(ws) != 0);}
 		
 		bool operator!=(const UString& s)
 			{return (Compare(s) != 0);}
 
 		//! Less than operator (case sensitive compare)
-		bool operator<(const Char* s)
+		bool operator<(const char* s)
 			{return (Compare(s) == -1);}
 
-		bool operator<(const WChar* ws)
+		bool operator<(const wchar_t* ws)
 			{return (Compare(ws) == -1);}
 
 		bool operator<(const UString& s)
 			{return (Compare(s) == -1);}
 
-		bool operator<=(const Char* s)
+		bool operator<=(const char* s)
 			{return (Compare(s) <= 0);}
 
-		bool operator<=(const WChar* ws)
+		bool operator<=(const wchar_t* ws)
 			{return (Compare(ws) <= 0);}
 
 		bool operator<=(const UString& s)
 			{return (Compare(s) <= 0);}
 
 		//! Greater than operator (case sensitive compare)
-		bool operator>(const Char* s)
+		bool operator>(const char* s)
 			{return (Compare(s) == 1);}
 
-		bool operator>(const WChar* ws)
+		bool operator>(const wchar_t* ws)
 			{return (Compare(ws) == 1);}
 
 		bool operator>(const UString& s)
 			{return (Compare(s) == 1);}
 
-		bool operator>=(const Char* s)
+		bool operator>=(const char* s)
 			{return (Compare(s) >= 0);}
 
-		bool operator>=(const WChar* ws)
+		bool operator>=(const wchar_t* ws)
 			{return (Compare(ws) >= 0);}
 
 		bool operator>=(const UString& s)
 			{return (Compare(s) >= 0);}
 
 		// Conversion operator
-		operator const WChar*() const
+		operator const wchar_t*() const
 			{return Get();}
 
 	private:
-		bool AllocString(UInt size);
+		bool AllocString(uint32_t size);
 
-		WChar* mData;
-		UInt mCapacity;
+		wchar_t* mData;
+		uint32_t mCapacity;
 	};
 
 #endif // USTRING_H

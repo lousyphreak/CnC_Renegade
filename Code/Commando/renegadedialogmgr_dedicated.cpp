@@ -94,7 +94,7 @@ WWUIInputClass * _TheWWUIInput = nullptr;
 #if !defined(FREEDEDICATEDSERVER)
 namespace {
 
-bool CALLBACK Default_On_Command(DialogBaseClass *dialog, int ctrl_id, int mesage_id, DWORD param)
+bool CALLBACK Default_On_Command(DialogBaseClass *dialog, int ctrl_id, int mesage_id, uint32_t param)
 {
 	bool handled = true;
 
@@ -167,7 +167,7 @@ void Shutdown_Factories()
 } // namespace
 #endif
 
-int MyLoadStringW(UINT str_id, LPWSTR buffer, int buffer_len)
+int MyLoadStringW(uint32_t str_id, LPWSTR buffer, int buffer_len)
 {
 	if (buffer == nullptr || buffer_len <= 0) {
 		return 0;

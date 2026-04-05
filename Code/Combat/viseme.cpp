@@ -31,7 +31,7 @@ namespace {
 
 char viseme_to_lower(char ch)
 {
-	return static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+	return static_cast<char>(std::tolower(static_cast<uint8_t>(ch)));
 }
 
 void viseme_lowercase_in_place(char * text)

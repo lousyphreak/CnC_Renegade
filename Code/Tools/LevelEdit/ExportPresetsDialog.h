@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 
@@ -57,7 +59,7 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(ExportPresetsDialogClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	afx_msg void OnBrowse();
 	virtual void OnOK();
 	//}}AFX_MSG

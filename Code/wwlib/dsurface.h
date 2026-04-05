@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -113,10 +115,10 @@ class DSurface : public XSurface
 		virtual bool Is_Direct_Draw(void) const {return(true);}
 
 		static int Build_Hicolor_Pixel(int red, int green, int blue);
-		static void Build_Remap_Table(unsigned short * table, PaletteClass const & palette);
-		static unsigned short Get_Halfbright_Mask(void) {return(HalfbrightMask);}
-		static unsigned short Get_Quarterbright_Mask(void) {return(QuarterbrightMask);}
-		static unsigned short Get_Eighthbright_Mask(void) {return(EighthbrightMask);}
+		static void Build_Remap_Table(uint16_t * table, PaletteClass const & palette);
+		static uint16_t Get_Halfbright_Mask(void) {return(HalfbrightMask);}
+		static uint16_t Get_Quarterbright_Mask(void) {return(QuarterbrightMask);}
+		static uint16_t Get_Eighthbright_Mask(void) {return(EighthbrightMask);}
 
 	protected:
 		void Restore_Check(void) const;
@@ -185,9 +187,9 @@ class DSurface : public XSurface
 		int ThisGreenLeft;
 
 	protected:
-		static unsigned short HalfbrightMask;
-		static unsigned short QuarterbrightMask;
-		static unsigned short EighthbrightMask;
+		static uint16_t HalfbrightMask;
+		static uint16_t QuarterbrightMask;
+		static uint16_t EighthbrightMask;
 
 
 		/*

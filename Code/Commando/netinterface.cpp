@@ -107,7 +107,7 @@ void cNetInterface::Set_Random_Nickname(void)
 
 	#ifdef _WIN32
 	char computer_name[MAX_COMPUTERNAME_LENGTH + 1];
-	DWORD size = sizeof(computer_name);
+	uint32_t size = sizeof(computer_name);
 	::GetComputerName(computer_name, &size);
 
 	int length_test = MAX_COMPUTERNAME_LENGTH + 1 - MAX_NICKNAME_LENGTH;

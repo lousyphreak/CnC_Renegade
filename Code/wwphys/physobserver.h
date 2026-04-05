@@ -37,6 +37,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef PHYSOBSERVER_H
 #define PHYSOBSERVER_H
 
@@ -71,27 +73,23 @@ public:
 ** This is an enumeration of possible replies that an observer can make when
 ** it gets a collision event.
 */
-enum _CollisionReactionType
+enum CollisionReactionType : int32_t
 {
 	COLLISION_REACTION_DEFAULT,
 	COLLISION_REACTION_STOP_MOTION,
 	COLLISION_REACTION_NO_BOUNCE,
 };
 
-typedef int CollisionReactionType;
-
 /*
 ** ExpirationReactionType
 ** This is an enumeration of the responses that the game object can give
 ** when the physics object it is observing is about to expire
 */
-enum _ExpirationReactionType
+enum ExpirationReactionType : int32_t
 {
 	EXPIRATION_DENIED,
 	EXPIRATION_APPROVED,
 };
-
-typedef int ExpirationReactionType;
 
 /*
 ** PhysObserverClass
@@ -106,7 +104,7 @@ public:
 	virtual CollisionReactionType		Collision_Occurred(const CollisionEventClass & event) { return COLLISION_REACTION_DEFAULT; }
 	virtual ExpirationReactionType	Object_Expired(PhysClass * observed_obj)					{ return EXPIRATION_APPROVED; }
 	virtual void							Object_Removed_From_Scene(PhysClass * observed_obj)	{ };
-	virtual void							Object_Shattered_Something(PhysClass * observed_obj, PhysClass * shattered_obj, int surface_type) { };
+	virtual void							Object_Shattered_Something(PhysClass * observed_obj, PhysClass * shattered_obj, int32_t surface_type) { };
 };
 
 

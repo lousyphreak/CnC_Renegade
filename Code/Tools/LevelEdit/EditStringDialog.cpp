@@ -84,7 +84,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 EditStringDialogClass::OnInitDialog (void) 
 {
 	CDialog::OnInitDialog ();
@@ -129,7 +129,7 @@ EditStringDialogClass::OnInitDialog (void)
 		//	Select the string so the user can readily modify its contents
 		//
 		::SetFocus (::GetDlgItem (m_hWnd, IDC_STRING_EDIT));
-		SendDlgItemMessage (IDC_STRING_EDIT, EM_SETSEL, (WPARAM)0, (LPARAM)-1);
+		SendDlgItemMessage (IDC_STRING_EDIT, EM_SETSEL, (uintptr_t)0, (intptr_t)-1);
 
 	} else {
 		SetDlgItemText (IDC_CODEID_EDIT, "IDS_");
@@ -138,7 +138,7 @@ EditStringDialogClass::OnInitDialog (void)
 		//	Select the CODE ID so the user can enter a valid ID
 		//
 		::SetFocus (::GetDlgItem (m_hWnd, IDC_CODEID_EDIT));
-		SendDlgItemMessage (IDC_CODEID_EDIT, EM_SETSEL, (WPARAM)0, (LPARAM)-1);
+		SendDlgItemMessage (IDC_CODEID_EDIT, EM_SETSEL, (uintptr_t)0, (intptr_t)-1);
 	}
 	
 	return FALSE;

@@ -93,7 +93,7 @@ void LineGroupClass::Set_Arrays(
 	ShareBufferClass<Vector3> *endlocs,
 	ShareBufferClass<Vector4> *diffuse,		
 	ShareBufferClass<Vector4> *taildiffuse,
-	ShareBufferClass<unsigned int> *alt,
+	ShareBufferClass<uint32_t> *alt,
 	ShareBufferClass<float> *sizes,	
 	ShareBufferClass<float> *ucoords, 
 	int active_line_count
@@ -322,8 +322,8 @@ void	LineGroupClass::Render(RenderInfoClass &rinfo)
 
 	{
 		DynamicIBAccessClass::WriteLockClass lock(&iba);
-		unsigned short *ibptr = lock.Get_Index_Array();
-		unsigned short j, idx;
+		uint16_t *ibptr = lock.Get_Index_Array();
+		uint16_t j, idx;
 
 		switch (LineMode)	{
 			case TETRAHEDRON:

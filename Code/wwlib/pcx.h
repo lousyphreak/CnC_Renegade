@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -46,9 +48,9 @@
 
 
 struct RGB {
-	unsigned char	red;
-	unsigned char	green;
-	unsigned char	blue;
+	uint8_t	red;
+	uint8_t	green;
+	uint8_t	blue;
 };
 
 struct PCX_HEADER
@@ -57,22 +59,22 @@ struct PCX_HEADER
 	char	version;
 	char	encoding;
 	char	pixelsize;
-	short	x;
-	short	y;
-	short	width;
-	short	height;
-	short	xres;
-	short	yres;
+	int16_t	x;
+	int16_t	y;
+	int16_t	width;
+	int16_t	height;
+	int16_t	xres;
+	int16_t	yres;
 	RGB	ega_palette[16];
 	char	nothing;
 	char	color_planes;
-	unsigned short	byte_per_line;
-	short	palette_type;
+	uint16_t	byte_per_line;
+	int16_t	palette_type;
 	char	filler[58];
 };
 
 
-Surface * Read_PCX_File(FileClass & file_handle, PaletteClass * palette= NULL, void * buff=NULL, long size=0);
+Surface * Read_PCX_File(FileClass & file_handle, PaletteClass * palette= NULL, void * buff=NULL, int32_t size=0);
 //Surface * Read_PCX_File (char * name, Buffer & Buff, PaletteClass * palette= NULL) ;
 bool Write_PCX_File(FileClass & file, Surface & pic, PaletteClass * palette);
 

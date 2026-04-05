@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // AnimatedSoundOptionsDialog.h : header file
 //
@@ -56,7 +58,7 @@ protected:
 	afx_msg void OnSoundDefinitionLibraryBrowseButton();
 	afx_msg void OnSoundIniBrowseButton();
 	virtual void OnOK();
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	afx_msg void OnSoundPathBrowseButton();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()

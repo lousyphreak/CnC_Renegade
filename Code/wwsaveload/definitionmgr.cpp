@@ -56,7 +56,7 @@ static void Make_String_Lower_Case(char * text)
 	}
 
 	for (; *text != '\0'; ++text) {
-		*text = static_cast<char>(SDL_tolower(static_cast<unsigned char>(*text)));
+		*text = static_cast<char>(SDL_tolower(static_cast<uint8_t>(*text)));
 	}
 }
 
@@ -70,7 +70,7 @@ DefinitionMgrClass	_TheDefinitionMgr;
 //	Constants
 //////////////////////////////////////////////////////////////////////////////////
 static const int		DEFINTION_LIST_GROW_SIZE	= 1000;
-static const uint32	IDRANGE_PER_CLASS				= 10000;
+static const uint32_t	IDRANGE_PER_CLASS				= 10000;
 
 enum
 {
@@ -120,7 +120,7 @@ DefinitionMgrClass::~DefinitionMgrClass (void)
 //
 //////////////////////////////////////////////////////////////////////////////////
 DefinitionClass *
-DefinitionMgrClass::Find_Definition (uint32 id, bool twiddle)
+DefinitionMgrClass::Find_Definition (uint32_t id, bool twiddle)
 {
 	DefinitionClass *definition = NULL;
 
@@ -234,7 +234,7 @@ DefinitionMgrClass::Find_Named_Definition (const char *name, bool twiddle)
 //////////////////////////////////////////////////////////////////////////////////
 
 DefinitionClass *
-DefinitionMgrClass::Find_Typed_Definition (const char *name, uint32 class_id, bool twiddle)
+DefinitionMgrClass::Find_Typed_Definition (const char *name, uint32_t class_id, bool twiddle)
 {
 	//
 	//	Sanity check
@@ -262,7 +262,7 @@ DefinitionMgrClass::Find_Typed_Definition (const char *name, uint32 class_id, bo
 		for (int i=0;i<defs->Length();++i) {
 			DefinitionClass* curr_def=(*defs)[i];
 			WWASSERT(curr_def);
-			uint32 curr_class_id = curr_def->Get_Class_ID ();
+			uint32_t curr_class_id = curr_def->Get_Class_ID ();
 			if (	(curr_class_id == class_id) ||
 					(::SuperClassID_From_ClassID (curr_class_id) == class_id) ||
 					(twiddle && (curr_def->Get_Class_ID () == CLASSID_TWIDDLERS)))
@@ -285,7 +285,7 @@ DefinitionMgrClass::Find_Typed_Definition (const char *name, uint32 class_id, bo
 				//
 				//	Is this the correct class of definition?
 				//
-				uint32 curr_class_id = curr_def->Get_Class_ID ();
+				uint32_t curr_class_id = curr_def->Get_Class_ID ();
 				if (	(curr_class_id == class_id) ||
 						(::SuperClassID_From_ClassID (curr_class_id) == class_id) ||
 						(twiddle && (curr_def->Get_Class_ID () == CLASSID_TWIDDLERS)))
@@ -376,7 +376,7 @@ DefinitionMgrClass::List_Available_Definitions (int superclass_id)
 //
 //////////////////////////////////////////////////////////////////////////////////
 DefinitionClass *
-DefinitionMgrClass::Get_First (uint32 id, ID_TYPE type)
+DefinitionMgrClass::Get_First (uint32_t id, ID_TYPE type)
 {
 	DefinitionClass *definition = NULL;
 
@@ -417,7 +417,7 @@ DefinitionClass *
 DefinitionMgrClass::Get_Next
 (
 	DefinitionClass *	curr_def,
-	uint32				id,
+	uint32_t				id,
 	ID_TYPE				type
 )
 {
@@ -572,7 +572,7 @@ DefinitionMgrClass::Register_Definition (DefinitionClass *definition)
 		//
 		//	Calculate where in the list we should insert this definition
 		//
-		uint32 id			= definition->Get_ID ();
+		uint32_t id			= definition->Get_ID ();
 		int lower_index	= 0;
 		int upper_index	= _DefinitionCount - 1;
 		int index			= upper_index / 2;
@@ -879,13 +879,13 @@ DefinitionMgrClass::Load_Variables (ChunkLoadClass &cload)
 //	Get_New_ID
 //
 /////////////////////////////////////////////////////////////////////
-uint32
-DefinitionMgrClass::Get_New_ID (uint32 class_id)
+uint32_t
+DefinitionMgrClass::Get_New_ID (uint32_t class_id)
 {
-	uint32 idrange_start = (class_id - DEF_CLASSID_START) * IDRANGE_PER_CLASS;
-	uint32 idrange_end	= (idrange_start + IDRANGE_PER_CLASS);
+	uint32_t idrange_start = (class_id - DEF_CLASSID_START) * IDRANGE_PER_CLASS;
+	uint32_t idrange_end	= (idrange_start + IDRANGE_PER_CLASS);
 
-	uint32 new_id = idrange_start + 1;
+	uint32_t new_id = idrange_start + 1;
 
 	//
 	//	Try to find the first empty slot in this ID range
@@ -897,7 +897,7 @@ DefinitionMgrClass::Get_New_ID (uint32 class_id)
 			//
 			//	Get this definition's ID
 			//
-			uint32 curr_id = definition->Get_ID ();
+			uint32_t curr_id = definition->Get_ID ();
 
 			//
 			//	Is this id in the range we are looking for?

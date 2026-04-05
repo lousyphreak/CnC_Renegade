@@ -83,7 +83,7 @@ MPWolPageBuddyPopupClass::On_Init_Dialog(void)
 
 		// Get the current buddy list
 		const WWOnline::UserList& list = mBuddyMgr->GetBuddyList();
-		const unsigned int count = list.size();
+		const uint32_t count = list.size();
 
 		if (count == 0) {
 			Observer<WOLBuddyMgrEvent>::NotifyMe (*mBuddyMgr);
@@ -95,7 +95,7 @@ MPWolPageBuddyPopupClass::On_Init_Dialog(void)
 			if (combo_box) {
 			
 				// Add each buddy to the combobox
-				for (unsigned int index = 0; index < count; ++index) {
+				for (uint32_t index = 0; index < count; ++index) {
 					const RefPtr<WWOnline::UserData>& user = list[index];
 
 					// Add this buddy if they are currently online
@@ -127,7 +127,7 @@ MPWolPageBuddyPopupClass::On_Init_Dialog(void)
 //
 ////////////////////////////////////////////////////////////////
 void
-MPWolPageBuddyPopupClass::On_Command(int ctrl_id, int message_id, DWORD param)
+MPWolPageBuddyPopupClass::On_Command(int ctrl_id, int message_id, uint32_t param)
 {
 	switch (ctrl_id) {
 		case IDC_INVITE_BUDDY_BUTTON: {
@@ -266,10 +266,10 @@ void MPWolPageBuddyPopupClass::HandleNotification(WOLBuddyMgrEvent &event)
 			combo_box->Reset_Content();
 		
 			const WWOnline::UserList& buddies = mBuddyMgr->GetBuddyList();
-			const unsigned int count = buddies.size();
+			const uint32_t count = buddies.size();
 
 			// Add each buddy to the combobox
-			for (unsigned int index = 0; index < count; ++index) {
+			for (uint32_t index = 0; index < count; ++index) {
 				const RefPtr<WWOnline::UserData>& user = buddies[index];
 
 				if (user->GetLocation() != WWOnline::USERLOCATION_OFFLINE) {

@@ -227,7 +227,7 @@ void Dispatch_Console_Text(const char *text)
         return;
     }
 
-    for (const unsigned char *cursor = reinterpret_cast<const unsigned char *>(text); *cursor != 0; ++cursor) {
+    for (const uint8_t *cursor = reinterpret_cast<const uint8_t *>(text); *cursor != 0; ++cursor) {
         if (*cursor < 0x80) {
             Input::Console_Add_Key(*cursor);
         }

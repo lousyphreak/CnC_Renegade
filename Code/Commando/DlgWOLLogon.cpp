@@ -210,7 +210,7 @@ void DlgWOLLogon::On_Init_Dialog(void)
 *
 ******************************************************************************/
 
-void DlgWOLLogon::On_Command(int ctrl, int message, DWORD param)
+void DlgWOLLogon::On_Command(int ctrl, int message, uint32_t param)
 	{
 	switch (ctrl)
 		{
@@ -351,9 +351,9 @@ void DlgWOLLogon::UpdatePersonas(void)
 		combo->Reset_Content();
 
 		const LoginInfoList& personas = LoginInfo::GetList();
-		const unsigned int count = personas.size();
+		const uint32_t count = personas.size();
 
-		for (unsigned int index = 0; index < count; ++index)
+		for (uint32_t index = 0; index < count; ++index)
 			{
 			const WideStringClass& name = personas[index]->GetNickname();
 			combo->Add_String(name);

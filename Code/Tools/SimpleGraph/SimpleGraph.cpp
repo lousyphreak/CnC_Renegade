@@ -63,7 +63,7 @@ CSimpleGraphApp theApp;
 /////////////////////////////////////////////////////////////////////////////
 // CSimpleGraphApp initialization
 
-BOOL CSimpleGraphApp::InitInstance()
+int32_t CSimpleGraphApp::InitInstance()
 {
 	// Standard initialization
 	// If you are not using these features and wish to reduce the size

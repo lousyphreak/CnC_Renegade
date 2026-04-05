@@ -56,8 +56,7 @@
 
 #else
 
-enum {false=0,true=1};
-typedef int bool;
+#include <stdbool.h>
 
 #endif
 

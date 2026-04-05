@@ -286,7 +286,7 @@ VisTableClass * PhysicsSceneClass::Get_Vis_Table_For_Rendering(const CameraClass
 }
 
 
-uint32 PhysicsSceneClass::Get_Dynamic_Object_Vis_ID
+uint32_t PhysicsSceneClass::Get_Dynamic_Object_Vis_ID
 (
 	const AABoxClass & obj_bounds,
 	int * node_id
@@ -857,7 +857,7 @@ void PhysicsSceneClass::Optimize_Visibility_Data(VisOptProgressClass & stats)
  * HISTORY:                                                                                    *
  *   7/5/2000   gth : Created.                                                                 *
  *=============================================================================================*/
-void PhysicsSceneClass::Merge_Vis_Sector_IDs(uint32 id0,uint32 id1)
+void PhysicsSceneClass::Merge_Vis_Sector_IDs(uint32_t id0,uint32_t id1)
 {
 	StaticCullingSystem->Merge_Vis_Sector_IDs(id0,id1);
 	StaticLightingSystem->Merge_Vis_Sector_IDs(id0,id1);
@@ -880,7 +880,7 @@ void PhysicsSceneClass::Merge_Vis_Sector_IDs(uint32 id0,uint32 id1)
  * HISTORY:                                                                                    *
  *   7/5/2000   gth : Created.                                                                 *
  *=============================================================================================*/
-void PhysicsSceneClass::Merge_Vis_Object_IDs(uint32 id0,uint32 id1)
+void PhysicsSceneClass::Merge_Vis_Object_IDs(uint32_t id0,uint32_t id1)
 {
 	StaticCullingSystem->Merge_Vis_Object_IDs(id0,id1);
 	DynamicObjVisSystem->Merge_Vis_Object_IDs(id0,id1);

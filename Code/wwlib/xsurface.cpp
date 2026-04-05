@@ -192,7 +192,7 @@ bool XSurface::Draw_Line(Rect const & xcliprect, Point2D const & startpoint, Poi
 				memset(buffer, color, (end.X-start.X)+1);
 			} else {
 				for (int x = 0; x <= end.X-start.X; x++) {
-					((short *)buffer)[x] = (short)color;
+					((uint16_t *)buffer)[x] = static_cast<uint16_t>(color);
 				}
 			}
 		} else {
@@ -200,7 +200,7 @@ bool XSurface::Draw_Line(Rect const & xcliprect, Point2D const & startpoint, Poi
 				if (bbp == 1) {
 					*(char*)buffer = (char)color;
 				} else {
-					*(short*)buffer = (short)color;
+					*(uint16_t*)buffer = static_cast<uint16_t>(color);
 				}
 				buffer = (void*)(((char*)buffer) + Stride());
 			}
@@ -292,9 +292,9 @@ int XSurface::Get_Pixel(Point2D const & point) const
 	void * pointer = ((Surface*)this)->Lock(point);
 	if (pointer != NULL) {
 		if (Bytes_Per_Pixel() == 2) {
-			color = *((unsigned short*)pointer);
+			color = *((uint16_t*)pointer);
 		} else {
-			color = *((unsigned char*)pointer);
+			color = *((uint8_t*)pointer);
 		}
 		((Surface*)this)->Unlock();
 	}
@@ -324,9 +324,9 @@ bool XSurface::Put_Pixel(Point2D const & point, int color)
 	void * pointer = Lock(point);
 	if (pointer != NULL) {
 		if (Bytes_Per_Pixel() == 2) {
-			*((unsigned short*)pointer) = (unsigned short)color;
+			*((uint16_t*)pointer) = (uint16_t)color;
 		} else {
-			*((unsigned char*)pointer) = (unsigned char)color;
+			*((uint8_t*)pointer) = (uint8_t)color;
 		}
 		Unlock();
 		return(true);
@@ -404,7 +404,7 @@ bool XSurface::Fill_Rect(Rect const & cliprect, Rect const & fillrect, int color
 		} else {
 			for (int y = 0; y < crect.Height; y++) {
 				for (int x = 0; x < crect.Width; x++) {
-					((unsigned short*)buffer)[x] = (unsigned short)color;
+					((uint16_t*)buffer)[x] = (uint16_t)color;
 				}
 				buffer = ((char *)buffer) + Stride();
 			}
@@ -857,9 +857,9 @@ bool XSurface::Prep_For_Blit(Surface & dest, Rect const & dcliprect, Rect & drec
 bool XSurface::Blit_Plain(Surface & dest, Rect const & destrect, Surface const & source, Rect const & sourcerect)
 {
 	if (dest.Bytes_Per_Pixel() == 1) {
-		return(Bit_Blit(dest, destrect, source, sourcerect, BlitPlain<unsigned char>()));
+		return(Bit_Blit(dest, destrect, source, sourcerect, BlitPlain<uint8_t>()));
 	}
-	return(Bit_Blit(dest, destrect, source, sourcerect, BlitPlain<unsigned short>()));
+	return(Bit_Blit(dest, destrect, source, sourcerect, BlitPlain<uint16_t>()));
 }
 
 
@@ -889,15 +889,14 @@ bool XSurface::Blit_Trans(Surface & dest, Rect const & destrect, Surface const &
 	switch (dest.Bytes_Per_Pixel())
 	{
 		case 1:
-			return(Bit_Blit(dest, destrect, source, sourcerect, BlitTrans<unsigned char>()));	
+			return(Bit_Blit(dest, destrect, source, sourcerect, BlitTrans<uint8_t>()));	
 		case 2:
-			return(Bit_Blit(dest, destrect, source, sourcerect, BlitTrans<unsigned short>()));	
+			return(Bit_Blit(dest, destrect, source, sourcerect, BlitTrans<uint16_t>()));	
 		case 4:
-			return(Bit_Blit(dest, destrect, source, sourcerect, BlitTrans<unsigned int>()));	
+			return(Bit_Blit(dest, destrect, source, sourcerect, BlitTrans<uint32_t>()));	
 		default:
 			return(false);
 	}
 }
-
 
 

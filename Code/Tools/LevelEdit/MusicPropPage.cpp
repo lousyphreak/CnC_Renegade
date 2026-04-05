@@ -70,7 +70,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // MusicPropPageClass message handlers
 
-BOOL MusicPropPageClass::OnInitDialog() 
+int32_t MusicPropPageClass::OnInitDialog() 
 {
 	CPropertyPage::OnInitDialog();
 

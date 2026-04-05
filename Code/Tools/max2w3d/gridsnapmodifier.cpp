@@ -78,8 +78,8 @@ public:
 	void DeleteThis()																			{ delete this; }
 	void GetClassName(TSTR& s)																{ s = Get_String(IDS_GRIDSNAPMODIFIER); }  
 	virtual Class_ID ClassID()																{ return GRIDSNAPMOD_CLASSID; }		
-	void BeginEditParams( IObjParam  *ip, ULONG flags,Animatable *prev);
-	void EndEditParams( IObjParam *ip,ULONG flags,Animatable *next);
+	void BeginEditParams( IObjParam  *ip, uint32_t flags,Animatable *prev);
+	void EndEditParams( IObjParam *ip,uint32_t flags,Animatable *next);
 	RefTargetHandle Clone(RemapDir& remap = NoRemap());
 	TCHAR *GetObjectName()																	{ return Get_String(IDS_GRIDSNAPMODIFIER);}
 	IOResult Load(ILoad *iload);
@@ -141,7 +141,7 @@ class GridSnapModifierClassDesc:public ClassDesc2
 {
 public:
 	int 				IsPublic()											{ return 1; }
-	void *			Create(BOOL loading = FALSE)					{ return new GridSnapModifierClass; }
+	void *			Create(int32_t loading = FALSE)					{ return new GridSnapModifierClass; }
 	const TCHAR *	ClassName()											{ return _T("Grid Snap Modifier"); }
 	SClass_ID		SuperClassID()										{ return OSM_CLASS_ID; }
 	Class_ID			ClassID()											{ return GRIDSNAPMOD_CLASSID; }
@@ -203,7 +203,7 @@ GridSnapModifierClass::GridSnapModifierClass()
 	assert(pblock2);
 }
 
-void GridSnapModifierClass::BeginEditParams( IObjParam  *ip, ULONG flags,Animatable *prev)
+void GridSnapModifierClass::BeginEditParams( IObjParam  *ip, uint32_t flags,Animatable *prev)
 {
 	this->ip = ip;
 
@@ -211,7 +211,7 @@ void GridSnapModifierClass::BeginEditParams( IObjParam  *ip, ULONG flags,Animata
 	_GridSnapModifierDesc.BeginEditParams(ip, this, flags, prev);
 }
 
-void GridSnapModifierClass::EndEditParams( IObjParam *ip,ULONG flags,Animatable *next)
+void GridSnapModifierClass::EndEditParams( IObjParam *ip,uint32_t flags,Animatable *next)
 {
 	SimpleMod2::EndEditParams(ip,flags,next);
 	_GridSnapModifierDesc.EndEditParams(ip, this, flags, next);

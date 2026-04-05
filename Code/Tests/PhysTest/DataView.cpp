@@ -87,7 +87,7 @@ void CDataView::Rebuild_Tree(void)
 				ASSERT (hItem != NULL);
 		
 				ItemInfoClass * item_info = new ItemInfoClass(model_name,ItemInfoClass::MODEL);
-				GetTreeCtrl().SetItemData(hItem, (ULONG)item_info);
+				GetTreeCtrl().SetItemData(hItem, (uint32_t)item_info);
 			}
 		}
 
@@ -111,7 +111,7 @@ void CDataView::Rebuild_Tree(void)
 
 			ItemInfoClass * item_info = new ItemInfoClass(instance_name,ItemInfoClass::INSTANCE);
 			item_info->Instance = phys_iterator.Peek_Obj();
-			GetTreeCtrl().SetItemData(hItem, (ULONG)item_info);
+			GetTreeCtrl().SetItemData(hItem, (uint32_t)item_info);
 		}
 	}
 	
@@ -182,7 +182,7 @@ void CDataView::Dump(CDumpContext& dc) const
 /////////////////////////////////////////////////////////////////////////////
 // CDataView message handlers
 
-BOOL CDataView::PreCreateWindow(CREATESTRUCT& cs) 
+int32_t CDataView::PreCreateWindow(CREATESTRUCT& cs) 
 {
 	// Modify the style bits for the window so it will
 	// have buttons and lines between nodes.
@@ -201,7 +201,7 @@ int CDataView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	return 0;
 }
 
-void CDataView::OnDeleteitem(NMHDR* pNMHDR, LRESULT* pResult) 
+void CDataView::OnDeleteitem(NMHDR* pNMHDR, intptr_t* pResult) 
 {
 	NM_TREEVIEW* pNMTreeView = (NM_TREEVIEW*)pNMHDR;
 	
@@ -218,7 +218,7 @@ void CDataView::OnDeleteitem(NMHDR* pNMHDR, LRESULT* pResult)
 	*pResult = 0;
 }
 
-void CDataView::OnSelchanged(NMHDR* pNMHDR, LRESULT* pResult) 
+void CDataView::OnSelchanged(NMHDR* pNMHDR, intptr_t* pResult) 
 {
 	// just tell the main window that the selection changed so it
 	// can link/unlink the virtual joystick.

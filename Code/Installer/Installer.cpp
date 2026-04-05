@@ -132,7 +132,7 @@ void WWAssert_Callback (const char *message);
 
 
 // Prototypes.
-bool CALLBACK Default_On_Command (DialogBaseClass *dialog, int ctrl_id, int mesage_id, DWORD param);
+bool CALLBACK Default_On_Command (DialogBaseClass *dialog, int ctrl_id, int mesage_id, uint32_t param);
 
 
 // Singleton.
@@ -140,8 +140,8 @@ InstallerClass _Installer;
 
 
 // Type definitions.
-typedef HRESULT (*DLLREGISTERSERVER)(void);
-typedef HRESULT (*DLLUNREGISTERSERVER)(void);
+typedef int32_t (*DLLREGISTERSERVER)(void);
+typedef int32_t (*DLLUNREGISTERSERVER)(void);
 
 
 /***********************************************************************************************
@@ -655,7 +655,7 @@ void InstallerClass::Check_Existing_Install()
 		StringClass		 multibytepathname;	
 		WIN32_FIND_DATA finddata;	
 		HANDLE			 handle;
-		DWORD				 major, minor, sourceversion, targetversion;
+		uint32_t				 major, minor, sourceversion, targetversion;
 
 		// Check for existence of target .exe.
 		if (!_RegistryManager.Get_Target_WOL_Pathname ((RegistryManagerClass::WOLComponentEnum) c, pathname)) {
@@ -1204,7 +1204,7 @@ const char *InstallerClass::Get_Serial_Number (StringClass &serialnumber)
  * HISTORY:                                                                                    *
  *   08/22/01    IML : Created.                                                                * 
  *=============================================================================================*/
-void InstallerClass::Dialog_Callback (DialogBaseClass *dialog, int ctrl_id, int message_id, DWORD param)
+void InstallerClass::Dialog_Callback (DialogBaseClass *dialog, int ctrl_id, int message_id, uint32_t param)
 {
 	InstallMenuDialogClass *installmenudialog = (InstallMenuDialogClass*) dialog;
 	
@@ -1578,7 +1578,7 @@ void InstallerClass::Dialog_Callback (DialogBaseClass *dialog, int ctrl_id, int 
  * HISTORY:                                                                                    *
  *   08/22/01    IML : Created.                                                                * 
  *=============================================================================================*/
-bool CALLBACK Default_On_Command (DialogBaseClass *dialog, int ctrl_id, int message_id, DWORD param)
+bool CALLBACK Default_On_Command (DialogBaseClass *dialog, int ctrl_id, int message_id, uint32_t param)
 {
 	_Installer.Dialog_Callback (dialog, ctrl_id, message_id, param);
 	return (true);
@@ -1706,9 +1706,9 @@ void InstallerClass::Update_Registry()
 
 		WideStringClass installpathname, folderpath, shortcutpathname;
 		StringClass		 serialnumber, encryptedserialnumber;
-		DWORD				 languageid, sku, version;
+		uint32_t				 languageid, sku, version;
 		WideStringClass pathname, gamefolder, gamepath;
-		DWORD				 major, minor;
+		uint32_t				 major, minor;
 
 		Get_Target_Game_Path (installpathname);
 		installpathname += L"\\";
@@ -1755,9 +1755,9 @@ void InstallerClass::Update_Registry()
 	if (Install_WOL()) {
 	
 		WideStringClass folderpath, wolapipathname, wolregisterpathname, wolbrowserpathname;
-		DWORD				 sku, version;
+		uint32_t				 sku, version;
 		WideStringClass WOLfolder;
-		DWORD				 major, minor;
+		uint32_t				 major, minor;
 
 		_RegistryManager.Get_Folder_Path (folderpath);
 		folderpath += L"\\";
@@ -2197,7 +2197,7 @@ void InstallerClass::Create_Game_Uninstall_Log()
 	WideStringClass gamefilepathname;
 	HANDLE			 handle;	
 	int				 i;
-	DWORD				 byteswritten;
+	uint32_t				 byteswritten;
 	StringClass		 multibytelogfilepathname, multibytelog;
 	__int64			 totalfilesize;
 	
@@ -2331,7 +2331,7 @@ void InstallerClass::Create_WOL_Uninstall_Log()
 	WideStringClass logfilepathname;
 	HANDLE			 handle;	
 	int				 i;
-	DWORD				 byteswritten;
+	uint32_t				 byteswritten;
 	StringClass		 multibytelogfilepathname, multibytelog;
 
 	// Create log pathname and log this file so it gets written to the uninstall log.
@@ -2374,7 +2374,7 @@ void InstallerClass::Create_Encryption_File (const WideStringClass &pathname)
 	StringClass multibytepathname (pathname); 
 	char			stringbuffer [ENCRYPTION_STRING_LENGTH];
    HANDLE		handle;
-	DWORD			byteswritten;
+	uint32_t			byteswritten;
 
 	handle = CreateFile (multibytepathname, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, 0, NULL);
 	if (handle == INVALID_HANDLE_VALUE) FATAL_SYSTEM_ERROR;
@@ -2417,7 +2417,7 @@ void InstallerClass::Encrypt (const char *number, const WideStringClass &pathnam
 	char			*s;		
 	int			 numberlength;
 	HANDLE		 handle;	
-	DWORD			 bytesread;
+	uint32_t			 bytesread;
 	char			 stringbuffer [ENCRYPTION_STRING_LENGTH];
 	int			 p;
 	
@@ -2472,7 +2472,7 @@ bool InstallerClass::Register_COM_Server (const WideStringClass &comdll)
 
 	if (module) {
 
-		HRESULT hr = E_FAIL;
+		int32_t hr = E_FAIL;
 
 		DLLREGISTERSERVER dllRegister = (DLLREGISTERSERVER) GetProcAddress (module, "DllRegisterServer");
 
@@ -2589,7 +2589,7 @@ void InstallerClass::Display_Readme()
 	STARTUPINFO			   startupinfo;
 	WideStringClass	   commandline;
 	StringClass				multibytecommandline;
-	BOOL					   success = false;	
+	int32_t					   success = false;	
 
 	// See if Winword is the owner of .doc files.  
 	_RegistryManager.Get_Document_Application_Pathname (pathname);

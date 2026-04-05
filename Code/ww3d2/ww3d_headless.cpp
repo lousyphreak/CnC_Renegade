@@ -18,7 +18,7 @@ void *g_window = NULL;
 int g_collision_box_mask = 0;
 int g_texture_reduction = 0;
 int g_texture_bitdepth = 32;
-long g_swap_interval = 0;
+int32_t g_swap_interval = 0;
 bool g_using_runtime_renderer = false;
 RenderDeviceDescClass g_headless_render_device_desc;
 
@@ -29,8 +29,8 @@ bool Has_Runtime_Renderer()
 
 } // namespace
 
-unsigned int WW3D::SyncTime = 0;
-unsigned int WW3D::PreviousSyncTime = 0;
+uint32_t WW3D::SyncTime = 0;
+uint32_t WW3D::PreviousSyncTime = 0;
 bool WW3D::IsSortingEnabled = true;
 float WW3D::PixelCenterX = 0.0f;
 float WW3D::PixelCenterY = 0.0f;
@@ -64,13 +64,13 @@ bool WW3D::Lite = true;
 float WW3D::DefaultNativeScreenSize = 1.0f;
 RefRenderObjListClass * WW3D::DefaultStaticSortLists = NULL;
 RefRenderObjListClass * WW3D::CurrentStaticSortLists = NULL;
-unsigned int WW3D::MinStaticSortLevel = 1;
-unsigned int WW3D::MaxStaticSortLevel = MAX_SORT_LEVEL;
+uint32_t WW3D::MinStaticSortLevel = 1;
+uint32_t WW3D::MaxStaticSortLevel = MAX_SORT_LEVEL;
 int WW3D::LastFrameMemoryAllocations = 0;
 int WW3D::LastFrameMemoryFrees = 0;
-long WW3D::UserStat0 = 0;
-long WW3D::UserStat1 = 0;
-long WW3D::UserStat2 = 0;
+int32_t WW3D::UserStat0 = 0;
+int32_t WW3D::UserStat1 = 0;
+int32_t WW3D::UserStat2 = 0;
 
 WW3DErrorType WW3D::Init(void * hwnd, char *, bool lite)
 {
@@ -397,9 +397,9 @@ void WW3D::Flip_To_Primary(void)
 #endif
 }
 
-void WW3D::Sync(unsigned int sync_time) { PreviousSyncTime = SyncTime; SyncTime = sync_time; ++FrameCount; }
-unsigned int WW3D::Get_Last_Frame_Poly_Count(void) { return 0; }
-unsigned int WW3D::Get_Last_Frame_Vertex_Count(void) { return 0; }
+void WW3D::Sync(uint32_t sync_time) { PreviousSyncTime = SyncTime; SyncTime = sync_time; ++FrameCount; }
+uint32_t WW3D::Get_Last_Frame_Poly_Count(void) { return 0; }
+uint32_t WW3D::Get_Last_Frame_Vertex_Count(void) { return 0; }
 void WW3D::Make_Screen_Shot(const char *) {}
 void WW3D::Start_Movie_Capture(const char *, float) { IsCapturing = true; }
 void WW3D::Stop_Movie_Capture(void) { IsCapturing = false; }
@@ -413,7 +413,7 @@ bool WW3D::Is_Movie_Paused() { return PauseRecord; }
 bool WW3D::Is_Recording_Next_Frame() { return RecordNextFrame; }
 bool WW3D::Is_Movie_Ready() { return false; }
 
-void WW3D::Set_Ext_Swap_Interval(long swap)
+void WW3D::Set_Ext_Swap_Interval(int32_t swap)
 {
 	g_swap_interval = swap;
 #if RENEGADE_WITH_BGFX_RENDERER
@@ -423,7 +423,7 @@ void WW3D::Set_Ext_Swap_Interval(long swap)
 #endif
 }
 
-long WW3D::Get_Ext_Swap_Interval(void)
+int32_t WW3D::Get_Ext_Swap_Interval(void)
 {
 #if RENEGADE_WITH_BGFX_RENDERER
 	if (Has_Runtime_Renderer()) {
@@ -485,7 +485,7 @@ int WW3D::Get_Texture_Bitdepth()
 void WW3D::Set_NPatches_Gap_Filling_Mode(NPatchesGapFillingModeEnum mode) { NPatchesGapFillingMode = mode; }
 void WW3D::Set_NPatches_Level(unsigned level) { NPatchesLevel = level; }
 void WW3D::Enable_Texturing(bool b) { IsTexturingEnabled = b; }
-void WW3D::Add_To_Static_Sort_List(RenderObjClass *, unsigned int) {}
+void WW3D::Add_To_Static_Sort_List(RenderObjClass *, uint32_t) {}
 void WW3D::Render_And_Clear_Static_Sort_Lists(RenderInfoClass &) {}
-void WW3D::Override_Current_Static_Sort_Lists(RefRenderObjListClass * sort_list, unsigned int min_sort, unsigned int max_sort) { CurrentStaticSortLists = sort_list; MinStaticSortLevel = min_sort; MaxStaticSortLevel = max_sort; }
+void WW3D::Override_Current_Static_Sort_Lists(RefRenderObjListClass * sort_list, uint32_t min_sort, uint32_t max_sort) { CurrentStaticSortLists = sort_list; MinStaticSortLevel = min_sort; MaxStaticSortLevel = max_sort; }
 void WW3D::Reset_Current_Static_Sort_Lists_To_Default(void) { CurrentStaticSortLists = DefaultStaticSortLists; MinStaticSortLevel = 1; MaxStaticSortLevel = MAX_SORT_LEVEL; }

@@ -335,12 +335,12 @@ void RigidDecalMeshClass::Render(void)
 	DynamicIBAccessClass dynamic_ib(BUFFER_TYPE_DYNAMIC_DX8,Polys.Count() * 3);
 	{
 		DynamicIBAccessClass::WriteLockClass lock(&dynamic_ib);
-		unsigned short * indices = lock.Get_Index_Array();
+		uint16_t * indices = lock.Get_Index_Array();
 		for (int i=0; i < Polys.Count(); i++)
 		{
-			indices[i*3 + 0] = (unsigned short)Polys[i].I;
-			indices[i*3 + 1] = (unsigned short)Polys[i].J;
-			indices[i*3 + 2] = (unsigned short)Polys[i].K;
+			indices[i*3 + 0] = (uint16_t)Polys[i].I;
+			indices[i*3 + 1] = (uint16_t)Polys[i].J;
+			indices[i*3 + 2] = (uint16_t)Polys[i].K;
 		}
 	}
 
@@ -414,7 +414,7 @@ bool RigidDecalMeshClass::Create_Decal
 (
 	DecalGeneratorClass *			generator,
 	const OBBoxClass &				localbox,
-	SimpleDynVecClass<uint32> &	apt,
+	SimpleDynVecClass<uint32_t> &	apt,
 	const DynamicVectorClass<Vector3> * world_vertex_locs
 )
 {
@@ -616,7 +616,7 @@ bool RigidDecalMeshClass::Create_Decal
  * HISTORY:                                                                                    *
  *   1/26/00    gth : Created.                                                                 *
  *=============================================================================================*/
-bool RigidDecalMeshClass::Delete_Decal(uint32 id)
+bool RigidDecalMeshClass::Delete_Decal(uint32_t id)
 {
 	/*
 	** Find the MeshDecal which matches the given id
@@ -833,12 +833,12 @@ void SkinDecalMeshClass::Render(void)
 	DynamicIBAccessClass dynamic_ib(BUFFER_TYPE_DYNAMIC_DX8,Polys.Count() * 3);
 	{
 		DynamicIBAccessClass::WriteLockClass lock(&dynamic_ib);
-		unsigned short * indices = lock.Get_Index_Array();
+		uint16_t * indices = lock.Get_Index_Array();
 		for (int i=0; i < Polys.Count(); i++)
 		{
-			indices[i*3 + 0] = (unsigned short)Polys[i].I;
-			indices[i*3 + 1] = (unsigned short)Polys[i].J;
-			indices[i*3 + 2] = (unsigned short)Polys[i].K;
+			indices[i*3 + 0] = (uint16_t)Polys[i].I;
+			indices[i*3 + 1] = (uint16_t)Polys[i].J;
+			indices[i*3 + 2] = (uint16_t)Polys[i].K;
 		}
 	}
 
@@ -910,7 +910,7 @@ int SkinDecalMeshClass::Process_Material_Run(int start_index)
  *   1/31/00    NH : Created.                                                                  *
  *=============================================================================================*/
 bool SkinDecalMeshClass::Create_Decal(DecalGeneratorClass * generator,
-	const OBBoxClass & localbox, SimpleDynVecClass<uint32> & apt,
+	const OBBoxClass & localbox, SimpleDynVecClass<uint32_t> & apt,
 	const DynamicVectorClass<Vector3> * world_vertex_locs)
 {
 	int i;
@@ -1033,7 +1033,7 @@ bool SkinDecalMeshClass::Create_Decal(DecalGeneratorClass * generator,
  * HISTORY:                                                                                    *
  *   1/31/00    NH : Created.                                                                  *
  *=============================================================================================*/
-bool SkinDecalMeshClass::Delete_Decal(uint32 id)
+bool SkinDecalMeshClass::Delete_Decal(uint32_t id)
 {
 	/*
 	** Find the MeshDecal which matches the given id

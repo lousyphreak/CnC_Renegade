@@ -257,11 +257,11 @@ void WWAudioClass::Temp_Disable_Audio(bool onoff)
     m_ForceDisable = onoff;
 }
 
-void WWAudioClass::On_Frame_Update(unsigned int)
+void WWAudioClass::On_Frame_Update(uint32_t)
 {
 }
 
-void WWAudioClass::Register_EOS_Callback(LPFNEOSCALLBACK, DWORD)
+void WWAudioClass::Register_EOS_Callback(LPFNEOSCALLBACK, uint32_t)
 {
 }
 
@@ -269,7 +269,7 @@ void WWAudioClass::UnRegister_EOS_Callback(LPFNEOSCALLBACK)
 {
 }
 
-void WWAudioClass::Register_Text_Callback(LPFNTEXTCALLBACK, DWORD)
+void WWAudioClass::Register_Text_Callback(LPFNTEXTCALLBACK, uint32_t)
 {
 }
 
@@ -296,7 +296,7 @@ AudibleSoundClass * WWAudioClass::Create_Sound_Effect(const char *)
     return NULL;
 }
 
-AudibleSoundClass * WWAudioClass::Create_Sound_Effect(const char *, unsigned char *, unsigned long)
+AudibleSoundClass * WWAudioClass::Create_Sound_Effect(const char *, uint8_t *, uint32_t)
 {
     return NULL;
 }
@@ -311,7 +311,7 @@ Sound3DClass * WWAudioClass::Create_3D_Sound(const char *, int)
     return NULL;
 }
 
-Sound3DClass * WWAudioClass::Create_3D_Sound(const char *, unsigned char *, unsigned long, int)
+Sound3DClass * WWAudioClass::Create_3D_Sound(const char *, uint8_t *, uint32_t, int)
 {
     return NULL;
 }
@@ -356,37 +356,37 @@ int WWAudioClass::Get_Logical_Type(int index, StringClass &name)
     return m_LogicalTypes[index].id;
 }
 
-int WWAudioClass::Create_Instant_Sound(int, const Matrix3D &, RefCountClass *, uint32, int)
+int WWAudioClass::Create_Instant_Sound(int, const Matrix3D &, RefCountClass *, uint32_t, int)
 {
     return 0;
 }
 
-int WWAudioClass::Create_Instant_Sound(const char *, const Matrix3D &, RefCountClass *, uint32, int)
+int WWAudioClass::Create_Instant_Sound(const char *, const Matrix3D &, RefCountClass *, uint32_t, int)
 {
     return 0;
 }
 
-AudibleSoundClass * WWAudioClass::Create_Continuous_Sound(int, RefCountClass *, uint32, int)
+AudibleSoundClass * WWAudioClass::Create_Continuous_Sound(int, RefCountClass *, uint32_t, int)
 {
     return NULL;
 }
 
-AudibleSoundClass * WWAudioClass::Create_Continuous_Sound(const char *, RefCountClass *, uint32, int)
+AudibleSoundClass * WWAudioClass::Create_Continuous_Sound(const char *, RefCountClass *, uint32_t, int)
 {
     return NULL;
 }
 
-AudibleSoundClass * WWAudioClass::Create_Sound(int, RefCountClass *, uint32, int)
+AudibleSoundClass * WWAudioClass::Create_Sound(int, RefCountClass *, uint32_t, int)
 {
     return NULL;
 }
 
-AudibleSoundClass * WWAudioClass::Create_Sound(const char *, RefCountClass *, uint32, int)
+AudibleSoundClass * WWAudioClass::Create_Sound(const char *, RefCountClass *, uint32_t, int)
 {
     return NULL;
 }
 
-SoundSceneObjClass * WWAudioClass::Find_Sound_Object(uint32)
+SoundSceneObjClass * WWAudioClass::Find_Sound_Object(uint32_t)
 {
     return NULL;
 }
@@ -598,7 +598,7 @@ bool SoundSceneClass::Is_Sound_In_Scene(AudibleSoundClass *, bool)
     return false;
 }
 
-void SoundSceneClass::On_Frame_Update(unsigned int)
+void SoundSceneClass::On_Frame_Update(uint32_t)
 {
 }
 
@@ -639,7 +639,7 @@ LogicalSoundClass::~LogicalSoundClass(void)
 {
 }
 
-bool LogicalSoundClass::Allow_Notify(uint32 timestamp)
+bool LogicalSoundClass::Allow_Notify(uint32_t timestamp)
 {
     if ((timestamp - m_LastNotification) < m_NotifyDelayInMS) {
         return false;
@@ -649,7 +649,7 @@ bool LogicalSoundClass::Allow_Notify(uint32 timestamp)
     return true;
 }
 
-bool LogicalSoundClass::On_Frame_Update(unsigned int)
+bool LogicalSoundClass::On_Frame_Update(uint32_t)
 {
     return false;
 }
@@ -715,14 +715,14 @@ bool SoundBufferClass::Load_From_File(FileClass &)
     return false;
 }
 
-bool SoundBufferClass::Load_From_Memory(unsigned char *mem_buffer, unsigned long size)
+bool SoundBufferClass::Load_From_Memory(uint8_t *mem_buffer, uint32_t size)
 {
     Free_Buffer();
     if ((mem_buffer == NULL) || (size == 0)) {
         return false;
     }
 
-    m_Buffer = new unsigned char[size];
+    m_Buffer = new uint8_t[size];
     std::memcpy(m_Buffer, mem_buffer, size);
     m_Length = size;
     Determine_Stats(m_Buffer);
@@ -745,7 +745,7 @@ void SoundBufferClass::Free_Buffer(void)
     m_Length = 0;
 }
 
-void SoundBufferClass::Determine_Stats(unsigned char *)
+void SoundBufferClass::Determine_Stats(uint8_t *)
 {
     m_Duration = 0;
     m_Rate = 0;
@@ -778,7 +778,7 @@ void StreamSoundBufferClass::Free_Buffer(void)
     SoundBufferClass::Free_Buffer();
 }
 
-bool StreamSoundBufferClass::Load_From_File(HANDLE, unsigned long, unsigned long)
+bool StreamSoundBufferClass::Load_From_File(HANDLE, uint32_t, uint32_t)
 {
     return false;
 }

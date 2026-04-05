@@ -235,7 +235,7 @@ void ENBAssetManager::Recolor_Vertex_Material(VertexMaterialClass *vmat,Vector3 
 	vmat->Set_Specular(rgb);
 }
 
-void ENBAssetManager::Recolor_Vertices(unsigned int *color, int count, Vector3 &hsv_shift)
+void ENBAssetManager::Recolor_Vertices(uint32_t *color, int count, Vector3 &hsv_shift)
 {
 	int i;	
 	Vector4 rgba;	
@@ -322,7 +322,7 @@ void ENBAssetManager::Recolor_Mesh(RenderObjClass *robj,Vector3 &hsv_shift)
 			Recolor_Vertex_Material(material->Peek_Vertex_Material(i),hsv_shift);	
 
 	// recolor color arrays
-	unsigned int * color;
+	uint32_t * color;
 	color=model->Get_Color_Array(0,false);
 	if (color) Recolor_Vertices(color,model->Get_Vertex_Count(),hsv_shift);
 	color=model->Get_Color_Array(1,false);
@@ -359,7 +359,7 @@ void ENBAssetManager::Recolor_HLOD(RenderObjClass *robj,Vector3 &hsv_shift)
 
 void ENBAssetManager::Recolor_ParticleEmitter(RenderObjClass *robj,Vector3 &hsv_shift)
 {
-	unsigned int i;
+	uint32_t i;
 
 	ParticleEmitterClass* emit=(ParticleEmitterClass*) robj;
 	ParticlePropertyStruct<Vector3> colors;

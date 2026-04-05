@@ -52,7 +52,7 @@ NetworkObjectFactoryClass *NetworkObjectFactoryMgrClass::_FactoryListHead = 0;
 //
 ////////////////////////////////////////////////////////////////////////////
 NetworkObjectFactoryClass *
-NetworkObjectFactoryMgrClass::Find_Factory (uint32 class_id)
+NetworkObjectFactoryMgrClass::Find_Factory (uint32_t class_id)
 {
 	NetworkObjectFactoryClass *factory = 0;
 

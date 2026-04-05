@@ -58,11 +58,11 @@
  * INPUT:                                                                  *
  *      void * source ptr                                                  *
  *      void * destination ptr                                             *
- *      unsigned long length of uncompressed data                          *
+ *      uint32_t length of uncompressed data                          *
  *                                                                         *
  *                                                                         *
  * OUTPUT:                                                                 *
- *     unsigned long # of destination bytes written                        *
+ *     uint32_t # of destination bytes written                        *
  *                                                                         *
  * WARNINGS:                                                               *
  *     3rd argument is dummy. It exists to provide cross-platform          *
@@ -72,17 +72,17 @@
  * HISTORY:                                                                *
  *    03/20/1995 IML : Created.                                            *
  *=========================================================================*/
-int LCW_Uncomp(void const * source, void * dest, unsigned long )
+int LCW_Uncomp(void const * source, void * dest, uint32_t )
 {
-	unsigned char * source_ptr, * dest_ptr, * copy_ptr;
-	unsigned char op_code, data;
+	uint8_t * source_ptr, * dest_ptr, * copy_ptr;
+	uint8_t op_code, data;
 	unsigned count;
 	unsigned * word_dest_ptr;
 	unsigned word_data;
 
 	/* Copy the source and destination ptrs. */
-	source_ptr = (unsigned char*) source;
-	dest_ptr   = (unsigned char*) dest;
+	source_ptr = (uint8_t*) source;
+	dest_ptr   = (uint8_t*) dest;
 
 	for (;;) {
 
@@ -104,7 +104,7 @@ int LCW_Uncomp(void const * source, void * dest, unsigned long )
 				if (op_code == 0x80) {
 
 					/* Return # of destination bytes written. */
-					return ((unsigned long) (dest_ptr - (unsigned char*) dest));
+					return static_cast<int>(dest_ptr - static_cast<const uint8_t *>(dest));
 
 				} else {
 
@@ -147,7 +147,7 @@ int LCW_Uncomp(void const * source, void * dest, unsigned long )
 
 						/* Do a long copy from destination. */
 						count = *source_ptr + ((unsigned) *(source_ptr + 1) << 8);
-						copy_ptr = (unsigned char*) dest + *(source_ptr + 2) + ((unsigned) *(source_ptr + 3) << 8);
+						copy_ptr = (uint8_t*) dest + *(source_ptr + 2) + ((unsigned) *(source_ptr + 3) << 8);
 						source_ptr += 4;
 
 						while (count--) *dest_ptr++ = *copy_ptr++;
@@ -156,7 +156,7 @@ int LCW_Uncomp(void const * source, void * dest, unsigned long )
 
 						/* Do a medium copy from destination. */
 						count = (op_code & 0x3f) + 3;
-						copy_ptr = (unsigned char*) dest + *source_ptr + ((unsigned) *(source_ptr + 1) << 8);
+						copy_ptr = (uint8_t*) dest + *source_ptr + ((unsigned) *(source_ptr + 1) << 8);
 						source_ptr += 2;
 
 						while (count--) *dest_ptr++ = *copy_ptr++;
@@ -199,14 +199,14 @@ int LCW_Comp(void const * source, void * dest, int datasize)
 {
 	int retval = 0;
 #ifdef _WINDOWS
-	long inlen = 0;
-	long a1stdest = 0;
-	long a1stsrc = 0;
-	long lenoff = 0;
-	long ndest = 0;
-	long count = 0;
-	long matchoff = 0;
-	long end_of_data =0;
+	int32_t inlen = 0;
+	int32_t a1stdest = 0;
+	int32_t a1stsrc = 0;
+	int32_t lenoff = 0;
+	int32_t ndest = 0;
+	int32_t count = 0;
+	int32_t matchoff = 0;
+	int32_t end_of_data =0;
 #ifdef _DEBUG
 	inlen = inlen;
 	a1stdest = a1stdest;
@@ -273,7 +273,7 @@ searchloop:
 		jb	short notlongenough
 
 		mov	[inlen],0	//; clear the in-length flag
-//		mov	[DWORD PTR inlen],0	//; clear the in-length flag
+//		mov	[uint32_t PTR inlen],0	//; clear the in-length flag
 		mov	esi,edi
 		mov	edi,[ndest]	//; get the offset of our compressed data
 
@@ -374,7 +374,7 @@ medrun:
 lenin:
 	__asm {
 		cmp	[inlen],0	//; is it doing a length?
-//		cmp	[DWORD PTR inlen],0	//; is it doing a length?
+//		cmp	[uint32_t PTR inlen],0	//; is it doing a length?
 		jnz	short len	//; if so, skip code
 	}
 lenin1:
@@ -387,17 +387,17 @@ len:
 	__asm {
 		mov	ebx,[lenoff]	//; get the offset of the length code
 		cmp	[ebx],0BFh	//; see if its maxed out
-//		cmp	[BYTE PTR ebx],0BFh	//; see if its maxed out
+//		cmp	[uint8_t PTR ebx],0BFh	//; see if its maxed out
 		je	lenin1	//; if so put out a new len code
 	}
 //stolen:
 	__asm {
 		inc	[ebx] //; inc the count code
-//		inc	[BYTE PTR ebx] //; inc the count code
+//		inc	[uint8_t PTR ebx] //; inc the count code
 		lodsb			//; get the byte
 		stosb			//; store it
 		mov	[inlen],1	//; we are now in a length so save it
-//		mov	[DWORD PTR inlen],1	//; we are now in a length so save it
+//		mov	[uint32_t PTR inlen],1	//; we are now in a length so save it
 		jmp	short nxt	//; do the next code
 	}
 longrun:
@@ -419,7 +419,7 @@ srunnxt:
 		//; this code common to all runs
 		add	esi,[count]	//; add in the length of the run to the source
 		mov	[inlen],0	//; set the in leght flag to false
-//		mov	[DWORD PTR inlen],0	//; set the in leght flag to false
+//		mov	[uint32_t PTR inlen],0	//; set the in leght flag to false
 	}
 nxt:
 	__asm {
@@ -440,5 +440,3 @@ outofhere:
 	return(retval);
 }
 #endif
-
-

@@ -880,7 +880,7 @@ MapCtrlClass::Add_Marker
 //	Get_Marker_Data
 //
 ////////////////////////////////////////////////////////////////
-uint32
+uint32_t
 MapCtrlClass::Get_Marker_Data (int index)
 {
 	return MarkerList[index].Get_User_Data ();
@@ -893,7 +893,7 @@ MapCtrlClass::Get_Marker_Data (int index)
 //
 ////////////////////////////////////////////////////////////////
 void
-MapCtrlClass::Set_Marker_Data (int index, uint32 user_data)
+MapCtrlClass::Set_Marker_Data (int index, uint32_t user_data)
 {
 	MarkerList[index].Set_User_Data (user_data);
 	return ;
@@ -1087,7 +1087,7 @@ MapCtrlClass::Initialize_Cloud (int cells_x, int cells_y)
 	//
 	//	Allocate a bit vector large enough to hold the cells
 	//
-	CloudVector = new uint32[((CloudSize.I * CloudSize.J) / 32) + 1];
+	CloudVector = new uint32_t[((CloudSize.I * CloudSize.J) / 32) + 1];
 	return ;
 }
 
@@ -1100,7 +1100,7 @@ MapCtrlClass::Initialize_Cloud (int cells_x, int cells_y)
 void
 MapCtrlClass::Reset_Cloud (void)
 {
-	::memset (CloudVector, 0xFF, sizeof (uint32) * (((CloudSize.I * CloudSize.J) / 32) + 1));
+	::memset (CloudVector, 0xFF, sizeof (uint32_t) * (((CloudSize.I * CloudSize.J) / 32) + 1));
 	return ;
 }
 
@@ -1237,7 +1237,7 @@ MapCtrlClass::Update_Pulse (void)
 	//
 	//	Update the color vector array
 	//
-	DynamicVectorClass<unsigned long> &color_array = MapOverlayRenderer.Get_Color_Array ();
+	DynamicVectorClass<uint32_t> &color_array = MapOverlayRenderer.Get_Color_Array ();
 	for (int index = 0; index < color_array.Count (); index ++) {
 		color_array[index] = overlay_color;
 	}

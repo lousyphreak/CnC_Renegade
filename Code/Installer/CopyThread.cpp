@@ -59,7 +59,7 @@ CopyThreadClass *CopyThreadClass::_ActiveCopyThread = NULL;
 
 /***************************************************************************
  * Memory allocation function
- * HUGE * FAR DIAMONDAPI fdi_mem_alloc( ULONG cb )
+ * HUGE * FAR DIAMONDAPI fdi_mem_alloc( uint32_t cb )
  *=========================================================================*/
 FNALLOC( fdi_mem_alloc )
 {
@@ -86,7 +86,7 @@ FNOPEN( file_open )
 
 	WWASSERT ((oflag & (_O_APPEND | _O_TEMPORARY)) == 0x0);
 	
-	DWORD desiredaccess, creationdisposition, flagsandattributes;
+	uint32_t desiredaccess, creationdisposition, flagsandattributes;
 
 	if (oflag & _O_WRONLY) {
 		desiredaccess = GENERIC_WRITE;
@@ -126,14 +126,14 @@ FNOPEN( file_open )
 
 
 /***************************************************************************
- * UINT FAR DIAMONDAPI file_read( int hf, void FAR *pv, UINT cb )
+ * uint32_t FAR DIAMONDAPI file_read( int hf, void FAR *pv, uint32_t cb )
  *=========================================================================*/
 FNREAD( file_read )
 {
 	// Abort the copying process?
 	if (!CopyThreadClass::_ActiveCopyThread->Get_Abort (true)) {
 
-		unsigned long bytecount;
+		uint32_t bytecount;
 	  
 		while (!ReadFile ((void*) hf, pv, cb, &bytecount, NULL)) {
 			if (!CopyThreadClass::_ActiveCopyThread->Retry()) break;
@@ -151,14 +151,14 @@ FNREAD( file_read )
 
 
 /***************************************************************************
- * UINT FAR DIAMONDAPI file_write( int hf, void FAR *pv, UINT cb )
+ * uint32_t FAR DIAMONDAPI file_write( int hf, void FAR *pv, uint32_t cb )
  *=========================================================================*/
 FNWRITE( file_write )
 {
 	// Abort the copying process?
 	if (!CopyThreadClass::_ActiveCopyThread->Get_Abort (true)) {
 
-		unsigned long bytecount;
+		uint32_t bytecount;
 		
 		while (!WriteFile ((void*) hf, pv, cb, &bytecount, NULL)) {
 			if (!CopyThreadClass::_ActiveCopyThread->Retry()) break;
@@ -198,8 +198,8 @@ FNCLOSE( file_close )
  *=========================================================================*/
 FNSEEK( file_seek )
 {
-	long	result;
-	DWORD movemethod;
+	int32_t	result;
+	uint32_t movemethod;
 
 	// Map seek type to Win32.
 	switch (seektype) {
@@ -254,7 +254,7 @@ FNFDINOTIFY( notification_function )
 			if (CopyThreadClass::Replace_File (_sourcefiletime, pfdin->cb, _targetpathname)) {
 
 				WideStringClass statusmessage;
-				long				 handle;
+				int32_t			 handle;
 				WideStringClass targetpath;
 				WideStringClass filename;
 
@@ -690,7 +690,7 @@ void CopyThreadClass::Copy_File (const WideStringClass &sourcepathname, const Wi
 	WideStringClass targetpath;
 	StringClass		 multibytetargetpath, multibytetemporarypathname;
 	HANDLE			 sourcefile, temporaryfile, targetfile; 
-	DWORD				 sourcebytecount, bytecount; 
+	uint32_t				 sourcebytecount, bytecount; 
 	WIN32_FIND_DATA sourcefiledata, targetfiledata;
 
 	multibytesourcepathname = sourcepathname;
@@ -778,12 +778,12 @@ void CopyThreadClass::Copy_File (const WideStringClass &sourcepathname, const Wi
  * HISTORY:                                                                                    *
  *   08/22/01    IML : Created.                                                                * 
  *=============================================================================================*/
-bool CopyThreadClass::Replace_File (const FILETIME &sourcefiletime, DWORD sourcefilesize, const WideStringClass &targetpathname)
+bool CopyThreadClass::Replace_File (const FILETIME &sourcefiletime, uint32_t sourcefilesize, const WideStringClass &targetpathname)
 {
 	StringClass		 multibytetargetpathname (targetpathname);	
 	WIN32_FIND_DATA targetdata;
 	HANDLE			 handle;
-	long				 t;	
+	int32_t			 t;	
 
 	// Does the target file exist?
 	handle = FindFirstFile (multibytetargetpathname, &targetdata); 
@@ -818,7 +818,7 @@ bool CopyThreadClass::Replace_File (const WideStringClass &sourcepathname, const
 	WIN32_FIND_DATA	sourcedata, targetdata;
 	HANDLE				handle;
 	VS_FIXEDFILEINFO	sourceversion, targetversion;
-	long					t;	
+	int32_t				t;	
 
 	// Find source file. It must exist.
 	while ((handle = FindFirstFile (multibytesourcepathname, &sourcedata)) == INVALID_HANDLE_VALUE) {
@@ -1100,6 +1100,5 @@ bool CopyThreadClass::Retry()
 	}
 	return (status == STATUS_RETRY);
 }
-
 
 

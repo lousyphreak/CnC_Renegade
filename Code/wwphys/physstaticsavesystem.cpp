@@ -57,7 +57,7 @@ PhysStaticObjectsSaveSystemClass		_PhysStaticObjectsSaveSystem;
 ** PhysStaticDataSaveSystemClass Implementation
 **
 **************************************************************************************/
-uint32 PhysStaticDataSaveSystemClass::Chunk_ID(void) const
+uint32_t PhysStaticDataSaveSystemClass::Chunk_ID(void) const
 {
 	return PHYSICS_CHUNKID_STATIC_DATA_SUBSYSTEM;
 }
@@ -109,7 +109,7 @@ void PhysStaticDataSaveSystemClass::On_Post_Load(void)
 ** PhysStaticObjectsSaveSystemClass Implementation
 **
 **************************************************************************************/
-uint32 PhysStaticObjectsSaveSystemClass::Chunk_ID(void) const
+uint32_t PhysStaticObjectsSaveSystemClass::Chunk_ID(void) const
 {
 	return PHYSICS_CHUNKID_STATIC_OBJECTS_SUBSYSTEM;
 }

@@ -155,7 +155,7 @@ RepairBayGameObjDef::~RepairBayGameObjDef (void)
 //	Get_Class_ID
 //
 ////////////////////////////////////////////////////////////////
-uint32
+uint32_t
 RepairBayGameObjDef::Get_Class_ID (void) const	
 { 
 	return CLASSID_GAME_OBJECT_DEF_REPAIR_BAY;
@@ -483,7 +483,7 @@ RepairBayGameObj::CnC_Initialize (BaseControllerClass *base)
 		//	Is this a repairing static anim phys?
 		//
 		if (	anim_phys_obj != NULL &&
-				anim_phys_obj->Get_Definition ()->Get_ID () == (uint32)Get_Definition ().RepairingStaticAnimDefID)
+				anim_phys_obj->Get_Definition ()->Get_ID () == (uint32_t)Get_Definition ().RepairingStaticAnimDefID)
 		{
 
 			//

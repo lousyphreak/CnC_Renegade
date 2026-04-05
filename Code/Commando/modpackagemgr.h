@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __MODPACKAGEMGR_H
@@ -98,10 +100,10 @@ public:
 	//
 	//	Mod/map package name
 	//
-	static bool								Get_Mod_Map_Name_From_CRC (uint32 mod_crc, uint32 map_crc, StringClass *mod_name, StringClass *map_name);
-	static bool								Get_Mod_Map_Name_From_CRC_Index (uint32 mod_file_crc, int map_index, StringClass *mod_name, StringClass *map_name);
-	static bool								Find_Filename_From_CRC (const char *search_mask, uint32 filename_crc, StringClass *filename);	
-	static bool								Find_Package_From_CRC (uint32 file_crc, StringClass *filename);
+	static bool								Get_Mod_Map_Name_From_CRC (uint32_t mod_crc, uint32_t map_crc, StringClass *mod_name, StringClass *map_name);
+	static bool								Get_Mod_Map_Name_From_CRC_Index (uint32_t mod_file_crc, int map_index, StringClass *mod_name, StringClass *map_name);
+	static bool								Find_Filename_From_CRC (const char *search_mask, uint32_t filename_crc, StringClass *filename);	
+	static bool								Find_Package_From_CRC (uint32_t file_crc, StringClass *filename);
 	
 protected:
 	

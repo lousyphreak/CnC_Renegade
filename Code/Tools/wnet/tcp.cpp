@@ -39,11 +39,11 @@ If you are writing a CLIENT:
 only by SERVER mode, so you can omit this argument.  Sample Code:
 
 fd_set *fdSet;
-uint8  *buff=new uint8[1024];
+uint8_t  *buff=new uint8_t[1024];
 int     retval;
 TCP tcp(CLIENT);
 
-tcp.Bind((uint32)0,(uint16)0); // let system pick local IP and a Port for you 
+tcp.Bind((uint32_t)0,(uint16_t)0); // let system pick local IP and a Port for you 
 tcp.Connect("tango",13);       // can connect by name or "10.1.1.10"
                                // or the integerßin host byte order
 
@@ -70,11 +70,11 @@ a server, you need to specify the 'whichFD' arguments to all the
 functions. Sample Code:
 
 fd_set *fdSet;
-uint8  *buff=new uint8[1024];
+uint8_t  *buff=new uint8_t[1024];
 int     retval;
 TCP     tcp(SERVER);
 
-tcp.Bind((uint32)0,(uint16)2121);    // You need to bind to a well defined
+tcp.Bind((uint32_t)0,(uint16_t)2121);    // You need to bind to a well defined
                               //  port number or nobody will know where
                               //  to connect to.
 
@@ -120,9 +120,9 @@ TCP::TCP(int new_mode)
 }
 
 // Create a TCP object on a pre-existing socket
-TCP::TCP(int new_mode,sint16 socket)
+TCP::TCP(int new_mode,int16_t socket)
 {
-  sint32 retval;
+  int32_t retval;
 
   mode=CLIENT;
   maxFD= socket;
@@ -165,13 +165,13 @@ int TCP::GetFD()
 
 
 // private function
-sint32 TCP::SetBlocking(bit8 block,sint32 whichFD)
+int32_t TCP::SetBlocking(int8_t block,int32_t whichFD)
 {
    if (whichFD==0)
      whichFD=fd;
 
    #ifdef _WINDOWS
-   unsigned long flag=1;
+   uint32_t flag=1;
    if (block)
      flag=0;
    int retval;
@@ -196,7 +196,7 @@ sint32 TCP::SetBlocking(bit8 block,sint32 whichFD)
 }
 
 
-sint32 TCP::GetMaxFD(void)
+int32_t TCP::GetMaxFD(void)
 {
   if (mode==CLIENT)
     return(fd);
@@ -207,9 +207,9 @@ sint32 TCP::GetMaxFD(void)
 }
 
 // Only specify whichFD if this is a server application
-sint32 TCP::Write(const uint8 *msg,uint32 len,sint32 whichFD)
+int32_t TCP::Write(const uint8_t *msg,uint32_t len,int32_t whichFD)
 {
-  sint32 retval;
+  int32_t retval;
 
   if (whichFD==0)
   {
@@ -230,9 +230,9 @@ sint32 TCP::Write(const uint8 *msg,uint32 len,sint32 whichFD)
 
 // Only specify whichFD if this is a server application
 // NON BLOCKING WRITE
-sint32 TCP::WriteNB(uint8 *msg,uint32 len,sint32 whichFD)
+int32_t TCP::WriteNB(uint8_t *msg,uint32_t len,int32_t whichFD)
 {
-  sint32 retval;
+  int32_t retval;
 
   if (whichFD==0)
   {
@@ -254,11 +254,11 @@ sint32 TCP::WriteNB(uint8 *msg,uint32 len,sint32 whichFD)
 //   1 goes to 1,2
 // 255 goes to 1,3
 // everything else is the same
-sint32 TCP::EncapsulatedWrite(uint8 *msg,uint32 len,sint32 whichFD)
+int32_t TCP::EncapsulatedWrite(uint8_t *msg,uint32_t len,int32_t whichFD)
 {
-  sint32 retval;
-  uint32 i,bytesSent=0;
-  uint8  data,one=1;
+  int32_t retval;
+  uint32_t i,bytesSent=0;
+  uint8_t  data,one=1;
 
   if (mode==CLIENT)
     whichFD=fd;
@@ -307,14 +307,14 @@ sint32 TCP::EncapsulatedWrite(uint8 *msg,uint32 len,sint32 whichFD)
 
 
 // Make sure string is '\0' terminated
-sint32 TCP::WriteString(char *msg,sint32 whichFD)
+int32_t TCP::WriteString(char *msg,int32_t whichFD)
 {
   if (mode==CLIENT)
     whichFD=fd;
 
   WaitWrite(whichFD);
 
-  sint32 retval;
+  int32_t retval;
 
   if (mode==CLIENT)
   {
@@ -338,11 +338,11 @@ sint32 TCP::WriteString(char *msg,sint32 whichFD)
 
 
 // only use for strings up to 1024 chars!
-sint32 TCP::Printf(sint32 whichFD,const char *format,...)
+int32_t TCP::Printf(int32_t whichFD,const char *format,...)
 {
   va_list arg;
   char string[1024];
-  sint32 retval;
+  int32_t retval;
   va_start(arg,format);
   vsprintf(string,format,arg);
   va_end(arg);
@@ -375,7 +375,7 @@ sint32 TCP::Printf(sint32 whichFD,const char *format,...)
 
 // Returns 0 on failure
 // Returns IP in host byte order!
-uint32 TCP::GetRemoteIP(sint32 whichFD)
+uint32_t TCP::GetRemoteIP(int32_t whichFD)
 {
   struct sockaddr_in sin;
   int    sinSize=sizeof(sin);
@@ -396,7 +396,7 @@ uint32 TCP::GetRemoteIP(sint32 whichFD)
 
 // Returns 0 on failure
 // Returns Port in host byte order!
-uint16 TCP::GetRemotePort(sint32 whichFD)
+uint16_t TCP::GetRemotePort(int32_t whichFD)
 {
   struct sockaddr_in sin;
   int    sinSize=sizeof(sin);
@@ -416,7 +416,7 @@ uint16 TCP::GetRemotePort(sint32 whichFD)
 
 
 // Is the FD connected?
-bit8 TCP::IsConnected(sint32 whichFD)
+int8_t TCP::IsConnected(int32_t whichFD)
 {
   struct sockaddr_in sin;
   int    sinSize=sizeof(sin);
@@ -445,9 +445,9 @@ bit8 TCP::IsConnected(sint32 whichFD)
 
 // Not portable?
 /**************
-sint32 TCP::GetSockStatus(sint32 whichFD)
+int32_t TCP::GetSockStatus(int32_t whichFD)
 {
-  sint32 retval;
+  int32_t retval;
   int status,size=sizeof(int);
 
   if (whichFD==0)
@@ -488,7 +488,7 @@ char *TCP::Gets(char *string,int n,int whichFD)
       return(NULL);
     }
 
-    retval=Read((unsigned char *)&c,1,whichFD);
+    retval=Read((uint8_t *)&c,1,whichFD);
     if ((retval>0)&&(c!=0))
     {
       string[i]=c;
@@ -509,9 +509,9 @@ char *TCP::Gets(char *string,int n,int whichFD)
 
 
 // only specify whichFD if this is a server
-sint32 TCP::Read(uint8 *msg,uint32 len,sint32 whichFD)
+int32_t TCP::Read(uint8_t *msg,uint32_t len,int32_t whichFD)
 {
-  sint32 retval;
+  int32_t retval;
   //DBGMSG("In read, mode: "<<mode<<"  FD: "<<fd);
   if (mode==CLIENT)
   {
@@ -545,14 +545,14 @@ sint32 TCP::Read(uint8 *msg,uint32 len,sint32 whichFD)
 // Try and read 'len' bytes until the timer goes out.
 // This is effectively a blocking call, but it's still useful
 // in threaded environments.
-sint32 TCP::TimedRead(uint8 *msg,uint32 len,int seconds,sint32 whichFD)
+int32_t TCP::TimedRead(uint8_t *msg,uint32_t len,int seconds,int32_t whichFD)
 {
   fd_set    set;
-  sint32    bytes_read=0;
-  sint32    retval;
+  int32_t    bytes_read=0;
+  int32_t    retval;
 
   time_t stop_time=time(NULL)+seconds;
-  while ((time(NULL)<=stop_time)&&((uint32)bytes_read<len))
+  while ((time(NULL)<=stop_time)&&((uint32_t)bytes_read<len))
   {
     Wait(1,0,set,whichFD);
     //DBGMSG("Calling read");
@@ -573,9 +573,9 @@ sint32 TCP::TimedRead(uint8 *msg,uint32 len,int seconds,sint32 whichFD)
 
 // only specify whichFD if this is a server
 // Peek at data in system buffer
-sint32 TCP::Peek(uint8 *msg,uint32 len,sint32 whichFD)
+int32_t TCP::Peek(uint8_t *msg,uint32_t len,int32_t whichFD)
 {
-  sint32 retval;
+  int32_t retval;
   if (mode==CLIENT)
   {
     retval=recv(fd,(char *)msg,len,MSG_PEEK);
@@ -602,10 +602,10 @@ sint32 TCP::Peek(uint8 *msg,uint32 len,sint32 whichFD)
 // only specify whichFD if this is a server
 // (this is used for non-8 bit clean pipes, you probably don't
 //   want to use it!)
-sint32 TCP::EncapsulatedRead(uint8 *msg,uint32 len,sint32 whichFD)
+int32_t TCP::EncapsulatedRead(uint8_t *msg,uint32_t len,int32_t whichFD)
 {
-  sint32 retval,bytesRead=0;
-  uint32 i;
+  int32_t retval,bytesRead=0;
+  uint32_t i;
   char data;
 
   if (mode==CLIENT)
@@ -657,7 +657,7 @@ sint32 TCP::EncapsulatedRead(uint8 *msg,uint32 len,sint32 whichFD)
 }
 
 
-sint32 TCP::CloseAll(void)
+int32_t TCP::CloseAll(void)
 {
   int i;
 
@@ -687,7 +687,7 @@ void TCP::DisownSocket(void)
 
 // for a server 0 = master FD, or a client FD can be passed in
 // for a client the whichFD argument is ignored completely
-sint32 TCP::Close(sint32 whichFD)
+int32_t TCP::Close(int32_t whichFD)
 {
   int i;
   if (mode==CLIENT)
@@ -695,7 +695,7 @@ sint32 TCP::Close(sint32 whichFD)
     connectionState=CLOSED;
     if(fd != -1)
     {
-      sint32 retval = closesocket(fd);
+      int32_t retval = closesocket(fd);
       fd = -1;
       return retval;
     }
@@ -720,7 +720,7 @@ sint32 TCP::Close(sint32 whichFD)
                break;
             }
        }
-       FD_CLR((uint32)whichFD,&clientList);
+       FD_CLR((uint32_t)whichFD,&clientList);
        clientCount--;
        return(closesocket(whichFD));
      }
@@ -733,7 +733,7 @@ sint32 TCP::Close(sint32 whichFD)
 // if 'sec' AND 'usec' are -1 then this will sleep until
 // there is socket activity
 
-int TCP::Wait(sint32 sec,sint32 usec,fd_set &returnSet,sint32 whichFD)
+int TCP::Wait(int32_t sec,int32_t usec,fd_set &returnSet,int32_t whichFD)
 {
   fd_set inputSet;
 
@@ -761,14 +761,14 @@ int TCP::Wait(sint32 sec,sint32 usec,fd_set &returnSet,sint32 whichFD)
   return(Wait(sec,usec,inputSet,returnSet));
 }
 
-int TCP::Wait(sint32 sec,sint32 usec,fd_set &givenSet,fd_set &returnSet)
+int TCP::Wait(int32_t sec,int32_t usec,fd_set &givenSet,fd_set &returnSet)
 {
   Wtime        timeout;
   Wtime        timenow;
   Wtime        timethen;
   fd_set       backupSet;
   int          retval=0,done,givenMax;
-  bit8         noTimeout=FALSE;
+  int8_t         noTimeout=FALSE;
   timeval      tv;
 
   returnSet=givenSet;
@@ -782,7 +782,7 @@ int TCP::Wait(sint32 sec,sint32 usec,fd_set &givenSet,fd_set &returnSet)
   timethen+=timeout;
 
   givenMax=maxFD;
-  for (uint32 i=0; i<(sizeof(fd_set)*8); i++)   // i=maxFD+1
+  for (uint32_t i=0; i<(sizeof(fd_set)*8); i++)   // i=maxFD+1
   {
     if (FD_ISSET(i,&givenSet))
       givenMax=i;
@@ -823,7 +823,7 @@ int TCP::Wait(sint32 sec,sint32 usec,fd_set &givenSet,fd_set &returnSet)
 }
 
 
-void TCP::WaitWrite(sint32 whichFD)
+void TCP::WaitWrite(int32_t whichFD)
 {
   fd_set       backupSet;
   int          retval=0,done;
@@ -855,7 +855,7 @@ void TCP::WaitWrite(sint32 whichFD)
 }
 
 // Can a FD be written to?
-bit8 TCP::CanWrite(sint32 whichFD)
+int8_t TCP::CanWrite(int32_t whichFD)
 {
   int          retval=0;
   fd_set       outputSet;
@@ -880,7 +880,7 @@ bit8 TCP::CanWrite(sint32 whichFD)
 }
 
 
-bit8 TCP::Bind(char *Host,uint16 port,bit8 reuseAddr)
+int8_t TCP::Bind(char *Host,uint16_t port,int8_t reuseAddr)
 {
   char hostName[100];
   struct hostent *hostStruct;
@@ -902,7 +902,7 @@ bit8 TCP::Bind(char *Host,uint16 port,bit8 reuseAddr)
 // You must call bind, implicit binding is for sissies
 //   Well... you can get implicit binding if you pass 0 for either arg
 
-bit8 TCP::Bind(uint32 IP,uint16 Port,bit8 reuseAddr)
+int8_t TCP::Bind(uint32_t IP,uint16_t Port,int8_t reuseAddr)
 {
   int retval; 
   int status;
@@ -923,7 +923,7 @@ bit8 TCP::Bind(uint32 IP,uint16 Port,bit8 reuseAddr)
 
   if (reuseAddr==TRUE)
   {
-    uint32 opval;
+    uint32_t opval;
 
     #ifdef SO_REUSEPORT
 /******************  this may make the socket get garbage data??
@@ -966,7 +966,7 @@ bit8 TCP::Bind(uint32 IP,uint16 Port,bit8 reuseAddr)
 
 // This is only for clients
 
-bit8 TCP::Connect(char *Host,uint16 port)
+int8_t TCP::Connect(char *Host,uint16_t port)
 {
   char hostName[100];
   struct hostent *hostStruct;
@@ -984,7 +984,7 @@ bit8 TCP::Connect(char *Host,uint16 port)
   return ( Connect(ntohl(hostNode->s_addr),port) );
 }
 
-bit8 TCP::Connect(uint32 IP,uint16 Port)
+int8_t TCP::Connect(uint32_t IP,uint16_t Port)
 {
   int tries,result;
   struct timeval sleep_time;
@@ -1052,7 +1052,7 @@ bit8 TCP::Connect(uint32 IP,uint16 Port)
 
 
 // Asynchronous Connection
-bit8 TCP::ConnectAsync(char *Host,uint16 port)
+int8_t TCP::ConnectAsync(char *Host,uint16_t port)
 {
   char hostName[100];
   struct hostent *hostStruct;
@@ -1071,7 +1071,7 @@ bit8 TCP::ConnectAsync(char *Host,uint16 port)
 }
 
 // Asynchronous Connection
-bit8 TCP::ConnectAsync(uint32 IP,uint16 Port)
+int8_t TCP::ConnectAsync(uint32_t IP,uint16_t Port)
 {
   int result;
   struct sockaddr_in serverAddr;
@@ -1201,12 +1201,12 @@ int TCP::GetStatus(void)
 
 // this is only for servers
 
-sint32 TCP::GetConnection(void)
+int32_t TCP::GetConnection(void)
 {
   if (mode!=SERVER)
     return(-1);
 
-  sint32 clientFD;
+  int32_t clientFD;
   struct sockaddr_in clientAddr;
   int addrlen=sizeof(clientAddr);
 
@@ -1221,12 +1221,12 @@ sint32 TCP::GetConnection(void)
   return(clientFD);
 }
 
-sint32 TCP::GetConnection(struct sockaddr *clientAddr)
+int32_t TCP::GetConnection(struct sockaddr *clientAddr)
 {
   if (mode!=SERVER)
     return(-1);
 
-  sint32 clientFD;
+  int32_t clientFD;
   int addrlen=sizeof(struct sockaddr);
 
   clientFD=accept(fd,(struct sockaddr *)clientAddr,&addrlen);

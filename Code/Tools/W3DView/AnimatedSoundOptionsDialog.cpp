@@ -160,7 +160,7 @@ AnimatedSoundOptionsDialogClass::OnOK (void)
 //	OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 AnimatedSoundOptionsDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();

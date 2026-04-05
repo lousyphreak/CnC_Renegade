@@ -72,5 +72,5 @@ char DefaultPaletteData[768] = {
 	 18,  27,  28,  21,  29,  30,  23,  31,  32,  26,  33,  34,  29,  63,  63,  63, 
 };
 
-PaletteClass DefaultPalette((unsigned char *)DefaultPaletteData);
+PaletteClass DefaultPalette((uint8_t *)DefaultPaletteData);
 ConvertClass DefaultConvert(DefaultPalette, DefaultPalette, BSurface(8,8,8));

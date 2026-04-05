@@ -130,7 +130,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 EditConversationDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -148,11 +148,11 @@ EditConversationDialogClass::OnInitDialog (void)
 	//
 	//	Configure the state combo box
 	//
-	SendDlgItemMessage (IDC_STATE_COMBO, CB_ADDSTRING, 0, (LPARAM)"Idle");
-	SendDlgItemMessage (IDC_STATE_COMBO, CB_ADDSTRING, 0, (LPARAM)"Idle (Secondary)");
-	SendDlgItemMessage (IDC_STATE_COMBO, CB_ADDSTRING, 0, (LPARAM)"Search");
-	SendDlgItemMessage (IDC_STATE_COMBO, CB_ADDSTRING, 0, (LPARAM)"Combat");
-	SendDlgItemMessage (IDC_STATE_COMBO, CB_SETCURSEL, (WPARAM)m_Conversation->Get_AI_State ());
+	SendDlgItemMessage (IDC_STATE_COMBO, CB_ADDSTRING, 0, (intptr_t)"Idle");
+	SendDlgItemMessage (IDC_STATE_COMBO, CB_ADDSTRING, 0, (intptr_t)"Idle (Secondary)");
+	SendDlgItemMessage (IDC_STATE_COMBO, CB_ADDSTRING, 0, (intptr_t)"Search");
+	SendDlgItemMessage (IDC_STATE_COMBO, CB_ADDSTRING, 0, (intptr_t)"Combat");
+	SendDlgItemMessage (IDC_STATE_COMBO, CB_SETCURSEL, (uintptr_t)m_Conversation->Get_AI_State ());
 
 	//
 	//	Configure the orator controls
@@ -163,14 +163,14 @@ EditConversationDialogClass::OnInitDialog (void)
 		//	Put the icon into the button control
 		//
 		HICON icon = ::LoadIcon (::AfxGetResourceHandle (), MAKEINTRESOURCE (ORATOR_CTRLS[index].icon_id));
-		SendDlgItemMessage (ORATOR_CTRLS[index].button_id, BM_SETIMAGE, IMAGE_ICON, (LPARAM)icon);
+		SendDlgItemMessage (ORATOR_CTRLS[index].button_id, BM_SETIMAGE, IMAGE_ICON, (intptr_t)icon);
 
 		//
 		//	Put the "visible" icon into the checkbox control
 		//
 		icon = (HICON)::LoadImage (::AfxGetResourceHandle (), MAKEINTRESOURCE (IDI_EYE2), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-		SendDlgItemMessage (ORATOR_CTRLS[index].check_id, BM_SETIMAGE, IMAGE_ICON, (LPARAM)icon);
-		SendDlgItemMessage (ORATOR_CTRLS[index].check_id, BM_SETCHECK, (WPARAM)TRUE);
+		SendDlgItemMessage (ORATOR_CTRLS[index].check_id, BM_SETIMAGE, IMAGE_ICON, (intptr_t)icon);
+		SendDlgItemMessage (ORATOR_CTRLS[index].check_id, BM_SETCHECK, (uintptr_t)TRUE);
 
 		//
 		//	Configure the orator type combo-box
@@ -188,14 +188,14 @@ EditConversationDialogClass::OnInitDialog (void)
 			//
 			//	Add this orator type to the combobox
 			//
-			int item_index = SendDlgItemMessage (combobox_id, CB_ADDSTRING, 0, (LPARAM)type_name);
-			SendDlgItemMessage (combobox_id, CB_SETITEMDATA, (WPARAM)item_index, (LPARAM)type_id);			
+			int item_index = SendDlgItemMessage (combobox_id, CB_ADDSTRING, 0, (intptr_t)type_name);
+			SendDlgItemMessage (combobox_id, CB_SETITEMDATA, (uintptr_t)item_index, (intptr_t)type_id);			
 		}
 	
 		//
 		//	Select the first item by default
 		//
-		SendDlgItemMessage (ORATOR_CTRLS[index].combo_id, CB_SETCURSEL, (WPARAM)0);
+		SendDlgItemMessage (ORATOR_CTRLS[index].combo_id, CB_SETCURSEL, (uintptr_t)0);
 	}
 
 	//
@@ -209,8 +209,8 @@ EditConversationDialogClass::OnInitDialog (void)
 		//
 		//	Check the checkbox control and enable the combobox control
 		//
-		SendDlgItemMessage (ORATOR_CTRLS[index].button_id, BM_SETCHECK, (WPARAM)TRUE);
-		SendDlgItemMessage (ORATOR_CTRLS[index].check_id, BM_SETCHECK, (WPARAM)(!orator->Is_Invisible ()));
+		SendDlgItemMessage (ORATOR_CTRLS[index].button_id, BM_SETCHECK, (uintptr_t)TRUE);
+		SendDlgItemMessage (ORATOR_CTRLS[index].check_id, BM_SETCHECK, (uintptr_t)(!orator->Is_Invisible ()));
 		::EnableWindow (::GetDlgItem (m_hWnd, ORATOR_CTRLS[index].combo_id), TRUE);
 		::EnableWindow (::GetDlgItem (m_hWnd, ORATOR_CTRLS[index].check_id), TRUE);		
 		
@@ -220,7 +220,7 @@ EditConversationDialogClass::OnInitDialog (void)
 		int orator_type = orator->Get_Orator_Type ();
 		int item_index = Find_Combobox_Entry (orator_type);
 		if (item_index >= 0) {
-			SendDlgItemMessage (ORATOR_CTRLS[index].combo_id, CB_SETCURSEL, (WPARAM)item_index);
+			SendDlgItemMessage (ORATOR_CTRLS[index].combo_id, CB_SETCURSEL, (uintptr_t)item_index);
 		}
 
 		//
@@ -235,14 +235,14 @@ EditConversationDialogClass::OnInitDialog (void)
 	//	Configure the "lock" checkbox
 	//
 	HICON lock_icon = (HICON)::LoadImage (::AfxGetResourceHandle (), MAKEINTRESOURCE (IDI_LOCK), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-	SendDlgItemMessage (IDC_LOCKED_CHECK, BM_SETIMAGE, (WPARAM)IMAGE_ICON, (LPARAM)lock_icon);
-	SendDlgItemMessage (IDC_LOCKED_CHECK, BM_SETCHECK, (WPARAM)is_locked);
+	SendDlgItemMessage (IDC_LOCKED_CHECK, BM_SETIMAGE, (uintptr_t)IMAGE_ICON, (intptr_t)lock_icon);
+	SendDlgItemMessage (IDC_LOCKED_CHECK, BM_SETCHECK, (uintptr_t)is_locked);
 
 	//
 	//	Set the check state of the "Is Innate" and "Is Key" checkboxes
 	//
-	SendDlgItemMessage (IDC_INNATE_CHECK, BM_SETCHECK, (WPARAM)m_Conversation->Is_Innate ());	
-	SendDlgItemMessage (IDC_KEY_CONVESATION_CHECK, BM_SETCHECK, (WPARAM)m_Conversation->Is_Key ());	
+	SendDlgItemMessage (IDC_INNATE_CHECK, BM_SETCHECK, (uintptr_t)m_Conversation->Is_Innate ());	
+	SendDlgItemMessage (IDC_KEY_CONVESATION_CHECK, BM_SETCHECK, (uintptr_t)m_Conversation->Is_Key ());	
 
 	//
 	//	Configure the columns
@@ -290,7 +290,7 @@ void
 EditConversationDialogClass::OnDblclkRemarkList
 (
 	NMHDR *	pNMHDR,
-	LRESULT* pResult
+	intptr_t* pResult
 )
 {
 	(*pResult) = 0;
@@ -360,7 +360,7 @@ void
 EditConversationDialogClass::OnKeydownRemarkList
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 )
 {
 	LV_KEYDOWN* pLVKeyDow = (LV_KEYDOWN*)pNMHDR;
@@ -545,7 +545,7 @@ EditConversationDialogClass::Add_Entry (const ConversationRemarkClass &remark, i
 			//	Allocate a remark object to associate with this entry in the list control
 			//
 			ConversationRemarkClass *associated_remark = new ConversationRemarkClass (remark);
-			m_ListCtrl.SetItemData (item_index, (DWORD)associated_remark);
+			m_ListCtrl.SetItemData (item_index, (uint32_t)associated_remark);
 		}
 	}
 
@@ -598,7 +598,7 @@ void
 EditConversationDialogClass::OnItemchangedRemarkList
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 )
 {
 	NM_LISTVIEW* pNMListView = (NM_LISTVIEW*)pNMHDR;
@@ -628,11 +628,11 @@ EditConversationDialogClass::Update_Button_States (void)
 // OnCommand
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 EditConversationDialogClass::OnCommand
 (
-	WPARAM wParam,
-	LPARAM lParam
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	
@@ -676,7 +676,7 @@ EditConversationDialogClass::OnCommand
 void
 EditConversationDialogClass::Update_Remarks (int orator_index)
 {
-	BOOL is_checked = (SendDlgItemMessage (ORATOR_CTRLS[orator_index].button_id, BM_GETCHECK) == 1);
+	int32_t is_checked = (SendDlgItemMessage (ORATOR_CTRLS[orator_index].button_id, BM_GETCHECK) == 1);
 	if (is_checked == false) {
 		
 		//
@@ -709,7 +709,7 @@ EditConversationDialogClass::Update_Remarks (int orator_index)
 void
 EditConversationDialogClass::Update_Enable_State (int orator_index)
 {
-	BOOL is_checked = (SendDlgItemMessage (ORATOR_CTRLS[orator_index].button_id, BM_GETCHECK) == 1);
+	int32_t is_checked = (SendDlgItemMessage (ORATOR_CTRLS[orator_index].button_id, BM_GETCHECK) == 1);
 	::EnableWindow (::GetDlgItem (m_hWnd, ORATOR_CTRLS[orator_index].combo_id), is_checked);
 	::EnableWindow (::GetDlgItem (m_hWnd, ORATOR_CTRLS[orator_index].check_id), is_checked);
 	return ;
@@ -724,7 +724,7 @@ EditConversationDialogClass::Update_Enable_State (int orator_index)
 void
 EditConversationDialogClass::Update_Player_Type_Combos (int orator_index)
 {
-	BOOL is_locked = (SendDlgItemMessage (IDC_LOCKED_CHECK, BM_GETCHECK) == 1);
+	int32_t is_locked = (SendDlgItemMessage (IDC_LOCKED_CHECK, BM_GETCHECK) == 1);
 
 	if (is_locked) {
 
@@ -737,7 +737,7 @@ EditConversationDialogClass::Update_Player_Type_Combos (int orator_index)
 		//	Update all the combo boxes to reflect the current selection
 		//
 		for (int index = 0; index < ORATOR_MAX; index ++) {
-			SendDlgItemMessage (ORATOR_CTRLS[index].combo_id, CB_SETCURSEL, (WPARAM)curr_sel);
+			SendDlgItemMessage (ORATOR_CTRLS[index].combo_id, CB_SETCURSEL, (uintptr_t)curr_sel);
 		}
 	}
 
@@ -761,7 +761,7 @@ EditConversationDialogClass::Get_Orator_Type (int orator_index)
 	//
 	int curr_sel = SendDlgItemMessage (ORATOR_CTRLS[orator_index].combo_id, CB_GETCURSEL);
 	if (curr_sel >= 0) {
-		retval = SendDlgItemMessage (ORATOR_CTRLS[orator_index].combo_id, CB_GETITEMDATA, (WPARAM)curr_sel);
+		retval = SendDlgItemMessage (ORATOR_CTRLS[orator_index].combo_id, CB_GETITEMDATA, (uintptr_t)curr_sel);
 	}
 
 	return retval;
@@ -777,7 +777,7 @@ void
 EditConversationDialogClass::OnDeleteitemRemarkList
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 ) 
 {
 	NM_LISTVIEW *pNMListView = (NM_LISTVIEW *)pNMHDR;
@@ -818,7 +818,7 @@ EditConversationDialogClass::Find_Combobox_Entry (int orator_type)
 		//
 		//	Is this the orator we are looking for?
 		//
-		int item_data = SendDlgItemMessage (IDC_ORATOR1_COMBO, CB_GETITEMDATA, (WPARAM)index);
+		int item_data = SendDlgItemMessage (IDC_ORATOR1_COMBO, CB_GETITEMDATA, (uintptr_t)index);
 		if (item_data == orator_type) {
 			retval = index;
 			break;

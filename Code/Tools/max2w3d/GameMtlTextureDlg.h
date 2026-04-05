@@ -40,6 +40,8 @@
 #ifndef GAMEMTLTEXTUREDLG_H
 #define GAMEMTLTEXTUREDLG_H
 
+#include <cstdint>
+
 #include <Max.h>
 #include "GameMtlForm.h"
 
@@ -53,13 +55,13 @@ public:
 	GameMtlTextureDlg(HWND parent, IMtlParams * imp, GameMtl * m, int pass);
 	~GameMtlTextureDlg(void);
 
-	virtual BOOL		Dialog_Proc (HWND dlg_wnd, UINT message, WPARAM wparam, LPARAM lparam);
-	void					ActivateDlg(BOOL onOff);
+	virtual int32_t		Dialog_Proc (HWND dlg_wnd, uint32_t message, uintptr_t wparam, intptr_t lparam);
+	void					ActivateDlg(int32_t onOff);
 	void					ReloadDialog(void);
 
 private:
 	
-	void					Enable_Stage(int stage,BOOL onoff);
+	void					Enable_Stage(int stage,int32_t onoff);
 	void					Update_Texture_Buttons(void);
 
 	ISpinnerControl * Stage0FramesSpin;

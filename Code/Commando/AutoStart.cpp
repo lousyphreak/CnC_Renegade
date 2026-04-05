@@ -175,7 +175,7 @@ void AutoRestartClass::Cancel(void)
  *=============================================================================================*/
 void AutoRestartClass::Think(void)
 {
-	static unsigned long time;
+	static uint32_t time;
 
 	bool can_render = ConsoleBox.Is_Exclusive() ? false : true;
 

@@ -239,9 +239,9 @@ RefPtr<IRCServerData> WOLLogonMgr::GetDefaultServer(void)
 	const IRCServerList& serverList = wolSession->GetIRCServerList();
 	const PingServerList& pingers = wolSession->GetPingServerList();
 
-	const unsigned int numServers = serverList.size();
+	const uint32_t numServers = serverList.size();
 
-	for (unsigned int index = 0; index < numServers; ++index)
+	for (uint32_t index = 0; index < numServers; ++index)
 		{
 		const RefPtr<IRCServerData>& thisServer = serverList[index];
 
@@ -252,7 +252,7 @@ RefPtr<IRCServerData> WOLLogonMgr::GetDefaultServer(void)
 			float serverLat = thisServer->GetLattitude();
 
 			// Find the ping server with the best time.
-			for (unsigned int pingindex = 0; pingindex < pingers.size(); pingindex++)
+			for (uint32_t pingindex = 0; pingindex < pingers.size(); pingindex++)
 				{
 				const RefPtr<PingServerData>& thisPing = pingers[pingindex];
 				float pingLong = thisPing->GetLongitude();
@@ -551,7 +551,7 @@ RefPtr<IRCServerData> WOLLogonMgr::GetPreferredServer(const wchar_t* login)
 	RefPtr<IRCServerData> server;
 	const IRCServerList& serverList = mWOLSession->GetIRCServerList();
 
-	for (unsigned int index = 0; index < serverList.size(); index++)
+	for (uint32_t index = 0; index < serverList.size(); index++)
 		{
 		const RefPtr<IRCServerData>& thisServer = serverList[index];
 
@@ -685,9 +685,9 @@ bool WOLLogonMgr::HasValidPings(void)
 	{
 	const PingServerList& pingers = mWOLSession->GetPingServerList();
 
-	unsigned int count = pingers.size();
+	uint32_t count = pingers.size();
 
-	for (unsigned int index = 0; index < count; ++index)
+	for (uint32_t index = 0; index < count; ++index)
 		{
 		int pingTime = pingers[index]->GetPingTime();
 

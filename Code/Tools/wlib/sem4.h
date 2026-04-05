@@ -19,6 +19,8 @@
 #ifndef SEM4_HEADER
 #define SEM4_HEADER
 
+#include <cstdint>
+
 #include <limits.h>
 #ifndef _WINDOWS
 #include <unistd.h>
@@ -51,14 +53,14 @@ class Sem4
   #endif
  public:
                Sem4();
-               Sem4(uint32 value);
+               Sem4(uint32_t value);
               ~Sem4();
 
-  sint32       Wait(void) const;
-  sint32       TryWait(void) const;
-  sint32       Post(void) const;
-  sint32       GetValue(int *sval) const;
-  sint32       Destroy(void);
+  int32_t       Wait(void) const;
+  int32_t       TryWait(void) const;
+  int32_t       Post(void) const;
+  int32_t       GetValue(int *sval) const;
+  int32_t       Destroy(void);
 };
 
 #endif

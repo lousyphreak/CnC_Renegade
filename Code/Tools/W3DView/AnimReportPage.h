@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // AnimReportPage.h : header file
 //
@@ -51,7 +53,7 @@ public:
 	// ClassWizard generate virtual function overrides
 	//{{AFX_VIRTUAL(CAnimReportPage)
 	public:
-	virtual BOOL OnSetActive();
+	virtual int32_t OnSetActive();
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 	//}}AFX_VIRTUAL
@@ -66,7 +68,7 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(CAnimReportPage)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 

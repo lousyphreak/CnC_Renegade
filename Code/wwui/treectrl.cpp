@@ -58,7 +58,7 @@ static const RectClass MINUS_RECT	= RectClass (16, 0, 32, 16);
 ////////////////////////////////////////////////////////////////
 TREECTRL_SORT_CALLBACK	TreeCtrlClass::CurrentSortCallback	= NULL;
 TreeCtrlClass *			TreeCtrlClass::CurrentSorter			= NULL;
-uint32						TreeCtrlClass::CurrentSortUserData	= 0;
+uint32_t						TreeCtrlClass::CurrentSortUserData	= 0;
 const char *				TreeCtrlClass::ICON_FOLDER				= "if_treefld.tga";
 const char *				TreeCtrlClass::ICON_FOLDER_OPEN		= "if_treefld_open.tga";
 
@@ -593,7 +593,7 @@ TreeCtrlClass::Sort_Children_Alphabetically (TreeItemClass *parent)
 //
 ////////////////////////////////////////////////////////////////
 void
-TreeCtrlClass::Sort_Children (TreeItemClass *parent, TREECTRL_SORT_CALLBACK sort_callback, uint32 user_data)
+TreeCtrlClass::Sort_Children (TreeItemClass *parent, TREECTRL_SORT_CALLBACK sort_callback, uint32_t user_data)
 {
 	CurrentSortCallback	= sort_callback;
 	CurrentSorter			= this;
@@ -656,7 +656,7 @@ TreeCtrlClass::Alphabetic_Sort_Callback
 	TreeCtrlClass *	tree_ctrl,
 	TreeItemClass *	item1,
 	TreeItemClass *	item2,
-	uint32				user_param
+	uint32_t				user_param
 )
 {
 	//
@@ -916,7 +916,7 @@ TreeCtrlClass::On_Mouse_Wheel (int direction)
 //
 ////////////////////////////////////////////////////////////////
 bool
-TreeCtrlClass::On_Key_Down (uint32 key_id, uint32 key_data)
+TreeCtrlClass::On_Key_Down (uint32_t key_id, uint32_t key_data)
 {
 	bool handled = false;
 	bool is_dirty = true;

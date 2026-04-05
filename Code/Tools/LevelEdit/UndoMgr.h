@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 
@@ -101,8 +103,8 @@ public:
 	//
 	OPERATION_TYPE			Get_Operation_Type (void) const				{ return m_Type; }
 	void						Set_Operation_Type (OPERATION_TYPE type)	{ m_Type = type; }
-	DWORD						Get_ID (void) const								{ return m_dwOperationID; }
-	void						Set_ID (DWORD id)									{ m_dwOperationID = id; }
+	uint32_t						Get_ID (void) const								{ return m_dwOperationID; }
+	void						Set_ID (uint32_t id)									{ m_dwOperationID = id; }
 
 	//
 	//	Operation methods
@@ -143,7 +145,7 @@ private:
 			bool operator!= (const NodeStateClass &src) { return !((*this) == src); }
 			const NodeStateClass &operator= (const NodeStateClass &src);
 
-			//DWORD			node_id;
+			//uint32_t			node_id;
 			Matrix3D		transform;
 			Vector3		dimensions;
 			//NodeClass *	deleted_node;
@@ -153,7 +155,7 @@ private:
 	//////////////////////////////////////////////////////////
 	//	Private member data
 	//////////////////////////////////////////////////////////
-	DWORD											m_dwOperationID;
+	uint32_t											m_dwOperationID;
 	OPERATION_TYPE								m_Type;
 	DynamicVectorClass<NodeStateClass>	m_StateList;
 };
@@ -208,7 +210,7 @@ private:
 	//////////////////////////////////////////////////////////
 	//	Private member data
 	//////////////////////////////////////////////////////////
-	DWORD					m_dwNextOperationID;
+	uint32_t					m_dwNextOperationID;
 	int					m_iCurrentBuffer;
 	UndoBufferClass * m_pBuffers[UNDO_LEVELS];
 };

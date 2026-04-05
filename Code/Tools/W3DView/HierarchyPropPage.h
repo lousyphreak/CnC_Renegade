@@ -21,6 +21,8 @@
 
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 // HierarchyPropPage.h : header file
 //
@@ -55,8 +57,8 @@ public:
 protected:
 	// Generated message map functions
 	//{{AFX_MSG(CHierarchyPropPage)
-	virtual BOOL OnInitDialog();
-	afx_msg void OnDblclkSubObjectList(NMHDR* pNMHDR, LRESULT* pResult);
+	virtual int32_t OnInitDialog();
+	afx_msg void OnDblclkSubObjectList(NMHDR* pNMHDR, intptr_t* pResult);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 

@@ -42,7 +42,7 @@ int Find_Patch(OUT char *filename,int maxlen, ConfigFile &config)
   Wstring             path;
   Wstring             sku;
   char                gamePath[MAX_PATH];
-  bit8                ok;
+  int8_t                ok;
 
 
   while(1)
@@ -82,7 +82,7 @@ int Find_Patch(OUT char *filename,int maxlen, ConfigFile &config)
 //
 // Returns FALSE if not in the config file or invalid for some reason.
 //
-bit8 Get_App_Dir(OUT char *filename,int maxlen, ConfigFile &config,int index)
+int8_t Get_App_Dir(OUT char *filename,int maxlen, ConfigFile &config,int index)
 {
   char                string[128];
   Wstring             key;
@@ -111,17 +111,17 @@ bit8 Get_App_Dir(OUT char *filename,int maxlen, ConfigFile &config,int index)
 
   DBGMSG("CONFIG:   SKU = "<<sku.get()<<"  PATH = '"<<path.get()<<"'");
   HKEY   regKey;
-  LONG   regRetval;
-  /////////////DWORD  regPrevious;
+  int32_t   regRetval;
+  /////////////uint32_t  regPrevious;
   regRetval=RegOpenKeyEx(HKEY_LOCAL_MACHINE,path.get(),0,KEY_READ,&regKey);
   if (regRetval!=ERROR_SUCCESS)
   {
     DBGMSG("RegOpenKey failed");
     return(FALSE);
   }
-  DWORD  type;
-  DWORD  length=MAX_PATH;
-  regRetval=RegQueryValueEx(regKey,"InstallPath",NULL,&type,(uint8 *)gamePath,
+  uint32_t  type;
+  uint32_t  length=MAX_PATH;
+  regRetval=RegQueryValueEx(regKey,"InstallPath",NULL,&type,(uint8_t *)gamePath,
       &length);
   DBGMSG("GAME PATH = "<<gamePath);
   if ((regRetval!=ERROR_SUCCESS)||(type!=REG_SZ))

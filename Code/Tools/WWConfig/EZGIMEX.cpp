@@ -63,7 +63,7 @@
 
 int galloccount=0;
 
-void * GCALL galloc(long size)
+void * GCALL galloc(int32_t size)
 {
     ++galloccount;
     return(malloc((size_t)size));
@@ -78,10 +78,10 @@ int GCALL gfree(void *memptr)
 
 /* get motorola memory */
 
-unsigned long ggetm(void *src, int bytes)
+uint32_t ggetm(void *src, int bytes)
 {
-    unsigned char *s = (unsigned char *) src;
-    unsigned long value;
+    uint8_t *s = (uint8_t *) src;
+    uint32_t value;
 
     value = 0L;
     while (bytes--)
@@ -93,11 +93,11 @@ unsigned long ggetm(void *src, int bytes)
 
 /* get intel memory */
 
-unsigned long ggeti(void *src, int bytes)
+uint32_t ggeti(void *src, int bytes)
 {
-    unsigned char *s = (unsigned char *) src;
+    uint8_t *s = (uint8_t *) src;
     int            i = 0;
-    unsigned long  value;
+    uint32_t  value;
 
     value = 0L;
     while (bytes--)
@@ -110,16 +110,16 @@ unsigned long ggeti(void *src, int bytes)
 
 /* put motorolla memory */
 
-void gputm(void *dst, unsigned long data, int bytes)
+void gputm(void *dst, uint32_t data, int bytes)
 {
-    unsigned char *d = (unsigned char *) dst;
-    unsigned long pval;
+    uint8_t *d = (uint8_t *) dst;
+    uint32_t pval;
 
     data <<= (4-bytes)*8;
     while (bytes)
     {
         pval = data >>  24;
-        *d++  = (unsigned char) pval;
+        *d++  = (uint8_t) pval;
         data <<= 8;
         --bytes;
     }
@@ -127,15 +127,15 @@ void gputm(void *dst, unsigned long data, int bytes)
 
 /* put intel memory */
 
-void gputi(void *dst, unsigned long data, int bytes)
+void gputi(void *dst, uint32_t data, int bytes)
 {
-    unsigned char *d = (unsigned char *) dst;
-    unsigned long   pval;
+    uint8_t *d = (uint8_t *) dst;
+    uint32_t   pval;
 
     while (bytes)
     {
         pval = data;
-        *d++  = (unsigned char) pval;
+        *d++  = (uint8_t) pval;
         data >>= 8;
         --bytes;
     }
@@ -173,33 +173,32 @@ int GCALL gclose(GSTREAM *g)
     return(ok);
 }
 
-int GCALL gread(GSTREAM *g, void *buf, long size)
+int GCALL gread(GSTREAM *g, void *buf, int32_t size)
 {
     return(fread(buf, (size_t) 1, (size_t) size, (FILE *) g));
 }
 
-int GCALL gwrite(GSTREAM *g, void *buf, long size)
+int GCALL gwrite(GSTREAM *g, void *buf, int32_t size)
 {
     return(fwrite(buf, (size_t)1, (size_t)size, (FILE *) g));
 }
 
-int GCALL gseek(GSTREAM *g, long offset)
+int GCALL gseek(GSTREAM *g, int32_t offset)
 {
     return(!fseek((FILE *) g, offset, SEEK_SET));
 }
 
-long GCALL glen(GSTREAM *g)
+int32_t GCALL glen(GSTREAM *g)
 {
-    long len;
-    long oldpos = gtell(g);
+    int32_t len;
+    int32_t oldpos = gtell(g);
     fseek((FILE *)g, 0, SEEK_END);
     len = gtell(g);
     fseek((FILE *)g, oldpos, SEEK_SET);
     return(len);
 }
 
-long GCALL gtell(GSTREAM *g)
+int32_t GCALL gtell(GSTREAM *g)
 {
     return(ftell((FILE *) g));
 }
-

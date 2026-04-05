@@ -25,6 +25,8 @@
 
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 
 #include "formtoolbar.h"
@@ -61,12 +63,12 @@ public:
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(CMainFrame)
 	public:
-	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
+	virtual int32_t PreCreateWindow(CREATESTRUCT& cs);
 	virtual void OnFinalRelease();
 	protected:
-	virtual BOOL OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext);
-	virtual BOOL OnCommand(WPARAM wParam, LPARAM lParam);
-	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+	virtual int32_t OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext);
+	virtual int32_t OnCommand(uintptr_t wParam, intptr_t lParam);
+	virtual intptr_t WindowProc(uint32_t message, uintptr_t wParam, intptr_t lParam);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -135,7 +137,7 @@ protected:
 	afx_msg void OnCamSpeedIncrease();
 	afx_msg void OnCamSpeedDecrease();
 	afx_msg void OnCamReset();
-	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+	afx_msg void OnKeyDown(uint32_t nChar, uint32_t nRepCnt, uint32_t nFlags);
 	afx_msg void OnGenVis();
 	afx_msg void OnToggleVisWindow();
 	afx_msg void OnAniBackFrame();
@@ -321,7 +323,7 @@ protected:
 	afx_msg void OnExportFileUsageReport();
 	afx_msg void OnExportMissingTranslationReport();
 	afx_msg void OnExportLanguage();
-	afx_msg void OnInitMenuPopup(CMenu* pPopupMenu, UINT nIndex, BOOL bSysMenu);
+	afx_msg void OnInitMenuPopup(CMenu* pPopupMenu, uint32_t nIndex, int32_t bSysMenu);
 	afx_msg void OnAlwaysLocalExport();
 	afx_msg void OnExportInstallerLanguageVersion();
 	afx_msg void OnExtractInstallerRcStrings();
@@ -382,7 +384,7 @@ private:
 	CLevelEditDoc *			m_pCurrentDoc;
 	CImageList					m_ImageList;
 	MainDialogBarClass		m_TestBar;
-	DWORD							m_UpdateTimer;
+	uint32_t							m_UpdateTimer;
 	float							m_GrowthRate;
 	int							m_MaxCamProfiles;
 	DynamicVectorClass<StringClass>	m_CameraProfiles;

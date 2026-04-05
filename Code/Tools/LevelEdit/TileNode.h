@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __TILE_NODE_H
@@ -94,7 +96,7 @@ public:
 	PhysClass *	Peek_Physics_Obj (void)	const		{ return m_PhysObj; }
 	bool			Is_Static (void) const				{ return true; }
 	bool			Can_Be_Rotated_Freely (void) const	{ return true; }
-	void			Set_ID (uint32 id);
+	void			Set_ID (uint32_t id);
 	void			Update_Cached_Vis_IDs (void);
 
 	void			Pre_Export (void);
@@ -125,8 +127,8 @@ protected:
 	//	Protected member data
 	//////////////////////////////////////////////////////////////////
 	StaticPhysClass *	m_PhysObj;
-	uint32				m_VisObjectID;
-	uint32				m_VisSectorID;
+	uint32_t				m_VisObjectID;
+	uint32_t				m_VisSectorID;
 };
 
 
@@ -134,7 +136,7 @@ protected:
 //	Set_ID
 //////////////////////////////////////////////////////////////////
 inline void
-TileNodeClass::Set_ID (uint32 id)
+TileNodeClass::Set_ID (uint32_t id)
 {
 	if (m_PhysObj != NULL) {
 		m_PhysObj->Set_ID (id);

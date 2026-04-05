@@ -544,7 +544,7 @@ NativeWOLUserList::~NativeWOLUserList()
 
 RefPtr<UserData> FindUserInList(const wchar_t* username, const UserList& list)
 	{
-	for (unsigned int index = 0; index < list.size(); index++)
+	for (uint32_t index = 0; index < list.size(); index++)
 		{
 		const WideStringClass& name = list[index]->GetName();
 

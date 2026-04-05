@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // EmitterUserPropPage.h : header file
 //
@@ -53,7 +55,7 @@ public:
 	// ClassWizard generate virtual function overrides
 	//{{AFX_VIRTUAL(EmitterUserPropPageClass)
 	public:
-	virtual BOOL OnApply();
+	virtual int32_t OnApply();
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 	//}}AFX_VIRTUAL
@@ -62,7 +64,7 @@ public:
 protected:
 	// Generated message map functions
 	//{{AFX_MSG(EmitterUserPropPageClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	afx_msg void OnChangeProgrammerSettingsEdit();
 	afx_msg void OnSelchangeTypeCombo();
 	//}}AFX_MSG

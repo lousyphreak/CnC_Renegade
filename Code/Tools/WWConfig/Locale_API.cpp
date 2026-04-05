@@ -36,6 +36,7 @@
 
 #include <Windows.h>
 #include <wtypes.h>
+#include <cstdint>
 #include "locale.h"
 #include "locale_api.h"
 #include "rawfile.h"
@@ -68,7 +69,7 @@ int		LanguageID		= 0;
 /* LOCALE API                                                               */
 /****************************************************************************/
 WCHAR *		Remove_Quotes_Around_String ( WCHAR *old_string );
-void *	 	Load_File ( const CHAR *filename, long *filesize );
+void *	 	Load_File ( const CHAR *filename, int32_t *filesize );
 
 //=============================================================================
 // These are wrapper functions around the LOCALE_ functions.  I made these to 
@@ -132,7 +133,7 @@ int Locale_Init	( int language, char *file )
 			case 1252:
 				{
 					LANGID	langid	= GetSystemDefaultLangID();
-					WORD	plangid = PRIMARYLANGID( langid );
+					uint16_t	plangid = PRIMARYLANGID( langid );
 
 					switch( plangid ) {
 
@@ -194,7 +195,7 @@ int Locale_Init	( int language, char *file )
 		//---------------------------------------------------------------------
 		// Create a file buffer that holds all the strings in the file.
 		//---------------------------------------------------------------------
-		long		filesize;
+		int32_t		filesize;
 		HRSRC 		hRsrc;
 		HGLOBAL		hGlobal;
 		int			PrimaryLanguage = LANG_NEUTRAL;
@@ -457,9 +458,9 @@ WCHAR *Remove_Quotes_Around_String ( WCHAR *old_string )
  *   10/17/1994 JLB : Created.													*
  *==============================================================================*/
 
-void * Load_File ( const char *filename, long *filesize )
+void * Load_File ( const char *filename, int32_t *filesize )
 {
-	int					size, bytes_read;
+	int32_t				size, bytes_read;
 	void				*ptr = NULL;
 //	StandardFileClass	file;
 	RawFileClass		file;
@@ -507,8 +508,7 @@ void * Load_File ( const char *filename, long *filesize )
 	}
 
 	if ( filesize != NULL ) {
-		*filesize = (long)size;
+		*filesize = size;
 	}
 	return( ptr );
 }
-

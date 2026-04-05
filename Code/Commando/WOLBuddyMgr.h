@@ -36,6 +36,8 @@
 #ifndef __WOLBUDDYMGR_H__
 #define __WOLBUDDYMGR_H__
 
+#include <cstdint>
+
 #include <WWOnline\RefPtr.h>
 #include <WWOnline\WOLSession.h>
 #include <WWOnline\WOLPageMsg.h>
@@ -217,7 +219,7 @@ class WOLBuddyMgr :
 		PageList mPageList;
 		PageList mInvitations;
 		WideStringClass mLastPagersName;
-		unsigned long mHidePagedDialog;
+		uint32_t mHidePagedDialog;
 
 		RefPtr<WWOnline::UserData> mPendingJoin;
 		};

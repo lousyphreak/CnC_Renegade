@@ -37,6 +37,8 @@
 #ifndef	EXPLOSION_H
 #define	EXPLOSION_H
 
+#include <cstdint>
+
 #ifndef	ALWAYS_H
 	#include "always.h"
 #endif
@@ -57,7 +59,7 @@ class	ExplosionDefinitionClass : public DefinitionClass {
 public:
 	ExplosionDefinitionClass( void );		
 
-	virtual uint32								Get_Class_ID( void ) const;
+	virtual uint32_t								Get_Class_ID( void ) const;
 	virtual PersistClass *					Create( void ) const					{ WWASSERT( 0 ); return NULL; }
 	virtual bool								Save( ChunkSaveClass &csave );
 	virtual bool								Load( ChunkLoadClass &cload );

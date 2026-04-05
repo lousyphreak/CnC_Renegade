@@ -37,6 +37,8 @@
 #ifndef	ACTIONPARAMS_H
 #define	ACTIONPARAMS_H
 
+#include <cstdint>
+
 #ifndef	ALWAYS_H
 	#include "always.h"
 #endif
@@ -80,7 +82,7 @@ public:
 	ActionParamsStruct( void );
 
 	void	Set_Basic( GameObjObserverClass * script, float priority, int action_id, SoldierAIState ai_state = NO_AI_STATE_CHANGE ) { ObserverID = script->Get_ID(); Priority = priority; ActionID = action_id; AIState = ai_state; }
-   void	Set_Basic( long observer_id, float priority, int action_id, SoldierAIState ai_state = NO_AI_STATE_CHANGE ) { ObserverID = observer_id; Priority = priority; ActionID = action_id; AIState = ai_state; }
+   void	Set_Basic( int32_t observer_id, float priority, int action_id, SoldierAIState ai_state = NO_AI_STATE_CHANGE ) { ObserverID = observer_id; Priority = priority; ActionID = action_id; AIState = ai_state; }
 
 	void	Set_Look( const Vector3 & location, float duration ) { LookLocation = location; LookDuration = duration; }	
 	void	Set_Look( GameObject * object, float duration ) { LookObject = object; LookDuration = duration; }
@@ -106,7 +108,7 @@ public:
 	// Note:  all of these must be saved in SafeActionParamsStruct::Save
 	int					Priority;
 	int					ActionID;
-	long					ObserverID;
+	int32_t				ObserverID;
 
 	Vector3				LookLocation;
 	GameObject *		LookObject;
@@ -225,4 +227,3 @@ void	inline ActionParamsStruct::Set_Look( const Vector3 &obj_pos, float angle,  
 }
 
 #endif	// ACTIONPARAMS_H
-

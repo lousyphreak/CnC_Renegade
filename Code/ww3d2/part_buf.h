@@ -35,6 +35,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef PART_BUF_H
@@ -61,7 +63,7 @@ struct NewParticleStruct
 {
 	Vector3			Position;	// Particle position in worldspace.
 	Vector3			Velocity;	// Particle velocity in worldspace.
-	unsigned int	TimeStamp;	// Millisecond time at creation.
+	uint32_t	TimeStamp;	// Millisecond time at creation.
 
 	// These are needed by DynamicVectorClass (will probably never be used).
 	bool operator != (const NewParticleStruct & p)
@@ -87,7 +89,7 @@ class ParticleBufferClass : public RenderObjClass
 {
 	public:
 
-		ParticleBufferClass(ParticleEmitterClass *emitter, unsigned int buffer_size,
+		ParticleBufferClass(ParticleEmitterClass *emitter, uint32_t buffer_size,
 			ParticlePropertyStruct<Vector3> &color, ParticlePropertyStruct<float> &opacity,
 			ParticlePropertyStruct<float> &size, ParticlePropertyStruct<float> &rotation,
 			float orient_rnd, ParticlePropertyStruct<float> &frame,
@@ -212,7 +214,7 @@ class ParticleBufferClass : public RenderObjClass
 
 		
 		// This is a utility function only meant to be called by the particle emitter.
-		unsigned int			Get_Buffer_Size(void) const		{ return MaxNum; }
+		uint32_t			Get_Buffer_Size(void) const		{ return MaxNum; }
 
 		// Note: Caller IS RESPONSIBLE for freeing any memory allocated by these calls
 		void						Get_Color_Key_Frames (ParticlePropertyStruct<Vector3>	&colors) const;
@@ -224,7 +226,7 @@ class ParticleBufferClass : public RenderObjClass
 		float						Get_Initial_Orientation_Random (void) const { return InitialOrientationRandom; }
 
 		// Total Active Particle Buffer Count
-		static unsigned int	Get_Total_Active_Count( void )	{ return TotalActiveCount; }
+		static uint32_t	Get_Total_Active_Count( void )	{ return TotalActiveCount; }
 
 		// Global control of particle LOD.  
 		static void				Set_LOD_Max_Screen_Size(int lod_level,float max_screen_size);
@@ -257,7 +259,7 @@ class ParticleBufferClass : public RenderObjClass
 		void Update_Bounding_Box(void);
 
 		// Helper function for Render_Particles and Render_LineGroup
-		void Generate_APT(ShareBufferClass <unsigned int> **apt,unsigned int &active_point_count);
+		void Generate_APT(ShareBufferClass <uint32_t> **apt,uint32_t &active_point_count);
 		void Combine_Color_And_Alpha();
 
 		// Get new particles from the emitter and write them into the circular
@@ -271,14 +273,14 @@ class ParticleBufferClass : public RenderObjClass
 
 		// Update all living non-new particles according to time elapsed since
 		// last update.
-		void Update_Non_New_Particles(unsigned int elapsed);
+		void Update_Non_New_Particles(uint32_t elapsed);
 
 		// Seperate circular buffer used by the emitter to pass new particles.
 		// It is implemented as an array, start and end indices and a count (to
 		// differentiate between completely full and completely empty).
 		NewParticleStruct *	NewParticleQueue;
-		unsigned int			NewParticleQueueStart;
-		unsigned int			NewParticleQueueEnd;
+		uint32_t			NewParticleQueueStart;
+		uint32_t			NewParticleQueueEnd;
 		int						NewParticleQueueCount;
 
 		// State global to the entire particle buffer.
@@ -286,8 +288,8 @@ class ParticleBufferClass : public RenderObjClass
 		int				FrameMode;		// frame mode (settings found in w3d_file.h - 1x1..16x16)
 		Vector3			Accel;			// Worldspace acceleration per ms^2.
 		bool				HasAccel;		// Is the acceleration non-zero?
-		unsigned int	MaxAge;			// Maximum age in milliseconds.
-		unsigned int	LastUpdateTime;// Time at last update.
+		uint32_t	MaxAge;			// Maximum age in milliseconds.
+		uint32_t	LastUpdateTime;// Time at last update.
 		bool				IsEmitterDead;
 		float				MaxSize;			// Used for BBox calculations
 
@@ -297,10 +299,10 @@ class ParticleBufferClass : public RenderObjClass
 		// particles are updated differently).
 		// Besides the head/tail indices, a count is used for each buffer to
 		// distinguish between full and empty.
-		unsigned int 	MaxNum;		// Maximum number of particles.
-		unsigned int	Start;		// Start of existing (non-new) particles.
-		unsigned int	End;			// End of existing (non-new) particles.
-		unsigned int	NewEnd;		// End of new particles.
+		uint32_t 	MaxNum;		// Maximum number of particles.
+		uint32_t	Start;		// Start of existing (non-new) particles.
+		uint32_t	End;			// End of existing (non-new) particles.
+		uint32_t	NewEnd;		// End of new particles.
 		int				NonNewNum;  // Non-new entry count (to know when empty).
 		int				NewNum;     // New entry count (to know when empty).
 
@@ -319,29 +321,29 @@ class ParticleBufferClass : public RenderObjClass
 		// if rotation and orientation randomizers, and all rotation keyframes
 		// are all zero, then all of the arrays will be NULL (including the
 		// Values array).
-		unsigned int	NumColorKeyFrames;
-		unsigned int *	ColorKeyFrameTimes;		// 0th entry is always 0
+		uint32_t	NumColorKeyFrames;
+		uint32_t *	ColorKeyFrameTimes;		// 0th entry is always 0
 		Vector3 *		ColorKeyFrameValues;
 		Vector3 *		ColorKeyFrameDeltas;
-		unsigned int	NumAlphaKeyFrames;
-		unsigned int *	AlphaKeyFrameTimes;		// 0th entry is always 0
+		uint32_t	NumAlphaKeyFrames;
+		uint32_t *	AlphaKeyFrameTimes;		// 0th entry is always 0
 		float *			AlphaKeyFrameValues;
 		float *			AlphaKeyFrameDeltas;
-		unsigned int	NumSizeKeyFrames;
-		unsigned int *	SizeKeyFrameTimes;		// 0th entry is always 0
+		uint32_t	NumSizeKeyFrames;
+		uint32_t *	SizeKeyFrameTimes;		// 0th entry is always 0
 		float *			SizeKeyFrameValues;
 		float *			SizeKeyFrameDeltas;
-		unsigned int	NumRotationKeyFrames;
-		unsigned int * RotationKeyFrameTimes;	// 0th entry is always 0
+		uint32_t	NumRotationKeyFrames;
+		uint32_t * RotationKeyFrameTimes;	// 0th entry is always 0
 		float *			RotationKeyFrameValues;	// In rotations per millisecond
 		float *			HalfRotationKeyFrameDeltas; // (* 0.5f)
 		float *			OrientationKeyFrameValues;	// Rotation preintegrated to keyframe times
-		unsigned int	NumFrameKeyFrames;
-		unsigned int * FrameKeyFrameTimes;		// 0th entry is always 0
+		uint32_t	NumFrameKeyFrames;
+		uint32_t * FrameKeyFrameTimes;		// 0th entry is always 0
 		float *			FrameKeyFrameValues;
 		float *			FrameKeyFrameDeltas;
-		unsigned int	NumBlurTimeKeyFrames;
-		unsigned int * BlurTimeKeyFrameTimes;		// 0th entry is always 0
+		uint32_t	NumBlurTimeKeyFrames;
+		uint32_t * BlurTimeKeyFrameTimes;		// 0th entry is always 0
 		float *			BlurTimeKeyFrameValues;
 		float *			BlurTimeKeyFrameDeltas;
 
@@ -355,19 +357,19 @@ class ParticleBufferClass : public RenderObjClass
 		// which is why each property has its own NumXXXRandomEntries variable.
 		// If a randomizer is zero and the property has no keyframes, the table
 		// will be NULL since it will never be used (property is constant)).
-		unsigned int	NumRandomColorEntriesMinus1;			// 2^n - 1 so can be used as a mask also
+		uint32_t	NumRandomColorEntriesMinus1;			// 2^n - 1 so can be used as a mask also
 		Vector3 *		RandomColorEntries;
-		unsigned int	NumRandomAlphaEntriesMinus1;			// 2^n - 1 so can be used as a mask also
+		uint32_t	NumRandomAlphaEntriesMinus1;			// 2^n - 1 so can be used as a mask also
 		float *			RandomAlphaEntries;
-		unsigned int	NumRandomSizeEntriesMinus1;			// 2^n - 1 so can be used as a mask also
+		uint32_t	NumRandomSizeEntriesMinus1;			// 2^n - 1 so can be used as a mask also
 		float *			RandomSizeEntries;
-		unsigned int	NumRandomRotationEntriesMinus1;		// 2^n - 1 so can be used as a mask also
+		uint32_t	NumRandomRotationEntriesMinus1;		// 2^n - 1 so can be used as a mask also
 		float *			RandomRotationEntries;
-		unsigned int	NumRandomOrientationEntriesMinus1;	// 2^n - 1 so can be used as a mask also
+		uint32_t	NumRandomOrientationEntriesMinus1;	// 2^n - 1 so can be used as a mask also
 		float *			RandomOrientationEntries;
-		unsigned int	NumRandomFrameEntriesMinus1;			// 2^n - 1 so can be used as a mask also
+		uint32_t	NumRandomFrameEntriesMinus1;			// 2^n - 1 so can be used as a mask also
 		float *			RandomFrameEntries;
-		unsigned int	NumRandomBlurTimeEntriesMinus1;		// 2^n - 1 so can be used as a mask also
+		uint32_t	NumRandomBlurTimeEntriesMinus1;		// 2^n - 1 so can be used as a mask also
 		float *			RandomBlurTimeEntries;
 		
 		Vector3			ColorRandom;
@@ -397,12 +399,12 @@ class ParticleBufferClass : public RenderObjClass
 		ShareBufferClass<Vector3> *	Color;			
 		ShareBufferClass<float> *		Alpha;
 		ShareBufferClass<float> *		Size;
-		ShareBufferClass<uint8> *		Frame;
+		ShareBufferClass<uint8_t> *		Frame;
 		ShareBufferClass<float> *		UCoord;			// Only used for line groups, uses Frame keyframes
 		ShareBufferClass<Vector3> *	TailPosition;	// Only used for line groups
 		ShareBufferClass<Vector4> *	TailDiffuse;	// Only used for line groups
-		ShareBufferClass<uint8> *		Orientation;
-		ShareBufferClass<unsigned int> *	APT;
+		ShareBufferClass<uint8_t> *		Orientation;
+		ShareBufferClass<uint32_t> *	APT;
 
 		// Do we keep two ping-pong position buffers (for collision and possibly other effects
 		// which need the previous frames position as well as this frames)
@@ -410,7 +412,7 @@ class ParticleBufferClass : public RenderObjClass
 
 		// Additional per-particle state:
 		Vector3 *							Velocity;	// World units per millisecond.
-		unsigned int *						TimeStamp;	// Millisecond time at creation.
+		uint32_t *						TimeStamp;	// Millisecond time at creation.
 
 		// This pointer is used for synchronization - the emitter is called to
 		// add new particles at the start of the buffers render function - to
@@ -424,11 +426,11 @@ class ParticleBufferClass : public RenderObjClass
 		// less than the threshold is not rendered. So if DecimationThreshold
 		// is 0 (the minimum value), all particles are rendered - if it is 16
 		// (the maximum value) none are rendered.
-		unsigned int						DecimationThreshold;
-		static const unsigned int		PermutationArray[16];
+		uint32_t						DecimationThreshold;
+		static const uint32_t		PermutationArray[16];
 
 		// LOD values
-		unsigned int						LodCount;
+		uint32_t						LodCount;
 		float									Cost[17];	// Cost array needs one entry for each LOD level
 		float									Value[18];	// Value array needs one more entry than # of LODs
 		float									LodBias;
@@ -437,7 +439,7 @@ class ParticleBufferClass : public RenderObjClass
 		float									ProjectedArea;
 		
 		// Total Active Particle Buffer Count
-		static unsigned int				TotalActiveCount;
+		static uint32_t				TotalActiveCount;
 
 		// Static array of screen-size clamps for the 17 possible LOD levels a
 		// particle buffer can have. We can change these from being global to

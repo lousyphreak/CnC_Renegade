@@ -371,7 +371,7 @@ CheckBoxCtrlClass::On_Kill_Focus (DialogControlClass *focus)
 //
 ////////////////////////////////////////////////////////////////
 bool
-CheckBoxCtrlClass::On_Key_Down (uint32 key_id, uint32 key_data)
+CheckBoxCtrlClass::On_Key_Down (uint32_t key_id, uint32_t key_data)
 {
 	bool handled = false;
 	bool is_dirty = true;

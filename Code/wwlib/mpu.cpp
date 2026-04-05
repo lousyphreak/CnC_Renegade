@@ -44,8 +44,8 @@
 typedef union {
 	LARGE_INTEGER LargeInt;
 	struct QuadPart {
-		unsigned long LowPart;
-		unsigned long HighPart;
+		uint32_t LowPart;
+		uint32_t HighPart;
 	} QuadPart;
 } QuadValue;
 
@@ -65,13 +65,13 @@ typedef union {
  * HISTORY:                                                                                    *
  *   05/20/1997 JLB : Created.                                                                 *
  *=============================================================================================*/
-unsigned long Get_CPU_Rate(unsigned long & high)
+uint32_t Get_CPU_Rate(uint32_t & high)
 {
 	union {
 		LARGE_INTEGER LargeInt;
 		struct {
-			unsigned long LowPart;
-			unsigned long HighPart;
+			uint32_t LowPart;
+			uint32_t HighPart;
 		} QuadPart;
 	} value;
 
@@ -84,7 +84,7 @@ unsigned long Get_CPU_Rate(unsigned long & high)
 }
 
 
-unsigned long Get_CPU_Clock(unsigned long & high)
+uint32_t Get_CPU_Clock(uint32_t & high)
 {
 	int h;
 	int l;
@@ -121,8 +121,8 @@ unsigned long Get_CPU_Clock(unsigned long & high)
 // # of MHz to allow samplings to deviate from average of samplings.
 #define TOLERANCE			1
 
-static unsigned long TSC_Low;
-static unsigned long TSC_High;
+static uint32_t TSC_Low;
+static uint32_t TSC_High;
 
 void RDTSC(void)
 {
@@ -138,16 +138,16 @@ void RDTSC(void)
 int Get_RDTSC_CPU_Speed(void)
 {
 	LARGE_INTEGER t0,t1;
-	DWORD	freq=0;						// Most current freq. calc.
-	DWORD	freq2=0;						// 2nd most current freq. calc.
-	DWORD	freq3=0;						// 3rd most current freq. calc.
-	DWORD	total;						// Sum of previous three freq. calc.
+	uint32_t	freq=0;						// Most current freq. calc.
+	uint32_t	freq2=0;						// 2nd most current freq. calc.
+	uint32_t	freq3=0;						// 3rd most current freq. calc.
+	uint32_t	total;						// Sum of previous three freq. calc.
 	int	tries=0;						// Number of times a calculation has been
 												// made on this call
-	DWORD	total_cycles=0, cycles;	// Clock cycles elapsed during test
-	DWORD	stamp0, stamp1;			// Time Stamp for beginning and end of test
-	DWORD	total_ticks=0, ticks;	// Microseconds elapsed during test
-// DWORD	current = 0;				// Elapsed time during loop
+	uint32_t	total_cycles=0, cycles;	// Clock cycles elapsed during test
+	uint32_t	stamp0, stamp1;			// Time Stamp for beginning and end of test
+	uint32_t	total_ticks=0, ticks;	// Microseconds elapsed during test
+// uint32_t	current = 0;				// Elapsed time during loop
 	LARGE_INTEGER count_freq;			// Hi-Res Performance Counter frequency
 
 
@@ -155,7 +155,7 @@ int Get_RDTSC_CPU_Speed(void)
 
 
 	HANDLE process = GetCurrentProcess();
-	DWORD processPri = GetPriorityClass(process);
+	uint32_t processPri = GetPriorityClass(process);
 	SetPriorityClass(process, REALTIME_PRIORITY_CLASS);
 
 	HANDLE thread = GetCurrentThread();
@@ -193,7 +193,7 @@ int Get_RDTSC_CPU_Speed(void)
 		** Loop until 50 ticks have passed since last read of hi-res counter.
 		** This accounts for overhead later.
 		*/
-		while ( (DWORD)t1.LowPart - (DWORD)t0.LowPart<50) {
+		while ( (uint32_t)t1.LowPart - (uint32_t)t0.LowPart<50) {
 			QueryPerformanceCounter(&t1);
 		}
 
@@ -207,7 +207,7 @@ int Get_RDTSC_CPU_Speed(void)
 		** Loop until 1000 ticks have passed since last read of hi-res counter.
 		** This allows for elapsed time for sampling.
 		*/
-		while ( (DWORD)t1.LowPart - (DWORD)t0.LowPart < 1000 ) {
+		while ( (uint32_t)t1.LowPart - (uint32_t)t0.LowPart < 1000 ) {
 			QueryPerformanceCounter(&t1);
 		}
 
@@ -217,11 +217,11 @@ int Get_RDTSC_CPU_Speed(void)
 
 		cycles = stamp1 - stamp0;					// # of cycles passed between reads
 
-		double bigticks = (double)((DWORD)t1.LowPart - (DWORD)t0.LowPart);
+		double bigticks = (double)((uint32_t)t1.LowPart - (uint32_t)t0.LowPart);
 		assert((bigticks * 100000.0) > bigticks);
 		bigticks = bigticks * 100000.0;						// Convert ticks to hundred
 															//   thousandths of a tick
-		ticks = (DWORD)(bigticks / (double)(count_freq.LowPart / 10));
+		ticks = (uint32_t)(bigticks / (double)(count_freq.LowPart / 10));
 															// Hundred Thousandths of a
 															//   Ticks / ( 10 ticks/second )
 															//   = microseconds (us)

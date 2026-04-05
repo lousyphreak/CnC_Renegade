@@ -38,6 +38,8 @@
 #ifndef PROGRESS_H
 #define PROGRESS_H
 
+#include <cstdint>
+
 #include "always.h"
 
 class Progress_Meter_Class
@@ -106,7 +108,7 @@ public:
 		}
 	}
 
-	BOOL Cancelled () { return Cancel_Requested; }
+	int32_t Cancelled () { return Cancel_Requested; }
 
 	float Increment;
 
@@ -119,7 +121,7 @@ private:
 	float Amount_Done;
 	float Accum;
 
-	BOOL Cancel_Requested;
+	int32_t Cancel_Requested;
 };
 
 #endif /* PROGRESS_H */

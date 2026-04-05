@@ -36,6 +36,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 
 #ifndef CHUNKIO_H
@@ -92,37 +94,37 @@ struct ChunkHeader
 {
 	// Functions.
 	ChunkHeader() : ChunkType(0), ChunkSize(0) {}
-	ChunkHeader(uint32 type, uint32 size) {ChunkType = type; ChunkSize = size;}
+	ChunkHeader(uint32_t type, uint32_t size) {ChunkType = type; ChunkSize = size;}
 
 	// Use these accessors to ensure you correctly deal with the data in the chunk header
-	void		Set_Type(uint32 type)					{ ChunkType = type; }
-	uint32	Get_Type(void)								{ return ChunkType; }
-	void		Set_Size(uint32 size)					{ ChunkSize &= 0x80000000; ChunkSize |= (size & 0x7FFFFFFF); }
-	void		Add_Size(uint32 add)						{ Set_Size(Get_Size() + add); }
-	uint32	Get_Size(void)								{ return (ChunkSize & 0x7FFFFFFF); }
+	void		Set_Type(uint32_t type)					{ ChunkType = type; }
+	uint32_t	Get_Type(void)								{ return ChunkType; }
+	void		Set_Size(uint32_t size)					{ ChunkSize &= 0x80000000; ChunkSize |= (size & 0x7FFFFFFF); }
+	void		Add_Size(uint32_t add)						{ Set_Size(Get_Size() + add); }
+	uint32_t	Get_Size(void)								{ return (ChunkSize & 0x7FFFFFFF); }
 	void		Set_Sub_Chunk_Flag(bool onoff)		{ if (onoff) { ChunkSize |= 0x80000000; } else { ChunkSize &= 0x7FFFFFFF; } }
 	int		Get_Sub_Chunk_Flag(void)				{ return (ChunkSize & 0x80000000); }
 
 	// Chunk type and size.
 	// Note: MSB of ChunkSize is used to indicate whether this chunk
 	// contains other chunks or data.
-	uint32 ChunkType;
-	uint32 ChunkSize;
+	uint32_t ChunkType;
+	uint32_t ChunkSize;
 };
 
 struct MicroChunkHeader
 {
 	MicroChunkHeader() {}
-	MicroChunkHeader(uint8 type, uint8 size) { ChunkType = type, ChunkSize = size; }
+	MicroChunkHeader(uint8_t type, uint8_t size) { ChunkType = type, ChunkSize = size; }
 
-	void		Set_Type(uint8 type)						{ ChunkType = type; }
-	uint8		Get_Type(void)								{ return ChunkType; }
-	void		Set_Size(uint8 size)						{ ChunkSize = size; }
-	void		Add_Size(uint8 add)						{ Set_Size(Get_Size() + add); }
-	uint8		Get_Size(void)								{ return ChunkSize; }
+	void		Set_Type(uint8_t type)						{ ChunkType = type; }
+	uint8_t		Get_Type(void)								{ return ChunkType; }
+	void		Set_Size(uint8_t size)						{ ChunkSize = size; }
+	void		Add_Size(uint8_t add)						{ Set_Size(Get_Size() + add); }
+	uint8_t		Get_Size(void)								{ return ChunkSize; }
 
-	uint8	ChunkType;
-	uint8	ChunkSize;
+	uint8_t	ChunkType;
+	uint8_t	ChunkSize;
 };
 
 
@@ -139,20 +141,20 @@ public:
 	ChunkSaveClass(FileClass * file);
 
 	// Chunk methods
-	bool					Begin_Chunk(uint32 id);
+	bool					Begin_Chunk(uint32_t id);
 	bool					End_Chunk();
 	int					Cur_Chunk_Depth();
 
 	// Micro chunk methods
-	bool					Begin_Micro_Chunk(uint32 id);
+	bool					Begin_Micro_Chunk(uint32_t id);
 	bool					End_Micro_Chunk();
 
 	// Write data into the file
-	uint32				Write(const void *buf, uint32 nbytes);
-	uint32				Write(const IOVector2Struct & v);
-	uint32				Write(const IOVector3Struct & v);
-	uint32				Write(const IOVector4Struct & v);
-	uint32				Write(const IOQuaternionStruct & q);
+	uint32_t				Write(const void *buf, uint32_t nbytes);
+	uint32_t				Write(const IOVector2Struct & v);
+	uint32_t				Write(const IOVector3Struct & v);
+	uint32_t				Write(const IOVector4Struct & v);
+	uint32_t				Write(const IOQuaternionStruct & q);
 
 private:
 
@@ -188,30 +190,30 @@ public:
 	// Chunk methods
 	bool					Open_Chunk();
 	bool					Close_Chunk();
-	uint32				Cur_Chunk_ID();
-	uint32				Cur_Chunk_Length();
+	uint32_t				Cur_Chunk_ID();
+	uint32_t				Cur_Chunk_Length();
 	int					Cur_Chunk_Depth();
 	int					Contains_Chunks();
 
 	// Micro Chunk methods
 	bool					Open_Micro_Chunk();
 	bool					Close_Micro_Chunk();
-	uint32				Cur_Micro_Chunk_ID();
-	uint32				Cur_Micro_Chunk_Length();
+	uint32_t				Cur_Micro_Chunk_ID();
+	uint32_t				Cur_Micro_Chunk_Length();
 
 	// Read a block of bytes from the output stream.
-	uint32				Read(void *buf, uint32 nbytes);
-	uint32				Read(IOVector2Struct * v);
-	uint32				Read(IOVector3Struct * v);
-	uint32				Read(IOVector4Struct * v);
-	uint32				Read(IOQuaternionStruct * q);
+	uint32_t				Read(void *buf, uint32_t nbytes);
+	uint32_t				Read(IOVector2Struct * v);
+	uint32_t				Read(IOVector3Struct * v);
+	uint32_t				Read(IOVector4Struct * v);
+	uint32_t				Read(IOQuaternionStruct * q);
 
 	// Seek over a block of bytes in the stream (same as Read but don't copy the data to a buffer)
-	uint32				Seek(uint32 nbytes);
+	uint32_t				Seek(uint32_t nbytes);
 
 	// Sneak peek at the next chunk that will be opened.  Beware, if you need
 	// this, then you are probably hacking so be careful!
-	bool					Peek_Next_Chunk(uint32 * set_id,uint32 * set_size);
+	bool					Peek_Next_Chunk(uint32_t * set_id,uint32_t * set_size);
 
 private:
 
@@ -221,7 +223,7 @@ private:
 
 	// Chunk reading support
 	int					StackIndex;
-	uint32				PositionStack[MAX_STACK_DEPTH];
+	uint32_t				PositionStack[MAX_STACK_DEPTH];
 	ChunkHeader			HeaderStack[MAX_STACK_DEPTH];
 
 	// Micro-chunk reading support

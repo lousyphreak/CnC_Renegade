@@ -178,7 +178,7 @@ PathfindSectorClass::Load_Variables (ChunkLoadClass &cload)
 			
 			case VARID_PORTAL_ID:
 			{
-				uint32 portal_id = 0;				
+				uint32_t portal_id = 0;				
 				cload.Read (&portal_id, sizeof (portal_id));
 				if (portal_id < PathfindClass::TEMP_PORTAL_ID_START) {
 					m_PortalList.Add (portal_id);
@@ -225,7 +225,7 @@ PathfindSectorClass::Peek_Portal (int index)
 //
 ///////////////////////////////////////////////////////////////////////////
 void
-PathfindSectorClass::Remove_Portal (uint32 portal_id)
+PathfindSectorClass::Remove_Portal (uint32_t portal_id)
 {
 	//
 	//	Loop over all the portals until we've found the one

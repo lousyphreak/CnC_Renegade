@@ -62,7 +62,7 @@
 //////////////////////////////////////////////////////////////////////////
 //	Local Prototypes
 //////////////////////////////////////////////////////////////////////////
-UINT fnPathfindDialogThread (DWORD dwparam1, DWORD dwparam2, DWORD, HRESULT *, HWND *);
+uint32_t fnPathfindDialogThread (uint32_t dwparam1, uint32_t dwparam2, uint32_t, int32_t *, HWND *);
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -489,13 +489,13 @@ PathfindSectorBuilderClass::Compress_Sectors_For_Pathfind (void)
 	//
 	//	Compress the sectors into the largest possible rectangular regions
 	//
-	DWORD before_ticks = ::GetTickCount ();
+	uint32_t before_ticks = ::GetTickCount ();
 	
 	Post_Process_Floodfill_For_Level_Features ();
 	Compress_Sectors ();
 	Generate_Portals ();
 
-	DWORD after_ticks = ::GetTickCount ();
+	uint32_t after_ticks = ::GetTickCount ();
 
 	WWDEBUG_SAY(("Time spent compressing: %d secs.\r\n", (after_ticks-before_ticks)/1000));
 	
@@ -2950,13 +2950,13 @@ PathfindSectorBuilderClass::Path_Across_Feature (LevelFeatureClass *level_featur
 // fnPathfindDialogThread
 //
 ////////////////////////////////////////////////////////////////////////////
-UINT
+uint32_t
 fnPathfindDialogThread
 (
-	DWORD dwparam1,
-	DWORD dwparam2,
-	DWORD /*dwparam3*/,
-	HRESULT* /*presult*/,
+	uint32_t dwparam1,
+	uint32_t dwparam2,
+	uint32_t /*dwparam3*/,
+	int32_t* /*presult*/,
 	HWND* /*phmain_wnd*/
 )
 {
@@ -2983,7 +2983,7 @@ fnPathfindDialogThread
 void
 PathfindSectorBuilderClass::Show_Dialog (void)
 {
-	::Create_UI_Thread (fnPathfindDialogThread, 0, (DWORD)&m_pDialog, 0, NULL, NULL);
+	::Create_UI_Thread (fnPathfindDialogThread, 0, (uint32_t)&m_pDialog, 0, NULL, NULL);
 	return ;
 }
 

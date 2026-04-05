@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef WW3D_H
@@ -161,12 +163,12 @@ public:
 	** By calling the Sync function, the application can move the ww3d library time forward.  This
 	** will control things like animated uv-offset mappers and render object animations.
 	*/
-	static void					Sync( unsigned int sync_time );
-	static unsigned int		Get_Sync_Time(void) { return SyncTime; }
-   static unsigned int     Get_Frame_Time(void) { return SyncTime - PreviousSyncTime; }
-   static unsigned int     Get_Frame_Count(void) { return FrameCount; }
-	static unsigned int		Get_Last_Frame_Poly_Count(void);
-	static unsigned int		Get_Last_Frame_Vertex_Count(void);
+	static void					Sync( uint32_t sync_time );
+	static uint32_t		Get_Sync_Time(void) { return SyncTime; }
+   static uint32_t     Get_Frame_Time(void) { return SyncTime - PreviousSyncTime; }
+   static uint32_t     Get_Frame_Count(void) { return FrameCount; }
+	static uint32_t		Get_Last_Frame_Poly_Count(void);
+	static uint32_t		Get_Last_Frame_Vertex_Count(void);
 
 	/*
 	** Screen/Movie capturing
@@ -189,8 +191,8 @@ public:
 	** Set_Ext_Swap_Interval - how many vertical retraces to wait before flipping frames
 	** Get_Ext_Swap_Interval - what is our current setting for the swap interval?
 	*/
-	static void             Set_Ext_Swap_Interval(long swap);
-   static long             Get_Ext_Swap_Interval(void);
+	static void             Set_Ext_Swap_Interval(int32_t swap);
+   static int32_t          Get_Ext_Swap_Interval(void);
 
 	/*
 	** Texture Reduction - all currently loaded textures can be de-resed on the fly
@@ -270,9 +272,9 @@ public:
 	static bool					Are_Static_Sort_Lists_Enabled(void)		{ return AreStaticSortListsEnabled; }
 	static void					Enable_Munge_Sort_On_Load(bool onoff)	{ MungeSortOnLoad=onoff; }
 	static bool					Is_Munge_Sort_On_Load_Enabled(void)		{ return MungeSortOnLoad; }
-	static void					Add_To_Static_Sort_List(RenderObjClass *robj, unsigned int sort_level);
+	static void					Add_To_Static_Sort_List(RenderObjClass *robj, uint32_t sort_level);
 	static void					Render_And_Clear_Static_Sort_Lists(RenderInfoClass & rinfo);
-	static void					Override_Current_Static_Sort_Lists(RefRenderObjListClass *sort_list, unsigned int min_sort, unsigned int max_sort);
+	static void					Override_Current_Static_Sort_Lists(RefRenderObjListClass *sort_list, uint32_t min_sort, uint32_t max_sort);
 	static void					Reset_Current_Static_Sort_Lists_To_Default(void);
 
 	static bool					Is_Snapshot_Activated()						{ return SnapshotActivated; }
@@ -280,9 +282,9 @@ public:
 
 	// These clock all the time under user control, and are used to update
    // Stats.UserStat* when performance sampling is enabled.
-   static long             UserStat0;
-   static long             UserStat1;
-   static long             UserStat2;
+   static int32_t          UserStat0;
+   static int32_t          UserStat1;
+   static int32_t          UserStat2;
 
 private:
 
@@ -302,13 +304,13 @@ private:
    // The absolute synchronized frame time (in milliseconds) supplied by the
    // application at the start of every frame. Note that wraparound cases
    // etc. need to be considered.
-	static unsigned int				SyncTime;
+	static uint32_t				SyncTime;
 
    // The previously set absolute sync time - this is used to get the interval between
    // the most recently set sync time and the previous one. Assuming the
    // application sets sync time at the start of every frame, this represents
    // the frame interval.
-   static unsigned int           PreviousSyncTime;
+   static uint32_t           PreviousSyncTime;
 
 	static float						PixelCenterX;
 	static float						PixelCenterY;
@@ -366,8 +368,8 @@ private:
 	// levels are for specialised uses.
 	static RefRenderObjListClass *DefaultStaticSortLists;
 	static RefRenderObjListClass *CurrentStaticSortLists;
-	static unsigned int MinStaticSortLevel;
-	static unsigned int MaxStaticSortLevel;
+	static uint32_t MinStaticSortLevel;
+	static uint32_t MaxStaticSortLevel;
 
 	// Memory allocation statistics
 	static int							LastFrameMemoryAllocations;
@@ -412,17 +414,17 @@ struct RenderStatistics
 		double	PixelsRejected;
 
 		// Surface cache statistics
-		long		Hits;
-		long		Misses;
-		long		Insertions;
-		long		Removals;
-		long		MemUsed;
-		long		MaxMemory;
+		int32_t		Hits;
+		int32_t		Misses;
+		int32_t		Insertions;
+		int32_t		Removals;
+		int32_t		MemUsed;
+		int32_t		MaxMemory;
 
       // User stats (can be used to see how often a function is called, etc.)
-      long     UserStat0;
-      long     UserStat1;
-      long     UserStat2;
+      int32_t  UserStat0;
+      int32_t  UserStat1;
+      int32_t  UserStat2;
 };
 
 

@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __EDITABLEHEIGHTFIELD_H
@@ -189,7 +191,7 @@ protected:
 	Vector3 *								GridNormals;
 	Vector2 *								GridUVs[MAX_TEXTURE_PASSES];
 	float *									TextureWeights[MAX_TEXTURE_PASSES];
-	uint8 *									QuadFlags;
+	uint8_t *									QuadFlags;
 	int										GridPointsX;
 	int										GridPointsY;
 	int										GridPointCount;

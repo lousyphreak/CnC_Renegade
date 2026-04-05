@@ -35,6 +35,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #pragma once
 
+#include <cstdint>
+
 #ifndef NATADDR_H
 #define NATADDR_H
 
@@ -61,22 +63,22 @@ class IPAddressClass
 		**	Constructors:
 		*/
 		IPAddressClass(void);
-		IPAddressClass(unsigned char *address, unsigned short port = 0);
-		IPAddressClass(unsigned long address, unsigned short port = 0);
+		IPAddressClass(uint8_t *address, uint16_t port = 0);
+		IPAddressClass(uint32_t address, uint16_t port = 0);
 
 		/*
 		**	Set the address from explicit variables.
 		*/
-		void Set_Address(unsigned char *address, unsigned short port = 0);
-		void Set_Address(unsigned long address, unsigned short port = 0);
-		void Set_Port(unsigned short port) {Port = port;};
+		void Set_Address(uint8_t *address, uint16_t port = 0);
+		void Set_Address(uint32_t address, uint16_t port = 0);
+		void Set_Port(uint16_t port) {Port = port;};
 
 		/*
 		**	Get the address values explicitly.
 		*/
-		void Get_Address(unsigned char *address, unsigned short *port = 0);
-		unsigned long Get_Address(void);
-		unsigned short Get_Port(void);
+		void Get_Address(uint8_t *address, uint16_t *port = 0);
+		uint32_t Get_Address(void);
+		uint16_t Get_Port(void);
 
 		/*
 		**	Tells if this address is a broadcast address
@@ -117,14 +119,14 @@ class IPAddressClass
 		** Actual xxx.xxx.xxx.xxx IP address.
 		*/
 		union  {
-			unsigned long WholeAddress;
-			unsigned char Address[4];
+			uint32_t WholeAddress;
+			uint8_t Address[4];
 		};
 
 		/*
 		** Port number associated with this address.
 		*/
-		unsigned short Port;
+		uint16_t Port;
 
 		/*
 		** Are the contents of the address array valid?

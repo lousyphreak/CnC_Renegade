@@ -146,7 +146,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
-static UINT indicators[] =
+static uint32_t indicators[] =
 {
 	ID_SEPARATOR,           // status line indicator
 	ID_INDICATOR_CAPS,
@@ -168,7 +168,7 @@ CMainFrame::~CMainFrame()
 	REF_PTR_RELEASE(ControlledObject);
 }
 
-BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
+int32_t CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 {
 	if( !CFrameWnd::PreCreateWindow(cs) )
 		return FALSE;
@@ -201,7 +201,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	if (!m_wndStatusBar.Create(this) ||
 		!m_wndStatusBar.SetIndicators(indicators,
-		  sizeof(indicators)/sizeof(UINT)))
+		  sizeof(indicators)/sizeof(uint32_t)))
 	{
 		TRACE0("Failed to create status bar\n");
 		return -1;      // fail to create
@@ -309,10 +309,10 @@ void CMainFrame::Dump(CDumpContext& dc) const
 // CMainFrame message handlers
 
 
-BOOL CMainFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext) 
+int32_t CMainFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext) 
 {
 	// Create the main splitter window for the application
-	BOOL ok = Splitter.CreateStatic (this, 1, 2);
+	int32_t ok = Splitter.CreateStatic (this, 1, 2);
 	ASSERT(ok);
 	if (!ok) return FALSE;
 
@@ -373,7 +373,7 @@ BOOL CMainFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)
 	return TRUE;
 }
 
-void CMainFrame::OnActivateApp(BOOL bActive, HTASK hTask) 
+void CMainFrame::OnActivateApp(int32_t bActive, HTASK hTask) 
 {
 	// Get a pointer to the 'graphic' pane's window
 	CGraphicView * view = (CGraphicView *)Splitter.GetPane(0,1);

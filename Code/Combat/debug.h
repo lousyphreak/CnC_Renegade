@@ -37,6 +37,8 @@
 #ifndef	DEBUG_H
 #define	DEBUG_H
 
+#include <cstdint>
+
 #ifndef	ALWAYS_H
 	#include "always.h"
 #endif
@@ -65,7 +67,7 @@
 //struct CONTEXT;
 //#define TEMP_CONTEXT_DEFINE
 //#endif
-//int Stack_Walk(unsigned long *return_addresses, int num_addresses, CONTEXT *context = NULL);
+//int Stack_Walk(uint32_t *return_addresses, int num_addresses, CONTEXT *context = NULL);
 //#ifdef TEMP_CONTEXT_DEFINE
 //#undef CONTEXT
 //#endif

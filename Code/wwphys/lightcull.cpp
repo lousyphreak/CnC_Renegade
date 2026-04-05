@@ -47,7 +47,7 @@
 /*
 ** Current version of the lightcull file format
 */
-const uint32 STATICLIGHTCULL_CURRENT_VERSION		= 0x00010000;
+const uint32_t STATICLIGHTCULL_CURRENT_VERSION		= 0x00010000;
 
 /*
 ** Chunk Id's used by the phys-aabtree code to save itself into a file
@@ -160,7 +160,7 @@ void StaticLightCullClass::Assign_Vis_IDs(void)
 	}
 }
 
-void StaticLightCullClass::Merge_Vis_Sector_IDs(uint32 id0,uint32 id1)
+void StaticLightCullClass::Merge_Vis_Sector_IDs(uint32_t id0,uint32_t id1)
 {
 	/*
 	** Each lightphys object may have a vis sector id.
@@ -174,7 +174,7 @@ void StaticLightCullClass::Merge_Vis_Sector_IDs(uint32 id0,uint32 id1)
 		LightPhysClass * obj = get_first_object(node);
 		while (obj) {
 
-			uint32 sector_id = obj->Get_Vis_Sector_ID();
+			uint32_t sector_id = obj->Get_Vis_Sector_ID();
 			if (sector_id != 0xFFFFFFFF) {
 				if (sector_id == id1) {
 					sector_id = id0;

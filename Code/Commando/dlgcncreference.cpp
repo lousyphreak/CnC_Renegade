@@ -64,8 +64,8 @@
 //	Static member initialization
 ////////////////////////////////////////////////////////////////
 CnCReferenceMenuClass *	CnCReferenceMenuClass::_TheInstance				= NULL;
-DWORD							CnCReferenceMenuClass::LastSuicideTimeMs		= 0;
-DWORD							CnCReferenceMenuClass::LastChangeTeamTimeMs	= 0;
+uint32_t							CnCReferenceMenuClass::LastSuicideTimeMs		= 0;
+uint32_t							CnCReferenceMenuClass::LastChangeTeamTimeMs	= 0;
 
 ////////////////////////////////////////////////////////////////
 //
@@ -198,7 +198,7 @@ CnCReferenceMenuClass::On_Destroy (void)
 //
 ////////////////////////////////////////////////////////////////
 void
-CnCReferenceMenuClass::On_Command (int ctrl_id, int message_id, DWORD param)
+CnCReferenceMenuClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	bool allow_default_processing = true;
 
@@ -346,7 +346,7 @@ CnCReferenceMenuClass::On_Menu_Activate (bool onoff)
 void
 CnCReferenceMenuClass::On_Frame_Update (void)
 {
-	DWORD time_now_ms = TIMEGETTIME();
+	uint32_t time_now_ms = TIMEGETTIME();
 
 	//
 	// Enable or disable the suicide button

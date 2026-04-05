@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 
@@ -65,10 +67,10 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(ScriptEditDialogClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	afx_msg void OnSelChangeParamNameCombo();
 	afx_msg void OnSelChangeScriptName();
-	afx_msg void OnDeltaposParamValueNumberSpin(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnDeltaposParamValueNumberSpin(NMHDR* pNMHDR, intptr_t* pResult);
 	virtual void OnOK();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()

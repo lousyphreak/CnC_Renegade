@@ -96,7 +96,7 @@ DuplicateRemoverClass::Process (void)
 //  fnThreadProc
 //
 ////////////////////////////////////////////////////////////////////////////
-UINT
+uint32_t
 DuplicateRemoverClass::fnThreadProc (LPVOID pParam)
 {
 	//
@@ -257,7 +257,7 @@ DuplicateRemoverClass::Copy_File
 		//	Copy the data from the source mix file to the destination file
 		//
 		int file_size = src_file->Size ();
-		uint8 buffer[4096];
+		uint8_t buffer[4096];
 		while (file_size > 0) {
 			
 			//
@@ -424,7 +424,7 @@ DuplicateRemoverClass::Clean_Directory (LPCTSTR local_dir)
 	// to our list
 	//
 	DynamicVectorClass<StringClass> file_list;
-	BOOL keep_going = TRUE;
+	int32_t keep_going = TRUE;
 	WIN32_FIND_DATA find_info = { 0 };
 	for (HANDLE hfind = ::FindFirstFile (search_mask, &find_info);
 		  (hfind != INVALID_HANDLE_VALUE) && keep_going;
@@ -537,7 +537,7 @@ DuplicateRemoverClass::Delete_File (LPCTSTR filename)
 		//
 		// Strip the readonly bit off if necessary
 		//
-		DWORD attributes = ::GetFileAttributes (filename);
+		uint32_t attributes = ::GetFileAttributes (filename);
 		if ((attributes != 0xFFFFFFFF) &&
 			 ((attributes & FILE_ATTRIBUTE_READONLY) == FILE_ATTRIBUTE_READONLY))
 		{

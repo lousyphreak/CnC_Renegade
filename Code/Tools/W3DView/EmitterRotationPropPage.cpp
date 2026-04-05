@@ -121,7 +121,7 @@ void EmitterRotationPropPageClass::Initialize (void)
 		m_MaxRotation = WWMath::Max(m_Rotations.Start,1.0f);
 		m_MinRotation = WWMath::Min(m_Rotations.Start,0.0f);
 
-		for (UINT index = 0; index < m_Rotations.NumKeyFrames; index ++) {
+		for (uint32_t index = 0; index < m_Rotations.NumKeyFrames; index ++) {
 			if (m_Rotations.Values[index] > m_MaxRotation) {
 				m_MaxRotation = m_Rotations.Values[index];
 			}
@@ -137,7 +137,7 @@ void EmitterRotationPropPageClass::Initialize (void)
 //  OnInitDialog
 //
 /////////////////////////////////////////////////////////////
-BOOL 
+int32_t 
 EmitterRotationPropPageClass::OnInitDialog() 
 {
 	CPropertyPage::OnInitDialog();
@@ -164,7 +164,7 @@ EmitterRotationPropPageClass::OnInitDialog()
 	//
 	// Load the current set of frame keyframes into the control
 	//
-	for (UINT index = 0; index < m_Rotations.NumKeyFrames; index ++) {
+	for (uint32_t index = 0; index < m_Rotations.NumKeyFrames; index ++) {
 		m_RotationBar->Modify_Point (index + 1,
 										m_Rotations.KeyTimes[index] / m_Lifetime,
 										0,
@@ -182,7 +182,7 @@ EmitterRotationPropPageClass::OnInitDialog()
 //  OnNotify
 //
 /////////////////////////////////////////////////////////////
-BOOL EmitterRotationPropPageClass::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult) 
+int32_t EmitterRotationPropPageClass::OnNotify(uintptr_t wParam, intptr_t lParam, intptr_t* pResult) 
 {
 	CBR_NMHDR *color_bar_hdr = (CBR_NMHDR *)lParam;
 
@@ -348,8 +348,8 @@ EmitterRotationPropPageClass::Update_Rotations (void)
 //  OnCommand
 //
 /////////////////////////////////////////////////////////////
-BOOL 
-EmitterRotationPropPageClass::OnCommand(WPARAM wParam, LPARAM lParam) 
+int32_t 
+EmitterRotationPropPageClass::OnCommand(uintptr_t wParam, intptr_t lParam) 
 {
 	switch (LOWORD (wParam))
 	{
@@ -358,7 +358,7 @@ EmitterRotationPropPageClass::OnCommand(WPARAM wParam, LPARAM lParam)
 			// Update the emitter
 			if ((HIWORD (wParam) == EN_KILLFOCUS) &&
 				 SendDlgItemMessage (LOWORD (wParam), EM_GETMODIFY)) {
-				SendDlgItemMessage (LOWORD (wParam), EM_SETMODIFY, (WPARAM)0);
+				SendDlgItemMessage (LOWORD (wParam), EM_SETMODIFY, (uintptr_t)0);
 
 				m_Rotations.Rand = ::GetDlgItemFloat (m_hWnd, IDC_ROTATION_RANDOM_EDIT);
 				m_pEmitterList->Set_Rotation_Keyframes (m_Rotations, m_InitialOrientationRandom);
@@ -374,7 +374,7 @@ EmitterRotationPropPageClass::OnCommand(WPARAM wParam, LPARAM lParam)
 			// Update the emitter
 			if ((HIWORD (wParam) == EN_KILLFOCUS) &&
 				 SendDlgItemMessage (LOWORD (wParam), EM_GETMODIFY)) {
-				SendDlgItemMessage (LOWORD (wParam), EM_SETMODIFY, (WPARAM)0);
+				SendDlgItemMessage (LOWORD (wParam), EM_SETMODIFY, (uintptr_t)0);
 
 				m_InitialOrientationRandom = ::GetDlgItemFloat (m_hWnd, IDC_INITIAL_ORIENTATION_RANDOM_EDIT);
 				m_pEmitterList->Set_Rotation_Keyframes (m_Rotations, m_InitialOrientationRandom);
@@ -405,7 +405,7 @@ EmitterRotationPropPageClass::On_Lifetime_Changed (float lifetime)
 		//
 		//	Rescale the sizes
 		//
-		for (UINT index = 0; index < m_Rotations.NumKeyFrames; index ++) {
+		for (uint32_t index = 0; index < m_Rotations.NumKeyFrames; index ++) {
 			m_Rotations.KeyTimes[index] *= conversion;
 		}
 

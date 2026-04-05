@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __DLGMPINGAMETEAMCHAT_H__
@@ -57,7 +59,7 @@ public:
 		PopupDialogClass (IDD_MULTIPLAY_INGAME_TEAM_CHAT)	{}
 
 	void	On_Init_Dialog (void);
-	bool	On_Key_Down (uint32 key_id, uint32 key_data);
+	bool	On_Key_Down (uint32_t key_id, uint32_t key_data);
 
 private:
 };

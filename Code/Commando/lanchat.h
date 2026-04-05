@@ -26,6 +26,8 @@
 //-----------------------------------------------------------------------------
 #if defined(_MSV_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef LANCHAT_H
@@ -73,11 +75,11 @@ class cLanChat
 
       SOCKET					Socket;
 		SOCKADDR_IN				LocalAddress;
-      DWORD						LastPositionBroadcastTimeMs;
+      uint32_t						LastPositionBroadcastTimeMs;
       int						PositionBroadcastNumber;
 		ChatLocationEnum		CurrentLocation;
-		static const USHORT	LAN_BROADCAST_INTERVAL_MS;
-		static const USHORT	LAN_PORT;
+		static const uint16_t	LAN_BROADCAST_INTERVAL_MS;
+		static const uint16_t	LAN_PORT;
 };
 
 #endif // LANCHAT_H

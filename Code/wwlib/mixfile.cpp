@@ -176,7 +176,7 @@ bool	MixFileFactoryClass::Build_Filename_List (DynamicVectorClass<StringClass> &
 				//
 				//	Get the length of the filename
 				//
-				uint8 name_len = 0;
+				uint8_t name_len = 0;
 				if (file->Read( &name_len, sizeof( name_len ) ) == sizeof( name_len )) {
 					
 					//
@@ -214,7 +214,7 @@ FileClass * MixFileFactoryClass::Get_File( char const *filename )
 	RawFileClass *file = NULL;
 
 	//	Create the key block that will be used to binary search for the file.
-	unsigned long crc = CRC_Stringi( filename );
+	uint32_t crc = CRC_Stringi( filename );
 
 	//	Binary search for the file in this mixfile. If it is found, then create the file
 	FileInfoStruct * info = NULL;
@@ -423,8 +423,8 @@ MixFileCreator::MixFileCreator( const char * filename )
 
 int MixFileCreator::File_Info_Compare(const void * a, const void * b) 
 {
-	unsigned int CRCA = ((FileInfoStruct*)a)->CRC;
-	unsigned int CRCB = ((FileInfoStruct*)b)->CRC;
+	uint32_t CRCA = ((FileInfoStruct*)a)->CRC;
+	uint32_t CRCB = ((FileInfoStruct*)b)->CRC;
 	if ( CRCA < CRCB ) return -1;
 	if ( CRCA > CRCB ) return 1;
 	return 0;
@@ -468,7 +468,7 @@ MixFileCreator::~MixFileCreator( void )
 			const char * filename = FileInfo[i].Filename;
 			int size = FileInfo[i].Filename.Get_Length()+1;
 			WWASSERT( size < 255 );
-			unsigned char csize = size;
+			uint8_t csize = size;
 			MixFile->Write( &csize, 1 );
 			MixFile->Write( filename, size );
 		}
@@ -593,7 +593,7 @@ void	MixFileCreator::Add_File( const char * filename, FileClass *file )
 */
 void	Add_Files( const char * dir, MixFileCreator & mix )
 {
-	BOOL bcontinue = TRUE;
+	int32_t bcontinue = TRUE;
 	HANDLE hfile_find;
 	WIN32_FIND_DATA find_info = {0};
 	StringClass path;

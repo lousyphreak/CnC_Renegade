@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // PresetDialogueTab.h : header file
 //
@@ -80,7 +82,7 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(PresetDialogueTabClass)
-	afx_msg void OnDblclkDialogueList(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnDblclkDialogueList(NMHDR* pNMHDR, intptr_t* pResult);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 

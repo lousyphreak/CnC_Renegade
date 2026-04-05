@@ -36,6 +36,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef PHYSDYNAMICSAVESYSTEM_H
 #define PHYSDYNAMICSAVESYSTEM_H
 
@@ -53,7 +55,7 @@ class PhysDynamicSaveSystemClass : public SaveLoadSubSystemClass
 {
 public:
 	
-	virtual uint32				Chunk_ID (void) const;
+	virtual uint32_t				Chunk_ID (void) const;
 
 protected:
 

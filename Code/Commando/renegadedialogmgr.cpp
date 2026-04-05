@@ -135,7 +135,7 @@ DialogFactoryBaseClass *FactoryArray[FACTORY_COUNT] =
 ////////////////////////////////////////////////////////////////
 //	Local Prototypes
 ////////////////////////////////////////////////////////////////
-bool CALLBACK Default_On_Command (DialogBaseClass *dialog, int ctrl_id, int mesage_id, DWORD param);
+bool CALLBACK Default_On_Command (DialogBaseClass *dialog, int ctrl_id, int mesage_id, uint32_t param);
 void	Stop_Main_Loop (int);
 
 ////////////////////////////////////////////////////////////////
@@ -364,7 +364,7 @@ RenegadeDialogMgrClass::Shutdown (void)
 //
 ////////////////////////////////////////////////////////////////
 bool CALLBACK
-Default_On_Command (DialogBaseClass *dialog, int ctrl_id, int mesage_id, DWORD param)
+Default_On_Command (DialogBaseClass *dialog, int ctrl_id, int mesage_id, uint32_t param)
 {
 	bool handled = true;
 
@@ -489,7 +489,7 @@ Default_On_Command (DialogBaseClass *dialog, int ctrl_id, int mesage_id, DWORD p
 // into the buffer, not including the NULL terminating character, or
 // zero if the string resource does not exist.
 //
-int MyLoadStringW (UINT str_id, LPWSTR buffer, int buffer_len)
+int MyLoadStringW (uint32_t str_id, LPWSTR buffer, int buffer_len)
 {
 	#ifndef RT_STRING
 	#define RT_STRING MAKEINTRESOURCE(6)

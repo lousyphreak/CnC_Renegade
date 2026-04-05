@@ -42,26 +42,9 @@
 
 #include <cstdint>
 
-typedef std::uint8_t		uint8;
-typedef std::uint16_t	uint16;
-typedef std::uint32_t	uint32;
-typedef unsigned int    uint;
-
-typedef std::int8_t		sint8;
-typedef std::int16_t		sint16;
-typedef std::int32_t		sint32;
-typedef signed int      sint;
-
 typedef float				float32;
 typedef double				float64;
 
-typedef std::uint32_t   DWORD;
-typedef std::uint16_t	WORD;
-typedef std::uint8_t    BYTE;
-typedef int             BOOL;
-typedef std::uint16_t	USHORT;
 typedef const char *		LPCSTR;
-typedef unsigned int    UINT;
-typedef std::uint32_t   ULONG;
 
 #endif //BITTYPE_H

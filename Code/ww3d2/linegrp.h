@@ -38,6 +38,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef LINEGRP_H
@@ -79,7 +81,7 @@ public:
 									ShareBufferClass<Vector3> *endlocs,
 									ShareBufferClass<Vector4> *diffuse = NULL,
 									ShareBufferClass<Vector4> *taildiffuse = NULL,
-									ShareBufferClass<unsigned int> *alt = NULL,
+									ShareBufferClass<uint32_t> *alt = NULL,
 									ShareBufferClass<float> *sizes = NULL,
 									ShareBufferClass<float> *ucoords = NULL,
 									int active_line_count = -1
@@ -113,7 +115,7 @@ protected:
 	ShareBufferClass<Vector3> *			EndLineLoc;	// World/cameraspace point locs
 	ShareBufferClass<Vector4> *			LineDiffuse; // (NULL if not used) RGBA values
 	ShareBufferClass<Vector4> *			TailDiffuse; // (NULL if not used) RGBA values
-	ShareBufferClass<unsigned int> *		ALT;			// (NULL if not used) active line table
+	ShareBufferClass<uint32_t> *		ALT;			// (NULL if not used) active line table
 	ShareBufferClass<float> *				LineSize;	// (NULL if not used) size override table	
 	ShareBufferClass<float> *				LineUCoord; // (NULL if not used) U coordinates
 	int											LineCount;	// Active (if ALT) or total point count
@@ -122,7 +124,7 @@ protected:
 	ShaderClass				Shader;					// (default created in CTor)
 
 	// Internal state:
-	unsigned int			Flags;						// operation control flags
+	uint32_t			Flags;						// operation control flags
 	float						DefaultLineSize;			// Line size (size array overrides if present)
 	Vector3					DefaultLineColor;		// Line color (color array overrides if present)
 	float						DefaultLineAlpha;		// Line alpha (alpha array overrides if present)	

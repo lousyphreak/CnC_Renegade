@@ -569,7 +569,7 @@ bool Fallback_Stream_To_Loaded_Audio(BackendStream *stream)
     return true;
 }
 
-bool Parse_Wave_Info(const void *data, size_t data_len, AILSOUNDINFO *info, unsigned long *duration_ms)
+bool Parse_Wave_Info(const void *data, size_t data_len, AILSOUNDINFO *info, uint32_t *duration_ms)
 {
     if ((data == nullptr) || (data_len < 44) || (info == nullptr)) {
         return false;
@@ -628,14 +628,14 @@ bool Parse_Wave_Info(const void *data, size_t data_len, AILSOUNDINFO *info, unsi
     info->data_len = data_size;
     if ((duration_ms != nullptr) && (data_size > 0) && (bits_per_sample > 0) && (channels > 0)) {
         const float bytes_per_second = static_cast<float>((sample_rate * channels * bits_per_sample) / 8);
-        *duration_ms = (bytes_per_second > 0.0f) ? static_cast<unsigned long>((static_cast<float>(data_size) / bytes_per_second) * 1000.0f) : 0;
+        *duration_ms = (bytes_per_second > 0.0f) ? static_cast<uint32_t>((static_cast<float>(data_size) / bytes_per_second) * 1000.0f) : 0;
     }
 
     return true;
 }
 } // namespace
 
-bool WWAudio_Get_Audio_Info_From_Memory(const void *data, size_t data_len, AILSOUNDINFO *info, unsigned long *duration_ms)
+bool WWAudio_Get_Audio_Info_From_Memory(const void *data, size_t data_len, AILSOUNDINFO *info, uint32_t *duration_ms)
 {
     std::lock_guard<std::recursive_mutex> guard(g_audio_mutex);
 

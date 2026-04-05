@@ -93,7 +93,7 @@ void cStackDump::Print_Call_Stack(void)
 	//	Determine the path to the executable
 	//
 	char path[MAX_PATH] = "";
-	DWORD gmf = ::GetModuleFileName(NULL, path, sizeof(path));
+	uint32_t gmf = ::GetModuleFileName(NULL, path, sizeof(path));
 	
 	if (gmf != 0)
 	{

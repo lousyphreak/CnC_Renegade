@@ -62,7 +62,7 @@ static char THIS_FILE[] = __FILE__;
 ///////////////////////////////////////////////////////////////////////
 //	Local prototypes
 ///////////////////////////////////////////////////////////////////////
-int CALLBACK InstancesListSortCallback (LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
+int CALLBACK InstancesListSortCallback (intptr_t lParam1, intptr_t lParam2, intptr_t lParamSort);
 
 #ifndef ListView_SetCheckState
    #define ListView_SetCheckState(hwndLV, i, fCheck) \
@@ -93,7 +93,7 @@ typedef struct
 	StringClass	name;
 	union
 	{
-		uint32		class_id;
+		uint32_t		class_id;
 		NodeClass *	node;
 	};
 
@@ -193,7 +193,7 @@ void InstancesPageClass::Dump(CDumpContext& dc) const
 void
 InstancesPageClass::OnSize
 (
-	UINT	nType,
+	uint32_t	nType,
 	int	cx,
 	int	cy
 ) 
@@ -356,12 +356,12 @@ InstancesPageClass::OnShowAll (void)
 //  WindowProc
 //
 ////////////////////////////////////////////////////////////////////////////
-LRESULT
+intptr_t
 InstancesPageClass::WindowProc
 (
-    UINT		message,
-    WPARAM	wParam,
-    LPARAM	lParam
+    uint32_t		message,
+    uintptr_t	wParam,
+    intptr_t	lParam
 )
 {
 	//
@@ -394,13 +394,13 @@ InstancesPageClass::WindowProc
 //  CheckBoxSubclassProc
 //
 ////////////////////////////////////////////////////////////////////////////
-LRESULT CALLBACK
+intptr_t CALLBACK
 CheckBoxSubclassProc
 (
 	HWND		hwnd,
-	UINT		message,
-	WPARAM	wparam,
-	LPARAM	lparam
+	uint32_t		message,
+	uintptr_t	wparam,
+	intptr_t	lparam
 )
 {
 	WNDPROC pold_proc = (WNDPROC)::GetProp (hwnd, "OLDPROC");
@@ -413,7 +413,7 @@ CheckBoxSubclassProc
 		LVHITTESTINFO hittest = { 0 };
 		hittest.pt.x = LOWORD (lparam);
 		hittest.pt.y = HIWORD (lparam);
-		::SendMessage (hwnd, LVM_HITTEST, 0, (LPARAM)&hittest);
+		::SendMessage (hwnd, LVM_HITTEST, 0, (intptr_t)&hittest);
 		
 		//
 		//	Did the user click one of the checkboxes?
@@ -423,11 +423,11 @@ CheckBoxSubclassProc
 			//
 			//	Notify the instances page that the user wants to toggle the checkbox
 			//
-			::PostMessage (::GetParent (hwnd), WM_USER+102, 0, (LPARAM)hittest.iItem);
+			::PostMessage (::GetParent (hwnd), WM_USER+102, 0, (intptr_t)hittest.iItem);
 		}
 
 	} else if (message == WM_DESTROY) {
-		::SetWindowLong (hwnd, GWL_WNDPROC, (LONG)pold_proc);
+		::SetWindowLong (hwnd, GWL_WNDPROC, (int32_t)pold_proc);
 		::RemoveProp (hwnd, "OLDPROC");
 	}
 
@@ -448,16 +448,16 @@ void
 InstancesPageClass::OnDblclkInstanceList
 (
 	NMHDR *	pNMHDR,
-	LRESULT* pResult
+	intptr_t* pResult
 ) 
 {
 	// Determine what client-coord location was double-clicked on
-	DWORD mouse_pos = ::GetMessagePos ();
+	uint32_t mouse_pos = ::GetMessagePos ();
 	POINT hit_point = { GET_X_LPARAM (mouse_pos), GET_Y_LPARAM (mouse_pos) };
 	m_ListCtrl.ScreenToClient (&hit_point);
 
 	// Goto the node that was double-clicked on (if possible)
-	UINT flags = 0;
+	uint32_t flags = 0;
 	int index = m_ListCtrl.HitTest (hit_point, &flags);
 	if ((index >= 0) && ((flags & LVHT_ONITEMLABEL) || (flags & LVHT_ONITEMICON))) {
 		
@@ -587,7 +587,7 @@ InstancesPageClass::OnDelete (void)
 //  OnInitDialog
 //
 ////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 InstancesPageClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -635,7 +635,7 @@ InstancesPageClass::OnInitDialog (void)
 	//
 	//	Subclass the list control so we can handle the checkstates
 	//
-	LONG oldproc = ::SetWindowLong (m_ListCtrl, GWL_WNDPROC, (LONG)CheckBoxSubclassProc);
+	int32_t oldproc = ::SetWindowLong (m_ListCtrl, GWL_WNDPROC, (int32_t)CheckBoxSubclassProc);
 	::SetProp (m_ListCtrl, "OLDPROC", (HANDLE)oldproc);
 
 	//
@@ -683,7 +683,7 @@ InstancesPageClass::Insert_Factory (LPCTSTR name, int class_id)
 		item_data->type		= TYPE_FACTORY;
 		item_data->class_id	= class_id;
 		item_data->name		= name;
-		m_ListCtrl.SetItemData (index, (DWORD)item_data);
+		m_ListCtrl.SetItemData (index, (uint32_t)item_data);
 		m_ListCtrl.SetCheck (index, TRUE);
 	}
 	
@@ -726,7 +726,7 @@ InstancesPageClass::Insert_Node (NodeClass *node)
 		item_data->type	= TYPE_NODE;
 		item_data->node	= node;
 		item_data->name	= node->Get_Name ();
-		m_ListCtrl.SetItemData (index, (DWORD)item_data);
+		m_ListCtrl.SetItemData (index, (uint32_t)item_data);
 		ListView_SetCheckState (m_ListCtrl, index, (node->Is_Hidden () == false));
 	}
 
@@ -768,7 +768,7 @@ InstancesPageClass::Insert_Navigator (void)
 		item_data->type	= TYPE_NAVIGATOR;
 		item_data->node	= NULL;
 		item_data->name	= "..";
-		m_ListCtrl.SetItemData (index, (DWORD)item_data);
+		m_ListCtrl.SetItemData (index, (uint32_t)item_data);
 	}
 
 	return ;	
@@ -896,7 +896,7 @@ void
 InstancesPageClass::Reset_List (void)
 {
 	m_ClassIDStack.Delete_All ();
-	Populate_List ((uint32)0);
+	Populate_List ((uint32_t)0);
 	return ;
 }
 
@@ -907,7 +907,7 @@ InstancesPageClass::Reset_List (void)
 //
 ////////////////////////////////////////////////////////////////////////////
 void
-InstancesPageClass::Populate_List (uint32 class_id)
+InstancesPageClass::Populate_List (uint32_t class_id)
 {
 	m_ListCtrl.SetRedraw (FALSE);
 	m_ListCtrl.DeleteAllItems ();
@@ -1028,7 +1028,7 @@ void
 InstancesPageClass::OnDeleteitemInstanceList
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 ) 
 {
 	NM_LISTVIEW* pNMListView = (NM_LISTVIEW*)pNMHDR;
@@ -1054,9 +1054,9 @@ InstancesPageClass::OnDeleteitemInstanceList
 int CALLBACK
 InstancesListSortCallback
 (
-	LPARAM lParam1,
-	LPARAM lParam2,
-   LPARAM lParamSort
+	intptr_t lParam1,
+	intptr_t lParam2,
+   intptr_t lParamSort
 )
 {
 	int retval = 0;
@@ -1097,7 +1097,7 @@ void
 InstancesPageClass::OnItemchangedInstanceList
 (
 	NMHDR *	pNMHDR,
-	LRESULT* pResult
+	intptr_t* pResult
 )
 {
 	NM_LISTVIEW* pNMListView = (NM_LISTVIEW*)pNMHDR;
@@ -1150,7 +1150,7 @@ InstancesPageClass::Update_Button_States (void)
 //
 ////////////////////////////////////////////////////////////////////////////
 void
-InstancesPageClass::Hide_Node (NodeClass *node, uint32 class_id, bool hide)
+InstancesPageClass::Hide_Node (NodeClass *node, uint32_t class_id, bool hide)
 {
 	PresetClass *preset = node->Get_Preset ();
 	if (preset != NULL) {
@@ -1160,8 +1160,8 @@ InstancesPageClass::Hide_Node (NodeClass *node, uint32 class_id, bool hide)
 			//
 			//	Did this node come from the selected factory?
 			//
-			uint32 curr_class_id	= definition->Get_Class_ID ();
-			uint32 superclass_id	= ::SuperClassID_From_ClassID (curr_class_id);
+			uint32_t curr_class_id	= definition->Get_Class_ID ();
+			uint32_t superclass_id	= ::SuperClassID_From_ClassID (curr_class_id);
 			if (curr_class_id == class_id || superclass_id == class_id) {
 				
 				//
@@ -1276,7 +1276,7 @@ InstancesPageClass::Update_Overlays (void)
 //
 /////////////////////////////////////////////////////////////////////////////
 bool
-InstancesPageClass::Does_Factory_Have_Children (uint32 factory_id)
+InstancesPageClass::Does_Factory_Have_Children (uint32_t factory_id)
 {
 	bool retval = false;
 
@@ -1296,8 +1296,8 @@ InstancesPageClass::Does_Factory_Have_Children (uint32 factory_id)
 				//
 				//	Did this node come from the specified factory?
 				//
-				uint32 class_id		= definition->Get_Class_ID ();
-				uint32 superclass_id	= ::SuperClassID_From_ClassID (class_id);
+				uint32_t class_id		= definition->Get_Class_ID ();
+				uint32_t superclass_id	= ::SuperClassID_From_ClassID (class_id);
 				if (class_id == factory_id || superclass_id == factory_id) {
 					retval = true;
 				}

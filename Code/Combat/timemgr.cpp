@@ -85,7 +85,7 @@ FrameTimeHistogramClass::~FrameTimeHistogramClass()
 }
 
 // Report normalized counts for each frame time slot, packed to unsigned bytes.
-void FrameTimeHistogramClass::Get_Packed_Report(unsigned char* bytes)
+void FrameTimeHistogramClass::Get_Packed_Report(uint8_t* bytes)
 {
 	unsigned total=0;
 	unsigned i;
@@ -95,7 +95,7 @@ void FrameTimeHistogramClass::Get_Packed_Report(unsigned char* bytes)
 	if (total==0) total=1;
 
 	for (i=0;i<SlotCount;++i) {
-		unsigned char value=255*Counts[i]/total;
+		uint8_t value=255*Counts[i]/total;
 		if (value==0 && Counts[i]!=0) value=1;
 		bytes[i]=value;
 	}
@@ -122,7 +122,7 @@ void FrameTimeHistogramClass::Reset()
 // Place the time of current frame to a correct slot.
 void FrameTimeHistogramClass::Add(float frame_time)
 {
-	unsigned long slot=WWMath::Float_To_Long(frame_time*(1000.0f/Step));
+	uint32_t slot=WWMath::Float_To_Long(frame_time*(1000.0f/Step));
 	if (slot>=SlotCount) slot=SlotCount-1;
 	Counts[slot]++;
 }

@@ -64,7 +64,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // MakeMixFileDialogClass message handlers
 
-BOOL MakeMixFileDialogClass::OnInitDialog() 
+int32_t MakeMixFileDialogClass::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
 	

@@ -73,7 +73,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL 
+int32_t 
 ParticleRotationKeyDialogClass::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
@@ -102,7 +102,7 @@ ParticleRotationKeyDialogClass::OnOK()
 // OnNotify
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL ParticleRotationKeyDialogClass::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult) 
+int32_t ParticleRotationKeyDialogClass::OnNotify(uintptr_t wParam, intptr_t lParam, intptr_t* pResult) 
 {
 	//
 	//	Update the spinner control if necessary

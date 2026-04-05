@@ -171,7 +171,7 @@ bool TriClass::Contains_Point(const Vector3 & ipoint) const
 	Find_Dominant_Plane(&axis1,&axis2);
 
 #if 1
-	unsigned char flags;	// dummy variable passed into function and not used here
+	uint8_t flags;	// dummy variable passed into function and not used here
 	return Point_In_Triangle_2D(*V[0], *V[1], *V[2], ipoint, axis1, axis2, flags);
 #else
 	float u0 = ipoint[axis1] - (*V[0])[axis1];

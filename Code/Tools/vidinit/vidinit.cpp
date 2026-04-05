@@ -58,7 +58,7 @@ CVidinitApp theApp;
 /////////////////////////////////////////////////////////////////////////////
 // CVidinitApp initialization
 
-BOOL CVidinitApp::InitInstance()
+int32_t CVidinitApp::InitInstance()
 {
 	// Standard initialization
 	// If you are not using these features and wish to reduce the size

@@ -71,7 +71,7 @@ DEFINE_AUTO_POOL(GridLinkClass,256);
 /*
 ** Current version of the file format
 */
-const uint32 GRID_CURRENT_VERSION = 0x00010000;
+const uint32_t GRID_CURRENT_VERSION = 0x00010000;
 
 
 /*
@@ -93,7 +93,7 @@ struct IOGridParametersStruct
 	IOVector3Struct	MinCellSize;	
 	IOVector3Struct	Origin;
 	IOVector3Struct	CellDim;
-	uint32				CellCount[3];
+	uint32_t				CellCount[3];
 	float32				MaxObjExtent;
 };
 
@@ -592,7 +592,7 @@ void GridCullSystemClass::Load(ChunkLoadClass & cload)
 	/*
 	** read the version chunk
 	*/ 
-	uint32 version;
+	uint32_t version;
 	cload.Open_Chunk();
 	WWASSERT(cload.Cur_Chunk_ID() == GRID_CHUNK_VERSION);
 	cload.Read(&version,sizeof(version));
@@ -672,7 +672,7 @@ void GridCullSystemClass::Save(ChunkSaveClass & csave)
 	/*
 	** write the version chunk
 	*/
-	uint32 version = GRID_CURRENT_VERSION;
+	uint32_t version = GRID_CURRENT_VERSION;
 	csave.Begin_Chunk(GRID_CHUNK_VERSION);
 	csave.Write(&version,sizeof(version));
 	csave.End_Chunk();

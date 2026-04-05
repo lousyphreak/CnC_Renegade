@@ -201,7 +201,7 @@ TimedDecorationPhysDefClass::TimedDecorationPhysDefClass(void) :
 #endif
 }
 
-uint32 TimedDecorationPhysDefClass::Get_Class_ID (void) const
+uint32_t TimedDecorationPhysDefClass::Get_Class_ID (void) const
 {
 	return CLASSID_TIMEDDECOPHYSDEF; 
 }

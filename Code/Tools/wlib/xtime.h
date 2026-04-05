@@ -32,6 +32,8 @@ function :-)
 #ifndef XTIME_HEADER
 #define XTIME_HEADER
 
+#include <cstdint>
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,12 +63,12 @@ class Xtime
               Xtime( time_t other );   // 1970-2038
              ~Xtime();
 
-    void      addSeconds(sint32 seconds);
+    void      addSeconds(int32_t seconds);
 
-    bit8      getTime(int &month, int &mday, int &year, int &hour, int &minute,
+    int8_t      getTime(int &month, int &mday, int &year, int &hour, int &minute,
                         int &second) const;
 
-    bit8      setTime(int month, int mday, int year, int hour, int minute,
+    int8_t      setTime(int month, int mday, int year, int hour, int minute,
                         int second);
 
     void      update();   // Update members sec & usec to system time
@@ -79,17 +81,17 @@ class Xtime
     void      PrintDate(char *out) const;
 **********/
 
-    sint32    getDay(void) const;    // Get days since year 0 
-    sint32    getMsec(void) const;   // Get milliseconds into the day
+    int32_t    getDay(void) const;    // Get days since year 0 
+    int32_t    getMsec(void) const;   // Get milliseconds into the day
 
-    void      setDay(sint32 day);
-    void      setMsec(sint32 msec);
+    void      setDay(int32_t day);
+    void      setMsec(int32_t msec);
 
-    void      set(sint32 newday, sint32 newmsec);
-    bit8      ParseDate(char *in);
-    bit8      FormatTime(char *out, char *format);
+    void      set(int32_t newday, int32_t newmsec);
+    int8_t      ParseDate(char *in);
+    int8_t      FormatTime(char *out, char *format);
 
-    bit8      getTimeval(struct timeval &tv);
+    int8_t      getTimeval(struct timeval &tv);
 
     // All of these may return -1 if the time is invalid
     int    getSecond(void) const; // Second (0-60) (60 is for a leap second)
@@ -103,12 +105,12 @@ class Xtime
     int    getYear(void) const;   // Year (e.g. 1997)
 
     // Modify the time components.  Return FALSE if fail
-    bit8      setSecond(sint32 sec);
-    bit8      setMinute(sint32 min);
-    bit8      setHour(sint32 hour);
-    bit8      setYear(sint32 year);
-    bit8      setMonth(sint32 month);
-    bit8      setMDay(sint32 mday);
+    int8_t      setSecond(int32_t sec);
+    int8_t      setMinute(int32_t min);
+    int8_t      setHour(int32_t hour);
+    int8_t      setYear(int32_t year);
+    int8_t      setMonth(int32_t month);
+    int8_t      setMDay(int32_t mday);
 
     void      normalize(void);  // move msec overflows to the day 
 
@@ -116,12 +118,12 @@ class Xtime
     int       compare(const Xtime &other) const;
     
     // comparisons
-    bit8   operator == ( const Xtime &other ) const;
-    bit8   operator != ( const Xtime &other ) const;
-    bit8   operator  < ( const Xtime &other ) const;
-    bit8   operator  > ( const Xtime &other ) const;
-    bit8   operator <= ( const Xtime &other ) const;
-    bit8   operator >= ( const Xtime &other ) const;
+    int8_t   operator == ( const Xtime &other ) const;
+    int8_t   operator != ( const Xtime &other ) const;
+    int8_t   operator  < ( const Xtime &other ) const;
+    int8_t   operator  > ( const Xtime &other ) const;
+    int8_t   operator <= ( const Xtime &other ) const;
+    int8_t   operator >= ( const Xtime &other ) const;
 
     // assignments
     Xtime   &operator = (const Xtime &other);
@@ -139,8 +141,8 @@ class Xtime
     Xtime    operator -  (time_t other);
 
   protected:
-    sint32    day_;    // days since Jan 1, 0
-    sint32    msec_;   // milliseconds  (thousandths of a sec)
+    int32_t    day_;    // days since Jan 1, 0
+    int32_t    msec_;   // milliseconds  (thousandths of a sec)
 };
 
 #endif

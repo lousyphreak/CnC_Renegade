@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // BoneMgrDialog.h : header file
 //
@@ -63,8 +65,8 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(BoneMgrDialogClass)
-	virtual BOOL OnInitDialog();
-	afx_msg void OnSelchangedBoneTree(NMHDR* pNMHDR, LRESULT* pResult);
+	virtual int32_t OnInitDialog();
+	afx_msg void OnSelchangedBoneTree(NMHDR* pNMHDR, intptr_t* pResult);
 	afx_msg void OnSelchangeObjectCombo();
 	afx_msg void OnDestroy();
 	virtual void OnOK();

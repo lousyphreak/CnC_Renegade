@@ -118,7 +118,7 @@ enum
 //	Chunk_ID
 //
 ///////////////////////////////////////////////////////////////////////
-uint32
+uint32_t
 EditorSaveLoadClass::Chunk_ID (void) const
 {
 	return CHUNKID_EDITOR_SAVELOAD;
@@ -510,7 +510,7 @@ EditorSaveLoadClass::Load_Level (LPCTSTR filename)
 		// one for the normal level data and one for the light solve data.  Here, we
 		// detect whether we are loading a file that was created before this change.
 		//
-		uint32 id,size;
+		uint32_t id,size;
 		if (chunk_load.Peek_Next_Chunk(&id,&size) && (id == CHUNKID_LVL_DATA)) {
 		
 			// Current file format, multiple saves embedded into this file
@@ -642,7 +642,7 @@ EditorSaveLoadClass::Import_Dynamic_Objects (LPCTSTR filename)
 		//
 		//	Find the largest used ID
 		//
-		uint32 start_id = (NodeMgrClass::Get_Max_Used_ID () + 1);
+		uint32_t start_id = (NodeMgrClass::Get_Max_Used_ID () + 1);
 
 		//
 		//	Remove the dynamic objects from the level and load the new objects.

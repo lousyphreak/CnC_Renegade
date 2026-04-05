@@ -123,7 +123,7 @@ ControlSaveLoadMenuClass::On_Init_Dialog (void)
 //
 ////////////////////////////////////////////////////////////////
 void
-ControlSaveLoadMenuClass::On_Command (int ctrl_id, int message_id, DWORD param)
+ControlSaveLoadMenuClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	switch (ctrl_id)
 	{
@@ -434,7 +434,7 @@ ControlSaveLoadMenuClass::Insert_Configuration (const InputConfigClass &config)
 		//	Make a copy of the config object and store it with the entry
 		//
 		InputConfigClass *local_copy = new InputConfigClass (config);
-		list_ctrl->Set_Entry_Data (item_index, 0, (DWORD)local_copy);
+		list_ctrl->Set_Entry_Data (item_index, 0, (uint32_t)local_copy);
 
 		//
 		//	Change the color of this configuration if the user cannot edit it
@@ -508,7 +508,7 @@ ControlSaveLoadMenuClass::ListSortCallback
 	ListCtrlClass *	list_ctrl,
 	int					item_index1,
 	int					item_index2,
-	uint32				user_param
+	uint32_t				user_param
 )
 {
 	int retval = 0;

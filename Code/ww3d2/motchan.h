@@ -38,6 +38,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef MOTCHAN_H
@@ -77,13 +79,13 @@ public:
 
 private:
 
-	uint32	PivotIdx;			// what pivot is this channel applied to
-	uint32	Type;					// what type of channel is this
+	uint32_t	PivotIdx;			// what pivot is this channel applied to
+	uint32_t	Type;					// what type of channel is this
 	int		VectorLen;			// size of each individual vector
 
 	float		ValueOffset;
 	float		ValueScale;
-	unsigned short* CompressedData;
+	uint16_t* CompressedData;
 
 	float	*	Data;					// pointer to the raw floating point data
 	int		FirstFrame;			// first frame which was non-identity
@@ -133,13 +135,13 @@ public:
 
 private:
 
-	uint32	PivotIdx;
-	uint32	Type;
+	uint32_t	PivotIdx;
+	uint32_t	Type;
 	int		DefaultVal;
 	int		FirstFrame;
 	int		LastFrame;
 
-	uint8 *	Bits;
+	uint8_t *	Bits;
 
 	void Free(void);
 
@@ -157,7 +159,7 @@ WWINLINE int BitChannelClass::Get_Bit(int frame) const
 	
 		int bit = frame - FirstFrame;
 
-		uint8 mask = (uint8)(1 << (bit % 8));
+		uint8_t mask = (uint8_t)(1 << (bit % 8));
 		return ((*(Bits + (bit/8)) & mask) != 0);
 		
 	}
@@ -190,22 +192,22 @@ public:
 
 private:
 
-	uint32	PivotIdx;			// what pivot is this channel applied to
-	uint32	Type;					// what type of channel is this
+	uint32_t	PivotIdx;			// what pivot is this channel applied to
+	uint32_t	Type;					// what type of channel is this
 	int		VectorLen;			// size of each individual vector
-	uint32	PacketSize;			// size of each packet
+	uint32_t	PacketSize;			// size of each packet
 	
-	uint32	NumTimeCodes;		// Number of packets
+	uint32_t	NumTimeCodes;		// Number of packets
 
-	uint32	LastTimeCodeIdx;	// absolute index to last time code
-	uint32	CachedIdx;			// Last Index Used
+	uint32_t	LastTimeCodeIdx;	// absolute index to last time code
+	uint32_t	CachedIdx;			// Last Index Used
   
-	uint32	*	Data;			 	// pointer to packet data
+	uint32_t	*	Data;			 	// pointer to packet data
 
 	void 		Free(void);
 	void 		set_identity(float * setvec);
-	uint32	get_index(uint32 timecode);
-	uint32	binary_search_index(uint32 timecode);
+	uint32_t	get_index(uint32_t timecode);
+	uint32_t	binary_search_index(uint32_t timecode);
 
 	friend class HCompressedAnimClass;
 };
@@ -227,24 +229,24 @@ public:
 
 private:
 
-	uint32	PivotIdx;			// what pivot is this channel applied to
-	uint32	Type;					// what type of channel is this
+	uint32_t	PivotIdx;			// what pivot is this channel applied to
+	uint32_t	Type;					// what type of channel is this
 	int		VectorLen;			// size of each individual vector
 	
-	uint32	NumFrames;			// Number of frames
+	uint32_t	NumFrames;			// Number of frames
 
 	float		Scale;				// Scale Filter, this much
   
-	uint32  *Data;				 	// pointer to packet data
+	uint32_t  *Data;				 	// pointer to packet data
 
-	uint32	CacheFrame;
+	uint32_t	CacheFrame;
 	float	  *CacheData;			// the data for CachedFrame, and CachedFrame+1, x VectorLen
 
 	void 		Free(void);
 
-	float		getframe(uint32 frame_idx, uint32 vector_idx=0);
-   void		decompress(uint32 frame_idx, float *outdata);
-   void		decompress(uint32 src_idx, float *srcdata, uint32 frame_idx, float *outdata);
+	float		getframe(uint32_t frame_idx, uint32_t vector_idx=0);
+   void		decompress(uint32_t frame_idx, float *outdata);
+   void		decompress(uint32_t src_idx, float *srcdata, uint32_t frame_idx, float *outdata);
 
 	friend class HCompressedAnimClass;
 };
@@ -273,14 +275,14 @@ public:
 
 private:
 
-	uint32	PivotIdx;
-	uint32	Type;
+	uint32_t	PivotIdx;
+	uint32_t	Type;
 	int		DefaultVal;
 	
-	uint32	NumTimeCodes;
-	uint32	CachedIdx;
+	uint32_t	NumTimeCodes;
+	uint32_t	CachedIdx;
 
-	uint32	*Bits;
+	uint32_t	*Bits;
 
 	void Free(void);
 

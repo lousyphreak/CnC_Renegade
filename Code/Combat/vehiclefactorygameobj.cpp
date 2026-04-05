@@ -139,7 +139,7 @@ VehicleFactoryGameObjDef::~VehicleFactoryGameObjDef (void)
 //	Get_Class_ID
 //
 ////////////////////////////////////////////////////////////////
-uint32
+uint32_t
 VehicleFactoryGameObjDef::Get_Class_ID (void) const	
 { 
 	return CLASSID_GAME_OBJECT_DEF_VEHICLE_FACTORY;

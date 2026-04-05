@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 #include "resource.h"
@@ -64,12 +66,12 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(ConversationPageClass)
-	afx_msg void OnDeleteItemConversationTree(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnSize(UINT nType, int cx, int cy);
-	virtual BOOL OnInitDialog();
+	afx_msg void OnDeleteItemConversationTree(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnSize(uint32_t nType, int cx, int cy);
+	virtual int32_t OnInitDialog();
 	afx_msg void OnDestroy();
-	afx_msg void OnDblclkConversationTree(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnItemexpandedConversationTree(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnDblclkConversationTree(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnItemexpandedConversationTree(NMHDR* pNMHDR, intptr_t* pResult);
 	afx_msg void OnAdd();
 	afx_msg void OnDelete();
 	afx_msg void OnEdit();

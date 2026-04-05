@@ -37,6 +37,8 @@
 #ifndef __NETEVENT_H__
 #define __NETEVENT_H__
 
+#include <cstdint>
+
 #include "networkobject.h"
 #include "netclassids.h"
 
@@ -52,7 +54,7 @@ public:
 
 	virtual void			Export_Creation(BitStreamClass &packet);
 	virtual void			Import_Creation(BitStreamClass &packet);
-	virtual uint32			Get_Network_Class_ID(void) const				= 0;
+	virtual uint32_t			Get_Network_Class_ID(void) const				= 0;
 	virtual void			Delete(void)										{delete this;}
 
 	//void						Send_Immediately(void);//TSS2001e

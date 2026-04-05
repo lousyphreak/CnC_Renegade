@@ -83,7 +83,7 @@ END_MESSAGE_MAP()
 //
 //	ColorSelectionDialogClass
 //
-BOOL
+int32_t
 ColorSelectionDialogClass::OnInitDialog (void)
 {
 	// Allow the base class to process this message
@@ -103,7 +103,7 @@ ColorSelectionDialogClass::OnInitDialog (void)
 	    (red_value == blue_value)) {
 
 		// Check the grayscale checkbox
-		SendDlgItemMessage (IDC_GRAYSCALE_CHECK, BM_SETCHECK, (WPARAM)TRUE);
+		SendDlgItemMessage (IDC_GRAYSCALE_CHECK, BM_SETCHECK, (uintptr_t)TRUE);
 	}
 
 	// Set the initial slider positions
@@ -137,8 +137,8 @@ ColorSelectionDialogClass::OnOK (void)
 void
 ColorSelectionDialogClass::OnHScroll
 (
-	UINT nSBCode,
-	UINT nPos,
+	uint32_t nSBCode,
+	uint32_t nPos,
 	CScrollBar *pScrollBar
 )
 {

@@ -82,12 +82,12 @@ void CWDumpTreeView::Dump(CDumpContext& dc) const
 /////////////////////////////////////////////////////////////////////////////
 // CWDumpTreeView message handlers
 
-void CWDumpTreeView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint) 
+void CWDumpTreeView::OnUpdate(CView* pSender, intptr_t lHint, CObject* pHint) 
 {
 	// add all the chunk items to the view
 	CTreeCtrl &tree = GetTreeCtrl();
 	tree.DeleteAllItems();
-	long flags = tree.GetStyle();
+	int32_t flags = static_cast<int32_t>(tree.GetStyle());
 	flags |= TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS | TVS_SHOWSELALWAYS | TVS_DISABLEDRAGDROP;
 	SetWindowLong(tree.GetSafeHwnd(), GWL_STYLE, flags);
 
@@ -102,7 +102,7 @@ void CWDumpTreeView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 }
 
 
-void CWDumpTreeView::OnSelchanged(NMHDR* pNMHDR, LRESULT* pResult) 
+void CWDumpTreeView::OnSelchanged(NMHDR* pNMHDR, intptr_t* pResult) 
 {
 	NM_TREEVIEW* pNMTreeView = (NM_TREEVIEW*)pNMHDR;
 
@@ -128,7 +128,7 @@ void CWDumpTreeView::InsertItem(ChunkItem * item, HTREEITEM Parent)
 
 	CTreeCtrl &tree = GetTreeCtrl();
 	HTREEITEM tree_item = tree.InsertItem(name, Parent);
-	tree.SetItem(tree_item, TVIF_PARAM,0,0,0,0,0, (long) item);
+	tree.SetItem(tree_item, TVIF_PARAM,0,0,0,0,0, reinterpret_cast<intptr_t>(item));
 
 	POSITION p = item->Chunks.GetHeadPosition();
 	while(p != 0) {
@@ -283,7 +283,7 @@ void CWDumpTreeView::SelectTreeItem (HTREEITEM treeitem, ChunkItem *chunkitem)
 		
 		HTREEITEM subtreeitem;
 
-		if (tree.GetItemData (treeitem) == (DWORD) chunkitem) {
+		if (tree.GetItemData (treeitem) == reinterpret_cast<intptr_t>(chunkitem)) {
 			tree.SelectItem (treeitem);
 		}
 		subtreeitem = tree.GetChildItem (treeitem);
@@ -293,4 +293,3 @@ void CWDumpTreeView::SelectTreeItem (HTREEITEM treeitem, ChunkItem *chunkitem)
 		treeitem = tree.GetNextSiblingItem (treeitem);
 	}
 }
-

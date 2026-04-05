@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __DLGCONFIGAUDIOTAB_H
@@ -74,7 +76,7 @@ public:
 	//	Inherited
 	//
 	void		On_Init_Dialog (void);
-	void		On_Command (int ctrl_id, int message_id, DWORD param);
+	void		On_Command (int ctrl_id, int message_id, uint32_t param);
 	bool		On_Apply (void);
 	void		On_Frame_Update (void);
 	void		On_SliderCtrl_Pos_Changed (SliderCtrlClass *slider_ctrl, int ctrl_id, int new_pos);

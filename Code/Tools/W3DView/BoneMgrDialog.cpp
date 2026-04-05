@@ -88,7 +88,7 @@ END_MESSAGE_MAP()
 //
 //  OnInitDialog
 //
-BOOL
+int32_t
 BoneMgrDialogClass::OnInitDialog (void)
 {
 	// Allow the base class to process this message
@@ -272,7 +272,7 @@ void
 BoneMgrDialogClass::OnSelchangedBoneTree
 (
 	NMHDR *pNMHDR,
-	LRESULT *pResult
+	intptr_t *pResult
 )
 {
 	// Make the dialog controls reflect the new selection

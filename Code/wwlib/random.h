@@ -36,6 +36,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #pragma once
 
+#include <cstdint>
+
 #ifndef RANDOM_H
 #define RANDOM_H
 
@@ -59,7 +61,7 @@ class RandomClass {
 		};
 
 	protected:
-		unsigned long Seed;
+		uint32_t Seed;
 
 		/*
 		**	Internal working constants that are used to generate the next
@@ -169,7 +171,7 @@ class Random3Class {
 // HY 6/14/01
 class Random4Class {
 	public:
-		Random4Class(unsigned int seed=4357);
+		Random4Class(uint32_t seed=4357);
 
 		operator int(void) {return(operator()());};
 		int operator() (void);
@@ -181,7 +183,7 @@ class Random4Class {
 		};
 		
 	protected:
-		unsigned int mt[624]; // state vector
+		uint32_t mt[624]; // state vector
 		int mti;			 // index
 };
 
@@ -243,7 +245,7 @@ int Pick_Random_Number(T & generator, int minval, int maxval)
 	**	Create a full bit mask pattern that has all bits set that just
 	**	barely covers the magnitude of the number range desired.
 	*/
-	unsigned int mask = ~0u;
+	uint32_t mask = ~0u;
 	if (highbit + 1 < static_cast<int>(sizeof(mask) * 8)) {
 		mask = (1u << (highbit + 1)) - 1u;
 	}

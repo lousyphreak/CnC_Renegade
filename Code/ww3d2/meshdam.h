@@ -38,6 +38,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef MESHDAM_H
@@ -53,7 +55,7 @@ class ChunkLoadClass;
 
 struct RGBStruct 
 {
-	uint8	R,G,B;
+	uint8_t	R,G,B;
 };
 
 struct DamageVertexStruct

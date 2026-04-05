@@ -117,7 +117,7 @@ ElevatorPhysDefClass::ElevatorPhysDefClass( void ) :
 	EDITABLE_PARAM(ElevatorPhysDefClass, ParameterClass::TYPE_SOUNDDEFINITIONID,	ElevatorMovingSoundDefID );
 }
 
-uint32	ElevatorPhysDefClass::Get_Class_ID (void) const	
+uint32_t	ElevatorPhysDefClass::Get_Class_ID (void) const	
 { 
 	return CLASSID_ELEVATORPHYSDEF; 
 }

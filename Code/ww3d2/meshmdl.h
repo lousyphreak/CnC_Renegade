@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef MESHMDL_H
@@ -199,7 +201,7 @@ public:
 	//	Decal interface
 	/////////////////////////////////////////////////////////////////////////////////////
 	void							Create_Decal(DecalGeneratorClass * generator, MeshClass * parent);
-	void							Delete_Decal(uint32 decal_id);
+	void							Delete_Decal(uint32_t decal_id);
 
 	/////////////////////////////////////////////////////////////////////////////////////
 	//	Alternate Material Description Interface
@@ -278,8 +280,8 @@ protected:
 	void post_process(void);
 	void post_process_fog(void);
 
-	unsigned int get_sort_flags(int pass) const;
-	unsigned int get_sort_flags(void) const;
+	uint32_t get_sort_flags(int pass) const;
+	uint32_t get_sort_flags(void) const;
 	void compute_static_sort_levels(void);
 
 	// mat info support

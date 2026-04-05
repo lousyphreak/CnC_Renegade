@@ -82,7 +82,7 @@ SimpleGameObjDef::SimpleGameObjDef( void ) :
 	return ;
 }
 
-uint32	SimpleGameObjDef::Get_Class_ID (void) const	
+uint32_t	SimpleGameObjDef::Get_Class_ID (void) const	
 { 
 	return CLASSID_GAME_OBJECT_DEF_SIMPLE; 
 }

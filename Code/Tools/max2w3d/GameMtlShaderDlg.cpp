@@ -140,7 +140,7 @@ GameMtlShaderDlg::~GameMtlShaderDlg()
  * HISTORY:                                                                                    *
  *   11/23/98   GTH : Created.                                                                 *
  *=============================================================================================*/
-BOOL GameMtlShaderDlg::Dialog_Proc (HWND dlg_wnd, UINT message, WPARAM wparam, LPARAM lparam) 
+int32_t GameMtlShaderDlg::Dialog_Proc (HWND dlg_wnd, uint32_t message, uintptr_t wparam, intptr_t lparam) 
 { 
 	int cursel;
 	int i;
@@ -152,7 +152,7 @@ BOOL GameMtlShaderDlg::Dialog_Proc (HWND dlg_wnd, UINT message, WPARAM wparam, L
 
 		case WM_INITDIALOG:
 			for(i = 0; i <= NUM_SHADER_BLEND_PRESETS; i++) {
-				SendDlgItemMessage(dlg_wnd,IDC_PRESET_COMBO,CB_ADDSTRING,0,(LONG)_ShaderBlendSettingPresetNames[i]);
+				SendDlgItemMessage(dlg_wnd,IDC_PRESET_COMBO,CB_ADDSTRING,0,(int32_t)_ShaderBlendSettingPresetNames[i]);
 			}
 			SendDlgItemMessage(dlg_wnd,IDC_PRESET_COMBO,CB_SETCURSEL,0,0);
 			break;
@@ -288,7 +288,7 @@ void GameMtlShaderDlg::ReloadDialog(void)
  * HISTORY:                                                                                    *
  *   11/23/98   GTH : Created.                                                                 *
  *=============================================================================================*/
-void GameMtlShaderDlg::ActivateDlg(BOOL onoff)
+void GameMtlShaderDlg::ActivateDlg(int32_t onoff)
 {
 	// shader has no color swatches which need to be activated...
 }

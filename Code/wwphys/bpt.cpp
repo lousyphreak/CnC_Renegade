@@ -268,7 +268,7 @@ private:
 
 
 	PlaneClass					Plane;		// splitting plane
-	uint32						NumPolys;	// num polys on plane
+	uint32_t						NumPolys;	// num polys on plane
 	BptPolyClass *				Polys;		// array of polys
 	BptNodeClass *				Front;		// pointer to front tree
 	BptNodeClass *				Back;			// pointer to back tree
@@ -371,11 +371,11 @@ public:
 	BptImpNodeClass *			Front;
 	BptImpNodeClass *			Back;
 
-	uint16						FirstPoly;
-	uint16						PolyCount;
+	uint16_t						FirstPoly;
+	uint16_t						PolyCount;
 
-	uint16						NormalIndex;
-	uint16						DistanceIndex;
+	uint16_t						NormalIndex;
+	uint16_t						DistanceIndex;
 
 	bool							Is_Visible(const CameraClass & camera);
 	bool							Cast_AABox_To_Polys(PhysAABoxCollisionTestClass & coltest);
@@ -1321,7 +1321,7 @@ int BptNodeClass::Num_Polys(void) const
 int BptNodeClass::Num_Tris(void) const
 {
 	int count = 0; 
-	for (unsigned int i=0; i<NumPolys; i++) {
+	for (uint32_t i=0; i<NumPolys; i++) {
 		count += Polys[i].NumVerts - 2;
 	}
 	if (Front) count += Front->Num_Tris();
@@ -1649,7 +1649,7 @@ void BptNodeClass::Submit_Polys(MeshBuilderClass & builder) const
 	*/
 	MeshBuilderClass::FaceClass face;
 
-	for (unsigned int fi=0; fi<NumPolys; fi++) {
+	for (uint32_t fi=0; fi<NumPolys; fi++) {
 
 		BptPolyClass * poly = &(Polys[fi]);
 
@@ -1703,7 +1703,7 @@ void BptNodeClass::Compute_Bounding_Box(void)
 	/*
 	** Bound the polys in this node
 	*/
-	for (unsigned int poly_index = 0; poly_index < NumPolys; poly_index++) {
+	for (uint32_t poly_index = 0; poly_index < NumPolys; poly_index++) {
 		for (int vert_index = 0; vert_index < Polys[poly_index].NumVerts; vert_index++) {
 
 			Vector3 & point = Polys[poly_index].Verts[vert_index].Position;
@@ -2329,7 +2329,7 @@ void BptImpBuilderClass::Add_Bpt_Node(const BptNodeClass * node)
 
 	MeshBuilderClass::FaceClass face;
 
-	for (unsigned int fi=0; fi<node->NumPolys; fi++) {
+	for (uint32_t fi=0; fi<node->NumPolys; fi++) {
 
 		BptPolyClass * poly = &(node->Polys[fi]);
 

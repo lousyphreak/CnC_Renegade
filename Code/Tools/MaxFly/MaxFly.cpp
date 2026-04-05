@@ -66,7 +66,7 @@ protected:
 	IUtil *		iu;
 	Interface *	ip;
 
-	friend static BOOL CALLBACK MaxFlyDlgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	friend static int32_t CALLBACK MaxFlyDlgProc(HWND hWnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
 };
 
 static MaxFly theMaxFly;
@@ -75,7 +75,7 @@ class MaxFlyClassDesc:public ClassDesc2
 {
 	public:
 	int 				IsPublic() {return 1;}
-	void *			Create(BOOL loading = FALSE) {return &theMaxFly;}
+	void *			Create(int32_t loading = FALSE) {return &theMaxFly;}
 	const TCHAR *	ClassName() {return GetString(IDS_CLASS_NAME);}
 	SClass_ID		SuperClassID() {return UTILITY_CLASS_ID;}
 	Class_ID			ClassID() {return MAXFLY_CLASS_ID;}
@@ -87,7 +87,7 @@ class MaxFlyClassDesc:public ClassDesc2
 static MaxFlyClassDesc MaxFlyDesc;
 ClassDesc2* GetMaxFlyDesc() {return &MaxFlyDesc;}
 
-static BOOL CALLBACK MaxFlyDlgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+static int32_t CALLBACK MaxFlyDlgProc(HWND hWnd, uint32_t msg, uintptr_t wParam, intptr_t lParam)
 {
 	switch (msg) {
 		case WM_INITDIALOG:
@@ -185,10 +185,10 @@ void MaxFly::Pitch_Up(void)
 				node->Rotate(	ip->GetTime(),									// Time
 									object_tm,										// tmAxis
 									AngAxis(Point3(1,0,0),-PITCH_SPEED),	// const AngAxis& val, 
-									TRUE,												// BOOL localOrigin=FALSE, 
-									TRUE,												// BOOL affectKids=TRUE, 
+									TRUE,												// int32_t localOrigin=FALSE, 
+									TRUE,												// int32_t affectKids=TRUE, 
 									PIV_NONE,										// int pivMode=PIV_NONE, 
-									TRUE												// BOOL ignoreLocks=FALSE
+									TRUE												// int32_t ignoreLocks=FALSE
 								);
 			}
 		}
@@ -207,10 +207,10 @@ void MaxFly::Pitch_Down(void)
 				node->Rotate(	ip->GetTime(),									// Time
 									object_tm,										// tmAxis
 									AngAxis(Point3(1,0,0),PITCH_SPEED),		// const AngAxis& val, 
-									TRUE,												// BOOL localOrigin=FALSE, 
-									TRUE,												// BOOL affectKids=TRUE, 
+									TRUE,												// int32_t localOrigin=FALSE, 
+									TRUE,												// int32_t affectKids=TRUE, 
 									PIV_NONE,										// int pivMode=PIV_NONE, 
-									TRUE												// BOOL ignoreLocks=FALSE
+									TRUE												// int32_t ignoreLocks=FALSE
 								);
 			}
 		}
@@ -228,10 +228,10 @@ void MaxFly::Yaw_Left(void)
 				node->Rotate(	ip->GetTime(),									// Time
 									object_tm,										// tmAxis
 									AngAxis(Point3(0,1,0),-YAW_SPEED),		// const AngAxis& val, 
-									TRUE,												// BOOL localOrigin=FALSE, 
-									TRUE,												// BOOL affectKids=TRUE, 
+									TRUE,												// int32_t localOrigin=FALSE, 
+									TRUE,												// int32_t affectKids=TRUE, 
 									PIV_NONE,										// int pivMode=PIV_NONE, 
-									TRUE												// BOOL ignoreLocks=FALSE
+									TRUE												// int32_t ignoreLocks=FALSE
 								);
 			}
 		}
@@ -249,10 +249,10 @@ void MaxFly::Yaw_Right(void)
 				node->Rotate(	ip->GetTime(),									// Time
 									object_tm,										// tmAxis
 									AngAxis(Point3(0,1,0),+YAW_SPEED),		// const AngAxis& val, 
-									TRUE,												// BOOL localOrigin=FALSE, 
-									TRUE,												// BOOL affectKids=TRUE, 
+									TRUE,												// int32_t localOrigin=FALSE, 
+									TRUE,												// int32_t affectKids=TRUE, 
 									PIV_NONE,										// int pivMode=PIV_NONE, 
-									TRUE												// BOOL ignoreLocks=FALSE
+									TRUE												// int32_t ignoreLocks=FALSE
 								);
 			}
 		}
@@ -270,10 +270,10 @@ void MaxFly::Fly_Forward(void)
 				node->Move(		ip->GetTime(),									// TimeValue t, 
 									object_tm,										// const Matrix3& tmAxis, 
 									Point3(0.0f,0.0f,-FLY_SPEED),				// const Point3& val, 
-									TRUE,												// BOOL localOrigin=FALSE, 
-									TRUE,												// BOOL affectKids=TRUE, 
+									TRUE,												// int32_t localOrigin=FALSE, 
+									TRUE,												// int32_t affectKids=TRUE, 
 									PIV_NONE,										// int pivMode=PIV_NONE, 
-									TRUE												// BOOL ignoreLocks=FALSE
+									TRUE												// int32_t ignoreLocks=FALSE
 								);
 			}
 		}
@@ -291,10 +291,10 @@ void MaxFly::Fly_Backward(void)
 				node->Move(		ip->GetTime(),									// TimeValue t, 
 									object_tm,										// const Matrix3& tmAxis, 
 									Point3(0.0f,0.0f,FLY_SPEED),				// const Point3& val, 
-									TRUE,												// BOOL localOrigin=FALSE, 
-									TRUE,												// BOOL affectKids=TRUE, 
+									TRUE,												// int32_t localOrigin=FALSE, 
+									TRUE,												// int32_t affectKids=TRUE, 
 									PIV_NONE,										// int pivMode=PIV_NONE, 
-									TRUE												// BOOL ignoreLocks=FALSE
+									TRUE												// int32_t ignoreLocks=FALSE
 								);
 			}
 		}

@@ -27,6 +27,8 @@
 //-----------------------------------------------------------------------------
 #if defined(_MSV_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef MSGSTATLISTGROUP_H
@@ -55,13 +57,13 @@ class cMsgStatListGroup
 		void		Increment_Num_Msg_Recd(		int list_num, int message_type, int increment = 1);
 		void		Increment_Num_Byte_Recd(	int list_num, int message_type, int increment);
 
-		DWORD		Get_Num_Msg_Sent(		int list_num, int message_type) const;
-		DWORD		Get_Num_Byte_Sent(	int list_num, int message_type) const;
-		DWORD		Get_Num_Msg_Recd(		int list_num, int message_type) const;
-		DWORD		Get_Num_Byte_Recd(	int list_num, int message_type) const;
+		uint32_t		Get_Num_Msg_Sent(		int list_num, int message_type) const;
+		uint32_t		Get_Num_Byte_Sent(	int list_num, int message_type) const;
+		uint32_t		Get_Num_Msg_Recd(		int list_num, int message_type) const;
+		uint32_t		Get_Num_Byte_Recd(	int list_num, int message_type) const;
 
-		DWORD		Compute_Avg_Num_Byte_Sent(	int list_num, int message_type) const;
-		DWORD		Compute_Avg_Num_Byte_Recd(	int list_num, int message_type) const;
+		uint32_t		Compute_Avg_Num_Byte_Sent(	int list_num, int message_type) const;
+		uint32_t		Compute_Avg_Num_Byte_Recd(	int list_num, int message_type) const;
 
 		cMsgStatList * Get_Stat_List(int list_num);
 

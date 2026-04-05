@@ -65,7 +65,7 @@ static DynamicVectorClass<FileMappingClass> MappingList;
 
 namespace
 {
-bool Read_File_Contents(FileClass &file, std::vector<unsigned char> &buffer, int reported_size)
+bool Read_File_Contents(FileClass &file, std::vector<uint8_t> &buffer, int reported_size)
 {
 	buffer.clear ();
 
@@ -74,7 +74,7 @@ bool Read_File_Contents(FileClass &file, std::vector<unsigned char> &buffer, int
 		return (file.Read (buffer.data (), reported_size) == reported_size);
 	}
 
-	unsigned char chunk[4096];
+	uint8_t chunk[4096];
 	for (;;) {
 		int bytes_read = file.Read (chunk, sizeof (chunk));
 		if (bytes_read < 0) {
@@ -151,7 +151,7 @@ SoundBufferClass::Free_Buffer (void)
 //	Determine_Stats
 //
 void
-SoundBufferClass::Determine_Stats (unsigned char *buffer)
+SoundBufferClass::Determine_Stats (uint8_t *buffer)
 {
 	WWPROFILE ("Determine_Stats");
 
@@ -249,13 +249,13 @@ SoundBufferClass::Load_From_File (FileClass &file)
 		we_opened = (file.Open () == TRUE);
 	}
 
-	std::vector<unsigned char> file_data;
+	std::vector<uint8_t> file_data;
 	const int reported_size = file.Size ();
 	retval = Read_File_Contents (file, file_data, reported_size);
 	if (retval && !file_data.empty ()) {
 
 		m_Length = file_data.size ();
-		m_Buffer = new unsigned char[m_Length];
+		m_Buffer = new uint8_t[m_Length];
 		::memcpy (m_Buffer, file_data.data (), m_Length);
 		Determine_Stats (m_Buffer);
 	} else {
@@ -279,8 +279,8 @@ SoundBufferClass::Load_From_File (FileClass &file)
 bool
 SoundBufferClass::Load_From_Memory
 (
-	unsigned char *mem_buffer,
-	unsigned long size
+	uint8_t *mem_buffer,
+	uint32_t size
 )
 {
 	MMSLockClass lock;
@@ -300,7 +300,7 @@ SoundBufferClass::Load_From_Memory
 		// Allocate a new buffer of the correct length and copy the contents
 		// into the buffer
 		m_Length = size;
-		m_Buffer = new unsigned char[m_Length];
+		m_Buffer = new uint8_t[m_Length];
 		::memcpy (m_Buffer, mem_buffer, size);
 		retval = true;
 
@@ -357,8 +357,8 @@ bool
 StreamSoundBufferClass::Load_From_File
 (
 	HANDLE			/*hfile*/,
-	unsigned long	/*size*/,
-	unsigned long	/*offset*/
+	uint32_t	/*size*/,
+	uint32_t	/*offset*/
 )
 {
 	WWPROFILE ("StreamSoundBufferClass::Load_From_File");
@@ -405,7 +405,7 @@ StreamSoundBufferClass::Load_From_File (FileClass &file)
 	m_Length = (reported_size > 0) ? reported_size : 0;
 
 	if (reported_size > 0) {
-		std::vector<unsigned char> buffer;
+		std::vector<uint8_t> buffer;
 		if (Read_File_Contents(file, buffer, reported_size) && !buffer.empty()) {
 			Determine_Stats(buffer.data());
 		}

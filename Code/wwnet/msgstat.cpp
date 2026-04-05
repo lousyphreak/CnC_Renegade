@@ -84,22 +84,22 @@ void cMsgStat::Increment_Num_Byte_Recd(int increment)
 }
 
 //---------------- --------------------------------------------------------------------
-DWORD	cMsgStat::Compute_Avg_Num_Byte_Sent(void) const
+uint32_t	cMsgStat::Compute_Avg_Num_Byte_Sent(void) const
 {
-	DWORD avg = 0;
+	uint32_t avg = 0;
 	if (NumMsgSent > 0) {
-		avg = (DWORD) cMathUtil::Round(NumByteSent / (float) NumMsgSent);
+		avg = (uint32_t) cMathUtil::Round(NumByteSent / (float) NumMsgSent);
 	}
 
 	return avg;
 }
 
 //---------------- --------------------------------------------------------------------
-DWORD cMsgStat::Compute_Avg_Num_Byte_Recd(void) const
+uint32_t cMsgStat::Compute_Avg_Num_Byte_Recd(void) const
 {
-	DWORD avg = 0;
+	uint32_t avg = 0;
 	if (NumMsgRecd > 0) {
-		avg = (DWORD) cMathUtil::Round(NumByteRecd / (float) NumMsgRecd);
+		avg = (uint32_t) cMathUtil::Round(NumByteRecd / (float) NumMsgRecd);
 	}
 
 	return avg;

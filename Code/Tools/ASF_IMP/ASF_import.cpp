@@ -79,7 +79,7 @@ public:
 	const TCHAR *	CopyrightMessage();	// ASCII Copyright message
 	const TCHAR *	OtherMessage1();	// Other message #1
 	const TCHAR *	OtherMessage2();	// Other message #2
-	unsigned int	Version();			// Version number * 100
+	uint32_t	Version();			// Version number * 100
 	void			ShowAbout(HWND);	// Show DLL's "About..." box
 
 	int				DoImport
@@ -87,7 +87,7 @@ public:
 		const TCHAR *  name,
 		ImpInterface * i,
 		Interface *    gi,
-		BOOL				suppressPrompts=FALSE
+		int32_t				suppressPrompts=FALSE
 	);
 };
 
@@ -97,10 +97,10 @@ public:
 
 static int         controlsInit = FALSE;
 
-BOOL WINAPI        DllMain
+int32_t WINAPI        DllMain
 (
     HINSTANCE      hinstDLL,
-	ULONG          fdwReason,
+	uint32_t          fdwReason,
 	LPVOID         lpvReserved
 )
 {
@@ -132,7 +132,7 @@ class ASF_ClassDesc : public ClassDesc
 {
 public:
 	int 			IsPublic()     { return 1; }
-	void *			Create(BOOL loading = FALSE) { return new ASF_Import; }
+	void *			Create(int32_t loading = FALSE) { return new ASF_Import; }
 	const TCHAR *	ClassName()    { return GetString(IDS_SHORT_DESC); }
 	SClass_ID		SuperClassID() { return SCENE_IMPORT_CLASS_ID; }
 	Class_ID		ClassID()      { return Class_ID(0x74975aa6, 0x1810323f); }
@@ -165,7 +165,7 @@ __declspec( dllexport ) ClassDesc *    LibClassDesc(int i)
 }
 
 // Return version so can detect obsolete DLLs
-__declspec( dllexport ) ULONG    LibVersion()
+__declspec( dllexport ) uint32_t    LibVersion()
 {
 	return VERSION_3DSMAX;
 }
@@ -220,7 +220,7 @@ const TCHAR *      ASF_Import::OtherMessage2()
 	return _T("");
 }
 
-unsigned int       ASF_Import::Version()
+uint32_t       ASF_Import::Version()
 {
 	return 100;
 }
@@ -267,7 +267,7 @@ int                ASF_Import::DoImport
 	const TCHAR *  filename,
 	ImpInterface * iface,
 	Interface *    gi,
-	BOOL 
+	int32_t 
 )
 {
 	int status;

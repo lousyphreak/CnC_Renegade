@@ -724,7 +724,7 @@ StaticPhysDefClass::StaticPhysDefClass(void) :
 	EDITABLE_PARAM(StaticPhysDefClass, ParameterClass::TYPE_BOOL, IsNonOccluder);
 }
 
-uint32 StaticPhysDefClass::Get_Class_ID (void) const
+uint32_t StaticPhysDefClass::Get_Class_ID (void) const
 {
 	return CLASSID_STATICPHYSDEF; 
 }

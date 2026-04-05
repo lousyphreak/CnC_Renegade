@@ -44,7 +44,7 @@ const int SHORTS_PER_LINE = 8;
 const int LONGS_PER_LINE = 4;
 
 
-HexToStringClass::HexToStringClass(const uint8 * data,uint32 size) :
+HexToStringClass::HexToStringClass(const uint8_t * data,uint32_t size) :
 	Data(data),
 	Size(size)
 {
@@ -56,7 +56,7 @@ HexToStringClass::HexToStringClass(const uint8 * data,uint32 size) :
 **
 *******************************************************************************************/
 	
-HexToStringByteClass::HexToStringByteClass(const uint8 * data,uint32 size) :
+HexToStringByteClass::HexToStringByteClass(const uint8_t * data,uint32_t size) :
 	HexToStringClass(data,size)
 {
 	Reset();
@@ -79,8 +79,8 @@ CString HexToStringByteClass::Get_Next_Line(void)
 	int i;
 	CString line_string;
 	CString tmp_string;
-	const uint8 * workptr = CurPos;
-	uint32 offset = (uint32)(CurPos - Data);
+	const uint8_t * workptr = CurPos;
+	uint32_t offset = (uint32_t)(CurPos - Data);
 	int bytes_to_eat = min(BYTES_PER_LINE,Size - offset);
 
 	// print hex dump
@@ -122,7 +122,7 @@ CString HexToStringByteClass::Get_Next_Line(void)
 **
 *******************************************************************************************/
 
-HexToStringShortClass::HexToStringShortClass(const uint8 * data,uint32 size) :
+HexToStringShortClass::HexToStringShortClass(const uint8_t * data,uint32_t size) :
 	HexToStringClass(data,size)
 {
 	// Round size down to the nearest word
@@ -132,12 +132,12 @@ HexToStringShortClass::HexToStringShortClass(const uint8 * data,uint32 size) :
 
 void HexToStringShortClass::Reset(void)
 {
-	CurPos = (uint16*)Data;
+	CurPos = (uint16_t*)Data;
 }
 
 bool HexToStringShortClass::Is_Done(void)
 {
-	uint32 offset = (uint32)((uint8*)CurPos - Data);
+	uint32_t offset = static_cast<uint32_t>(reinterpret_cast<const uint8_t *>(CurPos) - Data);
 	return offset >= Size;
 }
 
@@ -148,9 +148,9 @@ CString HexToStringShortClass::Get_Next_Line(void)
 	int i;
 	CString line_string;
 	CString tmp_string;
-	const uint16 * workptr = CurPos;
-	uint32 offset = (uint32)((uint8*)CurPos - Data);
-	int shorts_to_eat = min(SHORTS_PER_LINE,(Size - offset) / sizeof(uint16));  //yeah shorts_to_eat!
+	const uint16_t * workptr = CurPos;
+	uint32_t offset = static_cast<uint32_t>(reinterpret_cast<const uint8_t *>(CurPos) - Data);
+	int shorts_to_eat = min(SHORTS_PER_LINE,(Size - offset) / sizeof(uint16_t));  //yeah shorts_to_eat!
 
 	// print hex dump
 	line_string.Format("%08x:  ",offset);
@@ -168,7 +168,7 @@ CString HexToStringShortClass::Get_Next_Line(void)
 ** HexToStringLongClass
 **
 *******************************************************************************************/
-HexToStringLongClass::HexToStringLongClass(const uint8 * data,uint32 size) :
+HexToStringLongClass::HexToStringLongClass(const uint8_t * data,uint32_t size) :
 	HexToStringClass(data,size)
 {
 	// Round size down to the nearest long
@@ -178,12 +178,12 @@ HexToStringLongClass::HexToStringLongClass(const uint8 * data,uint32 size) :
 
 void HexToStringLongClass::Reset(void)
 {
-	CurPos = (uint32*)Data;
+	CurPos = (uint32_t*)Data;
 }
 
 bool HexToStringLongClass::Is_Done(void)
 {
-	uint32 offset = (uint32)((uint8*)CurPos - Data);
+	uint32_t offset = static_cast<uint32_t>(reinterpret_cast<const uint8_t *>(CurPos) - Data);
 	return offset >= Size;
 }
 
@@ -194,9 +194,9 @@ CString HexToStringLongClass::Get_Next_Line(void)
 	int i;
 	CString line_string;
 	CString tmp_string;
-	const uint32 * workptr = CurPos;
-	uint32 offset = (uint32)((uint8*)CurPos - Data);
-	int longs_to_eat = min(LONGS_PER_LINE,(Size - offset)/sizeof(uint32));  
+	const uint32_t * workptr = CurPos;
+	uint32_t offset = static_cast<uint32_t>(reinterpret_cast<const uint8_t *>(CurPos) - Data);
+	int longs_to_eat = min(LONGS_PER_LINE,(Size - offset)/sizeof(uint32_t));  
 
 	// print hex dump
 	line_string.Format("%08x:  ",offset);
@@ -208,5 +208,4 @@ CString HexToStringLongClass::Get_Next_Line(void)
 	CurPos = workptr;
 	return line_string;
 }
-
 

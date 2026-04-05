@@ -78,7 +78,7 @@ enum
 //	Chunk_ID
 //
 ///////////////////////////////////////////////////////////////////////
-uint32
+uint32_t
 StaticAudioSaveLoadClass::Chunk_ID (void) const
 {
 	return CHUNKID_STATIC_SAVELOAD;
@@ -170,7 +170,7 @@ StaticAudioSaveLoadClass::Load (ChunkLoadClass &cload)
 //	Chunk_ID
 //
 ///////////////////////////////////////////////////////////////////////
-uint32
+uint32_t
 DynamicAudioSaveLoadClass::Chunk_ID (void) const
 {
 	return CHUNKID_DYNAMIC_SAVELOAD;

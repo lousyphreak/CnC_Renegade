@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 
@@ -60,7 +62,7 @@ class TerrainLODPageClass : public DockableFormClass
 protected:
 	// Generated message map functions
 	//{{AFX_MSG(TerrainLODPageClass)
-	afx_msg void OnDblclkLodList(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnDblclkLodList(NMHDR* pNMHDR, intptr_t* pResult);
 	afx_msg void OnUpdateLodCountEdit();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
@@ -74,7 +76,7 @@ protected:
 		void						HandleInitDialog (void);
 		bool						Apply_Changes (void);
 
-		DynamicVectorClass<unsigned int> &Get_Distance_List (void)	{ return m_SettingsList; }
+		DynamicVectorClass<uint32_t> &Get_Distance_List (void)	{ return m_SettingsList; }
 
 	protected:
 		
@@ -88,7 +90,7 @@ protected:
 		///////////////////////////////////////////////////////
 		//	Private member data
 		///////////////////////////////////////////////////////
-		DynamicVectorClass<unsigned int>	m_SettingsList;
+		DynamicVectorClass<uint32_t>	m_SettingsList;
 		bool										m_bFinishedInit;
 };
 

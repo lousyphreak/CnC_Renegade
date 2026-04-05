@@ -35,11 +35,13 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #pragma once
 
+#include <cstdint>
+
 #ifndef MPU_H
 #define MPU_H
 
-unsigned long Get_CPU_Clock(unsigned long & high);
-unsigned long Get_CPU_Rate(unsigned long & high);
+uint32_t Get_CPU_Clock(uint32_t & high);
+uint32_t Get_CPU_Rate(uint32_t & high);
 
 int Get_RDTSC_CPU_Speed(void);
 

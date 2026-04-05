@@ -76,7 +76,7 @@ END_MESSAGE_MAP()
 //
 //  OnInitDialog
 //
-BOOL
+int32_t
 CBackgroundObjectDialog::OnInitDialog (void)
 {
     // Allow the base class to process this message
@@ -192,7 +192,7 @@ void
 CBackgroundObjectDialog::OnItemChangedHierarchyList
 (
     NMHDR* pNMHDR,
-    LRESULT* pResult
+    intptr_t* pResult
 )
 {
 	// Did the 'state' of the entry change?

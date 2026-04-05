@@ -64,7 +64,7 @@ class File : public Stream
 		File();
 
 		//! Name constructor - Create a File with an associated name
-		File(const Char* name, ERights rights = Rights_ReadOnly);
+		File(const char* name, ERights rights = Rights_ReadOnly);
 		File(const UString& name, ERights rights = Rights_ReadOnly);
 
 		//! Destructor
@@ -104,10 +104,10 @@ class File : public Stream
 		virtual EFileError Delete(void);
 
 		//! Load the file into memory
-		virtual EFileError Load(void*& outBuffer, UInt32& outSize);
+		virtual EFileError Load(void*& outBuffer, uint32_t& outSize);
 
 		//! Write file data
-		virtual EFileError Save(const void* buffer, UInt32 size);
+		virtual EFileError Save(const void* buffer, uint32_t size);
 
 		//! Error handling hook
 		virtual bool OnFileError(EFileError error, bool canRetry);
@@ -117,28 +117,28 @@ class File : public Stream
 		//-----------------------------------------------------------------------
 
 		//! Get the length of the file
-		virtual UInt32 GetLength(void);
+		virtual uint32_t GetLength(void);
 
 		//! Set the length of the file
-		virtual void SetLength(UInt32 length);
+		virtual void SetLength(uint32_t length);
 
 		//! Get file position marker
-		virtual UInt32 GetMarker(void);
+		virtual uint32_t GetMarker(void);
 
 		//! Set file position marker
-		virtual void SetMarker(Int32 offset, EStreamFrom from);
+		virtual void SetMarker(int32_t offset, EStreamFrom from);
 		
 		//! End of file test
 		virtual bool AtEnd(void);
 		
 		//! Read bytes from the file
-		virtual UInt32 GetBytes(void* ptr, UInt32 bytes);
+		virtual uint32_t GetBytes(void* ptr, uint32_t bytes);
 
 		//! Write bytes to the file
-		virtual UInt32 PutBytes(const void* ptr, UInt32 bytes);
+		virtual uint32_t PutBytes(const void* ptr, uint32_t bytes);
 
 		//! Read bytes from the file without marker adjustment
-		virtual UInt32 PeekBytes(void* ptr, UInt32 bytes);
+		virtual uint32_t PeekBytes(void* ptr, uint32_t bytes);
 
 		//! Flush the stream
 		virtual void Flush(void);

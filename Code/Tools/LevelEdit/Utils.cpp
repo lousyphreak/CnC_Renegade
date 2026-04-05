@@ -264,9 +264,9 @@ void
 Paint_Gradient
 (
     HWND hwnd,
-    BYTE base_red,
-    BYTE base_green,
-    BYTE base_blue
+    uint8_t base_red,
+    uint8_t base_green,
+    uint8_t base_blue
 )
 {
 	// Get the bounding rectangle so we know how much to paint
@@ -475,10 +475,10 @@ Up_One_Directory (LPCTSTR path)
 //  Get_File_Size
 //
 ////////////////////////////////////////////////////////////////////////////
-DWORD
+uint32_t
 Get_File_Size (LPCTSTR path)
 {
-	DWORD file_size = 0L;
+	uint32_t file_size = 0L;
 
 	ASSERT (path != NULL);
 	if (path != NULL) {
@@ -603,7 +603,7 @@ Find_File
 		} else {
 			
 			WIN32_FIND_DATA find_info = { 0 };
-			BOOL bcontinue = true;
+			int32_t bcontinue = true;
 
 			CString search_mask = current_dir + "\\*.*";
 
@@ -882,16 +882,16 @@ Filename_From_Asset_Name (LPCTSTR asset_name)
 //  Message_Box
 //
 ////////////////////////////////////////////////////////////////////////////
-UINT
+uint32_t
 Message_Box
 (
 	HWND hparentwnd,
-	UINT message_id,
-	UINT title_id,
-	UINT style
+	uint32_t message_id,
+	uint32_t title_id,
+	uint32_t style
 )
 {
-	UINT ret_code = IDOK;
+	uint32_t ret_code = IDOK;
 
 	if (Is_Silent_Mode () == false) {
 
@@ -999,7 +999,7 @@ Browse_For_Folder
 	HWND hparentwnd,
 	LPCTSTR default_path,
 	LPCTSTR title,
-	UINT flags
+	uint32_t flags
 )
 {
 	bool retval = false;
@@ -1075,10 +1075,10 @@ Pump_Messages (void)
 typedef struct
 {
 	LPVOID ThreadProc;
-	DWORD dwparam1;
-	DWORD dwparam2;
-	DWORD dwparam3;
-	HRESULT *presult;
+	uint32_t dwparam1;
+	uint32_t dwparam2;
+	uint32_t dwparam3;
+	int32_t *presult;
 	HWND *phmain_wnd;
 	HANDLE hevent;
 } THREAD_PARAMS;
@@ -1089,7 +1089,7 @@ typedef struct
 //  fnWorkerThread
 //
 ////////////////////////////////////////////////////////////////////////////
-UINT
+uint32_t
 fnWorkerThread (LPVOID pParam)
 {
 	THREAD_PARAMS *pthread_params = (THREAD_PARAMS *)pParam;
@@ -1119,10 +1119,10 @@ void
 Create_Worker_Thread
 (
 	MY_THREADPROC fnthread_proc,
-	DWORD dwparam1,
-	DWORD dwparam2,
-	DWORD dwparam3,
-	HRESULT *presult
+	uint32_t dwparam1,
+	uint32_t dwparam2,
+	uint32_t dwparam3,
+	int32_t *presult
 )
 {
 	// Create a structure we can pass to the thread proc
@@ -1146,7 +1146,7 @@ Create_Worker_Thread
 //  fnUIThread
 //
 ////////////////////////////////////////////////////////////////////////////
-UINT
+uint32_t
 fnUIThread (LPVOID pParam)
 {
 	THREAD_PARAMS *pthread_params = (THREAD_PARAMS *)pParam;
@@ -1187,10 +1187,10 @@ void
 Create_UI_Thread
 (
 	MY_UITHREADPROC fnthread_proc,
-	DWORD dwparam1,
-	DWORD dwparam2,
-	DWORD dwparam3,
-	HRESULT *presult,
+	uint32_t dwparam1,
+	uint32_t dwparam2,
+	uint32_t dwparam3,
+	int32_t *presult,
 	HWND *phmain_wnd
 )
 {	
@@ -1263,7 +1263,7 @@ void
 SetDlgItemFloat
 (
 	HWND hdlg,
-	UINT child_id,
+	uint32_t child_id,
 	float value
 )
 {
@@ -1330,7 +1330,7 @@ float
 GetDlgItemFloat
 (
 	HWND hdlg,
-	UINT child_id,
+	uint32_t child_id,
 	bool interpret
 )
 {
@@ -1466,13 +1466,13 @@ Fill_Node_Instance_Combo
 		  node = node_mgr.Get_Next (node)) {
 		
 		// Add this node to the combobox
-		int index = ::SendMessage (hcombobox, CB_ADDSTRING, (WPARAM)0, (LPARAM)node->Get_Name ());
+		int index = ::SendMessage (hcombobox, CB_ADDSTRING, (uintptr_t)0, (intptr_t)node->Get_Name ());
 		if (index != CB_ERR) {
-			::SendMessage (hcombobox, CB_SETITEMDATA, (WPARAM)index, (LPARAM)node);
+			::SendMessage (hcombobox, CB_SETITEMDATA, (uintptr_t)index, (intptr_t)node);
 
 			// If this is the default node, then select it...
 			if (node == default_node) {
-				::SendMessage (hcombobox, CB_SETCURSEL, (WPARAM)index, 0L);
+				::SendMessage (hcombobox, CB_SETCURSEL, (uintptr_t)index, 0L);
 			}
 		}
 	}
@@ -1501,13 +1501,13 @@ Fill_Group_Combo
 		if (pgroup != NULL) {
 
 			// Add this group to the combobox
-			int index = ::SendMessage (hcombobox, CB_ADDSTRING, (WPARAM)0, (LPARAM)(LPCTSTR)pgroup->Get_Name ());
+			int index = ::SendMessage (hcombobox, CB_ADDSTRING, (uintptr_t)0, (intptr_t)(LPCTSTR)pgroup->Get_Name ());
 			if (index != CB_ERR) {
-				::SendMessage (hcombobox, CB_SETITEMDATA, (WPARAM)index, (LPARAM)pgroup);
+				::SendMessage (hcombobox, CB_SETITEMDATA, (uintptr_t)index, (intptr_t)pgroup);
 
 				// If this is the default group, then select it...
 				if (pgroup == pdefault) {
-					::SendMessage (hcombobox, CB_SETCURSEL, (WPARAM)index, 0L);
+					::SendMessage (hcombobox, CB_SETCURSEL, (uintptr_t)index, 0L);
 				}
 			}
 		}		
@@ -1572,7 +1572,7 @@ Copy_File
 		bool allow_copy = (::lstrcmpi (existing_filename, new_filename) != 0);
 		
 		// Strip the readonly bit off if necessary
-		DWORD attributes = ::GetFileAttributes (new_filename);
+		uint32_t attributes = ::GetFileAttributes (new_filename);
 		if (allow_copy &&
 		    (attributes != 0xFFFFFFFF) &&
 			 ((attributes & FILE_ATTRIBUTE_READONLY) == FILE_ATTRIBUTE_READONLY)) {
@@ -1599,13 +1599,13 @@ Copy_File
 // fnUpdatingVSSThread
 //
 ////////////////////////////////////////////////////////////////////////////
-UINT
+uint32_t
 fnUpdatingVSSThread
 (
-	DWORD dwparam1,
-	DWORD /*dwparam2*/,
-	DWORD /*dwparam3*/,
-	HRESULT* /*presult*/,
+	uint32_t dwparam1,
+	uint32_t /*dwparam2*/,
+	uint32_t /*dwparam3*/,
+	int32_t* /*presult*/,
 	HWND* phmain_wnd
 )
 {
@@ -1632,7 +1632,7 @@ Show_VSS_Update_Dialog (HWND hparent_wnd)
 {
 	// Kick off a UI thread that will display the 'updating' dialog and animation for us
 	HWND hthread_wnd = NULL;
-	::Create_UI_Thread (fnUpdatingVSSThread, (DWORD)hparent_wnd, 0, 0, NULL, &hthread_wnd);
+	::Create_UI_Thread (fnUpdatingVSSThread, (uint32_t)hparent_wnd, 0, 0, NULL, &hthread_wnd);
 	return hthread_wnd;
 }
 
@@ -1823,17 +1823,17 @@ FileAccessRightsClass::~FileAccessRightsClass (void)
 //	fnEditToFloatProc
 //
 /////////////////////////////////////////////////////////////////////////////
-LRESULT CALLBACK
+intptr_t CALLBACK
 fnEditToFloatProc
 (
 	HWND		hwnd,
-	UINT		message,
-	WPARAM	wparam,
-	LPARAM	lparam
+	uint32_t		message,
+	uintptr_t	wparam,
+	intptr_t	lparam
 )
 {
 	WNDPROC old_proc = (WNDPROC)::GetProp (hwnd, "OLD_WND_PROC");
-	LRESULT result = 0L;
+	intptr_t result = 0L;
 
 	if (message == WM_SETTEXT) {
 		
@@ -1846,11 +1846,11 @@ fnEditToFloatProc
 		if (::strchr (string, '.') != 0) {
 			result = ::CallWindowProc (old_proc, hwnd, message, wparam, lparam);
 		} else {
-			long value			= ::atol ((LPCTSTR)lparam);
+			int32_t value		= static_cast<int32_t>(::atol ((LPCTSTR)lparam));
 			float float_value	= value / 100.0F;
 			CString new_text;
 			new_text.Format ("%.3f", float_value);
-			result = ::CallWindowProc (old_proc, hwnd, message, wparam, (LPARAM)(LPCTSTR)new_text);
+			result = ::CallWindowProc (old_proc, hwnd, message, wparam, (intptr_t)(LPCTSTR)new_text);
 		}
 
 	} else if (message == WM_GETTEXT) {
@@ -1865,10 +1865,10 @@ fnEditToFloatProc
 		LPCTSTR string		= (LPCTSTR)lparam;
 		if (::strchr (string, '.') != 0) {
 			float float_value	= ::atof (string);
-			long int_value		= long(float_value * 100);
+			int32_t int_value	= static_cast<int32_t>(float_value * 100);
 			::itoa (int_value, (LPTSTR)lparam, 10);			
 		} else {
-			long int_value		= ::atol (string) * 100;
+			int32_t int_value	= static_cast<int32_t>(::atol (string) * 100);
 			::itoa (int_value, (LPTSTR)lparam, 10);						
 		}
 
@@ -1904,7 +1904,7 @@ fnEditToFloatProc
 void
 Restore_Edit_Ctrl (HWND edit_wnd)
 {
-	LONG orig_proc = (LONG)::GetProp (edit_wnd, "OLD_WND_PROC");
+	int32_t orig_proc = (int32_t)::GetProp (edit_wnd, "OLD_WND_PROC");
 	if (orig_proc != 0) {
 		::SetWindowLong (edit_wnd, GWL_WNDPROC, orig_proc);
 		::RemoveProp (edit_wnd, "OLD_WND_PROC");
@@ -1923,7 +1923,7 @@ Make_Edit_Float_Ctrl (HWND edit_wnd)
 {
 	Restore_Edit_Ctrl (edit_wnd);
 
-	LONG old_proc = ::SetWindowLong (edit_wnd, GWL_WNDPROC, (LONG)fnEditToFloatProc);
+	int32_t old_proc = ::SetWindowLong (edit_wnd, GWL_WNDPROC, (int32_t)fnEditToFloatProc);
 	SetProp (edit_wnd, "OLD_WND_PROC", (HANDLE)old_proc);
 	return ;
 }
@@ -1934,17 +1934,17 @@ Make_Edit_Float_Ctrl (HWND edit_wnd)
 //	fnEditToIntProc
 //
 /////////////////////////////////////////////////////////////////////////////
-LRESULT CALLBACK
+intptr_t CALLBACK
 fnEditToIntProc
 (
 	HWND		hwnd,
-	UINT		message,
-	WPARAM	wparam,
-	LPARAM	lparam
+	uint32_t		message,
+	uintptr_t	wparam,
+	intptr_t	lparam
 )
 {
 	WNDPROC old_proc = (WNDPROC)::GetProp (hwnd, "OLD_WND_PROC");
-	LRESULT result = 0L;
+	intptr_t result = 0L;
 
 	if (message == WM_CHAR) {
 		
@@ -1977,7 +1977,7 @@ Make_Edit_Int_Ctrl (HWND edit_wnd)
 {
 	Restore_Edit_Ctrl (edit_wnd);
 
-	LONG old_proc = ::SetWindowLong (edit_wnd, GWL_WNDPROC, (LONG)fnEditToIntProc);
+	int32_t old_proc = ::SetWindowLong (edit_wnd, GWL_WNDPROC, (int32_t)fnEditToIntProc);
 	SetProp (edit_wnd, "OLD_WND_PROC", (HANDLE)old_proc);
 	return ;
 }
@@ -2278,7 +2278,7 @@ Perform_Job (LPCTSTR filename, bool delete_on_completion)
 //
 /////////////////////////////////////////////////////////////////////////////
 LPCTSTR
-Get_Factory_Name (uint32 class_id)
+Get_Factory_Name (uint32_t class_id)
 {
 	LPCTSTR name = NULL;
 

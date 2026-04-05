@@ -37,6 +37,8 @@
 #ifndef __WOLCHANNEL_H__
 #define __WOLCHANNEL_H__
 
+#include <cstdint>
+
 #include "RefCounted.h"
 #include "RefPtr.h"
 #include <WWLib\Notify.h>
@@ -94,17 +96,17 @@ class ChannelData :
 		bool IsPassworded(void) const;
 
 		// Set the channels minimum and maximum users allowed.
-		void SetMinMaxUsers(unsigned int minUsers, unsigned int maxUsers);
+		void SetMinMaxUsers(uint32_t minUsers, uint32_t maxUsers);
 
 		// Get the minimum number of users for game.
-		inline unsigned int GetMinUsers(void) const
+		inline uint32_t GetMinUsers(void) const
 			{return mData.minUsers;}
 
 		// Get the maximum number of users for game.
-		inline unsigned int GetMaxUsers(void) const
+		inline uint32_t GetMaxUsers(void) const
 			{return mData.maxUsers;}
 
-		inline unsigned int GetCurrentUsers(void) const
+		inline uint32_t GetCurrentUsers(void) const
 			{return mData.currentUsers;}
 
 		// Set official status
@@ -115,13 +117,13 @@ class ChannelData :
 			{return (mData.official != 0);}
 
 		// Set the tournament type this channel is hosting (0 = none)
-		void SetTournament(unsigned int tournamentType);
+		void SetTournament(uint32_t tournamentType);
 	
 		// Get the tournament type for this channel
-		inline unsigned int GetTournament(void) const
+		inline uint32_t GetTournament(void) const
 			{return mData.tournament;}
 		
-		inline unsigned int GetFlags(void) const
+		inline uint32_t GetFlags(void) const
 			{return mData.flags;}
 
 		WOL::Channel& GetData(void)
@@ -158,7 +160,7 @@ typedef enum
 	ChannelLeaving
 	} ChannelStatus;
 
-ChannelStatus GetChannelStatusFromHResult(HRESULT result);
+ChannelStatus GetChannelStatusFromHResult(int32_t result);
 const wchar_t* GetChannelStatusDescription(ChannelStatus status);
 
 class ChannelEvent :

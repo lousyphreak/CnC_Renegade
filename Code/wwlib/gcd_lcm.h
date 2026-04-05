@@ -38,13 +38,14 @@
 #ifndef GCD_LCM_H
 
 #include "always.h"
+#include <cstdint>
 
 // The greatest common divisor (GCD) is the greatest integer which is a
 // divisor of given positive integers.
-unsigned int Greatest_Common_Divisor(unsigned int a, unsigned int b);
+uint32_t Greatest_Common_Divisor(uint32_t a, uint32_t b);
 
 // The least common multiple (LCM) is the least integer of which given
 // positive integers are divisors.
-unsigned int Least_Common_Multiple(unsigned int a, unsigned int b);
+uint32_t Least_Common_Multiple(uint32_t a, uint32_t b);
 
 #endif

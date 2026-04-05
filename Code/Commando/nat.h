@@ -41,6 +41,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef NAT_H
 #define NAT_H
 
@@ -88,20 +90,20 @@ class FirewallHelperClass {
 		void Startup(void) {}
 		void Shutdown(void) {}
 		void Detect_Firewall(HANDLE = 0) {}
-		unsigned short Get_Raw_Firewall_Behavior(void) { return FIREWALL_TYPE_UNKNOWN; }
-		short Get_Source_Port_Allocation_Delta(void) { return 0; }
-		unsigned short Get_Next_Mangled_Source_Port(unsigned short source_port) { return source_port; }
+		uint16_t Get_Raw_Firewall_Behavior(void) { return FIREWALL_TYPE_UNKNOWN; }
+		int16_t Get_Source_Port_Allocation_Delta(void) { return 0; }
+		uint16_t Get_Next_Mangled_Source_Port(uint16_t source_port) { return source_port; }
 		int Get_Firewall_Hardness(FirewallBehaviorType) { return 0; }
 		int Get_Firewall_Retries(FirewallBehaviorType) { return 0; }
 		void Set_Source_Port_Pool_Start(int port) { SourcePortPool = port; }
 		int Get_Source_Port_Pool(void) { return SourcePortPool; }
-		int Build_Mangler_Packet(unsigned char *, unsigned short, unsigned long = 0, bool = false) { return 0; }
-		unsigned short Get_Next_Temporary_Source_Port(int) { return 0; }
+		int Build_Mangler_Packet(uint8_t *, uint16_t, uint32_t = 0, bool = false) { return 0; }
+		uint16_t Get_Next_Temporary_Source_Port(int) { return 0; }
 		bool Get_Reference_Port(void) { return false; }
 		void Reset_Server(void) {}
-		unsigned short Get_Client_Bind_Port(void) { return ClientPort; }
-		void Set_Firewall_Info(unsigned long, int, unsigned short, bool send_delay, int) { SendDelay = send_delay; }
-		void Get_Firewall_Info(unsigned long &last_behavior, int &last_delta, unsigned short &port_pool, bool &send_delay, int &confidence) const {
+		uint16_t Get_Client_Bind_Port(void) { return ClientPort; }
+		void Set_Firewall_Info(uint32_t, int, uint16_t, bool send_delay, int) { SendDelay = send_delay; }
+		void Get_Firewall_Info(uint32_t &last_behavior, int &last_delta, uint16_t &port_pool, bool &send_delay, int &confidence) const {
 			last_behavior = FIREWALL_TYPE_UNKNOWN;
 			last_delta = 0;
 			port_pool = 0;
@@ -110,17 +112,17 @@ class FirewallHelperClass {
 		}
 		void Set_Send_Delay(bool send_delay) { SendDelay = send_delay; }
 		bool Get_Send_Delay(void) { return SendDelay; }
-		bool Send_To_Mangler(IPAddressClass *, SocketHandlerClass *, unsigned long, bool = false) { return false; }
-		unsigned short Get_Mangler_Response(unsigned long, SocketHandlerClass *, int = 0, bool = false) { return 0; }
+		bool Send_To_Mangler(IPAddressClass *, SocketHandlerClass *, uint32_t, bool = false) { return false; }
+		uint16_t Get_Mangler_Response(uint32_t, SocketHandlerClass *, int = 0, bool = false) { return 0; }
 		void Connected_To_WWOnline_Server(void) {}
 		void Talk_To_New_Player(WOL::User *) {}
-		void Send_My_Port(unsigned short) {}
+		void Send_My_Port(uint16_t) {}
 		void Set_Client_Connect_Event(HANDLE, HANDLE, int *, int *) {}
 		bool Remove_Player_From_Negotiation_Queue(char *) { return false; }
 		bool Remove_Player_From_Negotiation_Queue_If_Mutex_Available(char *) { return false; }
 		void Cleanup_Client_Queue(void) {}
 		bool Get_Local_Chat_Connection_Address(void) { return false; }
-		unsigned long Get_Local_Address(void) { return 0; }
+		uint32_t Get_Local_Address(void) { return 0; }
 		IPAddressClass &Get_External_Address(void) { return ExternalAddress; }
 		void Set_External_Address(IPAddressClass &addr) { ExternalAddress = addr; }
 		void Reset(void) {}
@@ -132,7 +134,7 @@ class FirewallHelperClass {
 
 	private:
 		int SourcePortPool;
-		unsigned short ClientPort;
+		uint16_t ClientPort;
 		bool SendDelay;
 		IPAddressClass ExternalAddress;
 };
@@ -170,31 +172,31 @@ class WOLNATInterfaceClass {
 		void Set_Server(bool is_server) { IsServer = is_server; }
 		void Set_Server_Negotiated_Address(IPAddressClass *) {}
 		DynamicVectorClass<WOL::Server*> Get_Mangler_Server_List(void) { return DynamicVectorClass<WOL::Server*>(); }
-		unsigned short Get_Mangler_Port_By_Index(int) { return 0; }
+		uint16_t Get_Mangler_Port_By_Index(int) { return 0; }
 		bool Get_Mangler_Name_By_Index(int, char *mangler_name) { if (mangler_name != 0) { mangler_name[0] = 0; } return false; }
 		int Get_Num_Mangler_Servers(void) { return 0; }
-		unsigned long Get_Local_Address(void) { return 0; }
+		uint32_t Get_Local_Address(void) { return 0; }
 		void Tell_Server_That_Client_Is_In_Channel(void) {}
 		bool Is_NAT_Thread_Busy(void) { return false; }
-		unsigned short Get_Next_Client_Port(void) { return ForcePort; }
-		unsigned short Get_Port_As_Server(void) { return (ForcePort != 0) ? ForcePort : PortBase; }
-		unsigned short Get_Port_As_Server_Client(void) { return (ForcePort != 0) ? static_cast<unsigned short>(ForcePort + 1) : static_cast<unsigned short>(PortBase + 1); }
-		unsigned short Get_Force_Port(void) { return ForcePort; }
+		uint16_t Get_Next_Client_Port(void) { return ForcePort; }
+		uint16_t Get_Port_As_Server(void) { return (ForcePort != 0) ? ForcePort : PortBase; }
+		uint16_t Get_Port_As_Server_Client(void) { return (ForcePort != 0) ? static_cast<uint16_t>(ForcePort + 1) : static_cast<uint16_t>(PortBase + 1); }
+		uint16_t Get_Force_Port(void) { return ForcePort; }
 		void Get_Config(RegistryClass *, int &port_number, bool &send_delay) { port_number = ForcePort; send_delay = false; }
-		void Set_Config(RegistryClass *, int port_number, bool) { ForcePort = static_cast<unsigned short>(port_number); PortBase = static_cast<unsigned short>(port_number); }
+		void Set_Config(RegistryClass *, int port_number, bool) { ForcePort = static_cast<uint16_t>(port_number); PortBase = static_cast<uint16_t>(port_number); }
 		void Save_Firewall_Info_To_Registry(void) {}
-		unsigned long Get_Reg_External_IP(void) { return RegExternalIP; }
-		unsigned long Get_Reg_External_Port(void) { return RegExternalPort; }
+		uint32_t Get_Reg_External_IP(void) { return RegExternalIP; }
+		uint32_t Get_Reg_External_Port(void) { return RegExternalPort; }
 		void Get_Compact_Log(StringClass &) {}
-		unsigned long Get_Chat_External_IP(void) { return ChatExternalIP; }
+		uint32_t Get_Chat_External_IP(void) { return ChatExternalIP; }
 
 	private:
 		bool IsServer;
-		unsigned short ForcePort;
-		unsigned short PortBase;
-		unsigned long RegExternalIP;
-		unsigned long RegExternalPort;
-		unsigned long ChatExternalIP;
+		uint16_t ForcePort;
+		uint16_t PortBase;
+		uint32_t RegExternalIP;
+		uint32_t RegExternalPort;
+		uint32_t ChatExternalIP;
 };
 
 extern FirewallHelperClass FirewallHelper;
@@ -312,13 +314,13 @@ class FirewallHelperClass {
 		** Detection.
 		*/
 		void Detect_Firewall(HANDLE event = INVALID_HANDLE_VALUE);
-		unsigned short Get_Raw_Firewall_Behavior(void);	// {return((unsigned short)Behavior);};
-		short Get_Source_Port_Allocation_Delta(void) {return(SourcePortAllocationDelta);}
+		uint16_t Get_Raw_Firewall_Behavior(void);	// {return((uint16_t)Behavior);};
+		int16_t Get_Source_Port_Allocation_Delta(void) {return(static_cast<int16_t>(SourcePortAllocationDelta));}
 
 		/*
 		** Query class for behavior.
 		*/
-		unsigned short Get_Next_Mangled_Source_Port(unsigned short source_port);
+		uint16_t Get_Next_Mangled_Source_Port(uint16_t source_port);
 		int Get_Firewall_Hardness(FirewallBehaviorType behavior);
 		int Get_Firewall_Retries(FirewallBehaviorType behavior);
 		void Set_Source_Port_Pool_Start(int port) {SourcePortPool = port;};
@@ -327,36 +329,36 @@ class FirewallHelperClass {
 		/*
 		** Talking to the manglers.
 		*/
-		int Build_Mangler_Packet(unsigned char *buffer, unsigned short port, unsigned long packet_id = 0, bool blitzme = false);
+		int Build_Mangler_Packet(uint8_t *buffer, uint16_t port, uint32_t packet_id = 0, bool blitzme = false);
 
 		/*
 		** Port management.
 		*/
-		unsigned short Get_Next_Temporary_Source_Port(int skip);
+		uint16_t Get_Next_Temporary_Source_Port(int skip);
 		bool Get_Reference_Port(void);
 		void Reset_Server(void);
-		unsigned short Get_Client_Bind_Port(void) {return(ClientPort);};	//PlayersFirewallAddress.Get_Port());};
+		uint16_t Get_Client_Bind_Port(void) {return(ClientPort);};	//PlayersFirewallAddress.Get_Port());};
 
 		/*
 		** Firewall info import and export.
 		*/
-		void Set_Firewall_Info(unsigned long last_behavior, int last_delta, unsigned short port_pool, bool send_delay, int confidence);
-		void Get_Firewall_Info(unsigned long &last_behavior, int &last_delta, unsigned short &port_pool, bool &send_delay, int &confidence) const;
+		void Set_Firewall_Info(uint32_t last_behavior, int last_delta, uint16_t port_pool, bool send_delay, int confidence);
+		void Get_Firewall_Info(uint32_t &last_behavior, int &last_delta, uint16_t &port_pool, bool &send_delay, int &confidence) const;
 		void Set_Send_Delay(bool send_delay) {SendDelay = send_delay;};
 		bool Get_Send_Delay(void) {return(SendDelay);};
 
 		/*
 		** Communications functions.
 		*/
-		bool Send_To_Mangler(IPAddressClass *address, SocketHandlerClass *socket_handler, unsigned long packet_id, bool blitzme = false);
-		unsigned short Get_Mangler_Response(unsigned long packet_id, SocketHandlerClass *socket_handler, int time = 0, bool all_service = false);
+		bool Send_To_Mangler(IPAddressClass *address, SocketHandlerClass *socket_handler, uint32_t packet_id, bool blitzme = false);
+		uint16_t Get_Mangler_Response(uint32_t packet_id, SocketHandlerClass *socket_handler, int time = 0, bool all_service = false);
 
 		/*
 		** Server connection negotiation functions.
 		*/
 		void Connected_To_WWOnline_Server(void);
 		void Talk_To_New_Player(WOL::User *user);
-		void Send_My_Port(unsigned short port);
+		void Send_My_Port(uint16_t port);
 		void Set_Client_Connect_Event(HANDLE thread_event, HANDLE cancel_event, int *flag_ptr, int *queue_ptr);
 		bool Remove_Player_From_Negotiation_Queue(char *player_name);
 		bool Remove_Player_From_Negotiation_Queue_If_Mutex_Available(char *player_name);
@@ -367,7 +369,7 @@ class FirewallHelperClass {
 		** Get the local chat connection address.
 		*/
 		bool Get_Local_Chat_Connection_Address(void);
-		unsigned long Get_Local_Address(void);
+		uint32_t Get_Local_Address(void);
 		IPAddressClass &Get_External_Address(void) {return(ExternalAddress);}
 		void Set_External_Address(IPAddressClass &addr) {ExternalAddress = addr;}
 
@@ -415,7 +417,7 @@ class FirewallHelperClass {
 		/*
 		** Exposing the thread ID for the exception handler.
 		*/
-		unsigned long Get_Thread_ID(void) {return(ThreadID);};
+		uint32_t Get_Thread_ID(void) {return(ThreadID);};
 
 		/*
 		** Connection results reported back to the dialog wait object.
@@ -439,13 +441,13 @@ class FirewallHelperClass {
 		** Detection.
 		*/
 		FirewallBehaviorType Detect_Firewall_Behavior(void);
-		int Get_NAT_Port_Allocation_Scheme(int num_ports, unsigned short *original_ports, unsigned short *mangled_ports, bool &relative_delta, bool &looks_good);
+		int Get_NAT_Port_Allocation_Scheme(int num_ports, uint16_t *original_ports, uint16_t *mangled_ports, bool &relative_delta, bool &looks_good);
 
 		/*
 		** Server connection negotiation functions.
 		*/
 		int Negotiate_Port(void);
-		void Send_Connection_Result(int result, unsigned short port);
+		void Send_Connection_Result(int result, uint16_t port);
 		void Set_Client_Success(int success);
 		void Send_Queue_States(void);
 		bool Client_Cancelled(void);
@@ -455,8 +457,8 @@ class FirewallHelperClass {
 		/*
 		** Threading.
 		*/
-		static unsigned int __stdcall NAT_Thread_Start(void *param);
-		unsigned long NAT_Thread_Main_Loop(void);
+		static uint32_t __stdcall NAT_Thread_Start(void *param);
+		uint32_t NAT_Thread_Main_Loop(void);
 		void Add_Thread_Action(int thread_action, HANDLE thread_event);
 		void Set_Thread_Event(void);
 
@@ -558,7 +560,7 @@ class FirewallHelperClass {
 		/*
 		** Teacks what we expect the other player to have his port number mangled to.
 		*/
-		unsigned short			PlayersMangledPort;
+		uint16_t			PlayersMangledPort;
 
 		/*
 		** Other players in WOL::User struct form.
@@ -578,7 +580,7 @@ class FirewallHelperClass {
 		/*
 		** Port that the other player saw our packet actually come from.
 		*/
-		unsigned short			PlayersConnectionResultPort;
+		uint16_t			PlayersConnectionResultPort;
 
 		/*
 		** Enum for connection results.
@@ -628,12 +630,12 @@ class FirewallHelperClass {
 		** Connections we have made so far in this game. This includes people who were in the game and left.
 		*/
 		DynamicVectorClass<IPAddressClass> ConnectionHistory;
-		DynamicVectorClass<unsigned short> MangledPortHistory;
+		DynamicVectorClass<uint16_t> MangledPortHistory;
 
 		/*
 		** When we last heard from the client.
 		*/
-		unsigned long LastOptionsFromClient;
+		uint32_t LastOptionsFromClient;
 
 		/*
 		** Name of player who has cancelled out of our game channel before connecting.
@@ -655,7 +657,7 @@ class FirewallHelperClass {
 		/*
 		** Port that the client will use as a basis for negotiation.
 		*/
-		unsigned short ClientPort;
+		uint16_t ClientPort;
 
 		/*
 		** Client connect event notification.
@@ -678,7 +680,7 @@ class FirewallHelperClass {
 		**
 		*/
 		HANDLE ThreadHandle;
-		unsigned long ThreadID;
+		uint32_t ThreadID;
 		HANDLE NATThreadMutex;
 		HANDLE NATDataMutex;
 		bool ThreadActive;
@@ -735,7 +737,7 @@ class FirewallHelperClass {
 				/*
 				** Constructor. Grabs the mutex.
 				*/
-				inline ThreadLockClass(FirewallHelperClass *fwptr, unsigned long timeout = 10 * 1000) {
+				inline ThreadLockClass(FirewallHelperClass *fwptr, uint32_t timeout = 10 * 1000) {
 					FWPtr = fwptr;
 
 					/*
@@ -797,15 +799,15 @@ class FirewallHelperClass {
 		** CommHeaderType - Low level packet wrapper.
 		*/
 		struct CommHeaderType {
-			unsigned short MagicNumber;		   // in, out = GLOBAL_MAGICNUM = 0x1236. Just preserve the incoming value.
+			uint16_t MagicNumber;		   // in, out = GLOBAL_MAGICNUM = 0x1236. Just preserve the incoming value.
 			char Code;									// in, out = PACKET_DATA_NOACK = 1
 			union  {
-				unsigned char ForwardTo;			//  = 0
-				unsigned char ForwardFrom;
+				uint8_t ForwardTo;			//  = 0
+				uint8_t ForwardFrom;
 			};
-			unsigned long PacketID;					// Dont care.
-			unsigned char ForwardAddress[4];
-			unsigned short ForwardPort;
+			uint32_t PacketID;					// Dont care.
+			uint8_t ForwardAddress[4];
+			uint16_t ForwardPort;
 		};
 
 		/*
@@ -813,7 +815,7 @@ class FirewallHelperClass {
 		*/
 		struct GlobalHeaderType {
 			CommHeaderType Header;					// See above
-			unsigned short ProductID;				// in, out = COMMAND_AND_CONQUER_RA2 = 0xaa03. Just return the value from the received packet
+			uint16_t ProductID;				// in, out = COMMAND_AND_CONQUER_RA2 = 0xaa03. Just return the value from the received packet
 		};
 
 
@@ -828,10 +830,10 @@ class FirewallHelperClass {
 			union
 			{
 				struct {
-					unsigned short MangledPortNumber;
-					unsigned char MangledAddress[4];
-					unsigned short OriginalPortNumber;
-					unsigned char BlitzMe;
+					uint16_t MangledPortNumber;
+					uint8_t MangledAddress[4];
+					uint16_t OriginalPortNumber;
+					uint8_t BlitzMe;
 				} ManglerData;
 
 			};

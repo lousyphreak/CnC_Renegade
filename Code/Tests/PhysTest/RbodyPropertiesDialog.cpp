@@ -106,7 +106,7 @@ void CRbodyPropertiesDialog::OnOK()
 	CDialog::OnOK();
 }
 
-BOOL CRbodyPropertiesDialog::OnInitDialog() 
+int32_t CRbodyPropertiesDialog::OnInitDialog() 
 {
 	ASSERT(Object != NULL);
 	CDialog::OnInitDialog();
@@ -164,7 +164,7 @@ void CRbodyPropertiesDialog::SetDlgItemFloat(int controlid,float val)
 }
 
 
-BOOL CRbodyPropertiesDialog::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult) 
+int32_t CRbodyPropertiesDialog::OnNotify(uintptr_t wParam, intptr_t lParam, intptr_t* pResult) 
 {
 	// make the spin controls work...
 	switch(wParam) 

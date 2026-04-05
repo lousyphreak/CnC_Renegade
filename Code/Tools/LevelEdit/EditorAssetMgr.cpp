@@ -495,7 +495,7 @@ EditorAssetMgrClass::Load_Resource_Texture (const char *filename)
 		//	Copy the contents of the resource (memory) texture
 		// to a file.
 		//
-		BYTE buffer[2048];
+		uint8_t buffer[2048];
 		int size				= res_texture.Size ();
 		int total_written	= 0;
 		while (total_written < size) {

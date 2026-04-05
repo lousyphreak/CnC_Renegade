@@ -57,7 +57,7 @@ CCommandoUpdateApp theApp;
 /////////////////////////////////////////////////////////////////////////////
 // CCommandoUpdateApp initialization
 
-BOOL CCommandoUpdateApp::InitInstance()
+int32_t CCommandoUpdateApp::InitInstance()
 {
 	// Standard initialization
 	// If you are not using these features and wish to reduce the size

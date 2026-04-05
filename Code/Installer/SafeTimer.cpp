@@ -37,4 +37,4 @@
 // Includes.
 #include "SafeTimer.h"
 
-DWORD SafeTimerClass::_StartTime = timeGetTime();
+uint32_t SafeTimerClass::_StartTime = timeGetTime();

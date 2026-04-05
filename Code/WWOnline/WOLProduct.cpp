@@ -103,7 +103,7 @@ RefPtr<Product> Product::Current(void)
 ******************************************************************************/
 
 RefPtr<Product> Product::Create(const char* registryPath, int gameCode,
-		const wchar_t* chanPass, unsigned long ladderSKU)
+		const wchar_t* chanPass, uint32_t ladderSKU)
 	{
 	return new Product(registryPath, gameCode, chanPass, ladderSKU);
 	}
@@ -122,7 +122,7 @@ RefPtr<Product> Product::Create(const char* registryPath, int gameCode,
 *
 ******************************************************************************/
 
-Product::Product(const char* registryPath, int gameCode, const wchar_t* chanPass, unsigned long ladderSKU) :
+Product::Product(const char* registryPath, int gameCode, const wchar_t* chanPass, uint32_t ladderSKU) :
 		mRegistryPath(registryPath),
 		mProductSKU(0),
 		mLadderSKU(0),
@@ -134,24 +134,24 @@ Product::Product(const char* registryPath, int gameCode, const wchar_t* chanPass
 	WWASSERT(registryPath && "Invalid parameter");
 
 	HKEY rKey;
-	LONG result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, registryPath, 0, KEY_READ, &rKey);
+	int32_t result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, registryPath, 0, KEY_READ, &rKey);
 	
 	if (result == ERROR_SUCCESS)
 		{
 		// Get SKU
-		DWORD type;
-		DWORD sku = 0;
-		DWORD sizeOfBuffer = sizeof(sku);
-		result = RegQueryValueEx(rKey, "SKU", NULL, &type, (unsigned char*)&sku, &sizeOfBuffer);
+		uint32_t type;
+		uint32_t sku = 0;
+		uint32_t sizeOfBuffer = sizeof(sku);
+		result = RegQueryValueEx(rKey, "SKU", NULL, &type, (uint8_t*)&sku, &sizeOfBuffer);
 
 		mProductSKU = sku;
 		mLanguageCode = (sku & 0xFF);
 		mLadderSKU = ladderSKU;
 
 		// Get version
-		DWORD version = 0;
+		uint32_t version = 0;
 		sizeOfBuffer = sizeof(version);
-		result = RegQueryValueEx(rKey, "Version", NULL, &type, (unsigned char*)&version, &sizeOfBuffer);
+		result = RegQueryValueEx(rKey, "Version", NULL, &type, (uint8_t*)&version, &sizeOfBuffer);
 
 		mProductVersion = version;
 
@@ -174,7 +174,7 @@ Product::Product(const char* registryPath, int gameCode, const wchar_t* chanPass
 ******************************************************************************/
 
 Product::Initializer::Initializer(const char* registryPath, int gameCode,
-		const wchar_t* chanPass, unsigned long ladderSKU)
+		const wchar_t* chanPass, uint32_t ladderSKU)
 	{
 	CurrentProduct() = Product::Create(registryPath, gameCode, chanPass, ladderSKU);
 	}

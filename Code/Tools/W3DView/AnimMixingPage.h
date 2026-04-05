@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // AnimMixingPage.h : header file
 //
@@ -51,7 +53,7 @@ public:
 	//{{AFX_VIRTUAL(CAnimMixingPage)
 	public:
 	virtual void OnOK();
-	virtual BOOL OnKillActive();
+	virtual int32_t OnKillActive();
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 	//}}AFX_VIRTUAL
@@ -65,7 +67,7 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(CAnimMixingPage)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 

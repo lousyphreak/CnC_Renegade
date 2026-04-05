@@ -72,9 +72,9 @@
  *   2/13/2001  hy : Created.                                                                  *
  *=============================================================================================*/
 
-unsigned int SurfaceClass::PixelSize(const SurfaceClass::SurfaceDescription &sd)
+uint32_t SurfaceClass::PixelSize(const SurfaceClass::SurfaceDescription &sd)
 {
-	unsigned int size=0;
+	uint32_t size=0;
 
 	switch (sd.Format)
 	{	
@@ -107,7 +107,7 @@ unsigned int SurfaceClass::PixelSize(const SurfaceClass::SurfaceDescription &sd)
 	return size;
 }
 
-void SurfaceClass::Convert_Pixel(Vector3 &rgb, const SurfaceClass::SurfaceDescription &sd, const unsigned char * pixel)
+void SurfaceClass::Convert_Pixel(Vector3 &rgb, const SurfaceClass::SurfaceDescription &sd, const uint8_t * pixel)
 {
 	const float scale=1/255.0f;
 	switch (sd.Format)
@@ -123,8 +123,8 @@ void SurfaceClass::Convert_Pixel(Vector3 &rgb, const SurfaceClass::SurfaceDescri
 		break;
 	case WW3D_FORMAT_A4R4G4B4:
 		{
-			unsigned short tmp;
-			tmp=*(unsigned short*)&pixel[0];
+			uint16_t tmp;
+			tmp=*(uint16_t*)&pixel[0];
 			rgb.X=((tmp&0x0f00)>>4);   // R
 			rgb.Y=((tmp&0x00f0));		// G
 			rgb.Z=((tmp&0x000f)<<4);	// B			
@@ -132,8 +132,8 @@ void SurfaceClass::Convert_Pixel(Vector3 &rgb, const SurfaceClass::SurfaceDescri
 		break;
 	case WW3D_FORMAT_A1R5G5B5:
 		{
-			unsigned short tmp;
-			tmp=*(unsigned short*)&pixel[0];			
+			uint16_t tmp;
+			tmp=*(uint16_t*)&pixel[0];			
 			rgb.X=(tmp>>7)&0xf8; // R
 			rgb.Y=(tmp>>2)&0xf8; // G
 			rgb.Z=(tmp<<3)&0xf8; // B			
@@ -141,8 +141,8 @@ void SurfaceClass::Convert_Pixel(Vector3 &rgb, const SurfaceClass::SurfaceDescri
 		break;
 	case WW3D_FORMAT_R5G6B5:
 		{
-			unsigned short tmp;
-			tmp=*(unsigned short*)&pixel[0];			
+			uint16_t tmp;
+			tmp=*(uint16_t*)&pixel[0];			
 			rgb.X=(tmp>>8)&0xf8;
 			rgb.Y=(tmp>>3)&0xfc;
 			rgb.Z=(tmp<<3)&0xf8;
@@ -157,12 +157,12 @@ void SurfaceClass::Convert_Pixel(Vector3 &rgb, const SurfaceClass::SurfaceDescri
 }
 
 // Note: This function must never overwrite the original alpha
-void SurfaceClass::Convert_Pixel(unsigned char * pixel,const SurfaceClass::SurfaceDescription &sd, const Vector3 &rgb)
+void SurfaceClass::Convert_Pixel(uint8_t * pixel,const SurfaceClass::SurfaceDescription &sd, const Vector3 &rgb)
 {
-	unsigned char r,g,b;
-	r=(unsigned char) (rgb.X*255.0f);
-	g=(unsigned char) (rgb.Y*255.0f);
-	b=(unsigned char) (rgb.Z*255.0f);
+	uint8_t r,g,b;
+	r=(uint8_t) (rgb.X*255.0f);
+	g=(uint8_t) (rgb.Y*255.0f);
+	b=(uint8_t) (rgb.Z*255.0f);
 	switch (sd.Format)
 	{	
 	case WW3D_FORMAT_A8R8G8B8:
@@ -174,33 +174,33 @@ void SurfaceClass::Convert_Pixel(unsigned char * pixel,const SurfaceClass::Surfa
 		break;
 	case WW3D_FORMAT_A4R4G4B4:
 		{
-			unsigned short tmp;
-			tmp=*(unsigned short*)&pixel[0];
+			uint16_t tmp;
+			tmp=*(uint16_t*)&pixel[0];
 			tmp&=0xF000;
 			tmp|=(r&0xF0) << 4;
 			tmp|=(g&0xF0);
 			tmp|=(b&0xF0) >> 4;			
-			*(unsigned short*)&pixel[0]=tmp;
+			*(uint16_t*)&pixel[0]=tmp;
 		}
 		break;
 	case WW3D_FORMAT_A1R5G5B5:
 		{
-			unsigned short tmp;
-			tmp=*(unsigned short*)&pixel[0];
+			uint16_t tmp;
+			tmp=*(uint16_t*)&pixel[0];
 			tmp&=0x8000;
 			tmp|=(r&0xF8) << 7;
 			tmp|=(g&0xF8) << 2;
 			tmp|=(b&0xF8) >> 3;			
-			*(unsigned short*)&pixel[0]=tmp;
+			*(uint16_t*)&pixel[0]=tmp;
 		}
 		break;
 	case WW3D_FORMAT_R5G6B5:
 		{
-			unsigned short tmp;			
+			uint16_t tmp;			
 			tmp=(r&0xf8) << 8;
 			tmp|=(g&0xfc) << 3;
 			tmp|=(b&0xf8) >> 3;
-			*(unsigned short*)&pixel[0]=tmp;
+			*(uint16_t*)&pixel[0]=tmp;
 		}
 		break;
 	default:
@@ -292,13 +292,13 @@ void SurfaceClass::Clear()
 	Get_Description(sd);
 
 	// size of each pixel in bytes
-	unsigned int size=PixelSize(sd);
+	uint32_t size=PixelSize(sd);
 
 	D3DLOCKED_RECT lock_rect;	
 	::ZeroMemory(&lock_rect, sizeof(D3DLOCKED_RECT));
 	DX8_ErrorCode(D3DSurface->LockRect(&lock_rect,0,0));
-	unsigned int i;
-	unsigned char *mem=(unsigned char *) lock_rect.pBits;
+	uint32_t i;
+	uint8_t *mem=(uint8_t *) lock_rect.pBits;
 
 	for (i=0; i<sd.Height; i++)
 	{
@@ -325,19 +325,19 @@ void SurfaceClass::Clear()
  * HISTORY:                                                                                    *
  *   3/15/2001  hy : Created.                                                                  *
  *=============================================================================================*/
-void SurfaceClass::Copy(const unsigned char *other)
+void SurfaceClass::Copy(const uint8_t *other)
 {
 	SurfaceDescription sd;
 	Get_Description(sd);
 
 	// size of each pixel in bytes
-	unsigned int size=PixelSize(sd);
+	uint32_t size=PixelSize(sd);
 
 	D3DLOCKED_RECT lock_rect;	
 	::ZeroMemory(&lock_rect, sizeof(D3DLOCKED_RECT));
 	DX8_ErrorCode(D3DSurface->LockRect(&lock_rect,0,0));
-	unsigned int i;
-	unsigned char *mem=(unsigned char *) lock_rect.pBits;
+	uint32_t i;
+	uint8_t *mem=(uint8_t *) lock_rect.pBits;
 
 	for (i=0; i<sd.Height; i++)
 	{
@@ -364,13 +364,13 @@ void SurfaceClass::Copy(const unsigned char *other)
  * HISTORY:                                                                                    *
  *   5/2/2001   hy : Created.                                                                  *
  *=============================================================================================*/
-void SurfaceClass::Copy(Vector2i &min,Vector2i &max, const unsigned char *other)
+void SurfaceClass::Copy(Vector2i &min,Vector2i &max, const uint8_t *other)
 {
 	SurfaceDescription sd;
 	Get_Description(sd);
 
 	// size of each pixel in bytes
-	unsigned int size=PixelSize(sd);
+	uint32_t size=PixelSize(sd);
 
 	D3DLOCKED_RECT lock_rect;	
 	::ZeroMemory(&lock_rect, sizeof(D3DLOCKED_RECT));
@@ -381,7 +381,7 @@ void SurfaceClass::Copy(Vector2i &min,Vector2i &max, const unsigned char *other)
 	rect.bottom=max.J;
 	DX8_ErrorCode(D3DSurface->LockRect(&lock_rect,&rect,0));
 	int i;
-	unsigned char *mem=(unsigned char *) lock_rect.pBits;	
+	uint8_t *mem=(uint8_t *) lock_rect.pBits;	
 	int dx=max.I-min.I;
 
 	for (i=min.J; i<max.J; i++)
@@ -409,25 +409,25 @@ void SurfaceClass::Copy(Vector2i &min,Vector2i &max, const unsigned char *other)
  * HISTORY:                                                                                    *
  *   3/16/2001  hy : Created.                                                                  *
  *=============================================================================================*/
-unsigned char *SurfaceClass::CreateCopy(int *width,int *height,int*size,bool flip)
+uint8_t *SurfaceClass::CreateCopy(int *width,int *height,int*size,bool flip)
 {
 	SurfaceDescription sd;
 	Get_Description(sd);
 
 	// size of each pixel in bytes
-	unsigned int mysize=PixelSize(sd);
+	uint32_t mysize=PixelSize(sd);
 
 	*width=sd.Width;
 	*height=sd.Height;
 	*size=mysize;
 
-	unsigned char *other=new unsigned char [sd.Height*sd.Width*mysize];
+	uint8_t *other=new uint8_t [sd.Height*sd.Width*mysize];
 
 	D3DLOCKED_RECT lock_rect;	
 	::ZeroMemory(&lock_rect, sizeof(D3DLOCKED_RECT));
 	DX8_ErrorCode(D3DSurface->LockRect(&lock_rect,0,D3DLOCK_READONLY));
-	unsigned int i;
-	unsigned char *mem=(unsigned char *) lock_rect.pBits;
+	uint32_t i;
+	uint8_t *mem=(uint8_t *) lock_rect.pBits;
 
 	for (i=0; i<sd.Height; i++)
 	{
@@ -463,9 +463,9 @@ unsigned char *SurfaceClass::CreateCopy(int *width,int *height,int*size,bool fli
  *   2/13/2001  hy : Created.                                                                  *
  *=============================================================================================*/
 void SurfaceClass::Copy(
-	unsigned int dstx, unsigned int dsty,
-	unsigned int srcx, unsigned int srcy, 
-	unsigned int width, unsigned int height,
+	uint32_t dstx, uint32_t dsty,
+	uint32_t srcx, uint32_t srcy, 
+	uint32_t width, uint32_t height,
 	const SurfaceClass *other)
 {
 	WWASSERT(other);
@@ -523,8 +523,8 @@ void SurfaceClass::Copy(
  *   2/13/2001  hy : Created.                                                                  *
  *=============================================================================================*/
 void SurfaceClass::Stretch_Copy(
-	unsigned int dstx, unsigned int dsty, unsigned int dstwidth, unsigned int dstheight,
-	unsigned int srcx, unsigned int srcy, unsigned int srcwidth, unsigned int srcheight,
+	uint32_t dstx, uint32_t dsty, uint32_t dstwidth, uint32_t dstheight,
+	uint32_t srcx, uint32_t srcy, uint32_t srcwidth, uint32_t srcheight,
 	const SurfaceClass *other)
 {
 	WWASSERT(other);
@@ -595,7 +595,7 @@ void SurfaceClass::FindBB(Vector2i *min,Vector2i*max)
 	DX8_ErrorCode(D3DSurface->LockRect(&lock_rect,&rect,D3DLOCK_READONLY));
 
 	int x,y;
-	unsigned int size=PixelSize(sd);
+	uint32_t size=PixelSize(sd);
 	Vector2i realmin=*max;
 	Vector2i realmax=*min;	
 	
@@ -604,8 +604,8 @@ void SurfaceClass::FindBB(Vector2i *min,Vector2i*max)
 		for (x = min->I; x < max->I; x++) {
 
 			// HY - this is not endian safe
-			unsigned char *alpha=(unsigned char*) ((unsigned int)lock_rect.pBits+(y-min->J)*lock_rect.Pitch+(x-min->I)*size);
-			unsigned char myalpha=alpha[size-1];
+			uint8_t *alpha=static_cast<uint8_t *>(lock_rect.pBits)+(y-min->J)*lock_rect.Pitch+(x-min->I)*size;
+			uint8_t myalpha=alpha[size-1];
 			myalpha=(myalpha>>(8-alphabits)) & mask;
 			if (myalpha) {
 				realmin.I = MIN(realmin.I, x);
@@ -638,7 +638,7 @@ void SurfaceClass::FindBB(Vector2i *min,Vector2i*max)
  * HISTORY:                                                                                    *
  *   2/13/2001  hy : Created.                                                                  *
  *=============================================================================================*/
-bool SurfaceClass::Is_Transparent_Column(unsigned int column)
+bool SurfaceClass::Is_Transparent_Column(uint32_t column)
 {
 	SurfaceDescription sd;
 	Get_Description(sd);
@@ -658,7 +658,7 @@ bool SurfaceClass::Is_Transparent_Column(unsigned int column)
 		break;
 	}
 
-	unsigned int size=PixelSize(sd);
+	uint32_t size=PixelSize(sd);
 
 	D3DLOCKED_RECT lock_rect;
 	::ZeroMemory(&lock_rect, sizeof(D3DLOCKED_RECT));
@@ -678,8 +678,8 @@ bool SurfaceClass::Is_Transparent_Column(unsigned int column)
 	for (y = 0; y < (int) sd.Height; y++)
 	{
 		// HY - this is not endian safe
-		unsigned char *alpha=(unsigned char*) ((unsigned int)lock_rect.pBits+y*lock_rect.Pitch);		
-		unsigned char myalpha=alpha[size-1];		
+		uint8_t *alpha=static_cast<uint8_t *>(lock_rect.pBits)+y*lock_rect.Pitch;		
+		uint8_t myalpha=alpha[size-1];		
 		myalpha=(myalpha>>(8-alphabits)) & mask;		
 		if (myalpha) {
 			DX8_ErrorCode(D3DSurface->UnlockRect());
@@ -725,7 +725,7 @@ void SurfaceClass::Get_Pixel(Vector3 &rgb, int x,int y)
 	rect.right=x+1;
 
 	DX8_ErrorCode(D3DSurface->LockRect(&lock_rect,&rect,D3DLOCK_READONLY));	
-	Convert_Pixel(rgb,sd,(unsigned char *) lock_rect.pBits);
+	Convert_Pixel(rgb,sd,(uint8_t *) lock_rect.pBits);
 	DX8_ErrorCode(D3DSurface->UnlockRect());	
 }
 
@@ -803,12 +803,12 @@ void SurfaceClass::Detach (void)
  *                                                                                             *
  * HISTORY:                                                                                    *
  *=============================================================================================*/
-void SurfaceClass::DrawPixel(const unsigned int x,const unsigned int y, unsigned int color)
+void SurfaceClass::DrawPixel(const uint32_t x,const uint32_t y, uint32_t color)
 {
 	SurfaceDescription sd;
 	Get_Description(sd);
 
-	unsigned int size=PixelSize(sd);
+	uint32_t size=PixelSize(sd);
 
 	D3DLOCKED_RECT lock_rect;
 	::ZeroMemory(&lock_rect, sizeof(D3DLOCKED_RECT));
@@ -821,17 +821,17 @@ void SurfaceClass::DrawPixel(const unsigned int x,const unsigned int y, unsigned
 	rect.right=x+1;
 
 	DX8_ErrorCode(D3DSurface->LockRect(&lock_rect,&rect,0));
-	unsigned char *cptr=(unsigned char*)lock_rect.pBits;
-	unsigned short *sptr=(unsigned short*)lock_rect.pBits;
-	unsigned int *lptr=(unsigned int*)lock_rect.pBits;
+	uint8_t *cptr=(uint8_t*)lock_rect.pBits;
+	uint16_t *sptr=(uint16_t*)lock_rect.pBits;
+	uint32_t *lptr=(uint32_t*)lock_rect.pBits;
 
 	switch (size)
 	{
 	case 1:
-		*cptr=(unsigned char) (color & 0xFF);
+		*cptr=(uint8_t) (color & 0xFF);
 		break;
 	case 2:
-		*sptr=(unsigned short) (color & 0xFFFF);
+		*sptr=(uint16_t) (color & 0xFFFF);
 		break;
 	case 4:
 		*lptr=color;
@@ -857,12 +857,12 @@ void SurfaceClass::DrawPixel(const unsigned int x,const unsigned int y, unsigned
  *   4/9/2001   hy : Created.                                                                  *
  *   4/9/2001   hy : Created.                                                                  *
  *=============================================================================================*/
-void SurfaceClass::DrawHLine(const unsigned int y,const unsigned int x1, const unsigned int x2, unsigned int color)
+void SurfaceClass::DrawHLine(const uint32_t y,const uint32_t x1, const uint32_t x2, uint32_t color)
 { 
 	SurfaceDescription sd;
 	Get_Description(sd);
 
-	unsigned int size=PixelSize(sd);
+	uint32_t size=PixelSize(sd);
 
 	D3DLOCKED_RECT lock_rect;
 	::ZeroMemory(&lock_rect, sizeof(D3DLOCKED_RECT));
@@ -875,21 +875,21 @@ void SurfaceClass::DrawHLine(const unsigned int y,const unsigned int x1, const u
 	rect.right=x2+1;
 
 	DX8_ErrorCode(D3DSurface->LockRect(&lock_rect,&rect,0));
-	unsigned char *cptr=(unsigned char*)lock_rect.pBits;
-	unsigned short *sptr=(unsigned short*)lock_rect.pBits;
-	unsigned int *lptr=(unsigned int*)lock_rect.pBits;
+	uint8_t *cptr=(uint8_t*)lock_rect.pBits;
+	uint16_t *sptr=(uint16_t*)lock_rect.pBits;
+	uint32_t *lptr=(uint32_t*)lock_rect.pBits;
 
-	unsigned int x;
+	uint32_t x;
 	// the assumption here is that whenever a pixel has alpha it's in the MSB
 	for (x=x1; x<=x2; x++)
 	{		
 		switch (size)
 		{
 		case 1:
-			*cptr++=(unsigned char) (color & 0xFF);
+			*cptr++=(uint8_t) (color & 0xFF);
 			break;
 		case 2:
-			*sptr++=(unsigned short) (color & 0xFFFF);
+			*sptr++=(uint16_t) (color & 0xFFFF);
 			break;
 		case 4:
 			*lptr++=color;
@@ -918,7 +918,7 @@ void SurfaceClass::DrawHLine(const unsigned int y,const unsigned int x1, const u
  *=============================================================================================*/
 bool SurfaceClass::Is_Monochrome(void)
 {
-	unsigned int x,y;
+	uint32_t x,y;
 	SurfaceDescription sd;
 	Get_Description(sd);
 
@@ -935,7 +935,7 @@ bool SurfaceClass::Is_Monochrome(void)
 	int pitch,size;
 
 	size=PixelSize(sd);
-	unsigned char *bits=(unsigned char*) Lock(&pitch);
+	uint8_t *bits=(uint8_t*) Lock(&pitch);
 
 	Vector3 rgb;
 	bool mono=true;
@@ -979,13 +979,13 @@ bool SurfaceClass::Is_Monochrome(void)
  *=============================================================================================*/
 void SurfaceClass::Hue_Shift(const Vector3 &hsv_shift)
 {
-	unsigned int x,y;
+	uint32_t x,y;
 	SurfaceDescription sd;
 	Get_Description(sd);
 	int pitch,size;
 
 	size=PixelSize(sd);
-	unsigned char *bits=(unsigned char*) Lock(&pitch);
+	uint8_t *bits=(uint8_t*) Lock(&pitch);
 
 	Vector3 rgb;
 

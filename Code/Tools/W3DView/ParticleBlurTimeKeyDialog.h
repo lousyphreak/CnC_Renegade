@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // ParticleBlurTimeKeyDialog.h : header file
 //
@@ -46,7 +48,7 @@ public:
 	//{{AFX_VIRTUAL(ParticleBlurTimeKeyDialogClass)
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-	virtual BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult);
+	virtual int32_t OnNotify(uintptr_t wParam, intptr_t lParam, intptr_t* pResult);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -54,7 +56,7 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(ParticleBlurTimeKeyDialogClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	afx_msg void OnOk2();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()

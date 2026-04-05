@@ -36,6 +36,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 
 #ifndef __PATHFIND_SECTOR_H
 #define __PATHFIND_SECTOR_H
@@ -94,8 +96,8 @@ public:
 	//
 	//	Portal managment
 	//
-	void						Add_Portal (uint32 portal_id);
-	void						Remove_Portal (uint32 portal_id);
+	void						Add_Portal (uint32_t portal_id);
+	void						Remove_Portal (uint32_t portal_id);
 	void						Reset_Portal_List (void);
 
 	//
@@ -126,7 +128,7 @@ protected:
 	////////////////////////////////////////////////////////////////////
 	//	Protected member data
 	////////////////////////////////////////////////////////////////////
-	DynamicVectorClass<uint32>		m_PortalList;
+	DynamicVectorClass<uint32_t>		m_PortalList;
 	bool									m_IsValid;
 
 private:
@@ -156,7 +158,7 @@ PathfindSectorClass::Set_Bounding_Box (const AABoxClass &box)
 }
 
 inline void
-PathfindSectorClass::Add_Portal (uint32 portal_id)
+PathfindSectorClass::Add_Portal (uint32_t portal_id)
 {
 	m_PortalList.Add (portal_id);
 	return ;

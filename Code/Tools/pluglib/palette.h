@@ -55,7 +55,7 @@ class PaletteClass
 
 		PaletteClass(void) {};
 		PaletteClass(RGBClass const & rgb);
-		PaletteClass(unsigned char *binary_palette);
+		PaletteClass(uint8_t *binary_palette);
 
 		RGBClass & operator[] (int index) {return(Palette[index % COLOR_COUNT]);};
 		RGBClass const & operator[] (int index) const {return(Palette[index % COLOR_COUNT]);};
@@ -64,8 +64,8 @@ class PaletteClass
 		int operator == (PaletteClass const & palette) const;
 		int operator != (PaletteClass const & palette) const {return(!(operator ==(palette)));};
 		PaletteClass & operator = (PaletteClass const & palette);
-		operator const unsigned char * (void) const {return((const unsigned char *)&Palette[0]);};
-		operator unsigned char * (void) {return((unsigned char *)&Palette[0]);};
+		operator const uint8_t * (void) const {return((const uint8_t *)&Palette[0]);};
+		operator uint8_t * (void) {return((uint8_t *)&Palette[0]);};
 
 		void Adjust(int ratio);
 		void Adjust(int ratio, PaletteClass const & palette);

@@ -89,7 +89,7 @@ class GameMapsClassDesc : public ClassDesc
 {
 	public:
 	int 				IsPublic()			  		{ return 0; }
-	void *			Create(BOOL loading)		{ return new GameMapsClass(NULL); }
+	void *			Create(int32_t loading)		{ return new GameMapsClass(NULL); }
 	const TCHAR *	ClassName()					{ return _T("GameMaps"); }
 	SClass_ID		SuperClassID()				{ return REF_MAKER_CLASS_ID; }
 	Class_ID 		ClassID()			  		{ return _GameMapsClassID; }
@@ -130,7 +130,7 @@ Class_ID GameMapsClass::ClassID()
  * HISTORY:                                                                                    * 
  *   06/26/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-BOOL GameMapsClass::AssignController(Animatable *control,int subAnim)
+int32_t GameMapsClass::AssignController(Animatable *control,int subAnim)
 {
 	ReplaceReference(SubNumToRefNum(subAnim),(ReferenceTarget *)control);
 	return TRUE;
@@ -212,7 +212,7 @@ RefTargetHandle GameMapsClass::Clone(RemapDir &remap)
  *=============================================================================================*/
 IOResult GameMapsClass::Save(ISave * isave) 
 {
-	ULONG nb,f=0;
+	uint32_t nb,f=0;
 
 	isave->BeginChunk(GAMEMAPS_ONOFF_CHUNK);
 	for (int i=0; i<NTEXMAPS; i++) {
@@ -246,7 +246,7 @@ IOResult GameMapsClass::Save(ISave * isave)
  *=============================================================================================*/
 IOResult GameMapsClass::Load(ILoad * iload) 
 { 
-	ULONG nb;
+	uint32_t nb;
 	int id;
 	IOResult res;
 
@@ -255,7 +255,7 @@ IOResult GameMapsClass::Load(ILoad * iload)
 		switch (id = iload->CurChunkID())  {
 			case GAMEMAPS_ONOFF_CHUNK:
 				{
-					ULONG f;
+					uint32_t f;
 					res = iload->Read(&f,sizeof(f), &nb);
 					for (int i=0; i<NTEXMAPS; i++) 
 						 (*this)[i].MapOn = (f&(1<<i))?1:0;

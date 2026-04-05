@@ -81,7 +81,7 @@ void CMotorcycleDialog::SetDlgItemFloat(int controlid,float val)
 	SetDlgItemText(controlid,string);
 }
 
-BOOL CMotorcycleDialog::OnInitDialog() 
+int32_t CMotorcycleDialog::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
 	
@@ -100,7 +100,7 @@ BOOL CMotorcycleDialog::OnInitDialog()
 	return TRUE;
 }
 
-BOOL CMotorcycleDialog::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult) 
+int32_t CMotorcycleDialog::OnNotify(uintptr_t wParam, intptr_t lParam, intptr_t* pResult) 
 {
 	// make the spin controls work...
 	switch(wParam) 

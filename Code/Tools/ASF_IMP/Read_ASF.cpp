@@ -173,9 +173,9 @@ void Skeleton_Class::parse_units_block ( ASF_Lexer & lexer )
 	match_token ( lexer, ":units" );
 	match_newline ( lexer );
 
-	BOOL mass_defined   = FALSE;
-	BOOL length_defined = FALSE;
-	BOOL angle_defined  = FALSE;
+	int32_t mass_defined   = FALSE;
+	int32_t length_defined = FALSE;
+	int32_t angle_defined  = FALSE;
 
 	while (1)
 	{

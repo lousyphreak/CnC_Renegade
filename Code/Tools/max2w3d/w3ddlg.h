@@ -39,6 +39,8 @@
 #ifndef W3DDLG_H
 #define W3DDLG_H
 
+#include <cstdint>
+
 #include "always.h"
 #include <Max.h>
 #include "w3dutil.h"
@@ -52,7 +54,7 @@ public:
 	~W3dOptionsDialogClass();
 	
 	bool Get_Export_Options(W3dExportOptionsStruct * options);
-	bool Dialog_Proc(HWND hWnd,UINT message,WPARAM wParam,LPARAM);
+	bool Dialog_Proc(HWND hWnd,uint32_t message,uintptr_t wParam,intptr_t);
 
 public:
 
@@ -61,7 +63,7 @@ public:
 private:
 
 	void Dialog_Init();
-	BOOL Dialog_Ok();
+	int32_t Dialog_Ok();
 	void Enable_WHT_Export();
 	void Enable_WHT_Load();
 	void Disable_WHT_Export();

@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // FindDialog.h : header file
 //
@@ -76,7 +78,7 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(FindDialog)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	afx_msg void OnChangeFindString();
 	afx_msg void OnUpdateFindString();
 	//}}AFX_MSG

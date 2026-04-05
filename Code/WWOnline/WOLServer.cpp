@@ -159,11 +159,11 @@ IRCServerData::IRCServerData(const WOL::Server& server) :
 
 		if (token)
 			{
-			long productLangCode = product->GetLanguageCode();
+			int32_t productLangCode = product->GetLanguageCode();
 
 			do
 				{
-				long langCode = atol(token);
+				int32_t langCode = static_cast<int32_t>(atol(token));
 
 				if (langCode == productLangCode)
 					{

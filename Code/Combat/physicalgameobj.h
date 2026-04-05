@@ -37,6 +37,8 @@
 #ifndef	PHYSICALGAMEOBJ_H
 #define	PHYSICALGAMEOBJ_H
 
+#include <cstdint>
+
 #ifndef	ALWAYS_H
 	#include "always.h"
 #endif
@@ -186,8 +188,8 @@ public:
 	virtual	SimpleGameObj			*As_SimpleGameObj( void )		{ return NULL; }
 
 	// Network diagnostics
-	BYTE		Get_Server_Skips(void) {return ServerUpdateSkips;}
-	void		Reset_Server_Skips(BYTE value);
+	uint8_t		Get_Server_Skips(void) {return ServerUpdateSkips;}
+	void		Reset_Server_Skips(uint8_t value);
 	void		Increment_Server_Skips(void);
 
 
@@ -261,7 +263,7 @@ private:
 	//
 	// Networking bandwidth stuff
 	//
-	BYTE						ServerUpdateSkips;
+	uint8_t						ServerUpdateSkips;
 
 	//Vector3					TintColor;
 

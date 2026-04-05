@@ -63,7 +63,7 @@ SAMSiteGameObjDef::SAMSiteGameObjDef( void )
 	MODEL_DEF_PARAM( SAMSiteGameObjDef, PhysDefID, "DecorationPhysDef" );
 }
 
-uint32	SAMSiteGameObjDef::Get_Class_ID (void) const	
+uint32_t	SAMSiteGameObjDef::Get_Class_ID (void) const	
 { 
 	return CLASSID_GAME_OBJECT_DEF_SAMSITE; 
 }

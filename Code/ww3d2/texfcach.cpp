@@ -383,7 +383,7 @@ srColorSurfaceIFace *TextureFileCache::Load_Original_Texture_Surface(const char 
  * HISTORY:                                                                                    * 
  *   06/26/2000 SKB : Created.                                                                 * 
  *=============================================================================================*/
-srColorSurfaceIFace *TextureFileCache::Get_Surface(const char *texturename, unsigned int reduce_factor)
+srColorSurfaceIFace *TextureFileCache::Get_Surface(const char *texturename, uint32_t reduce_factor)
 {
 	CriticalSectionClass::LockClass m(mutex);
 
@@ -392,7 +392,7 @@ srColorSurfaceIFace *TextureFileCache::Get_Surface(const char *texturename, unsi
 		return(0);
 	}
 
-	if (reduce_factor >= (unsigned int)(Header.NumMipMaps)) {
+	if (reduce_factor >= (uint32_t)(Header.NumMipMaps)) {
 		reduce_factor=Header.NumMipMaps-1;
 	}
 

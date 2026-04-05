@@ -147,7 +147,7 @@ RingSizePropPageClass::Initialize (void)
 //  OnInitDialog
 //
 /////////////////////////////////////////////////////////////
-BOOL
+int32_t
 RingSizePropPageClass::OnInitDialog (void)
 {
 	// Allow the base class to process this message
@@ -322,7 +322,7 @@ RingSizePropPageClass::OnInitDialog (void)
 //  OnApply
 //
 /////////////////////////////////////////////////////////////
-BOOL
+int32_t
 RingSizePropPageClass::OnApply (void)
 {
 	// Allow the base class to process this message
@@ -348,12 +348,12 @@ RingSizePropPageClass::OnDestroy (void)
 //  OnNotify
 //
 /////////////////////////////////////////////////////////////
-BOOL
+int32_t
 RingSizePropPageClass::OnNotify
 (
-	WPARAM wParam,
-	LPARAM lParam,
-	LRESULT *pResult
+	uintptr_t wParam,
+	intptr_t lParam,
+	intptr_t *pResult
 ) 
 {
 	CBR_NMHDR *color_bar_hdr = (CBR_NMHDR *)lParam;
@@ -454,11 +454,11 @@ RingSizePropPageClass::OnNotify
 //  OnCommand
 //
 /////////////////////////////////////////////////////////////
-BOOL
+int32_t
 RingSizePropPageClass::OnCommand
 (
-	WPARAM wParam,
-	LPARAM lParam
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	switch (LOWORD (wParam))
@@ -470,7 +470,7 @@ RingSizePropPageClass::OnCommand
 			if ((HIWORD (wParam) == EN_KILLFOCUS) &&
 				 SendDlgItemMessage (LOWORD (wParam), EM_GETMODIFY))
 			{
-				SendDlgItemMessage (LOWORD (wParam), EM_SETMODIFY, (WPARAM)0);
+				SendDlgItemMessage (LOWORD (wParam), EM_SETMODIFY, (uintptr_t)0);
 
 				// Update the object
 				m_InnerSize.X = ::GetDlgItemFloat (m_hWnd, IDC_INNER_SIZE_X_EDIT);
@@ -490,7 +490,7 @@ RingSizePropPageClass::OnCommand
 			if ((HIWORD (wParam) == EN_KILLFOCUS) &&
 				 SendDlgItemMessage (LOWORD (wParam), EM_GETMODIFY))
 			{
-				SendDlgItemMessage (LOWORD (wParam), EM_SETMODIFY, (WPARAM)0);
+				SendDlgItemMessage (LOWORD (wParam), EM_SETMODIFY, (uintptr_t)0);
 
 				// Update the object
 				m_OuterSize.X = ::GetDlgItemFloat (m_hWnd, IDC_OUTER_SIZE_X_EDIT);

@@ -46,9 +46,9 @@
 
 namespace {
 
-unsigned int DataSafe_Random_Bits()
+uint32_t DataSafe_Random_Bits()
 {
-	static unsigned int seed = 0x6d2b79f5u ^ static_cast<unsigned int>(TIMEGETTIME()) ^ static_cast<unsigned int>(reinterpret_cast<uintptr_t>(&seed));
+	static uint32_t seed = 0x6d2b79f5u ^ static_cast<uint32_t>(TIMEGETTIME()) ^ static_cast<uint32_t>(reinterpret_cast<uintptr_t>(&seed));
 	seed ^= seed << 13;
 	seed ^= seed >> 17;
 	seed ^= seed << 5;
@@ -63,7 +63,7 @@ int DataSafe_Random_Int(int min_value, int max_value)
 		max_value = temp;
 	}
 
-	const unsigned int range = static_cast<unsigned int>(max_value - min_value) + 1u;
+	const uint32_t range = static_cast<uint32_t>(max_value - min_value) + 1u;
 	return min_value + static_cast<int>(DataSafe_Random_Bits() % range);
 }
 
@@ -103,11 +103,11 @@ int DataSafe_Random_Int(int min_value, int max_value)
 **
 ** I need to make this stuff static so that I can templatize the derived class and have all expansions use the same data.
 */
-uint32 GenericDataSafeClass::SimpleKey;
-uint32 GenericDataSafeClass::HandleKey;
-uint32 GenericDataSafeClass::Checksum;
-unsigned long GenericDataSafeClass::ShuffleDelay;
-unsigned long GenericDataSafeClass::SecurityCheckDelay;
+uint32_t GenericDataSafeClass::SimpleKey;
+uint32_t GenericDataSafeClass::HandleKey;
+uint32_t GenericDataSafeClass::Checksum;
+uint32_t GenericDataSafeClass::ShuffleDelay;
+uint32_t GenericDataSafeClass::SecurityCheckDelay;
 DataSafeHandleClass GenericDataSafeClass::SentinelOne = 0;
 int GenericDataSafeClass::NumLists = 0;
 DataSafeEntryListClass *GenericDataSafeClass::Safe[MAX_DATASAFE_LISTS];
@@ -118,11 +118,11 @@ int GenericDataSafeClass::CRCErrors = 0;
 #ifdef THREAD_SAFE_DATA_SAFE
 HANDLE GenericDataSafeClass::SafeMutex;
 #else //THREAD_SAFE_DATA_SAFE
-unsigned int GenericDataSafeClass::PreferredThread = GetCurrentThreadId();
+uint32_t GenericDataSafeClass::PreferredThread = GetCurrentThreadId();
 #endif //THREAD_SAFE_DATA_SAFE
 
 #ifdef WWDEBUG
-unsigned long GenericDataSafeClass::LastDump = TIMEGETTIME();
+uint32_t GenericDataSafeClass::LastDump = TIMEGETTIME();
 int GenericDataSafeClass::NumSwaps = 0;
 int GenericDataSafeClass::NumFetches = 0;
 int GenericDataSafeClass::SlopCount = 0;
@@ -148,7 +148,7 @@ char ErrorVal[1024] = {0,0,0,0};
 ** A data safe of type 'int' must always be declared first.
 **
 */
-typedef unsigned int DATASAFE_UNSIGNED_INT;
+typedef uint32_t DATASAFE_UNSIGNED_INT;
 
 DataSafeClass<int> DataSafeint(NULL, 0);
 template<> int DataSafeClass<int>::Type = 0;
@@ -215,8 +215,8 @@ GenericDataSafeClass::GenericDataSafeClass(void)
 		SimpleKey = 0x80000000;
 		HandleKey = 0x40000000;
 #else	//FIXED_KEY
-		SimpleKey = 0x55555555 ^ TIMEGETTIME() ^ static_cast<unsigned long>(DataSafe_Random_Bits());
-		HandleKey = 0xaaaaaaaa ^ (TIMEGETTIME()*2) ^ static_cast<unsigned long>(DataSafe_Random_Bits());
+		SimpleKey = 0x55555555 ^ TIMEGETTIME() ^ static_cast<uint32_t>(DataSafe_Random_Bits());
+		HandleKey = 0xaaaaaaaa ^ (TIMEGETTIME()*2) ^ static_cast<uint32_t>(DataSafe_Random_Bits());
 #endif	//FIXED_KEY
 		NumLists = 0;
 		Checksum = ~SimpleKey;
@@ -380,7 +380,7 @@ DataSafeEntryClass *GenericDataSafeClass::Get_Entry(DataSafeHandleClass handle)
 	list = new_handle.Handle.Part.List;
 
 	if (list < 0 || list >= NumLists || Safe[list] == NULL) {
-		WWDEBUG_SAY(("WARNING: Data Safe: Invalid handle list %d for handle %08x\n", list, static_cast<unsigned int>(handle)));
+		WWDEBUG_SAY(("WARNING: Data Safe: Invalid handle list %d for handle %08x\n", list, static_cast<uint32_t>(handle)));
 		ds_assert(false);
 		return NULL;
 	}
@@ -457,7 +457,7 @@ int GenericDataSafeClass::Get_Entry_Type(DataSafeHandleClass handle)
 	list = new_handle.Handle.Part.List;
 
 	if (list < 0 || list >= NumLists || Safe[list] == NULL) {
-		WWDEBUG_SAY(("WARNING: Data Safe: Invalid entry type lookup list %d for handle %08x\n", list, static_cast<unsigned int>(handle)));
+		WWDEBUG_SAY(("WARNING: Data Safe: Invalid entry type lookup list %d for handle %08x\n", list, static_cast<uint32_t>(handle)));
 		ds_assert(false);
 		return -1;
 	}
@@ -556,9 +556,9 @@ DataSafeEntryClass *GenericDataSafeClass::Get_Entry_By_Index(int list, int index
 void GenericDataSafeClass::Mem_Copy_Encrypt(void *dest, void *src, int size, bool do_checksum)
 {
 	ds_assert((size % 4) == 0);
-	uint32 temp;
-	uint32 *s = reinterpret_cast<uint32 *>(src);
-	uint32 *d = reinterpret_cast<uint32 *>(dest);
+	uint32_t temp;
+	uint32_t *s = reinterpret_cast<uint32_t *>(src);
+	uint32_t *d = reinterpret_cast<uint32_t *>(dest);
 
 	if (do_checksum) {
 		for (int i = 0 ; i < (size / 4) ; i++) {
@@ -597,9 +597,9 @@ void GenericDataSafeClass::Mem_Copy_Encrypt(void *dest, void *src, int size, boo
 void GenericDataSafeClass::Mem_Copy_Decrypt(void *dest, void *src, int size, bool do_checksum)
 {
 	ds_assert((size % 4) == 0);
-	uint32 temp;
-	uint32 *s = reinterpret_cast<uint32 *>(src);
-	uint32 *d = reinterpret_cast<uint32 *>(dest);
+	uint32_t temp;
+	uint32_t *s = reinterpret_cast<uint32_t *>(src);
+	uint32_t *d = reinterpret_cast<uint32_t *>(dest);
 
 	if (do_checksum) {
 		for (int i = 0 ; i < (size / 4) ; i++) {
@@ -633,10 +633,10 @@ void GenericDataSafeClass::Mem_Copy_Decrypt(void *dest, void *src, int size, boo
  * HISTORY:                                                                                    *
  *   6/19/2001 9:29PM ST : Created                                                             *
  *=============================================================================================*/
-void GenericDataSafeClass::Encrypt(void *data, int size, uint32 key, bool do_checksum)
+void GenericDataSafeClass::Encrypt(void *data, int size, uint32_t key, bool do_checksum)
 {
 	ds_assert((size % 4) == 0);
-	uint32 *data_ptr = reinterpret_cast<uint32 *>(data);
+	uint32_t *data_ptr = reinterpret_cast<uint32_t *>(data);
 
 	if (do_checksum) {
 		for (int i = 0 ; i < (size / 4) ; i++) {
@@ -668,10 +668,10 @@ void GenericDataSafeClass::Encrypt(void *data, int size, uint32 key, bool do_che
  * HISTORY:                                                                                    *
  *   6/19/2001 9:29PM ST : Created                                                             *
  *=============================================================================================*/
-void GenericDataSafeClass::Decrypt(void *data, int size, uint32 key, bool do_checksum)
+void GenericDataSafeClass::Decrypt(void *data, int size, uint32_t key, bool do_checksum)
 {
 	ds_assert((size % 4) == 0);
-	uint32 *data_ptr = reinterpret_cast<uint32 *>(data);
+	uint32_t *data_ptr = reinterpret_cast<uint32_t *>(data);
 
 	if (do_checksum) {
 		for (int i = 0 ; i < (size / 4) ; i++) {
@@ -912,10 +912,10 @@ void GenericDataSafeClass::Swap_Entries(DataSafeEntryClass *first, DataSafeEntry
 			/*
 			** Convert to long pointers to make it easy to read.
 			*/
-			uint32 *p1 = reinterpret_cast<uint32*>(first_data);
-			uint32 *p2 = reinterpret_cast<uint32*>(second_data);
+			uint32_t *p1 = reinterpret_cast<uint32_t*>(first_data);
+			uint32_t *p2 = reinterpret_cast<uint32_t*>(second_data);
 
-			uint32 temp = *p1;
+			uint32_t temp = *p1;
 			*p1 = *p2;
 			*p2 = temp;
 
@@ -1031,7 +1031,7 @@ void GenericDataSafeClass::Shuffle(bool forced)
 	/*
 	** Only check the time every n calls.
 	*/
-	static unsigned long _calls = 0;
+	static uint32_t _calls = 0;
 	_calls++;
 	if (_calls < DATASAFE_TIME_CHECK_CALLS) {
 		return;
@@ -1041,14 +1041,14 @@ void GenericDataSafeClass::Shuffle(bool forced)
 	/*
 	** Locals.
 	*/
-	unsigned long new_key;
-	unsigned long mod_key;
+	uint32_t new_key;
+	uint32_t mod_key;
 	int i,j;
 
 	/*
 	** We should only do this once in a while
 	*/
-	unsigned long time = TIMEGETTIME();
+	uint32_t time = TIMEGETTIME();
 
 	if (forced || time < ShuffleDelay || (time | ShuffleDelay) == 0 || (time - ShuffleDelay) > SHUFFLE_TIME) {
 		//WWDEBUG_SAY(("Data Safe: Performing data shuffle and re-key\n"));
@@ -1089,7 +1089,7 @@ void GenericDataSafeClass::Shuffle(bool forced)
 		** Generate a new key.
 		*/
 		new_key = TIMEGETTIME();
-		new_key ^= static_cast<unsigned long>(DataSafe_Random_Bits());
+		new_key ^= static_cast<uint32_t>(DataSafe_Random_Bits());
 
 		/*
 		** Reset the checksum. Can't keep a running checksum if we re-key
@@ -1423,7 +1423,7 @@ void GenericDataSafeClass::Dump_Safe_Stats(char *dump_buffer, int buffer_size)
 	/*
 	** Precalculate some stats.
 	*/
-	unsigned long time = TIMEGETTIME() - LastDump;
+	uint32_t time = TIMEGETTIME() - LastDump;
 	LastDump = TIMEGETTIME();
 	time = time / 1000;
 	int fetches_per_second = 0;
@@ -1468,7 +1468,7 @@ void GenericDataSafeClass::Dump_Safe_Stats(char *dump_buffer, int buffer_size)
 	** Count the number of items currently stored in the data safe.
 	*/
 	int count = 0;
-	unsigned long bytes = 0;
+	uint32_t bytes = 0;
 	for (int i=0 ; i<NumLists ; i++) {
 		ds_assert(Safe[i] != NULL);
 		if (Safe[i] != NULL) {
@@ -1488,7 +1488,7 @@ void GenericDataSafeClass::Dump_Safe_Stats(char *dump_buffer, int buffer_size)
 	/*
 	** Print out the percentage of safe capacity in use.
 	*/
-	unsigned long percent = (count * 100) / (MAX_DATASAFE_LISTS * MAX_ENTRIES_PER_LIST);
+	uint32_t percent = (count * 100) / (MAX_DATASAFE_LISTS * MAX_ENTRIES_PER_LIST);
 	sprintf(dump_ptr, "\n  Safe is %d percent full\n\n", percent);
 	UPDATE_PTR;
 

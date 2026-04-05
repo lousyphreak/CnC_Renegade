@@ -64,21 +64,21 @@ int												DialogMgrClass::TestArrayMaxCount;
 bool												DialogMgrClass::IsFirstRender	= false;
 bool												DialogMgrClass::IsInMenuMode	= false;
 DialogBaseClass *								DialogMgrClass::ActiveDialog	= NULL;
-BYTE												DialogMgrClass::KeyboardState[256];
+uint8_t												DialogMgrClass::KeyboardState[256];
 DialogControlClass *							DialogMgrClass::InputCapture = NULL;
 DialogControlClass *							DialogMgrClass::FocusControl = NULL;
 WWUIInputClass *								DialogMgrClass::Input = NULL;
 DialogTransitionClass *						DialogMgrClass::Transition = NULL;
 DialogBaseClass *								DialogMgrClass::PendingActiveDialog	= NULL;
 DialogBaseClass *								DialogMgrClass::TransitionDialog = NULL;
-uint32											DialogMgrClass::CurrTime		= 0;
-uint32											DialogMgrClass::LastFrameTime	= 0;
+uint32_t											DialogMgrClass::CurrTime		= 0;
+uint32_t											DialogMgrClass::LastFrameTime	= 0;
 Vector3											DialogMgrClass::LastMousePos (0, 0, 0);
 bool												DialogMgrClass::LastMouseButtonState[MB_COUNT] = { 0 };
 bool												DialogMgrClass::IsFlushing = false;
 
 ToolTipClass* DialogMgrClass::mIMEMessage = NULL;
-uint32 DialogMgrClass::mIMEMessageTime = 0;
+uint32_t DialogMgrClass::mIMEMessageTime = 0;
 
 
 static bool	GameWasInFocus;
@@ -376,7 +376,7 @@ DialogMgrClass::On_Frame_Update (void)
 	//
 	//	Update the timing
 	//
-	uint32 old_time	= CurrTime;
+	uint32_t old_time	= CurrTime;
 	CurrTime				= TIMEGETTIME ();
 	LastFrameTime		= CurrTime - old_time;
 
@@ -680,7 +680,7 @@ DialogMgrClass::Internal_Set_Active_Dialog (DialogBaseClass *dialog)
 //
 ////////////////////////////////////////////////////////////////
 bool
-DialogMgrClass::On_Key_Down (uint32 key_id, uint32 key_data)
+DialogMgrClass::On_Key_Down (uint32_t key_id, uint32_t key_data)
 {
 	if (Transition != NULL) {
 		return false;
@@ -712,7 +712,7 @@ DialogMgrClass::On_Key_Down (uint32 key_id, uint32 key_data)
 //
 ////////////////////////////////////////////////////////////////
 bool
-DialogMgrClass::On_Key_Up (uint32 key_id)
+DialogMgrClass::On_Key_Up (uint32_t key_id)
 {
 	if (Transition != NULL) {
 		return false;
@@ -980,7 +980,7 @@ DialogMgrClass::Rollback (DialogBaseClass *dialog)
 }
 
 
-void DialogMgrClass::Show_IME_Message(const wchar_t* message, uint32 duration)
+void DialogMgrClass::Show_IME_Message(const wchar_t* message, uint32_t duration)
 {
 	if (mIMEMessage == NULL) {
 		mIMEMessage = new ToolTipClass;

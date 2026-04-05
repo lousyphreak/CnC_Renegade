@@ -44,7 +44,7 @@ struct ThreadInformation
 {
   void     *startPoint;    // The address of the _real_ thread function, or class
   void     *data;          // data to pass to real thread function or class
-  bit8      destroy;       // only applies to classes, should delete after execution?
+  int8_t      destroy;       // only applies to classes, should delete after execution?
 };
 
 
@@ -52,7 +52,7 @@ struct ThreadInformation
 //
 // Start a thread inside a class
 //
-bit8 ThreadFactory::startThread(Runnable &runable, void *data, bit8 destroy)
+int8_t ThreadFactory::startThread(Runnable &runable, void *data, int8_t destroy)
 {
 #ifdef _REENTRANT
  
@@ -71,8 +71,8 @@ bit8 ThreadFactory::startThread(Runnable &runable, void *data, bit8 destroy)
   #ifdef _WIN32
     // Under windows call _beginthreadex instead of CreateThread so you can
     //  use all the normal C library stuff. (IMPORTANT!!!)
-    uint32 handle;
-	uint32 stup1d;
+    uint32_t handle;
+	uint32_t stup1d;
     handle=_beginthreadex(NULL,0,  threadClassLauncher, tInfo, 0, &stup1d);
     if (handle!=NULL)
       return(TRUE);
@@ -114,7 +114,7 @@ bit8 ThreadFactory::startThread(Runnable &runable, void *data, bit8 destroy)
 //
 // Start a thread inside a function
 //
-bit8 ThreadFactory::startThread(void (*start_func)(void *), void *data)
+int8_t ThreadFactory::startThread(void (*start_func)(void *), void *data)
 {
 #ifdef _REENTRANT
   ThreadInformation *tInfo=new ThreadInformation;
@@ -124,7 +124,7 @@ bit8 ThreadFactory::startThread(void (*start_func)(void *), void *data)
   #ifdef _WIN32
     // Under windows call _beginthreadex instead of CreateThread so you can
     //  use all the normal C library stuff. (IMPORTANT!!!)
-    uint32 handle;
+    uint32_t handle;
 	unsigned temp;
     handle=_beginthreadex(NULL,0,  threadFuncLauncher, tInfo, 0, &temp);
     if (handle!=NULL)
@@ -176,7 +176,7 @@ bit8 ThreadFactory::startThread(void (*start_func)(void *), void *data)
 
   Runnable *thrClass=(Runnable *)tInfo->startPoint;
   void     *data=tInfo->data;
-  bit8      destroy=tInfo->destroy;
+  int8_t      destroy=tInfo->destroy;
   delete(tInfo);
 
   thrClass->run(data);
@@ -203,7 +203,7 @@ Runnable::~Runnable()
 { }
 
 // Is there a thread running in this class
-bit8 Runnable::isRunning(void)
+int8_t Runnable::isRunning(void)
 {
   // Don't need to lock a simple assignment
   int temp=ThreadCount_;

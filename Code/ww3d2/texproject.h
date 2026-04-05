@@ -38,6 +38,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef TEXPROJECT_H
@@ -176,8 +178,8 @@ public:
 
 protected:
 
-	void						Set_Flag(uint32 flag,bool onoff);
-	bool						Get_Flag(uint32 flag) const;
+	void						Set_Flag(uint32_t flag,bool onoff);
+	bool						Get_Flag(uint32_t flag) const;
 	virtual void			Update_WS_Bounding_Volume(void);
 	void						Configure_Camera(CameraClass & camera);
 
@@ -198,7 +200,7 @@ protected:
 		DEFAULT_FLAGS			= ATTENUATE | AFFECT_DYNAMIC_OBJS | AFFECT_STATIC_OBJS
 	};
 	
-	uint32						Flags;
+	uint32_t						Flags;
 
 	/*
 	** Intensity Controls

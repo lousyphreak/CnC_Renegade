@@ -98,7 +98,7 @@ void TypeEncoder::SetTypePrecision(EncoderType type, float min, float max,
 ******************************************************************************/
 
 void TypeEncoder::SetTypePrecision(EncoderType type, float min, float max,
-		unsigned int bitPrecision)
+		uint32_t bitPrecision)
 {
 	EncoderTypeEntry& entry = _mEncoderTypes[type];
 
@@ -126,7 +126,7 @@ void TypeEncoder::SetTypePrecision(EncoderType type, float min, float max,
 *
 ******************************************************************************/
 
-TypeEncoder::TypeEncoder(void* buffer, unsigned int size)
+TypeEncoder::TypeEncoder(void* buffer, uint32_t size)
 	: BitPacker(buffer, size)
 {
 }
@@ -213,13 +213,13 @@ bool TypeEncoder::PutBool(bool value)
 *
 ******************************************************************************/
 
-int TypeEncoder::GetInt(unsigned int bitPrecision)
+int TypeEncoder::GetInt(uint32_t bitPrecision)
 {
 	// Get the sign
 	int sign = BitPacker::GetBit();
 
 	// Get the number
-	unsigned long code;
+	uint32_t code;
 	BitPacker::GetBits(code, bitPrecision);
 
 	// Adjust sign
@@ -248,10 +248,10 @@ int TypeEncoder::GetInt(unsigned int bitPrecision)
 *
 ******************************************************************************/
 
-bool TypeEncoder::PutInt(int value, unsigned int bitPrecision)
+bool TypeEncoder::PutInt(int value, uint32_t bitPrecision)
 {
 	BitPacker::PutBit(value < 0);
-	BitPacker::PutBits((unsigned long)abs(value), bitPrecision);
+	BitPacker::PutBits((uint32_t)abs(value), bitPrecision);
 	return true;
 }
 
@@ -276,9 +276,9 @@ bool TypeEncoder::PutInt(int value, unsigned int bitPrecision)
 
 float TypeEncoder::GetFloat(float min, float max, float resolution)
 {
-	unsigned int bitPrecision = CalcBitPrecision(min, max, resolution);
+	uint32_t bitPrecision = CalcBitPrecision(min, max, resolution);
 
-	unsigned long code = 0;
+	uint32_t code = 0;
 	BitPacker::GetBits(code, bitPrecision);
 
 	float value = (((float)code * resolution) + min);
@@ -307,9 +307,9 @@ float TypeEncoder::GetFloat(float min, float max, float resolution)
 
 bool TypeEncoder::PutFloat(float value, float min, float max, float resolution)
 {
-	unsigned int bitPrecision = CalcBitPrecision(min, max, resolution);
+	uint32_t bitPrecision = CalcBitPrecision(min, max, resolution);
 
-	unsigned long code = (unsigned long)((value - min) / resolution);
+	uint32_t code = (uint32_t)((value - min) / resolution);
 	BitPacker::PutBits(code, bitPrecision);
 	return true;
 }
@@ -335,7 +335,7 @@ float TypeEncoder::GetType(EncoderType type)
 {
 	EncoderTypeEntry& entry = _mEncoderTypes[type];
 
-	unsigned long code = 0;
+	uint32_t code = 0;
 	BitPacker::GetBits(code, entry.BitPrecision);
 
 	float value = (((float)code * entry.Resolution) + entry.MinExtent);
@@ -364,7 +364,7 @@ bool TypeEncoder::PutType(EncoderType type, float value)
 {
 	EncoderTypeEntry& entry = _mEncoderTypes[type];
 
-	unsigned long code = (unsigned long)((value - entry.MinExtent) / entry.Resolution);
+	uint32_t code = (uint32_t)((value - entry.MinExtent) / entry.Resolution);
 	BitPacker::PutBits(code, entry.BitPrecision);
 	return true;
 }
@@ -389,15 +389,15 @@ bool TypeEncoder::PutType(EncoderType type, float value)
 *
 ******************************************************************************/
 
-unsigned int TypeEncoder::CalcBitPrecision(float min, float max, float resolution)
+uint32_t TypeEncoder::CalcBitPrecision(float min, float max, float resolution)
 {
 	// Calculate the minimum number of bits required to encode this type with
 	// the specified resolution.
 	float range = (max - min);
-	unsigned int units = (unsigned int)((range / resolution) + 0.5);
+	uint32_t units = (uint32_t)((range / resolution) + 0.5);
 
-	unsigned int numBits = 32;
-	unsigned long bitMask = (1U << 31);
+	uint32_t numBits = 32;
+	uint32_t bitMask = (1U << 31);
 
 	while (numBits > 0) {
 		if (units & bitMask) {
@@ -424,16 +424,16 @@ unsigned int TypeEncoder::CalcBitPrecision(float min, float max, float resolutio
 * INPUTS
 *     float min
 *     float max
-*     unsigned int bitPrecision
+*     uint32_t bitPrecision
 *
 * RESULTS
 *     float
 *
 ******************************************************************************/
 
-float TypeEncoder::CalcResolution(float min, float max, unsigned int bitPrecision)
+float TypeEncoder::CalcResolution(float min, float max, uint32_t bitPrecision)
 {
-	static unsigned long _precisionRange[32] = {
+	static uint32_t _precisionRange[32] = {
 		0x00000001, 0x00000003, 0x00000007, 0x0000000F,
 		0x0000001F, 0x0000003F, 0x0000007F, 0x000000FF,
 		0x000001FF, 0x000003FF, 0x000007FF, 0x00000FFF,

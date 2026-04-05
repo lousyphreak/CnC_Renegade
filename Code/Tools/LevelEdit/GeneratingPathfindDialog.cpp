@@ -75,7 +75,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 GeneratingPathfindDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -146,12 +146,12 @@ GeneratingPathfindDialogClass::Set_Status (LPCTSTR text, float percent)
 // WindowProc
 //
 /////////////////////////////////////////////////////////////////////////////
-LRESULT
+intptr_t
 GeneratingPathfindDialogClass::WindowProc
 (
-	UINT		message,
-	WPARAM	wParam,
-	LPARAM	lParam
+	uint32_t		message,
+	uintptr_t	wParam,
+	intptr_t	lParam
 )
 {
 	if (message == WM_USER + 101) {

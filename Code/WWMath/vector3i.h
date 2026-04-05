@@ -37,6 +37,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef VECTOR3I_H
 #define VECTOR3I_H
 
@@ -95,17 +97,17 @@ class Vector3i16
 {
 public:
 
-	unsigned short I;
-	unsigned short J;
-	unsigned short K;
+	uint16_t I;
+	uint16_t J;
+	uint16_t K;
 
 	WWINLINE Vector3i16(void);
-	WWINLINE Vector3i16(unsigned short i,unsigned short j,unsigned short k);
+	WWINLINE Vector3i16(uint16_t i,uint16_t j,uint16_t k);
 
 	WWINLINE bool			operator== (const Vector3i & v) const;
    WWINLINE bool			operator!= (const Vector3i& v) const;
-	WWINLINE const	unsigned short &	operator[] (int n) const;
-	WWINLINE unsigned short & operator[] (int n);
+	WWINLINE const	uint16_t &	operator[] (int n) const;
+	WWINLINE uint16_t & operator[] (int n);
 };
 
 
@@ -113,7 +115,7 @@ WWINLINE Vector3i16::Vector3i16(void)
 {
 }
 
-WWINLINE Vector3i16::Vector3i16(unsigned short i,unsigned short j,unsigned short k) 
+WWINLINE Vector3i16::Vector3i16(uint16_t i,uint16_t j,uint16_t k) 
 { 
 	I = i; J = j; K = k; 
 }
@@ -128,14 +130,14 @@ WWINLINE bool Vector3i16::operator !=	(const Vector3i& v) const
 	return !(I == v.I && J == v.J && K == v.K);	
 }
 
-WWINLINE const unsigned short & Vector3i16::operator[] (int n) const				
+WWINLINE const uint16_t & Vector3i16::operator[] (int n) const				
 { 
-	return ((unsigned short *)this)[n]; 
+	return ((uint16_t *)this)[n]; 
 }
 
-WWINLINE unsigned short & Vector3i16::operator[] (int n)
+WWINLINE uint16_t & Vector3i16::operator[] (int n)
 { 
-	return ((unsigned short *)this)[n]; 
+	return ((uint16_t *)this)[n]; 
 }
 
 #endif

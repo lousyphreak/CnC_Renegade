@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __DLGMPINGAMECHAT_H__
@@ -75,10 +77,10 @@ public:
 	//	Inherited
 	//
 	void	On_Init_Dialog (void);
-	bool	On_EditCtrl_Key_Down (EditCtrlClass *edit_ctrl, uint32 key_id, uint32 key_data);
+	bool	On_EditCtrl_Key_Down (EditCtrlClass *edit_ctrl, uint32_t key_id, uint32_t key_data);
 	void	On_EditCtrl_Change(EditCtrlClass *edit_ctrl, int ctrl_id);
 	void	On_EditCtrl_Enter_Pressed (EditCtrlClass *edit_ctrl, int ctrl_id);
-	void	On_Command (int ctrl_id, int message_id, DWORD param);
+	void	On_Command (int ctrl_id, int message_id, uint32_t param);
 
 protected:
 
@@ -136,7 +138,7 @@ public:
 	//	Inherited
 	//
 	void	On_Init_Dialog (void);
-	void	On_Command (int ctrl_id, int mesage_id, DWORD param);
+	void	On_Command (int ctrl_id, int mesage_id, uint32_t param);
 	void	Render (void);
 
 	//

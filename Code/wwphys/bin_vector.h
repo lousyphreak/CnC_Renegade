@@ -1,3 +1,4 @@
+#include <cstdint>
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -41,7 +42,7 @@
 #define BIN_VECTOR_H
 
 #ifdef WWDEBUG
-extern const unsigned char _VectorBinary[3469];
+extern const uint8_t _VectorBinary[3469];
 #endif
 
 #endif

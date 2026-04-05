@@ -120,7 +120,7 @@ AssetPackageMgrClass::Build_Package_List (STRING_LIST &list)
 	//	Search for all sub-directories in our current folder
 	//
 	WIN32_FIND_DATA find_info	= { 0 };
-	BOOL keep_going				= TRUE;
+	int32_t keep_going				= TRUE;
 	HANDLE file_find				= NULL;
 	for (file_find = ::FindFirstFile (search_path, &find_info);
 		 (file_find != INVALID_HANDLE_VALUE) && keep_going;

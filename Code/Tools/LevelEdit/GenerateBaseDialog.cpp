@@ -72,7 +72,7 @@ void
 GenerateBaseDialogClass::OnUpdatePresetName (void)
 {
 	// Enable/disable the OK button based on the entry in the name editfield
-	BOOL benable = (::GetWindowTextLength (::GetDlgItem (m_hWnd, IDC_PRESET_NAME)) > 0);
+	int32_t benable = (::GetWindowTextLength (::GetDlgItem (m_hWnd, IDC_PRESET_NAME)) > 0);
 	::EnableWindow (::GetDlgItem (m_hWnd, IDOK), benable);
 	return ;
 }

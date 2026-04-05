@@ -56,7 +56,7 @@ class PS2GameMaterialClassDesc:public ClassDesc {
 
 public:
 	int				IsPublic()					{ return 1; }
-	void *			Create(BOOL loading)		
+	void *			Create(int32_t loading)		
 	{ 
 		GameMtl *mtl = new GameMtl(loading);
 		mtl->Set_Shader_Type(GameMtl::STE_PS2_SHADER);

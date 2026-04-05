@@ -35,6 +35,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #pragma once
+
+#include <cstdint>
 #ifndef _AUTOSTART_H
 #define _AUTOSTART_H
 
@@ -138,7 +140,7 @@ class AutoRestartClass : public Observer<WOLLogonAction>, public Observer<WWOnli
 		/*
 		** Time we last tried to create the game channel.
 		*/
-		unsigned long LastChannelCreateTime;
+		uint32_t LastChannelCreateTime;
 
 		/*
 		** Number of times we tried to create the channel.

@@ -56,7 +56,7 @@ CWdumpView::~CWdumpView()
 {
 }
 
-BOOL CWdumpView::PreCreateWindow(CREATESTRUCT& cs)
+int32_t CWdumpView::PreCreateWindow(CREATESTRUCT& cs)
 {
 	// TODO: Modify the Window class or styles here by modifying
 	//  the CREATESTRUCT cs

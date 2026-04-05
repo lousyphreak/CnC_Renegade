@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "refcount.h"
 
 #include <vector>
@@ -12,7 +14,7 @@ public:
 		return 0;
 	}
 
-	IndexBufferClass(unsigned buffer_type, unsigned short index_count)
+	IndexBufferClass(unsigned buffer_type, uint16_t index_count)
 		: engine_refs(0),
 		  index_count(index_count),
 		  type(buffer_type),
@@ -20,12 +22,12 @@ public:
 	{
 	}
 
-	unsigned short Get_Index_Count() const
+	uint16_t Get_Index_Count() const
 	{
 		return index_count;
 	}
 
-	const unsigned short *Get_Index_Data() const
+	const uint16_t *Get_Index_Data() const
 	{
 		return Storage.data();
 	}
@@ -60,7 +62,7 @@ public:
 		{
 		}
 
-		unsigned short * Get_Index_Array()
+		uint16_t * Get_Index_Array()
 		{
 			return IndexBuffer != NULL ? IndexBuffer->Storage.data() : NULL;
 		}
@@ -78,7 +80,7 @@ public:
 		{
 		}
 
-		unsigned short * Get_Index_Array()
+		uint16_t * Get_Index_Array()
 		{
 			return IndexBuffer != NULL ? IndexBuffer->Storage.data() + StartIndex : NULL;
 		}
@@ -90,15 +92,15 @@ public:
 
 protected:
 	mutable unsigned engine_refs;
-	unsigned short index_count;
+	uint16_t index_count;
 	unsigned type;
-	std::vector<unsigned short> Storage;
+	std::vector<uint16_t> Storage;
 };
 
 class DX8IndexBufferClass : public IndexBufferClass
 {
 public:
-	explicit DX8IndexBufferClass(unsigned short index_count = 0)
+	explicit DX8IndexBufferClass(uint16_t index_count = 0)
 		: IndexBufferClass(0, index_count)
 	{
 	}
@@ -107,9 +109,9 @@ public:
 class SortingIndexBufferClass : public IndexBufferClass
 {
 public:
-	unsigned short* index_buffer;
+	uint16_t* index_buffer;
 
-	explicit SortingIndexBufferClass(unsigned short index_count = 0)
+	explicit SortingIndexBufferClass(uint16_t index_count = 0)
 		: IndexBufferClass(1, index_count),
 		  index_buffer(Storage.data())
 	{
@@ -125,7 +127,7 @@ public:
 
 	DynamicIBAccessClass(int type, int index_count)
 		: Type(static_cast<unsigned>(type)),
-		  IndexCount(static_cast<unsigned short>(index_count)),
+		  IndexCount(static_cast<uint16_t>(index_count)),
 		  BackingBuffer(NULL)
 	{
 		Attach_Shared_Buffer(type);
@@ -141,12 +143,12 @@ public:
 		return Type;
 	}
 
-	unsigned short Get_Index_Count() const
+	uint16_t Get_Index_Count() const
 	{
 		return IndexCount;
 	}
 
-	const unsigned short *Get_Index_Data() const
+	const uint16_t *Get_Index_Data() const
 	{
 		return BackingBuffer != NULL ? BackingBuffer->Get_Index_Data() : NULL;
 	}
@@ -164,9 +166,9 @@ public:
 		{
 		}
 
-		unsigned short * Get_Index_Array()
+		uint16_t * Get_Index_Array()
 		{
-			return Access != nullptr && Access->BackingBuffer != NULL ? const_cast<unsigned short *>(Access->BackingBuffer->Get_Index_Data()) : nullptr;
+			return Access != nullptr && Access->BackingBuffer != NULL ? const_cast<uint16_t *>(Access->BackingBuffer->Get_Index_Data()) : nullptr;
 		}
 
 	private:
@@ -202,6 +204,6 @@ private:
 	}
 
 	unsigned Type;
-	unsigned short IndexCount;
+	uint16_t IndexCount;
 	IndexBufferClass * BackingBuffer;
 };

@@ -81,7 +81,7 @@ static W3dClassDesc		W3d_Export_Class_Descriptor;
  * HISTORY:                                                                                    * 
  *   06/09/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-BOOL WINAPI DllMain(HINSTANCE	hinstDLL,ULONG /*fdwReason*/,LPVOID /*lpvReserved*/)
+int32_t WINAPI DllMain(HINSTANCE	hinstDLL,uint32_t /*fdwReason*/,LPVOID /*lpvReserved*/)
 {
 	AppInstance = hinstDLL;
 
@@ -186,7 +186,7 @@ DLLEXPORT ClassDesc * LibClassDesc(int i)
  * HISTORY:                                                                                    * 
  *   06/09/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-DLLEXPORT ULONG LibVersion()
+DLLEXPORT uint32_t LibVersion()
 {
 	return VERSION_3DSMAX;
 }

@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 
@@ -70,7 +72,7 @@ public:
 	virtual ~TileDefinitionClass (void);
 
 	// From DefinitionClass
-	virtual uint32								Get_Class_ID (void) const { return CLASSID_TILE; }
+	virtual uint32_t								Get_Class_ID (void) const { return CLASSID_TILE; }
 
 	// From PersistClass
 	virtual const PersistFactoryClass &	Get_Factory (void) const;

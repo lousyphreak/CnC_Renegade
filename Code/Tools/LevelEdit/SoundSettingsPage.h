@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 #ifndef __AFXEXT_H__
@@ -77,7 +79,7 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(SoundSettingsPageClass)
-	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
+	afx_msg void OnHScroll(uint32_t nSBCode, uint32_t nPos, CScrollBar* pScrollBar);
 	afx_msg void OnChangeVolumeEdit();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()

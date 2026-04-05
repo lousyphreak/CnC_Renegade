@@ -85,7 +85,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 MemLogDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();

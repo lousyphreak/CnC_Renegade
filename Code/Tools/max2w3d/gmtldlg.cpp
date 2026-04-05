@@ -302,7 +302,7 @@ void GameMtlDlg::SetTime(TimeValue t)
  * HISTORY:                                                                                    * 
  *   06/26/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-BOOL GameMtlDlg::PanelProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam ) 
+int32_t GameMtlDlg::PanelProc(HWND hwndDlg, uint32_t msg, uintptr_t wParam, intptr_t lParam ) 
 {
 	int id = LOWORD(wParam);
 	int code = HIWORD(wParam);
@@ -339,23 +339,23 @@ BOOL GameMtlDlg::PanelProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam 
 				ShininessSpin = SetupFloatSpinner(hwndDlg,IDC_SHININESS_SPIN,IDC_SHININESS_EDIT,1.0f,1000.0f,TheMtl->GetShininess(),1.0f);
 				FogSpin = SetupFloatSpinner(hwndDlg,IDC_FOG_SPIN,IDC_FOG_EDIT,0.0f,1.0f,TheMtl->FogCoeff,0.01f);
 
-				SendDlgItemMessage( hwndDlg, IDC_DCT_MAPPING_COMBO, CB_ADDSTRING, 0, (LPARAM) (LPCTSTR) Get_String(IDS_UV_MAPPING));
-				SendDlgItemMessage( hwndDlg, IDC_DCT_MAPPING_COMBO, CB_ADDSTRING, 0, (LPARAM) (LPCTSTR) Get_String(IDS_ENVIRONMENT_MAPPING) );
+				SendDlgItemMessage( hwndDlg, IDC_DCT_MAPPING_COMBO, CB_ADDSTRING, 0, (intptr_t) (LPCTSTR) Get_String(IDS_UV_MAPPING));
+				SendDlgItemMessage( hwndDlg, IDC_DCT_MAPPING_COMBO, CB_ADDSTRING, 0, (intptr_t) (LPCTSTR) Get_String(IDS_ENVIRONMENT_MAPPING) );
 
-				SendDlgItemMessage( hwndDlg, IDC_DIT_MAPPING_COMBO, CB_ADDSTRING, 0, (LPARAM) (LPCTSTR) Get_String(IDS_UV_MAPPING));
-				SendDlgItemMessage( hwndDlg, IDC_DIT_MAPPING_COMBO, CB_ADDSTRING, 0, (LPARAM) (LPCTSTR) Get_String(IDS_ENVIRONMENT_MAPPING) );
+				SendDlgItemMessage( hwndDlg, IDC_DIT_MAPPING_COMBO, CB_ADDSTRING, 0, (intptr_t) (LPCTSTR) Get_String(IDS_UV_MAPPING));
+				SendDlgItemMessage( hwndDlg, IDC_DIT_MAPPING_COMBO, CB_ADDSTRING, 0, (intptr_t) (LPCTSTR) Get_String(IDS_ENVIRONMENT_MAPPING) );
 				
-				SendDlgItemMessage( hwndDlg, IDC_SCT_MAPPING_COMBO, CB_ADDSTRING, 0, (LPARAM) (LPCTSTR) Get_String(IDS_UV_MAPPING));
-				SendDlgItemMessage( hwndDlg, IDC_SCT_MAPPING_COMBO, CB_ADDSTRING, 0, (LPARAM) (LPCTSTR) Get_String(IDS_ENVIRONMENT_MAPPING) );
+				SendDlgItemMessage( hwndDlg, IDC_SCT_MAPPING_COMBO, CB_ADDSTRING, 0, (intptr_t) (LPCTSTR) Get_String(IDS_UV_MAPPING));
+				SendDlgItemMessage( hwndDlg, IDC_SCT_MAPPING_COMBO, CB_ADDSTRING, 0, (intptr_t) (LPCTSTR) Get_String(IDS_ENVIRONMENT_MAPPING) );
 				
-				SendDlgItemMessage( hwndDlg, IDC_SIT_MAPPING_COMBO, CB_ADDSTRING, 0, (LPARAM) (LPCTSTR) Get_String(IDS_UV_MAPPING));
-				SendDlgItemMessage( hwndDlg, IDC_SIT_MAPPING_COMBO, CB_ADDSTRING, 0, (LPARAM) (LPCTSTR) Get_String(IDS_ENVIRONMENT_MAPPING) );
+				SendDlgItemMessage( hwndDlg, IDC_SIT_MAPPING_COMBO, CB_ADDSTRING, 0, (intptr_t) (LPCTSTR) Get_String(IDS_UV_MAPPING));
+				SendDlgItemMessage( hwndDlg, IDC_SIT_MAPPING_COMBO, CB_ADDSTRING, 0, (intptr_t) (LPCTSTR) Get_String(IDS_ENVIRONMENT_MAPPING) );
 
 				/* Installing a windproc for texmap buttons which will handle drag-n-drop
 				HWND hw = GetDlgItem(hwndDlg, texMapID[i]);
 				WNDPROC oldp = (WNDPROC)GetWindowLong(hw, GWL_WNDPROC);
-				SetWindowLong( hw, GWL_WNDPROC, (LONG)TexSlotWndProc);
-				SetWindowLong( hw, GWL_USERDATA, (LONG)oldp);
+				SetWindowLong( hw, GWL_WNDPROC, (int32_t)TexSlotWndProc);
+				SetWindowLong( hw, GWL_USERDATA, (int32_t)oldp);
 				*/
 
 				return TRUE;
@@ -614,7 +614,7 @@ BOOL GameMtlDlg::PanelProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam 
  * HISTORY:                                                                                    * 
  *   06/26/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-static BOOL CALLBACK PanelDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+static int32_t CALLBACK PanelDlgProc(HWND hwndDlg, uint32_t msg, uintptr_t wParam, intptr_t lParam) 
 {
 	GameMtlDlg *theDlg;
 
@@ -628,7 +628,7 @@ static BOOL CALLBACK PanelDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		}
 	}
 
-	BOOL res;
+	int32_t res;
 	theDlg->IsActive = 1;
 	res = theDlg->PanelProc(hwndDlg,msg,wParam,lParam);
 	theDlg->IsActive = 0;
@@ -647,7 +647,7 @@ static BOOL CALLBACK PanelDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
  * HISTORY:                                                                                    * 
  *   06/26/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-BOOL GameMtlDlg::NotesProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+int32_t GameMtlDlg::NotesProc(HWND hwndDlg, uint32_t msg, uintptr_t wParam, intptr_t lParam) 
 {
 	int id = LOWORD(wParam);
 	int code = HIWORD(wParam);
@@ -685,7 +685,7 @@ BOOL GameMtlDlg::NotesProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
  * HISTORY:                                                                                    * 
  *   06/26/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-static BOOL CALLBACK NotesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+static int32_t CALLBACK NotesDlgProc(HWND hwndDlg, uint32_t msg, uintptr_t wParam, intptr_t lParam) 
 {
 	GameMtlDlg *theDlg;
 
@@ -699,7 +699,7 @@ static BOOL CALLBACK NotesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		}
 	}
 
-	BOOL res;
+	int32_t res;
 	theDlg->IsActive = 1;
 	res = theDlg->NotesProc(hwndDlg,msg,wParam,lParam);
 	theDlg->IsActive = 0;
@@ -719,7 +719,7 @@ static BOOL CALLBACK NotesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
  * HISTORY:                                                                                    *
  *   3/30/98    GTH : Created.                                                                 *
  *=============================================================================================*/
-BOOL GameMtlDlg::HintsProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+int32_t GameMtlDlg::HintsProc(HWND hwndDlg, uint32_t msg, uintptr_t wParam, intptr_t lParam) 
 {
 	int id = LOWORD(wParam);
 	int code = HIWORD(wParam);
@@ -778,7 +778,7 @@ BOOL GameMtlDlg::HintsProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
  * HISTORY:                                                                                    *
  *   3/30/98    GTH : Created.                                                                 *
  *=============================================================================================*/
-static BOOL CALLBACK HintsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+static int32_t CALLBACK HintsDlgProc(HWND hwndDlg, uint32_t msg, uintptr_t wParam, intptr_t lParam) 
 {
 	GameMtlDlg *theDlg;
 
@@ -792,7 +792,7 @@ static BOOL CALLBACK HintsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		}
 	}
 
-	BOOL res;
+	int32_t res;
 	theDlg->IsActive = 1;
 	res = theDlg->HintsProc(hwndDlg,msg,wParam,lParam);
 	theDlg->IsActive = 0;
@@ -812,7 +812,7 @@ static BOOL CALLBACK HintsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
  * HISTORY:                                                                                    *
  *   3/31/98    GTH : Created.                                                                 *
  *=============================================================================================*/
-BOOL GameMtlDlg::PsxProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+int32_t GameMtlDlg::PsxProc(HWND hwndDlg, uint32_t msg, uintptr_t wParam, intptr_t lParam) 
 {
 	int id = LOWORD(wParam);
 	int code = HIWORD(wParam);
@@ -874,7 +874,7 @@ BOOL GameMtlDlg::PsxProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
  * HISTORY:                                                                                    *
  *   3/31/98    GTH : Created.                                                                 *
  *=============================================================================================*/
-static BOOL CALLBACK PsxDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+static int32_t CALLBACK PsxDlgProc(HWND hwndDlg, uint32_t msg, uintptr_t wParam, intptr_t lParam) 
 {
 	GameMtlDlg *theDlg;
 
@@ -888,7 +888,7 @@ static BOOL CALLBACK PsxDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lP
 		}
 	}
 
-	BOOL res;
+	int32_t res;
 	theDlg->IsActive = 1;
 	res = theDlg->PsxProc(hwndDlg,msg,wParam,lParam);
 	theDlg->IsActive = 0;
@@ -908,7 +908,7 @@ static BOOL CALLBACK PsxDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lP
  * HISTORY:                                                                                    * 
  *   06/26/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-void  GameMtlDlg::LoadDialog(BOOL draw) 
+void  GameMtlDlg::LoadDialog(int32_t draw) 
 {
 
 	/*
@@ -1060,7 +1060,7 @@ void GameMtlDlg::UpdateMtlDisplay()
  * HISTORY:                                                                                    * 
  *   06/26/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-void GameMtlDlg::ActivateDlg(BOOL onOff)
+void GameMtlDlg::ActivateDlg(int32_t onOff)
 {
 	if (DiffuseSwatch) {
 		DiffuseSwatch->Activate(onOff);
@@ -1154,7 +1154,7 @@ void GameMtlDlg::BuildDialog()
 		MAKEINTRESOURCE(IDD_GAMEMTL_PANEL),
 		PanelDlgProc, 
 		Get_String(IDS_PARAMETERS), 
-		(LPARAM)this,
+		(intptr_t)this,
 		(TheMtl->GetFlag(GAMEMTL_ROLLUP1_OPEN) ? 0:APPENDROLL_CLOSED)
 	);		
 
@@ -1163,7 +1163,7 @@ void GameMtlDlg::BuildDialog()
 		MAKEINTRESOURCE(IDD_GAMEMTL_PSX_PANEL),
 		PsxDlgProc, 
 		Get_String(IDS_PSX_OPTIONS), 
-		(LPARAM)this,
+		(intptr_t)this,
 		(TheMtl->GetFlag(GAMEMTL_ROLLUP2_OPEN) ? 0:APPENDROLL_CLOSED)
 	);
 
@@ -1172,7 +1172,7 @@ void GameMtlDlg::BuildDialog()
 		MAKEINTRESOURCE(IDD_GAMEMTL_HINTS_PANEL),
 		HintsDlgProc, 
 		Get_String(IDS_MATERIAL_HINTS), 
-		(LPARAM)this,
+		(intptr_t)this,
 		(TheMtl->GetFlag(GAMEMTL_ROLLUP3_OPEN) ? 0:APPENDROLL_CLOSED)
 	);
 
@@ -1181,7 +1181,7 @@ void GameMtlDlg::BuildDialog()
 		MAKEINTRESOURCE(IDD_MATERIAL_NOTES_PANEL),
 		NotesDlgProc, 
 		Get_String(IDS_NOTES), 
-		(LPARAM)this,
+		(intptr_t)this,
 		(TheMtl->GetFlag(GAMEMTL_ROLLUP4_OPEN) ? 0:APPENDROLL_CLOSED)
 	);
 

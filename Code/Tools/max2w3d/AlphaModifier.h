@@ -38,6 +38,8 @@
 #ifndef ALPHA_MODIFIER_H
 #define ALPHA_MODIFIER_H
 
+#include <cstdint>
+
 
 #include <max.h>
 #include "iparamm2.h"
@@ -82,7 +84,7 @@ class AlphaModifierClass : public Modifier
 		ChannelMask ChannelsUsed()  {return PART_GEOM|PART_TOPO|PART_SELECT|PART_SUBSEL_TYPE;}
 		ChannelMask ChannelsChanged() {return PART_GEOM|PART_TOPO|PART_SELECT|PART_SUBSEL_TYPE;}
 		Class_ID InputType() { return triObjectClassID;}
-		BOOL ChangeTopology() {return FALSE;}
+		int32_t ChangeTopology() {return FALSE;}
 
 
 		// Calculate the local validity from the parameters
@@ -117,8 +119,8 @@ class AlphaModifierClass : public Modifier
 		CreateMouseCallBack* GetCreateMouseCallBack() {return NULL;}
 
 		// Load and unload our UI
-		void BeginEditParams(IObjParam *ip, ULONG flags,Animatable *prev);
-		void EndEditParams(IObjParam *ip, ULONG flags,Animatable *next);
+		void BeginEditParams(IObjParam *ip, uint32_t flags,Animatable *prev);
+		void EndEditParams(IObjParam *ip, uint32_t flags,Animatable *next);
 		void InvalidateUI();
 
 		// Message saved from window messages.
@@ -141,7 +143,7 @@ class AlphaModDlgProc : public ParamMap2UserDlgProc
 		AlphaModDlgProc() {}
 		AlphaModDlgProc(AlphaModifierClass *alpha_m) {AlphaModifier = alpha_m;}
 
-		BOOL DlgProc(TimeValue t, IParamMap2 *map, HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+		int32_t DlgProc(TimeValue t, IParamMap2 *map, HWND hWnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
 		void DeleteThis() {}
 
 		void SetThing(ReferenceTarget *m) {AlphaModifier = (AlphaModifierClass*)m;}

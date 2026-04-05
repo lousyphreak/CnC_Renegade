@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __MIXFILEDATABASE_H
@@ -114,7 +116,7 @@ public:
 	//
 	// User information
 	//
-	BOOL				Is_Read_Only (void) const	{ return FALSE; }
+	int32_t				Is_Read_Only (void) const	{ return FALSE; }
 
 	//
 	//	Misc information

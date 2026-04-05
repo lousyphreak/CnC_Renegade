@@ -110,13 +110,13 @@ bool GenLodExtensionDialogClass::Get_Options(OptionsStruct * options)
 	Options = options;
 
 	// Put up the options dialog box.
-	BOOL result = DialogBoxParam
+	int32_t result = DialogBoxParam
 						(
 							AppInstance,
 							MAKEINTRESOURCE (IDD_GENERATE_LOD_EXTENSION_DIALOG),
 							MaxInterface->GetMAXHWnd(),
 							(DLGPROC) _gen_lod_ext_dialog_proc,
-							(LPARAM) this
+							(intptr_t) this
 						);
 
 	if (result == TRUE) {
@@ -139,7 +139,7 @@ bool GenLodExtensionDialogClass::Get_Options(OptionsStruct * options)
  * HISTORY:                                                                                    *
  *   10/10/2000 gth : Created.                                                                 *
  *=============================================================================================*/
-bool GenLodExtensionDialogClass::Dialog_Proc(HWND hWnd,UINT message,WPARAM wParam,LPARAM)
+bool GenLodExtensionDialogClass::Dialog_Proc(HWND hWnd,uint32_t message,uintptr_t wParam,intptr_t)
 {
 	switch (message )	{
 
@@ -187,7 +187,7 @@ bool GenLodExtensionDialogClass::Dialog_Proc(HWND hWnd,UINT message,WPARAM wPara
  * HISTORY:                                                                                    *
  *   10/10/2000 gth : Created.                                                                 *
  *=============================================================================================*/
-static BOOL CALLBACK _gen_lod_ext_dialog_proc(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
+static int32_t CALLBACK _gen_lod_ext_dialog_proc(HWND hwnd,uint32_t message,uintptr_t wparam,intptr_t lparam)
 {
 	static GenLodExtensionDialogClass * dialog = NULL;
 

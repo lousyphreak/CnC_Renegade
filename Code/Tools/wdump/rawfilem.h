@@ -41,6 +41,8 @@
 #ifndef RAWFILEM_Hx
 #define RAWFILEM_Hx
 
+#include <cstdint>
+
 #include	<errno.h>
 #include	<limits.h>
 #include	<stddef.h>
@@ -159,8 +161,8 @@ class RawFileMClass : public FileClass
 		virtual int Size(void);
 		virtual int Write(void const *buffer, int size);
 		virtual void Close(void);
-		virtual unsigned long Get_Date_Time(void);
-		virtual bool Set_Date_Time(unsigned long datetime);
+		virtual uint32_t Get_Date_Time(void);
+		virtual bool Set_Date_Time(uint32_t datetime);
 		virtual void Error(int error, int canretry = false, char const * filename=NULL);
 
 		void Bias(int start, int length=-1);
@@ -209,8 +211,8 @@ class RawFileMClass : public FileClass
 		//             bits 5-10  minutes (0-59)
 		//             bits 11-15 hours (0-23)
 		//
-		unsigned short Date;
-		unsigned short Time;
+		uint16_t Date;
+		uint16_t Time;
 
 		/*
 		**	Filenames that were assigned as part of the construction process

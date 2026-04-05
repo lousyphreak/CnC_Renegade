@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __TREECTRL_H
@@ -61,7 +63,7 @@ class TreeCtrlClass;
 //////////////////////////////////////////////////////////////////////
 typedef DynamicVectorClass<TreeItemClass *>	TREE_ITEM_LIST;
 
-typedef int (CALLBACK *TREECTRL_SORT_CALLBACK) (TreeCtrlClass *tree_ctrl, TreeItemClass *item1, TreeItemClass *item2, uint32 user_param);
+typedef int32_t (CALLBACK *TREECTRL_SORT_CALLBACK) (TreeCtrlClass *tree_ctrl, TreeItemClass *item1, TreeItemClass *item2, uint32_t user_param);
 
 
 //////////////////////////////////////////////////////////////////////
@@ -119,7 +121,7 @@ public:
 	//	Sort support
 	//
 	void					Sort_Children_Alphabetically (TreeItemClass *parent);
-	void					Sort_Children (TreeItemClass *parent, TREECTRL_SORT_CALLBACK sort_callback, uint32 user_param);
+	void					Sort_Children (TreeItemClass *parent, TREECTRL_SORT_CALLBACK sort_callback, uint32_t user_param);
 
 	//
 	//	Misc
@@ -139,7 +141,7 @@ protected:
 	void				On_Set_Cursor (const Vector2 &mouse_pos);
 	void				On_Set_Focus (void);
 	void				On_Kill_Focus (DialogControlClass *focus);
-	bool				On_Key_Down (uint32 key_id, uint32 key_data);
+	bool				On_Key_Down (uint32_t key_id, uint32_t key_data);
 	void				On_Create (void);
 	void				Update_Client_Rect (void);
 	void				On_Expanded (TreeItemClass *item);
@@ -162,7 +164,7 @@ protected:
 	bool				Render_Item (TreeItemClass *item, float x_pos, float &y_pos, int &row_index, int level);
 
 	static int __cdecl	Sort_Callback (const void *elem1, const void *elem2);
-	static int CALLBACK	Alphabetic_Sort_Callback (TreeCtrlClass *tree_ctrl, TreeItemClass *item1, TreeItemClass *item2, uint32 user_param);
+	static int CALLBACK	Alphabetic_Sort_Callback (TreeCtrlClass *tree_ctrl, TreeItemClass *item1, TreeItemClass *item2, uint32_t user_param);
 
 	////////////////////////////////////////////////////////////////
 	//	Protected member data
@@ -183,7 +185,7 @@ protected:
 
 	static TREECTRL_SORT_CALLBACK CurrentSortCallback;
 	static TreeCtrlClass *			CurrentSorter;
-	static uint32						CurrentSortUserData;
+	static uint32_t						CurrentSortUserData;
 
 	friend class TreeItemClass;
 };
@@ -232,8 +234,8 @@ public:
 	//
 	//	User data access
 	//
-	void				Set_User_Data (uint32 data)		{ UserData = data; }
-	uint32			Get_User_Data (void) const			{ return UserData; }
+	void				Set_User_Data (uint32_t data)		{ UserData = data; }
+	uint32_t			Get_User_Data (void) const			{ return UserData; }
 
 	//
 	//	Selection control
@@ -291,7 +293,7 @@ protected:
 	WideStringClass	Name;
 	StringClass			IconName;
 	StringClass			SelectedIconName;
-	uint32				UserData;
+	uint32_t				UserData;
 	TREE_ITEM_LIST		ChildList;
 	bool					IsExpanded;
 	bool					NeedsChildren;

@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 
@@ -73,7 +75,7 @@ public:
 	SaveLoadSubSystemClass (void);
 	virtual ~SaveLoadSubSystemClass (void);
 
-	virtual uint32				Chunk_ID (void) const = 0;
+	virtual uint32_t				Chunk_ID (void) const = 0;
 
 protected:
 

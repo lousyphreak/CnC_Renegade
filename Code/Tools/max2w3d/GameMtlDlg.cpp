@@ -47,10 +47,10 @@
 #include "resource.h"
 #include "w3d_file.h"
 
-static BOOL CALLBACK DisplacementMapDlgProc(HWND hwndDlg, UINT msg, WPARAM wPara,LPARAM lParam);
-static BOOL CALLBACK SurfaceTypePanelDlgProc(HWND hwndDlg, UINT msg, WPARAM wPara,LPARAM lParam);
-static BOOL CALLBACK PassCountPanelDlgProc(HWND hwndDlg, UINT msg, WPARAM wPara,LPARAM lParam);
-static BOOL CALLBACK PassCountDialogDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,LPARAM lParam);
+static int32_t CALLBACK DisplacementMapDlgProc(HWND hwndDlg, uint32_t msg, uintptr_t wPara,intptr_t lParam);
+static int32_t CALLBACK SurfaceTypePanelDlgProc(HWND hwndDlg, uint32_t msg, uintptr_t wPara,intptr_t lParam);
+static int32_t CALLBACK PassCountPanelDlgProc(HWND hwndDlg, uint32_t msg, uintptr_t wPara,intptr_t lParam);
+static int32_t CALLBACK PassCountDialogDlgProc(HWND hwndDlg, uint32_t msg, uintptr_t wParam,intptr_t lParam);
 
 static int _Pass_Index_To_Flag[] = 
 {
@@ -278,7 +278,7 @@ void GameMtlDlg::ReloadDialog()
  * HISTORY:                                                                                    * 
  *   06/26/1997 GH  : Created.                                                                 * 
  *=============================================================================================*/
-void GameMtlDlg::ActivateDlg(BOOL onoff)
+void GameMtlDlg::ActivateDlg(int32_t onoff)
 {
 	for(int i = 0; i < TheMtl->Get_Pass_Count(); i++)
 	{
@@ -310,7 +310,7 @@ void GameMtlDlg::Invalidate()
 	InvalidateRect(HwndPassCount,NULL,0);
 }
 
-BOOL	GameMtlDlg::DisplacementMapProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+int32_t	GameMtlDlg::DisplacementMapProc(HWND hDlg, uint32_t message, uintptr_t wParam, intptr_t lParam)
 {
 	switch (message) 
 	{
@@ -344,7 +344,7 @@ BOOL	GameMtlDlg::DisplacementMapProc(HWND hDlg, UINT message, WPARAM wParam, LPA
 			case IDC_TEXTURE_BUTTON:
 				if(HIWORD(wParam) == BN_CLICKED)
 				{					
-					PostMessage(HwndEdit, WM_TEXMAP_BUTTON, TheMtl->Get_Displacement_Map_Index (), (LPARAM)TheMtl);
+					PostMessage(HwndEdit, WM_TEXMAP_BUTTON, TheMtl->Get_Displacement_Map_Index (), (intptr_t)TheMtl);
 				}
 			}
 			break;
@@ -352,7 +352,7 @@ BOOL	GameMtlDlg::DisplacementMapProc(HWND hDlg, UINT message, WPARAM wParam, LPA
 
 	return FALSE;
 }
-BOOL	GameMtlDlg::SurfaceTypeProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+int32_t	GameMtlDlg::SurfaceTypeProc(HWND hDlg, uint32_t message, uintptr_t wParam, intptr_t lParam)
 {
 	switch (message){
 		case WM_INITDIALOG:{
@@ -364,7 +364,7 @@ BOOL	GameMtlDlg::SurfaceTypeProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 												IDC_SURFACE_TYPE_COMBO,
 												CB_ADDSTRING,
 												0,
-												(LPARAM)SURFACE_TYPE_STRINGS[index]);
+												(intptr_t)SURFACE_TYPE_STRINGS[index]);
 			}
 
 			//
@@ -384,7 +384,7 @@ BOOL	GameMtlDlg::SurfaceTypeProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			::SendDlgItemMessage (	hDlg,
 											IDC_SURFACE_TYPE_COMBO,
 											CB_SETCURSEL,
-											(WPARAM)TheMtl->Get_Surface_Type (),
+											(uintptr_t)TheMtl->Get_Surface_Type (),
 
 											0L);
 
@@ -405,7 +405,7 @@ BOOL	GameMtlDlg::SurfaceTypeProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			case IDC_SURFACE_TYPE_COMBO:
 				if(HIWORD(wParam) == CBN_SELCHANGE)
 				{
-					unsigned int type = ::SendDlgItemMessage (hDlg, IDC_SURFACE_TYPE_COMBO, CB_GETCURSEL, 0, 0L);
+					uint32_t type = ::SendDlgItemMessage (hDlg, IDC_SURFACE_TYPE_COMBO, CB_GETCURSEL, 0, 0L);
 					TheMtl->Set_Surface_Type (type);
 				}
 				break;
@@ -456,7 +456,7 @@ BOOL	GameMtlDlg::SurfaceTypeProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 }
 
 
-BOOL	GameMtlDlg::PassCountProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+int32_t	GameMtlDlg::PassCountProc(HWND hDlg, uint32_t message, uintptr_t wParam, intptr_t lParam)
 {
 	switch (message) 
 	{		
@@ -479,13 +479,13 @@ BOOL	GameMtlDlg::PassCountProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	return FALSE;
 }
 
-static BOOL CALLBACK DisplacementMapDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,LPARAM lParam)
+static int32_t CALLBACK DisplacementMapDlgProc(HWND hwndDlg, uint32_t msg, uintptr_t wParam,intptr_t lParam)
 {
 	GameMtlDlg * theDlg;
 	if (msg == WM_INITDIALOG) {
 		theDlg = (GameMtlDlg*)lParam;
 		theDlg->HwndDisplacementMap = hwndDlg;
-		SetWindowLong(hwndDlg, GWL_USERDATA,(LPARAM)theDlg);
+		SetWindowLong(hwndDlg, GWL_USERDATA,(intptr_t)theDlg);
 	} else {
 		if ((theDlg = (GameMtlDlg *)GetWindowLong(hwndDlg, GWL_USERDATA) ) == NULL) {
 			return FALSE; 
@@ -493,19 +493,19 @@ static BOOL CALLBACK DisplacementMapDlgProc(HWND hwndDlg, UINT msg, WPARAM wPara
 	}
 
 	theDlg->IsActive = 1;
-	BOOL res = theDlg->DisplacementMapProc(hwndDlg,msg,wParam,lParam);
+	int32_t res = theDlg->DisplacementMapProc(hwndDlg,msg,wParam,lParam);
 	theDlg->IsActive = 0;
 
 	return res;
 }
 
-static BOOL CALLBACK SurfaceTypePanelDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,LPARAM lParam)
+static int32_t CALLBACK SurfaceTypePanelDlgProc(HWND hwndDlg, uint32_t msg, uintptr_t wParam,intptr_t lParam)
 {
 	GameMtlDlg * theDlg;
 	if (msg == WM_INITDIALOG) {
 		theDlg = (GameMtlDlg*)lParam;
 		theDlg->HwndSurfaceType = hwndDlg;
-		SetWindowLong(hwndDlg, GWL_USERDATA,(LPARAM)theDlg);
+		SetWindowLong(hwndDlg, GWL_USERDATA,(intptr_t)theDlg);
 	} else {
 		if ((theDlg = (GameMtlDlg *)GetWindowLong(hwndDlg, GWL_USERDATA) ) == NULL) {
 			return FALSE; 
@@ -513,20 +513,20 @@ static BOOL CALLBACK SurfaceTypePanelDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 	}
 
 	theDlg->IsActive = 1;
-	BOOL res = theDlg->SurfaceTypeProc(hwndDlg,msg,wParam,lParam);
+	int32_t res = theDlg->SurfaceTypeProc(hwndDlg,msg,wParam,lParam);
 	theDlg->IsActive = 0;
 
 	return res;
 }
 
-static BOOL CALLBACK PassCountPanelDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,LPARAM lParam)
+static int32_t CALLBACK PassCountPanelDlgProc(HWND hwndDlg, uint32_t msg, uintptr_t wParam,intptr_t lParam)
 {
 	GameMtlDlg * theDlg = (GameMtlDlg *)GetWindowLong(hwndDlg, GWL_USERDATA);
 	switch(msg){
 		case WM_INITDIALOG: {
 			theDlg = (GameMtlDlg*)lParam;
 			theDlg->HwndPassCount = hwndDlg;
-			SetWindowLong(hwndDlg, GWL_USERDATA,(LPARAM)theDlg);
+			SetWindowLong(hwndDlg, GWL_USERDATA,(intptr_t)theDlg);
 			return FALSE;
 		}
 	}
@@ -534,7 +534,7 @@ static BOOL CALLBACK PassCountPanelDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam
 		return FALSE; 
 	}
 	theDlg->IsActive = 1;
-	BOOL res = theDlg->PassCountProc(hwndDlg,msg,wParam,lParam);
+	int32_t res = theDlg->PassCountProc(hwndDlg,msg,wParam,lParam);
 	theDlg->IsActive = 0;
 	return res;
 }
@@ -546,7 +546,7 @@ void GameMtlDlg::Set_Pass_Count_Dialog(void)
 		MAKEINTRESOURCE(IDD_GAMEMTL_PASS_COUNT_DIALOG),
 		HwndPassCount,
 		PassCountDialogDlgProc,
-		(LPARAM)TheMtl->Get_Pass_Count());
+		(intptr_t)TheMtl->Get_Pass_Count());
 
 	if (res>=0) 
 	{
@@ -575,7 +575,7 @@ void GameMtlDlg::Set_Pass_Count_Dialog(void)
 	}
 }
 
-static BOOL CALLBACK PassCountDialogDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,LPARAM lParam)
+static int32_t CALLBACK PassCountDialogDlgProc(HWND hwndDlg, uint32_t msg, uintptr_t wParam,intptr_t lParam)
 {
 	switch (msg) 
 	{
@@ -636,7 +636,7 @@ void GameMtlDlg::Build_Dialog(HWND hParent)// = NULL
 		MAKEINTRESOURCE(IDD_GAMEMTL_SURFACE_TYPE),
 		SurfaceTypePanelDlgProc, 
 		Get_String(IDS_SURFACE_TYPE), 
-		(LPARAM)this,
+		(intptr_t)this,
 		TheMtl->Get_Flag(GAMEMTL_SURFACE_ROLLUP_OPEN) ? 0:APPENDROLL_CLOSED
 	);		
 	#ifdef WANT_DISPLACEMENT_MAPS
@@ -645,7 +645,7 @@ void GameMtlDlg::Build_Dialog(HWND hParent)// = NULL
 			MAKEINTRESOURCE(IDD_GAMEMTL_DISPLACEMENT_MAP),
 			DisplacementMapDlgProc, 
 			Get_String(IDS_DISPLACEMENT_MAP), 
-			(LPARAM)this,
+			(intptr_t)this,
 			TheMtl->Get_Flag(GAMEMTL_DISPLACEMENT_ROLLUP_OPEN) ? 0:APPENDROLL_CLOSED
 		);		
 	#endif //WANT_DISPLACEMENT_MAPS
@@ -655,7 +655,7 @@ void GameMtlDlg::Build_Dialog(HWND hParent)// = NULL
 		MAKEINTRESOURCE(IDD_GAMEMTL_PASS_COUNT),
 		PassCountPanelDlgProc, 
 		Get_String(IDS_PASS_COUNT), 
-		(LPARAM)this,
+		(intptr_t)this,
 		TheMtl->Get_Flag(GAMEMTL_PASSCOUNT_ROLLUP_OPEN) ? 0:APPENDROLL_CLOSED
 	);		
 

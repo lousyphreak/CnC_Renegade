@@ -40,6 +40,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "field.h"
+#include <cstdint>
 #include "wlib/wstypes.h"
 
 
@@ -47,13 +48,13 @@ class PacketClass
 {
   public:
 
-    PacketClass(short id = 0)
+    PacketClass(int16_t id = 0)
     {
       Size      = 0;
       ID        = id;
       Head      = 0;
     }
-    PacketClass(char *cur_buf);
+    PacketClass(uint8_t *cur_buf);
     ~PacketClass();
 
     //
@@ -67,11 +68,11 @@ class PacketClass
     // having to worry about newing one first.
     //
     void Add_Field(char *field, char data) {Add_Field(new FieldClass(field, data));};
-    void Add_Field(char *field, unsigned char data) {Add_Field(new FieldClass(field, data));};
-    void Add_Field(char *field, short data) {Add_Field(new FieldClass(field, data));};
-    void Add_Field(char *field, unsigned short data) {Add_Field(new FieldClass(field, data));};
-    void Add_Field(char *field, long data) {Add_Field(new FieldClass(field, data));};
-    void Add_Field(char *field, unsigned long data) {Add_Field(new FieldClass(field, data));};
+    void Add_Field(char *field, uint8_t data) {Add_Field(new FieldClass(field, data));};
+    void Add_Field(char *field, int16_t data) {Add_Field(new FieldClass(field, data));};
+    void Add_Field(char *field, uint16_t data) {Add_Field(new FieldClass(field, data));};
+    void Add_Field(char *field, int32_t data) {Add_Field(new FieldClass(field, data));};
+    void Add_Field(char *field, uint32_t data) {Add_Field(new FieldClass(field, data));};
     void Add_Field(char *field, char *data) {Add_Field(new FieldClass(field, data));};
     void Add_Field(char *field, void *data, int length) {Add_Field(new FieldClass(field, data, length));};
 
@@ -81,25 +82,24 @@ class PacketClass
     //
     FieldClass *Find_Field(char *id);
 
-    bit8 Get_Field(char *id, int &data);
-    bit8 Get_Field(char *id, char &data);
-    bit8 Get_Field(char *id, unsigned char &data);
-    bit8 Get_Field(char *id, short &data);
-    bit8 Get_Field(char *id, unsigned short &data);
-    bit8 Get_Field(char *id, long &data);
-    bit8 Get_Field(char *id, unsigned long &data);
-    bit8 Get_Field(char *id, unsigned &data);
-    bit8 Get_Field(char *id, char *data);
-    bit8 Get_Field(char *id, void *data, int &length);
-    unsigned short Get_Field_Size(char* id); 
+    int8_t Get_Field(char *id, int &data);
+    int8_t Get_Field(char *id, char &data);
+    int8_t Get_Field(char *id, uint8_t &data);
+    int8_t Get_Field(char *id, int16_t &data);
+    int8_t Get_Field(char *id, uint16_t &data);
+    int8_t Get_Field(char *id, int32_t &data);
+    int8_t Get_Field(char *id, uint32_t &data);
+    int8_t Get_Field(char *id, unsigned &data);
+    int8_t Get_Field(char *id, char *data);
+    int8_t Get_Field(char *id, void *data, int &length);
+    uint16_t Get_Field_Size(char* id); 
 
 
-    char *Create_Comms_Packet(int &size);
+    uint8_t *Create_Comms_Packet(int &size);
         
   private:
-    unsigned short   Size;
-    short            ID;
+    uint16_t   Size;
+    int16_t          ID;
     FieldClass      *Head;
     FieldClass      *Current;
 };
-

@@ -20,6 +20,8 @@
 #ifndef _GAMESPY_QNR_H_
 #define _GAMESPY_QNR_H_
 
+#include <cstdint>
+
 #include "renegade_build_config.h"
 
 /********
@@ -41,13 +43,13 @@ class CGameSpyQnR
 
 protected:
 	char secret_key[9];
-	BOOL m_GSInit;
-	BOOL m_GSEnabled;
+	int32_t m_GSInit;
+	int32_t m_GSEnabled;
 	qr_t query_reporting_rec;
 	void DoGameStuff(void);
-	BOOL Append_InfoKey_Pair(char *outbuf, int maxlen, const char *key, const char *value);
-	BOOL Append_InfoKey_Pair(char *outbuf, int maxlen, const char *key, const StringClass &value);
-	BOOL Append_InfoKey_Pair(char *outbuf, int maxlen, const char *key, const WideStringClass &value);
+	int32_t Append_InfoKey_Pair(char *outbuf, int maxlen, const char *key, const char *value);
+	int32_t Append_InfoKey_Pair(char *outbuf, int maxlen, const char *key, const StringClass &value);
+	int32_t Append_InfoKey_Pair(char *outbuf, int maxlen, const char *key, const WideStringClass &value);
 	static const char *gamename;
 	static const char *bname;
 	static const int prodid;
@@ -60,11 +62,11 @@ public:
 	void LaunchArcade(void);
 	void TrackUsage(void);
 	void Shutdown(void);
-	BOOL Parse_HeartBeat_List(const char *list);
+	int32_t Parse_HeartBeat_List(const char *list);
 	const char *Get_GameSpy_GameName(void) { return gamename; } 
 	const char *Get_Default_HeartBeat_List(void) { return default_heartbeat_list; } 
-	void Enable_Reporting(BOOL enable) { m_GSEnabled = enable; }
-	BOOL IsEnabled(void) { return m_GSEnabled; }
+	void Enable_Reporting(int32_t enable) { m_GSEnabled = enable; }
+	int32_t IsEnabled(void) { return m_GSEnabled; }
 	void Think();
 	void basic_callback(char *outbuf, int maxlen); 
 	void info_callback(char *outbuf, int maxlen);
@@ -92,11 +94,11 @@ public:
 	void LaunchArcade(void);
 	void TrackUsage(void);
 	void Shutdown(void);
-	BOOL Parse_HeartBeat_List(const char *list);
+	int32_t Parse_HeartBeat_List(const char *list);
 	const char *Get_GameSpy_GameName(void);
 	const char *Get_Default_HeartBeat_List(void);
-	void Enable_Reporting(BOOL enable);
-	BOOL IsEnabled(void);
+	void Enable_Reporting(int32_t enable);
+	int32_t IsEnabled(void);
 	void Think(void);
 	void basic_callback(char *outbuf, int maxlen);
 	void info_callback(char *outbuf, int maxlen);
@@ -104,7 +106,7 @@ public:
 	void players_callback(char *outbuf, int maxlen);
 
 private:
-	BOOL m_GSEnabled;
+	int32_t m_GSEnabled;
 };
 
 extern CGameSpyQnR GameSpyQnR;

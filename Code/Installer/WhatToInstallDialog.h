@@ -36,6 +36,8 @@
 #ifndef _WHAT_TO_INSTALL_H
 #define _WHAT_TO_INSTALL_H
 
+#include <cstdint>
+
 // Includes.
 #include "InstallMenuDialog.h"
 
@@ -51,7 +53,7 @@ class WhatToInstallDialogClass : public InstallMenuDialogClass
 		// RTTI.
 		void *As_WhatToInstallDialogClass()			{return (this);}
 
-		void On_Command (int ctrl_id, int message_id, DWORD param);
+		void On_Command (int ctrl_id, int message_id, uint32_t param);
 
 		bool Install_Game()				{return (Is_Dlg_Button_Checked (IDC_WHAT_TO_INSTALL_CHECK1));}
 		bool Install_WOL()				{return (Is_Dlg_Button_Checked (IDC_WHAT_TO_INSTALL_CHECK2));}

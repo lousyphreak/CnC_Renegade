@@ -370,7 +370,7 @@ InputCtrlClass::Set_Key_Assignment (int game_key_id, const WideStringClass &key_
 //
 ////////////////////////////////////////////////////////////////
 bool
-InputCtrlClass::On_Key_Down (uint32 key_id, uint32 key_data)
+InputCtrlClass::On_Key_Down (uint32_t key_id, uint32_t key_data)
 {
 	PendingKeyID = key_id;
 	return false;

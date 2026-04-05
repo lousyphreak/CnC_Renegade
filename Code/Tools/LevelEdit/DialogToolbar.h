@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 
@@ -81,13 +83,13 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(DialogToolbarClass)
-	afx_msg LRESULT OnIdleUpdateCmdUI(WPARAM wParam, LPARAM lParam);
+	afx_msg intptr_t OnIdleUpdateCmdUI(uintptr_t wParam, intptr_t lParam);
 	afx_msg void OnInitialUpdate();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 
-	//virtual BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult);
-	BOOL OnNeedToolTipText (UINT id, NMHDR *pTTTStruct, LRESULT *pResult);
+	//virtual int32_t OnNotify(uintptr_t wParam, intptr_t lParam, intptr_t* pResult);
+	int32_t OnNeedToolTipText (uint32_t id, NMHDR *pTTTStruct, intptr_t *pResult);
 
 
 

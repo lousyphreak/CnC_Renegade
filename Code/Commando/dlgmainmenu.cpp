@@ -312,7 +312,7 @@ MainMenuDialogClass::Choose_Skirmish_Map (void)
 {
 	DynamicVectorClass<StringClass>	map_list;
 	WIN32_FIND_DATA find_info	= { 0 };
-	BOOL keep_going				= TRUE;
+	int32_t keep_going				= TRUE;
 	HANDLE file_find				= NULL;
 	StringClass file_filter;
 
@@ -366,7 +366,7 @@ MainMenuDialogClass::Choose_Skirmish_Map (void)
 //
 ////////////////////////////////////////////////////////////////
 void
-MainMenuDialogClass::On_Command (int ctrl_id, int message_id, DWORD param)
+MainMenuDialogClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	bool allow_default = true;
 
@@ -481,8 +481,8 @@ MainMenuDialogClass::Update_Version_Number (void)
 	//
 	// Version 1.0 by default
 	//
-	unsigned long version_major = 1;
-	unsigned long version_minor = 0;
+	uint32_t version_major = 1;
+	uint32_t version_minor = 0;
 	Get_Version_Number(&version_major, &version_minor);
 
 	//

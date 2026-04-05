@@ -28,7 +28,7 @@ UDP::~UDP()
 {
 }
 
-sint32 UDP::Bind(char *Host,uint16 port)
+int32_t UDP::Bind(char *Host,uint16_t port)
 {
   char hostName[100];
   struct hostent *hostStruct;
@@ -48,7 +48,7 @@ sint32 UDP::Bind(char *Host,uint16 port)
 
 // You must call bind, implicit binding is for sissies
 //   Well... you can get implicit binding if you pass 0 for either arg
-sint32 UDP::Bind(uint32 IP,uint16 Port)
+int32_t UDP::Bind(uint32_t IP,uint16_t Port)
 {
   int retval;
   int status;
@@ -93,7 +93,7 @@ sint32 UDP::Bind(uint32 IP,uint16 Port)
   return(OK);
 }
 
-bit8 UDP::getLocalAddr(uint32 &ip, uint16 &port)
+int8_t UDP::getLocalAddr(uint32_t &ip, uint16_t &port)
 {
   ip=myIP;
   port=myPort;
@@ -102,10 +102,10 @@ bit8 UDP::getLocalAddr(uint32 &ip, uint16 &port)
 
 
 // private function
-sint32 UDP::SetBlocking(bit8 block)
+int32_t UDP::SetBlocking(int8_t block)
 {
   #ifdef _WINDOWS
-   unsigned long flag=1;
+   uint32_t flag=1;
    if (block)
      flag=0;
    int retval;
@@ -130,9 +130,9 @@ sint32 UDP::SetBlocking(bit8 block)
 }
 
 
-sint32 UDP::Write(uint8 *msg,uint32 len,uint32 IP,uint16 port)
+int32_t UDP::Write(uint8_t *msg,uint32_t len,uint32_t IP,uint16_t port)
 {
-  sint32 retval;
+  int32_t retval;
   struct sockaddr_in to;
 
   // This happens frequently
@@ -153,9 +153,9 @@ sint32 UDP::Write(uint8 *msg,uint32 len,uint32 IP,uint16 port)
   return(retval);
 }
 
-sint32 UDP::Read(uint8 *msg,uint32 len,sockaddr_in *from)
+int32_t UDP::Read(uint8_t *msg,uint32_t len,sockaddr_in *from)
 {
-  sint32 retval;
+  int32_t retval;
   int    alen=sizeof(sockaddr_in);
 
   if (from!=NULL)
@@ -224,7 +224,7 @@ UDP::sockStat UDP::GetStatus(void)
 //
 // Wait for net activity on this socket
 //
-int UDP::Wait(sint32 sec,sint32 usec,fd_set &returnSet)
+int UDP::Wait(int32_t sec,int32_t usec,fd_set &returnSet)
 {
   fd_set inputSet;
  
@@ -237,12 +237,12 @@ int UDP::Wait(sint32 sec,sint32 usec,fd_set &returnSet)
 //
 // Wait for net activity on a list of sockets
 //
-int UDP::Wait(sint32 sec,sint32 usec,fd_set &givenSet,fd_set &returnSet)
+int UDP::Wait(int32_t sec,int32_t usec,fd_set &givenSet,fd_set &returnSet)
 {
   Wtime        timeout,timenow,timethen;
   fd_set       backupSet;
   int          retval=0,done,givenMax;
-  bit8         noTimeout=FALSE;
+  int8_t         noTimeout=FALSE;
   timeval      tv;
  
   returnSet=givenSet;
@@ -256,7 +256,7 @@ int UDP::Wait(sint32 sec,sint32 usec,fd_set &givenSet,fd_set &returnSet)
   timethen+=timeout;
  
   givenMax=fd;
-  for (uint32 i=0; i<(sizeof(fd_set)*8); i++)   // i=maxFD+1
+  for (uint32_t i=0; i<(sizeof(fd_set)*8); i++)   // i=maxFD+1
   {
     if (FD_ISSET(i,&givenSet))
       givenMax=i;
@@ -308,7 +308,7 @@ int UDP::Wait(sint32 sec,sint32 usec,fd_set &givenSet,fd_set &returnSet)
 //  (which is the default). If you try and set the size to
 //  greater than the default it just sets it to 32767.
 
-bit8 UDP::SetInputBuffer(uint32 bytes)
+int8_t UDP::SetInputBuffer(uint32_t bytes)
 {
   #ifndef _WINDOWS
    int retval,arg=bytes;
@@ -326,7 +326,7 @@ bit8 UDP::SetInputBuffer(uint32 bytes)
 
 // Same note goes for the output buffer
 
-bit8 UDP::SetOutputBuffer(uint32 bytes)
+int8_t UDP::SetOutputBuffer(uint32_t bytes)
 {
   #ifndef _WINDOWS
    int retval,arg=bytes;

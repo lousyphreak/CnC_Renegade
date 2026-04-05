@@ -61,7 +61,7 @@ GeneratingManualVisDialogClass::GeneratingManualVisDialogClass(CWnd* pParent /*=
 	//
 	//	Determine the section of the status file
 	//
-	DWORD process_id = ::GetCurrentProcessId ();
+	uint32_t process_id = ::GetCurrentProcessId ();
 	m_StatusSection.Format ("%d", process_id);
 
 	//
@@ -106,7 +106,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 GeneratingManualVisDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -125,12 +125,12 @@ GeneratingManualVisDialogClass::OnInitDialog (void)
 // WindowProc
 //
 /////////////////////////////////////////////////////////////////////////////
-LRESULT
+intptr_t
 GeneratingManualVisDialogClass::WindowProc
 (
-	UINT		message,
-	WPARAM	wParam,
-	LPARAM	lParam
+	uint32_t		message,
+	uintptr_t	wParam,
+	intptr_t	lParam
 ) 
 {
 	if (message == WM_USER + 101) {
@@ -146,7 +146,7 @@ GeneratingManualVisDialogClass::WindowProc
 		//
 		//	Render the manual vis points
 		//
-		VisMgrClass::Render_Manual_Vis_Points (m_FarmMode, m_ProcessorIndex, m_TotalProcessors, ManualVisPointCallback, (DWORD)this);
+		VisMgrClass::Render_Manual_Vis_Points (m_FarmMode, m_ProcessorIndex, m_TotalProcessors, ManualVisPointCallback, (uint32_t)this);
 
 		::Get_Main_View ()->Allow_Repaint (true);
 		EndDialog (IDOK);	
@@ -162,7 +162,7 @@ GeneratingManualVisDialogClass::WindowProc
 //
 //////////////////////////////////////////////////////////////////////////////
 bool
-GeneratingManualVisDialogClass::On_Manual_Vis_Point_Render (DWORD milliseconds)
+GeneratingManualVisDialogClass::On_Manual_Vis_Point_Render (uint32_t milliseconds)
 {
 	//
 	//	Update our stats
@@ -174,7 +174,7 @@ GeneratingManualVisDialogClass::On_Manual_Vis_Point_Render (DWORD milliseconds)
 	//
 	//	Process window's messages once a second
 	//
-	static DWORD last_message_pump = 0;	
+	static uint32_t last_message_pump = 0;	
 	if (::GetTickCount () - last_message_pump > 1000) {
 		General_Pump_Messages ();
 		last_message_pump = ::GetTickCount ();
@@ -224,7 +224,7 @@ GeneratingManualVisDialogClass::Get_Manual_Point_Count (void)
 //
 //////////////////////////////////////////////////////////////////////////////
 bool
-GeneratingManualVisDialogClass::ManualVisPointCallback (DWORD milliseconds, DWORD param)
+GeneratingManualVisDialogClass::ManualVisPointCallback (uint32_t milliseconds, uint32_t param)
 {
 	bool retval = true;
 
@@ -250,16 +250,16 @@ GeneratingManualVisDialogClass::Update_Time (void)
 	//
 	// Compute the elapsed and estimated remaining time
 	//
-	DWORD cur_ticks = ::GetTickCount();
-	DWORD elapsed_ticks;
+	uint32_t cur_ticks = ::GetTickCount();
+	uint32_t elapsed_ticks;
 	if (cur_ticks > m_StartTime) {
 		elapsed_ticks = cur_ticks - m_StartTime;
 	} else {
 		elapsed_ticks = 0xFFFFFFFF - m_StartTime + cur_ticks;
 	}
 
-	DWORD avg_ticks = elapsed_ticks / m_CurrentPoint;
-	DWORD remaining_ticks = (m_TotalPoints - m_CurrentPoint) * avg_ticks;
+	uint32_t avg_ticks = elapsed_ticks / m_CurrentPoint;
+	uint32_t remaining_ticks = (m_TotalPoints - m_CurrentPoint) * avg_ticks;
 
 	float elapsed_minutes = (float)elapsed_ticks / 60000.0f;
 	float remaining_minutes = (float)remaining_ticks / 60000.0f;

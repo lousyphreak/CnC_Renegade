@@ -154,7 +154,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 TransitionEditDialogClass::OnInitDialog (void)
 {
 	CWaitCursor wait_cursor;
@@ -165,7 +165,7 @@ TransitionEditDialogClass::OnInitDialog (void)
 	//
 	//	Subclass the 3D window for mouse-tracking
 	//
-	SetWindowLong (::GetDlgItem (m_hWnd, IDC_3D_WINDOW), GWL_WNDPROC, (LONG)fn3DWindow);
+	SetWindowLong (::GetDlgItem (m_hWnd, IDC_3D_WINDOW), GWL_WNDPROC, (int32_t)fn3DWindow);
 	::SetProp (::GetDlgItem (m_hWnd, IDC_3D_WINDOW), "TRANSITION_DIALOG", (HANDLE)this);
 
 	//
@@ -235,9 +235,9 @@ TransitionEditDialogClass::OnInitDialog (void)
 	//
 	//	Select the default UI
 	//
-	SendDlgItemMessage (IDC_TOP, BM_SETCHECK, (WPARAM)TRUE);
-	SendDlgItemMessage (IDC_EDIT_ZONE, BM_SETCHECK, (WPARAM)TRUE);
-	SendDlgItemMessage (IDC_EDIT_CHAR, BM_SETCHECK, (WPARAM)TRUE);
+	SendDlgItemMessage (IDC_TOP, BM_SETCHECK, (uintptr_t)TRUE);
+	SendDlgItemMessage (IDC_EDIT_ZONE, BM_SETCHECK, (uintptr_t)TRUE);
+	SendDlgItemMessage (IDC_EDIT_CHAR, BM_SETCHECK, (uintptr_t)TRUE);
 	OnTop ();
 	OnEditZone ();
 	OnEditChar ();
@@ -248,7 +248,7 @@ TransitionEditDialogClass::OnInitDialog (void)
 	m_TimerID = ::timeSetEvent (	50,
 											50,
 											fnUpdateTimer,
-											(DWORD)m_hWnd,
+											(uint32_t)m_hWnd,
 											TIME_PERIODIC);	
 	return TRUE;
 }
@@ -421,11 +421,11 @@ TransitionEditDialogClass::Render_View (void)
 void CALLBACK
 TransitionEditDialogClass::fnUpdateTimer
 (
-	UINT	uID,
-	UINT	uMsg,
-	DWORD	user_data,
-	DWORD	dw1,
-	DWORD	dw2
+	uint32_t	uID,
+	uint32_t	uMsg,
+	uint32_t	user_data,
+	uint32_t	dw1,
+	uint32_t	dw2
 )
 {
 	HWND hwnd = (HWND)user_data;
@@ -449,12 +449,12 @@ TransitionEditDialogClass::fnUpdateTimer
 //  WindowProc
 //
 /////////////////////////////////////////////////////////////////////////////
-LRESULT
+intptr_t
 TransitionEditDialogClass::WindowProc
 (
-	UINT		message,
-	WPARAM	wParam,
-	LPARAM	lParam
+	uint32_t		message,
+	uintptr_t	wParam,
+	intptr_t	lParam
 )
 {
 	if (message == (WM_USER + 101)) {
@@ -921,7 +921,7 @@ TransitionEditDialogClass::Fill_Animation_List (void)
 		//
 		int cb_index = m_AnimationList.AddString (animation_name);
 		if (cb_index != CB_ERR) {
-			m_AnimationList.SetItemData (cb_index, (ULONG)::_strdup ((LPCTSTR)filename));
+			m_AnimationList.SetItemData (cb_index, (uint32_t)::_strdup ((LPCTSTR)filename));
 
 			//
 			//	Should we select this animation by default?
@@ -1089,13 +1089,13 @@ TransitionEditDialogClass::OnSelChangeAnimationList (void)
 //  fn3DWindow
 //
 /////////////////////////////////////////////////////////////////////////////
-LRESULT CALLBACK
+intptr_t CALLBACK
 TransitionEditDialogClass::fn3DWindow
 (
 	HWND		hwnd,
-	UINT		message,
-	WPARAM	wparam,
-	LPARAM	lparam
+	uint32_t		message,
+	uintptr_t	wparam,
+	intptr_t	lparam
 )
 {
 	if (message == WM_LBUTTONDOWN) {
@@ -1122,7 +1122,7 @@ TransitionEditDialogClass::fn3DWindow
 //
 /////////////////////////////////////////////////////////////////////////////
 void
-TransitionEditDialogClass::Handle_LBUTTON_DOWN (WPARAM wparam, LPARAM lparam)
+TransitionEditDialogClass::Handle_LBUTTON_DOWN (uintptr_t wparam, intptr_t lparam)
 {
 	::SetCapture (::GetDlgItem (m_hWnd, IDC_3D_WINDOW));
 	m_LastPoint.x = LOWORD (lparam);
@@ -1137,7 +1137,7 @@ TransitionEditDialogClass::Handle_LBUTTON_DOWN (WPARAM wparam, LPARAM lparam)
 //
 /////////////////////////////////////////////////////////////////////////////
 void
-TransitionEditDialogClass::Handle_LBUTTON_UP (WPARAM wparam, LPARAM lparam)
+TransitionEditDialogClass::Handle_LBUTTON_UP (uintptr_t wparam, intptr_t lparam)
 {
 	::ReleaseCapture ();
 	return ;
@@ -1150,7 +1150,7 @@ TransitionEditDialogClass::Handle_LBUTTON_UP (WPARAM wparam, LPARAM lparam)
 //
 /////////////////////////////////////////////////////////////////////////////
 void
-TransitionEditDialogClass::Handle_MOUSEMOVE (WPARAM wparam, LPARAM lparam)
+TransitionEditDialogClass::Handle_MOUSEMOVE (uintptr_t wparam, intptr_t lparam)
 {
 	POINT point = { LOWORD (lparam), HIWORD (lparam) };
 	WWASSERT (m_Camera != NULL);
@@ -1263,7 +1263,7 @@ Trackball_Camera
 //  PreTranslateMessage
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 TransitionEditDialogClass::PreTranslateMessage (MSG *pMsg)
 {
 	if (pMsg->message == WM_KEYDOWN || pMsg->message == WM_KEYUP) {
@@ -1401,7 +1401,7 @@ void
 TransitionEditDialogClass::Update_Animation (void)
 {
 	if (m_IsAnimating) {
-		DWORD curr_ticks = ::GetTickCount ();		
+		uint32_t curr_ticks = ::GetTickCount ();		
 		
 		float seconds		= float((curr_ticks - m_LastAnimUpdate)/1000.0F);
 		float frame_inc	= seconds * m_Animation->Get_Frame_Rate ();

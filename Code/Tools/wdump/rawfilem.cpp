@@ -409,7 +409,7 @@ void RawFileMClass::Close(void)
  *=============================================================================================*/
 int RawFileMClass::Read(void * buffer, int size)
 {
-	long	bytesread = 0;			// Running count of the number of bytes read into the buffer.
+	int32_t	bytesread = 0;			// Running count of the number of bytes read into the buffer.
 	int	opened = false;		// Was the file opened by this routine?
 
 	/*
@@ -436,10 +436,10 @@ int RawFileMClass::Read(void * buffer, int size)
 		size = size < remainder ? size : remainder;
 	}
 
-	long total = 0;
+	int32_t total = 0;
 	while (size > 0) {
 		bytesread = 0;
-		if (!ReadFile(Handle, buffer, size, &(unsigned long&)bytesread, NULL)) {
+		if (!ReadFile(Handle, buffer, size, &(uint32_t&)bytesread, NULL)) {
 			size -= bytesread;
 			total += bytesread;
 			Error(GetLastError(), true, Filename);
@@ -480,7 +480,7 @@ int RawFileMClass::Read(void * buffer, int size)
  *=============================================================================================*/
 int RawFileMClass::Write(void const * buffer, int size)
 {
-	long	bytesread = 0;
+	int32_t	bytesread = 0;
 	int	opened = false;		// Was the file manually opened?
 
 	/*
@@ -495,7 +495,7 @@ int RawFileMClass::Write(void const * buffer, int size)
 		opened = true;
 	}
 
-	if (!WriteFile(Handle, buffer, size, &(unsigned long&)bytesread, NULL)) {
+	if (!WriteFile(Handle, buffer, size, &(uint32_t&)bytesread, NULL)) {
 		Error(GetLastError(), false, Filename);
 	}
 
@@ -575,7 +575,7 @@ int RawFileMClass::Seek(int pos, int dir)
 		/*
 		**	Perform the modified raw seek into the file.
 		*/
-		long newpos = Raw_Seek(pos, dir) - BiasStart;
+		int32_t newpos = Raw_Seek(pos, dir) - BiasStart;
 
 		/*
 		**	Perform a final double check to make sure the file position fits with the bias range.
@@ -775,13 +775,13 @@ int RawFileMClass::Delete(void)
  *   11/14/1995 DRD : Created.                                                                 *
  *   07/13/1996 JLB : Handles win32 method.                                                    *
  *=============================================================================================*/
-unsigned long RawFileMClass::Get_Date_Time(void)
+uint32_t RawFileMClass::Get_Date_Time(void)
 {
 	BY_HANDLE_FILE_INFORMATION info;
 
 	if (GetFileInformationByHandle(Handle, &info)) {
-		WORD dosdate;
-		WORD dostime;
+		uint16_t dosdate;
+		uint16_t dostime;
 		FileTimeToDosDateTime(&info.ftLastWriteTime, &dosdate, &dostime);
 		return((dosdate << 16) | dostime);
 	}
@@ -804,14 +804,14 @@ unsigned long RawFileMClass::Get_Date_Time(void)
  *   11/14/1995 DRD : Created.                                                                 *
  *   07/13/1996 JLB : Handles win 32 method                                                    *
  *=============================================================================================*/
-bool RawFileMClass::Set_Date_Time(unsigned long datetime)
+bool RawFileMClass::Set_Date_Time(uint32_t datetime)
 {
 	if (RawFileMClass::Is_Open()) {
 		BY_HANDLE_FILE_INFORMATION info;
 
 		if (GetFileInformationByHandle(Handle, &info)) {
 			FILETIME filetime;
-			if (DosDateTimeToFileTime((WORD)(datetime >> 16), (WORD)(datetime & 0x0FFFF), &filetime)) {
+			if (DosDateTimeToFileTime((uint16_t)(datetime >> 16), (uint16_t)(datetime & 0x0FFFF), &filetime)) {
 				return(SetFileTime(Handle, &info.ftCreationTime, &filetime, &filetime) != 0);
 			}
 		}

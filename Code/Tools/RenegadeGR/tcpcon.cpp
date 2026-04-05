@@ -62,7 +62,7 @@ void TCPCon::close(void)
 //
 // Returns 'n' bytes written, 0 if closed, or -1 for error.
 //
-sint32 TCPCon::write(IN uint8 *msg,uint32 len, sint32 wait_secs)
+int32_t TCPCon::write(IN uint8_t *msg,uint32_t len, int32_t wait_secs)
 {
   if (State_==TCPMgr::CLOSED)
     return(0);
@@ -83,7 +83,7 @@ sint32 TCPCon::write(IN uint8 *msg,uint32 len, sint32 wait_secs)
 //
 // set buffered status 
 //
-void TCPCon::setBufferedWrites(TCPMgr *mgrptr, bit8 enabled)
+void TCPCon::setBufferedWrites(TCPMgr *mgrptr, int8_t enabled)
 {
   if (enabled)
     BufferedWrites_=TRUE;  
@@ -110,7 +110,7 @@ void TCPCon::pumpWrites(void)
 
   int   sendlen;
   int   retval;
-  uint8 *bufptr=NULL;
+  uint8_t *bufptr=NULL;
 
   while(1)
   {
@@ -120,7 +120,7 @@ void TCPCon::pumpWrites(void)
 
     WriteQueue_.getPointer(&bufptr,0);  // pointer to first byte
 
-    retval=normalWrite((uint8 *)bufptr, sendlen, 0);
+    retval=normalWrite((uint8_t *)bufptr, sendlen, 0);
     if (retval <= 0)
       break;
 
@@ -135,7 +135,7 @@ void TCPCon::pumpWrites(void)
 //
 // Returns 'n' bytes written, 0 if closed, or -1 for error.
 //
-sint32 TCPCon::normalWrite(IN uint8 *msg,uint32 len, sint32 wait_secs)
+int32_t TCPCon::normalWrite(IN uint8_t *msg,uint32_t len, int32_t wait_secs)
 {
   if (State_==TCPMgr::CLOSED)
     return(0);
@@ -143,8 +143,8 @@ sint32 TCPCon::normalWrite(IN uint8 *msg,uint32 len, sint32 wait_secs)
   if (wait_secs < 0)
     wait_secs=OutputDelay_;
 
-  sint32 retval=0;
-  sint32 sendCount=0;
+  int32_t retval=0;
+  int32_t sendCount=0;
   time_t start=time(NULL);
 
   TCPMgr::STATUS status;
@@ -168,7 +168,7 @@ sint32 TCPCon::normalWrite(IN uint8 *msg,uint32 len, sint32 wait_secs)
     else if (retval > 0)
       sendCount+=retval;
 
-    sint32 remaining_wait=wait_secs - (time(NULL)-start);
+    int32_t remaining_wait=wait_secs - (time(NULL)-start);
     if ((remaining_wait > 0) && (TCPMgr::wait(remaining_wait,0,&Socket_,1,FALSE) > 0))
       continue;  // I can write now.... 
 
@@ -184,10 +184,10 @@ sint32 TCPCon::normalWrite(IN uint8 *msg,uint32 len, sint32 wait_secs)
 // Returns 'n' bytes read, 0 for close, or -1 for error.
 // This may return less than we asked for
 //
-sint32 TCPCon::read(OUT uint8 *msg,uint32 maxlen, sint32 wait_secs)
+int32_t TCPCon::read(OUT uint8_t *msg,uint32_t maxlen, int32_t wait_secs)
 {
-  sint32 retval=0;
-  sint32 recvCount=0;
+  int32_t retval=0;
+  int32_t recvCount=0;
   time_t start=time(NULL);
   char   readBuffer[257];
 
@@ -217,13 +217,13 @@ sint32 TCPCon::read(OUT uint8 *msg,uint32 maxlen, sint32 wait_secs)
         DBGMSG("RECV: "<<readBuffer);
 
         // Add to tail
-        ReadQueue_.addMany((uint8 *)readBuffer, ReadQueue_.length(), retval);
+        ReadQueue_.addMany((uint8_t *)readBuffer, ReadQueue_.length(), retval);
       }
     } while ((retval > 0)&&(ReadQueue_.length() < int(maxlen)));
 
     if (ReadQueue_.length())  // OK, we'll take what we've got
     {
-      uint8 *cptr;
+      uint8_t *cptr;
       ReadQueue_.getPointer(&cptr,0);
 
 /*******
@@ -250,7 +250,7 @@ sint32 TCPCon::read(OUT uint8 *msg,uint32 maxlen, sint32 wait_secs)
         return(-1);
     }
  
-    sint32 remaining_wait=wait_secs - (time(NULL)-start);
+    int32_t remaining_wait=wait_secs - (time(NULL)-start);
     if ((remaining_wait > 0) && (TCPMgr::wait(remaining_wait,0,&Socket_,1,TRUE) > 0))
       continue;  // I can read now.... 
 
@@ -261,7 +261,7 @@ sint32 TCPCon::read(OUT uint8 *msg,uint32 maxlen, sint32 wait_secs)
 }
 
 // Push data back onto the read queue
-bit8 TCPCon::unread(uint8 *data, int length)
+int8_t TCPCon::unread(uint8_t *data, int length)
 {
   ReadQueue_.addMany(data, 0, length);
   return(TRUE);
@@ -270,7 +270,7 @@ bit8 TCPCon::unread(uint8 *data, int length)
 
 // Returns 0 on failure
 // Returns IP in host byte order!
-bit8 TCPCon::getRemoteAddr(uint32 *ip, uint16 *port)
+int8_t TCPCon::getRemoteAddr(uint32_t *ip, uint16_t *port)
 {
   struct sockaddr_in sin;
   int    sinSize=sizeof(sin);
@@ -289,25 +289,25 @@ bit8 TCPCon::getRemoteAddr(uint32 *ip, uint16 *port)
 //
 // only use for strings up to 4096 chars!
 //
-sint32 TCPCon::printf(const char *format, ...)
+int32_t TCPCon::printf(const char *format, ...)
 {
   va_list arg;
   char string[4097];
-  sint32 retval;
+  int32_t retval;
   va_start(arg,format);
   vsprintf(string,format,arg);
   va_end(arg);
   string[4096]=0;
  
-  retval=write((IN uint8 *)string,strlen(string), OutputDelay_);
+  retval=write((IN uint8_t *)string,strlen(string), OutputDelay_);
   return(retval);
 }
  
 
-bit8 TCPCon::isConnected(void)
+int8_t TCPCon::isConnected(void)
 {
-  uint32 remoteIp;
-  uint16 remotePort;
+  uint32_t remoteIp;
+  uint16_t remotePort;
 
   if (getRemoteAddr(&remoteIp,&remotePort)==TRUE)
   {
@@ -325,7 +325,7 @@ bit8 TCPCon::isConnected(void)
 // For the OutputDevice interface
 int TCPCon::print(IN char *str, int len)
 {
-  return(write((IN uint8 *)str,len,0));
+  return(write((IN uint8_t *)str,len,0));
 }
 ********/
 

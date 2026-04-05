@@ -74,7 +74,7 @@ enum
 ///////////////////////////////////////////////////////////////////////////
 //	Static member initialization
 ///////////////////////////////////////////////////////////////////////////
-long long PathSolveClass::_TicksPerMilliSec = 0;
+int64_t PathSolveClass::_TicksPerMilliSec = 0;
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -86,10 +86,10 @@ long long PathSolveClass::_TicksPerMilliSec = 0;
 //	Get_Time
 //
 ///////////////////////////////////////////////////////////////////////////
-static inline long long
+static inline int64_t
 Get_Time (void)
 {
-	return static_cast<long long>(SDL_GetPerformanceCounter());
+	return static_cast<int64_t>(SDL_GetPerformanceCounter());
 }
 
 
@@ -215,7 +215,7 @@ PathSolveClass::PathSolveClass (void)
 	// per millisecond we will get.
 	//
 	if (_TicksPerMilliSec == 0) {
-		_TicksPerMilliSec = static_cast<long long>(SDL_GetPerformanceFrequency());
+		_TicksPerMilliSec = static_cast<int64_t>(SDL_GetPerformanceFrequency());
 		_TicksPerMilliSec /= 1000;
 	}
 
@@ -245,7 +245,7 @@ PathSolveClass::PathSolveClass (const Vector3 &start, const Vector3 &dest)
 	// per millisecond we will get.
 	//
 	if (_TicksPerMilliSec == 0) {
-		_TicksPerMilliSec = static_cast<long long>(SDL_GetPerformanceFrequency());
+		_TicksPerMilliSec = static_cast<int64_t>(SDL_GetPerformanceFrequency());
 		_TicksPerMilliSec /= 1000;
 	}
 
@@ -331,12 +331,12 @@ PathSolveClass::Unlink_Pathfind_Hooks (void)
 //
 ///////////////////////////////////////////////////////////////////////////
 void
-PathSolveClass::Resolve_Path (unsigned int milliseconds)
+PathSolveClass::Resolve_Path (uint32_t milliseconds)
 {
 	WWMEMLOG(MEM_PATHFIND);
 
-	long long start_time	= Get_Time ();
-	long long end_time		= start_time + (((long long)milliseconds) * _TicksPerMilliSec);
+	int64_t start_time	= Get_Time ();
+	int64_t end_time		= start_time + (static_cast<int64_t>(milliseconds) * _TicksPerMilliSec);
 
 	int iterations = 0;
 	//Begin_Distributed_Solve ();
@@ -392,7 +392,7 @@ PathSolveClass::Resolve_Path (unsigned int milliseconds)
 
 	//End_Distributed_Solve ();
 
-	//WWDebug_Printf ("Time spent in pathfind: %d 1/100 millis, loops = %d, finished = %d.\r\n", (unsigned int)((Get_Time () - start_time) / (_TicksPerMilliSec/100)), iterations, (int)(m_State == TRAVERSING_PATH));
+	//WWDebug_Printf ("Time spent in pathfind: %d 1/100 millis, loops = %d, finished = %d.\r\n", (uint32_t)((Get_Time () - start_time) / (_TicksPerMilliSec/100)), iterations, (int)(m_State == TRAVERSING_PATH));
 	return ;
 }
 
@@ -403,7 +403,7 @@ PathSolveClass::Resolve_Path (unsigned int milliseconds)
 //
 ///////////////////////////////////////////////////////////////////////////
 PathSolveClass::STATE_DESC
-PathSolveClass::Timestep (unsigned int milliseconds)
+PathSolveClass::Timestep (uint32_t milliseconds)
 {
 
 	//
@@ -849,7 +849,7 @@ PathSolveClass::Does_Object_Have_Access_To_Portal (PathfindPortalClass *portal)
 		//
 		//	Lookup the mechanism this portal uses
 		//
-		uint32 mechanism_id			= action_portal->Get_Mechanism_ID ();
+		uint32_t mechanism_id			= action_portal->Get_Mechanism_ID ();
 		StaticPhysClass *mechanism	= PhysicsSceneClass::Get_Instance ()->Find_Static_Object (mechanism_id);
 		if (mechanism != NULL) {
 			AccessiblePhysClass *accessible_obj = mechanism->As_AccessiblePhysClass ();

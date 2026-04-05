@@ -53,7 +53,7 @@ Vector3 MaxWorldInfoClass::Get_Shared_Vertex_Normal (Vector3 pos, int smgroup)
 	//	Loop through all the meshes in the world and see which ones contain
 	// verticies that share the same space and are part of the same smoothing group.
 	//
-	for(unsigned int index = 0; index < MeshList.Count(); index ++) {
+	for(uint32_t index = 0; index < MeshList.Count(); index ++) {
 		GeometryExportTaskClass * task = MeshList[index];
 		if (task != CurrentTask) {
 			normal += task->Get_Shared_Vertex_Normal(world_pos,smgroup);			

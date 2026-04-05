@@ -130,7 +130,7 @@ bool												cNetwork::LastServerConnectionStateBad = false;
 bool												cNetwork::SensibleUpdates					= true;
 
 //-----------------------------------------------------------------------------
-void cNetwork::Init_Client(unsigned short my_port)
+void cNetwork::Init_Client(uint16_t my_port)
 {
 	WWMEMLOG(MEM_NETWORK);
 
@@ -173,7 +173,7 @@ void cNetwork::Init_Client(unsigned short my_port)
 		The_Game()->Set_Password(cGameSpyAdmin::Get_Password_Attempt());
 	}
 
-	ULONG bbo = 0;
+	uint32_t bbo = 0;
 	//if (IS_SOLOPLAY || GameModeManager::Find("LAN")->Is_Active()) {
 	if (IS_SOLOPLAY || 
 		 (GameModeManager::Find("LAN")->Is_Active() && !cGameSpyAdmin::Is_Gamespy_Game())) {
@@ -201,7 +201,7 @@ void cNetwork::Init_Client(unsigned short my_port)
 
 	PClientConnection->Set_Bandwidth_Budget_Out(bbo);
 
-   BOOL is_flow_control_enabled = !IS_SOLOPLAY;
+   int32_t is_flow_control_enabled = !IS_SOLOPLAY;
    PClientConnection->Enable_Flow_Control(is_flow_control_enabled);
 
 	WWASSERT(PTheGameData != NULL);
@@ -362,7 +362,7 @@ void cNetwork::Refusal_Handler(REFUSAL_CODE refusal_code)
    // The server refused our connection request! At this stage this
    // is fatal. Later on we would have to re-init the connection etc.
    //
-	static const unsigned long _refusalStrings[] = {
+	static const uint32_t _refusalStrings[] = {
 		IDS_MP_CONNECTION_REFUSED_GAME_FULL,      // REFUSAL_GAME_FULL
 		IDS_MP_PASSWORD_WRONG, // REFUSAL_BAD_PASSWORD
 		IDS_MENU_VERSION_MISMATCH, // REFUSAL_VERSION_MISMATCH
@@ -370,7 +370,7 @@ void cNetwork::Refusal_Handler(REFUSAL_CODE refusal_code)
 		IDS_MP_CONNECTION_REFUSED_BY_APPLICATION  // REFUSAL_BY_APPLICATION
 		};
 
-	const unsigned long refusalMsg = _refusalStrings[refusal_code - 1];
+	const uint32_t refusalMsg = _refusalStrings[refusal_code - 1];
 
 	if (cGameSpyAdmin::Is_Gamespy_Game()) {
 		if (refusal_code == REFUSAL_VERSION_MISMATCH) {
@@ -481,7 +481,7 @@ int cNetwork::Get_Data_Files_CRC(void)
 				int size = file->Size();
 				file->Open();
 				while ( size > 0 ) {
-					unsigned char buffer[ 4096 ];
+					uint8_t buffer[ 4096 ];
 					int amount = (std::min)( (int)size, (int)sizeof(buffer) );
 					amount = file->Read( buffer, amount );
 					crc = CRC_Memory( buffer, amount, crc );
@@ -582,8 +582,8 @@ void cNetwork::Onetime_Shutdown(void)
 	delete NetworkReceiver;
 
 #if 0
-	UINT comp_bytes	= cConnection::Get_Total_Compressed_Bytes_Sent();
-	UINT uncomp_bytes = cConnection::Get_Total_Uncompressed_Bytes_Sent();
+	uint32_t comp_bytes	= cConnection::Get_Total_Compressed_Bytes_Sent();
+	uint32_t uncomp_bytes = cConnection::Get_Total_Uncompressed_Bytes_Sent();
 	Debug_Say(("\n"));
 	Debug_Say(("TotalCompressedBytesSent   = %d\n", comp_bytes));
 	Debug_Say(("Without compression        = %d\n", uncomp_bytes));
@@ -650,14 +650,14 @@ void cNetwork::Init_Server(void)
 	if (IS_SOLOPLAY || 
 		 (GameModeManager::Find("LAN")->Is_Active() && !cGameSpyAdmin::Is_Gamespy_Game())) {
 
-		ULONG bbo = cBandwidth::Get_Bandwidth_Bps_From_Type(BANDWIDTH_LANT1);
+		uint32_t bbo = cBandwidth::Get_Bandwidth_Bps_From_Type(BANDWIDTH_LANT1);
 		WWASSERT(bbo > 0);
 		PServerConnection->Set_Bandwidth_Budget_Out(bbo);
 		cBandwidthGraph::Set_Scale(200000);
 	} else {
 		//WWASSERT(GameModeManager::Find("WOL")->Is_Active());
 		WWASSERT(cUserOptions::BandwidthBps.Get() > 0);
-		unsigned long bw = cBandwidth::Get_Bandwidth_Bps_From_Type((BANDWIDTH_TYPE_ENUM)cUserOptions::Get_Bandwidth_Type());
+		uint32_t bw = cBandwidth::Get_Bandwidth_Bps_From_Type((BANDWIDTH_TYPE_ENUM)cUserOptions::Get_Bandwidth_Type());
 
 		/*
 		** Only use a portion of the bandwidth based on how many slave servers there are.
@@ -683,7 +683,7 @@ void cNetwork::Init_Server(void)
    double max_acceptable_packetloss_pc = 10;
    PServerConnection->Set_Max_Acceptable_Packetloss_Pc(max_acceptable_packetloss_pc);
 
-   BOOL is_flow_control_enabled = !IS_SOLOPLAY;
+   int32_t is_flow_control_enabled = !IS_SOLOPLAY;
    PServerConnection->Enable_Flow_Control(is_flow_control_enabled);
 
 	WWASSERT(PTheGameData != NULL);
@@ -769,16 +769,16 @@ bool cNetwork::Load(ChunkLoadClass &cload)
 //-----------------------------------------------------------------------------
 void cNetwork::Update_Fps(void)
 {
-	static DWORD last_time_ms = 0;
+	static uint32_t last_time_ms = 0;
 	static int frame_count = 0;
-   DWORD time_now_ms = TIMEGETTIME();
+   uint32_t time_now_ms = TIMEGETTIME();
 
 	// Handle timer resetting.
 	if (time_now_ms < last_time_ms) {
 		last_time_ms = time_now_ms;
 	}
 	frame_count++;
-	DWORD time_interval = time_now_ms - last_time_ms;
+	uint32_t time_interval = time_now_ms - last_time_ms;
 
 	if (time_interval > 1000) {
 
@@ -805,11 +805,11 @@ void cNetwork::Update_Fps(void)
 
 void cNetwork::Connection_Status_Change_Feedback(void)
 {
-	static unsigned long _last_print = TIMEGETTIME();
+	static uint32_t _last_print = TIMEGETTIME();
 	static bool _last_print_bad = false;
-	static unsigned long _print_good_soon = 0;
+	static uint32_t _print_good_soon = 0;
 
-	unsigned long time = TIMEGETTIME();
+	uint32_t time = TIMEGETTIME();
 	const WCHAR *string = NULL;
 	if (LastServerConnectionStateBad) {
 		if (_last_print_bad && time - _last_print < 4000) {
@@ -875,8 +875,8 @@ void cNetwork::Update(void)
 	//
 	// Watch out for unexpected slow frames. They may interrupt networking.
 	//
-	static DWORD last_time_ms = TIMEGETTIME();
-	DWORD time_now_ms = TIMEGETTIME();
+	static uint32_t last_time_ms = TIMEGETTIME();
+	uint32_t time_now_ms = TIMEGETTIME();
 	if (time_now_ms - last_time_ms > 2000) {
 		Debug_Say(("\n***cNetwork::Update: warning, think # %d was slow (%u ms)\n\n",
 			ThinkCount,
@@ -992,7 +992,7 @@ void cNetwork::Client_Send_Packet(cPacket & packet, int mode)
 		PClientConnection->Send_Packet_To_Individual(packet, 0, mode);
 
 		/*
-		BYTE message_type = packet.Peek_Message_Type();
+		uint8_t message_type = packet.Peek_Message_Type();
 		PClientStatList->Increment_Num_Msg_Sent(message_type);
 		PClientStatList->Increment_Num_Byte_Sent(message_type, packet.Get_Compressed_Size_Bytes());
 		*/
@@ -1039,7 +1039,7 @@ void cNetwork::Server_Send_Packet(cPacket & packet, int mode, int recipient)
 					packet, client_id, mode);
 
 				/*
-				BYTE message_type = packet.Peek_Message_Type();
+				uint8_t message_type = packet.Peek_Message_Type();
 				PServerStatListGroup->Increment_Num_Msg_Sent(client_id - 1, message_type);
 				PServerStatListGroup->Increment_Num_Byte_Sent(client_id - 1, message_type, packet.Get_Compressed_Size_Bytes());
 				*/
@@ -1050,7 +1050,7 @@ void cNetwork::Server_Send_Packet(cPacket & packet, int mode, int recipient)
 		PServerConnection->Send_Packet_To_Individual(packet, recipient, mode);
 
 		/*
-		BYTE message_type = packet.Peek_Message_Type();
+		uint8_t message_type = packet.Peek_Message_Type();
 		PServerStatListGroup->Increment_Num_Msg_Sent(recipient - 1, message_type);
 		PServerStatListGroup->Increment_Num_Byte_Sent(recipient - 1, message_type, packet.Get_Compressed_Size_Bytes());
 		*/
@@ -1072,7 +1072,7 @@ void cNetwork::Server_Send_Packet_To_All_Connected(cPacket & packet, int mode)
 	WWASSERT(I_Am_Server());
    WWASSERT(PServerConnection->Is_Established());
 
-	//BYTE message_type = packet.Peek_Message_Type();
+	//uint8_t message_type = packet.Peek_Message_Type();
 
    for (int rhost_id = PServerConnection->Get_Min_RHost(); rhost_id <= PServerConnection->Get_Max_RHost(); rhost_id++) {
 		if (Get_Server_Rhost(rhost_id) != NULL) {
@@ -1256,12 +1256,12 @@ void cNetwork::Process_Eviction_Sc(cPacket & packet)
    WWASSERT(I_Am_Client());
 
 
-	UINT min_bps;
+	uint32_t min_bps;
 	packet.Get(min_bps);//naughty... type conversion
    float max_packetloss;
 	packet.Get(max_packetloss);
 
-   //UINT sustainable_bps  = (UINT) packet.Get();
+   //uint32_t sustainable_bps  = (uint32_t) packet.Get();
 
 	WWDEBUG_SAY(("\n* You were evicted from the server for inadequate bandwidth performance.\n"
          "* This server requires packetloss of less than %5.2f %%, and a minimum\n"

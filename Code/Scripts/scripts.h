@@ -37,6 +37,8 @@
 #ifndef	SCRIPTS_H
 #define	SCRIPTS_H
 
+#include <cstdint>
+
 #include "always.h"
 
 #include "scriptevents.h"
@@ -94,7 +96,7 @@ public:
 	void Set_Parameters_String(const char* params);
 
 	// Retrieve the scripts parameter string.
-	void Get_Parameters_String(char* buffer, unsigned int size);
+	void Get_Parameters_String(char* buffer, uint32_t size);
 
 	// Retrieve the parameter count.
 	int Get_Parameter_Count(void)

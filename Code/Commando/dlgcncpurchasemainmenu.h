@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __DLGCNCPURCHASEMAINMENU_H
@@ -76,10 +78,10 @@ public:
 	//
 	void		On_Init_Dialog (void);
 	void		On_Destroy (void);
-	void		On_Command (int ctrl_id, int mesage_id, DWORD param);
+	void		On_Command (int ctrl_id, int mesage_id, uint32_t param);
 	void		On_Merchandise_Selected (MerchandiseCtrlClass *ctrl, int ctrl_id);	
 	void		On_Merchandise_DblClk (MerchandiseCtrlClass *ctrl, int ctrl_id);
-	bool		On_Key_Down (uint32 key_id, uint32 key_data);
+	bool		On_Key_Down (uint32_t key_id, uint32_t key_data);
 	void		On_Frame_Update (void);	
 	void		Render (void);
 

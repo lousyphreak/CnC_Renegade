@@ -62,7 +62,7 @@ HWND
 FormClass::Create_Form
 (
 	HWND parent_wnd,
-	UINT template_id
+	uint32_t template_id
 )
 {
 	// call PreCreateWindow to get prefered extended style
@@ -73,7 +73,7 @@ FormClass::Create_Form
 											MAKEINTRESOURCE (template_id),
 											parent_wnd,
 											fnFormProc,
-											(LPARAM)this);
+											(intptr_t)this);
 
 	assert(m_hWnd);
 
@@ -102,13 +102,13 @@ FormClass::Create_Form
  * HISTORY:                                                                                    *
  *   11/6/98    GTH : Created.                                                                 *
  *=============================================================================================*/
-BOOL WINAPI
+int32_t WINAPI
 FormClass::fnFormProc
 (
 	HWND dlg_wnd,
-	UINT message,
-	WPARAM wparam,
-	LPARAM lparam
+	uint32_t message,
+	uintptr_t wparam,
+	intptr_t lparam
 ) 
 {
 	FormClass *pform = (FormClass *)::GetProp (dlg_wnd, "FORMCLASS");
@@ -120,7 +120,7 @@ FormClass::fnFormProc
 		::RemoveProp (dlg_wnd, "FORMCLASS");
 	}
 
-	BOOL retval = FALSE;
+	int32_t retval = FALSE;
 	if (pform) {
 		retval = pform->Dialog_Proc (dlg_wnd, message, wparam, lparam);
 	}
@@ -144,7 +144,7 @@ FormClass::fnFormProc
  * HISTORY:                                                                                    *
  *   11/6/98    GTH : Created.                                                                 *
  *=============================================================================================*/
-BOOL FormClass::ExecuteDlgInit(LPCTSTR lpszResourceName)
+int32_t FormClass::ExecuteDlgInit(LPCTSTR lpszResourceName)
 {
 	// find resource handle
 	LPVOID lpResource = NULL;
@@ -166,7 +166,7 @@ BOOL FormClass::ExecuteDlgInit(LPCTSTR lpszResourceName)
 	}
 
 	// execute it
-	BOOL bResult = ExecuteDlgInit(lpResource);
+	int32_t bResult = ExecuteDlgInit(lpResource);
 
 	// cleanup
 	if (lpResource != NULL && hResource != NULL)
@@ -192,17 +192,17 @@ BOOL FormClass::ExecuteDlgInit(LPCTSTR lpszResourceName)
  * HISTORY:                                                                                    *
  *   11/6/98    GTH : Created.                                                                 *
  *=============================================================================================*/
-BOOL FormClass::ExecuteDlgInit(LPVOID lpResource)
+int32_t FormClass::ExecuteDlgInit(LPVOID lpResource)
 {
-	BOOL bSuccess = TRUE;
+	int32_t bSuccess = TRUE;
 	if (lpResource != NULL)
 	{
-		UNALIGNED WORD* lpnRes = (WORD*)lpResource;
+		UNALIGNED uint16_t* lpnRes = (uint16_t*)lpResource;
 		while (bSuccess && *lpnRes != 0)
 		{
-			WORD nIDC = *lpnRes++;
-			WORD nMsg = *lpnRes++;
-			DWORD dwLen = *((UNALIGNED DWORD*&)lpnRes)++;
+			uint16_t nIDC = *lpnRes++;
+			uint16_t nMsg = *lpnRes++;
+			uint32_t dwLen = *((UNALIGNED uint32_t*&)lpnRes)++;
 
 			// In Win32 the WM_ messages have changed.  They have
 			// to be translated from the 32-bit values to 16-bit
@@ -221,12 +221,12 @@ BOOL FormClass::ExecuteDlgInit(LPVOID lpResource)
 			if (nMsg == LB_ADDSTRING || nMsg == CB_ADDSTRING)
 			{
 				// List/Combobox returns -1 for error
-				if (::SendDlgItemMessageA(m_hWnd, nIDC, nMsg, 0, (LONG)lpnRes) == -1)
+				if (::SendDlgItemMessageA(m_hWnd, nIDC, nMsg, 0, (int32_t)lpnRes) == -1)
 					bSuccess = FALSE;
 			}
 
 			// skip past data
-			lpnRes = (WORD*)((LPBYTE)lpnRes + (UINT)dwLen);
+			lpnRes = (uint16_t*)((LPBYTE)lpnRes + (uint32_t)dwLen);
 		}
 	}
 

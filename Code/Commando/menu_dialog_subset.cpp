@@ -56,7 +56,7 @@ void ClientStartSPGameDialogClass::On_Init_Dialog()
 	MenuDialogClass::On_Init_Dialog();
 }
 
-void ClientStartSPGameDialogClass::On_Command(int ctrl_id, int message_id, DWORD param)
+void ClientStartSPGameDialogClass::On_Command(int ctrl_id, int message_id, uint32_t param)
 {
 	if (ctrl_id == IDC_MENU_START_TUTORIAL_BUTTON) {
 		const char *tutorial_map_name = "M00_Tutorial.mix";
@@ -126,7 +126,7 @@ void ClientDifficultyMenuClass::On_Frame_Update()
 	MenuDialogClass::On_Frame_Update();
 }
 
-void ClientDifficultyMenuClass::On_Command(int ctrl_id, int message_id, DWORD param)
+void ClientDifficultyMenuClass::On_Command(int ctrl_id, int message_id, uint32_t param)
 {
 	switch (ctrl_id) {
 		case IDC_MENU_DIFFCULTY01_BUTTON:

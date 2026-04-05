@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __DEFINITION_FACTORY_MGR_H
@@ -59,14 +61,14 @@ public:
 	/////////////////////////////////////////////////////////////////////
 	//	Public methods
 	/////////////////////////////////////////////////////////////////////
-	static DefinitionFactoryClass *	Find_Factory (uint32 class_id);	
+	static DefinitionFactoryClass *	Find_Factory (uint32_t class_id);	
 	static DefinitionFactoryClass *	Find_Factory (const char *name);
 	static void								Register_Factory (DefinitionFactoryClass *factory);
 	static void								Unregister_Factory (DefinitionFactoryClass *factory);
 
 	// Class enumeration
-	static DefinitionFactoryClass *	Get_First (uint32 superclass_id);
-	static DefinitionFactoryClass *	Get_Next (DefinitionFactoryClass *current, uint32 superclass_id);
+	static DefinitionFactoryClass *	Get_First (uint32_t superclass_id);
+	static DefinitionFactoryClass *	Get_Next (DefinitionFactoryClass *current, uint32_t superclass_id);
 
 	// Factory enumeration
 	static DefinitionFactoryClass *	Get_First (void);

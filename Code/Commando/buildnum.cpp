@@ -70,7 +70,7 @@ char BuildInfoClass::BuildDate   [64] = {"Insert1Build2Date3Here4     xxxx      
  * HISTORY:                                                                                    *
  *   10/29/2001 4:54PM ST : Created                                                            *
  *=============================================================================================*/
-unsigned long BuildInfoClass::Get_Build_Number(void)
+uint32_t BuildInfoClass::Get_Build_Number(void)
 {
 	uint32_t build_number = 0;
 	std::memcpy(&build_number, &BuildNumber[28], sizeof(build_number));
@@ -97,7 +97,7 @@ unsigned long BuildInfoClass::Get_Build_Number(void)
 char *BuildInfoClass::Get_Build_Number_String(void)
 {
 	static char _buffer[16];
-	sprintf (_buffer, "%u", static_cast<unsigned int>(Get_Build_Number()));
+	sprintf (_buffer, "%u", static_cast<uint32_t>(Get_Build_Number()));
 	return (_buffer);
 }
 

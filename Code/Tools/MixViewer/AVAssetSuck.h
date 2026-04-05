@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef _AVASSETSUCK_H
 #define _AVASSETSUCK_H
 
@@ -32,7 +34,7 @@ class AVAssetSuckerClass
 	public:
 		AVAssetSuckerClass(void);
 		void Suck(char *input_file, char *output_file);
-		static unsigned int Do_Stuff(void *param);
+		static uint32_t Do_Stuff(void *param);
 		void Thread_Suck(void);
 
 

@@ -18,6 +18,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef SORTING_RENDERER_H
@@ -38,16 +40,16 @@ class SortingRendererClass
 public:
 	static void Insert_Triangles(
 		const SphereClass& bounding_sphere,
-		unsigned short start_index, 
-		unsigned short polygon_count,
-		unsigned short min_vertex_index,
-		unsigned short vertex_count);
+		uint16_t start_index, 
+		uint16_t polygon_count,
+		uint16_t min_vertex_index,
+		uint16_t vertex_count);
 
 	static void Insert_Triangles(
-		unsigned short start_index, 
-		unsigned short polygon_count,
-		unsigned short min_vertex_index,
-		unsigned short vertex_count);
+		uint16_t start_index, 
+		uint16_t polygon_count,
+		uint16_t min_vertex_index,
+		uint16_t vertex_count);
 
 	static void Flush();
 	static void Deinit();

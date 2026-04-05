@@ -63,7 +63,7 @@ CSplineTestApp theApp;
 /////////////////////////////////////////////////////////////////////////////
 // CSplineTestApp initialization
 
-BOOL CSplineTestApp::InitInstance()
+int32_t CSplineTestApp::InitInstance()
 {
 	AfxEnableControlContainer();
 

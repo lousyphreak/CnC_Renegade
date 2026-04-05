@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 
 /*
 **	Command & Conquer Renegade(tm)
@@ -116,7 +117,7 @@
 #if (UINT_MAX >= 0xffffffffL)
    typedef ptrdiff_t        lzo_ptrdiff_t;
 #else
-   typedef long             lzo_ptrdiff_t;
+   typedef ptrdiff_t        lzo_ptrdiff_t;
 #endif
 
 
@@ -217,7 +218,7 @@
 //
 ************************************************************************/
 
-#define LZO_BYTE(x)			((unsigned char) (x))
+#define LZO_BYTE(x)			((uint8_t) (x))
 
 #define LZO_MAX(a,b)		((a) >= (b) ? (a) : (b))
 #define LZO_MIN(a,b)		((a) <= (b) ? (a) : (b))
@@ -303,4 +304,3 @@
 /*
 vi:ts=4
 */
-

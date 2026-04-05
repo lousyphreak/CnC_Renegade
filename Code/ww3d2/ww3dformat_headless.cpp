@@ -2,30 +2,30 @@
 
 #include "vector4.h"
 
-void Vector4_to_Color(unsigned int *outc, const Vector4 &inc, const WW3DFormat)
+void Vector4_to_Color(uint32_t *outc, const Vector4 &inc, const WW3DFormat)
 {
     if (outc == nullptr) {
         return;
     }
 
-    const auto clamp = [](float value) -> unsigned int {
+    const auto clamp = [](float value) -> uint32_t {
         if (value <= 0.0f) {
             return 0;
         }
         if (value >= 1.0f) {
             return 255;
         }
-        return static_cast<unsigned int>(value * 255.0f + 0.5f);
+        return static_cast<uint32_t>(value * 255.0f + 0.5f);
     };
 
-    const unsigned int a = clamp(inc.W);
-    const unsigned int r = clamp(inc.X);
-    const unsigned int g = clamp(inc.Y);
-    const unsigned int b = clamp(inc.Z);
+    const uint32_t a = clamp(inc.W);
+    const uint32_t r = clamp(inc.X);
+    const uint32_t g = clamp(inc.Y);
+    const uint32_t b = clamp(inc.Z);
     *outc = (a << 24) | (r << 16) | (g << 8) | b;
 }
 
-void Color_to_Vector4(Vector4 *outc, const unsigned int inc, const WW3DFormat)
+void Color_to_Vector4(Vector4 *outc, const uint32_t inc, const WW3DFormat)
 {
     if (outc == nullptr) {
         return;

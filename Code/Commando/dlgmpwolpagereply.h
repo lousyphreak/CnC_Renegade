@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __DLG_MP_WOL_PAGE_REPLY_H
@@ -65,7 +67,7 @@ class DlgWOLPageReply :
 		bool FinalizeCreate(void);
 
 		void On_Init_Dialog(void);
-		void On_Command(int ctrl_id, int mesage_id, DWORD param);	
+		void On_Command(int ctrl_id, int mesage_id, uint32_t param);	
 
 		void Send_Reply(void);
 		void Add_Message(const WCHAR* username, const WCHAR* message);

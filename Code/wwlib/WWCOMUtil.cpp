@@ -61,14 +61,14 @@ STDMETHODIMP Dispatch_GetProperty(IDispatch* object, const OLECHAR* propName,
 	// Get the dispid for the named property
 	OLECHAR* member = const_cast<OLECHAR*>(propName);
 	DISPID dispid;
-	HRESULT hr = object->GetIDsOfNames(IID_NULL, &member, 1,
+	int32_t hr = object->GetIDsOfNames(IID_NULL, &member, 1,
 		LOCALE_SYSTEM_DEFAULT, &dispid);
 
 	if (SUCCEEDED(hr))
 		{
 		// Get the property
 		DISPPARAMS params = {NULL, NULL, 0, 0};
-		UINT argErr = 0;
+		uint32_t argErr = 0;
 		hr = object->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT,
 			DISPATCH_PROPERTYGET, &params, result, NULL, &argErr);
 		}
@@ -101,7 +101,7 @@ STDMETHODIMP Dispatch_PutProperty(IDispatch* object, const OLECHAR* propName,
 	OLECHAR* member = const_cast<OLECHAR*>(propName);
 	DISPID dispid;
 
-	HRESULT hr = object->GetIDsOfNames(IID_NULL, &member, 1,
+	int32_t hr = object->GetIDsOfNames(IID_NULL, &member, 1,
 		LOCALE_SYSTEM_DEFAULT, &dispid);
 
 	if (SUCCEEDED(hr))
@@ -112,7 +112,7 @@ STDMETHODIMP Dispatch_PutProperty(IDispatch* object, const OLECHAR* propName,
 		params.rgvarg = propValue;
 
 		VARIANT result;
-		UINT argErr = 0;
+		uint32_t argErr = 0;
 
 		hr = object->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT,
 			DISPATCH_PROPERTYPUT, &params, &result, NULL, &argErr);
@@ -146,12 +146,12 @@ STDMETHODIMP Dispatch_InvokeMethod(IDispatch* object, const OLECHAR* methodName,
 	OLECHAR* member = const_cast<OLECHAR*>(methodName);
 	DISPID dispid;
 
-	HRESULT hr = object->GetIDsOfNames(IID_NULL, &member, 1,
+	int32_t hr = object->GetIDsOfNames(IID_NULL, &member, 1,
 		LOCALE_SYSTEM_DEFAULT, &dispid);
 
 	if (SUCCEEDED(hr))
 		{
-		UINT argErr = 0;
+		uint32_t argErr = 0;
 		hr = object->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT,
 			DISPATCH_METHOD, params, result, NULL, &argErr);
 		}
@@ -188,7 +188,7 @@ bool RegisterCOMServer(const char* dllName)
 
 		if (regServerProc != NULL)
 			{
-			HRESULT hr = regServerProc();
+			int32_t hr = regServerProc();
 			success = SUCCEEDED(hr);
 			}
 
@@ -227,7 +227,7 @@ bool UnregisterCOMServer(const char* dllName)
 
 		if (unregServerProc != NULL)
 			{
-			HRESULT hr = unregServerProc();
+			int32_t hr = unregServerProc();
 			success = SUCCEEDED(hr);
 			}
 

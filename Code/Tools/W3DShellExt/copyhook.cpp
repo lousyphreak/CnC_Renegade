@@ -38,12 +38,12 @@
 
 //
 //  FUNCTION: CShellExt::CopyCallback(HWND,
-//                                    UINT, 
-//                                    UINT, 
+//                                    uint32_t, 
+//                                    uint32_t, 
 //                                    LPCSTR,
-//                                    DWORD,
+//                                    uint32_t,
 //                                    LPCSTR,
-//                                    DWORD)
+//                                    uint32_t)
 //
 //  PURPOSE: Called by the shell when a folder is being manipulated.
 //
@@ -68,13 +68,13 @@
 //  COMMENTS:
 //
 
-STDMETHODIMP_(UINT) CShellExt::CopyCallback(HWND hwnd, 
-                                            UINT wFunc, 
-                                            UINT wFlags, 
+STDMETHODIMP_(uint32_t) CShellExt::CopyCallback(HWND hwnd, 
+                                            uint32_t wFunc, 
+                                            uint32_t wFlags, 
                                             LPCSTR pszSrcFile, 
-                                            DWORD dwSrcAttribs,
+                                            uint32_t dwSrcAttribs,
                                             LPCSTR pszDestFile, 
-                                            DWORD dwDestAttribs)
+                                            uint32_t dwDestAttribs)
 {
     ODS("CShellExt::CopyCallback\r\n");
     return IDYES;

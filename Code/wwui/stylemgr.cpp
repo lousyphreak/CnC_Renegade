@@ -111,21 +111,21 @@ static FONT_DESC	DEFAULT_FONTS[StyleMgrClass::FONT_MAX] =
 ////////////////////////////////////////////////////////////////
 TextureClass *				StyleMgrClass::BackdropTexture			= NULL;
 
-uint32						StyleMgrClass::TitleColor					= RGB_TO_INT32 (255, 255, 255);
-uint32						StyleMgrClass::TitleHilightColor			= RGB_TO_INT32 (255, 255, 0);
-uint32						StyleMgrClass::TitleShadowColor			= RGB_TO_INT32 (0, 0, 0);
-uint32						StyleMgrClass::TextColor					= RGB_TO_INT32 (255, 213, 40);
-uint32						StyleMgrClass::TextShadowColor			= RGBA_TO_INT32 (0, 0, 0, 200);
-uint32						StyleMgrClass::LineColor					= RGB_TO_INT32 (255, 174, 40);
-uint32						StyleMgrClass::BkColor						= RGBA_TO_INT32 (255, 174, 40, 40);
-uint32						StyleMgrClass::DisabledTextColor			= RGBA_TO_INT32 (255, 213, 40, 140);
-uint32						StyleMgrClass::DisabledTextShadowColor	= RGBA_TO_INT32 (0, 0, 0, 96);
-uint32						StyleMgrClass::DisabledLineColor			= RGBA_TO_INT32 (230, 160, 35, 128);
-uint32						StyleMgrClass::DisabledBkColor			= RGBA_TO_INT32 (255, 174, 40, 30);
-uint32						StyleMgrClass::HilightColor				= RGB_TO_INT32 (70, 70, 70);
+uint32_t						StyleMgrClass::TitleColor					= RGB_TO_INT32 (255, 255, 255);
+uint32_t						StyleMgrClass::TitleHilightColor			= RGB_TO_INT32 (255, 255, 0);
+uint32_t						StyleMgrClass::TitleShadowColor			= RGB_TO_INT32 (0, 0, 0);
+uint32_t						StyleMgrClass::TextColor					= RGB_TO_INT32 (255, 213, 40);
+uint32_t						StyleMgrClass::TextShadowColor			= RGBA_TO_INT32 (0, 0, 0, 200);
+uint32_t						StyleMgrClass::LineColor					= RGB_TO_INT32 (255, 174, 40);
+uint32_t						StyleMgrClass::BkColor						= RGBA_TO_INT32 (255, 174, 40, 40);
+uint32_t						StyleMgrClass::DisabledTextColor			= RGBA_TO_INT32 (255, 213, 40, 140);
+uint32_t						StyleMgrClass::DisabledTextShadowColor	= RGBA_TO_INT32 (0, 0, 0, 96);
+uint32_t						StyleMgrClass::DisabledLineColor			= RGBA_TO_INT32 (230, 160, 35, 128);
+uint32_t						StyleMgrClass::DisabledBkColor			= RGBA_TO_INT32 (255, 174, 40, 30);
+uint32_t						StyleMgrClass::HilightColor				= RGB_TO_INT32 (70, 70, 70);
 
-uint32						StyleMgrClass::TabTextColor				= RGB_TO_INT32 (255, 255, 255);
-uint32						StyleMgrClass::TabGlowColor				= RGB_TO_INT32 (16, 10, 0);
+uint32_t						StyleMgrClass::TabTextColor				= RGB_TO_INT32 (255, 255, 255);
+uint32_t						StyleMgrClass::TabGlowColor				= RGB_TO_INT32 (16, 10, 0);
 
 FontCharsClass *			StyleMgrClass::Fonts[FONT_MAX]			= { NULL };
 float							StyleMgrClass::ScaleX						= 1.0F;
@@ -613,8 +613,8 @@ StyleMgrClass::Render_Text
 (
 	const WCHAR *				text,
 	Render2DSentenceClass *	renderer,
-	uint32						text_color,
-	uint32						shadow_color,
+	uint32_t						text_color,
+	uint32_t						shadow_color,
 	const RectClass &			rect,	
 	bool							do_shadow,
 	bool							do_clip,
@@ -692,8 +692,8 @@ StyleMgrClass::Render_Text
 (
 	const WCHAR *			text,
 	Render2DTextClass *	renderer,
-	uint32					text_color,
-	uint32					shadow_color,
+	uint32_t					text_color,
+	uint32_t					shadow_color,
 	const RectClass &		rect,	
 	bool						do_shadow,
 	bool						do_clip,
@@ -763,8 +763,8 @@ StyleMgrClass::Render_Text
 (
 	const WCHAR *				text,
 	Render2DSentenceClass *	renderer,
-	uint32						text_color,
-	uint32						shadow_color,
+	uint32_t						text_color,
+	uint32_t						shadow_color,
 	const RectClass &			rect,	
 	bool							do_shadow,
 	bool							do_clip,
@@ -908,8 +908,8 @@ StyleMgrClass::Render_Wrapped_Text_Ex
 (
 	const WCHAR *				text,
 	Render2DSentenceClass *	renderer,
-	uint32						text_color,
-	uint32						shadow_color, 
+	uint32_t						text_color,
+	uint32_t						shadow_color, 
 	const RectClass &			rect,
 	bool							do_shadow,
 	bool							do_vcenter,
@@ -944,8 +944,8 @@ StyleMgrClass::Render_Wrapped_Text_Ex
 			if (src_end == NULL) {						\
 				dest = src_start;							\
 			} else {											\
-				uint32 bytes	= ((uint32)src_end - (uint32)src_start);	\
-				uint32 len		= bytes / sizeof (WCHAR);						\
+				uint32_t bytes	= ((uint32_t)src_end - (uint32_t)src_start);	\
+				uint32_t len		= bytes / sizeof (WCHAR);						\
 				::memcpy (dest.Get_Buffer (len + 1), src_start, bytes);	\
 				dest.Peek_Buffer ()[len] = 0;										\
 			}
@@ -995,8 +995,8 @@ StyleMgrClass::Render_Wrapped_Text
 (
 	const WCHAR *				text,
 	Render2DSentenceClass *	renderer,
-	uint32						text_color,
-	uint32						shadow_color, 
+	uint32_t						text_color,
+	uint32_t						shadow_color, 
 	const RectClass &			rect,
 	bool							do_shadow,
 	bool							do_vcenter

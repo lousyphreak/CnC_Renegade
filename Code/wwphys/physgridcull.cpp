@@ -582,7 +582,7 @@ void PhysGridCullClass::Load_Static_Data(ChunkLoadClass & cload)
 void PhysGridCullClass::Load_Static_Variables(ChunkLoadClass & cload)
 {
 /* (gth) no variables for now...
-	uint32 version;
+	uint32_t version;
 	while (cload.Open_Micro_Chunk()) {
 
 		switch(cload.Cur_Micro_Chunk_ID()) {
@@ -608,7 +608,7 @@ void PhysGridCullClass::Save_Static_Data(ChunkSaveClass & csave)
 void PhysGridCullClass::Save_Static_Variables(ChunkSaveClass & csave)
 {
 /* (gth) no variables for now...
-	uint32 version = PHYSGRID_CURRENT_VERSION;
+	uint32_t version = PHYSGRID_CURRENT_VERSION;
 
 	WRITE_MICRO_CHUNK(csave,PHYSGRID_VARIABLE_VERSION,version);
 	WRITE_MICRO_CHUNK(csave,PHYSGRID_VARIABLE_DUMMYVISID,DummyVisId);

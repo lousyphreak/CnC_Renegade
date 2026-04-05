@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -59,8 +61,8 @@ class HeapNodeClass
 {
 	public:
 
-		virtual uint32		Get_Heap_Location (void) const = 0;
-		virtual void		Set_Heap_Location (uint32 location) = 0;
+		virtual uint32_t		Get_Heap_Location (void) const = 0;
+		virtual void		Set_Heap_Location (uint32_t location) = 0;
 
 		// This is pure virtual so that any type of key can be used as long as it uses the comparison operators.
 		virtual Key_Type	Heap_Key (void) const = 0;
@@ -76,7 +78,7 @@ class BinaryHeapClass
 	public:
 
 		// This constructor uses elements that have already been allocated.
-		BinaryHeapClass(HeapNodeClass<Key_Type> **allocated_list, unsigned int max_number_of_elements)
+		BinaryHeapClass(HeapNodeClass<Key_Type> **allocated_list, uint32_t max_number_of_elements)
 		{
 			assert(allocated_list);
 			assert(max_number_of_elements > 0);
@@ -88,7 +90,7 @@ class BinaryHeapClass
 		}
 
 		// This constructor allocates its own array of nodes
-		BinaryHeapClass(unsigned int max_number_of_elements)
+		BinaryHeapClass(uint32_t max_number_of_elements)
 			:	Max_Number_Of_Elements (max_number_of_elements),
 				Number_Of_Elements (0),
 				Elements (NULL),
@@ -111,7 +113,7 @@ class BinaryHeapClass
 		}
 		
 		// Reallocate an array large enough to hold the elements
-		void Resize_Array (unsigned int new_size)
+		void Resize_Array (uint32_t new_size)
 		{
 			// Start fresh
 			Release_Array ();
@@ -141,19 +143,19 @@ class BinaryHeapClass
 		}
 
 		// Return the current number of elements.
-		unsigned int Get_Number_Of_Elements()
+		uint32_t Get_Number_Of_Elements()
 		{
 			return (Number_Of_Elements);
 		}
 
 		// Return the maximum number of elements.
-		unsigned int Get_Max_Number_Of_Elements (void)
+		uint32_t Get_Max_Number_Of_Elements (void)
 		{
 			return (Max_Number_Of_Elements);
 		}
 
 		// Return a pointer to a node in the tree
-		HeapNodeClass<Key_Type> *Peek_Node (unsigned int location)
+		HeapNodeClass<Key_Type> *Peek_Node (uint32_t location)
 		{
 			return Elements[location];
 		}
@@ -163,7 +165,7 @@ class BinaryHeapClass
 		{
 
 			// Increment the number of elements in the heap.
-			unsigned int i = ++Number_Of_Elements;
+			uint32_t i = ++Number_Of_Elements;
 
 			// Doesn't handle the case of adding more elements than there is memory for.
 			assert(Number_Of_Elements < Max_Number_Of_Elements);
@@ -182,11 +184,11 @@ class BinaryHeapClass
 		
 		// Move the element up in the tree if necessary.  Use this if the key value becomes smaller when it is 
 		// already in the heap.
-		void Percolate_Up(unsigned int location)
+		void Percolate_Up(uint32_t location)
 		{
 			assert(location < Max_Number_Of_Elements);
 
-			unsigned int i = location;
+			uint32_t i = location;
 			HeapNodeClass<Key_Type> *node = Elements[i];
 
 			// Find the elements's place in the tree.  Remember: the smallest element is the root.
@@ -204,7 +206,7 @@ class BinaryHeapClass
 		// Take the smallest element out of the tree and reorder
 		HeapNodeClass<Key_Type>* Remove_Min (void)
 		{
-			unsigned int	child;
+			uint32_t	child;
 			HeapNodeClass<Key_Type>*  	last_element;
 			HeapNodeClass<Key_Type>* 	min_element;
 
@@ -226,7 +228,7 @@ class BinaryHeapClass
 			// Decrement the number of elements in the tree.
 			Number_Of_Elements--;
 
-			unsigned int i = 1;
+			uint32_t i = 1;
 			for (; (i * 2) <= Number_Of_Elements; i = child)
 			{
 				// Find a smaller child.
@@ -308,10 +310,10 @@ class BinaryHeapClass
 		HeapNodeClass<Key_Type>	**Elements;
 
 		// The number of allocated elements.
-		unsigned int					Max_Number_Of_Elements;
+		uint32_t					Max_Number_Of_Elements;
 
 		// Current number of elements in the tree.
-		unsigned int					Number_Of_Elements;
+		uint32_t					Number_Of_Elements;
 
 		// Flag to indicate who owns the memory for the
 		// binary tree.

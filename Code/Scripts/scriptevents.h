@@ -37,6 +37,8 @@
 #ifndef	SCRIPTEVENTS_H
 #define	SCRIPTEVENTS_H
 
+#include <cstdint>
+
 #include	"gameobjobserver.h"
 
 #if defined(BUILDING_DLL)
@@ -85,7 +87,7 @@ class	ScriptClass : public GameObjObserverClass
 
 		virtual void Set_Parameters_String(const char* params) = 0;
 
-		virtual void Get_Parameters_String(char* buffer, unsigned int size) = 0;
+		virtual void Get_Parameters_String(char* buffer, uint32_t size) = 0;
 
 		// Save and Load specific script
 		virtual	void Save(ScriptSaver& saver) = 0;
@@ -114,18 +116,18 @@ SCRIPT_DLL_FUNCT void Set_Request_Destroy_Func(void (*function)(ScriptClass*));
 
 
 const char* const LPSTR_GET_SCRIPT_COUNT = "Get_Script_Count";
-typedef int (*LPFN_GET_SCRIPT_COUNT)(void);
-SCRIPT_DLL_FUNCT int Get_Script_Count(void);
+typedef int32_t (*LPFN_GET_SCRIPT_COUNT)(void);
+SCRIPT_DLL_FUNCT int32_t Get_Script_Count(void);
 
 
 const char* const LPSTR_GET_SCRIPT_NAME = "Get_Script_Name";
-typedef const char* (*LPFN_GET_SCRIPT_NAME)(int);
-SCRIPT_DLL_FUNCT const char* Get_Script_Name(int index);
+typedef const char* (*LPFN_GET_SCRIPT_NAME)(int32_t);
+SCRIPT_DLL_FUNCT const char* Get_Script_Name(int32_t index);
 
 
 const char* const LPSTR_GET_SCRIPT_PARAM_DESCRIPTION = "Get_Script_Param_Description";
-typedef const char* (*LPFN_GET_SCRIPT_PARAM_DESCRIPTION)(int);
-SCRIPT_DLL_FUNCT const char* Get_Script_Param_Description(int index);
+typedef const char* (*LPFN_GET_SCRIPT_PARAM_DESCRIPTION)(int32_t);
+SCRIPT_DLL_FUNCT const char* Get_Script_Param_Description(int32_t index);
 
 
 /*

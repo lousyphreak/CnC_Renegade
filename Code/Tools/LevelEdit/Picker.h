@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 
@@ -46,8 +48,8 @@ public:
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(PickerClass)
 	protected:
-	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
-	virtual BOOL OnCommand(WPARAM wParam, LPARAM lParam);
+	virtual intptr_t WindowProc(uint32_t message, uintptr_t wParam, intptr_t lParam);
+	virtual int32_t OnCommand(uintptr_t wParam, intptr_t lParam);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -57,9 +59,9 @@ public:
 	// Generated message map functions
 protected:
 	//{{AFX_MSG(PickerClass)
-	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg void OnSize(uint32_t nType, int cx, int cy);
 	afx_msg void OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct);
-	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+	afx_msg int32_t OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnPaint();
 	//}}AFX_MSG
 
@@ -74,7 +76,7 @@ public:
 	//
 	//	Stuff
 	//	
-	virtual bool		Create_Picker (DWORD style, const RECT &rect, CWnd *parent, UINT id);
+	virtual bool		Create_Picker (uint32_t style, const RECT &rect, CWnd *parent, uint32_t id);
 	virtual void		Initialize_Control (void);	
 	virtual void		Set_Read_Only (bool readonly = true);
 

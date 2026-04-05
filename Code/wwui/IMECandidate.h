@@ -35,6 +35,8 @@
 #ifndef __IMECANDIDATE_H__
 #define __IMECANDIDATE_H__
 
+#include <cstdint>
+
 #include "Notify.h"
 #include "win.h"
 
@@ -61,7 +63,7 @@ class IMECandidate
 		IMECandidate();
 		~IMECandidate();
 
-		void Open(int index, HWND hwnd, UINT codepage, bool unicode, bool startFrom1);
+		void Open(int index, HWND hwnd, uint32_t codepage, bool unicode, bool startFrom1);
 		void Read(void);
 		void Close(void);
 
@@ -69,31 +71,31 @@ class IMECandidate
 
 		int GetIndex(void) const;
 
-		unsigned long GetStyle(void) const;
+		uint32_t GetStyle(void) const;
 
 		// Get the index of the first candidate in the page
-		unsigned long GetPageStart(void) const;
+		uint32_t GetPageStart(void) const;
 
 		// Set the page to start with the specified candidate index
-		void SetPageStart(unsigned long);
+		void SetPageStart(uint32_t);
 
 		// Get the number of candidates per page
-		unsigned long GetPageSize(void) const;
+		uint32_t GetPageSize(void) const;
 
 		// Get the total number of candidates in the list.
-		unsigned long GetCount(void) const;
+		uint32_t GetCount(void) const;
 
 		// Get the index of the current candidate selection
-		unsigned long GetSelection(void) const;
+		uint32_t GetSelection(void) const;
 
 		// Get the specified candidate string
-		const wchar_t* GetCandidate(unsigned long index);
+		const wchar_t* GetCandidate(uint32_t index);
 
 		// Select a candidate from the list.
-		void SelectCandidate(unsigned long index);
+		void SelectCandidate(uint32_t index);
 
 		// Set the candidate page view
-		void SetView(unsigned long topIndex, unsigned long bottomIndex);
+		void SetView(uint32_t topIndex, uint32_t bottomIndex);
 
 		// Check if the candidates should be displayed starting from 1 or 0
 		bool IsStartFrom1(void) const;
@@ -101,11 +103,11 @@ class IMECandidate
 	private:
 		int mIndex;
 		HWND mHWND;
-		UINT mCodePage;
+		uint32_t mCodePage;
 		bool mUseUnicode;
 		bool mStartFrom1;
 
-		unsigned long mCandidateSize;
+		uint32_t mCandidateSize;
 		CANDIDATELIST* mCandidates;
 
 		// Multibyte -> Unicode string conversion buffer
@@ -138,21 +140,21 @@ class IMECandidate
 		IMECandidate() = default;
 		~IMECandidate() = default;
 
-		void Open(int, HWND, UINT, bool, bool) {}
+		void Open(int, HWND, uint32_t, bool, bool) {}
 		void Read(void) {}
 		void Close(void) {}
 
 		bool IsValid(void) const { return false; }
 		int GetIndex(void) const { return -1; }
-		unsigned long GetStyle(void) const { return 0; }
-		unsigned long GetPageStart(void) const { return 0; }
-		void SetPageStart(unsigned long) {}
-		unsigned long GetPageSize(void) const { return 0; }
-		unsigned long GetCount(void) const { return 0; }
-		unsigned long GetSelection(void) const { return 0; }
-		const wchar_t* GetCandidate(unsigned long) { return L""; }
-		void SelectCandidate(unsigned long) {}
-		void SetView(unsigned long, unsigned long) {}
+		uint32_t GetStyle(void) const { return 0; }
+		uint32_t GetPageStart(void) const { return 0; }
+		void SetPageStart(uint32_t) {}
+		uint32_t GetPageSize(void) const { return 0; }
+		uint32_t GetCount(void) const { return 0; }
+		uint32_t GetSelection(void) const { return 0; }
+		const wchar_t* GetCandidate(uint32_t) { return L""; }
+		void SelectCandidate(uint32_t) {}
+		void SetView(uint32_t, uint32_t) {}
 		bool IsStartFrom1(void) const { return true; }
 	};
 

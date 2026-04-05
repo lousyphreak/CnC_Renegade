@@ -374,9 +374,9 @@ MenuEntryCtrlClass::Update_State (void)
 				CurrRadiusY = int(5.0F + (25.0F * percent));
 				CurrColor = RGB_TO_INT32 (MaxHilightRedValue * 3, 0, 0);
 
-				uint32 time1 = StartTime;
-				uint32 time2 = time1 + (EndTime - StartTime) / 2;
-				uint32 time3 = EndTime;
+				uint32_t time1 = StartTime;
+				uint32_t time2 = time1 + (EndTime - StartTime) / 2;
+				uint32_t time3 = EndTime;
 
 				if (curr_time >= (int)time2) {
 
@@ -386,8 +386,8 @@ MenuEntryCtrlClass::Update_State (void)
 					//
 					//	Transition the color from start to finish
 					//
-					uint32 start_time	= time2;
-					uint32 end_time	= time3;
+					uint32_t start_time	= time2;
+					uint32_t end_time	= time3;
 					float percent		= float(float(curr_time - start_time) / float(end_time - start_time));
 
 					Vector3 color = start_color + (end_color - start_color) * percent;
@@ -399,8 +399,8 @@ MenuEntryCtrlClass::Update_State (void)
 					Vector3 start_color (MaxHilightRedValue * 3, 0, 0);
 					Vector3 end_color (MaxHilightRedValue * 3, MaxHilightRedValue * 3.0F * 0.6F, 0);
 
-					uint32 start_time	= time1;
-					uint32 end_time	= time2;
+					uint32_t start_time	= time1;
+					uint32_t end_time	= time2;
 					float percent		= float(float(curr_time - start_time) / float(end_time - start_time));
 
 					Vector3 color = start_color + (end_color - start_color) * percent;
@@ -701,7 +701,7 @@ MenuEntryCtrlClass::On_Kill_Focus (DialogControlClass *focus)
 //
 ////////////////////////////////////////////////////////////////
 bool
-MenuEntryCtrlClass::On_Key_Down (uint32 key_id, uint32 key_data)
+MenuEntryCtrlClass::On_Key_Down (uint32_t key_id, uint32_t key_data)
 {
 	bool handled = true;
 
@@ -754,7 +754,7 @@ MenuEntryCtrlClass::On_Key_Down (uint32 key_id, uint32 key_data)
 //
 ////////////////////////////////////////////////////////////////
 bool
-MenuEntryCtrlClass::On_Key_Up (uint32 key_id)
+MenuEntryCtrlClass::On_Key_Up (uint32_t key_id)
 {	
 	return false;
 }

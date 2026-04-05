@@ -59,12 +59,12 @@ namespace WWOnline {
 *
 ******************************************************************************/
 
-GameStartEvent::GameStartEvent(const RefPtr<ChannelData>& channel, const UserList& users, unsigned long gameID) :
+GameStartEvent::GameStartEvent(const RefPtr<ChannelData>& channel, const UserList& users, uint32_t gameID) :
 		mResult(S_OK),
 		mChannel(channel),
 		mGameID(gameID)
 	{
-	for (unsigned int index = 0; index < users.size(); index++)
+	for (uint32_t index = 0; index < users.size(); index++)
 		{
 		mPlayers.push_back(users[index]);
 		}
@@ -192,7 +192,7 @@ void GameStartWait::WaitBeginning(void)
 
 	Observer<GameStartEvent>::NotifyMe(*session);
 
-	HRESULT hr = session->GetChatObject()->RequestGameStart(mPlayers);
+	int32_t hr = session->GetChatObject()->RequestGameStart(mPlayers);
 
 	if (FAILED(hr))
 		{

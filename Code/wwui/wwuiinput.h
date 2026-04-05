@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __WWUIINPUT_H
@@ -99,9 +101,9 @@ public:
 	virtual void				Enter_Menu_Mode (void)	{};
 	virtual void				Exit_Menu_Mode (void)	{};
 
-	bool ProcessMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam, LRESULT& result);
+	bool ProcessMessage(HWND hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam, intptr_t& result);
 	bool ProcessEvent(const SDL_Event &event);
-	void Update_Keyboard_State(BYTE *state) const;
+	void Update_Keyboard_State(uint8_t *state) const;
 
 	void InitIME(HWND hwnd);
 

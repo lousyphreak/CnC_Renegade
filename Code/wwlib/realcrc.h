@@ -38,10 +38,12 @@
 #ifndef REALCRC_H
 #define REALCRC_H
 
+#include <cstdint>
 
-unsigned long	CRC_Memory( const unsigned char *data, unsigned long length, unsigned long crc = 0 );
-unsigned long	CRC_String( const char *string, unsigned long crc = 0 );
-unsigned long	CRC_Stringi( const char *string, unsigned long crc = 0 );
+
+uint32_t	CRC_Memory( const uint8_t *data, uint32_t length, uint32_t crc = 0 );
+uint32_t	CRC_String( const char *string, uint32_t crc = 0 );
+uint32_t	CRC_Stringi( const char *string, uint32_t crc = 0 );
 
 
 #endif

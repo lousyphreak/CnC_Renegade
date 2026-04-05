@@ -113,7 +113,7 @@ WaitCondition::WaitResult FirewallDetectWait::GetResult(void)
 	if (mEndResult == Waiting)
 		{
 		// Wait for pending pings to finish first
-		unsigned int pingsWaiting = mWOLSession->GetPendingPingCount();
+		uint32_t pingsWaiting = mWOLSession->GetPendingPingCount();
 
 		if (mPingsRemaining != pingsWaiting)
 			{
@@ -124,7 +124,7 @@ WaitCondition::WaitResult FirewallDetectWait::GetResult(void)
 
 		if (mPingsRemaining == 0)
 			{
-			DWORD result = WaitForSingleObject(mEvent, 0);
+			uint32_t result = WaitForSingleObject(mEvent, 0);
 
 			if (result == WAIT_OBJECT_0)
 				{
@@ -218,7 +218,7 @@ WaitCondition::WaitResult FirewallConnectWait::GetResult(void)
 	if (mEndResult == Waiting)
 		{
 		// Wait for pending pings to finish first
-		unsigned int pingsWaiting = mWOLSession->GetPendingPingCount();
+		uint32_t pingsWaiting = mWOLSession->GetPendingPingCount();
 
 		if (mPingsRemaining != pingsWaiting)
 			{
@@ -252,7 +252,7 @@ WaitCondition::WaitResult FirewallConnectWait::GetResult(void)
 					mStartTime = TIMEGETTIME();
 					}
 
-				DWORD result = WaitForSingleObject(mEvent, 0);
+				uint32_t result = WaitForSingleObject(mEvent, 0);
 
 				if (result == WAIT_OBJECT_0)
 					{

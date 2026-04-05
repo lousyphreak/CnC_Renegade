@@ -36,7 +36,7 @@ HINSTANCE hInstance;
 int controlsInit = FALSE;
 
 
-BOOL WINAPI DllMain(HINSTANCE hinstDLL,ULONG fdwReason,LPVOID lpvReserved)
+int32_t WINAPI DllMain(HINSTANCE hinstDLL,uint32_t fdwReason,LPVOID lpvReserved)
 {
 	hInstance = hinstDLL;				// Hang on to this DLL's instance handle.
 
@@ -68,7 +68,7 @@ __declspec( dllexport ) ClassDesc* LibClassDesc(int i)
 	}
 }
 
-__declspec( dllexport ) ULONG LibVersion()
+__declspec( dllexport ) uint32_t LibVersion()
 {
 	return VERSION_3DSMAX;
 }

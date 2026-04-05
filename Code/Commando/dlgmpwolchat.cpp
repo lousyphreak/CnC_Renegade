@@ -184,7 +184,7 @@ void MPWolChatMenuClass::On_Init_Dialog(void)
 //	On_Command
 //
 ////////////////////////////////////////////////////////////////
-void MPWolChatMenuClass::On_Command(int ctrl_id, int message_id, DWORD param)
+void MPWolChatMenuClass::On_Command(int ctrl_id, int message_id, uint32_t param)
 {
 	switch (ctrl_id) {
 		case IDC_MENU_BACK_BUTTON:
@@ -312,7 +312,7 @@ void MPWolChatMenuClass::Refresh_Lobby_List(void)
 			if (listIndex >= -1) {
 				// Associate the channel with this lobby entry
 				const ChannelData* channel = lobby.ReferencedObject();
-				list->Set_Entry_Data(listIndex, 0, (uint32)channel);
+				list->Set_Entry_Data(listIndex, 0, (uint32_t)channel);
 
 				UpdateLobbyUserCount(list, listIndex);
 			}
@@ -404,9 +404,9 @@ void MPWolChatMenuClass::Add_Users(void)
 	if (list) {
 		// Loop over all the users
 		const UserList& userList = mChatMgr->GetUserInList();
-		const unsigned int count = userList.size();
+		const uint32_t count = userList.size();
 
-		for (unsigned int index = 0; index < count; ++index) {
+		for (uint32_t index = 0; index < count; ++index) {
 			const RefPtr<UserData>& user = userList[index];
 
 			// Add the user to the list control
@@ -445,9 +445,9 @@ void MPWolChatMenuClass::Remove_Users(void)
 	if (list) {
 		// Loop over all the users
 		const UserList& userList = mChatMgr->GetUserOutList();
-		const unsigned int count = userList.size();
+		const uint32_t count = userList.size();
 
-		for (unsigned int index = 0; index < count; ++index) {
+		for (uint32_t index = 0; index < count; ++index) {
 			const RefPtr<UserData>& user = userList[index];
 			WWASSERT(user.IsValid() && "Invalid user in userlist from WOLChatMgr");
 

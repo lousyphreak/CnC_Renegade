@@ -150,7 +150,7 @@ CameraSettingsFormClass::Update_Controls (void)
 		float far_plane = 0;
 		pcamera_mgr->Get_Camera ()->Get_Clip_Planes (near_plane, far_plane);
 		SetDlgItemInt (IDC_DEPTH_EDIT, (int)far_plane);
-		SendDlgItemMessage (IDC_DEPTH_SPIN, 0, MAKELPARAM ((short)far_plane, 0));
+		SendDlgItemMessage (IDC_DEPTH_SPIN, 0, MAKELPARAM (static_cast<int16_t>(far_plane), 0));
 	}
 
 	return ;
@@ -165,7 +165,7 @@ void
 CameraSettingsFormClass::OnDeltaPosDepthSpin
 (
 	NMHDR* pNMHDR,
-	LRESULT* pResult
+	intptr_t* pResult
 )
 {
 	NM_UPDOWN* pNMUpDown = (NM_UPDOWN*)pNMHDR;
@@ -217,12 +217,12 @@ CameraSettingsFormClass::Set_Depth (int new_depth)
 //
 //  WindowProc
 //
-LRESULT
+intptr_t
 CameraSettingsFormClass::WindowProc
 (
-    UINT message,
-    WPARAM wParam,
-    LPARAM lParam
+    uint32_t message,
+    uintptr_t wParam,
+    intptr_t lParam
 )
 {
 	// Is this the message we are expecting?
@@ -230,7 +230,7 @@ CameraSettingsFormClass::WindowProc
 		
 		// Make sure the controls reflect the current state when we are
 		// shown
-		if ((BOOL)LOWORD (wParam)) {
+		if ((int32_t)LOWORD (wParam)) {
 			Update_Controls ();
 		}
 	} 
@@ -238,4 +238,3 @@ CameraSettingsFormClass::WindowProc
 	// Allow the base class to process this message	
 	return DockableFormClass::WindowProc(message, wParam, lParam);
 }
-

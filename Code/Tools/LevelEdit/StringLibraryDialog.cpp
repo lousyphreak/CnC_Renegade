@@ -119,7 +119,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 StringLibraryDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -163,7 +163,7 @@ StringLibraryDialogClass::OnInitDialog (void)
 void
 StringLibraryDialogClass::OnSize
 (
-	UINT	nType,
+	uint32_t	nType,
 	int	cx,
 	int	cy
 ) 
@@ -286,7 +286,7 @@ void
 StringLibraryDialogClass::OnSelchangeTabCtrl
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 )
 {
 	(*pResult) = 0;

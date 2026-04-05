@@ -45,7 +45,7 @@ protected:
 	bool	write_pivots(ChunkSaveClass & csave);
 	bool	write_pivot_fixups(ChunkSaveClass & csave);
 
-	void	move_single_bone_to_end(unsigned int bone_index);
+	void	move_single_bone_to_end(uint32_t bone_index);
 	int	find_first_bad_bone(void);
 	
 	W3dHierarchyStruct		Header;
@@ -180,7 +180,7 @@ void HTreeHackClass::Load_W3D(ChunkLoadClass & cload)
 
 bool HTreeHackClass::read_pivots(ChunkLoadClass & cload)
 {
-	for (unsigned int pidx=0; pidx < Header.NumPivots; pidx++) {
+	for (uint32_t pidx=0; pidx < Header.NumPivots; pidx++) {
 		if (cload.Read(&Pivots[pidx],sizeof(W3dPivotStruct)) != sizeof(W3dPivotStruct)) {
 			return false;
 		}
@@ -190,7 +190,7 @@ bool HTreeHackClass::read_pivots(ChunkLoadClass & cload)
 
 bool HTreeHackClass::read_pivot_fixups(ChunkLoadClass & cload)
 {
-	for (unsigned int pidx=0; pidx < Header.NumPivots; pidx++) {
+	for (uint32_t pidx=0; pidx < Header.NumPivots; pidx++) {
 		if (cload.Read(&PivotFixups[pidx],sizeof(W3dPivotFixupStruct)) != sizeof(W3dPivotFixupStruct)) {
 			return false;
 		}
@@ -218,7 +218,7 @@ void HTreeHackClass::Save_W3D(ChunkSaveClass & csave)
 
 bool HTreeHackClass::write_pivots(ChunkSaveClass & csave)
 {
-	for (unsigned int pidx=0; pidx < Header.NumPivots; pidx++) {
+	for (uint32_t pidx=0; pidx < Header.NumPivots; pidx++) {
 		if (csave.Write(&Pivots[pidx],sizeof(W3dPivotStruct)) != sizeof(W3dPivotStruct)) {
 			return false;
 		}
@@ -228,7 +228,7 @@ bool HTreeHackClass::write_pivots(ChunkSaveClass & csave)
 
 bool HTreeHackClass::write_pivot_fixups(ChunkSaveClass & csave)
 {
-	for (unsigned int pidx=0; pidx < Header.NumPivots; pidx++) {
+	for (uint32_t pidx=0; pidx < Header.NumPivots; pidx++) {
 		if (csave.Write(&PivotFixups[pidx],sizeof(W3dPivotFixupStruct)) != sizeof(W3dPivotFixupStruct)) {
 			return false;
 		}
@@ -247,7 +247,7 @@ void HTreeHackClass::Move_Bone_To_End(int bone_index)
 	}
 }
 
-void HTreeHackClass::move_single_bone_to_end(unsigned int bone_index)
+void HTreeHackClass::move_single_bone_to_end(uint32_t bone_index)
 {
 	if (bone_index >= Header.NumPivots) {
 		return;
@@ -257,7 +257,7 @@ void HTreeHackClass::move_single_bone_to_end(unsigned int bone_index)
 	W3dPivotStruct tmp_pivot = Pivots[bone_index];
 	W3dPivotFixupStruct tmp_fixup = PivotFixups[bone_index];
 
-	for (unsigned int i=bone_index; i<Header.NumPivots-1; i++) {
+	for (uint32_t i=bone_index; i<Header.NumPivots-1; i++) {
 		Pivots[i] = Pivots[i+1];
 		PivotFixups[i] = PivotFixups[i+1];
 	}
@@ -276,7 +276,7 @@ void HTreeHackClass::move_single_bone_to_end(unsigned int bone_index)
 
 int HTreeHackClass::find_first_bad_bone(void)
 {
-	for (unsigned int i=1; i<Header.NumPivots; i++) {
+	for (uint32_t i=1; i<Header.NumPivots; i++) {
 		if (Pivots[i].ParentIdx > i) {
 			return i;
 		}

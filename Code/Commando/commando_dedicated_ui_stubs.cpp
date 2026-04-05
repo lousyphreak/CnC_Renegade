@@ -53,11 +53,11 @@ const char *VALUE_NAME_PARTICLE_DETAIL = "Particle_Detail";
 
 int DlgMpChangeLanNickname::DialogCount = 0;
 int cClientPingManager::PingNumber = 0;
-DWORD cClientPingManager::TimeSentMs = 0;
-DWORD cClientPingManager::LastRoundTripPingMs = 0;
-DWORD cClientPingManager::AvgRoundTripPingMs = 0;
+uint32_t cClientPingManager::TimeSentMs = 0;
+uint32_t cClientPingManager::LastRoundTripPingMs = 0;
+uint32_t cClientPingManager::AvgRoundTripPingMs = 0;
 bool cClientPingManager::IsAwaitingResponse = false;
-DWORD cClientPingManager::RoundTripPingSamplesMs[cClientPingManager::MAX_SAMPLES] = {};
+uint32_t cClientPingManager::RoundTripPingSamplesMs[cClientPingManager::MAX_SAMPLES] = {};
 SList<cGameChannel> cGameChannelList::ChanList;
 
 bool CDVerifyClass::Get_CD_Path(StringClass &drive_path)
@@ -76,12 +76,12 @@ DlgMsgBox::DlgMsgBox() : PopupDialogClass(0), mUserData(0)
 
 DlgMsgBox::~DlgMsgBox() = default;
 
-bool DlgMsgBox::DoDialog(const WCHAR *, const WCHAR *, DlgMsgBox::Type, Observer<DlgMsgBoxEvent> *, unsigned long)
+bool DlgMsgBox::DoDialog(const WCHAR *, const WCHAR *, DlgMsgBox::Type, Observer<DlgMsgBoxEvent> *, uint32_t)
 {
     return false;
 }
 
-bool DlgMsgBox::DoDialog(int, int, DlgMsgBox::Type, Observer<DlgMsgBoxEvent> *, unsigned long)
+bool DlgMsgBox::DoDialog(int, int, DlgMsgBox::Type, Observer<DlgMsgBoxEvent> *, uint32_t)
 {
     return false;
 }
@@ -91,7 +91,7 @@ bool DlgMPConnectionRefused::DoDialog(const WCHAR *, bool)
     return false;
 }
 
-DlgMPConnect::DlgMPConnect(int teamChoice, unsigned long clanID)
+DlgMPConnect::DlgMPConnect(int teamChoice, uint32_t clanID)
     : PopupDialogClass(0),
       mTeamChoice(teamChoice),
       mClanID(clanID),
@@ -102,7 +102,7 @@ DlgMPConnect::DlgMPConnect(int teamChoice, unsigned long clanID)
 
 DlgMPConnect::~DlgMPConnect() = default;
 
-bool DlgMPConnect::DoDialog(int, unsigned long)
+bool DlgMPConnect::DoDialog(int, uint32_t)
 {
     return false;
 }
@@ -118,7 +118,7 @@ void DlgMPConnect::Failed_To_Connect(void)
     mFailed = true;
 }
 
-void DlgMPConnect::On_Command(int, int, DWORD)
+void DlgMPConnect::On_Command(int, int, uint32_t)
 {
 }
 
@@ -142,7 +142,7 @@ void DlgMpChangeLanNickname::On_Init_Dialog(void)
 {
 }
 
-void DlgMpChangeLanNickname::On_Command(int, int, DWORD)
+void DlgMpChangeLanNickname::On_Command(int, int, uint32_t)
 {
 }
 
@@ -177,12 +177,12 @@ void cClientPingManager::Think(void)
 {
 }
 
-DWORD cClientPingManager::Get_Last_Round_Trip_Ping_Ms(void)
+uint32_t cClientPingManager::Get_Last_Round_Trip_Ping_Ms(void)
 {
     return LastRoundTripPingMs;
 }
 
-DWORD cClientPingManager::Get_Avg_Round_Trip_Ping_Ms(void)
+uint32_t cClientPingManager::Get_Avg_Round_Trip_Ping_Ms(void)
 {
     return AvgRoundTripPingMs;
 }
@@ -230,7 +230,7 @@ void DlgMsgBox::End_Dialog(void)
     PopupDialogClass::End_Dialog();
 }
 
-void DlgMsgBox::On_Command(int, int, DWORD)
+void DlgMsgBox::On_Command(int, int, uint32_t)
 {
 }
 
@@ -267,7 +267,7 @@ MPIngameChatPopupClass::MPIngameChatPopupClass(void)
 
 MPIngameChatPopupClass::~MPIngameChatPopupClass(void) = default;
 void MPIngameChatPopupClass::On_Init_Dialog(void) {}
-void MPIngameChatPopupClass::On_Command(int, int, DWORD) {}
+void MPIngameChatPopupClass::On_Command(int, int, uint32_t) {}
 void MPIngameChatPopupClass::Render(void) {}
 
 #if defined(FREEDEDICATEDSERVER)
@@ -353,7 +353,7 @@ bool StatisticsDisplayManager::Is_Current_Display(const char *)
     return false;
 }
 
-void StatisticsDisplayManager::Set_Stat(const char *, const char *, unsigned long, const Vector2 &)
+void StatisticsDisplayManager::Set_Stat(const char *, const char *, uint32_t, const Vector2 &)
 {
 }
 
@@ -389,7 +389,7 @@ void MainMenuDialogClass::Display(void)
 {
 }
 
-void MainMenuDialogClass::On_Command(int, int, DWORD)
+void MainMenuDialogClass::On_Command(int, int, uint32_t)
 {
 }
 
@@ -430,7 +430,7 @@ EditWheeledVehicleDialogClass::EditWheeledVehicleDialogClass(WheeledVehicleDefCl
 
 EditWheeledVehicleDialogClass::~EditWheeledVehicleDialogClass(void) = default;
 void EditWheeledVehicleDialogClass::On_Init_Dialog(void) {}
-void EditWheeledVehicleDialogClass::On_Command(int, int, DWORD) {}
+void EditWheeledVehicleDialogClass::On_Command(int, int, uint32_t) {}
 
 EditTrackedVehicleDialogClass::EditTrackedVehicleDialogClass(TrackedVehicleDefClass *def, float wheel_radius)
         : PopupDialogClass(0),
@@ -441,9 +441,9 @@ EditTrackedVehicleDialogClass::EditTrackedVehicleDialogClass(TrackedVehicleDefCl
 
 EditTrackedVehicleDialogClass::~EditTrackedVehicleDialogClass(void) = default;
 void EditTrackedVehicleDialogClass::On_Init_Dialog(void) {}
-void EditTrackedVehicleDialogClass::On_Command(int, int, DWORD) {}
+void EditTrackedVehicleDialogClass::On_Command(int, int, uint32_t) {}
 
 void DeathOptionsPopupClass::On_Init_Dialog(void) {}
-void DeathOptionsPopupClass::On_Command(int, int, DWORD) {}
+void DeathOptionsPopupClass::On_Command(int, int, uint32_t) {}
 void FailedOptionsPopupClass::On_Init_Dialog(void) {}
-void FailedOptionsPopupClass::On_Command(int, int, DWORD) {}
+void FailedOptionsPopupClass::On_Command(int, int, uint32_t) {}

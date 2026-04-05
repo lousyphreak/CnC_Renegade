@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -39,6 +41,6 @@
 #ifndef OBSCURE_H
 #define OBSCURE_H
 
-long Obfuscate(char const * string);
+uint32_t Obfuscate(char const * string);
 
 #endif

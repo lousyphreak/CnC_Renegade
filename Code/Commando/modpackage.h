@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __MODPACKAGE_H
@@ -84,14 +86,14 @@ public:
 	//
 	//	CRC Access
 	//
-	uint32					Get_CRC (void);
+	uint32_t					Get_CRC (void);
 	void						Compute_CRC (void);
 
 	//
 	//	Informational
 	//
 	void						Build_Level_List (DynamicVectorClass<StringClass> &list) const;
-	bool						Find_Map_From_CRC (uint32 crc, StringClass *map_name) const;
+	bool						Find_Map_From_CRC (uint32_t crc, StringClass *map_name) const;
 	int						Get_Map_Index (const char *map_name);
 
 protected:
@@ -105,7 +107,7 @@ protected:
 	///////////////////////////////////////////////////////////////////
 	StringClass			Name;	
 	StringClass			PackageFilename;
-	uint32				FileCRC;
+	uint32_t				FileCRC;
 };
 
 

@@ -37,6 +37,8 @@
 #ifndef	ACTION_H
 #define	ACTION_H
 
+#include <cstdint>
+
 #ifndef	ALWAYS_H
 	#include "always.h"
 #endif
@@ -114,7 +116,7 @@ public:
 	bool				Modify( const ActionParamsStruct & parameters, bool modify_move, bool modify_attack );
 
 	void				Act( void );
-	unsigned int	Get_Act_Count( void ) { return ActCount; }
+	uint32_t	Get_Act_Count( void ) { return ActCount; }
 	bool				Is_Active( void );
 	bool				Is_Busy( void );
 
@@ -133,7 +135,7 @@ protected:
 	SafeActionParamsStruct	Parameters;
 	bool							IsPaused;
 
-	unsigned int				ActCount; // TSS - diagnostic
+	uint32_t				ActCount; // TSS - diagnostic
 
 	void				Set_Action_Code( ActionCodeClass * code );
 

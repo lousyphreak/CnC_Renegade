@@ -47,7 +47,7 @@ const char * LOGFILE_EXTENSION		= "txt";
 //
 //	Local prototypes
 //
-BOOL CALLBACK fnTopLevelWindowSearch (HWND hwnd, LPARAM lParam);
+int32_t CALLBACK fnTopLevelWindowSearch (HWND hwnd, intptr_t lParam);
 void Debug_Refs(void);
 
 void init_logfile(void);
@@ -108,7 +108,7 @@ public:
 // Implementation
 protected:
 	//{{AFX_MSG(CAboutDlg)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };
@@ -132,7 +132,7 @@ BEGIN_MESSAGE_MAP(CAboutDlg, CDialog)
 END_MESSAGE_MAP()
 
 
-BOOL CAboutDlg::OnInitDialog() 
+int32_t CAboutDlg::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
 	
@@ -153,7 +153,7 @@ void CPhysTestApp::OnAppAbout()
 /////////////////////////////////////////////////////////////////////////////
 // CPhysTestApp initialization
 
-BOOL CPhysTestApp::InitInstance()
+int32_t CPhysTestApp::InitInstance()
 {
 	AfxEnableControlContainer();
 
@@ -170,7 +170,7 @@ BOOL CPhysTestApp::InitInstance()
 
 	// Is there already an instance of the viewer running?
 	HWND hprev_instance = NULL;
-	::EnumWindows (fnTopLevelWindowSearch, (LPARAM)&hprev_instance);
+	::EnumWindows (fnTopLevelWindowSearch, (intptr_t)&hprev_instance);
 	if (hprev_instance == NULL) {
 
 		// Change the registry key under which our settings are stored.
@@ -256,14 +256,14 @@ int CPhysTestApp::ExitInstance()
 //
 //	fnTopLevelWindowSearch
 //
-BOOL CALLBACK
+int32_t CALLBACK
 fnTopLevelWindowSearch
 (
 	HWND hwnd,
-	LPARAM lParam
+	intptr_t lParam
 )
 {
-	BOOL bcontinue = TRUE;
+	int32_t bcontinue = TRUE;
 
 	// Is this a viewer window?
 	if (::GetProp (hwnd, "WW3DVIEWER") != 0) {

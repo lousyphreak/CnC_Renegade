@@ -567,7 +567,7 @@ TextWindowClass::Set_Item_Color (int index, int col_index, const Vector3 &color)
 //
 ////////////////////////////////////////////////////////////////
 bool
-TextWindowClass::Set_Item_Data (int index, uint32 user_data)
+TextWindowClass::Set_Item_Data (int index, uint32_t user_data)
 {
 	//
 	//	Store the user data in the first column
@@ -582,7 +582,7 @@ TextWindowClass::Set_Item_Data (int index, uint32 user_data)
 //	Get_Item_Data
 //
 ////////////////////////////////////////////////////////////////
-uint32
+uint32_t
 TextWindowClass::Get_Item_Data (int index)
 {
 	//

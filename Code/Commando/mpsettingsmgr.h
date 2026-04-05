@@ -170,7 +170,7 @@ private:
 	static int								OptionFlags;
 
 #ifdef OBSOLETE
-	typedef std::map<const char*, int> GameModeMap;
+	typedef std::map<const char*, int32_t> GameModeMap;
 	static GameModeMap _mModePrefs;
 #endif
 };

@@ -212,7 +212,7 @@ END_MESSAGE_MAP()
 //	Modified: 12/06/2001 by	MML	- Retrieving strings from Locomoto file.
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 PerformanceConfigDialogClass::OnInitDialog (void)
 {
 	char string [_MAX_PATH];
@@ -423,7 +423,7 @@ PerformanceConfigDialogClass::Load_Values (void)
 		//
 		//	Check the checkbox controls (if necessary)
 		//
-		SendDlgItemMessage (IDC_TERRAIN_SHADOW_CHECK, BM_SETCHECK, (WPARAM)(static_shadows != 0));
+		SendDlgItemMessage (IDC_TERRAIN_SHADOW_CHECK, BM_SETCHECK, (uintptr_t)(static_shadows != 0));
 		
 		//
 		//	Select the correct setting from the lighting mode combo box
@@ -609,8 +609,8 @@ PerformanceConfigDialogClass::Update_Expert_Controls (int level)
 void
 PerformanceConfigDialogClass::OnHScroll
 (
-	UINT				nSBCode,
-	UINT				nPos,
+	uint32_t				nSBCode,
+	uint32_t				nPos,
 	CScrollBar *	pScrollBar
 )
 {
@@ -699,12 +699,12 @@ PerformanceConfigDialogClass::Apply_Changes (void)
 // WindowProc
 //
 /////////////////////////////////////////////////////////////////////////////
-LRESULT
+intptr_t
 PerformanceConfigDialogClass::WindowProc
 (
-	UINT		message,
-	WPARAM	wParam,
-	LPARAM	lParam
+	uint32_t		message,
+	uintptr_t	wParam,
+	intptr_t	lParam
 )
 {
 	if (message == (WM_USER + 101)) {
@@ -805,7 +805,7 @@ void AutoConfigSettings()
 		for (int adapter_index=0; adapter_index<adapter_count; adapter_index++) {
 			D3DADAPTER_IDENTIFIER8 id;
 			::ZeroMemory(&id, sizeof(D3DADAPTER_IDENTIFIER8));
-			HRESULT res = d3d->GetAdapterIdentifier(adapter_index,D3DENUM_NO_WHQL_LEVEL,&id);
+			int32_t res = d3d->GetAdapterIdentifier(adapter_index,D3DENUM_NO_WHQL_LEVEL,&id);
 			// If device ok, check if it matches the currently set adapter name
 			if (res == D3D_OK) {
 				StringClass name(id.Description,true);
@@ -1089,7 +1089,7 @@ void AutoConfigSettings()
 //
 /////////////////////////////////////////////////////////////////////////////
 void
-PerformanceConfigDialogClass::OnShowWindow(BOOL bShow, UINT nStatus) 
+PerformanceConfigDialogClass::OnShowWindow(int32_t bShow, uint32_t nStatus) 
 {
 	char string[ _MAX_PATH ];
 
@@ -1129,7 +1129,7 @@ PerformanceConfigDialogClass::OnShowWindow(BOOL bShow, UINT nStatus)
 			char cur_sel_string[256];
 			unsigned sel=SendDlgItemMessage (IDC_LIGHTING_MODE_COMBO, CB_GETCURSEL, 0, 0);
 			if (sel!=CB_ERR) {
-				SendDlgItemMessage (IDC_LIGHTING_MODE_COMBO, CB_GETLBTEXT, sel, (LPARAM)cur_sel_string);
+				SendDlgItemMessage (IDC_LIGHTING_MODE_COMBO, CB_GETLBTEXT, sel, (intptr_t)cur_sel_string);
 			}
 			else {
 				cur_sel_string[0]=0;
@@ -1138,16 +1138,16 @@ PerformanceConfigDialogClass::OnShowWindow(BOOL bShow, UINT nStatus)
 
 			// Reset content and add available modes
 			SendDlgItemMessage (IDC_LIGHTING_MODE_COMBO, CB_RESETCONTENT, 0, 0);
-			SendDlgItemMessage (IDC_LIGHTING_MODE_COMBO, CB_ADDSTRING, 0, (LPARAM)Locale_GetString( IDS_VERTEX, string ));
+			SendDlgItemMessage (IDC_LIGHTING_MODE_COMBO, CB_ADDSTRING, 0, (intptr_t)Locale_GetString( IDS_VERTEX, string ));
 			if (caps.Can_Do_Multi_Pass()) {
-				SendDlgItemMessage (IDC_LIGHTING_MODE_COMBO, CB_ADDSTRING, 0, (LPARAM)Locale_GetString( IDS_MULTI_PASS, string ));
+				SendDlgItemMessage (IDC_LIGHTING_MODE_COMBO, CB_ADDSTRING, 0, (intptr_t)Locale_GetString( IDS_MULTI_PASS, string ));
 			}
 			if (caps.Get_Max_Textures_Per_Pass()>1) {
-				SendDlgItemMessage (IDC_LIGHTING_MODE_COMBO, CB_ADDSTRING, 0, (LPARAM)Locale_GetString( IDS_MULTI_TEXTURE, string ));	
+				SendDlgItemMessage (IDC_LIGHTING_MODE_COMBO, CB_ADDSTRING, 0, (intptr_t)Locale_GetString( IDS_MULTI_TEXTURE, string ));	
 			}
 
 			// Try to set the previous selection
-			unsigned res=SendDlgItemMessage (IDC_LIGHTING_MODE_COMBO, CB_FINDSTRINGEXACT, -1, (LPARAM)cur_sel_string);
+			unsigned res=SendDlgItemMessage (IDC_LIGHTING_MODE_COMBO, CB_FINDSTRINGEXACT, -1, (intptr_t)cur_sel_string);
 			if (res==CB_ERR) {
 				if (sel==0) res=0;
 				else {
@@ -1164,21 +1164,21 @@ PerformanceConfigDialogClass::OnShowWindow(BOOL bShow, UINT nStatus)
 			// Get the current selection
 			sel=SendDlgItemMessage (IDC_TEXTURE_FILTER_COMBO, CB_GETCURSEL, 0, 0);
 			if (sel!=CB_ERR) {
-				SendDlgItemMessage (IDC_TEXTURE_FILTER_COMBO, CB_GETLBTEXT, sel, (LPARAM)cur_sel_string);
+				SendDlgItemMessage (IDC_TEXTURE_FILTER_COMBO, CB_GETLBTEXT, sel, (intptr_t)cur_sel_string);
 			}
 			else {
 				cur_sel_string[0]=0;
 				sel=registry.Get_Int (VALUE_NAME_TEXTURE_FILTER, TextureClass::TEXTURE_FILTER_BILINEAR);
 			}
 			SendDlgItemMessage (IDC_TEXTURE_FILTER_COMBO, CB_RESETCONTENT, 0, 0);
-			SendDlgItemMessage (IDC_TEXTURE_FILTER_COMBO, CB_ADDSTRING, 0, (LPARAM)Locale_GetString( IDS_BILINEAR, string ));
-			SendDlgItemMessage (IDC_TEXTURE_FILTER_COMBO, CB_ADDSTRING, 0, (LPARAM)Locale_GetString( IDS_TRILINEAR, string ));
+			SendDlgItemMessage (IDC_TEXTURE_FILTER_COMBO, CB_ADDSTRING, 0, (intptr_t)Locale_GetString( IDS_BILINEAR, string ));
+			SendDlgItemMessage (IDC_TEXTURE_FILTER_COMBO, CB_ADDSTRING, 0, (intptr_t)Locale_GetString( IDS_TRILINEAR, string ));
 			if (caps.Support_Anisotropic_Filtering()) {
-				SendDlgItemMessage (IDC_TEXTURE_FILTER_COMBO, CB_ADDSTRING, 0, (LPARAM)Locale_GetString( IDS_ANISOTROPIC, string ));	
+				SendDlgItemMessage (IDC_TEXTURE_FILTER_COMBO, CB_ADDSTRING, 0, (intptr_t)Locale_GetString( IDS_ANISOTROPIC, string ));	
 			}
 
 			// Try to set the previous selection
-			res=SendDlgItemMessage (IDC_TEXTURE_FILTER_COMBO, CB_FINDSTRINGEXACT, -1, (LPARAM)cur_sel_string);
+			res=SendDlgItemMessage (IDC_TEXTURE_FILTER_COMBO, CB_FINDSTRINGEXACT, -1, (intptr_t)cur_sel_string);
 			if (res==CB_ERR) {
 				if (sel==0) res=0;
 				else {

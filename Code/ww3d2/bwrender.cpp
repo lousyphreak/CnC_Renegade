@@ -42,7 +42,7 @@
 #include <string.h>
 
 
-BWRenderClass::Buffer::Buffer(unsigned char* buffer_, int scale_)
+BWRenderClass::Buffer::Buffer(uint8_t* buffer_, int scale_)
 	:
 	buffer(buffer_),
 	scale(scale_),
@@ -60,7 +60,7 @@ void BWRenderClass::Buffer::Set_H_Line(int start_x, int end_x, int y)
 	if (y<minv || y>=maxv || end_x<minv || start_x>=maxv) return;
 	if (start_x<minv) start_x=minv;
 	if (end_x>=maxv) end_x=maxv-1;
-	unsigned char* ptr=buffer+scale*y+start_x;
+	uint8_t* ptr=buffer+scale*y+start_x;
 	int w=end_x-start_x;
 	if (w) {
 		::memset(ptr,0x00,w);
@@ -78,14 +78,14 @@ void BWRenderClass::Buffer::Set_H_Line(int start_x, int end_x, int y)
 	}
 }
 
-void BWRenderClass::Buffer::Fill(unsigned char c)
+void BWRenderClass::Buffer::Fill(uint8_t c)
 {
 	memset(buffer,c,scale*scale);
 }
 
 // ------------------------------------------------------------------------------
 
-BWRenderClass::BWRenderClass(unsigned char* buffer, int buffer_scale)
+BWRenderClass::BWRenderClass(uint8_t* buffer, int buffer_scale)
 	:
 	pixel_buffer(buffer,buffer_scale)
 {
@@ -95,7 +95,7 @@ BWRenderClass::~BWRenderClass()
 {
 }
 
-void BWRenderClass::Fill(unsigned char c)
+void BWRenderClass::Fill(uint8_t c)
 {
 	pixel_buffer.Fill(c);
 }
@@ -129,7 +129,7 @@ static inline bool Cull(
 	return true;
 }
 
-void BWRenderClass::Render_Triangle_Strip(const unsigned long* indices,int index_count)
+void BWRenderClass::Render_Triangle_Strip(const uint32_t* indices,int index_count)
 {
 	index_count-=2;
 	bool b=false;
@@ -159,7 +159,7 @@ void BWRenderClass::Render_Triangle_Strip(const unsigned long* indices,int index
 	}
 }
 
-void BWRenderClass::Render_Triangles(const unsigned long* indices,int index_count)
+void BWRenderClass::Render_Triangles(const uint32_t* indices,int index_count)
 {
 	index_count/=3;
 	for (int n=0;n<index_count;++n) {

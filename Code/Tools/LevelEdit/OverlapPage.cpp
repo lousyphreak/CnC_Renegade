@@ -128,7 +128,7 @@ END_MESSAGE_MAP()
 void
 OverlapPageClass::OnSize
 (
-	UINT	nType,
+	uint32_t	nType,
 	int	cx,
 	int	cy
 ) 
@@ -207,7 +207,7 @@ OverlapPageClass::OnDestroy (void)
 //  OnInitDialog
 //
 ////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 OverlapPageClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -246,7 +246,7 @@ void
 OverlapPageClass::OnDeleteitemOverlapTree
 (
 	NMHDR *	pNMHDR,
-	LRESULT *pResult
+	intptr_t *pResult
 ) 
 {
 	NM_TREEVIEW* pNMTreeView = (NM_TREEVIEW*)pNMHDR;
@@ -398,20 +398,20 @@ void
 OverlapPageClass::OnDblclkOverlapTree
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 ) 
 {
 	//
 	// Determine what client-coord location was double-clicked on
 	//
-	DWORD mouse_pos = ::GetMessagePos ();
+	uint32_t mouse_pos = ::GetMessagePos ();
 	POINT hit_point = { GET_X_LPARAM (mouse_pos), GET_Y_LPARAM (mouse_pos) };
 	m_TreeCtrl.ScreenToClient (&hit_point);
 
 	//
 	// Goto the node that was double-clicked on (if possible)
 	//
-	UINT flags				= 0;
+	uint32_t flags				= 0;
 	HTREEITEM tree_item	= m_TreeCtrl.HitTest (hit_point, &flags);
 	if (tree_item != NULL && flags & TVHT_ONITEMLABEL) {
 		
@@ -443,7 +443,7 @@ void
 OverlapPageClass::OnItemexpandedOverlapTree
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 )
 {
 	NM_TREEVIEW* pNMTreeView = (NM_TREEVIEW*)pNMHDR;
@@ -452,7 +452,7 @@ OverlapPageClass::OnItemexpandedOverlapTree
 	// If this is a folder, then change its image based
 	// on its expanded state.
 	//
-	uint32 node_id = m_TreeCtrl.GetItemData (pNMTreeView->itemNew.hItem);
+	uint32_t node_id = m_TreeCtrl.GetItemData (pNMTreeView->itemNew.hItem);
 	if (node_id == 0) {
 		if (pNMTreeView->itemNew.state & TVIS_EXPANDED) {
 			m_TreeCtrl.SetItemImage (pNMTreeView->itemNew.hItem, OPEN_FOLDER_ICON, OPEN_FOLDER_ICON);

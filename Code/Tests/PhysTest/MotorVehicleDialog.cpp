@@ -80,7 +80,7 @@ void CMotorVehicleDialog::SetDlgItemFloat(int controlid,float val)
 	SetDlgItemText(controlid,string);
 }
 
-BOOL CMotorVehicleDialog::OnInitDialog() 
+int32_t CMotorVehicleDialog::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
 	m_TorqueSpin.SetRange(MIN_TORQUE * 100,MAX_TORQUE * 100);
@@ -91,7 +91,7 @@ BOOL CMotorVehicleDialog::OnInitDialog()
 	return TRUE;
 }
 
-BOOL CMotorVehicleDialog::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult) 
+int32_t CMotorVehicleDialog::OnNotify(uintptr_t wParam, intptr_t lParam, intptr_t* pResult) 
 {
 	// make the spin controls work...
 	switch(wParam) 

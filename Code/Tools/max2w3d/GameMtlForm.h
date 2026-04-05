@@ -39,6 +39,8 @@
 #ifndef GAMEMTLFORM_H
 #define GAMEMTLFORM_H
 
+#include <cstdint>
+
 #include "FormClass.h"
 
 class GameMtl;
@@ -51,20 +53,20 @@ public:
 	TimeValue GetTime(){ return GetCOREInterface()->GetTime();}
 	virtual void MtlChanged(){};  
 	virtual HWND AddRollupPage( HINSTANCE hInst, DLGTEMPLATE *dlgTemplate, 
-		DLGPROC dlgProc, TCHAR *title, LPARAM param=0,DWORD flags=0, int category = ROLLUP_CAT_STANDARD ){return NULL;}
+		DLGPROC dlgProc, TCHAR *title, intptr_t param=0,uint32_t flags=0, int category = ROLLUP_CAT_STANDARD ){return NULL;}
 	virtual HWND AddRollupPage( HINSTANCE hInst, TCHAR *dlgTemplate, 
-		DLGPROC dlgProc, TCHAR *title, LPARAM param=0,DWORD flags=0, int category = ROLLUP_CAT_STANDARD ){return NULL;};
+		DLGPROC dlgProc, TCHAR *title, intptr_t param=0,uint32_t flags=0, int category = ROLLUP_CAT_STANDARD ){return NULL;};
 
 	virtual HWND ReplaceRollupPage( HWND hOldRollup, HINSTANCE hInst, TCHAR *dlgTemplate, 
-		DLGPROC dlgProc, TCHAR *title, LPARAM param=0,DWORD flags=0, int category = ROLLUP_CAT_STANDARD  ){return NULL;}
+		DLGPROC dlgProc, TCHAR *title, intptr_t param=0,uint32_t flags=0, int category = ROLLUP_CAT_STANDARD  ){return NULL;}
 
 	virtual HWND ReplaceRollupPage( HWND hOldRollup, HINSTANCE hInst, DLGTEMPLATE *dlgTemplate, 
-		DLGPROC dlgProc, TCHAR *title, LPARAM param=0,DWORD flags=0, int category = ROLLUP_CAT_STANDARD  ){return NULL;};
+		DLGPROC dlgProc, TCHAR *title, intptr_t param=0,uint32_t flags=0, int category = ROLLUP_CAT_STANDARD  ){return NULL;};
 
 	virtual void DeleteRollupPage( HWND hRollup ){};
 
 	
-	virtual void RollupMouseMessage( HWND hDlg, UINT message,WPARAM wParam, LPARAM lParam ){};
+	virtual void RollupMouseMessage( HWND hDlg, uint32_t message,uintptr_t wParam, intptr_t lParam ){};
 	virtual void RegisterTimeChangeCallback(TimeChangeCallback *tc){}
 	virtual void UnRegisterTimeChangeCallback(TimeChangeCallback *tc){}
 

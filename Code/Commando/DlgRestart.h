@@ -37,6 +37,8 @@
 #ifndef __DLGRESTART_H__
 #define __DLGRESTART_H__
 
+#include <cstdint>
+
 #include <WWUI\PopupDialog.h>
 
 class DlgRestart :
@@ -50,7 +52,7 @@ class DlgRestart :
 		virtual ~DlgRestart();
 
 		void On_Init_Dialog(void);
-		void On_Command(int ctrl, int message, DWORD param);
+		void On_Command(int ctrl, int message, uint32_t param);
 
 	private:
 		// Prevent copy and assignment

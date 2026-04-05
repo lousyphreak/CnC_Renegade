@@ -37,6 +37,8 @@
 #ifndef	TEXTDISPLAY_H
 #define	TEXTDISPLAY_H
 
+#include <cstdint>
+
 #ifndef	ALWAYS_H
 	#include "always.h"
 #endif
@@ -87,13 +89,13 @@ public:
 class	TextDisplayLine {
 
 public:
-	TextDisplayLine( const WideStringClass & text, unsigned long color );
+	TextDisplayLine( const WideStringClass & text, uint32_t color );
 
 	float	Update_Time( float seconds )	{ Time += seconds; return Time; }
 	int	Get_Line_Count( void )			{ return LineCount; }
 
 	WideStringClass	Text;
-	unsigned long		Color;
+	uint32_t		Color;
 	float					Time;
 	int					LineCount;
 };
@@ -157,7 +159,7 @@ private:
 	Render2DTextClass	*		VerboseDisplay = NULL;
 	Render2DTextClass	*		StatisticsDisplay = NULL;
 	DynamicVectorClass<WideStringClass> RendererLines;
-	DynamicVectorClass<unsigned long> RendererColors;
+	DynamicVectorClass<uint32_t> RendererColors;
 	float							DisplayY = 0.0f;
 
 	SList<TextDisplayLine>	ScrollLines;
@@ -190,7 +192,7 @@ public:
 	static	void	Render( Render2DTextClass * renderer );
 	static	void	Set_Display( const char * title );
 	static	bool	Is_Current_Display( const char* title); // Returns true if "title" is currently active
-	static	void	Set_Stat( const char * title, const char * text, unsigned long color = 0xffffffff, const Vector2& location = Vector2( 0, -240 ) );
+	static	void	Set_Stat( const char * title, const char * text, uint32_t color = 0xffffffff, const Vector2& location = Vector2( 0, -240 ) );
 };
 
 #endif

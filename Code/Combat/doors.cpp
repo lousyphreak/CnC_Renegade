@@ -82,7 +82,7 @@ DoorPhysDefClass::DoorPhysDefClass( void ) :
 	EDITABLE_PARAM(DoorPhysDefClass, ParameterClass::TYPE_BOOL,	DoorOpensForVehicles);
 }
 
-uint32	DoorPhysDefClass::Get_Class_ID (void) const
+uint32_t	DoorPhysDefClass::Get_Class_ID (void) const
 {
 	return CLASSID_DOORPHYSDEF;
 }

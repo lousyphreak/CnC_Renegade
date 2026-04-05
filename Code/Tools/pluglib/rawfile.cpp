@@ -636,7 +636,7 @@ void RawFileClass::Close(void)
  *=============================================================================================*/
 int RawFileClass::Read(void * buffer, int size)
 {
-	long	bytesread = 0;			// Running count of the number of bytes read into the buffer.
+	int32_t	bytesread = 0;			// Running count of the number of bytes read into the buffer.
 	int	opened = false;		// Was the file opened by this routine?
 
 	/*
@@ -663,7 +663,7 @@ int RawFileClass::Read(void * buffer, int size)
 		size = size < remainder ? size : remainder;
 	}
 
-	long total = 0;
+	int32_t total = 0;
 	while (size > 0) {
 		bytesread = 0;
 
@@ -675,7 +675,7 @@ int RawFileClass::Read(void * buffer, int size)
 			if ((bytesread == 0)&&( ! feof(Handle)))
 				readok=ferror(Handle);
 		#else
-			readok=ReadFile(Handle, buffer, size, &(unsigned long&)bytesread, NULL);
+			readok=ReadFile(Handle, buffer, size, &(uint32_t&)bytesread, NULL);
 		#endif
 			
 
@@ -720,7 +720,7 @@ int RawFileClass::Read(void * buffer, int size)
  *=============================================================================================*/
 int RawFileClass::Write(void const * buffer, int size)
 {
-	long	byteswritten = 0;
+	int32_t	byteswritten = 0;
 	int	opened = false;		// Was the file manually opened?
 
 	/*
@@ -741,7 +741,7 @@ int RawFileClass::Write(void const * buffer, int size)
 		if (byteswritten != size)
 			writeok = FALSE;
 	#else
-		writeok=WriteFile(Handle, buffer, size, &(unsigned long&)byteswritten, NULL);
+		writeok=WriteFile(Handle, buffer, size, &(uint32_t&)byteswritten, NULL);
 	#endif
 
 	if (! writeok) {
@@ -824,7 +824,7 @@ int RawFileClass::Seek(int pos, int dir)
 		/*
 		**	Perform the modified raw seek into the file.
 		*/
-		long newpos = Raw_Seek(pos, dir) - BiasStart;
+		int32_t newpos = Raw_Seek(pos, dir) - BiasStart;
 
 		/*
 		**	Perform a final double check to make sure the file position fits with the bias range.
@@ -1045,7 +1045,7 @@ int RawFileClass::Delete(void)
  *   11/14/1995 DRD : Created.                                                                 *
  *   07/13/1996 JLB : Handles win32 method.                                                    *
  *=============================================================================================*/
-unsigned long RawFileClass::Get_Date_Time(void)
+uint32_t RawFileClass::Get_Date_Time(void)
 {
 #ifdef _UNIX
 	struct stat statbuf;
@@ -1055,8 +1055,8 @@ unsigned long RawFileClass::Get_Date_Time(void)
 	BY_HANDLE_FILE_INFORMATION info;
 
 	if (GetFileInformationByHandle(Handle, &info)) {
-		WORD dosdate;
-		WORD dostime;
+		uint16_t dosdate;
+		uint16_t dostime;
 		FileTimeToDosDateTime(&info.ftLastWriteTime, &dosdate, &dostime);
 		return((dosdate << 16) | dostime);
 	}
@@ -1080,7 +1080,7 @@ unsigned long RawFileClass::Get_Date_Time(void)
  *   11/14/1995 DRD : Created.                                                                 *
  *   07/13/1996 JLB : Handles win 32 method                                                    *
  *=============================================================================================*/
-bool RawFileClass::Set_Date_Time(unsigned long datetime)
+bool RawFileClass::Set_Date_Time(uint32_t datetime)
 {
 #ifdef _UNIX
 	assert(0);
@@ -1091,7 +1091,7 @@ bool RawFileClass::Set_Date_Time(unsigned long datetime)
 
 		if (GetFileInformationByHandle(Handle, &info)) {
 			FILETIME filetime;
-			if (DosDateTimeToFileTime((WORD)(datetime >> 16), (WORD)(datetime & 0x0FFFF), &filetime)) {
+			if (DosDateTimeToFileTime((uint16_t)(datetime >> 16), (uint16_t)(datetime & 0x0FFFF), &filetime)) {
 				return(SetFileTime(Handle, &info.ftCreationTime, &filetime, &filetime) != 0);
 			}
 		}
@@ -1178,7 +1178,7 @@ int RawFileClass::Raw_Seek(int pos, int dir)
 		if (fseek(Handle, pos, dir) != 0) {
 			pos = 0xFFFFFFFF;
 		} else {
-			long newpos = ftell(Handle);
+			int32_t newpos = static_cast<int32_t>(ftell(Handle));
 			pos = (newpos >= 0) ? static_cast<int>(newpos) : 0xFFFFFFFF;
 		}
    #else
@@ -1264,4 +1264,3 @@ void RawFileClass::Detach (void)
 	Allocated = false;
 	Handle = NULL_HANDLE;	
 }
-

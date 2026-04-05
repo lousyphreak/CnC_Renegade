@@ -79,7 +79,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 EditStringTwiddlerDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -118,7 +118,7 @@ EditStringTwiddlerDialogClass::OnInitDialog (void)
 	//	Select the CODE ID so the user can enter a valid ID
 	//
 	::SetFocus (::GetDlgItem (m_hWnd, IDC_CODEID_EDIT));
-	SendDlgItemMessage (IDC_CODEID_EDIT, EM_SETSEL, (WPARAM)0, (LPARAM)-1);
+	SendDlgItemMessage (IDC_CODEID_EDIT, EM_SETSEL, (uintptr_t)0, (intptr_t)-1);
 
 	return FALSE;
 }
@@ -230,7 +230,7 @@ EditStringTwiddlerDialogClass::OnOK (void)
 //
 /////////////////////////////////////////////////////////////////////////////
 void
-EditStringTwiddlerDialogClass::OnKeydownListctrl (NMHDR *pNMHDR, LRESULT *pResult)
+EditStringTwiddlerDialogClass::OnKeydownListctrl (NMHDR *pNMHDR, intptr_t *pResult)
 {
 	LV_KEYDOWN *pLVKeyDown = (LV_KEYDOWN*)pNMHDR;
 	*pResult = 0;

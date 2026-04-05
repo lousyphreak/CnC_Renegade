@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __COMBOBOX_CTRL_H
@@ -81,7 +83,7 @@ public:
 	void				Set_Window_Pos (const Vector2 &pos);
 	void				Render (void);
 
-	void Set_Style(DWORD style);
+	void Set_Style(uint32_t style);
 
 	//
 	//	Content control
@@ -90,8 +92,8 @@ public:
 	void				Delete_String (int index);
 	int				Find_String (const WCHAR* string)		{ return DropDownCtrl.Find_String (string); }
 	int				Select_String (const WCHAR* string);
-	void				Set_Item_Data (int index, uint32 data)				{ DropDownCtrl.Set_Item_Data (index, data); Set_Dirty();}
-	uint32			Get_Item_Data (int index)								{ return DropDownCtrl.Get_Item_Data (index); }
+	void				Set_Item_Data (int index, uint32_t data)				{ DropDownCtrl.Set_Item_Data (index, data); Set_Dirty();}
+	uint32_t			Get_Item_Data (int index)								{ return DropDownCtrl.Get_Item_Data (index); }
 	void				Reset_Content (void)										{ DropDownCtrl.Reset_Content (); }
 	bool				Get_String (int index, WideStringClass &string)	{ return DropDownCtrl.Get_String (index, string); }
 	
@@ -117,7 +119,7 @@ protected:
 	void				On_Set_Focus (void);
 	void				On_Kill_Focus (DialogControlClass *focus);
 	void				On_Mouse_Wheel (int direction);
-	bool				On_Key_Down (uint32 key_id, uint32 key_data);
+	bool				On_Key_Down (uint32_t key_id, uint32_t key_data);
 	void				On_Create (void);
 	void				On_Destroy (void);
 	void				Update_Client_Rect (void);
@@ -131,7 +133,7 @@ protected:
 	//
 	void				On_Drop_Down_End (int curr_sel);
 	void				On_EditCtrl_Change(EditCtrlClass* edit_ctrl, int ctrl_id);
-	bool				On_EditCtrl_Key_Down(EditCtrlClass* edit_ctrl, uint32 key_id, uint32 key_data);
+	bool				On_EditCtrl_Key_Down(EditCtrlClass* edit_ctrl, uint32_t key_id, uint32_t key_data);
 
 	////////////////////////////////////////////////////////////////
 	//	Protected member data

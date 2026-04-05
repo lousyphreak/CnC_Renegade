@@ -108,7 +108,7 @@ FontCharsClass::FontCharsClass(void) :
 	FirstUnicodeChar(0xFFFF),
 	LastUnicodeChar(0),
 	IsBold(false),
-	BufferList(sizeof(PreAllocatedBufferList) / sizeof(uint16 *), PreAllocatedBufferList)
+	BufferList(sizeof(PreAllocatedBufferList) / sizeof(uint16_t *), PreAllocatedBufferList)
 {
 	::memset(ASCIICharArray, 0, sizeof(ASCIICharArray));
 }
@@ -146,7 +146,7 @@ int FontCharsClass::Get_Char_Spacing(WCHAR ch)
 	return width > 0 ? width + 1 : 0;
 }
 
-void FontCharsClass::Blit_Char(WCHAR ch, uint16 * dest_ptr, int dest_stride, int x, int y)
+void FontCharsClass::Blit_Char(WCHAR ch, uint16_t * dest_ptr, int dest_stride, int x, int y)
 {
 	if (dest_ptr == NULL || dest_stride <= 0) {
 		return;
@@ -368,7 +368,7 @@ void Render2DSentenceClass::Build_Sentence(const WCHAR * text)
 	DrawExtents.Set(0.0f, 0.0f, extents.X, extents.Y);
 }
 
-void Render2DSentenceClass::Draw_Sentence(uint32)
+void Render2DSentenceClass::Draw_Sentence(uint32_t)
 {
 	const float width = DrawExtents.Width();
 	const float height = DrawExtents.Height();

@@ -35,6 +35,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #if defined(_MSV_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef	CNETWORK_H
@@ -173,7 +175,7 @@ public:
 
 	static void Set_Graphing_Y(float y)						{GraphingY = y;}
 
-   static void Init_Client(unsigned short my_port = 0);
+   static void Init_Client(uint16_t my_port = 0);
    static void Init_Server(void);
 
    static void Cleanup_Server(void);

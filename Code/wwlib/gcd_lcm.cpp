@@ -34,8 +34,9 @@
  * Functions:                                                                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #include "gcd_lcm.h"
+#include <cstdint>
 
-unsigned int Greatest_Common_Divisor(unsigned int a, unsigned int b)
+uint32_t Greatest_Common_Divisor(uint32_t a, uint32_t b)
 {
 	// This uses Euclid's algorithm
 	if (b == 0) {
@@ -46,7 +47,7 @@ unsigned int Greatest_Common_Divisor(unsigned int a, unsigned int b)
 }
 
 
-unsigned int Least_Common_Multiple(unsigned int a, unsigned int b)
+uint32_t Least_Common_Multiple(uint32_t a, uint32_t b)
 {
 	return (a * b) / Greatest_Common_Divisor(a, b);
 }

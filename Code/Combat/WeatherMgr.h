@@ -37,6 +37,8 @@
 #ifndef WEATHERMGR_H
 #define WEATHERMGR_H
 
+#include <cstdint>
+
 
 // Code controlling defines.
 #define WEATHER_PARTICLE_SORT 0
@@ -183,9 +185,9 @@ class WeatherSystemClass : public RenderObjClass
 				Vector3			 CurrentPosition;		// Current position of particle (in world space).
 				Vector3			 SurfaceNormal;		// Normal of surface particle collides with (if any).
 
-				unsigned char	 Page;					// Texture page for this particle.
-				unsigned char	 RenderMode;
-				unsigned char	 Pad [2];				// Pad structure to 4-byte multiple.
+				uint8_t	 Page;					// Texture page for this particle.
+				uint8_t	 RenderMode;
+				uint8_t	 Pad [2];				// Pad structure to 4-byte multiple.
 		};
 
 	protected:
@@ -337,7 +339,7 @@ class	WeatherMgrClass : public SaveLoadSubSystemClass, public NetworkObjectClass
 		 WeatherMgrClass();
 		~WeatherMgrClass() {}
 
-		uint32		Chunk_ID() const	{return (CHUNKID_WEATHER_MGR);}
+		uint32_t		Chunk_ID() const	{return (CHUNKID_WEATHER_MGR);}
 		const char *Name() const		{return ("WeatherMgrClass");}
 		void Delete (void)				{}
 		virtual void Set_Delete_Pending (void) {};

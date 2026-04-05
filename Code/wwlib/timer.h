@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -145,7 +147,7 @@ inline BasicTimerClass<T>::~BasicTimerClass(void)
 
 
 //template<class T>
-//inline unsigned long BasicTimerClass<T>::Value(void) const
+//inline uint32_t BasicTimerClass<T>::Value(void) const
 //{
 //	return(Timer()-Started);
 //}

@@ -173,7 +173,7 @@ typedef SimpleParameterClass<Vector3,	ParameterClass::TYPE_VECTOR3>		Vector3Para
 typedef SimpleParameterClass<Matrix3D, ParameterClass::TYPE_MATRIX3D>	Matrix3DParameterClass;
 typedef SimpleParameterClass<RectClass,ParameterClass::TYPE_RECT>			RectParameterClass;
 typedef SimpleParameterClass<Vector3,	ParameterClass::TYPE_COLOR	>		ColorParameterClass;
-typedef SimpleParameterClass<int,		ParameterClass::TYPE_STRINGSDB_ID>	StringsDBEntryParameterClass;
+typedef SimpleParameterClass<int32_t,	ParameterClass::TYPE_STRINGSDB_ID>	StringsDBEntryParameterClass;
 
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -244,4 +244,3 @@ public:
 };
 
 #endif //__SIMPLE_PARAMETER_H
-

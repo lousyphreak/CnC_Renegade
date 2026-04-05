@@ -36,6 +36,8 @@
 #ifndef _MESSAGE_BOX_H
 #define _MESSAGE_BOX_H
 
+#include <cstdint>
+
 // Includes.
 #include "PopupDialog.h"
 #include "MenuDialog.h"
@@ -62,7 +64,7 @@ class MessageBoxClass : public PopupDialogClass
 		static MessageBoxClass *Create_Dialog (const WCHAR *title, const WCHAR *text, MessageBoxTypeEnum type, CallbackMenuDialogClass *callbackobject);
 		static void					Do_Dialog (const WCHAR *title, const WCHAR *text, MessageBoxTypeEnum type, CallbackMenuDialogClass *callbackobject = NULL);
 
-		void On_Command (int ctrl_id, int message_id, DWORD param);
+		void On_Command (int ctrl_id, int message_id, uint32_t param);
 
 	protected:
 

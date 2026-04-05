@@ -203,7 +203,7 @@ void W3dMaterialClass::Reset(void)
 	}
 }
 
-void W3dMaterialClass::Set_Surface_Type(unsigned int type)
+void W3dMaterialClass::Set_Surface_Type(uint32_t type)
 {
 	SurfaceType = type;
 }
@@ -276,7 +276,7 @@ void W3dMaterialClass::Set_Map_Channel(int pass,int stage,int channel)
 	MapChannel[pass][stage] = channel;	
 }
 
-unsigned int W3dMaterialClass::Get_Surface_Type(void) const
+uint32_t W3dMaterialClass::Get_Surface_Type(void) const
 {
 	return SurfaceType;
 }
@@ -369,18 +369,18 @@ void W3dMaterialClass::Init(Mtl * mtl)
 	W3d_Shader_Reset(&shader);
 
 	mat.Attributes = 0;
-	mat.Emissive.R = mat.Emissive.G = mat.Emissive.B = 0; //(uint8)(255 .0f * mtl->GetSelfIllum());
+	mat.Emissive.R = mat.Emissive.G = mat.Emissive.B = 0; //(uint8_t)(255 .0f * mtl->GetSelfIllum());
 	
 	Color diffuse =			mtl->GetDiffuse();
-	mat.Diffuse.R =			(uint8)(diffuse.r * 255.0f);
-	mat.Diffuse.G =			(uint8)(diffuse.g * 255.0f);		
-	mat.Diffuse.B =			(uint8)(diffuse.b * 255.0f);
+	mat.Diffuse.R =			(uint8_t)(diffuse.r * 255.0f);
+	mat.Diffuse.G =			(uint8_t)(diffuse.g * 255.0f);		
+	mat.Diffuse.B =			(uint8_t)(diffuse.b * 255.0f);
 	mat.Ambient =				mat.Diffuse;
 
 	Color specular =			mtl->GetSpecular();
-	mat.Specular.R =			(uint8)(specular.r * 255.0f);
-	mat.Specular.G =			(uint8)(specular.g * 255.0f);		
-	mat.Specular.B =			(uint8)(specular.b * 255.0f);
+	mat.Specular.R =			(uint8_t)(specular.r * 255.0f);
+	mat.Specular.G =			(uint8_t)(specular.g * 255.0f);		
+	mat.Specular.B =			(uint8_t)(specular.b * 255.0f);
 
 	mat.Shininess =			mtl->GetShininess();
 	mat.Opacity =				1.0f - mtl->GetXParency();
@@ -1133,19 +1133,19 @@ int W3dMaterialDescClass::Add_Texture(W3dMapClass * map,int pass,int stage)
 	return ti;
 }
 
-unsigned long W3dMaterialDescClass::Compute_Crc(const W3dVertexMaterialStruct & vmat,
+uint32_t W3dMaterialDescClass::Compute_Crc(const W3dVertexMaterialStruct & vmat,
 																const char *mapper_args0,
 																const char *mapper_args1)
 {
-	unsigned long crc = 0;
-	crc = CRC_Memory((const unsigned char *)&vmat.Attributes,sizeof(vmat.Attributes),crc);
-	crc = CRC_Memory((const unsigned char *)&vmat.Ambient,sizeof(vmat.Ambient),crc);
-	crc = CRC_Memory((const unsigned char *)&vmat.Diffuse,sizeof(vmat.Diffuse),crc);
-	crc = CRC_Memory((const unsigned char *)&vmat.Specular,sizeof(vmat.Specular),crc);
-	crc = CRC_Memory((const unsigned char *)&vmat.Emissive,sizeof(vmat.Emissive),crc);
-	crc = CRC_Memory((const unsigned char *)&vmat.Shininess,sizeof(vmat.Shininess),crc);
-	crc = CRC_Memory((const unsigned char *)&vmat.Opacity,sizeof(vmat.Opacity),crc);
-	crc = CRC_Memory((const unsigned char *)&vmat.Translucency,sizeof(vmat.Translucency),crc);
+	uint32_t crc = 0;
+	crc = CRC_Memory((const uint8_t *)&vmat.Attributes,sizeof(vmat.Attributes),crc);
+	crc = CRC_Memory((const uint8_t *)&vmat.Ambient,sizeof(vmat.Ambient),crc);
+	crc = CRC_Memory((const uint8_t *)&vmat.Diffuse,sizeof(vmat.Diffuse),crc);
+	crc = CRC_Memory((const uint8_t *)&vmat.Specular,sizeof(vmat.Specular),crc);
+	crc = CRC_Memory((const uint8_t *)&vmat.Emissive,sizeof(vmat.Emissive),crc);
+	crc = CRC_Memory((const uint8_t *)&vmat.Shininess,sizeof(vmat.Shininess),crc);
+	crc = CRC_Memory((const uint8_t *)&vmat.Opacity,sizeof(vmat.Opacity),crc);
+	crc = CRC_Memory((const uint8_t *)&vmat.Translucency,sizeof(vmat.Translucency),crc);
 
 	// Add mapper args string to crc. We are stripping out spaces, tabs, and
 	// leading/trailing newlines before computing the CRC so two strings will
@@ -1156,29 +1156,29 @@ unsigned long W3dMaterialDescClass::Compute_Crc(const W3dVertexMaterialStruct & 
 	return crc;
 }
 
-unsigned long W3dMaterialDescClass::Compute_Crc(const W3dShaderStruct & shader)
+uint32_t W3dMaterialDescClass::Compute_Crc(const W3dShaderStruct & shader)
 {
-	unsigned long crc = 0;
-	crc = CRC_Memory((const unsigned char *)&shader,sizeof(shader),crc);
+	uint32_t crc = 0;
+	crc = CRC_Memory((const uint8_t *)&shader,sizeof(shader),crc);
 	return crc;
 }
 
-unsigned long W3dMaterialDescClass::Compute_Crc(const W3dMapClass & map)
+uint32_t W3dMaterialDescClass::Compute_Crc(const W3dMapClass & map)
 {
-	unsigned long crc = 0;
+	uint32_t crc = 0;
 	if (map.AnimInfo != NULL) {
-		crc = CRC_Memory((const unsigned char *)&map.AnimInfo->Attributes,sizeof(map.AnimInfo->Attributes),crc);
-		crc = CRC_Memory((const unsigned char *)&map.AnimInfo->AnimType,sizeof(map.AnimInfo->AnimType),crc);
-		crc = CRC_Memory((const unsigned char *)&map.AnimInfo->FrameCount,sizeof(map.AnimInfo->FrameCount),crc);
-		crc = CRC_Memory((const unsigned char *)&map.AnimInfo->FrameRate,sizeof(map.AnimInfo->FrameRate),crc);
+		crc = CRC_Memory((const uint8_t *)&map.AnimInfo->Attributes,sizeof(map.AnimInfo->Attributes),crc);
+		crc = CRC_Memory((const uint8_t *)&map.AnimInfo->AnimType,sizeof(map.AnimInfo->AnimType),crc);
+		crc = CRC_Memory((const uint8_t *)&map.AnimInfo->FrameCount,sizeof(map.AnimInfo->FrameCount),crc);
+		crc = CRC_Memory((const uint8_t *)&map.AnimInfo->FrameRate,sizeof(map.AnimInfo->FrameRate),crc);
 	}
 	crc = CRC_Stringi(map.Filename, crc);
 	return crc;
 }
 
-unsigned long W3dMaterialDescClass::Add_String_To_Crc(const char *str, unsigned long in_crc)
+uint32_t W3dMaterialDescClass::Add_String_To_Crc(const char *str, uint32_t in_crc)
 {
-	unsigned long out_crc = in_crc;
+	uint32_t out_crc = in_crc;
 	if (str) {
 		int len = strlen(str);
 		char *temp = new char[len + 1];
@@ -1211,7 +1211,7 @@ unsigned long W3dMaterialDescClass::Add_String_To_Crc(const char *str, unsigned 
 			}
 		}
 
-		out_crc = CRC_Memory((const unsigned char *)temp,count,in_crc);
+		out_crc = CRC_Memory((const uint8_t *)temp,count,in_crc);
 		delete [] temp;
 	}
 	return out_crc;

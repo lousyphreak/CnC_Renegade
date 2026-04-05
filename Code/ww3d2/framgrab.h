@@ -86,7 +86,7 @@ public:
 	void ConvertGrab(void *BitmapPointer);
 	void Grab(void *BitmapPointer);
 
-	long * GetBuffer()			{ return Bitmap; }
+	uint32_t * GetBuffer()			{ return Bitmap; }
 	float	GetFrameRate()			{ return FrameRate; }
 
 protected:
@@ -94,14 +94,14 @@ protected:
 	float			FrameRate;
 
 	MODE Mode;
-	long Counter; // used for incrementing filename cunter, etc.
+	int32_t Counter; // used for incrementing filename cunter, etc.
 
 	void GrabAVI(void *BitmapPointer);
 	void GrabRawFrame(void *BitmapPointer);
 
 	// avi settings
 	PAVIFILE				AVIFile;  
-	long					*Bitmap;
+	uint32_t				*Bitmap;
 	PAVISTREAM			Stream;     
 	AVISTREAMINFO		AVIStreamInfo;
 	BITMAPINFOHEADER	BitmapInfoHeader; 

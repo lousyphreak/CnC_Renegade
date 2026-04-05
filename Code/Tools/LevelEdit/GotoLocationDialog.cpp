@@ -79,7 +79,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 GotoLocationDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();

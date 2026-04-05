@@ -36,6 +36,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef __RENEGADETERRAINPATCH_H
 #define __RENEGADETERRAINPATCH_H
 
@@ -96,7 +98,7 @@ public:
 	//
 	//	Quad access
 	//
-	void					Set_Quad_Flags (int quad_index, uint8 flags)		{ QuadFlags[quad_index] = flags; }
+	void					Set_Quad_Flags (int quad_index, uint8_t flags)		{ QuadFlags[quad_index] = flags; }
 
 	//
 	//	UV access
@@ -228,7 +230,7 @@ protected:
 	Vector3 *							Grid;
 	Vector3 *							GridNormals;
 	Vector3 *							VertexColors;
-	uint8 *								QuadFlags;	
+	uint8_t *								QuadFlags;	
 	int									GridPointsX;
 	int									GridPointsY;
 	int									GridPointCount;

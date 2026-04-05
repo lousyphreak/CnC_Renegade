@@ -36,6 +36,8 @@
 #ifndef _TYPEENCODER_H_
 #define _TYPEENCODER_H_
 
+#include <cstdint>
+
 #include "BitPacker.h"
 
 class TypeEncoder : public BitPacker
@@ -55,9 +57,9 @@ class TypeEncoder : public BitPacker
 
 		// Set the type precision based on desired bit width.
 		static void SetTypePrecision(EncoderType type, float min, float max,
-			unsigned int bitPrecision);
+			uint32_t bitPrecision);
 
-		TypeEncoder(void* buffer, unsigned int size);
+		TypeEncoder(void* buffer, uint32_t size);
 		~TypeEncoder();
 
 		// Retrieve a boolean value (1 bit)
@@ -67,10 +69,10 @@ class TypeEncoder : public BitPacker
 		bool PutBool(bool value);
 
 		// Retrieve an integer
-		int GetInt(unsigned int bitPrecision);
+		int GetInt(uint32_t bitPrecision);
 
 		// Write an integer with specified bit precision
-		bool PutInt(int value, unsigned int bitPrecision);
+		bool PutInt(int value, uint32_t bitPrecision);
 
 		// Retrieve a floating point value
 		float GetFloat(float min, float max, float resolution);
@@ -86,10 +88,10 @@ class TypeEncoder : public BitPacker
 
 	private:
 		// Calculate the number of bits required to encode a value. (Internal use)
-		static unsigned int CalcBitPrecision(float min, float max, float resolution);
+		static uint32_t CalcBitPrecision(float min, float max, float resolution);
 
 		// Calculate the minimum resolution possible with given bit width.(Internal use)
-		static float CalcResolution(float min, float max, unsigned int bitPrecision);
+		static float CalcResolution(float min, float max, uint32_t bitPrecision);
 
 		typedef struct
 			{
@@ -97,7 +99,7 @@ class TypeEncoder : public BitPacker
 			float MinExtent;
 			float MaxExtent;
 			float Resolution;
-			unsigned int BitPrecision;
+			uint32_t BitPrecision;
 			} EncoderTypeEntry;
 
 		static EncoderTypeEntry _mEncoderTypes[MAX_ENCODERTYPES];

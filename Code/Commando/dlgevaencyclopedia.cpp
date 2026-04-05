@@ -204,7 +204,7 @@ EVAEncyclopediaMenuClass::On_Destroy (void)
 //
 ////////////////////////////////////////////////////////////////
 void
-EVAEncyclopediaMenuClass::On_Command (int ctrl_id, int message_id, DWORD param)
+EVAEncyclopediaMenuClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	bool allow_default_processing = true;
 

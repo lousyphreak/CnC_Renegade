@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // ColorSelectionDialog.h : header file
 //
@@ -61,9 +63,9 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(ColorSelectionDialogClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	virtual void OnOK();
-	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
+	afx_msg void OnHScroll(uint32_t nSBCode, uint32_t nPos, CScrollBar* pScrollBar);
 	afx_msg void OnPaint();
 	afx_msg void OnGrayscaleCheck();
 	//}}AFX_MSG

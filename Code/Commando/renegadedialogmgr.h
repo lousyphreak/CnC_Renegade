@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __RENEGADE_DIALOG_MGR_H
@@ -50,7 +52,7 @@
 ////////////////////////////////////////////////////////////////
 //	Prototypes
 ////////////////////////////////////////////////////////////////
-int MyLoadStringW (UINT str_id, LPWSTR buffer, int buffer_len);
+int MyLoadStringW (uint32_t str_id, LPWSTR buffer, int buffer_len);
 
 
 ////////////////////////////////////////////////////////////////

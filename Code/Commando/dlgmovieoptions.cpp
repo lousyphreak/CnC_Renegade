@@ -88,7 +88,7 @@ MovieOptionsMenuClass::On_Init_Dialog (void)
 			//
 			int item_index = list_ctrl->Insert_Entry (0xFF, TRANSLATE (IDS_INTRO_MOVIE));
 			if (item_index != -1) {
-				list_ctrl->Set_Entry_Data (item_index, 0, (DWORD)new StringClass (INTRO_MOVIE));
+				list_ctrl->Set_Entry_Data (item_index, 0, (uint32_t)new StringClass (INTRO_MOVIE));
 			}
 
 			//
@@ -110,7 +110,7 @@ MovieOptionsMenuClass::On_Init_Dialog (void)
 				const WCHAR *wide_desc = TRANSLATE_BY_DESC(string_id_des);
 				int item_index = list_ctrl->Insert_Entry (0xFF, wide_desc);
 				if (item_index != -1) {
-					list_ctrl->Set_Entry_Data (item_index, 0, (DWORD)new StringClass (list[index]));
+					list_ctrl->Set_Entry_Data (item_index, 0, (uint32_t)new StringClass (list[index]));
 				}
 			}
 		}
@@ -127,7 +127,7 @@ MovieOptionsMenuClass::On_Init_Dialog (void)
 //
 ////////////////////////////////////////////////////////////////
 void
-MovieOptionsMenuClass::On_Command (int ctrl_id, int message_id, DWORD param)
+MovieOptionsMenuClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	if (IsPlaying) {
 		return ;
@@ -338,7 +338,7 @@ MovieOptionsMenuClass::On_Frame_Update (void)
 //
 ////////////////////////////////////////////////////////////////
 bool
-MovieOptionsMenuClass::On_Key_Down (uint32 key_id, uint32 key_data)
+MovieOptionsMenuClass::On_Key_Down (uint32_t key_id, uint32_t key_data)
 {
 	bool retval = false;
 	

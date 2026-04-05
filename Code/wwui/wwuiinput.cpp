@@ -45,7 +45,7 @@
 
 namespace {
 
-uint32 SDL_Keycode_To_VKey(SDL_Keycode keycode)
+uint32_t SDL_Keycode_To_VKey(SDL_Keycode keycode)
 {
 	switch (keycode) {
 		case SDLK_BACKSPACE:
@@ -104,24 +104,24 @@ uint32 SDL_Keycode_To_VKey(SDL_Keycode keycode)
 	}
 
 	if (keycode >= SDLK_0 && keycode <= SDLK_9) {
-		return static_cast<uint32>(keycode);
+		return static_cast<uint32_t>(keycode);
 	}
 
 	if (keycode >= SDLK_A && keycode <= SDLK_Z) {
-		return static_cast<uint32>(keycode - SDLK_A + 'A');
+		return static_cast<uint32_t>(keycode - SDLK_A + 'A');
 	}
 
 	return 0;
 }
 
-const char *Decode_UTF8_Code_Unit(const char *text, uint16 &unicode)
+const char *Decode_UTF8_Code_Unit(const char *text, uint16_t &unicode)
 {
 	unicode = 0;
 	if (text == NULL) {
 		return NULL;
 	}
 
-	const unsigned char lead = static_cast<unsigned char>(*text);
+	const uint8_t lead = static_cast<uint8_t>(*text);
 	if (lead == 0) {
 		return text;
 	}
@@ -132,23 +132,23 @@ const char *Decode_UTF8_Code_Unit(const char *text, uint16 &unicode)
 	}
 
 	if ((lead & 0xE0) == 0xC0) {
-		const unsigned char trail0 = static_cast<unsigned char>(text[1]);
+		const uint8_t trail0 = static_cast<uint8_t>(text[1]);
 		if ((trail0 & 0xC0) != 0x80) {
 			return text + 1;
 		}
 
-		unicode = static_cast<uint16>(((lead & 0x1F) << 6) | (trail0 & 0x3F));
+		unicode = static_cast<uint16_t>(((lead & 0x1F) << 6) | (trail0 & 0x3F));
 		return text + 2;
 	}
 
 	if ((lead & 0xF0) == 0xE0) {
-		const unsigned char trail0 = static_cast<unsigned char>(text[1]);
-		const unsigned char trail1 = static_cast<unsigned char>(text[2]);
+		const uint8_t trail0 = static_cast<uint8_t>(text[1]);
+		const uint8_t trail1 = static_cast<uint8_t>(text[2]);
 		if ((trail0 & 0xC0) != 0x80 || (trail1 & 0xC0) != 0x80) {
 			return text + 1;
 		}
 
-		unicode = static_cast<uint16>(((lead & 0x0F) << 12) | ((trail0 & 0x3F) << 6) | (trail1 & 0x3F));
+		unicode = static_cast<uint16_t>(((lead & 0x0F) << 12) | ((trail0 & 0x3F) << 6) | (trail1 & 0x3F));
 		return text + 3;
 	}
 
@@ -188,7 +188,7 @@ IME::IMEManager* WWUIInputClass::GetIME(void) const
 }
 
 
-bool WWUIInputClass::ProcessMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam, LRESULT& result)
+bool WWUIInputClass::ProcessMessage(HWND hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam, intptr_t& result)
 {
 	WWMEMLOG(MEM_GAMEDATA);
 
@@ -227,13 +227,13 @@ bool WWUIInputClass::ProcessEvent(const SDL_Event &event)
 	switch (event.type) {
 		case SDL_EVENT_KEY_DOWN:
 		{
-			const uint32 key_id = SDL_Keycode_To_VKey(event.key.key);
+			const uint32_t key_id = SDL_Keycode_To_VKey(event.key.key);
 			return (key_id != 0) ? DialogMgrClass::On_Key_Down(key_id, 0) : false;
 		}
 
 		case SDL_EVENT_KEY_UP:
 		{
-			const uint32 key_id = SDL_Keycode_To_VKey(event.key.key);
+			const uint32_t key_id = SDL_Keycode_To_VKey(event.key.key);
 			return (key_id != 0) ? DialogMgrClass::On_Key_Up(key_id) : false;
 		}
 
@@ -242,7 +242,7 @@ bool WWUIInputClass::ProcessEvent(const SDL_Event &event)
 			bool handled = false;
 			const char *cursor = event.text.text;
 			while (cursor != NULL && *cursor != 0) {
-				uint16 unicode = 0;
+				uint16_t unicode = 0;
 				const char *next = Decode_UTF8_Code_Unit(cursor, unicode);
 				if (unicode != 0) {
 					DialogMgrClass::On_Unicode_Char(static_cast<WCHAR>(unicode));
@@ -264,7 +264,7 @@ bool WWUIInputClass::ProcessEvent(const SDL_Event &event)
 }
 
 
-void WWUIInputClass::Update_Keyboard_State(BYTE *state) const
+void WWUIInputClass::Update_Keyboard_State(uint8_t *state) const
 {
 	if (state == NULL) {
 		return;
@@ -298,7 +298,7 @@ void WWUIInputClass::HandleNotification(IME::IMEEvent& event)
 	else if (IME::IME_GUIDELINE == event.GetAction())
 		{
 		wchar_t desc[255];
-		unsigned long level = event.Subject()->GetGuideline(desc, sizeof(desc));
+		uint32_t level = event.Subject()->GetGuideline(desc, sizeof(desc));
 
 		if (GL_LEVEL_NOGUIDELINE != level)
 			{

@@ -291,7 +291,7 @@ EncyclopediaMgrClass::Save (ChunkSaveClass &csave)
 	//
 	for (int index = 0; index < TYPE_COUNT; index ++) {
 		csave.Begin_Chunk (CHUNKID_TYPE_DATA);
-			const VectorClass<unsigned char> &bit_vector = KnownObjectVector[index].Get_Bit_Array();
+			const VectorClass<uint8_t> &bit_vector = KnownObjectVector[index].Get_Bit_Array();
 			if (bit_vector.Length () > 0) {
 				csave.Write (&bit_vector[0], sizeof (bit_vector[0]) * bit_vector.Length ());
 			}
@@ -340,7 +340,7 @@ EncyclopediaMgrClass::Load (ChunkLoadClass &cload)
 				int size = cload.Cur_Chunk_Length ();
 				
 				int vector_size = max (size, KnownObjectVector[type_index].Get_Bit_Array().Length ());
-				//unsigned char *bit_vector = new unsigned char[vector_size];
+				//uint8_t *bit_vector = new uint8_t[vector_size];
 
 				//
 				//	Initialize the known object array from the saved bit vector
@@ -351,8 +351,8 @@ EncyclopediaMgrClass::Load (ChunkLoadClass &cload)
 				//
 				//	Now read the data straight into the vector
 				//
-				const VectorClass<unsigned char> &bit_array = KnownObjectVector[type_index].Get_Bit_Array ();
-				cload.Read (const_cast<unsigned char*>(&bit_array[0]), size);
+				const VectorClass<uint8_t> &bit_array = KnownObjectVector[type_index].Get_Bit_Array ();
+				cload.Read (const_cast<uint8_t*>(&bit_array[0]), size);
 
 				//
 				//	Advance to the next entry

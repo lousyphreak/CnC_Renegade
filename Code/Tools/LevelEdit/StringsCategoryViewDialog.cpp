@@ -41,7 +41,7 @@ static char THIS_FILE[] = __FILE__;
 /////////////////////////////////////////////////////////////////////////////
 //	Local prototypes
 /////////////////////////////////////////////////////////////////////////////
-static int CALLBACK StringEntrySortCompareFn (LPARAM param1, LPARAM param2, LPARAM sort_info);
+static int CALLBACK StringEntrySortCompareFn (intptr_t param1, intptr_t param2, intptr_t sort_info);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -161,7 +161,7 @@ StringsCategoryViewDialogClass::Create (CWnd *parent_wnd)
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 StringsCategoryViewDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -302,7 +302,7 @@ void
 StringsCategoryViewDialogClass::OnDblclkStringList
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 ) 
 {
 	(*pResult) = 0;
@@ -411,7 +411,7 @@ void
 StringsCategoryViewDialogClass::OnColumnclickStringList
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 )
  
 {
@@ -436,15 +436,15 @@ StringsCategoryViewDialogClass::OnColumnclickStringList
 //
 /////////////////////////////////////////////////////////////////////////////
 int CALLBACK
-StringEntrySortCompareFn (LPARAM param1, LPARAM param2, LPARAM sort_info)
+StringEntrySortCompareFn (intptr_t param1, intptr_t param2, intptr_t sort_info)
 {
 	int retval = 0;
 
 	TDBObjClass *object1	= (TDBObjClass *)param1;
 	TDBObjClass *object2	= (TDBObjClass *)param2;
 
-	LONG column_id = LOWORD (sort_info);
-	BOOL ascending	= HIWORD (sort_info);
+	int32_t column_id = LOWORD (sort_info);
+	int32_t ascending	= HIWORD (sort_info);
 
 	if (object1 != NULL && object2 != NULL) {
 		
@@ -546,7 +546,7 @@ StringsCategoryViewDialogClass::Insert_New_Entry (TDBObjClass *object)
 			}
 		}
 
-		m_ListCtrl.SetItemData (item_index, (DWORD)object);
+		m_ListCtrl.SetItemData (item_index, (uint32_t)object);
 	}
 
 	return ;
@@ -562,7 +562,7 @@ void
 StringsCategoryViewDialogClass::OnDeleteitemStringList
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 ) 
 {
 	NM_LISTVIEW* pNMListView = (NM_LISTVIEW*)pNMHDR;
@@ -588,7 +588,7 @@ void
 StringsCategoryViewDialogClass::OnKeydownStringList
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 )
 {
 	LV_KEYDOWN* pLVKeyDow = (LV_KEYDOWN*)pNMHDR;
@@ -725,7 +725,7 @@ StringsCategoryViewDialogClass::Apply_Changes (void)
 //
 /////////////////////////////////////////////////////////////////////////////
 void
-StringsCategoryViewDialogClass::OnSize (UINT nType, int cx, int cy) 
+StringsCategoryViewDialogClass::OnSize (uint32_t nType, int cx, int cy) 
 {
 	CDialog::OnSize (nType, cx, cy);
 	Resize_Controls ();
@@ -848,7 +848,7 @@ void
 StringsCategoryViewDialogClass::OnItemchangedStringList
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 )
 {
 	NM_LISTVIEW* pNMListView = (NM_LISTVIEW*)pNMHDR;

@@ -59,7 +59,7 @@ static const float MINUTES_PER_TICK		= 1.0f / TICKS_PER_MINUTE;
 //////////////////////////////////////////////////////////////////////////
 //	Local Prototypes
 //////////////////////////////////////////////////////////////////////////
-static UINT fnGeneratingVisDialogThread (DWORD dwparam1, DWORD dwparam2, DWORD, HRESULT *, HWND *);
+static uint32_t fnGeneratingVisDialogThread (uint32_t dwparam1, uint32_t dwparam2, uint32_t, int32_t *, HWND *);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -84,7 +84,7 @@ GeneratingEdgeSampledVisDialogClass::GeneratingEdgeSampledVisDialogClass(CWnd* p
 	//
 	//	Determine the section of the status file
 	//
-	DWORD process_id = ::GetCurrentProcessId ();
+	uint32_t process_id = ::GetCurrentProcessId ();
 	m_StatusSection.Format ("%d", process_id);
 
 	//
@@ -131,7 +131,7 @@ END_MESSAGE_MAP()
 // DoDataExchange
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 GeneratingEdgeSampledVisDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog();
@@ -162,7 +162,7 @@ GeneratingEdgeSampledVisDialogClass::OnInitDialog (void)
 //
 /////////////////////////////////////////////////////////////////////////////
 void
-GeneratingEdgeSampledVisDialogClass::OnTimer (UINT nIDEvent) 
+GeneratingEdgeSampledVisDialogClass::OnTimer (uint32_t nIDEvent) 
 {
 	//
 	//	Refresh the dialog
@@ -238,9 +238,9 @@ GeneratingEdgeSampledVisDialogClass::Update_Stats (void)
 			//
 			//	Make a rough estimate of the time we have remaining
 			//
-			DWORD elapsed_ticks = ::GetTickCount () - m_StartTime;
-			DWORD avg_ticks = elapsed_ticks / max(processed,1);
-			DWORD remaining_ticks = avg_ticks * (total - processed);
+			uint32_t elapsed_ticks = ::GetTickCount () - m_StartTime;
+			uint32_t avg_ticks = elapsed_ticks / max(processed,1);
+			uint32_t remaining_ticks = avg_ticks * (total - processed);
 
 			float elapsed_minutes	= MINUTES_PER_TICK * (float)elapsed_ticks;
 			float remaining_minutes	= MINUTES_PER_TICK * (float)remaining_ticks;
@@ -303,7 +303,7 @@ GeneratingEdgeSampledVisDialogClass::Display (void)
 	//	Create the dialog on a separate thread
 	//
 	GeneratingEdgeSampledVisDialogClass *dialog = NULL;
-	::Create_UI_Thread (fnGeneratingVisDialogThread, 0, (DWORD)&dialog, 0, NULL, NULL);
+	::Create_UI_Thread (fnGeneratingVisDialogThread, 0, (uint32_t)&dialog, 0, NULL, NULL);
 	return dialog;
 }
 
@@ -341,13 +341,13 @@ GeneratingEdgeSampledVisDialogClass::Set_Finished (bool is_finished)
 // fnGeneratingVisDialogThread
 //
 ////////////////////////////////////////////////////////////////////////////
-UINT
+uint32_t
 fnGeneratingVisDialogThread
 (
-	DWORD dwparam1,
-	DWORD dwparam2,
-	DWORD /*dwparam3*/,
-	HRESULT* /*presult*/,
+	uint32_t dwparam1,
+	uint32_t dwparam2,
+	uint32_t /*dwparam3*/,
+	int32_t* /*presult*/,
 	HWND* /*phmain_wnd*/
 )
 {

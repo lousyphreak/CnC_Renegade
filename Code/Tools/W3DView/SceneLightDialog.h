@@ -21,6 +21,8 @@
 
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 // SceneLightDialog.h : header file
 //
@@ -56,7 +58,7 @@ public:
 	//{{AFX_VIRTUAL(CSceneLightDialog)
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+	virtual intptr_t WindowProc(uint32_t message, uintptr_t wParam, intptr_t lParam);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -64,8 +66,8 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(CSceneLightDialog)
-	virtual BOOL OnInitDialog();
-	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
+	virtual int32_t OnInitDialog();
+	afx_msg void OnHScroll(uint32_t nSBCode, uint32_t nPos, CScrollBar* pScrollBar);
 	virtual void OnCancel();
 	afx_msg void OnGrayscaleCheck();
 	afx_msg void OnChannelBothRadio();
@@ -117,7 +119,7 @@ protected:
 		float		m_InitialEndAtten;
 		float		m_InitialDistance;
 		float		m_InitialIntensity;
-		BOOL		m_InitialAttenOn;
+		int32_t		m_InitialAttenOn;
 };
 
 //{{AFX_INSERT_LOCATION}}

@@ -93,7 +93,7 @@ static int LastSortedSecond;
 static const float max_update_rate = 140.0f;						// Priority 1 update rate
 static const float min_update_rate = 5000.0f;					// Priority 0.001 update rate
 static const float unseen_update_rate = 10000.0f;				// Priority 0 update rate.
-static const unsigned short infinity_update_rate = 0xffff;	// Lowest update rate - no updates at all.
+static const uint16_t infinity_update_rate = 0xffff;	// Lowest update rate - no updates at all.
 
 
 
@@ -286,13 +286,13 @@ if (cDevOptions::UseNewTCADO.Is_False()) {
 	}
 	avail_bytes_per_update = (int) (mult * (float)avail_bytes_per_update);
 
-	unsigned long time = TIMEGETTIME();
+	uint32_t time = TIMEGETTIME();
 
 	/*
 	** Don't use more than 50% of the available bytes per update for guaranteed packets.
 	*/
-	unsigned long bytes_out = 0;
-	unsigned long max_bytes = avail_bytes_per_update;	//(avail_bytes_per_update >> 1);	//* 3) / 4;
+	uint32_t bytes_out = 0;
+	uint32_t max_bytes = avail_bytes_per_update;	//(avail_bytes_per_update >> 1);	//* 3) / 4;
 
 	/*
 	** Figure a compression ratio of 2:1
@@ -367,11 +367,11 @@ if (cDevOptions::UseNewTCADO.Is_False()) {
 			for (i=0 ; i<object_list.Count() ; i++) {
 				temp_obj = object_list[i];
 				float pri = temp_obj->Get_Cached_Priority();
-				unsigned long update_rate = infinity_update_rate;	//0;
+				uint32_t update_rate = infinity_update_rate;	//0;
 				if (pri > 0.025f) {	//01f) {
-					update_rate = (unsigned long)(((1.0f - pri) * spread) + ms_low);
+					update_rate = (uint32_t)(((1.0f - pri) * spread) + ms_low);
 				}
-				temp_obj->Set_Update_Rate(client_id, (unsigned short) update_rate);
+				temp_obj->Set_Update_Rate(client_id, (uint16_t) update_rate);
 				if (update_rate != infinity_update_rate) {
 					int bps = (1000.0f / update_rate) * temp_obj->Get_Frequent_Update_Export_Size();
 					total_bps += bps;
@@ -394,14 +394,14 @@ if (cDevOptions::UseNewTCADO.Is_False()) {
 				}
 			}
 
-			unsigned short rate;
+			uint16_t rate;
 			float float_rate;
 			for (i=0 ; i<object_list.Count() ; i++) {
 				temp_obj = object_list[i];
 				float obj_upd_rate = (float)temp_obj->Get_Update_Rate(client_id);
 				if (obj_upd_rate != infinity_update_rate) {
 					float_rate = obj_upd_rate / factor;
-					rate = (unsigned short) float_rate;
+					rate = (uint16_t) float_rate;
 					temp_obj->Set_Update_Rate(client_id, rate);
 				}
 			}
@@ -417,8 +417,8 @@ if (cDevOptions::UseNewTCADO.Is_False()) {
 		*/
 		for (i=0 ; i<object_list.Count() ; i++) {
 			temp_obj = object_list[i];
-			unsigned long rate =  (unsigned long)temp_obj->Get_Update_Rate(client_id);
-			if (rate != (unsigned long)infinity_update_rate) {
+			uint32_t rate =  (uint32_t)temp_obj->Get_Update_Rate(client_id);
+			if (rate != (uint32_t)infinity_update_rate) {
 				if (time - temp_obj->Get_Last_Update_Time(client_id) > rate) {
 					Send_Object_Update(temp_obj, client_id);
 					temp_obj->Set_Last_Update_Time(client_id, time);
@@ -451,7 +451,7 @@ if (cDevOptions::UseNewTCADO.Is_False()) {
 	*/
 
 
-	const unsigned char dirty_check = (NetworkObjectClass::BIT_FREQUENT ^ 0xffffffff) & (NetworkObjectClass::BIT_CREATION | NetworkObjectClass::BIT_RARE | NetworkObjectClass::BIT_OCCASIONAL);
+	const uint8_t dirty_check = (NetworkObjectClass::BIT_FREQUENT ^ 0xffffffff) & (NetworkObjectClass::BIT_CREATION | NetworkObjectClass::BIT_RARE | NetworkObjectClass::BIT_OCCASIONAL);
 
 	WWPROFILE("TCADO");
 
@@ -479,7 +479,7 @@ if (cDevOptions::UseNewTCADO.Is_False()) {
 	int count = 0;
 	bool global_packet_allowance_full = false;
 	NetworkObjectClass *temp_obj;
-	unsigned long time = TIMEGETTIME();
+	uint32_t time = TIMEGETTIME();
 	int global_count = 0;
 
 	/*
@@ -513,8 +513,8 @@ if (cDevOptions::UseNewTCADO.Is_False()) {
 	/*
 	** Don't use more than 50% of the available bytes per update for guaranteed packets.
 	*/
-	unsigned long bytes_out = 0;
-	unsigned long max_bytes = avail_bytes_per_update;	//(avail_bytes_per_update >> 1);	//* 3) / 4;
+	uint32_t bytes_out = 0;
+	uint32_t max_bytes = avail_bytes_per_update;	//(avail_bytes_per_update >> 1);	//* 3) / 4;
 
 	/*
 	** Figure a compression ratio of 2:1 for guaranteed packets.
@@ -562,7 +562,7 @@ if (cDevOptions::UseNewTCADO.Is_False()) {
 				object_list.Add(p_object);
 			} else {
 
-				unsigned char dirty = p_object->Get_Object_Dirty_Bits(client_id);
+				uint8_t dirty = p_object->Get_Object_Dirty_Bits(client_id);
 
 				if (dirty & dirty_check) {
 					/*
@@ -766,15 +766,15 @@ if (cDevOptions::UseNewTCADO.Is_False()) {
 			for (i=0 ; i<object_list.Count() ; i++) {
 				temp_obj = object_list[i];
 				float pri = temp_obj->Get_Cached_Priority_2(client_id);
-				unsigned long update_rate = infinity_update_rate;	//0;
+				uint32_t update_rate = infinity_update_rate;	//0;
 				if (pri > 0.025f) {	//01f) {
-					update_rate = (unsigned long)(((1.0f - pri) * spread) + ms_low);
+					update_rate = (uint32_t)(((1.0f - pri) * spread) + ms_low);
 				} else {
 					if (pri > 0.009f) {
 						update_rate = min_update_rate;
 					}
 				}
-				temp_obj->Set_Update_Rate(client_id, (unsigned short) update_rate);
+				temp_obj->Set_Update_Rate(client_id, (uint16_t) update_rate);
 				if (update_rate != infinity_update_rate) {
 					int bps = (1000.0f / update_rate) * temp_obj->Get_Frequent_Update_Export_Size();
 					total_bps += bps;
@@ -797,14 +797,14 @@ if (cDevOptions::UseNewTCADO.Is_False()) {
 				}
 			}
 
-			unsigned short rate;
+			uint16_t rate;
 			float float_rate;
 			for (i=0 ; i<object_list.Count() ; i++) {
 				temp_obj = object_list[i];
 				float obj_upd_rate = (float)temp_obj->Get_Update_Rate(client_id);
 				if (obj_upd_rate != infinity_update_rate && obj_upd_rate < (min_update_rate + WWMATH_EPSILON)) {
 					float_rate = obj_upd_rate / factor;
-					rate = (unsigned short) float_rate;
+					rate = (uint16_t) float_rate;
 					temp_obj->Set_Update_Rate(client_id, rate);
 				}
 			}
@@ -820,8 +820,8 @@ if (cDevOptions::UseNewTCADO.Is_False()) {
 		*/
 		for (i=0 ; i<object_list.Count() ; i++) {
 			temp_obj = object_list[i];
-			unsigned long rate =  (unsigned long)temp_obj->Get_Update_Rate(client_id);
-			if (rate != (unsigned long)infinity_update_rate) {
+			uint32_t rate =  (uint32_t)temp_obj->Get_Update_Rate(client_id);
+			if (rate != (uint32_t)infinity_update_rate) {
 				if (time - temp_obj->Get_Last_Update_Time(client_id) > rate) {
 					Send_Object_Update(temp_obj, client_id);
 					temp_obj->Set_Last_Update_Time(client_id, time);
@@ -873,7 +873,7 @@ void cNetwork::Tell_Server_About_Dynamic_Objects
 			//debug_count++;
 		}
 	}
-	//unsigned long time = TIMEGETTIME() / 1000;
+	//uint32_t time = TIMEGETTIME() / 1000;
 	//WWDEBUG_SAY(("Updated %d objects at %d\n", debug_count, time));
 
 #endif // !FREEDEDICATEDSERVER
@@ -954,7 +954,7 @@ cNetwork::Send_Object_Update(NetworkObjectClass *object, int client_id)
 	packet.Add(object->Is_Delete_Pending());
 	//packet.Add(object->Get_App_Packet_Type());
 
-	BYTE type = object->Get_App_Packet_Type();
+	uint8_t type = object->Get_App_Packet_Type();
 	int bits_start = packet.Get_Bit_Write_Position();
 
 	//
@@ -979,7 +979,7 @@ cNetwork::Send_Object_Update(NetworkObjectClass *object, int client_id)
 		//
 		//	Add the class id of the object so it can be created on the client.
 		//
-		uint32 net_classid = object->Get_Network_Class_ID ();
+		uint32_t net_classid = object->Get_Network_Class_ID ();
 		packet.Add (net_classid);
 
 		//

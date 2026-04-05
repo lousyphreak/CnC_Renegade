@@ -42,23 +42,23 @@
 //
 // class statics
 //
-//const WORD cNetUtil::WS_VERSION_REQD = MAKEWORD(1, 1); // Winsock 1.1
-//USHORT cNetUtil::HeaderBytes;
-//USHORT cNetUtil::MaxPacketAppDataSize = MAX_LAN_PACKET_APP_DATA_SIZE;
-UINT cNetUtil::DefaultResendTimeoutMs = 200; // used for singleplayer
+//const uint16_t cNetUtil::WS_VERSION_REQD = MAKEWORD(1, 1); // Winsock 1.1
+//uint16_t cNetUtil::HeaderBytes;
+//uint16_t cNetUtil::MaxPacketAppDataSize = MAX_LAN_PACKET_APP_DATA_SIZE;
+uint32_t cNetUtil::DefaultResendTimeoutMs = 200; // used for singleplayer
 bool cNetUtil::IsInternet = false;
 
 static const int INVALID_VALUE = -999;
 
-const USHORT	cNetUtil::NETSTATS_SAMPLE_TIME_MS									= 2000;
-const USHORT	cNetUtil::KEEPALIVE_TIMEOUT_MS										= 2000;
-const USHORT	cNetUtil::MAX_RESENDS													= 50;
-const USHORT	cNetUtil::MULTI_SENDS													= 10;
-const USHORT	cNetUtil::RESEND_TIMEOUT_LAN_MS										= 300;
-const USHORT	cNetUtil::RESEND_TIMEOUT_INTERNET_MS								= 500;
-const	ULONG		cNetUtil::CLIENT_CONNECTION_LOSS_TIMEOUT							= 15000;		// Milliseconds til client gives up on server
-const	ULONG		cNetUtil::SERVER_CONNECTION_LOSS_TIMEOUT							= 15000;		// Milliseconds til server gives up on client
-const	ULONG		cNetUtil::SERVER_CONNECTION_LOSS_TIMEOUT_LOADING_ALLOWANCE	= 45000;		// Milliseconds extra allowed til server gives up on loading client.
+const uint16_t	cNetUtil::NETSTATS_SAMPLE_TIME_MS									= 2000;
+const uint16_t	cNetUtil::KEEPALIVE_TIMEOUT_MS										= 2000;
+const uint16_t	cNetUtil::MAX_RESENDS													= 50;
+const uint16_t	cNetUtil::MULTI_SENDS													= 10;
+const uint16_t	cNetUtil::RESEND_TIMEOUT_LAN_MS										= 300;
+const uint16_t	cNetUtil::RESEND_TIMEOUT_INTERNET_MS								= 500;
+const	uint32_t		cNetUtil::CLIENT_CONNECTION_LOSS_TIMEOUT							= 15000;		// Milliseconds til client gives up on server
+const	uint32_t		cNetUtil::SERVER_CONNECTION_LOSS_TIMEOUT							= 15000;		// Milliseconds til server gives up on client
+const	uint32_t		cNetUtil::SERVER_CONNECTION_LOSS_TIMEOUT_LOADING_ALLOWANCE	= 45000;		// Milliseconds extra allowed til server gives up on loading client.
 
 
 //int cNetUtil::DefaultMultiSends							= INVALID_VALUE;
@@ -226,7 +226,7 @@ bool cNetUtil::Would_Block(LPCSTR sFile, unsigned uLine, int ret_code)
 //
 // Returns up to max_addresses adapter addresses for the local host
 //
-int cNetUtil::Get_Local_Tcpip_Addresses(SOCKADDR_IN ip_address[], USHORT max_addresses)
+int cNetUtil::Get_Local_Tcpip_Addresses(SOCKADDR_IN ip_address[], uint16_t max_addresses)
 {
 	WWDEBUG_SAY(("cNetUtil::Get_Local_Tcpip_Addresses:\n"));
 
@@ -253,7 +253,7 @@ int cNetUtil::Get_Local_Tcpip_Addresses(SOCKADDR_IN ip_address[], USHORT max_add
 			ZeroMemory(&ip_address[num_adapters], sizeof(SOCKADDR_IN));
 			ip_address[num_adapters].sin_family = AF_INET;
 	      ip_address[num_adapters].sin_addr.s_addr =
-				*((u_long *) (p_hostent->h_addr_list[num_adapters]));
+				*((ww_u_long *) (p_hostent->h_addr_list[num_adapters]));
 		   WWDEBUG_SAY(("  Address: %s\n", Address_To_String(ip_address[num_adapters].sin_addr.s_addr)));
 			num_adapters++;
 		}
@@ -279,8 +279,8 @@ bool cNetUtil::Is_Same_Address(LPSOCKADDR_IN p_address1, const SOCKADDR_IN* p_ad
 }
 
 //-------------------------------------------------------------------------------
-void cNetUtil::Address_To_String(LPSOCKADDR_IN p_address, char * str, UINT len,
-   USHORT & port)
+void cNetUtil::Address_To_String(LPSOCKADDR_IN p_address, char * str, uint32_t len,
+   uint16_t & port)
 {
 	WWASSERT(p_address != NULL);
    WWASSERT(str != NULL);
@@ -295,7 +295,7 @@ void cNetUtil::Address_To_String(LPSOCKADDR_IN p_address, char * str, UINT len,
 }
 
 //-------------------------------------------------------------------------------
-LPCSTR cNetUtil::Address_To_String(ULONG ip)
+LPCSTR cNetUtil::Address_To_String(uint32_t ip)
 {
 	IN_ADDR in_addr;
 	in_addr.s_addr = ip;
@@ -310,7 +310,7 @@ LPCSTR cNetUtil::Address_To_String(ULONG ip)
 }
 
 //-------------------------------------------------------------------------------
-void cNetUtil::String_To_Address(LPSOCKADDR_IN p_address, LPCSTR str, USHORT port)
+void cNetUtil::String_To_Address(LPSOCKADDR_IN p_address, LPCSTR str, uint16_t port)
 {
 	WWASSERT(p_address != NULL);
    ZeroMemory(p_address, sizeof(SOCKADDR_IN));
@@ -541,12 +541,12 @@ void cNetUtil::Create_Unbound_Socket(SOCKET & sock)
    //
    // Make socket non-blocking
    //
-   u_long arg = 1L;
-   WSA_CHECK(ioctlsocket(sock, FIONBIO, (u_long *) &arg));
+   ww_u_long arg = 1;
+   WSA_CHECK(ioctlsocket(sock, FIONBIO, &arg));
 }
 
 //-------------------------------------------------------------------------------
-bool cNetUtil::Create_Bound_Socket(SOCKET & sock, USHORT port, SOCKADDR_IN & local_address)
+bool cNetUtil::Create_Bound_Socket(SOCKET & sock, uint16_t port, SOCKADDR_IN & local_address)
 {
    //
    // TSS - is all this necessary or is above function OK?
@@ -574,7 +574,7 @@ void cNetUtil::Close_Socket(SOCKET & sock)
 }
 
 //-----------------------------------------------------------------------------
-void cNetUtil::Broadcast(SOCKET & sock, USHORT port, cPacket & packet)
+void cNetUtil::Broadcast(SOCKET & sock, uint16_t port, cPacket & packet)
 {
    SOCKADDR_IN broadcast_address;
    Create_Broadcast_Address(&broadcast_address, port);
@@ -589,7 +589,7 @@ void cNetUtil::Broadcast(SOCKET & sock, USHORT port, cPacket & packet)
 
 //-------------------------------------------------------------------------------
 void cNetUtil::Create_Broadcast_Address(LPSOCKADDR_IN p_broadcast_address,
-   USHORT port)
+   uint16_t port)
 {
    WWASSERT(p_broadcast_address != NULL);
    ZeroMemory(p_broadcast_address, sizeof(SOCKADDR_IN));
@@ -600,7 +600,7 @@ void cNetUtil::Create_Broadcast_Address(LPSOCKADDR_IN p_broadcast_address,
 }
 
 //-------------------------------------------------------------------------------
-void cNetUtil::Create_Local_Address(LPSOCKADDR_IN p_local_address, USHORT port)
+void cNetUtil::Create_Local_Address(LPSOCKADDR_IN p_local_address, uint16_t port)
 {
    WWASSERT(p_local_address != NULL);
    ZeroMemory(p_local_address, sizeof(SOCKADDR_IN));
@@ -616,13 +616,13 @@ bool cNetUtil::Get_Local_Address(LPSOCKADDR_IN p_local_address)
 	WWASSERT(p_local_address != NULL);
 
 	/*
-	const USHORT MAX_ADDRESSES = 1;
+	const uint16_t MAX_ADDRESSES = 1;
 	int num_addresses = Get_Local_Tcpip_Addresses(p_local_address, MAX_ADDRESSES);
 
 	return (num_addresses == 1);
 	*/
 
-	const USHORT MAX_ADDRESSES = 10;
+	const uint16_t MAX_ADDRESSES = 10;
 	SOCKADDR_IN local_address[MAX_ADDRESSES];
 	int num_addresses = Get_Local_Tcpip_Addresses(local_address, MAX_ADDRESSES);
 
@@ -638,7 +638,7 @@ void cNetUtil::Lan_Servicing(SOCKET & sock, LanPacketHandlerCallback p_callback)
 {
    int retcode;
 
-   unsigned long start_time = TIMEGETTIME();
+   uint32_t start_time = TIMEGETTIME();
 
    do {
 		cPacket packet;
@@ -660,7 +660,7 @@ void cNetUtil::Lan_Servicing(SOCKET & sock, LanPacketHandlerCallback p_callback)
 			//
 			// diagnostic
 			//
-			ULONG ip = packet.Get_From_Address_Wrapper()->FromAddress.sin_addr.s_addr;
+			uint32_t ip = packet.Get_From_Address_Wrapper()->FromAddress.sin_addr.s_addr;
 			WWDEBUG_SAY(("cNetUtil::Lan_Servicing: %s\n", cNetUtil::Address_To_String(ip)));
 			*/
 
@@ -670,7 +670,7 @@ void cNetUtil::Lan_Servicing(SOCKET & sock, LanPacketHandlerCallback p_callback)
 		}
 	} while (retcode != SOCKET_ERROR); // this will indicate no more data
 
-   unsigned long time_spent = TIMEGETTIME() - start_time;
+   uint32_t time_spent = TIMEGETTIME() - start_time;
    if (time_spent > 100) {
       WWDEBUG_SAY(("*** cNetUtil::Lan_Servicing: Too much time (%d ms)) spent receiving lan packets.\n",
          time_spent));

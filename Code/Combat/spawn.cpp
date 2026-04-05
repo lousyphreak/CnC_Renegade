@@ -126,7 +126,7 @@ SpawnerDefClass::SpawnerDefClass( void ) :
 	SCRIPTLIST_PARAM (SpawnerDefClass, "Scripts", ScriptNameList, ScriptParameterList);
 }
 
-uint32	SpawnerDefClass::Get_Class_ID( void ) const
+uint32_t	SpawnerDefClass::Get_Class_ID( void ) const
 {
 	return CLASSID_SPAWNER_DEF;
 }

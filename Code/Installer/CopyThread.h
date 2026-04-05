@@ -36,6 +36,8 @@
 #ifndef _COPY_THREAD_H
 #define _COPY_THREAD_H
 
+#include <cstdint>
+
 // Includes.
 #include "Thread.h"
 #include "Win.h"
@@ -83,7 +85,7 @@ class CopyThreadClass : public ThreadClass
 		DynamicVectorClass <StringClass> &Get_Subdirectory_Log() {return (SubdirectoryLog);}
 		DynamicVectorClass <StringClass> &Get_Filename_Log()		{return (FilenameLog);}
 
-		static bool Replace_File (const FILETIME &sourcefiletime, DWORD sourcefilesize, const WideStringClass &targetpathname);
+		static bool Replace_File (const FILETIME &sourcefiletime, uint32_t sourcefilesize, const WideStringClass &targetpathname);
 		static bool Replace_File (const WideStringClass &sourcepathname, const WideStringClass &targetpathname);
 
 		static CopyThreadClass *_ActiveCopyThread;

@@ -38,6 +38,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef DX8TEXTUREMANAGER_H
@@ -57,7 +59,7 @@ class DX8TextureTrackerClass : public MultiListObjectClass
 {
 friend DX8TextureManagerClass;
 public:
-	DX8TextureTrackerClass(unsigned int w, unsigned int h, WW3DFormat format,
+	DX8TextureTrackerClass(uint32_t w, uint32_t h, WW3DFormat format,
 		TextureClass::MipCountType count,bool rt,
 		TextureClass *tex):
 	Width(w),
@@ -69,8 +71,8 @@ public:
 	{
 	}
 private:
-	unsigned int Width;
-	unsigned int Height;
+	uint32_t Width;
+	uint32_t Height;
 	WW3DFormat Format;
 	TextureClass::MipCountType Mip_level_count;
 	bool RenderTarget;

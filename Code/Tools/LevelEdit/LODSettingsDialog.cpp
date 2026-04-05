@@ -34,7 +34,7 @@ static char THIS_FILE[] = __FILE__;
 // LODSettingsDialogClass
 //
 /////////////////////////////////////////////////////////////////////////////
-LODSettingsDialogClass::LODSettingsDialogClass (unsigned int distance, CWnd *pParent)
+LODSettingsDialogClass::LODSettingsDialogClass (uint32_t distance, CWnd *pParent)
 	:	m_Distance (distance),
 		CDialog(LODSettingsDialogClass::IDD, pParent)
 {
@@ -72,7 +72,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 LODSettingsDialogClass::OnInitDialog (void) 
 {
 	CDialog::OnInitDialog ();

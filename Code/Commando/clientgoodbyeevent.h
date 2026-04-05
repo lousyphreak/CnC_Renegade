@@ -37,6 +37,8 @@
 #ifndef __CLIENTGOODBYEEVENT_H__
 #define __CLIENTGOODBYEEVENT_H__
 
+#include <cstdint>
+
 #include "netevent.h"
 #include "netclassids.h"
 
@@ -53,7 +55,7 @@ public:
 
 	virtual void			Export_Creation(BitStreamClass &packet);
 	virtual void			Import_Creation(BitStreamClass &packet);
-	virtual uint32			Get_Network_Class_ID(void) const				{return NETCLASSID_CLIENTGOODBYEEVENT;}
+	virtual uint32_t			Get_Network_Class_ID(void) const				{return NETCLASSID_CLIENTGOODBYEEVENT;}
 
 private:
 

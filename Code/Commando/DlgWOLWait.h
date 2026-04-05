@@ -36,6 +36,8 @@
 #ifndef __DLGWOLWAIT_H__
 #define __DLGWOLWAIT_H__
 
+#include <cstdint>
+
 #include "renegade_build_config.h"
 #include <win.h>
 #include "Notify.h"
@@ -85,13 +87,13 @@ class DlgWOLWait :
 		enum {SHOW_NEVER = 0xFFFFFFFF};
 
 		static bool DoDialog(const WCHAR* title, const WCHAR* button_text, RefPtr<WaitCondition>& wait,
-				Observer<DlgWOLWaitEvent>* observer = NULL, unsigned long timeout = 0, unsigned long dialog_timeout = 0);
+				Observer<DlgWOLWaitEvent>* observer = NULL, uint32_t timeout = 0, uint32_t dialog_timeout = 0);
 
 		static bool DoDialog(const WCHAR* title, RefPtr<WaitCondition>& wait,
-				Observer<DlgWOLWaitEvent>* observer = NULL, unsigned long timeout = 0, unsigned long dialog_timeout = 0);
+				Observer<DlgWOLWaitEvent>* observer = NULL, uint32_t timeout = 0, uint32_t dialog_timeout = 0);
 
 		static bool DoDialog(int titleID, RefPtr<WaitCondition>& wait,
-				Observer<DlgWOLWaitEvent>* observer = NULL, unsigned long timeout = 0, unsigned long dialog_timeout = 0);
+				Observer<DlgWOLWaitEvent>* observer = NULL, uint32_t timeout = 0, uint32_t dialog_timeout = 0);
 
 		const RefPtr<WaitCondition>& GetWait(void)
 			{return mWait;}
@@ -99,7 +101,7 @@ class DlgWOLWait :
 		static DlgWOLWait *Get_Instance (void)	{ return mTheInstance; }
 
 	protected:
-		DlgWOLWait(RefPtr<WaitCondition>& wait, unsigned long timeout, unsigned long dialog_timeout = 0);
+		DlgWOLWait(RefPtr<WaitCondition>& wait, uint32_t timeout, uint32_t dialog_timeout = 0);
 		~DlgWOLWait();
 
 		// Prevent copy and assignment
@@ -111,7 +113,7 @@ class DlgWOLWait :
 		void On_Init_Dialog(void);
 		void On_Destroy(void);
 		void On_Periodic(void);
-		void On_Command(int ctrl, int message, DWORD param);
+		void On_Command(int ctrl, int message, uint32_t param);
 		void Render(void);
 
 		DECLARE_NOTIFIER(DlgWOLWaitEvent)
@@ -120,8 +122,8 @@ class DlgWOLWait :
 		RefPtr<WaitCondition> mWait;
 		RefPtr<WWOnline::Session> mWOLSession;
 		unsigned mStartTime;
-		unsigned long mTimeout;
-		unsigned long mDialogTimeout;
+		uint32_t mTimeout;
+		uint32_t mDialogTimeout;
 		bool mShowDialog;
 		static DlgWOLWait *	mTheInstance;
 	};
@@ -162,15 +164,15 @@ class DlgWOLWait
 		enum {SHOW_NEVER = 0xFFFFFFFF};
 
 		static bool DoDialog(const WCHAR*, const WCHAR*, RefPtr<WaitCondition>&,
-				Observer<DlgWOLWaitEvent>* = 0, unsigned long = 0, unsigned long = 0)
+				Observer<DlgWOLWaitEvent>* = 0, uint32_t = 0, uint32_t = 0)
 			{return false;}
 
 		static bool DoDialog(const WCHAR*, RefPtr<WaitCondition>&,
-				Observer<DlgWOLWaitEvent>* = 0, unsigned long = 0, unsigned long = 0)
+				Observer<DlgWOLWaitEvent>* = 0, uint32_t = 0, uint32_t = 0)
 			{return false;}
 
 		static bool DoDialog(int, RefPtr<WaitCondition>&,
-				Observer<DlgWOLWaitEvent>* = 0, unsigned long = 0, unsigned long = 0)
+				Observer<DlgWOLWaitEvent>* = 0, uint32_t = 0, uint32_t = 0)
 			{return false;}
 
 		static DlgWOLWait *Get_Instance(void)

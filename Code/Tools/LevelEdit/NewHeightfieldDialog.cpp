@@ -108,7 +108,7 @@ NewHeightfieldDialogClass::OnOK (void)
 //	OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 NewHeightfieldDialogClass::OnInitDialog (void) 
 {
 	CDialog::OnInitDialog ();

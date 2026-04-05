@@ -63,7 +63,7 @@ char* strtrim(char* buffer)
 		/* Strip leading white space from the string. */
 		char* source = buffer;
 
-		while ((*source != 0) && ((unsigned char)*source <= 32)) {
+		while ((*source != 0) && ((uint8_t)*source <= 32)) {
 			++source;
 		}
 
@@ -73,7 +73,7 @@ char* strtrim(char* buffer)
 
 		/* Clip trailing white space from the string. */
 		for (int index = static_cast<int>(strlen(buffer)) - 1; index >= 0; --index) {
-			if ((unsigned char)buffer[index] <= 32) {
+			if ((uint8_t)buffer[index] <= 32) {
 				buffer[index] = '\0';
 			} else {
 				break;
@@ -91,7 +91,7 @@ wchar_t* wcstrim(wchar_t* buffer)
 		/* Strip leading white space from the string. */
 		wchar_t* source = buffer;
 
-		while ((*source != 0) && ((unsigned int)*source <= 32)) {
+		while ((*source != 0) && ((uint32_t)*source <= 32)) {
 			++source;
 		}
 		
@@ -101,7 +101,7 @@ wchar_t* wcstrim(wchar_t* buffer)
 
 		/* Clip trailing white space from the string. */
 		for (int index = static_cast<int>(wcslen(buffer)) - 1; index >= 0; --index) {
-			if ((unsigned int)buffer[index] <= 32) {
+			if ((uint32_t)buffer[index] <= 32) {
 				buffer[index] = L'\0';
 			} else {
 				break;

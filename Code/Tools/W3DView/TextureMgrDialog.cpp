@@ -157,7 +157,7 @@ TextureMgrDialogClass::Fill_List_Ctrl_With_Meshes (void)
 			m_ListCtrl.SetItemText (list_index, COL_TEXTURES, texture_string);
 
 			// Associate the node with the list entry
-			m_ListCtrl.SetItemData (list_index, (DWORD)pnode);
+			m_ListCtrl.SetItemData (list_index, (uint32_t)pnode);
 		}
 	}
 
@@ -207,7 +207,7 @@ TextureMgrDialogClass::Fill_List_Ctrl_With_Textures (TextureListNodeClass &paren
 //
 // OnInitDialog
 //
-BOOL
+int32_t
 TextureMgrDialogClass::OnInitDialog (void)
 {
 	CWaitCursor wait_cursor;	
@@ -399,7 +399,7 @@ void
 TextureMgrDialogClass::OnDblclkMeshTextureListCtrl
 (
 	NMHDR *pNMHDR,
-	LRESULT *pResult
+	intptr_t *pResult
 )
 {
 	// Determine which item is selected
@@ -480,7 +480,7 @@ void
 TextureMgrDialogClass::OnKeydownMeshTextureListCtrl
 (
 	NMHDR* pNMHDR,
-	LRESULT* pResult
+	intptr_t* pResult
 )
 {
 	// Did the user press the backspace key?
@@ -552,7 +552,7 @@ TextureMgrDialogClass::OnBack (void)
 void
 TextureMgrDialogClass::OnDetails (void)
 {
-	LONG style = ::GetWindowLong (m_ListCtrl, GWL_STYLE);
+	int32_t style = ::GetWindowLong (m_ListCtrl, GWL_STYLE);
 	SetWindowLong (m_ListCtrl, GWL_STYLE, (style & (~LVS_TYPEMASK)) | LVS_REPORT);
 	return ;
 }
@@ -565,7 +565,7 @@ TextureMgrDialogClass::OnDetails (void)
 void
 TextureMgrDialogClass::OnLarge (void)
 {
-	LONG style = ::GetWindowLong (m_ListCtrl, GWL_STYLE);
+	int32_t style = ::GetWindowLong (m_ListCtrl, GWL_STYLE);
 	SetWindowLong (m_ListCtrl, GWL_STYLE, (style & (~LVS_TYPEMASK)) | LVS_ICON);
 	return ;
 }
@@ -578,7 +578,7 @@ TextureMgrDialogClass::OnLarge (void)
 void
 TextureMgrDialogClass::OnList (void)
 {
-	LONG style = ::GetWindowLong (m_ListCtrl, GWL_STYLE);
+	int32_t style = ::GetWindowLong (m_ListCtrl, GWL_STYLE);
 	SetWindowLong (m_ListCtrl, GWL_STYLE, (style & (~LVS_TYPEMASK)) | LVS_LIST);
 	return ;
 }
@@ -591,7 +591,7 @@ TextureMgrDialogClass::OnList (void)
 void
 TextureMgrDialogClass::OnSmall (void)
 {
-	LONG style = ::GetWindowLong (m_ListCtrl, GWL_STYLE);
+	int32_t style = ::GetWindowLong (m_ListCtrl, GWL_STYLE);
 	SetWindowLong (m_ListCtrl, GWL_STYLE, (style & (~LVS_TYPEMASK)) | LVS_SMALLICON);
 	return ;
 }
@@ -700,7 +700,7 @@ TextureMgrDialogClass::Insert_Texture_Details
 		m_ListCtrl.SetItemText (index, COL_TEXTURE_TYPE, type_string);
 
 		// Associate the node with the list entry
-		m_ListCtrl.SetItemData (index, (DWORD)pnode);
+		m_ListCtrl.SetItemData (index, (uint32_t)pnode);
 	}
 
 	return ;

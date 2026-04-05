@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __DEFINITION_CLASS_ID_H
@@ -91,8 +93,8 @@ enum
 //	SuperClassID_From_ClassID
 //
 //////////////////////////////////////////////////////////////////////////////////
-inline uint32
-SuperClassID_From_ClassID (uint32 class_id)
+inline uint32_t
+SuperClassID_From_ClassID (uint32_t class_id)
 {
 	//
 	//	Which id-range does it fall under?

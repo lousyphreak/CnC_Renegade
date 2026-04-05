@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __DIALOG_BASE_H
@@ -75,7 +77,7 @@ class DialogTransitionClass;
 ////////////////////////////////////////////////////////////////
 //	Typedefs
 ////////////////////////////////////////////////////////////////
-typedef bool (CALLBACK *DEFAULT_DLG_CMD_HANDLER) (DialogBaseClass *dialog, int ctrl_id, int mesage_id, DWORD param);
+typedef bool (CALLBACK *DEFAULT_DLG_CMD_HANDLER) (DialogBaseClass *dialog, int32_t ctrl_id, int32_t mesage_id, uint32_t param);
 
 
 class DialogEvent :
@@ -234,7 +236,7 @@ public:
 	//
 	//	Notifications
 	//
-	virtual void			On_Command (int ctrl_id, int mesage_id, DWORD param);
+	virtual void			On_Command (int ctrl_id, int mesage_id, uint32_t param);
 
 	//
 	//	Default processing support
@@ -258,10 +260,10 @@ protected:
 	virtual void			On_Init_Dialog (void);
 	virtual void			On_Destroy (void)					{}
 	virtual void			On_Activate (bool onoff);
-	virtual bool			On_Key_Down (uint32 key_id, uint32 key_data);
+	virtual bool			On_Key_Down (uint32_t key_id, uint32_t key_data);
 	virtual void			On_Unicode_Char(WCHAR unicode);
 	virtual void			On_Mouse_Wheel (int direction);
-	virtual bool			On_Key_Up (uint32 key_id);
+	virtual bool			On_Key_Up (uint32_t key_id);
 	virtual void			On_Frame_Update (void);
 	virtual void			On_Periodic (void)				{}
 

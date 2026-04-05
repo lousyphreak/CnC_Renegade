@@ -35,6 +35,8 @@
 #ifndef __WOLUSER_H__
 #define __WOLUSER_H__
 
+#include <cstdint>
+
 // Disable warning about exception handling not being enabled.
 #pragma warning(disable : 4530)
 
@@ -126,7 +128,7 @@ class UserData :
 		void SetChannel(const RefPtr<ChannelData>& channel);
 
 		// Get user's clan ID
-		unsigned long GetSquadID(void) const
+		uint32_t GetSquadID(void) const
 			{return mData.squadID;}
 
 		// Get access user's Clan data (This is shared with all other users in the same clan)
@@ -168,7 +170,7 @@ class UserData :
 		void SetLadderFromType(const RefPtr<LadderData>& ladder, LadderType ladderType);
 		RefPtr<LadderData> GetLadderFromType(LadderType ladderType);
 
-		unsigned long mKickTimer;
+		uint32_t mKickTimer;
 
 	private:
 		UserData(const WOL::User&);

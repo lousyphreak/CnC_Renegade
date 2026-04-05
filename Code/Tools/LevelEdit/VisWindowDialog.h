@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 #include "resource.h"
@@ -64,8 +66,8 @@ protected:
 	// Generated message map functions
 	//{{AFX_MSG(VisWindowDialogClass)
 	afx_msg void OnPaint();
-	virtual BOOL OnInitDialog();
-	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	virtual int32_t OnInitDialog();
+	afx_msg void OnMouseMove(uint32_t nFlags, CPoint point);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 
@@ -76,8 +78,8 @@ public:
 	///////////////////////////////////////////////////////////////////
 	void		Create (void);
 	void		Update_Display (VisRasterizerClass &rasterizer);
-	BOOL		OnToolTipNeedText(UINT id, NMHDR * pNMHDR, LRESULT * pResult);
-	BOOL		PreTranslateMessage(MSG* pMsg);
+	int32_t		OnToolTipNeedText(uint32_t id, NMHDR * pNMHDR, intptr_t * pResult);
+	int32_t		PreTranslateMessage(MSG* pMsg);
 
 
 public:
@@ -95,15 +97,15 @@ private:
 	// Private methods
 	///////////////////////////////////////////////////////////////////
 	int				Hit_Test(CPoint point) const;
-	unsigned int	Id_To_Pixel(unsigned int id) const;		
-	unsigned int	Pixel_To_Id(unsigned int pixel) const;
+	uint32_t	Id_To_Pixel(uint32_t id) const;		
+	uint32_t	Pixel_To_Id(uint32_t pixel) const;
 
 	///////////////////////////////////////////////////////////////////
 	//	Private member data
 	///////////////////////////////////////////////////////////////////
 	HDC				MemDC;
 	HBITMAP			Bitmap;
-	BYTE *			BitmapBits;
+	uint8_t *			BitmapBits;
 	int				Width;
 	int				Height;
 	unsigned			CurToolTipVisId;

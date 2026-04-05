@@ -388,7 +388,7 @@ float	ArmorWarheadManager::Get_Damage_Multiplier( ArmorType armor, WarheadType w
 	WWASSERT( (int)armor < Get_Num_Armor_Types() );
 	WWASSERT( (int)warhead >= 0 );
 	WWASSERT( (int)warhead < Get_Num_Warhead_Types() );
-	return( Multipliers[ (unsigned int)armor * Get_Num_Warhead_Types() + (unsigned int)warhead ] );
+	return( Multipliers[ (uint32_t)armor * Get_Num_Warhead_Types() + (uint32_t)warhead ] );
 
 	/*
 	int index = armor * Get_Num_Warhead_Types() + warhead;
@@ -408,7 +408,7 @@ float	ArmorWarheadManager::Get_Shield_Absorbsion( ArmorType armor, WarheadType w
 	WWASSERT( (int)armor < Get_Num_Armor_Types() );
 	WWASSERT( (int)warhead >= 0 );
 	WWASSERT( (int)warhead < Get_Num_Warhead_Types() );
-	return( Absorbsion[ (unsigned int)armor * Get_Num_Warhead_Types() + (unsigned int)warhead ] );
+	return( Absorbsion[ (uint32_t)armor * Get_Num_Warhead_Types() + (uint32_t)warhead ] );
 }
 
 
@@ -1103,7 +1103,7 @@ void DefenseObjectClass::Import(BitStreamClass & packet)
 
 	int health				= packet.Get(health, BITPACK_HEALTH);
 	int shield_strength	= packet.Get(shield_strength, BITPACK_SHIELD_STRENGTH);
-	unsigned int shield_type;
+	uint32_t shield_type;
 	packet.Get(shield_type, BITPACK_SHIELD_TYPE);
 
 	ShieldType			= shield_type;
@@ -1134,7 +1134,7 @@ void DefenseObjectClass::Export(BitStreamClass & packet)
 
 	packet.Add(health,							BITPACK_HEALTH);
 	packet.Add(shield_strength,				BITPACK_SHIELD_STRENGTH);
-	packet.Add((unsigned long)ShieldType,	BITPACK_SHIELD_TYPE);
+	packet.Add((uint32_t)ShieldType,	BITPACK_SHIELD_TYPE);
 
    //LastSentHealth = Health;
    //LastSentSkin = Skin;

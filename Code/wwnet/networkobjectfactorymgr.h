@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __NETWORK_OBJECT_FACTORY_MGR_H
@@ -61,7 +63,7 @@ public:
 	/////////////////////////////////////////////////////////////////////
 	//	Public methods
 	/////////////////////////////////////////////////////////////////////
-	static NetworkObjectFactoryClass *	Find_Factory (uint32 class_id);	
+	static NetworkObjectFactoryClass *	Find_Factory (uint32_t class_id);	
 	static void									Register_Factory (NetworkObjectFactoryClass *factory);
 	static void									Unregister_Factory (NetworkObjectFactoryClass *factory);
 

@@ -44,9 +44,9 @@ IMPLEMENT_DYNAMIC(RingPropertySheetClass, CPropertySheet)
 RingPropertySheetClass::RingPropertySheetClass
 (
 	RingRenderObjClass *	ring,
-	UINT						nIDCaption,
+	uint32_t						nIDCaption,
 	CWnd *					pParentWnd,
-	UINT						iSelectPage
+	uint32_t						iSelectPage
 )
 	:	m_RenderObj (NULL),
 		CPropertySheet(nIDCaption, pParentWnd, iSelectPage)
@@ -67,7 +67,7 @@ RingPropertySheetClass::RingPropertySheetClass
 	RingRenderObjClass *		ring,
 	LPCTSTR						pszCaption,
 	CWnd *						pParentWnd,
-	UINT							iSelectPage
+	uint32_t							iSelectPage
 )
 	:	m_RenderObj (NULL),		
 		CPropertySheet(pszCaption, pParentWnd, iSelectPage)
@@ -108,12 +108,12 @@ END_MESSAGE_MAP()
 //  WindowProc
 //
 /////////////////////////////////////////////////////////////
-LRESULT
+intptr_t
 RingPropertySheetClass::WindowProc
 (
-	UINT message,
-	WPARAM wParam,
-	LPARAM lParam
+	uint32_t message,
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	switch (message)
@@ -143,7 +143,7 @@ RingPropertySheetClass::WindowProc
 				{					
 					// Did the user click the button?
 					if (HIWORD (wParam) == BN_CLICKED) {
-						LRESULT lresult = CPropertySheet::WindowProc (message, wParam, lParam);
+						intptr_t lresult = CPropertySheet::WindowProc (message, wParam, lParam);
 
 						// If all the pages contain valid data, then update the emitter
 						if (	m_GeneralPage.Is_Data_Valid () &&

@@ -58,7 +58,7 @@ enum
 DynamicVectorClass<PathSolveClass *>	PathMgrClass::AvailablePathList;
 DynamicVectorClass<PathSolveClass *>	PathMgrClass::UsedPathList;
 PathSolveClass *								PathMgrClass::ActivePath = NULL;
-long long									PathMgrClass::TicksPerMilliSec = 0;
+int64_t									PathMgrClass::TicksPerMilliSec = 0;
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -81,7 +81,7 @@ PathMgrClass::Initialize (void)
 	//	Determine what the resolution of our timer is
 	//
 	if (TicksPerMilliSec == 0) {
-		TicksPerMilliSec = static_cast<long long>(SDL_GetPerformanceFrequency());
+		TicksPerMilliSec = static_cast<int64_t>(SDL_GetPerformanceFrequency());
 		TicksPerMilliSec /= 1000;
 	}
 
@@ -316,10 +316,10 @@ PathMgrClass::Load (ChunkLoadClass &cload)
 //	Get_Time
 //
 ///////////////////////////////////////////////////////////////////////////
-static inline long long
+static inline int64_t
 Get_Time (void)
 {
-	return static_cast<long long>(SDL_GetPerformanceCounter());
+	return static_cast<int64_t>(SDL_GetPerformanceCounter());
 }
 
 
@@ -329,10 +329,10 @@ Get_Time (void)
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 void
-PathMgrClass::Resolve_Paths (const Vector3 &camera_pos, uint32 milliseconds)
+PathMgrClass::Resolve_Paths (const Vector3 &camera_pos, uint32_t milliseconds)
 {
-	long long start_time	= Get_Time ();
-	long long end_time		= start_time + (((long long)milliseconds) * TicksPerMilliSec);
+	int64_t start_time	= Get_Time ();
+	int64_t end_time		= start_time + (static_cast<int64_t>(milliseconds) * TicksPerMilliSec);
 
 	WWMEMLOG(MEM_PATHFIND);
 
@@ -356,7 +356,7 @@ PathMgrClass::Resolve_Paths (const Vector3 &camera_pos, uint32 milliseconds)
 			//
 			//	Let this path think for (up to) the remainder of our timeslice
 			//
-			uint32 time_slice = uint32((end_time - Get_Time ()) / TicksPerMilliSec);
+			uint32_t time_slice = uint32_t((end_time - Get_Time ()) / TicksPerMilliSec);
 			PathSolveClass::STATE_DESC result = ActivePath->Timestep (time_slice);
 
 			//

@@ -35,6 +35,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #pragma once
+
+#include <cstdint>
 #ifndef _DLGWOLAUTOSTART_H
 #define _DLGWOLAUTOSTART_H
 
@@ -51,8 +53,8 @@ class AutoRestartProgressDialogClass : public MenuDialogClass
 	public:
 		AutoRestartProgressDialogClass(void);
 		void On_Init_Dialog(void);
-		void On_Command(int ctrl_id, int message_id, DWORD param);
-		void Add_Text(unsigned short *txt);
+		void On_Command(int ctrl_id, int message_id, uint32_t param);
+		void Add_Text(uint16_t *txt);
 		static AutoRestartProgressDialogClass *Get_Instance(void) {return(Instance);}
 
 	private:

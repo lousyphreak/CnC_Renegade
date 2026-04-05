@@ -98,9 +98,9 @@ bool TryingToExit = false;
 ** Register dump variables. These are used to allow the game to restart from an arbitrary
 ** position after an exception occurs.
 */
-unsigned long ExceptionReturnStack = 0;
-unsigned long ExceptionReturnAddress = 0;
-unsigned long ExceptionReturnFrame = 0;
+uint32_t ExceptionReturnStack = 0;
+uint32_t ExceptionReturnAddress = 0;
+uint32_t ExceptionReturnFrame = 0;
 
 /*
 ** Number of times the exception handler has recursed. Recursions are bad.
@@ -116,15 +116,15 @@ DynamicVectorClass<ThreadInfoType*> ThreadList;
 ** Definitions to allow run-time linking to the Imagehlp.dll functions.
 **
 */
-typedef BOOL  (WINAPI *SymCleanupType) (HANDLE hProcess);
-typedef BOOL  (WINAPI *SymGetSymFromAddrType) (HANDLE hProcess, DWORD Address, LPDWORD Displacement, PIMAGEHLP_SYMBOL Symbol);
-typedef BOOL  (WINAPI *SymInitializeType) (HANDLE hProcess, LPSTR UserSearchPath, BOOL fInvadeProcess);
-typedef BOOL  (WINAPI *SymLoadModuleType) (HANDLE hProcess, HANDLE hFile, LPSTR ImageName, LPSTR ModuleName, DWORD BaseOfDll, DWORD SizeOfDll);
-typedef DWORD (WINAPI *SymSetOptionsType) (DWORD SymOptions);
-typedef BOOL  (WINAPI *SymUnloadModuleType) (HANDLE hProcess, DWORD BaseOfDll);
-typedef BOOL  (WINAPI *StackWalkType) (DWORD MachineType, HANDLE hProcess, HANDLE hThread, LPSTACKFRAME StackFrame, LPVOID ContextRecord, PREAD_PROCESS_MEMORY_ROUTINE ReadMemoryRoutine, PFUNCTION_TABLE_ACCESS_ROUTINE FunctionTableAccessRoutine, PGET_MODULE_BASE_ROUTINE GetModuleBaseRoutine, PTRANSLATE_ADDRESS_ROUTINE TranslateAddress);
-typedef LPVOID (WINAPI *SymFunctionTableAccessType) (HANDLE hProcess, DWORD AddrBase);
-typedef DWORD (WINAPI *SymGetModuleBaseType) (HANDLE hProcess, DWORD dwAddr);
+typedef int32_t  (WINAPI *SymCleanupType) (HANDLE hProcess);
+typedef int32_t  (WINAPI *SymGetSymFromAddrType) (HANDLE hProcess, uint32_t Address, LPDWORD Displacement, PIMAGEHLP_SYMBOL Symbol);
+typedef int32_t  (WINAPI *SymInitializeType) (HANDLE hProcess, LPSTR UserSearchPath, int32_t fInvadeProcess);
+typedef int32_t  (WINAPI *SymLoadModuleType) (HANDLE hProcess, HANDLE hFile, LPSTR ImageName, LPSTR ModuleName, uint32_t BaseOfDll, uint32_t SizeOfDll);
+typedef uint32_t (WINAPI *SymSetOptionsType) (uint32_t SymOptions);
+typedef int32_t  (WINAPI *SymUnloadModuleType) (HANDLE hProcess, uint32_t BaseOfDll);
+typedef int32_t  (WINAPI *StackWalkType) (uint32_t MachineType, HANDLE hProcess, HANDLE hThread, LPSTACKFRAME StackFrame, LPVOID ContextRecord, PREAD_PROCESS_MEMORY_ROUTINE ReadMemoryRoutine, PFUNCTION_TABLE_ACCESS_ROUTINE FunctionTableAccessRoutine, PGET_MODULE_BASE_ROUTINE GetModuleBaseRoutine, PTRANSLATE_ADDRESS_ROUTINE TranslateAddress);
+typedef LPVOID (WINAPI *SymFunctionTableAccessType) (HANDLE hProcess, uint32_t AddrBase);
+typedef uint32_t (WINAPI *SymGetModuleBaseType) (HANDLE hProcess, uint32_t dwAddr);
 
 
 static SymCleanupType							_SymCleanup = NULL;
@@ -283,7 +283,7 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	/*
 	** List of possible exceptions
 	*/
-	static const unsigned int _codes[] = {
+	static const uint32_t _codes[] = {
 		EXCEPTION_ACCESS_VIOLATION,
 		EXCEPTION_ARRAY_BOUNDS_EXCEEDED,
 		EXCEPTION_BREAKPOINT,
@@ -355,13 +355,13 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	if (imagehelp != NULL) {
 		DebugString ("Exception Handler: Found IMAGEHLP.DLL - linking to required functions\n");
 		char const *function_name = NULL;
-		unsigned long *fptr = (unsigned long*) &_SymCleanup;
+		uint32_t *fptr = (uint32_t*) &_SymCleanup;
 		int count = 0;
 
 		do {
 			function_name = ImagehelpFunctionNames[count];
 			if (function_name) {
-				*fptr = (unsigned long) GetProcAddress(imagehelp, function_name);
+				*fptr = (uint32_t) GetProcAddress(imagehelp, function_name);
 				fptr++;
 				count++;
 			}
@@ -407,8 +407,8 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	}
 
 
-	unsigned char symbol [256];
-	unsigned long displacement;
+	uint8_t symbol [256];
+	uint32_t displacement;
 	IMAGEHLP_SYMBOL *symptr = (IMAGEHLP_SYMBOL*)&symbol;
 
 	/*
@@ -420,7 +420,7 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	** The following are set for access violation only
 	*/
 	int access_read_write=-1;
-	unsigned long access_address = 0;
+	uint32_t access_address = 0;
 
 	if (e_info->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
 		DebugString("Exception Handler: Exception is access violation\n");
@@ -488,12 +488,12 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	DebugString("Stack walk...\n");
 	Add_Txt("\r\n  Stack walk...\r\n");
 
-	unsigned long return_addresses[256];
+	uint32_t return_addresses[256];
 	int num_addresses = Stack_Walk(return_addresses, 256, context);
 
 	if (num_addresses) {
 		for (int s=0 ; s<num_addresses ; s++) {
-			unsigned long temp_addr = return_addresses[s];
+			uint32_t temp_addr = return_addresses[s];
 			displacement = 0;
 
 			for (int space = 0 ; space <= s ; space++) {
@@ -644,7 +644,7 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	DebugString("EIP bytes dump...\n");
 	sprintf(scrap, "\r\nBytes at CS:EIP (%08X)  : ", context->Eip);
 
-	unsigned char *eip_ptr = (unsigned char *) (context->Eip);
+	uint8_t *eip_ptr = (uint8_t *) (context->Eip);
 	char bytestr[32];
 
 	for (int c = 0 ; c < 32 ; c++) {
@@ -665,7 +665,7 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	*/
 	DebugString("Stack dump...\n");
 	Add_Txt("Stack dump (* indicates possible code address) :\r\n");
-	unsigned long *stackptr = (unsigned long*) context->Esp;
+	uint32_t *stackptr = (uint32_t*) context->Esp;
 
 	for (int j=0 ; j<2048 ; j++) {
 		if (IsBadReadPtr(stackptr, 4)) {
@@ -806,7 +806,7 @@ int Exception_Handler(int exception_code, EXCEPTION_POINTERS *e_info)
 		** Log the machine state to disk
 		*/
 		HANDLE debug_file;
-		DWORD	actual;
+		uint32_t	actual;
 		debug_file = CreateFile("_except.txt", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (debug_file != INVALID_HANDLE_VALUE){
 			WriteFile(debug_file, ExceptionText, strlen(ExceptionText), &actual, NULL);
@@ -853,7 +853,7 @@ int Exception_Handler(int exception_code, EXCEPTION_POINTERS *e_info)
 #endif //_DEBUG
 		TryingToExit = true;
 
-		unsigned long id = Get_Main_Thread_ID();
+		uint32_t id = Get_Main_Thread_ID();
 		if (id != GetCurrentThreadId()) {
 			DebugString("Exiting due to exception in sub thread\n");
 			ExitProcess(EXIT_SUCCESS);
@@ -883,7 +883,7 @@ int Exception_Handler(int exception_code, EXCEPTION_POINTERS *e_info)
  * HISTORY:                                                                                    *
  *   8/30/2001 3:04PM ST : Created                                                             *
  *=============================================================================================*/
-void Register_Thread_ID(unsigned long thread_id, char *thread_name, bool main_thread)
+void Register_Thread_ID(uint32_t thread_id, char *thread_name, bool main_thread)
 {
 	WWMEMLOG(MEM_GAMEDATA);
 	if (thread_name) {
@@ -924,7 +924,7 @@ void Register_Thread_ID(unsigned long thread_id, char *thread_name, bool main_th
  * HISTORY:                                                                                    *
  *   2/6/2002 9:40PM ST : Created                                                              *
  *=============================================================================================*/
-bool Register_Thread_Handle(unsigned long thread_id, HANDLE thread_handle)
+bool Register_Thread_Handle(uint32_t thread_id, HANDLE thread_handle)
 {
 	for (int i=0 ; i<ThreadList.Count() ; i++) {
 		if (ThreadList[i]->ThreadID == thread_id) {
@@ -995,7 +995,7 @@ HANDLE Get_Thread_Handle(int thread_index)
  * HISTORY:                                                                                    *
  *   8/30/2001 3:10PM ST : Created                                                             *
  *=============================================================================================*/
-void Unregister_Thread_ID(unsigned long thread_id, char *thread_name)
+void Unregister_Thread_ID(uint32_t thread_id, char *thread_name)
 {
 	for (int i=0 ; i<ThreadList.Count() ; i++) {
 		if (strcmp(thread_name, ThreadList[i]->ThreadName) == 0) {
@@ -1023,7 +1023,7 @@ void Unregister_Thread_ID(unsigned long thread_id, char *thread_name)
  * HISTORY:                                                                                    *
  *   12/6/2001 12:20PM ST : Created                                                            *
  *=============================================================================================*/
-unsigned long Get_Main_Thread_ID(void)
+uint32_t Get_Main_Thread_ID(void)
 {
 	for (int i=0 ; i<ThreadList.Count() ; i++) {
 		if (ThreadList[i]->Main) {
@@ -1063,13 +1063,13 @@ void Load_Image_Helper(void)
 
 		if (ImageHelp != NULL) {
 			char const *function_name = NULL;
-			unsigned long *fptr = (unsigned long *) &_SymCleanup;
+			uint32_t *fptr = (uint32_t *) &_SymCleanup;
 			int count = 0;
 
 			do {
 				function_name = ImagehelpFunctionNames[count];
 				if (function_name) {
-					*fptr = (unsigned long) GetProcAddress(ImageHelp, function_name);
+					*fptr = (uint32_t) GetProcAddress(ImageHelp, function_name);
 					fptr++;
 					count++;
 				}
@@ -1167,12 +1167,12 @@ bool Lookup_Symbol(void *code_ptr, char *symbol, int &displacement)
 	symbol_struct_ptr->SizeOfStruct = sizeof (symbol_struct_buf);
 	symbol_struct_ptr->MaxNameLength = sizeof(symbol_struct_buf)-sizeof (IMAGEHLP_SYMBOL);
 	symbol_struct_ptr->Size = 0;
-	symbol_struct_ptr->Address = (unsigned long)code_ptr;
+	symbol_struct_ptr->Address = (uint32_t)code_ptr;
 
 	/*
 	** See if we have the symbol for that address.
 	*/
-	if (_SymGetSymFromAddr(GetCurrentProcess(), (unsigned long)code_ptr, (unsigned long *)&displacement, symbol_struct_ptr)) {
+	if (_SymGetSymFromAddr(GetCurrentProcess(), (uint32_t)code_ptr, (uint32_t *)&displacement, symbol_struct_ptr)) {
 
 		/*
 		** Copy it back into the buffer provided.
@@ -1202,7 +1202,7 @@ bool Lookup_Symbol(void *code_ptr, char *symbol, int &displacement)
  * HISTORY:                                                                                    *
  *   6/12/2001 11:57AM ST : Created                                                            *
  *=============================================================================================*/
-int Stack_Walk(unsigned long *return_addresses, int num_addresses, CONTEXT *context)
+int Stack_Walk(uint32_t *return_addresses, int num_addresses, CONTEXT *context)
 {
 	static HINSTANCE _imagehelp = (HINSTANCE) -1;
 
@@ -1227,7 +1227,7 @@ int Stack_Walk(unsigned long *return_addresses, int num_addresses, CONTEXT *cont
 	STACKFRAME stack_frame;
 	memset(&stack_frame, 0, sizeof(stack_frame));
 
-	unsigned long reg_eip, reg_ebp, reg_esp;
+	uint32_t reg_eip, reg_ebp, reg_esp;
 
 	__asm {
 here:
@@ -1267,7 +1267,7 @@ here:
 			if (i==0 && context == NULL) {
 				continue;
 			}
-			unsigned long return_address = stack_frame.AddrReturn.Offset;
+			uint32_t return_address = stack_frame.AddrReturn.Offset;
 			return_addresses[pointer_index++] = return_address;
 		} else {
 			break;

@@ -567,7 +567,7 @@ NodeClass::Save (ChunkSaveClass &csave)
 		if (phys_obj != NULL) {
 			StaticPhysClass *static_phys_obj = phys_obj->As_StaticPhysClass ();
 			if (static_phys_obj != NULL) {
-				uint32 vis_id = static_phys_obj->Get_Vis_Object_ID ();
+				uint32_t vis_id = static_phys_obj->Get_Vis_Object_ID ();
 				WRITE_MICRO_CHUNK (csave, VARID_VISID, vis_id);
 				vis_id = static_phys_obj->Get_Vis_Sector_ID();
 				WRITE_MICRO_CHUNK (csave, VARID_VISSECTORID, vis_id);
@@ -638,7 +638,7 @@ NodeClass::Load_Variables (ChunkLoadClass &cload)
 
 			case VARID_VISID:
 			{
-				uint32 vis_id = 0;
+				uint32_t vis_id = 0;
 				cload.Read (&vis_id, sizeof (vis_id));
 
 				//
@@ -655,7 +655,7 @@ NodeClass::Load_Variables (ChunkLoadClass &cload)
 
 			case VARID_VISSECTORID:
 			{
-				uint32 vis_id = 0;
+				uint32_t vis_id = 0;
 				cload.Read (&vis_id, sizeof (vis_id));
 
 				//
@@ -839,7 +839,7 @@ NodeClass::Show_Settings_Dialog (void)
 	prop_sheet.Add_Page (&pos_tab);
 
 	// Show the property sheet
-	UINT ret_code = prop_sheet.DoModal ();
+	uint32_t ret_code = prop_sheet.DoModal ();
 	
 	// Return true if the user clicked OK
 	return (ret_code == IDOK);
@@ -886,7 +886,7 @@ NodeClass::operator= (const NodeClass &src)
 //
 /////////////////////////////////////////////////////////////////
 void
-NodeClass::Set_ID (uint32 id)
+NodeClass::Set_ID (uint32_t id)
 {
 	m_ID = id;
 	NodeMgrClass::Setup_Node_Identity (*this);

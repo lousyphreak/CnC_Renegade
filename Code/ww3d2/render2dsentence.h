@@ -38,6 +38,8 @@
 #pragma once
 #endif
 
+#include <cstdint>
+
 #ifndef RENDER2DSENTENCE_H
 #define RENDER2DSENTENCE_H
 
@@ -67,7 +69,7 @@ public:
 	int	Get_Char_Width( WCHAR ch );
 	int	Get_Char_Spacing( WCHAR ch );
 
-	void	Blit_Char( WCHAR ch, uint16 *dest_ptr, int dest_stride, int x, int y );
+	void	Blit_Char( WCHAR ch, uint16_t *dest_ptr, int dest_stride, int x, int y );
 
 private:
 
@@ -76,8 +78,8 @@ private:
 	//
 	struct CharDataStruct {
 		WCHAR				Value;
-		short				Width;
-		uint16 *			Buffer;
+		int16_t			Width;
+		uint16_t *			Buffer;
 	};
 
 	//
@@ -96,8 +98,8 @@ private:
 	//	Private member data
 	//
 	StringClass							Name;
-	DynamicVectorClass<uint16 *>	BufferList;
-	uint16*								PreAllocatedBufferList[16];	// We'll use this with BufferList first
+	DynamicVectorClass<uint16_t *>	BufferList;
+	uint16_t*								PreAllocatedBufferList[16];	// We'll use this with BufferList first
 	int									CurrPixelOffset;
 	int									CharHeight;
 	int									PointSize;
@@ -106,12 +108,12 @@ private:
 	HBITMAP								OldGDIBitmap;
 	HBITMAP								GDIBitmap;	
 	HFONT									GDIFont;
-	uint8 *								GDIBitmapBits;
+	uint8_t *								GDIBitmapBits;
 	HDC									MemDC;
 	CharDataStruct *					ASCIICharArray[256];
 	CharDataStruct **					UnicodeCharArray;
-	uint16								FirstUnicodeChar;
-	uint16								LastUnicodeChar;
+	uint16_t								FirstUnicodeChar;
+	uint16_t								LastUnicodeChar;
 	bool									IsBold;
 };
 
@@ -154,7 +156,7 @@ public:
 	ShaderClass	Get_Shader (void) const						{ return Shader; }
 	void			Set_Shader (ShaderClass shader);
 
-//	void	Draw_Block( const RectClass & screen, unsigned long color = 0xFFFFFFFF );
+//	void	Draw_Block( const RectClass & screen, uint32_t color = 0xFFFFFFFF );
 
 	const RectClass & Get_Draw_Extents( void )			{ return DrawExtents; }
 //	const RectClass & Get_Total_Extents( void )			{ return TotalExtents; }
@@ -168,7 +170,7 @@ public:
 	//	Sentence control
 	//
 	void	Build_Sentence (const WCHAR *text);
-	void	Draw_Sentence (uint32 color = 0xFFFFFFFF);
+	void	Draw_Sentence (uint32_t color = 0xFFFFFFFF);
 
 	//
 	//	Texture hint
@@ -246,7 +248,7 @@ private:
 	RectClass										DrawExtents;
 	bool												IsClippedEnabled;
 													
-	uint16 *											LockedPtr;
+	uint16_t *											LockedPtr;
 	int												LockedStride;
 	TextureClass *									CurTexture;
 	ShaderClass										Shader;

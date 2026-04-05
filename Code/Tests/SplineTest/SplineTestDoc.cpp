@@ -72,7 +72,7 @@ CSplineTestDoc::~CSplineTestDoc()
 	}
 }
 
-BOOL CSplineTestDoc::OnNewDocument()
+int32_t CSplineTestDoc::OnNewDocument()
 {
 	if (!CDocument::OnNewDocument())
 		return FALSE;

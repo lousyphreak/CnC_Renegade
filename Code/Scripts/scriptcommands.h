@@ -113,8 +113,8 @@ enum {
 #define SCRIPT_COMMANDS_VERSION 174
 
 typedef struct {
-	unsigned int Size;
-	unsigned int Version;
+	uint32_t Size;
+	uint32_t Version;
 
 	// Debug messages
 	void (*	Debug_Message )( char *format, ... );
@@ -233,7 +233,7 @@ typedef struct {
 	void	( * Enable_Enemy_Seen_Func)( GameObject * obj, bool enable );
 
 	// Display Text
-	void	(*	Set_Display_Color_Func )( unsigned char red, unsigned char green, unsigned char blue );
+	void	(*	Set_Display_Color_Func )( uint8_t red, uint8_t green, uint8_t blue );
 	void	(*	Display_Text )( int string_id );
 	void	(*	Display_Float_Func )( float value, const char * format );
 	void	(*	Display_Int_Func )( int value, const char * format );
@@ -246,9 +246,9 @@ typedef struct {
 	void	(*	Load_Pointer )( ScriptLoader & loader, void ** pointer );
 	void	(*	Load_End )( ScriptLoader & loader );
 
-	void (*Begin_Chunk)(ScriptSaver& saver, unsigned int chunkID);
+	void (*Begin_Chunk)(ScriptSaver& saver, uint32_t chunkID);
 	void (*End_Chunk)(ScriptSaver& saver);
-	bool (*Open_Chunk)(ScriptLoader& loader, unsigned int* chunkID);
+	bool (*Open_Chunk)(ScriptLoader& loader, uint32_t* chunkID);
 	void (*Close_Chunk)(ScriptLoader& loader);
 
 	// Radar Effects
@@ -310,7 +310,7 @@ typedef struct {
 	void	(* Static_Anim_Phys_Goto_Last_Frame_Func )( int obj_id, const char * anim_name );
 
 	// Timing
-	unsigned int (* Get_Sync_Time)( void );
+	uint32_t (* Get_Sync_Time)( void );
 
 	// Objectives
 	void	(* Add_Objective_Func)( int id, int type, int status, int short_description_id, char * description_sound_filename, int long_description_id );
@@ -467,7 +467,7 @@ public:
 	void Stop_Sound(int sound_id, bool destroy_sound = true) const { Stop_Sound_Func(sound_id, destroy_sound); }
 	GameObject * Find_Closest_Soldier(const Vector3 & pos, float min_dist, float max_dist, bool only_human = true) const { return Find_Closest_Soldier_Func(pos, min_dist, max_dist, only_human); }
 	void Enable_Enemy_Seen(GameObject * obj, bool enable = true) const { Enable_Enemy_Seen_Func(obj, enable); }
-	void Set_Display_Color(unsigned char red = 255, unsigned char green = 255, unsigned char blue = 255) const { Set_Display_Color_Func(red, green, blue); }
+	void Set_Display_Color(uint8_t red = 255, uint8_t green = 255, uint8_t blue = 255) const { Set_Display_Color_Func(red, green, blue); }
 	void Display_Float(float value, const char * format = "%f") const { Display_Float_Func(value, format); }
 	void Display_Int(int value, const char * format = "%d") const { Display_Int_Func(value, format); }
 	void Create_Explosion(const char * explosion_def_name, const Vector3 & pos, GameObject * creator = NULL) const { Create_Explosion_Func(explosion_def_name, pos, creator); }

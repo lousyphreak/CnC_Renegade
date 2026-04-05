@@ -26,6 +26,8 @@
 //-----------------------------------------------------------------------------
 #if defined(_MSV_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef RHOST_H
@@ -40,7 +42,7 @@
 #include "win.h"
 #include <winsock.h>
 
-//const USHORT MAX_MESSAGE_TYPES = 256;
+//const uint16_t MAX_MESSAGE_TYPES = 256;
 
 
 //
@@ -67,8 +69,8 @@ class cRemoteHost
       cRemoteHost();
       ~cRemoteHost();
 
-		void Add_Packet(cPacket & packet, BYTE list_type);
-		void Remove_Packet(int reliable_packet_id, BYTE list_type);
+		void Add_Packet(cPacket & packet, uint8_t list_type);
+		void Remove_Packet(int reliable_packet_id, uint8_t list_type);
       void Toggle_Flow_Control();
 		void Init_Stats();
 		int Get_Last_Service_Count()						{return LastServiceCount;}
@@ -101,7 +103,7 @@ class cRemoteHost
 		float Get_Average_Priority(void)					{return(AverageObjectPriority);}
 
 
-		USHORT Get_Resend_Timeout_Ms() const			{return ResendTimeoutMs;}
+		uint16_t Get_Resend_Timeout_Ms() const			{return ResendTimeoutMs;}
 
       //
       // Ping
@@ -127,8 +129,8 @@ class cRemoteHost
 		void Increment_Reliable_Packet_Rcv_Id()		{ReliablePacketRcvId++;}
 		void Increment_Unreliable_Packet_Rcv_Id()		{UnreliablePacketRcvId++;}
 
-		unsigned long Get_Last_Keepalive_Time_Ms() const	{return LastKeepaliveTimeMs;}
-		void Set_Last_Keepalive_Time_Ms(unsigned long time_ms)	{LastKeepaliveTimeMs = time_ms;}
+		uint32_t Get_Last_Keepalive_Time_Ms() const	{return LastKeepaliveTimeMs;}
+		void Set_Last_Keepalive_Time_Ms(uint32_t time_ms)	{LastKeepaliveTimeMs = time_ms;}
 
       SList<cPacket> & Get_Packet_List(int index)	{WWASSERT(index >= 0 && index < 4); return PacketList[index];}
 
@@ -143,13 +145,13 @@ class cRemoteHost
 
 		void Set_Is_Loading(bool state);
 		bool Get_Is_Loading(void)							{return(IsLoading);}
-		bool Was_Recently_Loading(unsigned long time = 0);
+		bool Was_Recently_Loading(uint32_t time = 0);
 
 		void Set_Flood(bool state);
 		bool Get_Flood(void)									{return(ExpectPacketFlood);}
 
-		unsigned long Get_Creation_Time(void)			{return(CreationTime);}
-		unsigned long Get_Total_Resends(void)			{return(TotalResends);}
+		uint32_t Get_Creation_Time(void)			{return(CreationTime);}
+		uint32_t Get_Total_Resends(void)			{return(TotalResends);}
 		void Increment_Resends(void)						{TotalResends++;}
 		void Set_Total_Resent_Packets_In_Queue (int resent_packets) {TotalResentPacketsInQueue = resent_packets;}
 
@@ -172,7 +174,7 @@ class cRemoteHost
 		double			TPIncrement;
 		int				LastReliableSendId;
 		int				LastUnreliableSendId;
-		USHORT			ResendTimeoutMs;
+		uint16_t			ResendTimeoutMs;
 		int				NumInternalPings;
 		int				TotalInternalPingtimeMs;
       int				AverageInternalPingtimeMs;
@@ -186,9 +188,9 @@ class cRemoteHost
       SList<cPacket>	PacketList[4];	// list of all player objects
       int				ListMax[4];
       int				ListProcessingTime[4];
-      unsigned long	LastKeepaliveTimeMs;
+      uint32_t	LastKeepaliveTimeMs;
       bool				MustEvict;
-      BOOL				IsFlowControlEnabled;
+      int32_t				IsFlowControlEnabled;
 		int				LastServiceCount;
 		int				LastContactTime;
 		int				TargetBps;
@@ -198,21 +200,21 @@ class cRemoteHost
 		float				AverageObjectPriority;
 		bool				IsLoading;
 		bool				ExpectPacketFlood;
-		unsigned long	FloodTimer;
-		unsigned long	WasLoading;
-		unsigned long	TotalResends;
-		unsigned long	CreationTime;
+		uint32_t	FloodTimer;
+		uint32_t	WasLoading;
+		uint32_t	TotalResends;
+		uint32_t	CreationTime;
 		int				PriorityUpdateCounter;
 
 		//
 		// Variables for detecting outgoing packet floods.
 		//
-		unsigned long	ExtendedAveragePingTime;
+		uint32_t	ExtendedAveragePingTime;
 		int				ExtendedAverageCount;
 		int				LastAveragePingTime;
 		bool				IsOutgoingFlooded;
 		int				TotalResentPacketsInQueue;
-		unsigned long	NextOutgoingFloodActionTime;
+		uint32_t	NextOutgoingFloodActionTime;
 		int				NumOutgoingFloods;
 
 		static bool		AllowExtraModemBandwidthThrottling;

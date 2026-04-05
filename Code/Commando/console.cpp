@@ -411,7 +411,7 @@ WWPROFILE( "Input Active" );
 
 			unsigned slot_count=TimeManager::Peek_Frame_Time_Histogram().Get_Slot_Count();
 			if (slot_count) {
-				unsigned char* slots=new unsigned char[slot_count];
+				uint8_t* slots=new uint8_t[slot_count];
 				TimeManager::Peek_Frame_Time_Histogram().Get_Packed_Report(slots);
 				unsigned i;
 				for (i=0;i<slot_count;++i) {
@@ -1765,7 +1765,6 @@ void	ConsoleGameModeClass::Update_Memory_Log( void )
 
 	StatisticsDisplayManager::Set_Stat( "memory", memory_string, 0xffffffff );
 }
-
 
 
 

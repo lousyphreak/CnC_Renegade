@@ -270,8 +270,8 @@ EditableHeightfieldClass::Allocate_Grid (void)
 	//	Allocate and initiailze the array of quad flags
 	//
 	int quad_count	= (GridPointsX - 1) * (GridPointsY - 1);
-	QuadFlags		= new uint8[quad_count];
-	::memset (QuadFlags, 0, sizeof (uint8) * quad_count);
+	QuadFlags		= new uint8_t[quad_count];
+	::memset (QuadFlags, 0, sizeof (uint8_t) * quad_count);
 
 	//
 	//	Initialize the grid and the uv array's
@@ -1446,7 +1446,7 @@ EditableHeightfieldClass::Save (ChunkSaveClass &csave)
 	csave.Begin_Chunk (CHUNKID_QUAD_FLAGS);
 
 		int quad_count = (GridPointsX - 1) * (GridPointsY - 1);
-		csave.Write (QuadFlags, sizeof (uint8) * quad_count);
+		csave.Write (QuadFlags, sizeof (uint8_t) * quad_count);
 				
 	csave.End_Chunk ();
 
@@ -1592,7 +1592,7 @@ EditableHeightfieldClass::Load (ChunkLoadClass &cload)
 				//	Read the array of quad flags
 				//
 				int quad_count = (GridPointsX - 1) * (GridPointsY - 1);
-				cload.Read (QuadFlags, sizeof (uint8) * quad_count);
+				cload.Read (QuadFlags, sizeof (uint8_t) * quad_count);
 				break;
 			}
 
@@ -1764,7 +1764,7 @@ EditableHeightfieldClass::Create
 	//	Allocate a buffer to store the bitmap data int
 	//
 	int stride			= (((bmp_info.bmWidth * 3) + 3) & ~3);
-	uint8 *bmp_bits	= new uint8[stride * bmp_info.bmHeight];
+	uint8_t *bmp_bits	= new uint8_t[stride * bmp_info.bmHeight];
 	
 	//
 	//	Get the bitmap data

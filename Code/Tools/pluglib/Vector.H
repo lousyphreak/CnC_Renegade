@@ -53,6 +53,8 @@
 #ifndef VECTOR_H
 #define VECTOR_H
 
+#include <cstdint>
+
 #include	"noinit.h"
 #include	<assert.h>
 #include	<new.h>
@@ -303,7 +305,7 @@ template<class T>
 inline int VectorClass<T>::ID(T const * ptr)
 {
 	if (!IsValid) return(0);
-	return(((unsigned long)ptr - (unsigned long)&(*this)[0]) / sizeof(T));
+	return(((uint32_t)ptr - (uint32_t)&(*this)[0]) / sizeof(T));
 }
 
 
@@ -859,7 +861,7 @@ int First_False_Bit(void const * array);
 class BooleanVectorClass
 {
 	public:
-		BooleanVectorClass(unsigned size=0, unsigned char * array=0);
+		BooleanVectorClass(unsigned size=0, uint8_t * array=0);
 		BooleanVectorClass(BooleanVectorClass const & vector);
 
 		// Assignment operator.
@@ -955,7 +957,7 @@ class BooleanVectorClass
 		/*
 		**	This points to the allocated bitfield array.
 		*/
-		VectorClass<unsigned char> BitArray;
+		VectorClass<uint8_t> BitArray;
 };
 
 

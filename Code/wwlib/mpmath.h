@@ -35,6 +35,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #pragma once
 
+#include <cstdint>
+
 #ifndef MPMATH_H
 #define MPMATH_H
 
@@ -45,15 +47,16 @@
 
 #include	"straw.h"
 #include	<stdlib.h>
+#include	<cstdint>
 
 #define	UNITSIZE					32
 #define	MAX_BIT_PRECISION		2048
 #define	MAX_UNIT_PRECISION	(MAX_BIT_PRECISION/UNITSIZE)
-#define	signeddigit	signed long
+#define	signeddigit	int32_t
 #define	LOG_UNITSIZE			5
 
-//#define	digit	unsigned long
-typedef unsigned long digit;
+//#define	digit	uint32_t
+typedef uint32_t digit;
 
 #define MPEXPORT
 
@@ -63,7 +66,7 @@ typedef unsigned long digit;
 
 extern "C" {
 extern int MPEXPORT XMP_Fetch_Prime_Size(void);
-unsigned short const * MPEXPORT XMP_Fetch_Prime_Table(void);
+uint16_t const * MPEXPORT XMP_Fetch_Prime_Table(void);
 int MPEXPORT XMP_Significance(const digit * r, int precision);
 void MPEXPORT XMP_Inc(digit * r, int precision);
 void MPEXPORT XMP_Dec(digit * r, int precision);
@@ -89,17 +92,17 @@ digit MPEXPORT XMP_Bits_To_Mask(int bits);
 bool MPEXPORT XMP_Is_Negative(const digit * r, int precision);
 bool MPEXPORT XMP_Test_Eq_Int(digit const * r, int i, int p);
 bool MPEXPORT XMP_Sub(digit * result, const digit * r1, const digit * r2, bool borrow, int precision);
-bool MPEXPORT XMP_Sub_Int(digit * result, const digit * r1, unsigned short r2, bool borrow, int precision);
+bool MPEXPORT XMP_Sub_Int(digit * result, const digit * r1, uint16_t r2, bool borrow, int precision);
 int MPEXPORT XMP_Unsigned_Mult(digit * prod, const digit * multiplicand, const digit * multiplier, int precision);
-int MPEXPORT XMP_Unsigned_Mult_Int(digit * prod, const digit * multiplicand, short multiplier, int precision);
-int MPEXPORT XMP_Signed_Mult_Int(digit * prod, const digit * multiplicand, signed short multiplier, int precision);
+int MPEXPORT XMP_Unsigned_Mult_Int(digit * prod, const digit * multiplicand, int16_t multiplier, int precision);
+int MPEXPORT XMP_Signed_Mult_Int(digit * prod, const digit * multiplicand, int16_t multiplier, int precision);
 int MPEXPORT XMP_Signed_Mult(digit * prod, const digit * multiplicand, const digit * multiplier, int precision);
-unsigned short MPEXPORT XMP_Unsigned_Div_Int(digit * quotient, digit const * dividend, unsigned short divisor, int precision);
+uint16_t MPEXPORT XMP_Unsigned_Div_Int(digit * quotient, digit const * dividend, uint16_t divisor, int precision);
 int MPEXPORT XMP_Unsigned_Div(digit * remainder, digit * quotient, digit const * dividend, digit const * divisor, int precision);
 void MPEXPORT XMP_Signed_Div(digit * remainder, digit * quotient, digit const * dividend, digit const * divisor, int precision);
 int MPEXPORT XMP_Reciprocal(digit * quotient, const digit * divisor, int precision);
 void MPEXPORT XMP_Decode_ASCII(char const * str, digit * mpn, int precision);
-//void MPEXPORT xmp_single_mul(unsigned short * prod, unsigned short * multiplicand, unsigned short multiplier, int precision);
+//void MPEXPORT xmp_single_mul(uint16_t * prod, uint16_t * multiplicand, uint16_t multiplier, int precision);
 void MPEXPORT XMP_Double_Mul(digit * prod, const digit * multiplicand, const digit * multiplier, int precision);
 //int MPEXPORT xmp_stage_modulus(const digit * n_modulus, int precision);
 int MPEXPORT XMP_Mod_Mult(digit * prod, const digit * multiplicand, const digit * multiplier, int precision);
@@ -109,17 +112,17 @@ bool MPEXPORT XMP_Is_Small_Prime(const digit * candidate, int precision);
 bool MPEXPORT XMP_Small_Divisors_Test(const digit * candidate, int precision);
 bool MPEXPORT XMP_Fermat_Test(const digit * candidate_prime, unsigned rounds, int precision);
 void MPEXPORT XMP_Inverse_A_Mod_B(digit * result, digit const * number, digit const * modulus, int precision);
-void MPEXPORT XMP_Signed_Decode(digit * result, const unsigned char * from, int frombytes, int precision);
-void MPEXPORT XMP_Unsigned_Decode(digit * result, const unsigned char * from, int frombytes, int precision);
-unsigned MPEXPORT XMP_Encode(unsigned char * to, digit const * from, int precision);
-unsigned MPEXPORT XMP_Encode_Bounded(unsigned char * to, unsigned tobytes, digit const * from, int precision);
+void MPEXPORT XMP_Signed_Decode(digit * result, const uint8_t * from, int frombytes, int precision);
+void MPEXPORT XMP_Unsigned_Decode(digit * result, const uint8_t * from, int frombytes, int precision);
+unsigned MPEXPORT XMP_Encode(uint8_t * to, digit const * from, int precision);
+unsigned MPEXPORT XMP_Encode_Bounded(uint8_t * to, unsigned tobytes, digit const * from, int precision);
 void MPEXPORT XMP_Randomize(digit * result, Straw & rng, int nbits, int precision);
 void MPEXPORT XMP_Randomize_Bounded(digit * result, Straw & rng, digit const * min, digit const * max, int precision);
 bool MPEXPORT XMP_Is_Prime(digit const * prime, int precision);
 bool MPEXPORT XMP_Rabin_Miller_Test(Straw & rng, digit const * w, int rounds, int precision);
-int MPEXPORT XMP_DER_Length_Encode(unsigned long length, unsigned char * output);
-int MPEXPORT XMP_DER_Encode(digit const * from, unsigned char * output, int precision);
-void MPEXPORT XMP_DER_Decode(digit * result, unsigned char const * input, int precision);
+int MPEXPORT XMP_DER_Length_Encode(uint32_t length, uint8_t * output);
+int MPEXPORT XMP_DER_Encode(digit const * from, uint8_t * output, int precision);
+void MPEXPORT XMP_DER_Decode(digit * result, uint8_t const * input, int precision);
 }
 
 

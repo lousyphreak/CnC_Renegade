@@ -42,6 +42,7 @@
 #include "ChunkView.h"
 #include "ChunkTreeView.h"
 #include "ChunkViewDoc.h"
+#include <cstdint>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -97,14 +98,14 @@ void CChunkTreeView::Dump(CDumpContext& dc) const
 /////////////////////////////////////////////////////////////////////////////
 // CChunkTreeView message handlers
 
-void CChunkTreeView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint) 
+void CChunkTreeView::OnUpdate(CView* pSender, intptr_t lHint, CObject* pHint) 
 {
 	// Reset the entire tree view
 	CTreeCtrl &tree = GetTreeCtrl();
 	tree.DeleteAllItems();
 	
 	// Set the style attributes
-	long flags = tree.GetStyle();
+	int32_t flags = tree.GetStyle();
 	flags |= TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS | TVS_SHOWSELALWAYS | TVS_DISABLEDRAGDROP;
 	SetWindowLong(tree.GetSafeHwnd(), GWL_STYLE, flags);
 
@@ -125,7 +126,7 @@ void CChunkTreeView::Insert_Chunk(const ChunkImageClass * chunk, HTREEITEM Paren
 
 	CTreeCtrl &tree = GetTreeCtrl();
 	HTREEITEM tree_item = tree.InsertItem(name, Parent);
-	tree.SetItem(tree_item, TVIF_PARAM,0,0,0,0,0, (long) chunk);
+	tree.SetItem(tree_item, TVIF_PARAM,0,0,0,0,0, reinterpret_cast<intptr_t>(chunk));
 
 	for (int i=0; i<chunk->Get_Child_Count(); i++) {
 		Insert_Chunk(chunk->Get_Child(i),tree_item);
@@ -133,7 +134,7 @@ void CChunkTreeView::Insert_Chunk(const ChunkImageClass * chunk, HTREEITEM Paren
 }
 
 
-void CChunkTreeView::OnSelchanged(NMHDR* pNMHDR, LRESULT* pResult) 
+void CChunkTreeView::OnSelchanged(NMHDR* pNMHDR, intptr_t* pResult) 
 {
 	NM_TREEVIEW* pNMTreeView = (NM_TREEVIEW*)pNMHDR;
 

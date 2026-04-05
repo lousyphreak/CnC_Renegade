@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __STYLE_MGR_H
@@ -146,16 +148,16 @@ public:
 	//
 	//	Color methods
 	//
-	static uint32			Get_Text_Color (void)						{ return TextColor; }
-	static uint32			Get_Text_Shadow_Color (void)				{ return TextShadowColor; }
-	static uint32			Get_Disabled_Text_Color (void)			{ return DisabledTextColor; }
-	static uint32			Get_Disabled_Text_Shadow_Color (void)	{ return DisabledTextShadowColor; }
-	static uint32			Get_Line_Color (void)						{ return LineColor; }
-	static uint32			Get_Bk_Color (void)							{ return BkColor; }
-	static uint32			Get_Disabled_Line_Color (void)			{ return DisabledLineColor; }
-	static uint32			Get_Disabled_Bk_Color (void)				{ return DisabledBkColor; }
-	static uint32			Get_Tab_Text_Color (void)					{ return TabTextColor; }
-	static uint32			Get_Tab_Glow_Color (void)					{ return TabGlowColor; }
+	static uint32_t			Get_Text_Color (void)						{ return TextColor; }
+	static uint32_t			Get_Text_Shadow_Color (void)				{ return TextShadowColor; }
+	static uint32_t			Get_Disabled_Text_Color (void)			{ return DisabledTextColor; }
+	static uint32_t			Get_Disabled_Text_Shadow_Color (void)	{ return DisabledTextShadowColor; }
+	static uint32_t			Get_Line_Color (void)						{ return LineColor; }
+	static uint32_t			Get_Bk_Color (void)							{ return BkColor; }
+	static uint32_t			Get_Disabled_Line_Color (void)			{ return DisabledLineColor; }
+	static uint32_t			Get_Disabled_Bk_Color (void)				{ return DisabledBkColor; }
+	static uint32_t			Get_Tab_Text_Color (void)					{ return TabTextColor; }
+	static uint32_t			Get_Tab_Glow_Color (void)					{ return TabGlowColor; }
 
 	//
 	//	Backdrop support
@@ -165,13 +167,13 @@ public:
 	//
 	//	Text support
 	//
-	static void				Render_Text (const WCHAR *text, Render2DSentenceClass *renderer, uint32 text_color, uint32 shadow_color, const RectClass &rect, bool do_shadow = false, bool do_clip = true, JUSTIFICATION justify = LEFT_JUSTIFY, bool is_vcentered = true);
+	static void				Render_Text (const WCHAR *text, Render2DSentenceClass *renderer, uint32_t text_color, uint32_t shadow_color, const RectClass &rect, bool do_shadow = false, bool do_clip = true, JUSTIFICATION justify = LEFT_JUSTIFY, bool is_vcentered = true);
 	static void				Render_Text (const WCHAR *text, Render2DSentenceClass *renderer, const RectClass &rect, bool do_shadow = false, bool do_clip = true, JUSTIFICATION justify = LEFT_JUSTIFY, bool is_enabled = true, bool is_vcentered = true);
 	static void				Render_Title_Text (const WCHAR *text, Render2DSentenceClass *renderer, const RectClass &rect);
-	static void				Render_Wrapped_Text (const WCHAR *text, Render2DSentenceClass *renderer, uint32 text_color, uint32 shadow_color, const RectClass &rect, bool do_shadow = false, bool do_vcenter = false);
+	static void				Render_Wrapped_Text (const WCHAR *text, Render2DSentenceClass *renderer, uint32_t text_color, uint32_t shadow_color, const RectClass &rect, bool do_shadow = false, bool do_vcenter = false);
 	static void				Render_Wrapped_Text (const WCHAR *text, Render2DSentenceClass *renderer, const RectClass &rect, bool do_shadow = false, bool do_vcenter = false, bool is_enabled = true);	
 	static void				Render_Wrapped_Text_Ex (const WCHAR *text, Render2DSentenceClass *renderer, const RectClass &rect, bool do_shadow = false, bool do_vcenter = false, bool is_enabled = true, JUSTIFICATION justify = LEFT_JUSTIFY);
-	static void				Render_Wrapped_Text_Ex (const WCHAR *text, Render2DSentenceClass *renderer, uint32 text_color, uint32 shadow_color, const RectClass &rect, bool do_shadow = false, bool do_vcenter = false, JUSTIFICATION justify = LEFT_JUSTIFY);
+	static void				Render_Wrapped_Text_Ex (const WCHAR *text, Render2DSentenceClass *renderer, uint32_t text_color, uint32_t shadow_color, const RectClass &rect, bool do_shadow = false, bool do_vcenter = false, JUSTIFICATION justify = LEFT_JUSTIFY);
 
 	//
 	//	Hilight support
@@ -190,20 +192,20 @@ private:
 	//	Private member data
 	////////////////////////////////////////////////////////////////	
 	static TextureClass *			BackdropTexture;	
-	static uint32						TitleColor;
-	static uint32						TitleHilightColor;
-	static uint32						TitleShadowColor;
-	static uint32						TextColor;
-	static uint32						TextShadowColor;
-	static uint32						LineColor;
-	static uint32						BkColor;
-	static uint32						DisabledTextColor;
-	static uint32						DisabledTextShadowColor;
-	static uint32						DisabledLineColor;
-	static uint32						DisabledBkColor;
-	static uint32						HilightColor;
-	static uint32						TabTextColor;
-	static uint32						TabGlowColor;
+	static uint32_t						TitleColor;
+	static uint32_t						TitleHilightColor;
+	static uint32_t						TitleShadowColor;
+	static uint32_t						TextColor;
+	static uint32_t						TextShadowColor;
+	static uint32_t						LineColor;
+	static uint32_t						BkColor;
+	static uint32_t						DisabledTextColor;
+	static uint32_t						DisabledTextShadowColor;
+	static uint32_t						DisabledLineColor;
+	static uint32_t						DisabledBkColor;
+	static uint32_t						HilightColor;
+	static uint32_t						TabTextColor;
+	static uint32_t						TabGlowColor;
 	static FontCharsClass *			Fonts[FONT_MAX];
 	static float						ScaleX;
 	static float						ScaleY;

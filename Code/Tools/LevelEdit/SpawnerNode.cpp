@@ -422,10 +422,10 @@ SpawnerNodeClass::Load_Assets (void)
 //	Get_Spawned_Definition_ID
 //
 ////////////////////////////////////////////////////////////////
-uint32
+uint32_t
 SpawnerNodeClass::Get_Spawned_Definition_ID (void)
 {
-	uint32 id = 0;
+	uint32_t id = 0;
 
 	if (m_Preset != NULL) {
 		SpawnerDefClass *definition = static_cast<SpawnerDefClass *> (m_Preset->Get_Definition ());
@@ -646,7 +646,7 @@ SpawnerNodeClass::Create_Spawner_Obj (void)
 //
 /////////////////////////////////////////////////////////////////
 void
-SpawnerNodeClass::Set_ID (uint32 id)
+SpawnerNodeClass::Set_ID (uint32_t id)
 {
 	NodeClass::Set_ID (id);
 	if (m_SpawnerObj != NULL) {
@@ -825,7 +825,7 @@ SpawnerNodeClass::Show_Settings_Dialog (void)
 	prop_sheet.Add_Page (&scripts_tab);
 
 	// Show the property sheet
-	UINT ret_code = prop_sheet.DoModal ();
+	uint32_t ret_code = prop_sheet.DoModal ();
 	if (ret_code == IDOK) {
 		
 		//

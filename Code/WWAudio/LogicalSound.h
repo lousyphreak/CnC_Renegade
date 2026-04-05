@@ -32,6 +32,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __LOGICAL_SOUND_H
@@ -74,20 +76,20 @@ class LogicalSoundClass : public SoundSceneObjClass
 		virtual bool			Is_Single_Shot (void) const			{ return m_IsSingleShot; }
 		virtual void			Set_Single_Shot (bool single_shot)	{ m_IsSingleShot = single_shot; }
 
-		virtual void			Set_Type_Mask (uint32 mask = 0)	{ m_TypeMask = mask; }
-		virtual uint32			Get_Type_Mask (void) const			{ return m_TypeMask; }
+		virtual void			Set_Type_Mask (uint32_t mask = 0)	{ m_TypeMask = mask; }
+		virtual uint32_t			Get_Type_Mask (void) const			{ return m_TypeMask; }
 
 		virtual float			Get_Notify_Delay (void) const		{ return (float)m_NotifyDelayInMS / 1000.0F; }
-		virtual void			Set_Notify_Delay (float secs)		{ m_NotifyDelayInMS = uint32(secs * 1000.0F); }
-		virtual bool			Allow_Notify (uint32 timestamp);
+		virtual void			Set_Notify_Delay (float secs)		{ m_NotifyDelayInMS = uint32_t(secs * 1000.0F); }
+		virtual bool			Allow_Notify (uint32_t timestamp);
 
-		virtual uint32			Get_Listener_Timestamp (void) const		{ return m_OldestListenerTimestamp; }
+		virtual uint32_t			Get_Listener_Timestamp (void) const		{ return m_OldestListenerTimestamp; }
 		virtual void			Set_Listener_Timestamp (int timestamp)	{ m_OldestListenerTimestamp = timestamp; }
 
 		//////////////////////////////////////////////////////////////////////
 		//	Update methods
 		//////////////////////////////////////////////////////////////////////
-		virtual bool			On_Frame_Update (unsigned int milliseconds = 0);
+		virtual bool			On_Frame_Update (uint32_t milliseconds = 0);
 
 		//////////////////////////////////////////////////////////////////////
 		//	Position/direction methods
@@ -140,12 +142,12 @@ class LogicalSoundClass : public SoundSceneObjClass
 		//////////////////////////////////////////////////////////////////////
 		float					m_DropOffRadius;
 		bool					m_IsSingleShot;
-		uint32					m_TypeMask;
+		uint32_t					m_TypeMask;
 		Vector3					m_Position;
-		uint32					m_OldestListenerTimestamp;
+		uint32_t					m_OldestListenerTimestamp;
 		int						m_MaxListeners;
-		uint32					m_NotifyDelayInMS;
-		uint32					m_LastNotification;
+		uint32_t					m_NotifyDelayInMS;
+		uint32_t					m_LastNotification;
 };
 
 

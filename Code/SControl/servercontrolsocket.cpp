@@ -123,7 +123,7 @@ ServerControlSocketClass::~ServerControlSocketClass(void)
  * HISTORY:                                                                                    *
  *   2/24/00 12:41PM ST : Created                                                              *
  *=============================================================================================*/
-bool ServerControlSocketClass::Open(int port, bool loopback, unsigned long ip)
+bool ServerControlSocketClass::Open(int port, bool loopback, uint32_t ip)
 {
 	struct sockaddr_in addr;
 	static int socket_transmit_buffer_size = SERVER_CONTROL_SOCKET_BUFFER_SIZE;
@@ -143,7 +143,7 @@ bool ServerControlSocketClass::Open(int port, bool loopback, unsigned long ip)
 	** Bind our UDP socket to our UDP port number
 	*/
 	addr.sin_family = AF_INET;
-	addr.sin_port = (unsigned short) htons((unsigned short)port);
+	addr.sin_port = (uint16_t) htons((uint16_t)port);
 	if (loopback) {
 		addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	} else {
@@ -189,7 +189,7 @@ bool ServerControlSocketClass::Open(int port, bool loopback, unsigned long ip)
 	/*
 	** Set the blocking mode of the socket to non-blocking.
 	*/
-	unsigned long nonblocking = true;
+	uint32_t nonblocking = true;
 	err = ioctlsocket(Socket, FIONBIO, &nonblocking);
 	if (err) {
 		DebugString(("ServerControlSocketClass - Failed to set socket to non-blocking - error code %d.\n", LAST_ERROR));
@@ -313,7 +313,7 @@ void ServerControlSocketClass::Discard_Out_Buffers(void)
  *=============================================================================================*/
 void ServerControlSocketClass::Clear_Socket_Error(void)
 {
-	unsigned long error_code;
+	uint32_t error_code;
 	int length = 4;
 
 	if (Socket != INVALID_SOCKET) {
@@ -340,7 +340,7 @@ void ServerControlSocketClass::Clear_Socket_Error(void)
  * HISTORY:                                                                                    *
  *    3/1/00 11:51AM ST : Created                                                              *
  *=============================================================================================*/
-void ServerControlSocketClass::Write(void *buffer, int buffer_len, void *address, unsigned short port)
+void ServerControlSocketClass::Write(void *buffer, int buffer_len, void *address, uint16_t port)
 {
 	/*
 	** Create a temporary holding area for the packet.
@@ -393,7 +393,7 @@ void ServerControlSocketClass::Write(void *buffer, int buffer_len, void *address
  * HISTORY:                                                                                    *
  *    3/8/00 1:12PM ST : Created                                                               *
  *=============================================================================================*/
-int ServerControlSocketClass::Read(void *buffer, int buffer_len, void *address, unsigned short *port, int packetnum)
+int ServerControlSocketClass::Read(void *buffer, int buffer_len, void *address, uint16_t *port, int packetnum)
 {
 	/*
 	** Call the Service function in case there are any outstanding unqueued packets.
@@ -471,7 +471,7 @@ int ServerControlSocketClass::Read(void *buffer, int buffer_len, void *address, 
  * HISTORY:                                                                                    *
  *    3/8/00 1:12PM ST : Created                                                               *
  *=============================================================================================*/
-int ServerControlSocketClass::Peek(void *buffer, int buffer_len, void *address, unsigned short *port, int packetnum)
+int ServerControlSocketClass::Peek(void *buffer, int buffer_len, void *address, uint16_t *port, int packetnum)
 {
 	/*
 	** Call the Service function in case there are any outstanding unqueued packets.
@@ -539,8 +539,8 @@ void ServerControlSocketClass::Build_Packet_CRC(WinsockBufferType *packet)
 
 	packet->CRC = 0;
 
-	unsigned long *crc_ptr = &(packet->CRC);
-	unsigned long *packetptr = (unsigned long*) &(packet->Buffer[0]);
+	uint32_t *crc_ptr = &(packet->CRC);
+	uint32_t *packetptr = (uint32_t*) &(packet->Buffer[0]);
 
 	for (int i=0 ; i<packet->BufferLen/4 ; i++) {
 		Add_CRC (crc_ptr, *packetptr++);
@@ -548,7 +548,7 @@ void ServerControlSocketClass::Build_Packet_CRC(WinsockBufferType *packet)
 
 	int leftover = packet->BufferLen & 3;
 	if (leftover) {
-		unsigned long val = *packetptr;
+		uint32_t val = *packetptr;
 		val = val & (0xffffffff >> ((4-leftover) << 3));
 		Add_CRC (crc_ptr, val);
 	}
@@ -578,10 +578,10 @@ bool ServerControlSocketClass::Passes_CRC_Check(WinsockBufferType *packet)
 		return (false);
 	}
 
-	unsigned long crc = 0;
+	uint32_t crc = 0;
 
-	unsigned long *crc_ptr = &crc;
-	unsigned long *packetptr = (unsigned long*) &(packet->Buffer[0]);
+	uint32_t *crc_ptr = &crc;
+	uint32_t *packetptr = (uint32_t*) &(packet->Buffer[0]);
 
 	for (int i=0 ; i<packet->BufferLen/4 ; i++) {
 		Add_CRC (crc_ptr, *packetptr++);
@@ -589,7 +589,7 @@ bool ServerControlSocketClass::Passes_CRC_Check(WinsockBufferType *packet)
 
 	int leftover = packet->BufferLen & 3;
 	if (leftover) {
-		unsigned long val = *packetptr;
+		uint32_t val = *packetptr;
 		val = val & (0xffffffff >> ((4-leftover) << 3));
 		Add_CRC (crc_ptr, val);
 	}
@@ -730,12 +730,12 @@ void *ServerControlSocketClass::Get_New_In_Buffer(void)
  *=============================================================================================*/
 void ServerControlSocketClass::Service(void)
 {
-	unsigned long bytes;
+	uint32_t bytes;
 	struct sockaddr_in addr;
 	int addr_len;
 	WinsockBufferType *packet;
 	int result;
-	unsigned long timeout_check = TIMEGETTIME();
+	uint32_t timeout_check = TIMEGETTIME();
 	int times = 0;
 
 	for (;;) {
@@ -799,7 +799,7 @@ void ServerControlSocketClass::Service(void)
 					** result is the number of bytes read.
 					*/
 					packet->BufferLen = result - sizeof(packet->CRC);
-					packet->CRC = *((unsigned long*) (&ReceiveBuffer[0]));
+					packet->CRC = *((uint32_t*) (&ReceiveBuffer[0]));
 					memcpy (packet->Buffer, ReceiveBuffer + sizeof(packet->CRC), packet->BufferLen);
 
 					/*
@@ -826,7 +826,7 @@ void ServerControlSocketClass::Service(void)
 
 						memcpy (packet->Address, &addr.sin_addr.s_addr, 4);
 						packet->Port = ntohs(addr.sin_port);
-						//DebugString(("ServerControlSocketClass - recvfrom %s ; %d\n", IPAddressClass(packet->Address).As_String(), (unsigned int)((unsigned short)ntohs(addr.sin_port))));
+						//DebugString(("ServerControlSocketClass - recvfrom %s ; %d\n", IPAddressClass(packet->Address).As_String(), (uint32_t)((uint16_t)ntohs(addr.sin_port))));
 
 #ifdef PACKET_ENCRYPTION
 						Decrypt(packet->Buffer, packet->BufferLen);
@@ -876,13 +876,13 @@ void ServerControlSocketClass::Service(void)
 		*/
 		addr.sin_family = AF_INET;
 		if (packet->Port == 0) {
-			addr.sin_port = (unsigned short) htons((unsigned short)Port);
+			addr.sin_port = (uint16_t) htons((uint16_t)Port);
 		} else {
 			addr.sin_port = htons(packet->Port);
 		}
 		memcpy (&addr.sin_addr.s_addr, packet->Address, 4);
 
-		//DebugString(("ServerControlSocketClass - sendto %s ; %d\n", IPAddressClass(packet->Address).As_String(), (unsigned int)((unsigned short)ntohs(addr.sin_port))));
+		//DebugString(("ServerControlSocketClass - sendto %s ; %d\n", IPAddressClass(packet->Address).As_String(), (uint32_t)((uint16_t)ntohs(addr.sin_port))));
 
 		/*
 		** Send it.
@@ -932,7 +932,7 @@ void ServerControlSocketClass::Service(void)
  * HISTORY:                                                                                    *
  *   05/09/1995 BRR : Created                                                                  *
  *=============================================================================================*/
-void ServerControlSocketClass::Add_CRC(unsigned long *crc, unsigned long val)
+void ServerControlSocketClass::Add_CRC(uint32_t *crc, uint32_t val)
 {
 	int hibit;
 
@@ -984,7 +984,7 @@ void ServerControlSocketClass::Set_Encryption_Key(char *key)
  * HISTORY:                                                                                    *
  *   2/22/2002 12:37PM ST : Created                                                            *
  *=============================================================================================*/
-void ServerControlSocketClass::Encrypt(unsigned char *packet, int size)
+void ServerControlSocketClass::Encrypt(uint8_t *packet, int size)
 {
 	char key[8];
 	memcpy(key, Key, 8);
@@ -1029,7 +1029,7 @@ void ServerControlSocketClass::Encrypt(unsigned char *packet, int size)
  * HISTORY:                                                                                    *
  *   2/22/2002 12:37PM ST : Created                                                            *
  *=============================================================================================*/
-void ServerControlSocketClass::Decrypt(unsigned char *packet, int size)
+void ServerControlSocketClass::Decrypt(uint8_t *packet, int size)
 {
 	char key[8];
 	memcpy(key, Key, 8);

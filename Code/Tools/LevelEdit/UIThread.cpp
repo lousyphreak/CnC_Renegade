@@ -42,7 +42,7 @@ UIThreadClass::~UIThreadClass()
 {
 }
 
-BOOL UIThreadClass::InitInstance()
+int32_t UIThreadClass::InitInstance()
 {
 	// TODO:  perform and per-thread initialization here
 	return TRUE;

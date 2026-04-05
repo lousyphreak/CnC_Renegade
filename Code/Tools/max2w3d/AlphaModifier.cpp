@@ -226,7 +226,7 @@ void AlphaModifierClass::NotifyInputChanged(Interval changeInt, PartID partID, R
 class AlphaClassDesc : public ClassDesc2 {
 	public:
 	int 			IsPublic()					{ return TRUE; }
-	void *			Create( BOOL loading )		{ return new AlphaModifierClass; }
+	void *			Create( int32_t loading )		{ return new AlphaModifierClass; }
 	const TCHAR *	ClassName()					{ return Get_String(IDS_ALPHA_MODIFIER_CLASS); }
 	SClass_ID		SuperClassID()				{ return OSM_CLASS_ID; }
 	Class_ID 		ClassID()					{ return ALPHA_MODIFIER_CLASSID; }
@@ -280,7 +280,7 @@ static ParamBlockDesc2 alpha_param_blk
  |	Basic implementation of a dialog handler
 \*===========================================================================*/
 
-BOOL AlphaModDlgProc::DlgProc(TimeValue t, IParamMap2 *map, HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+int32_t AlphaModDlgProc::DlgProc(TimeValue t, IParamMap2 *map, HWND hWnd, uint32_t msg, uintptr_t wParam, intptr_t lParam)
 {
 	int id = LOWORD(wParam);
 	int code = HIWORD(wParam);
@@ -359,7 +359,7 @@ void AlphaModifierClass::InvalidateUI()
  |	We ask the ClassDesc2 to handle Beginning and Ending EditParams for us
 \*===========================================================================*/
 
-void AlphaModifierClass::BeginEditParams( IObjParam *ip, ULONG flags,Animatable *prev )
+void AlphaModifierClass::BeginEditParams( IObjParam *ip, uint32_t flags,Animatable *prev )
 {
 
 	AlphaCD.BeginEditParams(ip, this, flags, prev);
@@ -367,7 +367,7 @@ void AlphaModifierClass::BeginEditParams( IObjParam *ip, ULONG flags,Animatable 
 	alpha_param_blk.SetUserDlgProc(new AlphaModDlgProc(this));
 }
 		
-void AlphaModifierClass::EndEditParams( IObjParam *ip, ULONG flags,Animatable *next )
+void AlphaModifierClass::EndEditParams( IObjParam *ip, uint32_t flags,Animatable *next )
 {
 	AlphaCD.EndEditParams(ip, this, flags, next);
 }

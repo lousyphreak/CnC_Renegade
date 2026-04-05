@@ -40,6 +40,8 @@
 #ifndef REFCOUNTED_H
 #define REFCOUNTED_H
 
+#include <cstdint>
+
 #include <assert.h>
 
 class RefCounted
@@ -80,7 +82,7 @@ class RefCounted
 	private:
 		friend class RefPtrBase;
 
-		unsigned int mRefCount;
+		uint32_t mRefCount;
 	};
 
 #endif // REFCOUNTED_H

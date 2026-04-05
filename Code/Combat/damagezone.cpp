@@ -74,7 +74,7 @@ DamageZoneGameObjDef::DamageZoneGameObjDef( void ) :
 #endif	//PARAM_EDITING_ON
 }
 
-uint32	DamageZoneGameObjDef::Get_Class_ID (void) const
+uint32_t	DamageZoneGameObjDef::Get_Class_ID (void) const
 {
 	return CLASSID_GAME_OBJECT_DEF_DAMAGE_ZONE;
 }

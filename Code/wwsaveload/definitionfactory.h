@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __DEFINITION_FACTORY_H
@@ -71,7 +73,7 @@ public:
 	//////////////////////////////////////////////////////////////
 	virtual DefinitionClass *	Create (void) const = 0;
 	virtual const char *			Get_Name (void) const = 0;
-	virtual uint32					Get_Class_ID (void) const = 0;
+	virtual uint32_t					Get_Class_ID (void) const = 0;
 	virtual bool					Is_Displayed (void) const = 0;
 
 protected:

@@ -266,7 +266,7 @@ SpecSheetClass::OnCreate (LPCREATESTRUCT lpCreateStruct)
 	// Set the font for this control
 	//
 	HFONT hfont = (HFONT)GetParent()->SendMessage (WM_GETFONT);
-	SendMessage (WM_SETFONT, (WPARAM)hfont);
+	SendMessage (WM_SETFONT, (uintptr_t)hfont);
 
 	CRect client_rect;
 	GetClientRect (&client_rect);
@@ -289,8 +289,8 @@ SpecSheetClass::OnCreate (LPCREATESTRUCT lpCreateStruct)
 	//
 	//	Configure the scrollbar
 	//
-	::SendMessage (scrollbar, SBM_SETRANGE, (WPARAM)0, (WPARAM)100);
-	::SendMessage (scrollbar, WM_SETFONT, (WPARAM)hfont, 0L);
+	::SendMessage (scrollbar, SBM_SETRANGE, (uintptr_t)0, (uintptr_t)100);
+	::SendMessage (scrollbar, WM_SETFONT, (uintptr_t)hfont, 0L);
 
 	//
 	//	Create a control object for every parameter
@@ -393,7 +393,7 @@ SpecSheetClass::Get_Parameter (int index)
 // OnNcHitTest
 //
 /////////////////////////////////////////////////////////////////////////////
-UINT
+uint32_t
 SpecSheetClass::OnNcHitTest (CPoint point) 
 {
 	return HTCLIENT;
@@ -408,8 +408,8 @@ SpecSheetClass::OnNcHitTest (CPoint point)
 void
 SpecSheetClass::OnVScroll
 (
-	UINT			nSBCode,
-	UINT			nPos,
+	uint32_t			nSBCode,
+	uint32_t			nPos,
 	CScrollBar *pScrollBar
 )
 {
@@ -494,7 +494,7 @@ SpecSheetClass::Set_Scroll_Pos (int new_pos)
 	//	Update the scroll bar
 	//
 	int sb_pos = ((m_ScrollPos * 100) / m_MaxScrollPos);
-	SendDlgItemMessage (878, SBM_SETPOS, (WPARAM)sb_pos, (LPARAM)TRUE);
+	SendDlgItemMessage (878, SBM_SETPOS, (uintptr_t)sb_pos, (intptr_t)TRUE);
 	return ;
 }
 
@@ -504,15 +504,15 @@ SpecSheetClass::Set_Scroll_Pos (int new_pos)
 // OnSetCursor
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 SpecSheetClass::OnSetCursor
 (
 	CWnd *	pWnd,
-	UINT		nHitTest,
-	UINT		message
+	uint32_t		nHitTest,
+	uint32_t		message
 )
 {
-	BOOL retval = FALSE;
+	int32_t retval = FALSE;
 
 	if (nHitTest == HTCLIENT) {
 		::SetCursor (::LoadCursor (::AfxGetResourceHandle (), MAKEINTRESOURCE (IDC_OBJ_MOVE)));
@@ -533,7 +533,7 @@ SpecSheetClass::OnSetCursor
 void
 SpecSheetClass::OnNcMouseMove
 (
-	UINT		nHitTest,
+	uint32_t		nHitTest,
 	CPoint	point
 ) 
 {	
@@ -550,7 +550,7 @@ SpecSheetClass::OnNcMouseMove
 void
 SpecSheetClass::OnNcLButtonDown
 (
-	UINT		nHitTest,
+	uint32_t		nHitTest,
 	CPoint	point
 )
 {
@@ -573,7 +573,7 @@ SpecSheetClass::OnNcLButtonDown
 void
 SpecSheetClass::OnNcLButtonUp
 (
-	UINT		nHitTest,
+	uint32_t		nHitTest,
 	CPoint	point
 )
 {	
@@ -588,7 +588,7 @@ SpecSheetClass::OnNcLButtonUp
 //
 /////////////////////////////////////////////////////////////////////////////
 void
-SpecSheetClass::OnLButtonDown (UINT nFlags, CPoint point)
+SpecSheetClass::OnLButtonDown (uint32_t nFlags, CPoint point)
 {
 	//if (nHitTest == HTVSCROLL) {
 		m_IsScrolling = true;
@@ -607,7 +607,7 @@ SpecSheetClass::OnLButtonDown (UINT nFlags, CPoint point)
 //
 /////////////////////////////////////////////////////////////////////////////
 void
-SpecSheetClass::OnLButtonUp (UINT nFlags, CPoint point) 
+SpecSheetClass::OnLButtonUp (uint32_t nFlags, CPoint point) 
 {
 	m_IsScrolling = false;
 	ReleaseCapture ();
@@ -623,7 +623,7 @@ SpecSheetClass::OnLButtonUp (UINT nFlags, CPoint point)
 //
 /////////////////////////////////////////////////////////////////////////////
 void
-SpecSheetClass::OnMouseMove (UINT nFlags, CPoint point) 
+SpecSheetClass::OnMouseMove (uint32_t nFlags, CPoint point) 
 {
 	if (m_IsScrolling) {
 
@@ -744,7 +744,7 @@ SpecSheetClass::Scroll_Controls (int amount)
 void
 SpecSheetClass::OnSize
 (
-	UINT	nType,
+	uint32_t	nType,
 	int	cx,
 	int	cy
 )
@@ -785,7 +785,7 @@ SpecSheetClass::OnSize
 // PreCreateWindow
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 SpecSheetClass::PreCreateWindow (CREATESTRUCT &cs) 
 {
 	cs.dwExStyle |= WS_EX_CONTROLPARENT;
@@ -938,11 +938,11 @@ fnCtrlCompareCallback (void const *ptr1, void const *ptr2)
 // OnCommand
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 SpecSheetClass::OnCommand
 (
-	WPARAM wParam,
-	LPARAM lParam
+	uintptr_t wParam,
+	intptr_t lParam
 ) 
 {
 	bool processed = false;
@@ -978,10 +978,10 @@ SpecSheetClass::OnDestroy (void)
 // WindowProc
 //
 /////////////////////////////////////////////////////////////////////////////
-LRESULT
-SpecSheetClass::WindowProc (UINT message, WPARAM wParam, LPARAM lParam) 
+intptr_t
+SpecSheetClass::WindowProc (uint32_t message, uintptr_t wParam, intptr_t lParam) 
 {
-	LRESULT result = 0L;
+	intptr_t result = 0L;
 
 	if (message == WM_DRAWITEM) {
 		

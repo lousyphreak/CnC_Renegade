@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __SOUND_PSEUDO_3DOBJ_H
@@ -140,7 +142,7 @@ class SoundPseudo3DClass : public Sound3DClass
 		//////////////////////////////////////////////////////////////////////
 		//	Update methods
 		//////////////////////////////////////////////////////////////////////
-		virtual bool			On_Frame_Update (unsigned int milliseconds = 0);
+		virtual bool			On_Frame_Update (uint32_t milliseconds = 0);
 
 		//////////////////////////////////////////////////////////////////////
 		//	Handle information

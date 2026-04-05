@@ -35,6 +35,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __PART_EMT_LDR_H
@@ -75,7 +77,7 @@ class Vector3Randomizer;
 	(((float)byte) / 255.0F)	\
 
 #define FLOAT_TO_BYTE(fval)			\
-	((unsigned char)(max(fval,0.0F) * 255.0F))	\
+	((uint8_t)(max(fval,0.0F) * 255.0F))	\
 
 #define RGBA_TO_VECTOR3(rgba)																			\
 	Vector3 (BYTE_TO_FLOAT(rgba.R), BYTE_TO_FLOAT (rgba.G), BYTE_TO_FLOAT (rgba.B))	\
@@ -125,7 +127,7 @@ class ParticleEmitterDefClass
 		//
 		//	Informational methods
 		//
-		unsigned int			Get_Version (void) const				{ return m_Version; }
+		uint32_t			Get_Version (void) const				{ return m_Version; }
 
 		//
 		//	Inline Accessors
@@ -141,7 +143,7 @@ class ParticleEmitterDefClass
 		float						Get_Elasticity (void) const			{ return m_Info.Elasticity; }
 		Vector3					Get_Velocity (void) const				{ return Vector3 (m_Info.Velocity.X, m_Info.Velocity.Y, m_Info.Velocity.Z); }
 		Vector3					Get_Acceleration (void) const			{ return Vector3 (m_Info.Acceleration.X, m_Info.Acceleration.Y, m_Info.Acceleration.Z); }
-		unsigned int			Get_Burst_Size (void) const			{ return m_InfoV2.BurstSize; }
+		uint32_t			Get_Burst_Size (void) const			{ return m_InfoV2.BurstSize; }
 		float						Get_Outward_Vel (void) const			{ return m_InfoV2.OutwardVel; }
 		float						Get_Vel_Inherit (void) const			{ return m_InfoV2.VelInherit; }
 
@@ -156,7 +158,7 @@ class ParticleEmitterDefClass
 		virtual void			Set_Elasticity (float value)					{ m_Info.Elasticity = value; }
 		virtual void			Set_Velocity (const Vector3 &value)			{ m_Info.Velocity.X = value.X; m_Info.Velocity.Y = value.Y; m_Info.Velocity.Z = value.Z; }
 		virtual void			Set_Acceleration (const Vector3 &value)	{ m_Info.Acceleration.X = value.X; m_Info.Acceleration.Y = value.Y; m_Info.Acceleration.Z = value.Z; }
-		virtual void			Set_Burst_Size (unsigned int count)			{ m_InfoV2.BurstSize = count; }
+		virtual void			Set_Burst_Size (uint32_t count)			{ m_InfoV2.BurstSize = count; }
 		virtual void			Set_Outward_Vel (float value)					{ m_InfoV2.OutwardVel = value; }
 		virtual void			Set_Vel_Inherit (float value)					{ m_InfoV2.VelInherit = value; }
 
@@ -291,7 +293,7 @@ class ParticleEmitterDefClass
 		char * 									m_pName;
 		char *									m_pUserString;
 		int										m_iUserType;
-		unsigned	int							m_Version;
+		uint32_t							m_Version;
 		ShaderClass								m_Shader;
 		W3dEmitterInfoStruct					m_Info;
 		W3dEmitterInfoStructV2				m_InfoV2;

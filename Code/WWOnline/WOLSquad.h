@@ -35,6 +35,8 @@
 #ifndef __WOLSQUAD_H__
 #define __WOLSQUAD_H__
 
+#include <cstdint>
+
 #include "RefCounted.h"
 #include "RefPtr.h"
 #include <wwlib/widestring.h>
@@ -64,7 +66,7 @@ class SquadData :
 		static void Reset(void);
 
 		// Find a squad by its ID
-		static RefPtr<SquadData> FindByID(unsigned long);
+		static RefPtr<SquadData> FindByID(uint32_t);
 
 		// Find a squad by its abbreviation
 		static RefPtr<SquadData> FindByAbbr(const wchar_t* abbr);
@@ -80,7 +82,7 @@ class SquadData :
 			{return mData;}
 
 		// Get ID of this squad
-		unsigned long GetID(void) const
+		uint32_t GetID(void) const
 			{return mData.id;}
 
 		// Get full name of this squad

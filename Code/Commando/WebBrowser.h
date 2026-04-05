@@ -37,6 +37,8 @@
 #ifndef __WEBBROWSER_H__
 #define __WEBBROWSER_H__
 
+#include <cstdint>
+
 #include "renegade_build_config.h"
 
 #if RENEGADE_WITH_LEGACY_WOL
@@ -138,7 +140,7 @@ class WebBrowser :
 	private:
 		static WebBrowser* _mInstance;
 
-		ULONG mRefCount;
+		uint32_t mRefCount;
 		CComPtr<IWOLBrowser> mWOLBrowser;
 		wchar_t mPendingURL[512];
 		bool mVisible;
@@ -154,9 +156,9 @@ class WebBrowser :
 	// IUnknown methods
 	//---------------------------------------------------------------------------
 	public:
-		HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject);
-		ULONG STDMETHODCALLTYPE AddRef(void);
-		ULONG STDMETHODCALLTYPE Release(void);
+		int32_t STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject);
+		uint32_t STDMETHODCALLTYPE AddRef(void);
+		uint32_t STDMETHODCALLTYPE Release(void);
 
 	//---------------------------------------------------------------------------
 	// IWOLBrowserEvent methods
@@ -164,15 +166,15 @@ class WebBrowser :
 	private:
 		STDMETHOD(OnScriptQuit)(void);
 		STDMETHOD(OnBeforeNavigate)(const wchar_t* url, const wchar_t* targetFrame);
-		STDMETHOD(OnDocumentComplete)(const wchar_t* url, BOOL topFrame);
+		STDMETHOD(OnDocumentComplete)(const wchar_t* url, int32_t topFrame);
 		STDMETHOD(OnDownloadBegin)(void);
-		STDMETHOD(OnProgressChange)(LONG progress, LONG progressMax);
+		STDMETHOD(OnProgressChange)(int32_t progress, int32_t progressMax);
 		STDMETHOD(OnDownloadComplete)(void);
 		STDMETHOD(OnNavigateComplete)(const wchar_t* url);
 		STDMETHOD(OnStatusTextChange)(const wchar_t* statusText);
 		STDMETHOD(OnTitleChange)(const wchar_t* title);
 		STDMETHOD(OnNewWindow)(void);
-		STDMETHOD(OnShowMessage)(const wchar_t* text, const wchar_t* caption, ULONG type, LONG* result);
+		STDMETHOD(OnShowMessage)(const wchar_t* text, const wchar_t* caption, uint32_t type, int32_t* result);
 		STDMETHOD(OnFailedPageCertification)(void);
 		STDMETHOD(OnErrorMsg)(const wchar_t* error);
 		STDMETHOD(OnRegisterLogin)(const wchar_t* nick, const wchar_t* pass);

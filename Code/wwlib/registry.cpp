@@ -43,12 +43,12 @@ namespace
 	std::string Trim(const std::string & value)
 	{
 		std::size_t start = 0;
-		while (start < value.size() && std::isspace(static_cast<unsigned char>(value[start])) != 0) {
+		while (start < value.size() && std::isspace(static_cast<uint8_t>(value[start])) != 0) {
 			++start;
 		}
 
 		std::size_t end = value.size();
-		while (end > start && std::isspace(static_cast<unsigned char>(value[end - 1])) != 0) {
+		while (end > start && std::isspace(static_cast<uint8_t>(value[end - 1])) != 0) {
 			--end;
 		}
 
@@ -96,7 +96,7 @@ namespace
 	std::string Encode_Hex(const void * data, int size)
 	{
 		static const char hex_digits[] = "0123456789ABCDEF";
-		const unsigned char * bytes = static_cast<const unsigned char *>(data);
+		const uint8_t * bytes = static_cast<const uint8_t *>(data);
 		std::string encoded;
 		encoded.reserve(static_cast<std::size_t>(size) * 2);
 		for (int index = 0; index < size; ++index) {
@@ -116,14 +116,14 @@ namespace
 			if (ch >= '0' && ch <= '9') {
 				return ch - '0';
 			}
-			ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+			ch = static_cast<char>(std::toupper(static_cast<uint8_t>(ch)));
 			if (ch >= 'A' && ch <= 'F') {
 				return 10 + (ch - 'A');
 			}
 			return -1;
 		};
 
-		unsigned char * bytes = static_cast<unsigned char *>(buffer);
+		uint8_t * bytes = static_cast<uint8_t *>(buffer);
 		const int byte_count = std::min<int>(buffer_size, static_cast<int>(text.size() / 2));
 		for (int index = 0; index < byte_count; ++index) {
 			const int high = nibble(text[static_cast<std::size_t>(index) * 2]);
@@ -131,7 +131,7 @@ namespace
 			if (high < 0 || low < 0) {
 				return index;
 			}
-			bytes[index] = static_cast<unsigned char>((high << 4) | low);
+			bytes[index] = static_cast<uint8_t>((high << 4) | low);
 		}
 		return byte_count;
 	}
@@ -226,12 +226,12 @@ namespace
 		return (section_name.compare(0, prefix.size(), prefix) == 0) && (section_name[prefix.size()] == '\\');
 	}
 
-	bool Is_High_Surrogate(uint32 value)
+	bool Is_High_Surrogate(uint32_t value)
 	{
 		return value >= 0xD800 && value <= 0xDBFF;
 	}
 
-	bool Is_Low_Surrogate(uint32 value)
+	bool Is_Low_Surrogate(uint32_t value)
 	{
 		return value >= 0xDC00 && value <= 0xDFFF;
 	}
@@ -242,7 +242,7 @@ namespace
 		buffer[0] = 0;
 	}
 
-	void Append_UTF8(std::string & text, uint32 codepoint)
+	void Append_UTF8(std::string & text, uint32_t codepoint)
 	{
 		if (codepoint > 0x10FFFF || (codepoint >= 0xD800 && codepoint <= 0xDFFF)) {
 			codepoint = 0xFFFD;
@@ -265,17 +265,17 @@ namespace
 		}
 	}
 
-	uint32 Decode_UTF8_Codepoint(const std::string & value, std::size_t & index)
+	uint32_t Decode_UTF8_Codepoint(const std::string & value, std::size_t & index)
 	{
 		const std::size_t start = index;
-		const unsigned char lead = static_cast<unsigned char>(value[index++]);
+		const uint8_t lead = static_cast<uint8_t>(value[index++]);
 		if (lead < 0x80) {
 			return lead;
 		}
 
 		int continuation_count = 0;
-		uint32 codepoint = 0;
-		uint32 minimum = 0;
+		uint32_t codepoint = 0;
+		uint32_t minimum = 0;
 
 		if ((lead & 0xE0) == 0xC0) {
 			continuation_count = 1;
@@ -301,7 +301,7 @@ namespace
 				return 0xFFFD;
 			}
 
-			const unsigned char next = static_cast<unsigned char>(value[read_index]);
+			const uint8_t next = static_cast<uint8_t>(value[read_index]);
 			if ((next & 0xC0) != 0x80) {
 				index = start + 1;
 				return 0xFFFD;
@@ -328,11 +328,11 @@ namespace
 
 		std::string text;
 		for (std::size_t index = 0; value[index] != 0; ++index) {
-			uint32 codepoint = static_cast<uint32>(value[index]);
+			uint32_t codepoint = static_cast<uint32_t>(value[index]);
 
-			if (sizeof(WCHAR) == sizeof(unsigned short)) {
+			if (sizeof(WCHAR) == sizeof(uint16_t)) {
 				if (Is_High_Surrogate(codepoint)) {
-					const uint32 trail = static_cast<uint32>(value[index + 1]);
+					const uint32_t trail = static_cast<uint32_t>(value[index + 1]);
 					if (Is_Low_Surrogate(trail)) {
 						codepoint =
 							0x10000 +
@@ -359,27 +359,27 @@ namespace
 			return;
 		}
 
-		std::vector<uint32> codepoints;
+		std::vector<uint32_t> codepoints;
 		codepoints.reserve(value.size());
 		for (std::size_t index = 0; index < value.size();) {
 			codepoints.push_back(Decode_UTF8_Codepoint(value, index));
 		}
 
-		if (sizeof(WCHAR) == sizeof(unsigned short)) {
+		if (sizeof(WCHAR) == sizeof(uint16_t)) {
 			int code_unit_count = 0;
-			for (uint32 codepoint : codepoints) {
+			for (uint32_t codepoint : codepoints) {
 				code_unit_count += (codepoint > 0xFFFF) ? 2 : 1;
 			}
 
 			WCHAR * buffer = out.Get_Buffer(code_unit_count + 1);
 			int output_index = 0;
-			for (uint32 codepoint : codepoints) {
+			for (uint32_t codepoint : codepoints) {
 				if (codepoint > 0x10FFFF || (codepoint >= 0xD800 && codepoint <= 0xDFFF)) {
 					codepoint = 0xFFFD;
 				}
 
 				if (codepoint > 0xFFFF) {
-					const uint32 surrogate = codepoint - 0x10000;
+					const uint32_t surrogate = codepoint - 0x10000;
 					buffer[output_index++] = static_cast<WCHAR>(0xD800 + (surrogate >> 10));
 					buffer[output_index++] = static_cast<WCHAR>(0xDC00 + (surrogate & 0x3FF));
 				} else {
@@ -392,7 +392,7 @@ namespace
 
 		WCHAR * buffer = out.Get_Buffer(static_cast<int>(codepoints.size()) + 1);
 		int output_index = 0;
-		for (uint32 codepoint : codepoints) {
+		for (uint32_t codepoint : codepoints) {
 			if (codepoint > 0x10FFFF || (codepoint >= 0xD800 && codepoint <= 0xDFFF)) {
 				codepoint = 0xFFFD;
 			}

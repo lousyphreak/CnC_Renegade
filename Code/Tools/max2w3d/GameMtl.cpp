@@ -94,7 +94,7 @@ public:
 
 	int NumActionTables() { return 1; }
 	ActionTable* GetActionTable(int action_index);
-	void *Create(BOOL loading)	{ 
+	void *Create(int32_t loading)	{ 
 		TheMtl =  new GameMtl(loading); //Do not call createNew GameMtl() since the system should take care of the 
 												//additionla stuff in that function
 		Game_mtl_actionCB = new GameMtlActionCB (TheMtl);
@@ -104,7 +104,7 @@ public:
 	}
 #else
 public:
-	void *			Create(BOOL loading)	{ return  new GameMtl(loading);}
+	void *			Create(int32_t loading)	{ return  new GameMtl(loading);}
 #endif
 	int				IsPublic()					{ return 1; }
 	const TCHAR *	ClassName()					{ return Get_String(IDS_GAMEMTL); }
@@ -135,7 +135,7 @@ public:
 	** Data from the previous version of GameMtl
 	*/
 	bool					IsOld;
-	ULONG					Attributes;		
+	uint32_t					Attributes;		
 	Color					Diffuse;
 	Color					Specular;
 	Color					AmbientCoeff;
@@ -757,7 +757,7 @@ Color scale(const Color& a, const Color& b)
  * HISTORY:                                                                                    *
  *   11/23/98   GTH : Created.                                                                 *
  *=============================================================================================*/
-GameMtl::GameMtl(BOOL loading) 
+GameMtl::GameMtl(int32_t loading) 
 {
 	MaterialDialog = NULL;
 	SurfaceType = SURFACE_TYPE_DEFAULT;
@@ -1419,9 +1419,9 @@ Interval GameMtl::Validity(TimeValue t)
  * HISTORY:                                                                                    *
  *   11/23/98   GTH : Created.                                                                 *
  *=============================================================================================*/
-ULONG GameMtl::Requirements(int subMtlNum) 
+uint32_t GameMtl::Requirements(int subMtlNum) 
 {
-	ULONG req = 0;
+	uint32_t req = 0;
 	
 	for (int pass = 0; pass < W3dMaterialClass::MAX_PASSES; pass++) {
 		for (int stage = 0; stage < W3dMaterialClass::MAX_STAGES; stage++) {
@@ -1456,12 +1456,12 @@ ULONG GameMtl::Requirements(int subMtlNum)
  *=============================================================================================*/
 IOResult GameMtl::Load(ILoad *iload) 
 {
-	ULONG nb;
+	uint32_t nb;
 	int id;
 	int passindex = 0;
 	int len = 0;
-	unsigned char tmp8;
-	unsigned short tmp16;
+	uint8_t tmp8;
+	uint16_t tmp16;
 	char * tmpstring = NULL;
 	float tmpfloat;
 	IOResult res;
@@ -1543,7 +1543,7 @@ IOResult GameMtl::Load(ILoad *iload)
 				break;
 
 			case GAMEMTL_DCT_FRAMES_CHUNK:
-				res = iload->Read(&tmp16,sizeof(unsigned short),&nb);
+				res = iload->Read(&tmp16,sizeof(uint16_t),&nb);
 				lc->DCTFrames = tmp16;
 				lc->IsOld = true;
 				break;
@@ -1555,7 +1555,7 @@ IOResult GameMtl::Load(ILoad *iload)
 				break;
 
 			case GAMEMTL_DIT_FRAMES_CHUNK:
-				res = iload->Read(&tmp16,sizeof(unsigned short),&nb);
+				res = iload->Read(&tmp16,sizeof(uint16_t),&nb);
 				lc->DITFrames = tmp16;
 				lc->IsOld = true;
 				break;
@@ -1567,7 +1567,7 @@ IOResult GameMtl::Load(ILoad *iload)
 				break;
 			
 			case GAMEMTL_SCT_FRAMES_CHUNK:
-				res = iload->Read(&tmp16,sizeof(unsigned short),&nb);
+				res = iload->Read(&tmp16,sizeof(uint16_t),&nb);
 				lc->SCTFrames = tmp16;
 				lc->IsOld = true;
 				break;
@@ -1579,7 +1579,7 @@ IOResult GameMtl::Load(ILoad *iload)
 				break;
 
 			case GAMEMTL_SIT_FRAMES_CHUNK:
-				res = iload->Read(&tmp16,sizeof(unsigned short),&nb);
+				res = iload->Read(&tmp16,sizeof(uint16_t),&nb);
 				lc->SITFrames = tmp16;
 				lc->IsOld = true;
 				break;
@@ -1591,25 +1591,25 @@ IOResult GameMtl::Load(ILoad *iload)
 				break;
 
 			case GAMEMTL_DCT_MAPPING_CHUNK:
-				res = iload->Read(&tmp8,sizeof(unsigned char),&nb);
+				res = iload->Read(&tmp8,sizeof(uint8_t),&nb);
 				lc->DCTMappingType = tmp8;
 				lc->IsOld = true;
 				break;
 
 			case GAMEMTL_DIT_MAPPING_CHUNK:
-				res = iload->Read(&tmp8,sizeof(unsigned char),&nb);
+				res = iload->Read(&tmp8,sizeof(uint8_t),&nb);
 				lc->DITMappingType = tmp8;
 				lc->IsOld = true;
 				break;
 
 			case GAMEMTL_SCT_MAPPING_CHUNK:
-				res = iload->Read(&tmp8,sizeof(unsigned char),&nb);
+				res = iload->Read(&tmp8,sizeof(uint8_t),&nb);
 				lc->SCTMappingType = tmp8;
 				lc->IsOld = true;
 				break;
 
 			case GAMEMTL_SIT_MAPPING_CHUNK:
-				res = iload->Read(&tmp8,sizeof(unsigned char),&nb);
+				res = iload->Read(&tmp8,sizeof(uint8_t),&nb);
 				lc->SITMappingType = tmp8;
 				lc->IsOld = true;
 				break;
@@ -1693,7 +1693,7 @@ IOResult GameMtl::Load(ILoad *iload)
 IOResult GameMtl::Save(ISave *isave) 
 {
 	IOResult res;
-	ULONG nb;
+	uint32_t nb;
 
 	/*
 	** Save the base class stuff
@@ -1714,7 +1714,7 @@ IOResult GameMtl::Save(ISave *isave)
 	/*
 	** Save the "cur-pages"
 	*/
-	uint8 tmp8;
+	uint8_t tmp8;
 	int pass;
 	for (pass=0; pass < W3dMaterialClass::MAX_PASSES; pass++) {
 		isave->BeginChunk(GAMEMTL_PASS0_CUR_PAGE + pass);
@@ -3230,7 +3230,7 @@ void GameMtl::Set_Map_Channel(int pass,int stage,int val)
 // This returns the mapping args string buffer for that pass (and stage) after
 // assuring that it can contain a string of length 'len' (if len is 0 no
 // resizing will be performed)..
-char * GameMtl::Get_Mapping_Arg_Buffer(int pass, int stage, unsigned int len)
+char * GameMtl::Get_Mapping_Arg_Buffer(int pass, int stage, uint32_t len)
 {
 	assert(pass >= 0);
 	assert(pass < W3dMaterialClass::MAX_PASSES);
@@ -3401,7 +3401,7 @@ ActionTable* GameMaterialClassDesc::GetActionTable(int action_index)
 	return pTab;
 }
 //============================================================================================
-BOOL GameMtlActionCB::ExecuteAction(int id) {
+int32_t GameMtlActionCB::ExecuteAction(int id) {
 	Interface* ip = GetCOREInterface();
 	switch(id){
 		case IDA_GAMEMTL_DODLG:{

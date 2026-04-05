@@ -53,7 +53,7 @@
 **
 **********************************************************************************************/
 
-BOOL CALLBACK _floater_dialog_proc(HWND hwnd,UINT message,WPARAM wParam,LPARAM lParam)
+int32_t CALLBACK _floater_dialog_proc(HWND hwnd,uint32_t message,uintptr_t wParam,intptr_t lParam)
 {
 	if (message == WM_INITDIALOG) {
 		FloaterDialogClass * floater = (FloaterDialogClass *)lParam;
@@ -169,7 +169,7 @@ void FloaterDialogClass::Create(Interface * ip, int child_dlg_id, DLGPROC child_
 										MAKEINTRESOURCE(IDD_W3DUTILITY_FLOATER_DIALOG),
 										::GetCOREInterface()->GetMAXHWnd(),
 										(DLGPROC) _floater_dialog_proc,
-										(LPARAM) this 
+										(intptr_t) this 
 									);
 	::GetCOREInterface()->RegisterDlgWnd(Hwnd); 
 }
@@ -191,7 +191,7 @@ void FloaterDialogClass::Create(Interface * ip, int child_dlg_id, DLGPROC child_
  * HISTORY:                                                                                    *
  *   10/11/2000 gth : Created.                                                                 *
  *=============================================================================================*/
-bool FloaterDialogClass::Dialog_Proc(HWND hWnd,UINT message,WPARAM wParam,LPARAM)
+bool FloaterDialogClass::Dialog_Proc(HWND hWnd,uint32_t message,uintptr_t wParam,intptr_t)
 {
 	switch (message )	{
 
@@ -206,7 +206,7 @@ bool FloaterDialogClass::Dialog_Proc(HWND hWnd,UINT message,WPARAM wParam,LPARAM
 												);
 				if (childhwnd!= NULL) {
 					RECT rect;
-					LONG style = ::GetWindowLong(hWnd,GWL_STYLE);
+					int32_t style = ::GetWindowLong(hWnd,GWL_STYLE);
 					::GetWindowRect(childhwnd,&rect);
 					::AdjustWindowRect(&rect,style,FALSE);
 					::SetWindowPos(hWnd,NULL,0,0,rect.right - rect.left,rect.bottom - rect.top,SWP_NOZORDER|SWP_NOMOVE);

@@ -37,6 +37,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef PHYS3_H
 #define PHYS3_H
 
@@ -318,7 +320,7 @@ public:
 	Phys3DefClass(void);
 	
 	// From Definition
-	virtual uint32								Get_Class_ID (void) const;
+	virtual uint32_t								Get_Class_ID (void) const;
 	virtual PersistClass *					Create(void) const;
 
 	// From PhysDefClass

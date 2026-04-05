@@ -39,6 +39,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 #include "vector.h"
@@ -199,11 +201,11 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(TextureMgrDialogClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	virtual void OnOK();
 	virtual void OnCancel();
-	afx_msg void OnDblclkMeshTextureListCtrl(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnKeydownMeshTextureListCtrl(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnDblclkMeshTextureListCtrl(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnKeydownMeshTextureListCtrl(NMHDR* pNMHDR, intptr_t* pResult);
 	afx_msg void OnDestroy();
 	afx_msg void OnBack();
 	afx_msg void OnDetails();

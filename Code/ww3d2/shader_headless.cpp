@@ -45,7 +45,7 @@ bool g_backface_culling_inverted = false;
 }
 
 bool ShaderClass::ShaderDirty = true;
-unsigned long ShaderClass::CurrentShader = 0;
+uint32_t ShaderClass::CurrentShader = 0;
 
 
 /*
@@ -342,7 +342,7 @@ void ShaderClass::Report_Unable_To_Fog(const char *source)
  *=============================================================================================*/
 void ShaderClass::Apply()
 {
-	unsigned long diff;
+	uint32_t diff;
 
 	if (ShaderDirty) {
 		diff = 0xffffffff;

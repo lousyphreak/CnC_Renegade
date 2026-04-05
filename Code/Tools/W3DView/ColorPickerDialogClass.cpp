@@ -38,9 +38,9 @@ static char THIS_FILE[] = __FILE__;
 // Local constants
 //
 /////////////////////////////////////////////////////////////////////////////
-const DWORD	UPDATE_COLOR_BARS		= 0x00000001;
-const DWORD	UPDATE_WHITENESS		= 0x00000002;
-const DWORD	UPDATE_HUE_PICKER		= 0x00000004;
+const uint32_t	UPDATE_COLOR_BARS		= 0x00000001;
+const uint32_t	UPDATE_WHITENESS		= 0x00000002;
+const uint32_t	UPDATE_HUE_PICKER		= 0x00000004;
 
 /*class MyManageStateClass
 {
@@ -74,12 +74,12 @@ Create_Color_Picker_Form (HWND parent, int red, int green, int blue)
 	return dialog->m_hWnd;
 }
 
-BOOL
+int32_t
 Get_Form_Color (HWND form_wnd, int *red, int *green, int *blue)
 {
 	//MY_MANAGE_STATE ()
 
-	BOOL retval = FALSE;
+	int32_t retval = FALSE;
 
 	ColorPickerDialogClass *dialog = (ColorPickerDialogClass *)::GetProp (form_wnd, "COLORPICKERDLGCLASS");
 	if (dialog != NULL) {
@@ -93,12 +93,12 @@ Get_Form_Color (HWND form_wnd, int *red, int *green, int *blue)
 }
 
 
-BOOL
+int32_t
 Set_Form_Color (HWND form_wnd, int red, int green, int blue)
 {
 	//MY_MANAGE_STATE ()
 
-	BOOL retval = FALSE;
+	int32_t retval = FALSE;
 
 	ColorPickerDialogClass *dialog = (ColorPickerDialogClass *)::GetProp (form_wnd, "COLORPICKERDLGCLASS");
 	if (dialog != NULL) {
@@ -110,12 +110,12 @@ Set_Form_Color (HWND form_wnd, int red, int green, int blue)
 }
 
 
-BOOL
+int32_t
 Set_Form_Original_Color (HWND form_wnd, int red, int green, int blue)
 {
 	//MY_MANAGE_STATE ()
 
-	BOOL retval = FALSE;
+	int32_t retval = FALSE;
 
 	ColorPickerDialogClass *dialog = (ColorPickerDialogClass *)::GetProp (form_wnd, "COLORPICKERDLGCLASS");
 	if (dialog != NULL) {
@@ -127,12 +127,12 @@ Set_Form_Original_Color (HWND form_wnd, int red, int green, int blue)
 }
 
 
-BOOL
+int32_t
 Show_Color_Picker (int *red, int *green, int *blue)
 {
 	//MY_MANAGE_STATE ()
 
-	BOOL retval = FALSE;
+	int32_t retval = FALSE;
 
 	ColorPickerDialogClass dialog (*red, *green, *blue);
 	if (dialog.DoModal () == IDOK) {
@@ -146,12 +146,12 @@ Show_Color_Picker (int *red, int *green, int *blue)
 }
 
 
-BOOL
+int32_t
 Set_Update_Callback (HWND form_wnd, WWCTRL_COLORCALLBACK callback, void *arg)
 {
 	//MY_MANAGE_STATE()
 
-	BOOL retval = FALSE;
+	int32_t retval = FALSE;
 
 	ColorPickerDialogClass *dialog = (ColorPickerDialogClass *)::GetProp (form_wnd, "COLORPICKERDLGCLASS");
 	if (dialog != NULL) {
@@ -173,7 +173,7 @@ ColorPickerDialogClass::ColorPickerDialogClass
 	int green,
 	int blue,
 	CWnd *pParent,
-	UINT res_id
+	uint32_t res_id
 )
 	:	m_OrigRed ((float)red),
 		m_OrigGreen ((float)green),
@@ -244,7 +244,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 ColorPickerDialogClass::OnInitDialog (void) 
 {
 	CDialog::OnInitDialog ();
@@ -405,12 +405,12 @@ ColorPickerDialogClass::Update_Whiteness_Bar (void)
 // OnNotify
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 ColorPickerDialogClass::OnNotify
 (
-	WPARAM wParam,
-	LPARAM lParam,
-	LRESULT *pResult
+	uintptr_t wParam,
+	intptr_t lParam,
+	intptr_t *pResult
 )
 {
 	CBR_NMHDR *color_bar_hdr = (CBR_NMHDR *)lParam;
@@ -505,7 +505,7 @@ ColorPickerDialogClass::Update_Color
 	float red,
 	float green,
 	float blue,
-	DWORD flags
+	uint32_t flags
 )
 {
 	/*bool update_red = m_CurrentRed != red;
@@ -596,7 +596,7 @@ ColorPickerDialogClass::OnReset (void)
 	return ;
 }
 
-LRESULT ColorPickerDialogClass::WindowProc(UINT message, WPARAM wParam, LPARAM lParam) 
+intptr_t ColorPickerDialogClass::WindowProc(uint32_t message, uintptr_t wParam, intptr_t lParam) 
 {
 	return CDialog::WindowProc(message, wParam, lParam);
 }
@@ -607,11 +607,11 @@ LRESULT ColorPickerDialogClass::WindowProc(UINT message, WPARAM wParam, LPARAM l
 // OnCommand
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 ColorPickerDialogClass::OnCommand
 (
-	WPARAM wParam,
-	LPARAM lParam
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	switch (LOWORD (wParam))

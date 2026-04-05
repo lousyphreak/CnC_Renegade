@@ -40,6 +40,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // ChunkTreeView.h : header file
 //
@@ -67,7 +69,7 @@ public:
 	//{{AFX_VIRTUAL(CChunkTreeView)
 	protected:
 	virtual void OnDraw(CDC* pDC);      // overridden to draw this view
-	virtual void OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint);
+	virtual void OnUpdate(CView* pSender, intptr_t lHint, CObject* pHint);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -83,7 +85,7 @@ protected:
 	// Generated message map functions
 protected:
 	//{{AFX_MSG(CChunkTreeView)
-	afx_msg void OnSelchanged(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnSelchanged(NMHDR* pNMHDR, intptr_t* pResult);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };

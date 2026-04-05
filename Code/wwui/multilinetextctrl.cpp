@@ -53,7 +53,7 @@ MultiLineTextCtrlClass::MultiLineTextCtrlClass (void)	:
 	RowCount (0),
 	RowsPerPage (0)
 {
-	UINT scrolllines;
+	uint32_t scrolllines;
 
 	//
 	//	Configure the renderers
@@ -144,8 +144,8 @@ MultiLineTextCtrlClass::Create_Text_Renderer (void)
 			if (src_end == NULL) {						\
 				dest = src_start;							\
 			} else {											\
-				uint32 bytes	= ((uint32)src_end - (uint32)src_start);	\
-				uint32 len		= bytes / sizeof (WCHAR);						\
+				uint32_t bytes	= ((uint32_t)src_end - (uint32_t)src_start);	\
+				uint32_t len		= bytes / sizeof (WCHAR);						\
 				::memcpy (dest.Get_Buffer (len + 1), src_start, bytes);	\
 				dest.Peek_Buffer ()[len] = 0;										\
 			}
@@ -388,7 +388,7 @@ MultiLineTextCtrlClass::Calculate_Row_Count (void)
 //
 ////////////////////////////////////////////////////////////////
 bool
-MultiLineTextCtrlClass::On_Key_Down (uint32 key_id, uint32 key_data)
+MultiLineTextCtrlClass::On_Key_Down (uint32_t key_id, uint32_t key_data)
 {
 	switch (key_id)
 	{

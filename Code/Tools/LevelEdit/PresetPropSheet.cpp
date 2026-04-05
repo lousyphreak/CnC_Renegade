@@ -53,7 +53,7 @@ static const int BORDER_TAB_Y			= 6;
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 PresetPropSheetClass::OnInitDialog (void)
 {
 	//
@@ -142,8 +142,8 @@ PresetPropSheetClass::Reposition_Buttons (int cx, int cy)
 // OnCommand
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
-PresetPropSheetClass::OnCommand (WPARAM wParam, LPARAM lParam)
+int32_t
+PresetPropSheetClass::OnCommand (uintptr_t wParam, intptr_t lParam)
 {
 	//
 	//	If the user clicked the propagate button, then save the

@@ -457,7 +457,7 @@ void WOLJoinGame::ConnectToServer(void)
 	WWDEBUG_SAY(("WOLJoinGame: Connect to server\n"));
 
 	// Start the client
-	unsigned short my_port = FirewallHelper.Get_Client_Bind_Port();
+	uint16_t my_port = FirewallHelper.Get_Client_Bind_Port();
 	cNetwork::Init_Client(my_port);
 
 	// Display the "connecting" dialog.

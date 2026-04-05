@@ -288,9 +288,9 @@ void WolGameModeClass::Shutdown(void)
 void WolGameModeClass::Think(void)
 {
 	WWPROFILE("WOL Think");
-	static unsigned long _last_auto_kick = 0;
-	static unsigned long _kick_history_persist_time = 1000 * 60 * 60;
-	unsigned long time = TIMEGETTIME();
+	static uint32_t _last_auto_kick = 0;
+	static uint32_t _kick_history_persist_time = 1000 * 60 * 60;
+	uint32_t time = TIMEGETTIME();
 
 	//---------------------------------------------------------------------------
 	// Yield time to WWOnline
@@ -303,7 +303,7 @@ void WolGameModeClass::Think(void)
 	// Periodically update quickmatch bot with recent server information
 	//---------------------------------------------------------------------------
 	if (mGameInProgress) {// && mQuickMatch) {
-		unsigned long theTime = TIMEGETTIME();
+		uint32_t theTime = TIMEGETTIME();
 
 		if (theTime >= mSendServerInfoTime) {
 			//mSendServerInfoTime = (theTime + (120 * 1000));
@@ -337,7 +337,7 @@ void WolGameModeClass::Think(void)
 		//
 		if (cNetwork::I_Am_Server() && mGameInProgress) {
 		
-			unsigned long time = TIMEGETTIME();
+			uint32_t time = TIMEGETTIME();
 
 			//
 			// Clear out old kicklist entries.
@@ -350,9 +350,9 @@ void WolGameModeClass::Think(void)
 			}
 
 			const UserList& userList = mWOLSession->GetUserList();
-			const unsigned int count = userList.size();
+			const uint32_t count = userList.size();
 
-			for (unsigned int index = 0; index < count; index++) {
+			for (uint32_t index = 0; index < count; index++) {
 				const RefPtr<UserData>& user = userList[index];
 				WWASSERT(user.IsValid());
 			
@@ -858,7 +858,7 @@ void WolGameModeClass::Evaluate_Clans(cGameData* theGame)
 			RefPtr<UserData> host = mWOLSession->GetCurrentUser();
 
 			if (host.IsValid()) {
-				unsigned long hostClanID = host->GetSquadID();
+				uint32_t hostClanID = host->GetSquadID();
 				theGame->Set_Clan(0, hostClanID);
 
 				WWDEBUG_SAY(("CLANS: Assigning slot 0 to '%S' (host) clan #%lu\n", (const WCHAR*)host->GetName(), hostClanID));
@@ -866,13 +866,13 @@ void WolGameModeClass::Evaluate_Clans(cGameData* theGame)
 
 			// Determine which clans are in the game.
 			const UserList& userList = mWOLSession->GetUserList();
-			const unsigned int count = userList.size();
+			const uint32_t count = userList.size();
 
-			for (unsigned int index = 0; index < count; ++index) {
+			for (uint32_t index = 0; index < count; ++index) {
 				const RefPtr<UserData>& user = userList[index];
 				WWASSERT(user.IsValid());
 
-				unsigned long userClanID = user->GetSquadID();
+				uint32_t userClanID = user->GetSquadID();
 
 				if (userClanID != 0) {
 
@@ -925,15 +925,15 @@ void WolGameModeClass::Update_Channel_Settings(cGameData* theGame, const RefPtr<
 			//---------------------------------------------------------------------------
 			// Get average FPS of game (Capped at 255 fps)
 			//---------------------------------------------------------------------------
-			unsigned long fps = TimeManager::Get_Average_Frame_Rate();
-			fps = min<unsigned long>(fps, 255);
+			uint32_t fps = TimeManager::Get_Average_Frame_Rate();
+			fps = min<uint32_t>(fps, 255);
 
 			int numPlayers = theGame->Get_Current_Players();
 
 			int avgPing = cPlayerManager::Get_Average_Ping();
 			avgPing = min<int>(avgPing, UCHAR_MAX);
 
-			unsigned short avgPoints = cPlayerManager::Get_Average_WOL_Points();
+			uint16_t avgPoints = cPlayerManager::Get_Average_WOL_Points();
 
 			int avgPlayed = cPlayerManager::Get_Average_Games_Played();
 			avgPlayed = min<int>(avgPlayed, USHRT_MAX);
@@ -1243,7 +1243,7 @@ bool WolGameModeClass::Kick_Player(const wchar_t* name)
  * HISTORY:                                                                                    *
  *   8/8/2002 4:33PM ST : Created                                                              *
  *=============================================================================================*/
-void WolGameModeClass::Ban_Player(const wchar_t* name, unsigned long ip)
+void WolGameModeClass::Ban_Player(const wchar_t* name, uint32_t ip)
 {
 	// If the name is not NULL. we are the server and the player to kick is
 	// not ourself then proceed with the kick.
@@ -1261,8 +1261,8 @@ void WolGameModeClass::Ban_Player(const wchar_t* name, unsigned long ip)
 			KickIPList.Add(ip);
 			char ipstr[128];
 			pn += ":";
-			unsigned char *ip_ptr = (unsigned char*)&ip;
-			sprintf(ipstr, "%u.%u.%u.%u\n", (unsigned int)ip_ptr[0], (unsigned int)ip_ptr[1], (unsigned int)ip_ptr[2], (unsigned int)ip_ptr[3]);
+			uint8_t *ip_ptr = reinterpret_cast<uint8_t*>(&ip);
+			sprintf(ipstr, "%u.%u.%u.%u\n", (uint32_t)ip_ptr[0], (uint32_t)ip_ptr[1], (uint32_t)ip_ptr[2], (uint32_t)ip_ptr[3]);
 			pn += ipstr;
 
 	   	FILE *kick_list = fopen("wolbanlist.txt", "at");
@@ -1270,7 +1270,7 @@ void WolGameModeClass::Ban_Player(const wchar_t* name, unsigned long ip)
 			   fwrite(pn.Peek_Buffer(), 1, pn.Get_Length(), kick_list);
 			   fclose(kick_list);
 	   	}
-			DynamicVectorClass<unsigned long> KickIPList;
+			DynamicVectorClass<uint32_t> KickIPList;
 		}
 	}
 }
@@ -1324,7 +1324,7 @@ void WolGameModeClass::Auto_Kick(void)
  * HISTORY:                                                                                    *
  *   8/8/2002 9:14PM ST : Created                                                              *
  *=============================================================================================*/
-bool WolGameModeClass::Is_Banned(const char *player_name, unsigned long ip)
+bool WolGameModeClass::Is_Banned(const char *player_name, uint32_t ip)
 {
 	int i;
 
@@ -1387,7 +1387,7 @@ void WolGameModeClass::Read_Kick_List(void)
 				if (colon_ptr) {
 					*colon_ptr = 0;
 					KickNameList.Add(temp);
-					unsigned long ip = inet_addr(colon_ptr + 1);
+					uint32_t ip = inet_addr(colon_ptr + 1);
 					KickIPList.Add(ip);
 				}
 			}
@@ -1489,7 +1489,7 @@ void WolGameModeClass::HandleNotification(UserEvent& event)
 				if (mTheGame->IsClanGame.Is_True()) {
 					WWDEBUG_SAY(("CLANS: User join clan assignment\n"));
 
-					unsigned long userClanID = user->GetSquadID();
+					uint32_t userClanID = user->GetSquadID();
 					WWASSERT(userClanID != 0 && "User not in a clan");
 
 					// If the game is open to a new clan then assign the user to a
@@ -1650,7 +1650,7 @@ void WolGameModeClass::HandleNotification(GameOptionsMessage& message)
 			//-----------------------------------------------------------------------
 			// Send game information
 			//-----------------------------------------------------------------------
-			unsigned long mapCRC = CRC_Stringi(mTheGame->Get_Map_Name());
+			uint32_t mapCRC = CRC_Stringi(mTheGame->Get_Map_Name());
 			float seconds = mTheGame->Get_Time_Remaining_Seconds();
 
 			// Game info sent as: MapCRC Seconds remaining
@@ -1739,7 +1739,7 @@ void WolGameModeClass::HandleNotification(GameOptionsMessage& message)
 					datastring=requestor;
 					datastring+="\t";
 
-					unsigned long versionminor,versionmajor;
+					uint32_t versionminor,versionmajor;
 					Get_Version_Number(&versionmajor,&versionminor);
 
 					SYSTEMTIME time;
@@ -1773,7 +1773,7 @@ void WolGameModeClass::HandleNotification(GameOptionsMessage& message)
 					filename+=tmp;
 					filename+=".txt";
 
-					DWORD written;
+					uint32_t written;
 					HANDLE file;
 					file = CreateFile(filename, GENERIC_WRITE, 0, NULL, OPEN_ALWAYS,
 							FILE_ATTRIBUTE_NORMAL, NULL);
@@ -1969,7 +1969,7 @@ void WolGameModeClass::HandleNotification(ServerError& server_error)
 ** This doesn't work because you can't get a server list without also doing a complete reset of wolapi.
 */
 #if (0)
-	HRESULT code = server_error.GetErrorCode();
+	int32_t code = server_error.GetErrorCode();
 
 	if (code == CHAT_E_MUSTPATCH) {
 		if (mMonitorConnection && mConnected) {

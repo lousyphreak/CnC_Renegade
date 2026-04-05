@@ -24,6 +24,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 /////////////////////////////////////////////////////////////////////////////
@@ -47,7 +49,7 @@ public:
 	//{{AFX_VIRTUAL(CW3DUpdateDlg)
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
-	virtual BOOL OnCommand(WPARAM wParam, LPARAM lParam);
+	virtual int32_t OnCommand(uintptr_t wParam, intptr_t lParam);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -56,7 +58,7 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(CW3DUpdateDlg)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	virtual void OnOK();

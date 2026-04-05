@@ -70,7 +70,7 @@ FloodProtectionMgrClass::Decay_Old_Entries (void)
 {
 	const int DECAY_TIME	= 15000;
 
-	uint32 curr_time = ::GetTickCount ();
+	uint32_t curr_time = ::GetTickCount ();
 
 	//
 	//	Loop over all the entries in the list
@@ -81,7 +81,7 @@ FloodProtectionMgrClass::Decay_Old_Entries (void)
 		//
 		//	Has this entry expired?
 		//
-		uint32 time = FloodList[index].time;
+		uint32_t time = FloodList[index].time;
 		if ((curr_time - time) >= DECAY_TIME) {
 			FloodList.Delete (index);
 			index --;

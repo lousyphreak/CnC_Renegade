@@ -37,6 +37,8 @@
 #ifndef __PROTECT_H__
 #define __PROTECT_H__
 
+#include <cstdint>
+
 #ifdef COPY_PROTECT
 
 #include <windows.h>
@@ -54,7 +56,7 @@ class Protect
 		Protect();
 		~Protect();
 
-		void SendMappedFileHandle(HANDLE process, DWORD threadID) const;
+		void SendMappedFileHandle(HANDLE process, uint32_t threadID) const;
 
 	private:
 		// Prevent copy & assignment
@@ -76,7 +78,7 @@ extern "C" {
 
 void __cdecl InitializeProtect(void);
 void __cdecl ShutdownProtect(void);
-void __cdecl SendProtectMessage(HANDLE process, DWORD threadID);
+void __cdecl SendProtectMessage(HANDLE process, uint32_t threadID);
 
 #ifdef __cplusplus
 };

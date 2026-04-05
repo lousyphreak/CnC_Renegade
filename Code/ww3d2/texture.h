@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef TEXTURE_H
@@ -151,7 +153,7 @@ class TextureClass : public RefCountClass
 		unsigned Get_ID() const { return texture_id; }	// Each textrure has a unique id
 
 		// The number of Mip levels in the texture
-		unsigned int Get_Mip_Level_Count(void);
+		uint32_t Get_Mip_Level_Count(void);
 
 		// Note! Width and Height may be zero and may change if texture uses mipmaps
 		int Get_Width() 
@@ -171,12 +173,12 @@ class TextureClass : public RefCountClass
 		int Get_Inactivation_Time() const { return InactivationTime; }
 
 		// Get the surface of one of the mipmap levels (defaults to highest-resolution one)
-		SurfaceClass *Get_Surface_Level(unsigned int level = 0);
-		IDirect3DSurface8 *Get_D3D_Surface_Level(unsigned int level = 0);
+		SurfaceClass *Get_Surface_Level(uint32_t level = 0);
+		IDirect3DSurface8 *Get_D3D_Surface_Level(uint32_t level = 0);
 
 		// Texture priority affects texture management and caching.
-		unsigned int Get_Priority(void);
-		unsigned int Set_Priority(unsigned int priority);	// Returns previous priority
+		uint32_t Get_Priority(void);
+		uint32_t Set_Priority(uint32_t priority);	// Returns previous priority
 
 		// Filter and MIPmap settings:
 		FilterType Get_Min_Filter(void) const { return TextureMinFilter; }
@@ -240,11 +242,11 @@ class TextureClass : public RefCountClass
 
 	private:
 		// Apply this texture's settings into D3D
-		void Apply(unsigned int stage);
+		void Apply(uint32_t stage);
 		void Load_Locked_Surface();
 
 		// Apply a Null texture's settings into D3D
-		static void Apply_Null(unsigned int stage);
+		static void Apply_Null(uint32_t stage);
 
 		// State not contained in the Direct3D texture object:
 		FilterType TextureMinFilter;

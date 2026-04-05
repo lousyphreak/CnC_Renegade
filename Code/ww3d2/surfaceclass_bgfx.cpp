@@ -44,7 +44,7 @@ uint8_t Expand_6_To_8(uint8_t value)
 	return static_cast<uint8_t>((value << 2) | (value >> 4));
 }
 
-void Decode_Pixel(const unsigned char *pixel, WW3DFormat format, uint8_t &r, uint8_t &g, uint8_t &b, uint8_t &a)
+void Decode_Pixel(const uint8_t *pixel, WW3DFormat format, uint8_t &r, uint8_t &g, uint8_t &b, uint8_t &a)
 {
 	r = g = b = 0;
 	a = 255;
@@ -115,7 +115,7 @@ void Decode_Pixel(const unsigned char *pixel, WW3DFormat format, uint8_t &r, uin
 	}
 }
 
-void Encode_Pixel(unsigned char *pixel, WW3DFormat format, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+void Encode_Pixel(uint8_t *pixel, WW3DFormat format, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
 	if (pixel == NULL) {
 		return;
@@ -178,13 +178,13 @@ void Encode_Pixel(unsigned char *pixel, WW3DFormat format, uint8_t r, uint8_t g,
 	}
 }
 
-unsigned char *Pixel_At(BgfxCompatSurface *surface, unsigned x, unsigned y)
+uint8_t *Pixel_At(BgfxCompatSurface *surface, unsigned x, unsigned y)
 {
 	const size_t offset = (static_cast<size_t>(y) * static_cast<size_t>(surface->width) + static_cast<size_t>(x)) * static_cast<size_t>(BgfxCompat_Get_Pixel_Size(surface->format));
 	return surface->bytes.data() + offset;
 }
 
-const unsigned char *Pixel_At(const BgfxCompatSurface *surface, unsigned x, unsigned y)
+const uint8_t *Pixel_At(const BgfxCompatSurface *surface, unsigned x, unsigned y)
 {
 	const size_t offset = (static_cast<size_t>(y) * static_cast<size_t>(surface->width) + static_cast<size_t>(x)) * static_cast<size_t>(BgfxCompat_Get_Pixel_Size(surface->format));
 	return surface->bytes.data() + offset;
@@ -276,12 +276,12 @@ void SurfaceClass::Clear()
 }
 
 void SurfaceClass::Copy(
-	unsigned int dstx,
-	unsigned int dsty,
-	unsigned int srcx,
-	unsigned int srcy,
-	unsigned int width,
-	unsigned int height,
+	uint32_t dstx,
+	uint32_t dsty,
+	uint32_t srcx,
+	uint32_t srcy,
+	uint32_t width,
+	uint32_t height,
 	const SurfaceClass *other)
 {
 	if (other == NULL) {
@@ -317,7 +317,7 @@ void SurfaceClass::Copy(
 	}
 }
 
-void SurfaceClass::Copy(const unsigned char *other)
+void SurfaceClass::Copy(const uint8_t *other)
 {
 	BgfxCompatSurface *surface = BgfxCompat_To_Surface(D3DSurface);
 	if (surface != NULL && other != NULL) {
@@ -325,7 +325,7 @@ void SurfaceClass::Copy(const unsigned char *other)
 	}
 }
 
-void SurfaceClass::Copy(Vector2i &min, Vector2i &max, const unsigned char *other)
+void SurfaceClass::Copy(Vector2i &min, Vector2i &max, const uint8_t *other)
 {
 	BgfxCompatSurface *surface = BgfxCompat_To_Surface(D3DSurface);
 	if (surface == NULL || other == NULL) {
@@ -345,14 +345,14 @@ void SurfaceClass::Copy(Vector2i &min, Vector2i &max, const unsigned char *other
 }
 
 void SurfaceClass::Stretch_Copy(
-	unsigned int dstx,
-	unsigned int dsty,
-	unsigned int dstwidth,
-	unsigned int dstheight,
-	unsigned int srcx,
-	unsigned int srcy,
-	unsigned int srcwidth,
-	unsigned int srcheight,
+	uint32_t dstx,
+	uint32_t dsty,
+	uint32_t dstwidth,
+	uint32_t dstheight,
+	uint32_t srcx,
+	uint32_t srcy,
+	uint32_t srcwidth,
+	uint32_t srcheight,
 	const SurfaceClass *source)
 {
 	if (source == NULL) {
@@ -405,7 +405,7 @@ void SurfaceClass::FindBB(Vector2i *min, Vector2i *max)
 	*max = real_max;
 }
 
-bool SurfaceClass::Is_Transparent_Column(unsigned int column)
+bool SurfaceClass::Is_Transparent_Column(uint32_t column)
 {
 	BgfxCompatSurface *surface = BgfxCompat_To_Surface(D3DSurface);
 	if (surface == NULL || column >= surface->width) {
@@ -423,7 +423,7 @@ bool SurfaceClass::Is_Transparent_Column(unsigned int column)
 	return true;
 }
 
-unsigned char *SurfaceClass::CreateCopy(int *width, int *height, int *size, bool flip)
+uint8_t *SurfaceClass::CreateCopy(int *width, int *height, int *size, bool flip)
 {
 	BgfxCompatSurface *surface = BgfxCompat_To_Surface(D3DSurface);
 	if (surface == NULL) {
@@ -442,7 +442,7 @@ unsigned char *SurfaceClass::CreateCopy(int *width, int *height, int *size, bool
 	}
 
 	const size_t byte_count = surface->bytes.size();
-	unsigned char *copy = new unsigned char[byte_count];
+	uint8_t *copy = new uint8_t[byte_count];
 	if (!flip) {
 		std::memcpy(copy, surface->bytes.data(), byte_count);
 		return copy;
@@ -472,7 +472,7 @@ void SurfaceClass::Detach(void)
 	}
 }
 
-void SurfaceClass::DrawHLine(const unsigned int y, const unsigned int x1, const unsigned int x2, unsigned int color)
+void SurfaceClass::DrawHLine(const uint32_t y, const uint32_t x1, const uint32_t x2, uint32_t color)
 {
 	BgfxCompatSurface *surface = BgfxCompat_To_Surface(D3DSurface);
 	if (surface == NULL || y >= surface->height) {
@@ -486,7 +486,7 @@ void SurfaceClass::DrawHLine(const unsigned int y, const unsigned int x1, const 
 	}
 }
 
-void SurfaceClass::DrawPixel(const unsigned int x, const unsigned int y, unsigned int color)
+void SurfaceClass::DrawPixel(const uint32_t x, const uint32_t y, uint32_t color)
 {
 	BgfxCompatSurface *surface = BgfxCompat_To_Surface(D3DSurface);
 	if (surface == NULL || x >= surface->width || y >= surface->height) {
@@ -538,19 +538,19 @@ bool SurfaceClass::Is_Monochrome(void)
 	return true;
 }
 
-unsigned int SurfaceClass::PixelSize(const SurfaceDescription &sd)
+uint32_t SurfaceClass::PixelSize(const SurfaceDescription &sd)
 {
 	return BgfxCompat_Get_Pixel_Size(sd.Format);
 }
 
-void SurfaceClass::Convert_Pixel(Vector3 &rgb, const SurfaceDescription &sd, const unsigned char *pixel)
+void SurfaceClass::Convert_Pixel(Vector3 &rgb, const SurfaceDescription &sd, const uint8_t *pixel)
 {
 	uint8_t r, g, b, a;
 	Decode_Pixel(pixel, sd.Format, r, g, b, a);
 	rgb.Set(r / 255.0f, g / 255.0f, b / 255.0f);
 }
 
-void SurfaceClass::Convert_Pixel(unsigned char *pixel, const SurfaceDescription &sd, const Vector3 &rgb)
+void SurfaceClass::Convert_Pixel(uint8_t *pixel, const SurfaceDescription &sd, const Vector3 &rgb)
 {
 	Encode_Pixel(
 		pixel,

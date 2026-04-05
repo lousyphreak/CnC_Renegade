@@ -56,7 +56,7 @@ static char *FULLMONTHS[]={"January","February","March","April","May","June",
 // Return the daycount since year 0 for the specified date.
 // month = 1-12, day = 1-31 year = 0...
 //
-static sint32 Get_Day(int month, int day, int year)
+static int32_t Get_Day(int month, int day, int year)
 {
   time_t days;
 
@@ -85,11 +85,11 @@ static sint32 Get_Day(int month, int day, int year)
 //
 // Ayecarumba what a pain in the ass!
 //
-static bit8 Get_Date_From_Day(sint32 days, OUT sint32 &year, OUT sint32 &yday)
+static int8_t Get_Date_From_Day(int32_t days, OUT int32_t &year, OUT int32_t &yday)
 {
-  //register long int rem;
-  register long int y;
-  //register const unsigned short int *ip;
+  //register int32_t rem;
+  register int32_t y;
+  //register const uint16_t *ip;
  
   if (days <= 365)
   {
@@ -110,7 +110,7 @@ static bit8 Get_Date_From_Day(sint32 days, OUT sint32 &year, OUT sint32 &yday)
   while (days < 0 || days >= (IS_LEAP (y) ? 366 : 365))
   {
     /* Guess a corrected year, assuming 365 days per year.  */
-    long int yg = y + days / 365 - (days % 365 < 0);
+    int32_t yg = y + days / 365 - (days % 365 < 0);
  
     /* Adjust DAYS and Y to match the guessed year.  */
     days -= ((yg - y) * 365
@@ -133,7 +133,7 @@ int Max_Day(int month, int year)
     {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31},
     {0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
   };
-  bit8 isleap=IS_LEAP(year);
+  int8_t isleap=IS_LEAP(year);
   return(dayTable[isleap][month]);
 }
 
@@ -251,7 +251,7 @@ Xtime::~Xtime()
 //
 // Add some number of seconds to the time (seconds can be negative)
 //
-void Xtime::addSeconds(sint32 seconds)
+void Xtime::addSeconds(int32_t seconds)
 {
   // Add to day counter first
   day_+=(seconds/86400);
@@ -312,7 +312,7 @@ void Xtime::update(void)
 // To specify 12-hour format, use "aa" instead of "hh".
 // The hours will be 12 hour and the string will be
 // appended with " AM" or " PM".
-bit8 Xtime::FormatTime(char *out, char *format)
+int8_t Xtime::FormatTime(char *out, char *format)
 {
   int lastWasH=0;
   int ampmflag = 0;
@@ -481,7 +481,7 @@ bit8 Xtime::FormatTime(char *out, char *format)
     }
     else if (strncmp(ptr,"aa",2)==0)
     {
-      uint32 tmp = (getHour() <= 12) ? getHour() : getHour() - 12;
+      uint32_t tmp = (getHour() <= 12) ? getHour() : getHour() - 12;
       sprintf(out+strlen(out),"%02ld", tmp);
       lastWasH=2;  // needs to be 1 after top of loop decs it
       ptr+=2;
@@ -510,10 +510,10 @@ bit8 Xtime::FormatTime(char *out, char *format)
 // Can have a +minutes after the normal time
 // eg: Thu, 20 Jun 1996 17:33:49 +100
 // Returns true if successfully parsed, false otherwise
-bit8 Xtime::ParseDate(char *in)
+int8_t Xtime::ParseDate(char *in)
 {
   int i;
-  uint32 minOffset;
+  uint32_t minOffset;
   struct tm t;
   char *ptr=in;
   while ((!isgraph(*ptr))&&(*ptr!=0)) ptr++;  // skip to start of string
@@ -560,8 +560,8 @@ bit8 Xtime::ParseDate(char *in)
   t.tm_year%=100;   // 1996 is stored as 96, not 1996
   t.tm_isdst=-1;    // day_light savings info isn't available
 
-  sec=(uint32)(mktime(&t));
-  if ((sint32)sec==-1)
+  sec=(uint32_t)(mktime(&t));
+  if ((int32_t)sec==-1)
     return(FALSE);
 
 
@@ -623,31 +623,31 @@ void Xtime::PrintDate(char *out) const
 ********************************************/
 
 // Get day_s since year 0
-sint32 Xtime::getDay(void) const
+int32_t Xtime::getDay(void) const
 {
   return(day_);
 }
 
 // Get msecs since start of day
-sint32 Xtime::getMsec(void) const
+int32_t Xtime::getMsec(void) const
 {
   return(msec_);
 }
 
 // Set days since year 0
-void Xtime::setDay(sint32 newday)
+void Xtime::setDay(int32_t newday)
 {
   day_=newday;
 }
 
 // Set msec since start of this day
-void Xtime::setMsec(sint32 newmsec)
+void Xtime::setMsec(int32_t newmsec)
 {
   msec_=newmsec;
 }
 
 // Set both
-void Xtime::set(sint32 newday, sint32 newmsec)
+void Xtime::set(int32_t newday, int32_t newmsec)
 {
   day_=newday;
   msec_=newmsec;
@@ -658,14 +658,14 @@ void Xtime::set(sint32 newday, sint32 newmsec)
 // Get a timeval ptr from a Xtime class
 // May fail if timeval can't hold a year this big or small
 //
-bit8 Xtime::getTimeval(struct timeval &tv)
+int8_t Xtime::getTimeval(struct timeval &tv)
 {
   // A timeval can only hold dates from 1970-2038
   if ((day_ < 719528) || (day_ >= 719528+24855))
     return(FALSE);
 
   // Compute seconds since Jan 1, 1970
-  uint32 seconds=day_-719528;
+  uint32_t seconds=day_-719528;
   seconds*=(60*60*24);
   seconds+=(msec_/1000);
 
@@ -677,7 +677,7 @@ bit8 Xtime::getTimeval(struct timeval &tv)
 //
 // Set the time
 //
-bit8 Xtime::setTime(int month, int mday, int year, int hour, int minute, int second)
+int8_t Xtime::setTime(int month, int mday, int year, int hour, int minute, int second)
 {
   day_=Get_Day(month,mday,year);
   msec_=(hour*1000*60*60)+(minute*1000*60)+(second*1000);
@@ -689,7 +689,7 @@ bit8 Xtime::setTime(int month, int mday, int year, int hour, int minute, int sec
 int Xtime::getYDay(void) const   // Day of Year  (1-366)  (366 = leap yr)
 {
 	int year;
-	sint32 dayofyear;
+	int32_t dayofyear;
 	if (Get_Date_From_Day(day_,year,dayofyear)==FALSE)
 		return(-1);
 	return dayofyear;
@@ -701,10 +701,10 @@ int Xtime::getYDay(void) const   // Day of Year  (1-366)  (366 = leap yr)
 //
 // Most of the uglyness is in Get_Date_From_Day() 
 //
-bit8 Xtime::getTime(int &month, int &mday, int &year, int &hour, int &minute, int &second) const
+int8_t Xtime::getTime(int &month, int &mday, int &year, int &hour, int &minute, int &second) const
 {
   int i;
-  sint32 dayofyear;
+  int32_t dayofyear;
   if (Get_Date_From_Day(day_,year,dayofyear)==FALSE)
     return(FALSE);
 
@@ -715,7 +715,7 @@ bit8 Xtime::getTime(int &month, int &mday, int &year, int &hour, int &minute, in
 
   month=0;
 
-  bit8 isleap=IS_LEAP(year);
+  int8_t isleap=IS_LEAP(year);
   for (i=0; i<12; i++)
   {
     if (DaysAtMonth[isleap][i] >= dayofyear)
@@ -782,9 +782,9 @@ int Xtime::getYear(void) const
 //
 // Set the seconds value (0-59)
 //
-bit8 Xtime::setSecond(sint32 sec)
+int8_t Xtime::setSecond(int32_t sec)
 {
-  sint32 second=(msec_/ 1000)%60;
+  int32_t second=(msec_/ 1000)%60;
   msec_-=(second*1000);
   msec_+=(sec*1000);
   return(TRUE);
@@ -793,9 +793,9 @@ bit8 Xtime::setSecond(sint32 sec)
 //
 // Set the minutes value (0-59)
 //
-bit8 Xtime::setMinute(sint32 min)
+int8_t Xtime::setMinute(int32_t min)
 {
-  sint32 minute=(msec_/60000)%60;  // 1000*60 
+  int32_t minute=(msec_/60000)%60;  // 1000*60 
   msec_-=(minute*60000);
   msec_+=(min*60000);
   return(TRUE);
@@ -804,7 +804,7 @@ bit8 Xtime::setMinute(sint32 min)
 //
 // Set the minutes value (0-23)
 //
-bit8 Xtime::setHour(sint32 hour)
+int8_t Xtime::setHour(int32_t hour)
 {
   hour=(msec_/3600000)%24;  // 1000*60*60
   msec_-=(hour*3600000);
@@ -816,7 +816,7 @@ bit8 Xtime::setHour(sint32 hour)
 // Set the year value
 // Results are undefined if you're moving from Feb 29, to a non leap year
 //
-bit8 Xtime::setYear(sint32 _year)
+int8_t Xtime::setYear(int32_t _year)
 {
   // extract the date
   int month,mday,year,hour,min,sec;
@@ -831,7 +831,7 @@ bit8 Xtime::setYear(sint32 _year)
 //
 // Modify the month
 //
-bit8 Xtime::setMonth(sint32 _month)
+int8_t Xtime::setMonth(int32_t _month)
 {
   // extract the date
   int month,mday,year,hour,min,sec;
@@ -847,7 +847,7 @@ bit8 Xtime::setMonth(sint32 _month)
 //
 // Modify the day of the month 
 //
-bit8 Xtime::setMDay(sint32 _mday)
+int8_t Xtime::setMDay(int32_t _mday)
 {
   // extract the date
   int month,mday,year,hour,min,sec;
@@ -883,25 +883,25 @@ int   Xtime::compare(const Xtime &other) const
 }
   
 
-bit8 Xtime::operator == ( const Xtime &other ) const
+int8_t Xtime::operator == ( const Xtime &other ) const
 {
-  bit8 retval=compare(other);
+  int8_t retval=compare(other);
   if (retval==0)
     return(TRUE);
   else
     return(FALSE);
 }
 
-bit8 Xtime::operator != ( const Xtime &other ) const
+int8_t Xtime::operator != ( const Xtime &other ) const
 {
-  bit8 retval=compare(other);
+  int8_t retval=compare(other);
   if (retval==0)
     return(FALSE);
   else
     return(TRUE);
 }
 
-bit8 Xtime::operator < ( const Xtime &other ) const
+int8_t Xtime::operator < ( const Xtime &other ) const
 {
   int retval=compare(other);
   if (retval==-1)
@@ -910,7 +910,7 @@ bit8 Xtime::operator < ( const Xtime &other ) const
     return(FALSE);
 }
 
-bit8 Xtime::operator > ( const Xtime &other ) const
+int8_t Xtime::operator > ( const Xtime &other ) const
 {
   int retval=compare(other);
   if (retval==1)
@@ -919,7 +919,7 @@ bit8 Xtime::operator > ( const Xtime &other ) const
     return(FALSE);
 }
 
-bit8 Xtime::operator <= ( const Xtime &other ) const
+int8_t Xtime::operator <= ( const Xtime &other ) const
 {
   int retval=compare(other);
   if ((retval==-1)||(retval==0))
@@ -928,7 +928,7 @@ bit8 Xtime::operator <= ( const Xtime &other ) const
     return(FALSE);
 }
 
-bit8 Xtime::operator >= ( const Xtime &other ) const
+int8_t Xtime::operator >= ( const Xtime &other ) const
 {
   int retval=compare(other);
   if ((retval==1)||(retval==0))
@@ -986,7 +986,7 @@ Xtime &Xtime::operator += (const time_t other)
 
 Xtime &Xtime::operator -= (const time_t other)
 {
-  addSeconds(-((sint32)other));
+  addSeconds(-((int32_t)other));
   return *this;
 }
 

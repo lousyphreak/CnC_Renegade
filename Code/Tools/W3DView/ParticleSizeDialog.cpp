@@ -77,7 +77,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 ParticleSizeDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog();
@@ -106,12 +106,12 @@ ParticleSizeDialogClass::OnOK (void)
 // OnNotify
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 ParticleSizeDialogClass::OnNotify
 (	
-	WPARAM wParam,
-	LPARAM lParam,
-	LRESULT *pResult
+	uintptr_t wParam,
+	intptr_t lParam,
+	intptr_t *pResult
 ) 
 {
 	//

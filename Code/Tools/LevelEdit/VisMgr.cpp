@@ -322,7 +322,7 @@ VisMgrClass::Render_Manual_Vis_Points
 	int									processor_index,
 	int									total_processors,
 	VIS_POINT_RENDERED_CALLBACK	callback,
-	DWORD									param
+	uint32_t									param
 )
 {
 	SceneEditorClass *scene_editor	= ::Get_Scene_Editor ();
@@ -371,7 +371,7 @@ VisMgrClass::Render_Manual_Vis_Points
 	//	
 	for (int index = 0; index < point_list.Count (); index ++)
 	{
-		DWORD before = ::GetTickCount ();
+		uint32_t before = ::GetTickCount ();
 		VisPointNodeClass *vis_point = point_list[index];
 
 		//	Set the camera up to use the same settings we used when
@@ -409,7 +409,7 @@ VisMgrClass::Render_Manual_Vis_Points
 		//	Notify the callback that we've renedered a point
 		//				
 		if (callback != NULL) {
-			DWORD after	= ::GetTickCount ();		
+			uint32_t after	= ::GetTickCount ();		
 			keep_going	= (*callback) (after - before, param);
 		}
 	}

@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // DriverVersionWarning.h : header file
 //
@@ -56,7 +58,7 @@ protected:
 	// Generated message map functions
 	//{{AFX_MSG(DriverVersionWarning)
 	afx_msg void OnDisableDriverVersionDialogCheckbox();
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	virtual void OnCancel();
 	virtual void OnOK();
 	//}}AFX_MSG

@@ -57,8 +57,8 @@ static const int ICON_PHYS_SETTING		= 1;
 /////////////////////////////////////////////////////////////////////////////
 //	Local prototypes
 /////////////////////////////////////////////////////////////////////////////
-static LRESULT CALLBACK CheckBoxSubclassProc (HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
-static BOOL TreeView_SetCheckState (HWND hwndTreeView, HTREEITEM hItem, BOOL fCheck);
+static intptr_t CALLBACK CheckBoxSubclassProc (HWND hwnd, uint32_t message, uintptr_t wparam, intptr_t lparam);
+static int32_t TreeView_SetCheckState (HWND hwndTreeView, HTREEITEM hItem, int32_t fCheck);
 static bool Find_Parameter_In_List (DynamicVectorClass<DefinitionParameterClass *> &parameter_list, ParameterClass *parameter);
 
 
@@ -109,7 +109,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 ParameterInheritanceDialogClass::OnInitDialog (void) 
 {
 	CDialog::OnInitDialog ();
@@ -156,8 +156,8 @@ ParameterInheritanceDialogClass::OnInitDialog (void)
 	//
 	//	Subclass the list and tree controls so we can handle the checkstates
 	//
-	LONG oldproc1 = ::SetWindowLong (m_ListCtrl, GWL_WNDPROC, (LONG)CheckBoxSubclassProc);
-	LONG oldproc2 = ::SetWindowLong (m_TreeCtrl, GWL_WNDPROC, (LONG)CheckBoxSubclassProc);
+	int32_t oldproc1 = ::SetWindowLong (m_ListCtrl, GWL_WNDPROC, (int32_t)CheckBoxSubclassProc);
+	int32_t oldproc2 = ::SetWindowLong (m_TreeCtrl, GWL_WNDPROC, (int32_t)CheckBoxSubclassProc);
 	::SetProp (m_ListCtrl, "OLDPROC",		(HANDLE)oldproc1);
 	::SetProp (m_TreeCtrl, "OLDPROC",		(HANDLE)oldproc2);
 	::SetProp (m_ListCtrl, "IS_LIST_CTRL", (HANDLE)TRUE);
@@ -265,7 +265,7 @@ ParameterInheritanceDialogClass::Add_Parameters_To_List
 					def_param->Set_Index (index);
 					def_param->Set_Parent (parent);
 
-					m_ListCtrl.SetItemData (item_index, (LONG)def_param);
+					m_ListCtrl.SetItemData (item_index, (int32_t)def_param);
 					ListView_SetCheckState (m_ListCtrl, item_index, false);
 				}
 			}
@@ -328,7 +328,7 @@ ParameterInheritanceDialogClass::Add_Children_To_Tree (HTREEITEM parent_item, in
 					//
 					//	Associate the preset pointer with this tree item
 					//
-					m_TreeCtrl.SetItemData (new_item, (LONG)child_preset);
+					m_TreeCtrl.SetItemData (new_item, (int32_t)child_preset);
 
 					//
 					//	Check this preset by default
@@ -392,13 +392,13 @@ ParameterInheritanceDialogClass::OnDestroy (void)
 //  CheckBoxSubclassProc
 //
 ////////////////////////////////////////////////////////////////////////////
-LRESULT CALLBACK
+intptr_t CALLBACK
 CheckBoxSubclassProc
 (
 	HWND		hwnd,
-	UINT		message,
-	WPARAM	wparam,
-	LPARAM	lparam
+	uint32_t		message,
+	uintptr_t	wparam,
+	intptr_t	lparam
 )
 {
 	WNDPROC old_proc = (WNDPROC)::GetProp (hwnd, "OLDPROC");
@@ -408,7 +408,7 @@ CheckBoxSubclassProc
 		//
 		//	Is this the list control or the tree control?
 		//
-		BOOL is_list_ctrl = (BOOL)::GetProp (hwnd, "IS_LIST_CTRL");
+		int32_t is_list_ctrl = (int32_t)::GetProp (hwnd, "IS_LIST_CTRL");
 		if (is_list_ctrl) {
 			
 			//
@@ -417,7 +417,7 @@ CheckBoxSubclassProc
 			LVHITTESTINFO hittest = { 0 };
 			hittest.pt.x = LOWORD (lparam);
 			hittest.pt.y = HIWORD (lparam);
-			::SendMessage (hwnd, LVM_HITTEST, 0, (LPARAM)&hittest);
+			::SendMessage (hwnd, LVM_HITTEST, 0, (intptr_t)&hittest);
 			
 			//
 			//	Did the user click one of the checkboxes?
@@ -427,7 +427,7 @@ CheckBoxSubclassProc
 				//
 				//	Notify the dialog that the user wants to toggle the checkbox
 				//
-				::PostMessage (::GetParent (hwnd), WM_USER+102, 0, (LPARAM)hittest.iItem);
+				::PostMessage (::GetParent (hwnd), WM_USER+102, 0, (intptr_t)hittest.iItem);
 			}
 
 		} else {
@@ -438,7 +438,7 @@ CheckBoxSubclassProc
 			TVHITTESTINFO hittest = { 0 };
 			hittest.pt.x = LOWORD (lparam);
 			hittest.pt.y = HIWORD (lparam);
-			::SendMessage (hwnd, TVM_HITTEST, 0, (LPARAM)&hittest);
+			::SendMessage (hwnd, TVM_HITTEST, 0, (intptr_t)&hittest);
 			
 			//
 			//	Did the user click one of the checkboxes?
@@ -448,12 +448,12 @@ CheckBoxSubclassProc
 				//
 				//	Notify the dialog that the user wants to toggle the checkbox
 				//
-				::PostMessage (::GetParent (hwnd), WM_USER+103, 0, (LPARAM)hittest.hItem);
+				::PostMessage (::GetParent (hwnd), WM_USER+103, 0, (intptr_t)hittest.hItem);
 			}
 		}
 
 	} else if (message == WM_DESTROY) {
-		::SetWindowLong (hwnd, GWL_WNDPROC, (LONG)old_proc);
+		::SetWindowLong (hwnd, GWL_WNDPROC, (int32_t)old_proc);
 		::RemoveProp (hwnd, "OLDPROC");
 		::RemoveProp (hwnd, "IS_LIST_CTRL");
 	}
@@ -461,7 +461,7 @@ CheckBoxSubclassProc
 	//
 	//	Allow the default message processing to occur
 	//
-	LRESULT result = 0L;
+	intptr_t result = 0L;
 	if (old_proc != NULL) {
 		result = ::CallWindowProc (old_proc, hwnd, message, wparam, lparam);
 	} else {
@@ -477,12 +477,12 @@ CheckBoxSubclassProc
 // WindowProc
 //
 /////////////////////////////////////////////////////////////////////////////
-LRESULT
+intptr_t
 ParameterInheritanceDialogClass::WindowProc
 (
-	UINT		message,
-	WPARAM	wParam,
-	LPARAM	lParam
+	uint32_t		message,
+	uintptr_t	wParam,
+	intptr_t	lParam
 )
 {	
 	if (message == WM_USER + 102) {
@@ -491,7 +491,7 @@ ParameterInheritanceDialogClass::WindowProc
 		//	Invert the checked state of this entry
 		//
 		int index		= (int)lParam;
-		BOOL checked	= ListView_GetCheckState (m_ListCtrl, index);
+		int32_t checked	= ListView_GetCheckState (m_ListCtrl, index);
 		Update_List_Entry_Check (index, (bool)(checked != 1));
 
 	} else if (message == WM_USER + 103) {
@@ -500,7 +500,7 @@ ParameterInheritanceDialogClass::WindowProc
 		//	Invert the checked state of this entry
 		//
 		HTREEITEM tree_item	= (HTREEITEM)lParam;
-		BOOL checked			= m_TreeCtrl.GetCheck (tree_item);
+		int32_t checked			= m_TreeCtrl.GetCheck (tree_item);
 		Update_Tree_Entry_Check (tree_item, (bool)(checked != 1));
 	}
 
@@ -573,8 +573,8 @@ ParameterInheritanceDialogClass::Update_List_Entry_Check (int index, bool checke
 // TreeView_SetCheckState
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
-TreeView_SetCheckState (HWND hwndTreeView, HTREEITEM hItem, BOOL fCheck)
+int32_t
+TreeView_SetCheckState (HWND hwndTreeView, HTREEITEM hItem, int32_t fCheck)
 {
     TVITEM tvItem;
 
@@ -849,7 +849,7 @@ void
 ParameterInheritanceDialogClass::OnDeleteitemParameterList
 (	
 	NMHDR *	pNMHDR,
-	LRESULT* pResult
+	intptr_t* pResult
 )
 {
 	NM_LISTVIEW* pNMListView = (NM_LISTVIEW*)pNMHDR;

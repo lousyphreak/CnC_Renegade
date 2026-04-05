@@ -44,7 +44,7 @@
 
 void main(int, void**)
 {
-	void* buffer = new unsigned char[BUFFER_SIZE];
+	void* buffer = new uint8_t[BUFFER_SIZE];
 
 	if (buffer == NULL) {
 		printf("Failed to allocate buffer\n");

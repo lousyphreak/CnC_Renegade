@@ -79,13 +79,13 @@ void RGBClass::Adjust(int ratio, RGBClass const & rgb)
 	**	destination color.
 	*/
 	int value = (int)rgb.Red - (int)Red;
-	Red = (unsigned char)((int)Red + (value * ratio) / 256);
+	Red = (uint8_t)((int)Red + (value * ratio) / 256);
 
 	value = (int)rgb.Green - (int)Green;
-	Green = (unsigned char)((int)Green + (value * ratio) / 256);
+	Green = (uint8_t)((int)Green + (value * ratio) / 256);
 
 	value = (int)rgb.Blue - (int)Blue;
-	Blue = (unsigned char)((int)Blue + (value * ratio) / 256);
+	Blue = (uint8_t)((int)Blue + (value * ratio) / 256);
 }
 
 
@@ -192,10 +192,10 @@ RGBClass::operator HSVClass (void) const
 	**	hue is based on a six sided color wheel.
 	*/
 	if (saturation != 0) {
-		unsigned int tmp = value - white;
-	 	unsigned int r1 = ((value - red) * 255) / tmp;
-	 	unsigned int g1 = ((value - green) * 255) / tmp;
-	 	unsigned int b1 = ((value - blue) * 255) / tmp;
+		uint32_t tmp = value - white;
+	 	uint32_t r1 = ((value - red) * 255) / tmp;
+	 	uint32_t g1 = ((value - green) * 255) / tmp;
+	 	uint32_t b1 = ((value - blue) * 255) / tmp;
 
 		// Find effect of second most predominant color.
 		// In which section of the hexagon of colors does the color lie?
@@ -225,7 +225,6 @@ RGBClass::operator HSVClass (void) const
 		hue = tmp / 6;
 	}
 
-	HSVClass hsv((unsigned char)hue, (unsigned char)saturation, (unsigned char)value);
+	HSVClass hsv((uint8_t)hue, (uint8_t)saturation, (uint8_t)value);
 	return(hsv);
 }
-

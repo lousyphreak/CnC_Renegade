@@ -33,6 +33,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 //#define MEMORY_OVERWRITE_TEST
 
 
@@ -209,9 +211,9 @@ protected:
 class FastFixedAllocator
 {
 public:
-	FastFixedAllocator(unsigned int n=0);
+	FastFixedAllocator(uint32_t n=0);
   ~FastFixedAllocator();
-   void  Init(unsigned int n); //Useful for setting allocation size *after* construction,
+   void  Init(uint32_t n); //Useful for setting allocation size *after* construction,
                                //but before first use.
 	void* Alloc();
 	void  Free(void* pAlloc);
@@ -236,7 +238,7 @@ protected:
 		char mem[size];
 	};
 	Chunk* chunks;
-	unsigned int esize;
+	uint32_t esize;
 	unsigned TotalHeapSize;
 	unsigned TotalAllocatedSize;
 	unsigned TotalAllocationCount;
@@ -283,7 +285,7 @@ WWINLINE void FastFixedAllocator::Free(void* pAlloc)
 //
 // ----------------------------------------------------------------------------
 
-WWINLINE FastFixedAllocator::FastFixedAllocator(unsigned int n) : esize(1), TotalHeapSize(0), TotalAllocatedSize(0), TotalAllocationCount(0)
+WWINLINE FastFixedAllocator::FastFixedAllocator(uint32_t n) : esize(1), TotalHeapSize(0), TotalAllocatedSize(0), TotalAllocationCount(0)
 {
    head   = 0;
    chunks = 0;
@@ -312,7 +314,7 @@ WWINLINE FastFixedAllocator::~FastFixedAllocator()
 //
 // ----------------------------------------------------------------------------
 
-WWINLINE void FastFixedAllocator::Init(unsigned int n)
+WWINLINE void FastFixedAllocator::Init(uint32_t n)
 {
    esize = (n<sizeof(Link*) ? sizeof(Link*) : n);
 }
@@ -361,9 +363,9 @@ class FastAllocatorGeneral
 	};
 public:
 	FastAllocatorGeneral();
-	void* Alloc(unsigned int n);
+	void* Alloc(uint32_t n);
 	void  Free(void* pAlloc);
-  	void* Realloc(void* pAlloc, unsigned int n);
+  	void* Realloc(void* pAlloc, uint32_t n);
 
 	unsigned Get_Total_Heap_Size();
 	unsigned Get_Total_Allocated_Size();
@@ -419,7 +421,7 @@ WWINLINE unsigned FastAllocatorGeneral::Get_Total_Allocation_Count()
 //
 // ----------------------------------------------------------------------------
 
-WWINLINE void* FastAllocatorGeneral::Alloc(unsigned int n)
+WWINLINE void* FastAllocatorGeneral::Alloc(uint32_t n)
 {
    void* pMemory;
 	static int re_entrancy=0;
@@ -428,9 +430,9 @@ WWINLINE void* FastAllocatorGeneral::Alloc(unsigned int n)
    //We actually allocate n+4 bytes. We store the # allocated 
    //in the first 4 bytes, and return the ptr to the rest back
    //to the user.
-   n += sizeof(unsigned int); 
+   n += sizeof(uint32_t); 
 #ifdef MEMORY_OVERWRITE_TEST
-	n+=sizeof(unsigned int);
+	n+=sizeof(uint32_t);
 #endif
 
 	if (re_entrancy==1) {
@@ -451,12 +453,12 @@ WWINLINE void* FastAllocatorGeneral::Alloc(unsigned int n)
       pMemory = ::malloc(n);
 	}
 #ifdef MEMORY_OVERWRITE_TEST
-	*((unsigned int*)((char*)pMemory+n)-1)=0xabbac0de;
+	*((uint32_t*)((char*)pMemory+n)-1)=0xabbac0de;
 #endif
 
 	re_entrancy--;
-   *((unsigned int*)pMemory) = n;     //Write modified (augmented by 4) count into first four bytes.
-   return ((unsigned int*)pMemory)+1; //return ptr to bytes after it back to user.
+   *((uint32_t*)pMemory) = n;     //Write modified (augmented by 4) count into first four bytes.
+   return ((uint32_t*)pMemory)+1; //return ptr to bytes after it back to user.
 }
 
 // ----------------------------------------------------------------------------
@@ -468,10 +470,10 @@ WWINLINE void* FastAllocatorGeneral::Alloc(unsigned int n)
 WWINLINE void FastAllocatorGeneral::Free(void* pAlloc)
 {
    if (pAlloc) {
-      unsigned int* n = ((unsigned int*)pAlloc)-1; //Subtract four bytes and the count is stored there.
+      uint32_t* n = ((uint32_t*)pAlloc)-1; //Subtract four bytes and the count is stored there.
 
 #ifdef MEMORY_OVERWRITE_TEST
-		WWASSERT(*((unsigned int*)((char*)n+*n)-1)==0xabbac0de);
+		WWASSERT(*((uint32_t*)((char*)n+*n)-1)==0xabbac0de);
 #endif
 
 		unsigned size=*n;
@@ -495,11 +497,11 @@ WWINLINE void FastAllocatorGeneral::Free(void* pAlloc)
 //  (2) realloc(pblock, 0) is equivalent to free(pblock) (except that NULL is returned).
 //  (3) if the realloc() fails, the object pointed to by pblock is left unchanged.
 //
-WWINLINE void* FastAllocatorGeneral::Realloc(void* pAlloc, unsigned int n){
+WWINLINE void* FastAllocatorGeneral::Realloc(void* pAlloc, uint32_t n){
    if(n){
       void* const pNewAlloc = Alloc(n);      //Allocate the new memory. This never fails.
       if(pAlloc){
-         n = *(((unsigned int*)pAlloc)-1);   //Subtract four bytes and the count is stored there.
+         n = *(((uint32_t*)pAlloc)-1);   //Subtract four bytes and the count is stored there.
          ::memcpy(pNewAlloc, pAlloc, n);     //Copy the old memory into the new memory.
          Free(pAlloc);                       //Delete the old memory.
       }
@@ -533,7 +535,7 @@ WWINLINE void* FastAllocatorGeneral::Realloc(void* pAlloc, unsigned int n){
    //for VC++, and let other compilers use a standard allocator template.
    template <class T>
    struct FastSTLAllocator{
-      typedef size_t    size_type;        //basically, "unsigned int"
+      typedef size_t    size_type;        //basically, "uint32_t"
       typedef ptrdiff_t difference_type;  //basically, "int"
       typedef T*        pointer;
       typedef const T*  const_pointer;
@@ -628,22 +630,22 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////////////
 // Here's how you declare a custom allocator for every regular STL container class:
 //
-typedef vector<int, FastSTLAllocator<int> >                            IntArray;
-typedef list<int, FastSTLAllocator<int> >                              IntList;
-typedef deque<int, FastSTLAllocator<int> >                             IntDequeue;
-typedef queue<int, deque<int, FastSTLAllocator<int> > >                IntQueue;
-typedef priority_queue<int, vector<int, FastSTLAllocator<int> > >      IntPriorityQueue;
-typedef stack<int, deque<int, FastSTLAllocator<int> > >                IntStack;
-typedef map<int, int, less<int>, FastSTLAllocator<int> >               IntMap;
-typedef multimap<int, int, less<int>, FastSTLAllocator<int> >          IntMultiMap;
-typedef set<int, less<int>, FastSTLAllocator<int> >                    IntSet;
-typedef multiset<int, less<int>, FastSTLAllocator<int> >               IntMultiSet;
+typedef vector<int32_t, FastSTLAllocator<int32_t> >                            IntArray;
+typedef list<int32_t, FastSTLAllocator<int32_t> >                              IntList;
+typedef deque<int32_t, FastSTLAllocator<int32_t> >                             IntDequeue;
+typedef queue<int32_t, deque<int32_t, FastSTLAllocator<int32_t> > >            IntQueue;
+typedef priority_queue<int32_t, vector<int32_t, FastSTLAllocator<int32_t> > >  IntPriorityQueue;
+typedef stack<int32_t, deque<int32_t, FastSTLAllocator<int32_t> > >            IntStack;
+typedef map<int32_t, int32_t, less<int32_t>, FastSTLAllocator<int32_t> >       IntMap;
+typedef multimap<int32_t, int32_t, less<int32_t>, FastSTLAllocator<int32_t> >  IntMultiMap;
+typedef set<int32_t, less<int32_t>, FastSTLAllocator<int32_t> >                IntSet;
+typedef multiset<int32_t, less<int32_t>, FastSTLAllocator<int32_t> >           IntMultiSet;
 
 //If you have the hashing containers available, here's how you do it:
-typedef hash_map<int, int, hash<int>, equal_to<int>, FastSTLAllocator<int> >        IntHashMap;
-typedef hash_multimap<int, int, hash<int>, equal_to<int>, FastSTLAllocator<int> >   IntHashMultiMap;
-typedef hash_set<int, hash<int>, equal_to<int>, FastSTLAllocator<int> >             IntHashSet;
-typedef hash_multiset<int, hash<int>, equal_to<int>, FastSTLAllocator<int> >        IntHashMultiSet;
+typedef hash_map<int32_t, int32_t, hash<int32_t>, equal_to<int32_t>, FastSTLAllocator<int32_t> >        IntHashMap;
+typedef hash_multimap<int32_t, int32_t, hash<int32_t>, equal_to<int32_t>, FastSTLAllocator<int32_t> >   IntHashMultiMap;
+typedef hash_set<int32_t, hash<int32_t>, equal_to<int32_t>, FastSTLAllocator<int32_t> >                 IntHashSet;
+typedef hash_multiset<int32_t, hash<int32_t>, equal_to<int32_t>, FastSTLAllocator<int32_t> >            IntHashMultiSet;
 
 typedef basic_string<char, char_traits<char>, FastSTLAllocator<char> > CharString;
 
@@ -722,7 +724,6 @@ void main(){
 
 
 #endif //sentry
-
 
 
 

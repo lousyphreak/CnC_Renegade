@@ -53,7 +53,7 @@
 
 Random4Class Random;
 
-RandomSamplingClass::RandomSamplingClass(unsigned int dimensions,unsigned char divisions):
+RandomSamplingClass::RandomSamplingClass(uint32_t dimensions,uint8_t divisions):
 	SamplingClass(dimensions,divisions)
 {		
 }
@@ -75,23 +75,23 @@ RandomSamplingClass::RandomSamplingClass(unsigned int dimensions,unsigned char d
  *=============================================================================================*/
 void RandomSamplingClass::Sample(float *target)
 {
-	unsigned int i;
+	uint32_t i;
 	for (i=0; i<Dimensions; i++)
 	{
 		target[i]=Random.Get_Float();
 	}
 }
 
-RegularSamplingClass::RegularSamplingClass(unsigned int dimensions,unsigned char divisions):
+RegularSamplingClass::RegularSamplingClass(uint32_t dimensions,uint8_t divisions):
 	SamplingClass(dimensions,divisions)
 {
-	index=new unsigned char[Dimensions];
+	index=new uint8_t[Dimensions];
 	Reset();
 }
 
 void RegularSamplingClass::Reset()
 {
-	memset(index,0,sizeof(unsigned char)*Dimensions);
+	memset(index,0,sizeof(uint8_t)*Dimensions);
 }
 
 RegularSamplingClass::~RegularSamplingClass()
@@ -117,7 +117,7 @@ RegularSamplingClass::~RegularSamplingClass()
  *=============================================================================================*/
 void RegularSamplingClass::Sample(float *target)
 {
-	unsigned int i;
+	uint32_t i;
 
 	for (i=0; i<Dimensions; i++)
 	{
@@ -138,16 +138,16 @@ void RegularSamplingClass::Sample(float *target)
 	}
 }
 
-StratifiedSamplingClass::StratifiedSamplingClass(unsigned int dimensions,unsigned char divisions):
+StratifiedSamplingClass::StratifiedSamplingClass(uint32_t dimensions,uint8_t divisions):
 	SamplingClass(dimensions,divisions)	
 {	
-	index=new unsigned char[Dimensions];
+	index=new uint8_t[Dimensions];
 	Reset();
 }
 
 void StratifiedSamplingClass::Reset()
 {
-	memset(index,0,sizeof(unsigned char)*Dimensions);
+	memset(index,0,sizeof(uint8_t)*Dimensions);
 }
 
 StratifiedSamplingClass::~StratifiedSamplingClass()
@@ -172,7 +172,7 @@ StratifiedSamplingClass::~StratifiedSamplingClass()
  *=============================================================================================*/
 void StratifiedSamplingClass::Sample(float *target)
 {
-	unsigned int i;
+	uint32_t i;
 
 	for (i=0; i<Dimensions; i++)
 	{
@@ -228,7 +228,7 @@ inline float RadInv(int i,int base)
 	return sum;
 }
 
-QMCSamplingClass::QMCSamplingClass(unsigned int dimensions,unsigned char divisions):
+QMCSamplingClass::QMCSamplingClass(uint32_t dimensions,uint8_t divisions):
 	SamplingClass(dimensions,divisions),
 	index(0)
 {	
@@ -253,7 +253,7 @@ QMCSamplingClass::QMCSamplingClass(unsigned int dimensions,unsigned char divisio
  *=============================================================================================*/
 void QMCSamplingClass::Sample(float *target)
 {
-	unsigned int i;
+	uint32_t i;
 	for (i=0; i<Dimensions; i++)
 	{
 		target[i]=RadInv(index,primes[i]);

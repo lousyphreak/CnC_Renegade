@@ -67,7 +67,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // LightSolveOptionsDialogClass message handlers
 
-BOOL LightSolveOptionsDialogClass::OnInitDialog() 
+int32_t LightSolveOptionsDialogClass::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
 	return TRUE;

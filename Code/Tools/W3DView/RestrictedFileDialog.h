@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // RestrictedFileDialog.h : header file
 //
@@ -33,10 +35,10 @@ class RestrictedFileDialogClass : public CFileDialog
 	DECLARE_DYNAMIC(RestrictedFileDialogClass)
 
 public:
-	RestrictedFileDialogClass(BOOL bOpenFileDialog, // TRUE for FileOpen, FALSE for FileSaveAs
+	RestrictedFileDialogClass(int32_t bOpenFileDialog, // TRUE for FileOpen, FALSE for FileSaveAs
 		LPCTSTR lpszDefExt = NULL,
 		LPCTSTR lpszFileName = NULL,
-		DWORD dwFlags = OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
+		uint32_t dwFlags = OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
 		LPCTSTR lpszFilter = NULL,
 		CWnd* pParentWnd = NULL);
 
@@ -47,7 +49,7 @@ protected:
 	DECLARE_MESSAGE_MAP()
 
 	virtual void			OnFileNameChange (void);
-	virtual BOOL			OnFileNameOK (void);
+	virtual int32_t			OnFileNameOK (void);
 	virtual void			OnInitDone (void);
 
 	private:

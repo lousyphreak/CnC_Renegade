@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __MERCHANDISECTRL_H
@@ -81,8 +83,8 @@ public:
 
 	int				Get_Selected_Alternate (void)	{ return (CurrentTextureIndex - 1); }
 
-	DWORD				Get_User_Data (void) const		{ return UserData; }
-	void				Set_User_Data (DWORD data)		{ UserData = data; }	
+	uint32_t				Get_User_Data (void) const		{ return UserData; }
+	void				Set_User_Data (uint32_t data)		{ UserData = data; }	
 
 	void				Increment_Purchase_Count (void)	{ Count ++; Set_Dirty (); }
 	void				Reset_Purchase_Count (void)		{ Count = 0; Set_Dirty (); }
@@ -119,7 +121,7 @@ protected:
 	RectClass					CostRect;
 	RectClass					CountRect;
 
-	DWORD							UserData;
+	uint32_t							UserData;
 	int							Cost;
 	int							Count;
 

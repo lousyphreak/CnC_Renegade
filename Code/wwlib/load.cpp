@@ -65,11 +65,11 @@
  * HISTORY:                                                                *
  *   09/17/1993 JLB : Created.                                             *
  *=========================================================================*/
-unsigned long __cdecl Uncompress_Data(void const *src, void *dst)
+uint32_t __cdecl Uncompress_Data(void const *src, void *dst)
 {
-	unsigned int					skip;			// Number of leading data to skip.
+	uint32_t					skip;			// Number of leading data to skip.
 	CompressionType	method;		// Compression method used.
-	unsigned long					uncomp_size;
+	uint32_t					uncomp_size;
 
 	if (!src || !dst) return(NULL);
 
@@ -86,7 +86,7 @@ unsigned long __cdecl Uncompress_Data(void const *src, void *dst)
 		skip = Reverse_Word(skip);
 	#endif
 	method = (CompressionType) ((CompHeaderType*)src)->Method;
-	src = ((char*)src) + (long)sizeof(CompHeaderType) + (long)skip;
+	src = ((char*)src) + sizeof(CompHeaderType) + skip;
 //	src = Add_Long_To_Pointer((void *)src, (long)sizeof(CompHeaderType) + (long)skip);
 
 	switch (method) {
@@ -101,12 +101,11 @@ unsigned long __cdecl Uncompress_Data(void const *src, void *dst)
 			break;
 
 		case LCW:
-			LCW_Uncomp((void *) src, (void *) dst, (unsigned long) uncomp_size);
+			LCW_Uncomp((void *) src, (void *) dst, (uint32_t) uncomp_size);
 			break;
 
 	}
 
 	return(uncomp_size);
 }
-
 

@@ -36,6 +36,8 @@
 
 #if defined(_MSV_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef PLAYER_H
@@ -65,7 +67,7 @@ class cPlayer : public PlayerDataClass, public NetworkObjectClass {
    public:
       friend class cPlayerManager; // so that only cPlayerManager can call ~cPlayer
 
-		virtual uint32		Get_Network_Class_ID(void) const		{return NETCLASSID_PLAYER;}
+		virtual uint32_t		Get_Network_Class_ID(void) const		{return NETCLASSID_PLAYER;}
 		virtual void		Delete(void);
 
 		void Init(void);
@@ -110,16 +112,16 @@ class cPlayer : public PlayerDataClass, public NetworkObjectClass {
       float Get_Kill_To_Death_Ratio(void) const;
       void Get_Player_String(int rank, WideStringClass & string, bool force_verbose = false);
 
-			unsigned long Get_WOL_ClanID(void) const {return ClanID;}
-			void Set_WOL_ClanID(unsigned long id) {ClanID = id;}
+			uint32_t Get_WOL_ClanID(void) const {return ClanID;}
+			void Set_WOL_ClanID(uint32_t id) {ClanID = id;}
 
       int Get_Wol_Rank(void) const {return (int)WolRank;}
       void Set_Wol_Rank(int wol_rank);
 
-			unsigned short Get_WOL_Points(void) const
+			uint16_t Get_WOL_Points(void) const
 				{return WOLPoints;}
 
-      void Set_WOL_Points(unsigned short points)
+      void Set_WOL_Points(uint16_t points)
 				{WOLPoints = points;}
 
       int Get_Rung(void) const {return (int)Rung;}
@@ -132,23 +134,23 @@ class cPlayer : public PlayerDataClass, public NetworkObjectClass {
       //int Get_Ping(void)								{return Ping;}
       int Get_Ping(void);
 
-      DWORD Get_Join_Time(void) const {return JoinTimeMs;}
+      uint32_t Get_Join_Time(void) const {return JoinTimeMs;}
       void Reset_Join_Time(void);
 
-      DWORD Get_Total_Time(void) const {return TotalTimeMs;}
+      uint32_t Get_Total_Time(void) const {return TotalTimeMs;}
       void Increment_Total_Time(void);
       void Reset_Total_Time(void);
 
-		ULONG Get_Ip_Address(void) const {return IpAddress;}
-      void Set_Ip_Address(ULONG ip_address);
+		uint32_t Get_Ip_Address(void) const {return IpAddress;}
+      void Set_Ip_Address(uint32_t ip_address);
 
 		int Get_Fps(void) const {return Fps;}
       void Set_Fps(int fps);
 
       //int Get_Avg_Ping(void) const;
 
-		DWORD Get_Last_Update_Time_Ms(void) const {return LastUpdateTimeMs;}
-      void Set_Last_Update_Time_Ms(DWORD time_ms);
+		uint32_t Get_Last_Update_Time_Ms(void) const {return LastUpdateTimeMs;}
+      void Set_Last_Update_Time_Ms(uint32_t time_ms);
 
 		bool Is_Human(void) const {return Id >= 0;}
 
@@ -192,16 +194,16 @@ class cPlayer : public PlayerDataClass, public NetworkObjectClass {
 		//
 		void								Set_GameSpy_Auth_State(GAMESPY_AUTH_STATE_ENUM state);
 		GAMESPY_AUTH_STATE_ENUM		Get_GameSpy_Auth_State(void)	const	{return GameSpyAuthState;}
-		void								Set_GameSpy_Auth_State_Entry_Time_Ms(DWORD time_ms);
-		DWORD								Get_GameSpy_Auth_State_Entry_Time_Ms(void) const {return GameSpyAuthStateEntryTimeMs;}
+		void								Set_GameSpy_Auth_State_Entry_Time_Ms(uint32_t time_ms);
+		uint32_t								Get_GameSpy_Auth_State_Entry_Time_Ms(void) const {return GameSpyAuthStateEntryTimeMs;}
 		void								Set_GameSpy_Challenge_String(StringClass & challenge_string);
 		void								Set_GameSpy_Hash_Id(StringClass & hash_id);
 		StringClass &					Get_GameSpy_Challenge_String(void) {return GameSpyChallengeString;}
 		StringClass &					Get_GameSpy_Hash_Id(void) {return GameSpyHashId;}
 		void								Set_GameSpy_Kick_State(GAMESPY_KICK_STATE_ENUM state);
 		GAMESPY_KICK_STATE_ENUM				Get_GameSpy_Kick_State(void)	const	{return GameSpyKickState;}
-		void								Set_GameSpy_Kick_State_Entry_Time_Ms(DWORD time_ms);
-		DWORD								Get_GameSpy_Kick_State_Entry_Time_Ms(void) const {return GameSpyKickStateEntryTimeMs;}
+		void								Set_GameSpy_Kick_State_Entry_Time_Ms(uint32_t time_ms);
+		uint32_t								Get_GameSpy_Kick_State_Entry_Time_Ms(void) const {return GameSpyKickStateEntryTimeMs;}
 
 		//
 		// N.B. If you change the state of any of these on the server then you
@@ -225,15 +227,15 @@ class cPlayer : public PlayerDataClass, public NetworkObjectClass {
 		safe_int				Rung;
 		safe_int				WolRank;
 
-		unsigned short WOLPoints;
+		uint16_t WOLPoints;
 
 		int					DamageScaleFactor;
 		int					Ping;
-		DWORD					JoinTimeMs;
-		DWORD					TotalTimeMs;
-		ULONG					IpAddress;
+		uint32_t					JoinTimeMs;
+		uint32_t					TotalTimeMs;
+		uint32_t					IpAddress;
 		int					Fps;
-		DWORD					LastUpdateTimeMs;
+		uint32_t					LastUpdateTimeMs;
 		int					FastSortKey;
 		int					NumWolGames;
 		cBoolean				IsWaitingForIntermission;
@@ -242,11 +244,11 @@ class cPlayer : public PlayerDataClass, public NetworkObjectClass {
 		// GameSpy support
 		//
 		GAMESPY_AUTH_STATE_ENUM		GameSpyAuthState;
-		DWORD								GameSpyAuthStateEntryTimeMs;
+		uint32_t								GameSpyAuthStateEntryTimeMs;
 		StringClass						GameSpyChallengeString;
 		StringClass						GameSpyHashId;
 		GAMESPY_KICK_STATE_ENUM		GameSpyKickState;
-		DWORD						GameSpyKickStateEntryTimeMs;
+		uint32_t						GameSpyKickStateEntryTimeMs;
 
 		//
 		// N.B. If you change the state of any of these on the server then you
@@ -255,7 +257,7 @@ class cPlayer : public PlayerDataClass, public NetworkObjectClass {
 		cBoolean				IsInGame;
 		cBoolean				IsActive;
 
-		unsigned long ClanID;
+		uint32_t ClanID;
 };
 
 //-----------------------------------------------------------------------------

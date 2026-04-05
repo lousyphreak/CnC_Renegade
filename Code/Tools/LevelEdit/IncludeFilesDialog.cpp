@@ -93,7 +93,7 @@ END_MESSAGE_MAP()
 //
 // OnInitDialog
 //
-BOOL
+int32_t
 IncludeFilesDialogClass::OnInitDialog (void)
 {
 	// Allow the base class to process this message
@@ -191,7 +191,7 @@ void
 IncludeFilesDialogClass::OnSelchangedIncludeTree
 (
 	NMHDR *pNMHDR,
-	LRESULT *pResult
+	intptr_t *pResult
 )
 {
 	NM_TREEVIEW *pNMTreeView = (NM_TREEVIEW *)pNMHDR;

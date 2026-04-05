@@ -763,7 +763,7 @@ Render2DSentenceClass::Build_Textures (void)
 //
 ////////////////////////////////////////////////////////////////////////////////////
 void
-Render2DSentenceClass::Draw_Sentence (uint32 color)
+Render2DSentenceClass::Draw_Sentence (uint32_t color)
 {
 	Render2DClass *curr_renderer	= NULL;
 	SurfaceClass *curr_surface		= NULL;
@@ -1174,7 +1174,7 @@ Render2DSentenceClass::Build_Sentence (const WCHAR *text)
 			//	Ensure the surface is locked
 			//
 			if (LockedPtr == NULL) {
-				LockedPtr = (uint16 *)CurSurface->Lock (&LockedStride);
+				LockedPtr = (uint16_t *)CurSurface->Lock (&LockedStride);
 				WWASSERT (LockedPtr != NULL);
 			}
 
@@ -1228,7 +1228,7 @@ FontCharsClass::FontCharsClass (void) :
 	FirstUnicodeChar( 0xFFFF ),
 	LastUnicodeChar( 0 ),
 	IsBold (false),
-	BufferList(sizeof(PreAllocatedBufferList)/sizeof(uint16*),PreAllocatedBufferList)
+	BufferList(sizeof(PreAllocatedBufferList)/sizeof(uint16_t*),PreAllocatedBufferList)
 {
 	::memset( ASCIICharArray, 0, sizeof (ASCIICharArray) );
 	return ;
@@ -1261,7 +1261,7 @@ FontCharsClass::~FontCharsClass (void)
 const FontCharsClass::CharDataStruct *
 FontCharsClass::Get_Char_Data (WCHAR ch)
 {
-	if (ch < 0 || static_cast<uint32>(ch) > 0xFFFFu) {
+	if (ch < 0 || static_cast<uint32_t>(ch) > 0xFFFFu) {
 		WWASSERT(0);
 		ch = L'?';
 	}
@@ -1329,7 +1329,7 @@ FontCharsClass::Get_Char_Spacing (WCHAR ch)
 //
 ////////////////////////////////////////////////////////////////////////////////////
 void
-FontCharsClass::Blit_Char (WCHAR ch, uint16 *dest_ptr, int dest_stride, int x, int y)
+FontCharsClass::Blit_Char (WCHAR ch, uint16_t *dest_ptr, int dest_stride, int x, int y)
 {
 	const CharDataStruct	* data = Get_Char_Data( ch );
 	if ( data != NULL && data->Width != 0 ) {
@@ -1338,7 +1338,7 @@ FontCharsClass::Blit_Char (WCHAR ch, uint16 *dest_ptr, int dest_stride, int x, i
 		//	Setup the src and destination pointers
 		//
 		int dest_inc		= (dest_stride >> 1);
-		uint16 *src_ptr	= data->Buffer;
+		uint16_t *src_ptr	= data->Buffer;
 		dest_ptr				+= (dest_inc * y) + x;
 
 		//
@@ -1394,7 +1394,7 @@ FontCharsClass::Store_GDI_Char (WCHAR ch)
 	//	Get a pointer to the surface that this character should use
 	//
 	Update_Current_Buffer( char_size.cx );
-	uint16 *curr_buffer = BufferList[BufferList.Count () - 1];
+	uint16_t *curr_buffer = BufferList[BufferList.Count () - 1];
 	curr_buffer += CurrPixelOffset;
 
 	//
@@ -1416,10 +1416,10 @@ FontCharsClass::Store_GDI_Char (WCHAR ch)
 			//
 			//	Get the pixel color at this location
 			//
-			uint8 pixel_value = GDIBitmapBits[index];
+			uint8_t pixel_value = GDIBitmapBits[index];
 			index += 3;
 
-			uint16 pixel_color = 0;
+			uint16_t pixel_color = 0;
 			if (pixel_value != 0) {
 				pixel_color = 0x0FFF;
 			}
@@ -1428,7 +1428,7 @@ FontCharsClass::Store_GDI_Char (WCHAR ch)
 			//	Convert the pixel intensity from 8bit to 4bit and
 			// store it in our buffer
 			//
-			uint8 alpha_value	= ((pixel_value >> 4) & 0xF);
+			uint8_t alpha_value	= ((pixel_value >> 4) & 0xF);
 			*curr_buffer ++	= pixel_color | (alpha_value << 12);
 		}
 	}
@@ -1463,7 +1463,7 @@ FontCharsClass::Store_GDI_Char (WCHAR ch)
 	BgfxFontFaceState *font_state = Get_Font_State(this);
 	const int char_height = std::max(CharHeight, 1);
 	int glyph_width = 0;
-	std::vector<uint16> glyph_pixels;
+	std::vector<uint16_t> glyph_pixels;
 
 	if (font_state != nullptr && font_state->Face != nullptr && FT_Load_Char(font_state->Face, static_cast<FT_ULong>(ch), FT_LOAD_RENDER | FT_LOAD_TARGET_NORMAL) == 0) {
 		FT_GlyphSlot glyph = font_state->Face->glyph;
@@ -1476,9 +1476,9 @@ FontCharsClass::Store_GDI_Char (WCHAR ch)
 		const int max_cols = std::min(static_cast<int>(glyph->bitmap.width), std::max(glyph_width, 0));
 		for (int row = 0; row < max_rows; ++row) {
 			for (int col = 0; col < max_cols; ++col) {
-				const uint8 alpha = glyph->bitmap.buffer[row * glyph->bitmap.pitch + col];
+				const uint8_t alpha = glyph->bitmap.buffer[row * glyph->bitmap.pitch + col];
 				if (alpha != 0) {
-					glyph_pixels[static_cast<size_t>(top + row) * static_cast<size_t>(glyph_width) + static_cast<size_t>(col)] = static_cast<uint16>(0x0FFF | (((alpha >> 4) & 0x0F) << 12));
+					glyph_pixels[static_cast<size_t>(top + row) * static_cast<size_t>(glyph_width) + static_cast<size_t>(col)] = static_cast<uint16_t>(0x0FFF | (((alpha >> 4) & 0x0F) << 12));
 				}
 			}
 		}
@@ -1496,9 +1496,9 @@ FontCharsClass::Store_GDI_Char (WCHAR ch)
 
 	CharDataStruct *char_data = new CharDataStruct;
 	char_data->Value = ch;
-	char_data->Width = static_cast<short>(glyph_width);
-	char_data->Buffer = new uint16[static_cast<size_t>(std::max(glyph_width, 1)) * static_cast<size_t>(char_height)];
-	::memcpy(char_data->Buffer, glyph_pixels.data(), sizeof(uint16) * static_cast<size_t>(std::max(glyph_width, 1)) * static_cast<size_t>(char_height));
+	char_data->Width = static_cast<int16_t>(glyph_width);
+	char_data->Buffer = new uint16_t[static_cast<size_t>(std::max(glyph_width, 1)) * static_cast<size_t>(char_height)];
+	::memcpy(char_data->Buffer, glyph_pixels.data(), sizeof(uint16_t) * static_cast<size_t>(std::max(glyph_width, 1)) * static_cast<size_t>(char_height));
 
 	if (ch < 256) {
 		ASCIICharArray[ch] = char_data;
@@ -1538,7 +1538,7 @@ FontCharsClass::Update_Current_Buffer (int char_width)
 	//	Do we need to create a new surface?
 	//
 	if (needs_new_buffer) {
-		uint16 *new_buffer = new uint16[CHAR_BUFFER_LEN];
+		uint16_t *new_buffer = new uint16_t[CHAR_BUFFER_LEN];
 		BufferList.Add( new_buffer );
 		CurrPixelOffset = 0;
 	}
@@ -1570,9 +1570,9 @@ FontCharsClass::Create_GDI_Font (const char *font_name)
 	//
 	//	Create the Windows font
 	//
-	DWORD bold		= IsBold ? FW_BOLD : FW_NORMAL;
-	DWORD italic	= 0;
-	DWORD	charset;
+	uint32_t bold		= IsBold ? FW_BOLD : FW_NORMAL;
+	uint32_t italic	= 0;
+	uint32_t	charset;
 
 	// Map the current code page to a font character set.
 	switch (GetACP()) {
@@ -1815,9 +1815,9 @@ FontCharsClass::Grow_Unicode_Array (WCHAR ch)
 		return ;
 	}
 
-	uint16 first_index	= std::min<uint16>( FirstUnicodeChar, static_cast<uint16>(ch) );
-	uint16 last_index		= std::max<uint16>( LastUnicodeChar, static_cast<uint16>(ch) );
-	uint16 count			= (last_index - first_index) + 1;
+	uint16_t first_index	= std::min<uint16_t>( FirstUnicodeChar, static_cast<uint16_t>(ch) );
+	uint16_t last_index		= std::max<uint16_t>( LastUnicodeChar, static_cast<uint16_t>(ch) );
+	uint16_t count			= (last_index - first_index) + 1;
 
 	//
 	//	Allocate enough memory to hold the new cells

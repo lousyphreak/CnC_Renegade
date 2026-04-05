@@ -162,7 +162,7 @@ public:
 	void Paste  ( HWND );
 	void Delete ( HWND );
 
-	BOOL Is_Empty () const { return first_pose == NULL; }
+	int32_t Is_Empty () const { return first_pose == NULL; }
 
 	void Update_Object_List ( HWND hWnd );
 
@@ -200,7 +200,7 @@ class Clipboard_Desc_Class:public ClassDesc
 {
 public:
 	int 			IsPublic()     {return 1;}
-	void *			Create(BOOL)   {return &the_clipboard;}
+	void *			Create(int32_t)   {return &the_clipboard;}
 	const TCHAR *	ClassName()    {return _T("Key Clipboard");}
 	SClass_ID		SuperClassID() {return UTILITY_CLASS_ID;}
 	Class_ID		ClassID()      {return Class_ID(0x5eb13907, 0x1d931bb4);}
@@ -223,12 +223,12 @@ ClassDesc* ClipboardDesc() {return &clipboard_desc;}
 // ClipboardDlgProc
 //----------------------------------------------------------------------------
 
-static BOOL CALLBACK ClipboardDlgProc
+static int32_t CALLBACK ClipboardDlgProc
 (
 	HWND hWnd,
-	UINT msg,
-	WPARAM wParam,
-	LPARAM lParam
+	uint32_t msg,
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	switch (msg)
@@ -277,12 +277,12 @@ static BOOL CALLBACK ClipboardDlgProc
 // Pose_Name_Message_Handler
 //----------------------------------------------------------------------------
 
-static BOOL CALLBACK Pose_Name_Message_Handler
+static int32_t CALLBACK Pose_Name_Message_Handler
 (
 	HWND hWnd,
-	UINT msg,
-	WPARAM wParam,
-	LPARAM lParam
+	uint32_t msg,
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	static ISpinnerControl * first_frame_spin;
@@ -328,7 +328,7 @@ static BOOL CALLBACK Pose_Name_Message_Handler
 				EndDialog ( hWnd, 0 );
 
 			SendDlgItemMessage ( hWnd, IDC_NAME, WM_GETTEXT, MAX_NAME,
-				(LPARAM) pose_name );
+				(intptr_t) pose_name );
 
 			first_frame = first_frame_spin->GetIVal ();
 			last_frame  = last_frame_spin->GetIVal ();
@@ -611,7 +611,7 @@ void Clipboard_Class::Update_Pose_List ( HWND hWnd )
 	for ( Pose * p = first_pose; p != NULL; p = p->next )
 	{
 		SendDlgItemMessage ( hWnd, IDC_POSE_LIST, CB_ADDSTRING, 0,
-			(LPARAM) (LPCTSTR) p->name () );
+			(intptr_t) (LPCTSTR) p->name () );
 	}
 }
 
@@ -810,6 +810,6 @@ void Pose::Add_Objects_To_List ( HWND hWnd )
 	for ( Node_Key * k = first_key; k != NULL; k = k->next () )
 	{
 		SendDlgItemMessage ( hWnd, IDC_OBJECT_LIST, LB_ADDSTRING, 0,
-			(LPARAM) (LPCTSTR) k->name () );
+			(intptr_t) (LPCTSTR) k->name () );
 	}
 }

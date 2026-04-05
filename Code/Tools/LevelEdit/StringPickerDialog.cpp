@@ -186,7 +186,7 @@ void
 StringPickerDialogClass::OnSelchangeTabCtrl
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 )
 {
 	(*pResult) = 0;
@@ -250,7 +250,7 @@ StringPickerDialogClass::Update_Page_Visibility (void)
 void
 StringPickerDialogClass::OnSize
 (
-	UINT	nType,
+	uint32_t	nType,
 	int	cx,
 	int	cy
 ) 
@@ -270,7 +270,7 @@ StringPickerDialogClass::OnSize
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 StringPickerDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();

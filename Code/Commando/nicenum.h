@@ -26,6 +26,8 @@
 #ifndef __NICENUM_H__
 #define __NICENUM_H__
 
+#include <cstdint>
+
 #include "bittype.h"
 
 //-----------------------------------------------------------------------------
@@ -33,20 +35,20 @@ class cNicEnum
 {
 public:
 	static void			Init(void);
-	static USHORT		Get_Num_Nics(void)			{return NumNics;}
-	static ULONG *		Get_Nics(void)					{return NicList;}
-	static USHORT		Get_Num_GameSpy_Nics(void)	{return NumGSNics;}
-	static ULONG *		Get_GameSpy_Nics(void)		{return GSNicList;}
+	static uint16_t		Get_Num_Nics(void)			{return NumNics;}
+	static uint32_t *		Get_Nics(void)					{return NicList;}
+	static uint16_t		Get_Num_GameSpy_Nics(void)	{return NumGSNics;}
+	static uint32_t *		Get_GameSpy_Nics(void)		{return GSNicList;}
 
 	enum					{MAX_NICS = 10};
 
 private:
-	static ULONG		Enumerate_Nics(ULONG * addresses, ULONG max_addresses);
+	static uint32_t		Enumerate_Nics(uint32_t * addresses, uint32_t max_addresses);
 
-	static ULONG		NicList[MAX_NICS];
-	static ULONG		GSNicList[MAX_NICS];
-	static USHORT		NumNics;
-	static USHORT		NumGSNics;
+	static uint32_t		NicList[MAX_NICS];
+	static uint32_t		GSNicList[MAX_NICS];
+	static uint16_t		NumNics;
+	static uint16_t		NumGSNics;
 };
 
 //-----------------------------------------------------------------------------

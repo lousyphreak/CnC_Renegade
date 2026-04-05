@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 
@@ -67,7 +69,7 @@ private:
 	//////////////////////////////////////////////////////////////
 	//	Private member data
 	//////////////////////////////////////////////////////////////
-	uint32			DefinitionID;
+	uint32_t			DefinitionID;
 	Matrix3D			Transform;
 };
 

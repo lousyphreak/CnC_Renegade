@@ -535,7 +535,7 @@ int intChop(const float& f)
     int sign	= (a>>31);								// sign = 0xFFFFFFFF if original value is negative, 0 if positive
     int mantissa	= (a&((1<<23)-1))|(1<<23);			// extract mantissa and add the hidden bit
     int exponent	= ((a&0x7fffffff)>>23)-127;			// extract the exponent
-    int r	= (unsigned int(mantissa)<<8)>>(31-exponent);	// ((1<<exponent)*mantissa)>>24 -- (we know that mantissa > (1<<24))
+    int r	= (uint32_t(mantissa)<<8)>>(31-exponent);	// ((1<<exponent)*mantissa)>>24 -- (we know that mantissa > (1<<24))
     return ((r ^ (sign)) - sign ) &~ (exponent>>31);	// add original sign. If exponent was negative, make return value 0.
 }
 
@@ -549,7 +549,7 @@ int intFloor (const float& f)
 	int expsign	= ~(exponent>>31);									// 0xFFFFFFFF if exponent is positive, 0 otherwise
 	int imask		= ( (1<<(31-(exponent))))-1;					// mask for true integer values
 	int mantissa	= (a&((1<<23)-1));								// extract mantissa (without the hidden bit)
-	int r			= (unsigned int(mantissa|(1<<23))<<8)>>(31-exponent);	// ((1<<exponent)*(mantissa|hidden bit))>>24 -- (we know that mantissa > (1<<24))
+	int r			= (uint32_t(mantissa|(1<<23))<<8)>>(31-exponent);	// ((1<<exponent)*(mantissa|hidden bit))>>24 -- (we know that mantissa > (1<<24))
 
 	r = ((r & expsign) ^ (sign)) + ((!((mantissa<<8)&imask)&(expsign^((a-1)>>31)))&sign);	// if (fabs(value)<1.0) value = 0; copy sign; if (value < 0 && value==(int)(value)) value++;
 	return r;
@@ -588,12 +588,12 @@ int jan_main(int argc, char* argv[])
 		float r0 = 0.0f;
 		float r1 = 0.0f; 
 		float r2 = 0.0f;
-		unsigned long acos_cycles = 0;
-		unsigned long bez_cycles = 0;
-		unsigned long table_cycles = 0;
-		unsigned long acos_sum = 0;
-		unsigned long bez_sum = 0;
-		unsigned long table_sum = 0;
+		uint32_t acos_cycles = 0;
+		uint32_t bez_cycles = 0;
+		uint32_t table_cycles = 0;
+		uint32_t acos_sum = 0;
+		uint32_t bez_sum = 0;
+		uint32_t table_sum = 0;
 		const int SAMPLE_COUNT = 20;
 
 		{

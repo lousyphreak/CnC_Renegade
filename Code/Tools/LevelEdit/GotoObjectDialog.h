@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // GotoObjectDialog.h : header file
 //
@@ -59,7 +61,7 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(GotoObjectDialogClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	virtual void OnOK();
 	afx_msg void OnEditChangeObjectList();
 	afx_msg void OnSelChangeObjectList();

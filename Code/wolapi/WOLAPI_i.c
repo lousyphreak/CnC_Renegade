@@ -38,12 +38,14 @@ extern "C"{
 #ifndef __IID_DEFINED__
 #define __IID_DEFINED__
 
+#include <cstdint>
+
 typedef struct _IID
 {
-    unsigned long x;
-    unsigned short s1;
-    unsigned short s2;
-    unsigned char  c[8];
+    uint32_t x;
+    uint16_t s1;
+    uint16_t s2;
+    uint8_t  c[8];
 } IID;
 
 #endif // __IID_DEFINED__

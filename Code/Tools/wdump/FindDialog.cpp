@@ -65,7 +65,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // FindDialog message handlers
 
-BOOL FindDialog::OnInitDialog() 
+int32_t FindDialog::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
 	

@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 
@@ -67,9 +69,9 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(StringPickerDialogClass)
-	afx_msg void OnSelchangeTabCtrl(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnSize(UINT nType, int cx, int cy);
-	virtual BOOL OnInitDialog();
+	afx_msg void OnSelchangeTabCtrl(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnSize(uint32_t nType, int cx, int cy);
+	virtual int32_t OnInitDialog();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 

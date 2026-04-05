@@ -48,7 +48,7 @@ int Streamer::xsputn(const char* buf, int size) //implementation of sputn
   if (size<=0)  // Nothing to do
     return(0);
 
-  const unsigned char *ptr=(const unsigned char *)buf;
+  const uint8_t *ptr=(const uint8_t *)buf;
   for (int i=0; i<size; i++, ptr++)
   {
     if(*ptr=='\n')

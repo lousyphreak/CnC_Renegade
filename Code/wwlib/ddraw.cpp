@@ -62,10 +62,10 @@ LPDIRECTDRAWSURFACE	PaletteSurface = NULL;
 bool SurfacesRestored = false;
 static bool CanVblankSync = true;
 
-unsigned char CurrentPalette[768];
+uint8_t CurrentPalette[768];
 bool Debug_Windowed;
 
-int (*DirectDrawErrorHandler)(HRESULT error) = NULL;
+int (*DirectDrawErrorHandler)(int32_t error) = NULL;
 
 void Set_Palette(PaletteClass const & pal, int time, void (*callback)())
 {
@@ -128,7 +128,7 @@ void Set_Palette(PaletteClass const & pal, int time, void (*callback)())
 /***********************************************************************************************
  * Process_DD_Result -- Does a message box based on the result of a DD command                 *
  *                                                                                             *
- * INPUT:		HRESULT result				- the result returned from the direct draw command		  *
+ * INPUT:		int32_t result				- the result returned from the direct draw command		  *
  *             int     display_ok_msg	- should a message be displayed if command ok			  *                                                                                      *
  *                                                                                             *
  * OUTPUT:		none																									  *
@@ -136,11 +136,11 @@ void Set_Palette(PaletteClass const & pal, int time, void (*callback)())
  * HISTORY:                                                                                    *
  *   09/27/1995 PWG : Created.                                                                 *
  *=============================================================================================*/
-void Process_DD_Result(HRESULT result, int display_ok_msg)
+void Process_DD_Result(int32_t result, int display_ok_msg)
 {
 #ifdef _DEBUG
 	static struct {
-		HRESULT Error;
+		int32_t Error;
 		char const * Message;
 	} _errors[] = {
 		{DDERR_ALREADYINITIALIZED, "This object is already initialized"},
@@ -330,7 +330,7 @@ void Prep_Direct_Draw(void)
 	// If there is not currently a direct draw object then we need to define one.
 	//
 	if ( DirectDrawObject == NULL ) {
-		HRESULT result = DirectDrawCreate(NULL, &DirectDrawObject, NULL);
+		int32_t result = DirectDrawCreate(NULL, &DirectDrawObject, NULL);
 		Process_DD_Result(result, false);
 		if (result == DD_OK) {
 			if (Debug_Windowed) {
@@ -359,7 +359,7 @@ void Prep_Direct_Draw(void)
  *=============================================================================================*/
 bool Set_Video_Mode(HWND , int w, int h, int bits_per_pixel)
 {
-	HRESULT result;
+	int32_t result;
 
 	Prep_Direct_Draw();
 
@@ -437,7 +437,7 @@ bool Set_Video_Mode(HWND , int w, int h, int bits_per_pixel)
  *=============================================================================================*/
 void Reset_Video_Mode(void)
 {
-	HRESULT result;
+	int32_t result;
 
 	//
 	// If a direct draw object has been declared and a video mode has been set
@@ -468,7 +468,7 @@ void Reset_Video_Mode(void)
  * HISTORY:                                                                                    *
  *    11/29/95 12:52PM ST : Created                                                            *
  *=============================================================================================*/
-unsigned int Get_Free_Video_Memory(void)
+uint32_t Get_Free_Video_Memory(void)
 {
 	DDCAPS	video_capabilities;
 
@@ -516,7 +516,7 @@ unsigned Get_Video_Hardware_Capabilities(void)
 	*/
 	video_capabilities.dwSize = sizeof(video_capabilities);
 	//MessageBox(MainWindow, "In Get_Video_Hardware_Capabilities. About to call GetCaps","Note", MB_ICONEXCLAMATION|MB_OK);
-	HRESULT result = DirectDrawObject->GetCaps (&video_capabilities, NULL);
+	int32_t result = DirectDrawObject->GetCaps (&video_capabilities, NULL);
 	if (result != DD_OK) {
 		Process_DD_Result(result, false);
 		return (0);
@@ -564,7 +564,7 @@ unsigned Get_Video_Hardware_Capabilities(void)
 void Wait_Vert_Blank(void)
 {
 	if (CanVblankSync) {
-		HRESULT result = DirectDrawObject->WaitForVerticalBlank(DDWAITVB_BLOCKBEGIN, 0);
+		int32_t result = DirectDrawObject->WaitForVerticalBlank(DDWAITVB_BLOCKBEGIN, 0);
 		if (result == E_NOTIMPL) {
 			CanVblankSync = false;
 			return;
@@ -597,16 +597,16 @@ void Set_Palette(void const * palette)
 	}
 
 	if (DirectDrawObject != NULL && PaletteSurface != NULL) {
-		unsigned char * palette_get = (unsigned char *)palette;
+		uint8_t * palette_get = (uint8_t *)palette;
 		for (int index = 0; index < 256; index++) {
 
 			int red = *palette_get++;
 			int green = *palette_get++;
 			int blue = *palette_get++;
 
-			PaletteEntries[index].peRed = (unsigned char)red;
-			PaletteEntries[index].peGreen = (unsigned char)green;
-			PaletteEntries[index].peBlue = (unsigned char)blue;
+			PaletteEntries[index].peRed = (uint8_t)red;
+			PaletteEntries[index].peGreen = (uint8_t)green;
+			PaletteEntries[index].peBlue = (uint8_t)blue;
 		}
 
 		if (PalettePtr != NULL) {
@@ -637,7 +637,7 @@ void Set_Palette(void const * palette)
  *=============================================================================================*/
 void Wait_Blit (void)
 {
-	HRESULT	return_code;
+	int32_t	return_code;
 
 	do {
 		return_code=PaletteSurface->GetBltStatus (DDGBS_ISBLTDONE);

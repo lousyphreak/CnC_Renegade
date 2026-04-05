@@ -68,7 +68,7 @@ END_MESSAGE_MAP()
 //	OnInitDialog
 //
 ///////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 MissingTranslationReportDialogClass::OnInitDialog (void) 
 {
 	CDialog::OnInitDialog ();

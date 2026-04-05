@@ -312,7 +312,7 @@ bool ChannelData::IsPassworded(void) const
 *
 ******************************************************************************/
 
-void ChannelData::SetMinMaxUsers(unsigned int minUsers, unsigned int maxUsers)
+void ChannelData::SetMinMaxUsers(uint32_t minUsers, uint32_t maxUsers)
 	{
 	mData.minUsers = minUsers;
 	mData.maxUsers = maxUsers;
@@ -357,7 +357,7 @@ void ChannelData::SetOfficial(bool official)
 *
 ******************************************************************************/
 
-void ChannelData::SetTournament(unsigned int tournamentType)
+void ChannelData::SetTournament(uint32_t tournamentType)
 	{
 	mData.tournament = tournamentType;
 	}
@@ -369,17 +369,17 @@ void ChannelData::SetTournament(unsigned int tournamentType)
 *     GetChannelStatusFromHRESULT
 *
 * DESCRIPTION
-*     Get a channel status from the provided HRESULT
+*     Get a channel status from the provided int32_t
 *
 * INPUTS
-*     HRESULT - Error / Status code.
+*     int32_t - Error / Status code.
 *
 * RESULT
 *     ChannelStatus - Channel status
 *
 ******************************************************************************/
 
-ChannelStatus GetChannelStatusFromHResult(HRESULT result)
+ChannelStatus GetChannelStatusFromHResult(int32_t result)
 	{
 	switch (result)
 		{

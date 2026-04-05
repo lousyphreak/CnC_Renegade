@@ -71,7 +71,7 @@ END_MESSAGE_MAP()
 class MeshDialog : public CDialog
 {
 	public:
-		MeshDialog (UINT nIDTemplate, CWnd* pParentWnd, const char *meshname, const char *anomalies)
+		MeshDialog (uint32_t nIDTemplate, CWnd* pParentWnd, const char *meshname, const char *anomalies)
 			: CDialog (nIDTemplate, pParentWnd)
 		{
 			MeshName  = meshname;
@@ -79,7 +79,7 @@ class MeshDialog : public CDialog
 		}
 
 	protected:
-		virtual BOOL OnInitDialog();
+		virtual int32_t OnInitDialog();
 
 	private:
 		const char *MeshName;
@@ -197,7 +197,7 @@ int LightMapView::OnCreate (LPCREATESTRUCT lpCreateStruct)
 	static LV_COLUMN _lightmapsolve	= {LVCF_TEXT | LVCF_FMT, LVCFMT_LEFT, 0, "Lightmap Solve", 0, 0};
 
 	CListCtrl &list = GetListCtrl();
-	long		 flags = list.GetStyle();
+	int32_t	 flags = static_cast<int32_t>(list.GetStyle());
 
 	if (CListView::OnCreate(lpCreateStruct) == -1) return (-1);
 
@@ -228,7 +228,7 @@ int LightMapView::OnCreate (LPCREATESTRUCT lpCreateStruct)
  * HISTORY:                                                                                    *
  *   6/1/99    IML : Created.                                                                  * 
  *=============================================================================================*/
-void LightMapView::OnUpdate (CView* pSender, LPARAM lHint, CObject* pHint)
+void LightMapView::OnUpdate (CView* pSender, intptr_t lHint, CObject* pHint)
 {
 	static float	  _widthratio [] = {0.18f, 0.25f, 0.25f, 0.16f, 0.16f};
 	static LV_COLUMN _column		  = {LVCF_WIDTH, 0, 0, 0, 0, 0};
@@ -363,7 +363,7 @@ void LightMapView::OnUpdateToolsPacking (CCmdUI *cmdui)
  * HISTORY:                                                                                    *
  *   02/03/00    IML : Created.                                                                * 
  *=============================================================================================*/
-void LightMapView::OnLButtonDown (UINT flags, CPoint point)
+void LightMapView::OnLButtonDown (uint32_t flags, CPoint point)
 {
 	LVHITTESTINFO hittest;
 
@@ -422,7 +422,7 @@ int LightMapView::Compare_Names (const void *index0, const void *index1)
  * HISTORY:                                                                                    *
  *   02/03/00    IML : Created.                                                                * 
  *=============================================================================================*/
-BOOL MeshDialog::OnInitDialog()
+int32_t MeshDialog::OnInitDialog()
 {
 	StringBuilder string (256);
 
@@ -438,7 +438,7 @@ BOOL MeshDialog::OnInitDialog()
 
 
 // The following is maintained by MFC tools.
-BOOL LightMapView::PreCreateWindow(CREATESTRUCT& cs)
+int32_t LightMapView::PreCreateWindow(CREATESTRUCT& cs)
 {
 	// TODO: Modify the Window class or styles here by modifying
 	// the CREATESTRUCT cs

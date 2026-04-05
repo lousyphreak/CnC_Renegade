@@ -92,7 +92,7 @@ END_MESSAGE_MAP()
 //
 //  OnInitDialog
 //
-BOOL
+int32_t
 CMeshPropPage::OnInitDialog (void)
 {
 	// Allow the base class to process this message
@@ -127,44 +127,44 @@ CMeshPropPage::OnInitDialog (void)
             SetDlgItemText (IDC_USER_TEXT, pCMesh->Get_User_Text ());
 
             // Get the flags for the mesh
-            DWORD dwFlags = pCMesh->Get_W3D_Flags ();
+            uint32_t dwFlags = pCMesh->Get_W3D_Flags ();
 
             // Determine what type of mesh this is
             if ((dwFlags & W3D_MESH_FLAG_COLLISION_BOX) == W3D_MESH_FLAG_COLLISION_BOX)
             {
-                SendDlgItemMessage (IDC_MESH_TYPE_COLLISION_BOX, BM_SETCHECK, (WPARAM)TRUE);
+                SendDlgItemMessage (IDC_MESH_TYPE_COLLISION_BOX, BM_SETCHECK, (uintptr_t)TRUE);
             }
             else if ((dwFlags & W3D_MESH_FLAG_SKIN) == W3D_MESH_FLAG_SKIN)
             {
-                SendDlgItemMessage (IDC_MESH_TYPE_SKIN, BM_SETCHECK, (WPARAM)TRUE);
+                SendDlgItemMessage (IDC_MESH_TYPE_SKIN, BM_SETCHECK, (uintptr_t)TRUE);
             }
             else if ((dwFlags & W3D_MESH_FLAG_SHADOW) == W3D_MESH_FLAG_SHADOW)
             {
-                SendDlgItemMessage (IDC_MESH_TYPE_SHADOW, BM_SETCHECK, (WPARAM)TRUE);
+                SendDlgItemMessage (IDC_MESH_TYPE_SHADOW, BM_SETCHECK, (uintptr_t)TRUE);
             }
             else
             {
-                SendDlgItemMessage (IDC_MESH_TYPE_NORMAL, BM_SETCHECK, (WPARAM)TRUE);
+                SendDlgItemMessage (IDC_MESH_TYPE_NORMAL, BM_SETCHECK, (uintptr_t)TRUE);
             }
 
 
             // Is this collision type physical?
-            DWORD dwCollisionFlags = dwFlags & W3D_MESH_FLAG_COLLISION_TYPE_MASK;
+            uint32_t dwCollisionFlags = dwFlags & W3D_MESH_FLAG_COLLISION_TYPE_MASK;
             if ((dwCollisionFlags & W3D_MESH_FLAG_COLLISION_TYPE_PHYSICAL) == W3D_MESH_FLAG_COLLISION_TYPE_PHYSICAL)
             {
-                SendDlgItemMessage (IDC_COLLISION_TYPE_PHYSICAL, BM_SETCHECK, (WPARAM)TRUE);
+                SendDlgItemMessage (IDC_COLLISION_TYPE_PHYSICAL, BM_SETCHECK, (uintptr_t)TRUE);
             }
             
             // Is this collision type projectile?
             if ((dwCollisionFlags & W3D_MESH_FLAG_COLLISION_TYPE_PROJECTILE) == W3D_MESH_FLAG_COLLISION_TYPE_PROJECTILE)
             {
-                SendDlgItemMessage (IDC_COLLISION_TYPE_PROJECTILE, BM_SETCHECK, (WPARAM)TRUE);
+                SendDlgItemMessage (IDC_COLLISION_TYPE_PROJECTILE, BM_SETCHECK, (uintptr_t)TRUE);
             }
 
             // Is this a hidden mesh?
             if ((dwFlags & W3D_MESH_FLAG_HIDDEN) == W3D_MESH_FLAG_HIDDEN)
             {
-                SendDlgItemMessage (IDC_HIDDEN, BM_SETCHECK, (WPARAM)TRUE);
+                SendDlgItemMessage (IDC_HIDDEN, BM_SETCHECK, (uintptr_t)TRUE);
             }
 
             // Free the object

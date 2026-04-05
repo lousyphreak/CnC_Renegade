@@ -114,7 +114,7 @@ void MessageBoxClass::Do_Dialog (const WCHAR *title, const WCHAR *text, MessageB
  * HISTORY:                                                                                    *
  *   08/22/01    IML : Created.                                                                * 
  *=============================================================================================*/
-void MessageBoxClass::On_Command (int ctrl_id, int message_id, DWORD param)
+void MessageBoxClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	if (CallbackObject != NULL) {
 		CallbackObject->Callback (ctrl_id, this);

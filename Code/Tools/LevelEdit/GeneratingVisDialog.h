@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // GeneratingVisDialog.h : header file
 //
@@ -52,7 +54,7 @@ public:
 	//{{AFX_VIRTUAL(GeneratingVisDialogClass)
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+	virtual intptr_t WindowProc(uint32_t message, uintptr_t wParam, intptr_t lParam);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -60,7 +62,7 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(GeneratingVisDialogClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	virtual void OnCancel();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
@@ -86,7 +88,7 @@ protected:
 		void			Update_Time (void);
 		void			Build_Node_List (NODE_LIST &list);
 		void			Render_Vis_Points (VIS_POINT_LIST &point_list);
-		bool			On_Manual_Vis_Point_Render (DWORD milliseconds);
+		bool			On_Manual_Vis_Point_Render (uint32_t milliseconds);
 		int			Get_Manual_Point_Count (void);
 		void			Generate_Points (NODE_LIST &node_list, VisPointGeneratorClass &generator);
 		void			Reset_Vis_Data_For_Nodes (NODE_LIST &node_list);
@@ -94,7 +96,7 @@ protected:
 		/////////////////////////////////////////////////////////////////////////////////
 		//	Protected static methods
 		/////////////////////////////////////////////////////////////////////////////////
-		static bool ManualVisPointCallback (DWORD milliseconds, DWORD param);
+		static bool ManualVisPointCallback (uint32_t milliseconds, uint32_t param);
 
 	private:
 		
@@ -103,7 +105,7 @@ protected:
 		/////////////////////////////////////////////////////////////////////////////////
 		int			m_CurrentPoint;
 		int			m_TotalPoints;
-		DWORD			m_StartTime;
+		uint32_t			m_StartTime;
 
 		bool			m_IgnoreBias;
 		bool			m_bStop;

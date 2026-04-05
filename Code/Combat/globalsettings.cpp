@@ -134,7 +134,7 @@ GlobalSettingsDef::~GlobalSettingsDef( void )
 }
 
 
-uint32	GlobalSettingsDef::Get_Class_ID (void) const	
+uint32_t	GlobalSettingsDef::Get_Class_ID (void) const	
 {	
 	return CLASSID_GLOBAL_SETTINGS_DEF_GENERAL;
 }
@@ -334,7 +334,7 @@ HumanLoiterGlobalSettingsDef::~HumanLoiterGlobalSettingsDef( void )
 	}
 }
 
-uint32	HumanLoiterGlobalSettingsDef::Get_Class_ID (void) const	
+uint32_t	HumanLoiterGlobalSettingsDef::Get_Class_ID (void) const	
 { 
 	return CLASSID_GLOBAL_SETTINGS_DEF_HUMAN_LOITER; 
 }
@@ -765,7 +765,7 @@ HUDGlobalSettingsDef::~HUDGlobalSettingsDef( void )
 	Instance = NULL;
 }
 
-uint32	HUDGlobalSettingsDef::Get_Class_ID (void) const	
+uint32_t	HUDGlobalSettingsDef::Get_Class_ID (void) const	
 { 
 	return CLASSID_GLOBAL_SETTINGS_DEF_HUD; 
 }
@@ -1136,7 +1136,7 @@ HumanAnimOverrideDef::HumanAnimOverrideDef( void )
 	EDITABLE_PARAM( HumanAnimOverrideDef, ParameterClass::TYPE_STRING, WalkAtHip );
 }
 
-uint32	HumanAnimOverrideDef::Get_Class_ID (void) const	
+uint32_t	HumanAnimOverrideDef::Get_Class_ID (void) const	
 { 
 	return CLASSID_GLOBAL_SETTINGS_DEF_HUMAN_ANIM_OVERRIDE; 
 }

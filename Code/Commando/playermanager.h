@@ -36,6 +36,8 @@
 
 #if defined(_MSV_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef PLAYERMANAGER_H
@@ -98,7 +100,7 @@ public:
 	static void							Increment_Player_Times(void);
 	static int							Compute_Full_Player_List_Height(void);
 	static int							Get_Average_Ladder_Points(void);
-	static unsigned short		Get_Average_WOL_Points(void);
+	static uint16_t		Get_Average_WOL_Points(void);
 	static int							Get_Average_Games_Played(void);
 	static int							Get_Average_Ping(void);
 	static int							Get_Average_FPS(void);

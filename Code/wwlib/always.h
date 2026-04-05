@@ -35,6 +35,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #pragma once
 
+#include <cstdint>
+
 #ifndef ALWAYS_H
 #define ALWAYS_H
 
@@ -61,7 +63,7 @@
 #define   free(p)           _free_dbg(p, _NORMAL_BLOCK)
 #define   _msize(p)         _msize_dbg(p, _NORMAL_BLOCK)
 
-void* __cdecl operator new(unsigned int s);
+void* __cdecl operator new(uint32_t s);
 
 #endif	//STEVES_NEW_CATCHER
 #endif	//_MSC_VER

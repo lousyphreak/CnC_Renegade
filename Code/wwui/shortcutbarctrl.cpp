@@ -516,7 +516,7 @@ ShortcutBarCtrlClass::On_Kill_Focus (DialogControlClass *focus)
 //
 ////////////////////////////////////////////////////////////////
 bool
-ShortcutBarCtrlClass::On_Key_Down (uint32 key_id, uint32 key_data)
+ShortcutBarCtrlClass::On_Key_Down (uint32_t key_id, uint32_t key_data)
 {
 	bool handled = true;
 
@@ -831,7 +831,7 @@ ShortcutBarCtrlClass::Update_Pulse (void)
 	//
 	//	Update the color vector array
 	//
-	DynamicVectorClass<unsigned long> &color_array = TexturedControlRenderer.Get_Color_Array ();
+	DynamicVectorClass<uint32_t> &color_array = TexturedControlRenderer.Get_Color_Array ();
 	for (int index = 0; index < color_array.Count (); index ++) {
 		color_array[index] = bar_color;
 	}

@@ -45,7 +45,7 @@ for the 'get' functions. E.g. getString("KEY",valWstring);
 #include "configfile.h"
 #include "wdebug.h"
 
-static uint32 Wstring_Hash(const Wstring &string);
+static uint32_t Wstring_Hash(const Wstring &string);
 static char  *Eat_Spaces(char *string);
 
 ConfigFile::ConfigFile() : Dictionary_(Wstring_Hash)
@@ -56,7 +56,7 @@ ConfigFile::~ConfigFile()
 
 // Read and parse the config file.  The key value pairs will be stored
 //   for later access by the getString/getInt functions.
-bit8 ConfigFile::readFile(FILE *in)
+int8_t ConfigFile::readFile(FILE *in)
 {
   char    string[256];
   char    sectionname[256];  // section name like '[user parameters]'
@@ -132,7 +132,7 @@ bit8 ConfigFile::readFile(FILE *in)
 //
 // Section specifies the configfile section.  Set to NULL if you don't care.
 //
-bit8 ConfigFile::enumerate(int &index, int &offset, Wstring &key, Wstring &value, IN char *section) const
+int8_t ConfigFile::enumerate(int &index, int &offset, Wstring &key, Wstring &value, IN char *section) const
 {
 	int seclen = strlen(section);
   while(1)
@@ -163,7 +163,7 @@ bit8 ConfigFile::enumerate(int &index, int &offset, Wstring &key, Wstring &value
 
 
 // Get a config entry as a string
-bit8 ConfigFile::getString(IN Wstring &_key, Wstring &value, IN char *section) const
+int8_t ConfigFile::getString(IN Wstring &_key, Wstring &value, IN char *section) const
 {
   Wstring key(_key);
   key.toUpper();
@@ -176,7 +176,7 @@ bit8 ConfigFile::getString(IN Wstring &_key, Wstring &value, IN char *section) c
   }
 
   Critsec_.lock();
-  bit8 retval=Dictionary_.getValue(key,value);
+  int8_t retval=Dictionary_.getValue(key,value);
   Critsec_.unlock();
 
   if (retval==FALSE)
@@ -188,7 +188,7 @@ bit8 ConfigFile::getString(IN Wstring &_key, Wstring &value, IN char *section) c
 } 
 
 // Get a config entry as a string
-bit8 ConfigFile::getString(IN char *key,Wstring &value, IN char *section) const
+int8_t ConfigFile::getString(IN char *key,Wstring &value, IN char *section) const
 {
   Wstring sKey;
   sKey.set(key);
@@ -196,7 +196,7 @@ bit8 ConfigFile::getString(IN char *key,Wstring &value, IN char *section) const
 }   
 
 // Get a config entry as an integer
-bit8 ConfigFile::getInt(IN Wstring &_key,sint32 &value, IN char *section) const
+int8_t ConfigFile::getInt(IN Wstring &_key,int32_t &value, IN char *section) const
 {
   Wstring key(_key);
   key.toUpper();
@@ -210,7 +210,7 @@ bit8 ConfigFile::getInt(IN Wstring &_key,sint32 &value, IN char *section) const
 
   Wstring svalue;
   Critsec_.lock();
-  bit8 retval=Dictionary_.getValue(key,svalue);
+  int8_t retval=Dictionary_.getValue(key,svalue);
   Critsec_.unlock();
 
   if (retval==FALSE)
@@ -223,7 +223,7 @@ bit8 ConfigFile::getInt(IN Wstring &_key,sint32 &value, IN char *section) const
 }
 
 // Get a config entry as an integer
-bit8 ConfigFile::getInt(IN char *key,sint32 &value, IN char *section) const
+int8_t ConfigFile::getInt(IN char *key,int32_t &value, IN char *section) const
 {
   Wstring sKey;
   sKey.set(key);
@@ -234,7 +234,7 @@ bit8 ConfigFile::getInt(IN char *key,sint32 &value, IN char *section) const
 
 
 // Get a config entry as an integer
-bit8 ConfigFile::getInt(IN Wstring &_key,sint16 &value, IN char *section) const
+int8_t ConfigFile::getInt(IN Wstring &_key,int16_t &value, IN char *section) const
 {
   Wstring key(_key);
   key.toUpper();
@@ -248,7 +248,7 @@ bit8 ConfigFile::getInt(IN Wstring &_key,sint16 &value, IN char *section) const
 
   Wstring svalue;
   Critsec_.lock();
-  bit8 retval=Dictionary_.getValue(key,svalue);
+  int8_t retval=Dictionary_.getValue(key,svalue);
   Critsec_.unlock();
 
   if (retval==FALSE)
@@ -261,7 +261,7 @@ bit8 ConfigFile::getInt(IN Wstring &_key,sint16 &value, IN char *section) const
 }
  
 // Get a config entry as an integer
-bit8 ConfigFile::getInt(IN char *key,sint16 &value, IN char *section) const
+int8_t ConfigFile::getInt(IN char *key,int16_t &value, IN char *section) const
 {
   Wstring sKey;
   sKey.set(key);
@@ -274,7 +274,7 @@ bit8 ConfigFile::getInt(IN char *key,sint16 &value, IN char *section) const
 /************* MDC; Added functionality for updating and saving config files ************/
 
 // Remove an entry
-bit8 ConfigFile::removeEntry(IN Wstring &_key, IN char *section)
+int8_t ConfigFile::removeEntry(IN Wstring &_key, IN char *section)
 {
 	Wstring key(_key);
 	key.toUpper();
@@ -287,7 +287,7 @@ bit8 ConfigFile::removeEntry(IN Wstring &_key, IN char *section)
 	}
 	
 	Critsec_.lock();
-	bit8 retval=Dictionary_.remove(key);
+	int8_t retval=Dictionary_.remove(key);
 	Critsec_.unlock();
 	
 	if (retval==FALSE)
@@ -299,7 +299,7 @@ bit8 ConfigFile::removeEntry(IN Wstring &_key, IN char *section)
 }
 
 // Remove an entry
-bit8 ConfigFile::removeEntry(IN char *key, IN char *section)
+int8_t ConfigFile::removeEntry(IN char *key, IN char *section)
 {
 	Wstring sKey;
 	sKey.set(key);
@@ -307,7 +307,7 @@ bit8 ConfigFile::removeEntry(IN char *key, IN char *section)
 }
 
 // Set a config entry as a string
-bit8 ConfigFile::setString(IN Wstring &_key, IN Wstring &value, IN char *section)
+int8_t ConfigFile::setString(IN Wstring &_key, IN Wstring &value, IN char *section)
 {
 	Wstring key(_key);
 	key.toUpper();
@@ -325,7 +325,7 @@ bit8 ConfigFile::setString(IN Wstring &_key, IN Wstring &value, IN char *section
 	
 	Critsec_.lock();
 	Dictionary_.remove(key);
-	bit8 retval=Dictionary_.add(key,value);
+	int8_t retval=Dictionary_.add(key,value);
 
 	// Test for a new section
 	Wstring test;
@@ -354,7 +354,7 @@ bit8 ConfigFile::setString(IN Wstring &_key, IN Wstring &value, IN char *section
 } 
 
 // Set a config entry as a string
-bit8 ConfigFile::setString(IN char *key,IN Wstring &value, IN char *section)
+int8_t ConfigFile::setString(IN char *key,IN Wstring &value, IN char *section)
 {
 	Wstring sKey;
 	sKey.set(key);
@@ -362,7 +362,7 @@ bit8 ConfigFile::setString(IN char *key,IN Wstring &value, IN char *section)
 }   
 
 // Set a config entry as an integer
-bit8 ConfigFile::setInt(IN Wstring &_key,IN sint32 &value, IN char *section)
+int8_t ConfigFile::setInt(IN Wstring &_key,IN int32_t &value, IN char *section)
 {
 	Wstring key(_key);
 	key.toUpper();
@@ -382,7 +382,7 @@ bit8 ConfigFile::setInt(IN Wstring &_key,IN sint32 &value, IN char *section)
 	svalue.setFormatted("%d", value);
 	Critsec_.lock();
 	Dictionary_.remove(key);
-	bit8 retval=Dictionary_.add(key,svalue);
+	int8_t retval=Dictionary_.add(key,svalue);
 	// Test for a new section
 	Wstring test;
 	//DBGMSG("Testing " << sectionList.length() << " entries for " << section);
@@ -412,7 +412,7 @@ bit8 ConfigFile::setInt(IN Wstring &_key,IN sint32 &value, IN char *section)
 }
 
 // Set a config entry as an integer
-bit8 ConfigFile::setInt(IN char *key,IN sint32 &value, IN char *section)
+int8_t ConfigFile::setInt(IN char *key,IN int32_t &value, IN char *section)
 {
 	Wstring sKey;
 	sKey.set(key);
@@ -421,7 +421,7 @@ bit8 ConfigFile::setInt(IN char *key,IN sint32 &value, IN char *section)
 
 
 // Write config file to disk.  Does not preserve comments, etc.
-bit8 ConfigFile::writeFile(FILE *config)
+int8_t ConfigFile::writeFile(FILE *config)
 {
 	if (!config)
 	{
@@ -461,11 +461,11 @@ bit8 ConfigFile::writeFile(FILE *config)
 
 // Given a Wstring, return a 32 bit integer that has a good numeric
 //   distributation for the purposes of indexing into a hash table.
-static uint32 Wstring_Hash(const Wstring &string)
+static uint32_t Wstring_Hash(const Wstring &string)
 {
-  uint32 retval=0;
+  uint32_t retval=0;
   retval=string.length();
-  for (uint32 i=0; i<string.length(); i++)
+  for (uint32_t i=0; i<string.length(); i++)
   {
     retval+=*(string.get()+i);
     retval+=i;

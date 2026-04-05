@@ -128,7 +128,7 @@ ServerSaveLoadMenuClass::On_Init_Dialog (void)
 //
 ////////////////////////////////////////////////////////////////
 void
-ServerSaveLoadMenuClass::On_Command (int ctrl_id, int message_id, DWORD param)
+ServerSaveLoadMenuClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	switch (ctrl_id)
 	{
@@ -401,7 +401,7 @@ ServerSaveLoadMenuClass::Insert_Configuration (ServerSettingsClass *config)
 		//	Make a copy of the config object and store it with the entry
 		//
 		ServerSettingsClass *local_copy = new ServerSettingsClass(config);
-		list_ctrl->Set_Entry_Data (item_index, 0, (DWORD)local_copy);
+		list_ctrl->Set_Entry_Data (item_index, 0, (uint32_t)local_copy);
 
 		//
 		//	Change the color of this configuration if the user cannot edit it
@@ -475,7 +475,7 @@ ServerSaveLoadMenuClass::ListSortCallback
 	ListCtrlClass *	list_ctrl,
 	int					item_index1,
 	int					item_index2,
-	uint32				user_param
+	uint32_t				user_param
 )
 {
 
@@ -627,7 +627,7 @@ void ServerSaveLoadMenuClass::Save_Now(void)
  * HISTORY:                                                                                    *
  *   12/17/2001 5:11PM ST : Created                                                            *
  *=============================================================================================*/
-ServerSettingsClass::ServerSettingsClass(char *filename, unsigned short *configname, int file_number)
+ServerSettingsClass::ServerSettingsClass(char *filename, uint16_t *configname, int file_number)
 {
 	ConfigName = configname;	//"Default C&C Server Settings";
 	RawFileName = filename;		//"svrcfg_cnc.ini"
@@ -711,13 +711,13 @@ void ServerSettingsManagerClass::Scan(void)
 	/*
 	** Add in the default as the first entry.
 	*/
-	ServerSettingsList.Add(new ServerSettingsClass("def_svrcfg_cnc.ini", (unsigned short *)TRANSLATE(IDS_SERVER_SAVELOAD_DEFAULT), 0));
+	ServerSettingsList.Add(new ServerSettingsClass("def_svrcfg_cnc.ini", (uint16_t *)TRANSLATE(IDS_SERVER_SAVELOAD_DEFAULT), 0));
 	ServerSettingsList[0]->IsCustom = false;
 
 	/*
 	** Add in the custom default as the second entry.
 	*/
-	ServerSettingsList.Add(new ServerSettingsClass("svrcfg_cnc.ini", (unsigned short *)TRANSLATE(IDS_SERVER_SAVELOAD_CUSTOM_DEFAULT), 1));
+	ServerSettingsList.Add(new ServerSettingsClass("svrcfg_cnc.ini", (uint16_t *)TRANSLATE(IDS_SERVER_SAVELOAD_CUSTOM_DEFAULT), 1));
 	ServerSettingsList[1]->IsCustom = true;
 
 	for (int i=2 ; i<MAX_SETTINGS_FILES ; i++) {
@@ -728,11 +728,11 @@ void ServerSettingsManagerClass::Scan(void)
 		if (file.Is_Available()) {
 			INIClass *ini = Get_INI(file_name);
 			if (ini) {
-				description = ini->Get_Wide_String(description, "Settings", "wConfigName", L"");	//(unsigned short *)TRANSLATE(IDS_SERVER_SAVELOAD_DEFAULT));
+				description = ini->Get_Wide_String(description, "Settings", "wConfigName", L"");	//(uint16_t *)TRANSLATE(IDS_SERVER_SAVELOAD_DEFAULT));
 				if (description.Get_Length()) {
 					ServerSettingsList.Add(new ServerSettingsClass(file_name, description.Peek_Buffer(), i));
 				} else {
-					StringClass defaultstr((unsigned short *)TRANSLATE(IDS_SERVER_SAVELOAD_DEFAULT), true);
+					StringClass defaultstr((uint16_t *)TRANSLATE(IDS_SERVER_SAVELOAD_DEFAULT), true);
 					ini->Get_String("Settings", "bConfigName", defaultstr.Peek_Buffer(), char_description.Peek_Buffer(), 128);
 					ServerSettingsList.Add(new ServerSettingsClass(file_name, WideStringClass(char_description, true).Peek_Buffer(), i));
 				}

@@ -51,13 +51,13 @@
 static bool _DynamicSortingVertexArrayInUse=false;
 //static VertexFormatXYZNDUV2* _DynamicSortingVertexArray=NULL;
 static SortingVertexBufferClass* _DynamicSortingVertexArray=NULL;
-static unsigned short _DynamicSortingVertexArraySize=0;
-static unsigned short _DynamicSortingVertexArrayOffset=0;	
+static uint16_t _DynamicSortingVertexArraySize=0;
+static uint16_t _DynamicSortingVertexArrayOffset=0;	
 
 static bool _DynamicDX8VertexBufferInUse=false;
 static DX8VertexBufferClass* _DynamicDX8VertexBuffer=NULL;
-static unsigned short _DynamicDX8VertexBufferSize=DEFAULT_VB_SIZE;
-static unsigned short _DynamicDX8VertexBufferOffset=0;
+static uint16_t _DynamicDX8VertexBufferSize=DEFAULT_VB_SIZE;
+static uint16_t _DynamicDX8VertexBufferOffset=0;
 
 static const FVFInfoClass _DynamicFVFInfo(dynamic_fvf_type);
 
@@ -73,7 +73,7 @@ static int _VertexBufferTotalSize;
 //
 // ----------------------------------------------------------------------------
 
-VertexBufferClass::VertexBufferClass(unsigned type_, unsigned FVF, unsigned short vertex_count_)
+VertexBufferClass::VertexBufferClass(unsigned type_, unsigned FVF, uint16_t vertex_count_)
 	:
 	VertexCount(vertex_count_),
 	type(type_),
@@ -175,7 +175,7 @@ VertexBufferClass::WriteLockClass::WriteLockClass(VertexBufferClass* VertexBuffe
 		DX8_ErrorCode(static_cast<DX8VertexBufferClass*>(VertexBuffer)->Get_DX8_Vertex_Buffer()->Lock(
 			0,
 			0,
-			(unsigned char**)&Vertices,
+			(uint8_t**)&Vertices,
 			0));	// Default (no) flags
 		break;
 	case BUFFER_TYPE_SORTING:
@@ -241,7 +241,7 @@ VertexBufferClass::AppendLockClass::AppendLockClass(VertexBufferClass* VertexBuf
 		DX8_ErrorCode(static_cast<DX8VertexBufferClass*>(VertexBuffer)->Get_DX8_Vertex_Buffer()->Lock(
 			start_index*VertexBuffer->FVF_Info().Get_FVF_Size(),
 			index_range*VertexBuffer->FVF_Info().Get_FVF_Size(),
-			(unsigned char**)&Vertices,
+			(uint8_t**)&Vertices,
 			0));	// Default (no) flags
 		break;
 	case BUFFER_TYPE_SORTING:
@@ -281,7 +281,7 @@ VertexBufferClass::AppendLockClass::~AppendLockClass()
 //
 // ----------------------------------------------------------------------------
 
-SortingVertexBufferClass::SortingVertexBufferClass(unsigned short VertexCount)
+SortingVertexBufferClass::SortingVertexBufferClass(uint16_t VertexCount)
 	:
 	VertexBufferClass(BUFFER_TYPE_SORTING, dynamic_fvf_type, VertexCount)
 {
@@ -305,7 +305,7 @@ SortingVertexBufferClass::~SortingVertexBufferClass()
 
 //	bool dynamic=false,bool softwarevp=false);
 
-DX8VertexBufferClass::DX8VertexBufferClass(unsigned FVF, unsigned short vertex_count_, UsageType usage)
+DX8VertexBufferClass::DX8VertexBufferClass(unsigned FVF, uint16_t vertex_count_, UsageType usage)
 	:
 	VertexBufferClass(BUFFER_TYPE_DX8, FVF, vertex_count_),
 	VertexBuffer(NULL)
@@ -319,7 +319,7 @@ DX8VertexBufferClass::DX8VertexBufferClass(
 	const Vector3* vertices,
 	const Vector3* normals, 
 	const Vector2* tex_coords, 
-	unsigned short VertexCount,
+	uint16_t VertexCount,
 	UsageType usage)
 	:
 	VertexBufferClass(BUFFER_TYPE_DX8, D3DFVF_XYZ|D3DFVF_TEX1|D3DFVF_NORMAL, VertexCount),
@@ -340,7 +340,7 @@ DX8VertexBufferClass::DX8VertexBufferClass(
 	const Vector3* normals, 
 	const Vector4* diffuse,
 	const Vector2* tex_coords, 
-	unsigned short VertexCount,
+	uint16_t VertexCount,
 	UsageType usage)
 	:
 	VertexBufferClass(BUFFER_TYPE_DX8, D3DFVF_XYZ|D3DFVF_TEX1|D3DFVF_NORMAL|D3DFVF_DIFFUSE, VertexCount),
@@ -361,7 +361,7 @@ DX8VertexBufferClass::DX8VertexBufferClass(
 	const Vector3* vertices,
 	const Vector4* diffuse,
 	const Vector2* tex_coords, 
-	unsigned short VertexCount,
+	uint16_t VertexCount,
 	UsageType usage)
 	:
 	VertexBufferClass(BUFFER_TYPE_DX8, D3DFVF_XYZ|D3DFVF_TEX1|D3DFVF_DIFFUSE, VertexCount),
@@ -380,7 +380,7 @@ DX8VertexBufferClass::DX8VertexBufferClass(
 DX8VertexBufferClass::DX8VertexBufferClass(
 	const Vector3* vertices,
 	const Vector2* tex_coords, 
-	unsigned short VertexCount,
+	uint16_t VertexCount,
 	UsageType usage)
 	:
 	VertexBufferClass(BUFFER_TYPE_DX8, D3DFVF_XYZ|D3DFVF_TEX1, VertexCount),
@@ -439,7 +439,7 @@ void DX8VertexBufferClass::Create_Vertex_Buffer(UsageType usage)
 		usage_flags|=D3DUSAGE_SOFTWAREPROCESSING;
 	}
 
-	HRESULT ret=DX8Wrapper::_Get_D3D_Device8()->CreateVertexBuffer(
+	int32_t ret=DX8Wrapper::_Get_D3D_Device8()->CreateVertexBuffer(
 		FVF_Info().Get_FVF_Size()*VertexCount,
 		usage_flags,
 		FVF_Info().Get_FVF(),
@@ -698,7 +698,7 @@ void DX8VertexBufferClass::Copy(const Vector3* loc, const Vector2* uv, const Vec
 //
 // ----------------------------------------------------------------------------
 
-DynamicVBAccessClass::DynamicVBAccessClass(unsigned t,unsigned fvf,unsigned short vertex_count_)
+DynamicVBAccessClass::DynamicVBAccessClass(unsigned t,unsigned fvf,uint16_t vertex_count_)
 	:
 	Type(t),
 	FVFInfo(_DynamicFVFInfo),
@@ -839,7 +839,7 @@ DynamicVBAccessClass::WriteLockClass::WriteLockClass(DynamicVBAccessClass* dynam
 		DX8_ErrorCode(static_cast<DX8VertexBufferClass*>(DynamicVBAccess->VertexBuffer)->Get_DX8_Vertex_Buffer()->Lock(
 			DynamicVBAccess->VertexBufferOffset*_DynamicDX8VertexBuffer->FVF_Info().Get_FVF_Size(),
 			DynamicVBAccess->Get_Vertex_Count()*DynamicVBAccess->VertexBuffer->FVF_Info().Get_FVF_Size(),
-			(unsigned char**)&Vertices,
+			(uint8_t**)&Vertices,
 			D3DLOCK_NOSYSLOCK | (!DynamicVBAccess->VertexBufferOffset ? D3DLOCK_DISCARD : D3DLOCK_NOOVERWRITE)));
 		break;
 	case BUFFER_TYPE_DYNAMIC_SORTING:

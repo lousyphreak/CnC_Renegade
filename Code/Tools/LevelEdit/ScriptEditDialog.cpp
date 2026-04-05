@@ -96,7 +96,7 @@ END_MESSAGE_MAP()
 //	OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 ScriptEditDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog();
@@ -111,14 +111,14 @@ ScriptEditDialogClass::OnInitDialog (void)
 			//
 			// Add this script to the combobox
 			//
-			int item_index = SendDlgItemMessage (IDC_SCRIPT_NAME, CB_ADDSTRING, 0, (LPARAM)script->Get_Name ());
-			SendDlgItemMessage (IDC_SCRIPT_NAME, CB_SETITEMDATA, (WPARAM)item_index, (LPARAM)script);
+			int item_index = SendDlgItemMessage (IDC_SCRIPT_NAME, CB_ADDSTRING, 0, (intptr_t)script->Get_Name ());
+			SendDlgItemMessage (IDC_SCRIPT_NAME, CB_SETITEMDATA, (uintptr_t)item_index, (intptr_t)script);
 
 			//
 			//	Select this script if it is the default
 			//
 			if (::lstrcmpi (m_Script.Get_Name (), script->Get_Name ()) == 0) {
-				SendDlgItemMessage (IDC_SCRIPT_NAME, CB_SETCURSEL, (WPARAM)item_index);
+				SendDlgItemMessage (IDC_SCRIPT_NAME, CB_SETCURSEL, (uintptr_t)item_index);
 			}
 		}
 	}
@@ -166,11 +166,11 @@ ScriptEditDialogClass::Fill_Param_Combo (void)
 	// Add the param names to the combobox
 	for (int index = 0; index < m_Script.Get_Param_Count (); index ++) {
 		CString name = m_Script.Get_Param_Name (index);
-		SendDlgItemMessage (IDC_PARAM_NAME_COMBO, CB_ADDSTRING, (WPARAM)0, (LPARAM)(LPCTSTR)name);
+		SendDlgItemMessage (IDC_PARAM_NAME_COMBO, CB_ADDSTRING, (uintptr_t)0, (intptr_t)(LPCTSTR)name);
 	}
 
 	// Select the first parameter in the list by default
-	SendDlgItemMessage (IDC_PARAM_NAME_COMBO, CB_SETCURSEL, (WPARAM)0);
+	SendDlgItemMessage (IDC_PARAM_NAME_COMBO, CB_SETCURSEL, (uintptr_t)0);
 	return ;
 }
 
@@ -470,7 +470,7 @@ void
 ScriptEditDialogClass::OnDeltaposParamValueNumberSpin
 (
 	NMHDR *pNMHDR,
-	LRESULT *pResult
+	intptr_t *pResult
 ) 
 {
 	NM_UPDOWN* pNMUpDown = (NM_UPDOWN*)pNMHDR;

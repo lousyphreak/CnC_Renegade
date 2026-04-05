@@ -37,6 +37,8 @@
 #ifndef __DLGMPTEAMSELECT_H__
 #define __DLGMPTEAMSELECT_H__
 
+#include <cstdint>
+
 #include "renegade_build_config.h"
 
 #if RENEGADE_WITH_LEGACY_WOL
@@ -58,7 +60,7 @@ class GameOptionsMessage;
 
 class cPlayer;
 
-typedef TypedEventPair<bool, int> MPChooseTeamSignal;
+typedef TypedEventPair<bool, int32_t> MPChooseTeamSignal;
 
 class DlgMPTeamSelect :
 		public MenuDialogClass,
@@ -79,7 +81,7 @@ class DlgMPTeamSelect :
 
 		void On_Init_Dialog(void);
 		void On_Frame_Update(void);
-		void On_Command(int ctrlID, int message, DWORD param);
+		void On_Command(int ctrlID, int message, uint32_t param);
 		void On_Last_Menu_Ending(void);
 
 		void InitSideChoice(int sidePref);
@@ -120,7 +122,7 @@ class DlgMPTeamSelect :
 template <typename SignalType>
 class Signaler;
 
-typedef TypedEventPair<bool, int> MPChooseTeamSignal;
+typedef TypedEventPair<bool, int32_t> MPChooseTeamSignal;
 
 class DlgMPTeamSelect
 	{

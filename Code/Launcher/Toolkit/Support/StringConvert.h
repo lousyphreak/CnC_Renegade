@@ -41,7 +41,7 @@
 
 class UString;
 
-Char* UStringToANSI(const UString& string, Char* buffer, UInt bufferLength);
-Char* UnicodeToANSI(const WChar* string, Char* buffer, UInt bufferLength);
+char* UStringToANSI(const UString& string, char* buffer, uint32_t bufferLength);
+char* UnicodeToANSI(const wchar_t* string, char* buffer, uint32_t bufferLength);
 
 #endif // STRINGCONVERT_H

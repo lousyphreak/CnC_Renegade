@@ -295,14 +295,14 @@ void WOLGameInfo::ImportFromChannel(const RefPtr<ChannelData>& channel)
 	mIsDataValid = true;
 
 	// Extract ExInfo settings
-	unsigned long fileCRC = 0;
-	unsigned long version = 0;
-	unsigned long clanID1 = 0;
-	unsigned long clanID2 = 0;
-	unsigned char gameType = 0;
-	unsigned char gameFlags1 = 0;
-	unsigned char gameFlags2 = 0;
-	unsigned char modMapIndex = 0;
+	uint32_t fileCRC = 0;
+	uint32_t version = 0;
+	uint32_t clanID1 = 0;
+	uint32_t clanID2 = 0;
+	uint8_t gameType = 0;
+	uint8_t gameFlags1 = 0;
+	uint8_t gameFlags2 = 0;
+	uint8_t modMapIndex = 0;
 
 	int count = sscanf(exInfo, "%08lX%08lX%08lX%08lX%c%c%c%c", &version, &fileCRC,
 			&clanID1, &clanID2, &gameType, &gameFlags1, &gameFlags2, &modMapIndex);
@@ -408,9 +408,9 @@ void WOLGameInfo::ImportFromChannel(const RefPtr<ChannelData>& channel)
 	mIsQuickmatch = (strchr(topic, '|') != NULL);
 
 	// Extract game title from topic
-	unsigned int titleLength = (topic[0] - 0x20);
+	uint32_t titleLength = (topic[0] - 0x20);
 	WWASSERT(titleLength <= 32);
-	titleLength = min<unsigned int>(titleLength, 32);
+	titleLength = min<uint32_t>(titleLength, 32);
 	++topic;
 
 	strncpy(mTitle, topic, titleLength);
@@ -418,9 +418,9 @@ void WOLGameInfo::ImportFromChannel(const RefPtr<ChannelData>& channel)
 	WWASSERT(strlen(mTitle) == titleLength);
 	topic += titleLength;
 
-	unsigned int mapLength = (topic[0] - 0x20);
+	uint32_t mapLength = (topic[0] - 0x20);
 	WWASSERT(mapLength <= 16);
-	mapLength = min<unsigned int>(mapLength, 16);
+	mapLength = min<uint32_t>(mapLength, 16);
 	++topic;
 
 	if (!got_map_name) {
@@ -462,13 +462,13 @@ void WOLGameInfo::ExportToChannel(const RefPtr<ChannelData>& channel)
 		{
 		// If this is a dedicated server then the max players must be incremented
 		// by one to account for the host.
-		unsigned int maxPlayers = (mIsDedicated == true) ? (mMaxPlayers + 1) : mMaxPlayers;
+		uint32_t maxPlayers = (mIsDedicated == true) ? (mMaxPlayers + 1) : mMaxPlayers;
 
 		// Set the channels min and max players
 		channel->SetMinMaxUsers(mMinPlayers, maxPlayers);
 
 		// Set the tournament type
-		unsigned int tournamentType = (mIsLaddered ? 1 : 0);
+		uint32_t tournamentType = (mIsLaddered ? 1 : 0);
 		channel->SetTournament(tournamentType);
 
 		//-------------------------------------------------------------------------
@@ -476,7 +476,7 @@ void WOLGameInfo::ExportToChannel(const RefPtr<ChannelData>& channel)
 		//-------------------------------------------------------------------------
 
 		// For flags bit 6 must be set to keep the overall value at least a space character
-		unsigned char gameFlags1 = 0x20;
+		uint8_t gameFlags1 = 0x20;
 		gameFlags1 |= mIsDedicated ? 0x40 : 0x00;
 		gameFlags1 |= mIsFriendlyFire ? 0x10 : 0x00;
 		gameFlags1 |= mIsFreeWeapons ? 0x08 : 0x00;
@@ -484,7 +484,7 @@ void WOLGameInfo::ExportToChannel(const RefPtr<ChannelData>& channel)
 		gameFlags1 |= mIsTeamChange ? 0x02 : 0x00;
 		gameFlags1 |= mIsClanGame ? 0x01 : 0x00;
 
-		unsigned char gameFlags2 = 0x20;
+		uint8_t gameFlags2 = 0x20;
 		gameFlags2 |= mIsMod ? 0x40 : 0x00;
 		gameFlags2 |= mSpawnWeapons ? 0x04: 0x00;
 		gameFlags2 |= mIsRepairBuildings ? 0x02: 0x00;
@@ -492,8 +492,8 @@ void WOLGameInfo::ExportToChannel(const RefPtr<ChannelData>& channel)
 
 		// The file CRC is either the map name or the mod name depending on if
 		// the mod flag is set.
-		unsigned long fileCRC = 0;
-		unsigned char modMapIndex = 0;
+		uint32_t fileCRC = 0;
+		uint8_t modMapIndex = 0;
 
 		if (mIsMod)
 			{
@@ -519,7 +519,7 @@ void WOLGameInfo::ExportToChannel(const RefPtr<ChannelData>& channel)
 		//-------------------------------------------------------------------------
 		// Encode topic
 		//-------------------------------------------------------------------------
-		unsigned int titleLength = min<unsigned int>(strlen(mTitle), 32);
+		uint32_t titleLength = min<uint32_t>(strlen(mTitle), 32);
 		titleLength += 0x20;
 
 		// WARNING: The channels topic field has a maximum size of 80 bytes.
@@ -532,7 +532,7 @@ void WOLGameInfo::ExportToChannel(const RefPtr<ChannelData>& channel)
 		//
 		// Only using 61 max right now. Room for a map name maybe? ST - 10/31/2002 2:55PM
 		//
-		unsigned int mapLength = min<unsigned int>(strlen(mMapName), 16);
+		uint32_t mapLength = min<uint32_t>(strlen(mMapName), 16);
 		mapLength += 0x20;
 
 		// WARNING: The channels topic field has a maximum size of 80 bytes.
@@ -568,7 +568,7 @@ void WOLGameInfo::ExportToChannel(const RefPtr<ChannelData>& channel)
 bool WOLGameInfo::IsValidGameChannel(const RefPtr<ChannelData>& channel)
 	{
 	WOLGameInfo gameInfo(channel);
-	return (gameInfo.IsDataValid() && (gameInfo.mVersion == (unsigned long)cNetwork::Get_Exe_Key()));
+	return (gameInfo.IsDataValid() && (gameInfo.mVersion == (uint32_t)cNetwork::Get_Exe_Key()));
 	}
 
 
@@ -588,7 +588,7 @@ bool WOLGameInfo::IsValidGameChannel(const RefPtr<ChannelData>& channel)
 *
 ******************************************************************************/
 
-bool WOLGameInfo::IsClanCompeting(unsigned long clanID) const
+bool WOLGameInfo::IsClanCompeting(uint32_t clanID) const
 	{
 	return (mIsClanGame && (clanID != 0) && ((clanID == mClanID1) || (clanID == mClanID2)));
 	}
@@ -639,14 +639,14 @@ bool WOLGameInfo::CanUserJoin(const RefPtr<UserData>& user)
 		return false;
 		}
 
-	if (mVersion != (unsigned long)cNetwork::Get_Exe_Key())
+	if (mVersion != (uint32_t)cNetwork::Get_Exe_Key())
 		{
 		return false;
 		}
 
 	if (mIsClanGame)
 		{
-		unsigned long userClanID = user->GetSquadID();
+		uint32_t userClanID = user->GetSquadID();
 		return ((0 != userClanID) && (IsClanGameOpen() || IsClanCompeting(userClanID)));
 		}
 

@@ -296,7 +296,7 @@ HeightfieldEditorClass::Create_Texture_Thumbnail (const char *filename, int widt
 	::ZeroMemory (&lock_rect, sizeof (D3DLOCKED_RECT));
 	DX8_ErrorCode (d3d_surface->LockRect (&lock_rect, 0, 0));
 	int src_pitch		= lock_rect.Pitch;
-	uint8 *src_bits	= (unsigned char *)lock_rect.pBits;
+	uint8_t *src_bits	= (uint8_t *)lock_rect.pBits;
 
 	//
 	// Set-up the fields of the BITMAPINFOHEADER
@@ -318,7 +318,7 @@ HeightfieldEditorClass::Create_Texture_Thumbnail (const char *filename, int widt
 	//
 	// Create a bitmap that we can access the bits directly of
 	//
-	uint8 *dest_bits	= NULL;
+	uint8_t *dest_bits	= NULL;
 	HDC screen_dc		= ::GetDC (NULL);
 	HBITMAP bitmap		= ::CreateDIBSection (screen_dc, (const BITMAPINFO *)&bitmap_info,
 														DIB_RGB_COLORS, (void **)&dest_bits, NULL, 0L);	

@@ -161,7 +161,7 @@ void ProgressCtrlClass::Create_Control_Renderers(void)
 *
 ******************************************************************************/
 
-float ProgressCtrlClass::Calculate_Bar_Width(unsigned int position)
+float ProgressCtrlClass::Calculate_Bar_Width(uint32_t position)
 	{
 	// Adjust the bar to reflect the new position
 	float maxBarWidth = (Rect.Width() - (float)(2 * BAR_INSET));
@@ -247,7 +247,7 @@ void ProgressCtrlClass::Render(void)
 *
 ******************************************************************************/
 
-void ProgressCtrlClass::Set_Range(unsigned int min, unsigned int max)
+void ProgressCtrlClass::Set_Range(uint32_t min, uint32_t max)
 	{
 	WWASSERT(min < max);
 
@@ -258,7 +258,7 @@ void ProgressCtrlClass::Set_Range(unsigned int min, unsigned int max)
 		float newDelta = (max - min);
 		float scaler = (oldDelta / newDelta);
 
-		unsigned int position = (unsigned int)((float)mPosition * scaler);
+		uint32_t position = (uint32_t)((float)mPosition * scaler);
 		Set_Position(position);
 		}
 
@@ -286,7 +286,7 @@ void ProgressCtrlClass::Set_Range(unsigned int min, unsigned int max)
 *
 ******************************************************************************/
 
-void ProgressCtrlClass::Get_Range(unsigned int& min, unsigned int& max)
+void ProgressCtrlClass::Get_Range(uint32_t& min, uint32_t& max)
 	{
 	min = mMinLimit;
 	max = mMaxLimit;
@@ -309,11 +309,11 @@ void ProgressCtrlClass::Get_Range(unsigned int& min, unsigned int& max)
 *
 ******************************************************************************/
 
-void ProgressCtrlClass::Set_Position(unsigned int position)
+void ProgressCtrlClass::Set_Position(uint32_t position)
 	{
-	unsigned int oldPosition = mPosition;
-	mPosition = min<unsigned int>(mMaxLimit, position);
-	mPosition = max<unsigned int>(mMinLimit, mPosition);
+	uint32_t oldPosition = mPosition;
+	mPosition = min<uint32_t>(mMaxLimit, position);
+	mPosition = max<uint32_t>(mMinLimit, mPosition);
 
 	if (oldPosition != mPosition)
 		{
@@ -361,7 +361,7 @@ void ProgressCtrlClass::Delta_Position(int delta)
 *
 ******************************************************************************/
 
-unsigned int ProgressCtrlClass::Get_Position(void) const
+uint32_t ProgressCtrlClass::Get_Position(void) const
 	{
 	return mPosition;
 	}
@@ -385,10 +385,10 @@ unsigned int ProgressCtrlClass::Get_Position(void) const
 *
 ******************************************************************************/
 
-void ProgressCtrlClass::Set_Step(unsigned int step)
+void ProgressCtrlClass::Set_Step(uint32_t step)
 	{
-	mStep = min<unsigned int>((mMaxLimit - mMinLimit), step);
-	mStep = max<unsigned int>(1, mStep);
+	mStep = min<uint32_t>((mMaxLimit - mMinLimit), step);
+	mStep = max<uint32_t>(1, mStep);
 	}
 
 

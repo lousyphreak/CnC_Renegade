@@ -129,13 +129,13 @@ class WWMouseClass : public Mouse {
 		**	and the mouse class maintain a strict master/slave relationship, a
 		**	simple critial section flag is all that is needed.
 		*/
-		long Blocked;
+		int32_t Blocked;
 
 		/*
 		**	Mouse hide/show state. If zero or greater, the mouse is visible. Otherwise
 		**	it is invisible.
 		*/
-		long MouseState;
+		int32_t MouseState;
 
 		/*
 		**	If the mouse is being managed by this class (for the game), then this flag

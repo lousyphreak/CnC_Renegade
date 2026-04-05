@@ -195,7 +195,7 @@ PurchaseSettingsDefClass::~PurchaseSettingsDefClass (void)
 //	Get_Class_ID
 //
 ///////////////////////////////////////////////////////////////////////////////////////////
-uint32
+uint32_t
 PurchaseSettingsDefClass::Get_Class_ID (void) const
 { 
 	return CLASSID_GLOBAL_SETTINGS_DEF_PURCHASE; 

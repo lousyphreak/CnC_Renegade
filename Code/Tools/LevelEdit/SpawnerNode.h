@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __SPAWNER_NODE_H
@@ -98,7 +100,7 @@ public:
 	bool			Is_Static (void) const				{ return false; }
 	void			Add_To_Scene (void);
 	void			Remove_From_Scene (void);
-	void			Set_ID (uint32 id);
+	void			Set_ID (uint32_t id);
 	NodeClass *	Add_Child_Node (const Matrix3D &tm);
 	bool			Can_Add_Child_Nodes (void)	const	{ return true; }
 	bool			Show_Settings_Dialog (void);
@@ -128,7 +130,7 @@ public:
 	//
 	// Spawner specific
 	//
-	uint32						Get_Spawned_Definition_ID (void);
+	uint32_t						Get_Spawned_Definition_ID (void);
 	void							Load_Assets (void);
 	RenderObjClass *			Get_Spawned_Model (void);
 	SpawnPointNodeClass *	Add_Spawn_Point (const Matrix3D &tm);

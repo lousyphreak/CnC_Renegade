@@ -1539,7 +1539,7 @@ void	Enable_Enemy_Seen( GameObject * obj, bool enable )
 
 Vector3 _DisplayColor( 1,1,1 );
 
-void	Set_Display_Color( unsigned char red, unsigned char green, unsigned char blue )
+void	Set_Display_Color( uint8_t red, uint8_t green, uint8_t blue )
 {
 	_DisplayColor = Vector3( (float)red/255.0f, (float)green/255.0f, (float)blue/255.0f );
 }
@@ -1616,7 +1616,7 @@ bool	Load_Begin( ScriptLoader & loader, int * id )
 void	Load_Data( ScriptLoader & loader, int size, void * data )
 {
 	SCRIPT_PTR_CHECK( data );
-	unsigned int chunkSize = loader.CLoad.Cur_Micro_Chunk_Length();
+	uint32_t chunkSize = loader.CLoad.Cur_Micro_Chunk_Length();
 	WWASSERT((unsigned)size >= chunkSize);
 	loader.CLoad.Read(data, chunkSize);
 	WWASSERT((unsigned)size <= 250);		// Make sure we don't save too much
@@ -1636,7 +1636,7 @@ void	Load_End( ScriptLoader & loader )
 	loader.CLoad.Close_Micro_Chunk();
 }
 
-void Begin_Chunk(ScriptSaver& saver, unsigned int chunkID)
+void Begin_Chunk(ScriptSaver& saver, uint32_t chunkID)
 {
 	saver.CSave.Begin_Chunk(chunkID);
 }
@@ -1648,7 +1648,7 @@ void End_Chunk(ScriptSaver& saver)
 }
 
 
-bool Open_Chunk(ScriptLoader& loader, unsigned int* chunkID)
+bool Open_Chunk(ScriptLoader& loader, uint32_t* chunkID)
 {
 	SCRIPT_PTR_CHECK_RET(chunkID, false);
 
@@ -2251,7 +2251,7 @@ void	Static_Anim_Phys_Goto_Last_Frame( int obj_id, const char * anim_name )
 	}
 }
 
-unsigned int Get_Sync_Time( void )
+uint32_t Get_Sync_Time( void )
 {
 	return CombatManager::Get_Sync_Time();
 }

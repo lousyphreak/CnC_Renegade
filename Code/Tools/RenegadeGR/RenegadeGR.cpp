@@ -64,7 +64,7 @@ JNIEXPORT jint JNICALL Java_RenegadeNet__1nativeSendGR
 	RenegadeGameRes renegadeGameRes("10.2.20.28", 4850);
 	//RenegadeGameRes renegadeGameRes;
 	renegadeGameRes.setGameID(21450402);
-	renegadeGameRes.setPlayerCount((unsigned char)loginlen);
+	renegadeGameRes.setPlayerCount((uint8_t)loginlen);
 	renegadeGameRes.setClanGame(0);
 	renegadeGameRes.setDuration(100);
 	renegadeGameRes.setMapName("Renegade Map");
@@ -93,7 +93,7 @@ JNIEXPORT jint JNICALL Java_RenegadeNet__1nativeSendGR
 
 JNIEXPORT void JNICALL Java_RenegadeNet_startWinSock(JNIEnv *, jclass)
 {
-	WORD wVersionRequested;
+	uint16_t wVersionRequested;
 	WSADATA wsaData;
 	int err = 1;
 

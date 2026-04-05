@@ -117,9 +117,9 @@ void
 Paint_Gradient
 (
 	HWND hWnd,
-	BYTE baseRed,
-	BYTE baseGreen,
-	BYTE baseBlue
+	uint8_t baseRed,
+	uint8_t baseGreen,
+	uint8_t baseBlue
 )
 {
     // Get the bounding rectangle so we know how much to paint
@@ -169,7 +169,7 @@ void
 SetDlgItemFloat
 (
 	HWND hdlg,
-	UINT child_id,
+	uint32_t child_id,
 	float value
 )
 {
@@ -191,7 +191,7 @@ float
 GetDlgItemFloat
 (
 	HWND hdlg,
-	UINT child_id
+	uint32_t child_id
 )
 {
 	// Get the string from the window
@@ -295,7 +295,7 @@ Update_Spinner_Buddy (HWND hspinner, int delta)
 			//
 			int int_min = 0;
 			int int_max = 0;
-			SendMessage (hspinner, UDM_GETRANGE32, (WPARAM)&int_min, (LPARAM)&int_max);
+			SendMessage (hspinner, UDM_GETRANGE32, (uintptr_t)&int_min, (intptr_t)&int_max);
 			float float_min = ((float)int_min) / 100;
 			float float_max = ((float)int_max) / 100;
 			value = max (float_min, value);			
@@ -458,7 +458,7 @@ Strip_Filename_From_Path (LPCTSTR path)
 HBITMAP
 Create_DIB_Section
 (
-	UCHAR **pbits,
+	uint8_t **pbits,
 	int width,
 	int height
 )
@@ -555,7 +555,7 @@ Make_Bitmap_From_Texture (TextureClass &texture, int width, int height)
 		int src_height = surface->getHeight ();
 
 		// Create a DIB section for fast 'blitting'
-		UCHAR *pbits = NULL;
+		uint8_t *pbits = NULL;
 		hbitmap = ::Create_DIB_Section (&pbits, width, height);
 		
 		ASSERT (hbitmap != NULL);
@@ -567,7 +567,7 @@ Make_Bitmap_From_Texture (TextureClass &texture, int width, int height)
 			float curr_src_pixel = 0;
 			float curr_src_row = 0;
 			
-			// Window's bitmaps are DWORD aligned, so make sure
+			// Window's bitmaps are uint32_t aligned, so make sure
 			// we take that into account.
 			int alignment_offset = (width * 3) % 4;
 			alignment_offset = (alignment_offset != 0) ? (4 - alignment_offset) : 0;
@@ -886,8 +886,8 @@ Load_RC_Texture (LPCTSTR resource_name)
 	//	Load the cursor file image from this binaries resources
 	//
 	ResourceFileClass resource_file (::AfxGetResourceHandle (), resource_name);
-	unsigned char *res_data = resource_file.Peek_Data ();
-	unsigned int data_size = resource_file.Size ();
+	uint8_t *res_data = resource_file.Peek_Data ();
+	uint32_t data_size = resource_file.Size ();
 
 	//
 	//	Create a texture from the raw image data
@@ -977,7 +977,7 @@ Copy_File
 	bool allow_copy = (::lstrcmpi (existing_filename, new_filename) != 0);
 	
 	// Strip the readonly bit off if necessary
-	DWORD attributes = ::GetFileAttributes (new_filename);
+	uint32_t attributes = ::GetFileAttributes (new_filename);
 	if (allow_copy &&
 		 (attributes != 0xFFFFFFFF) &&
 		 ((attributes & FILE_ATTRIBUTE_READONLY) == FILE_ATTRIBUTE_READONLY))

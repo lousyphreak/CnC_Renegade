@@ -21,6 +21,8 @@
 
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 // ColorPicker.h : header file
 //
@@ -81,7 +83,7 @@ public:
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(ColorPickerClass)
 	public:
-	virtual BOOL Create(LPCTSTR lpszClassName, LPCTSTR lpszWindowName, DWORD dwStyle, const RECT& rect, CWnd* pParentWnd, UINT nID, CCreateContext* pContext = NULL);
+	virtual int32_t Create(LPCTSTR lpszClassName, LPCTSTR lpszWindowName, uint32_t dwStyle, const RECT& rect, CWnd* pParentWnd, uint32_t nID, CCreateContext* pContext = NULL);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -93,15 +95,15 @@ protected:
 	//{{AFX_MSG(ColorPickerClass)
 	afx_msg void OnPaint();
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
-	afx_msg void OnSize(UINT nType, int cx, int cy);
-	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
-	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
-	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
-	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	afx_msg void OnSize(uint32_t nType, int cx, int cy);
+	afx_msg int32_t OnEraseBkgnd(CDC* pDC);
+	afx_msg void OnLButtonDown(uint32_t nFlags, CPoint point);
+	afx_msg void OnLButtonUp(uint32_t nFlags, CPoint point);
+	afx_msg void OnMouseMove(uint32_t nFlags, CPoint point);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 
-	friend LRESULT WINAPI fnColorPickerProc (HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
+	friend intptr_t WINAPI fnColorPickerProc (HWND hwnd, uint32_t message, uintptr_t wparam, intptr_t lparam);
 
 	public:
 
@@ -122,13 +124,13 @@ protected:
 		//
 		//	Private member data
 		//
-		void				Paint_DIB (int width, int height, UCHAR *pbits);
+		void				Paint_DIB (int width, int height, uint8_t *pbits);
 		void				Create_Bitmap (void);
 		void				Free_Bitmap (void);
-		void				Fill_Rect (UCHAR *pbits, const RECT &rect, COLORREF color, int scanline_size);
-		void				Frame_Rect (UCHAR *pbits, const RECT &rect, COLORREF color, int scanline_size);
-		void				Draw_Horz_Line (UCHAR *pbits, int x, int y, int len, COLORREF color, int scanline_size);
-		void				Draw_Vert_Line (UCHAR *pbits, int x, int y, int len, COLORREF color, int scanline_size);
+		void				Fill_Rect (uint8_t *pbits, const RECT &rect, COLORREF color, int scanline_size);
+		void				Frame_Rect (uint8_t *pbits, const RECT &rect, COLORREF color, int scanline_size);
+		void				Draw_Horz_Line (uint8_t *pbits, int x, int y, int len, COLORREF color, int scanline_size);
+		void				Draw_Vert_Line (uint8_t *pbits, int x, int y, int len, COLORREF color, int scanline_size);
 		COLORREF			Color_From_Point (int x, int y);
 		CPoint			Point_From_Color (COLORREF color);
 		void				Paint_Marker (void);
@@ -144,7 +146,7 @@ protected:
 		//
 		HBITMAP			m_hBitmap;
 		HDC				m_hMemDC;
-		UCHAR	*			m_pBits;
+		uint8_t	*			m_pBits;
 		int				m_iWidth;
 		int				m_iHeight;
 		CPoint			m_CurrentPoint;

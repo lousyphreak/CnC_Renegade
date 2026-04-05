@@ -39,6 +39,8 @@
 #ifndef GENMTLNAMESDIALOG_H
 #define GENMTLNAMESDIALOG_H
 
+#include <cstdint>
+
 #include <windows.h>
 
 class Interface;
@@ -81,7 +83,7 @@ public:
 	};
 
 	bool Get_Options(OptionsStruct * options);
-	bool Dialog_Proc(HWND hWnd,UINT message,WPARAM wParam,LPARAM);
+	bool Dialog_Proc(HWND hWnd,uint32_t message,uintptr_t wParam,intptr_t);
 	bool Ok_To_Exit(void);
 		
 private:
@@ -92,7 +94,7 @@ private:
 	Interface *						MaxInterface;
 	ISpinnerControl *				NameIndexSpin;
 
-	friend BOOL CALLBACK _gen_mtl_names_dialog_proc(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam);
+	friend int32_t CALLBACK _gen_mtl_names_dialog_proc(HWND hwnd,uint32_t message,uintptr_t wparam,intptr_t lparam);
 
 };
 

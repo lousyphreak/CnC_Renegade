@@ -66,7 +66,7 @@ CWdumpApp theApp;
 // private class declaration of a CCommandLineInfo class that knows about our special options
 class CWDumpCommandLineInfo : public CCommandLineInfo
 {
-	virtual void ParseParam(const TCHAR* pszParam,BOOL bFlag,BOOL bLast)
+	virtual void ParseParam(const TCHAR* pszParam,int32_t bFlag,int32_t bLast)
 	{
 		if (bFlag)
 		{
@@ -91,7 +91,7 @@ class CWDumpCommandLineInfo : public CCommandLineInfo
 /////////////////////////////////////////////////////////////////////////////
 // CWdumpApp initialization
 
-BOOL CWdumpApp::InitInstance()
+int32_t CWdumpApp::InitInstance()
 {
 	// Standard initialization
 	// If you are not using these features and wish to reduce the size

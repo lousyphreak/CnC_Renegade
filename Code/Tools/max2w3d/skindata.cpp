@@ -55,12 +55,12 @@
  *=============================================================================================*/
 IOResult SkinDataClass::Save(ISave *isave)
 {
-	ULONG nb;
+	uint32_t nb;
 
 	/*
 	** save the flags
 	*/
-	short flags = 0;
+	int16_t flags = 0;
 	if (Valid) flags |= 0x01;
 	if (Held) flags |= 0x02;
 
@@ -115,8 +115,8 @@ IOResult SkinDataClass::Save(ISave *isave)
  *=============================================================================================*/
 IOResult SkinDataClass::Load(ILoad *iload)
 {
-	ULONG nb;
-	short flags;
+	uint32_t nb;
+	int16_t flags;
 	int n;
 	IOResult res;
 
@@ -159,4 +159,3 @@ IOResult SkinDataClass::Load(ILoad *iload)
 	
 	return IO_OK;
 }
-

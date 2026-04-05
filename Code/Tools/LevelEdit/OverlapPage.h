@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 #include "resource.h"
@@ -63,13 +65,13 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(OverlapPageClass)
-	afx_msg void OnDeleteitemOverlapTree(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnSize(UINT nType, int cx, int cy);
-	virtual BOOL OnInitDialog();
+	afx_msg void OnDeleteitemOverlapTree(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnSize(uint32_t nType, int cx, int cy);
+	virtual int32_t OnInitDialog();
 	afx_msg void OnDestroy();
 	afx_msg void OnRefresh();
-	afx_msg void OnDblclkOverlapTree(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnItemexpandedOverlapTree(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnDblclkOverlapTree(NMHDR* pNMHDR, intptr_t* pResult);
+	afx_msg void OnItemexpandedOverlapTree(NMHDR* pNMHDR, intptr_t* pResult);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 

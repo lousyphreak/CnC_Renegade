@@ -21,6 +21,8 @@
 
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 // ValueListDialogClass.h : header file
 //
@@ -55,7 +57,7 @@ protected:
 	//{{AFX_MSG(ValueListDialogClass)
 	virtual void OnOK();
 	afx_msg void OnUpdateListEdit();
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 

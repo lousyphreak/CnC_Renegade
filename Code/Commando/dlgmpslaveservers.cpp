@@ -46,7 +46,7 @@
 
 
 
-unsigned long SlaveServerDialogClass::EnableIDs[MAX_SLAVES] = {
+uint32_t SlaveServerDialogClass::EnableIDs[MAX_SLAVES] = {
 	IDC_SLAVE_ENABLE1,
 	IDC_SLAVE_ENABLE2,
 	IDC_SLAVE_ENABLE3,
@@ -57,7 +57,7 @@ unsigned long SlaveServerDialogClass::EnableIDs[MAX_SLAVES] = {
 };
 
 
-unsigned long SlaveServerDialogClass::NickIDs[MAX_SLAVES] = {
+uint32_t SlaveServerDialogClass::NickIDs[MAX_SLAVES] = {
 	IDC_NICK_EDIT1,
 	IDC_NICK_EDIT2,
 	IDC_NICK_EDIT3,
@@ -67,7 +67,7 @@ unsigned long SlaveServerDialogClass::NickIDs[MAX_SLAVES] = {
 	IDC_NICK_EDIT7
 };
 
-unsigned long SlaveServerDialogClass::PassIDs[MAX_SLAVES] = {
+uint32_t SlaveServerDialogClass::PassIDs[MAX_SLAVES] = {
 	IDC_PASS_EDIT1,
 	IDC_PASS_EDIT2,
 	IDC_PASS_EDIT3,
@@ -78,7 +78,7 @@ unsigned long SlaveServerDialogClass::PassIDs[MAX_SLAVES] = {
 };
 
 
-unsigned long SlaveServerDialogClass::SerialIDs[MAX_SLAVES] = {
+uint32_t SlaveServerDialogClass::SerialIDs[MAX_SLAVES] = {
 	IDC_SERIAL_EDIT1,
 	IDC_SERIAL_EDIT2,
 	IDC_SERIAL_EDIT3,
@@ -90,7 +90,7 @@ unsigned long SlaveServerDialogClass::SerialIDs[MAX_SLAVES] = {
 
 
 
-unsigned long SlaveServerDialogClass::PortIDs[MAX_SLAVES] = {
+uint32_t SlaveServerDialogClass::PortIDs[MAX_SLAVES] = {
 	IDC_PORT_EDIT1,
 	IDC_PORT_EDIT2,
 	IDC_PORT_EDIT3,
@@ -102,7 +102,7 @@ unsigned long SlaveServerDialogClass::PortIDs[MAX_SLAVES] = {
 
 
 
-unsigned long SlaveServerDialogClass::SettingsButtons[MAX_SLAVES] = {
+uint32_t SlaveServerDialogClass::SettingsButtons[MAX_SLAVES] = {
 	IDC_SLAVE1_SETTINGS,
 	IDC_SLAVE2_SETTINGS,
 	IDC_SLAVE3_SETTINGS,
@@ -147,7 +147,7 @@ SlaveServerDialogClass::On_Init_Dialog (void)
 	char serial[64];
 	char pass[64];
 	bool enable;
-	unsigned short port;
+	uint16_t port;
 	char settings_file_name[MAX_PATH];
 	int bw;
 
@@ -181,7 +181,7 @@ SlaveServerDialogClass::On_Init_Dialog (void)
 		Set_Dlg_Item_Text(SerialIDs[i], tempser.Peek_Buffer());
 
 		char temp[32];
-		_itoa((unsigned long)port, temp, 10);
+		_itoa((uint32_t)port, temp, 10);
 		WideStringClass tempport(temp, true);
 		Set_Dlg_Item_Text(PortIDs[i], tempport.Peek_Buffer());
 
@@ -194,7 +194,7 @@ SlaveServerDialogClass::On_Init_Dialog (void)
 
 
 void
-SlaveServerDialogClass::On_Command (int ctrl_id, int message_id, DWORD param)
+SlaveServerDialogClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	switch (ctrl_id) {
 		case IDC_MENU_BACK_BUTTON:
@@ -226,12 +226,12 @@ SlaveServerDialogClass::On_Command (int ctrl_id, int message_id, DWORD param)
 				WideStringClass tempport(Get_Dlg_Item_Text(PortIDs[i]));
 				StringClass newport;
 				tempport.Convert_To(newport);
-				unsigned long port = atoi(newport.Peek_Buffer());
+				uint32_t port = atoi(newport.Peek_Buffer());
 				if (port > 0xffff) {
 					port = 0xffff;
 				}
 
-				SlaveMaster.Add_Slave(enable, nick, serial, (unsigned short)port, ServerSettingsFileNames[i], 0xffffffff, pass);
+				SlaveMaster.Add_Slave(enable, nick, serial, (uint16_t)port, ServerSettingsFileNames[i], 0xffffffff, pass);
 			}
 			SlaveMaster.Save();
 		}
@@ -313,7 +313,7 @@ void SlaveServerDialogClass::Set_Slave_Button(int slavenum)
 				if (size != 0) {
 					description = char_description;
 				} else {
-					description = (unsigned short *)TRANSLATE(IDS_SERVER_SAVELOAD_DEFAULT);
+					description = (uint16_t *)TRANSLATE(IDS_SERVER_SAVELOAD_DEFAULT);
 					size = 1;
 				}
 			}

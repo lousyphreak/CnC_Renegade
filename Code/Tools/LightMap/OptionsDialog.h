@@ -39,6 +39,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 
 
@@ -83,8 +85,8 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(OptionsDialog)
-	virtual BOOL OnInitDialog();
-	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
+	virtual int32_t OnInitDialog();
+	afx_msg void OnHScroll(uint32_t nSBCode, uint32_t nPos, CScrollBar* pScrollBar);
 	afx_msg void OnChangeSpatialTolerance();
 	afx_msg void OnUpdateSpatialTolerance();
 	afx_msg void OnChangeFillColorRed();
@@ -95,7 +97,7 @@ protected:
 	afx_msg void OnUpdateFillColorBlue();
 	afx_msg void On16BitsPerPixel();
 	afx_msg void On24BitsPerPixel();
-	afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
+	afx_msg void OnVScroll(uint32_t nSBCode, uint32_t nPos, CScrollBar* pScrollBar);
 	afx_msg void OnLightExportSelective();
 	afx_msg void OnChangeLightExclusionString();
 	//}}AFX_MSG

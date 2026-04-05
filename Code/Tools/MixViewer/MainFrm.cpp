@@ -58,7 +58,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
-static UINT indicators[] =
+static uint32_t indicators[] =
 {
 	ID_SEPARATOR,           // status line indicator
 	ID_INDICATOR_CAPS,
@@ -94,7 +94,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	if (!m_wndStatusBar.Create(this) ||
 		!m_wndStatusBar.SetIndicators(indicators,
-		  sizeof(indicators)/sizeof(UINT)))
+		  sizeof(indicators)/sizeof(uint32_t)))
 	{
 		TRACE0("Failed to create status bar\n");
 		return -1;      // fail to create
@@ -109,7 +109,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	return 0;
 }
 
-BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
+int32_t CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 {
 	if( !CFrameWnd::PreCreateWindow(cs) )
 		return FALSE;
@@ -216,7 +216,7 @@ CMainFrame::OnCombineDuplicates (void)
 		combiner.Set_Destination_File (full_path);
 
 		WIN32_FIND_DATA find_info	= { 0 };
-		BOOL keep_going				= TRUE;
+		int32_t keep_going				= TRUE;
 
 		CString search_mask = directory + "\\*.mix";
 
@@ -349,7 +349,7 @@ CMainFrame::OnExportFiles (void)
 							dest_file && dest_file->Is_Available() ) {
 
 						int length = source_file->Size();
-						unsigned char file_buffer[4096];
+						uint8_t file_buffer[4096];
 
 						while ( length > 0 ) {
 							int amount = min ( (int)length, (int)sizeof( file_buffer ) );
@@ -596,12 +596,12 @@ CMainFrame::OnMakeMixPatch(void)
 //	WindowProc
 //
 /////////////////////////////////////////////////////////////////////////////
-LRESULT
+intptr_t
 CMainFrame::WindowProc
 (
-	UINT		message,
-	WPARAM	wParam,
-	LPARAM	lParam
+	uint32_t		message,
+	uintptr_t	wParam,
+	intptr_t	lParam
 ) 
 {
 	return CFrameWnd::WindowProc(message, wParam, lParam);
@@ -624,7 +624,7 @@ CMainFrame::OnDropFiles (HDROP hDropInfo)
 	//
 	//	Get the count of files from the drop query
 	//
-	int file_count = (int)::DragQueryFile (hDropInfo, (UINT)-1, NULL, 0);
+	int file_count = (int)::DragQueryFile (hDropInfo, (uint32_t)-1, NULL, 0);
 	if (file_count > 0) {
 
 		CMixViewerDoc *doc = (CMixViewerDoc *)GetActiveDocument ();

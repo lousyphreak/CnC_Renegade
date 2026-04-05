@@ -38,6 +38,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef _SLAVEMASTER_H
 #define _SLAVEMASTER_H
 
@@ -61,8 +63,8 @@ class SlaveServerClass
 		SlaveServerClass(void);
 		~SlaveServerClass(void);
 
-		void Set(bool enable, char *nick, char *serial, unsigned short port, char *settings_file, int bandwidth, char *password);
-		void Get(bool &enable, char *nick, char *serial, unsigned short &port, char *settings_file, int &bandwidth, char *password);
+		void Set(bool enable, char *nick, char *serial, uint16_t port, char *settings_file, int bandwidth, char *password);
+		void Get(bool &enable, char *nick, char *serial, uint16_t &port, char *settings_file, int &bandwidth, char *password);
 
 
 	private:
@@ -70,12 +72,12 @@ class SlaveServerClass
 		char	NickName[32];
 		char	Serial[64];
 		char	Password[64];
-		unsigned short Port;
+		uint16_t Port;
 		char	SettingsFileName[MAX_PATH];
 
 		bool	Enable;
 		bool	IsRunning;
-		unsigned short ControlPort;
+		uint16_t ControlPort;
 		int	Bandwidth;
 
 		PROCESS_INFORMATION ProcessInfo;
@@ -112,7 +114,7 @@ class SlaveMasterClass
 
 		int Get_Num_Slaves(void) {return(NumSlaveServers);}
 		int Get_Num_Enabled_Slaves(void);
-		void Add_Slave(bool enable, char *nick, char *serial, unsigned short port, char *settings_file, int bandwidth, char *password);
+		void Add_Slave(bool enable, char *nick, char *serial, uint16_t port, char *settings_file, int bandwidth, char *password);
 		SlaveServerClass *Get_Slave(int index);
 
 		void Set_Slave_Mode(bool mode) {SlaveMode = mode;}

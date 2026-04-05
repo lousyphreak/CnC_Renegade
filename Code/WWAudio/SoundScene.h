@@ -37,6 +37,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __SOUNDSCENE_H
@@ -166,7 +168,7 @@ class SoundSceneClass
 		//////////////////////////////////////////////////////////////////////
 		//	Protected methods
 		//////////////////////////////////////////////////////////////////////
-		virtual void			On_Frame_Update (unsigned int milliseconds = 0);
+		virtual void			On_Frame_Update (uint32_t milliseconds = 0);
 		virtual void			Initialize (void);
 
 		virtual bool			Is_Logical_Sound_In_Scene (LogicalSoundClass *sound_obj, bool single_shot = false);

@@ -37,6 +37,8 @@
 #ifndef __DLGMPCONNECT_H__
 #define __DLGMPCONNECT_H__
 
+#include <cstdint>
+
 #include "popupdialog.h"
 
 class cGameData;
@@ -48,17 +50,17 @@ class DlgMPConnect :
 		// Display connecting dialog.
 		//   TeamChoice - Team preference of connecting player
 		//   ClanID - ID of players clan (0 if not a clan game)
-		static bool DoDialog(int teamChoice, unsigned long clanID);
+		static bool DoDialog(int teamChoice, uint32_t clanID);
 
 		void Connected(cGameData* theGame);
 		void Failed_To_Connect(void);
 
 
 	protected:
-		DlgMPConnect(int teamChoice, unsigned long clanID);
+		DlgMPConnect(int teamChoice, uint32_t clanID);
 		virtual ~DlgMPConnect();
 
-		void On_Command(int ctrl, int message, DWORD param);
+		void On_Command(int ctrl, int message, uint32_t param);
 		void On_Periodic(void);
 
 	private:
@@ -67,7 +69,7 @@ class DlgMPConnect :
 		const DlgMPConnect& operator=(const DlgMPConnect&);
 
 		int mTeamChoice;
-		unsigned long mClanID;
+		uint32_t mClanID;
 
 		cGameData* mTheGame;
 		bool mFailed;

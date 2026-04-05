@@ -37,6 +37,8 @@
 #ifndef TGATODXT_H
 #define TGATODXT_H
 
+#include <cstdint>
+
 
 // Includes.
 #include <winbase.h>
@@ -55,12 +57,12 @@ class TGAToDXTClass
 		void Write (const char *outputfilename);
 
 		FILETIME		  *WriteTimePtr;	// Time stamp of write time of DXT file.	
-		unsigned char *Buffer;			// Staging buffer.
+		uint8_t *Buffer;			// Staging buffer.
 		unsigned			BufferSize;		// Size of buffer in bytes.
 		unsigned			BufferCount;	// No. of bytes written to buffer.
 
-	friend void ReadDTXnFile (DWORD count, void *buffer);
-	friend void WriteDTXnFile (DWORD datacount, void *data);
+	friend void ReadDTXnFile (uint32_t count, void *buffer);
+	friend void WriteDTXnFile (uint32_t datacount, void *data);
 };
 
 

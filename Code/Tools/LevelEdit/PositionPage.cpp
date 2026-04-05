@@ -147,13 +147,13 @@ PositionPageClass::HandleInitDialog (void)
 
 	// Enable/disable the 'restrict rotation' checkbox, and set its check state
 	::EnableWindow (::GetDlgItem (m_hWnd, IDC_RESTRICT_CHECK), m_pNode->Can_Be_Rotated_Freely ());
-	SendDlgItemMessage (IDC_RESTRICT_CHECK, BM_SETCHECK, (WPARAM)m_pNode->Is_Rotation_Restricted ());
+	SendDlgItemMessage (IDC_RESTRICT_CHECK, BM_SETCHECK, (uintptr_t)m_pNode->Is_Rotation_Restricted ());
 
 	// Set the ranges for the spin controls
-	SendDlgItemMessage (IDC_XPOS_SPIN, UDM_SETRANGE, (WPARAM)0, MAKELPARAM (UD_MAXVAL, UD_MINVAL));
-	SendDlgItemMessage (IDC_YPOS_SPIN, UDM_SETRANGE, (WPARAM)0, MAKELPARAM (UD_MAXVAL, UD_MINVAL));
-	SendDlgItemMessage (IDC_ZPOS_SPIN, UDM_SETRANGE, (WPARAM)0, MAKELPARAM (UD_MAXVAL, UD_MINVAL));
-	SendDlgItemMessage (IDC_ZROT_SPIN, UDM_SETRANGE, (WPARAM)0, MAKELPARAM (UD_MAXVAL, UD_MINVAL));
+	SendDlgItemMessage (IDC_XPOS_SPIN, UDM_SETRANGE, (uintptr_t)0, MAKELPARAM (UD_MAXVAL, UD_MINVAL));
+	SendDlgItemMessage (IDC_YPOS_SPIN, UDM_SETRANGE, (uintptr_t)0, MAKELPARAM (UD_MAXVAL, UD_MINVAL));
+	SendDlgItemMessage (IDC_ZPOS_SPIN, UDM_SETRANGE, (uintptr_t)0, MAKELPARAM (UD_MAXVAL, UD_MINVAL));
+	SendDlgItemMessage (IDC_ZROT_SPIN, UDM_SETRANGE, (uintptr_t)0, MAKELPARAM (UD_MAXVAL, UD_MINVAL));
 	
 	// Assume we aren't messing with the rotation
 	m_bInclueRotation = false;
@@ -208,7 +208,7 @@ void
 PositionPageClass::OnDeltaPosXPosSpin
 (
 	NMHDR* pNMHDR,
-	LRESULT* pResult
+	intptr_t* pResult
 ) 
 {
 	NM_UPDOWN* pNMUpDown = (NM_UPDOWN*)pNMHDR;
@@ -232,7 +232,7 @@ void
 PositionPageClass::OnDeltaPosXRotSpin
 (
 	NMHDR* pNMHDR,
-	LRESULT* pResult
+	intptr_t* pResult
 ) 
 {
 	NM_UPDOWN* pNMUpDown = (NM_UPDOWN*)pNMHDR;
@@ -256,7 +256,7 @@ void
 PositionPageClass::OnDeltaPosYPosSpin
 (
 	NMHDR* pNMHDR,
-	LRESULT* pResult
+	intptr_t* pResult
 ) 
 {
 	NM_UPDOWN* pNMUpDown = (NM_UPDOWN*)pNMHDR;
@@ -280,7 +280,7 @@ void
 PositionPageClass::OnDeltaPosYRotSpin
 (
 	NMHDR* pNMHDR,
-	LRESULT* pResult
+	intptr_t* pResult
 ) 
 {
 	NM_UPDOWN* pNMUpDown = (NM_UPDOWN*)pNMHDR;
@@ -304,7 +304,7 @@ void
 PositionPageClass::OnDeltaPosZPosSpin
 (
 	NMHDR* pNMHDR,
-	LRESULT* pResult
+	intptr_t* pResult
 ) 
 {
 	NM_UPDOWN* pNMUpDown = (NM_UPDOWN*)pNMHDR;
@@ -328,7 +328,7 @@ void
 PositionPageClass::OnDeltaPosZRotSpin
 (
 	NMHDR* pNMHDR,
-	LRESULT* pResult
+	intptr_t* pResult
 ) 
 {
 	NM_UPDOWN* pNMUpDown = (NM_UPDOWN*)pNMHDR;

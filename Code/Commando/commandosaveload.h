@@ -37,6 +37,8 @@
 #ifndef	COMMANDOSAVELOAD_H
 #define	COMMANDOSAVELOAD_H
 
+#include <cstdint>
+
 #ifndef	ALWAYS_H
 	#include "always.h"
 #endif
@@ -58,7 +60,7 @@ public:
 	CommandoSaveLoadClass(void) {}
 	virtual ~CommandoSaveLoadClass(void) {}
 
-	virtual uint32	Chunk_ID (void) const { return CHUNKID_COMMANDO; }
+	virtual uint32_t	Chunk_ID (void) const { return CHUNKID_COMMANDO; }
 
 protected:
 	virtual bool	Save( ChunkSaveClass &csave );

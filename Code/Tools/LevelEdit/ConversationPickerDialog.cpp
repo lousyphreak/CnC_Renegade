@@ -85,7 +85,7 @@ void
 ConversationPickerDialogClass::OnSelchangedConversationTree
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 )
 {
 	NM_TREEVIEW *pNMTreeView = (NM_TREEVIEW *)pNMHDR;
@@ -114,7 +114,7 @@ ConversationPickerDialogClass::OnSelchangedConversationTree
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 ConversationPickerDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -190,7 +190,7 @@ ConversationPickerDialogClass::Insert_Entry (ConversationClass *conversation)
 		//
 		//	Associate the conversation with the entry in the tree
 		//
-		m_TreeCtrl.SetItemData (tree_item, (DWORD)conversation);
+		m_TreeCtrl.SetItemData (tree_item, (uint32_t)conversation);
 		m_TreeCtrl.SortChildren (parent_item);
 
 		//

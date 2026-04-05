@@ -112,7 +112,7 @@ void FinalDialogClass::On_Init_Dialog (void)
  * HISTORY:                                                                                    *
  *   08/22/01    IML : Created.                                                                * 
  *=============================================================================================*/
-void FinalDialogClass::On_Command (int ctrl_id, int message_id, DWORD param)
+void FinalDialogClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 {
 	static bool _disabled = false;
 

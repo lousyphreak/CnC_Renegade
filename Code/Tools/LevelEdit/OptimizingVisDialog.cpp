@@ -38,7 +38,7 @@ static char THIS_FILE[] = __FILE__;
 //////////////////////////////////////////////////////////////////////////
 //	Local Prototypes
 //////////////////////////////////////////////////////////////////////////
-static UINT fnOptimizeVisDialogThread (DWORD dwparam1, DWORD dwparam2, DWORD, HRESULT *, HWND *);
+static uint32_t fnOptimizeVisDialogThread (uint32_t dwparam1, uint32_t dwparam2, uint32_t, int32_t *, HWND *);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -87,7 +87,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 OptimizingVisDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -118,12 +118,12 @@ OptimizingVisDialogClass::OnCancel (void)
 // WindowProc
 //
 /////////////////////////////////////////////////////////////////////////////
-LRESULT
+intptr_t
 OptimizingVisDialogClass::WindowProc
 (
-	UINT		message,
-	WPARAM	wParam,
-	LPARAM	lParam
+	uint32_t		message,
+	uintptr_t	wParam,
+	intptr_t	lParam
 )
 {
 	if (message == WM_TIMER) {
@@ -212,7 +212,7 @@ OptimizingVisDialogClass::Optimize (void)
 	//
 	//	Create the dialog on a separate thread
 	//
-	::Create_UI_Thread (fnOptimizeVisDialogThread, 0, (DWORD)&dialog, 0, NULL, NULL);
+	::Create_UI_Thread (fnOptimizeVisDialogThread, 0, (uint32_t)&dialog, 0, NULL, NULL);
 	dialog->Set_Status_Object (&stats);
 
 	//
@@ -239,13 +239,13 @@ OptimizingVisDialogClass::Optimize (void)
 // fnOptimizeVisDialogThread
 //
 ////////////////////////////////////////////////////////////////////////////
-UINT
+uint32_t
 fnOptimizeVisDialogThread
 (
-	DWORD dwparam1,
-	DWORD dwparam2,
-	DWORD /*dwparam3*/,
-	HRESULT* /*presult*/,
+	uint32_t dwparam1,
+	uint32_t dwparam2,
+	uint32_t /*dwparam3*/,
+	int32_t* /*presult*/,
 	HWND* /*phmain_wnd*/
 )
 {

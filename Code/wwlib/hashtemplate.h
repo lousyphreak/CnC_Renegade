@@ -37,6 +37,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef HASH_TEMPLATE_H
 #include <cstring>
 #define HASH_TEMPLATE_H
@@ -49,22 +51,22 @@
 template <class Key> class HashTemplateKeyClass
 {
 public:
-	static inline unsigned int Get_Hash_Value (const Key& k);
+	static inline uint32_t Get_Hash_Value (const Key& k);
 };
 
-// Default hash function for data types that can be cast into an unsigned int
-template <class Key> inline unsigned int HashTemplateKeyClass<Key>::Get_Hash_Value (const Key& k)
+// Default hash function for data types that can be cast into an uint32_t
+template <class Key> inline uint32_t HashTemplateKeyClass<Key>::Get_Hash_Value (const Key& k)
 { 
-	unsigned int hval = *((const unsigned int*)(&k));
+	uint32_t hval = *((const uint32_t*)(&k));
 	hval = hval + (hval>>5) + (hval>>10) + (hval >> 20);
 	return hval;
 }
 
 // Specialization for floating point hash values (as the default dword-
 // casting yields a very bad hash function)
-template <> inline unsigned int HashTemplateKeyClass<float>::Get_Hash_Value (const float& s)
+template <> inline uint32_t HashTemplateKeyClass<float>::Get_Hash_Value (const float& s)
 {
-	unsigned int z = *((const unsigned int*)(&s));
+	uint32_t z = *((const uint32_t*)(&s));
 	return ((z>>22)+(z>>12)+(z));
 }
 
@@ -92,7 +94,7 @@ public:
 	bool Exists(const KeyType& s) const;
 	bool Exists(const KeyType& s, const ValueType& d) const;
 	void Remove_All(void);
-	unsigned int Get_Size(void) const;
+	uint32_t Get_Size(void) const;
 
 	int* Get_Hash() { return Hash; }
 	Entry* Get_Table() { return Table; }
@@ -100,7 +102,7 @@ public:
 private:
 	HashTemplateClass (const HashTemplateClass&);	// not allowed
 	HashTemplateClass& operator= (const HashTemplateClass&);	// not allowed
-	static unsigned int Get_Hash_Val(const KeyType& s, const unsigned int hash_array_size);
+	static uint32_t Get_Hash_Val(const KeyType& s, const uint32_t hash_array_size);
 	void Re_Hash(void);
 
 	int Alloc_Entry(void);
@@ -115,7 +117,7 @@ private:
 	int* Hash;							// hash pointers
 	Entry* Table;						// allocation table
 	int First;							// handle of first free entry
-	unsigned int Size;				// size of hash table
+	uint32_t Size;				// size of hash table
 };
 
 template <class KeyType, class ValueType>
@@ -180,21 +182,21 @@ template <class KeyType, class ValueType> inline void HashTemplateClass<KeyType,
 {
 	int h;
 	h				= Alloc_Entry();
-	unsigned int hval	= Get_Hash_Val(s,Size);
+	uint32_t hval	= Get_Hash_Val(s,Size);
 	Table[h].Key	= s;
 	Table[h].Value	= d;
 	Table[h].Next	= Hash[hval];
 	Hash[hval]		= h;
 }
 
-template <class KeyType, class ValueType> inline unsigned int HashTemplateClass<KeyType,ValueType>::Get_Size (void) const
+template <class KeyType, class ValueType> inline uint32_t HashTemplateClass<KeyType,ValueType>::Get_Size (void) const
 {
 	return Size;
 }
 
 template <class KeyType, class ValueType> inline void HashTemplateClass<KeyType,ValueType>::Remove_All (void)
 {
-	for (unsigned int i = 0; i < Size; i++)
+	for (uint32_t i = 0; i < Size; i++)
 	{
 		int f = Hash[i];
 		if (f!=NIL)
@@ -212,7 +214,7 @@ template <class KeyType, class ValueType> inline void HashTemplateClass<KeyType,
 template <class KeyType, class ValueType> inline void HashTemplateClass<KeyType,ValueType>::Remove	(const KeyType& s)
 {
 	if (!Hash) return;
-	unsigned int hval = Get_Hash_Val(s,Size);
+	uint32_t hval = Get_Hash_Val(s,Size);
 	int  prev = NIL;
 	int	h	 = Hash[hval];
 
@@ -236,7 +238,7 @@ template <class KeyType, class ValueType> inline void HashTemplateClass<KeyType,
 template <class KeyType, class ValueType> inline void HashTemplateClass<KeyType,ValueType>::Remove (const KeyType& s, const ValueType& d)
 {
 	if (!Hash) return;
-	unsigned int hval = Get_Hash_Val(s,Size);
+	uint32_t hval = Get_Hash_Val(s,Size);
 	int  prev = NIL;
 	int	h	 = Hash[hval];
 
@@ -332,14 +334,14 @@ template <class KeyType, class ValueType> inline bool HashTemplateClass<KeyType,
 	return false;
 }
 
-template <class KeyType, class ValueType> inline unsigned int HashTemplateClass<KeyType,ValueType>::Get_Hash_Val(const KeyType& s, const unsigned int hash_array_size)
+template <class KeyType, class ValueType> inline uint32_t HashTemplateClass<KeyType,ValueType>::Get_Hash_Val(const KeyType& s, const uint32_t hash_array_size)
 {
 	return HashTemplateKeyClass<KeyType>::Get_Hash_Value (s) & (hash_array_size-1);
 }
 
 template <class KeyType, class ValueType> inline void HashTemplateClass<KeyType,ValueType>::Re_Hash()
 {
-	unsigned int new_size = Size*2;
+	uint32_t new_size = Size*2;
 	if (new_size < 4)
 		new_size = 4;
 
@@ -362,7 +364,7 @@ template <class KeyType, class ValueType> inline void HashTemplateClass<KeyType,
 			int	h = Hash[i];
 			while (h != NIL)
 			{
-				unsigned int hVal		= Get_Hash_Val(Table[h].Key, new_size);
+				uint32_t hVal		= Get_Hash_Val(Table[h].Key, new_size);
 				new_table[cnt].Key	= Table[h].Key;
 				new_table[cnt].Value = Table[h].Value;
 				new_table[cnt].Next	= new_hash[hVal];
@@ -411,18 +413,18 @@ template <class KeyType, class ValueType> inline HashTemplateClass<KeyType,Value
 // for filenames, so it takes into account the four characters that come before
 // the file extension (.xxx - extension expected to be 4 characters).
 
-template <> inline unsigned int HashTemplateKeyClass<StringClass>::Get_Hash_Value(const StringClass& s)
+template <> inline uint32_t HashTemplateKeyClass<StringClass>::Get_Hash_Value(const StringClass& s)
 {
-	unsigned int len=s.Get_Length();
-	unsigned char* buffer=(unsigned char*)s.Peek_Buffer();
+	uint32_t len=s.Get_Length();
+	uint8_t* buffer=(uint8_t*)s.Peek_Buffer();
 	if (len<8) {
-		unsigned int hval=0;
-		for (unsigned int a=0;a<len;++a) {
+		uint32_t hval=0;
+		for (uint32_t a=0;a<len;++a) {
 			hval+=37*hval+buffer[a];
 		}
 		return hval;
 	}
-	unsigned int hval = 0;
+	uint32_t hval = 0;
 	std::memcpy(&hval, buffer + len - 8, sizeof(hval));
 	hval = hval + (hval>>5) + (hval>>10) + (hval >> 20);
 	return hval;

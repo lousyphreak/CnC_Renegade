@@ -39,6 +39,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef BUILDINGAGGREGATE_H
@@ -107,7 +109,7 @@ class BuildingAggregateDefClass : public StaticAnimPhysDefClass
 public:
 	BuildingAggregateDefClass(void);
 	
-	virtual uint32								Get_Class_ID( void ) const;
+	virtual uint32_t								Get_Class_ID( void ) const;
 	virtual const char *						Get_Type_Name(void)				{ return "BuildingAggregateDef"; }
 	virtual bool								Is_Type(const char *);
 	virtual PersistClass *					Create( void ) const ;

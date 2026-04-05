@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "vector3.h"
 #include "vector4.h"
 #include "../compat/dx8vertexbuffer.h"
@@ -89,7 +91,7 @@ struct IDirect3DSurface8;
 #define D3DTSS_BUMPENVMAT11 10
 #endif
 
-using D3DTRANSFORMSTATETYPE = int;
+using D3DTRANSFORMSTATETYPE = int32_t;
 
 #ifndef MAX_TEXTURE_STAGES
 #define MAX_TEXTURE_STAGES 2
@@ -212,10 +214,10 @@ public:
 	{
 	}
 
-	static void Set_Alpha(const float alpha, unsigned int & color)
+	static void Set_Alpha(const float alpha, uint32_t & color)
 	{
-		unsigned char * component = reinterpret_cast<unsigned char *>(&color);
-		component[3] = static_cast<unsigned char>(255.0f * alpha);
+		uint8_t * component = reinterpret_cast<uint8_t *>(&color);
+		component[3] = static_cast<uint8_t>(255.0f * alpha);
 	}
 
 	static void Set_World_Identity()
@@ -292,7 +294,7 @@ public:
 	{
 	}
 
-	static Vector4 Convert_Color(unsigned int color)
+	static Vector4 Convert_Color(uint32_t color)
 	{
 		const float inv = 1.0f / 255.0f;
 		return Vector4(
@@ -302,11 +304,11 @@ public:
 			static_cast<float>((color >> 24) & 0xFF) * inv);
 	}
 
-	static unsigned int Convert_Color(const Vector4 &color)
+	static uint32_t Convert_Color(const Vector4 &color)
 	{
-		auto clamp = [](float value) -> unsigned long {
+		auto clamp = [](float value) -> uint32_t {
 			const float scaled = value < 0.0f ? 0.0f : (value > 1.0f ? 255.0f : value * 255.0f);
-			return static_cast<unsigned long>(scaled + 0.5f);
+			return static_cast<uint32_t>(scaled + 0.5f);
 		};
 
 		return (clamp(color.W) << 24) |
@@ -315,7 +317,7 @@ public:
 			clamp(color.Z);
 	}
 
-	static unsigned int Convert_Color(const Vector3 &color, float alpha)
+	static uint32_t Convert_Color(const Vector3 &color, float alpha)
 	{
 		return Convert_Color(Vector4(color.X, color.Y, color.Z, alpha));
 	}

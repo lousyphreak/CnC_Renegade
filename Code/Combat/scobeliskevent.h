@@ -37,6 +37,8 @@
 #ifndef __SCOBELISKEVENT_H__
 #define __SCOBELISKEVENT_H__
 
+#include <cstdint>
+
 #include "networkobject.h"
 #include "netclassids.h"
 #include "vector3.h"
@@ -55,7 +57,7 @@ public:
 
 	virtual void			Export_Creation(BitStreamClass &packet);
 	virtual void			Import_Creation(BitStreamClass &packet);
-	virtual uint32			Get_Network_Class_ID(void) const				{return NETCLASSID_SCOBELISKEVENT;}
+	virtual uint32_t			Get_Network_Class_ID(void) const				{return NETCLASSID_SCOBELISKEVENT;}
 
 private:
 

@@ -113,7 +113,7 @@ EmitterFramePropPageClass::Initialize (void)
 		m_MaxFrame = WWMath::Max(m_Frames.Start,1.0f);
 		m_MinFrame = WWMath::Min(m_Frames.Start,0.0f);
 
-		for (UINT index = 0; index < m_Frames.NumKeyFrames; index ++) {
+		for (uint32_t index = 0; index < m_Frames.NumKeyFrames; index ++) {
 			if (m_Frames.Values[index] > m_MaxFrame) {
 				m_MaxFrame = m_Frames.Values[index];
 			}
@@ -133,7 +133,7 @@ EmitterFramePropPageClass::Initialize (void)
 //  OnInitDialog
 //
 /////////////////////////////////////////////////////////////
-BOOL 
+int32_t 
 EmitterFramePropPageClass::OnInitDialog() 
 {
 	CPropertyPage::OnInitDialog();
@@ -174,7 +174,7 @@ EmitterFramePropPageClass::OnInitDialog()
 	//
 	// Load the current set of frame keyframes into the control
 	//
-	for (UINT index = 0; index < m_Frames.NumKeyFrames; index ++) {
+	for (uint32_t index = 0; index < m_Frames.NumKeyFrames; index ++) {
 		m_FrameBar->Modify_Point (index + 1,
 										m_Frames.KeyTimes[index] / m_Lifetime,
 										0,
@@ -193,7 +193,7 @@ EmitterFramePropPageClass::OnInitDialog()
 //  OnApply
 //
 /////////////////////////////////////////////////////////////
-BOOL EmitterFramePropPageClass::OnApply() 
+int32_t EmitterFramePropPageClass::OnApply() 
 {
 	return CPropertyPage::OnApply();
 }
@@ -205,7 +205,7 @@ BOOL EmitterFramePropPageClass::OnApply()
 //  OnNotify
 //
 /////////////////////////////////////////////////////////////
-BOOL EmitterFramePropPageClass::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult) 
+int32_t EmitterFramePropPageClass::OnNotify(uintptr_t wParam, intptr_t lParam, intptr_t* pResult) 
 {
 	CBR_NMHDR *color_bar_hdr = (CBR_NMHDR *)lParam;
 
@@ -360,8 +360,8 @@ EmitterFramePropPageClass::Update_Frames (void)
 //  OnCommand
 //
 /////////////////////////////////////////////////////////////
-BOOL 
-EmitterFramePropPageClass::OnCommand(WPARAM wParam, LPARAM lParam) 
+int32_t 
+EmitterFramePropPageClass::OnCommand(uintptr_t wParam, intptr_t lParam) 
 {
 	switch (LOWORD (wParam))
 	{
@@ -371,7 +371,7 @@ EmitterFramePropPageClass::OnCommand(WPARAM wParam, LPARAM lParam)
 			if ((HIWORD (wParam) == EN_KILLFOCUS) &&
 				SendDlgItemMessage (LOWORD (wParam), EM_GETMODIFY)) 
 			{
-				SendDlgItemMessage (LOWORD (wParam), EM_SETMODIFY, (WPARAM)0);
+				SendDlgItemMessage (LOWORD (wParam), EM_SETMODIFY, (uintptr_t)0);
 				m_Frames.Rand = ::GetDlgItemFloat (m_hWnd, IDC_FRAME_RANDOM_EDIT);
 				m_pEmitterList->Set_Frame_Keyframes (m_Frames);
 				SetModified ();
@@ -405,7 +405,7 @@ EmitterFramePropPageClass::On_Lifetime_Changed (float lifetime)
 		//
 		//	Rescale the sizes
 		//
-		for (UINT index = 0; index < m_Frames.NumKeyFrames; index ++) {
+		for (uint32_t index = 0; index < m_Frames.NumKeyFrames; index ++) {
 			m_Frames.KeyTimes[index] *= conversion;
 		}
 

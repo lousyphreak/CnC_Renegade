@@ -72,10 +72,10 @@ void RenegadeGameRes::setMapName(const char* val)
 }
 
 
-void RenegadeGameRes::addPlayer(const char* login, double score, long unsigned int clan_id,
-								long unsigned int duration, long unsigned int ip, 
-								long unsigned int deaths, long unsigned int kills, 
-								long unsigned int selfkills, long unsigned int damagepoints)
+void RenegadeGameRes::addPlayer(const char* login, double score, uint32_t clan_id,
+								uint32_t duration, uint32_t ip, 
+								uint32_t deaths, uint32_t kills, 
+								uint32_t selfkills, uint32_t damagepoints)
 {	
 	char** newstr = _addToArr(_logins, login);
 	delete[] _logins;
@@ -88,9 +88,9 @@ void RenegadeGameRes::addPlayer(const char* login, double score, long unsigned i
 	// accuracy as a 4-byte float.
 	
 	// Expecting a score X such that -0.5 <= X <= 0.5
-	score += 0.5;	// So that it can be stored unsigned
-	long unsigned int convscore = (long unsigned int)(score * GR_SCORE_SCALE);
-	long unsigned int* newlui = _addToArr(_scores, convscore);
+	score += 0.5;	// So that it can be stored as a 32-bit integer.
+	uint32_t convscore = static_cast<uint32_t>(score * GR_SCORE_SCALE);
+	uint32_t* newlui = _addToArr(_scores, convscore);
 	delete[] _scores;
 	_scores = newlui;
 
@@ -134,7 +134,7 @@ int RenegadeGameRes::sendResults()
 	// Build the packet
 	PacketClass rawPacket;
 	rawPacket.Add_Field(GR_GAME_ID, _game_id);
-	rawPacket.Add_Field(GR_PLAYER_COUNT, (long)_player_count);
+	rawPacket.Add_Field(GR_PLAYER_COUNT, static_cast<int32_t>(_player_count));
 	rawPacket.Add_Field(GR_CLAN_GAME, _clan_game);
 	rawPacket.Add_Field(GR_DURATION, _duration);
 	rawPacket.Add_Field(GR_MAP_NAME, _map_name);
@@ -176,9 +176,9 @@ int RenegadeGameRes::sendResults()
 	}
 	int packetsize = 0;
 	void* outPacket = rawPacket.Create_Comms_Packet(packetsize);
-	void* encPacket = PrepareEncryptedPacket((unsigned char*)outPacket, &packetsize);
-	bit8 result = 0;
-	sint32 sendlen = 0;
+	void* encPacket = PrepareEncryptedPacket((uint8_t*)outPacket, &packetsize);
+	int8_t result = 0;
+	int32_t sendlen = 0;
 	
 
 	// If the _host member is not set, then this method is being called in-game
@@ -188,7 +188,7 @@ int RenegadeGameRes::sendResults()
 
 	TCPMgr	tcpMgr;
 	TCPCon*	tcpCon;
-	uint32 handle = -1;
+	uint32_t handle = -1;
 	result = tcpMgr.connect(_host, _port, &handle);
 	if( result == FALSE )
 		sendlen = GR_ERROR_BIND_FAILED;
@@ -199,7 +199,7 @@ int RenegadeGameRes::sendResults()
 			sendlen = GR_ERROR_CONNECT_FAILED;
 		else
 		{
-			sendlen = tcpCon->write((uint8*)encPacket, packetsize, 5);
+			sendlen = tcpCon->write((uint8_t*)encPacket, packetsize, 5);
 			tcpCon->close();
 		}
 	}
@@ -266,16 +266,16 @@ char** RenegadeGameRes::_addToArr(char** arr, const char* item)
 | Takes a pointer to an array and a new item, constructs a new array and returns	|
 | a pointer to it.																	|
 `----------------------------------------------------------------------------------*/
-long unsigned int* RenegadeGameRes::_addToArr(long unsigned int* arr, long unsigned int item)
+uint32_t* RenegadeGameRes::_addToArr(uint32_t* arr, uint32_t item)
 {
-	long unsigned int* newarr = NULL;
+	uint32_t* newarr = NULL;
 
 
 	if( arr == NULL )
 	{
 		// Make a new array
 		assert( _myplayercount == 0 );
-		newarr = new long unsigned int[1];		
+		newarr = new uint32_t[1];		
 		// Add the new item
 		newarr[0] = item;
 	}
@@ -283,7 +283,7 @@ long unsigned int* RenegadeGameRes::_addToArr(long unsigned int* arr, long unsig
 	{
 		// Make a new array and copy all the old stuff over
 		assert( _myplayercount > 0 );
-		newarr = new long unsigned int[_myplayercount+1];
+		newarr = new uint32_t[_myplayercount+1];
 		for(int i = 0; i < _myplayercount; i++)
 			newarr[i] = arr[i];
 		// Add the new item

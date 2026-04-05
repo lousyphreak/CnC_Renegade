@@ -177,7 +177,7 @@ void CPhysTestDoc::Dump(CDumpContext& dc) const
 /////////////////////////////////////////////////////////////////////////////
 // CPhysTestDoc commands
 
-BOOL CPhysTestDoc::OnNewDocument()
+int32_t CPhysTestDoc::OnNewDocument()
 {
 	if (!CDocument::OnNewDocument())
 		return FALSE;
@@ -202,14 +202,14 @@ BOOL CPhysTestDoc::OnNewDocument()
 	return TRUE;
 }
 
-BOOL CPhysTestDoc::OnOpenDocument(LPCTSTR lpszPathName) 
+int32_t CPhysTestDoc::OnOpenDocument(LPCTSTR lpszPathName) 
 {
 	Load_PHY_File(lpszPathName); 
 	Get_Data_View()->Rebuild_Tree();
 	return TRUE;
 }
 
-BOOL CPhysTestDoc::OnSaveDocument(LPCTSTR lpszPathName) 
+int32_t CPhysTestDoc::OnSaveDocument(LPCTSTR lpszPathName) 
 {
 	Save_PHY_File(lpszPathName); 
 	return TRUE;
@@ -231,7 +231,8 @@ void CPhysTestDoc::Load_LEV_File(LPCTSTR lpszPathName)
 	//
 	if (::strrchr (lpszPathName, '\\')) {
 		CString stringTemp = lpszPathName;
-		stringTemp = stringTemp.Left ((long)::strrchr (lpszPathName, '\\') - (long)lpszPathName);
+		const char *path_sep = ::strrchr (lpszPathName, '\\');
+		stringTemp = stringTemp.Left (static_cast<int>(path_sep - lpszPathName));
 		::SetCurrentDirectory (stringTemp);
 		WW3D::Add_Search_Path (stringTemp);
 	}
@@ -402,4 +403,3 @@ int CPhysTestDoc::Get_Physics_Object_Count(void)
 	}
 	return count;
 }
-

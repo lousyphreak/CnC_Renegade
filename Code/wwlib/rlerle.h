@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 /*
 **	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -55,7 +57,7 @@
 **	necessary for clipping purposes. The return value represents the number of transparent
 **	pixels before actual pixel data starts when the RLE uncompression is resumed.
 */
-inline int Skip_Leading_Pixels(unsigned char const * & sptr, int skipper)
+inline int Skip_Leading_Pixels(uint8_t const * & sptr, int skipper)
 {
 	/*
 	**	Skip leading pixels as requested.
@@ -87,7 +89,7 @@ class RLEBlitTransXlat : public RLEBlitter {
 
 		virtual void Blit(void * dest, void const * source, int length, int leadskip=0) const
 		{
-			unsigned char const * sptr = (unsigned char const *)source;
+			uint8_t const * sptr = (uint8_t const *)source;
 			T * dptr = (T *)dest;
 
 			/*
@@ -104,7 +106,7 @@ class RLEBlitTransXlat : public RLEBlitter {
 			**	exhausted.
 			*/
 			while (length > 0) {
-				unsigned char value = *sptr++;
+				uint8_t value = *sptr++;
 				if (value == '\0') {
 					value = *sptr++;
 					length -= value;
@@ -128,11 +130,11 @@ class RLEBlitTransXlat : public RLEBlitter {
 template<class T>
 class RLEBlitTransRemapXlat : public RLEBlitter {
 	public:
-		RLEBlitTransRemapXlat(unsigned char const * remapper, T const * translator) : RemapTable(remapper), TranslateTable(translator) {assert(TranslateTable != NULL);assert(RemapTable != NULL);}
+		RLEBlitTransRemapXlat(uint8_t const * remapper, T const * translator) : RemapTable(remapper), TranslateTable(translator) {assert(TranslateTable != NULL);assert(RemapTable != NULL);}
 
 		virtual void Blit(void * dest, void const * source, int length, int leadskip=0) const
 		{
-			unsigned char const * sptr = (unsigned char const *)source;
+			uint8_t const * sptr = (uint8_t const *)source;
 			T * dptr = (T *)dest;
 
 			/*
@@ -149,7 +151,7 @@ class RLEBlitTransRemapXlat : public RLEBlitter {
 			**	exhausted.
 			*/
 			while (length > 0) {
-				unsigned char value = *sptr++;
+				uint8_t value = *sptr++;
 				if (value == '\0') {
 					value = *sptr++;
 					length -= value;
@@ -162,7 +164,7 @@ class RLEBlitTransRemapXlat : public RLEBlitter {
 		}
 
 	private:
-		unsigned char const * RemapTable;
+		uint8_t const * RemapTable;
 		T const * TranslateTable;
 };
 
@@ -176,12 +178,12 @@ class RLEBlitTransRemapXlat : public RLEBlitter {
 template<class T>
 class RLEBlitTransZRemapXlat : public RLEBlitter {
 	public:
-		RLEBlitTransZRemapXlat(unsigned char const * const * remapper, T const * translator) : RemapTable(remapper), TranslateTable(translator) {assert(TranslateTable != NULL);assert(RemapTable != NULL);}
+		RLEBlitTransZRemapXlat(uint8_t const * const * remapper, T const * translator) : RemapTable(remapper), TranslateTable(translator) {assert(TranslateTable != NULL);assert(RemapTable != NULL);}
 
 		virtual void Blit(void * dest, void const * source, int length, int leadskip=0) const
 		{
-			unsigned char const * sptr = (unsigned char const *)source;
-			unsigned char const * remapper = *RemapTable;
+			uint8_t const * sptr = (uint8_t const *)source;
+			uint8_t const * remapper = *RemapTable;
 			T * dptr = (T *)dest;
 
 			/*
@@ -198,7 +200,7 @@ class RLEBlitTransZRemapXlat : public RLEBlitter {
 			**	exhausted.
 			*/
 			while (length > 0) {
-				unsigned char value = *sptr++;
+				uint8_t value = *sptr++;
 				if (value == '\0') {
 					value = *sptr++;
 					length -= value;
@@ -211,7 +213,7 @@ class RLEBlitTransZRemapXlat : public RLEBlitter {
 		}
 
 	private:
-		unsigned char const * const * RemapTable;
+		uint8_t const * const * RemapTable;
 		T const * TranslateTable;
 };
 
@@ -228,7 +230,7 @@ class RLEBlitTransRemapDest : public RLEBlitter {
 
 		virtual void Blit(void * dest, void const * source, int length, int leadskip=0) const
 		{
-			unsigned char const * sptr = (unsigned char const *)source;
+			uint8_t const * sptr = (uint8_t const *)source;
 			T * dptr = (T *)dest;
 
 			/*
@@ -245,7 +247,7 @@ class RLEBlitTransRemapDest : public RLEBlitter {
 			**	exhausted.
 			*/
 			while (length > 0) {
-				unsigned char value = *sptr++;
+				uint8_t value = *sptr++;
 				if (value == '\0') {
 					value = *sptr++;
 					length -= value;
@@ -276,7 +278,7 @@ class RLEBlitTransDarken : public RLEBlitter {
 
 		virtual void Blit(void * dest, void const * source, int length, int leadskip=0) const
 		{
-			unsigned char const * sptr = (unsigned char const *)source;
+			uint8_t const * sptr = (uint8_t const *)source;
 			T * dptr = (T *)dest;
 
 			/*
@@ -293,7 +295,7 @@ class RLEBlitTransDarken : public RLEBlitter {
 			**	exhausted.
 			*/
 			while (length > 0) {
-				unsigned char value = *sptr++;
+				uint8_t value = *sptr++;
 				if (value == '\0') {
 					value = *sptr++;
 					length -= value;
@@ -323,7 +325,7 @@ class RLEBlitTransLucent50 : public RLEBlitter {
 
 		virtual void Blit(void * dest, void const * source, int length, int leadskip=0) const
 		{
-			unsigned char const * sptr = (unsigned char const *)source;
+			uint8_t const * sptr = (uint8_t const *)source;
 			T * dptr = (T *)dest;
 
 			/*
@@ -340,7 +342,7 @@ class RLEBlitTransLucent50 : public RLEBlitter {
 			**	exhausted.
 			*/
 			while (length > 0) {
-				unsigned char value = *sptr++;
+				uint8_t value = *sptr++;
 				if (value == '\0') {
 					value = *sptr++;
 					length -= value;
@@ -370,7 +372,7 @@ class RLEBlitTransLucent25 : public RLEBlitter {
 
 		virtual void Blit(void * dest, void const * source, int length, int leadskip=0) const
 		{
-			unsigned char const * sptr = (unsigned char const *)source;
+			uint8_t const * sptr = (uint8_t const *)source;
 			T * dptr = (T *)dest;
 
 			/*
@@ -387,7 +389,7 @@ class RLEBlitTransLucent25 : public RLEBlitter {
 			**	exhausted.
 			*/
 			while (length > 0) {
-				unsigned char value = *sptr++;
+				uint8_t value = *sptr++;
 				if (value == '\0') {
 					value = *sptr++;
 					length -= value;
@@ -419,7 +421,7 @@ class RLEBlitTransLucent75 : public RLEBlitter {
 
 		virtual void Blit(void * dest, void const * source, int length, int leadskip=0) const
 		{
-			unsigned char const * sptr = (unsigned char const *)source;
+			uint8_t const * sptr = (uint8_t const *)source;
 			T * dptr = (T *)dest;
 
 			/*
@@ -436,7 +438,7 @@ class RLEBlitTransLucent75 : public RLEBlitter {
 			**	exhausted.
 			*/
 			while (length > 0) {
-				unsigned char value = *sptr++;
+				uint8_t value = *sptr++;
 				if (value == '\0') {
 					value = *sptr++;
 					length -= value;
@@ -457,10 +459,10 @@ class RLEBlitTransLucent75 : public RLEBlitter {
 
 
 #if defined(_MSC_VER) && defined(_M_IX86) && RENEGADE_WITH_X86_ASM
-void RLEBlitTransZRemapXlat<unsigned short>::Blit(void * dest, void const * source, int len, int leadskip) const
+void RLEBlitTransZRemapXlat<uint16_t>::Blit(void * dest, void const * source, int len, int leadskip) const
 {
-	unsigned char const * remapper = *RemapTable;
-	unsigned short const * transtable = TranslateTable;
+	uint8_t const * remapper = *RemapTable;
+	uint16_t const * transtable = TranslateTable;
 
 	/*
 	**	Set up the working registers for the blit operation.
@@ -541,10 +543,10 @@ fini:;
 }
 
 
-void RLEBlitTransRemapXlat<unsigned short>::Blit(void * dest, void const * source, int len, int leadskip) const
+void RLEBlitTransRemapXlat<uint16_t>::Blit(void * dest, void const * source, int len, int leadskip) const
 {
-	unsigned char const * remapper = RemapTable;
-	unsigned short const * transtable = TranslateTable;
+	uint8_t const * remapper = RemapTable;
+	uint16_t const * transtable = TranslateTable;
 
 	/*
 	**	Set up the working registers for the blit operation.
@@ -625,9 +627,9 @@ fini:;
 }
 
 
-void RLEBlitTransXlat<unsigned short>::Blit(void * dest, void const * source, int len, int leadskip) const
+void RLEBlitTransXlat<uint16_t>::Blit(void * dest, void const * source, int len, int leadskip) const
 {
-	unsigned short const * transtable = TranslateTable;
+	uint16_t const * transtable = TranslateTable;
 
 	/*
 	**	Set up the working registers for the blit operation.

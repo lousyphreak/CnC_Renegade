@@ -88,16 +88,16 @@ END_MESSAGE_MAP()
 bool
 PickerClass::Create_Picker
 (
-	DWORD				style,
+	uint32_t				style,
 	const RECT &	rect,
 	CWnd *			parent,
-	UINT				id
+	uint32_t				id
 )
 {
 	//
 	//	Create the outer window
 	//
-	BOOL success = CreateEx (	WS_EX_CLIENTEDGE,
+	int32_t success = CreateEx (	WS_EX_CLIENTEDGE,
 									  "STATIC",
 									  "",
 									  (style | SS_WHITERECT | WS_CLIPCHILDREN) & (~WS_BORDER),
@@ -118,12 +118,12 @@ PickerClass::Create_Picker
 //	WindowProc
 //
 ///////////////////////////////////////////////////////////
-LRESULT
+intptr_t
 PickerClass::WindowProc
 (
-	UINT		message,
-	WPARAM	wParam,
-	LPARAM	lParam
+	uint32_t		message,
+	uintptr_t	wParam,
+	intptr_t	lParam
 )
 {
 	//
@@ -141,11 +141,11 @@ PickerClass::WindowProc
 		//	Translate the message so the dialog thinks it came from an
 		// edit control
 		//
-		LONG id = ::GetWindowLong (m_hWnd, GWL_ID); 
+		int32_t id = ::GetWindowLong (m_hWnd, GWL_ID); 
 		return ::SendMessage (::GetParent (m_hWnd),
 									 message,
 									 MAKEWPARAM (id & 0xFFFF, HIWORD (wParam)),
-									 (LPARAM)m_hWnd);
+									 (intptr_t)m_hWnd);
 
 	} else if (message == WM_SETFOCUS) {
 		::SetFocus (::GetDlgItem (m_hWnd, EDIT_ID));
@@ -167,7 +167,7 @@ PickerClass::Initialize_Control (void)
 	// Set the font for this control
 	//
 	HFONT hfont = (HFONT)GetParent()->SendMessage (WM_GETFONT);
-	SendMessage (WM_SETFONT, (WPARAM)hfont);
+	SendMessage (WM_SETFONT, (uintptr_t)hfont);
 
 	//
 	//	Determine how tall to make the edit control
@@ -200,7 +200,7 @@ PickerClass::Initialize_Control (void)
 		GetWindowRect (&rect2);
 
 
-	::SendMessage (m_EditCtrl, WM_SETFONT, (WPARAM)hfont, 0L);
+	::SendMessage (m_EditCtrl, WM_SETFONT, (uintptr_t)hfont, 0L);
 	
 	//
 	// Create the picker button
@@ -230,7 +230,7 @@ PickerClass::Initialize_Control (void)
 void
 PickerClass::OnSize
 (
-	UINT	nType,
+	uint32_t	nType,
 	int	cx,
 	int	cy
 )
@@ -240,7 +240,7 @@ PickerClass::OnSize
 	// Set the font for this control
 	//
 	HFONT hfont = (HFONT)GetParent()->SendMessage (WM_GETFONT);
-	SendMessage (WM_SETFONT, (WPARAM)hfont);
+	SendMessage (WM_SETFONT, (uintptr_t)hfont);
 
 	//
 	//	Determine how tall to make the edit control
@@ -287,11 +287,11 @@ PickerClass::OnSize
 //	OnCommand
 //
 ///////////////////////////////////////////////////////////
-BOOL
+int32_t
 PickerClass::OnCommand
 (
-	WPARAM wParam,
-	LPARAM lParam
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	//
@@ -326,7 +326,7 @@ PickerClass::OnDrawItem
 	//
 	// Draw the button frame
 	//
-	UINT type = (pDrawItemStruct->itemState & ODS_SELECTED) ? (DFCS_SCROLLDOWN | DFCS_PUSHED) : DFCS_SCROLLDOWN;
+	uint32_t type = (pDrawItemStruct->itemState & ODS_SELECTED) ? (DFCS_SCROLLDOWN | DFCS_PUSHED) : DFCS_SCROLLDOWN;
 	::DrawFrameControl (pDrawItemStruct->hDC, &rect, DFC_SCROLL, type);
 
 	//
@@ -366,7 +366,7 @@ PickerClass::OnDrawItem
 void
 PickerClass::Set_Read_Only (bool readonly)
 {
-	::SendMessage (m_EditCtrl, EM_SETREADONLY, (WPARAM)readonly, 0L);
+	::SendMessage (m_EditCtrl, EM_SETREADONLY, (uintptr_t)readonly, 0L);
 	return ;
 }
 
@@ -376,7 +376,7 @@ PickerClass::Set_Read_Only (bool readonly)
 //	OnEraseBkgnd
 //
 ///////////////////////////////////////////////////////////
-BOOL
+int32_t
 PickerClass::OnEraseBkgnd (CDC *pDC)
 {
 	CRect rect;

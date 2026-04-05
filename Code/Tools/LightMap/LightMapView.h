@@ -37,6 +37,8 @@
 #ifndef LIGHTMAPVIEW_H
 #define LIGHTMAPVIEW_H
 
+#include <cstdint>
+
 #include <afxcview.h>
 #include "LightMapDoc.h"
 #include "Lightscape.h"
@@ -73,8 +75,8 @@ public:
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(LightMapView)
 	public:
-	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
-	virtual void OnUpdate (CView* pSender, LPARAM lHint, CObject* pHint);
+	virtual int32_t PreCreateWindow(CREATESTRUCT& cs);
+	virtual void OnUpdate (CView* pSender, intptr_t lHint, CObject* pHint);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -96,7 +98,7 @@ protected:
 	afx_msg void OnToolsOptions();
 	afx_msg void OnToolsPacking();
 	afx_msg void OnUpdateToolsPacking(CCmdUI* pCmdUI);
-	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonDown(uint32_t nFlags, CPoint point);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };

@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef RINGOBJ_H
@@ -65,8 +67,8 @@ typedef LERPAnimationChannelClass<Vector2>	RingScaleChannelClass;
 */
 struct W3dRingStruct
 {
-	uint32				Version;						// file format version
-	uint32				Attributes;					// box attributes (above #define's)
+	uint32_t				Version;						// file format version
+	uint32_t				Attributes;					// box attributes (above #define's)
 	char					Name[2*W3D_NAME_LEN];	// name is in the form <containername>.<boxname>
 
 	W3dVectorStruct	Center;						// center of the box
@@ -136,9 +138,9 @@ public:
 	virtual const char		  *Get_Name(void) const;
 	virtual void					Set_Name(const char * name);
 
-	unsigned int					Get_Flags(void) {return Flags;}
-	void								Set_Flags(unsigned int flags) { Flags = flags; }
-	void								Set_Flag(unsigned int flag, bool onoff) { Flags &= (~flag); if (onoff) Flags |= flag; }
+	uint32_t					Get_Flags(void) {return Flags;}
+	void								Set_Flags(uint32_t flags) { Flags = flags; }
+	void								Set_Flag(uint32_t flag, bool onoff) { Flags &= (~flag); if (onoff) Flags |= flag; }
 
 	// Animation access
 	bool								Is_Animating (void)		{ return IsAnimating; }
@@ -244,7 +246,7 @@ protected:
 	Vector2							OuterScale;
 
 	// Flags
-	unsigned int					Flags;
+	uint32_t					Flags;
 
 	VertexMaterialClass	  	  *RingMaterial;
 	ShaderClass					  	RingShader;

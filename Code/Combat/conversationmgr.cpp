@@ -235,7 +235,7 @@ ConversationMgrClass::Reset (void)
 //	Chunk_ID
 //
 ////////////////////////////////////////////////////////////////
-uint32
+uint32_t
 ConversationMgrClass::Chunk_ID (void) const
 {
 	return CHUNKID_CONVERSATION_MGR;

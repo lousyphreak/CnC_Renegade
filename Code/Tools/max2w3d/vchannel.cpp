@@ -74,9 +74,9 @@ static bool table_valid = false;
 
 VectorChannelClass::VectorChannelClass
 (
-	uint32 id,
+	uint32_t id,
 	int maxframes,
-	uint32 flags,
+	uint32_t flags,
 	int vectorlength,
 	float32 * identvect
 ) :
@@ -166,10 +166,10 @@ float * VectorChannelClass::Get_Vector(int frameidx)
 
 bool VectorChannelClass::SaveTimeCoded(ChunkSaveClass & csave, BitChannelClass *binmov)
 {
-	uint32 channelsize  = sizeof(W3dTimeCodedAnimChannelStruct);
-	uint32 packetsize   = (VectorLen * sizeof(float32)) + sizeof(uint32);
+	uint32_t channelsize  = sizeof(W3dTimeCodedAnimChannelStruct);
+	uint32_t packetsize   = (VectorLen * sizeof(float32)) + sizeof(uint32_t);
 	channelsize			 += packetsize * MaxFrames;
-	channelsize			 -= sizeof(uint32);
+	channelsize			 -= sizeof(uint32_t);
 
 	W3dTimeCodedAnimChannelStruct * chn = (W3dTimeCodedAnimChannelStruct *)malloc(channelsize);
 	
@@ -184,11 +184,11 @@ bool VectorChannelClass::SaveTimeCoded(ChunkSaveClass & csave, BitChannelClass *
 	
 	// Fetch Channel Data into new format
 	// tc [data] tc [data] tc [data] .. ...
-	uint32 fidx = 0;
+	uint32_t fidx = 0;
 
 	for (int fcount=0; fcount < MaxFrames; fcount++, fidx += (VectorLen+1) ) {
 		
-		uint32	* pivec;
+		uint32_t	* pivec;
 		float32	* pfvec;
 
 		pivec = 	&chn->Data[ fidx ];
@@ -229,7 +229,7 @@ bool VectorChannelClass::SaveTimeCoded(ChunkSaveClass & csave, BitChannelClass *
 
 	channelsize  = sizeof(W3dTimeCodedAnimChannelStruct);
 	channelsize += packetsize * chn->NumTimeCodes;
-	channelsize -= sizeof(uint32);
+	channelsize -= sizeof(uint32_t);
 
 	float percent = (((float)channelsize) / original_channelsize) * 100.0f;
 	// save
@@ -256,37 +256,37 @@ bool VectorChannelClass::SaveTimeCoded(ChunkSaveClass & csave, BitChannelClass *
 /*
 struct W3dAdaptiveDeltaAnimChannelStruct
 {
-	uint32		NumFrames;			// number of frames of animation
-	uint16		Pivot;				// pivot effected by this channel
-	uint8			VectorLen;			// num Channels
-	uint8			Flags;				// channel type
+	uint32_t		NumFrames;			// number of frames of animation
+	uint16_t		Pivot;				// pivot effected by this channel
+	uint8_t			VectorLen;			// num Channels
+	uint8_t			Flags;				// channel type
 	float			Scale;				// Filter Table Scale
 
-	uint32		Data[1];				// OpCode Data Stream
+	uint32_t		Data[1];				// OpCode Data Stream
 
 };
 */
 
 struct 
 {
-	unsigned	char	filter : 7;
-	unsigned char	flag   : 1;
-	unsigned char	d0		 : 4;
-	unsigned char  d1     : 4;
-	unsigned char	d2		 : 4;
-	unsigned char  d3     : 4;
-	unsigned char	d4		 : 4;
-	unsigned char  d5     : 4;
-	unsigned char	d6		 : 4;
-	unsigned char  d7     : 4;
-	unsigned char	d8		 : 4;
-	unsigned char  d9     : 4;
-	unsigned char	d10	 : 4;
-	unsigned char  d11    : 4;
-	unsigned char	d12	 : 4;
-	unsigned char  d13    : 4;
-	unsigned char	d14	 : 4;
-	unsigned char  d15    : 4;
+	uint8_t	filter : 7;
+	uint8_t	flag   : 1;
+	uint8_t	d0		 : 4;
+	uint8_t  d1     : 4;
+	uint8_t	d2		 : 4;
+	uint8_t  d3     : 4;
+	uint8_t	d4		 : 4;
+	uint8_t  d5     : 4;
+	uint8_t	d6		 : 4;
+	uint8_t  d7     : 4;
+	uint8_t	d8		 : 4;
+	uint8_t  d9     : 4;
+	uint8_t	d10	 : 4;
+	uint8_t  d11    : 4;
+	uint8_t	d12	 : 4;
+	uint8_t  d13    : 4;
+	uint8_t	d14	 : 4;
+	uint8_t  d15    : 4;
 
 } AdaptiveDeltaPacketStruct;
 							 	  
@@ -358,11 +358,11 @@ float VectorChannelClass::test_compress(int filter_index, float scale, float val
 //				scale (filter table scale)
 //				value1 (continue compression from this initial value)
 //				float *indata  // 16 values to compress
-//				unsigned char *pPacket
+//				uint8_t *pPacket
 //
 // output: float error;		// aggregate error for packet
 //                          
-float VectorChannelClass::compress(int filter_index, float scale, float value1, float *indata, unsigned char *pPacket, float *outdata)
+float VectorChannelClass::compress(int filter_index, float scale, float value1, float *indata, uint8_t *pPacket, float *outdata)
 {			
    float error = 0.0f;						
                      
@@ -430,7 +430,7 @@ float VectorChannelClass::compress(int filter_index, float scale, float value1, 
 
 bool VectorChannelClass::SaveAdaptiveDelta(ChunkSaveClass & csave, BitChannelClass *binmov)
 {
-	uint32 channelsize  = sizeof(W3dAdaptiveDeltaAnimChannelStruct);
+	uint32_t channelsize  = sizeof(W3dAdaptiveDeltaAnimChannelStruct);
 	int packetsize   = sizeof(AdaptiveDeltaPacketStruct);
 	int numpackets   = (MaxFrames + 15) / 16;
 	channelsize		 += packetsize * numpackets * VectorLen;
@@ -528,9 +528,9 @@ bool VectorChannelClass::SaveAdaptiveDelta(ChunkSaveClass & csave, BitChannelCla
                
 			// Encode current packet
 
-			unsigned char * pPacket;
+			uint8_t * pPacket;
 
-			pPacket = (unsigned char *) &chn->Data[0];			// beginning of data struct
+			pPacket = (uint8_t *) &chn->Data[0];			// beginning of data struct
 			pPacket+= (VectorLen * sizeof(float));					// skip over initial values
 			pPacket+= (sizeof(AdaptiveDeltaPacketStruct) * VectorLen * ((frame-1)>>4));  // skip up to the appropriate packet
 			pPacket+=  sizeof(AdaptiveDeltaPacketStruct) * vi;	// skip up the appropriate vector index
@@ -623,7 +623,7 @@ bool VectorChannelClass::Save(ChunkSaveClass & csave, BitChannelClass *binmov)
 		}
 
 
-		unsigned int channelsize = sizeof(W3dAnimChannelStruct);
+		uint32_t channelsize = sizeof(W3dAnimChannelStruct);
 		int num_frames = End - Begin + 1;
 		channelsize += VectorLen * sizeof(float32) * (num_frames) - sizeof(float32);
 
@@ -763,20 +763,20 @@ void VectorChannelClass::compute_range(void)
 //
 //  Remove a packet from a W3dTimeCodedAnimChanelStruct
 //
-void VectorChannelClass::remove_packet(W3dTimeCodedAnimChannelStruct * c, uint32 packet_idx)
+void VectorChannelClass::remove_packet(W3dTimeCodedAnimChannelStruct * c, uint32_t packet_idx)
 {												
 	assert( c );
 	assert( c->NumTimeCodes > 1 );
 	
-	uint32 packet_size = c->VectorLen + 1;
-	uint32 packet_len  = packet_size * sizeof(uint32);
+	uint32_t packet_size = c->VectorLen + 1;
+	uint32_t packet_len  = packet_size * sizeof(uint32_t);
   												 
-	uint32 *src, *dst;
+	uint32_t *src, *dst;
   
-	dst = (uint32 *) &c->Data[ packet_size * packet_idx ];
-	src = (uint32 *) &c->Data[ packet_size * (packet_idx + 1) ];
+	dst = (uint32_t *) &c->Data[ packet_size * packet_idx ];
+	src = (uint32_t *) &c->Data[ packet_size * (packet_idx + 1) ];
    									 
-	uint32 copy_length = (c->NumTimeCodes - (packet_idx + 1)) * packet_len;
+	uint32_t copy_length = (c->NumTimeCodes - (packet_idx + 1)) * packet_len;
   
 	if (copy_length)  {
   	
@@ -814,7 +814,7 @@ void VectorChannelClass::compress(W3dTimeCodedAnimChannelStruct * c)
 			
 			while(1) {
 				
-				uint32 idx = find_useless_packet( c, Terr );
+				uint32_t idx = find_useless_packet( c, Terr );
      
 				if (PACKETS_ALL_USEFUL == idx) break;
     
@@ -831,7 +831,7 @@ void VectorChannelClass::compress(W3dTimeCodedAnimChannelStruct * c)
 
 			while(1) {
 				
-				uint32 idx = find_useless_packet( c, Rerr );
+				uint32_t idx = find_useless_packet( c, Rerr );
      
 				if (PACKETS_ALL_USEFUL == idx) break;
     
@@ -846,7 +846,7 @@ void VectorChannelClass::compress(W3dTimeCodedAnimChannelStruct * c)
 			
 			while(1) {
 				
-				uint32 idx = find_useless_packetQ( c, Rerr );
+				uint32_t idx = find_useless_packetQ( c, Rerr );
      
 				if (PACKETS_ALL_USEFUL == idx) break;
     
@@ -881,7 +881,7 @@ void VectorChannelClass::compress(W3dTimeCodedAnimChannelStruct * c)
 
 			pct+=0.5f;
 
-			uint32 maxFrames = pct;
+			uint32_t maxFrames = pct;
 
 			if (maxFrames < 2) maxFrames = 2;
 
@@ -899,7 +899,7 @@ void VectorChannelClass::compress(W3dTimeCodedAnimChannelStruct * c)
 
 					while(maxFrames < c->NumTimeCodes) {
 						
-						uint32 idx = find_least_useful_packet( c );
+						uint32_t idx = find_least_useful_packet( c );
 						if (PACKETS_ALL_USEFUL == idx) break;
 						remove_packet( c, idx );
 					}	
@@ -911,7 +911,7 @@ void VectorChannelClass::compress(W3dTimeCodedAnimChannelStruct * c)
 					
 					while(maxFrames < c->NumTimeCodes) {
 						
-						uint32 idx = find_least_useful_packetQ( c );
+						uint32_t idx = find_least_useful_packetQ( c );
 						if (PACKETS_ALL_USEFUL == idx) break;
 						remove_packet( c, idx );
 					}	
@@ -942,7 +942,7 @@ void VectorChannelClass::compress(W3dTimeCodedAnimChannelStruct * c)
 // interpolate FROM
 //#define W3D_TIMECODED_BINARY_MOVEMENT_FLAG  0x80000000
 //      
-uint32 VectorChannelClass::find_useless_packet(W3dTimeCodedAnimChannelStruct * c, double tolerance)
+uint32_t VectorChannelClass::find_useless_packet(W3dTimeCodedAnimChannelStruct * c, double tolerance)
 {												
 #define MAX_VECTOR_SIZE 8
 static  float32 tempvec[MAX_VECTOR_SIZE];		
@@ -951,26 +951,26 @@ static  float32 tempvec[MAX_VECTOR_SIZE];
   assert( c->NumTimeCodes );	// make sure some packets exist
   assert( c->VectorLen <= MAX_VECTOR_SIZE );
   		 
-  uint32 packet_size = c->VectorLen + 1;
+  uint32_t packet_size = c->VectorLen + 1;
                        
   if (c->NumTimeCodes > 1) {
   	if (c->NumTimeCodes > 2)  {
   						 
   		float32 *pVecSrc, *pVecDst, *pVecOriginal;
-      uint32	*pTcSrc,  *pTcDst,  *pTcOriginal;
+      uint32_t	*pTcSrc,  *pTcDst,  *pTcOriginal;
               
-      for(uint32 try_idx = 0; try_idx < (c->NumTimeCodes - 2); try_idx++)  {
+      for(uint32_t try_idx = 0; try_idx < (c->NumTimeCodes - 2); try_idx++)  {
       	
         // Src Pointers
-        pTcSrc  = (uint32 *) &c->Data[ try_idx * packet_size ];
+        pTcSrc  = (uint32_t *) &c->Data[ try_idx * packet_size ];
         pVecSrc	= (float32 *) pTcSrc+1;
         				 
         // Original Vector we're trying to recreate         
-        pTcOriginal  = (uint32 *) &c->Data[ (try_idx + 1) * packet_size ];
+        pTcOriginal  = (uint32_t *) &c->Data[ (try_idx + 1) * packet_size ];
         pVecOriginal = (float32 *) pTcOriginal+1;
         
         // Dst Pointers
-        pTcDst  = (uint32 *) &c->Data[ (try_idx + 2 ) * packet_size ];
+        pTcDst  = (uint32_t *) &c->Data[ (try_idx + 2 ) * packet_size ];
         pVecDst =	(float32 *) pTcDst+1;	 
         
         // Skip automagically, if binary movement involved		
@@ -989,7 +989,7 @@ static  float32 tempvec[MAX_VECTOR_SIZE];
         float32 tEnd      = *pTcDst; 
         float32 tRatio    = (tRecreate - tStart) / (tEnd - tStart);
         																		
-        for (uint32 idx=0; idx < c->VectorLen; idx++)  {
+        for (uint32_t idx=0; idx < c->VectorLen; idx++)  {
         
         	tempvec[ idx ] = WWMath::Lerp(pVecSrc[idx], pVecDst[idx], tRatio);
           	
@@ -1036,7 +1036,7 @@ static  float32 tempvec[MAX_VECTOR_SIZE];
         
       if ((c->Data[ packet_size ] & W3D_TIMECODED_BINARY_MOVEMENT_FLAG) == 0) {
       	
-	      for(uint32 idx=0; idx < c->VectorLen; idx++) {
+	      for(uint32_t idx=0; idx < c->VectorLen; idx++) {
 	      
 	      	float32 delta;
 	        
@@ -1068,33 +1068,33 @@ static  float32 tempvec[MAX_VECTOR_SIZE];
 // interpolate FROM
 //#define W3D_TIMECODED_BINARY_MOVEMENT_FLAG  0x80000000
 //
-uint32 VectorChannelClass::find_useless_packetQ(W3dTimeCodedAnimChannelStruct * c, double tolerance)
+uint32_t VectorChannelClass::find_useless_packetQ(W3dTimeCodedAnimChannelStruct * c, double tolerance)
 {												
 	
   assert( c );	// make sure pointer exists
   assert( c->NumTimeCodes );	// make sure some packets exist
   assert( c->VectorLen == 4);
   		 
-  uint32 packet_size = c->VectorLen + 1;
+  uint32_t packet_size = c->VectorLen + 1;
                        
   if (c->NumTimeCodes > 1) {
   	if (c->NumTimeCodes > 2)  {
   						 
   		float32 *pVecSrc, *pVecDst, *pVecOrg;
-      uint32	*pTcSrc,  *pTcDst,  *pTcOrg;
+      uint32_t	*pTcSrc,  *pTcDst,  *pTcOrg;
               
-		for(uint32 try_idx = 0; try_idx < (c->NumTimeCodes - 2); try_idx++)  {
+		for(uint32_t try_idx = 0; try_idx < (c->NumTimeCodes - 2); try_idx++)  {
       	
 			// Src Pointers
-			pTcSrc  = (uint32 *) &c->Data[ try_idx * packet_size ];
+			pTcSrc  = (uint32_t *) &c->Data[ try_idx * packet_size ];
 			pVecSrc	= (float32 *) pTcSrc+1;
         				 
 			// Original Vector we're trying to recreate         
-			pTcOrg  = (uint32 *) &c->Data[ (try_idx + 1) * packet_size ];
+			pTcOrg  = (uint32_t *) &c->Data[ (try_idx + 1) * packet_size ];
 			pVecOrg = (float32 *) pTcOrg+1;
         
 			// Dst Pointers
-			pTcDst  = (uint32 *) &c->Data[ (try_idx + 2 ) * packet_size ];
+			pTcDst  = (uint32_t *) &c->Data[ (try_idx + 2 ) * packet_size ];
 			pVecDst = (float32 *) pTcDst+1;	 
         
 			// Sphereical Linear Interpolate between Src, and Dst, to recreate the
@@ -1182,7 +1182,7 @@ uint32 VectorChannelClass::find_useless_packetQ(W3dTimeCodedAnimChannelStruct * 
 // interpolate FROM
 //#define W3D_TIMECODED_BINARY_MOVEMENT_FLAG  0x80000000
 //
-uint32 VectorChannelClass::find_least_useful_packet(W3dTimeCodedAnimChannelStruct *c)
+uint32_t VectorChannelClass::find_least_useful_packet(W3dTimeCodedAnimChannelStruct *c)
 {
 
 static  float32 tempvec[MAX_VECTOR_SIZE];		
@@ -1191,29 +1191,29 @@ static  float32 tempvec[MAX_VECTOR_SIZE];
   assert( c->NumTimeCodes );	// make sure some packets exist
   assert( c->VectorLen <= MAX_VECTOR_SIZE );
   		 
-  uint32 packet_size = c->VectorLen + 1;
+  uint32_t packet_size = c->VectorLen + 1;
   
   double leasterror = 9999999.0f;
-  uint32 ret_idx = PACKETS_ALL_USEFUL;
+  uint32_t ret_idx = PACKETS_ALL_USEFUL;
                        
 	if (c->NumTimeCodes > 1) {
 		if (c->NumTimeCodes > 2)  {
   						 
   			float32 *pVecSrc, *pVecDst, *pVecOriginal;
-			uint32	*pTcSrc,  *pTcDst,  *pTcOriginal;
+			uint32_t	*pTcSrc,  *pTcDst,  *pTcOriginal;
               
-			for(uint32 try_idx = 0; try_idx < (c->NumTimeCodes - 2); try_idx++)  {
+			for(uint32_t try_idx = 0; try_idx < (c->NumTimeCodes - 2); try_idx++)  {
       	
 				// Src Pointers
-				pTcSrc  = (uint32 *) &c->Data[ try_idx * packet_size ];
+				pTcSrc  = (uint32_t *) &c->Data[ try_idx * packet_size ];
 				pVecSrc	= (float32 *) pTcSrc+1;
         				 
 				// Original Vector we're trying to recreate         
-				pTcOriginal  = (uint32 *) &c->Data[ (try_idx + 1) * packet_size ];
+				pTcOriginal  = (uint32_t *) &c->Data[ (try_idx + 1) * packet_size ];
 				pVecOriginal = (float32 *) pTcOriginal+1;
         
 				// Dst Pointers
-				pTcDst  = (uint32 *) &c->Data[ (try_idx + 2 ) * packet_size ];
+				pTcDst  = (uint32_t *) &c->Data[ (try_idx + 2 ) * packet_size ];
 				pVecDst =	(float32 *) pTcDst+1;	 
         		
 	        	// Skip automagically, if binary movement involved		
@@ -1232,7 +1232,7 @@ static  float32 tempvec[MAX_VECTOR_SIZE];
 				float32 tEnd      = *pTcDst; 
 				float32 tRatio    = (tRecreate - tStart) / (tEnd - tStart);
         		 																	
-				for (uint32 idx=0; idx < c->VectorLen; idx++)  {
+				for (uint32_t idx=0; idx < c->VectorLen; idx++)  {
         
         		 tempvec[ idx ] = WWMath::Lerp(pVecSrc[idx], pVecDst[idx], tRatio);
           	 	
@@ -1296,36 +1296,36 @@ static  float32 tempvec[MAX_VECTOR_SIZE];
 // interpolate TOO
 //#define W3D_TIMECODED_BINARY_MOVEMENT_FLAG  0x80000000
 //
-uint32 VectorChannelClass::find_least_useful_packetQ(W3dTimeCodedAnimChannelStruct *c)
+uint32_t VectorChannelClass::find_least_useful_packetQ(W3dTimeCodedAnimChannelStruct *c)
 {
 
   assert( c );	// make sure pointer exists
   assert( c->NumTimeCodes );	// make sure some packets exist
   assert( c->VectorLen == 4);
   		 
-  uint32 packet_size = c->VectorLen + 1;
+  uint32_t packet_size = c->VectorLen + 1;
 
   double leasterror = 9999999.0f;
-  uint32 ret_idx = PACKETS_ALL_USEFUL;
+  uint32_t ret_idx = PACKETS_ALL_USEFUL;
   
   if (c->NumTimeCodes > 1) {
   	if (c->NumTimeCodes > 2)  {
   						 
   		float32 *pVecSrc, *pVecDst, *pVecOrg;
-      uint32	*pTcSrc,  *pTcDst,  *pTcOrg;
+      uint32_t	*pTcSrc,  *pTcDst,  *pTcOrg;
               
-		for(uint32 try_idx = 0; try_idx < (c->NumTimeCodes - 2); try_idx++)  {
+		for(uint32_t try_idx = 0; try_idx < (c->NumTimeCodes - 2); try_idx++)  {
       	
 			// Src Pointers
-			pTcSrc  = (uint32 *) &c->Data[ try_idx * packet_size ];
+			pTcSrc  = (uint32_t *) &c->Data[ try_idx * packet_size ];
 			pVecSrc	= (float32 *) pTcSrc+1;
         				 
 			// Original Vector we're trying to recreate         
-			pTcOrg  = (uint32 *) &c->Data[ (try_idx + 1) * packet_size ];
+			pTcOrg  = (uint32_t *) &c->Data[ (try_idx + 1) * packet_size ];
 			pVecOrg = (float32 *) pTcOrg+1;
         
 			// Dst Pointers
-			pTcDst  = (uint32 *) &c->Data[ (try_idx + 2 ) * packet_size ];
+			pTcDst  = (uint32_t *) &c->Data[ (try_idx + 2 ) * packet_size ];
 			pVecDst = (float32 *) pTcDst+1;	 
         	
 	      // Skip automagically, if binary movement involved		

@@ -32,6 +32,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __EMITTER_INSTANCE_LIST_H
@@ -78,7 +80,7 @@ class EmitterInstanceListClass : public ParticleEmitterDefClass
 
 		virtual void			Set_Velocity (const Vector3 &value);
 		virtual void			Set_Acceleration (const Vector3 &value);
-		virtual void			Set_Burst_Size (unsigned int count);
+		virtual void			Set_Burst_Size (uint32_t count);
 		virtual void			Set_Outward_Vel (float value);
 		virtual void			Set_Vel_Inherit (float value);
 		

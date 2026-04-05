@@ -37,6 +37,8 @@
 #ifndef __ANNOUNCEEVENT_H__
 #define __ANNOUNCEEVENT_H__
 
+#include <cstdint>
+
 #include "netevent.h"
 #include "netclassids.h"
 
@@ -59,7 +61,7 @@ class	CSAnnouncement :
 		virtual void Export_Creation(BitStreamClass& packet);
 		virtual void Import_Creation(BitStreamClass& packet);
 
-		virtual uint32 Get_Network_Class_ID(void) const
+		virtual uint32_t Get_Network_Class_ID(void) const
 			{return NETCLASSID_CSANNOUNCEMENT;}
 
 	protected:
@@ -88,7 +90,7 @@ class	SCAnnouncement :
 		virtual void Export_Creation(BitStreamClass& packet);
 		virtual void Import_Creation(BitStreamClass& packet);
 
-		virtual uint32 Get_Network_Class_ID(void) const
+		virtual uint32_t Get_Network_Class_ID(void) const
 			{return NETCLASSID_SCANNOUNCEMENT;}
 
 	protected:

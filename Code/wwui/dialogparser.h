@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __DIALOG_PARSER_H
@@ -84,7 +86,7 @@ typedef struct _ControlDefinitionStruct
 {
 	int					id;
 	CONTROL_TYPE		type;
-	uint32				style;
+	uint32_t				style;
 	int					x;
 	int					y;
 	int					cx;

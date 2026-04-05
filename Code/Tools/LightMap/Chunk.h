@@ -52,7 +52,7 @@ class ChunkClass : public ChunkHeader
 
 	private:
 
-		char *Data;
+		uint8_t *Data;
 };
 
 

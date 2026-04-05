@@ -21,6 +21,8 @@
 
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 // ColorPickerDialogClass.h : header file
 //
@@ -39,7 +41,7 @@ class ColorPickerDialogClass : public CDialog
 {
 // Construction
 public:
-	ColorPickerDialogClass (int red, int green, int blue, CWnd* pParent = NULL, UINT res_id = ColorPickerDialogClass::IDD);   // standard constructor
+	ColorPickerDialogClass (int red, int green, int blue, CWnd* pParent = NULL, uint32_t res_id = ColorPickerDialogClass::IDD);   // standard constructor
 
 // Dialog Data
 	//{{AFX_DATA(ColorPickerDialogClass)
@@ -55,9 +57,9 @@ public:
 	//{{AFX_VIRTUAL(ColorPickerDialogClass)
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-	virtual BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult);
-	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
-	virtual BOOL OnCommand(WPARAM wParam, LPARAM lParam);
+	virtual int32_t OnNotify(uintptr_t wParam, intptr_t lParam, intptr_t* pResult);
+	virtual intptr_t WindowProc(uint32_t message, uintptr_t wParam, intptr_t lParam);
+	virtual int32_t OnCommand(uintptr_t wParam, intptr_t lParam);
 	virtual void PostNcDestroy();
 	//}}AFX_VIRTUAL
 
@@ -66,7 +68,7 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(ColorPickerDialogClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	afx_msg void OnReset();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
@@ -96,7 +98,7 @@ protected:
 		void					Update_Blue_Bar (void);
 		void					Update_Current_Color_Bar (void);
 		void					Update_Whiteness_Bar (void);
-		void					Update_Color (float red, float green, float blue, DWORD flags = 0xFFFFFFFF);
+		void					Update_Color (float red, float green, float blue, uint32_t flags = 0xFFFFFFFF);
 
 	private:
 		

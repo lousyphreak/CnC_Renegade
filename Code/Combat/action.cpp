@@ -1283,7 +1283,7 @@ Clip_Point (Vector3 *point, const AABoxClass &box)
 				//
 				//	Lookup the physics object we will be interacting with
 				//
-				uint32 mechanism_id	= Path->Get_Action_Mechanism();
+				uint32_t mechanism_id	= Path->Get_Action_Mechanism();
 				StaticPhysClass *mechanism = PhysicsSceneClass::Get_Instance ()->Find_Static_Object( mechanism_id );
 				if (mechanism != NULL) {
 

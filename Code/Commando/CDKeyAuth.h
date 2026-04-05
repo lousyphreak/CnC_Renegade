@@ -19,6 +19,8 @@
 #ifndef _CDKEYAUTH_H_
 #define _CDKEYAUTH_H_
 
+#include <cstdint>
+
 /********
 INCLUDES
 ********/
@@ -38,7 +40,7 @@ protected:
 public:
 	static void GetSerialNum(StringClass &serial);
 	static void DisconnectUser(int localid);
-	static void AuthenticateUser(int localid, ULONG ip, char *challenge, char *authstring);
+	static void AuthenticateUser(int localid, uint32_t ip, char *challenge, char *authstring);
 	static char *GenChallenge(int nchars);
 	static void AuthSerial(const char *challenge, StringClass &resp);
 

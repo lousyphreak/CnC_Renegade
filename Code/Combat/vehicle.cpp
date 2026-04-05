@@ -200,7 +200,7 @@ VehicleGameObjDef::~VehicleGameObjDef( void )
 	Free_Transition_List();
 }
 
-uint32	VehicleGameObjDef::Get_Class_ID (void) const
+uint32_t	VehicleGameObjDef::Get_Class_ID (void) const
 {
 	return CLASSID_GAME_OBJECT_DEF_VEHICLE;
 }

@@ -48,9 +48,9 @@
 #include <SDL3/SDL_timer.h>
 
 
-static inline unsigned long Get_Save_Load_Ticks(void)
+static inline uint32_t Get_Save_Load_Ticks(void)
 {
-	return static_cast<unsigned long>(SDL_GetTicks() & 0xFFFFFFFFu);
+	return static_cast<uint32_t>(SDL_GetTicks() & 0xFFFFFFFFu);
 }
 
 
@@ -113,7 +113,7 @@ bool SaveLoadSystemClass::Load (ChunkLoadClass &cload,bool auto_post_load)
 // Nework update macro for post loader.
 #define UPDATE_NETWORK 											\
 	if (network_callback) {                            \
-		unsigned long time2 = Get_Save_Load_Ticks();    \
+		uint32_t time2 = Get_Save_Load_Ticks();    \
 		if (time2 - time > 20) {                        \
 			network_callback();                          \
 			time = time2;                                \
@@ -122,7 +122,7 @@ bool SaveLoadSystemClass::Load (ChunkLoadClass &cload,bool auto_post_load)
 
 bool SaveLoadSystemClass::Post_Load_Processing (void(*network_callback)(void))
 {
-	unsigned long time = Get_Save_Load_Ticks();
+	uint32_t time = Get_Save_Load_Ticks();
 
 	// Call PostLoad on each PersistClass that wanted post-load
 	PostLoadableClass * obj = PostLoadList.Remove_Head();
@@ -150,7 +150,7 @@ void SaveLoadSystemClass::Unregister_Sub_System (SaveLoadSubSystemClass * sys)
 }
 
 
-SaveLoadSubSystemClass * SaveLoadSystemClass::Find_Sub_System (uint32 chunk_id)
+SaveLoadSubSystemClass * SaveLoadSystemClass::Find_Sub_System (uint32_t chunk_id)
 {
 	// TODO: need a d-s that gives fast searching based on chunk_id!!
 	SaveLoadSubSystemClass * sys;
@@ -174,7 +174,7 @@ void SaveLoadSystemClass::Unregister_Persist_Factory(PersistFactoryClass * facto
 	Unlink_Factory(factory);
 }
 
-PersistFactoryClass * SaveLoadSystemClass::Find_Persist_Factory(uint32 chunk_id)
+PersistFactoryClass * SaveLoadSystemClass::Find_Persist_Factory(uint32_t chunk_id)
 {
 	// TODO: need a d-s that gives fast searching based on chunk_id!!
 	PersistFactoryClass * fact;

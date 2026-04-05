@@ -155,12 +155,12 @@ CameraMgr::~CameraMgr (void)
 //	fnCameraKeyboardHook
 //
 ////////////////////////////////////////////////////////////////////////////
-LRESULT CALLBACK
+intptr_t CALLBACK
 fnCameraKeyboardHook
 (
 	int code,
-	WPARAM wParam,
-	LPARAM lParam
+	uintptr_t wParam,
+	intptr_t lParam
 )
 {
 	// Should we process this message?
@@ -344,8 +344,8 @@ CameraMgr::Auto_Level (void)
 {
 	// Is there a mouse button down?
 	// We don't want to auto-level if the mouse button is down
-	BOOL mouse_down = BOOL(::GetKeyState (VK_LBUTTON) & 0xF000);
-	mouse_down |= BOOL(::GetKeyState (VK_RBUTTON) & 0xF000);
+	int32_t mouse_down = int32_t(::GetKeyState (VK_LBUTTON) & 0xF000);
+	mouse_down |= int32_t(::GetKeyState (VK_RBUTTON) & 0xF000);
 
 	// Should we auto-level the camera?
 	if ((m_AutoLevelPercent <= 1) && (mouse_down == false)) {
@@ -576,9 +576,9 @@ CameraMgr::On_Frame (void)
 				//
 				//	Check for the VIS-Update keypress
 				//
-				static DWORD last_vis_gen = 0;
-				static DWORD last_static_anim_toggle = 0;
-				DWORD current_ticks = ::GetTickCount ();
+				static uint32_t last_vis_gen = 0;
+				static uint32_t last_static_anim_toggle = 0;
+				uint32_t current_ticks = ::GetTickCount ();
 				if ((::GetAsyncKeyState (VK_RETURN) < 0) && (current_ticks - last_vis_gen) > 1000) {
 					Vector3 sample_point	= m_WalkThruObj->Get_Transform ().Get_Translation () + Vector3 (0, 0, 1);
 					::Get_Scene_Editor ()->Record_Vis_Info (m_pCamera->Get_Transform (), sample_point);
@@ -1246,18 +1246,18 @@ CameraMgr::Fly_To_Transform (const Matrix3D &transform)
 void
 CameraMgr::Update_Fly_To (void)
 {
-	const DWORD FLY_TICKS = 5000;
+	const uint32_t FLY_TICKS = 5000;
 	float fly_ticks = (float)FLY_TICKS;
 	
 	if (::GetAsyncKeyState (VK_CONTROL) < 0) {
 		fly_ticks = fly_ticks / m_SpeedModifier;
 	}
 
-	DWORD current_time = ::GetTickCount ();
+	uint32_t current_time = ::GetTickCount ();
 	float spline_time = float(current_time - m_FlyToStartTime) / fly_ticks;
 	spline_time = min (1.0F, spline_time);
 
-	if (m_FlyToStartTime + ((DWORD)fly_ticks) < current_time) {
+	if (m_FlyToStartTime + ((uint32_t)fly_ticks) < current_time) {
 		m_pCamera->Set_Transform (m_FlyToEndTransform);
 		Set_Camera_Mode (MODE_MOVE_PLANE);
 	} else {

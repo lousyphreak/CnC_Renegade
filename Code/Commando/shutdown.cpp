@@ -264,7 +264,7 @@ public:
 
 	void Thread_Function()
 	{
-		DWORD written;
+		uint32_t written;
 		HANDLE file = CreateFile(Filename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
 				FILE_ATTRIBUTE_NORMAL, NULL);
 		if (INVALID_HANDLE_VALUE != file) {
@@ -285,11 +285,11 @@ static void Log_System_Information()
 	}
 
 	char name[MAX_COMPUTERNAME_LENGTH + 1];
-	DWORD size = sizeof(name);
+	uint32_t size = sizeof(name);
 	::GetComputerName(name, &size);
 
 	char user[UNLEN+1];
-	DWORD userlen=sizeof(user);
+	uint32_t userlen=sizeof(user);
 	::GetUserName(user, &userlen);
 
 	StringClass string; // This will be a long string so don't allocate locally!
@@ -323,7 +323,7 @@ static void Log_System_Information()
 	string+=tmp;
 
 	// Write log to network folder
-	DWORD written;
+	uint32_t written;
 	HANDLE file;
 
 #ifdef WWDEBUG

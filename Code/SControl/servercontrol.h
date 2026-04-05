@@ -36,6 +36,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifndef SERVERCONTROL_H
 #define SERVERCONTROL_H
 
@@ -85,7 +87,7 @@ class ServerControlClass
 		/*
 		** Init, shutdown.
 		*/
-		bool Start_Listening(unsigned short port, char *password, const char*(*app_request_callback)(char*), void(*app_response_callback)(char*), bool loopback = false, unsigned long ip = 0);
+		bool Start_Listening(uint16_t port, char *password, const char*(*app_request_callback)(char*), void(*app_response_callback)(char*), bool loopback = false, uint32_t ip = 0);
 		void Stop_Listening(void);
 		void Set_Welcome_Message(char *message);
 
@@ -94,7 +96,7 @@ class ServerControlClass
 		/*
 		** Send/receive etc.
 		*/
-		void Send_Message(char *text, unsigned long ip, unsigned short port);
+		void Send_Message(char *text, uint32_t ip, uint16_t port);
 
 		/*
 		** Service.
@@ -103,12 +105,12 @@ class ServerControlClass
 
 	private:
 
-		void Parse_Message(void *buffer, int len, unsigned long address, unsigned short port);
-		void Add_Remote_Control(unsigned long ip, unsigned short port);
-		void Remove_Remote_Control(unsigned long ip, unsigned short port);
-		bool Is_Authenticated(unsigned long address, unsigned short port);
-		void Reset_Timeout(unsigned long address, unsigned short port);
-		void Respond(const char *message, unsigned long ip, unsigned short port);
+		void Parse_Message(void *buffer, int len, uint32_t address, uint16_t port);
+		void Add_Remote_Control(uint32_t ip, uint16_t port);
+		void Remove_Remote_Control(uint32_t ip, uint16_t port);
+		bool Is_Authenticated(uint32_t address, uint16_t port);
+		void Reset_Timeout(uint32_t address, uint16_t port);
+		void Respond(const char *message, uint32_t ip, uint16_t port);
 
 
 		/*
@@ -135,7 +137,7 @@ class ServerControlClass
 		/*
 		** Port we are bound to.
 		*/
-		unsigned short LocalPort;
+		uint16_t LocalPort;
 
 		/*
 		** Are we listening for control messages?
@@ -161,13 +163,13 @@ class ServerControlClass
 		** Struct to hold info about remote controllers.
 		*/
 		typedef struct tRemoteControlStruct{
-			unsigned short Port;
-			unsigned long IP;
+			uint16_t Port;
+			uint32_t IP;
 			bool Secure;
-			unsigned long Time;
+			uint32_t Time;
 		} RemoteControlStruct;
 
-		RemoteControlStruct *Get_Controller(unsigned long ip, unsigned short port);
+		RemoteControlStruct *Get_Controller(uint32_t ip, uint16_t port);
 
 		/*
 		** List of remote controllers we know about.

@@ -51,10 +51,10 @@ class LightMapApp : public CWinApp
 		// Functions.
 		char  *Working_Path()		  {return (WorkingPath);}
 		char  *Instance_Name()		  {return (InstanceName);}
-		DWORD	 Application_Version() {return (ApplicationVersion);}
+		uint32_t	 Application_Version() {return (ApplicationVersion);}
 
 		static bool			 Explorer_Style();	
-		static DWORD	    File_Dialog_Flags();
+		static uint32_t	    File_Dialog_Flags();
 		
 		static const char *File_Dialog_Filter()
 		{
@@ -78,7 +78,7 @@ class LightMapApp : public CWinApp
 		char  WorkingPath [_MAX_PATH];	// Path of executing application.
 		char  InstanceName [_MAX_PATH];	// Name unique to this instance of the application. 
 
-		DWORD ApplicationVersion;			// Version no. of this application.
+		uint32_t ApplicationVersion;			// Version no. of this application.
 
 // The following is maintained by MFC tools.
 public:
@@ -87,7 +87,7 @@ public:
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(LightMapApp)
 	public:
-	virtual BOOL InitInstance();
+	virtual int32_t InitInstance();
 	//}}AFX_VIRTUAL
 
 // Implementation

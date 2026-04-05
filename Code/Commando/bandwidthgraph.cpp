@@ -257,8 +257,8 @@ cBandwidthGraph::Think
 
 	YPosition += YIncrement;
 
-	DWORD bps = 0;
-	DWORD target_bps = 0;
+	uint32_t bps = 0;
+	uint32_t target_bps = 0;
 
 	//
 	// Client bandwidth

@@ -35,6 +35,8 @@
 #ifndef __WOLGAMEINFO_H__
 #define __WOLGAMEINFO_H__
 
+#include <cstdint>
+
 #include <WWOnline/RefPtr.h>
 
 class cGameData;
@@ -75,10 +77,10 @@ class WOLGameInfo
 
 		void ExportToChannel(const RefPtr<WWOnline::ChannelData>& channel);
 
-		unsigned long Version(void) const
+		uint32_t Version(void) const
 			{return mVersion;};
 
-		unsigned int GameType(void) const
+		uint32_t GameType(void) const
 			{return mGameType;}
 
 		const char* MapName(void) const
@@ -90,19 +92,19 @@ class WOLGameInfo
 		const char* Title(void) const
 			{return mTitle;}
 
-		unsigned int MinPlayers(void) const
+		uint32_t MinPlayers(void) const
 			{return mMinPlayers;}
 
-		unsigned int MaxPlayers(void) const
+		uint32_t MaxPlayers(void) const
 			{return mMaxPlayers;}
 
-		unsigned int NumPlayers(void) const
+		uint32_t NumPlayers(void) const
 			{return mNumPlayers;}
 		
-		unsigned long ClanID1(void) const
+		uint32_t ClanID1(void) const
 			{return mClanID1;}
 
-		unsigned long ClanID2(void) const
+		uint32_t ClanID2(void) const
 			{return mClanID2;}
 		
 		bool IsLaddered(void) const
@@ -145,7 +147,7 @@ class WOLGameInfo
 			{return mPingTime;}
 
 		// Is the clan competing in the game.		
-		bool IsClanCompeting(unsigned long clanID) const;
+		bool IsClanCompeting(uint32_t clanID) const;
 
 		bool IsClanGameOpen(void) const;
 
@@ -160,19 +162,19 @@ class WOLGameInfo
 		bool mIsDataValid;
 		bool mIsMapValid;
 
-		unsigned long mVersion;
-		unsigned int  mGameType;
+		uint32_t mVersion;
+		uint32_t  mGameType;
 
 		char mMapName[MAX_TEXT_LENGTH];
 		char mModName[MAX_TEXT_LENGTH];
 		char mTitle[MAX_TEXT_LENGTH];
 
-		unsigned int mMinPlayers;
-		unsigned int mMaxPlayers;
-		unsigned int mNumPlayers;
+		uint32_t mMinPlayers;
+		uint32_t mMaxPlayers;
+		uint32_t mNumPlayers;
 		
-		unsigned long mClanID1;
-		unsigned long mClanID2;
+		uint32_t mClanID1;
+		uint32_t mClanID2;
 		
 		bool mIsMod;
 		bool mIsLaddered;

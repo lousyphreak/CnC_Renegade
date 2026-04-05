@@ -293,7 +293,7 @@ SceneEditorClass::Create_Node
 (
 	PresetClass *	preset,
 	Matrix3D *		transform,
-	DWORD				node_id,
+	uint32_t				node_id,
 	bool				add_to_scene
 )
 {
@@ -1109,7 +1109,7 @@ SceneEditorClass::On_Frame (void)
 	//	Get the currently 'focussed' process
 	//
 	HWND current_focus_wnd = ::GetFocus ();
-	DWORD process_id = 0;
+	uint32_t process_id = 0;
 	if (current_focus_wnd != NULL) {
 		::GetWindowThreadProcessId (current_focus_wnd, &process_id);
 	}

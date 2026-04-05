@@ -173,7 +173,7 @@ TerrainDefinitionClass::Save_Variables (ChunkSaveClass &csave)
 	//	Write the list of distances to the chunk
 	//
 	for (int index = 0; index < m_DistanceList.Count (); index ++) {
-		uint32 distance = m_DistanceList[index];
+		uint32_t distance = m_DistanceList[index];
 
 		//
 		//	Create a new micro-chunk and write this data out to it.
@@ -210,7 +210,7 @@ TerrainDefinitionClass::Load_Variables (ChunkLoadClass &cload)
 			
 			case VARID_LOD_DIST:
 			{
-				uint32 distance = 0;
+				uint32_t distance = 0;
 				retval &= (cload.Read (&distance, sizeof (distance)) == sizeof (distance));
 				m_DistanceList.Add (distance);
 			}

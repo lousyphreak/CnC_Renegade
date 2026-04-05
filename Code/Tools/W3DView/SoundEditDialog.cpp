@@ -131,7 +131,7 @@ void SoundEditDialogClass::Dump(CDumpContext& dc) const
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 SoundEditDialogClass::OnInitDialog (void)
 {
 	CDialog::OnInitDialog ();
@@ -187,12 +187,12 @@ SoundEditDialogClass::OnInitDialog (void)
 	//
 	// Check the appropriate controls
 	//
-	SendDlgItemMessage (IDC_INFINITE_LOOPS_CHECK,	BM_SETCHECK, (WPARAM)(loop_count == 0));
-	SendDlgItemMessage (IDC_3D_RADIO,					BM_SETCHECK, (WPARAM)is_3d);
-	SendDlgItemMessage (IDC_2D_RADIO,					BM_SETCHECK, (WPARAM)(is_3d == false));
-	SendDlgItemMessage (IDC_MUSIC_RADIO,				BM_SETCHECK, (WPARAM)is_music);
-	SendDlgItemMessage (IDC_SOUNDEFFECT_RADIO,		BM_SETCHECK, (WPARAM)(is_music == false));
-	SendDlgItemMessage (IDC_STOP_WHEN_HIDDEN_CHECK,	BM_SETCHECK, (WPARAM)(stop_on_hide));
+	SendDlgItemMessage (IDC_INFINITE_LOOPS_CHECK,	BM_SETCHECK, (uintptr_t)(loop_count == 0));
+	SendDlgItemMessage (IDC_3D_RADIO,					BM_SETCHECK, (uintptr_t)is_3d);
+	SendDlgItemMessage (IDC_2D_RADIO,					BM_SETCHECK, (uintptr_t)(is_3d == false));
+	SendDlgItemMessage (IDC_MUSIC_RADIO,				BM_SETCHECK, (uintptr_t)is_music);
+	SendDlgItemMessage (IDC_SOUNDEFFECT_RADIO,		BM_SETCHECK, (uintptr_t)(is_music == false));
+	SendDlgItemMessage (IDC_STOP_WHEN_HIDDEN_CHECK,	BM_SETCHECK, (uintptr_t)(stop_on_hide));
 
 	//
 	// Set up the sliders

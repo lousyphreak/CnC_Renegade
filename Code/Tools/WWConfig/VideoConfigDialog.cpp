@@ -123,7 +123,7 @@ END_MESSAGE_MAP()
 //
 //	Modified: 12/06/2001 by	MML	- Retrieving strings from Locomoto file.
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 VideoConfigDialogClass::OnInitDialog (void) 
 {
 	char string [_MAX_PATH];
@@ -229,7 +229,7 @@ VideoConfigDialogClass::OnInitDialog (void)
 	//
 	//	Set the "windowed mode" checkbox
 	//
-	SendDlgItemMessage (IDC_WINDOWED_CHECK, BM_SETCHECK, (WPARAM)CurrentIsWindowed);
+	SendDlgItemMessage (IDC_WINDOWED_CHECK, BM_SETCHECK, (uintptr_t)CurrentIsWindowed);
 
 	//
 	//	Select the first entry for deafult (if necessary)
@@ -399,21 +399,21 @@ VideoConfigDialogClass::Update_Color_Combo (void)
 		//
 		//	Check to see if this string is already in the combobox
 		//
-		int item_index = SendDlgItemMessage (IDC_BITDEPTH_COMBO, CB_FINDSTRINGEXACT, 0, (LPARAM)(LPCTSTR)color_string);
+		int item_index = SendDlgItemMessage (IDC_BITDEPTH_COMBO, CB_FINDSTRINGEXACT, 0, (intptr_t)(LPCTSTR)color_string);
 		if (item_index == CB_ERR) {
 
 			//
 			//	Add this entry to the combobox
 			//
-			int item_index = SendDlgItemMessage (IDC_BITDEPTH_COMBO, CB_ADDSTRING, 0, (LPARAM)(LPCTSTR)color_string);
+			int item_index = SendDlgItemMessage (IDC_BITDEPTH_COMBO, CB_ADDSTRING, 0, (intptr_t)(LPCTSTR)color_string);
 			if (item_index != CB_ERR) {
-				SendDlgItemMessage (IDC_BITDEPTH_COMBO, CB_SETITEMDATA, (WPARAM)item_index, (LPARAM)res_desc.BitDepth);
+				SendDlgItemMessage (IDC_BITDEPTH_COMBO, CB_SETITEMDATA, (uintptr_t)item_index, (intptr_t)res_desc.BitDepth);
 
 				//
 				//	Select this entry if its the current bit depth
 				//
 				if (res_desc.BitDepth == CurrentBitDepth) {
-					SendDlgItemMessage (IDC_BITDEPTH_COMBO, CB_SETCURSEL, (WPARAM)item_index);
+					SendDlgItemMessage (IDC_BITDEPTH_COMBO, CB_SETCURSEL, (uintptr_t)item_index);
 					selected = true;
 				}
 			}
@@ -523,7 +523,7 @@ void
 VideoConfigDialogClass::OnItemchangedDriverList
 (
 	NMHDR *		pNMHDR,
-	LRESULT *	pResult
+	intptr_t *	pResult
 )
 {
 	NM_LISTVIEW* pNMListView = (NM_LISTVIEW*)pNMHDR;
@@ -601,7 +601,7 @@ VideoConfigDialogClass::OnSelchangeBitdepthCombo (void)
 		//
 		//	Update the current bit depth
 		//
-		CurrentBitDepth = SendDlgItemMessage (IDC_BITDEPTH_COMBO, CB_GETITEMDATA, (WPARAM)index);
+		CurrentBitDepth = SendDlgItemMessage (IDC_BITDEPTH_COMBO, CB_GETITEMDATA, (uintptr_t)index);
 		if (CurrentBitDepth <= 0) {
 			CurrentBitDepth = 16;
 		}		
@@ -623,7 +623,7 @@ VideoConfigDialogClass::OnSelchangeBitdepthCombo (void)
 //
 /////////////////////////////////////////////////////////////////////////////
 void
-VideoConfigDialogClass::OnHScroll (UINT nSBCode, UINT nPos, CScrollBar *pScrollBar)
+VideoConfigDialogClass::OnHScroll (uint32_t nSBCode, uint32_t nPos, CScrollBar *pScrollBar)
 {
 	CDialog::OnHScroll (nSBCode, nPos, pScrollBar);
 
@@ -657,12 +657,12 @@ VideoConfigDialogClass::Apply_Changes (void)
 // WindowProc
 //
 /////////////////////////////////////////////////////////////////////////////
-LRESULT
+intptr_t
 VideoConfigDialogClass::WindowProc
 (
-	UINT	message,
-	WPARAM	wParam,
-	LPARAM	lParam
+	uint32_t	message,
+	uintptr_t	wParam,
+	intptr_t	lParam
 )
 {
 	if (message == (WM_USER + 101)) {

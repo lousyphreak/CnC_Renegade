@@ -39,6 +39,8 @@
 #ifndef W3D_FILE_H
 #define W3D_FILE_H
 
+#include <cstdint>
+
 #include "always.h"
 
 #ifndef BITTYPE_H
@@ -226,7 +228,7 @@ enum {
 
 		W3D_CHUNK_MESH_HEADER3,					// New improved mesh header
 		W3D_CHUNK_TRIANGLES,						// New improved triangles chunk
-		W3D_CHUNK_PER_TRI_MATERIALS,			// Multi-Mtl meshes - An array of uint16 material id's
+		W3D_CHUNK_PER_TRI_MATERIALS,			// Multi-Mtl meshes - An array of uint16_t material id's
 
 	W3D_CHUNK_HIERARCHY = 0x100,		// hierarchy tree definition (.WHT file)
 		W3D_CHUNK_HIERARCHY_HEADER,
@@ -262,8 +264,8 @@ enum {
 
 struct W3dChunkHeader
 {
-	uint32		ChunkType;			// Type of chunk (see above enumeration)
-	uint32		ChunkSize;			// Size of the chunk, (not including the chunk header)
+	uint32_t		ChunkType;			// Type of chunk (see above enumeration)
+	uint32_t		ChunkSize;			// Size of the chunk, (not including the chunk header)
 };
 
 
@@ -350,10 +352,10 @@ struct W3dTexCoordStruct
 /////////////////////////////////////////////////////////////////////////////////////////////
 struct W3dRGBStruct
 {
-	uint8			R;
-	uint8			G;
-	uint8			B;
-	uint8			pad;
+	uint8_t			R;
+	uint8_t			G;
+	uint8_t			B;
+	uint8_t			pad;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -364,10 +366,10 @@ struct W3dMaterialStruct
 	char		  	MaterialName[W3D_NAME_LEN];	// name of the material (NULL terminated)
 	char	 		PrimaryName[W3D_NAME_LEN];		// primary texture name (NULL terminated)
 	char	 		SecondaryName[W3D_NAME_LEN];	// secondary texture name (NULL terminated)
-	uint32		RenderFlags;						// Rendering flags
-	uint8	 		Red;									// Rgb colors
-	uint8	 		Green;
-	uint8	 		Blue;
+	uint32_t		RenderFlags;						// Rendering flags
+	uint8_t	 		Red;									// Rgb colors
+	uint8_t	 		Green;
+	uint8_t	 		Blue;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -378,14 +380,14 @@ struct W3dMaterial2Struct
 	char		  	MaterialName[W3D_NAME_LEN];	// name of the material (NULL terminated)
 	char	 		PrimaryName[W3D_NAME_LEN];		// primary texture name (NULL terminated)
 	char	 		SecondaryName[W3D_NAME_LEN];	// secondary texture name (NULL terminated)
-	uint32		RenderFlags;						// Rendering flags
-	uint8	 		Red;									// Rgb colors
-	uint8	 		Green;
-	uint8	 		Blue;
-	uint8			Alpha;								
+	uint32_t		RenderFlags;						// Rendering flags
+	uint8_t	 		Red;									// Rgb colors
+	uint8_t	 		Green;
+	uint8_t	 		Blue;
+	uint8_t			Alpha;								
 
-	uint16		PrimaryNumFrames;					// number of animated frames (if 1, not animated)
-	uint16		SecondaryNumFrames;				// number of animated frames (if 1, not animated)
+	uint16_t		PrimaryNumFrames;					// number of animated frames (if 1, not animated)
+	uint16_t		SecondaryNumFrames;				// number of animated frames (if 1, not animated)
 
 	char			Pad[12];								// expansion room
 };
@@ -446,7 +448,7 @@ struct W3dMaterial2Struct
 /////////////////////////////////////////////////////////////////////////////////////////////
 struct W3dMaterial3Struct
 {
-	uint32					Attributes;					// flags,hints,etc.
+	uint32_t					Attributes;					// flags,hints,etc.
 	
 	W3dRGBStruct			DiffuseColor;				// diffuse color
 	W3dRGBStruct			SpecularColor;				// specular color
@@ -468,8 +470,8 @@ struct W3dMaterial3Struct
 /////////////////////////////////////////////////////////////////////////////////////////////
 struct W3dMap3Struct
 {
-	uint16					MappingType;				// Mapping type, will be one of the above #defines (e.g. W3DMAPPING_UV)
-	uint16					FrameCount;					// Number of frames (1 if not animated)
+	uint16_t					MappingType;				// Mapping type, will be one of the above #defines (e.g. W3DMAPPING_UV)
+	uint16_t					FrameCount;					// Number of frames (1 if not animated)
 	float32					FrameRate;					// Frame rate, frames per second in floating point
 };
 
@@ -479,11 +481,11 @@ struct W3dMap3Struct
 /////////////////////////////////////////////////////////////////////////////////////////////
 struct W3dSurrenderTriStruct
 {
-	uint32					Vindex[3];			// vertex, vert normal, and texture coord indexes (all use same index)
+	uint32_t					Vindex[3];			// vertex, vert normal, and texture coord indexes (all use same index)
 	W3dTexCoordStruct		TexCoord[3];		// texture coordinates	(OBSOLETE!!!)
-	uint32					MaterialIdx; 		// material index
+	uint32_t					MaterialIdx; 		// material index
 	W3dVectorStruct		Normal;		 		// Face normal
-	uint32					Attributes;			// collision flags, sort method, etc
+	uint32_t					Attributes;			// collision flags, sort method, etc
 	W3dRGBStruct			Gouraud[3];			// Pre-set shading values (OBSOLETE!!!)
 };
 
@@ -494,8 +496,8 @@ struct W3dSurrenderTriStruct
 /////////////////////////////////////////////////////////////////////////////////////////////
 struct W3dTriStruct
 {
-	uint32					Vindex[3];			// vertex,vnormal,texcoord,color indices
-	uint32					Attributes;			// attributes bits
+	uint32_t					Vindex[3];			// vertex,vnormal,texcoord,color indices
+	uint32_t					Attributes;			// attributes bits
 	W3dVectorStruct		Normal;				// plane normal
 	float32					Dist;					// plane distance
 };
@@ -523,31 +525,31 @@ struct W3dTriStruct
 /////////////////////////////////////////////////////////////////////////////////////////////
 struct W3dMeshHeaderStruct
 {
-	uint32					Version;							// Currently version 0x100
+	uint32_t					Version;							// Currently version 0x100
 	char						MeshName[W3D_NAME_LEN];		// name of the mesh (Null terminated)
-	uint32					Attributes;
+	uint32_t					Attributes;
 	
 	//
 	// Counts, these can be regarded as an inventory of what is to come in the file.
 	//
-	uint32					NumTris;				// number of triangles (OBSOLETE!)
-	uint32					NumQuads;			// number of quads; (OBSOLETE!)
-	uint32					NumSrTris;			// number of triangles
+	uint32_t					NumTris;				// number of triangles (OBSOLETE!)
+	uint32_t					NumQuads;			// number of quads; (OBSOLETE!)
+	uint32_t					NumSrTris;			// number of triangles
 
-	uint32					NumPovTris;			// (NOT USED)
-	uint32					NumPovQuads;		// (NOT USED)
+	uint32_t					NumPovTris;			// (NOT USED)
+	uint32_t					NumPovQuads;		// (NOT USED)
 	
-	uint32					NumVertices;		// number of unique vertices
-	uint32					NumNormals;			// number of unique normals (OBSOLETE!)
-	uint32					NumSrNormals;		// number of surrender normals (MUST EQUAL NumVertices or 0)
+	uint32_t					NumVertices;		// number of unique vertices
+	uint32_t					NumNormals;			// number of unique normals (OBSOLETE!)
+	uint32_t					NumSrNormals;		// number of surrender normals (MUST EQUAL NumVertices or 0)
 
-	uint32					NumTexCoords;		// number of unique texture coords (MUST EQUAL NumVertices or 0)
-	uint32					NumMaterials;		// number of unique materials needed
+	uint32_t					NumTexCoords;		// number of unique texture coords (MUST EQUAL NumVertices or 0)
+	uint32_t					NumMaterials;		// number of unique materials needed
 
-	uint32					NumVertColors;		// number of vertex colors (MUST EQUAL NumVertices or 0)
-	uint32					NumVertInfluences;// vertex influences(MUST EQUAL NumVertices or 0)
-	uint32					NumDamageStages;	// number of damage offset chunks
-	uint32					FutureCounts[5];	// reserve space for future counts (set to zero).
+	uint32_t					NumVertColors;		// number of vertex colors (MUST EQUAL NumVertices or 0)
+	uint32_t					NumVertInfluences;// vertex influences(MUST EQUAL NumVertices or 0)
+	uint32_t					NumDamageStages;	// number of damage offset chunks
+	uint32_t					FutureCounts[5];	// reserve space for future counts (set to zero).
 
 	//
 	// LOD controls
@@ -581,7 +583,7 @@ struct W3dMeshHeaderStruct
 	//
 	char						HierarchyTreeName[W3D_NAME_LEN];
 	char						HierarchyModelName[W3D_NAME_LEN];
-	uint32					FutureUse[24];		// Reserved for future use
+	uint32_t					FutureUse[24];		// Reserved for future use
 };
 
 
@@ -599,8 +601,8 @@ struct W3dMeshHeaderStruct
 
 struct W3dMeshHeader3Struct
 {
-	uint32					Version;							
-	uint32					Attributes;
+	uint32_t					Version;							
+	uint32_t					Attributes;
 	
 	char						MeshName[W3D_NAME_LEN];		
 	char						HierarchyModelName[W3D_NAME_LEN];
@@ -608,14 +610,14 @@ struct W3dMeshHeader3Struct
 	//
 	// Counts, these can be regarded as an inventory of what is to come in the file.
 	//
-	uint32					NumTris;				// number of triangles
-	uint32					NumVertices;		// number of unique vertices
-	uint32					NumMaterials;		// number of unique materials
-	uint32					NumDamageStages;	// number of damage offset chunks
-	uint32					FutureCounts[3];	// future counts
+	uint32_t					NumTris;				// number of triangles
+	uint32_t					NumVertices;		// number of unique vertices
+	uint32_t					NumMaterials;		// number of unique materials
+	uint32_t					NumDamageStages;	// number of damage offset chunks
+	uint32_t					FutureCounts[3];	// future counts
 
-	uint32					VertexChannels;	// bits for presence of types of per-vertex info
-	uint32					FaceChannels;		// bits for presence of types of per-face info
+	uint32_t					VertexChannels;	// bits for presence of types of per-vertex info
+	uint32_t					FaceChannels;		// bits for presence of types of per-face info
 	
 	//
 	// Bounding volumes
@@ -633,8 +635,8 @@ struct W3dMeshHeader3Struct
 // 
 struct W3dVertInfStruct
 {
-	uint16					BoneIdx;
-	uint8						Pad[6];
+	uint16_t					BoneIdx;
+	uint8_t						Pad[6];
 };
 
 //
@@ -644,22 +646,22 @@ struct W3dVertInfStruct
 //
 struct W3dMeshDamageStruct
 {
-	uint32					NumDamageMaterials;	// number of materials to replace
-	uint32					NumDamageVerts;		// number of vertices to replace
-	uint32					NumDamageColors;		// number of vertex colors to replace
-	uint32					DamageIndex;			// what index is this damage chunk assigned to
-	uint32					FutureUse[4];	
+	uint32_t					NumDamageMaterials;	// number of materials to replace
+	uint32_t					NumDamageVerts;		// number of vertices to replace
+	uint32_t					NumDamageColors;		// number of vertex colors to replace
+	uint32_t					DamageIndex;			// what index is this damage chunk assigned to
+	uint32_t					FutureUse[4];	
 };
 
 struct W3dMeshDamageVertexStruct
 {
-	uint32				VertexIndex;
+	uint32_t				VertexIndex;
 	W3dVectorStruct	NewVertex;
 };
 
 struct W3dMeshDamageColorStruct
 {
-	uint32				VertexIndex;
+	uint32_t				VertexIndex;
 	W3dRGBStruct		NewColor;
 };
 
@@ -699,16 +701,16 @@ struct W3dMeshDamageColorStruct
 
 struct W3dHierarchyStruct
 {
-	uint32					Version;
+	uint32_t					Version;
 	char						Name[W3D_NAME_LEN];	// Name of the hierarchy
-	uint32					NumPivots;				
+	uint32_t					NumPivots;				
 	W3dVectorStruct		Center;					
 };
 
 struct W3dPivotStruct
 {
 	char						Name[W3D_NAME_LEN];	// Name of the node (UR_ARM, LR_LEG, TORSO, etc)
-	uint32					ParentIdx;				// 0xffffffff = root pivot; no parent
+	uint32_t					ParentIdx;				// 0xffffffff = root pivot; no parent
 	W3dVectorStruct		Translation;			// translation to pivot point
 	W3dVectorStruct		EulerAngles;			// orientation of the pivot point
 	W3dQuaternionStruct	Rotation;				// orientation of the pivot point
@@ -733,11 +735,11 @@ struct W3dPivotFixupStruct
 
 struct W3dAnimHeaderStruct
 {
-	uint32					Version;
+	uint32_t					Version;
 	char						Name[W3D_NAME_LEN];				
 	char						HierarchyName[W3D_NAME_LEN];
-	uint32					NumFrames;
-	uint32					FrameRate;
+	uint32_t					NumFrames;
+	uint32_t					FrameRate;
 };
 
 enum 
@@ -753,12 +755,12 @@ enum
 
 struct W3dAnimChannelStruct
 {
-	uint16					FirstFrame;			
-	uint16					LastFrame;			
-	uint16					VectorLen;			// length of each vector in this channel
-	uint16					Flags;				// channel type.
-	uint16					Pivot;				// pivot affected by this channel
-	uint16					pad;
+	uint16_t					FirstFrame;			
+	uint16_t					LastFrame;			
+	uint16_t					VectorLen;			// length of each vector in this channel
+	uint16_t					Flags;				// channel type.
+	uint16_t					Pivot;				// pivot affected by this channel
+	uint16_t					pad;
 	float32					Data[1];				// will be (LastFrame - FirstFrame + 1) * VectorLen long
 };
 
@@ -769,12 +771,12 @@ enum
 
 struct W3dBitChannelStruct
 {
-	uint16					FirstFrame;			// all frames outside "First" and "Last" are assumed = DefaultVal
-	uint16					LastFrame;			
-	uint16					Flags;				// channel type.
-	uint16					Pivot;				// pivot affected by this channel
-	uint8						DefaultVal;			// default state when outside valid range.
-	uint8						Data[1];				// will be (LastFrame - FirstFrame + 1) / 8 long
+	uint16_t					FirstFrame;			// all frames outside "First" and "Last" are assumed = DefaultVal
+	uint16_t					LastFrame;			
+	uint16_t					Flags;				// channel type.
+	uint16_t					Pivot;				// pivot affected by this channel
+	uint8_t						DefaultVal;			// default state when outside valid range.
+	uint8_t						Data[1];				// will be (LastFrame - FirstFrame + 1) / 8 long
 };
 
 /********************************************************************************
@@ -789,31 +791,31 @@ struct W3dBitChannelStruct
 
 struct W3dHModelHeaderStruct
 {
-	uint32					Version;
+	uint32_t					Version;
 	char						Name[W3D_NAME_LEN];				// Name of this connection set (NULL terminated)
 	char						HierarchyName[W3D_NAME_LEN];	// Name of hierarchy associated with these connections (NULL terminated)
-	uint16					NumConnections;				
+	uint16_t					NumConnections;				
 };
 
 struct W3dHModelAuxDataStruct
 {
-	uint32					Attributes;
-	uint32					MeshCount;
-	uint32					CollisionCount;
-	uint32					SkinCount;
-	uint32					ShadowCount;
-	uint32					FutureCounts[7];
+	uint32_t					Attributes;
+	uint32_t					MeshCount;
+	uint32_t					CollisionCount;
+	uint32_t					SkinCount;
+	uint32_t					ShadowCount;
+	uint32_t					FutureCounts[7];
 
 	float32					LODMin;
 	float32					LODMax;
-	uint32					FutureUse[32];	
+	uint32_t					FutureUse[32];	
 };
 
 struct W3dHModelNodeStruct
 {
 	// Note: the full name of the Render object is expected to be: <HModelName>.<RenderObjName>
 	char						RenderObjName[W3D_NAME_LEN];
-	uint16					PivotIdx;
+	uint16_t					PivotIdx;
 };
 
 
@@ -828,9 +830,9 @@ struct W3dHModelNodeStruct
 
 struct W3dLODModelHeaderStruct
 {
-	uint32					Version;
+	uint32_t					Version;
 	char						Name[W3D_NAME_LEN];				// Name of this LOD Model
-	uint16					NumLODs;				
+	uint16_t					NumLODs;				
 };
 
 struct W3dLODStruct 
@@ -851,8 +853,8 @@ struct W3dLODStruct
 
 struct W3dTileMapHeaderStruct
 {
-	uint32				Version;
-	uint32				TileInstanceCount;
+	uint32_t				Version;
+	uint32_t				TileInstanceCount;
 };
 
 #define W3D_TILE_ROTATION_0			0x00
@@ -863,7 +865,7 @@ struct W3dTileMapHeaderStruct
 struct W3dTileInstanceStruct
 {
 	char					RenderObjName[2*W3D_NAME_LEN];
-	uint32				Rotation;
+	uint32_t				Rotation;
 	W3dVectorStruct	Position;
 };
 
@@ -877,8 +879,8 @@ struct W3dTileInstanceStruct
 
 struct W3dTileMapPartitionStruct
 {
-	uint16				Flags;						// type of node, type of plane, flags for presence of children.
-	uint16				InstanceIndex;				// if Type==LEAF, this field will store the tile instance index.
+	uint16_t				Flags;						// type of node, type of plane, flags for presence of children.
+	uint16_t				InstanceIndex;				// if Type==LEAF, this field will store the tile instance index.
 	float32				Dist;							// distance along plane axis.
 	W3dVectorStruct	Min;							// min corner of the bounding box
 	W3dVectorStruct	Max;							// max corner of the bounding box

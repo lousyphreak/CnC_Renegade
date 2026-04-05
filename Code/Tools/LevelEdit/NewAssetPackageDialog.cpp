@@ -74,7 +74,7 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //
 /////////////////////////////////////////////////////////////////////////////
-BOOL
+int32_t
 NewAssetPackageDialogClass::OnInitDialog (void) 
 {
 	CDialog::OnInitDialog ();

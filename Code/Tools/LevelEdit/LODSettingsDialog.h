@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // LODSettingsDialog.h : header file
 //
@@ -32,7 +34,7 @@ class LODSettingsDialogClass : public CDialog
 {
 // Construction
 public:
-	LODSettingsDialogClass (unsigned int distance = 0, CWnd* pParent = NULL);
+	LODSettingsDialogClass (uint32_t distance = 0, CWnd* pParent = NULL);
 
 // Dialog Data
 	//{{AFX_DATA(LODSettingsDialogClass)
@@ -53,7 +55,7 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(LODSettingsDialogClass)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	virtual void OnOK();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
@@ -63,14 +65,14 @@ protected:
 		////////////////////////////////////////////////////////
 		//	Public methods
 		////////////////////////////////////////////////////////
-		unsigned int		Get_Distance (void) const { return m_Distance; }
+		uint32_t		Get_Distance (void) const { return m_Distance; }
 
 	private:
 
 		////////////////////////////////////////////////////////
 		//	Private member data
 		////////////////////////////////////////////////////////
-		unsigned int		m_Distance;
+		uint32_t		m_Distance;
 };
 
 //{{AFX_INSERT_LOCATION}}

@@ -82,7 +82,7 @@
  * HISTORY:                                                                                    *
  *   07/18/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-BooleanVectorClass::BooleanVectorClass(unsigned size, unsigned char * array) :
+BooleanVectorClass::BooleanVectorClass(unsigned size, uint8_t * array) :
 	BitCount(size),
 	Copy(false),
 	LastIndex(-1),
@@ -344,8 +344,8 @@ void BooleanVectorClass::Fixup(int index) const
 		*/
 		if (index != -1) {
 			assert(unsigned(index) < unsigned(BitCount));
-			((unsigned char &)Copy) = (unsigned char)Get_Bit((void*)&BitArray[0], index);
-//			((unsigned char&)Copy) = Get_Bit((void*)&BitArray[0], index);
+			((uint8_t &)Copy) = (uint8_t)Get_Bit((void*)&BitArray[0], index);
+//			((uint8_t&)Copy) = Get_Bit((void*)&BitArray[0], index);
 		}
 
 		((BooleanVectorClass *)this)->LastIndex = index;
@@ -365,7 +365,7 @@ void BooleanVectorClass::Fixup(int index) const
  * HISTORY:                                                                                    *
  *   07/18/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-void BooleanVectorClass::Init(unsigned size, unsigned char * array)
+void BooleanVectorClass::Init(unsigned size, uint8_t * array)
 {
 	Copy = false;
 	LastIndex = -1;

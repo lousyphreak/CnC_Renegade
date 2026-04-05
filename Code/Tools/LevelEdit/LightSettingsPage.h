@@ -21,6 +21,8 @@
 
 #if _MSC_VER > 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER > 1000
 // LightSettingsPage.h : header file
 //
@@ -84,7 +86,7 @@ protected:
 	afx_msg void OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct);
 	afx_msg void OnChangeInnerAttenEdit();
 	afx_msg void OnChangeOuterAttenEdit();
-	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
+	afx_msg void OnHScroll(uint32_t nSBCode, uint32_t nPos, CScrollBar* pScrollBar);
 	afx_msg void OnKillfocusOuterAttenEdit();
 	afx_msg void OnKillfocusInnerAttenEdit();
 	afx_msg void OnAmbientButton();

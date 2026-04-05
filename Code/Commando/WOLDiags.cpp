@@ -44,7 +44,7 @@ using namespace WWOnline;
 
 void ShowWOLVersion(const RefPtr<Session>& session)
 	{
-	unsigned long ver = 0;
+	uint32_t ver = 0;
 	session->GetChatObject()->GetVersion(&ver);
 	ConsoleFunctionClass::Print("WOLAPI V%u.%u\n", (ver >> 16), (ver & 0xFFFF));
 	}
@@ -76,9 +76,9 @@ void ShowTopic(const RefPtr<Session>& session)
 void ShowPingServers(const RefPtr<Session>& session)
 	{
 	const PingServerList& pingServers = session->GetPingServerList();
-	unsigned int count = pingServers.size();
+	uint32_t count = pingServers.size();
 
-	for (unsigned int index = 0; index < count; index++)
+	for (uint32_t index = 0; index < count; index++)
 		{
 		const RefPtr<PingServerData>& ping = pingServers[index];
 		ConsoleFunctionClass::Print("%-18s %-4dms - %s\n",

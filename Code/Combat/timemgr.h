@@ -64,7 +64,7 @@ public:
 	unsigned Get_Slot_Count() const { return SlotCount; }
 	float Get_Step() const { return Step; }
 
-	void Get_Packed_Report(unsigned char* bytes);	// Normalized counts, as bytes
+	void Get_Packed_Report(uint8_t* bytes);	// Normalized counts, as bytes
 	void Get_Report(unsigned* counts);					// Absolute counts
 
 };

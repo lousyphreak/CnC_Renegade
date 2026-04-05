@@ -74,7 +74,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CAnimReportPage message handlers
 
-BOOL CAnimReportPage::OnInitDialog() 
+int32_t CAnimReportPage::OnInitDialog() 
 {
 	CPropertyPage::OnInitDialog();
 	
@@ -201,7 +201,7 @@ void CAnimReportPage::MakeChannelStr (int bone_idx, HAnimClass *hanim, char *cha
 		strcat(channels, "V");
 }
 
-BOOL CAnimReportPage::OnSetActive() 
+int32_t CAnimReportPage::OnSetActive() 
 {
 	// Delete all info in the report view.
 	m_AnimReport.DeleteAllItems();

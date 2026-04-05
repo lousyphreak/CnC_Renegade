@@ -26,7 +26,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-using SOCKET = int;
+using SOCKET = int32_t;
 using SOCKADDR = struct sockaddr;
 using SOCKADDR_IN = struct sockaddr_in;
 using IN_ADDR = struct in_addr;
@@ -36,15 +36,15 @@ using LPSOCKADDR = SOCKADDR *;
 using LPSOCKADDR_IN = SOCKADDR_IN *;
 using LPHOSTENT = HOSTENT *;
 using LPSERVENT = SERVENT *;
-using u_long = unsigned long;
+using ww_u_long = uint32_t;
 
 struct WSADATA {
-    WORD wVersion;
-    WORD wHighVersion;
+    uint16_t wVersion;
+    uint16_t wHighVersion;
     char szDescription[257];
     char szSystemStatus[129];
-    unsigned short iMaxSockets;
-    unsigned short iMaxUdpDg;
+    uint16_t iMaxSockets;
+    uint16_t iMaxUdpDg;
     char * lpVendorInfo;
 };
 
@@ -211,10 +211,10 @@ struct WSADATA {
 #endif
 
 #ifndef MAKEWORD
-#define MAKEWORD(low, high) (static_cast<WORD>((static_cast<BYTE>(low)) | (static_cast<WORD>(static_cast<BYTE>(high)) << 8)))
+#define MAKEWORD(low, high) (static_cast<uint16_t>((static_cast<uint8_t>(low)) | (static_cast<uint16_t>(static_cast<uint8_t>(high)) << 8)))
 #endif
 
-inline int WSAStartup(WORD, WSADATA * data)
+inline int WSAStartup(uint16_t, WSADATA * data)
 {
     if (data != nullptr) {
         std::memset(data, 0, sizeof(WSADATA));
@@ -244,7 +244,7 @@ inline int closesocket(SOCKET socket_handle)
     return ::close(socket_handle);
 }
 
-inline int ioctlsocket(SOCKET socket_handle, long command, u_long * argument)
+inline int ioctlsocket(SOCKET socket_handle, int32_t command, ww_u_long * argument)
 {
     return ::ioctl(socket_handle, command, argument);
 }

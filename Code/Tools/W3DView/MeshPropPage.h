@@ -21,6 +21,8 @@
 
 #if _MSC_VER >= 1000
 #pragma once
+
+#include <cstdint>
 #endif // _MSC_VER >= 1000
 // MeshPropPage.h : header file
 //
@@ -56,7 +58,7 @@ public:
 protected:
 	// Generated message map functions
 	//{{AFX_MSG(CMeshPropPage)
-	virtual BOOL OnInitDialog();
+	virtual int32_t OnInitDialog();
 	afx_msg void OnClose();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()

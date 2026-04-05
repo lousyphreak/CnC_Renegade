@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef _SUBTITLEMANAGER_H_
@@ -66,7 +68,7 @@ public:
 	void Reset(void);
 
 	// Process subtitles
-	bool Process(unsigned long movieTime);
+	bool Process(uint32_t movieTime);
 	void Render();
 
 private:

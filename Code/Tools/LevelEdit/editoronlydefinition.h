@@ -36,6 +36,8 @@
 
 #if defined(_MSC_VER)
 #pragma once
+
+#include <cstdint>
 #endif
 
 #ifndef __EDITORONLYDEFINITION_H
@@ -71,7 +73,7 @@ public:
 	//
 	// Inherited
 	//
-	virtual uint32								Get_Class_ID (void) const { return CLASSID_EDITOR_ONLY_OBJECTS; }
+	virtual uint32_t								Get_Class_ID (void) const { return CLASSID_EDITOR_ONLY_OBJECTS; }
 	virtual const PersistFactoryClass &	Get_Factory (void) const;
 	virtual bool								Save (ChunkSaveClass &csave);
 	virtual bool								Load (ChunkLoadClass &cload);

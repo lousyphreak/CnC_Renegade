@@ -71,12 +71,12 @@ bool RecalculatePingProfile(const RefPtr<Session>& session)
 		const PingServerList& pingers = session->GetPingServerList();
 
 		// The ping profile holds up to eight pings.
-		unsigned int count = min<unsigned int>(8, pingers.size());
+		uint32_t count = min<uint32_t>(8, pingers.size());
 
 		// If there aren't any ping servers then fail.
 		if (count > 0)
 			{
-			for (unsigned int index = 0; index < count; index++)
+			for (uint32_t index = 0; index < count; index++)
 				{
 				int pingTime = pingers[index]->GetPingTime();
 
@@ -90,7 +90,7 @@ bool RecalculatePingProfile(const RefPtr<Session>& session)
 				pingTime = min<int>(pingTime, 1000);
 
 				// Scale ping time to from 0-1000 to 0-255
-				gPingProfile.Pings[index] = (((unsigned long)pingTime * 255) / 1000);
+				gPingProfile.Pings[index] = (((uint32_t)pingTime * 255) / 1000);
 				}
 
 			return true;
@@ -140,17 +140,17 @@ const PingProfile& GetLocalPingProfile(void)
 *
 ******************************************************************************/
 
-long ComparePingProfile(const PingProfile& ping1, const PingProfile& ping2)
+int32_t ComparePingProfile(const PingProfile& ping1, const PingProfile& ping2)
 	{
-	long minWeight = LONG_MAX;
+	int32_t minWeight = INT32_MAX;
 
 	for (int index = 0; index < 8; index++)
 		{
-		long a = ping1.Pings[index];
-		long b = ping2.Pings[index];
-		long weight = (a * a) + (b * b);
+		int32_t a = ping1.Pings[index];
+		int32_t b = ping2.Pings[index];
+		int32_t weight = (a * a) + (b * b);
 
-		minWeight = min<long>(weight, minWeight);
+		minWeight = min<int32_t>(weight, minWeight);
 		}
 
 	return minWeight;
@@ -216,7 +216,7 @@ void DecodePingProfile(const char* buffer, PingProfile& pings)
 	{
 	if (buffer)
 		{
-		unsigned long ping[8];
+		uint32_t ping[8];
 
 		sscanf(buffer, "%02X%02X%02X%02X%02X%02X%02X%02X",
 			&ping[0], &ping[1], &ping[2], &ping[3], &ping[4], &ping[5], &ping[6], &ping[7]);
@@ -333,7 +333,7 @@ void PingProfileWait::WaitBeginning(void)
 	const PingServerList& pingers = mWOLSession->GetPingServerList();
 
 	// Handle up to eight servers
-	mCount = min<unsigned int>(8, pingers.size());
+	mCount = min<uint32_t>(8, pingers.size());
 
 	if (mCount == 0)
 		{
@@ -345,7 +345,7 @@ void PingProfileWait::WaitBeginning(void)
 
 	bool pingsValid = true;
 
-	for (unsigned int index = 0; index < mCount; index++)
+	for (uint32_t index = 0; index < mCount; index++)
 		{
 		int pingTime = pingers[index]->GetPingTime();
 
@@ -389,7 +389,7 @@ void PingProfileWait::HandleNotification(RawPing& ping)
 
 		const PingServerList& pingers = mWOLSession->GetPingServerList();
 
-		for (unsigned int index = 0; index < pingers.size(); index++)
+		for (uint32_t index = 0; index < pingers.size(); index++)
 			{
 			const char* pinger = pingers[index]->GetHostAddress();
 

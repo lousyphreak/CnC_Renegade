@@ -33,7 +33,7 @@
 void
 Draw_Sunken_Rect
 (
-	UCHAR *pbits,
+	uint8_t *pbits,
 	const RECT &rect,
 	int scanline_size
 )
@@ -57,7 +57,7 @@ Draw_Sunken_Rect
 void
 Draw_Raised_Rect
 (
-	UCHAR *pbits,
+	uint8_t *pbits,
 	const RECT &rect,
 	int scanline_size
 )
@@ -81,15 +81,15 @@ Draw_Raised_Rect
 void
 Frame_Rect
 (
-	UCHAR *pbits,
+	uint8_t *pbits,
 	const RECT &rect,
 	COLORREF color,
 	int scanline_size
 )
 {
-	UCHAR red = GetRValue (color);
-	UCHAR green = GetRValue (color);
-	UCHAR blue = GetRValue (color);
+	uint8_t red = GetRValue (color);
+	uint8_t green = GetRValue (color);
+	uint8_t blue = GetRValue (color);
 
 	int index = (rect.top * scanline_size) + (rect.left * 3);
 	for (int col = rect.left; col < rect.right; col ++) {
@@ -132,7 +132,7 @@ Frame_Rect
 void
 Draw_Vert_Line
 (
-	UCHAR *pbits,
+	uint8_t *pbits,
 	int x,
 	int y,
 	int len,
@@ -140,9 +140,9 @@ Draw_Vert_Line
 	int scanline_size
 )
 {
-	UCHAR red = GetRValue (color);
-	UCHAR green = GetRValue (color);
-	UCHAR blue = GetRValue (color);
+	uint8_t red = GetRValue (color);
+	uint8_t green = GetRValue (color);
+	uint8_t blue = GetRValue (color);
 
 	int index = (y * scanline_size) + (x * 3);
 	for (int row = y; row < len; row ++) {
@@ -163,7 +163,7 @@ Draw_Vert_Line
 void
 Draw_Horz_Line
 (
-	UCHAR *pbits,
+	uint8_t *pbits,
 	int x,
 	int y,
 	int len,
@@ -171,9 +171,9 @@ Draw_Horz_Line
 	int scanline_size
 )
 {
-	UCHAR red = GetRValue (color);
-	UCHAR green = GetRValue (color);
-	UCHAR blue = GetRValue (color);
+	uint8_t red = GetRValue (color);
+	uint8_t green = GetRValue (color);
+	uint8_t blue = GetRValue (color);
 
 	int index = (y * scanline_size) + (x * 3);
 	for (int col = x; col < len; col ++) {

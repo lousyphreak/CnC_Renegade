@@ -243,7 +243,7 @@ MotorcycleDefClass::MotorcycleDefClass(void) :
 	FLOAT_EDITABLE_PARAM(MotorcycleDefClass, LeanK1, 0.01f, 100000.0f);
 }
 
-uint32 MotorcycleDefClass::Get_Class_ID (void) const	
+uint32_t MotorcycleDefClass::Get_Class_ID (void) const	
 { 
 	return CLASSID_MOTORCYCLEDEF; 
 }

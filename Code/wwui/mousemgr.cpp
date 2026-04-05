@@ -75,7 +75,7 @@ static Vector2 HOTSPOTS[MouseMgrClass::CURSOR_COUNT] =
 TextureClass *						MouseMgrClass::Textures[CURSOR_COUNT]	= { 0 };
 ScreenCursorClass *				MouseMgrClass::MouseCursor					= NULL;
 MouseMgrClass::CURSOR_TYPE		MouseMgrClass::CursorType					= MouseMgrClass::CURSOR_ARROW;
-unsigned int MouseMgrClass::CursorWaitCount = 0;
+uint32_t MouseMgrClass::CursorWaitCount = 0;
 
 ////////////////////////////////////////////////////////////////
 //

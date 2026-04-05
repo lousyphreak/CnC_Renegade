@@ -179,7 +179,7 @@ GridCullSystemClass::GridCullSystemClass(void) :
 GridCullSystemClass::~GridCullSystemClass(void)
 {
 	if (Cells != NULL) {
-		delete Cells;
+		delete[] Cells;
 		Cells = NULL;
 	}
 }

@@ -126,14 +126,17 @@ void
 LogicalSoundClass::Remove_From_Scene (void)
 {
 	if (m_Scene != NULL) {
+		SoundSceneClass *scene = m_Scene;
+		Add_Ref ();
 
 		//
 		//	Remove this sound from the culling system
 		//
-		m_Scene->Remove_Logical_Sound (this, m_IsSingleShot);
+		scene->Remove_Logical_Sound (this, m_IsSingleShot);
 		m_Scene					= NULL;
 		m_PhysWrapper			= NULL;
 		m_LastNotification	= 0;
+		Release_Ref ();
 	}
 
 	return ;
@@ -257,4 +260,3 @@ LogicalSoundClass::Load (ChunkLoadClass &cload)
 
 	return true;
 }
-

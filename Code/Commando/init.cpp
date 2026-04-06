@@ -394,8 +394,25 @@ private:
 class StrippingFileFactoryClass : public SimpleFileFactoryClass {
 public:
 	virtual FileClass * Get_File( const char * filename ) {
+		if (filename == NULL || filename[0] == 0 || BaseFactory == NULL) {
+			return NULL;
+		}
+
+		FileClass * file = BaseFactory->Get_File( filename );
+		if (file != NULL && file->Is_Available()) {
+			return file;
+		}
+
 		StringClass stripped(true);
 		Strip_Path_From_Filename( stripped, filename );
+		if (stripped.Compare_No_Case(filename) == 0) {
+			return file;
+		}
+
+		if (file != NULL) {
+			BaseFactory->Return_File(file);
+		}
+
 		return BaseFactory->Get_File( stripped );
 	}
 	void Set_Base_Factory( FileFactoryClass * factory ) { BaseFactory = factory; }

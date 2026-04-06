@@ -1981,8 +1981,8 @@ bool Innate_Soldier_Enable( GameObject * obj, int bits, bool state )
 	if ( soldier == NULL ) {
 //		Cinematics call this for non-soldiers
 //		Debug_Say(( "Object is not a soldier!\n" ));
+		return false;
 	}
-	SCRIPT_PTR_CHECK_RET(soldier, false);
 	bool old_state = soldier->Is_Innate_Enabled( bits );
 	if ( state ) {
 		soldier->Innate_Enable( bits );

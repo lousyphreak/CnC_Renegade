@@ -91,6 +91,7 @@ public:
 	static DefinitionClass *	Find_Typed_Definition (const char *name, uint32_t class_id, bool twiddle = true);
    static void                List_Available_Definitions (void); 
    static void                List_Available_Definitions (int superclass_id); 	
+	static bool						Is_Hash_Ready (void);
 	static uint32_t					Get_New_ID (uint32_t class_id);
 
 	// Definition registration

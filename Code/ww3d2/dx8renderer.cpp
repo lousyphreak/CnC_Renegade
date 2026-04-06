@@ -72,8 +72,17 @@ DX8MeshRendererClass TheDX8MeshRenderer;
 static DynamicVectorClass<Vector3>				_TempVertexBuffer;
 static DynamicVectorClass<Vector3>				_TempNormalBuffer;
 
-static TextureCategoryList							texture_category_delete_list;
-static FVFCategoryList								fvf_category_container_delete_list;
+static TextureCategoryList &Texture_Category_Delete_List()
+{
+	static TextureCategoryList *list = new TextureCategoryList();
+	return *list;
+}
+
+static FVFCategoryList &FVF_Category_Container_Delete_List()
+{
+	static FVFCategoryList *list = new FVFCategoryList();
+	return *list;
+}
 
 
 // helper data structure
@@ -252,7 +261,7 @@ void DX8TextureCategoryClass::Remove_Polygon_Renderer(DX8PolygonRendererClass* p
 	p_renderer->Set_Texture_Category(NULL);
 	if (PolygonRendererList.Peek_Head() == NULL) {
 		container->Remove_Texture_Category(this);
-		texture_category_delete_list.Add_Tail(this);
+		Texture_Category_Delete_List().Add_Tail(this);
 	}
 }
 
@@ -266,7 +275,7 @@ void DX8FVFCategoryContainer::Remove_Texture_Category(DX8TextureCategoryClass* t
 		// If any of the texture category lists has anything in it, no need to delete this container
 		if (texture_category_list[pass].Peek_Head() != NULL) return;
 	}
-	fvf_category_container_delete_list.Add_Tail(this);
+	FVF_Category_Container_Delete_List().Add_Tail(this);
 }
 
 void DX8FVFCategoryContainer::Add_Visible_Material_Pass(MaterialPassClass * pass,MeshClass * mesh)
@@ -1816,10 +1825,10 @@ void DX8MeshRendererClass::Shutdown(void)
 
 void DX8MeshRendererClass::Clear_Pending_Delete_Lists()
 {
-	while (DX8TextureCategoryClass* category=texture_category_delete_list.Remove_Head()) {
+	while (DX8TextureCategoryClass* category=Texture_Category_Delete_List().Remove_Head()) {
 		delete category;
 	}
-	while (DX8FVFCategoryContainer* container=fvf_category_container_delete_list.Remove_Head()) {
+	while (DX8FVFCategoryContainer* container=FVF_Category_Container_Delete_List().Remove_Head()) {
 		delete container;
 	}
 }
@@ -2115,5 +2124,4 @@ void DX8MeshRendererClass::Invalidate()
 
 	texture_category_container_lists_rigid.Delete_All();
 }
-
 

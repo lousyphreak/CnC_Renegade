@@ -3,6 +3,7 @@
 #include "bgfx_compat_resources.h"
 
 #include "assetmgr.h"
+#include "dx8texman.h"
 #include "w3d_file.h"
 #include "ww3d.h"
 #include "wwdebug.h"
@@ -14,6 +15,7 @@ namespace {
 
 bgfx::TextureHandle g_white_texture = BGFX_INVALID_HANDLE;
 unsigned g_next_texture_id = 1;
+constexpr bgfx::ViewId kRenderTargetReadbackViewId = 250;
 
 uint8_t Expand_4_To_8(uint8_t value)
 {
@@ -111,14 +113,138 @@ BgfxCompatTexture *Create_Texture_Backend(int width, int height, WW3DFormat form
 	return texture;
 }
 
+bool Can_Use_BGFX()
+{
+	return bgfx::getCaps() != NULL;
+}
+
+bool Supports_Render_Target_Readback()
+{
+	const bgfx::Caps *caps = bgfx::getCaps();
+	return caps != NULL
+		&& (caps->supported & BGFX_CAPS_TEXTURE_BLIT) != 0
+		&& (caps->supported & BGFX_CAPS_TEXTURE_READ_BACK) != 0;
+}
+
+bool Ensure_Render_Target_Readback(BgfxCompatTexture *texture)
+{
+	if (texture == NULL || !texture->render_target || !Can_Use_BGFX()) {
+		return false;
+	}
+
+	if (bgfx::isValid(texture->readback_handle)) {
+		return true;
+	}
+
+	if (!Supports_Render_Target_Readback()) {
+		return false;
+	}
+
+	texture->readback_handle = bgfx::createTexture2D(
+		static_cast<uint16_t>(std::max(texture->width, 1)),
+		static_cast<uint16_t>(std::max(texture->height, 1)),
+		false,
+		1,
+		bgfx::TextureFormat::BGRA8,
+		BGFX_TEXTURE_BLIT_DST | BGFX_TEXTURE_READ_BACK);
+	return bgfx::isValid(texture->readback_handle);
+}
+
+void Sync_Render_Target_To_CPU(BgfxCompatTexture *texture)
+{
+	if (texture == NULL || !texture->render_target || !bgfx::isValid(texture->handle)) {
+		return;
+	}
+
+	if (!Ensure_Render_Target_Readback(texture)) {
+		return;
+	}
+
+	const size_t byte_count = static_cast<size_t>(std::max(texture->width, 1))
+		* static_cast<size_t>(std::max(texture->height, 1))
+		* 4U;
+	texture->bytes.resize(byte_count, 0);
+
+	bgfx::blit(kRenderTargetReadbackViewId, texture->readback_handle, 0, 0, texture->handle);
+	const uint32_t expected_frame = bgfx::readTexture(texture->readback_handle, texture->bytes.data());
+	uint32_t current_frame = bgfx::frame(BGFX_FRAME_FLUSH);
+	while (current_frame < expected_frame) {
+		current_frame = bgfx::frame(BGFX_FRAME_FLUSH);
+	}
+	texture->dirty = false;
+}
+
+bool Create_Render_Target_Resources(BgfxCompatTexture *texture)
+{
+	if (texture == NULL || !texture->render_target || !Can_Use_BGFX()) {
+		return false;
+	}
+
+	texture->handle = bgfx::createTexture2D(
+		static_cast<uint16_t>(std::max(texture->width, 1)),
+		static_cast<uint16_t>(std::max(texture->height, 1)),
+		false,
+		1,
+		bgfx::TextureFormat::BGRA8,
+		BGFX_TEXTURE_RT);
+	if (!bgfx::isValid(texture->handle)) {
+		return false;
+	}
+
+	texture->frame_buffer = bgfx::createFrameBuffer(1, &texture->handle, false);
+	if (!bgfx::isValid(texture->frame_buffer)) {
+		bgfx::destroy(texture->handle);
+		texture->handle = BGFX_INVALID_HANDLE;
+		return false;
+	}
+
+	texture->dirty = false;
+	Ensure_Render_Target_Readback(texture);
+	return true;
+}
+
+void Release_Texture_Resources(BgfxCompatTexture *texture)
+{
+	if (texture == NULL) {
+		return;
+	}
+
+	if (bgfx::isValid(texture->frame_buffer)) {
+		bgfx::destroy(texture->frame_buffer);
+		texture->frame_buffer = BGFX_INVALID_HANDLE;
+	}
+	if (bgfx::isValid(texture->readback_handle)) {
+		bgfx::destroy(texture->readback_handle);
+		texture->readback_handle = BGFX_INVALID_HANDLE;
+	}
+	if (bgfx::isValid(texture->handle)) {
+		bgfx::destroy(texture->handle);
+		texture->handle = BGFX_INVALID_HANDLE;
+	}
+	if (!texture->render_target) {
+		texture->dirty = true;
+	}
+}
+
+void Recreate_Texture_Resources(BgfxCompatTexture *texture)
+{
+	if (texture == NULL) {
+		return;
+	}
+
+	Release_Texture_Resources(texture);
+	if (texture->render_target) {
+		Create_Render_Target_Resources(texture);
+	} else {
+		texture->dirty = true;
+	}
+}
+
 void Destroy_Texture_Backend(IDirect3DTexture8 *texture)
 {
 	BgfxCompatTexture *backend = BgfxCompat_To_Texture(texture);
 	if (backend != NULL) {
-		if (bgfx::isValid(backend->handle)) {
-			bgfx::destroy(backend->handle);
-			backend->handle = BGFX_INVALID_HANDLE;
-		}
+		Release_Texture_Resources(backend);
 		delete backend;
 	}
 }
@@ -217,6 +343,13 @@ bgfx::TextureHandle BgfxCompat_Get_Texture_Handle(TextureClass *texture)
 		return g_white_texture;
 	}
 
+	if (backend->render_target) {
+		if (!bgfx::isValid(backend->handle)) {
+			Recreate_Texture_Resources(backend);
+		}
+		return bgfx::isValid(backend->handle) ? backend->handle : g_white_texture;
+	}
+
 	if (!backend->dirty && bgfx::isValid(backend->handle)) {
 		return backend->handle;
 	}
@@ -238,6 +371,24 @@ bgfx::TextureHandle BgfxCompat_Get_Texture_Handle(TextureClass *texture)
 		memory);
 	backend->dirty = false;
 	return bgfx::isValid(backend->handle) ? backend->handle : g_white_texture;
+}
+
+bgfx::FrameBufferHandle BgfxCompat_Get_Frame_Buffer(TextureClass *texture)
+{
+	if (texture == NULL) {
+		return BGFX_INVALID_HANDLE;
+	}
+
+	BgfxCompatTexture *backend = BgfxCompat_To_Texture(texture->Peek_DX8_Texture());
+	if (backend == NULL || !backend->render_target) {
+		return BGFX_INVALID_HANDLE;
+	}
+
+	if (!bgfx::isValid(backend->frame_buffer)) {
+		Recreate_Texture_Resources(backend);
+	}
+
+	return backend->frame_buffer;
 }
 
 uint64_t BgfxCompat_Get_Sampler_Flags(const TextureClass *texture)
@@ -280,6 +431,34 @@ bgfx::TextureHandle BgfxCompat_Get_White_Texture()
 	return g_white_texture;
 }
 
+bool BgfxCompat_Is_Render_Target(const TextureClass *texture)
+{
+	if (texture == NULL) {
+		return false;
+	}
+
+	const BgfxCompatTexture *backend = BgfxCompat_To_Texture(texture->Peek_DX8_Texture());
+	return backend != NULL && backend->render_target;
+}
+
+void BgfxCompat_Release_Texture_Resources(TextureClass *texture)
+{
+	if (texture == NULL) {
+		return;
+	}
+
+	Release_Texture_Resources(BgfxCompat_To_Texture(texture->Peek_DX8_Texture()));
+}
+
+void BgfxCompat_Recreate_Texture_Resources(TextureClass *texture)
+{
+	if (texture == NULL) {
+		return;
+	}
+
+	Recreate_Texture_Resources(BgfxCompat_To_Texture(texture->Peek_DX8_Texture()));
+}
+
 void BgfxCompat_Shutdown_Texture_System()
 {
 	if (bgfx::isValid(g_white_texture)) {
@@ -288,7 +467,7 @@ void BgfxCompat_Shutdown_Texture_System()
 	}
 }
 
-TextureClass::TextureClass(unsigned width, unsigned height, WW3DFormat format, MipCountType mip_level_count, PoolType pool, bool)
+TextureClass::TextureClass(unsigned width, unsigned height, WW3DFormat format, MipCountType mip_level_count, PoolType pool, bool rendertarget)
 	: TextureMinFilter(FILTER_TYPE_DEFAULT),
 	  TextureMagFilter(FILTER_TYPE_DEFAULT),
 	  MipMapFilter(mip_level_count != MIP_LEVELS_1 ? FILTER_TYPE_DEFAULT : FILTER_TYPE_NONE),
@@ -313,6 +492,21 @@ TextureClass::TextureClass(unsigned width, unsigned height, WW3DFormat format, M
 	  TextureLoadTask(NULL),
 	  ThumbnailLoadTask(NULL)
 {
+	BgfxCompatTexture *backend = BgfxCompat_To_Texture(D3DTexture);
+	if (backend != NULL) {
+		backend->render_target = rendertarget;
+		if (rendertarget) {
+			TextureFormat = WW3D_FORMAT_A8R8G8B8;
+			backend->format = TextureFormat;
+			backend->bytes.assign(static_cast<size_t>(backend->width) * static_cast<size_t>(backend->height) * 4U, 0);
+			Create_Render_Target_Resources(backend);
+		}
+	}
+
+	if (pool == POOL_DEFAULT) {
+		DX8TextureTrackerClass *track = new DX8TextureTrackerClass(width, height, TextureFormat, mip_level_count, rendertarget, this);
+		DX8TextureManagerClass::Add(track);
+	}
 }
 
 TextureClass::TextureClass(const char *name, const char *full_path, MipCountType mip_level_count, WW3DFormat texture_format, bool allow_compression)
@@ -381,6 +575,9 @@ TextureClass::TextureClass(IDirect3DTexture8 *d3d_texture)
 
 TextureClass::~TextureClass(void)
 {
+	if (Pool == POOL_DEFAULT) {
+		DX8TextureManagerClass::Remove(this);
+	}
 	Destroy_Texture_Backend(D3DTexture);
 	D3DTexture = NULL;
 	delete TextureLoadTask;
@@ -410,6 +607,9 @@ SurfaceClass *TextureClass::Get_Surface_Level(uint32_t)
 	BgfxCompatTexture *backend = BgfxCompat_To_Texture(D3DTexture);
 	if (backend == NULL) {
 		return NULL;
+	}
+	if (backend->render_target) {
+		Sync_Render_Target_To_CPU(backend);
 	}
 	SurfaceClass *surface = NEW_REF(SurfaceClass, (static_cast<unsigned>(backend->width), static_cast<unsigned>(backend->height), backend->format));
 	surface->Copy(backend->bytes.data());

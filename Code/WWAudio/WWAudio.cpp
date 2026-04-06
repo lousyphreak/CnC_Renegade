@@ -460,6 +460,10 @@ WWAudioClass::Get_Sound_Buffer (const char *filename, bool is_3d)
 {
 	WWPROFILE ("Get_Sound_Buffer");
 
+	if (filename == NULL || filename[0] == 0) {
+		return NULL;
+	}
+
 	//
 	// Try to find the buffer in our cache, otherwise create a new buffer.
 	//

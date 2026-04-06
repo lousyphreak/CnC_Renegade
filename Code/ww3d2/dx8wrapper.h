@@ -86,6 +86,7 @@ using FLOAT = float;
 
 class TextureClass;
 class LightClass;
+class LightEnvironmentClass;
 class RenderDeviceDescClass;
 class VertexMaterialClass;
 
@@ -108,14 +109,14 @@ struct RenderStateStruct {
 };
 class DX8Caps {
 public:
-	bool Support_Render_To_Texture_Format(int) const { return false; }
+	bool Support_Render_To_Texture_Format(int) const { return true; }
 	bool Support_Texture_Format(int) const { return true; }
 	bool Support_NPatches() const { return false; }
 	bool Support_Bump_Envmap() const { return false; }
 	bool Support_Bump_Envmap_Luminance() const { return false; }
 	bool Support_TnL() const { return true; }
 	bool Support_DXTC() const { return true; }
-	bool Support_Gamma() const { return false; }
+	bool Support_Gamma() const { return true; }
 	bool Support_ZBias() const { return true; }
 	bool Is_Fog_Allowed() const { return true; }
 	unsigned Get_Vendor() const { return 0; }
@@ -221,16 +222,13 @@ public:
 	static void Update_Window(void *hwnd);
 	static void Refresh_Render_Device_Desc(void);
 
-	template <typename... Args>
-	static void Set_Light_Environment(Args&&...) {}
-	template <typename... Args>
-	static void Set_Light(Args&&...) {}
-	template <typename... Args>
-	static void Draw_Strip(Args&&...) {}
-	template <typename... Args>
-	static void Set_Render_Target(Args&&...) {}
-	template <typename... Args>
-	static void Set_Gamma(Args&&...) {}
+	static void Set_Light_Environment(const LightEnvironmentClass *light_environment);
+	static void Set_Light(unsigned index, const LightClass *light);
+	static void Set_Light(unsigned index, const LightClass &light);
+	static void Draw_Strip(uint16_t start_index, uint16_t polygon_count, uint16_t min_vertex_index, uint16_t vertex_count);
+	static void Set_Render_Target(TextureClass *texture);
+	static void Set_Render_Target(IDirect3DSurface8 *surface);
+	static void Set_Gamma(float gamma, float brightness, float contrast, bool calibrate = false, bool save = false);
 	static void Set_Fog(bool enable, const Vector3 &color, float start, float end);
 	static bool Get_Fog_Enable() { return _Fog_Enable_State(); }
 	static unsigned Get_Fog_Color() { return Convert_Color(_Fog_Color_State(), 1.0f); }
@@ -270,10 +268,10 @@ public:
 	static void Set_View_Identity();
 	static bool Is_Device_Lost() { return false; }
 	static bool Is_Initted();
-	static TextureClass *Create_Render_Target(unsigned, unsigned, int) { return NULL; }
+	static TextureClass *Create_Render_Target(unsigned width, unsigned height, int format);
 	static void Begin_Statistics() {}
 	static void End_Statistics() {}
-	static bool Is_Render_To_Texture() { return false; }
+	static bool Is_Render_To_Texture();
 	static DX8Caps *Get_Current_Caps()
 	{
 		static DX8Caps caps;

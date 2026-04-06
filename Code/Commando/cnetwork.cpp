@@ -491,6 +491,9 @@ int cNetwork::Get_Data_Files_CRC(void)
 			} else {
 //				Debug_Say(( "******%s not found\n", name ));
 			}
+			if (file != NULL) {
+				_TheFileFactory->Return_File(file);
+			}
 		}
 	}
 	return crc;
@@ -516,7 +519,7 @@ void cNetwork::Compute_Exe_Key(void)
 	//
 	string.Format("RENEGADE %u", BuildInfoClass::Get_Build_Number());
 
-	WWDEBUG_SAY(("File id string: %s\n", string));
+	WWDEBUG_SAY(("File id string: %s\n", string.Peek_Buffer()));
 	key_string += string;
 	key_string += " ";
 	ExeCRC = CRCEngine()(string, strlen(string));
@@ -535,7 +538,7 @@ void cNetwork::Compute_Exe_Key(void)
 	//
 	//cMiscUtil::Get_File_Id_String("Data\\strings.tdb", string);
 	string.Format("strings.tdb %u", TranslateDBClass::Get_Version_Number());
-	WWDEBUG_SAY(("File id string: %s\n", string));
+	WWDEBUG_SAY(("File id string: %s\n", string.Peek_Buffer()));
 	key_string += string;
 	key_string += " ";
 	StringsCRC = CRCEngine()(string, strlen(string));

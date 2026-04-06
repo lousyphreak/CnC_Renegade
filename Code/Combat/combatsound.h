@@ -77,7 +77,8 @@ typedef enum {
 class CombatSound {
 public:
 	Vector3				Position;
-	CombatSoundType	Type;
+	// Logical sounds also use authored script IDs outside the fixed SOUND_TYPE_* enum range.
+	int					Type;
 	ScriptableGameObj * Creator;
 };
 

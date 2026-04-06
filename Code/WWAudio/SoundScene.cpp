@@ -216,16 +216,15 @@ SoundSceneClass::Collect_Logical_Sounds (int listener_count)
 	// been completely processed
 	//
 	MultiListIterator<LogicalSoundClass> single_shot_it (&m_SingleShotLogicalSounds);
-	for (single_shot_it.First (); !single_shot_it.Is_Done (); single_shot_it.Next ()) {
+	for (single_shot_it.First (); !single_shot_it.Is_Done (); ) {
 		LogicalSoundClass *sound_obj = single_shot_it.Peek_Obj ();
+		single_shot_it.Next ();
 
 		//
 		//	Remove this sound if its been completely processed
 		//
 		if (sound_obj->Get_Listener_Timestamp () <= LogicalListenerClass::Get_Oldest_Timestamp ()) {
 			sound_obj->Remove_From_Scene ();
-			single_shot_it.Remove_Current_Object ();
-			single_shot_it.Prev ();
 		}
 	}
 

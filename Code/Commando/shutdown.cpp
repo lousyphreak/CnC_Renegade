@@ -355,6 +355,8 @@ static void Log_System_Information()
 		WriteFile(file, string, strlen(string), &written, NULL);
 		CloseHandle(file);
 	}
+
+	SysInfoCopyThread.Stop();
 }
 
 
@@ -484,9 +486,9 @@ void Debug_Refs(void)
 {
 #ifndef NDEBUG
 //	Debug_Say(("Detecting Active Refs...\r\n"));
-	RefCountNodeClass * first = RefCountClass::ActiveRefList.First();
+	RefCountNodeClass * first = RefCountClass::ActiveRefList.First_Valid();
 	RefCountNodeClass * node = first;
-	while (node->Is_Valid())
+	while (node != NULL)
 	{
 		RefCountClass * obj = node->Get();
 		ActiveRefStruct * ref = &(obj->ActiveRefInfo);
@@ -494,7 +496,7 @@ void Debug_Refs(void)
 		bool display = true;
 		int	count = 0;
 		RefCountNodeClass * search = first;
-		while (search->Is_Valid()) {
+		while (search != NULL) {
 
 			if (search == node) {	// if this is not the first one
 				if (count != 0) {
@@ -514,7 +516,7 @@ void Debug_Refs(void)
 				count++;
 			}
 
-			search = search->Next();
+			search = search->Next_Valid();
 		}
 
 		if ( display ) {
@@ -527,7 +529,7 @@ void Debug_Refs(void)
 			}
 		}
 
-		node = node->Next();
+		node = node->Next_Valid();
 	}
 //	Debug_Say(("Done.\r\n"));
 #endif

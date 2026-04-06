@@ -2456,7 +2456,7 @@ void MPEXPORT XMP_Randomize(digit * result, Straw & rng, int total_bits, int pre
 	XMP_Init(result, 0, precision);
 	rng.Get(result, nbytes);
 
-	((uint8_t *)result)[nbytes-1] &= (uint8_t)(~((~0) << (total_bits % 8)));
+	((uint8_t *)result)[nbytes-1] &= static_cast<uint8_t>(~((~uint32_t(0)) << (total_bits % 8)));
 }
 
 

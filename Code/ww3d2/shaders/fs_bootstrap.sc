@@ -5,6 +5,7 @@ $input v_color0, v_texcoord0, v_fog
 SAMPLER2D(s_texColor, 0);
 uniform vec4 u_fogState;
 uniform vec4 u_fogColor;
+uniform vec4 u_colorAdjust;
 
 void main()
 {
@@ -30,5 +31,9 @@ void main()
         discard;
     }
 
+    color.rgb = (color.rgb - 0.5) * u_colorAdjust.z + 0.5;
+    color.rgb += vec3(u_colorAdjust.y, u_colorAdjust.y, u_colorAdjust.y);
+    color.rgb = clamp(color.rgb, 0.0, 1.0);
+    color.rgb = pow(max(color.rgb, vec3(0.0, 0.0, 0.0)), vec3(u_colorAdjust.x, u_colorAdjust.x, u_colorAdjust.x));
     gl_FragColor = color;
 }

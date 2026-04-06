@@ -864,7 +864,7 @@ bool	SmartGameObj::Is_Obj_Visible( PhysicalGameObj *obj )
 void	SmartGameObj::On_Logical_Heard (LogicalListenerClass *listener, LogicalSoundClass *sound_obj) 
 {
 	CombatSound sound;
-	sound.Type = (CombatSoundType)sound_obj->Get_Type_Mask();
+	sound.Type = (int)sound_obj->Get_Type_Mask();
 	sound.Position = sound_obj->Get_Position();
 
 	//
@@ -1060,4 +1060,3 @@ void	SmartGameObj::Reset_Controller( void )
 		CombatManager::Send_Control_Packet(this);
 		CombatManager::Send_State_Packet(this);
 		*/
-

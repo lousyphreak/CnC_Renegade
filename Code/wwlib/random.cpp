@@ -111,6 +111,8 @@ RandomClass::RandomClass(unsigned seed) :
  *=============================================================================================*/
 int RandomClass::operator ()(void)
 {
+	const uint32_t significant_mask = ~((~uint32_t(0)) << SIGNIFICANT_BITS);
+
 	/*
 	**	Transform the seed value into the next number in the sequence.
 	*/
@@ -120,7 +122,7 @@ int RandomClass::operator ()(void)
 	**	Extract the 'random' bits from the seed and return that value as the
 	**	random number result.
 	*/
-	return((Seed >> THROW_AWAY_BITS) & (~((~0) << SIGNIFICANT_BITS)));
+	return((Seed >> THROW_AWAY_BITS) & significant_mask);
 }
 
 

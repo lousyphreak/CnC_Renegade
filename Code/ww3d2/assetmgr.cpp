@@ -98,6 +98,7 @@
 #include "distlod.h"
 #include "hlod.h"
 #include "agg_def.h"
+#include "part_ldr.h"
 #include "texfcach.h"
 #include "wwstring.h"
 #include "wwmemlog.h"
@@ -221,6 +222,7 @@ WW3DAssetManager::WW3DAssetManager(void) :
 	Register_Prototype_Loader(&_HLodLoader);
 	Register_Prototype_Loader(&_DistLODLoader);
 	Register_Prototype_Loader(&_AggregateLoader);
+	Register_Prototype_Loader(&_ParticleEmitterLoader);
 	Register_Prototype_Loader(&_NullLoader);
 	Register_Prototype_Loader(&_DazzleLoader);
 	
@@ -1586,4 +1588,3 @@ const char * HTreeIterator::Current_Item_Name(void)
 {
 	return WW3DAssetManager::Get_Instance()->HTreeManager.Get_Tree(Index)->Get_Name();
 }
-

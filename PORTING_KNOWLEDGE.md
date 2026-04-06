@@ -1,5 +1,27 @@
 # Porting Knowledge
 
+## TGA include casing on Linux
+
+- This tree contains legacy includes that request the Westwood loader as `targa.h`, `TARGA.H`, and `Targa.h` depending on subsystem and era.
+- On case-sensitive filesystems, a lowercase compatibility shim can accidentally shadow the real `Code/wwlib/TARGA.H` header if `Code/compat` appears earlier on the include path.
+- If that shim is only a stub, runtime failures look misleading: the loader appears to "open" a TGA, but header fields such as `PixelDepth`, `Width`, and `Height` stay zero and downstream code reports invalid format errors like `unsupported bitdepth(0)`.
+- The safe Linux fix in this tree is to remove the stubbed lowercase compatibility header from the active include path and update the renderer-side includes to reference the real `Code/wwlib/TARGA.H` implementation explicitly.
+
+## bgfx font atlas bounding boxes
+
+- `Font3DDataClass::Make_Proportional` does not search the whole font texture for a glyph. It passes the current glyph cell bounds into `SurfaceClass::FindBB` and expects the result to stay inside that rectangle.
+- The original D3D `SurfaceClass::FindBB` honors those input bounds by locking only the requested rectangle. If a port scans the entire surface instead, every glyph can inherit the same global bounding box and therefore the same UV slice after atlas repacking.
+- On Renegade's HUD this failure mode looks like dynamic text rendering as a repeated deterministic atlas sequence instead of the requested string, because multiple characters now sample the same part of the `Font3D` atlas.
+- The bgfx implementation should therefore clamp to the caller's `[min,max)` rectangle and preserve the original "no visible pixels" semantics by returning the input bounds crossed (`real_min = *max`, `real_max = *min`) when nothing opaque is found.
+
+## bgfx DX8 wrapper parity notes
+
+- The current bgfx path was not just missing polish; several `DX8Wrapper` APIs were still literal no-op placeholders even though higher-level renderer/gameplay code actively called them. Before chasing visual mismatches, audit `dx8wrapper.h` for stubbed methods and verify each has a real bgfx implementation.
+- The highest-impact missing parity surfaces in this tree were light-state ingestion, triangle-strip submission, gamma controls, render-target binding/creation, and default-pool texture management. Filling in those seams moves bgfx from "test renderer" toward "D3D replacement" much faster than rewriting the full legacy renderer in one pass.
+- Render-to-texture support on bgfx needs both wrapper state and resource state. Tracking only a texture handle is not enough; the texture backend must also own a framebuffer handle and expose it back to `DX8Wrapper` so the active view can switch between the main backbuffer and a texture-backed framebuffer.
+- The current lighting parity uses a CPU-side approximation in the bootstrap submission path. That is enough to keep legacy light/environment state from being ignored completely, but it is still an emulation layer rather than a full shader-permutation replacement for the original D3D fixed-function pipeline.
+- Gamma support must preserve the legacy `Set_Gamma(float gamma, float brightness, float contrast, bool calibrate, bool save)` signature because existing engine/UI code still calls the five-argument form even if the bgfx implementation ignores the trailing booleans.
+
 ## bgfx scene fog behavior
 
 - The bgfx renderer does not inherit D3D8 fixed-function fog automatically; `SceneClass::Render` only stays wired up if `DX8Wrapper::Set_Fog` stores the scene fog state and the bgfx draw path forwards it into shader uniforms.
@@ -69,3 +91,11 @@
 
 - `VisemeManager` builds a per-letter reference table over the viseme combination table.
 - Some letters legitimately have zero entries. Any code that computes `start + count - 1` for a bucket must guard `count == 0` first.
+
+## Validation surfaced non-renderer blockers
+
+- Strengthening the bgfx port enough to survive longer gameplay paths will often expose older engine bugs that the initial bootstrap renderer never reached. In this session the additional blockers were lifetime hazards in logical audio scene removal, script-side buffer sizing/array bounds issues, and a few gameplay systems that assumed data was always present.
+- `LogicalListenerClass::Remove_From_Scene` and `LogicalSoundClass::Remove_From_Scene` can trigger scene-side removal paths that drop the final reference. Hold a temporary ref across the callback into `SoundSceneClass` so teardown cannot delete the object mid-function.
+- `SoundSceneClass::Collect_Logical_Sounds` should advance the iterator before removing a single-shot logical sound from the scene. Removing the current node first invalidates the iterator's view of the list.
+- `CombatSound::Type` cannot stay constrained to the fixed `CombatSoundType` enum when logical sounds also use authored script IDs. Store the raw integer type mask/ID instead of truncating it back into the enum.
+- `Test_Cinematic::Command_Set_Primary` formatted `MyID` into a 10-byte stack buffer, which is too small for the full signed 32-bit integer range plus the NUL terminator. Use a bounded formatter with a larger buffer for object/callback ID strings in the scripts code.

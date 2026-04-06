@@ -145,6 +145,8 @@ void	ControlClass::Clear_Control( void )
 
 	OneTimeBooleanBits	= 0;
 	ContinuousBooleanBits	= 0;
+	PendingOneTimeBooleanBits = 0;
+	PendingContinuousBooleanBits = 0;
 	memset( AnalogValues, 0, sizeof(AnalogValues) ); 
 }
 

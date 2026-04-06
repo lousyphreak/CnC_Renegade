@@ -129,13 +129,16 @@ void
 LogicalListenerClass::Remove_From_Scene (void)
 {
 	if (m_Scene != NULL) {
+		SoundSceneClass *scene = m_Scene;
+		Add_Ref ();
 
 		//
 		//	Remove this listener from the culling system
 		//
-		m_Scene->Remove_Logical_Listener (this);
+		scene->Remove_Logical_Listener (this);
 		m_Scene = NULL;
 		m_PhysWrapper = NULL;
+		Release_Ref ();
 	}
 
 	return ;
@@ -216,4 +219,3 @@ LogicalListenerClass::Load (ChunkLoadClass &cload)
 
 	return true;
 }
-

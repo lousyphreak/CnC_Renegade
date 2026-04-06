@@ -842,13 +842,17 @@ void AnimCollisionManagerClass::Init(const AnimCollisionManagerDefClass & def)
 		** build an animation name from the model name.
 		*/
 		if (anim_name.Is_Empty ()) {
-			StringClass model_name(Parent.Peek_Model()->Get_Name(),true);
-			anim_name = model_name;
-			anim_name+=".";
-			anim_name+=model_name;
+			const char *model_name = Parent.Peek_Model()->Get_Name();
+			if ((model_name != NULL) && (stricmp(model_name, "NULL") != 0)) {
+				anim_name = model_name;
+				anim_name+=".";
+				anim_name+=model_name;
+			}
 		}
 				
-		Set_Animation(anim_name);
+		if (anim_name.Is_Empty() == false) {
+			Set_Animation(anim_name);
+		}
 	}
 }
 
@@ -1542,4 +1546,3 @@ bool AnimCollisionManagerDefClass::Load(ChunkLoadClass &cload)
 	}
 	return true;
 }
-

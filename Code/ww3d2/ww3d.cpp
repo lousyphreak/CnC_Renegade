@@ -93,6 +93,7 @@
 #include "wwprofile.h"
 #include "wwmemlog.h"
 #include "shattersystem.h"
+#include "definitionmgr.h"
 #include "textureloader.h"
 #include "statistics.h"
 #include "pointgr.h"
@@ -107,7 +108,7 @@
 #include "vector3i.h"
 #include <cstdio>
 #include "dx8wrapper.h"
-#include "targa.h"
+#include "TARGA.H"
 #include "sortingrenderer.h"
 #include "thread.h"
 #include "dx8texman.h"
@@ -297,7 +298,9 @@ WW3DErrorType WW3D::Init(void *hwnd, char *defaultpal, bool lite)
 	** Initialize the animation-triggered sound system
 	*/
 	if (!lite) {
-		AnimatedSoundMgrClass::Initialize ();
+		if (DefinitionMgrClass::Is_Hash_Ready()) {
+			AnimatedSoundMgrClass::Initialize ();
+		}
 		IsInitted = true;
 	}
 	WWDEBUG_SAY(("WW3D Init completed\n"));
@@ -348,6 +351,7 @@ WW3DErrorType WW3D::Shutdown(void)
 		WW3DAssetManager::Get_Instance()->Free_Assets();
 	}
 
+	TheDX8MeshRenderer.Shutdown();
 	DX8TextureManagerClass::Shutdown();
 	if (!Lite) {
 		DX8Wrapper::Shutdown();

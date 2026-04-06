@@ -2409,7 +2409,10 @@ DECLARE_SCRIPT (MX0_Area4_Controller_DLS, "")
 		}
 		if(timer_id == FINALE)
 		{
-			Commands->Destroy_Object(Commands->Find_Object(basewall_id));
+			GameObject *basewall = Commands->Find_Object(basewall_id);
+			if (basewall != NULL) {
+				Commands->Destroy_Object(basewall);
+			}
 			GameObject *controller = Commands->Create_Object("Invisible_Object", Vector3(0.0f, 0.0f, 0.0f));
 			Commands->Set_Facing(controller, 0.000f);
 			Commands->Attach_Script(controller, "Test_Cinematic", "X0Z_Finale.txt");
@@ -3291,6 +3294,5 @@ DECLARE_SCRIPT (MX0_Explosive_Barrels_DLS, "Logical_Sound=0:int, Radius:float")
 		Commands->Create_Logical_Sound(obj, Get_Int_Parameter("Logical_Sound"), Commands->Get_Position(obj), radius);
 	}
 };
-
 
 

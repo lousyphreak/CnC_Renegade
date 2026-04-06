@@ -2102,6 +2102,10 @@ DECLARE_SCRIPT ( MX0_A03_HUMVEE, "" ) // moves humvee
 
 	void Created( GameObject *obj )
 	{
+		for (int i = 0; i < (sizeof(Target_Id) / sizeof(Target_Id[0])); ++i) {
+			Target_Id[i] = 0;
+		}
+
 		target = 1;
 		// set targets
 		Target_Id[1] = MX0_A03_NOD_BUGGIE_ID;
@@ -2132,6 +2136,11 @@ DECLARE_SCRIPT ( MX0_A03_HUMVEE, "" ) // moves humvee
 	{
 		if ( action_id == 0 ) // humvee at end of first waypath. begin attacking buggie.
 		{
+			if ((target <= 0) || (target >= (sizeof(Target_Id) / sizeof(Target_Id[0])))) {
+				Commands->Innate_Enable( obj );
+				return;
+			}
+
 			// Commands->Debug_Message( "***** DAK ***** finding Object Buggie.\n" );
 			Current_Target = Target_Id[target];
 			GameObject *target = Commands->Find_Object( Current_Target );
@@ -2147,6 +2156,13 @@ DECLARE_SCRIPT ( MX0_A03_HUMVEE, "" ) // moves humvee
 		if ( action_id == 1 ) // humvee done with target. attack next target
 		{
 			target = target + 1;
+
+			if ((target <= 0) || (target >= (sizeof(Target_Id) / sizeof(Target_Id[0])))) {
+				Current_Target = 0;
+				Commands->Innate_Enable( obj );
+				return;
+			}
+
 			Current_Target = Target_Id[target];
 			GameObject *target = Commands->Find_Object( Current_Target );
 
@@ -2222,6 +2238,10 @@ DECLARE_SCRIPT ( MX0_A03_TANK, "" ) // moves tank
 
 	void Created( GameObject *obj )
 	{
+		for (int i = 0; i < (sizeof(Target_Id) / sizeof(Target_Id[0])); ++i) {
+			Target_Id[i] = 0;
+		}
+
 		target = 1;
 
 		// send id to controller.
@@ -2253,6 +2273,11 @@ DECLARE_SCRIPT ( MX0_A03_TANK, "" ) // moves tank
 	{
 		if ( type == 0 ) // attack Target_Id[target]
 		{
+			if ((target <= 0) || (target >= (sizeof(Target_Id) / sizeof(Target_Id[0])))) {
+				Current_Target = 0;
+				return;
+			}
+
 			Current_Target = Target_Id[target];
 			GameObject *target = Commands->Find_Object ( Current_Target );
 			if ( target )

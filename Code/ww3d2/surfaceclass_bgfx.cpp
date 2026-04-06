@@ -386,17 +386,22 @@ void SurfaceClass::FindBB(Vector2i *min, Vector2i *max)
 		return;
 	}
 
-	Vector2i real_min(static_cast<int>(surface->width), static_cast<int>(surface->height));
-	Vector2i real_max(-1, -1);
-	for (unsigned y = 0; y < surface->height; ++y) {
-		for (unsigned x = 0; x < surface->width; ++x) {
+	const int left = std::max(min->I, 0);
+	const int top = std::max(min->J, 0);
+	const int right = std::min(max->I, static_cast<int>(surface->width));
+	const int bottom = std::min(max->J, static_cast<int>(surface->height));
+
+	Vector2i real_min = *max;
+	Vector2i real_max = *min;
+	for (int y = top; y < bottom; ++y) {
+		for (int x = left; x < right; ++x) {
 			uint8_t r, g, b, a;
-			Decode_Pixel(Pixel_At(surface, x, y), surface->format, r, g, b, a);
+			Decode_Pixel(Pixel_At(surface, static_cast<unsigned>(x), static_cast<unsigned>(y)), surface->format, r, g, b, a);
 			if (a != 0) {
-				real_min.I = std::min(real_min.I, static_cast<int>(x));
-				real_min.J = std::min(real_min.J, static_cast<int>(y));
-				real_max.I = std::max(real_max.I, static_cast<int>(x));
-				real_max.J = std::max(real_max.J, static_cast<int>(y));
+				real_min.I = std::min(real_min.I, x);
+				real_min.J = std::min(real_min.J, y);
+				real_max.I = std::max(real_max.I, x);
+				real_max.J = std::max(real_max.J, y);
 			}
 		}
 	}

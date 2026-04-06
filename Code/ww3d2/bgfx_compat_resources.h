@@ -27,7 +27,10 @@ struct BgfxCompatTexture
 	WW3DFormat format = WW3D_FORMAT_A8R8G8B8;
 	std::vector<uint8_t> bytes;
 	bgfx::TextureHandle handle = BGFX_INVALID_HANDLE;
+	bgfx::FrameBufferHandle frame_buffer = BGFX_INVALID_HANDLE;
+	bgfx::TextureHandle readback_handle = BGFX_INVALID_HANDLE;
 	bool dirty = true;
+	bool render_target = false;
 };
 
 inline BgfxCompatSurface *BgfxCompat_To_Surface(IDirect3DSurface8 *surface)
@@ -53,6 +56,10 @@ inline const BgfxCompatTexture *BgfxCompat_To_Texture(const IDirect3DTexture8 *t
 unsigned BgfxCompat_Get_Pixel_Size(WW3DFormat format);
 std::vector<uint8_t> BgfxCompat_Convert_Surface_To_RGBA8(const BgfxCompatSurface &surface);
 bgfx::TextureHandle BgfxCompat_Get_Texture_Handle(TextureClass *texture);
+bgfx::FrameBufferHandle BgfxCompat_Get_Frame_Buffer(TextureClass *texture);
 uint64_t BgfxCompat_Get_Sampler_Flags(const TextureClass *texture);
 bgfx::TextureHandle BgfxCompat_Get_White_Texture();
+bool BgfxCompat_Is_Render_Target(const TextureClass *texture);
+void BgfxCompat_Release_Texture_Resources(TextureClass *texture);
+void BgfxCompat_Recreate_Texture_Resources(TextureClass *texture);
 void BgfxCompat_Shutdown_Texture_System();

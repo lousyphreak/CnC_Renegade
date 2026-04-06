@@ -2,6 +2,25 @@
 
 ## Recent changes
 
+- Fixed bgfx HUD/mission text glyph selection so dynamic text no longer collapses into the same `0123456789...`-style placeholder sequence.
+- Root cause: the bgfx `SurfaceClass::FindBB` port ignored the caller-provided bounding rectangle and scanned the entire surface. `Font3DDataClass::Make_Proportional` relies on `FindBB` to measure each glyph inside its own cell, so the bgfx path was giving many characters the same bounding box/UV region from the shared font atlas.
+- Resolution: `Code/ww3d2/surfaceclass_bgfx.cpp` now clamps to and scans only the requested sub-rectangle, matching the original D3D implementation's behavior. That restores per-character atlas bounds for `Font3D` HUD text renderers such as health, ammo, and scripted on-screen messages.
+- Validation: rebuilt with `cmake --build build -j20` and ran `timeout 35s ./Renegade` from `build/bin`. The executable stayed alive for the full smoke window (`EXIT:124`), and the captured runtime log did not report any `FONT6x8/FONT8x8/FONT12x16/FONT24x36` load failures while exercising the live renderer path.
+
+- Fixed Linux TGA loading for legacy lowercase includes such as `#include "targa.h"`.
+- Root cause: non-Windows targets prepended `Code/compat` to the include path, and `Code/compat/targa.h` was only a stubbed shim. Files like `ww3dformat.cpp` therefore saw a zero-initialized fake `Targa` header, which surfaced at runtime as `TextureClass: Targa has unsupported bitdepth(0)` and `BGFX Surface: failed to load FONT6x8.TGA via TextureLoader`.
+- Resolution: removed the stubbed `Code/compat/targa.h` entry point from the active path and updated the renderer-side includes/loaders to use the real `Code/wwlib/TARGA.H` implementation directly, so case-sensitive Linux builds no longer substitute the fake header.
+- Validation: rebuilt with `cmake --build build -j20` and ran `./build/bin/Renegade`. The follow-up runtime log no longer reports the `FONT6x8.TGA` load failure or the `unsupported bitdepth(0)` TGA error. The executable now reaches `MainLoop: Entering main loop`; the remaining non-zero exit in this environment is a pre-existing LeakSanitizer report rooted in external RenderDoc/Vulkan library allocations during shutdown.
+
+- Advanced the bgfx renderer from a bootstrap smoke-test path toward a real Direct3D replacement by implementing several previously stubbed `DX8Wrapper` entry points that live gameplay/render code already calls.
+- Root cause: the bgfx path still exposed key D3D-era APIs such as `Set_Light_Environment`, `Set_Light`, `Draw_Strip`, `Set_Render_Target`, `Set_Gamma`, `Create_Render_Target`, and `Is_Render_To_Texture` as no-op placeholders. That left fixed-function lighting, strip submission, gamma controls, and render-to-texture behavior missing even though higher-level engine code expected them.
+- Resolution: `Code/ww3d2/dx8wrapper.cpp` now ingests light state and approximates fixed-function lighting in the bootstrap path, converts strips to triangle lists for submission, binds bgfx framebuffers for render targets, reports render-to-texture/gamma support, and uploads gamma/brightness/contrast controls to the bootstrap shader. `texture_bgfx.cpp`, `bgfx_compat_resources.h`, and `dx8texman_bgfx.cpp` now track bgfx render-target resources and default-pool texture recreation instead of leaving those paths stubbed out.
+- Validation: rebuilt with `cmake --build build --config Debug -j2` and repeatedly ran `./build/bin/Renegade` under `timeout 300s` from `build/bin`. The final validation run completed the full 300-second smoke window and exited via timeout (`EXIT:124`) rather than a crash or assert.
+
+- Fixed several deeper runtime blockers uncovered while validating the stronger bgfx path for the required 300-second smoke window.
+- Root cause: once the renderer got far enough into live mission/script paths, ASan/asserts exposed unrelated robustness issues: logical-audio scene removal could invalidate the current object mid-call, combat/logical sound IDs were being forced back into a too-small enum type, several mission scripts assumed target arrays and object pointers were always valid, and `Test_Cinematic::Command_Set_Primary` overflowed a stack buffer when formatting callback IDs.
+- Resolution: logical sound/listener removal now keeps temporary references and advances iterators safely during scene teardown, `CombatSound` now stores raw integer type IDs, the mission/test scripts now initialize and bounds-check their target/object state before using it, `ControlClass::Clear_Control` now also clears the pending input bitfields, and `Test_Cinematic.cpp` now formats the callback ID with a bounded buffer.
+
 - Implemented real scene fog in the bgfx renderer instead of leaving `DX8Wrapper::Set_Fog` as a no-op.
 - Root cause: the bgfx bootstrap path only forwarded texture/color/alpha-test state, so scene fog range/color never reached the GPU. The bgfx-only `ShaderClass::Enable_Fog` path also still inherited fixed-function fog restrictions and warned on blend modes used by vehicle wheel materials.
 - Resolution: the bgfx wrapper now stores fog enable/color/range state, computes a per-vertex fog factor in camera space, passes fog mode/color through bgfx uniforms, and applies the legacy fog behaviors in the bootstrap shaders. The bgfx `shader_headless.cpp` fog selector now also maps additional non-fixed-function blend combinations to `FOG_SCALE_FRAGMENT` instead of warning.
@@ -50,5 +69,6 @@
 
 ## Remaining work
 
-- Continue smoke and gameplay-path validation to catch additional renderer or lifetime issues that only appear after deeper menu/game interaction.
+- Continue smoke and gameplay-path validation to catch additional renderer or lifetime issues that only appear after deeper menu/game interaction, especially effects/aggregate paths that still log missing subobjects during the 300-second run.
+- Continue pushing bgfx beyond the current bootstrap emulation layer toward fuller fixed-function parity, especially where the original D3D renderer used capabilities that are still only approximated on the CPU side.
 - Audit the SDL_mixer Miles shim against more in-game audio content paths, especially long-form music/dialog streams and any feature combinations that previously depended on Miles-specific DSP behavior.

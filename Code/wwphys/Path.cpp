@@ -386,7 +386,7 @@ PathClass::Initialize (PathSolveClass &path_solve)
 	//
 	//	Clip the spline to the sectors and portals that the solver knows is safe
 	//
-	if (m_PathObject.Is_Flag_Set (PathObjectClass::IS_VEHICLE) == false) {
+	if (m_Spline != NULL && m_PathObject.Is_Flag_Set (PathObjectClass::IS_VEHICLE) == false) {
 		Clip_Spline_To_Pathfind_Data (node_list, path_solve);
 	}
 
@@ -621,6 +621,21 @@ PathClass::Evaluate_Next_Point (const Vector3 &curr_pos, Vector3 &new_pos)
 	}
 
 	//
+	//	Zero-distance paths do not have a spline to evaluate.  Treat them as
+	// immediate action requests followed by completion.
+	//
+	if (m_Spline == NULL && m_TotalDist <= 0.0F) {
+		new_pos = m_ExpectedPos;
+		if (m_CurrentAction + 1 < m_PathActions.Count ()) {
+			m_CurrentAction ++;
+			m_State = STATE_ACTION_REQUIRED;
+		} else {
+			m_State = STATE_PATH_COMPLETE;
+		}
+		return true;
+	}
+
+	//
 	//	Get the delta from our current position to the point where we
 	// should be heading
 	//
@@ -774,7 +789,7 @@ PathClass::Get_Curve_Sharpness (Vector3 *position) const
 {
 	float sharpness = 0;
 
-	if (m_PathObject.Is_Flag_Set (PathObjectClass::IS_VEHICLE)) {
+	if (m_Spline != NULL && m_PathObject.Is_Flag_Set (PathObjectClass::IS_VEHICLE)) {
 		Vector3 foo;
 		m_Spline->Evaluate (m_SplineTime, &foo);
 		sharpness = ((VehicleCurveClass *)m_Spline)->Get_Current_Sharpness (position);
@@ -829,6 +844,9 @@ PathClass::Display_Path (bool onoff)
 	if (onoff == false) {
 		PathDebugPlotterClass::Get_Instance ()->Display (false);
 	} else if (m_State < FIRST_ERROR) {
+		if (m_Spline == NULL) {
+			return ;
+		}
 		
 		//
 		//	Turn off painting
@@ -1366,6 +1384,30 @@ PathClass::Initialize_Spline (DynamicVectorClass<PATH_NODE> &node_list)
 			//
 			m_TotalDist += (point - last_point).Length ();
 			last_point = point;
+		}
+
+		//
+		//	A solved path can legitimately collapse to a single point.  Preserve
+		// any action nodes, but don't build a spline with undefined times.
+		//
+		if (m_TotalDist <= 0.0F) {
+			for (int index = 0; index < node_list.Count (); index ++) {
+				if (node_list[index].action_id != ACTION_NONE) {
+					PATH_NODE node = node_list[index];
+					node.time = 0.0F;
+					node.next_time = 0.0F;
+					m_PathActions.Add (node);
+				}
+			}
+
+			m_StartTime = 0.0F;
+			m_EndTime = 0.0F;
+			m_SplineTime = 0.0F;
+			m_LookAheadTime = 0.0F;
+			m_LookAheadDist = 0.0F;
+			m_ExpectedPos = m_StartPos;
+			m_State = (m_PathActions.Count () > 0) ? STATE_TRAVERSING_PATH : STATE_PATH_COMPLETE;
+			return ;
 		}
 
 		//

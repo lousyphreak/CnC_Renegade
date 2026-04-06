@@ -405,30 +405,95 @@ return false;
 }
 
 Targa targa;
-if (TARGA_ERROR_HANDLER(targa.Load(filename, TGAF_IMAGE, false), filename) != 0) {
+if (TARGA_ERROR_HANDLER(targa.Open(filename, TGA_READMODE), filename) != 0) {
 return false;
 }
 
-surface->width = std::max(static_cast<unsigned>(targa.Header.Width), 1U);
-surface->height = std::max(static_cast<unsigned>(targa.Header.Height), 1U);
-switch (targa.Header.PixelDepth) {
-case 8:
-surface->format = WW3D_FORMAT_A8;
-break;
-case 24:
-surface->format = WW3D_FORMAT_R8G8B8;
-break;
-case 32:
-default:
-surface->format = WW3D_FORMAT_A8R8G8B8;
-break;
+// Match the legacy loader: flip the Y-origin before loading so the image
+// ends up in the expected orientation.
+targa.Header.ImageDescriptor ^= TGAIDF_YORIGIN;
+
+WW3DFormat src_format;
+WW3DFormat dest_format;
+unsigned src_bpp = 0;
+Get_WW3D_Format(dest_format, src_format, src_bpp, targa);
+if (src_format == WW3D_FORMAT_UNKNOWN) {
+	return false;
 }
 
-const size_t byte_count = static_cast<size_t>(surface->width) * static_cast<size_t>(surface->height) * static_cast<size_t>(BgfxCompat_Get_Pixel_Size(surface->format));
-surface->bytes.resize(byte_count, 0);
-if (targa.GetImage() != NULL) {
-std::memcpy(surface->bytes.data(), targa.GetImage(), byte_count);
+unsigned src_width = std::max(static_cast<unsigned>(targa.Header.Width), 1U);
+unsigned src_height = std::max(static_cast<unsigned>(targa.Header.Height), 1U);
+unsigned width = src_width;
+unsigned height = src_height;
+
+uint8_t palette[256 * 4];
+targa.SetPalette(palette);
+
+if (TARGA_ERROR_HANDLER(targa.Load(filename, TGAF_IMAGE, false), filename) != 0) {
+	return false;
 }
+
+uint8_t *src_surface = reinterpret_cast<uint8_t *>(targa.GetImage());
+if (src_surface == NULL) {
+	return false;
+}
+
+std::unique_ptr<uint8_t[]> converted_surface;
+if (src_format == WW3D_FORMAT_A1R5G5B5 ||
+	src_format == WW3D_FORMAT_R5G6B5 ||
+	src_format == WW3D_FORMAT_A4R4G4B4 ||
+	src_format == WW3D_FORMAT_P8 ||
+	src_format == WW3D_FORMAT_L8 ||
+	src_width != width ||
+	src_height != height) {
+
+	converted_surface.reset(new uint8_t[static_cast<size_t>(width) * static_cast<size_t>(height) * 4U]);
+	dest_format = Get_Valid_Texture_Format(WW3D_FORMAT_A8R8G8B8, false);
+	BitmapHandlerClass::Copy_Image(
+		converted_surface.get(),
+		width,
+		height,
+		width * 4U,
+		WW3D_FORMAT_A8R8G8B8,
+		src_surface,
+		src_width,
+		src_height,
+		src_width * src_bpp,
+		src_format,
+		reinterpret_cast<uint8_t *>(targa.GetPalette()),
+		targa.Header.CMapDepth >> 3,
+		false);
+	src_surface = converted_surface.get();
+	src_format = WW3D_FORMAT_A8R8G8B8;
+	src_width = width;
+	src_height = height;
+	src_bpp = Get_Bytes_Per_Pixel(src_format);
+}
+
+surface->width = width;
+surface->height = height;
+surface->format = dest_format;
+surface->bytes.resize(
+	static_cast<size_t>(width) *
+	static_cast<size_t>(height) *
+	static_cast<size_t>(BgfxCompat_Get_Pixel_Size(dest_format)),
+	0);
+
+BitmapHandlerClass::Copy_Image(
+	surface->bytes.data(),
+	width,
+	height,
+	width * BgfxCompat_Get_Pixel_Size(dest_format),
+	dest_format,
+	src_surface,
+	src_width,
+	src_height,
+	src_width * src_bpp,
+	src_format,
+	reinterpret_cast<uint8_t *>(targa.GetPalette()),
+	targa.Header.CMapDepth >> 3,
+	false);
+
 return true;
 }
 

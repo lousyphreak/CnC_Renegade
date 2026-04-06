@@ -135,10 +135,10 @@ void RefCountClass::Remove_Active_Ref(RefCountClass * obj)
  *=============================================================================================*/
 bool RefCountClass::Validate_Active_Ref(RefCountClass * obj)
 {
-	RefCountNodeClass *node = ActiveRefList.First();
+	RefCountNodeClass *node = ActiveRefList.First_Valid();
 	while (node) {
 		if (node->Get() == obj) return true;
-		node = node->Next();
+		node = node->Next_Valid();
 	}
 	return false;
 }
@@ -209,5 +209,4 @@ void	RefCountClass::Dec_Total_Refs(RefCountClass * obj)
 
 
 #endif
-
 

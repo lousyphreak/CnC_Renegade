@@ -259,7 +259,7 @@ DefinitionMgrClass::Find_Typed_Definition (const char *name, uint32_t class_id, 
 	DynamicVectorClass<DefinitionClass*>* defs = DefinitionHash->Get(lower_case_name);
 
 	if (defs) {
-		for (int i=0;i<defs->Length();++i) {
+		for (int i = 0; i < defs->Count(); ++i) {
 			DefinitionClass* curr_def=(*defs)[i];
 			WWASSERT(curr_def);
 			uint32_t curr_class_id = curr_def->Get_Class_ID ();
@@ -320,6 +320,11 @@ DefinitionMgrClass::Find_Typed_Definition (const char *name, uint32_t class_id, 
 	}
 
 	return definition;
+}
+
+bool DefinitionMgrClass::Is_Hash_Ready (void)
+{
+	return (DefinitionHash != NULL);
 }
 
 

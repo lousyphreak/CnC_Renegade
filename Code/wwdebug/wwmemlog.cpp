@@ -90,7 +90,15 @@ std::atomic<int> g_current_allocated_size{0};
 std::atomic<int> g_allocate_count{0};
 std::atomic<int> g_free_count{0};
 std::atomic<bool> g_memlog_initialized{false};
-thread_local std::vector<int> g_category_stack;
+thread_local std::vector<int> *g_category_stack = nullptr;
+
+std::vector<int> &Get_Category_Stack()
+{
+	if (g_category_stack == nullptr) {
+		g_category_stack = new std::vector<int>();
+	}
+	return *g_category_stack;
+}
 
 int Clamp_Category(int category)
 {
@@ -107,10 +115,11 @@ int Get_Default_Category()
 
 int Get_Active_Category()
 {
-	if (g_category_stack.empty()) {
+	std::vector<int> &category_stack = Get_Category_Stack();
+	if (category_stack.empty()) {
 		return Get_Default_Category();
 	}
-	return Clamp_Category(g_category_stack.back());
+	return Clamp_Category(category_stack.back());
 }
 
 void Update_Peak_Allocated_Memory(int category, int current_value)
@@ -183,13 +192,14 @@ void WWMemoryLogClass::Register_Memory_Released(int category,int size)
 
 void WWMemoryLogClass::Push_Active_Category(int category)
 {
-	g_category_stack.push_back(Clamp_Category(category));
+	Get_Category_Stack().push_back(Clamp_Category(category));
 }
 
 void WWMemoryLogClass::Pop_Active_Category(void)
 {
-	if (!g_category_stack.empty()) {
-		g_category_stack.pop_back();
+	std::vector<int> &category_stack = Get_Category_Stack();
+	if (!category_stack.empty()) {
+		category_stack.pop_back();
 	}
 }
 
@@ -254,5 +264,5 @@ int WWMemoryLogClass::Get_Free_Count()
 void WWMemoryLogClass::Init()
 {
 	g_memlog_initialized.store(true, std::memory_order_release);
-	g_category_stack.clear();
+	Get_Category_Stack().clear();
 }

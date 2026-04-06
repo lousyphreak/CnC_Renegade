@@ -40,6 +40,8 @@
 #include "dx8wrapper.h"
 
 #include "bgfx_compat_resources.h"
+#include "light.h"
+#include "lightenvironment.h"
 #include "matrix3d.h"
 #include "matrix4.h"
 #include "rddesc.h"
@@ -57,6 +59,7 @@
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include <vector>
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_properties.h>
@@ -97,6 +100,26 @@ struct BgfxGuiVertex {
 	float fog;
 };
 
+struct BgfxLightState {
+	bool enabled = false;
+	LightClass::LightType type = LightClass::POINT;
+	Vector3 ambient = Vector3(0.0f, 0.0f, 0.0f);
+	Vector3 diffuse = Vector3(0.0f, 0.0f, 0.0f);
+	Vector3 position = Vector3(0.0f, 0.0f, 0.0f);
+	Vector3 direction = Vector3(0.0f, 0.0f, -1.0f);
+	float far_atten_start = 0.0f;
+	float far_atten_end = 1.0f;
+	float spot_angle_cos = -1.0f;
+};
+
+struct BgfxLightEnvironmentState {
+	bool enabled = false;
+	Vector3 ambient = Vector3(0.0f, 0.0f, 0.0f);
+	unsigned count = 0;
+	Vector3 directions[4];
+	Vector3 diffuse[4];
+};
+
 struct BgfxDx8WrapperState {
 	SDL_Window *window = nullptr;
 	SDL_GLContext gl_context = nullptr;
@@ -120,6 +143,7 @@ struct BgfxDx8WrapperState {
 	bgfx::UniformHandle texture_uniform = BGFX_INVALID_HANDLE;
 	bgfx::UniformHandle fog_state_uniform = BGFX_INVALID_HANDLE;
 	bgfx::UniformHandle fog_color_uniform = BGFX_INVALID_HANDLE;
+	bgfx::UniformHandle color_adjust_uniform = BGFX_INVALID_HANDLE;
 	bool layout_ready = false;
 	Matrix4 world;
 	Matrix4 view;
@@ -143,6 +167,12 @@ struct BgfxDx8WrapperState {
 	unsigned current_ib_type = BUFFER_TYPE_INVALID;
 	unsigned current_vba_offset = 0;
 	unsigned current_iba_offset = 0;
+	TextureClass *render_target = nullptr;
+	BgfxLightState lights[4];
+	BgfxLightEnvironmentState light_environment;
+	float gamma = 1.0f;
+	float brightness = 0.0f;
+	float contrast = 1.0f;
 
 	BgfxDx8WrapperState()
 	{
@@ -202,6 +232,149 @@ float Compute_Vertex_Fog(const Matrix4 &world_view, const float *position)
 	return Clamp_Fog_Factor((fog_distance - fog_start) / (fog_end - fog_start));
 }
 
+Vector3 Transform_Normal_To_Camera_Space(const Matrix4 &world_view, const Vector3 &normal);
+Vector3 Normalize_Vector(const Vector3 &value);
+
+Vector3 Clamp_Vector(const Vector3 &value)
+{
+	return Vector3(
+		std::min(std::max(value.X, 0.0f), 1.0f),
+		std::min(std::max(value.Y, 0.0f), 1.0f),
+		std::min(std::max(value.Z, 0.0f), 1.0f));
+}
+
+Vector3 Multiply_Vector(const Vector3 &a, const Vector3 &b)
+{
+	return Vector3(a.X * b.X, a.Y * b.Y, a.Z * b.Z);
+}
+
+Vector3 Scale_Vector(const Vector3 &value, float scale)
+{
+	return Vector3(value.X * scale, value.Y * scale, value.Z * scale);
+}
+
+void Add_Clamped(Vector3 &accumulator, const Vector3 &value)
+{
+	accumulator = Clamp_Vector(accumulator + value);
+}
+
+Vector3 Color_To_Vector3(uint32_t color)
+{
+	const Vector4 converted = DX8Wrapper::Convert_Color(color);
+	return Vector3(converted.X, converted.Y, converted.Z);
+}
+
+Vector3 Resolve_Color_Source(unsigned source, const Vector3 &material_color, uint32_t vertex_diffuse, bool has_diffuse)
+{
+	if (source == D3DMCS_COLOR1 && has_diffuse) {
+		return Color_To_Vector3(vertex_diffuse);
+	}
+	return material_color;
+}
+
+Vector3 View_Rotate_Vector(const Vector3 &value)
+{
+	return Normalize_Vector(Transform_Normal_To_Camera_Space(g_bgfx.view, value));
+}
+
+float Compute_Attenuation(const BgfxLightState &light, const Vector3 &world_position)
+{
+	if (light.type == LightClass::DIRECTIONAL) {
+		return 1.0f;
+	}
+
+	Vector3 to_light = light.position - world_position;
+	const float distance = to_light.Length();
+	const float range = light.far_atten_end - light.far_atten_start;
+	float attenuation = 1.0f;
+	if (range > 1.0e-6f) {
+		attenuation = 1.0f - (distance - light.far_atten_start) / range;
+		attenuation = std::min(std::max(attenuation, 0.0f), 1.0f);
+	}
+
+	if (light.type == LightClass::SPOT && attenuation > 0.0f) {
+		const Vector3 spot_dir = Normalize_Vector(light.direction);
+		const Vector3 to_object = Normalize_Vector(world_position - light.position);
+		const float cone = Vector3::Dot_Product(spot_dir, to_object);
+		if (cone <= light.spot_angle_cos) {
+			return 0.0f;
+		}
+		const float denom = std::max(1.0f - light.spot_angle_cos, 1.0e-6f);
+		attenuation *= std::min(std::max((cone - light.spot_angle_cos) / denom, 0.0f), 1.0f);
+	}
+
+	return attenuation;
+}
+
+Vector3 Compute_Lit_Color(
+	uint32_t vertex_diffuse,
+	bool has_diffuse,
+	bool has_normal,
+	unsigned normal_offset,
+	const uint8_t *src,
+	const float *position,
+	const Matrix4 &world_view)
+{
+	if (g_bgfx.material == nullptr) {
+		return Color_To_Vector3(has_diffuse ? vertex_diffuse : 0xFFFFFFFFU);
+	}
+
+	Vector3 ambient_color(0.0f, 0.0f, 0.0f);
+	Vector3 diffuse_color(1.0f, 1.0f, 1.0f);
+	Vector3 emissive_color(0.0f, 0.0f, 0.0f);
+	g_bgfx.material->Get_Ambient(&ambient_color);
+	g_bgfx.material->Get_Diffuse(&diffuse_color);
+	g_bgfx.material->Get_Emissive(&emissive_color);
+
+	const Vector3 resolved_ambient = Resolve_Color_Source(g_bgfx.render_states[D3DRS_AMBIENTMATERIALSOURCE], ambient_color, vertex_diffuse, has_diffuse);
+	const Vector3 resolved_diffuse = Resolve_Color_Source(g_bgfx.render_states[D3DRS_DIFFUSEMATERIALSOURCE], diffuse_color, vertex_diffuse, has_diffuse);
+	const Vector3 resolved_emissive = Resolve_Color_Source(g_bgfx.render_states[D3DRS_EMISSIVEMATERIALSOURCE], emissive_color, vertex_diffuse, has_diffuse);
+	if (g_bgfx.render_states[D3DRS_LIGHTING] == 0 || !has_normal) {
+		return Clamp_Vector(resolved_diffuse + resolved_emissive);
+	}
+
+	const float *normal_data = reinterpret_cast<const float *>(src + normal_offset);
+	const Vector3 normal = Normalize_Vector(Transform_Normal_To_Camera_Space(world_view, Vector3(normal_data[0], normal_data[1], normal_data[2])));
+	Vector4 world_position4;
+	Matrix4::Transform_Vector(g_bgfx.world, Vector3(position[0], position[1], position[2]), &world_position4);
+	const Vector3 world_position(world_position4.X, world_position4.Y, world_position4.Z);
+
+	Vector3 lit = resolved_emissive;
+	Add_Clamped(lit, Multiply_Vector(resolved_ambient, Color_To_Vector3(g_bgfx.render_states[D3DRS_AMBIENT])));
+
+	if (g_bgfx.light_environment.enabled) {
+		Add_Clamped(lit, Multiply_Vector(resolved_ambient, g_bgfx.light_environment.ambient));
+		for (unsigned light_index = 0; light_index < g_bgfx.light_environment.count; ++light_index) {
+			const Vector3 light_dir = View_Rotate_Vector(g_bgfx.light_environment.directions[light_index]);
+			const float ndotl = std::max(Vector3::Dot_Product(normal, light_dir), 0.0f);
+			Add_Clamped(lit, Multiply_Vector(resolved_diffuse, Scale_Vector(g_bgfx.light_environment.diffuse[light_index], ndotl)));
+		}
+		return lit;
+	}
+
+	for (const BgfxLightState &light : g_bgfx.lights) {
+		if (!light.enabled) {
+			continue;
+		}
+
+		const float attenuation = Compute_Attenuation(light, world_position);
+		if (attenuation <= 0.0f) {
+			continue;
+		}
+
+		Vector3 light_direction = light.direction;
+		if (light.type != LightClass::DIRECTIONAL) {
+			light_direction = light.position - world_position;
+		}
+		light_direction = View_Rotate_Vector(light_direction);
+		const float ndotl = std::max(Vector3::Dot_Product(normal, light_direction), 0.0f);
+		Add_Clamped(lit, Multiply_Vector(resolved_ambient, Scale_Vector(light.ambient, attenuation)));
+		Add_Clamped(lit, Multiply_Vector(resolved_diffuse, Scale_Vector(light.diffuse, attenuation * ndotl)));
+	}
+
+	return lit;
+}
+
 void Reset_Draw_State()
 {
 	g_bgfx.vertex_data = nullptr;
@@ -220,6 +393,11 @@ void Reset_Draw_State()
 	g_bgfx.current_ib_type = BUFFER_TYPE_INVALID;
 	g_bgfx.current_vba_offset = 0;
 	g_bgfx.current_iba_offset = 0;
+	REF_PTR_RELEASE(g_bgfx.render_target);
+	g_bgfx.light_environment = BgfxLightEnvironmentState();
+	for (BgfxLightState &light : g_bgfx.lights) {
+		light = BgfxLightState();
+	}
 	for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
 		g_bgfx.texture_transforms[stage].Make_Identity();
 		for (unsigned state = 0; state < 32; ++state) {
@@ -343,31 +521,26 @@ Vector4 Generate_Stage0_Texture_Input(
 	return Vector4(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
-uint32_t Resolve_Diffuse_Color(uint32_t vertex_diffuse, bool has_diffuse)
+uint32_t Resolve_Diffuse_Color(
+	uint32_t vertex_diffuse,
+	bool has_diffuse,
+	bool has_normal,
+	unsigned normal_offset,
+	const uint8_t *src,
+	const float *position,
+	const Matrix4 &world_view)
 {
 	if (g_bgfx.material == nullptr) {
 		return has_diffuse ? vertex_diffuse : 0xFFFFFFFFU;
 	}
 
-	// Mesh/material preprocessing already bakes material color and opacity into COLOR1 vertex diffuse when requested.
-	const unsigned diffuse_source = g_bgfx.render_states[D3DRS_DIFFUSEMATERIALSOURCE];
-	if (diffuse_source == D3DMCS_COLOR1 && has_diffuse) {
-		return vertex_diffuse;
+	float alpha = g_bgfx.material->Get_Opacity();
+	if (g_bgfx.render_states[D3DRS_DIFFUSEMATERIALSOURCE] == D3DMCS_COLOR1 && has_diffuse) {
+		alpha = DX8Wrapper::Convert_Color(vertex_diffuse).W;
 	}
 
-	Vector3 diffuse_color(1.0f, 1.0f, 1.0f);
-	Vector3 emissive_color(0.0f, 0.0f, 0.0f);
-	g_bgfx.material->Get_Diffuse(&diffuse_color);
-	g_bgfx.material->Get_Emissive(&emissive_color);
-
-	Vector3 resolved = diffuse_color;
-	if (g_bgfx.render_states[D3DRS_LIGHTING] != 0) {
-		resolved.X = std::min(resolved.X + emissive_color.X, 1.0f);
-		resolved.Y = std::min(resolved.Y + emissive_color.Y, 1.0f);
-		resolved.Z = std::min(resolved.Z + emissive_color.Z, 1.0f);
-	}
-
-	return DX8Wrapper::Convert_Color(Vector4(resolved.X, resolved.Y, resolved.Z, g_bgfx.material->Get_Opacity()));
+	const Vector3 resolved = Compute_Lit_Color(vertex_diffuse, has_diffuse, has_normal, normal_offset, src, position, world_view);
+	return DX8Wrapper::Convert_Color(Vector4(resolved.X, resolved.Y, resolved.Z, alpha));
 }
 
 void Clamp_Window_Size(int &width, int &height)
@@ -473,11 +646,22 @@ void Update_Windowed_State()
 
 void Apply_View_Rect()
 {
+	unsigned target_width = g_bgfx.viewport.Width;
+	unsigned target_height = g_bgfx.viewport.Height;
+	if (g_bgfx.render_target != nullptr) {
+		target_width = static_cast<unsigned>(std::max(g_bgfx.render_target->Get_Width(), 1));
+		target_height = static_cast<unsigned>(std::max(g_bgfx.render_target->Get_Height(), 1));
+	}
 	const uint16_t x = static_cast<uint16_t>(std::min(g_bgfx.viewport.X, 0xFFFFu));
 	const uint16_t y = static_cast<uint16_t>(std::min(g_bgfx.viewport.Y, 0xFFFFu));
-	const uint16_t width = static_cast<uint16_t>(std::min(std::max(g_bgfx.viewport.Width, 1u), 0xFFFFu));
-	const uint16_t height = static_cast<uint16_t>(std::min(std::max(g_bgfx.viewport.Height, 1u), 0xFFFFu));
+	const uint16_t width = static_cast<uint16_t>(std::min(std::max(target_width, 1u), 0xFFFFu));
+	const uint16_t height = static_cast<uint16_t>(std::min(std::max(target_height, 1u), 0xFFFFu));
 	bgfx::setViewRect(kBootstrapViewId, x, y, width, height);
+}
+
+void Apply_View_Target()
+{
+	bgfx::setViewFrameBuffer(kBootstrapViewId, BgfxCompat_Get_Frame_Buffer(g_bgfx.render_target));
 }
 
 bool Sync_Backbuffer(bool force_reset)
@@ -543,6 +727,9 @@ bool Ensure_Gui_Resources()
 	if (!bgfx::isValid(g_bgfx.fog_color_uniform)) {
 		g_bgfx.fog_color_uniform = bgfx::createUniform("u_fogColor", bgfx::UniformType::Vec4);
 	}
+	if (!bgfx::isValid(g_bgfx.color_adjust_uniform)) {
+		g_bgfx.color_adjust_uniform = bgfx::createUniform("u_colorAdjust", bgfx::UniformType::Vec4);
+	}
 
 	if (!bgfx::isValid(g_bgfx.gui_program)) {
 		const uint8_t *vs_data = nullptr;
@@ -575,7 +762,8 @@ bool Ensure_Gui_Resources()
 	return bgfx::isValid(g_bgfx.gui_program) &&
 		bgfx::isValid(g_bgfx.texture_uniform) &&
 		bgfx::isValid(g_bgfx.fog_state_uniform) &&
-		bgfx::isValid(g_bgfx.fog_color_uniform);
+		bgfx::isValid(g_bgfx.fog_color_uniform) &&
+		bgfx::isValid(g_bgfx.color_adjust_uniform);
 }
 
 Matrix4 Adjust_Projection_For_BGFX(const Matrix4 &projection)
@@ -736,7 +924,7 @@ bool Submit_Triangles(uint16_t start_index, uint16_t polygon_count, uint16_t min
 		const uint8_t *src = g_bgfx.vertex_data + static_cast<size_t>(draw_min_source + i) * vertex_stride;
 		const float *position = reinterpret_cast<const float *>(src + location_offset);
 		const uint32_t diffuse = has_diffuse ? *reinterpret_cast<const uint32_t *>(src + diffuse_offset) : 0xFFFFFFFFU;
-		const uint32_t resolved_diffuse = Resolve_Diffuse_Color(diffuse, has_diffuse);
+		const uint32_t resolved_diffuse = Resolve_Diffuse_Color(diffuse, has_diffuse, has_normal, normal_offset, src, position, world_view);
 		dst_vertices[i].x = position[0];
 		dst_vertices[i].y = position[1];
 		dst_vertices[i].z = position[2];
@@ -804,10 +992,13 @@ bool Submit_Triangles(uint16_t start_index, uint16_t polygon_count, uint16_t min
 	const float fog_state[4] = { fog_mode, 0.0f, 0.0f, 0.0f };
 	const Vector3 fog_color_value = DX8Wrapper::Get_Fog_Color_Vector();
 	const float fog_color[4] = { fog_color_value.X, fog_color_value.Y, fog_color_value.Z, 1.0f };
+	const float gamma_power = 1.0f / std::max(g_bgfx.gamma, 1.0e-4f);
+	const float color_adjust[4] = { gamma_power, g_bgfx.brightness, g_bgfx.contrast, 0.0f };
 	bgfx::setTransform(&mvp_bgfx[0][0]);
 	bgfx::setTexture(0, g_bgfx.texture_uniform, bgfx::isValid(texture_handle) ? texture_handle : BgfxCompat_Get_White_Texture(), sampler_flags);
 	bgfx::setUniform(g_bgfx.fog_state_uniform, fog_state);
 	bgfx::setUniform(g_bgfx.fog_color_uniform, fog_color);
+	bgfx::setUniform(g_bgfx.color_adjust_uniform, color_adjust);
 	bgfx::setVertexBuffer(0, &tvb);
 	bgfx::setIndexBuffer(&tib);
 	bgfx::setState(Build_BGFX_State());
@@ -826,8 +1017,21 @@ void Copy_Surface_Rectangles(
 {
 	BgfxCompatSurface *dst = BgfxCompat_To_Surface(destination_surface);
 	const BgfxCompatSurface *src = BgfxCompat_To_Surface(source_surface);
-	if (dst == nullptr || src == nullptr || source_rects == nullptr || dest_points == nullptr || rect_count == 0 || dst->format != src->format) {
+	if (dst == nullptr || src == nullptr || dst->format != src->format) {
 		return;
+	}
+
+	RECT full_source_rect = {
+		0,
+		0,
+		static_cast<int32_t>(std::min(src->width, dst->width)),
+		static_cast<int32_t>(std::min(src->height, dst->height))
+	};
+	POINT origin = { 0, 0 };
+	if (source_rects == nullptr || dest_points == nullptr || rect_count == 0) {
+		source_rects = &full_source_rect;
+		dest_points = &origin;
+		rect_count = 1;
 	}
 
 	const unsigned pixel_size = BgfxCompat_Get_Pixel_Size(dst->format);
@@ -894,6 +1098,7 @@ bool Initialize_Bgfx(SDL_Window *window)
 
 	bgfx::setViewName(kBootstrapViewId, "Bootstrap");
 	bgfx::setViewMode(kBootstrapViewId, bgfx::ViewMode::Sequential);
+	Apply_View_Target();
 	Apply_View_Rect();
 	bgfx::setViewClear(kBootstrapViewId, g_bgfx.clear_flags, g_bgfx.clear_color, g_bgfx.clear_depth, g_bgfx.clear_stencil);
 	return true;
@@ -922,6 +1127,10 @@ void Shutdown_Bgfx()
 	if (bgfx::isValid(g_bgfx.fog_color_uniform)) {
 		bgfx::destroy(g_bgfx.fog_color_uniform);
 		g_bgfx.fog_color_uniform = BGFX_INVALID_HANDLE;
+	}
+	if (bgfx::isValid(g_bgfx.color_adjust_uniform)) {
+		bgfx::destroy(g_bgfx.color_adjust_uniform);
+		g_bgfx.color_adjust_uniform = BGFX_INVALID_HANDLE;
 	}
 	BgfxCompat_Shutdown_Texture_System();
 
@@ -978,6 +1187,7 @@ void DX8Wrapper::Begin_Scene(void)
 	bgfx::setViewClear(kBootstrapViewId, g_bgfx.clear_flags, g_bgfx.clear_color, g_bgfx.clear_depth, g_bgfx.clear_stencil);
 	bgfx::setViewMode(kBootstrapViewId, bgfx::ViewMode::Sequential);
 	bgfx::setViewTransform(kBootstrapViewId, kIdentityMatrix, kIdentityMatrix);
+	Apply_View_Target();
 	bgfx::touch(kBootstrapViewId);
 	g_bgfx.draw_calls = 0;
 }
@@ -1025,6 +1235,7 @@ void DX8Wrapper::Set_Viewport(const RenderViewportClass &viewport)
 {
 	g_bgfx.viewport = viewport;
 	if (g_bgfx.initialized) {
+		Apply_View_Target();
 		Apply_View_Rect();
 	}
 }
@@ -1118,8 +1329,13 @@ void DX8Wrapper::Get_Device_Resolution(int &width, int &height, int &bits, bool 
 
 void DX8Wrapper::Get_Render_Target_Resolution(int &width, int &height, int &bits, bool &windowed)
 {
-	width = g_bgfx.width;
-	height = g_bgfx.height;
+	if (g_bgfx.render_target != nullptr) {
+		width = std::max(g_bgfx.render_target->Get_Width(), 1);
+		height = std::max(g_bgfx.render_target->Get_Height(), 1);
+	} else {
+		width = g_bgfx.width;
+		height = g_bgfx.height;
+	}
 	bits = g_bgfx.bit_depth;
 	windowed = g_bgfx.windowed;
 }
@@ -1362,6 +1578,40 @@ void DX8Wrapper::Draw_Triangles(uint16_t start_index, uint16_t polygon_count, ui
 	Submit_Triangles(start_index, polygon_count, min_vertex_index, vertex_count);
 }
 
+void DX8Wrapper::Draw_Strip(uint16_t start_index, uint16_t polygon_count, uint16_t min_vertex_index, uint16_t vertex_count)
+{
+	if (g_bgfx.index_data == nullptr || polygon_count == 0) {
+		return;
+	}
+
+	const uint32_t strip_index_count = static_cast<uint32_t>(polygon_count) + 2U;
+	if (static_cast<uint32_t>(start_index) + strip_index_count > g_bgfx.index_count) {
+		WWRELEASE_SAY(("BGFX2D: strip index buffer range out of bounds (start=%u count=%u available=%u)\n", start_index, strip_index_count, g_bgfx.index_count));
+		return;
+	}
+
+	std::vector<uint16_t> triangles(static_cast<size_t>(polygon_count) * 3U, 0);
+	for (uint32_t triangle_index = 0; triangle_index < polygon_count; ++triangle_index) {
+		uint16_t i0 = g_bgfx.index_data[start_index + triangle_index + 0];
+		uint16_t i1 = g_bgfx.index_data[start_index + triangle_index + 1];
+		uint16_t i2 = g_bgfx.index_data[start_index + triangle_index + 2];
+		if ((triangle_index & 1U) != 0U) {
+			std::swap(i0, i1);
+		}
+		triangles[triangle_index * 3U + 0] = i0;
+		triangles[triangle_index * 3U + 1] = i1;
+		triangles[triangle_index * 3U + 2] = i2;
+	}
+
+	const uint16_t *saved_indices = g_bgfx.index_data;
+	const uint16_t saved_index_count = g_bgfx.index_count;
+	g_bgfx.index_data = triangles.data();
+	g_bgfx.index_count = static_cast<uint16_t>(triangles.size());
+	Submit_Triangles(0, polygon_count, min_vertex_index, vertex_count);
+	g_bgfx.index_data = saved_indices;
+	g_bgfx.index_count = saved_index_count;
+}
+
 void DX8Wrapper::Set_Texture(unsigned stage, TextureClass *texture)
 {
 	if (stage < MAX_TEXTURE_STAGES) {
@@ -1392,6 +1642,86 @@ void DX8Wrapper::Set_DX8_Render_State(unsigned state, unsigned value)
 	if (state < 256) {
 		g_bgfx.render_states[state] = value;
 	}
+}
+
+void DX8Wrapper::Set_Light_Environment(const LightEnvironmentClass *light_environment)
+{
+	g_bgfx.light_environment = BgfxLightEnvironmentState();
+	if (light_environment == nullptr) {
+		return;
+	}
+
+	g_bgfx.light_environment.enabled = true;
+	g_bgfx.light_environment.ambient = light_environment->Get_Equivalent_Ambient();
+	g_bgfx.light_environment.count = static_cast<unsigned>(std::min(light_environment->Get_Light_Count(), 4));
+	for (unsigned light_index = 0; light_index < g_bgfx.light_environment.count; ++light_index) {
+		g_bgfx.light_environment.directions[light_index] = light_environment->Get_Light_Direction(static_cast<int>(light_index));
+		g_bgfx.light_environment.diffuse[light_index] = light_environment->Get_Light_Diffuse(static_cast<int>(light_index));
+	}
+}
+
+void DX8Wrapper::Set_Light(unsigned index, const LightClass *light)
+{
+	if (index >= 4) {
+		return;
+	}
+
+	g_bgfx.light_environment.enabled = false;
+	BgfxLightState &state = g_bgfx.lights[index];
+	state = BgfxLightState();
+	if (light == nullptr) {
+		return;
+	}
+
+	state.enabled = true;
+	state.type = light->Get_Type();
+	light->Get_Ambient(&state.ambient);
+	light->Get_Diffuse(&state.diffuse);
+	state.position = light->Get_Position();
+	double far_start = 0.0;
+	double far_end = 1.0;
+	light->Get_Far_Attenuation_Range(far_start, far_end);
+	state.far_atten_start = static_cast<float>(far_start);
+	state.far_atten_end = static_cast<float>(far_end);
+	if (state.type == LightClass::DIRECTIONAL) {
+		state.direction = -light->Get_Transform().Get_Z_Vector();
+	} else {
+		state.direction = light->Get_Transform().Get_Z_Vector();
+	}
+	if (state.type == LightClass::SPOT) {
+		Vector3 spot_direction;
+		light->Get_Spot_Direction(spot_direction);
+		Matrix3D::Rotate_Vector(light->Get_Transform(), spot_direction, &state.direction);
+		state.spot_angle_cos = light->Get_Spot_Angle_Cos();
+	}
+}
+
+void DX8Wrapper::Set_Light(unsigned index, const LightClass &light)
+{
+	Set_Light(index, &light);
+}
+
+void DX8Wrapper::Set_Render_Target(TextureClass *texture)
+{
+	REF_PTR_SET(g_bgfx.render_target, texture);
+	if (g_bgfx.initialized) {
+		Apply_View_Target();
+		Apply_View_Rect();
+	}
+}
+
+void DX8Wrapper::Set_Render_Target(IDirect3DSurface8 *surface)
+{
+	if (surface == nullptr) {
+		Set_Render_Target(static_cast<TextureClass *>(nullptr));
+	}
+}
+
+void DX8Wrapper::Set_Gamma(float gamma, float brightness, float contrast, bool, bool)
+{
+	g_bgfx.gamma = std::max(gamma, 1.0e-4f);
+	g_bgfx.brightness = brightness;
+	g_bgfx.contrast = std::max(contrast, 0.0f);
 }
 
 void DX8Wrapper::Set_World_Identity()
@@ -1451,6 +1781,17 @@ void DX8Wrapper::Release_Render_State()
 
 void DX8Wrapper::Apply_Render_State_Changes()
 {
+}
+
+TextureClass *DX8Wrapper::Create_Render_Target(unsigned width, unsigned height, int format)
+{
+	const WW3DFormat resolved_format = format == WW3D_FORMAT_UNKNOWN ? WW3D_FORMAT_A8R8G8B8 : static_cast<WW3DFormat>(format);
+	return NEW_REF(TextureClass, (width, height, resolved_format, TextureClass::MIP_LEVELS_1, TextureClass::POOL_DEFAULT, true));
+}
+
+bool DX8Wrapper::Is_Render_To_Texture()
+{
+	return g_bgfx.render_target != nullptr && BgfxCompat_Is_Render_Target(g_bgfx.render_target);
 }
 
 void DX8Wrapper::_Copy_DX8_Rects(IDirect3DSurface8 *pSourceSurface, const RECT *pSourceRectsArray, uint32_t cRects, IDirect3DSurface8 *pDestinationSurface, const POINT *pDestPointsArray)

@@ -42,6 +42,7 @@
 #include "distlod.h"
 #include "hlod.h"
 #include "agg_def.h"
+#include "part_ldr.h"
 #include "wwstring.h"
 #include "wwmemlog.h"
 #include "dazzle.h"
@@ -145,6 +146,7 @@ WW3DAssetManager::WW3DAssetManager(void) :
 	Register_Prototype_Loader(&_HLodLoader);
 	Register_Prototype_Loader(&_DistLODLoader);
 	Register_Prototype_Loader(&_AggregateLoader);
+	Register_Prototype_Loader(&_ParticleEmitterLoader);
 	Register_Prototype_Loader(&_NullLoader);
 	Register_Prototype_Loader(&_DazzleLoader);
 	

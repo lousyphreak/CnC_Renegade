@@ -120,10 +120,26 @@ DECLARE_SCRIPT(Test_Cinematic_Primary_Killed, "CallbackID=:int")
 DECLARE_SCRIPT(Test_Cinematic, "ControlFilename=:string")
 {
 public:
+	#define	NUM_SLOTS	40
+
+	Test_Cinematic (void)
+		: MyID (0),
+		  LastSyncTime (0),
+		  Time (0.0F),
+		  FrameSync (0.0F),
+		  PrimaryKilled (false),
+		  IsCameraCinematic (false),
+		  NextParameter (NULL),
+		  Controls (NULL)
+	{
+		for (int index = 0; index < NUM_SLOTS; index ++) {
+			ObjectSlots[index] = 0;
+		}
+	}
+
 	/*
 	** Object Slots
 	*/
-	#define	NUM_SLOTS	40
 	int	ObjectSlots[ NUM_SLOTS ];
 
 	int	MyID;  // doesn't need to be saved
@@ -787,8 +803,8 @@ public:
 			GameObject * obj = Commands->Find_Object( id );
 			if ( obj ) {
 				Commands->Enable_Hibernation( obj, false );
-				char id[10];
-				sprintf( id, "%d", MyID );
+				char id[16];
+				snprintf( id, sizeof(id), "%d", MyID );
 				Commands->Attach_Script( obj, "Test_Cinematic_Primary_Killed", id );
 			} else {
 //				Commands->Debug_Message( "Slot Object not found %d\n", obj_slot );
@@ -1086,4 +1102,3 @@ parameter = OBJECT_ID
 
 ;_________________________________________
 #endif
-

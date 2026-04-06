@@ -248,6 +248,8 @@ void	CombatManager::Shutdown( void )
 
 	BonesManager::Shutdown();
 
+	ConversationMgrClass::Shutdown();
+
 	ScriptManager::Shutdown();
 
 	if (MessageWindow != NULL) {
@@ -255,8 +257,6 @@ void	CombatManager::Shutdown( void )
 		delete MessageWindow;
 		MessageWindow = NULL;
 	}
-
-	ConversationMgrClass::Shutdown ();
 
 //	Debug_Say(( "Combat Shutdown %d refs\n", RefCountClass::Total_Refs() ));
 }
@@ -1367,7 +1367,6 @@ void	CombatManager::Register_Star_Killer( ArmedGameObj * killer )
 		StarKillerID = 0;
 	}
 }
-
 
 
 

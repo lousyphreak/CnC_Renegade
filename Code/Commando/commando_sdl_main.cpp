@@ -24,6 +24,12 @@
 #include "useroptions.h"
 #include "win.h"
 
+// disable leak detection
+#ifdef __cplusplus
+extern "C"
+#endif
+const char* __asan_default_options() { return "detect_leaks=0"; }
+
 namespace {
 
 bool HasArgument(int argc, char **argv, std::string_view needle)

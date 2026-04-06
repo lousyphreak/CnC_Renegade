@@ -36,6 +36,14 @@
 - The current lighting parity uses a CPU-side approximation in the bootstrap submission path. That is enough to keep legacy light/environment state from being ignored completely, but it is still an emulation layer rather than a full shader-permutation replacement for the original D3D fixed-function pipeline.
 - Gamma support must preserve the legacy `Set_Gamma(float gamma, float brightness, float contrast, bool calibrate, bool save)` signature because existing engine/UI code still calls the five-argument form even if the bgfx implementation ignores the trailing booleans.
 
+## bgfx shader program split
+
+- The bgfx bootstrap renderer originally treated every triangle draw as if it needed the same shader feature superset. In practice the hot paths in `Code/ww3d2/dx8wrapper.cpp` fall into a much smaller set: trivial textured/color-modulated draws, unlit material draws, light-environment draws, and direct-light draws.
+- A useful split for this tree is therefore `basic`, `unlit`, `lit_environment`, and `lit_dynamic`. That removes the worst "one shader for everything" state propagation without exploding permutations for every blend/depth combination.
+- Do not split solely on opaque vs transparent vs additive. In this port, those differences are already expressed by `Build_BGFX_State()` and changing programs there would multiply permutations without removing much CPU work.
+- The highest-value CPU offload was direct-light shading. Before the split, `dx8wrapper.cpp` still computed point/spot/directional lighting per vertex on the CPU for non-light-environment paths. Uploading camera-space light arrays and evaluating attenuation in the vertex shader removes that per-vertex CPU work while preserving the wrapper's fixed-function compatibility model.
+- Unlit material resolution is also worth moving to shader code. That lets the submit loop forward original vertex colors instead of baking material diffuse/emissive/opacity per vertex on the CPU.
+
 ## bgfx scene fog behavior
 
 - The bgfx renderer does not inherit D3D8 fixed-function fog automatically; `SceneClass::Render` only stays wired up if `DX8Wrapper::Set_Fog` stores the scene fog state and the bgfx draw path forwards it into shader uniforms.
@@ -74,7 +82,14 @@
 
 - The bgfx-backed `DX8Wrapper` keeps legacy texture bindings in process-local render state between draw calls, similar to the original D3D device state model.
 - Those cached `TextureClass*` bindings must participate in refcounting. Storing raw pointers is unsafe because UI and sentence rendering can destroy textures while the wrapper still plans to submit draws that read the current binding.
+- In practice the fix belongs directly in `DX8Wrapper::Set_Texture`: use `REF_PTR_SET` when replacing `g_bgfx.textures[stage]`, and release those bindings from draw-state reset/shutdown paths. Equality guards are still fine, but they must not bypass ownership when the binding actually changes.
 - When porting more D3D state to bgfx/SDL paths, treat cached resource bindings as owners until they are replaced or the draw state is reset/shutdown.
+
+## OBB collision side sign
+
+- `Code/WWMath/colmathobbobb.cpp` expects `ObbCollisionStruct::Side` to represent only the interval side `+1` or `-1` selected during separation testing.
+- If that field reaches contact-normal generation uninitialized, modern UBSan reports signed-overflow UB at `-context.Side` and the resulting normal sign becomes garbage.
+- The safe modernization is to initialize `Side` in the constructor and convert it back into the final normal multiplier with an explicit branch instead of integer negation. That preserves the intended `+/-1` behavior without relying on signed overflow edge cases.
 
 ## Conversation manager re-entrancy
 

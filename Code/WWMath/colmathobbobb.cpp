@@ -519,6 +519,7 @@ struct ObbCollisionStruct
 		StartBad(true),													// Startbad is true until one of the axes clears it
 		AxisId(INTERSECTION),											// AxisId will be the axis that allowed the longest move
 		MaxFrac(0.0f),														// MaxFrac is the longest allowed move so far
+		Side(1),																// default to the "positive" interval side until a separating axis overrides it
 		Box0(box0),															
 		Move0(move0),
 		Box1(box1),
@@ -831,7 +832,8 @@ static inline void compute_contact_normal(ObbCollisionStruct & context,CastResul
 		break;
 	}	
 
-	result->Normal *= -context.Side;
+	const float normal_sign = context.Side < 0 ? 1.0f : -1.0f;
+	result->Normal *= normal_sign;
 }
 
 

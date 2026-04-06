@@ -69,13 +69,25 @@
 #include <bgfx/bgfx.h>
 #include <bgfx/platform.h>
 
-#include "glsl/fs_bootstrap.sc.bin.h"
-#include "glsl/vs_bootstrap.sc.bin.h"
-#include "spirv/fs_bootstrap.sc.bin.h"
-#include "spirv/vs_bootstrap.sc.bin.h"
+#include "glsl/fs_basic.sc.bin.h"
+#include "glsl/fs_scene.sc.bin.h"
+#include "glsl/vs_basic.sc.bin.h"
+#include "glsl/vs_lit_dynamic.sc.bin.h"
+#include "glsl/vs_lit_environment.sc.bin.h"
+#include "glsl/vs_unlit.sc.bin.h"
+#include "spirv/fs_basic.sc.bin.h"
+#include "spirv/fs_scene.sc.bin.h"
+#include "spirv/vs_basic.sc.bin.h"
+#include "spirv/vs_lit_dynamic.sc.bin.h"
+#include "spirv/vs_lit_environment.sc.bin.h"
+#include "spirv/vs_unlit.sc.bin.h"
 #if defined(_WIN32)
-#include "dx11/fs_bootstrap.sc.bin.h"
-#include "dx11/vs_bootstrap.sc.bin.h"
+#include "dx11/fs_basic.sc.bin.h"
+#include "dx11/fs_scene.sc.bin.h"
+#include "dx11/vs_basic.sc.bin.h"
+#include "dx11/vs_lit_dynamic.sc.bin.h"
+#include "dx11/vs_lit_environment.sc.bin.h"
+#include "dx11/vs_unlit.sc.bin.h"
 #endif
 
 namespace {
@@ -102,6 +114,31 @@ struct BgfxGuiVertex {
 	uint32_t abgr;
 	float u;
 	float v;
+};
+
+enum BgfxProgramType {
+	BGFX_PROGRAM_BASIC = 0,
+	BGFX_PROGRAM_UNLIT,
+	BGFX_PROGRAM_LIGHT_ENVIRONMENT,
+	BGFX_PROGRAM_LIGHT_DYNAMIC,
+	BGFX_PROGRAM_COUNT
+};
+
+struct EmbeddedShaderBinary {
+	const uint8_t *glsl_data = nullptr;
+	uint32_t glsl_size = 0;
+	const uint8_t *spirv_data = nullptr;
+	uint32_t spirv_size = 0;
+#if defined(_WIN32)
+	const uint8_t *dx11_data = nullptr;
+	uint32_t dx11_size = 0;
+#endif
+};
+
+struct BgfxProgramSelection {
+	BgfxProgramType program = BGFX_PROGRAM_BASIC;
+	bool fog_enabled = false;
+	bool use_gpu_texgen = false;
 };
 
 struct BgfxLightState {
@@ -143,23 +180,34 @@ struct BgfxDx8WrapperState {
 	bool initialized = false;
 	bool windowed = true;
 	bgfx::VertexLayout gui_layout;
-	bgfx::ProgramHandle gui_program = BGFX_INVALID_HANDLE;
+	bgfx::ProgramHandle programs[BGFX_PROGRAM_COUNT] = {
+		BGFX_INVALID_HANDLE,
+		BGFX_INVALID_HANDLE,
+		BGFX_INVALID_HANDLE,
+		BGFX_INVALID_HANDLE
+	};
 	bgfx::UniformHandle texture_uniform = BGFX_INVALID_HANDLE;
 	bgfx::UniformHandle fog_state_uniform = BGFX_INVALID_HANDLE;
 	bgfx::UniformHandle fog_color_uniform = BGFX_INVALID_HANDLE;
 	bgfx::UniformHandle color_adjust_uniform = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle lighting_state_uniform = BGFX_INVALID_HANDLE;
 	bgfx::UniformHandle material_source_uniform = BGFX_INVALID_HANDLE;
 	bgfx::UniformHandle material_ambient_uniform = BGFX_INVALID_HANDLE;
 	bgfx::UniformHandle material_diffuse_uniform = BGFX_INVALID_HANDLE;
 	bgfx::UniformHandle material_emissive_uniform = BGFX_INVALID_HANDLE;
+	bgfx::UniformHandle material_state_uniform = BGFX_INVALID_HANDLE;
 	bgfx::UniformHandle render_ambient_uniform = BGFX_INVALID_HANDLE;
+	bgfx::UniformHandle light_environment_state_uniform = BGFX_INVALID_HANDLE;
 	bgfx::UniformHandle light_environment_ambient_uniform = BGFX_INVALID_HANDLE;
 	bgfx::UniformHandle light_environment_direction_uniform = BGFX_INVALID_HANDLE;
 	bgfx::UniformHandle light_environment_diffuse_uniform = BGFX_INVALID_HANDLE;
 	bgfx::UniformHandle world_view_row_uniform = BGFX_INVALID_HANDLE;
 	bgfx::UniformHandle texgen_state_uniform = BGFX_INVALID_HANDLE;
 	bgfx::UniformHandle texture_transform_row_uniform = BGFX_INVALID_HANDLE;
+	bgfx::UniformHandle direct_light_state_uniform = BGFX_INVALID_HANDLE;
+	bgfx::UniformHandle direct_light_position_uniform = BGFX_INVALID_HANDLE;
+	bgfx::UniformHandle direct_light_direction_uniform = BGFX_INVALID_HANDLE;
+	bgfx::UniformHandle direct_light_ambient_uniform = BGFX_INVALID_HANDLE;
+	bgfx::UniformHandle direct_light_diffuse_uniform = BGFX_INVALID_HANDLE;
 	bool layout_ready = false;
 	Matrix4 world;
 	Matrix4 view;
@@ -205,6 +253,123 @@ struct BgfxDx8WrapperState {
 };
 
 BgfxDx8WrapperState g_bgfx;
+
+const EmbeddedShaderBinary kVertexShaders[BGFX_PROGRAM_COUNT] = {
+	{
+		vs_basic_glsl,
+		static_cast<uint32_t>(sizeof(vs_basic_glsl)),
+		vs_basic_spv,
+		static_cast<uint32_t>(sizeof(vs_basic_spv)),
+#if defined(_WIN32)
+		vs_basic_dx11,
+		static_cast<uint32_t>(sizeof(vs_basic_dx11)),
+#endif
+	},
+	{
+		vs_unlit_glsl,
+		static_cast<uint32_t>(sizeof(vs_unlit_glsl)),
+		vs_unlit_spv,
+		static_cast<uint32_t>(sizeof(vs_unlit_spv)),
+#if defined(_WIN32)
+		vs_unlit_dx11,
+		static_cast<uint32_t>(sizeof(vs_unlit_dx11)),
+#endif
+	},
+	{
+		vs_lit_environment_glsl,
+		static_cast<uint32_t>(sizeof(vs_lit_environment_glsl)),
+		vs_lit_environment_spv,
+		static_cast<uint32_t>(sizeof(vs_lit_environment_spv)),
+#if defined(_WIN32)
+		vs_lit_environment_dx11,
+		static_cast<uint32_t>(sizeof(vs_lit_environment_dx11)),
+#endif
+	},
+	{
+		vs_lit_dynamic_glsl,
+		static_cast<uint32_t>(sizeof(vs_lit_dynamic_glsl)),
+		vs_lit_dynamic_spv,
+		static_cast<uint32_t>(sizeof(vs_lit_dynamic_spv)),
+#if defined(_WIN32)
+		vs_lit_dynamic_dx11,
+		static_cast<uint32_t>(sizeof(vs_lit_dynamic_dx11)),
+#endif
+	},
+};
+
+const EmbeddedShaderBinary kFragmentShaders[BGFX_PROGRAM_COUNT] = {
+	{
+		fs_basic_glsl,
+		static_cast<uint32_t>(sizeof(fs_basic_glsl)),
+		fs_basic_spv,
+		static_cast<uint32_t>(sizeof(fs_basic_spv)),
+#if defined(_WIN32)
+		fs_basic_dx11,
+		static_cast<uint32_t>(sizeof(fs_basic_dx11)),
+#endif
+	},
+	{
+		fs_scene_glsl,
+		static_cast<uint32_t>(sizeof(fs_scene_glsl)),
+		fs_scene_spv,
+		static_cast<uint32_t>(sizeof(fs_scene_spv)),
+#if defined(_WIN32)
+		fs_scene_dx11,
+		static_cast<uint32_t>(sizeof(fs_scene_dx11)),
+#endif
+	},
+	{
+		fs_scene_glsl,
+		static_cast<uint32_t>(sizeof(fs_scene_glsl)),
+		fs_scene_spv,
+		static_cast<uint32_t>(sizeof(fs_scene_spv)),
+#if defined(_WIN32)
+		fs_scene_dx11,
+		static_cast<uint32_t>(sizeof(fs_scene_dx11)),
+#endif
+	},
+	{
+		fs_scene_glsl,
+		static_cast<uint32_t>(sizeof(fs_scene_glsl)),
+		fs_scene_spv,
+		static_cast<uint32_t>(sizeof(fs_scene_spv)),
+#if defined(_WIN32)
+		fs_scene_dx11,
+		static_cast<uint32_t>(sizeof(fs_scene_dx11)),
+#endif
+	},
+};
+
+bgfx::ShaderHandle Create_Embedded_Shader(const EmbeddedShaderBinary &shader)
+{
+	const uint8_t *data = shader.glsl_data;
+	uint32_t size = shader.glsl_size;
+
+	switch (bgfx::getRendererType()) {
+	case bgfx::RendererType::Vulkan:
+		data = shader.spirv_data;
+		size = shader.spirv_size;
+		break;
+#if defined(_WIN32)
+	case bgfx::RendererType::Direct3D11:
+	case bgfx::RendererType::Direct3D12:
+		data = shader.dx11_data;
+		size = shader.dx11_size;
+		break;
+#endif
+	default:
+		break;
+	}
+
+	return bgfx::createShader(bgfx::copy(data, size));
+}
+
+bgfx::ProgramHandle Create_Embedded_Program(BgfxProgramType program)
+{
+	const bgfx::ShaderHandle vertex_shader = Create_Embedded_Shader(kVertexShaders[program]);
+	const bgfx::ShaderHandle fragment_shader = Create_Embedded_Shader(kFragmentShaders[program]);
+	return bgfx::createProgram(vertex_shader, fragment_shader, true);
+}
 
 void Reset_View_Sequence()
 {
@@ -637,7 +802,235 @@ uint32_t Resolve_Unlit_Diffuse_Color(
 	return DX8Wrapper::Convert_Color(Vector4(resolved.X, resolved.Y, resolved.Z, alpha));
 }
 
+float Get_Draw_Fog_Mode()
+{
+	return (DX8Wrapper::Get_Current_Caps()->Is_Fog_Allowed() && DX8Wrapper::Get_Fog_Enable())
+		? static_cast<float>(g_bgfx.shader.Get_Fog_Func())
+		: static_cast<float>(ShaderClass::FOG_DISABLE);
+}
+
+float Encode_Light_Type(LightClass::LightType type)
+{
+	switch (type) {
+	case LightClass::DIRECTIONAL:
+		return 0.0f;
+	case LightClass::SPOT:
+		return 2.0f;
+	case LightClass::POINT:
+	default:
+		return 1.0f;
+	}
+}
+
+Vector3 Transform_Position_To_Camera_Space(const Matrix4 &view, const Vector3 &position)
+{
+	Vector4 camera_position;
+	Matrix4::Transform_Vector(view, position, &camera_position);
+	return Vector3(camera_position.X, camera_position.Y, camera_position.Z);
+}
+
+BgfxProgramSelection Select_BGFX_Program(const BgfxDrawLightingState &draw_lighting_state, bool fog_enabled, bool use_gpu_texgen)
+{
+	BgfxProgramSelection selection;
+	selection.fog_enabled = fog_enabled;
+	selection.use_gpu_texgen = use_gpu_texgen;
+
+	if (draw_lighting_state.use_light_environment) {
+		selection.program = BGFX_PROGRAM_LIGHT_ENVIRONMENT;
+	} else if (draw_lighting_state.lighting_enabled) {
+		selection.program = BGFX_PROGRAM_LIGHT_DYNAMIC;
+	} else if (draw_lighting_state.material_present || fog_enabled || use_gpu_texgen) {
+		selection.program = BGFX_PROGRAM_UNLIT;
+	} else {
+		selection.program = BGFX_PROGRAM_BASIC;
+	}
+
+	return selection;
+}
+
+void Set_Color_Adjust_Uniform()
+{
+	const float gamma_power = 1.0f / std::max(g_bgfx.gamma, 1.0e-4f);
+	const float color_adjust[4] = { gamma_power, g_bgfx.brightness, g_bgfx.contrast, 0.0f };
+	bgfx::setUniform(g_bgfx.color_adjust_uniform, color_adjust);
+}
+
+void Set_Fog_Uniforms(float fog_mode)
+{
+	const float fog_start = DX8Wrapper::Get_Fog_Start();
+	const float fog_end = DX8Wrapper::Get_Fog_End();
+	const float fog_inverse_range = fog_end > fog_start ? 1.0f / (fog_end - fog_start) : 0.0f;
+	const float fog_state[4] = { fog_mode, fog_start, fog_inverse_range, fog_end };
+	const Vector3 fog_color_value = DX8Wrapper::Get_Fog_Color_Vector();
+	const float fog_color[4] = { fog_color_value.X, fog_color_value.Y, fog_color_value.Z, 1.0f };
+	bgfx::setUniform(g_bgfx.fog_state_uniform, fog_state);
+	if (fog_mode != static_cast<float>(ShaderClass::FOG_DISABLE)) {
+		bgfx::setUniform(g_bgfx.fog_color_uniform, fog_color);
+	}
+}
+
+void Set_Material_Uniforms(const BgfxDrawLightingState &draw_lighting_state, bool has_diffuse)
+{
+	Vector3 material_ambient(1.0f, 1.0f, 1.0f);
+	Vector3 material_diffuse(1.0f, 1.0f, 1.0f);
+	Vector3 material_emissive(0.0f, 0.0f, 0.0f);
+	float opacity = 1.0f;
+	float material_source[4] = { 0.0f, has_diffuse ? 1.0f : 0.0f, 0.0f, 0.0f };
+
+	if (draw_lighting_state.material_present) {
+		material_ambient = draw_lighting_state.material_ambient;
+		material_diffuse = draw_lighting_state.material_diffuse;
+		material_emissive = draw_lighting_state.material_emissive;
+		opacity = draw_lighting_state.opacity;
+		material_source[0] = draw_lighting_state.ambient_uses_vertex_diffuse && has_diffuse ? 1.0f : 0.0f;
+		material_source[1] = draw_lighting_state.diffuse_uses_vertex_diffuse && has_diffuse ? 1.0f : 0.0f;
+		material_source[2] = draw_lighting_state.emissive_uses_vertex_diffuse && has_diffuse ? 1.0f : 0.0f;
+	}
+
+	const float material_state[4] = { opacity, 0.0f, 0.0f, 0.0f };
+	const float material_ambient_uniform[4] = { material_ambient.X, material_ambient.Y, material_ambient.Z, 1.0f };
+	const float material_diffuse_uniform[4] = { material_diffuse.X, material_diffuse.Y, material_diffuse.Z, 1.0f };
+	const float material_emissive_uniform[4] = { material_emissive.X, material_emissive.Y, material_emissive.Z, 1.0f };
+
+	bgfx::setUniform(g_bgfx.material_source_uniform, material_source);
+	bgfx::setUniform(g_bgfx.material_ambient_uniform, material_ambient_uniform);
+	bgfx::setUniform(g_bgfx.material_diffuse_uniform, material_diffuse_uniform);
+	bgfx::setUniform(g_bgfx.material_emissive_uniform, material_emissive_uniform);
+	bgfx::setUniform(g_bgfx.material_state_uniform, material_state);
+}
+
+void Set_Render_Ambient_Uniform(const Vector3 &render_ambient)
+{
+	const float render_ambient_uniform[4] = { render_ambient.X, render_ambient.Y, render_ambient.Z, 1.0f };
+	bgfx::setUniform(g_bgfx.render_ambient_uniform, render_ambient_uniform);
+}
+
+void Set_World_View_Row_Uniform(const Matrix4 &world_view)
+{
+	const float world_view_rows[3][4] = {
+		{ world_view[0][0], world_view[0][1], world_view[0][2], world_view[0][3] },
+		{ world_view[1][0], world_view[1][1], world_view[1][2], world_view[1][3] },
+		{ world_view[2][0], world_view[2][1], world_view[2][2], world_view[2][3] }
+	};
+	bgfx::setUniform(g_bgfx.world_view_row_uniform, world_view_rows, 3);
+}
+
+void Set_Texgen_Uniforms(
+	bool has_normal,
+	unsigned texcoord_generation,
+	bool apply_texture_transform,
+	bool projected_texture,
+	const Matrix4 &texture_transform)
+{
+	float texgen_mode = 0.0f;
+	if (texcoord_generation == D3DTSS_TCI_CAMERASPACEPOSITION) {
+		texgen_mode = 1.0f;
+	} else if (texcoord_generation == D3DTSS_TCI_CAMERASPACENORMAL) {
+		texgen_mode = 2.0f;
+	} else if (texcoord_generation == D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR) {
+		texgen_mode = 3.0f;
+	}
+
+	const float texgen_state[4] = {
+		texgen_mode,
+		apply_texture_transform ? 1.0f : 0.0f,
+		projected_texture ? 1.0f : 0.0f,
+		has_normal ? 1.0f : 0.0f
+	};
+	bgfx::setUniform(g_bgfx.texgen_state_uniform, texgen_state);
+
+	if (apply_texture_transform) {
+		const float texture_transform_rows[4][4] = {
+			{ texture_transform[0][0], texture_transform[0][1], texture_transform[0][2], texture_transform[0][3] },
+			{ texture_transform[1][0], texture_transform[1][1], texture_transform[1][2], texture_transform[1][3] },
+			{ texture_transform[2][0], texture_transform[2][1], texture_transform[2][2], texture_transform[2][3] },
+			{ texture_transform[3][0], texture_transform[3][1], texture_transform[3][2], texture_transform[3][3] }
+		};
+		bgfx::setUniform(g_bgfx.texture_transform_row_uniform, texture_transform_rows, 4);
+	}
+}
+
+void Set_Light_Environment_Uniforms(const BgfxDrawLightingState &draw_lighting_state)
+{
+	const float light_environment_state[4] = {
+		static_cast<float>(draw_lighting_state.light_environment_count),
+		0.0f,
+		0.0f,
+		0.0f
+	};
+	const float light_environment_ambient[4] = {
+		draw_lighting_state.light_environment_ambient.X,
+		draw_lighting_state.light_environment_ambient.Y,
+		draw_lighting_state.light_environment_ambient.Z,
+		1.0f
+	};
+	float light_environment_directions[4][4] = { { 0.0f } };
+	float light_environment_diffuse[4][4] = { { 0.0f } };
+
+	for (unsigned light_index = 0; light_index < draw_lighting_state.light_environment_count; ++light_index) {
+		light_environment_directions[light_index][0] = draw_lighting_state.light_environment_camera_directions[light_index].X;
+		light_environment_directions[light_index][1] = draw_lighting_state.light_environment_camera_directions[light_index].Y;
+		light_environment_directions[light_index][2] = draw_lighting_state.light_environment_camera_directions[light_index].Z;
+		light_environment_diffuse[light_index][0] = draw_lighting_state.light_environment_diffuse[light_index].X;
+		light_environment_diffuse[light_index][1] = draw_lighting_state.light_environment_diffuse[light_index].Y;
+		light_environment_diffuse[light_index][2] = draw_lighting_state.light_environment_diffuse[light_index].Z;
+	}
+
+	bgfx::setUniform(g_bgfx.light_environment_state_uniform, light_environment_state);
+	bgfx::setUniform(g_bgfx.light_environment_ambient_uniform, light_environment_ambient);
+	bgfx::setUniform(g_bgfx.light_environment_direction_uniform, light_environment_directions, 4);
+	bgfx::setUniform(g_bgfx.light_environment_diffuse_uniform, light_environment_diffuse, 4);
+}
+
+void Set_Direct_Light_Uniforms()
+{
+	float direct_light_state[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	float direct_light_position[4][4] = { { 0.0f } };
+	float direct_light_direction[4][4] = { { 0.0f } };
+	float direct_light_ambient[4][4] = { { 0.0f } };
+	float direct_light_diffuse[4][4] = { { 0.0f } };
+
+	unsigned light_count = 0;
+	for (const BgfxLightState &light : g_bgfx.lights) {
+		if (!light.enabled || light_count >= 4) {
+			continue;
+		}
+
+		const Vector3 camera_position = Transform_Position_To_Camera_Space(g_bgfx.view, light.position);
+		const Vector3 camera_direction = View_Rotate_Vector(light.direction);
+
+		direct_light_position[light_count][0] = camera_position.X;
+		direct_light_position[light_count][1] = camera_position.Y;
+		direct_light_position[light_count][2] = camera_position.Z;
+		direct_light_position[light_count][3] = light.far_atten_start;
+
+		direct_light_direction[light_count][0] = camera_direction.X;
+		direct_light_direction[light_count][1] = camera_direction.Y;
+		direct_light_direction[light_count][2] = camera_direction.Z;
+		direct_light_direction[light_count][3] = light.far_atten_end;
+
+		direct_light_ambient[light_count][0] = light.ambient.X;
+		direct_light_ambient[light_count][1] = light.ambient.Y;
+		direct_light_ambient[light_count][2] = light.ambient.Z;
+		direct_light_ambient[light_count][3] = Encode_Light_Type(light.type);
+
+		direct_light_diffuse[light_count][0] = light.diffuse.X;
+		direct_light_diffuse[light_count][1] = light.diffuse.Y;
+		direct_light_diffuse[light_count][2] = light.diffuse.Z;
+		direct_light_diffuse[light_count][3] = light.spot_angle_cos;
+		++light_count;
+	}
+
+	direct_light_state[0] = static_cast<float>(light_count);
+	bgfx::setUniform(g_bgfx.direct_light_state_uniform, direct_light_state);
+	bgfx::setUniform(g_bgfx.direct_light_position_uniform, direct_light_position, 4);
+	bgfx::setUniform(g_bgfx.direct_light_direction_uniform, direct_light_direction, 4);
+	bgfx::setUniform(g_bgfx.direct_light_ambient_uniform, direct_light_ambient, 4);
+	bgfx::setUniform(g_bgfx.direct_light_diffuse_uniform, direct_light_diffuse, 4);
+}
+
 void Set_Gui_Draw_Uniforms(
+	const BgfxProgramSelection &selection,
 	const BgfxDrawLightingState &draw_lighting_state,
 	bool has_diffuse,
 	bool has_normal,
@@ -647,120 +1040,40 @@ void Set_Gui_Draw_Uniforms(
 	const Matrix4 &world_view,
 	const Matrix4 &texture_transform)
 {
-	const float fog_mode = (DX8Wrapper::Get_Current_Caps()->Is_Fog_Allowed() && DX8Wrapper::Get_Fog_Enable())
-		? static_cast<float>(g_bgfx.shader.Get_Fog_Func())
-		: static_cast<float>(ShaderClass::FOG_DISABLE);
-	const float fog_start = DX8Wrapper::Get_Fog_Start();
-	const float fog_end = DX8Wrapper::Get_Fog_End();
-	const float fog_inverse_range = fog_end > fog_start ? 1.0f / (fog_end - fog_start) : 0.0f;
-	const float fog_state[4] = { fog_mode, fog_start, fog_inverse_range, fog_end };
-	const Vector3 fog_color_value = DX8Wrapper::Get_Fog_Color_Vector();
-	const float fog_color[4] = { fog_color_value.X, fog_color_value.Y, fog_color_value.Z, 1.0f };
-	const float gamma_power = 1.0f / std::max(g_bgfx.gamma, 1.0e-4f);
-	const float color_adjust[4] = { gamma_power, g_bgfx.brightness, g_bgfx.contrast, 0.0f };
-	const float lighting_state[4] = {
-		draw_lighting_state.use_light_environment ? 1.0f : 0.0f,
-		static_cast<float>(draw_lighting_state.light_environment_count),
-		draw_lighting_state.opacity,
-		0.0f
-	};
-	const float material_source[4] = {
-		draw_lighting_state.ambient_uses_vertex_diffuse && has_diffuse ? 1.0f : 0.0f,
-		draw_lighting_state.diffuse_uses_vertex_diffuse && has_diffuse ? 1.0f : 0.0f,
-		draw_lighting_state.emissive_uses_vertex_diffuse && has_diffuse ? 1.0f : 0.0f,
-		0.0f
-	};
-	const float material_ambient[4] = {
-		draw_lighting_state.material_ambient.X,
-		draw_lighting_state.material_ambient.Y,
-		draw_lighting_state.material_ambient.Z,
-		1.0f
-	};
-	const float material_diffuse[4] = {
-		draw_lighting_state.material_diffuse.X,
-		draw_lighting_state.material_diffuse.Y,
-		draw_lighting_state.material_diffuse.Z,
-		1.0f
-	};
-	const float material_emissive[4] = {
-		draw_lighting_state.material_emissive.X,
-		draw_lighting_state.material_emissive.Y,
-		draw_lighting_state.material_emissive.Z,
-		1.0f
-	};
-	const float render_ambient[4] = {
-		draw_lighting_state.render_ambient.X,
-		draw_lighting_state.render_ambient.Y,
-		draw_lighting_state.render_ambient.Z,
-		1.0f
-	};
-	const float light_environment_ambient[4] = {
-		draw_lighting_state.light_environment_ambient.X,
-		draw_lighting_state.light_environment_ambient.Y,
-		draw_lighting_state.light_environment_ambient.Z,
-		1.0f
-	};
-	const float world_view_rows[3][4] = {
-		{ world_view[0][0], world_view[0][1], world_view[0][2], world_view[0][3] },
-		{ world_view[1][0], world_view[1][1], world_view[1][2], world_view[1][3] },
-		{ world_view[2][0], world_view[2][1], world_view[2][2], world_view[2][3] }
-	};
-	float texgen_mode = 0.0f;
-	if (texcoord_generation == D3DTSS_TCI_CAMERASPACEPOSITION) {
-		texgen_mode = 1.0f;
-	} else if (texcoord_generation == D3DTSS_TCI_CAMERASPACENORMAL) {
-		texgen_mode = 2.0f;
-	} else if (texcoord_generation == D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR) {
-		texgen_mode = 3.0f;
-	}
-	const float texgen_state[4] = {
-		texgen_mode,
-		apply_texture_transform ? 1.0f : 0.0f,
-		projected_texture ? 1.0f : 0.0f,
-		has_normal ? 1.0f : 0.0f
-	};
-	const float texture_transform_rows[4][4] = {
-		{ texture_transform[0][0], texture_transform[0][1], texture_transform[0][2], texture_transform[0][3] },
-		{ texture_transform[1][0], texture_transform[1][1], texture_transform[1][2], texture_transform[1][3] },
-		{ texture_transform[2][0], texture_transform[2][1], texture_transform[2][2], texture_transform[2][3] },
-		{ texture_transform[3][0], texture_transform[3][1], texture_transform[3][2], texture_transform[3][3] }
-	};
-	float light_environment_directions[4][4] = { { 0.0f } };
-	float light_environment_diffuse[4][4] = { { 0.0f } };
-	for (unsigned light_index = 0; light_index < draw_lighting_state.light_environment_count; ++light_index) {
-		light_environment_directions[light_index][0] = draw_lighting_state.light_environment_camera_directions[light_index].X;
-		light_environment_directions[light_index][1] = draw_lighting_state.light_environment_camera_directions[light_index].Y;
-		light_environment_directions[light_index][2] = draw_lighting_state.light_environment_camera_directions[light_index].Z;
-		light_environment_diffuse[light_index][0] = draw_lighting_state.light_environment_diffuse[light_index].X;
-		light_environment_diffuse[light_index][1] = draw_lighting_state.light_environment_diffuse[light_index].Y;
-		light_environment_diffuse[light_index][2] = draw_lighting_state.light_environment_diffuse[light_index].Z;
-	}
-	const bool fog_enabled = fog_mode != static_cast<float>(ShaderClass::FOG_DISABLE);
-	const bool lighting_enabled = draw_lighting_state.use_light_environment;
-	const bool needs_world_view_rows = fog_enabled || lighting_enabled || texgen_mode > 0.0f;
+	Set_Color_Adjust_Uniform();
 
-	bgfx::setUniform(g_bgfx.fog_state_uniform, fog_state);
-	bgfx::setUniform(g_bgfx.color_adjust_uniform, color_adjust);
-	bgfx::setUniform(g_bgfx.lighting_state_uniform, lighting_state);
-	bgfx::setUniform(g_bgfx.texgen_state_uniform, texgen_state);
-	if (fog_enabled) {
-		bgfx::setUniform(g_bgfx.fog_color_uniform, fog_color);
+	if (selection.program == BGFX_PROGRAM_BASIC) {
+		return;
 	}
-	if (lighting_enabled) {
-		bgfx::setUniform(g_bgfx.material_source_uniform, material_source);
-		bgfx::setUniform(g_bgfx.material_ambient_uniform, material_ambient);
-		bgfx::setUniform(g_bgfx.material_diffuse_uniform, material_diffuse);
-		bgfx::setUniform(g_bgfx.material_emissive_uniform, material_emissive);
-		bgfx::setUniform(g_bgfx.render_ambient_uniform, render_ambient);
-		bgfx::setUniform(g_bgfx.light_environment_ambient_uniform, light_environment_ambient);
-		bgfx::setUniform(g_bgfx.light_environment_direction_uniform, light_environment_directions, 4);
-		bgfx::setUniform(g_bgfx.light_environment_diffuse_uniform, light_environment_diffuse, 4);
-	}
+
+	const float fog_mode = selection.fog_enabled
+		? Get_Draw_Fog_Mode()
+		: static_cast<float>(ShaderClass::FOG_DISABLE);
+	Set_Fog_Uniforms(fog_mode);
+	Set_Material_Uniforms(draw_lighting_state, has_diffuse);
+
+	const bool needs_world_view_rows =
+		selection.program == BGFX_PROGRAM_LIGHT_ENVIRONMENT ||
+		selection.program == BGFX_PROGRAM_LIGHT_DYNAMIC ||
+		selection.fog_enabled ||
+		(selection.use_gpu_texgen && texcoord_generation != D3DTSS_TCI_PASSTHRU);
 	if (needs_world_view_rows) {
-		bgfx::setUniform(g_bgfx.world_view_row_uniform, world_view_rows, 3);
+		Set_World_View_Row_Uniform(world_view);
 	}
-	if (apply_texture_transform) {
-		bgfx::setUniform(g_bgfx.texture_transform_row_uniform, texture_transform_rows, 4);
+
+	Set_Texgen_Uniforms(
+		has_normal,
+		selection.use_gpu_texgen ? texcoord_generation : D3DTSS_TCI_PASSTHRU,
+		selection.use_gpu_texgen ? apply_texture_transform : false,
+		selection.use_gpu_texgen ? projected_texture : false,
+		texture_transform);
+
+	if (selection.program == BGFX_PROGRAM_LIGHT_ENVIRONMENT) {
+		Set_Render_Ambient_Uniform(draw_lighting_state.render_ambient);
+		Set_Light_Environment_Uniforms(draw_lighting_state);
+	} else if (selection.program == BGFX_PROGRAM_LIGHT_DYNAMIC) {
+		Set_Render_Ambient_Uniform(draw_lighting_state.render_ambient);
+		Set_Direct_Light_Uniforms();
 	}
 }
 
@@ -951,9 +1264,6 @@ bool Ensure_Gui_Resources()
 	if (!bgfx::isValid(g_bgfx.color_adjust_uniform)) {
 		g_bgfx.color_adjust_uniform = bgfx::createUniform("u_colorAdjust", bgfx::UniformType::Vec4);
 	}
-	if (!bgfx::isValid(g_bgfx.lighting_state_uniform)) {
-		g_bgfx.lighting_state_uniform = bgfx::createUniform("u_lightingState", bgfx::UniformType::Vec4);
-	}
 	if (!bgfx::isValid(g_bgfx.material_source_uniform)) {
 		g_bgfx.material_source_uniform = bgfx::createUniform("u_materialSource", bgfx::UniformType::Vec4);
 	}
@@ -966,8 +1276,14 @@ bool Ensure_Gui_Resources()
 	if (!bgfx::isValid(g_bgfx.material_emissive_uniform)) {
 		g_bgfx.material_emissive_uniform = bgfx::createUniform("u_materialEmissive", bgfx::UniformType::Vec4);
 	}
+	if (!bgfx::isValid(g_bgfx.material_state_uniform)) {
+		g_bgfx.material_state_uniform = bgfx::createUniform("u_materialState", bgfx::UniformType::Vec4);
+	}
 	if (!bgfx::isValid(g_bgfx.render_ambient_uniform)) {
 		g_bgfx.render_ambient_uniform = bgfx::createUniform("u_renderAmbient", bgfx::UniformType::Vec4);
+	}
+	if (!bgfx::isValid(g_bgfx.light_environment_state_uniform)) {
+		g_bgfx.light_environment_state_uniform = bgfx::createUniform("u_lightEnvState", bgfx::UniformType::Vec4);
 	}
 	if (!bgfx::isValid(g_bgfx.light_environment_ambient_uniform)) {
 		g_bgfx.light_environment_ambient_uniform = bgfx::createUniform("u_lightEnvAmbient", bgfx::UniformType::Vec4);
@@ -987,52 +1303,54 @@ bool Ensure_Gui_Resources()
 	if (!bgfx::isValid(g_bgfx.texture_transform_row_uniform)) {
 		g_bgfx.texture_transform_row_uniform = bgfx::createUniform("u_textureTransformRow", bgfx::UniformType::Vec4, 4);
 	}
-
-	if (!bgfx::isValid(g_bgfx.gui_program)) {
-		const uint8_t *vs_data = nullptr;
-		uint32_t vs_size = 0;
-		const uint8_t *fs_data = nullptr;
-		uint32_t fs_size = 0;
-		switch (bgfx::getRendererType()) {
-		case bgfx::RendererType::Vulkan:
-			vs_data = vs_bootstrap_spv; vs_size = sizeof(vs_bootstrap_spv);
-			fs_data = fs_bootstrap_spv; fs_size = sizeof(fs_bootstrap_spv);
-			break;
-#if defined(_WIN32)
-		case bgfx::RendererType::Direct3D11:
-		case bgfx::RendererType::Direct3D12:
-			vs_data = vs_bootstrap_dx11; vs_size = sizeof(vs_bootstrap_dx11);
-			fs_data = fs_bootstrap_dx11; fs_size = sizeof(fs_bootstrap_dx11);
-			break;
-#endif
-		default:
-			vs_data = vs_bootstrap_glsl; vs_size = sizeof(vs_bootstrap_glsl);
-			fs_data = fs_bootstrap_glsl; fs_size = sizeof(fs_bootstrap_glsl);
-			break;
-		}
-		const bgfx::ShaderHandle vertex_shader = bgfx::createShader(bgfx::copy(vs_data, vs_size));
-		const bgfx::ShaderHandle fragment_shader = bgfx::createShader(bgfx::copy(fs_data, fs_size));
-		g_bgfx.gui_program = bgfx::createProgram(vertex_shader, fragment_shader, true);
-		WWRELEASE_SAY(("BGFX2D: GUI shader program initialized\n"));
+	if (!bgfx::isValid(g_bgfx.direct_light_state_uniform)) {
+		g_bgfx.direct_light_state_uniform = bgfx::createUniform("u_directLightState", bgfx::UniformType::Vec4);
+	}
+	if (!bgfx::isValid(g_bgfx.direct_light_position_uniform)) {
+		g_bgfx.direct_light_position_uniform = bgfx::createUniform("u_directLightPosition", bgfx::UniformType::Vec4, 4);
+	}
+	if (!bgfx::isValid(g_bgfx.direct_light_direction_uniform)) {
+		g_bgfx.direct_light_direction_uniform = bgfx::createUniform("u_directLightDirection", bgfx::UniformType::Vec4, 4);
+	}
+	if (!bgfx::isValid(g_bgfx.direct_light_ambient_uniform)) {
+		g_bgfx.direct_light_ambient_uniform = bgfx::createUniform("u_directLightAmbient", bgfx::UniformType::Vec4, 4);
+	}
+	if (!bgfx::isValid(g_bgfx.direct_light_diffuse_uniform)) {
+		g_bgfx.direct_light_diffuse_uniform = bgfx::createUniform("u_directLightDiffuse", bgfx::UniformType::Vec4, 4);
 	}
 
-	return bgfx::isValid(g_bgfx.gui_program) &&
+	for (int program_index = 0; program_index < BGFX_PROGRAM_COUNT; ++program_index) {
+		if (!bgfx::isValid(g_bgfx.programs[program_index])) {
+			g_bgfx.programs[program_index] = Create_Embedded_Program(static_cast<BgfxProgramType>(program_index));
+		}
+	}
+
+	return bgfx::isValid(g_bgfx.programs[BGFX_PROGRAM_BASIC]) &&
+		bgfx::isValid(g_bgfx.programs[BGFX_PROGRAM_UNLIT]) &&
+		bgfx::isValid(g_bgfx.programs[BGFX_PROGRAM_LIGHT_ENVIRONMENT]) &&
+		bgfx::isValid(g_bgfx.programs[BGFX_PROGRAM_LIGHT_DYNAMIC]) &&
 		bgfx::isValid(g_bgfx.texture_uniform) &&
 		bgfx::isValid(g_bgfx.fog_state_uniform) &&
 		bgfx::isValid(g_bgfx.fog_color_uniform) &&
 		bgfx::isValid(g_bgfx.color_adjust_uniform) &&
-		bgfx::isValid(g_bgfx.lighting_state_uniform) &&
 		bgfx::isValid(g_bgfx.material_source_uniform) &&
 		bgfx::isValid(g_bgfx.material_ambient_uniform) &&
 		bgfx::isValid(g_bgfx.material_diffuse_uniform) &&
 		bgfx::isValid(g_bgfx.material_emissive_uniform) &&
+		bgfx::isValid(g_bgfx.material_state_uniform) &&
 		bgfx::isValid(g_bgfx.render_ambient_uniform) &&
+		bgfx::isValid(g_bgfx.light_environment_state_uniform) &&
 		bgfx::isValid(g_bgfx.light_environment_ambient_uniform) &&
 		bgfx::isValid(g_bgfx.light_environment_direction_uniform) &&
 		bgfx::isValid(g_bgfx.light_environment_diffuse_uniform) &&
 		bgfx::isValid(g_bgfx.world_view_row_uniform) &&
 		bgfx::isValid(g_bgfx.texgen_state_uniform) &&
-		bgfx::isValid(g_bgfx.texture_transform_row_uniform);
+		bgfx::isValid(g_bgfx.texture_transform_row_uniform) &&
+		bgfx::isValid(g_bgfx.direct_light_state_uniform) &&
+		bgfx::isValid(g_bgfx.direct_light_position_uniform) &&
+		bgfx::isValid(g_bgfx.direct_light_direction_uniform) &&
+		bgfx::isValid(g_bgfx.direct_light_ambient_uniform) &&
+		bgfx::isValid(g_bgfx.direct_light_diffuse_uniform);
 }
 
 Matrix4 Adjust_Projection_For_BGFX(const Matrix4 &projection)
@@ -1183,42 +1501,27 @@ bool Submit_Primitives(uint16_t start_index, uint16_t primitive_count, uint16_t 
 	const Matrix4 &texture_transform = g_bgfx.texture_transforms[0];
 	const Matrix4 world_view = g_bgfx.view * g_bgfx.world;
 	const BgfxDrawLightingState draw_lighting_state = Build_Draw_Lighting_State(has_normal);
-	const bool needs_cpu_lighting = draw_lighting_state.lighting_enabled && !draw_lighting_state.use_light_environment;
-	const bool unlit_material_color_is_constant =
-		draw_lighting_state.material_present &&
-		!draw_lighting_state.lighting_enabled &&
-		(!draw_lighting_state.diffuse_uses_vertex_diffuse || !has_diffuse) &&
-		(!draw_lighting_state.emissive_uses_vertex_diffuse || !has_diffuse);
-	const uint32_t unlit_constant_diffuse = unlit_material_color_is_constant
-		? Resolve_Unlit_Diffuse_Color(draw_lighting_state, 0xFFFFFFFFU, false)
-		: 0xFFFFFFFFU;
 	const bool gpu_texcoord_generation_supported =
 		texcoord_generation == D3DTSS_TCI_PASSTHRU ||
 		texcoord_generation == D3DTSS_TCI_CAMERASPACEPOSITION ||
 		texcoord_generation == D3DTSS_TCI_CAMERASPACENORMAL ||
 		texcoord_generation == D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR;
 	const bool needs_cpu_texcoords = !gpu_texcoord_generation_supported;
-	if (!needs_cpu_lighting && !needs_cpu_texcoords) {
+	const float fog_mode = Get_Draw_Fog_Mode();
+	const bool fog_enabled = fog_mode != static_cast<float>(ShaderClass::FOG_DISABLE);
+	const bool use_gpu_texgen = !needs_cpu_texcoords && (texcoord_generation != D3DTSS_TCI_PASSTHRU || apply_texture_transform);
+	const BgfxProgramSelection program_selection = Select_BGFX_Program(draw_lighting_state, fog_enabled, use_gpu_texgen);
+	if (!needs_cpu_texcoords) {
 		WWPerfMonClass::Record_Fast_Submit();
 	} else {
 		WWPerfMonClass::Record_Slow_Submit();
-		WWPerfMonClass::Record_Slow_Submit_Reasons(needs_cpu_lighting, false, needs_cpu_texcoords);
+		WWPerfMonClass::Record_Slow_Submit_Reasons(false, false, needs_cpu_texcoords);
 	}
 	BgfxGuiVertex *dst_vertices = reinterpret_cast<BgfxGuiVertex *>(tvb.data);
 	for (uint32_t i = 0; i < source_vertex_count; ++i) {
 		const uint8_t *src = g_bgfx.vertex_data + static_cast<size_t>(draw_min_source + i) * vertex_stride;
 		const float *position = reinterpret_cast<const float *>(src + location_offset);
 		const uint32_t diffuse = has_diffuse ? *reinterpret_cast<const uint32_t *>(src + diffuse_offset) : 0xFFFFFFFFU;
-		uint32_t resolved_diffuse = diffuse;
-		if (draw_lighting_state.material_present && !draw_lighting_state.use_light_environment) {
-			if (!draw_lighting_state.lighting_enabled) {
-				resolved_diffuse = unlit_material_color_is_constant
-					? unlit_constant_diffuse
-					: Resolve_Unlit_Diffuse_Color(draw_lighting_state, diffuse, has_diffuse);
-			} else {
-				resolved_diffuse = Resolve_Diffuse_Color(diffuse, has_diffuse, has_normal, normal_offset, src, position, world_view);
-			}
-		}
 		dst_vertices[i].x = position[0];
 		dst_vertices[i].y = position[1];
 		dst_vertices[i].z = position[2];
@@ -1232,7 +1535,7 @@ bool Submit_Primitives(uint16_t start_index, uint16_t primitive_count, uint16_t 
 			dst_vertices[i].ny = 0.0f;
 			dst_vertices[i].nz = 1.0f;
 		}
-		dst_vertices[i].abgr = DX8_To_BGFX_Color(resolved_diffuse);
+		dst_vertices[i].abgr = DX8_To_BGFX_Color(diffuse);
 		if (has_selected_texcoord) {
 			const float *uv = reinterpret_cast<const float *>(src + tex_offset);
 			dst_vertices[i].u = uv[0];
@@ -1306,6 +1609,7 @@ bool Submit_Primitives(uint16_t start_index, uint16_t primitive_count, uint16_t 
 	bgfx::setTransform(&mvp_bgfx[0][0]);
 	bgfx::setTexture(0, g_bgfx.texture_uniform, bgfx::isValid(texture_handle) ? texture_handle : BgfxCompat_Get_White_Texture(), sampler_flags);
 	Set_Gui_Draw_Uniforms(
+		program_selection,
 		draw_lighting_state,
 		has_diffuse,
 		has_normal,
@@ -1317,7 +1621,7 @@ bool Submit_Primitives(uint16_t start_index, uint16_t primitive_count, uint16_t 
 	bgfx::setVertexBuffer(0, &tvb);
 	bgfx::setIndexBuffer(&tib);
 	bgfx::setState(Build_BGFX_State(triangle_strip));
-	bgfx::submit(g_bgfx.current_view_id, g_bgfx.gui_program);
+	bgfx::submit(g_bgfx.current_view_id, g_bgfx.programs[program_selection.program]);
 
 	++g_bgfx.draw_calls;
 	WWPerfMonClass::Record_Draw_Call();
@@ -1432,9 +1736,11 @@ void Shutdown_Bgfx()
 
 	Reset_Draw_State();
 
-	if (bgfx::isValid(g_bgfx.gui_program)) {
-		bgfx::destroy(g_bgfx.gui_program);
-		g_bgfx.gui_program = BGFX_INVALID_HANDLE;
+	for (bgfx::ProgramHandle &program : g_bgfx.programs) {
+		if (bgfx::isValid(program)) {
+			bgfx::destroy(program);
+			program = BGFX_INVALID_HANDLE;
+		}
 	}
 	if (bgfx::isValid(g_bgfx.texture_uniform)) {
 		bgfx::destroy(g_bgfx.texture_uniform);
@@ -1452,10 +1758,6 @@ void Shutdown_Bgfx()
 		bgfx::destroy(g_bgfx.color_adjust_uniform);
 		g_bgfx.color_adjust_uniform = BGFX_INVALID_HANDLE;
 	}
-	if (bgfx::isValid(g_bgfx.lighting_state_uniform)) {
-		bgfx::destroy(g_bgfx.lighting_state_uniform);
-		g_bgfx.lighting_state_uniform = BGFX_INVALID_HANDLE;
-	}
 	if (bgfx::isValid(g_bgfx.material_source_uniform)) {
 		bgfx::destroy(g_bgfx.material_source_uniform);
 		g_bgfx.material_source_uniform = BGFX_INVALID_HANDLE;
@@ -1472,9 +1774,17 @@ void Shutdown_Bgfx()
 		bgfx::destroy(g_bgfx.material_emissive_uniform);
 		g_bgfx.material_emissive_uniform = BGFX_INVALID_HANDLE;
 	}
+	if (bgfx::isValid(g_bgfx.material_state_uniform)) {
+		bgfx::destroy(g_bgfx.material_state_uniform);
+		g_bgfx.material_state_uniform = BGFX_INVALID_HANDLE;
+	}
 	if (bgfx::isValid(g_bgfx.render_ambient_uniform)) {
 		bgfx::destroy(g_bgfx.render_ambient_uniform);
 		g_bgfx.render_ambient_uniform = BGFX_INVALID_HANDLE;
+	}
+	if (bgfx::isValid(g_bgfx.light_environment_state_uniform)) {
+		bgfx::destroy(g_bgfx.light_environment_state_uniform);
+		g_bgfx.light_environment_state_uniform = BGFX_INVALID_HANDLE;
 	}
 	if (bgfx::isValid(g_bgfx.light_environment_ambient_uniform)) {
 		bgfx::destroy(g_bgfx.light_environment_ambient_uniform);
@@ -1499,6 +1809,26 @@ void Shutdown_Bgfx()
 	if (bgfx::isValid(g_bgfx.texture_transform_row_uniform)) {
 		bgfx::destroy(g_bgfx.texture_transform_row_uniform);
 		g_bgfx.texture_transform_row_uniform = BGFX_INVALID_HANDLE;
+	}
+	if (bgfx::isValid(g_bgfx.direct_light_state_uniform)) {
+		bgfx::destroy(g_bgfx.direct_light_state_uniform);
+		g_bgfx.direct_light_state_uniform = BGFX_INVALID_HANDLE;
+	}
+	if (bgfx::isValid(g_bgfx.direct_light_position_uniform)) {
+		bgfx::destroy(g_bgfx.direct_light_position_uniform);
+		g_bgfx.direct_light_position_uniform = BGFX_INVALID_HANDLE;
+	}
+	if (bgfx::isValid(g_bgfx.direct_light_direction_uniform)) {
+		bgfx::destroy(g_bgfx.direct_light_direction_uniform);
+		g_bgfx.direct_light_direction_uniform = BGFX_INVALID_HANDLE;
+	}
+	if (bgfx::isValid(g_bgfx.direct_light_ambient_uniform)) {
+		bgfx::destroy(g_bgfx.direct_light_ambient_uniform);
+		g_bgfx.direct_light_ambient_uniform = BGFX_INVALID_HANDLE;
+	}
+	if (bgfx::isValid(g_bgfx.direct_light_diffuse_uniform)) {
+		bgfx::destroy(g_bgfx.direct_light_diffuse_uniform);
+		g_bgfx.direct_light_diffuse_uniform = BGFX_INVALID_HANDLE;
 	}
 	BgfxCompat_Shutdown_Texture_System();
 
@@ -1989,7 +2319,7 @@ void DX8Wrapper::Draw_Strip(uint16_t start_index, uint16_t polygon_count, uint16
 void DX8Wrapper::Set_Texture(unsigned stage, TextureClass *texture)
 {
 	if (stage < MAX_TEXTURE_STAGES && g_bgfx.textures[stage] != texture) {
-		g_bgfx.textures[stage] = texture;
+		REF_PTR_SET(g_bgfx.textures[stage], texture);
 	}
 }
 

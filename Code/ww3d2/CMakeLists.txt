@@ -107,9 +107,20 @@ if(RENEGADE_WITH_BGFX_RENDERER)
     set(WW3D2_BGFX_SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
     set(WW3D2_BGFX_GENERATED_SHADER_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated/shaders")
 
+    set(WW3D2_BGFX_VERTEX_SHADERS
+        "${WW3D2_BGFX_SHADER_DIR}/vs_basic.sc"
+        "${WW3D2_BGFX_SHADER_DIR}/vs_unlit.sc"
+        "${WW3D2_BGFX_SHADER_DIR}/vs_lit_environment.sc"
+        "${WW3D2_BGFX_SHADER_DIR}/vs_lit_dynamic.sc"
+    )
+    set(WW3D2_BGFX_FRAGMENT_SHADERS
+        "${WW3D2_BGFX_SHADER_DIR}/fs_basic.sc"
+        "${WW3D2_BGFX_SHADER_DIR}/fs_scene.sc"
+    )
+
     bgfx_compile_shaders(
         TYPE VERTEX
-        SHADERS "${WW3D2_BGFX_SHADER_DIR}/vs_bootstrap.sc"
+        SHADERS ${WW3D2_BGFX_VERTEX_SHADERS}
         VARYING_DEF "${WW3D2_BGFX_SHADER_DIR}/varying.def.sc"
         OUTPUT_DIR "${WW3D2_BGFX_GENERATED_SHADER_DIR}"
         INCLUDE_DIRS "${bgfx_cmake_SOURCE_DIR}/bgfx/src"
@@ -117,7 +128,7 @@ if(RENEGADE_WITH_BGFX_RENDERER)
     )
     bgfx_compile_shaders(
         TYPE FRAGMENT
-        SHADERS "${WW3D2_BGFX_SHADER_DIR}/fs_bootstrap.sc"
+        SHADERS ${WW3D2_BGFX_FRAGMENT_SHADERS}
         VARYING_DEF "${WW3D2_BGFX_SHADER_DIR}/varying.def.sc"
         OUTPUT_DIR "${WW3D2_BGFX_GENERATED_SHADER_DIR}"
         INCLUDE_DIRS "${bgfx_cmake_SOURCE_DIR}/bgfx/src"
@@ -126,8 +137,10 @@ if(RENEGADE_WITH_BGFX_RENDERER)
 
     list(APPEND WW3D2_BGFX_SHADER_SOURCES
         "${WW3D2_BGFX_SHADER_DIR}/varying.def.sc"
-        "${WW3D2_BGFX_SHADER_DIR}/vs_bootstrap.sc"
-        "${WW3D2_BGFX_SHADER_DIR}/fs_bootstrap.sc"
+        "${WW3D2_BGFX_SHADER_DIR}/vs_common.sc"
+        "${WW3D2_BGFX_SHADER_DIR}/fs_common.sc"
+        ${WW3D2_BGFX_VERTEX_SHADERS}
+        ${WW3D2_BGFX_FRAGMENT_SHADERS}
     )
 endif()
 

@@ -14,7 +14,7 @@ Executables willl run continuously until the user closes them, so you need to us
 
 ## Building the project
 
-Use `cmake --build` to build the project. The main windows build is in build-win.
+Use `cmake --build -j20` to build the project. The main windows build is in build-win.
 The build should alway be Debug mode with ASAN and UBSAN enabled, to catch any memory errors and undefined behavior during development.
 **ALWAYS** build and run the main executable before returning to the user, to make sure that the port is working and that there are no crashes or major issues for at least 300 seconds. Should **ANY** crash or major issue be found, fix it as part of your task before returning to the user.
 
@@ -27,8 +27,10 @@ The build should alway be Debug mode with ASAN and UBSAN enabled, to catch any m
 - keep a knowledge document (e.g. `PORTING_KNOWLEDGE.md`) to document any important information, insights, or discoveries made during the porting process, such as how certain systems work, any quirks or edge cases discovered, and any useful resources or references found.
 - if there is any decision to be made about how to implement something, or if there are any questions or uncertainties about how to proceed, use the `askQuestions` tool.
 - do not modify game code, only the updates to modern integration (like sound, render, input). we want to preserve functionality as much as possible, and not introduce new bugs or changes to the original game logic.
+- the original pre-port code can be accessed with the git tag `original`, so if you need to check how something worked before, you can check out that tag and see the original code.
 
-- **DO NOT COMMIT** - the user will do that
+
+- **DO NOT TOUCH GIT** - the user will do that
 - **DO NOT CHANGE THE ORIGINAL GAME CODE** - unless needed to port to new functionality, like changing the file system to use SDL3, or changing the input handling to use SDL3, but do not change the original game logic or behavior unless absolutely necessary. if you need to change something in the original code, make sure to document it in the `PORTING_PROGRESS.md` and `PORTING_KNOWLEDGE.md` files, and explain why the change was needed and how it was implemented.
 
 

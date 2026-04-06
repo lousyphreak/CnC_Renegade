@@ -178,6 +178,23 @@ static TextureClass* Create_Projector_Render_Target(unsigned w,unsigned h)
 
 }
 
+static TextureClass *Create_Static_Shadow_Texture(TextureClass *shared_render_target)
+{
+#if RENEGADE_WITH_BGFX_RENDERER
+	TextureClass *texture = Create_Projector_Render_Target(STATIC_PROJECTOR_RESOLUTION,STATIC_PROJECTOR_RESOLUTION);
+	if (texture != NULL) {
+		SET_REF_OWNER(texture);
+	}
+	return texture;
+#else
+	TextureClass *texture = shared_render_target;
+	if (texture != NULL) {
+		texture->Add_Ref();
+	}
+	return texture;
+#endif
+}
+
 /************************************************************************************
 **
 ** ShadowTexClass Implemenation
@@ -1124,11 +1141,13 @@ void PhysicsSceneClass::Generate_Static_Shadow_Projectors(void)
 	*/
 	_StaticShadowTexMgr.Reset();
 
+	TextureClass * render_target = NULL;
+#if !RENEGADE_WITH_BGFX_RENDERER
 	/*
 	** Allocate a render target texture for all of the static shadows to share
 	*/
-	TextureClass * render_target = Create_Projector_Render_Target(STATIC_PROJECTOR_RESOLUTION,STATIC_PROJECTOR_RESOLUTION);
-//	TextureClass * render_target = DX8Wrapper::Create_Render_Target(STATIC_PROJECTOR_RESOLUTION,STATIC_PROJECTOR_RESOLUTION);
+	render_target = Create_Projector_Render_Target(STATIC_PROJECTOR_RESOLUTION,STATIC_PROJECTOR_RESOLUTION);
+//	render_target = DX8Wrapper::Create_Render_Target(STATIC_PROJECTOR_RESOLUTION,STATIC_PROJECTOR_RESOLUTION);
 
 	// Test render target functionality. Some NVidia driver versions have issues with rendering to a texture and
 	// copying surface to another texture. If this fails, we'll not use static shadow projectors. Dynamic shadow
@@ -1172,9 +1191,12 @@ void PhysicsSceneClass::Generate_Static_Shadow_Projectors(void)
 */
 
 	}
+#endif
 
-	if (render_target != NULL) {
-		SET_REF_OWNER(render_target);
+	if ((RENEGADE_WITH_BGFX_RENDERER != 0) || (render_target != NULL)) {
+		if (render_target != NULL) {
+			SET_REF_OWNER(render_target);
+		}
 
 		/*
 		** Generate a new shadow for each one.  Each time we find a new object-lightsource
@@ -1259,10 +1281,27 @@ void PhysicsSceneClass::Setup_Static_Directional_Shadow
 	*/
 	if (existing_texture == NULL) {
 
-		shadow_projector->Set_Render_Target(render_target);
-		shadow_projector->Compute_Texture(&obj,def->Shadow_Is_Additive());
+		TextureClass * shadow_texture = Create_Static_Shadow_Texture(render_target);
+		if (shadow_texture == NULL) {
+			WWDEBUG_SAY(("Failed to allocate static shadow texture for object type %d\n",type_id));
+			REF_PTR_RELEASE(shadow_projector);
+			return;
+		}
 
-		SurfaceClass * surf = render_target->Get_Surface_Level();
+		shadow_projector->Set_Render_Target(shadow_texture);
+		if (!shadow_projector->Compute_Texture(&obj,def->Shadow_Is_Additive())) {
+			WWDEBUG_SAY(("Failed to render static shadow texture for object type %d\n",type_id));
+			shadow_projector->Set_Render_Target(NULL);
+			REF_PTR_RELEASE(shadow_texture);
+			REF_PTR_RELEASE(shadow_projector);
+			return;
+		}
+
+#if RENEGADE_WITH_BGFX_RENDERER
+		shadow_projector->Set_Render_Target(NULL);
+		shadow_projector->Set_Texture(shadow_texture);
+#else
+		SurfaceClass * surf = shadow_texture->Get_Surface_Level();
 
 		SurfaceClass::SurfaceDescription desc;
 		surf->Get_Description(desc);
@@ -1277,8 +1316,10 @@ void PhysicsSceneClass::Setup_Static_Directional_Shadow
 		REF_PTR_RELEASE(surf);
 		REF_PTR_RELEASE(new_surf);
 		REF_PTR_RELEASE(new_texture);
+#endif
 
 		_StaticShadowTexMgr.Add_Shadow_Texture(type_id,obj_orientation,shadow_projector->Peek_Texture());
+		REF_PTR_RELEASE(shadow_texture);
 	}
 
 	/*

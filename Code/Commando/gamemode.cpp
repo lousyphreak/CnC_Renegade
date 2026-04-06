@@ -168,6 +168,8 @@ void GameModeManager::List_Active_Game_Modes(void)
 */
 void	GameModeManager::Think( void )
 {
+	WWPROFILE("GameModes");
+
 	for (	SLNode<GameModeClass> *game_mode_node = GameModeList.Head();
 			game_mode_node != NULL;
 			game_mode_node = game_mode_node->Next()) {
@@ -177,15 +179,19 @@ void	GameModeManager::Think( void )
 		//	  mode->Get_State() != GAME_MODE_INACTIVE_PENDING ) {
 		//if ( mode->Get_State() != GAME_MODE_INACTIVE &&
 		if ( !mode->Is_Inactive() ) {
-
-//			char name[80];
-//			sprintf( name, "Think - %s", mode->Name() );
-			mode->Think();
+			{
+				WWPROFILE(mode->Name());
+				mode->Think();
+			}
 		}
 
 		mode->Safely_Deactivate(); // if required
 	}
-	BINKMovie::Update();
+
+	{
+		WWPROFILE("BINK_Update");
+		BINKMovie::Update();
+	}
 }
 
 void GameModeManager::Safely_Deactivate(void)
@@ -239,6 +245,7 @@ void	GameModeManager::Render( void )
 			// the game isn't active.  (This gives us a menu performance boost).
 			//
 			if (combat_mode_active) {
+				WWPROFILE("Pre_Render_Processing");
 				COMBAT_SCENE->Pre_Render_Processing(*COMBAT_CAMERA);
 			}
 		}
@@ -257,7 +264,10 @@ void	GameModeManager::Render( void )
 				GameModeClass *mode = game_mode_node->Data();
 
 				if ( mode->Get_State() != GAME_MODE_INACTIVE ) {
-					mode->Render();
+					{
+						WWPROFILE(mode->Name());
+						mode->Render();
+					}
 				}
 			}
 		}
@@ -306,6 +316,7 @@ void	GameModeManager::Render( void )
 
 
 		if (do_pscene) {
+			WWPROFILE("Post_Render_Processing");
 			COMBAT_SCENE->Post_Render_Processing();
 		}
 

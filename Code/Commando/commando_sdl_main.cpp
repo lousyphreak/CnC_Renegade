@@ -23,6 +23,7 @@
 #include "singletoninstancekeeper.h"
 #include "useroptions.h"
 #include "win.h"
+#include "wwperfmon.h"
 
 // disable leak detection
 #ifdef __cplusplus
@@ -355,6 +356,8 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
+    WWPerfMonClass::Configure_From_Environment();
+
     SDL_PropertiesID window_props = SDL_CreateProperties();
     if (window_props == 0) {
         std::cerr << "SDL_CreateProperties failed: " << SDL_GetError() << '\n';
@@ -375,6 +378,7 @@ int main(int argc, char **argv)
     SDL_DestroyProperties(window_props);
     if (window == nullptr) {
         std::cerr << "SDL_CreateWindow failed: " << SDL_GetError() << '\n';
+        WWPerfMonClass::Shutdown();
         SDL_Quit();
         return EXIT_FAILURE;
     }
@@ -397,6 +401,7 @@ int main(int argc, char **argv)
         SDL_Delay(16);
         MainWindow = nullptr;
         GameInFocus = false;
+        WWPerfMonClass::Shutdown();
         SDL_DestroyWindow(window);
         SDL_Quit();
         return EXIT_SUCCESS;
@@ -415,6 +420,7 @@ int main(int argc, char **argv)
 
     MainWindow = nullptr;
     GameInFocus = false;
+    WWPerfMonClass::Shutdown();
     SDL_DestroyWindow(window);
     SDL_Quit();
     return exit_code;

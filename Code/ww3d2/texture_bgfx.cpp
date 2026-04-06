@@ -7,6 +7,9 @@
 #include "w3d_file.h"
 #include "ww3d.h"
 #include "wwdebug.h"
+#include "wwperfmon.h"
+
+#include <SDL3/SDL_timer.h>
 
 #include <algorithm>
 #include <cstring>
@@ -165,11 +168,20 @@ void Sync_Render_Target_To_CPU(BgfxCompatTexture *texture)
 		* 4U;
 	texture->bytes.resize(byte_count, 0);
 
+	const Uint64 readback_start_ticks = WWPerfMonClass::Begin_Scope();
 	bgfx::blit(kRenderTargetReadbackViewId, texture->readback_handle, 0, 0, texture->handle);
 	const uint32_t expected_frame = bgfx::readTexture(texture->readback_handle, texture->bytes.data());
 	uint32_t current_frame = bgfx::frame(BGFX_FRAME_FLUSH);
+	unsigned flush_frames = 1;
 	while (current_frame < expected_frame) {
 		current_frame = bgfx::frame(BGFX_FRAME_FLUSH);
+		++flush_frames;
+	}
+	const Uint64 readback_end_ticks = SDL_GetPerformanceCounter();
+	if (readback_start_ticks != 0 && readback_end_ticks >= readback_start_ticks) {
+		WWPerfMonClass::Record_Render_Target_Readback(
+			static_cast<double>(readback_end_ticks - readback_start_ticks) * 1000.0 / static_cast<double>(SDL_GetPerformanceFrequency()),
+			flush_frames);
 	}
 	texture->dirty = false;
 }
@@ -199,7 +211,7 @@ bool Create_Render_Target_Resources(BgfxCompatTexture *texture)
 	}
 
 	texture->dirty = false;
-	Ensure_Render_Target_Readback(texture);
+	// Most render targets stay GPU-resident; only allocate readback resources on demand.
 	return true;
 }
 

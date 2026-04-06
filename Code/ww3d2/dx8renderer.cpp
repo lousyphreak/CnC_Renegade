@@ -1645,6 +1645,16 @@ void DX8TextureCategoryClass::Render(void)
 	SNAPSHOT_SAY(("Set_Shader(0x%x)\n",Get_Shader()));
 	DX8Wrapper::Set_Shader(Get_Shader());
 	
+	/*
+	** Cache camera vectors used for ALIGNED and ORIENTED mesh billboard modes.
+	** Peek_Camera() is guaranteed non-null here (Flush() guards against null camera).
+	*/
+	const Matrix3D & camera_tm = TheDX8MeshRenderer.Peek_Camera()->Get_Transform();
+	Vector3 cached_camera_z_vector;
+	Vector3 cached_camera_position;
+	camera_tm.Get_Z_Vector(&cached_camera_z_vector);
+	camera_tm.Get_Translation(&cached_camera_position);
+
 	PolyRenderTaskClass * prt = render_task_head;
 	while (prt) {
 
@@ -1727,24 +1737,20 @@ void DX8TextureCategoryClass::Render(void)
 			SNAPSHOT_SAY(("Camera mode ALIGNED\n"));
 
 			Vector3 mesh_position;
-			Vector3 camera_z_vector;
 			
-			TheDX8MeshRenderer.Peek_Camera()->Get_Transform().Get_Z_Vector(&camera_z_vector);
 			mesh->Get_Transform().Get_Translation(&mesh_position);
 
-			tmp_world.Obj_Look_At(mesh_position,mesh_position + camera_z_vector,0.0f);
+			tmp_world.Obj_Look_At(mesh_position,mesh_position + cached_camera_z_vector,0.0f);
 			world_transform = &tmp_world;
 
 		} else if (mesh->Peek_Model()->Get_Flag(MeshModelClass::ORIENTED)) {
 			SNAPSHOT_SAY(("Camera mode ORIENTED\n"));
 		
 			Vector3 mesh_position;
-			Vector3 camera_position;
 
-			TheDX8MeshRenderer.Peek_Camera()->Get_Transform().Get_Translation(&camera_position);
 			mesh->Get_Transform().Get_Translation(&mesh_position);
 
-			tmp_world.Obj_Look_At(mesh_position,camera_position,0.0f);
+			tmp_world.Obj_Look_At(mesh_position,cached_camera_position,0.0f);
 			world_transform = &tmp_world;
 		
 		} else if (mesh->Peek_Model()->Get_Flag(MeshModelClass::SKIN)) {

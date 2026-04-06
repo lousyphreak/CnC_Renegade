@@ -66,6 +66,8 @@
 #include "gamespyadmin.h"
 #include "demosupport.h"
 #include "GameSpy_QnR.h"
+#include "ww3d.h"
+#include "wwperfmon.h"
 
 
 /*
@@ -84,44 +86,69 @@ void Stop_Main_Loop(int exitCode)
 void _Game_Main_Loop_Loop(void)
 {
 	WWPROFILE( "Main Loop" );
+	WWPerfMonClass::Begin_Frame();
 
-	Windows_Message_Handler();
+	{
+		const Uint64 start_ticks = WWPerfMonClass::Begin_Scope();
+		Windows_Message_Handler();
+		WWPerfMonClass::End_Scope(WWPERF_SECTION_EVENT_PUMP, start_ticks);
+	}
 
 	uint32_t time1 = TIMEGETTIME();
 
-   TimeManager::Update();
+	{
+		const Uint64 start_ticks = WWPerfMonClass::Begin_Scope();
+		TimeManager::Update();
+		WWPerfMonClass::End_Scope(WWPERF_SECTION_TIME_UPDATE, start_ticks);
+	}
 
-   Input::Update();
+	{
+		const Uint64 start_ticks = WWPerfMonClass::Begin_Scope();
+		Input::Update();
+		WWPerfMonClass::End_Scope(WWPERF_SECTION_INPUT, start_ticks);
+	}
 
 
 {	WWPROFILE( "Pathfind Evaluate" );
+	const Uint64 start_ticks = WWPerfMonClass::Begin_Scope();
    if (COMBAT_CAMERA != NULL) {
 		Vector3 camera_pos = COMBAT_CAMERA->Get_Position();
 		PathMgrClass::Resolve_Paths( camera_pos );
 	}
+	WWPerfMonClass::End_Scope(WWPERF_SECTION_PATHFIND, start_ticks);
 }
 
 {	WWPROFILE( "Think" );
+	const Uint64 start_ticks = WWPerfMonClass::Begin_Scope();
    GameModeManager::Think();
 	GameInitMgrClass::Think();
+	WWPerfMonClass::End_Scope(WWPERF_SECTION_THINK, start_ticks);
 }
 
 {	WWPROFILE( "Dialog Mgr Update" );
+	const Uint64 start_ticks = WWPerfMonClass::Begin_Scope();
    DialogMgrClass::On_Frame_Update ();
+	WWPerfMonClass::End_Scope(WWPERF_SECTION_DIALOG, start_ticks);
 }
 
 {	WWPROFILE( "Network Object Mgr Think" );
+	const Uint64 start_ticks = WWPerfMonClass::Begin_Scope();
    NetworkObjectMgrClass::Think ();
 	ServerControl.Service();
+	WWPerfMonClass::End_Scope(WWPERF_SECTION_NETWORK, start_ticks);
 }
 
 {	WWPROFILE("GameSpy_QnR");
+	const Uint64 start_ticks = WWPerfMonClass::Begin_Scope();
 	GameSpyQnR.Think();
+	WWPerfMonClass::End_Scope(WWPERF_SECTION_GAMESPY, start_ticks);
 }
 
 	if (cGameSpyAdmin::Is_Gamespy_Game()) {
 		WWPROFILE( "cGameSpyAdmin Think" );
+		const Uint64 start_ticks = WWPerfMonClass::Begin_Scope();
 		cGameSpyAdmin::Think();
+		WWPerfMonClass::End_Scope(WWPERF_SECTION_GAMESPY_ADMIN, start_ticks);
 	}
 
 	//
@@ -131,28 +158,38 @@ void _Game_Main_Loop_Loop(void)
 	WWASSERT(GameModeManager::Find("Combat") != NULL);
 
 	if (!GameModeManager::Find("Combat")->Is_Active()) {
+		const Uint64 start_ticks = WWPerfMonClass::Begin_Scope();
 		cNetwork::Update();
+		WWPerfMonClass::End_Scope(WWPERF_SECTION_NETWORK_UPDATE, start_ticks);
 	}
 
 	// Denzil - Embedded browser
 	if (WebBrowser::IsWebPageDisplayed() == false) {
+		const Uint64 start_ticks = WWPerfMonClass::Begin_Scope();
 		GameModeManager::Render();
+		WWPerfMonClass::End_Scope(WWPERF_SECTION_RENDER, start_ticks);
 	}
 
 	if (AutoRestart.Is_Active()) {
+		const Uint64 start_ticks = WWPerfMonClass::Begin_Scope();
 		AutoRestart.Think();
+		WWPerfMonClass::End_Scope(WWPERF_SECTION_AUTO_RESTART, start_ticks);
 	}
 
 {	WWPROFILE("ConsoleBox");
+	const Uint64 start_ticks = WWPerfMonClass::Begin_Scope();
 	ConsoleBox.Think();
+	WWPerfMonClass::End_Scope(WWPERF_SECTION_CONSOLE, start_ticks);
 }
 
 	DEMO_SECURITY_CHECK;
 
 {	WWPROFILE( "Audio" );
+	const Uint64 start_ticks = WWPerfMonClass::Begin_Scope();
 	if (!ConsoleBox.Is_Exclusive()) {
 		WWAudioClass::Get_Instance ()->On_Frame_Update (0);
 	}
+	WWPerfMonClass::End_Scope(WWPERF_SECTION_AUDIO, start_ticks);
 }
 	// Give the sound manager a chance to think
   // PROFILE(	"Audio", WWAudioClass::Get_Instance ()->On_Frame_Update (0) );
@@ -172,7 +209,11 @@ void _Game_Main_Loop_Loop(void)
 }
 #endif
 
-   DebugManager::Update();
+	{
+		const Uint64 start_ticks = WWPerfMonClass::Begin_Scope();
+		DebugManager::Update();
+		WWPerfMonClass::End_Scope(WWPERF_SECTION_DEBUG, start_ticks);
+	}
 
 
 	/*
@@ -192,6 +233,8 @@ void _Game_Main_Loop_Loop(void)
 			}
 		}
 	}
+
+	WWPerfMonClass::End_Frame();
 }
 
 /*
@@ -206,6 +249,11 @@ int Game_Main_Loop(void)
 
 	// Only run main loop if the init is succesful!
 	if (Game_Init()) {
+		if (WWPerfMonClass::Has_Forced_Swap_Interval()) {
+			WW3D::Set_Ext_Swap_Interval(WWPerfMonClass::Get_Forced_Swap_Interval());
+			WWLib_Debug_Printf("MainLoop: Forced swap interval=%d\n", WWPerfMonClass::Get_Forced_Swap_Interval());
+		}
+		WWPerfMonClass::Notify_Game_Initialized();
 		WWLib_Debug_Printf("MainLoop: Entering main loop\n");
 
 		while ( RunMainLoop ) {

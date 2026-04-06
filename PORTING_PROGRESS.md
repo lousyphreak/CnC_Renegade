@@ -2,6 +2,17 @@
 
 ## Recent changes
 
+- Improved bgfx runtime performance by removing forced per-offscreen-scene frame flushes from the D3D wrapper compatibility layer.
+- Root cause: `Code/ww3d2/dx8wrapper.cpp` mapped every legacy `Begin_Scene`/`End_Scene` pair onto one bgfx view. Because bgfx framebuffer and viewport state are view-level, the wrapper used `bgfx::frame(BGFX_FRAME_FLUSH)` for `End_Scene(false)` so offscreen render-target passes could safely change targets before the final presented scene. Dynamic/projected shadow rendering uses that offscreen path, so the port was serializing render-target work into extra bgfx frames instead of keeping it inside one gameplay frame.
+- Resolution: the bgfx wrapper now allocates an ordered bgfx view per legacy scene, keeps render-target/view state attached to the current scene view, and only calls `bgfx::frame()` when the scene actually flips the presented frame. Offscreen render-target passes now stay in the same bgfx frame without a forced flush.
+- Follow-up investigation also confirmed that the remaining active Linux/bgfx `Get_Surface_Level()` call sites are not triggering render-target GPU readback during normal gameplay: the actual render-target reads in `Code/wwphys/pscene_projectors.cpp` are compiled out on bgfx, while the still-active `metalmap`/`enbassetmgr` sites operate on regular textures rather than bgfx render targets.
+- Validation: rebuilt with `cmake --build build -j20`, ran `ctest --test-dir build --output-on-failure -j20` (no tests were present), then ran `ASAN_OPTIONS=detect_leaks=0 timeout 60s ./build/bin/Renegade` and `ASAN_OPTIONS=detect_leaks=0 timeout 300s ./build/bin/Renegade`. Both runtime validations survived the full timeout window and exited via timeout (`EXIT:124`) rather than a crash/assert.
+
+- Removed an unnecessary bgfx static-shadow GPU->CPU->GPU round trip and fixed a shutdown-time conversation teardown hazard exposed during validation.
+- Root cause: `Code/wwphys/pscene_projectors.cpp` rendered cached static shadows into a render target, read that texture back through `TextureClass::Get_Surface_Level()`, and immediately re-uploaded it as a new texture. The same validation pass also exposed a shutdown ordering bug where `ConversationMgrClass::Shutdown()` notified script observers after `ScriptManager::Shutdown()` had already destroyed them.
+- Resolution: bgfx static shadow caching now keeps the generated texture GPU-resident and binds it directly, `Code/ww3d2/texture_bgfx.cpp` allocates render-target readback resources lazily instead of eagerly, and `Code/Combat/combat.cpp` now shuts down `ConversationMgrClass` before `ScriptManager`.
+- Validation: rebuilt successfully before the wrapper follow-up work, and the crash found during the first smoke pass no longer reproduces in the later 60-second and 300-second validation runs above.
+
 - Fixed bgfx HUD/mission text glyph selection so dynamic text no longer collapses into the same `0123456789...`-style placeholder sequence.
 - Root cause: the bgfx `SurfaceClass::FindBB` port ignored the caller-provided bounding rectangle and scanned the entire surface. `Font3DDataClass::Make_Proportional` relies on `FindBB` to measure each glyph inside its own cell, so the bgfx path was giving many characters the same bounding box/UV region from the shared font atlas.
 - Resolution: `Code/ww3d2/surfaceclass_bgfx.cpp` now clamps to and scans only the requested sub-rectangle, matching the original D3D implementation's behavior. That restores per-character atlas bounds for `Font3D` HUD text renderers such as health, ammo, and scripted on-screen messages.
@@ -72,3 +83,30 @@
 - Continue smoke and gameplay-path validation to catch additional renderer or lifetime issues that only appear after deeper menu/game interaction, especially effects/aggregate paths that still log missing subobjects during the 300-second run.
 - Continue pushing bgfx beyond the current bootstrap emulation layer toward fuller fixed-function parity, especially where the original D3D renderer used capabilities that are still only approximated on the CPU side.
 - Audit the SDL_mixer Miles shim against more in-game audio content paths, especially long-form music/dialog streams and any feature combinations that previously depended on Miles-specific DSP behavior.
+
+## CPU render hotspot optimizations (profiler-driven)
+
+Runtime profiling of a 120-frame sustained-render window (~16.82 ms/frame average) identified the bgfx CPU submission path as the bottleneck (GPU idle, waitSubmit large). Three targeted port-regression fixes were identified and applied:
+
+### Fix 1: `LightEnvironmentClass::Pre_Render_Update` dead matrix work eliminated
+- **File**: `Code/ww3d2/lightenvironment.cpp`
+- **Root cause**: The original D3D backend required light directions in camera space; `Pre_Render_Update` computed `Inverse_Rotate_Vector` per light → stored in `OutputLights[]`. In the bgfx port, `Set_Light_Environment` reads world-space directions from `InputLights[]` and the renderer re-rotates via `View_Rotate_Vector` at submission time. `OutputLights[]` is never read anywhere in the bgfx codebase — the per-light loop was pure waste called for every visible physics object per frame.
+- **Fix**: Removed the per-light loop body. Kept the `OutputAmbient` clamp since `Get_Equivalent_Ambient()` is consumed by `Set_Light_Environment`. Added a comment explaining the D3D vs bgfx split.
+- **Impact**: Up to `LightCount` (max 4) matrix-vector multiplications eliminated per visible object per frame.
+
+### Fix 2: Camera transform cached before mesh loop in `DX8TextureCategoryClass::Render`
+- **File**: `Code/ww3d2/dx8renderer.cpp`
+- **Root cause**: For ALIGNED and ORIENTED billboard mesh modes, `TheDX8MeshRenderer.Peek_Camera()->Get_Transform()` was called per mesh to extract camera Z-vector and camera position respectively. The camera doesn't change within a single category render, so these were redundant dereferences every iteration.
+- **Fix**: Cache `camera_z_vector` and `camera_position` once before the `PolyRenderTaskClass` loop; use cached values in the ALIGNED/ORIENTED branches.
+
+### Fix 3: `DX8Wrapper::Set_Texture` equality guard
+- **File**: `Code/ww3d2/dx8wrapper.cpp`
+- **Root cause**: `Set_Texture` unconditionally wrote `g_bgfx.textures[stage]` even when the incoming texture pointer was identical to the one already bound.
+- **Fix**: Skip the write when `g_bgfx.textures[stage] == texture` (avoids unnecessary cache-line dirty per texture stage per texture category render).
+
+### Rejected ideas
+- **Deduplicating `Pre_Render_Update` calls per shared `LightEnvironmentClass`**: Objects can share light environments but the Pre_Render_Update call-site in pscene.cpp doesn't track which envs have already been updated this frame. The fix would require a per-frame generation counter or a visited set, adding complexity and risk.
+- **Removing `PolyRenderTaskClass` Add_Ref/Release_Ref**: The ownership semantics are correct and the pool already amortizes allocation cost; changing the ref protocol risks use-after-free in unusual render paths.
+- **Restructuring texture category sort/batching**: Would require non-trivial renderer restructuring with high regression risk.
+
+- **Validation**: `cmake --build build -j20` succeeded with no warnings. `./build/bin/Renegade` ran stably under `timeout 310` with no ASAN/UBSAN errors.

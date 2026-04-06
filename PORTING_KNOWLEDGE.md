@@ -1,5 +1,19 @@
 # Porting Knowledge
 
+## bgfx offscreen scene sequencing
+
+- bgfx framebuffer, clear, and viewport state are view-level, not draw-level. A D3D8-style wrapper that funnels every legacy `Begin_Scene`/`End_Scene` pair through one bgfx view will either alias view state across unrelated passes or end up "fixing" the problem by calling `bgfx::frame(BGFX_FRAME_FLUSH)` between offscreen passes.
+- In this tree that flush pattern showed up in `Code/ww3d2/dx8wrapper.cpp` for `End_Scene(false)`. That is especially expensive because Renegade uses offscreen render-target scenes for projected shadows, so one gameplay frame can turn into several bgfx frames plus render-thread synchronization.
+- The behavior-safe fix is to assign a unique ordered bgfx view to each legacy scene, keep view/framebuffer/viewport changes scoped to that scene, and call `bgfx::frame()` only when the scene actually flips the backbuffer. Reserve any special-purpose view IDs used elsewhere; here, view `250` is already reserved in `texture_bgfx.cpp` for render-target readback blits.
+
+## bgfx readback audit follow-up
+
+- The bgfx render-target readback path in `Code/ww3d2/texture_bgfx.cpp` (`bgfx::blit` -> `bgfx::readTexture` -> `bgfx::frame(BGFX_FRAME_FLUSH)` loop) is still real, but it is only required when CPU code explicitly asks for a render-target surface.
+- After the static-shadow fix, the suspicious remaining `Get_Surface_Level()` call sites in the Linux/bgfx build do not currently hit that path during normal gameplay:
+  - the render-target reads in `Code/wwphys/pscene_projectors.cpp` are compiled out on bgfx;
+  - the active `Code/ww3d2/metalmap.cpp` and `Code/ww3d2/hueshift/enbassetmgr.cpp` call sites operate on regular textures, not bgfx render targets.
+- If performance is still terrible after removing an obvious readback, do not assume "some other hidden readback" is still active. Audit wrapper-level synchronization too, especially any code that turns render-target passes into separate backend frames.
+
 ## TGA include casing on Linux
 
 - This tree contains legacy includes that request the Westwood loader as `targa.h`, `TARGA.H`, and `Targa.h` depending on subsystem and era.
@@ -99,3 +113,18 @@
 - `SoundSceneClass::Collect_Logical_Sounds` should advance the iterator before removing a single-shot logical sound from the scene. Removing the current node first invalidates the iterator's view of the list.
 - `CombatSound::Type` cannot stay constrained to the fixed `CombatSoundType` enum when logical sounds also use authored script IDs. Store the raw integer type mask/ID instead of truncating it back into the enum.
 - `Test_Cinematic::Command_Set_Primary` formatted `MyID` into a 10-byte stack buffer, which is too small for the full signed 32-bit integer range plus the NUL terminator. Use a bounded formatter with a larger buffer for object/callback ID strings in the scripts code.
+
+## LightEnvironmentClass: OutputLights vs InputLights in bgfx port
+
+The original D3D backend consumed `OutputLights[]` — camera-space-transformed light directions produced by `Pre_Render_Update`. The bgfx port bypasses this:
+- `Set_Light_Environment` (dx8wrapper.cpp) reads `InputLights[]` world-space directions via `Get_Light_Direction(i)`.
+- The renderer rotates them to camera space later via `View_Rotate_Vector` during shader parameter assembly.
+- `OutputLights[]` is written only by `Pre_Render_Update` and is never read anywhere in the bgfx codebase.
+
+Therefore `Pre_Render_Update` only needs to clamp `OutputAmbient` (which IS consumed via `Get_Equivalent_Ambient()`). The per-light `Inverse_Rotate_Vector` loop is dead work and has been removed.
+
+If a future backend needs camera-space light directions (e.g., a shader that wants them pre-transformed on the CPU), restore the per-light loop in `Pre_Render_Update` and update `Set_Light_Environment` to read from `OutputLights` instead of `InputLights`.
+
+## DX8TextureCategoryClass::Render camera access pattern
+
+The `Peek_Camera()` pointer is guaranteed non-null during `Render()` calls because `DX8MeshRendererClass::Flush()` returns early if `camera == NULL`. Camera state does not change per-mesh within a single flush, so per-mesh camera transform lookups for ALIGNED/ORIENTED modes were redundant; they are now cached once before the loop.

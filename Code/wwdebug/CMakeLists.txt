@@ -1,6 +1,7 @@
 set(WWDEBUG_SOURCES
     wwdebug.cpp
     wwmemlog.cpp
+    wwperfmon.cpp
     wwprofile.cpp
 )
 

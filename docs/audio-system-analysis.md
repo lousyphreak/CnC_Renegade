@@ -14,8 +14,7 @@ The original codebase, however, still preserves a very complete audio contract. 
   - Almost every `WWAudioClass` method is stubbed or returns failure/null.
 - `Code/WWAudio/AudioSaveLoad_null.cpp`
   - Static/dynamic audio save-load subsystems are effectively empty.
-- `Code/WWAudio/AudibleSoundDefinition_headless.cpp`
-  - Headless definition factory exists, but `Create_Sound()` and logical creation return `nullptr`.
+- The old `AudibleSoundDefinition_headless.cpp` stub has been removed; the real definition behavior lives in `Code/WWAudio/AudibleSound.cpp`.
 
 ### What still defines the required behavior
 

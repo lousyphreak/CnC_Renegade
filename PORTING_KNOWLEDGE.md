@@ -8,10 +8,10 @@
 
 ## bgfx particle renderer wiring
 
-- The current Linux/bgfx CMake path can lag behind the original renderer sources even when the implementation is still present in-tree. In this case `Code/ww3d2/CMakeLists.txt` kept compiling `particle_renderers_headless.cpp`, which made `PointGroupClass::Render`, `LineGroupClass::Render`, and `SegLineRendererClass::Render` no-ops despite `pointgr.cpp`, `linegrp.cpp`, and `seglinerenderer.cpp` still existing.
+- The current Linux/bgfx CMake path can lag behind the original renderer sources even when the implementation is still present in-tree. In this case the old headless particle-renderer stub stayed wired into `Code/ww3d2/CMakeLists.txt`, which made `PointGroupClass::Render`, `LineGroupClass::Render`, and `SegLineRendererClass::Render` no-ops despite `pointgr.cpp`, `linegrp.cpp`, and `seglinerenderer.cpp` still existing.
 - Restoring those files is behavior-safe because they already render through `DX8Wrapper`, `DynamicVBAccessClass`, and `SortingRendererClass`; they do not talk directly to D3D8. The real integration seam is build wiring, not a renderer rewrite.
 - `PointGroupClass` also has hidden startup/shutdown requirements. Its render path depends on `_Init()` / `_Shutdown()` to build shared lookup tables, shared index buffers, and the preset `PointMaterial`, and there was no active caller in the bgfx bootstrap before this fix.
-- The active non-Windows build does **not** use the old `dx8vertexbuffer.cpp` / `dx8indexbuffer.cpp` implementations. It uses the header-only compatibility shims in `Code/compat/`. Those shims must preserve the original per-allocation offset semantics because `sortingrenderer_headless.cpp` reads deferred translucent geometry back out of the shared sorting buffers later in the same frame.
+- The active non-Windows build does **not** use the old `dx8vertexbuffer.cpp` / `dx8indexbuffer.cpp` implementations. It uses the header-only compatibility shims in `Code/compat/`. Those shims must preserve the original per-allocation offset semantics because `sortingrenderer_bgfx.cpp` reads deferred translucent geometry back out of the shared sorting buffers later in the same frame.
 
 ## bgfx compatibility scratch submission after parity restores
 
@@ -74,7 +74,7 @@
 - The bgfx renderer does not inherit D3D8 fixed-function fog automatically; `SceneClass::Render` only stays wired up if `DX8Wrapper::Set_Fog` stores the scene fog state and the bgfx draw path forwards it into shader uniforms.
 - Renegade camera space is forward-negative-Z. A practical linear fog factor for the bgfx path is therefore based on `max(-view_z, 0)` against the scene's fog start/end distances.
 - For the bgfx bootstrap shader, `FOG_ENABLE` should blend fragment RGB toward the scene fog color, `FOG_SCALE_FRAGMENT` should attenuate fragment RGBA by `(1 - fog)` so alpha-driven blend modes also fade out, and `FOG_WHITE` should blend fragment RGB toward white to preserve the original multiplicative-fog behavior.
-- The bgfx-only `shader_headless.cpp` path can safely accept more blend combinations than the old fixed-function renderer because the shader can explicitly attenuate the fragment before the backend blend stage. That is the right place to suppress legacy "Unable to fog shader" warnings for bgfx-specific support.
+- The bgfx-only `shader_bgfx.cpp` path can safely accept more blend combinations than the old fixed-function renderer because the shader can explicitly attenuate the fragment before the backend blend stage. That is the right place to suppress legacy "Unable to fog shader" warnings for bgfx-specific support.
 
 ## UI map cloud buffer ownership
 

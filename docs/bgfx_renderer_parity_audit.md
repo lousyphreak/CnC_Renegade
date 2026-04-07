@@ -8,7 +8,7 @@ It is based on:
 
 - the bgfx build wiring in `Code/ww3d2/CMakeLists.txt`
 - the current bgfx backend in `Code/ww3d2/dx8wrapper.cpp`, `texture_bgfx.cpp`, and `surfaceclass_bgfx.cpp`
-- the bgfx-linked compatibility replacements such as `dx8renderer_headless.cpp`, `sortingrenderer_headless.cpp`, `shader_headless.cpp`, and `vertmaterial_headless.cpp`
+- the bgfx-linked compatibility replacements such as `dx8renderer_bgfx.cpp`, `sortingrenderer_bgfx.cpp`, `shader_bgfx.cpp`, and `vertmaterial_bgfx.cpp`
 - the original/full implementations that still exist beside them, especially `pointgr.cpp`, `linegrp.cpp`, `seglinerenderer.cpp`, `textureloader.cpp`, and `texturethumbnail.cpp`
 
 This is a **source audit**. It is strong enough to identify confirmed parity breaks and confirmed preserved systems, but any row marked **Partial** still deserves runtime validation.
@@ -26,7 +26,7 @@ The bgfx renderer is **not** a full parity port of the original DX8 renderer yet
 ### What is clearly present
 
 - bgfx device/bootstrap, scene begin/end, clear, viewport, resize, fullscreen/windowed toggle, and swap interval
-- the core mesh renderer and sorting renderer logic through `dx8renderer_headless.cpp` and `sortingrenderer_headless.cpp`
+- the core mesh renderer and sorting renderer logic through `dx8renderer_bgfx.cpp` and `sortingrenderer_bgfx.cpp`
 - CPU-side fixed-function-style lighting, fog state, blend/depth/cull state mapping, and stage-0 texture coordinate generation
 - the original point/line/segmented-line renderer implementations through `pointgr.cpp`, `linegrp.cpp`, and `seglinerenderer.cpp`, including the offset-aware compatibility dynamic-buffer behavior they rely on for sorted translucent draws
 - CPU-backed surfaces and textures, including basic DDS/TGA loading and texture-backed render targets
@@ -37,8 +37,8 @@ The bgfx renderer is **not** a full parity port of the original DX8 renderer yet
 1. **Stage-1 / second-texture material support is not actually submitted by the bgfx backend.**
    The high-level material system still configures two stages, but `Submit_Primitives()` only reads stage-0 texture state and only binds `g_bgfx.textures[0]` to `s_texColor`.
 
-2. **The original thumbnail/database/streaming texture path is gone.**
-   `texturethumbnail_headless.cpp` is a real stub, the original threaded foreground/background loader behavior is not preserved, and the bgfx texture path collapses textures to one uploaded level.
+2. **Texture loading is still reduced even after the thumbnail manager restore.**
+   `texturethumbnail_bgfx.cpp` now restores the thumbnail database/hash path and on-demand thumbnail generation, but `textureloader_bgfx.cpp` still runs loads synchronously and the bgfx texture path still collapses runtime textures to one uploaded level.
 
 3. **Public capture/debug APIs are not fully ported.**
    `WW3D::Make_Screen_Shot()` explicitly logs that it is not implemented for the bgfx bootstrap; movie capture remains legacy Windows-only code that depends on old DX8 front-buffer behavior.
@@ -48,52 +48,50 @@ The bgfx renderer is **not** a full parity port of the original DX8 renderer yet
 
 ## Build wiring: what the bgfx build really links
 
-The single most important fact in this audit is that the bgfx build is **not** simply "all real renderer files plus bgfx wrapper." `Code/ww3d2/CMakeLists.txt` keeps many `*_headless.cpp` files in the build, and those filenames are misleading.
+The current bgfx build is no longer compiled around misleading `*_headless.cpp` renderer filenames. `Code/ww3d2/CMakeLists.txt` now uses explicit source selection: original source files for the non-bgfx path, explicit `*_bgfx.cpp` compatibility files for the bgfx path, and no remaining renderer `*_headless.cpp` implementation files in-tree.
 
-### Real bgfx-linked implementations despite the `headless` name
+### Explicit bgfx-linked compatibility implementations
 
-- `dx8renderer_headless.cpp`
-- `sortingrenderer_headless.cpp`
-- `shader_headless.cpp`
-- `vertmaterial_headless.cpp`
-- `assetmgr_headless.cpp`
-- `textureloader_headless.cpp`
+- `dx8renderer_bgfx.cpp`
+- `sortingrenderer_bgfx.cpp`
+- `shader_bgfx.cpp`
+- `vertmaterial_bgfx.cpp`
+- `assetmgr_bgfx.cpp`
+- `textureloader_bgfx.cpp`
 
-These are not all empty stubs. Several are substantial compatibility replacements.
+These are substantial compatibility replacements and are the actual files compiled into the bgfx build.
 
-### True behavior-loss files that the bgfx build still links
+### Remaining reduced subsystems in the bgfx build
 
-- `texturethumbnail_headless.cpp`
-
-These are real parity gaps, not naming accidents.
+- `textureloader_bgfx.cpp` still replaces threaded/background loading with synchronous completion
+- `texturethumbnail_bgfx.cpp` restores thumbnail database behavior, but it still depends on the simplified bgfx texture loader beneath it
 
 ### Files the bgfx build swaps in
 
-When `RENEGADE_WITH_BGFX_RENDERER` is enabled, `CMakeLists.txt` removes:
+When `RENEGADE_WITH_BGFX_RENDERER` is enabled, `CMakeLists.txt` selects these bgfx-side implementations:
 
-- `particle_renderers_headless.cpp`
-- `render2dsentence_headless.cpp`
-- `surfaceclass_headless.cpp`
-- `texture_headless.cpp`
-- `ww3d_headless.cpp`
-
-and adds:
-
+- `assetmgr_bgfx.cpp`
+- `dx8renderer_bgfx.cpp`
 - `dx8texman_bgfx.cpp`
 - `linegrp.cpp`
 - `pointgr.cpp`
 - `render2dsentence.cpp`
 - `seglinerenderer.cpp`
+- `shader_bgfx.cpp`
+- `sortingrenderer_bgfx.cpp`
 - `surfaceclass_bgfx.cpp`
 - `texture_bgfx.cpp`
+- `textureloader_bgfx.cpp`
+- `texturethumbnail_bgfx.cpp`
+- `vertmaterial_bgfx.cpp`
 - `ww3d.cpp`
 - `dx8wrapper.cpp`
 
 That means the bgfx build has a mix of:
 
 - real bgfx backend files
-- real compatibility replacements
-- and a few still-stubbed subsystems
+- explicit bgfx compatibility replacements
+- and a few still-reduced subsystems
 
 ## Architectural findings by subsystem
 
@@ -114,8 +112,8 @@ This means the backend is closer to a **fixed-function emulation shim** than a f
 
 This area is stronger than the filenames imply.
 
-- `dx8renderer_headless.cpp` is a real implementation and still drives the main mesh render path.
-- `sortingrenderer_headless.cpp` is also a real implementation, not a no-op.
+- `dx8renderer_bgfx.cpp` is a real implementation and still drives the main mesh render path.
+- `sortingrenderer_bgfx.cpp` is also a real implementation, not a no-op.
 - `mesh.cpp`, `meshmdl.cpp`, `matpass.cpp`, `mapper.cpp`, and related higher-level render code are still present and still feed the renderer.
 
 So the bgfx renderer is **not** missing the entire mesh pipeline. The parity problems come from specific backend capabilities, not from the complete absence of mesh rendering.
@@ -218,13 +216,13 @@ Original renderer behavior from `textureloader.cpp` and `texturethumbnail.cpp`:
 
 Current bgfx behavior:
 
-- `texturethumbnail_headless.cpp` stubs out the entire thumbnail manager
-- `textureloader_headless.cpp` makes background loading synchronous (`Finish_Load()` immediately)
+- `texturethumbnail_bgfx.cpp` restores the thumbnail database, hash lookups, file regeneration checks, and on-demand thumbnail creation using a cross-platform bgfx path
+- `textureloader_bgfx.cpp` still makes background loading synchronous (`Finish_Load()` immediately)
 - `Flush_Pending_Load_Tasks()` is explicitly a no-op because bgfx loading is synchronous
 - compressed DDS files are decoded to RGBA8 instead of preserved in compressed residency
 - both compressed and uncompressed load paths end with `MipLevelCount = 1`
 
-This means the old renderer's texture streaming/thumbnail/loading behavior is not just incomplete; it has effectively been replaced by a simpler synchronous loader with single-level textures.
+This means the old renderer's texture streaming/loading behavior is still incomplete even though thumbnail database support is back; the remaining gaps are the lack of real asynchronous loading and the loss of runtime mip-chain preservation.
 
 ### 9. Render targets, projectors, and shadows
 
@@ -271,7 +269,7 @@ So dazzle/halo/lens flare should be treated as **Partial**, not Missing.
 
 This was previously the clearest confirmed feature hole in the renderer, but the bgfx build wiring now restores the original implementations.
 
-The bgfx build now removes `particle_renderers_headless.cpp` and compiles:
+The bgfx build now compiles:
 
 - `pointgr.cpp`
 - `linegrp.cpp`
@@ -281,7 +279,7 @@ The bgfx build now removes `particle_renderers_headless.cpp` and compiles:
 
 The initial restore also exposed two bgfx/Linux compatibility bugs that had to be fixed before the path behaved like the original renderer:
 
-- the active header-only `Code/compat/dx8vertexbuffer.h` / `dx8indexbuffer.h` shims had dropped the original per-allocation offsets that `sortingrenderer_headless.cpp` expects when it re-reads sorted translucent geometry later in the frame
+- the active header-only `Code/compat/dx8vertexbuffer.h` / `dx8indexbuffer.h` shims had dropped the original per-allocation offsets that `sortingrenderer_bgfx.cpp` expects when it re-reads sorted translucent geometry later in the frame
 - `Code/ww3d2/dx8wrapper.cpp::Submit_Primitives()` still copied every converted draw through bgfx transient buffers, which made restored particle traffic compete with the rest of the frame for bgfx's transient pool
 
 The current bgfx build now restores those compatibility-buffer offsets, preserves them through `DX8Wrapper::Get_Render_State()` / `Set_Render_State()`, and uses persistent bgfx dynamic scratch buffers that are reset after `bgfx::frame()`.
@@ -344,11 +342,11 @@ The table below lists every renderer-facing feature surface I could trace from t
 
 | Subsystem | Original feature | bgfx status | Evidence | Notes |
 | --- | --- | --- | --- | --- |
-| Build wiring | Main mesh renderer path | Implemented | `Code/ww3d2/CMakeLists.txt`, `dx8renderer_headless.cpp` | Misleading filename; real implementation is compiled in bgfx build. |
-| Build wiring | Sorting renderer | Implemented | `Code/ww3d2/CMakeLists.txt`, `sortingrenderer_headless.cpp` | Real implementation, not a no-op. |
-| Build wiring | Shader/material state generation | Implemented | `shader_headless.cpp`, `vertmaterial_headless.cpp` | High-level material system is preserved. |
+| Build wiring | Main mesh renderer path | Implemented | `Code/ww3d2/CMakeLists.txt`, `dx8renderer_bgfx.cpp` | Active bgfx build now uses an explicit bgfx-named compatibility source. |
+| Build wiring | Sorting renderer | Implemented | `Code/ww3d2/CMakeLists.txt`, `sortingrenderer_bgfx.cpp` | Active bgfx build now uses an explicit bgfx-named compatibility source. |
+| Build wiring | Shader/material state generation | Implemented | `shader_bgfx.cpp`, `vertmaterial_bgfx.cpp` | High-level material system is preserved through explicit bgfx-named sources. |
 | Build wiring | Particle renderer backend selection | Implemented | `CMakeLists.txt`, `pointgr.cpp`, `linegrp.cpp`, `seglinerenderer.cpp`, `ww3d.cpp`, `Code/compat/dx8vertexbuffer.h`, `Code/compat/dx8indexbuffer.h` | bgfx build now swaps in the original particle/line renderer sources, restores `PointGroupClass` static init/shutdown, and preserves the dynamic/sorting buffer offsets those paths expect. |
-| Build wiring | Thumbnail manager selection | Missing | `CMakeLists.txt`, `texturethumbnail_headless.cpp` | Entire manager is stubbed. |
+| Build wiring | Thumbnail manager selection | Implemented | `CMakeLists.txt`, `texturethumbnail_bgfx.cpp` | bgfx build now compiles a real cross-platform thumbnail manager instead of the old stub. |
 | Device/frame | `DX8Wrapper::Init` / Shutdown | Implemented | `dx8wrapper.cpp` init/shutdown path | Real bgfx bootstrap and teardown exist. |
 | Device/frame | Begin scene / end scene / present | Implemented | `dx8wrapper.cpp` | bgfx frame lifecycle is wired. |
 | Device/frame | Clear color/depth | Implemented | `dx8wrapper.cpp:1203-1218` | Color/depth clear state is applied through bgfx. |
@@ -388,18 +386,18 @@ The table below lists every renderer-facing feature surface I could trace from t
 | Shading | Gamma/brightness/contrast | Implemented | `dx8wrapper.cpp`, `fs_common.sc` | Real shader-side adjustment exists. |
 | Shading | Bump env map / bump env luminance | Missing | `dx8wrapper.h:114-116`, stage-1 backend gap | Caps say unsupported and no bgfx shader path exists. |
 | Shading | Secondary gradient / detail combiners | Missing | `ShaderClass` exists, current bgfx shader set does not consume them | High-level state exists, final shader path does not. |
-| Shading | N-patches | Missing | `dx8wrapper.h:114`, `dx8renderer_headless.cpp` comments | Explicitly unsupported in bgfx path. |
+| Shading | N-patches | Missing | `dx8wrapper.h:114`, `dx8renderer_bgfx.cpp` comments | Explicitly unsupported in bgfx path. |
 | Geometry | Static vertex buffers | Implemented | `dx8wrapper.cpp:1513-1521` | Bound and consumed by submission path. |
 | Geometry | Dynamic vertex buffers | Implemented | `Code/compat/dx8vertexbuffer.h`, `dx8wrapper.cpp` | Active Linux/bgfx compatibility wrapper now preserves per-allocation offsets again, which is required for sorted translucent particle geometry. |
 | Geometry | Static index buffers | Implemented | `dx8wrapper.cpp:1533-1541` | Bound and consumed by submission path. |
 | Geometry | Dynamic index buffers | Implemented | `Code/compat/dx8indexbuffer.h`, `dx8wrapper.cpp` | Active Linux/bgfx compatibility wrapper now preserves per-allocation offsets again, which is required for sorted translucent particle geometry. |
 | Geometry | Indexed triangle draw | Implemented | `dx8wrapper.cpp`, `Build_BGFX_State()` | Main draw path works through `Submit_Primitives()` and now uploads converted geometry through persistent bgfx dynamic scratch buffers instead of per-draw transients. |
 | Geometry | Triangle strips | Implemented | `dx8wrapper.cpp:1568-1600` | CPU converts strip indices to triangles before submission. |
-| Geometry | Translucent sorting | Implemented | `sortingrenderer_headless.cpp`, `ww3d.cpp:1021-1023` | Sorting renderer is real and flushed each frame. |
-| Geometry | Delayed/procedural material passes | Partial | `mesh.cpp`, `dx8renderer_headless.cpp` | High-level pass system exists, but any pass expecting full multi-stage shader semantics is reduced. |
+| Geometry | Translucent sorting | Implemented | `sortingrenderer_bgfx.cpp`, `ww3d.cpp:1021-1023` | Sorting renderer is real and flushed each frame. |
+| Geometry | Delayed/procedural material passes | Partial | `mesh.cpp`, `dx8renderer_bgfx.cpp` | High-level pass system exists, but any pass expecting full multi-stage shader semantics is reduced. |
 | Geometry | DX8Wrapper perf counters | Missing | `dx8wrapper.h:282-287` | All DX8Wrapper counters return `0`. |
 | Geometry | Frame polygon/vertex totals | Partial | `ww3d.cpp:1105-1113` | WW3D counters exist via `Debug_Statistics`, but DX8Wrapper-side counters are still stubs. |
-| Geometry | Z-bias / polygon offset | Partial | `sortingrenderer_headless.cpp`, `dx8wrapper.cpp` | Full generic bgfx polygon-offset parity is still missing; the current fix only restores sorter state hygiene. The missing ground-particle fix came from the particle LOD/APT path instead of a depth-bias workaround. |
+| Geometry | Z-bias / polygon offset | Partial | `sortingrenderer_bgfx.cpp`, `dx8wrapper.cpp` | Full generic bgfx polygon-offset parity is still missing; the current fix only restores sorter state hygiene. The missing ground-particle fix came from the particle LOD/APT path instead of a depth-bias workaround. |
 | Texture coords | Stage-0 pass-through UVs | Implemented | `Generate_Stage0_Texture_Input()` | Standard UV path works. |
 | Texture coords | Stage-0 camera-space position generation | Implemented | `Generate_Stage0_Texture_Input()` | Supported. |
 | Texture coords | Stage-0 camera-space normal generation | Implemented | `Generate_Stage0_Texture_Input()` | Supported. |
@@ -409,29 +407,29 @@ The table below lists every renderer-facing feature surface I could trace from t
 | Textures/surfaces | CPU `SurfaceClass` lock/unlock/copy/clear/stretch | Implemented | `surfaceclass_bgfx.cpp` | Needed for fonts, sentence rendering, and CPU-side conversions. |
 | Textures/surfaces | Texture creation from dimensions | Implemented | `texture_bgfx.cpp:408-448` | Real bgfx texture backend object is created. |
 | Textures/surfaces | Texture creation from a `SurfaceClass` | Implemented | `texture_bgfx.cpp:470-479` | CPU surface data is copied into backend texture bytes. |
-| Textures/surfaces | File texture loading (`DDS` / `TGA`) | Implemented | `surfaceclass_bgfx.cpp:193-214`, `textureloader_headless.cpp` | Immediate load path exists. |
+| Textures/surfaces | File texture loading (`DDS` / `TGA`) | Implemented | `surfaceclass_bgfx.cpp:193-214`, `textureloader_bgfx.cpp` | Immediate load path exists. |
 | Textures/surfaces | Stage-0 texture binding | Implemented | `dx8wrapper.cpp:987-1000` | Only stage 0 is actually submitted. |
 | Textures/surfaces | Stage-1 texture binding | Missing | `dx8wrapper.cpp:1602-1607` vs `987-1000` | `Set_Texture(1, ...)` stores the pointer, but the backend never binds it. |
 | Textures/surfaces | Address mode (wrap/clamp) | Implemented | `texture_bgfx.cpp:339-345` | Sampler flags are built for U/V clamp. |
 | Textures/surfaces | Min/mag filtering | Partial | `texture_bgfx.cpp:347-355` | Point/aniso mapping exists, but the backend is simplified. |
 | Textures/surfaces | Mip filter selection | Missing | `texture_bgfx.cpp:357-360` | Both branches currently choose `BGFX_SAMPLER_MIP_POINT`. |
-| Textures/surfaces | Mip-chain preservation | Missing | `texture_bgfx.cpp:532-535`, `textureloader_headless.cpp:1165-1167`, `1215-1217` | Runtime texture objects collapse to a single level. |
+| Textures/surfaces | Mip-chain preservation | Missing | `texture_bgfx.cpp:532-535`, `textureloader_bgfx.cpp:1165-1167`, `1215-1217` | Runtime texture objects collapse to a single level. |
 | Textures/surfaces | `Get_Mip_Level_Count()` semantics | Missing | `texture_bgfx.cpp:532-535` | Always returns `1`. |
 | Textures/surfaces | `Get_Surface_Level(level)` semantics | Partial | `texture_bgfx.cpp:543-552` | Only synthesizes a CPU copy of current bytes; no true per-level surface access. |
 | Textures/surfaces | `Get_D3D_Surface_Level(level)` semantics | Missing | `texture_bgfx.cpp:554-557` | Always returns `NULL`. |
-| Textures/surfaces | DDS compressed residency | Partial | `textureloader_headless.cpp:1165-1167`, `1227-1254` | DDS is supported only as a load/decode source; data is uploaded as RGBA8. |
-| Textures/surfaces | Texture reduction setting | Partial | `ww3d.cpp:1554-1585`, `textureloader_headless.cpp` | Reduction value is used during load, but the final texture still ends up single-level. |
+| Textures/surfaces | DDS compressed residency | Partial | `textureloader_bgfx.cpp:1165-1167`, `1227-1254` | DDS is supported only as a load/decode source; data is uploaded as RGBA8. |
+| Textures/surfaces | Texture reduction setting | Partial | `ww3d.cpp:1554-1585`, `textureloader_bgfx.cpp` | Reduction value is used during load, but the final texture still ends up single-level. |
 | Textures/surfaces | Texture invalidation / lazy re-init | Partial | `texture_bgfx.cpp:593-599`, `ww3d.cpp:740-754` | Invalidation exists, but the old thumbnail/streaming behavior is gone. |
-| Texture loading | Background texture loading thread | Missing | `textureloader.cpp` vs `textureloader_headless.cpp:788-803` | Original threaded loader is replaced by synchronous `Finish_Load()`. |
-| Texture loading | Foreground/background task queues | Missing | `textureloader.cpp` vs `textureloader_headless.cpp` | API shape remains, queue-driven behavior does not. |
-| Texture loading | Thumbnail database / thumbnail hash | Missing | `texturethumbnail.cpp` vs `texturethumbnail_headless.cpp` | Entire system is stubbed out. |
-| Texture loading | Thumbnail-first texture promotion | Missing | `texture.cpp`, `textureloader.cpp`, `texturethumbnail.cpp` vs bgfx replacements | Original deferred/thumbnail flow is not preserved. |
+| Texture loading | Background texture loading thread | Missing | `textureloader.cpp` vs `textureloader_bgfx.cpp:788-803` | Original threaded loader is replaced by synchronous `Finish_Load()`. |
+| Texture loading | Foreground/background task queues | Missing | `textureloader.cpp` vs `textureloader_bgfx.cpp` | API shape remains, queue-driven behavior does not. |
+| Texture loading | Thumbnail database / thumbnail hash | Implemented | `texturethumbnail.cpp` vs `texturethumbnail_bgfx.cpp` | bgfx path now restores thumbnail database loading, hashing, save/update logic, and on-demand thumbnail creation. |
+| Texture loading | Thumbnail-first texture promotion | Partial | `texture.cpp`, `textureloader.cpp`, `texturethumbnail.cpp` vs bgfx replacements | Thumbnail lookup/promotion path exists again, but it still feeds into the simplified synchronous bgfx loader. |
 | Render targets | Texture-backed render target creation | Implemented | `dx8wrapper.cpp:1773-1777`, `texture_bgfx.cpp:120-146` | Real bgfx framebuffer-backed textures are created. |
 | Render targets | `Set_Render_Target(TextureClass *)` | Implemented | `dx8wrapper.cpp:1691-1698` | The bgfx view target is updated from the texture RT. |
 | Render targets | `Set_Render_Target(IDirect3DSurface8 *)` | Missing | `dx8wrapper.cpp:1700-1705` | Non-null surfaces are ignored; only `nullptr` reset works. |
 | Render targets | Projector render-to-texture flow | Partial | `texproject.cpp:1108-1157` | RTT path exists, but original stage-1 projector semantics are reduced. |
 | Render targets | Shadow/projector secondary mapper path | Missing | `texproject.cpp:618-622`, `707-711`, `1318-1319` | `Mapper1` is stage 1; bgfx submit path never consumes stage 1. |
-| Effects | Base mesh material rendering | Implemented | `mesh.cpp`, `dx8renderer_headless.cpp` | Core mesh/material path still exists. |
+| Effects | Base mesh material rendering | Implemented | `mesh.cpp`, `dx8renderer_bgfx.cpp` | Core mesh/material path still exists. |
 | Effects | Two-texture / stage-1 materials | Missing | `dynamesh.cpp`, `texproject.cpp`, `shattersystem.cpp` note, `Submit_Primitives()` | High-level code still configures stage 1; backend does not submit it. |
 | Effects | Decals | Partial | `decalmsh.cpp`, `dx8wrapper.cpp` | Geometry/material path exists, but general bgfx polygon-offset parity is still unresolved so decal depth separation still needs follow-up work. |
 | Effects | Dazzle / halo / lens flare | Partial | `dazzle.cpp` | Real implementation exists and uses stage 0, but runtime validation is still needed. |

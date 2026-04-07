@@ -39,7 +39,6 @@ set(WW3D2_SOURCES
     line3d.cpp
     layer.cpp
     nullrobj.cpp
-    particle_renderers_headless.cpp
     part_buf.cpp
     part_emt.cpp
     part_ldr.cpp
@@ -47,7 +46,6 @@ set(WW3D2_SOURCES
     projector.cpp
     pivot.cpp
     render2d.cpp
-    render2dsentence_headless.cpp
     rendobj.cpp
     rinfo.cpp
     ringobj.cpp
@@ -57,57 +55,45 @@ set(WW3D2_SOURCES
     soundrobj.cpp
     sphereobj.cpp
     statistics.cpp
-    assetmgr_headless.cpp
     animatedsoundmgr.cpp
     dazzle.cpp
     decalsys.cpp
     dx8rendererdebugger.cpp
     dx8polygonrenderer.cpp
-    dx8renderer_headless.cpp
     font3d.cpp
     formconv.cpp
     hmdldef.cpp
     proto.cpp
-    shader_headless.cpp
     shattersystem.cpp
     snappts.cpp
     dynamesh.cpp
-    sortingrenderer_headless.cpp
-    surfaceclass_headless.cpp
-    texture_headless.cpp
-    textureloader_headless.cpp
-    texturethumbnail_headless.cpp
     texproject.cpp
-    vertmaterial_headless.cpp
     visrasterizer.cpp
     w3d_util.cpp
-    ww3d_headless.cpp
     ww3dformat.cpp
 )
 
 set(WW3D2_BGFX_SHADER_SOURCES)
 if(RENEGADE_WITH_BGFX_RENDERER)
-    list(REMOVE_ITEM WW3D2_SOURCES
-        particle_renderers_headless.cpp
-        render2dsentence_headless.cpp
-        surfaceclass_headless.cpp
-        texture_headless.cpp
-        ww3d_headless.cpp
-    )
-
     list(APPEND WW3D2_SOURCES
+        assetmgr_bgfx.cpp
+        dx8renderer_bgfx.cpp
         dx8texman_bgfx.cpp
         linegrp.cpp
         pointgr.cpp
         render2dsentence.cpp
         seglinerenderer.cpp
+        shader_bgfx.cpp
+        sortingrenderer_bgfx.cpp
         surfaceclass_bgfx.cpp
         texture_bgfx.cpp
+        textureloader_bgfx.cpp
+        texturethumbnail_bgfx.cpp
+        vertmaterial_bgfx.cpp
         ww3d.cpp
     )
 
     list(APPEND WW3D2_SOURCES dx8wrapper.cpp)
-
     set(WW3D2_BGFX_SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
     set(WW3D2_BGFX_GENERATED_SHADER_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated/shaders")
 
@@ -145,6 +131,23 @@ if(RENEGADE_WITH_BGFX_RENDERER)
         "${WW3D2_BGFX_SHADER_DIR}/fs_common.sc"
         ${WW3D2_BGFX_VERTEX_SHADERS}
         ${WW3D2_BGFX_FRAGMENT_SHADERS}
+    )
+else()
+    list(APPEND WW3D2_SOURCES
+        assetmgr.cpp
+        dx8renderer.cpp
+        linegrp.cpp
+        pointgr.cpp
+        render2dsentence.cpp
+        seglinerenderer.cpp
+        shader.cpp
+        sortingrenderer.cpp
+        surfaceclass.cpp
+        texture.cpp
+        textureloader.cpp
+        texturethumbnail.cpp
+        vertmaterial.cpp
+        ww3d.cpp
     )
 endif()
 

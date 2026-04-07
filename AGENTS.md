@@ -38,6 +38,7 @@ The build should alway be Debug mode with ASAN and UBSAN enabled, to catch any m
 - when you port a part of the renderer, remove the corresponding null and headless renderer parts
 - stay as close to the d3d original as possible
 - make sure to not do a lot of CPU work, we are porting to modern render APIs so use the GPU where feasible
+- there is a document at `docs/bgfx_renderer_parity_audit.md`, use it for reference, and keep it updated as you work
 
 ## **ACCEPTABLE CHANGES**
 
@@ -47,7 +48,7 @@ the following is acceptable:
 - removal of legacy things for good reasons (like CPU detection, because it is no longer required on modern systems)
 
 the following **MUST** be changed:
-- **ANY** win32 specific behaviour (we want the codebase to be 100% cross platform, without any win32 specific code or dependencies)
+- **ANY** win32 or linux specific behaviour (we want the codebase to be 100% cross platform, without any win32 specific code or dependencies)
 - wide strings (we want to use UTF-8 everywhere, and not have any wide string dependencies in the codebase)
 - checking for _WIN32 or similar is a code smell, we want to remove all of those and replace them with more generic cross platform code, for example using SDL3 for input and file system instead of win32 API.
 

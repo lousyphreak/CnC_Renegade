@@ -3,7 +3,7 @@ file(GLOB WWAUDIO_HEADERS CONFIGURE_DEPENDS "*.h")
 set(WWAUDIO_COMMON_SOURCES
     AudioEvents.cpp
     SoundSceneObj.cpp
-    Threads_headless.cpp
+    Threads_compat.cpp
     ${WWAUDIO_HEADERS}
 )
 

@@ -96,6 +96,8 @@ constexpr int kFallbackRenderWidth = 640;
 constexpr int kFallbackRenderHeight = 480;
 constexpr bgfx::ViewId kFirstSceneViewId = 0;
 constexpr bgfx::ViewId kMaxSceneViewId = 249; // View 250 is reserved for render-target readback.
+constexpr uint32_t kCompatibilityScratchVertexBytes = 24u << 20;
+constexpr uint32_t kCompatibilityScratchIndexBytes = 8u << 20;
 
 const float kIdentityMatrix[16] = {
 	1.0f, 0.0f, 0.0f, 0.0f,
@@ -115,6 +117,9 @@ struct BgfxGuiVertex {
 	float u;
 	float v;
 };
+
+constexpr uint32_t kCompatibilityScratchVertexCapacity = kCompatibilityScratchVertexBytes / sizeof(BgfxGuiVertex);
+constexpr uint32_t kCompatibilityScratchIndexCapacity = kCompatibilityScratchIndexBytes / sizeof(uint16_t);
 
 enum BgfxProgramType {
 	BGFX_PROGRAM_BASIC = 0,
@@ -180,6 +185,12 @@ struct BgfxDx8WrapperState {
 	bool initialized = false;
 	bool windowed = true;
 	bgfx::VertexLayout gui_layout;
+	bgfx::DynamicVertexBufferHandle compatibility_vertex_buffer = BGFX_INVALID_HANDLE;
+	bgfx::DynamicIndexBufferHandle compatibility_index_buffer = BGFX_INVALID_HANDLE;
+	uint32_t compatibility_vertex_capacity = 0;
+	uint32_t compatibility_index_capacity = 0;
+	uint32_t compatibility_vertex_offset = 0;
+	uint32_t compatibility_index_offset = 0;
 	bgfx::ProgramHandle programs[BGFX_PROGRAM_COUNT] = {
 		BGFX_INVALID_HANDLE,
 		BGFX_INVALID_HANDLE,
@@ -624,6 +635,8 @@ void Reset_Draw_State()
 	g_bgfx.current_ib_type = BUFFER_TYPE_INVALID;
 	g_bgfx.current_vba_offset = 0;
 	g_bgfx.current_iba_offset = 0;
+	g_bgfx.compatibility_vertex_offset = 0;
+	g_bgfx.compatibility_index_offset = 0;
 	REF_PTR_RELEASE(g_bgfx.render_target);
 	g_bgfx.light_environment = BgfxLightEnvironmentState();
 	for (BgfxLightState &light : g_bgfx.lights) {
@@ -638,6 +651,121 @@ void Reset_Draw_State()
 	for (unsigned state = 0; state < 256; ++state) {
 		g_bgfx.render_states[state] = 0;
 	}
+}
+
+void Reset_Compatibility_Submit_Scratch()
+{
+	g_bgfx.compatibility_vertex_offset = 0;
+	g_bgfx.compatibility_index_offset = 0;
+}
+
+bool Ensure_Compatibility_Submit_Scratch(uint32_t required_vertices, uint32_t required_indices)
+{
+	uint32_t desired_vertex_capacity = kCompatibilityScratchVertexCapacity;
+	if (desired_vertex_capacity < required_vertices) {
+		desired_vertex_capacity = required_vertices;
+	}
+
+	uint32_t desired_index_capacity = kCompatibilityScratchIndexCapacity;
+	if (desired_index_capacity < required_indices) {
+		desired_index_capacity = required_indices;
+	}
+
+	if (!bgfx::isValid(g_bgfx.compatibility_vertex_buffer) || g_bgfx.compatibility_vertex_capacity < desired_vertex_capacity) {
+		if (bgfx::isValid(g_bgfx.compatibility_vertex_buffer) && g_bgfx.compatibility_vertex_offset != 0) {
+			return false;
+		}
+		if (bgfx::isValid(g_bgfx.compatibility_vertex_buffer)) {
+			bgfx::destroy(g_bgfx.compatibility_vertex_buffer);
+		}
+		g_bgfx.compatibility_vertex_buffer = bgfx::createDynamicVertexBuffer(desired_vertex_capacity, g_bgfx.gui_layout);
+		g_bgfx.compatibility_vertex_capacity = bgfx::isValid(g_bgfx.compatibility_vertex_buffer) ? desired_vertex_capacity : 0;
+		g_bgfx.compatibility_vertex_offset = 0;
+	}
+
+	if (!bgfx::isValid(g_bgfx.compatibility_index_buffer) || g_bgfx.compatibility_index_capacity < desired_index_capacity) {
+		if (bgfx::isValid(g_bgfx.compatibility_index_buffer) && g_bgfx.compatibility_index_offset != 0) {
+			return false;
+		}
+		if (bgfx::isValid(g_bgfx.compatibility_index_buffer)) {
+			bgfx::destroy(g_bgfx.compatibility_index_buffer);
+		}
+		g_bgfx.compatibility_index_buffer = bgfx::createDynamicIndexBuffer(desired_index_capacity);
+		g_bgfx.compatibility_index_capacity = bgfx::isValid(g_bgfx.compatibility_index_buffer) ? desired_index_capacity : 0;
+		g_bgfx.compatibility_index_offset = 0;
+	}
+
+	return bgfx::isValid(g_bgfx.compatibility_vertex_buffer) && bgfx::isValid(g_bgfx.compatibility_index_buffer);
+}
+
+bool Reserve_Compatibility_Submit_Scratch(uint32_t vertex_count, uint32_t index_count, uint32_t &vertex_offset, uint32_t &index_offset)
+{
+	if (!Ensure_Compatibility_Submit_Scratch(vertex_count, index_count)) {
+		return false;
+	}
+
+	if (g_bgfx.compatibility_vertex_offset + vertex_count > g_bgfx.compatibility_vertex_capacity ||
+		g_bgfx.compatibility_index_offset + index_count > g_bgfx.compatibility_index_capacity) {
+		WWRELEASE_SAY((
+			"BGFX: compatibility scratch buffer exhausted (verts %u+%u/%u, indices %u+%u/%u)\n",
+			g_bgfx.compatibility_vertex_offset,
+			vertex_count,
+			g_bgfx.compatibility_vertex_capacity,
+			g_bgfx.compatibility_index_offset,
+			index_count,
+			g_bgfx.compatibility_index_capacity));
+		return false;
+	}
+
+	vertex_offset = g_bgfx.compatibility_vertex_offset;
+	index_offset = g_bgfx.compatibility_index_offset;
+	g_bgfx.compatibility_vertex_offset += vertex_count;
+	g_bgfx.compatibility_index_offset += index_count;
+	return true;
+}
+
+void Bind_Current_Vertex_Buffer_Slice(unsigned buffer_offset)
+{
+	g_bgfx.current_vba_offset = buffer_offset;
+	if (g_bgfx.current_vb == nullptr) {
+		g_bgfx.vertex_data = nullptr;
+		g_bgfx.vertex_fvf = nullptr;
+		g_bgfx.vertex_count = 0;
+		return;
+	}
+
+	g_bgfx.vertex_fvf = &g_bgfx.current_vb->FVF_Info();
+	const uint16_t total_vertex_count = g_bgfx.current_vb->Get_Vertex_Count();
+	if (buffer_offset > total_vertex_count) {
+		WWRELEASE_SAY(("BGFX: vertex buffer offset out of bounds (%u > %u)\n", buffer_offset, total_vertex_count));
+		g_bgfx.vertex_data = nullptr;
+		g_bgfx.vertex_count = 0;
+		return;
+	}
+
+	g_bgfx.vertex_data = g_bgfx.current_vb->Get_Vertex_Data() + static_cast<size_t>(buffer_offset) * static_cast<size_t>(g_bgfx.vertex_fvf->Get_FVF_Size());
+	g_bgfx.vertex_count = static_cast<uint16_t>(total_vertex_count - buffer_offset);
+}
+
+void Bind_Current_Index_Buffer_Slice(unsigned buffer_offset)
+{
+	g_bgfx.current_iba_offset = buffer_offset;
+	if (g_bgfx.current_ib == nullptr) {
+		g_bgfx.index_data = nullptr;
+		g_bgfx.index_count = 0;
+		return;
+	}
+
+	const uint16_t total_index_count = g_bgfx.current_ib->Get_Index_Count();
+	if (buffer_offset > total_index_count) {
+		WWRELEASE_SAY(("BGFX: index buffer offset out of bounds (%u > %u)\n", buffer_offset, total_index_count));
+		g_bgfx.index_data = nullptr;
+		g_bgfx.index_count = 0;
+		return;
+	}
+
+	g_bgfx.index_data = g_bgfx.current_ib->Get_Index_Data() + buffer_offset;
+	g_bgfx.index_count = static_cast<uint16_t>(total_index_count - buffer_offset);
 }
 
 void Apply_Material_Texture_State(const VertexMaterialClass *material)
@@ -1472,15 +1600,11 @@ bool Submit_Primitives(uint16_t start_index, uint16_t primitive_count, uint16_t 
 	const uint32_t draw_min_source = requested_min_source;
 	const uint32_t draw_max_source = requested_max_source;
 	const uint32_t source_vertex_count = draw_max_source - draw_min_source + 1U;
-	if (bgfx::getAvailTransientVertexBuffer(source_vertex_count, g_bgfx.gui_layout) < source_vertex_count || bgfx::getAvailTransientIndexBuffer(index_total) < index_total) {
-		WWRELEASE_SAY(("BGFX2D: transient buffer allocation failed (%u vertices, %u indices)\n", source_vertex_count, index_total));
+	uint32_t scratch_vertex_offset = 0;
+	uint32_t scratch_index_offset = 0;
+	if (!Reserve_Compatibility_Submit_Scratch(source_vertex_count, index_total, scratch_vertex_offset, scratch_index_offset)) {
 		return false;
 	}
-
-	bgfx::TransientVertexBuffer tvb;
-	bgfx::TransientIndexBuffer tib;
-	bgfx::allocTransientVertexBuffer(&tvb, source_vertex_count, g_bgfx.gui_layout);
-	bgfx::allocTransientIndexBuffer(&tib, index_total);
 
 	const unsigned vertex_stride = g_bgfx.vertex_fvf->Get_FVF_Size();
 	const unsigned vertex_format = g_bgfx.vertex_fvf->Get_FVF();
@@ -1517,7 +1641,12 @@ bool Submit_Primitives(uint16_t start_index, uint16_t primitive_count, uint16_t 
 		WWPerfMonClass::Record_Slow_Submit();
 		WWPerfMonClass::Record_Slow_Submit_Reasons(false, false, needs_cpu_texcoords);
 	}
-	BgfxGuiVertex *dst_vertices = reinterpret_cast<BgfxGuiVertex *>(tvb.data);
+
+	static std::vector<BgfxGuiVertex> converted_vertices;
+	if (converted_vertices.size() < source_vertex_count) {
+		converted_vertices.resize(source_vertex_count);
+	}
+	BgfxGuiVertex *dst_vertices = converted_vertices.data();
 	for (uint32_t i = 0; i < source_vertex_count; ++i) {
 		const uint8_t *src = g_bgfx.vertex_data + static_cast<size_t>(draw_min_source + i) * vertex_stride;
 		const float *position = reinterpret_cast<const float *>(src + location_offset);
@@ -1578,7 +1707,11 @@ bool Submit_Primitives(uint16_t start_index, uint16_t primitive_count, uint16_t 
 		}
 	}
 
-	uint16_t *dst_indices = reinterpret_cast<uint16_t *>(tib.data);
+	static std::vector<uint16_t> converted_indices;
+	if (converted_indices.size() < index_total) {
+		converted_indices.resize(index_total);
+	}
+	uint16_t *dst_indices = converted_indices.data();
 	for (uint32_t i = 0; i < index_total; ++i) {
 		const uint32_t source_index = static_cast<uint32_t>(g_bgfx.index_data[start_index + i]) + base_vertex_index;
 		if (source_index < draw_min_source || source_index > draw_max_source) {
@@ -1587,6 +1720,15 @@ bool Submit_Primitives(uint16_t start_index, uint16_t primitive_count, uint16_t 
 		}
 		dst_indices[i] = static_cast<uint16_t>(source_index - draw_min_source);
 	}
+
+	bgfx::update(
+		g_bgfx.compatibility_vertex_buffer,
+		scratch_vertex_offset,
+		bgfx::copy(dst_vertices, source_vertex_count * sizeof(BgfxGuiVertex)));
+	bgfx::update(
+		g_bgfx.compatibility_index_buffer,
+		scratch_index_offset,
+		bgfx::copy(dst_indices, index_total * sizeof(uint16_t)));
 
 	// bgfx::setViewTransform is view-level (shared by ALL draw calls in a view), not
 	// per-draw-call.  Since the engine changes view/projection per draw call (e.g. 3D
@@ -1618,8 +1760,8 @@ bool Submit_Primitives(uint16_t start_index, uint16_t primitive_count, uint16_t 
 		projected_texture,
 		world_view,
 		texture_transform);
-	bgfx::setVertexBuffer(0, &tvb);
-	bgfx::setIndexBuffer(&tib);
+	bgfx::setVertexBuffer(0, g_bgfx.compatibility_vertex_buffer, scratch_vertex_offset, source_vertex_count);
+	bgfx::setIndexBuffer(g_bgfx.compatibility_index_buffer, scratch_index_offset, index_total);
 	bgfx::setState(Build_BGFX_State(triangle_strip));
 	bgfx::submit(g_bgfx.current_view_id, g_bgfx.programs[program_selection.program]);
 
@@ -1830,6 +1972,14 @@ void Shutdown_Bgfx()
 		bgfx::destroy(g_bgfx.direct_light_diffuse_uniform);
 		g_bgfx.direct_light_diffuse_uniform = BGFX_INVALID_HANDLE;
 	}
+	if (bgfx::isValid(g_bgfx.compatibility_vertex_buffer)) {
+		bgfx::destroy(g_bgfx.compatibility_vertex_buffer);
+		g_bgfx.compatibility_vertex_buffer = BGFX_INVALID_HANDLE;
+	}
+	if (bgfx::isValid(g_bgfx.compatibility_index_buffer)) {
+		bgfx::destroy(g_bgfx.compatibility_index_buffer);
+		g_bgfx.compatibility_index_buffer = BGFX_INVALID_HANDLE;
+	}
 	BgfxCompat_Shutdown_Texture_System();
 
 	bgfx::frame();
@@ -1910,6 +2060,7 @@ void DX8Wrapper::End_Scene(bool flip_frame)
 	if (flip_frame) {
 		const Uint64 end_scene_ticks = WWPerfMonClass::Begin_Scope();
 		bgfx::frame(BGFX_FRAME_NONE);
+		Reset_Compatibility_Submit_Scratch();
 		if (WWPerfMonClass::Is_Enabled()) {
 			const bgfx::Stats *stats = bgfx::getStats();
 			if (stats != nullptr) {
@@ -2254,42 +2405,32 @@ void DX8Wrapper::Set_Projection_Transform_With_Z_Bias(const Matrix4 &matrix, flo
 
 void DX8Wrapper::Set_Vertex_Buffer(const VertexBufferClass *vb)
 {
-	g_bgfx.vertex_data = vb != nullptr ? vb->Get_Vertex_Data() : nullptr;
-	g_bgfx.vertex_fvf = vb != nullptr ? &vb->FVF_Info() : nullptr;
-	g_bgfx.vertex_count = vb != nullptr ? vb->Get_Vertex_Count() : 0;
 	g_bgfx.current_vb = vb;
 	g_bgfx.current_vb_type = vb != nullptr ? vb->Type() : BUFFER_TYPE_INVALID;
-	g_bgfx.current_vba_offset = 0;
+	Bind_Current_Vertex_Buffer_Slice(0);
 }
 
 void DX8Wrapper::Set_Vertex_Buffer(const DynamicVBAccessClass &vba)
 {
-	g_bgfx.vertex_data = vba.Get_Vertex_Data();
-	g_bgfx.vertex_fvf = &vba.FVF_Info();
-	g_bgfx.vertex_count = vba.Get_Vertex_Count();
 	g_bgfx.current_vb = vba.Get_Vertex_Buffer();
 	g_bgfx.current_vb_type = vba.Get_Type();
-	g_bgfx.current_vba_offset = 0;
+	Bind_Current_Vertex_Buffer_Slice(vba.Get_Vertex_Buffer_Offset());
 }
 
 void DX8Wrapper::Set_Index_Buffer(const IndexBufferClass *ib, uint16_t index_base_offset)
 {
-	g_bgfx.index_data = ib != nullptr ? ib->Get_Index_Data() : nullptr;
-	g_bgfx.index_count = ib != nullptr ? ib->Get_Index_Count() : 0;
 	g_bgfx.index_base_offset = index_base_offset;
 	g_bgfx.current_ib = ib;
 	g_bgfx.current_ib_type = ib != nullptr ? ib->Type() : BUFFER_TYPE_INVALID;
-	g_bgfx.current_iba_offset = 0;
+	Bind_Current_Index_Buffer_Slice(0);
 }
 
 void DX8Wrapper::Set_Index_Buffer(const DynamicIBAccessClass &iba, uint16_t index_base_offset)
 {
-	g_bgfx.index_data = iba.Get_Index_Data();
-	g_bgfx.index_count = iba.Get_Index_Count();
 	g_bgfx.index_base_offset = index_base_offset;
 	g_bgfx.current_ib = iba.Get_Index_Buffer();
 	g_bgfx.current_ib_type = iba.Get_Type();
-	g_bgfx.current_iba_offset = 0;
+	Bind_Current_Index_Buffer_Slice(iba.Get_Index_Buffer_Offset());
 }
 
 void DX8Wrapper::Set_Index_Buffer_Index_Offset(unsigned offset)
@@ -2346,6 +2487,11 @@ void DX8Wrapper::Set_DX8_Render_State(unsigned state, unsigned value)
 	if (state < 256) {
 		g_bgfx.render_states[state] = value;
 	}
+}
+
+unsigned DX8Wrapper::Get_DX8_Render_State(unsigned state)
+{
+	return state < 256 ? g_bgfx.render_states[state] : 0;
 }
 
 void DX8Wrapper::Set_Light_Environment(const LightEnvironmentClass *light_environment)
@@ -2450,6 +2596,7 @@ void DX8Wrapper::Get_Render_State(RenderStateStruct &state)
 	state.world = g_bgfx.world;
 	state.view = g_bgfx.view;
 	state.projection = g_bgfx.projection;
+	state.zbias = g_bgfx.render_states[D3DRS_ZBIAS];
 	state.vertex_buffer = const_cast<VertexBufferClass*>(g_bgfx.current_vb);
 	if (state.vertex_buffer) state.vertex_buffer->Add_Ref();
 	state.index_buffer = const_cast<IndexBufferClass*>(g_bgfx.current_ib);
@@ -2471,12 +2618,11 @@ void DX8Wrapper::Set_Render_State(const RenderStateStruct &state)
 	Set_Transform(TRANSFORM_WORLD, state.world);
 	Set_Transform(TRANSFORM_VIEW, state.view);
 	Set_Transform(TRANSFORM_PROJECTION, state.projection);
-	if (state.vertex_buffer) {
-		Set_Vertex_Buffer(state.vertex_buffer);
-	}
-	if (state.index_buffer) {
-		Set_Index_Buffer(state.index_buffer, static_cast<uint16_t>(state.index_base_offset));
-	}
+	Set_DX8_Render_State(D3DRS_ZBIAS, state.zbias);
+	Set_Vertex_Buffer(state.vertex_buffer);
+	Bind_Current_Vertex_Buffer_Slice(state.vba_offset);
+	Set_Index_Buffer(state.index_buffer, static_cast<uint16_t>(state.index_base_offset));
+	Bind_Current_Index_Buffer_Slice(state.iba_offset);
 }
 
 void DX8Wrapper::Release_Render_State()

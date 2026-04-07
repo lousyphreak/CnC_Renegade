@@ -99,6 +99,7 @@ struct RenderStateStruct {
 	Matrix4 world;
 	Matrix4 view;
 	Matrix4 projection;
+	unsigned zbias = 0;
 	VertexBufferClass* vertex_buffer = nullptr;
 	IndexBufferClass* index_buffer = nullptr;
 	unsigned vertex_buffer_type = 0;
@@ -252,6 +253,7 @@ public:
 	static void Set_Shader(const ShaderClass &shader);
 	static void Set_DX8_Texture_Stage_State(unsigned stage, unsigned state, unsigned value);
 	static void Set_DX8_Render_State(unsigned state, unsigned value);
+	static unsigned Get_DX8_Render_State(unsigned state);
 
 	static void Get_Render_State(RenderStateStruct &state);
 	static void Set_Render_State(const RenderStateStruct &state);

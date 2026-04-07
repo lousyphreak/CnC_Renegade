@@ -853,7 +853,8 @@ void PointGroupClass::Render(RenderInfoClass &rinfo)
 			transformed_loc[i].X=result.X;
 			transformed_loc[i].Y=result.Y;
 			transformed_loc[i].Z=result.Z;
-		}		
+		}
+
 		current_loc = &transformed_loc[0];				
 	} // if transform
 
@@ -926,7 +927,7 @@ void PointGroupClass::Render(RenderInfoClass &rinfo)
 		}
 		
 		current+=delta;
-	}							  
+	}
 
 	// restore the matrices
 	DX8Wrapper::Set_Transform(D3DTS_VIEW,view);
@@ -971,9 +972,9 @@ void PointGroupClass::Update_Arrays(
 	// since they always all have the same length.
 	if (VertexLoc.Length() < total_vnum) {
 		// Resize arrays (2x guardband to prevent frequent reallocations).
-		VertexLoc.Resize(total_vnum * 2, false);		
-		VertexUV.Resize(total_vnum * 2, false);
-		VertexDiffuse.Resize(total_vnum * 2, false);
+		VertexLoc.Resize(total_vnum * 2);		
+		VertexUV.Resize(total_vnum * 2);
+		VertexDiffuse.Resize(total_vnum * 2);
 	}
 
 	int vert, i, j;
@@ -1474,4 +1475,3 @@ void PointGroupClass::_Shutdown(void)
 	REF_PTR_RELEASE(Quads);
 	REF_PTR_RELEASE(Tris);
 }
-

@@ -88,6 +88,7 @@ set(WW3D2_SOURCES
 set(WW3D2_BGFX_SHADER_SOURCES)
 if(RENEGADE_WITH_BGFX_RENDERER)
     list(REMOVE_ITEM WW3D2_SOURCES
+        particle_renderers_headless.cpp
         render2dsentence_headless.cpp
         surfaceclass_headless.cpp
         texture_headless.cpp
@@ -96,7 +97,10 @@ if(RENEGADE_WITH_BGFX_RENDERER)
 
     list(APPEND WW3D2_SOURCES
         dx8texman_bgfx.cpp
+        linegrp.cpp
+        pointgr.cpp
         render2dsentence.cpp
+        seglinerenderer.cpp
         surfaceclass_bgfx.cpp
         texture_bgfx.cpp
         ww3d.cpp

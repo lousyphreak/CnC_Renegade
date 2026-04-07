@@ -121,13 +121,18 @@ public:
 class DynamicIBAccessClass
 {
 public:
-	static void _Reset(bool)
+	static void _Reset(bool frame_changed)
 	{
+		Shared_Sorting_Buffer_Offset() = 0;
+		if (frame_changed) {
+			Shared_DX8_Buffer_Offset() = 0;
+		}
 	}
 
 	DynamicIBAccessClass(int type, int index_count)
 		: Type(static_cast<unsigned>(type)),
 		  IndexCount(static_cast<uint16_t>(index_count)),
+		  IndexBufferOffset(0),
 		  BackingBuffer(NULL)
 	{
 		Attach_Shared_Buffer(type);
@@ -135,6 +140,11 @@ public:
 
 	~DynamicIBAccessClass()
 	{
+		if (Type == 3) {
+			Shared_Sorting_Buffer_Offset() = static_cast<uint16_t>(Shared_Sorting_Buffer_Offset() + IndexCount);
+		} else {
+			Shared_DX8_Buffer_Offset() = static_cast<uint16_t>(Shared_DX8_Buffer_Offset() + IndexCount);
+		}
 		REF_PTR_RELEASE(BackingBuffer);
 	}
 
@@ -150,12 +160,17 @@ public:
 
 	const uint16_t *Get_Index_Data() const
 	{
-		return BackingBuffer != NULL ? BackingBuffer->Get_Index_Data() : NULL;
+		return BackingBuffer != NULL ? BackingBuffer->Get_Index_Data() + IndexBufferOffset : NULL;
 	}
 
 	const IndexBufferClass * Get_Index_Buffer() const
 	{
 		return BackingBuffer;
+	}
+
+	uint16_t Get_Index_Buffer_Offset() const
+	{
+		return IndexBufferOffset;
 	}
 
 	class WriteLockClass
@@ -168,7 +183,7 @@ public:
 
 		uint16_t * Get_Index_Array()
 		{
-			return Access != nullptr && Access->BackingBuffer != NULL ? const_cast<uint16_t *>(Access->BackingBuffer->Get_Index_Data()) : nullptr;
+			return Access != nullptr ? const_cast<uint16_t *>(Access->Get_Index_Data()) : nullptr;
 		}
 
 	private:
@@ -176,6 +191,8 @@ public:
 	};
 
 private:
+	static constexpr uint16_t kDefaultSharedIndexCount = 5000;
+
 	static IndexBufferClass *& Shared_DX8_Buffer()
 	{
 		static IndexBufferClass * buffer = NULL;
@@ -188,16 +205,53 @@ private:
 		return buffer;
 	}
 
+	static uint16_t & Shared_DX8_Buffer_Offset()
+	{
+		static uint16_t offset = 0;
+		return offset;
+	}
+
+	static uint16_t & Shared_Sorting_Buffer_Offset()
+	{
+		static uint16_t offset = 0;
+		return offset;
+	}
+
 	void Attach_Shared_Buffer(int type)
 	{
 		const bool sorting_buffer = (type == 1 || type == 3);
 		IndexBufferClass *& shared_buffer = sorting_buffer ? Shared_Sorting_Buffer() : Shared_DX8_Buffer();
 
-		if (shared_buffer == NULL || shared_buffer->Get_Index_Count() < IndexCount) {
-			REF_PTR_RELEASE(shared_buffer);
-			shared_buffer = sorting_buffer ?
-				static_cast<IndexBufferClass *>(new SortingIndexBufferClass(IndexCount)) :
-				static_cast<IndexBufferClass *>(new DX8IndexBufferClass(IndexCount));
+		if (sorting_buffer) {
+			const uint32_t required_index_count = static_cast<uint32_t>(Shared_Sorting_Buffer_Offset()) + static_cast<uint32_t>(IndexCount);
+			if (shared_buffer == NULL || shared_buffer->Get_Index_Count() < required_index_count) {
+				REF_PTR_RELEASE(shared_buffer);
+			}
+			if (shared_buffer == NULL) {
+				uint32_t new_index_count = required_index_count;
+				if (new_index_count < kDefaultSharedIndexCount) {
+					new_index_count = kDefaultSharedIndexCount;
+				}
+				shared_buffer = static_cast<IndexBufferClass *>(new SortingIndexBufferClass(static_cast<uint16_t>(new_index_count)));
+				Shared_Sorting_Buffer_Offset() = 0;
+			}
+			IndexBufferOffset = Shared_Sorting_Buffer_Offset();
+		} else {
+			if (shared_buffer == NULL || shared_buffer->Get_Index_Count() < IndexCount) {
+				REF_PTR_RELEASE(shared_buffer);
+			}
+			if (shared_buffer == NULL) {
+				uint32_t new_index_count = IndexCount;
+				if (new_index_count < kDefaultSharedIndexCount) {
+					new_index_count = kDefaultSharedIndexCount;
+				}
+				shared_buffer = static_cast<IndexBufferClass *>(new DX8IndexBufferClass(static_cast<uint16_t>(new_index_count)));
+				Shared_DX8_Buffer_Offset() = 0;
+			}
+			if (static_cast<uint32_t>(Shared_DX8_Buffer_Offset()) + static_cast<uint32_t>(IndexCount) > shared_buffer->Get_Index_Count()) {
+				Shared_DX8_Buffer_Offset() = 0;
+			}
+			IndexBufferOffset = Shared_DX8_Buffer_Offset();
 		}
 
 		REF_PTR_SET(BackingBuffer, shared_buffer);
@@ -205,5 +259,6 @@ private:
 
 	unsigned Type;
 	uint16_t IndexCount;
+	uint16_t IndexBufferOffset;
 	IndexBufferClass * BackingBuffer;
 };

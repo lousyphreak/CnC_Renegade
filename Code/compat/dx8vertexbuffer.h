@@ -140,14 +140,19 @@ public:
 class DynamicVBAccessClass
 {
 public:
-	static void _Reset(bool)
+	static void _Reset(bool frame_changed)
 	{
+		Shared_Sorting_Buffer_Offset() = 0;
+		if (frame_changed) {
+			Shared_DX8_Buffer_Offset() = 0;
+		}
 	}
 
 	DynamicVBAccessClass(int type, int vertex_count)
 		: FVFInfo(dynamic_fvf_type),
 		  Type(static_cast<unsigned>(type)),
 		  VertexCount(static_cast<uint16_t>(vertex_count)),
+		  VertexBufferOffset(0),
 		  BackingBuffer(NULL)
 	{
 		Attach_Shared_Buffer(type);
@@ -157,6 +162,7 @@ public:
 		: FVFInfo(dynamic_fvf_type),
 		  Type(static_cast<unsigned>(type)),
 		  VertexCount(static_cast<uint16_t>(vertex_count)),
+		  VertexBufferOffset(0),
 		  BackingBuffer(NULL)
 	{
 		Attach_Shared_Buffer(type);
@@ -164,6 +170,11 @@ public:
 
 	~DynamicVBAccessClass()
 	{
+		if (Type == 3) {
+			Shared_Sorting_Buffer_Offset() = static_cast<uint16_t>(Shared_Sorting_Buffer_Offset() + VertexCount);
+		} else {
+			Shared_DX8_Buffer_Offset() = static_cast<uint16_t>(Shared_DX8_Buffer_Offset() + VertexCount);
+		}
 		REF_PTR_RELEASE(BackingBuffer);
 	}
 
@@ -184,12 +195,21 @@ public:
 
 	const uint8_t *Get_Vertex_Data() const
 	{
-		return BackingBuffer != NULL ? BackingBuffer->Get_Vertex_Data() : NULL;
+		if (BackingBuffer == NULL) {
+			return NULL;
+		}
+
+		return BackingBuffer->Get_Vertex_Data() + static_cast<size_t>(VertexBufferOffset) * static_cast<size_t>(FVFInfo.Get_FVF_Size());
 	}
 
 	const VertexBufferClass * Get_Vertex_Buffer() const
 	{
 		return BackingBuffer;
+	}
+
+	uint16_t Get_Vertex_Buffer_Offset() const
+	{
+		return VertexBufferOffset;
 	}
 
 	class WriteLockClass
@@ -202,7 +222,7 @@ public:
 
 		void * Get_Vertex_Array()
 		{
-			return Access != nullptr && Access->BackingBuffer != NULL ? const_cast<uint8_t*>(Access->BackingBuffer->Get_Vertex_Data()) : nullptr;
+			return Access != nullptr ? const_cast<uint8_t*>(Access->Get_Vertex_Data()) : nullptr;
 		}
 
 		VertexFormatXYZNDUV2 * Get_Formatted_Vertex_Array()
@@ -215,6 +235,8 @@ public:
 	};
 
 private:
+	static constexpr uint16_t kDefaultSharedVertexCount = 5000;
+
 	static VertexBufferClass *& Shared_DX8_Buffer()
 	{
 		static VertexBufferClass * buffer = NULL;
@@ -227,16 +249,53 @@ private:
 		return buffer;
 	}
 
+	static uint16_t & Shared_DX8_Buffer_Offset()
+	{
+		static uint16_t offset = 0;
+		return offset;
+	}
+
+	static uint16_t & Shared_Sorting_Buffer_Offset()
+	{
+		static uint16_t offset = 0;
+		return offset;
+	}
+
 	void Attach_Shared_Buffer(int type)
 	{
 		const bool sorting_buffer = (type == 1 || type == 3);
 		VertexBufferClass *& shared_buffer = sorting_buffer ? Shared_Sorting_Buffer() : Shared_DX8_Buffer();
 
-		if (shared_buffer == NULL || shared_buffer->Get_Vertex_Count() < VertexCount) {
-			REF_PTR_RELEASE(shared_buffer);
-			shared_buffer = sorting_buffer ?
-				static_cast<VertexBufferClass *>(new SortingVertexBufferClass(VertexCount)) :
-				static_cast<VertexBufferClass *>(new DX8VertexBufferClass(dynamic_fvf_type, VertexCount));
+		if (sorting_buffer) {
+			const uint32_t required_vertex_count = static_cast<uint32_t>(Shared_Sorting_Buffer_Offset()) + static_cast<uint32_t>(VertexCount);
+			if (shared_buffer == NULL || shared_buffer->Get_Vertex_Count() < required_vertex_count) {
+				REF_PTR_RELEASE(shared_buffer);
+			}
+			if (shared_buffer == NULL) {
+				uint32_t new_vertex_count = required_vertex_count;
+				if (new_vertex_count < kDefaultSharedVertexCount) {
+					new_vertex_count = kDefaultSharedVertexCount;
+				}
+				shared_buffer = static_cast<VertexBufferClass *>(new SortingVertexBufferClass(static_cast<uint16_t>(new_vertex_count)));
+				Shared_Sorting_Buffer_Offset() = 0;
+			}
+			VertexBufferOffset = Shared_Sorting_Buffer_Offset();
+		} else {
+			if (shared_buffer == NULL || shared_buffer->Get_Vertex_Count() < VertexCount) {
+				REF_PTR_RELEASE(shared_buffer);
+			}
+			if (shared_buffer == NULL) {
+				uint32_t new_vertex_count = VertexCount;
+				if (new_vertex_count < kDefaultSharedVertexCount) {
+					new_vertex_count = kDefaultSharedVertexCount;
+				}
+				shared_buffer = static_cast<VertexBufferClass *>(new DX8VertexBufferClass(dynamic_fvf_type, static_cast<uint16_t>(new_vertex_count)));
+				Shared_DX8_Buffer_Offset() = 0;
+			}
+			if (static_cast<uint32_t>(Shared_DX8_Buffer_Offset()) + static_cast<uint32_t>(VertexCount) > shared_buffer->Get_Vertex_Count()) {
+				Shared_DX8_Buffer_Offset() = 0;
+			}
+			VertexBufferOffset = Shared_DX8_Buffer_Offset();
 		}
 
 		REF_PTR_SET(BackingBuffer, shared_buffer);
@@ -245,5 +304,6 @@ private:
 	FVFInfoClass FVFInfo;
 	unsigned Type;
 	uint16_t VertexCount;
+	uint16_t VertexBufferOffset;
 	VertexBufferClass * BackingBuffer;
 };

@@ -1,5 +1,30 @@
 # Porting Knowledge
 
+## shutdown ordering after ASan validation
+
+- `Game_Shutdown()` must destroy active game modes before tearing down `CombatManager`. `CombatGameModeClass::Shutdown()` calls `CombatManager::Unload_Level()`, and that path expects the combat scene, scripts, and object managers to still be valid while objects unregister themselves.
+- `ScriptManager::Shutdown()` must detach scripts from their owning `ScriptableGameObj` instances before unloading the script module. Destroying scripts in place leaves freed observer pointers inside game objects, which later produces use-after-free errors during `GameObjManager::Destroy_All()`.
+- Shutdown-time scene removal should tolerate `COMBAT_SCENE == NULL`. A number of object destructors only need best-effort removal from scene lists; when shutdown ordering means the scene is already gone, skipping the removal is safer than dereferencing a null scene singleton.
+
+## bgfx particle renderer wiring
+
+- The current Linux/bgfx CMake path can lag behind the original renderer sources even when the implementation is still present in-tree. In this case `Code/ww3d2/CMakeLists.txt` kept compiling `particle_renderers_headless.cpp`, which made `PointGroupClass::Render`, `LineGroupClass::Render`, and `SegLineRendererClass::Render` no-ops despite `pointgr.cpp`, `linegrp.cpp`, and `seglinerenderer.cpp` still existing.
+- Restoring those files is behavior-safe because they already render through `DX8Wrapper`, `DynamicVBAccessClass`, and `SortingRendererClass`; they do not talk directly to D3D8. The real integration seam is build wiring, not a renderer rewrite.
+- `PointGroupClass` also has hidden startup/shutdown requirements. Its render path depends on `_Init()` / `_Shutdown()` to build shared lookup tables, shared index buffers, and the preset `PointMaterial`, and there was no active caller in the bgfx bootstrap before this fix.
+- The active non-Windows build does **not** use the old `dx8vertexbuffer.cpp` / `dx8indexbuffer.cpp` implementations. It uses the header-only compatibility shims in `Code/compat/`. Those shims must preserve the original per-allocation offset semantics because `sortingrenderer_headless.cpp` reads deferred translucent geometry back out of the shared sorting buffers later in the same frame.
+
+## bgfx compatibility scratch submission after parity restores
+
+- The bgfx wrapper still has to convert legacy WW3D vertex/index data into the uniform `BgfxGuiVertex` layout before submission, but it does **not** need to spend bgfx transient-buffer budget on every draw to do it.
+- A safer compatibility pattern in this tree is to keep persistent bgfx dynamic vertex/index buffers dedicated to converted draw submission and reset their write offsets only after `bgfx::frame()`. That removes legacy draw traffic from bgfx's transient pool while preserving the wrapper's CPU conversion path.
+- If particle-heavy scenes suddenly look wrong after restoring an original renderer path, audit the header-only compatibility dynamic buffers first. If they return the shared buffer base pointer without the original per-allocation offset, translucent sorting can read back the wrong vertices/indices and produce both positional corruption and "too opaque" blending artifacts even when the shader/blend state itself is correct.
+
+## shutdown-time physics singleton ordering
+
+- `StaticAnimPhysClass` can own a `ShadowProjector` that is normally registered with `PhysicsSceneClass`.
+- During teardown, the object can be destroyed after the global physics scene singleton has already been cleared. The destructor and `Set_Shadow()` therefore need to tolerate `PhysicsSceneClass::Get_Instance() == NULL` before removing or re-adding the projector.
+- This is a shutdown-ordering guard, not a behavior change for normal runtime operation.
+
 ## bgfx offscreen scene sequencing
 
 - bgfx framebuffer, clear, and viewport state are view-level, not draw-level. A D3D8-style wrapper that funnels every legacy `Begin_Scene`/`End_Scene` pair through one bgfx view will either alias view state across unrelated passes or end up "fixing" the problem by calling `bgfx::frame(BGFX_FRAME_FLUSH)` between offscreen passes.

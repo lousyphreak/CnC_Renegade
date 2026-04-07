@@ -43,10 +43,12 @@
 #include "rinfo.h"
 #include "dx8wrapper.h"
 #include "sortingrenderer.h"
+#include "vertmaterial.h"
 #include "vp.h"
 #include "vector3i.h"
 #include "random.h"
 #include "v3_rnd.h"
+#include "w3d_file.h"
 #include "meshgeometry.h"
 
 

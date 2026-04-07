@@ -440,6 +440,7 @@ static void Apply_Render_State(RenderStateStruct& render_state)
 	DX8Wrapper::Set_Transform(D3DTS_WORLD,render_state.world);
 	DX8Wrapper::Set_Transform(D3DTS_VIEW,render_state.view);
 	DX8Wrapper::Set_Transform(D3DTS_PROJECTION,render_state.projection);
+	DX8Wrapper::Set_DX8_Render_State(D3DRS_ZBIAS,render_state.zbias);
 }
 
 // ----------------------------------------------------------------------------
@@ -605,6 +606,7 @@ void SortingRendererClass::Flush()
 	Matrix4 old_view;
 	Matrix4 old_world;
 	Matrix4 old_projection;
+	const unsigned old_zbias = DX8Wrapper::Get_DX8_Render_State(D3DRS_ZBIAS);
 	DX8Wrapper::Get_Transform(D3DTS_VIEW,old_view);
 	DX8Wrapper::Get_Transform(D3DTS_WORLD,old_world);
 	DX8Wrapper::Get_Transform(D3DTS_PROJECTION,old_projection);
@@ -638,6 +640,7 @@ void SortingRendererClass::Flush()
 	DX8Wrapper::Set_Transform(D3DTS_VIEW,old_view);
 	DX8Wrapper::Set_Transform(D3DTS_WORLD,old_world);
 	DX8Wrapper::Set_Transform(D3DTS_PROJECTION,old_projection);
+	DX8Wrapper::Set_DX8_Render_State(D3DRS_ZBIAS,old_zbias);
 
 }
 

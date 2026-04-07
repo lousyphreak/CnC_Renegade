@@ -33,6 +33,11 @@ The build should alway be Debug mode with ASAN and UBSAN enabled, to catch any m
 - **DO NOT TOUCH GIT** - the user will do that
 - **DO NOT CHANGE THE ORIGINAL GAME CODE** - unless needed to port to new functionality, like changing the file system to use SDL3, or changing the input handling to use SDL3, but do not change the original game logic or behavior unless absolutely necessary. if you need to change something in the original code, make sure to document it in the `PORTING_PROGRESS.md` and `PORTING_KNOWLEDGE.md` files, and explain why the change was needed and how it was implemented.
 
+## Renderer porting
+
+- when you port a part of the renderer, remove the corresponding null and headless renderer parts
+- stay as close to the d3d original as possible
+- make sure to not do a lot of CPU work, we are porting to modern render APIs so use the GPU where feasible
 
 ## **ACCEPTABLE CHANGES**
 

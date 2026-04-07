@@ -272,6 +272,7 @@ WW3DErrorType WW3D::Init(void *hwnd, char *defaultpal, bool lite)
 		return(WW3D_ERROR_DIRECTX8_INITIALIZATION_FAILED);
 	}
 	VertexMaterialClass::Init();
+	PointGroupClass::_Init();
 	WWDEBUG_SAY(("Allocate Debug Resources\n"));
 	Allocate_Debug_Resources();
 
@@ -351,6 +352,7 @@ WW3DErrorType WW3D::Shutdown(void)
 		WW3DAssetManager::Get_Instance()->Free_Assets();
 	}
 
+	PointGroupClass::_Shutdown();
 	TheDX8MeshRenderer.Shutdown();
 	DX8TextureManagerClass::Shutdown();
 	if (!Lite) {

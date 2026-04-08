@@ -39,8 +39,6 @@
 
 #if defined(_MSC_VER)
 #pragma once
-
-#include <cstdint>
 #endif
 
 #ifndef DX8_RENDERER_H
@@ -154,7 +152,7 @@ protected:
 	bool														AnyDelayedPassesToRender;
 
 	void Generate_Texture_Categories(Vertex_Split_Table& split_table,unsigned vertex_offset);
-	void Insert_To_Texture_Category(
+	void DX8FVFCategoryContainer::Insert_To_Texture_Category(
 		Vertex_Split_Table& split_table,
 		TextureClass** textures,
 		VertexMaterialClass* mat,
@@ -183,7 +181,7 @@ public:
 	DX8FVFCategoryContainer(unsigned FVF,bool sorting);
 	virtual ~DX8FVFCategoryContainer();
 
-	static unsigned Define_FVF(MeshModelClass* mmc,uint32_t * user_lighting,bool enable_lighting);
+	static unsigned Define_FVF(MeshModelClass* mmc,unsigned int * user_lighting,bool enable_lighting);
 	bool Is_Sorting() const { return sorting; }
 
 	void Change_Polygon_Renderer_Texture(
@@ -293,7 +291,7 @@ private:
 
 	void Reset();
 
-	uint32_t								VisibleVertexCount;
+	unsigned int								VisibleVertexCount;
 	MeshClass *									VisibleSkinHead;
 
 };
@@ -308,20 +306,18 @@ private:
 */
 struct MeshRegKeyStruct
 {
-	MeshRegKeyStruct(void) : Model(NULL), UserLighting(NULL), Sorting(false) {}
-	MeshRegKeyStruct(MeshModelClass * mdl,uint32_t * lighting,bool sorting) : Model(mdl), UserLighting(lighting), Sorting(sorting) {}
-	bool operator == (const MeshRegKeyStruct & that) { return ((Model == that.Model) && (UserLighting == that.UserLighting) && (Sorting == that.Sorting)); }
+	MeshRegKeyStruct(void) : Model(NULL), UserLighting(NULL) {}
+	MeshRegKeyStruct(MeshModelClass * mdl,unsigned int * lighting) : Model(mdl), UserLighting(lighting) {}
+	bool operator == (const MeshRegKeyStruct & that) { return ((Model == that.Model) && (UserLighting == that.UserLighting)); }
 
 	MeshModelClass *	Model;
-	uint32_t *		UserLighting;
-	bool				Sorting;
+	unsigned int *		UserLighting;
 };
 
 
-template <> inline uint32_t HashTemplateKeyClass<MeshRegKeyStruct>::Get_Hash_Value(const MeshRegKeyStruct& key)
+inline unsigned int HashTemplateKeyClass<MeshRegKeyStruct>::Get_Hash_Value(const MeshRegKeyStruct& key)
 {
-	uint32_t hval = static_cast<uint32_t>(reinterpret_cast<std::uintptr_t>(key.Model) + reinterpret_cast<std::uintptr_t>(key.UserLighting));
-	hval ^= key.Sorting ? 0x9e3779b9U : 0U;
+	unsigned int hval = (unsigned int)(key.Model) + (unsigned int)(key.UserLighting);
 	hval = hval + (hval>>5) + (hval>>10) + (hval >> 20);
 	return hval;
 }

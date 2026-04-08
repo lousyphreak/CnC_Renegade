@@ -18,8 +18,6 @@
 
 #if defined(_MSC_VER)
 #pragma once
-
-#include <cstdint>
 #endif
 
 #ifndef DAZZLE_H
@@ -191,9 +189,9 @@ class DazzleLayerClass {
 
 	private:
 
-		virtual int Get_Visible_Item_Count(uint32_t type) const;	// Return visible item count
-//		virtual void Get_Visible_Item_Locations(uint32_t type, Vector3* locations) const;	// Copy locations of visible items to buffer
-		virtual void Clear_Visible_List(uint32_t type);
+		virtual int Get_Visible_Item_Count(unsigned int type) const;	// Return visible item count
+//		virtual void Get_Visible_Item_Locations(unsigned int type, Vector3* locations) const;	// Copy locations of visible items to buffer
+		virtual void Clear_Visible_List(unsigned int type);
 
 		// We have an array of visible lists (one for each dazzle type).
 		DazzleRenderObjClass** visible_lists;
@@ -253,7 +251,7 @@ class DazzleRenderObjClass : public RenderObjClass
 	float visibility;
 	bool on_list;	// This is used to avoid insterting a dazzle into a list twice.
 	float radius;	// Used to cast rays against
-	uint32_t creation_time;
+	unsigned int creation_time;
 	
 	static bool	_dazzle_rendering_enabled;
 
@@ -289,7 +287,7 @@ public:
 	void Set_Halo_Color(const Vector3& col) { halo_color=col; }
 	void Set_Lensflare_Intensity (float intensity) {lensflare_intensity=intensity;}
 
-	uint32_t					Get_Dazzle_Type(void) { return type; }
+	unsigned int					Get_Dazzle_Type(void) { return type; }
 
 	// Usually, a DazzleRenderObj adds itself to the appropriate visible list
 	// (determined by the current layer) when it is rendered. This does not
@@ -316,7 +314,7 @@ public:
 	static void Init_Lensflare(const LensflareInitClass& i);
 	static void Init_From_INI(const INIClass* ini);
 	static unsigned Get_Type_ID(const char* name);	// Return the ID of type with given name, or INT_MAX if failed
-	static const char * Get_Type_Name(uint32_t id);	// Return the name of the type with the given ID
+	static const char * Get_Type_Name(unsigned int id);	// Return the name of the type with the given ID
 	static DazzleTypeClass* Get_Type_Class(unsigned id);	// Return dazzle type class pointer, or NULL if not found
 																			// The pointer is NOT refcounted - all types are deinitialised
 																			// when exiting the level.

@@ -37,2614 +37,3306 @@
  *   DX8Wrapper::_Update_Texture -- Copies a texture from system memory to video memory        *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+//#define CREATE_DX8_MULTI_THREADED
+//#define CREATE_DX8_FPU_PRESERVE
+#define WW3D_DEVTYPE D3DDEVTYPE_HAL
+
 #include "dx8wrapper.h"
-
-#include "bgfx_compat_resources.h"
-#include "light.h"
-#include "lightenvironment.h"
-#include "matrix3d.h"
-#include "matrix4.h"
-#include "rddesc.h"
-#include "render2d.h"
-#include "refcount.h"
-#include "registry.h"
-#include "shader.h"
-#include "texture.h"
-#include "vertmaterial.h"
+#include "dx8fvf.h"
+#include "dx8vertexbuffer.h"
+#include "dx8indexbuffer.h"
+#include "dx8renderer.h"
 #include "ww3d.h"
-#include "wwdebug.h"
-#include "wwperfmon.h"
+#include "camera.h"
+#include "wwstring.h"
+#include "matrix4.h"
+#include "vertmaterial.h"
+#include "rddesc.h"
+#include "lightenvironment.h"
+#include "statistics.h"
+#include "registry.h"
+#include "boxrobj.h"
+#include "pointgr.h"
+#include "render2d.h"
+#include "sortingrenderer.h"
+#include "shattersystem.h"
+#include "light.h"
+#include "assetmgr.h"
+#include "textureloader.h"
+#include "missingtexture.h"
+#include "thread.h"
+#include <stdio.h>
+#include <D3dx8core.h>
+#include "pot.h"
+#include "wwprofile.h"
+#include "ffactory.h"
+#include "dx8caps.h"
+#include "formconv.h"
+#include "dx8texman.h"
+#include "bound.h"
 
-#include <algorithm>
-#include <cmath>
-#include <cstdint>
-#include <cstring>
-#include <limits>
-#include <vector>
+const int DEFAULT_RESOLUTION_WIDTH = 800;
+const int DEFAULT_RESOLUTION_HEIGHT = 600;
+const int DEFAULT_BIT_DEPTH = 32;
+const int DEFAULT_TEXTURE_BIT_DEPTH = 16;
 
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_properties.h>
-#include <SDL3/SDL_video.h>
 
-#include <bgfx/bgfx.h>
-#include <bgfx/platform.h>
+/***********************************************************************************
+**
+** DX8Wrapper Static Variables
+**
+***********************************************************************************/
 
-#include "glsl/fs_basic.sc.bin.h"
-#include "glsl/fs_scene.sc.bin.h"
-#include "glsl/vs_basic.sc.bin.h"
-#include "glsl/vs_lit_dynamic.sc.bin.h"
-#include "glsl/vs_lit_environment.sc.bin.h"
-#include "glsl/vs_unlit.sc.bin.h"
-#include "spirv/fs_basic.sc.bin.h"
-#include "spirv/fs_scene.sc.bin.h"
-#include "spirv/vs_basic.sc.bin.h"
-#include "spirv/vs_lit_dynamic.sc.bin.h"
-#include "spirv/vs_lit_environment.sc.bin.h"
-#include "spirv/vs_unlit.sc.bin.h"
-#if defined(_WIN32)
-#include "dx11/fs_basic.sc.bin.h"
-#include "dx11/fs_scene.sc.bin.h"
-#include "dx11/vs_basic.sc.bin.h"
-#include "dx11/vs_lit_dynamic.sc.bin.h"
-#include "dx11/vs_lit_environment.sc.bin.h"
-#include "dx11/vs_unlit.sc.bin.h"
-#endif
+static HWND						_Hwnd															= NULL;
+bool								DX8Wrapper::IsInitted									= false;
+bool								DX8Wrapper::_EnableTriangleDraw						= true;
 
-namespace {
+int								DX8Wrapper::CurRenderDevice							= -1;
+int								DX8Wrapper::ResolutionWidth							= DEFAULT_RESOLUTION_WIDTH;
+int								DX8Wrapper::ResolutionHeight							= DEFAULT_RESOLUTION_HEIGHT;
+int								DX8Wrapper::BitDepth										= DEFAULT_BIT_DEPTH;
+int								DX8Wrapper::TextureBitDepth							= DEFAULT_TEXTURE_BIT_DEPTH;
+bool								DX8Wrapper::IsWindowed									= false;
 
-constexpr int kFallbackRenderWidth = 640;
-constexpr int kFallbackRenderHeight = 480;
-constexpr bgfx::ViewId kFirstSceneViewId = 0;
-constexpr bgfx::ViewId kMaxSceneViewId = 249; // View 250 is reserved for render-target readback.
-constexpr uint32_t kCompatibilityScratchVertexBytes = 24u << 20;
-constexpr uint32_t kCompatibilityScratchIndexBytes = 8u << 20;
+D3DMATRIX						DX8Wrapper::old_world;
+D3DMATRIX						DX8Wrapper::old_view;
+D3DMATRIX						DX8Wrapper::old_prj;
 
-const float kIdentityMatrix[16] = {
-	1.0f, 0.0f, 0.0f, 0.0f,
-	0.0f, 1.0f, 0.0f, 0.0f,
-	0.0f, 0.0f, 1.0f, 0.0f,
-	0.0f, 0.0f, 0.0f, 1.0f,
-};
+bool								DX8Wrapper::world_identity;
+unsigned							DX8Wrapper::RenderStates[256];
+unsigned							DX8Wrapper::TextureStageStates[MAX_TEXTURE_STAGES][32];
+IDirect3DBaseTexture8 *		DX8Wrapper::Textures[MAX_TEXTURE_STAGES];
+RenderStateStruct				DX8Wrapper::render_state;
+unsigned							DX8Wrapper::render_state_changed;
 
-struct BgfxGuiVertex {
-	float x;
-	float y;
-	float z;
-	float nx;
-	float ny;
-	float nz;
-	uint32_t abgr;
-	float u;
-	float v;
-};
+bool								DX8Wrapper::FogEnable									= false;
+D3DCOLOR							DX8Wrapper::FogColor										= 0;
 
-constexpr uint32_t kCompatibilityScratchVertexCapacity = kCompatibilityScratchVertexBytes / sizeof(BgfxGuiVertex);
-constexpr uint32_t kCompatibilityScratchIndexCapacity = kCompatibilityScratchIndexBytes / sizeof(uint16_t);
+IDirect3D8 *					DX8Wrapper::D3DInterface								= NULL;
+IDirect3DDevice8 *			DX8Wrapper::D3DDevice									= NULL;
+IDirect3DSurface8 *			DX8Wrapper::CurrentRenderTarget						= NULL;
+IDirect3DSurface8 *			DX8Wrapper::DefaultRenderTarget						= NULL;
+IDirect3DSurface8 *			DX8Wrapper::DefaultDepthBuffer						= NULL;
+bool								DX8Wrapper::IsRenderToTexture							= false;
 
-enum BgfxProgramType {
-	BGFX_PROGRAM_BASIC = 0,
-	BGFX_PROGRAM_UNLIT,
-	BGFX_PROGRAM_LIGHT_ENVIRONMENT,
-	BGFX_PROGRAM_LIGHT_DYNAMIC,
-	BGFX_PROGRAM_COUNT
-};
+unsigned							DX8Wrapper::matrix_changes								= 0;
+unsigned							DX8Wrapper::material_changes							= 0;
+unsigned							DX8Wrapper::vertex_buffer_changes					= 0;
+unsigned							DX8Wrapper::index_buffer_changes                = 0;
+unsigned							DX8Wrapper::light_changes								= 0;
+unsigned							DX8Wrapper::texture_changes							= 0;
+unsigned							DX8Wrapper::render_state_changes						= 0;
+unsigned							DX8Wrapper::texture_stage_state_changes			= 0;
+unsigned							DX8Wrapper::_MainThreadID								= 0;
+bool								DX8Wrapper::CurrentDX8LightEnables[4];
+bool								DX8Wrapper::IsDeviceLost;
+int								DX8Wrapper::ZBias;
+float								DX8Wrapper::ZNear;
+float								DX8Wrapper::ZFar;
+Matrix4							DX8Wrapper::ProjectionMatrix;
 
-struct EmbeddedShaderBinary {
-	const uint8_t *glsl_data = nullptr;
-	uint32_t glsl_size = 0;
-	const uint8_t *spirv_data = nullptr;
-	uint32_t spirv_size = 0;
-#if defined(_WIN32)
-	const uint8_t *dx11_data = nullptr;
-	uint32_t dx11_size = 0;
-#endif
-};
+DX8Caps*							DX8Wrapper::CurrentCaps;
 
-struct BgfxProgramSelection {
-	BgfxProgramType program = BGFX_PROGRAM_BASIC;
-	bool fog_enabled = false;
-	bool use_gpu_texgen = false;
-};
+D3DADAPTER_IDENTIFIER8		DX8Wrapper::CurrentAdapterIdentifier;
 
-struct BgfxLightState {
-	bool enabled = false;
-	LightClass::LightType type = LightClass::POINT;
-	Vector3 ambient = Vector3(0.0f, 0.0f, 0.0f);
-	Vector3 diffuse = Vector3(0.0f, 0.0f, 0.0f);
-	Vector3 position = Vector3(0.0f, 0.0f, 0.0f);
-	Vector3 direction = Vector3(0.0f, 0.0f, -1.0f);
-	float far_atten_start = 0.0f;
-	float far_atten_end = 1.0f;
-	float spot_angle_cos = -1.0f;
-};
+unsigned long DX8Wrapper::FrameCount = 0;
 
-struct BgfxLightEnvironmentState {
-	bool enabled = false;
-	Vector3 ambient = Vector3(0.0f, 0.0f, 0.0f);
-	unsigned count = 0;
-	Vector3 directions[4];
-	Vector3 diffuse[4];
-};
+bool								_DX8SingleThreaded										= false;
 
-struct BgfxDx8WrapperState {
-	SDL_Window *window = nullptr;
-	SDL_GLContext gl_context = nullptr;
-	RenderDeviceDescClass render_device_desc;
-	RenderViewportClass viewport = RenderViewportClass(0u, 0u, static_cast<unsigned>(kFallbackRenderWidth), static_cast<unsigned>(kFallbackRenderHeight));
-	uint32_t reset_flags = BGFX_RESET_NONE;
-	uint32_t clear_color = 0x000000FFu;
-	float clear_depth = 1.0f;
-	uint8_t clear_stencil = 0;
-	uint16_t clear_flags = BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH;
-	int width = kFallbackRenderWidth;
-	int height = kFallbackRenderHeight;
-	int window_width = kFallbackRenderWidth;
-	int window_height = kFallbackRenderHeight;
-	int bit_depth = 32;
-	int swap_interval = 0;
-	bool initialized = false;
-	bool windowed = true;
-	bgfx::VertexLayout gui_layout;
-	bgfx::DynamicVertexBufferHandle compatibility_vertex_buffer = BGFX_INVALID_HANDLE;
-	bgfx::DynamicIndexBufferHandle compatibility_index_buffer = BGFX_INVALID_HANDLE;
-	uint32_t compatibility_vertex_capacity = 0;
-	uint32_t compatibility_index_capacity = 0;
-	uint32_t compatibility_vertex_offset = 0;
-	uint32_t compatibility_index_offset = 0;
-	bgfx::ProgramHandle programs[BGFX_PROGRAM_COUNT] = {
-		BGFX_INVALID_HANDLE,
-		BGFX_INVALID_HANDLE,
-		BGFX_INVALID_HANDLE,
-		BGFX_INVALID_HANDLE
-	};
-	bgfx::UniformHandle texture_uniform = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle fog_state_uniform = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle fog_color_uniform = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle color_adjust_uniform = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle material_source_uniform = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle material_ambient_uniform = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle material_diffuse_uniform = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle material_emissive_uniform = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle material_state_uniform = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle render_ambient_uniform = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle light_environment_state_uniform = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle light_environment_ambient_uniform = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle light_environment_direction_uniform = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle light_environment_diffuse_uniform = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle world_view_row_uniform = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle texgen_state_uniform = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle texture_transform_row_uniform = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle direct_light_state_uniform = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle direct_light_position_uniform = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle direct_light_direction_uniform = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle direct_light_ambient_uniform = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle direct_light_diffuse_uniform = BGFX_INVALID_HANDLE;
-	bool layout_ready = false;
-	Matrix4 world;
-	Matrix4 view;
-	Matrix4 projection;
-	Matrix4 texture_transforms[MAX_TEXTURE_STAGES];
-	const uint8_t *vertex_data = nullptr;
-	const FVFInfoClass *vertex_fvf = nullptr;
-	uint16_t vertex_count = 0;
-	const uint16_t *index_data = nullptr;
-	uint16_t index_count = 0;
-	uint16_t index_base_offset = 0;
-	TextureClass *textures[MAX_TEXTURE_STAGES] = { nullptr, nullptr };
-	ShaderClass shader;
-	const VertexMaterialClass *material = nullptr;
-	unsigned render_states[256] = { 0 };
-	unsigned texture_stage_states[MAX_TEXTURE_STAGES][32] = { { 0 } };
-	unsigned draw_calls = 0;
-	const VertexBufferClass *current_vb = nullptr;
-	const IndexBufferClass *current_ib = nullptr;
-	unsigned current_vb_type = BUFFER_TYPE_INVALID;
-	unsigned current_ib_type = BUFFER_TYPE_INVALID;
-	unsigned current_vba_offset = 0;
-	unsigned current_iba_offset = 0;
-	TextureClass *render_target = nullptr;
-	bgfx::ViewId current_view_id = kFirstSceneViewId;
-	bgfx::ViewId next_view_id = kFirstSceneViewId;
-	bool scene_active = false;
-	BgfxLightState lights[4];
-	BgfxLightEnvironmentState light_environment;
-	float gamma = 1.0f;
-	float brightness = 0.0f;
-	float contrast = 1.0f;
+unsigned							number_of_DX8_calls										= 0;
+static unsigned				last_frame_matrix_changes								= 0;
+static unsigned				last_frame_material_changes							= 0;
+static unsigned				last_frame_vertex_buffer_changes						= 0;
+static unsigned				last_frame_index_buffer_changes						= 0;
+static unsigned				last_frame_light_changes								= 0;
+static unsigned				last_frame_texture_changes								= 0;
+static unsigned				last_frame_render_state_changes						= 0;
+static unsigned				last_frame_texture_stage_state_changes				= 0;
+static unsigned				last_frame_number_of_DX8_calls						= 0;
 
-	BgfxDx8WrapperState()
-	{
-		world.Make_Identity();
-		view.Make_Identity();
-		projection.Make_Identity();
-		for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
-			texture_transforms[stage].Make_Identity();
-		}
-	}
-};
+static D3DDISPLAYMODE DesktopMode;
 
-BgfxDx8WrapperState g_bgfx;
+static D3DPRESENT_PARAMETERS								_PresentParameters;
+static DynamicVectorClass<StringClass>					_RenderDeviceNameTable;
+static DynamicVectorClass<StringClass>					_RenderDeviceShortNameTable;
+static DynamicVectorClass<RenderDeviceDescClass>	_RenderDeviceDescriptionTable;
 
-const EmbeddedShaderBinary kVertexShaders[BGFX_PROGRAM_COUNT] = {
-	{
-		vs_basic_glsl,
-		static_cast<uint32_t>(sizeof(vs_basic_glsl)),
-		vs_basic_spv,
-		static_cast<uint32_t>(sizeof(vs_basic_spv)),
-#if defined(_WIN32)
-		vs_basic_dx11,
-		static_cast<uint32_t>(sizeof(vs_basic_dx11)),
-#endif
-	},
-	{
-		vs_unlit_glsl,
-		static_cast<uint32_t>(sizeof(vs_unlit_glsl)),
-		vs_unlit_spv,
-		static_cast<uint32_t>(sizeof(vs_unlit_spv)),
-#if defined(_WIN32)
-		vs_unlit_dx11,
-		static_cast<uint32_t>(sizeof(vs_unlit_dx11)),
-#endif
-	},
-	{
-		vs_lit_environment_glsl,
-		static_cast<uint32_t>(sizeof(vs_lit_environment_glsl)),
-		vs_lit_environment_spv,
-		static_cast<uint32_t>(sizeof(vs_lit_environment_spv)),
-#if defined(_WIN32)
-		vs_lit_environment_dx11,
-		static_cast<uint32_t>(sizeof(vs_lit_environment_dx11)),
-#endif
-	},
-	{
-		vs_lit_dynamic_glsl,
-		static_cast<uint32_t>(sizeof(vs_lit_dynamic_glsl)),
-		vs_lit_dynamic_spv,
-		static_cast<uint32_t>(sizeof(vs_lit_dynamic_spv)),
-#if defined(_WIN32)
-		vs_lit_dynamic_dx11,
-		static_cast<uint32_t>(sizeof(vs_lit_dynamic_dx11)),
-#endif
-	},
-};
 
-const EmbeddedShaderBinary kFragmentShaders[BGFX_PROGRAM_COUNT] = {
-	{
-		fs_basic_glsl,
-		static_cast<uint32_t>(sizeof(fs_basic_glsl)),
-		fs_basic_spv,
-		static_cast<uint32_t>(sizeof(fs_basic_spv)),
-#if defined(_WIN32)
-		fs_basic_dx11,
-		static_cast<uint32_t>(sizeof(fs_basic_dx11)),
-#endif
-	},
-	{
-		fs_scene_glsl,
-		static_cast<uint32_t>(sizeof(fs_scene_glsl)),
-		fs_scene_spv,
-		static_cast<uint32_t>(sizeof(fs_scene_spv)),
-#if defined(_WIN32)
-		fs_scene_dx11,
-		static_cast<uint32_t>(sizeof(fs_scene_dx11)),
-#endif
-	},
-	{
-		fs_scene_glsl,
-		static_cast<uint32_t>(sizeof(fs_scene_glsl)),
-		fs_scene_spv,
-		static_cast<uint32_t>(sizeof(fs_scene_spv)),
-#if defined(_WIN32)
-		fs_scene_dx11,
-		static_cast<uint32_t>(sizeof(fs_scene_dx11)),
-#endif
-	},
-	{
-		fs_scene_glsl,
-		static_cast<uint32_t>(sizeof(fs_scene_glsl)),
-		fs_scene_spv,
-		static_cast<uint32_t>(sizeof(fs_scene_spv)),
-#if defined(_WIN32)
-		fs_scene_dx11,
-		static_cast<uint32_t>(sizeof(fs_scene_dx11)),
-#endif
-	},
-};
+typedef IDirect3D8* (WINAPI *Direct3DCreate8Type) (UINT SDKVersion);
+Direct3DCreate8Type	Direct3DCreate8Ptr = NULL;
+HINSTANCE D3D8Lib = NULL;
 
-bgfx::ShaderHandle Create_Embedded_Shader(const EmbeddedShaderBinary &shader)
+
+/***********************************************************************************
+**
+** DX8Wrapper Implementation
+**
+***********************************************************************************/
+
+void Log_DX8_ErrorCode(unsigned res)
 {
-	const uint8_t *data = shader.glsl_data;
-	uint32_t size = shader.glsl_size;
+	char tmp[256]="";
 
-	switch (bgfx::getRendererType()) {
-	case bgfx::RendererType::Vulkan:
-		data = shader.spirv_data;
-		size = shader.spirv_size;
-		break;
-#if defined(_WIN32)
-	case bgfx::RendererType::Direct3D11:
-	case bgfx::RendererType::Direct3D12:
-		data = shader.dx11_data;
-		size = shader.dx11_size;
-		break;
-#endif
-	default:
-		break;
+	HRESULT new_res=D3DXGetErrorStringA(
+		res,
+		tmp,
+		sizeof(tmp));
+
+	if (new_res==D3D_OK) {
+		WWDEBUG_SAY((tmp));
 	}
 
-	return bgfx::createShader(bgfx::copy(data, size));
+	WWASSERT(0);
 }
 
-bgfx::ProgramHandle Create_Embedded_Program(BgfxProgramType program)
+void Non_Fatal_Log_DX8_ErrorCode(unsigned res,const char * file,int line)
 {
-	const bgfx::ShaderHandle vertex_shader = Create_Embedded_Shader(kVertexShaders[program]);
-	const bgfx::ShaderHandle fragment_shader = Create_Embedded_Shader(kFragmentShaders[program]);
-	return bgfx::createProgram(vertex_shader, fragment_shader, true);
-}
+	char tmp[256]="";
 
-void Reset_View_Sequence()
-{
-	g_bgfx.current_view_id = kFirstSceneViewId;
-	g_bgfx.next_view_id = kFirstSceneViewId;
-	g_bgfx.scene_active = false;
-}
+	HRESULT new_res=D3DXGetErrorStringA(
+		res,
+		tmp,
+		sizeof(tmp));
 
-bgfx::ViewId Allocate_Scene_View()
-{
-	if (g_bgfx.next_view_id > kMaxSceneViewId) {
-		WWPerfMonClass::Record_Scene_View_Flush();
-		bgfx::frame(BGFX_FRAME_FLUSH);
-		Reset_View_Sequence();
-	}
-
-	// bgfx framebuffer/viewport state is view-level, so each legacy Begin/End_Scene
-	// pair needs its own ordered view to keep offscreen render-target passes in the
-	// same bgfx frame without forcing a flush between them.
-	const bgfx::ViewId view_id = g_bgfx.next_view_id++;
-	g_bgfx.current_view_id = view_id;
-	g_bgfx.scene_active = true;
-	WWPerfMonClass::Record_Scene_View_Allocation();
-	return view_id;
-}
-
-uint32_t Compose_Reset_Flags()
-{
-	return g_bgfx.swap_interval > 0 ? BGFX_RESET_VSYNC : BGFX_RESET_NONE;
-}
-
-uint32_t DX8_To_BGFX_Color(uint32_t color)
-{
-	return (color & 0xFF00FF00u) | ((color & 0x00FF0000u) >> 16) | ((color & 0x000000FFu) << 16);
-}
-
-// bgfx::setViewClear() expects RGBA, but DX8Wrapper::Convert_Color() produces ARGB.
-uint32_t ARGB_To_RGBA(uint32_t argb)
-{
-	return (argb << 8) | ((argb >> 24) & 0xFFu);
-}
-
-Vector3 Transform_Normal_To_Camera_Space(const Matrix4 &world_view, const Vector3 &normal);
-Vector3 Normalize_Vector(const Vector3 &value);
-
-Vector3 Clamp_Vector(const Vector3 &value)
-{
-	return Vector3(
-		std::min(std::max(value.X, 0.0f), 1.0f),
-		std::min(std::max(value.Y, 0.0f), 1.0f),
-		std::min(std::max(value.Z, 0.0f), 1.0f));
-}
-
-Vector3 Multiply_Vector(const Vector3 &a, const Vector3 &b)
-{
-	return Vector3(a.X * b.X, a.Y * b.Y, a.Z * b.Z);
-}
-
-Vector3 Scale_Vector(const Vector3 &value, float scale)
-{
-	return Vector3(value.X * scale, value.Y * scale, value.Z * scale);
-}
-
-void Add_Clamped(Vector3 &accumulator, const Vector3 &value)
-{
-	accumulator = Clamp_Vector(accumulator + value);
-}
-
-Vector3 Color_To_Vector3(uint32_t color)
-{
-	const Vector4 converted = DX8Wrapper::Convert_Color(color);
-	return Vector3(converted.X, converted.Y, converted.Z);
-}
-
-Vector3 Resolve_Color_Source(unsigned source, const Vector3 &material_color, uint32_t vertex_diffuse, bool has_diffuse)
-{
-	if (source == D3DMCS_COLOR1 && has_diffuse) {
-		return Color_To_Vector3(vertex_diffuse);
-	}
-	return material_color;
-}
-
-Vector3 View_Rotate_Vector(const Vector3 &value)
-{
-	return Normalize_Vector(Transform_Normal_To_Camera_Space(g_bgfx.view, value));
-}
-
-float Compute_Attenuation(const BgfxLightState &light, const Vector3 &world_position)
-{
-	if (light.type == LightClass::DIRECTIONAL) {
-		return 1.0f;
-	}
-
-	Vector3 to_light = light.position - world_position;
-	const float distance = to_light.Length();
-	const float range = light.far_atten_end - light.far_atten_start;
-	float attenuation = 1.0f;
-	if (range > 1.0e-6f) {
-		attenuation = 1.0f - (distance - light.far_atten_start) / range;
-		attenuation = std::min(std::max(attenuation, 0.0f), 1.0f);
-	}
-
-	if (light.type == LightClass::SPOT && attenuation > 0.0f) {
-		const Vector3 spot_dir = Normalize_Vector(light.direction);
-		const Vector3 to_object = Normalize_Vector(world_position - light.position);
-		const float cone = Vector3::Dot_Product(spot_dir, to_object);
-		if (cone <= light.spot_angle_cos) {
-			return 0.0f;
-		}
-		const float denom = std::max(1.0f - light.spot_angle_cos, 1.0e-6f);
-		attenuation *= std::min(std::max((cone - light.spot_angle_cos) / denom, 0.0f), 1.0f);
-	}
-
-	return attenuation;
-}
-
-struct BgfxDrawLightingState
-{
-	bool material_present = false;
-	bool lighting_enabled = false;
-	bool use_light_environment = false;
-	bool ambient_uses_vertex_diffuse = false;
-	bool diffuse_uses_vertex_diffuse = false;
-	bool emissive_uses_vertex_diffuse = false;
-	float opacity = 1.0f;
-	Vector3 material_ambient = Vector3(0.0f, 0.0f, 0.0f);
-	Vector3 material_diffuse = Vector3(1.0f, 1.0f, 1.0f);
-	Vector3 material_emissive = Vector3(0.0f, 0.0f, 0.0f);
-	Vector3 render_ambient = Vector3(0.0f, 0.0f, 0.0f);
-	Vector3 light_environment_ambient = Vector3(0.0f, 0.0f, 0.0f);
-	unsigned light_environment_count = 0;
-	Vector3 light_environment_camera_directions[4];
-	Vector3 light_environment_diffuse[4];
-};
-
-BgfxDrawLightingState Build_Draw_Lighting_State(bool has_normal)
-{
-	BgfxDrawLightingState state;
-	state.material_present = g_bgfx.material != nullptr;
-	state.lighting_enabled = state.material_present && g_bgfx.render_states[D3DRS_LIGHTING] != 0 && has_normal;
-	state.use_light_environment = state.lighting_enabled && g_bgfx.light_environment.enabled;
-
-	if (!state.material_present) {
-		return state;
-	}
-
-	g_bgfx.material->Get_Ambient(&state.material_ambient);
-	g_bgfx.material->Get_Diffuse(&state.material_diffuse);
-	g_bgfx.material->Get_Emissive(&state.material_emissive);
-	state.opacity = g_bgfx.material->Get_Opacity();
-	state.ambient_uses_vertex_diffuse = g_bgfx.render_states[D3DRS_AMBIENTMATERIALSOURCE] == D3DMCS_COLOR1;
-	state.diffuse_uses_vertex_diffuse = g_bgfx.render_states[D3DRS_DIFFUSEMATERIALSOURCE] == D3DMCS_COLOR1;
-	state.emissive_uses_vertex_diffuse = g_bgfx.render_states[D3DRS_EMISSIVEMATERIALSOURCE] == D3DMCS_COLOR1;
-	state.render_ambient = Color_To_Vector3(g_bgfx.render_states[D3DRS_AMBIENT]);
-
-	if (state.use_light_environment) {
-		state.light_environment_ambient = g_bgfx.light_environment.ambient;
-		state.light_environment_count = g_bgfx.light_environment.count;
-		for (unsigned light_index = 0; light_index < state.light_environment_count; ++light_index) {
-			state.light_environment_camera_directions[light_index] = View_Rotate_Vector(g_bgfx.light_environment.directions[light_index]);
-			state.light_environment_diffuse[light_index] = g_bgfx.light_environment.diffuse[light_index];
-		}
-	}
-
-	return state;
-}
-
-Vector3 Compute_Lit_Color(
-	uint32_t vertex_diffuse,
-	bool has_diffuse,
-	bool has_normal,
-	unsigned normal_offset,
-	const uint8_t *src,
-	const float *position,
-	const Matrix4 &world_view)
-{
-	if (g_bgfx.material == nullptr) {
-		return Color_To_Vector3(has_diffuse ? vertex_diffuse : 0xFFFFFFFFU);
-	}
-
-	Vector3 ambient_color(0.0f, 0.0f, 0.0f);
-	Vector3 diffuse_color(1.0f, 1.0f, 1.0f);
-	Vector3 emissive_color(0.0f, 0.0f, 0.0f);
-	g_bgfx.material->Get_Ambient(&ambient_color);
-	g_bgfx.material->Get_Diffuse(&diffuse_color);
-	g_bgfx.material->Get_Emissive(&emissive_color);
-
-	const Vector3 resolved_ambient = Resolve_Color_Source(g_bgfx.render_states[D3DRS_AMBIENTMATERIALSOURCE], ambient_color, vertex_diffuse, has_diffuse);
-	const Vector3 resolved_diffuse = Resolve_Color_Source(g_bgfx.render_states[D3DRS_DIFFUSEMATERIALSOURCE], diffuse_color, vertex_diffuse, has_diffuse);
-	const Vector3 resolved_emissive = Resolve_Color_Source(g_bgfx.render_states[D3DRS_EMISSIVEMATERIALSOURCE], emissive_color, vertex_diffuse, has_diffuse);
-	if (g_bgfx.render_states[D3DRS_LIGHTING] == 0 || !has_normal) {
-		return Clamp_Vector(resolved_diffuse + resolved_emissive);
-	}
-
-	const float *normal_data = reinterpret_cast<const float *>(src + normal_offset);
-	const Vector3 normal = Normalize_Vector(Transform_Normal_To_Camera_Space(world_view, Vector3(normal_data[0], normal_data[1], normal_data[2])));
-	Vector4 world_position4;
-	Matrix4::Transform_Vector(g_bgfx.world, Vector3(position[0], position[1], position[2]), &world_position4);
-	const Vector3 world_position(world_position4.X, world_position4.Y, world_position4.Z);
-
-	Vector3 lit = resolved_emissive;
-	Add_Clamped(lit, Multiply_Vector(resolved_ambient, Color_To_Vector3(g_bgfx.render_states[D3DRS_AMBIENT])));
-
-	if (g_bgfx.light_environment.enabled) {
-		Add_Clamped(lit, Multiply_Vector(resolved_ambient, g_bgfx.light_environment.ambient));
-		for (unsigned light_index = 0; light_index < g_bgfx.light_environment.count; ++light_index) {
-			const Vector3 light_dir = View_Rotate_Vector(g_bgfx.light_environment.directions[light_index]);
-			const float ndotl = std::max(Vector3::Dot_Product(normal, light_dir), 0.0f);
-			Add_Clamped(lit, Multiply_Vector(resolved_diffuse, Scale_Vector(g_bgfx.light_environment.diffuse[light_index], ndotl)));
-		}
-		return lit;
-	}
-
-	for (const BgfxLightState &light : g_bgfx.lights) {
-		if (!light.enabled) {
-			continue;
-		}
-
-		const float attenuation = Compute_Attenuation(light, world_position);
-		if (attenuation <= 0.0f) {
-			continue;
-		}
-
-		Vector3 light_direction = light.direction;
-		if (light.type != LightClass::DIRECTIONAL) {
-			light_direction = light.position - world_position;
-		}
-		light_direction = View_Rotate_Vector(light_direction);
-		const float ndotl = std::max(Vector3::Dot_Product(normal, light_direction), 0.0f);
-		Add_Clamped(lit, Multiply_Vector(resolved_ambient, Scale_Vector(light.ambient, attenuation)));
-		Add_Clamped(lit, Multiply_Vector(resolved_diffuse, Scale_Vector(light.diffuse, attenuation * ndotl)));
-	}
-
-	return lit;
-}
-
-void Reset_Draw_State()
-{
-	g_bgfx.vertex_data = nullptr;
-	g_bgfx.vertex_fvf = nullptr;
-	g_bgfx.vertex_count = 0;
-	g_bgfx.index_data = nullptr;
-	g_bgfx.index_count = 0;
-	g_bgfx.index_base_offset = 0;
-	REF_PTR_RELEASE(g_bgfx.textures[0]);
-	REF_PTR_RELEASE(g_bgfx.textures[1]);
-	g_bgfx.material = nullptr;
-	g_bgfx.shader = ShaderClass();
-	g_bgfx.current_vb = nullptr;
-	g_bgfx.current_ib = nullptr;
-	g_bgfx.current_vb_type = BUFFER_TYPE_INVALID;
-	g_bgfx.current_ib_type = BUFFER_TYPE_INVALID;
-	g_bgfx.current_vba_offset = 0;
-	g_bgfx.current_iba_offset = 0;
-	g_bgfx.compatibility_vertex_offset = 0;
-	g_bgfx.compatibility_index_offset = 0;
-	REF_PTR_RELEASE(g_bgfx.render_target);
-	g_bgfx.light_environment = BgfxLightEnvironmentState();
-	for (BgfxLightState &light : g_bgfx.lights) {
-		light = BgfxLightState();
-	}
-	for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
-		g_bgfx.texture_transforms[stage].Make_Identity();
-		for (unsigned state = 0; state < 32; ++state) {
-			g_bgfx.texture_stage_states[stage][state] = 0;
-		}
-	}
-	for (unsigned state = 0; state < 256; ++state) {
-		g_bgfx.render_states[state] = 0;
+	if (new_res==D3D_OK) {
+		WWDEBUG_SAY(("DX8 Error: %s, File: %s, Line: %d\r\n",tmp,file,line));
 	}
 }
 
-void Reset_Compatibility_Submit_Scratch()
+
+
+bool DX8Wrapper::Init(void * hwnd, bool lite)
 {
-	g_bgfx.compatibility_vertex_offset = 0;
-	g_bgfx.compatibility_index_offset = 0;
-}
-
-bool Ensure_Compatibility_Submit_Scratch(uint32_t required_vertices, uint32_t required_indices)
-{
-	uint32_t desired_vertex_capacity = kCompatibilityScratchVertexCapacity;
-	if (desired_vertex_capacity < required_vertices) {
-		desired_vertex_capacity = required_vertices;
-	}
-
-	uint32_t desired_index_capacity = kCompatibilityScratchIndexCapacity;
-	if (desired_index_capacity < required_indices) {
-		desired_index_capacity = required_indices;
-	}
-
-	if (!bgfx::isValid(g_bgfx.compatibility_vertex_buffer) || g_bgfx.compatibility_vertex_capacity < desired_vertex_capacity) {
-		if (bgfx::isValid(g_bgfx.compatibility_vertex_buffer) && g_bgfx.compatibility_vertex_offset != 0) {
-			return false;
-		}
-		if (bgfx::isValid(g_bgfx.compatibility_vertex_buffer)) {
-			bgfx::destroy(g_bgfx.compatibility_vertex_buffer);
-		}
-		g_bgfx.compatibility_vertex_buffer = bgfx::createDynamicVertexBuffer(desired_vertex_capacity, g_bgfx.gui_layout);
-		g_bgfx.compatibility_vertex_capacity = bgfx::isValid(g_bgfx.compatibility_vertex_buffer) ? desired_vertex_capacity : 0;
-		g_bgfx.compatibility_vertex_offset = 0;
-	}
-
-	if (!bgfx::isValid(g_bgfx.compatibility_index_buffer) || g_bgfx.compatibility_index_capacity < desired_index_capacity) {
-		if (bgfx::isValid(g_bgfx.compatibility_index_buffer) && g_bgfx.compatibility_index_offset != 0) {
-			return false;
-		}
-		if (bgfx::isValid(g_bgfx.compatibility_index_buffer)) {
-			bgfx::destroy(g_bgfx.compatibility_index_buffer);
-		}
-		g_bgfx.compatibility_index_buffer = bgfx::createDynamicIndexBuffer(desired_index_capacity);
-		g_bgfx.compatibility_index_capacity = bgfx::isValid(g_bgfx.compatibility_index_buffer) ? desired_index_capacity : 0;
-		g_bgfx.compatibility_index_offset = 0;
-	}
-
-	return bgfx::isValid(g_bgfx.compatibility_vertex_buffer) && bgfx::isValid(g_bgfx.compatibility_index_buffer);
-}
-
-bool Reserve_Compatibility_Submit_Scratch(uint32_t vertex_count, uint32_t index_count, uint32_t &vertex_offset, uint32_t &index_offset)
-{
-	if (!Ensure_Compatibility_Submit_Scratch(vertex_count, index_count)) {
-		return false;
-	}
-
-	if (g_bgfx.compatibility_vertex_offset + vertex_count > g_bgfx.compatibility_vertex_capacity ||
-		g_bgfx.compatibility_index_offset + index_count > g_bgfx.compatibility_index_capacity) {
-		WWRELEASE_SAY((
-			"BGFX: compatibility scratch buffer exhausted (verts %u+%u/%u, indices %u+%u/%u)\n",
-			g_bgfx.compatibility_vertex_offset,
-			vertex_count,
-			g_bgfx.compatibility_vertex_capacity,
-			g_bgfx.compatibility_index_offset,
-			index_count,
-			g_bgfx.compatibility_index_capacity));
-		return false;
-	}
-
-	vertex_offset = g_bgfx.compatibility_vertex_offset;
-	index_offset = g_bgfx.compatibility_index_offset;
-	g_bgfx.compatibility_vertex_offset += vertex_count;
-	g_bgfx.compatibility_index_offset += index_count;
-	return true;
-}
-
-void Bind_Current_Vertex_Buffer_Slice(unsigned buffer_offset)
-{
-	g_bgfx.current_vba_offset = buffer_offset;
-	if (g_bgfx.current_vb == nullptr) {
-		g_bgfx.vertex_data = nullptr;
-		g_bgfx.vertex_fvf = nullptr;
-		g_bgfx.vertex_count = 0;
-		return;
-	}
-
-	g_bgfx.vertex_fvf = &g_bgfx.current_vb->FVF_Info();
-	const uint16_t total_vertex_count = g_bgfx.current_vb->Get_Vertex_Count();
-	if (buffer_offset > total_vertex_count) {
-		WWRELEASE_SAY(("BGFX: vertex buffer offset out of bounds (%u > %u)\n", buffer_offset, total_vertex_count));
-		g_bgfx.vertex_data = nullptr;
-		g_bgfx.vertex_count = 0;
-		return;
-	}
-
-	g_bgfx.vertex_data = g_bgfx.current_vb->Get_Vertex_Data() + static_cast<size_t>(buffer_offset) * static_cast<size_t>(g_bgfx.vertex_fvf->Get_FVF_Size());
-	g_bgfx.vertex_count = static_cast<uint16_t>(total_vertex_count - buffer_offset);
-}
-
-void Bind_Current_Index_Buffer_Slice(unsigned buffer_offset)
-{
-	g_bgfx.current_iba_offset = buffer_offset;
-	if (g_bgfx.current_ib == nullptr) {
-		g_bgfx.index_data = nullptr;
-		g_bgfx.index_count = 0;
-		return;
-	}
-
-	const uint16_t total_index_count = g_bgfx.current_ib->Get_Index_Count();
-	if (buffer_offset > total_index_count) {
-		WWRELEASE_SAY(("BGFX: index buffer offset out of bounds (%u > %u)\n", buffer_offset, total_index_count));
-		g_bgfx.index_data = nullptr;
-		g_bgfx.index_count = 0;
-		return;
-	}
-
-	g_bgfx.index_data = g_bgfx.current_ib->Get_Index_Data() + buffer_offset;
-	g_bgfx.index_count = static_cast<uint16_t>(total_index_count - buffer_offset);
-}
-
-void Apply_Material_Texture_State(const VertexMaterialClass *material)
-{
-	if (material == nullptr) {
-		DX8Wrapper::Set_DX8_Render_State(D3DRS_LIGHTING, false);
-		DX8Wrapper::Set_DX8_Render_State(D3DRS_AMBIENTMATERIALSOURCE, D3DMCS_MATERIAL);
-		DX8Wrapper::Set_DX8_Render_State(D3DRS_DIFFUSEMATERIALSOURCE, D3DMCS_MATERIAL);
-		DX8Wrapper::Set_DX8_Render_State(D3DRS_EMISSIVEMATERIALSOURCE, D3DMCS_MATERIAL);
-
-		for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
-			DX8Wrapper::Set_DX8_Texture_Stage_State(stage, D3DTSS_TEXCOORDINDEX, D3DTSS_TCI_PASSTHRU | stage);
-			DX8Wrapper::Set_DX8_Texture_Stage_State(stage, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE);
-		}
-		return;
-	}
-
-	// Legacy accessors are not const-correct even though material apply is logically read-only.
-	VertexMaterialClass *mutable_material = const_cast<VertexMaterialClass *>(material);
-	DX8Wrapper::Set_DX8_Render_State(D3DRS_LIGHTING, mutable_material->Get_Lighting());
-	DX8Wrapper::Set_DX8_Render_State(D3DRS_AMBIENTMATERIALSOURCE, mutable_material->Get_Ambient_Color_Source());
-	DX8Wrapper::Set_DX8_Render_State(D3DRS_DIFFUSEMATERIALSOURCE, mutable_material->Get_Diffuse_Color_Source());
-	DX8Wrapper::Set_DX8_Render_State(D3DRS_EMISSIVEMATERIALSOURCE, mutable_material->Get_Emissive_Color_Source());
-
-	for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
-		TextureMapperClass *mapper = mutable_material->Get_Mapper(stage);
-		if (mapper != nullptr) {
-			mapper->Apply(mutable_material->Get_UV_Source(stage));
-			mapper->Release_Ref();
-		} else {
-			DX8Wrapper::Set_DX8_Texture_Stage_State(stage, D3DTSS_TEXCOORDINDEX, D3DTSS_TCI_PASSTHRU | mutable_material->Get_UV_Source(stage));
-			DX8Wrapper::Set_DX8_Texture_Stage_State(stage, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE);
-		}
-	}
-}
-
-Vector3 Transform_Normal_To_Camera_Space(const Matrix4 &world_view, const Vector3 &normal)
-{
-	return Vector3(
-		world_view[0][0] * normal.X + world_view[0][1] * normal.Y + world_view[0][2] * normal.Z,
-		world_view[1][0] * normal.X + world_view[1][1] * normal.Y + world_view[1][2] * normal.Z,
-		world_view[2][0] * normal.X + world_view[2][1] * normal.Y + world_view[2][2] * normal.Z);
-}
-
-Vector3 Normalize_Vector(const Vector3 &value)
-{
-	const float length_squared = value.X * value.X + value.Y * value.Y + value.Z * value.Z;
-	if (length_squared <= 1.0e-12f) {
-		return Vector3(0.0f, 0.0f, 1.0f);
-	}
-
-	const float inverse_length = 1.0f / std::sqrt(length_squared);
-	return Vector3(value.X * inverse_length, value.Y * inverse_length, value.Z * inverse_length);
-}
-
-Vector4 Generate_Stage0_Texture_Input(
-	const Matrix4 &world_view,
-	unsigned texcoord_generation,
-	unsigned texcoord_set,
-	unsigned texcoord_count,
-	unsigned tex_offset,
-	bool has_normal,
-	unsigned normal_offset,
-	const uint8_t *src,
-	const float *position,
-	bool *generated)
-{
-	*generated = false;
-
-	if (texcoord_generation == D3DTSS_TCI_PASSTHRU) {
-		if (texcoord_set < texcoord_count) {
-			const float *uv = reinterpret_cast<const float *>(src + tex_offset);
-			*generated = true;
-			return Vector4(uv[0], uv[1], 0.0f, 1.0f);
-		}
-		return Vector4(0.0f, 0.0f, 0.0f, 1.0f);
-	}
-
-	const Vector3 object_position(position[0], position[1], position[2]);
-	Vector4 camera_position;
-	Matrix4::Transform_Vector(world_view, object_position, &camera_position);
-
-	if (texcoord_generation == D3DTSS_TCI_CAMERASPACEPOSITION) {
-		*generated = true;
-		return camera_position;
-	}
-
-	if (!has_normal) {
-		return Vector4(0.0f, 0.0f, 0.0f, 1.0f);
-	}
-
-	const float *normal_data = reinterpret_cast<const float *>(src + normal_offset);
-	const Vector3 object_normal(normal_data[0], normal_data[1], normal_data[2]);
-	const Vector3 camera_normal = Normalize_Vector(Transform_Normal_To_Camera_Space(world_view, object_normal));
-
-	if (texcoord_generation == D3DTSS_TCI_CAMERASPACENORMAL) {
-		*generated = true;
-		return Vector4(camera_normal.X, camera_normal.Y, camera_normal.Z, 1.0f);
-	}
-
-	if (texcoord_generation == D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR) {
-		const Vector3 to_eye = Normalize_Vector(Vector3(-camera_position.X, -camera_position.Y, -camera_position.Z));
-		const float dot = camera_normal.X * to_eye.X + camera_normal.Y * to_eye.Y + camera_normal.Z * to_eye.Z;
-		const Vector3 reflection(
-			2.0f * dot * camera_normal.X - to_eye.X,
-			2.0f * dot * camera_normal.Y - to_eye.Y,
-			2.0f * dot * camera_normal.Z - to_eye.Z);
-		*generated = true;
-		return Vector4(reflection.X, reflection.Y, reflection.Z, 1.0f);
-	}
-
-	return Vector4(0.0f, 0.0f, 0.0f, 1.0f);
-}
-
-uint32_t Resolve_Diffuse_Color(
-	uint32_t vertex_diffuse,
-	bool has_diffuse,
-	bool has_normal,
-	unsigned normal_offset,
-	const uint8_t *src,
-	const float *position,
-	const Matrix4 &world_view)
-{
-	if (g_bgfx.material == nullptr) {
-		return has_diffuse ? vertex_diffuse : 0xFFFFFFFFU;
-	}
-
-	float alpha = g_bgfx.material->Get_Opacity();
-	if (g_bgfx.render_states[D3DRS_DIFFUSEMATERIALSOURCE] == D3DMCS_COLOR1 && has_diffuse) {
-		alpha = DX8Wrapper::Convert_Color(vertex_diffuse).W;
-	}
-
-	const Vector3 resolved = Compute_Lit_Color(vertex_diffuse, has_diffuse, has_normal, normal_offset, src, position, world_view);
-	return DX8Wrapper::Convert_Color(Vector4(resolved.X, resolved.Y, resolved.Z, alpha));
-}
-
-uint32_t Resolve_Unlit_Diffuse_Color(
-	const BgfxDrawLightingState &state,
-	uint32_t vertex_diffuse,
-	bool has_diffuse)
-{
-	if (!state.material_present) {
-		return has_diffuse ? vertex_diffuse : 0xFFFFFFFFU;
-	}
-
-	float alpha = state.opacity;
-	if (state.diffuse_uses_vertex_diffuse && has_diffuse) {
-		alpha = DX8Wrapper::Convert_Color(vertex_diffuse).W;
-	}
-
-	const Vector3 resolved_diffuse = Resolve_Color_Source(
-		state.diffuse_uses_vertex_diffuse ? D3DMCS_COLOR1 : D3DMCS_MATERIAL,
-		state.material_diffuse,
-		vertex_diffuse,
-		has_diffuse);
-	const Vector3 resolved_emissive = Resolve_Color_Source(
-		state.emissive_uses_vertex_diffuse ? D3DMCS_COLOR1 : D3DMCS_MATERIAL,
-		state.material_emissive,
-		vertex_diffuse,
-		has_diffuse);
-	const Vector3 resolved = Clamp_Vector(resolved_diffuse + resolved_emissive);
-	return DX8Wrapper::Convert_Color(Vector4(resolved.X, resolved.Y, resolved.Z, alpha));
-}
-
-float Get_Draw_Fog_Mode()
-{
-	return (DX8Wrapper::Get_Current_Caps()->Is_Fog_Allowed() && DX8Wrapper::Get_Fog_Enable())
-		? static_cast<float>(g_bgfx.shader.Get_Fog_Func())
-		: static_cast<float>(ShaderClass::FOG_DISABLE);
-}
-
-float Encode_Light_Type(LightClass::LightType type)
-{
-	switch (type) {
-	case LightClass::DIRECTIONAL:
-		return 0.0f;
-	case LightClass::SPOT:
-		return 2.0f;
-	case LightClass::POINT:
-	default:
-		return 1.0f;
-	}
-}
-
-Vector3 Transform_Position_To_Camera_Space(const Matrix4 &view, const Vector3 &position)
-{
-	Vector4 camera_position;
-	Matrix4::Transform_Vector(view, position, &camera_position);
-	return Vector3(camera_position.X, camera_position.Y, camera_position.Z);
-}
-
-BgfxProgramSelection Select_BGFX_Program(const BgfxDrawLightingState &draw_lighting_state, bool fog_enabled, bool use_gpu_texgen)
-{
-	BgfxProgramSelection selection;
-	selection.fog_enabled = fog_enabled;
-	selection.use_gpu_texgen = use_gpu_texgen;
-
-	if (draw_lighting_state.use_light_environment) {
-		selection.program = BGFX_PROGRAM_LIGHT_ENVIRONMENT;
-	} else if (draw_lighting_state.lighting_enabled) {
-		selection.program = BGFX_PROGRAM_LIGHT_DYNAMIC;
-	} else if (draw_lighting_state.material_present || fog_enabled || use_gpu_texgen) {
-		selection.program = BGFX_PROGRAM_UNLIT;
-	} else {
-		selection.program = BGFX_PROGRAM_BASIC;
-	}
-
-	return selection;
-}
-
-void Set_Color_Adjust_Uniform()
-{
-	const float gamma_power = 1.0f / std::max(g_bgfx.gamma, 1.0e-4f);
-	const float color_adjust[4] = { gamma_power, g_bgfx.brightness, g_bgfx.contrast, 0.0f };
-	bgfx::setUniform(g_bgfx.color_adjust_uniform, color_adjust);
-}
-
-void Set_Fog_Uniforms(float fog_mode)
-{
-	const float fog_start = DX8Wrapper::Get_Fog_Start();
-	const float fog_end = DX8Wrapper::Get_Fog_End();
-	const float fog_inverse_range = fog_end > fog_start ? 1.0f / (fog_end - fog_start) : 0.0f;
-	const float fog_state[4] = { fog_mode, fog_start, fog_inverse_range, fog_end };
-	const Vector3 fog_color_value = DX8Wrapper::Get_Fog_Color_Vector();
-	const float fog_color[4] = { fog_color_value.X, fog_color_value.Y, fog_color_value.Z, 1.0f };
-	bgfx::setUniform(g_bgfx.fog_state_uniform, fog_state);
-	if (fog_mode != static_cast<float>(ShaderClass::FOG_DISABLE)) {
-		bgfx::setUniform(g_bgfx.fog_color_uniform, fog_color);
-	}
-}
-
-void Set_Material_Uniforms(const BgfxDrawLightingState &draw_lighting_state, bool has_diffuse)
-{
-	Vector3 material_ambient(1.0f, 1.0f, 1.0f);
-	Vector3 material_diffuse(1.0f, 1.0f, 1.0f);
-	Vector3 material_emissive(0.0f, 0.0f, 0.0f);
-	float opacity = 1.0f;
-	float material_source[4] = { 0.0f, has_diffuse ? 1.0f : 0.0f, 0.0f, 0.0f };
-
-	if (draw_lighting_state.material_present) {
-		material_ambient = draw_lighting_state.material_ambient;
-		material_diffuse = draw_lighting_state.material_diffuse;
-		material_emissive = draw_lighting_state.material_emissive;
-		opacity = draw_lighting_state.opacity;
-		material_source[0] = draw_lighting_state.ambient_uses_vertex_diffuse && has_diffuse ? 1.0f : 0.0f;
-		material_source[1] = draw_lighting_state.diffuse_uses_vertex_diffuse && has_diffuse ? 1.0f : 0.0f;
-		material_source[2] = draw_lighting_state.emissive_uses_vertex_diffuse && has_diffuse ? 1.0f : 0.0f;
-	}
-
-	const float material_state[4] = { opacity, 0.0f, 0.0f, 0.0f };
-	const float material_ambient_uniform[4] = { material_ambient.X, material_ambient.Y, material_ambient.Z, 1.0f };
-	const float material_diffuse_uniform[4] = { material_diffuse.X, material_diffuse.Y, material_diffuse.Z, 1.0f };
-	const float material_emissive_uniform[4] = { material_emissive.X, material_emissive.Y, material_emissive.Z, 1.0f };
-
-	bgfx::setUniform(g_bgfx.material_source_uniform, material_source);
-	bgfx::setUniform(g_bgfx.material_ambient_uniform, material_ambient_uniform);
-	bgfx::setUniform(g_bgfx.material_diffuse_uniform, material_diffuse_uniform);
-	bgfx::setUniform(g_bgfx.material_emissive_uniform, material_emissive_uniform);
-	bgfx::setUniform(g_bgfx.material_state_uniform, material_state);
-}
-
-void Set_Render_Ambient_Uniform(const Vector3 &render_ambient)
-{
-	const float render_ambient_uniform[4] = { render_ambient.X, render_ambient.Y, render_ambient.Z, 1.0f };
-	bgfx::setUniform(g_bgfx.render_ambient_uniform, render_ambient_uniform);
-}
-
-void Set_World_View_Row_Uniform(const Matrix4 &world_view)
-{
-	const float world_view_rows[3][4] = {
-		{ world_view[0][0], world_view[0][1], world_view[0][2], world_view[0][3] },
-		{ world_view[1][0], world_view[1][1], world_view[1][2], world_view[1][3] },
-		{ world_view[2][0], world_view[2][1], world_view[2][2], world_view[2][3] }
-	};
-	bgfx::setUniform(g_bgfx.world_view_row_uniform, world_view_rows, 3);
-}
-
-void Set_Texgen_Uniforms(
-	bool has_normal,
-	unsigned texcoord_generation,
-	bool apply_texture_transform,
-	bool projected_texture,
-	const Matrix4 &texture_transform)
-{
-	float texgen_mode = 0.0f;
-	if (texcoord_generation == D3DTSS_TCI_CAMERASPACEPOSITION) {
-		texgen_mode = 1.0f;
-	} else if (texcoord_generation == D3DTSS_TCI_CAMERASPACENORMAL) {
-		texgen_mode = 2.0f;
-	} else if (texcoord_generation == D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR) {
-		texgen_mode = 3.0f;
-	}
-
-	const float texgen_state[4] = {
-		texgen_mode,
-		apply_texture_transform ? 1.0f : 0.0f,
-		projected_texture ? 1.0f : 0.0f,
-		has_normal ? 1.0f : 0.0f
-	};
-	bgfx::setUniform(g_bgfx.texgen_state_uniform, texgen_state);
-
-	if (apply_texture_transform) {
-		const float texture_transform_rows[4][4] = {
-			{ texture_transform[0][0], texture_transform[0][1], texture_transform[0][2], texture_transform[0][3] },
-			{ texture_transform[1][0], texture_transform[1][1], texture_transform[1][2], texture_transform[1][3] },
-			{ texture_transform[2][0], texture_transform[2][1], texture_transform[2][2], texture_transform[2][3] },
-			{ texture_transform[3][0], texture_transform[3][1], texture_transform[3][2], texture_transform[3][3] }
-		};
-		bgfx::setUniform(g_bgfx.texture_transform_row_uniform, texture_transform_rows, 4);
-	}
-}
-
-void Set_Light_Environment_Uniforms(const BgfxDrawLightingState &draw_lighting_state)
-{
-	const float light_environment_state[4] = {
-		static_cast<float>(draw_lighting_state.light_environment_count),
-		0.0f,
-		0.0f,
-		0.0f
-	};
-	const float light_environment_ambient[4] = {
-		draw_lighting_state.light_environment_ambient.X,
-		draw_lighting_state.light_environment_ambient.Y,
-		draw_lighting_state.light_environment_ambient.Z,
-		1.0f
-	};
-	float light_environment_directions[4][4] = { { 0.0f } };
-	float light_environment_diffuse[4][4] = { { 0.0f } };
-
-	for (unsigned light_index = 0; light_index < draw_lighting_state.light_environment_count; ++light_index) {
-		light_environment_directions[light_index][0] = draw_lighting_state.light_environment_camera_directions[light_index].X;
-		light_environment_directions[light_index][1] = draw_lighting_state.light_environment_camera_directions[light_index].Y;
-		light_environment_directions[light_index][2] = draw_lighting_state.light_environment_camera_directions[light_index].Z;
-		light_environment_diffuse[light_index][0] = draw_lighting_state.light_environment_diffuse[light_index].X;
-		light_environment_diffuse[light_index][1] = draw_lighting_state.light_environment_diffuse[light_index].Y;
-		light_environment_diffuse[light_index][2] = draw_lighting_state.light_environment_diffuse[light_index].Z;
-	}
-
-	bgfx::setUniform(g_bgfx.light_environment_state_uniform, light_environment_state);
-	bgfx::setUniform(g_bgfx.light_environment_ambient_uniform, light_environment_ambient);
-	bgfx::setUniform(g_bgfx.light_environment_direction_uniform, light_environment_directions, 4);
-	bgfx::setUniform(g_bgfx.light_environment_diffuse_uniform, light_environment_diffuse, 4);
-}
-
-void Set_Direct_Light_Uniforms()
-{
-	float direct_light_state[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-	float direct_light_position[4][4] = { { 0.0f } };
-	float direct_light_direction[4][4] = { { 0.0f } };
-	float direct_light_ambient[4][4] = { { 0.0f } };
-	float direct_light_diffuse[4][4] = { { 0.0f } };
-
-	unsigned light_count = 0;
-	for (const BgfxLightState &light : g_bgfx.lights) {
-		if (!light.enabled || light_count >= 4) {
-			continue;
-		}
-
-		const Vector3 camera_position = Transform_Position_To_Camera_Space(g_bgfx.view, light.position);
-		const Vector3 camera_direction = View_Rotate_Vector(light.direction);
-
-		direct_light_position[light_count][0] = camera_position.X;
-		direct_light_position[light_count][1] = camera_position.Y;
-		direct_light_position[light_count][2] = camera_position.Z;
-		direct_light_position[light_count][3] = light.far_atten_start;
-
-		direct_light_direction[light_count][0] = camera_direction.X;
-		direct_light_direction[light_count][1] = camera_direction.Y;
-		direct_light_direction[light_count][2] = camera_direction.Z;
-		direct_light_direction[light_count][3] = light.far_atten_end;
-
-		direct_light_ambient[light_count][0] = light.ambient.X;
-		direct_light_ambient[light_count][1] = light.ambient.Y;
-		direct_light_ambient[light_count][2] = light.ambient.Z;
-		direct_light_ambient[light_count][3] = Encode_Light_Type(light.type);
-
-		direct_light_diffuse[light_count][0] = light.diffuse.X;
-		direct_light_diffuse[light_count][1] = light.diffuse.Y;
-		direct_light_diffuse[light_count][2] = light.diffuse.Z;
-		direct_light_diffuse[light_count][3] = light.spot_angle_cos;
-		++light_count;
-	}
-
-	direct_light_state[0] = static_cast<float>(light_count);
-	bgfx::setUniform(g_bgfx.direct_light_state_uniform, direct_light_state);
-	bgfx::setUniform(g_bgfx.direct_light_position_uniform, direct_light_position, 4);
-	bgfx::setUniform(g_bgfx.direct_light_direction_uniform, direct_light_direction, 4);
-	bgfx::setUniform(g_bgfx.direct_light_ambient_uniform, direct_light_ambient, 4);
-	bgfx::setUniform(g_bgfx.direct_light_diffuse_uniform, direct_light_diffuse, 4);
-}
-
-void Set_Gui_Draw_Uniforms(
-	const BgfxProgramSelection &selection,
-	const BgfxDrawLightingState &draw_lighting_state,
-	bool has_diffuse,
-	bool has_normal,
-	unsigned texcoord_generation,
-	bool apply_texture_transform,
-	bool projected_texture,
-	const Matrix4 &world_view,
-	const Matrix4 &texture_transform)
-{
-	Set_Color_Adjust_Uniform();
-
-	if (selection.program == BGFX_PROGRAM_BASIC) {
-		return;
-	}
-
-	const float fog_mode = selection.fog_enabled
-		? Get_Draw_Fog_Mode()
-		: static_cast<float>(ShaderClass::FOG_DISABLE);
-	Set_Fog_Uniforms(fog_mode);
-	Set_Material_Uniforms(draw_lighting_state, has_diffuse);
-
-	const bool needs_world_view_rows =
-		selection.program == BGFX_PROGRAM_LIGHT_ENVIRONMENT ||
-		selection.program == BGFX_PROGRAM_LIGHT_DYNAMIC ||
-		selection.fog_enabled ||
-		(selection.use_gpu_texgen && texcoord_generation != D3DTSS_TCI_PASSTHRU);
-	if (needs_world_view_rows) {
-		Set_World_View_Row_Uniform(world_view);
-	}
-
-	Set_Texgen_Uniforms(
-		has_normal,
-		selection.use_gpu_texgen ? texcoord_generation : D3DTSS_TCI_PASSTHRU,
-		selection.use_gpu_texgen ? apply_texture_transform : false,
-		selection.use_gpu_texgen ? projected_texture : false,
-		texture_transform);
-
-	if (selection.program == BGFX_PROGRAM_LIGHT_ENVIRONMENT) {
-		Set_Render_Ambient_Uniform(draw_lighting_state.render_ambient);
-		Set_Light_Environment_Uniforms(draw_lighting_state);
-	} else if (selection.program == BGFX_PROGRAM_LIGHT_DYNAMIC) {
-		Set_Render_Ambient_Uniform(draw_lighting_state.render_ambient);
-		Set_Direct_Light_Uniforms();
-	}
-}
-
-void Clamp_Window_Size(int &width, int &height)
-{
-	width = std::max(width, 1);
-	height = std::max(height, 1);
-}
-
-bool Query_Window_Size(SDL_Window *window, int &width, int &height)
-{
-	if (window == nullptr) {
-		width = kFallbackRenderWidth;
-		height = kFallbackRenderHeight;
-		return false;
-	}
-
-	if (!SDL_GetWindowSize(window, &width, &height)) {
-		width = kFallbackRenderWidth;
-		height = kFallbackRenderHeight;
-		return false;
-	}
-
-	Clamp_Window_Size(width, height);
-	return true;
-}
-
-bool Query_Window_Pixel_Size(SDL_Window *window, int &width, int &height)
-{
-	if (window == nullptr) {
-		width = kFallbackRenderWidth;
-		height = kFallbackRenderHeight;
-		return false;
-	}
-
-	if (!SDL_GetWindowSizeInPixels(window, &width, &height)) {
-		return Query_Window_Size(window, width, height);
-	}
-
-	Clamp_Window_Size(width, height);
-	return true;
-}
-void Ensure_Window_Ready_For_BGFX(SDL_Window *window)
-{
-	if (window == nullptr) {
-		return;
-	}
-
-	SDL_ShowWindow(window);
-	SDL_RaiseWindow(window);
-	SDL_SyncWindow(window);
-	SDL_PumpEvents();
-}
-
-bool Populate_Platform_Data(SDL_Window *window, bgfx::PlatformData &platform_data)
-{
-	if (window == nullptr) {
-		return false;
-	}
-
-	const SDL_PropertiesID properties = SDL_GetWindowProperties(window);
-	if (properties == 0) {
-		return false;
-	}
-
-#if defined(_WIN32)
-	platform_data.nwh = SDL_GetPointerProperty(properties, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
-	platform_data.type = bgfx::NativeWindowHandleType::Default;
-	return platform_data.nwh != nullptr;
-#elif defined(__APPLE__)
-	platform_data.nwh = SDL_GetPointerProperty(properties, SDL_PROP_WINDOW_COCOA_WINDOW_POINTER, nullptr);
-	platform_data.type = bgfx::NativeWindowHandleType::Default;
-	return platform_data.nwh != nullptr;
-#else
-	const char *video_driver = SDL_GetCurrentVideoDriver();
-	if (video_driver != nullptr && std::strcmp(video_driver, "wayland") == 0) {
-		platform_data.ndt = SDL_GetPointerProperty(properties, SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER, nullptr);
-		platform_data.nwh = SDL_GetPointerProperty(properties, SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER, nullptr);
-		platform_data.type = bgfx::NativeWindowHandleType::Wayland;
-		return platform_data.ndt != nullptr && platform_data.nwh != nullptr;
-	}
-
-	if (video_driver != nullptr && std::strcmp(video_driver, "x11") == 0) {
-		platform_data.ndt = SDL_GetPointerProperty(properties, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr);
-		const Sint64 x11_window = SDL_GetNumberProperty(properties, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0);
-		platform_data.nwh = reinterpret_cast<void *>(static_cast<uintptr_t>(x11_window));
-		platform_data.type = bgfx::NativeWindowHandleType::Default;
-		return platform_data.ndt != nullptr && x11_window != 0;
-	}
-	return false;
-#endif
-}
-
-void Update_Windowed_State()
-{
-	if (g_bgfx.window == nullptr) {
-		g_bgfx.windowed = true;
-		return;
-	}
-
-	const SDL_WindowFlags flags = SDL_GetWindowFlags(g_bgfx.window);
-	g_bgfx.windowed = (flags & SDL_WINDOW_FULLSCREEN) == 0;
-}
-
-void Apply_View_Rect()
-{
-	unsigned target_width = g_bgfx.viewport.Width;
-	unsigned target_height = g_bgfx.viewport.Height;
-	if (g_bgfx.render_target != nullptr) {
-		target_width = static_cast<unsigned>(std::max(g_bgfx.render_target->Get_Width(), 1));
-		target_height = static_cast<unsigned>(std::max(g_bgfx.render_target->Get_Height(), 1));
-	}
-	const uint16_t x = static_cast<uint16_t>(std::min(g_bgfx.viewport.X, 0xFFFFu));
-	const uint16_t y = static_cast<uint16_t>(std::min(g_bgfx.viewport.Y, 0xFFFFu));
-	const uint16_t width = static_cast<uint16_t>(std::min(std::max(target_width, 1u), 0xFFFFu));
-	const uint16_t height = static_cast<uint16_t>(std::min(std::max(target_height, 1u), 0xFFFFu));
-	bgfx::setViewRect(g_bgfx.current_view_id, x, y, width, height);
-}
-
-void Apply_View_Target()
-{
-	bgfx::setViewFrameBuffer(g_bgfx.current_view_id, BgfxCompat_Get_Frame_Buffer(g_bgfx.render_target));
-}
-
-bool Sync_Backbuffer(bool force_reset)
-{
-	if (!g_bgfx.initialized) {
-		return false;
-	}
-
-	int window_width = g_bgfx.window_width;
-	int window_height = g_bgfx.window_height;
-	Query_Window_Size(g_bgfx.window, window_width, window_height);
-
-	int width = g_bgfx.width;
-	int height = g_bgfx.height;
-	Query_Window_Pixel_Size(g_bgfx.window, width, height);
-
-	const uint32_t reset_flags = Compose_Reset_Flags();
-	const bool render_changed = force_reset || width != g_bgfx.width || height != g_bgfx.height || reset_flags != g_bgfx.reset_flags;
-	const bool window_changed = window_width != g_bgfx.window_width || window_height != g_bgfx.window_height;
-	if (render_changed) {
-		g_bgfx.width = width;
-		g_bgfx.height = height;
-		g_bgfx.reset_flags = reset_flags;
-		bgfx::reset(static_cast<uint32_t>(g_bgfx.width), static_cast<uint32_t>(g_bgfx.height), g_bgfx.reset_flags);
-	}
-
-	if (render_changed || window_changed) {
-		g_bgfx.window_width = window_width;
-		g_bgfx.window_height = window_height;
-		DX8Wrapper::Refresh_Render_Device_Desc();
-		Render2DClass::Set_Screen_Resolution(RectClass(0, 0, g_bgfx.width, g_bgfx.height));
-	}
-
-	Update_Windowed_State();
-	Apply_View_Rect();
-	bgfx::setViewClear(g_bgfx.current_view_id, g_bgfx.clear_flags, g_bgfx.clear_color, g_bgfx.clear_depth, g_bgfx.clear_stencil);
-	return true;
-}
-
-bool Ensure_Gui_Resources()
-{
-	if (!g_bgfx.initialized) {
-		return false;
-	}
-
-	if (!g_bgfx.layout_ready) {
-		g_bgfx.gui_layout
-			.begin()
-			.add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
-			.add(bgfx::Attrib::Normal, 3, bgfx::AttribType::Float)
-			.add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
-			.add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
-			.end();
-		g_bgfx.layout_ready = true;
-	}
-
-	if (!bgfx::isValid(g_bgfx.texture_uniform)) {
-		g_bgfx.texture_uniform = bgfx::createUniform("s_texColor", bgfx::UniformType::Sampler);
-	}
-	if (!bgfx::isValid(g_bgfx.fog_state_uniform)) {
-		g_bgfx.fog_state_uniform = bgfx::createUniform("u_fogState", bgfx::UniformType::Vec4);
-	}
-	if (!bgfx::isValid(g_bgfx.fog_color_uniform)) {
-		g_bgfx.fog_color_uniform = bgfx::createUniform("u_fogColor", bgfx::UniformType::Vec4);
-	}
-	if (!bgfx::isValid(g_bgfx.color_adjust_uniform)) {
-		g_bgfx.color_adjust_uniform = bgfx::createUniform("u_colorAdjust", bgfx::UniformType::Vec4);
-	}
-	if (!bgfx::isValid(g_bgfx.material_source_uniform)) {
-		g_bgfx.material_source_uniform = bgfx::createUniform("u_materialSource", bgfx::UniformType::Vec4);
-	}
-	if (!bgfx::isValid(g_bgfx.material_ambient_uniform)) {
-		g_bgfx.material_ambient_uniform = bgfx::createUniform("u_materialAmbient", bgfx::UniformType::Vec4);
-	}
-	if (!bgfx::isValid(g_bgfx.material_diffuse_uniform)) {
-		g_bgfx.material_diffuse_uniform = bgfx::createUniform("u_materialDiffuse", bgfx::UniformType::Vec4);
-	}
-	if (!bgfx::isValid(g_bgfx.material_emissive_uniform)) {
-		g_bgfx.material_emissive_uniform = bgfx::createUniform("u_materialEmissive", bgfx::UniformType::Vec4);
-	}
-	if (!bgfx::isValid(g_bgfx.material_state_uniform)) {
-		g_bgfx.material_state_uniform = bgfx::createUniform("u_materialState", bgfx::UniformType::Vec4);
-	}
-	if (!bgfx::isValid(g_bgfx.render_ambient_uniform)) {
-		g_bgfx.render_ambient_uniform = bgfx::createUniform("u_renderAmbient", bgfx::UniformType::Vec4);
-	}
-	if (!bgfx::isValid(g_bgfx.light_environment_state_uniform)) {
-		g_bgfx.light_environment_state_uniform = bgfx::createUniform("u_lightEnvState", bgfx::UniformType::Vec4);
-	}
-	if (!bgfx::isValid(g_bgfx.light_environment_ambient_uniform)) {
-		g_bgfx.light_environment_ambient_uniform = bgfx::createUniform("u_lightEnvAmbient", bgfx::UniformType::Vec4);
-	}
-	if (!bgfx::isValid(g_bgfx.light_environment_direction_uniform)) {
-		g_bgfx.light_environment_direction_uniform = bgfx::createUniform("u_lightEnvDir", bgfx::UniformType::Vec4, 4);
-	}
-	if (!bgfx::isValid(g_bgfx.light_environment_diffuse_uniform)) {
-		g_bgfx.light_environment_diffuse_uniform = bgfx::createUniform("u_lightEnvDiffuse", bgfx::UniformType::Vec4, 4);
-	}
-	if (!bgfx::isValid(g_bgfx.world_view_row_uniform)) {
-		g_bgfx.world_view_row_uniform = bgfx::createUniform("u_worldViewRow", bgfx::UniformType::Vec4, 3);
-	}
-	if (!bgfx::isValid(g_bgfx.texgen_state_uniform)) {
-		g_bgfx.texgen_state_uniform = bgfx::createUniform("u_texGenState", bgfx::UniformType::Vec4);
-	}
-	if (!bgfx::isValid(g_bgfx.texture_transform_row_uniform)) {
-		g_bgfx.texture_transform_row_uniform = bgfx::createUniform("u_textureTransformRow", bgfx::UniformType::Vec4, 4);
-	}
-	if (!bgfx::isValid(g_bgfx.direct_light_state_uniform)) {
-		g_bgfx.direct_light_state_uniform = bgfx::createUniform("u_directLightState", bgfx::UniformType::Vec4);
-	}
-	if (!bgfx::isValid(g_bgfx.direct_light_position_uniform)) {
-		g_bgfx.direct_light_position_uniform = bgfx::createUniform("u_directLightPosition", bgfx::UniformType::Vec4, 4);
-	}
-	if (!bgfx::isValid(g_bgfx.direct_light_direction_uniform)) {
-		g_bgfx.direct_light_direction_uniform = bgfx::createUniform("u_directLightDirection", bgfx::UniformType::Vec4, 4);
-	}
-	if (!bgfx::isValid(g_bgfx.direct_light_ambient_uniform)) {
-		g_bgfx.direct_light_ambient_uniform = bgfx::createUniform("u_directLightAmbient", bgfx::UniformType::Vec4, 4);
-	}
-	if (!bgfx::isValid(g_bgfx.direct_light_diffuse_uniform)) {
-		g_bgfx.direct_light_diffuse_uniform = bgfx::createUniform("u_directLightDiffuse", bgfx::UniformType::Vec4, 4);
-	}
-
-	for (int program_index = 0; program_index < BGFX_PROGRAM_COUNT; ++program_index) {
-		if (!bgfx::isValid(g_bgfx.programs[program_index])) {
-			g_bgfx.programs[program_index] = Create_Embedded_Program(static_cast<BgfxProgramType>(program_index));
-		}
-	}
-
-	return bgfx::isValid(g_bgfx.programs[BGFX_PROGRAM_BASIC]) &&
-		bgfx::isValid(g_bgfx.programs[BGFX_PROGRAM_UNLIT]) &&
-		bgfx::isValid(g_bgfx.programs[BGFX_PROGRAM_LIGHT_ENVIRONMENT]) &&
-		bgfx::isValid(g_bgfx.programs[BGFX_PROGRAM_LIGHT_DYNAMIC]) &&
-		bgfx::isValid(g_bgfx.texture_uniform) &&
-		bgfx::isValid(g_bgfx.fog_state_uniform) &&
-		bgfx::isValid(g_bgfx.fog_color_uniform) &&
-		bgfx::isValid(g_bgfx.color_adjust_uniform) &&
-		bgfx::isValid(g_bgfx.material_source_uniform) &&
-		bgfx::isValid(g_bgfx.material_ambient_uniform) &&
-		bgfx::isValid(g_bgfx.material_diffuse_uniform) &&
-		bgfx::isValid(g_bgfx.material_emissive_uniform) &&
-		bgfx::isValid(g_bgfx.material_state_uniform) &&
-		bgfx::isValid(g_bgfx.render_ambient_uniform) &&
-		bgfx::isValid(g_bgfx.light_environment_state_uniform) &&
-		bgfx::isValid(g_bgfx.light_environment_ambient_uniform) &&
-		bgfx::isValid(g_bgfx.light_environment_direction_uniform) &&
-		bgfx::isValid(g_bgfx.light_environment_diffuse_uniform) &&
-		bgfx::isValid(g_bgfx.world_view_row_uniform) &&
-		bgfx::isValid(g_bgfx.texgen_state_uniform) &&
-		bgfx::isValid(g_bgfx.texture_transform_row_uniform) &&
-		bgfx::isValid(g_bgfx.direct_light_state_uniform) &&
-		bgfx::isValid(g_bgfx.direct_light_position_uniform) &&
-		bgfx::isValid(g_bgfx.direct_light_direction_uniform) &&
-		bgfx::isValid(g_bgfx.direct_light_ambient_uniform) &&
-		bgfx::isValid(g_bgfx.direct_light_diffuse_uniform);
-}
-
-Matrix4 Adjust_Projection_For_BGFX(const Matrix4 &projection)
-{
-	const bgfx::Caps *caps = bgfx::getCaps();
-
-	// CameraClass::Get_D3D_Projection_Matrix already maps clip-space depth to [0, 1].
-	// Backends that use [0, 1] (Vulkan, D3D11/12, Metal) need no adjustment.
-	if (caps == nullptr || !caps->homogeneousDepth) {
-		return projection;
-	}
-
-	// OpenGL uses homogeneous depth [-1, 1]. Convert the D3D-style [0, 1] projection
-	// back to [-1, 1]: z_ndc' = 2 * z_ndc - 1.
-	Matrix4 depth_remap(true);
-	depth_remap[2][2] = 2.0f;
-	depth_remap[2][3] = -1.0f;
-	return depth_remap * projection;
-}
-
-uint64_t Build_BGFX_State(bool triangle_strip)
-{
-	uint64_t state = 0;
-	if (g_bgfx.shader.Get_Color_Mask() != ShaderClass::COLOR_WRITE_DISABLE) {
-		state |= BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A;
-	}
-	if (g_bgfx.shader.Get_Depth_Mask() == ShaderClass::DEPTH_WRITE_ENABLE) {
-		state |= BGFX_STATE_WRITE_Z;
-	}
-
-	switch (g_bgfx.shader.Get_Depth_Compare()) {
-		case ShaderClass::PASS_LEQUAL: state |= BGFX_STATE_DEPTH_TEST_LEQUAL; break;
-		case ShaderClass::PASS_LESS: state |= BGFX_STATE_DEPTH_TEST_LESS; break;
-		case ShaderClass::PASS_EQUAL: state |= BGFX_STATE_DEPTH_TEST_EQUAL; break;
-		case ShaderClass::PASS_GEQUAL: state |= BGFX_STATE_DEPTH_TEST_GEQUAL; break;
-		case ShaderClass::PASS_GREATER: state |= BGFX_STATE_DEPTH_TEST_GREATER; break;
-		case ShaderClass::PASS_NOTEQUAL: state |= BGFX_STATE_DEPTH_TEST_NOTEQUAL; break;
-		case ShaderClass::PASS_NEVER: state |= BGFX_STATE_DEPTH_TEST_NEVER; break;
-		case ShaderClass::PASS_ALWAYS:
-		default: state |= BGFX_STATE_DEPTH_TEST_ALWAYS; break;
-	}
-
-	if (g_bgfx.shader.Get_Alpha_Test() == ShaderClass::ALPHATEST_ENABLE) {
-		uint8_t alpha_ref = 0x60;
-		if (g_bgfx.shader.Get_Src_Blend_Func() == ShaderClass::SRCBLEND_ONE_MINUS_SRC_ALPHA) {
-			alpha_ref = static_cast<uint8_t>(0xFF - alpha_ref);
-		}
-		state |= BGFX_STATE_ALPHA_REF(alpha_ref);
-	}
-
-	const ShaderClass::SrcBlendFuncType src = g_bgfx.shader.Get_Src_Blend_Func();
-	const ShaderClass::DstBlendFuncType dst = g_bgfx.shader.Get_Dst_Blend_Func();
-	if (!(src == ShaderClass::SRCBLEND_ONE && dst == ShaderClass::DSTBLEND_ZERO)) {
-		uint64_t src_factor = BGFX_STATE_BLEND_ONE;
-		uint64_t dst_factor = BGFX_STATE_BLEND_ZERO;
-		switch (src) {
-			case ShaderClass::SRCBLEND_ZERO: src_factor = BGFX_STATE_BLEND_ZERO; break;
-			case ShaderClass::SRCBLEND_SRC_ALPHA: src_factor = BGFX_STATE_BLEND_SRC_ALPHA; break;
-			case ShaderClass::SRCBLEND_ONE_MINUS_SRC_ALPHA: src_factor = BGFX_STATE_BLEND_INV_SRC_ALPHA; break;
-			case ShaderClass::SRCBLEND_ONE:
-			default: src_factor = BGFX_STATE_BLEND_ONE; break;
-		}
-		switch (dst) {
-			case ShaderClass::DSTBLEND_ONE: dst_factor = BGFX_STATE_BLEND_ONE; break;
-			case ShaderClass::DSTBLEND_SRC_COLOR: dst_factor = BGFX_STATE_BLEND_SRC_COLOR; break;
-			case ShaderClass::DSTBLEND_ONE_MINUS_SRC_COLOR: dst_factor = BGFX_STATE_BLEND_INV_SRC_COLOR; break;
-			case ShaderClass::DSTBLEND_SRC_ALPHA: dst_factor = BGFX_STATE_BLEND_SRC_ALPHA; break;
-			case ShaderClass::DSTBLEND_ONE_MINUS_SRC_ALPHA: dst_factor = BGFX_STATE_BLEND_INV_SRC_ALPHA; break;
-			case ShaderClass::DSTBLEND_ZERO:
-			default: dst_factor = BGFX_STATE_BLEND_ZERO; break;
-		}
-		state |= BGFX_STATE_BLEND_FUNC(src_factor, dst_factor);
-	}
-
-	if (g_bgfx.shader.Get_Cull_Mode() == ShaderClass::CULL_MODE_ENABLE) {
-		state |= ShaderClass::Is_Backface_Culling_Inverted() ? BGFX_STATE_CULL_CCW : BGFX_STATE_CULL_CW;
-	}
-
-	if (triangle_strip) {
-		state |= BGFX_STATE_PT_TRISTRIP;
-	}
-
-	state |= BGFX_STATE_MSAA;
-	return state;
-}
-
-bool Submit_Primitives(uint16_t start_index, uint16_t primitive_count, uint16_t min_vertex_index, uint16_t vertex_count, bool triangle_strip)
-{
-	const Uint64 submit_start_ticks = WWPerfMonClass::Begin_Scope();
-	if (!DX8Wrapper::_Is_Triangle_Draw_Enabled() || !g_bgfx.initialized || primitive_count == 0 || !Ensure_Gui_Resources()) {
-		return false;
-	}
-	if (g_bgfx.vertex_data == nullptr || g_bgfx.index_data == nullptr || g_bgfx.vertex_fvf == nullptr) {
-		return false;
-	}
-
-	const uint32_t index_total = triangle_strip
-		? static_cast<uint32_t>(primitive_count) + 2U
-		: static_cast<uint32_t>(primitive_count) * 3U;
-	if (vertex_count == 0 || index_total == 0) {
-		return false;
-	}
-
-	if (static_cast<uint32_t>(start_index) + index_total > g_bgfx.index_count) {
-		WWRELEASE_SAY(("BGFX2D: index buffer range out of bounds (start=%u count=%u available=%u)\n", start_index, index_total, g_bgfx.index_count));
-		return false;
-	}
-
-	const uint32_t base_vertex_index = static_cast<uint32_t>(g_bgfx.index_base_offset);
-	const uint32_t requested_min_source = base_vertex_index + static_cast<uint32_t>(min_vertex_index);
-	const uint32_t requested_max_source = requested_min_source + static_cast<uint32_t>(vertex_count) - 1U;
-	if (requested_max_source >= g_bgfx.vertex_count) {
-		WWRELEASE_SAY(("BGFX2D: vertex buffer range out of bounds (min=%u count=%u base=%u available=%u)\n", min_vertex_index, vertex_count, g_bgfx.index_base_offset, g_bgfx.vertex_count));
-		return false;
-	}
-
-	// The mesh renderer already precomputes the exact min/range for each polygon renderer.
-	// Trusting that range avoids re-scanning every draw's indices on the submit hot path.
-	const uint32_t draw_min_source = requested_min_source;
-	const uint32_t draw_max_source = requested_max_source;
-	const uint32_t source_vertex_count = draw_max_source - draw_min_source + 1U;
-	uint32_t scratch_vertex_offset = 0;
-	uint32_t scratch_index_offset = 0;
-	if (!Reserve_Compatibility_Submit_Scratch(source_vertex_count, index_total, scratch_vertex_offset, scratch_index_offset)) {
-		return false;
-	}
-
-	const unsigned vertex_stride = g_bgfx.vertex_fvf->Get_FVF_Size();
-	const unsigned vertex_format = g_bgfx.vertex_fvf->Get_FVF();
-	const unsigned texcoord_count = (vertex_format & D3DFVF_TEXCOUNT_MASK) >> 8;
-	const unsigned location_offset = g_bgfx.vertex_fvf->Get_Location_Offset();
-	const unsigned normal_offset = g_bgfx.vertex_fvf->Get_Normal_Offset();
-	const unsigned diffuse_offset = g_bgfx.vertex_fvf->Get_Diffuse_Offset();
-	const bool has_diffuse = (vertex_format & D3DFVF_DIFFUSE) == D3DFVF_DIFFUSE;
-	const bool has_normal = (vertex_format & D3DFVF_NORMAL) == D3DFVF_NORMAL;
-	const unsigned texcoord_index = g_bgfx.texture_stage_states[0][D3DTSS_TEXCOORDINDEX];
-	const unsigned texcoord_generation = texcoord_index & 0xFFFF0000u;
-	const unsigned selected_texcoord = texcoord_index & 0x0000FFFFu;
-	const unsigned texcoord_transform = g_bgfx.texture_stage_states[0][D3DTSS_TEXTURETRANSFORMFLAGS];
-	const bool has_selected_texcoord = texcoord_count > selected_texcoord;
-	const unsigned tex_offset = has_selected_texcoord ? g_bgfx.vertex_fvf->Get_Tex_Offset(selected_texcoord) : 0;
-	const bool apply_texture_transform = texcoord_transform != D3DTTFF_DISABLE;
-	const bool projected_texture = (texcoord_transform & D3DTTFF_PROJECTED) == D3DTTFF_PROJECTED;
-	const Matrix4 &texture_transform = g_bgfx.texture_transforms[0];
-	const Matrix4 world_view = g_bgfx.view * g_bgfx.world;
-	const BgfxDrawLightingState draw_lighting_state = Build_Draw_Lighting_State(has_normal);
-	const bool gpu_texcoord_generation_supported =
-		texcoord_generation == D3DTSS_TCI_PASSTHRU ||
-		texcoord_generation == D3DTSS_TCI_CAMERASPACEPOSITION ||
-		texcoord_generation == D3DTSS_TCI_CAMERASPACENORMAL ||
-		texcoord_generation == D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR;
-	const bool needs_cpu_texcoords = !gpu_texcoord_generation_supported;
-	const float fog_mode = Get_Draw_Fog_Mode();
-	const bool fog_enabled = fog_mode != static_cast<float>(ShaderClass::FOG_DISABLE);
-	const bool use_gpu_texgen = !needs_cpu_texcoords && (texcoord_generation != D3DTSS_TCI_PASSTHRU || apply_texture_transform);
-	const BgfxProgramSelection program_selection = Select_BGFX_Program(draw_lighting_state, fog_enabled, use_gpu_texgen);
-	if (!needs_cpu_texcoords) {
-		WWPerfMonClass::Record_Fast_Submit();
-	} else {
-		WWPerfMonClass::Record_Slow_Submit();
-		WWPerfMonClass::Record_Slow_Submit_Reasons(false, false, needs_cpu_texcoords);
-	}
-
-	static std::vector<BgfxGuiVertex> converted_vertices;
-	if (converted_vertices.size() < source_vertex_count) {
-		converted_vertices.resize(source_vertex_count);
-	}
-	BgfxGuiVertex *dst_vertices = converted_vertices.data();
-	for (uint32_t i = 0; i < source_vertex_count; ++i) {
-		const uint8_t *src = g_bgfx.vertex_data + static_cast<size_t>(draw_min_source + i) * vertex_stride;
-		const float *position = reinterpret_cast<const float *>(src + location_offset);
-		const uint32_t diffuse = has_diffuse ? *reinterpret_cast<const uint32_t *>(src + diffuse_offset) : 0xFFFFFFFFU;
-		dst_vertices[i].x = position[0];
-		dst_vertices[i].y = position[1];
-		dst_vertices[i].z = position[2];
-		if (has_normal) {
-			const float *normal = reinterpret_cast<const float *>(src + normal_offset);
-			dst_vertices[i].nx = normal[0];
-			dst_vertices[i].ny = normal[1];
-			dst_vertices[i].nz = normal[2];
-		} else {
-			dst_vertices[i].nx = 0.0f;
-			dst_vertices[i].ny = 0.0f;
-			dst_vertices[i].nz = 1.0f;
-		}
-		dst_vertices[i].abgr = DX8_To_BGFX_Color(diffuse);
-		if (has_selected_texcoord) {
-			const float *uv = reinterpret_cast<const float *>(src + tex_offset);
-			dst_vertices[i].u = uv[0];
-			dst_vertices[i].v = uv[1];
-		} else {
-			dst_vertices[i].u = 0.0f;
-			dst_vertices[i].v = 0.0f;
-		}
-
-		if (needs_cpu_texcoords) {
-			bool generated_texcoord = false;
-			const Vector4 stage0_input = Generate_Stage0_Texture_Input(
-				world_view,
-				texcoord_generation,
-				selected_texcoord,
-				texcoord_count,
-				tex_offset,
-				has_normal,
-				normal_offset,
-				src,
-				position,
-				&generated_texcoord);
-			if (generated_texcoord) {
-				Vector4 transformed = stage0_input;
-				if (apply_texture_transform) {
-					Matrix4::Transform_Vector(texture_transform, stage0_input, &transformed);
-				}
-
-				if (projected_texture && std::fabs(transformed.W) > 1.0e-12f) {
-					dst_vertices[i].u = transformed.X / transformed.W;
-					dst_vertices[i].v = transformed.Y / transformed.W;
-				} else {
-					dst_vertices[i].u = transformed.X;
-					dst_vertices[i].v = transformed.Y;
-				}
-			} else {
-				dst_vertices[i].u = 0.0f;
-				dst_vertices[i].v = 0.0f;
+	WWASSERT(!IsInitted);
+
+	/*
+	** Initialize all variables!
+	*/
+	_Hwnd = (HWND)hwnd;
+	_MainThreadID=ThreadClass::_Get_Current_Thread_ID();
+	WWDEBUG_SAY(("DX8Wrapper main thread: 0x%x\n",_MainThreadID));
+	CurRenderDevice = -1;
+	ResolutionWidth = DEFAULT_RESOLUTION_WIDTH;
+	ResolutionHeight = DEFAULT_RESOLUTION_HEIGHT;
+	// Initialize Render2DClass Screen Resolution
+	Render2DClass::Set_Screen_Resolution( RectClass( 0, 0, ResolutionWidth, ResolutionHeight ) );
+	BitDepth = DEFAULT_BIT_DEPTH;
+	IsWindowed = false;
+
+	for (int light=0;light<4;++light) CurrentDX8LightEnables[light]=false;
+
+	::ZeroMemory(&old_world, sizeof(D3DMATRIX));
+	::ZeroMemory(&old_view, sizeof(D3DMATRIX));
+	::ZeroMemory(&old_prj, sizeof(D3DMATRIX));
+
+	//old_vertex_shader; TODO
+	//old_sr_shader;
+	//current_shader;
+
+	//world_identity;
+	//CurrentFogColor;
+
+	D3DInterface = NULL;
+	D3DDevice = NULL;
+
+	WWDEBUG_SAY(("Reset DX8Wrapper statistics\n"));
+	Reset_Statistics();
+
+	Invalidate_Cached_Render_States();
+
+	if (!lite) {
+		D3D8Lib = LoadLibrary("D3D8.DLL");
+
+		if (D3D8Lib == NULL) return false;
+
+		Direct3DCreate8Ptr = (Direct3DCreate8Type) GetProcAddress(D3D8Lib, "Direct3DCreate8");
+		if (Direct3DCreate8Ptr) {
+
+			/*
+			** Create the D3D interface object
+			*/
+			WWDEBUG_SAY(("Create Direct3D8\n"));
+			D3DInterface = Direct3DCreate8Ptr(D3D_SDK_VERSION);		// TODO: handle failure cases...
+			if (D3DInterface == NULL) {
+				return(false);
 			}
+			IsInitted = true;
+
+			/*
+			** Enumerate the available devices
+			*/
+			WWDEBUG_SAY(("Enumerate devices\n"));
+			Enumerate_Devices();
+			WWDEBUG_SAY(("DX8Wrapper Init completed\n"));
 		}
 	}
-
-	static std::vector<uint16_t> converted_indices;
-	if (converted_indices.size() < index_total) {
-		converted_indices.resize(index_total);
-	}
-	uint16_t *dst_indices = converted_indices.data();
-	for (uint32_t i = 0; i < index_total; ++i) {
-		const uint32_t source_index = static_cast<uint32_t>(g_bgfx.index_data[start_index + i]) + base_vertex_index;
-		if (source_index < draw_min_source || source_index > draw_max_source) {
-			WWRELEASE_SAY(("BGFX2D: source index outside declared range (index=%u range=%u..%u)\n", source_index, draw_min_source, draw_max_source));
-			return false;
-		}
-		dst_indices[i] = static_cast<uint16_t>(source_index - draw_min_source);
-	}
-
-	bgfx::update(
-		g_bgfx.compatibility_vertex_buffer,
-		scratch_vertex_offset,
-		bgfx::copy(dst_vertices, source_vertex_count * sizeof(BgfxGuiVertex)));
-	bgfx::update(
-		g_bgfx.compatibility_index_buffer,
-		scratch_index_offset,
-		bgfx::copy(dst_indices, index_total * sizeof(uint16_t)));
-
-	// bgfx::setViewTransform is view-level (shared by ALL draw calls in a view), not
-	// per-draw-call.  Since the engine changes view/projection per draw call (e.g. 3D
-	// backdrop vs 2D UI) but all draw calls in the current scene view share that state, the last
-	// setViewTransform wins and earlier ones are lost.
-	//
-	// Fix: compute the full MVP on the CPU and pass it via bgfx::setTransform (which IS
-	// per-draw-call).  Begin_Scene already sets the view-level view/proj to identity,
-	// so u_modelViewProj = model * I * I = model = our pre-computed MVP.
-	//
-	// The engine's Matrix4 uses row-major storage with column-vector convention (M * v).
-	// bgfx expects the model matrix in row-major with row-vector convention (v * M).
-	// Transposing converts between the two conventions.
-	const Matrix4 adjusted_projection = Adjust_Projection_For_BGFX(g_bgfx.projection);
-	const Matrix4 mvp_engine = adjusted_projection * g_bgfx.view * g_bgfx.world;
-	const Matrix4 mvp_bgfx = mvp_engine.Transpose();
-
-	const bgfx::TextureHandle texture_handle = BgfxCompat_Get_Texture_Handle(g_bgfx.textures[0]);
-	const uint64_t sampler_flags = BgfxCompat_Get_Sampler_Flags(g_bgfx.textures[0]);
-	bgfx::setTransform(&mvp_bgfx[0][0]);
-	bgfx::setTexture(0, g_bgfx.texture_uniform, bgfx::isValid(texture_handle) ? texture_handle : BgfxCompat_Get_White_Texture(), sampler_flags);
-	Set_Gui_Draw_Uniforms(
-		program_selection,
-		draw_lighting_state,
-		has_diffuse,
-		has_normal,
-		texcoord_generation,
-		apply_texture_transform,
-		projected_texture,
-		world_view,
-		texture_transform);
-	bgfx::setVertexBuffer(0, g_bgfx.compatibility_vertex_buffer, scratch_vertex_offset, source_vertex_count);
-	bgfx::setIndexBuffer(g_bgfx.compatibility_index_buffer, scratch_index_offset, index_total);
-	bgfx::setState(Build_BGFX_State(triangle_strip));
-	bgfx::submit(g_bgfx.current_view_id, g_bgfx.programs[program_selection.program]);
-
-	++g_bgfx.draw_calls;
-	WWPerfMonClass::Record_Draw_Call();
-	WWPerfMonClass::Record_Submitted_Vertex_Count(source_vertex_count);
-	WWPerfMonClass::Record_Submitted_Index_Count(index_total);
-	WWPerfMonClass::End_Scope(WWPERF_SECTION_SUBMIT_TRIANGLES, submit_start_ticks);
-	return true;
-}
-
-void Copy_Surface_Rectangles(
-	IDirect3DSurface8 *source_surface,
-	const RECT *source_rects,
-	uint32_t rect_count,
-	IDirect3DSurface8 *destination_surface,
-	const POINT *dest_points)
-{
-	BgfxCompatSurface *dst = BgfxCompat_To_Surface(destination_surface);
-	const BgfxCompatSurface *src = BgfxCompat_To_Surface(source_surface);
-	if (dst == nullptr || src == nullptr || dst->format != src->format) {
-		return;
-	}
-
-	RECT full_source_rect = {
-		0,
-		0,
-		static_cast<int32_t>(std::min(src->width, dst->width)),
-		static_cast<int32_t>(std::min(src->height, dst->height))
-	};
-	POINT origin = { 0, 0 };
-	if (source_rects == nullptr || dest_points == nullptr || rect_count == 0) {
-		source_rects = &full_source_rect;
-		dest_points = &origin;
-		rect_count = 1;
-	}
-
-	const unsigned pixel_size = BgfxCompat_Get_Pixel_Size(dst->format);
-	for (uint32_t rect_index = 0; rect_index < rect_count; ++rect_index) {
-		const RECT &src_rect = source_rects[rect_index];
-		const POINT &dst_point = dest_points[rect_index];
-		const unsigned width = static_cast<unsigned>(std::max(src_rect.right - src_rect.left, 0));
-		const unsigned height = static_cast<unsigned>(std::max(src_rect.bottom - src_rect.top, 0));
-		for (unsigned row = 0; row < height; ++row) {
-			const size_t src_offset = (static_cast<size_t>(src_rect.top + static_cast<int32_t>(row)) * static_cast<size_t>(src->width) + static_cast<size_t>(src_rect.left)) * pixel_size;
-			const size_t dst_offset = (static_cast<size_t>(dst_point.y + static_cast<int32_t>(row)) * static_cast<size_t>(dst->width) + static_cast<size_t>(dst_point.x)) * pixel_size;
-			std::memcpy(dst->bytes.data() + dst_offset, src->bytes.data() + src_offset, static_cast<size_t>(width) * pixel_size);
-		}
-	}
-}
-
-bool Initialize_Bgfx(SDL_Window *window)
-{
-	int window_width = kFallbackRenderWidth;
-	int window_height = kFallbackRenderHeight;
-	Query_Window_Size(window, window_width, window_height);
-
-	int width = kFallbackRenderWidth;
-	int height = kFallbackRenderHeight;
-	Query_Window_Pixel_Size(window, width, height);
-
-	if (window != nullptr) {
-		Ensure_Window_Ready_For_BGFX(window);
-		SDL_PumpEvents();
-		SDL_SyncWindow(window);
-	}
-
-	bgfx::Init init;
-	init.type = bgfx::RendererType::Count;
-	init.vendorId = BGFX_PCI_ID_NONE;
-	init.debug = false;
-	init.profile = false;
-	init.resolution.width = static_cast<uint32_t>(width);
-	init.resolution.height = static_cast<uint32_t>(height);
-	init.resolution.reset = Compose_Reset_Flags();
-
-	if (!Populate_Platform_Data(window, init.platformData)) {
-		SDL_SetError("Unable to extract native window/display handles for bgfx initialization.");
-		return false;
-	}
-
-	if (!bgfx::init(init)) {
-		SDL_SetError("bgfx::init failed.");
-		return false;
-	}
-
-	g_bgfx.window = window;
-	g_bgfx.width = width;
-	g_bgfx.height = height;
-	g_bgfx.window_width = window_width;
-	g_bgfx.window_height = window_height;
-	g_bgfx.reset_flags = init.resolution.reset;
-	g_bgfx.initialized = true;
-	Reset_Draw_State();
-	Reset_View_Sequence();
-	g_bgfx.viewport = RenderViewportClass(0u, 0u, static_cast<unsigned>(width), static_cast<unsigned>(height));
-	Update_Windowed_State();
-	DX8Wrapper::Refresh_Render_Device_Desc();
-	Render2DClass::Set_Screen_Resolution(RectClass(0, 0, width, height));
-
-	bgfx::setViewName(g_bgfx.current_view_id, "Bootstrap");
-	bgfx::setViewMode(g_bgfx.current_view_id, bgfx::ViewMode::Sequential);
-	Apply_View_Target();
-	Apply_View_Rect();
-	bgfx::setViewClear(g_bgfx.current_view_id, g_bgfx.clear_flags, g_bgfx.clear_color, g_bgfx.clear_depth, g_bgfx.clear_stencil);
-	return true;
-}
-
-void Shutdown_Bgfx()
-{
-	if (!g_bgfx.initialized) {
-		return;
-	}
-
-	Reset_Draw_State();
-
-	for (bgfx::ProgramHandle &program : g_bgfx.programs) {
-		if (bgfx::isValid(program)) {
-			bgfx::destroy(program);
-			program = BGFX_INVALID_HANDLE;
-		}
-	}
-	if (bgfx::isValid(g_bgfx.texture_uniform)) {
-		bgfx::destroy(g_bgfx.texture_uniform);
-		g_bgfx.texture_uniform = BGFX_INVALID_HANDLE;
-	}
-	if (bgfx::isValid(g_bgfx.fog_state_uniform)) {
-		bgfx::destroy(g_bgfx.fog_state_uniform);
-		g_bgfx.fog_state_uniform = BGFX_INVALID_HANDLE;
-	}
-	if (bgfx::isValid(g_bgfx.fog_color_uniform)) {
-		bgfx::destroy(g_bgfx.fog_color_uniform);
-		g_bgfx.fog_color_uniform = BGFX_INVALID_HANDLE;
-	}
-	if (bgfx::isValid(g_bgfx.color_adjust_uniform)) {
-		bgfx::destroy(g_bgfx.color_adjust_uniform);
-		g_bgfx.color_adjust_uniform = BGFX_INVALID_HANDLE;
-	}
-	if (bgfx::isValid(g_bgfx.material_source_uniform)) {
-		bgfx::destroy(g_bgfx.material_source_uniform);
-		g_bgfx.material_source_uniform = BGFX_INVALID_HANDLE;
-	}
-	if (bgfx::isValid(g_bgfx.material_ambient_uniform)) {
-		bgfx::destroy(g_bgfx.material_ambient_uniform);
-		g_bgfx.material_ambient_uniform = BGFX_INVALID_HANDLE;
-	}
-	if (bgfx::isValid(g_bgfx.material_diffuse_uniform)) {
-		bgfx::destroy(g_bgfx.material_diffuse_uniform);
-		g_bgfx.material_diffuse_uniform = BGFX_INVALID_HANDLE;
-	}
-	if (bgfx::isValid(g_bgfx.material_emissive_uniform)) {
-		bgfx::destroy(g_bgfx.material_emissive_uniform);
-		g_bgfx.material_emissive_uniform = BGFX_INVALID_HANDLE;
-	}
-	if (bgfx::isValid(g_bgfx.material_state_uniform)) {
-		bgfx::destroy(g_bgfx.material_state_uniform);
-		g_bgfx.material_state_uniform = BGFX_INVALID_HANDLE;
-	}
-	if (bgfx::isValid(g_bgfx.render_ambient_uniform)) {
-		bgfx::destroy(g_bgfx.render_ambient_uniform);
-		g_bgfx.render_ambient_uniform = BGFX_INVALID_HANDLE;
-	}
-	if (bgfx::isValid(g_bgfx.light_environment_state_uniform)) {
-		bgfx::destroy(g_bgfx.light_environment_state_uniform);
-		g_bgfx.light_environment_state_uniform = BGFX_INVALID_HANDLE;
-	}
-	if (bgfx::isValid(g_bgfx.light_environment_ambient_uniform)) {
-		bgfx::destroy(g_bgfx.light_environment_ambient_uniform);
-		g_bgfx.light_environment_ambient_uniform = BGFX_INVALID_HANDLE;
-	}
-	if (bgfx::isValid(g_bgfx.light_environment_direction_uniform)) {
-		bgfx::destroy(g_bgfx.light_environment_direction_uniform);
-		g_bgfx.light_environment_direction_uniform = BGFX_INVALID_HANDLE;
-	}
-	if (bgfx::isValid(g_bgfx.light_environment_diffuse_uniform)) {
-		bgfx::destroy(g_bgfx.light_environment_diffuse_uniform);
-		g_bgfx.light_environment_diffuse_uniform = BGFX_INVALID_HANDLE;
-	}
-	if (bgfx::isValid(g_bgfx.world_view_row_uniform)) {
-		bgfx::destroy(g_bgfx.world_view_row_uniform);
-		g_bgfx.world_view_row_uniform = BGFX_INVALID_HANDLE;
-	}
-	if (bgfx::isValid(g_bgfx.texgen_state_uniform)) {
-		bgfx::destroy(g_bgfx.texgen_state_uniform);
-		g_bgfx.texgen_state_uniform = BGFX_INVALID_HANDLE;
-	}
-	if (bgfx::isValid(g_bgfx.texture_transform_row_uniform)) {
-		bgfx::destroy(g_bgfx.texture_transform_row_uniform);
-		g_bgfx.texture_transform_row_uniform = BGFX_INVALID_HANDLE;
-	}
-	if (bgfx::isValid(g_bgfx.direct_light_state_uniform)) {
-		bgfx::destroy(g_bgfx.direct_light_state_uniform);
-		g_bgfx.direct_light_state_uniform = BGFX_INVALID_HANDLE;
-	}
-	if (bgfx::isValid(g_bgfx.direct_light_position_uniform)) {
-		bgfx::destroy(g_bgfx.direct_light_position_uniform);
-		g_bgfx.direct_light_position_uniform = BGFX_INVALID_HANDLE;
-	}
-	if (bgfx::isValid(g_bgfx.direct_light_direction_uniform)) {
-		bgfx::destroy(g_bgfx.direct_light_direction_uniform);
-		g_bgfx.direct_light_direction_uniform = BGFX_INVALID_HANDLE;
-	}
-	if (bgfx::isValid(g_bgfx.direct_light_ambient_uniform)) {
-		bgfx::destroy(g_bgfx.direct_light_ambient_uniform);
-		g_bgfx.direct_light_ambient_uniform = BGFX_INVALID_HANDLE;
-	}
-	if (bgfx::isValid(g_bgfx.direct_light_diffuse_uniform)) {
-		bgfx::destroy(g_bgfx.direct_light_diffuse_uniform);
-		g_bgfx.direct_light_diffuse_uniform = BGFX_INVALID_HANDLE;
-	}
-	if (bgfx::isValid(g_bgfx.compatibility_vertex_buffer)) {
-		bgfx::destroy(g_bgfx.compatibility_vertex_buffer);
-		g_bgfx.compatibility_vertex_buffer = BGFX_INVALID_HANDLE;
-	}
-	if (bgfx::isValid(g_bgfx.compatibility_index_buffer)) {
-		bgfx::destroy(g_bgfx.compatibility_index_buffer);
-		g_bgfx.compatibility_index_buffer = BGFX_INVALID_HANDLE;
-	}
-	BgfxCompat_Shutdown_Texture_System();
-
-	bgfx::frame();
-	bgfx::shutdown();
-
-#if defined(__linux__)
-	if (g_bgfx.gl_context != nullptr) {
-		SDL_GL_DestroyContext(g_bgfx.gl_context);
-		g_bgfx.gl_context = nullptr;
-	}
-#endif
-
-	g_bgfx = BgfxDx8WrapperState();
-}
-
-} // namespace
-
-void DX8Wrapper::Refresh_Render_Device_Desc(void)
-{
-	g_bgfx.render_device_desc = RenderDeviceDescClass();
-	g_bgfx.render_device_desc.reset_resolution_list();
-	g_bgfx.render_device_desc.set_device_name("bgfx");
-	const char *video_driver = SDL_GetCurrentVideoDriver();
-	g_bgfx.render_device_desc.set_driver_name(video_driver != nullptr ? video_driver : "SDL3");
-	g_bgfx.render_device_desc.set_driver_version("bootstrap");
-	g_bgfx.render_device_desc.add_resolution(g_bgfx.window_width, g_bgfx.window_height, g_bgfx.bit_depth);
-}
-
-bool DX8Wrapper::Init(void *hwnd, bool lite)
-{
-	if (lite) {
-		return true;
-	}
-
-	g_bgfx.window = reinterpret_cast<SDL_Window *>(hwnd);
-	g_bgfx.reset_flags = Compose_Reset_Flags();
-	return Initialize_Bgfx(g_bgfx.window);
+	return(true);
 }
 
 void DX8Wrapper::Shutdown(void)
 {
-	Shutdown_Bgfx();
-}
+	if (D3DDevice) {
+		Set_Render_Target ((IDirect3DSurface8 *)NULL);
 
-void DX8Wrapper::Begin_Scene(void)
-{
-	if (!g_bgfx.initialized) {
-		return;
+		// If in full screen, reset device to windowed mode before releasing it. This is an attempt to
+		// fix some random bugs and crashes on some devices.
+#if (0)
+		if (!IsWindowed) {
+			IsWindowed=true;
+			ResolutionWidth=DEFAULT_RESOLUTION_WIDTH;
+			ResolutionHeight=DEFAULT_RESOLUTION_HEIGHT;
+			_PresentParameters.BackBufferWidth = ResolutionWidth;
+			_PresentParameters.BackBufferHeight = ResolutionHeight;
+			_PresentParameters.BackBufferCount = 1;
+			_PresentParameters.MultiSampleType = D3DMULTISAMPLE_NONE;
+			_PresentParameters.SwapEffect = D3DSWAPEFFECT_DISCARD;
+			_PresentParameters.Windowed = IsWindowed;
+			_PresentParameters.EnableAutoDepthStencil = FALSE;
+			_PresentParameters.Flags=0;
+			_PresentParameters.BackBufferFormat = DesktopMode.Format;
+			Reset_Device();
+		}
+#endif //(0)
+		Release_Device();
 	}
 
-	const bgfx::ViewId view_id = Allocate_Scene_View();
-	Sync_Backbuffer(false);
-	Ensure_Gui_Resources();
-	bgfx::setViewName(view_id, g_bgfx.render_target != nullptr ? "BootstrapRT" : "Bootstrap");
-	bgfx::setViewClear(view_id, g_bgfx.clear_flags, g_bgfx.clear_color, g_bgfx.clear_depth, g_bgfx.clear_stencil);
-	bgfx::setViewMode(view_id, bgfx::ViewMode::Sequential);
-	bgfx::setViewTransform(view_id, kIdentityMatrix, kIdentityMatrix);
-	Apply_View_Target();
-	bgfx::touch(view_id);
-	g_bgfx.draw_calls = 0;
-}
+	if (D3DInterface) {
+		D3DInterface->Release();
+		D3DInterface=NULL;
 
-void DX8Wrapper::Set_Fog(bool enable, const Vector3 &color, float start, float end)
-{
-	_Fog_Enable_State() = enable;
-	_Fog_Color_State() = color;
-	_Fog_Start_State() = std::max(start, 0.0f);
-	_Fog_End_State() = std::max(end, _Fog_Start_State());
-}
-
-void DX8Wrapper::End_Scene(bool flip_frame)
-{
-	if (!g_bgfx.initialized) {
-		return;
+	}
+	for (int i = 0; i < MAX_TEXTURE_STAGES; i++) {
+		if (Textures[i]) {
+			Textures[i]->Release();
+			Textures[i] = NULL;
+		}
 	}
 
-	g_bgfx.scene_active = false;
-	if (flip_frame) {
-		const Uint64 end_scene_ticks = WWPerfMonClass::Begin_Scope();
-		bgfx::frame(BGFX_FRAME_NONE);
-		Reset_Compatibility_Submit_Scratch();
-		if (WWPerfMonClass::Is_Enabled()) {
-			const bgfx::Stats *stats = bgfx::getStats();
-			if (stats != nullptr) {
-				const double cpu_frame_ms = stats->cpuTimerFreq > 0
-					? (1000.0 * static_cast<double>(stats->cpuTimeFrame) / static_cast<double>(stats->cpuTimerFreq))
-					: 0.0;
-				const double gpu_frame_ms = stats->gpuTimerFreq > 0
-					? (1000.0 * static_cast<double>(stats->gpuTimeEnd - stats->gpuTimeBegin) / static_cast<double>(stats->gpuTimerFreq))
-					: 0.0;
-				const double wait_render_ms = stats->cpuTimerFreq > 0
-					? (1000.0 * static_cast<double>(stats->waitRender) / static_cast<double>(stats->cpuTimerFreq))
-					: 0.0;
-				const double wait_submit_ms = stats->cpuTimerFreq > 0
-					? (1000.0 * static_cast<double>(stats->waitSubmit) / static_cast<double>(stats->cpuTimerFreq))
-					: 0.0;
-				WWPerfMonClass::Record_Bgfx_Frame_Timing(
-					cpu_frame_ms,
-					gpu_frame_ms,
-					wait_render_ms,
-					wait_submit_ms,
-					stats->numDraw);
+	_RenderDeviceNameTable.Delete_All();
+	_RenderDeviceShortNameTable.Delete_All();
+	_RenderDeviceDescriptionTable.Delete_All();
+
+	if (D3D8Lib) {
+		FreeLibrary(D3D8Lib);
+		D3D8Lib = NULL;
+	}
+
+	IsInitted = false;
+}
+
+void DX8Wrapper::Do_Onetime_Device_Dependent_Inits(void)
+{
+	/*
+	** Set Global render states (some of which depend on caps)
+	*/
+	Compute_Caps(D3DFormat_To_WW3DFormat(_PresentParameters.BackBufferFormat));
+
+   /*
+	** Initalize any other subsystems inside of WW3D
+	*/
+	MissingTexture::_Init();
+	TextureClass::_Init_Filters((TextureClass::TextureFilterMode)WW3D::Get_Texture_Filter());
+	TheDX8MeshRenderer.Init();
+	BoxRenderObjClass::Init();
+	VertexMaterialClass::Init();
+	PointGroupClass::_Init(); // This needs the VertexMaterialClass to be initted
+	ShatterSystem::Init();
+	TextureLoader::Init();
+
+	Set_Default_Global_Render_States();
+}
+
+inline DWORD F2DW(float f) { return *((unsigned*)&f); }
+void DX8Wrapper::Set_Default_Global_Render_States(void)
+{
+	DX8_THREAD_ASSERT();
+	const D3DCAPS8 &caps = Get_Current_Caps()->Get_DX8_Caps();
+
+	Set_DX8_Render_State(D3DRS_RANGEFOGENABLE, (caps.RasterCaps & D3DPRASTERCAPS_FOGRANGE) ? TRUE : FALSE);
+	Set_DX8_Render_State(D3DRS_FOGTABLEMODE, D3DFOG_NONE);
+	Set_DX8_Render_State(D3DRS_FOGVERTEXMODE, D3DFOG_LINEAR);
+	Set_DX8_Render_State(D3DRS_SPECULARMATERIALSOURCE, D3DMCS_MATERIAL);
+	Set_DX8_Render_State(D3DRS_COLORVERTEX, TRUE);
+	Set_DX8_Render_State(D3DRS_ZBIAS,0);
+	Set_DX8_Texture_Stage_State(1, D3DTSS_BUMPENVLSCALE, F2DW(1.0f));
+	Set_DX8_Texture_Stage_State(1, D3DTSS_BUMPENVLOFFSET, F2DW(0.0f));
+	Set_DX8_Texture_Stage_State(0, D3DTSS_BUMPENVMAT00,F2DW(1.0f));
+	Set_DX8_Texture_Stage_State(0, D3DTSS_BUMPENVMAT01,F2DW(0.0f));
+	Set_DX8_Texture_Stage_State(0, D3DTSS_BUMPENVMAT10,F2DW(0.0f));
+	Set_DX8_Texture_Stage_State(0, D3DTSS_BUMPENVMAT11,F2DW(1.0f));
+
+//	Set_DX8_Render_State(D3DRS_CULLMODE, D3DCULL_CW);
+	// Set dither mode here?
+}
+
+void DX8Wrapper::Invalidate_Cached_Render_States(void)
+{
+	int a;
+	for (a=0;a<sizeof(RenderStates)/sizeof(unsigned);++a) {
+		RenderStates[a]=0x12345678;
+	}
+	for (a=0;a<MAX_TEXTURE_STAGES;++a) {
+		for (int b=0; b<32;b++) {
+			TextureStageStates[a][b]=0x12345678;
+		}
+		Textures[a]=NULL;
+	}
+	ShaderClass::Invalidate();
+}
+
+void DX8Wrapper::Do_Onetime_Device_Dependent_Shutdowns(void)
+{
+	/*
+	** Shutdown ww3d systems
+	*/
+	if (render_state.vertex_buffer) render_state.vertex_buffer->Release_Engine_Ref();
+	REF_PTR_RELEASE(render_state.vertex_buffer);
+	if (render_state.index_buffer) render_state.index_buffer->Release_Engine_Ref();
+	REF_PTR_RELEASE(render_state.index_buffer);
+	REF_PTR_RELEASE(render_state.material);
+	for (unsigned i=0;i<MAX_TEXTURE_STAGES;++i) REF_PTR_RELEASE(render_state.Textures[i]);
+
+	TextureLoader::Deinit();
+	SortingRendererClass::Deinit();
+	DynamicVBAccessClass::_Deinit();
+	DynamicIBAccessClass::_Deinit();
+	ShatterSystem::Shutdown();
+	PointGroupClass::_Shutdown();
+	VertexMaterialClass::Shutdown();
+	BoxRenderObjClass::Shutdown();
+	TheDX8MeshRenderer.Shutdown();
+	MissingTexture::_Deinit();
+
+	if (CurrentCaps) {
+		delete CurrentCaps;
+		CurrentCaps=NULL;
+	}
+}
+
+
+bool DX8Wrapper::Create_Device(void)
+{
+	WWASSERT(D3DDevice == NULL);	// for now, once you've created a device, you're stuck with it!
+
+	D3DCAPS8 caps;
+	if (FAILED( D3DInterface->GetDeviceCaps(
+		CurRenderDevice,
+		WW3D_DEVTYPE,
+		&caps))) {
+		return false;
+	}
+
+	::ZeroMemory(&CurrentAdapterIdentifier, sizeof(D3DADAPTER_IDENTIFIER8));
+	if (FAILED( D3DInterface->GetAdapterIdentifier(CurRenderDevice,D3DENUM_NO_WHQL_LEVEL,&CurrentAdapterIdentifier))) {
+		return false;
+	}
+
+	unsigned vertex_processing_type=D3DCREATE_SOFTWARE_VERTEXPROCESSING;
+	if (caps.DevCaps&D3DDEVCAPS_HWTRANSFORMANDLIGHT) {
+		vertex_processing_type=D3DCREATE_MIXED_VERTEXPROCESSING;
+	}
+
+#ifdef CREATE_DX8_MULTI_THREADED
+	vertex_processing_type|=D3DCREATE_MULTITHREADED;
+	_DX8SingleThreaded=false;
+#else
+	_DX8SingleThreaded=true;
+#endif
+
+#ifdef CREATE_DX8_FPU_PRESERVE
+	vertex_processing_type|=D3DCREATE_FPU_PRESERVE;
+#endif
+
+	// JANI HACK! Some objects flicker on ATI Radeons. This can be fixed by locking the back buffer before flipping.
+	// For this to work the back buffers need to be created as lockable!
+	DX8Caps dx8_caps(
+		D3DInterface,
+		caps, 
+		D3DFormat_To_WW3DFormat(_PresentParameters.BackBufferFormat), 
+		CurrentAdapterIdentifier);
+	if (dx8_caps.Get_Vendor()==DX8Caps::VENDOR_ATI) {
+		_PresentParameters.Flags=D3DPRESENTFLAG_LOCKABLE_BACKBUFFER;
+	}
+
+	HRESULT hr = D3DInterface->CreateDevice(
+		CurRenderDevice,
+		WW3D_DEVTYPE,
+		_Hwnd,
+		vertex_processing_type,
+		&_PresentParameters,
+		&D3DDevice );
+
+	if (FAILED(hr)) {
+		// The device selection may fail because the device lied that it supports 32 bit zbuffer with 16 bit
+		// display. This happens at least on Voodoo2.
+
+		if ((_PresentParameters.BackBufferFormat==D3DFMT_R5G6B5 ||
+			_PresentParameters.BackBufferFormat==D3DFMT_X1R5G5B5 ||
+			_PresentParameters.BackBufferFormat==D3DFMT_A1R5G5B5) &&
+			(_PresentParameters.AutoDepthStencilFormat==D3DFMT_D32 ||
+			_PresentParameters.AutoDepthStencilFormat==D3DFMT_D24S8 ||
+			_PresentParameters.AutoDepthStencilFormat==D3DFMT_D24X8)) {
+
+				_PresentParameters.AutoDepthStencilFormat=D3DFMT_D16;
+				hr = D3DInterface->CreateDevice(
+					CurRenderDevice,
+					WW3D_DEVTYPE,
+					_Hwnd,
+					vertex_processing_type,
+					&_PresentParameters,
+					&D3DDevice );
+				if (FAILED(hr)) {
+					return false;
+				}
 			}
 		}
-		WWPerfMonClass::End_Scope(WWPERF_SECTION_END_SCENE, end_scene_ticks);
-		Reset_View_Sequence();
+
+	/*
+	** Initialize all subsystems
+	*/
+	Do_Onetime_Device_Dependent_Inits();
+	return true;
+}
+
+bool DX8Wrapper::Reset_Device(void)
+{
+	WWDEBUG_SAY(("Resetting device.\n"));
+	DX8_THREAD_ASSERT();
+	if ((IsInitted) && (D3DDevice != NULL)) {
+		// Release all non-MANAGED stuff
+		WW3D::_Invalidate_Textures();
+
+		Set_Vertex_Buffer (NULL);
+		Set_Index_Buffer (NULL, 0);
+		DynamicVBAccessClass::_Deinit();
+		DynamicIBAccessClass::_Deinit();
+		DX8TextureManagerClass::Release_Textures();
+
+		// Reset frame count to reflect the flipping chain being reset by Reset()
+		FrameCount = 0;
+
+		DX8CALL(Reset(&_PresentParameters));
+		DX8TextureManagerClass::Recreate_Textures();
+		Invalidate_Cached_Render_States();
+		Set_Default_Global_Render_States();
+		WWDEBUG_SAY(("Device reset completed\n"));
+		return true;
+	}
+	WWDEBUG_SAY(("Device reset failed\n"));
+	return false;
+}
+
+void DX8Wrapper::Release_Device(void)
+{
+	if (D3DDevice) {
+		/*
+		** Release the current vertex and index buffers
+		*/
+		if (render_state.vertex_buffer) render_state.vertex_buffer->Release_Engine_Ref();
+		REF_PTR_RELEASE(render_state.vertex_buffer);
+		if (render_state.index_buffer) render_state.index_buffer->Release_Engine_Ref();
+		REF_PTR_RELEASE(render_state.index_buffer);
+
+		/*
+		** Shutdown all subsystems
+		*/
+		Do_Onetime_Device_Dependent_Shutdowns();
+
+		/*
+		** Release the device
+		*/
+		D3DDevice->Release();
+		D3DDevice=NULL;
 	}
 }
 
-void DX8Wrapper::Flip_To_Primary(void)
+void DX8Wrapper::Enumerate_Devices()
 {
-}
+	DX8_Assert();
 
-void DX8Wrapper::Clear(bool clear_color, bool clear_z_stencil, const Vector3 &color, float z, uint32_t stencil)
-{
-	g_bgfx.clear_flags = BGFX_CLEAR_NONE;
-	if (clear_color) {
-		g_bgfx.clear_flags |= BGFX_CLEAR_COLOR;
-	}
-	if (clear_z_stencil) {
-		g_bgfx.clear_flags |= BGFX_CLEAR_DEPTH;
-	}
-	g_bgfx.clear_color = ARGB_To_RGBA(Convert_Color(color, 1.0f));
-	g_bgfx.clear_depth = z;
-	g_bgfx.clear_stencil = static_cast<uint8_t>(stencil & 0xFFu);
+	int adapter_count = D3DInterface->GetAdapterCount();
+	for (int adapter_index=0; adapter_index<adapter_count; adapter_index++) {
 
-	if (g_bgfx.initialized && g_bgfx.scene_active) {
-		bgfx::setViewClear(g_bgfx.current_view_id, g_bgfx.clear_flags, g_bgfx.clear_color, g_bgfx.clear_depth, g_bgfx.clear_stencil);
-	}
-}
+		D3DADAPTER_IDENTIFIER8 id;
+		::ZeroMemory(&id, sizeof(D3DADAPTER_IDENTIFIER8));
+		HRESULT res = D3DInterface->GetAdapterIdentifier(adapter_index,D3DENUM_NO_WHQL_LEVEL,&id);
 
-void DX8Wrapper::Set_Viewport(const RenderViewportClass &viewport)
-{
-	g_bgfx.viewport = viewport;
-	if (g_bgfx.initialized && g_bgfx.scene_active) {
-		Apply_View_Target();
-		Apply_View_Rect();
+		if (res == D3D_OK) {
+
+			/*
+			** Set up the render device description
+			** TODO: Fill in more fields of the render device description?  (need some lookup tables)
+			*/
+			RenderDeviceDescClass desc;
+			desc.set_device_name(id.Description);
+			desc.set_driver_name(id.Driver);
+
+			char buf[64];
+			sprintf(buf,"%d.%d.%d.%d", //"%04x.%04x.%04x.%04x",
+				HIWORD(id.DriverVersion.HighPart),
+				LOWORD(id.DriverVersion.HighPart),
+				HIWORD(id.DriverVersion.LowPart),
+				LOWORD(id.DriverVersion.LowPart));
+
+			desc.set_driver_version(buf);
+
+			D3DInterface->GetDeviceCaps(adapter_index,WW3D_DEVTYPE,&desc.Caps);
+			D3DInterface->GetAdapterIdentifier(adapter_index,D3DENUM_NO_WHQL_LEVEL,&desc.AdapterIdentifier);
+
+			DX8Caps dx8caps(D3DInterface,desc.Caps,WW3D_FORMAT_UNKNOWN,desc.AdapterIdentifier);
+
+			/*
+			** Enumerate the resolutions
+			*/
+			desc.reset_resolution_list();
+			int mode_count = D3DInterface->GetAdapterModeCount(adapter_index);
+			for (int mode_index=0; mode_index<mode_count; mode_index++) {
+				D3DDISPLAYMODE d3dmode;
+				::ZeroMemory(&d3dmode, sizeof(D3DDISPLAYMODE));
+				HRESULT res = D3DInterface->EnumAdapterModes(adapter_index,mode_index,&d3dmode);
+
+				if (res == D3D_OK) {
+					int bits = 0;
+					switch (d3dmode.Format)
+					{
+						case D3DFMT_R8G8B8:
+						case D3DFMT_A8R8G8B8:
+						case D3DFMT_X8R8G8B8:		bits = 32; break;
+
+						case D3DFMT_R5G6B5:
+						case D3DFMT_X1R5G5B5:		bits = 16; break;
+					}
+
+					// Some cards fail in certain modes, DX8Caps keeps list of those.
+					if (!dx8caps.Is_Valid_Display_Format(d3dmode.Width,d3dmode.Height,D3DFormat_To_WW3DFormat(d3dmode.Format))) {
+						bits=0;
+					}
+
+					/*
+					** If we recognize the format, add it to the list
+					** TODO: should we handle more formats?  will any cards report more than 24 or 16 bit?
+					*/
+					if (bits != 0) {
+						desc.add_resolution(d3dmode.Width,d3dmode.Height,bits);
+					}
+				}
+			}
+
+			// IML: If the device has one or more valid resolutions add it to the device list.
+			// NOTE: Testing has shown that there are drivers with zero resolutions.
+			if (desc.Enumerate_Resolutions().Count() > 0) {
+
+				/*
+				** Set up the device name
+				*/
+				StringClass device_name(id.Description,true);
+				_RenderDeviceNameTable.Add(device_name);
+				_RenderDeviceShortNameTable.Add(device_name);	// for now, just add the same name to the "pretty name table"
+
+				/*
+				** Add the render device to our table
+				*/
+				_RenderDeviceDescriptionTable.Add(desc);
+			}
+		}
 	}
 }
 
 bool DX8Wrapper::Set_Any_Render_Device(void)
 {
-	return g_bgfx.initialized;
-}
-
-bool DX8Wrapper::Set_Render_Device(const char *dev_name, int width, int height, int bits, int windowed, bool resize_window)
-{
-	if (dev_name != nullptr && std::strcmp(dev_name, g_bgfx.render_device_desc.Get_Device_Name()) != 0) {
-		return false;
+	// Then fullscreen
+	for (int dev_number = 0; dev_number < _RenderDeviceNameTable.Count(); dev_number++) {
+		if (Set_Render_Device(dev_number,-1,-1,-1,0,false)) {
+			return true;
+		}
 	}
 
-	return Set_Device_Resolution(width, height, bits, windowed, resize_window);
+	// Try windowed first
+	for (dev_number = 0; dev_number < _RenderDeviceNameTable.Count(); dev_number++) {
+		if (Set_Render_Device(dev_number,-1,-1,-1,1,false)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool DX8Wrapper::Set_Render_Device
+(
+	const char * dev_name,
+	int width,
+	int height,
+	int bits,
+	int windowed,
+	bool resize_window
+)
+{
+	for ( int dev_number = 0; dev_number < _RenderDeviceNameTable.Count(); dev_number++) {
+		if ( strcmp( dev_name, _RenderDeviceNameTable[dev_number]) == 0) {
+			return Set_Render_Device( dev_number, width, height, bits, windowed, resize_window );
+		}
+
+		if ( strcmp( dev_name, _RenderDeviceShortNameTable[dev_number]) == 0) {
+			return Set_Render_Device( dev_number, width, height, bits, windowed, resize_window );
+		}
+	}
+	return false;
 }
 
 bool DX8Wrapper::Set_Render_Device(int dev, int width, int height, int bits, int windowed, bool resize_window)
 {
-	if (dev > 0) {
-		return false;
+	WWASSERT(IsInitted);
+	WWASSERT(dev >= -1);
+	WWASSERT(dev < _RenderDeviceNameTable.Count());
+
+	/*
+	** If user has never selected a render device, start out with device 0
+	*/
+	if ((CurRenderDevice == -1) && (dev == -1)) {
+		CurRenderDevice = 0;
+	} else if (dev != -1) {
+		CurRenderDevice = dev;
 	}
 
-	return Set_Device_Resolution(width, height, bits, windowed, resize_window);
+	/*
+	** If user doesn't want to change res, set the res variables to match the
+	** current resolution
+	*/
+	if (width != -1)		ResolutionWidth = width;
+	if (height != -1)		ResolutionHeight = height;
+
+	// Initialize Render2DClass Screen Resolution
+	Render2DClass::Set_Screen_Resolution( RectClass( 0, 0, ResolutionWidth, ResolutionHeight ) );
+
+	if (bits != -1)		BitDepth = bits;
+	if (windowed != -1)	IsWindowed = (windowed != 0);
+
+	WWDEBUG_SAY(("Attempting Set_Render_Device: name: %s, width: %d, height: %d, windowed: %d\r\n",
+		_RenderDeviceNameTable[CurRenderDevice],ResolutionWidth,ResolutionHeight,(IsWindowed ? 1 : 0)));
+
+	WWASSERT(D3DDevice == NULL);
+
+	/*
+	** Initialize values for D3DPRESENT_PARAMETERS members.
+	*/
+	::ZeroMemory(&_PresentParameters, sizeof(D3DPRESENT_PARAMETERS));
+
+	_PresentParameters.BackBufferWidth = ResolutionWidth;
+	_PresentParameters.BackBufferHeight = ResolutionHeight;
+	_PresentParameters.BackBufferCount = IsWindowed ? 1 : 2;
+
+	_PresentParameters.MultiSampleType = D3DMULTISAMPLE_NONE;
+	_PresentParameters.SwapEffect = IsWindowed ? D3DSWAPEFFECT_DISCARD : D3DSWAPEFFECT_FLIP;		// Shouldn't this be D3DSWAPEFFECT_FLIP?
+	_PresentParameters.hDeviceWindow = _Hwnd;
+	_PresentParameters.Windowed = IsWindowed;
+
+	_PresentParameters.EnableAutoDepthStencil = TRUE;				// Driver will attempt to match Z-buffer depth
+	_PresentParameters.Flags=0;											// We're not going to lock the backbuffer
+
+	_PresentParameters.FullScreen_PresentationInterval = D3DPRESENT_INTERVAL_DEFAULT;
+	_PresentParameters.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
+
+	/*
+	** Set up the buffer formats.  Several issues here:
+	** - if in windowed mode, the backbuffer must use the current display format.
+	** - the depth buffer must use
+	*/
+
+	::ZeroMemory(&DesktopMode, sizeof(D3DDISPLAYMODE));
+	D3DInterface->GetAdapterDisplayMode( CurRenderDevice, &DesktopMode );
+	_PresentParameters.BackBufferFormat = DesktopMode.Format;
+
+	if (IsWindowed) {
+		WWDEBUG_SAY(("Initializing windowed mode\r\n"));
+
+// 10/23/01 - Denzil - DX window initialization
+		/*
+		** Enforce a required set of window styles and size if the main window
+		** IS NOT A CHILD WINDOW.  :)
+		*/
+		if ((::GetWindowLong(_Hwnd, GWL_STYLE) & WS_CHILD) == 0) {
+			::SetWindowLong(_Hwnd, GWL_STYLE, WS_SYSMENU|WS_CAPTION|WS_MINIMIZEBOX|WS_CLIPCHILDREN);
+
+			// Always resize the window to the desired resolution in windowed mode.
+			resize_window = true;
+		}
+// End Denzil - DX window initialzaion
+
+		// In windowed mode, define the bitdepth from desktop mode (as it can't be changed)
+		switch (_PresentParameters.BackBufferFormat) {
+		case D3DFMT_X8R8G8B8:
+		case D3DFMT_A8R8G8B8:
+		case D3DFMT_R8G8B8: BitDepth=32; break;
+		case D3DFMT_A4R4G4B4:
+		case D3DFMT_A1R5G5B5:
+		case D3DFMT_R5G6B5: BitDepth=16; break;
+		case D3DFMT_L8:
+		case D3DFMT_A8:
+		case D3DFMT_P8: BitDepth=8; break;
+		default:
+			// Unknown backbuffer format probably means the device can't do windowed
+			return false;
+		}
+
+		WWDEBUG_SAY(("Using buffer format: %d\r\n",_PresentParameters.BackBufferFormat));
+
+		/*
+		** Find an appropriate Z buffer
+		*/
+		if (!Find_Z_Mode(_PresentParameters.BackBufferFormat,_PresentParameters.BackBufferFormat,&_PresentParameters.AutoDepthStencilFormat))
+		{
+			// If opening 32 bit mode failed, try 16 bit, even if the desktop happens to be 32 bit
+			if (BitDepth==32) {
+				WWDEBUG_SAY(("Failed to find a 32 bit mode, trying 16 bit\r\n"));
+				BitDepth=16;
+				_PresentParameters.BackBufferFormat=D3DFMT_R5G6B5;
+				if (!Find_Z_Mode(_PresentParameters.BackBufferFormat,_PresentParameters.BackBufferFormat,&_PresentParameters.AutoDepthStencilFormat)) {
+					_PresentParameters.AutoDepthStencilFormat=D3DFMT_UNKNOWN;
+				}
+			}
+			else {
+				_PresentParameters.AutoDepthStencilFormat=D3DFMT_UNKNOWN;
+			}
+		}
+
+	} else {
+
+// 10/23/01 - Denzil - DX Window initialization
+		// For fullscreen set the window style to WS_POPUP (Recommended in DX docs)
+		SetWindowLong(_Hwnd, GWL_STYLE, WS_POPUP);
+
+		// Set fullscreen window position to top left and resize to cover entire display.
+		// Recommended in DX docs to prevent other windows on the desktop from attempting
+		// to repaint. This also prevents the OS from spending time calculating invalid
+		// rects for windows that will never been seen.
+		SetWindowPos(_Hwnd, HWND_TOPMOST, 0, 0,
+			GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN),
+			SWP_SHOWWINDOW|SWP_NOCOPYBITS);
+
+		// We already resized the window
+		resize_window = false;
+// End Denzil - DX window initialization
+
+		WWDEBUG_SAY(("Initializing full-screen mode\r\n"));
+
+		/*
+		** Try to find a mode that matches the user's desired bit-depth.
+		*/
+		Find_Color_And_Z_Mode(ResolutionWidth,ResolutionHeight,BitDepth,
+			&_PresentParameters.BackBufferFormat,&_PresentParameters.AutoDepthStencilFormat);
+
+	}
+
+#ifdef _WINDOWS
+	// PWG 4/13/2000 - changed so that if you say to resize the window it resizes
+	// regardless of whether its windowed or not as OpenGL resizes its self around
+	// the caption and edges of the window type you provide, so its important to
+	// push the client area to be the size you really want.
+	// if ( resize_window && windowed ) {
+	if (resize_window) {
+
+		// Get the current dimensions of the 'render area' of the window
+		RECT rect = { 0 };
+		::GetClientRect (_Hwnd, &rect);
+
+#if(0) // Denzil - DX Window initialization
+		// Is the window the correct size for this resolution?
+		if ((rect.right-rect.left) != ResolutionWidth ||
+			 (rect.bottom-rect.top) != ResolutionHeight) {
+
+			// Calculate what the main window's bounding rectangle should be to
+			// accomodate this resolution
+			rect.left = 0;
+			rect.top = 0;
+			rect.right = ResolutionWidth;
+			rect.bottom = ResolutionHeight;
+			DWORD dwstyle = ::GetWindowLong (_Hwnd, GWL_STYLE);
+
+			AdjustWindowRect (&rect, dwstyle, FALSE);
+
+			// Resize the window to fit this resolution
+			::SetWindowPos (_Hwnd,
+								 NULL,
+								 0,
+								 0,
+								 rect.right-rect.left,
+								 rect.bottom-rect.top,
+								 SWP_NOZORDER | SWP_NOMOVE);
+		}
+#else
+		// Adjust the main window's client area to accomodate the resolution
+		DWORD dwstyle = ::GetWindowLong(_Hwnd, GWL_STYLE);
+		DWORD dwexstyle = ::GetWindowLong(_Hwnd, GWL_EXSTYLE);
+
+		rect.right = ResolutionWidth;
+		rect.bottom = ResolutionHeight;
+
+		::AdjustWindowRectEx(&rect, dwstyle, (::GetMenu(_Hwnd) != NULL), dwexstyle);
+
+		::SetWindowPos(_Hwnd, HWND_TOP, 0, 0,
+				(rect.right - rect.left), (rect.bottom - rect.top),
+				SWP_SHOWWINDOW|SWP_NOCOPYBITS);
+#endif
+	}
+#endif
+
+	/*
+	** Time to actually create the device.
+	*/
+	if (_PresentParameters.AutoDepthStencilFormat==D3DFMT_UNKNOWN) {
+		if (BitDepth==32) {
+			_PresentParameters.AutoDepthStencilFormat=D3DFMT_D32;
+		}
+		else {
+			_PresentParameters.AutoDepthStencilFormat=D3DFMT_D16;
+		}
+	}
+	return Create_Device();
 }
 
 bool DX8Wrapper::Set_Next_Render_Device(void)
 {
-	return g_bgfx.initialized;
-}
-
-int DX8Wrapper::Get_Render_Device_Count(void)
-{
-	return 1;
-}
-
-int DX8Wrapper::Get_Render_Device(void)
-{
-	return 0;
-}
-
-const char *DX8Wrapper::Get_Render_Device_Name(int)
-{
-	return g_bgfx.render_device_desc.Get_Device_Name();
-}
-
-const RenderDeviceDescClass &DX8Wrapper::Get_Render_Device_Desc(int)
-{
-	return g_bgfx.render_device_desc;
-}
-
-bool DX8Wrapper::Set_Device_Resolution(int width, int height, int bits, int windowed, bool)
-{
-	if (bits > 0) {
-		g_bgfx.bit_depth = bits;
-		Refresh_Render_Device_Desc();
-	}
-
-	if (g_bgfx.window == nullptr) {
-		return false;
-	}
-
-	if (windowed != -1 && !SDL_SetWindowFullscreen(g_bgfx.window, windowed == 0)) {
-		return false;
-	}
-
-	if (width > 0 && height > 0 && !SDL_SetWindowSize(g_bgfx.window, width, height)) {
-		return false;
-	}
-
-	if (g_bgfx.initialized) {
-		return Sync_Backbuffer(true);
-	}
-
-	Query_Window_Size(g_bgfx.window, g_bgfx.window_width, g_bgfx.window_height);
-	Query_Window_Pixel_Size(g_bgfx.window, g_bgfx.width, g_bgfx.height);
-	Update_Windowed_State();
-	Refresh_Render_Device_Desc();
-	Render2DClass::Set_Screen_Resolution(RectClass(0, 0, g_bgfx.width, g_bgfx.height));
-	return true;
-}
-
-void DX8Wrapper::Get_Device_Resolution(int &width, int &height, int &bits, bool &windowed)
-{
-	width = g_bgfx.window_width;
-	height = g_bgfx.window_height;
-	bits = g_bgfx.bit_depth;
-	windowed = g_bgfx.windowed;
-}
-
-void DX8Wrapper::Get_Render_Target_Resolution(int &width, int &height, int &bits, bool &windowed)
-{
-	if (g_bgfx.render_target != nullptr) {
-		width = std::max(g_bgfx.render_target->Get_Width(), 1);
-		height = std::max(g_bgfx.render_target->Get_Height(), 1);
-	} else {
-		width = g_bgfx.width;
-		height = g_bgfx.height;
-	}
-	bits = g_bgfx.bit_depth;
-	windowed = g_bgfx.windowed;
-}
-
-int DX8Wrapper::Get_Device_Resolution_Width(void)
-{
-	return g_bgfx.window_width;
-}
-
-int DX8Wrapper::Get_Device_Resolution_Height(void)
-{
-	return g_bgfx.window_height;
-}
-
-bool DX8Wrapper::Is_Windowed(void)
-{
-	return g_bgfx.windowed;
+	int new_dev = (CurRenderDevice + 1) % _RenderDeviceNameTable.Count();
+	return Set_Render_Device(new_dev);
 }
 
 bool DX8Wrapper::Toggle_Windowed(void)
 {
-	if (g_bgfx.window == nullptr) {
-		return false;
-	}
+#ifdef WW3D_DX8
+	// State OK?
+	assert (IsInitted);
+	if (IsInitted) {
 
-	if (!SDL_SetWindowFullscreen(g_bgfx.window, g_bgfx.windowed)) {
-		return false;
-	}
+		// Get information about the current render device's resolutions
+		const RenderDeviceDescClass &render_device = Get_Render_Device_Desc ();
+		const DynamicVectorClass<ResolutionDescClass> &resolutions = render_device.Enumerate_Resolutions ();
 
-	return !g_bgfx.initialized || Sync_Backbuffer(true);
+		// Loop through all the resolutions supported by the current device.
+		// If we aren't currently running under one of these resolutions,
+		// then we should probably		 to the closest resolution before
+		// toggling the windowed state.
+		int curr_res = -1;
+		for (int res = 0;
+		     (res < resolutions.Count ()) && (curr_res == -1);
+			  res ++) {
+
+			// Is this the resolution we are looking for?
+			if ((resolutions[res].Width == ResolutionWidth) &&
+				 (resolutions[res].Height == ResolutionHeight) &&
+				 (resolutions[res].BitDepth == BitDepth)) {
+				curr_res = res;
+			}
+		}
+
+		if (curr_res == -1) {
+
+			// We don't match any of the standard resolutions,
+			// so set the first resolution and toggle the windowed state.
+			return Set_Device_Resolution (resolutions[0].Width,
+								 resolutions[0].Height,
+								 resolutions[0].BitDepth,
+								 !IsWindowed, true);
+		} else {
+
+			// Toggle the windowed state
+			return Set_Device_Resolution (-1, -1, -1, !IsWindowed, true);
+		}
+	}
+#endif //WW3D_DX8
+
+	return false;
 }
 
 void DX8Wrapper::Set_Swap_Interval(int swap)
 {
-	g_bgfx.swap_interval = std::max(swap, 0);
-	if (g_bgfx.initialized) {
-		Sync_Backbuffer(true);
+	switch (swap) {
+		case 0: _PresentParameters.FullScreen_PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE; break;
+		case 1: _PresentParameters.FullScreen_PresentationInterval = D3DPRESENT_INTERVAL_ONE ; break;
+		case 2: _PresentParameters.FullScreen_PresentationInterval = D3DPRESENT_INTERVAL_TWO; break;
+		case 3: _PresentParameters.FullScreen_PresentationInterval = D3DPRESENT_INTERVAL_THREE; break;
+		default: _PresentParameters.FullScreen_PresentationInterval = D3DPRESENT_INTERVAL_ONE ; break;
 	}
+
+	Reset_Device();
 }
 
 int DX8Wrapper::Get_Swap_Interval(void)
 {
-	return g_bgfx.swap_interval;
+	return _PresentParameters.FullScreen_PresentationInterval;
 }
 
-void DX8Wrapper::Set_Texture_Bitdepth(int depth)
+int DX8Wrapper::Get_Render_Device_Count(void)
 {
-	g_bgfx.bit_depth = depth;
-	Refresh_Render_Device_Desc();
+	return _RenderDeviceNameTable.Count();
+
+}
+int DX8Wrapper::Get_Render_Device(void)
+{
+	assert(IsInitted);
+	return CurRenderDevice;
 }
 
-int DX8Wrapper::Get_Texture_Bitdepth(void)
+const RenderDeviceDescClass & DX8Wrapper::Get_Render_Device_Desc(int deviceidx)
 {
-	return g_bgfx.bit_depth;
-}
+	WWASSERT(IsInitted);
 
-void DX8Wrapper::Update_Window(void *hwnd)
-{
-	g_bgfx.window = reinterpret_cast<SDL_Window *>(hwnd);
-	if (g_bgfx.initialized) {
-		Sync_Backbuffer(true);
-	}
-}
-
-bool DX8Wrapper::Is_Initted()
-{
-	return g_bgfx.initialized;
-}
-
-bool DX8Wrapper::Registry_Save_Render_Device(const char *sub_key)
-{
-	return Registry_Save_Render_Device(sub_key, 0, g_bgfx.window_width, g_bgfx.window_height, g_bgfx.bit_depth, g_bgfx.windowed, g_bgfx.bit_depth);
-}
-
-bool DX8Wrapper::Registry_Save_Render_Device(const char *sub_key, int, int width, int height, int depth, bool windowed, int texture_depth)
-{
-	if (sub_key == nullptr) {
-		return false;
+	if ((deviceidx == -1) && (CurRenderDevice == -1)) {
+		CurRenderDevice = 0;
 	}
 
-	RegistryClass registry(sub_key);
-	if (!registry.Is_Valid()) {
-		return false;
+	// if the device index is -1 then we want the current device
+	if (deviceidx == -1) {
+		WWASSERT(CurRenderDevice >= 0);
+		WWASSERT(CurRenderDevice < _RenderDeviceNameTable.Count());
+		return _RenderDeviceDescriptionTable[CurRenderDevice];
 	}
 
-	registry.Set_String("RenderDeviceName", g_bgfx.render_device_desc.Get_Device_Name());
-	registry.Set_Int("RenderDeviceWidth", width > 0 ? width : g_bgfx.window_width);
-	registry.Set_Int("RenderDeviceHeight", height > 0 ? height : g_bgfx.window_height);
-	registry.Set_Int("RenderDeviceDepth", depth > 0 ? depth : g_bgfx.bit_depth);
-	registry.Set_Int("RenderDeviceWindowed", windowed ? 1 : 0);
-	registry.Set_Int("RenderDeviceTextureDepth", texture_depth > 0 ? texture_depth : g_bgfx.bit_depth);
-	return true;
+	// We can only ask for multiple device information if the devices
+	// have been detected.
+	WWASSERT(deviceidx >= 0);
+	WWASSERT(deviceidx < _RenderDeviceNameTable.Count());
+	return _RenderDeviceDescriptionTable[deviceidx];
 }
 
-bool DX8Wrapper::Registry_Load_Render_Device(const char *sub_key, bool resize_window)
+const char * DX8Wrapper::Get_Render_Device_Name(int device_index)
 {
-	char device[256] = {};
-	int width = g_bgfx.window_width;
-	int height = g_bgfx.window_height;
-	int depth = g_bgfx.bit_depth;
-	int windowed = g_bgfx.windowed ? 1 : 0;
-	int texture_depth = g_bgfx.bit_depth;
-
-	if (!Registry_Load_Render_Device(sub_key, device, sizeof(device), width, height, depth, windowed, texture_depth)) {
-		return Set_Any_Render_Device();
-	}
-
-	Set_Texture_Bitdepth(texture_depth);
-	return Set_Render_Device(device[0] != '\0' ? device : g_bgfx.render_device_desc.Get_Device_Name(), width, height, depth, windowed, resize_window);
+	device_index = device_index % _RenderDeviceShortNameTable.Count();
+	return _RenderDeviceShortNameTable[device_index];
 }
 
-bool DX8Wrapper::Registry_Load_Render_Device(const char *sub_key, char *device, int device_len, int &width, int &height, int &depth, int &windowed, int &texture_depth)
+bool DX8Wrapper::Set_Device_Resolution(int width,int height,int bits,int windowed, bool resize_window)
 {
-	if (sub_key == nullptr) {
-		return false;
-	}
+	if (D3DDevice != NULL) {
 
-	RegistryClass registry(sub_key);
-	if (!registry.Is_Valid()) {
-		return false;
-	}
-
-	char device_name[256] = {};
-	registry.Get_String("RenderDeviceName", device_name, sizeof(device_name), g_bgfx.render_device_desc.Get_Device_Name());
-	width = registry.Get_Int("RenderDeviceWidth", g_bgfx.window_width);
-	height = registry.Get_Int("RenderDeviceHeight", g_bgfx.window_height);
-	depth = registry.Get_Int("RenderDeviceDepth", g_bgfx.bit_depth);
-	windowed = registry.Get_Int("RenderDeviceWindowed", g_bgfx.windowed ? 1 : 0);
-	texture_depth = registry.Get_Int("RenderDeviceTextureDepth", g_bgfx.bit_depth);
-
-	if (device != nullptr && device_len > 0) {
-		std::snprintf(device, static_cast<size_t>(device_len), "%s", device_name);
-	}
-
-	return true;
-}
-
-void DX8Wrapper::Set_Transform(TransformSlot transform, const Matrix4 &m)
-{
-	switch (transform) {
-		case TRANSFORM_WORLD: g_bgfx.world = m; break;
-		case TRANSFORM_VIEW: g_bgfx.view = m; break;
-		case TRANSFORM_PROJECTION: g_bgfx.projection = m; break;
-		case TRANSFORM_TEXTURE0:
-		case static_cast<TransformSlot>(TRANSFORM_TEXTURE0 + 1):
-		{
-			const unsigned stage = static_cast<unsigned>(transform - TRANSFORM_TEXTURE0);
-			if (stage < MAX_TEXTURE_STAGES) {
-				g_bgfx.texture_transforms[stage] = m;
-			}
-			break;
+		if (width != -1) {
+			_PresentParameters.BackBufferWidth = ResolutionWidth = width;
 		}
-		default: break;
-	}
-}
-
-void DX8Wrapper::Set_Transform(TransformSlot transform, const Matrix3D &m)
-{
-	Set_Transform(transform, Matrix4(m));
-}
-
-void DX8Wrapper::Get_Transform(TransformSlot transform, Matrix4 &m)
-{
-	switch (transform) {
-		case TRANSFORM_WORLD: m = g_bgfx.world; break;
-		case TRANSFORM_VIEW: m = g_bgfx.view; break;
-		case TRANSFORM_PROJECTION: m = g_bgfx.projection; break;
-		case TRANSFORM_TEXTURE0:
-		case static_cast<TransformSlot>(TRANSFORM_TEXTURE0 + 1):
-		{
-			const unsigned stage = static_cast<unsigned>(transform - TRANSFORM_TEXTURE0);
-			if (stage < MAX_TEXTURE_STAGES) {
-				m = g_bgfx.texture_transforms[stage];
-			} else {
-				m.Make_Identity();
-			}
-			break;
+		if (height != -1) {
+			_PresentParameters.BackBufferHeight = ResolutionHeight = height;
 		}
-		default: m.Make_Identity(); break;
-	}
-}
-
-void DX8Wrapper::Set_Projection_Transform_With_Z_Bias(const Matrix4 &matrix, float, float)
-{
-	g_bgfx.projection = matrix;
-}
-
-void DX8Wrapper::Set_Vertex_Buffer(const VertexBufferClass *vb)
-{
-	g_bgfx.current_vb = vb;
-	g_bgfx.current_vb_type = vb != nullptr ? vb->Type() : BUFFER_TYPE_INVALID;
-	Bind_Current_Vertex_Buffer_Slice(0);
-}
-
-void DX8Wrapper::Set_Vertex_Buffer(const DynamicVBAccessClass &vba)
-{
-	g_bgfx.current_vb = vba.Get_Vertex_Buffer();
-	g_bgfx.current_vb_type = vba.Get_Type();
-	Bind_Current_Vertex_Buffer_Slice(vba.Get_Vertex_Buffer_Offset());
-}
-
-void DX8Wrapper::Set_Index_Buffer(const IndexBufferClass *ib, uint16_t index_base_offset)
-{
-	g_bgfx.index_base_offset = index_base_offset;
-	g_bgfx.current_ib = ib;
-	g_bgfx.current_ib_type = ib != nullptr ? ib->Type() : BUFFER_TYPE_INVALID;
-	Bind_Current_Index_Buffer_Slice(0);
-}
-
-void DX8Wrapper::Set_Index_Buffer(const DynamicIBAccessClass &iba, uint16_t index_base_offset)
-{
-	g_bgfx.index_base_offset = index_base_offset;
-	g_bgfx.current_ib = iba.Get_Index_Buffer();
-	g_bgfx.current_ib_type = iba.Get_Type();
-	Bind_Current_Index_Buffer_Slice(iba.Get_Index_Buffer_Offset());
-}
-
-void DX8Wrapper::Set_Index_Buffer_Index_Offset(unsigned offset)
-{
-	g_bgfx.index_base_offset = static_cast<uint16_t>(offset);
-}
-
-void DX8Wrapper::Draw_Triangles(unsigned, uint16_t start_index, uint16_t polygon_count, uint16_t min_vertex_index, uint16_t vertex_count)
-{
-	Submit_Primitives(start_index, polygon_count, min_vertex_index, vertex_count, false);
-}
-
-void DX8Wrapper::Draw_Triangles(uint16_t start_index, uint16_t polygon_count, uint16_t min_vertex_index, uint16_t vertex_count)
-{
-	Submit_Primitives(start_index, polygon_count, min_vertex_index, vertex_count, false);
-}
-
-void DX8Wrapper::Draw_Strip(uint16_t start_index, uint16_t polygon_count, uint16_t min_vertex_index, uint16_t vertex_count)
-{
-	if (g_bgfx.index_data == nullptr || polygon_count == 0) {
-		return;
-	}
-
-	Submit_Primitives(start_index, polygon_count, min_vertex_index, vertex_count, true);
-}
-
-void DX8Wrapper::Set_Texture(unsigned stage, TextureClass *texture)
-{
-	if (stage < MAX_TEXTURE_STAGES && g_bgfx.textures[stage] != texture) {
-		REF_PTR_SET(g_bgfx.textures[stage], texture);
-	}
-}
-
-void DX8Wrapper::Set_Material(const VertexMaterialClass *material)
-{
-	g_bgfx.material = material;
-	Apply_Material_Texture_State(material);
-}
-
-void DX8Wrapper::Set_Shader(const ShaderClass &shader)
-{
-	g_bgfx.shader = shader;
-}
-
-void DX8Wrapper::Set_DX8_Texture_Stage_State(unsigned stage, unsigned state, unsigned value)
-{
-	if (stage < MAX_TEXTURE_STAGES && state < 32) {
-		g_bgfx.texture_stage_states[stage][state] = value;
-	}
-}
-
-void DX8Wrapper::Set_DX8_Render_State(unsigned state, unsigned value)
-{
-	if (state < 256) {
-		g_bgfx.render_states[state] = value;
-	}
-}
-
-unsigned DX8Wrapper::Get_DX8_Render_State(unsigned state)
-{
-	return state < 256 ? g_bgfx.render_states[state] : 0;
-}
-
-void DX8Wrapper::Set_Light_Environment(const LightEnvironmentClass *light_environment)
-{
-	g_bgfx.light_environment = BgfxLightEnvironmentState();
-	if (light_environment == nullptr) {
-		return;
-	}
-
-	g_bgfx.light_environment.enabled = true;
-	g_bgfx.light_environment.ambient = light_environment->Get_Equivalent_Ambient();
-	g_bgfx.light_environment.count = static_cast<unsigned>(std::min(light_environment->Get_Light_Count(), 4));
-	for (unsigned light_index = 0; light_index < g_bgfx.light_environment.count; ++light_index) {
-		g_bgfx.light_environment.directions[light_index] = light_environment->Get_Light_Direction(static_cast<int>(light_index));
-		g_bgfx.light_environment.diffuse[light_index] = light_environment->Get_Light_Diffuse(static_cast<int>(light_index));
-	}
-}
-
-void DX8Wrapper::Set_Light(unsigned index, const LightClass *light)
-{
-	if (index >= 4) {
-		return;
-	}
-
-	g_bgfx.light_environment.enabled = false;
-	BgfxLightState &state = g_bgfx.lights[index];
-	state = BgfxLightState();
-	if (light == nullptr) {
-		return;
-	}
-
-	state.enabled = true;
-	state.type = light->Get_Type();
-	light->Get_Ambient(&state.ambient);
-	light->Get_Diffuse(&state.diffuse);
-	state.position = light->Get_Position();
-	double far_start = 0.0;
-	double far_end = 1.0;
-	light->Get_Far_Attenuation_Range(far_start, far_end);
-	state.far_atten_start = static_cast<float>(far_start);
-	state.far_atten_end = static_cast<float>(far_end);
-	if (state.type == LightClass::DIRECTIONAL) {
-		state.direction = -light->Get_Transform().Get_Z_Vector();
+#pragma message("TODO: support changing windowed status and changing the bit depth")
+		return Reset_Device();
 	} else {
-		state.direction = light->Get_Transform().Get_Z_Vector();
-	}
-	if (state.type == LightClass::SPOT) {
-		Vector3 spot_direction;
-		light->Get_Spot_Direction(spot_direction);
-		Matrix3D::Rotate_Vector(light->Get_Transform(), spot_direction, &state.direction);
-		state.spot_angle_cos = light->Get_Spot_Angle_Cos();
+		return false;
 	}
 }
 
-void DX8Wrapper::Set_Light(unsigned index, const LightClass &light)
+void DX8Wrapper::Get_Device_Resolution(int & set_w,int & set_h,int & set_bits,bool & set_windowed)
 {
-	Set_Light(index, &light);
+	WWASSERT(IsInitted);
+
+	set_w = ResolutionWidth;
+	set_h = ResolutionHeight;
+	set_bits = BitDepth;
+	set_windowed = IsWindowed;
+
+	return ;
 }
 
-void DX8Wrapper::Set_Render_Target(TextureClass *texture)
+void DX8Wrapper::Get_Render_Target_Resolution(int & set_w,int & set_h,int & set_bits,bool & set_windowed)
 {
-	REF_PTR_SET(g_bgfx.render_target, texture);
-	if (g_bgfx.initialized && g_bgfx.scene_active) {
-		Apply_View_Target();
-		Apply_View_Rect();
+	WWASSERT(IsInitted);
+
+	if (CurrentRenderTarget != NULL) {
+		D3DSURFACE_DESC info;
+		CurrentRenderTarget->GetDesc (&info);
+
+		set_w				= info.Width;
+		set_h				= info.Height;
+		set_bits			= BitDepth;		// should we get the actual bit depth of the target?
+		set_windowed	= IsWindowed;	// this doesn't really make sense for render targets (shouldn't matter)...
+
+	} else {
+		Get_Device_Resolution (set_w, set_h, set_bits, set_windowed);
+	}
+
+	return ;
+}
+
+bool DX8Wrapper::Registry_Save_Render_Device( const char * sub_key )
+{
+	int	width, height, depth;
+	bool	windowed;
+	Get_Device_Resolution(width, height, depth, windowed);
+	return Registry_Save_Render_Device(sub_key, CurRenderDevice, ResolutionWidth, ResolutionHeight, BitDepth, IsWindowed, TextureBitDepth);
+}
+
+bool DX8Wrapper::Registry_Save_Render_Device( const char *sub_key, int device, int width, int height, int depth, bool windowed, int texture_depth)
+{
+	RegistryClass * registry = new RegistryClass( sub_key );
+	WWASSERT( registry );
+
+	if ( !registry->Is_Valid() ) {
+		delete registry;
+		WWDEBUG_SAY(( "Error getting Registry\n" ));
+		return false;
+	}
+
+	registry->Set_String( VALUE_NAME_RENDER_DEVICE_NAME,
+		_RenderDeviceShortNameTable[device] );
+	registry->Set_Int( VALUE_NAME_RENDER_DEVICE_WIDTH,	width );
+	registry->Set_Int( VALUE_NAME_RENDER_DEVICE_HEIGHT, height );
+	registry->Set_Int( VALUE_NAME_RENDER_DEVICE_DEPTH, depth );
+	registry->Set_Int( VALUE_NAME_RENDER_DEVICE_WINDOWED, windowed );
+	registry->Set_Int( VALUE_NAME_RENDER_DEVICE_TEXTURE_DEPTH, texture_depth );
+
+	delete registry;
+	return true;
+}
+
+bool DX8Wrapper::Registry_Load_Render_Device( const char * sub_key, bool resize_window )
+{
+	char	name[ 200 ];
+	int	width,height,depth,windowed;
+
+	if (	Registry_Load_Render_Device(	sub_key,
+													name,
+													sizeof(name),
+													width,
+													height,
+													depth,
+													windowed,
+													TextureBitDepth) &&
+			(*name != 0))
+	{
+		WWDEBUG_SAY(( "Device %s (%d X %d) %d bit windowed:%d\n", name,width,height,depth,windowed));
+
+		if (TextureBitDepth==16 || TextureBitDepth==32) {
+//			WWDEBUG_SAY(( "Texture depth %d\n", TextureBitDepth));
+		} else {
+			WWDEBUG_SAY(( "Invalid texture depth %d, switching to 16 bits\n", TextureBitDepth));
+			TextureBitDepth=16;
+		}
+
+
+//		_RenderDeviceDescriptionTable.
+
+
+		if ( Set_Render_Device( name, width,height,depth,windowed, resize_window ) != true) {
+			if (depth==16) depth=32;
+			else depth=16;
+			if ( Set_Render_Device( name, width,height,depth,windowed, resize_window ) == true) {
+				return true;
+			}
+			if (depth==16) depth=32;
+			else depth=16;
+			// we'll test resolutions down, so if start is 640, increase to begin with...
+			if (width==640) {
+				width=1024;
+				height=768;
+			}
+			while (true) {
+				if (width>2048) {
+					width=2048;
+					height=1536;
+				}
+				else if (width>1920) {
+					width=1920;
+					height=1440;
+				}
+				else if (width>1600) {
+					width=1600;
+					height=1200;
+				}
+				else if (width>1280) {
+					width=1280;
+					height=1024;
+				}
+				else if (width>1024) {
+					width=1024;
+					height=768;
+				}
+				else if (width>800) {
+					width=800;
+					height=600;
+				}
+				else if (width!=640) {
+					width=640;
+					height=480;
+				}
+				else {
+					return Set_Any_Render_Device();
+				}
+				for (int i=0;i<2;++i) {
+					if ( Set_Render_Device( name, width,height,depth,windowed, resize_window ) == true) {
+						return true;
+					}
+					if (depth==16) depth=32;
+					else depth=16;
+				}
+			}
+		}
+
+		return true;
+	}
+
+	WWDEBUG_SAY(( "Error getting Registry\n" ));
+
+	return Set_Any_Render_Device();
+}
+
+bool DX8Wrapper::Registry_Load_Render_Device( const char * sub_key, char *device, int device_len, int &width, int &height, int &depth, int &windowed, int &texture_depth)
+{
+	RegistryClass registry( sub_key );
+
+	if ( registry.Is_Valid() ) {
+		registry.Get_String( VALUE_NAME_RENDER_DEVICE_NAME,
+			device, device_len);
+
+		width =		registry.Get_Int( VALUE_NAME_RENDER_DEVICE_WIDTH, -1 );
+		height =		registry.Get_Int( VALUE_NAME_RENDER_DEVICE_HEIGHT, -1 );
+		depth =		registry.Get_Int( VALUE_NAME_RENDER_DEVICE_DEPTH, -1 );
+		windowed =	registry.Get_Int( VALUE_NAME_RENDER_DEVICE_WINDOWED, -1 );
+		texture_depth = registry.Get_Int( VALUE_NAME_RENDER_DEVICE_TEXTURE_DEPTH, -1 );
+		return true;
+	}
+	*device=0;
+	width=-1;
+	height=-1;
+	depth=-1;
+	windowed=-1;
+	texture_depth=-1;
+	return false;
+}
+
+
+bool DX8Wrapper::Find_Color_And_Z_Mode(int resx,int resy,int bitdepth,D3DFORMAT * set_colorbuffer,D3DFORMAT * set_zmode)
+{
+	static D3DFORMAT _formats16[] =
+	{
+		D3DFMT_R5G6B5,
+		D3DFMT_X1R5G5B5,
+		D3DFMT_A1R5G5B5
+	};
+
+	static D3DFORMAT _formats32[] =
+	{
+		D3DFMT_A8R8G8B8,
+		D3DFMT_X8R8G8B8,
+		D3DFMT_R8G8B8,
+	};
+
+	/*
+	** Select the table that we're going to use to search for a valid backbuffer format
+	*/
+	D3DFORMAT * format_table = NULL;
+	int format_count = 0;
+
+	if (BitDepth == 16) {
+		format_table = _formats16;
+		format_count = sizeof(_formats16) / sizeof(D3DFORMAT);
+	} else {
+		format_table = _formats32;
+		format_count = sizeof(_formats32) / sizeof(D3DFORMAT);
+	}
+
+	/*
+	** now search for a valid format
+	*/
+	bool found = false;
+	unsigned int mode = 0;
+
+	for (int format_index=0; format_index < format_count; format_index++) {
+		found |= Find_Color_Mode(format_table[format_index],resx,resy,&mode);
+		if (found) break;
+	}
+
+	if (!found) {
+		return false;
+	} else {
+		*set_colorbuffer = format_table[format_index];
+	}
+
+	/*
+	** We found a backbuffer format, now find a zbuffer format
+	*/
+	return Find_Z_Mode(*set_colorbuffer,*set_colorbuffer, set_zmode);
+};
+
+
+// find the resolution mode with at least resx,resy with the highest supported
+// refresh rate
+bool DX8Wrapper::Find_Color_Mode(D3DFORMAT colorbuffer, int resx, int resy, UINT *mode)
+{
+	UINT i,j,modemax;
+	UINT rx,ry;
+	D3DDISPLAYMODE dmode;
+	::ZeroMemory(&dmode, sizeof(D3DDISPLAYMODE));
+
+	rx=(unsigned int) resx;
+	ry=(unsigned int) resy;
+
+	bool found=false;
+
+	modemax=D3DInterface->GetAdapterModeCount(D3DADAPTER_DEFAULT);
+
+	i=0;
+
+	while (i<modemax && !found)
+	{
+		D3DInterface->EnumAdapterModes(D3DADAPTER_DEFAULT, i, &dmode);
+		if (dmode.Width==rx && dmode.Height==ry && dmode.Format==colorbuffer) {
+			WWDEBUG_SAY(("Found valid color mode.  Width = %d Height = %d Format = %d\r\n",dmode.Width,dmode.Height,dmode.Format));
+			found=true;
+		}
+		i++;
+	}
+
+	i--; // this is the first valid mode
+
+	// no match
+	if (!found) {
+		WWDEBUG_SAY(("Failed to find a valid color mode\r\n"));
+		return false;
+	}
+
+	// go to the highest refresh rate in this mode
+	bool stillok=true;
+
+	j=i;
+	while (j<modemax && stillok)
+	{
+		D3DInterface->EnumAdapterModes(D3DADAPTER_DEFAULT, j, &dmode);
+		if (dmode.Width==rx && dmode.Height==ry && dmode.Format==colorbuffer)
+			stillok=true; else stillok=false;
+		j++;
+	}
+
+	if (stillok==false) *mode=j-2;
+	else *mode=i;
+
+	return true;
+}
+
+// Helper function to find a Z buffer mode for the colorbuffer
+// Will look for greatest Z precision
+bool DX8Wrapper::Find_Z_Mode(D3DFORMAT colorbuffer,D3DFORMAT backbuffer, D3DFORMAT *zmode)
+{
+	if (Test_Z_Mode(colorbuffer,backbuffer,D3DFMT_D32))
+	{
+		*zmode=D3DFMT_D32;
+		WWDEBUG_SAY(("Found zbuffer mode D3DFMT_D32\r\n"));
+		return true;
+	}
+
+	if (Test_Z_Mode(colorbuffer,backbuffer,D3DFMT_D24S8))
+	{
+		*zmode=D3DFMT_D24S8;
+		WWDEBUG_SAY(("Found zbuffer mode D3DFMT_D24S8\r\n"));
+		return true;
+	}
+
+	if (Test_Z_Mode(colorbuffer,backbuffer,D3DFMT_D24X8))
+	{
+		*zmode=D3DFMT_D24X8;
+		WWDEBUG_SAY(("Found zbuffer mode D3DFMT_D24X8\r\n"));
+		return true;
+	}
+
+	if (Test_Z_Mode(colorbuffer,backbuffer,D3DFMT_D24X4S4))
+	{
+		*zmode=D3DFMT_D24X4S4;
+		WWDEBUG_SAY(("Found zbuffer mode D3DFMT_D24X4S4\r\n"));
+		return true;
+	}
+
+	if (Test_Z_Mode(colorbuffer,backbuffer,D3DFMT_D16))
+	{
+		*zmode=D3DFMT_D16;
+		WWDEBUG_SAY(("Found zbuffer mode D3DFMT_D16\r\n"));
+		return true;
+	}
+
+	if (Test_Z_Mode(colorbuffer,backbuffer,D3DFMT_D15S1))
+	{
+		*zmode=D3DFMT_D15S1;
+		WWDEBUG_SAY(("Found zbuffer mode D3DFMT_D15S1\r\n"));
+		return true;
+	}
+
+	// can't find a match
+	WWDEBUG_SAY(("Failed to find a valid zbuffer mode\r\n"));
+	return false;
+}
+
+bool DX8Wrapper::Test_Z_Mode(D3DFORMAT colorbuffer,D3DFORMAT backbuffer, D3DFORMAT zmode)
+{
+	// See if we have this mode first
+	if (FAILED(D3DInterface->CheckDeviceFormat(D3DADAPTER_DEFAULT,WW3D_DEVTYPE,
+		colorbuffer,D3DUSAGE_DEPTHSTENCIL,D3DRTYPE_SURFACE,zmode)))
+	{
+		WWDEBUG_SAY(("CheckDeviceFormat failed.  Colorbuffer format = %d  Zbufferformat = %d\r\n",colorbuffer,zmode));
+		return false;
+	}
+
+	// Then see if it matches the color buffer
+	if(FAILED(D3DInterface->CheckDepthStencilMatch(D3DADAPTER_DEFAULT, WW3D_DEVTYPE,
+		colorbuffer,backbuffer,zmode)))
+	{
+		WWDEBUG_SAY(("CheckDepthStencilMatch failed.  Colorbuffer format = %d  Backbuffer format = %d Zbufferformat = %d\r\n",colorbuffer,backbuffer,zmode));
+		return false;
+	}
+	return true;
+}
+
+
+void DX8Wrapper::Reset_Statistics()
+{
+	matrix_changes	= 0;
+	material_changes = 0;
+	vertex_buffer_changes = 0;
+	index_buffer_changes = 0;
+	light_changes = 0;
+	texture_changes = 0;
+	render_state_changes =0;
+	texture_stage_state_changes =0;
+
+	number_of_DX8_calls = 0;
+	last_frame_matrix_changes = 0;
+	last_frame_material_changes = 0;
+	last_frame_vertex_buffer_changes = 0;
+	last_frame_index_buffer_changes = 0;
+	last_frame_light_changes = 0;
+	last_frame_texture_changes = 0;
+	last_frame_render_state_changes = 0;
+	last_frame_texture_stage_state_changes = 0;
+	last_frame_number_of_DX8_calls = 0;
+}
+
+void DX8Wrapper::Begin_Statistics()
+{
+	matrix_changes=0;
+	material_changes=0;
+	vertex_buffer_changes=0;
+	index_buffer_changes=0;
+	light_changes=0;
+	texture_changes = 0;
+	render_state_changes =0;
+	texture_stage_state_changes =0;
+	number_of_DX8_calls=0;
+}
+
+void DX8Wrapper::End_Statistics()
+{
+	last_frame_matrix_changes=matrix_changes;
+	last_frame_material_changes=material_changes;
+	last_frame_vertex_buffer_changes=vertex_buffer_changes;
+	last_frame_index_buffer_changes=index_buffer_changes;
+	last_frame_light_changes=light_changes;
+	last_frame_texture_changes = texture_changes;
+	last_frame_render_state_changes = render_state_changes;
+	last_frame_texture_stage_state_changes = texture_stage_state_changes;
+	last_frame_number_of_DX8_calls=number_of_DX8_calls;
+}
+
+unsigned DX8Wrapper::Get_Last_Frame_Matrix_Changes()			{ return last_frame_matrix_changes; }
+unsigned DX8Wrapper::Get_Last_Frame_Material_Changes()		{ return last_frame_material_changes; }
+unsigned DX8Wrapper::Get_Last_Frame_Vertex_Buffer_Changes()	{ return last_frame_vertex_buffer_changes; }
+unsigned DX8Wrapper::Get_Last_Frame_Index_Buffer_Changes()	{ return last_frame_index_buffer_changes; }
+unsigned DX8Wrapper::Get_Last_Frame_Light_Changes()			{ return last_frame_light_changes; }
+unsigned DX8Wrapper::Get_Last_Frame_Texture_Changes()			{ return last_frame_texture_changes; }
+unsigned DX8Wrapper::Get_Last_Frame_Render_State_Changes()	{ return last_frame_render_state_changes; }
+unsigned DX8Wrapper::Get_Last_Frame_Texture_Stage_State_Changes()	{ return last_frame_texture_stage_state_changes; }
+unsigned DX8Wrapper::Get_Last_Frame_DX8_Calls()					{ return last_frame_number_of_DX8_calls; }
+unsigned long DX8Wrapper::Get_FrameCount(void) {return FrameCount;}
+
+void DX8_Assert()
+{
+	WWASSERT(DX8Wrapper::_Get_D3D8());
+	DX8_THREAD_ASSERT();
+}
+
+void DX8Wrapper::Begin_Scene(void)
+{
+	DX8_THREAD_ASSERT();
+	DX8CALL(BeginScene());
+}
+
+void DX8Wrapper::End_Scene(bool flip_frames)
+{
+	DX8_THREAD_ASSERT();
+	DX8CALL(EndScene());
+
+	if (flip_frames) {
+		// JANI HACK! Some objects flicker on ATI Radeons. This can be fixed by locking the back buffer before flipping.
+		// Remember that for this to work the back buffers need to have been create as lockable!
+		if (Get_Current_Caps()->Get_Vendor()==DX8Caps::VENDOR_ATI) {
+			IDirect3DSurface8 * bb;
+			DX8CALL(GetBackBuffer(0,D3DBACKBUFFER_TYPE_MONO,&bb));
+			D3DLOCKED_RECT rect;
+			HRESULT res=bb->LockRect(
+					&rect,
+					NULL,
+					D3DLOCK_READONLY);
+			if (res==D3D_OK) {
+				bb->UnlockRect();
+				bb->Release();
+			}
+		}
+
+		DX8_Assert();
+		HRESULT hr;
+		{
+			WWPROFILE("DX8Device::Present()");
+			hr=_Get_D3D_Device8()->Present(NULL, NULL, NULL, NULL);
+		}
+
+		number_of_DX8_calls++;
+
+		if (SUCCEEDED(hr)) {
+			IsDeviceLost=false;
+			FrameCount++;
+		}
+		else {
+			IsDeviceLost=true;
+		}
+
+		// If the device was lost we need to check for cooperative level and possibly reset the device
+		if (hr==D3DERR_DEVICELOST) {
+			hr=_Get_D3D_Device8()->TestCooperativeLevel();
+			if (hr==D3DERR_DEVICENOTRESET) {
+				Reset_Device();
+			}
+			else {
+				// Sleep it not active
+				ThreadClass::Sleep_Ms(200);
+			}
+		}
+		else {
+			DX8_ErrorCode(hr);
+		}
+	}
+
+	// Each frame, release all of the buffers and textures.
+	Set_Vertex_Buffer(NULL);
+	Set_Index_Buffer(NULL,0);
+	for (unsigned i=0;i<MAX_TEXTURE_STAGES;++i) Set_Texture(i,NULL);
+	Set_Material(NULL);
+}
+
+
+void DX8Wrapper::Flip_To_Primary(void)
+{
+	// If we are fullscreen and the current frame is odd then we need
+	// to force a page flip to ensure that the first buffer in the flipping
+	// chain is the one visible.
+	if (!IsWindowed) {
+		DX8_Assert();
+
+		int numBuffers = (_PresentParameters.BackBufferCount + 1);
+		int visibleBuffer = (FrameCount % numBuffers);
+		int flipCount = ((numBuffers - visibleBuffer) % numBuffers);
+		int resetAttempts = 0;
+
+		while ((flipCount > 0) && (resetAttempts < 3)) {
+			HRESULT hr = _Get_D3D_Device8()->TestCooperativeLevel();
+
+			if (FAILED(hr)) {
+				WWDEBUG_SAY(("TestCooperativeLevel Failed!\n"));
+
+				if (D3DERR_DEVICELOST == hr) {
+					IsDeviceLost=true;
+					WWDEBUG_SAY(("DEVICELOST: Cannot flip to primary.\n"));
+					return;
+				}
+				IsDeviceLost=false;
+
+				if (D3DERR_DEVICENOTRESET == hr) {
+					WWDEBUG_SAY(("DEVICENOTRESET\n"));
+					Reset_Device();
+					resetAttempts++;
+				}
+			} else {
+				WWDEBUG_SAY(("Flipping: %ld\n", FrameCount));
+				hr = _Get_D3D_Device8()->Present(NULL, NULL, NULL, NULL);
+
+				if (SUCCEEDED(hr)) {
+					IsDeviceLost=false;
+					FrameCount++;
+					WWDEBUG_SAY(("Flip to primary succeeded %ld\n", FrameCount));
+				}
+				else {
+					IsDeviceLost=true;
+				}
+			}
+
+			--flipCount;
+		}
 	}
 }
 
-void DX8Wrapper::Set_Render_Target(IDirect3DSurface8 *surface)
+
+void DX8Wrapper::Clear(bool clear_color, bool clear_z_stencil, const Vector3 &color, float z, unsigned int stencil)
 {
-	if (surface == nullptr) {
-		Set_Render_Target(static_cast<TextureClass *>(nullptr));
+	DX8_THREAD_ASSERT();
+	// If we try to clear a stencil buffer which is not there, the entire call will fail
+	bool has_stencil = (	_PresentParameters.AutoDepthStencilFormat == D3DFMT_D15S1 ||
+								_PresentParameters.AutoDepthStencilFormat == D3DFMT_D24S8 ||
+								_PresentParameters.AutoDepthStencilFormat == D3DFMT_D24X4S4);
+
+	DWORD flags = 0;
+	if (clear_color) flags |= D3DCLEAR_TARGET;
+	if (clear_z_stencil) flags |= D3DCLEAR_ZBUFFER;
+	if (clear_z_stencil && has_stencil) flags |= D3DCLEAR_STENCIL;
+	if (flags)
+	{
+		DX8CALL(Clear(0, NULL, flags, Convert_Color(color,0.0f), z, stencil));
 	}
 }
 
-void DX8Wrapper::Set_Gamma(float gamma, float brightness, float contrast, bool, bool)
+void DX8Wrapper::Set_Viewport(CONST D3DVIEWPORT8* pViewport)
 {
-	g_bgfx.gamma = std::max(gamma, 1.0e-4f);
-	g_bgfx.brightness = brightness;
-	g_bgfx.contrast = std::max(contrast, 0.0f);
+	DX8_THREAD_ASSERT();
+	DX8CALL(SetViewport(pViewport));
 }
 
-void DX8Wrapper::Set_World_Identity()
-{
-	g_bgfx.world.Make_Identity();
-}
+// ----------------------------------------------------------------------------
+//
+// Set vertex buffer. A reference to previous vertex buffer is released and
+// this one is assigned the current vertex buffer. The DX8 vertex buffer will
+// actually be set in Apply() which is called by Draw_Indexed_Triangles().
+//
+// ----------------------------------------------------------------------------
 
-void DX8Wrapper::Set_View_Identity()
+void DX8Wrapper::Set_Vertex_Buffer(const VertexBufferClass* vb)
 {
-	g_bgfx.view.Make_Identity();
-}
-
-void DX8Wrapper::Get_Render_State(RenderStateStruct &state)
-{
-	state.shader = g_bgfx.shader;
-	state.material = const_cast<VertexMaterialClass*>(g_bgfx.material);
-	if (state.material) state.material->Add_Ref();
-	for (unsigned i = 0; i < MAX_TEXTURE_STAGES; ++i) {
-		state.Textures[i] = g_bgfx.textures[i];
-		if (state.Textures[i]) state.Textures[i]->Add_Ref();
+	render_state.vba_offset=0;
+	render_state.vba_count=0;
+	if (render_state.vertex_buffer) {
+		render_state.vertex_buffer->Release_Engine_Ref();
 	}
-	state.world = g_bgfx.world;
-	state.view = g_bgfx.view;
-	state.projection = g_bgfx.projection;
-	state.zbias = g_bgfx.render_states[D3DRS_ZBIAS];
-	state.vertex_buffer = const_cast<VertexBufferClass*>(g_bgfx.current_vb);
-	if (state.vertex_buffer) state.vertex_buffer->Add_Ref();
-	state.index_buffer = const_cast<IndexBufferClass*>(g_bgfx.current_ib);
-	if (state.index_buffer) state.index_buffer->Add_Ref();
-	state.vertex_buffer_type = g_bgfx.current_vb_type;
-	state.index_buffer_type = g_bgfx.current_ib_type;
-	state.vba_offset = g_bgfx.current_vba_offset;
-	state.iba_offset = g_bgfx.current_iba_offset;
-	state.index_base_offset = g_bgfx.index_base_offset;
-}
-
-void DX8Wrapper::Set_Render_State(const RenderStateStruct &state)
-{
-	Set_Shader(state.shader);
-	Set_Material(state.material);
-	for (unsigned i = 0; i < MAX_TEXTURE_STAGES; ++i) {
-		Set_Texture(i, state.Textures[i]);
+	REF_PTR_SET(render_state.vertex_buffer,const_cast<VertexBufferClass*>(vb));
+	if (vb) {
+		vb->Add_Engine_Ref();
+		render_state.vertex_buffer_type=vb->Type();
 	}
-	Set_Transform(TRANSFORM_WORLD, state.world);
-	Set_Transform(TRANSFORM_VIEW, state.view);
-	Set_Transform(TRANSFORM_PROJECTION, state.projection);
-	Set_DX8_Render_State(D3DRS_ZBIAS, state.zbias);
-	Set_Vertex_Buffer(state.vertex_buffer);
-	Bind_Current_Vertex_Buffer_Slice(state.vba_offset);
-	Set_Index_Buffer(state.index_buffer, static_cast<uint16_t>(state.index_base_offset));
-	Bind_Current_Index_Buffer_Slice(state.iba_offset);
+	else {
+		render_state.index_buffer_type=BUFFER_TYPE_INVALID;
+	}
+	render_state_changed|=VERTEX_BUFFER_CHANGED;
 }
 
-void DX8Wrapper::Release_Render_State()
+// ----------------------------------------------------------------------------
+//
+// Set index buffer. A reference to previous index buffer is released and
+// this one is assigned the current index buffer. The DX8 index buffer will
+// actually be set in Apply() which is called by Draw_Indexed_Triangles().
+//
+// ----------------------------------------------------------------------------
+
+void DX8Wrapper::Set_Index_Buffer(const IndexBufferClass* ib,unsigned short index_base_offset)
 {
+	render_state.iba_offset=0;
+	if (render_state.index_buffer) {
+		render_state.index_buffer->Release_Engine_Ref();
+	}
+	REF_PTR_SET(render_state.index_buffer,const_cast<IndexBufferClass*>(ib));
+	render_state.index_base_offset=index_base_offset;
+	if (ib) {
+		ib->Add_Engine_Ref();
+		render_state.index_buffer_type=ib->Type();
+	}
+	else {
+		render_state.index_buffer_type=BUFFER_TYPE_INVALID;
+	}
+	render_state_changed|=INDEX_BUFFER_CHANGED;
 }
+
+// ----------------------------------------------------------------------------
+//
+// Set vertex buffer using dynamic access object.
+//
+// ----------------------------------------------------------------------------
+
+void DX8Wrapper::Set_Vertex_Buffer(const DynamicVBAccessClass& vba_)
+{
+	if (render_state.vertex_buffer) render_state.vertex_buffer->Release_Engine_Ref();
+
+	DynamicVBAccessClass& vba=const_cast<DynamicVBAccessClass&>(vba_);
+	render_state.vertex_buffer_type=vba.Get_Type();
+	render_state.vba_offset=vba.VertexBufferOffset;
+	render_state.vba_count=vba.Get_Vertex_Count();
+	REF_PTR_SET(render_state.vertex_buffer,vba.VertexBuffer);
+	render_state.vertex_buffer->Add_Engine_Ref();
+	render_state_changed|=VERTEX_BUFFER_CHANGED;
+	render_state_changed|=INDEX_BUFFER_CHANGED;		// vba_offset changes so index buffer needs to be reset as well.
+}
+
+// ----------------------------------------------------------------------------
+//
+// Set index buffer using dynamic access object.
+//
+// ----------------------------------------------------------------------------
+
+void DX8Wrapper::Set_Index_Buffer(const DynamicIBAccessClass& iba_,unsigned short index_base_offset)
+{
+	if (render_state.index_buffer) render_state.index_buffer->Release_Engine_Ref();
+
+	DynamicIBAccessClass& iba=const_cast<DynamicIBAccessClass&>(iba_);
+	render_state.index_base_offset=index_base_offset;
+	render_state.index_buffer_type=iba.Get_Type();
+	render_state.iba_offset=iba.IndexBufferOffset;
+	REF_PTR_SET(render_state.index_buffer,iba.IndexBuffer);
+	render_state.index_buffer->Add_Engine_Ref();
+	render_state_changed|=INDEX_BUFFER_CHANGED;
+}
+
+// ----------------------------------------------------------------------------
+//
+// Private function for the special case of rendering polygons from sorting
+// index and vertex buffers.
+//
+// ----------------------------------------------------------------------------
+
+void DX8Wrapper::Draw_Sorting_IB_VB(
+	unsigned primitive_type,
+	unsigned short start_index,
+	unsigned short polygon_count,
+	unsigned short min_vertex_index,
+	unsigned short vertex_count)
+{
+	WWASSERT(render_state.vertex_buffer_type==BUFFER_TYPE_SORTING || render_state.vertex_buffer_type==BUFFER_TYPE_DYNAMIC_SORTING);
+	WWASSERT(render_state.index_buffer_type==BUFFER_TYPE_SORTING || render_state.index_buffer_type==BUFFER_TYPE_DYNAMIC_SORTING);
+
+	// Fill dynamic vertex buffer with sorting vertex buffer vertices
+	DynamicVBAccessClass dyn_vb_access(BUFFER_TYPE_DYNAMIC_DX8,dynamic_fvf_type,vertex_count);
+	{
+		DynamicVBAccessClass::WriteLockClass lock(&dyn_vb_access);
+		VertexFormatXYZNDUV2* src = static_cast<SortingVertexBufferClass*>(render_state.vertex_buffer)->VertexBuffer;
+		VertexFormatXYZNDUV2* dest= lock.Get_Formatted_Vertex_Array();
+		src += render_state.vba_offset + render_state.index_base_offset + min_vertex_index;
+		unsigned  size = dyn_vb_access.FVF_Info().Get_FVF_Size()*vertex_count/sizeof(unsigned);
+		unsigned *dest_u =(unsigned*) dest;
+		unsigned *src_u = (unsigned*) src;
+
+		for (unsigned i=0;i<size;++i) {
+			*dest_u++=*src_u++;
+		}
+	}
+
+	DX8CALL(SetStreamSource(
+		0,
+		static_cast<DX8VertexBufferClass*>(dyn_vb_access.VertexBuffer)->Get_DX8_Vertex_Buffer(),
+		dyn_vb_access.FVF_Info().Get_FVF_Size()));
+	DX8CALL(SetVertexShader(dyn_vb_access.FVF_Info().Get_FVF()));
+	DX8_RECORD_VERTEX_BUFFER_CHANGE();
+
+	unsigned index_count=0;
+	switch (primitive_type) {
+	case D3DPT_TRIANGLELIST: index_count=polygon_count*3; break;
+	case D3DPT_TRIANGLESTRIP: index_count=polygon_count+2; break;
+	case D3DPT_TRIANGLEFAN: index_count=polygon_count+2; break;
+	default: WWASSERT(0); break; // Unsupported primitive type
+	}
+
+	// Fill dynamic index buffer with sorting index buffer vertices
+	DynamicIBAccessClass dyn_ib_access(BUFFER_TYPE_DYNAMIC_DX8,index_count);
+	{
+		DynamicIBAccessClass::WriteLockClass lock(&dyn_ib_access);
+		unsigned short* dest=lock.Get_Index_Array();
+		unsigned short* src=NULL;
+		src=static_cast<SortingIndexBufferClass*>(render_state.index_buffer)->index_buffer;
+		src+=render_state.iba_offset+start_index;
+
+		for (unsigned short i=0;i<index_count;++i) {
+			unsigned short index=*src++;
+			index-=min_vertex_index;
+			WWASSERT(index<vertex_count);
+			*dest++=index;
+		}
+	}
+
+	DX8CALL(SetIndices(
+		static_cast<DX8IndexBufferClass*>(dyn_ib_access.IndexBuffer)->Get_DX8_Index_Buffer(),
+		dyn_vb_access.VertexBufferOffset));
+	DX8_RECORD_INDEX_BUFFER_CHANGE();
+
+	DX8CALL(DrawIndexedPrimitive(
+		D3DPT_TRIANGLELIST,
+		0,		// start vertex
+		vertex_count,
+		dyn_ib_access.IndexBufferOffset,
+		polygon_count));
+
+	DX8_RECORD_RENDER(polygon_count,vertex_count,render_state.shader);
+}
+
+// ----------------------------------------------------------------------------
+//
+//
+//
+// ----------------------------------------------------------------------------
+
+void DX8Wrapper::Draw(
+	unsigned primitive_type,
+	unsigned short start_index,
+	unsigned short polygon_count,
+	unsigned short min_vertex_index,
+	unsigned short vertex_count)
+{
+	DX8_THREAD_ASSERT();
+	SNAPSHOT_SAY(("DX8 - draw\n"));
+
+	Apply_Render_State_Changes();
+
+	// Debug feature to disable triangle drawing...
+	if (!_Is_Triangle_Draw_Enabled()) return;
+
+#ifdef MESH_RENDER_SNAPSHOT_ENABLED
+	if (WW3D::Is_Snapshot_Activated()) {
+		unsigned long passes=0;
+		SNAPSHOT_SAY(("ValidateDevice: "));
+		HRESULT res=D3DDevice->ValidateDevice(&passes);
+		switch (res) {
+		case D3D_OK:
+			SNAPSHOT_SAY(("OK\n"));
+			break;
+
+		case D3DERR_CONFLICTINGTEXTUREFILTER:
+			SNAPSHOT_SAY(("D3DERR_CONFLICTINGTEXTUREFILTER\n"));
+			break;
+		case D3DERR_CONFLICTINGTEXTUREPALETTE:
+			SNAPSHOT_SAY(("D3DERR_CONFLICTINGTEXTUREPALETTE\n"));
+			break;
+		case D3DERR_DEVICELOST:
+			SNAPSHOT_SAY(("D3DERR_DEVICELOST\n"));
+			break;
+		case D3DERR_TOOMANYOPERATIONS:
+			SNAPSHOT_SAY(("D3DERR_TOOMANYOPERATIONS\n"));
+			break;
+		case D3DERR_UNSUPPORTEDALPHAARG:
+			SNAPSHOT_SAY(("D3DERR_UNSUPPORTEDALPHAARG\n"));
+			break;
+		case D3DERR_UNSUPPORTEDALPHAOPERATION:
+			SNAPSHOT_SAY(("D3DERR_UNSUPPORTEDALPHAOPERATION\n"));
+			break;
+		case D3DERR_UNSUPPORTEDCOLORARG:
+			SNAPSHOT_SAY(("D3DERR_UNSUPPORTEDCOLORARG\n"));
+			break;
+		case D3DERR_UNSUPPORTEDCOLOROPERATION:
+			SNAPSHOT_SAY(("D3DERR_UNSUPPORTEDCOLOROPERATION\n"));
+			break;
+		case D3DERR_UNSUPPORTEDFACTORVALUE:
+			SNAPSHOT_SAY(("D3DERR_UNSUPPORTEDFACTORVALUE\n"));
+			break;
+		case D3DERR_UNSUPPORTEDTEXTUREFILTER:
+			SNAPSHOT_SAY(("D3DERR_UNSUPPORTEDTEXTUREFILTER\n"));
+			break;
+		case D3DERR_WRONGTEXTUREFORMAT:
+			SNAPSHOT_SAY(("D3DERR_WRONGTEXTUREFORMAT\n"));
+			break;
+		default:
+			SNAPSHOT_SAY(("UNKNOWN Error\n"));
+			break;
+		}
+	}
+#endif	// MESH_RENDER_SHAPSHOT_ENABLED
+
+
+	SNAPSHOT_SAY(("DX8 - draw %d polygons (%d vertices)\n",polygon_count,vertex_count));
+
+	if (vertex_count<3) {
+		min_vertex_index=0;
+		switch (render_state.vertex_buffer_type) {
+		case BUFFER_TYPE_DX8:
+		case BUFFER_TYPE_SORTING:
+			vertex_count=render_state.vertex_buffer->Get_Vertex_Count()-render_state.index_base_offset-render_state.vba_offset-min_vertex_index;
+			break;
+		case BUFFER_TYPE_DYNAMIC_DX8:
+		case BUFFER_TYPE_DYNAMIC_SORTING:
+			vertex_count=render_state.vba_count;
+			break;
+		}
+	}
+
+	switch (render_state.vertex_buffer_type) {
+	case BUFFER_TYPE_DX8:
+	case BUFFER_TYPE_DYNAMIC_DX8:
+		switch (render_state.index_buffer_type) {
+		case BUFFER_TYPE_DX8:
+		case BUFFER_TYPE_DYNAMIC_DX8:
+			{
+				DX8_RECORD_RENDER(polygon_count,vertex_count,render_state.shader);
+				DX8CALL(DrawIndexedPrimitive(
+					(D3DPRIMITIVETYPE)primitive_type,
+					min_vertex_index,
+					vertex_count,
+					start_index+render_state.iba_offset,
+					polygon_count));
+			}
+			break;
+		case BUFFER_TYPE_SORTING:
+		case BUFFER_TYPE_DYNAMIC_SORTING:
+			WWASSERT_PRINT(0,"VB and IB must of same type (sorting or dx8)");
+			break;
+		case BUFFER_TYPE_INVALID:
+			WWASSERT(0);
+			break;
+		}
+		break;
+	case BUFFER_TYPE_SORTING:
+	case BUFFER_TYPE_DYNAMIC_SORTING:
+		switch (render_state.index_buffer_type) {
+		case BUFFER_TYPE_DX8:
+		case BUFFER_TYPE_DYNAMIC_DX8:
+			WWASSERT_PRINT(0,"VB and IB must of same type (sorting or dx8)");
+			break;
+		case BUFFER_TYPE_SORTING:
+		case BUFFER_TYPE_DYNAMIC_SORTING:
+			Draw_Sorting_IB_VB(primitive_type,start_index,polygon_count,min_vertex_index,vertex_count);
+			break;
+		case BUFFER_TYPE_INVALID:
+			WWASSERT(0);
+			break;
+		}
+		break;
+	case BUFFER_TYPE_INVALID:
+		WWASSERT(0);
+		break;
+	}
+}
+
+// ----------------------------------------------------------------------------
+//
+//
+//
+// ----------------------------------------------------------------------------
+
+void DX8Wrapper::Draw_Triangles(
+	unsigned buffer_type,
+	unsigned short start_index,
+	unsigned short polygon_count,
+	unsigned short min_vertex_index,
+	unsigned short vertex_count)
+{
+	if (buffer_type==BUFFER_TYPE_SORTING || buffer_type==BUFFER_TYPE_DYNAMIC_SORTING) {
+		SortingRendererClass::Insert_Triangles(start_index,polygon_count,min_vertex_index,vertex_count);
+	}
+	else {
+		Draw(D3DPT_TRIANGLELIST,start_index,polygon_count,min_vertex_index,vertex_count);
+	}
+}
+
+// ----------------------------------------------------------------------------
+//
+//
+//
+// ----------------------------------------------------------------------------
+
+void DX8Wrapper::Draw_Triangles(
+	unsigned short start_index,
+	unsigned short polygon_count,
+	unsigned short min_vertex_index,
+	unsigned short vertex_count)
+{
+	Draw(D3DPT_TRIANGLELIST,start_index,polygon_count,min_vertex_index,vertex_count);
+}
+
+// ----------------------------------------------------------------------------
+//
+//
+//
+// ----------------------------------------------------------------------------
+
+void DX8Wrapper::Draw_Strip(
+	unsigned short start_index,
+	unsigned short polygon_count,
+	unsigned short min_vertex_index,
+	unsigned short vertex_count)
+{
+	Draw(D3DPT_TRIANGLESTRIP,start_index,polygon_count,min_vertex_index,vertex_count);
+}
+
+// ----------------------------------------------------------------------------
+//
+//
+//
+// ----------------------------------------------------------------------------
 
 void DX8Wrapper::Apply_Render_State_Changes()
 {
+	if (!render_state_changed) return;
+	if (render_state_changed&SHADER_CHANGED) {
+		SNAPSHOT_SAY(("DX8 - apply shader\n"));
+		render_state.shader.Apply();
+	}
+
+	unsigned mask=TEXTURE0_CHANGED;
+	for (unsigned i=0;i<MAX_TEXTURE_STAGES;++i,mask<<=1) {
+		if (render_state_changed&mask) {
+			SNAPSHOT_SAY(("DX8 - apply texture %d (%s)\n",i,render_state.Textures[i] ? render_state.Textures[i]->Get_Full_Path() : "NULL"));
+			if (render_state.Textures[i]) render_state.Textures[i]->Apply(i);
+			else TextureClass::Apply_Null(i);
+		}
+		else {
+			SNAPSHOT_SAY(("DX8 - texture %d not changed (%s)\n",i,render_state.Textures[i] ? render_state.Textures[i]->Get_Full_Path() : "NULL"));
+		}
+	}
+
+	if (render_state_changed&MATERIAL_CHANGED) {
+		SNAPSHOT_SAY(("DX8 - apply material\n"));
+		VertexMaterialClass* material=const_cast<VertexMaterialClass*>(render_state.material);
+		if (material) {
+			material->Apply();
+		}
+		else VertexMaterialClass::Apply_Null();
+	}
+
+	if (render_state_changed&LIGHTS_CHANGED)
+	{
+		unsigned mask=LIGHT0_CHANGED;
+		for (unsigned index=0;index<4;++index,mask<<=1) {
+			if (render_state_changed&mask) {
+				SNAPSHOT_SAY(("DX8 - apply light %d\n",index));
+				if (render_state.LightEnable[index]) {
+					Set_DX8_Light(index,&render_state.Lights[index]);
+				}
+				else {
+					Set_DX8_Light(index,NULL);
+				}
+			}
+		}
+	}
+
+	if (render_state_changed&WORLD_CHANGED) {
+		SNAPSHOT_SAY(("DX8 - apply world matrix\n"));
+		_Set_DX8_Transform(D3DTS_WORLD,render_state.world);
+	}
+	if (render_state_changed&VIEW_CHANGED) {
+		SNAPSHOT_SAY(("DX8 - apply view matrix\n"));
+		_Set_DX8_Transform(D3DTS_VIEW,render_state.view);
+	}
+	if (render_state_changed&VERTEX_BUFFER_CHANGED) {
+		SNAPSHOT_SAY(("DX8 - apply vb change\n"));
+		if (render_state.vertex_buffer) {
+			switch (render_state.vertex_buffer_type) {//->Type()) {
+			case BUFFER_TYPE_DX8:
+			case BUFFER_TYPE_DYNAMIC_DX8:
+				DX8CALL(SetStreamSource(
+					0,
+					static_cast<DX8VertexBufferClass*>(render_state.vertex_buffer)->Get_DX8_Vertex_Buffer(),
+					render_state.vertex_buffer->FVF_Info().Get_FVF_Size()));
+				DX8_RECORD_VERTEX_BUFFER_CHANGE();
+				DX8CALL(SetVertexShader(render_state.vertex_buffer->FVF_Info().Get_FVF()));
+				break;
+			case BUFFER_TYPE_SORTING:
+			case BUFFER_TYPE_DYNAMIC_SORTING:
+				break;
+			default:
+				WWASSERT(0);
+			}
+		} else {
+			DX8CALL(SetStreamSource(0,NULL,0));
+			DX8_RECORD_VERTEX_BUFFER_CHANGE();
+		}
+	}
+	if (render_state_changed&INDEX_BUFFER_CHANGED) {
+		SNAPSHOT_SAY(("DX8 - apply ib change\n"));
+		if (render_state.index_buffer) {
+			switch (render_state.index_buffer_type) {//->Type()) {
+			case BUFFER_TYPE_DX8:
+			case BUFFER_TYPE_DYNAMIC_DX8:
+				DX8CALL(SetIndices(
+					static_cast<DX8IndexBufferClass*>(render_state.index_buffer)->Get_DX8_Index_Buffer(),
+					render_state.index_base_offset+render_state.vba_offset));
+				DX8_RECORD_INDEX_BUFFER_CHANGE();
+				break;
+			case BUFFER_TYPE_SORTING:
+			case BUFFER_TYPE_DYNAMIC_SORTING:
+				break;
+			default:
+				WWASSERT(0);
+			}
+		}
+		else {
+			DX8CALL(SetIndices(
+				NULL,
+				0));
+			DX8_RECORD_INDEX_BUFFER_CHANGE();
+		}
+	}
+
+	render_state_changed&=((unsigned)WORLD_IDENTITY|(unsigned)VIEW_IDENTITY);
 }
 
-TextureClass *DX8Wrapper::Create_Render_Target(unsigned width, unsigned height, int format)
+IDirect3DTexture8 * DX8Wrapper::_Create_DX8_Texture(
+	unsigned int width,
+	unsigned int height,
+	WW3DFormat format,
+	TextureClass::MipCountType mip_level_count,
+	D3DPOOL pool,
+	bool rendertarget)
 {
-	const WW3DFormat resolved_format = format == WW3D_FORMAT_UNKNOWN ? WW3D_FORMAT_A8R8G8B8 : static_cast<WW3DFormat>(format);
-	return NEW_REF(TextureClass, (width, height, resolved_format, TextureClass::MIP_LEVELS_1, TextureClass::POOL_DEFAULT, true));
+	DX8_THREAD_ASSERT();
+	DX8_Assert();
+	IDirect3DTexture8 *texture = NULL;
+
+	// Paletted textures not supported!
+	WWASSERT(format!=D3DFMT_P8);
+
+	// NOTE: If 'format' is not supported as a texture format, this function will find the closest
+	// format that is supported and use that instead.
+
+	// Render target may return NOTAVAILABLE, in
+	// which case we return NULL.
+	if (rendertarget) {
+		unsigned ret=D3DXCreateTexture(
+			DX8Wrapper::_Get_D3D_Device8(),
+			width,
+			height,
+			mip_level_count,
+			D3DUSAGE_RENDERTARGET,
+			WW3DFormat_To_D3DFormat(format),
+			pool,
+			&texture);
+
+		if (ret==D3DERR_NOTAVAILABLE) {
+			Non_Fatal_Log_DX8_ErrorCode(ret,__FILE__,__LINE__);
+			return NULL;
+		}
+
+		// If ran out of texture ram, try invalidating some textures and mesh cache.
+		if (ret==D3DERR_OUTOFVIDEOMEMORY) {
+			WWDEBUG_SAY(("Error: Out of memory while creating render target. Trying to release assets...\n"));
+			// Free all textures that haven't been used in the last 5 seconds
+			TextureClass::Invalidate_Old_Unused_Textures(5000);
+
+			// Invalidate the mesh cache
+			WW3D::_Invalidate_Mesh_Cache();
+
+			ret=D3DXCreateTexture(
+				DX8Wrapper::_Get_D3D_Device8(),
+				width,
+				height,
+				mip_level_count,
+				D3DUSAGE_RENDERTARGET,
+				WW3DFormat_To_D3DFormat(format),
+				pool,
+				&texture);
+
+			if (SUCCEEDED(ret)) {
+				WWDEBUG_SAY(("...Render target creation succesful.\n"));
+			}
+			else {
+				WWDEBUG_SAY(("...Render target creation failed.\n"));
+			}
+			if (ret==D3DERR_OUTOFVIDEOMEMORY) {
+				Non_Fatal_Log_DX8_ErrorCode(ret,__FILE__,__LINE__);
+				return NULL;
+			}
+		}
+
+		DX8_ErrorCode(ret);
+		// Just return the texture, no reduction
+		// allowed for render targets.
+		return texture;
+	}
+
+	// We should never run out of video memory when allocating a non-rendertarget texture.
+	// However, it seems to happen sometimes when there are a lot of textures in memory and so
+	// if it happens we'll release assets and try again (anything is better than crashing).
+	unsigned ret=D3DXCreateTexture(
+		DX8Wrapper::_Get_D3D_Device8(),
+		width,
+		height,
+		mip_level_count,
+		0,
+		WW3DFormat_To_D3DFormat(format),
+		pool,
+		&texture);
+
+	// If ran out of texture ram, try invalidating some textures and mesh cache.
+	if (ret==D3DERR_OUTOFVIDEOMEMORY) {
+		WWDEBUG_SAY(("Error: Out of memory while creating texture. Trying to release assets...\n"));
+		// Free all textures that haven't been used in the last 5 seconds
+		TextureClass::Invalidate_Old_Unused_Textures(5000);
+
+		// Invalidate the mesh cache
+		WW3D::_Invalidate_Mesh_Cache();
+
+		ret=D3DXCreateTexture(
+			DX8Wrapper::_Get_D3D_Device8(),
+			width,
+			height,
+			mip_level_count,
+			0,
+			WW3DFormat_To_D3DFormat(format),
+			pool,
+			&texture);
+		if (SUCCEEDED(ret)) {
+			WWDEBUG_SAY(("...Texture creation succesful.\n"));
+		}
+		else {
+			StringClass format_name(0,true);
+			Get_WW3D_Format_Name(format, format_name);
+			WWDEBUG_SAY(("...Texture creation failed. (%d x %d, format: %s, mips: %d\n",width,height,format_name,mip_level_count));
+		}
+
+	}
+	DX8_ErrorCode(ret);
+
+	return texture;
 }
 
-bool DX8Wrapper::Is_Render_To_Texture()
+IDirect3DTexture8 * DX8Wrapper::_Create_DX8_Texture(
+	const char *filename,
+	TextureClass::MipCountType mip_level_count)
 {
-	return g_bgfx.render_target != nullptr && BgfxCompat_Is_Render_Target(g_bgfx.render_target);
+	DX8_THREAD_ASSERT();
+	DX8_Assert();
+	IDirect3DTexture8 *texture = NULL;
+
+	// NOTE: If the original image format is not supported as a texture format, it will
+	// automatically be converted to an appropriate format.
+	// NOTE: It is possible to get the size and format of the original image file from this
+	// function as well, so if we later want to second-guess D3DX's format conversion decisions
+	// we can do so after this function is called..
+	unsigned result = D3DXCreateTextureFromFileExA(
+		_Get_D3D_Device8(),
+		filename,
+		D3DX_DEFAULT,
+		D3DX_DEFAULT,
+		mip_level_count,//create_mipmaps ? 0 : 1,
+		0,
+		D3DFMT_UNKNOWN,
+		D3DPOOL_MANAGED,
+		D3DX_FILTER_BOX,
+		D3DX_FILTER_BOX,
+		0,
+		NULL,
+		NULL,
+		&texture);
+
+	if (result != D3D_OK) {
+		return MissingTexture::_Get_Missing_Texture();
+	}
+
+	// Make sure texture wasn't paletted!
+	D3DSURFACE_DESC desc;
+	texture->GetLevelDesc(0,&desc);
+	if (desc.Format==D3DFMT_P8) {
+		texture->Release();
+		return MissingTexture::_Get_Missing_Texture();
+	}
+	return texture;
 }
 
-void DX8Wrapper::_Copy_DX8_Rects(IDirect3DSurface8 *pSourceSurface, const RECT *pSourceRectsArray, uint32_t cRects, IDirect3DSurface8 *pDestinationSurface, const POINT *pDestPointsArray)
+IDirect3DTexture8 * DX8Wrapper::_Create_DX8_Texture(
+	IDirect3DSurface8 *surface,
+	TextureClass::MipCountType mip_level_count)
 {
-	Copy_Surface_Rectangles(pSourceSurface, pSourceRectsArray, cRects, pDestinationSurface, pDestPointsArray);
+	DX8_THREAD_ASSERT();
+	DX8_Assert();
+	IDirect3DTexture8 *texture = NULL;
+
+	D3DSURFACE_DESC surface_desc;
+	::ZeroMemory(&surface_desc, sizeof(D3DSURFACE_DESC));
+	surface->GetDesc(&surface_desc);
+
+	// This function will create a texture with a different (but similar) format if the surface is
+	// not in a supported texture format.
+	WW3DFormat format=D3DFormat_To_WW3DFormat(surface_desc.Format);
+	texture = _Create_DX8_Texture(surface_desc.Width, surface_desc.Height, format, mip_level_count);
+
+	// Copy the surface to the texture
+	IDirect3DSurface8 *tex_surface = NULL;
+	texture->GetSurfaceLevel(0, &tex_surface);
+	DX8_ErrorCode(D3DXLoadSurfaceFromSurface(tex_surface, NULL, NULL, surface, NULL, NULL, D3DX_FILTER_BOX, 0));
+	tex_surface->Release();
+
+	// Create mipmaps if needed
+	if (mip_level_count!=TextureClass::MIP_LEVELS_1) {
+		DX8_ErrorCode(D3DXFilterTexture(texture, NULL, 0, D3DX_FILTER_BOX));
+	}
+
+	return texture;
+
+}
+
+IDirect3DSurface8 * DX8Wrapper::_Create_DX8_Surface(unsigned int width, unsigned int height, WW3DFormat format)
+{
+	DX8_THREAD_ASSERT();
+	DX8_Assert();
+
+	IDirect3DSurface8 *surface = NULL;
+
+	// Paletted surfaces not supported!
+	WWASSERT(format!=D3DFMT_P8);
+
+	DX8CALL(CreateImageSurface(width, height, WW3DFormat_To_D3DFormat(format), &surface));
+
+	return surface;
+}
+
+IDirect3DSurface8 * DX8Wrapper::_Create_DX8_Surface(const char *filename_)
+{
+	DX8_THREAD_ASSERT();
+	DX8_Assert();
+
+	// Note: Since there is no "D3DXCreateSurfaceFromFile" and no "GetSurfaceInfoFromFile" (the
+	// latter is supposed to be added to D3DX in a future version), we create a texture from the
+	// file (w/o mipmaps), check that its surface is equal to the original file data (which it
+	// will not be if the file is not in a texture-supported format or size). If so, copy its
+	// surface (we might be able to just get its surface and add a ref to it but I'm not sure so
+	// I'm not going to risk it) and release the texture. If not, create a surface according to
+	// the file data and use D3DXLoadSurfaceFromFile. This is a horrible hack, but it saves us
+	// having to write file loaders. Will fix this when D3DX provides us with the right functions.
+	// Create a surface the size of the file image data
+	IDirect3DSurface8 *surface = NULL;
+
+	{
+		file_auto_ptr myfile(_TheFileFactory,filename_);
+		// If file not found, create a surface with missing texture in it
+		if (!myfile->Is_Available()) {
+			return MissingTexture::_Create_Missing_Surface();
+		}
+	}
+
+	StringClass filename_string(filename_,true);
+	surface=TextureLoader::Load_Surface_Immediate(
+		filename_string,
+		WW3D_FORMAT_UNKNOWN,
+		true);
+	return surface;
+}
+
+
+/***********************************************************************************************
+ * DX8Wrapper::_Update_Texture -- Copies a texture from system memory to video memory          *
+ *                                                                                             *
+ *                                                                                             *
+ *                                                                                             *
+ *                                                                                             *
+ * INPUT:                                                                                      *
+ *                                                                                             *
+ * OUTPUT:                                                                                     *
+ *                                                                                             *
+ * WARNINGS:                                                                                   *
+ *                                                                                             *
+ * HISTORY:                                                                                    *
+ *   4/26/2001  hy : Created.                                                                  *
+ *=============================================================================================*/
+void DX8Wrapper::_Update_Texture(TextureClass *system, TextureClass *video)
+{
+	WWASSERT(system);
+	WWASSERT(video);
+	WWASSERT(system->Pool==TextureClass::POOL_SYSTEMMEM);
+	WWASSERT(video->Pool==TextureClass::POOL_DEFAULT);
+	DX8CALL(UpdateTexture(system->D3DTexture,video->D3DTexture));
+}
+
+void DX8Wrapper::Compute_Caps(WW3DFormat display_format)
+{
+	DX8_THREAD_ASSERT();
+	DX8_Assert();
+	delete CurrentCaps;
+	CurrentCaps=new DX8Caps(_Get_D3D8(),D3DDevice,display_format,Get_Current_Adapter_Identifier());
+}
+
+void DX8Wrapper::Set_Light(unsigned index,const LightClass &light)
+{
+	D3DLIGHT8 dlight;
+	Vector3 temp;
+	memset(&dlight,0,sizeof(D3DLIGHT8));
+
+	switch (light.Get_Type())
+	{
+	case LightClass::POINT:
+		{
+			dlight.Type=D3DLIGHT_POINT;
+		}
+		break;
+	case LightClass::DIRECTIONAL:
+		{
+			dlight.Type=D3DLIGHT_DIRECTIONAL;
+		}
+		break;
+	case LightClass::SPOT:
+		{
+			dlight.Type=D3DLIGHT_SPOT;
+		}
+		break;
+	}
+
+	light.Get_Diffuse(&temp);
+	temp*=light.Get_Intensity();
+	dlight.Diffuse.r=temp.X;
+	dlight.Diffuse.g=temp.Y;
+	dlight.Diffuse.b=temp.Z;
+	dlight.Diffuse.a=1.0f;
+
+	light.Get_Specular(&temp);
+	temp*=light.Get_Intensity();
+	dlight.Specular.r=temp.X;
+	dlight.Specular.g=temp.Y;
+	dlight.Specular.b=temp.Z;
+	dlight.Specular.a=1.0f;
+
+	light.Get_Ambient(&temp);
+	temp*=light.Get_Intensity();
+	dlight.Ambient.r=temp.X;
+	dlight.Ambient.g=temp.Y;
+	dlight.Ambient.b=temp.Z;
+	dlight.Ambient.a=1.0f;
+
+	temp=light.Get_Position();
+	dlight.Position=*(D3DVECTOR*) &temp;
+
+	light.Get_Spot_Direction(temp);
+	dlight.Direction=*(D3DVECTOR*) &temp;
+
+	dlight.Range=light.Get_Attenuation_Range();
+	dlight.Falloff=light.Get_Spot_Exponent();
+	dlight.Theta=light.Get_Spot_Angle();
+	dlight.Phi=light.Get_Spot_Angle();
+
+	// Inverse linear light 1/(1+D)
+	double a,b;
+	light.Get_Far_Attenuation_Range(a,b);
+	dlight.Attenuation0=1.0f;
+	if (fabs(a-b)<1e-5)
+		// if the attenuation range is too small assume uniform with cutoff
+		dlight.Attenuation1=0.0f;
+	else
+		// this will cause the light to drop to half intensity at the first far attenuation
+		dlight.Attenuation1=(float) 1.0/a;
+	dlight.Attenuation2=0.0f;
+
+	Set_Light(index,&dlight);
+}
+
+// ----------------------------------------------------------------------------
+//
+// Set the light environment. This is a lighting model which used up to four
+// directional lights to produce the lighting.
+//
+// ----------------------------------------------------------------------------
+
+void DX8Wrapper::Set_Light_Environment(LightEnvironmentClass* light_env)
+{
+	if (light_env) {
+
+		int light_count = light_env->Get_Light_Count();
+		Set_DX8_Render_State(D3DRS_AMBIENT,Convert_Color(light_env->Get_Equivalent_Ambient(),0.0f));
+
+		D3DLIGHT8 light;
+		::ZeroMemory(&light, sizeof(D3DLIGHT8));
+		light.Type=D3DLIGHT_DIRECTIONAL;
+
+		for (int l=0;l<light_count;++l) {
+			(Vector3&)light.Diffuse=light_env->Get_Light_Diffuse(l);
+			Vector3 dir=-light_env->Get_Light_Direction(l);
+			light.Direction=(const D3DVECTOR&)(dir);
+			Set_Light(l,&light);
+		}
+
+		for (;l<4;++l) {
+			Set_Light(l,NULL);
+		}
+	}
+/*	else {
+		for (int l=0;l<4;++l) {
+			Set_Light(l,NULL);
+		}
+	}
+*/
+}
+
+IDirect3DSurface8 * DX8Wrapper::_Get_DX8_Front_Buffer()
+{
+	DX8_THREAD_ASSERT();
+	D3DDISPLAYMODE mode;
+
+	DX8CALL(GetDisplayMode(&mode));
+
+	IDirect3DSurface8 * fb=NULL;
+
+	DX8CALL(CreateImageSurface(mode.Width,mode.Height,D3DFMT_A8R8G8B8,&fb));
+
+	DX8CALL(GetFrontBuffer(fb));
+	return fb;
+}
+
+SurfaceClass * DX8Wrapper::_Get_DX8_Back_Buffer(unsigned int num)
+{
+	DX8_THREAD_ASSERT();
+
+	IDirect3DSurface8 * bb;
+	SurfaceClass *surf=NULL;
+	DX8CALL(GetBackBuffer(num,D3DBACKBUFFER_TYPE_MONO,&bb));
+	if (bb)
+	{
+		surf=NEW_REF(SurfaceClass,(bb));
+		bb->Release();
+	}
+
+	return surf;
+}
+
+
+TextureClass *
+DX8Wrapper::Create_Render_Target (int width, int height, WW3DFormat format)
+{
+	DX8_THREAD_ASSERT();
+	DX8_Assert();
+	number_of_DX8_calls++;
+
+	// Use the current display format if format isn't specified
+	if (format==WW3D_FORMAT_UNKNOWN) {
+		D3DDISPLAYMODE mode;
+		DX8CALL(GetDisplayMode(&mode));
+		format=D3DFormat_To_WW3DFormat(mode.Format);
+	}
+
+	// If render target format isn't supported return NULL
+	if (!Get_Current_Caps()->Support_Render_To_Texture_Format(format)) {
+		WWDEBUG_SAY(("DX8Wrapper - Render target format is not supported\r\n"));
+		return NULL;
+	}
+
+	//
+	//	Note: We're going to force the width and height to be powers of two and equal
+	//
+	const D3DCAPS8& dx8caps=Get_Current_Caps()->Get_DX8_Caps();
+	float poweroftwosize = width;
+	if (height > 0 && height < width) {
+		poweroftwosize = height;
+	}
+	poweroftwosize = ::Find_POT (poweroftwosize);
+
+	if (poweroftwosize>dx8caps.MaxTextureWidth) {
+		poweroftwosize=dx8caps.MaxTextureWidth;
+	}
+	if (poweroftwosize>dx8caps.MaxTextureHeight) {
+		poweroftwosize=dx8caps.MaxTextureHeight;
+	}
+
+	width = height = poweroftwosize;
+
+	//
+	//	Attempt to create the render target
+	//
+	TextureClass * tex = NEW_REF(TextureClass,(width,height,format,TextureClass::MIP_LEVELS_1,TextureClass::POOL_DEFAULT,true));
+
+	// 3dfx drivers are lying in the CheckDeviceFormat call and claiming
+	// that they support render targets!
+	if (tex->Peek_DX8_Texture() == NULL) {
+		WWDEBUG_SAY(("DX8Wrapper - Render target creation failed!\r\n"));
+		REF_PTR_RELEASE(tex);
+	}
+
+	return tex;
+}
+
+
+void
+DX8Wrapper::Set_Render_Target (TextureClass * texture)
+{
+	WWASSERT(texture != NULL);
+	IDirect3DSurface8 * d3d_surf = texture->Get_D3D_Surface_Level();
+	WWASSERT(d3d_surf != NULL);
+	Set_Render_Target(d3d_surf);
+	d3d_surf->Release();
+
+	IsRenderToTexture = true;
+}
+
+void
+DX8Wrapper::Set_Render_Target(IDirect3DSwapChain8 *swap_chain)
+{
+	DX8_THREAD_ASSERT();
+	WWASSERT (swap_chain != NULL);
+
+	//
+	//	Get the back buffer for the swap chain
+	//
+	LPDIRECT3DSURFACE8 render_target = NULL;
+	swap_chain->GetBackBuffer (0, D3DBACKBUFFER_TYPE_MONO, &render_target);
+
+	//
+	//	Set this back buffer as the render targer
+	//
+	Set_Render_Target (render_target, true);
+
+	//
+	//	Release our hold on the back buffer
+	//
+	if (render_target != NULL) {
+		render_target->Release ();
+		render_target = NULL;
+	}
+
+	IsRenderToTexture = false;
+
+	return ;
+}
+
+void
+DX8Wrapper::Set_Render_Target(IDirect3DSurface8 *render_target, bool use_default_depth_buffer)
+{
+	DX8_THREAD_ASSERT();
+	DX8_Assert();
+
+	//
+	//	Should we restore the default render target set a new one?
+	//
+	if (render_target == NULL || render_target == DefaultRenderTarget) {
+		// If there is currently a custom render target, default must NOT be NULL.
+		if (CurrentRenderTarget) {
+			WWASSERT(DefaultRenderTarget!=NULL);
+		}
+
+		//
+		//	Restore the default render target
+		//
+		if (DefaultRenderTarget != NULL) {
+			DX8CALL(SetRenderTarget (DefaultRenderTarget, DefaultDepthBuffer));
+			DefaultRenderTarget->Release ();
+			DefaultRenderTarget = NULL;
+			if (DefaultDepthBuffer) {
+				DefaultDepthBuffer->Release ();
+				DefaultDepthBuffer = NULL;
+			}
+		}
+
+		//
+		//	Release our hold on the "current" render target
+		//
+		if (CurrentRenderTarget != NULL) {
+			CurrentRenderTarget->Release ();
+			CurrentRenderTarget = NULL;
+		}
+
+	} else if (render_target != CurrentRenderTarget) {
+		WWASSERT(DefaultRenderTarget==NULL);
+
+		//
+		//	We'll need the depth buffer later...
+		//
+		if (DefaultDepthBuffer == NULL) {
+//		IDirect3DSurface8 *depth_buffer = NULL;
+			DX8CALL(GetDepthStencilSurface (&DefaultDepthBuffer));
+		}
+
+		//
+		//	Get a pointer to the default render target (if necessary)
+		//
+		if (DefaultRenderTarget == NULL) {
+			DX8CALL(GetRenderTarget (&DefaultRenderTarget));
+		}
+
+		//
+		//	Release our hold on the old "current" render target
+		//
+		if (CurrentRenderTarget != NULL) {
+			CurrentRenderTarget->Release ();
+			CurrentRenderTarget = NULL;
+		}
+
+		//
+		//	Keep a copy of the current render target (for housekeeping)
+		//
+		CurrentRenderTarget = render_target;
+		WWASSERT (CurrentRenderTarget != NULL);
+		if (CurrentRenderTarget != NULL) {
+			CurrentRenderTarget->AddRef ();
+
+			//
+			//	Switch render targets
+			//
+			if (use_default_depth_buffer) {
+				DX8CALL(SetRenderTarget (CurrentRenderTarget, DefaultDepthBuffer));
+			} else {
+				DX8CALL(SetRenderTarget (CurrentRenderTarget, NULL));
+			}
+		}
+	}
+
+	//
+	//	Free our hold on the depth buffer
+	//
+//	if (depth_buffer != NULL) {
+//		depth_buffer->Release ();
+//		depth_buffer = NULL;
+//	}
+
+	IsRenderToTexture = false;
+	return ;
+}
+
+
+IDirect3DSwapChain8 *
+DX8Wrapper::Create_Additional_Swap_Chain (HWND render_window)
+{
+	DX8_Assert();
+
+	//
+	//	Configure the presentation parameters for a windowed render target
+	//
+	D3DPRESENT_PARAMETERS params				= { 0 };
+	params.BackBufferFormat						= _PresentParameters.BackBufferFormat;
+	params.BackBufferCount						= 1;
+	params.MultiSampleType						= D3DMULTISAMPLE_NONE;
+	params.SwapEffect								= D3DSWAPEFFECT_COPY_VSYNC;
+	params.hDeviceWindow							= render_window;
+	params.Windowed								= TRUE;
+	params.EnableAutoDepthStencil				= TRUE;
+	params.AutoDepthStencilFormat				= _PresentParameters.AutoDepthStencilFormat;
+	params.Flags									= 0;
+	params.FullScreen_RefreshRateInHz		= D3DPRESENT_RATE_DEFAULT;
+	params.FullScreen_PresentationInterval	= D3DPRESENT_INTERVAL_DEFAULT;
+
+	//
+	//	Create the swap chain
+	//
+	IDirect3DSwapChain8 *swap_chain = NULL;
+	DX8CALL(CreateAdditionalSwapChain(&params, &swap_chain));
+	return swap_chain;
+}
+
+void DX8Wrapper::Flush_DX8_Resource_Manager(unsigned int bytes)
+{
+	DX8_Assert();
+	DX8CALL(ResourceManagerDiscardBytes(bytes));
+}
+
+unsigned int DX8Wrapper::Get_Free_Texture_RAM()
+{
+	DX8_Assert();
+	number_of_DX8_calls++;
+	return DX8Wrapper::_Get_D3D_Device8()->GetAvailableTextureMem();
+}
+
+// Converts a linear gamma ramp to one that is controlled by:
+// Gamma - controls the curvature of the middle of the curve
+// Bright - controls the minimum value of the curve
+// Contrast - controls the difference between the maximum and the minimum of the curve
+void DX8Wrapper::Set_Gamma(float gamma,float bright,float contrast,bool calibrate,bool uselimit)
+{
+	gamma=Bound(gamma,0.6f,6.0f);
+	bright=Bound(bright,-0.5f,0.5f);
+	contrast=Bound(contrast,0.5f,2.0f);
+	float oo_gamma=1.0f/gamma;
+
+	DX8_Assert();
+	number_of_DX8_calls++;
+
+	DWORD flag=(calibrate?D3DSGR_CALIBRATE:D3DSGR_NO_CALIBRATION);
+
+	D3DGAMMARAMP ramp;
+	float			 limit;	
+
+	// IML: I'm not really sure what the intent of the 'limit' variable is. It does not produce useful results for my purposes.
+	if (uselimit) {
+		limit=(contrast-1)/2*contrast;
+	} else {
+		limit = 0.0f;
+	}
+
+	// HY - arrived at this equation after much trial and error.
+	for (int i=0; i<256; i++) {
+		float in,out;
+		in=i/256.0f;
+		float x=in-limit;
+		x=Bound(x,0.0f,1.0f);
+		x=powf(x,oo_gamma);
+		out=contrast*x+bright;
+		out=Bound(out,0.0f,1.0f);
+		ramp.red[i]=(WORD) (out*65535);
+		ramp.green[i]=(WORD) (out*65535);
+		ramp.blue[i]=(WORD) (out*65535);
+	}
+
+	if (Get_Current_Caps()->Support_Gamma())	{
+		DX8Wrapper::_Get_D3D_Device8()->SetGammaRamp(flag,&ramp);
+	} else {
+		HWND hwnd = GetDesktopWindow();
+		HDC hdc = GetDC(hwnd);
+		if (hdc)
+		{
+			SetDeviceGammaRamp (hdc, &ramp);
+			ReleaseDC (hwnd, hdc);
+		}
+	}
+}
+
+const char* DX8Wrapper::Get_DX8_Render_State_Name(D3DRENDERSTATETYPE state)
+{
+	switch (state) {
+	case D3DRS_ZENABLE                       : return "D3DRS_ZENABLE";
+	case D3DRS_FILLMODE                      : return "D3DRS_FILLMODE";
+	case D3DRS_SHADEMODE                     : return "D3DRS_SHADEMODE";
+	case D3DRS_LINEPATTERN                   : return "D3DRS_LINEPATTERN";
+	case D3DRS_ZWRITEENABLE                  : return "D3DRS_ZWRITEENABLE";
+	case D3DRS_ALPHATESTENABLE               : return "D3DRS_ALPHATESTENABLE";
+	case D3DRS_LASTPIXEL                     : return "D3DRS_LASTPIXEL";
+	case D3DRS_SRCBLEND                      : return "D3DRS_SRCBLEND";
+	case D3DRS_DESTBLEND                     : return "D3DRS_DESTBLEND";
+	case D3DRS_CULLMODE                      : return "D3DRS_CULLMODE";
+	case D3DRS_ZFUNC                         : return "D3DRS_ZFUNC";
+	case D3DRS_ALPHAREF                      : return "D3DRS_ALPHAREF";
+	case D3DRS_ALPHAFUNC                     : return "D3DRS_ALPHAFUNC";
+	case D3DRS_DITHERENABLE                  : return "D3DRS_DITHERENABLE";
+	case D3DRS_ALPHABLENDENABLE              : return "D3DRS_ALPHABLENDENABLE";
+	case D3DRS_FOGENABLE                     : return "D3DRS_FOGENABLE";
+	case D3DRS_SPECULARENABLE                : return "D3DRS_SPECULARENABLE";
+	case D3DRS_ZVISIBLE                      : return "D3DRS_ZVISIBLE";
+	case D3DRS_FOGCOLOR                      : return "D3DRS_FOGCOLOR";
+	case D3DRS_FOGTABLEMODE                  : return "D3DRS_FOGTABLEMODE";
+	case D3DRS_FOGSTART                      : return "D3DRS_FOGSTART";
+	case D3DRS_FOGEND                        : return "D3DRS_FOGEND";
+	case D3DRS_FOGDENSITY                    : return "D3DRS_FOGDENSITY";
+	case D3DRS_EDGEANTIALIAS                 : return "D3DRS_EDGEANTIALIAS";
+	case D3DRS_ZBIAS                         : return "D3DRS_ZBIAS";
+	case D3DRS_RANGEFOGENABLE                : return "D3DRS_RANGEFOGENABLE";
+	case D3DRS_STENCILENABLE                 : return "D3DRS_STENCILENABLE";
+	case D3DRS_STENCILFAIL                   : return "D3DRS_STENCILFAIL";
+	case D3DRS_STENCILZFAIL                  : return "D3DRS_STENCILZFAIL";
+	case D3DRS_STENCILPASS                   : return "D3DRS_STENCILPASS";
+	case D3DRS_STENCILFUNC                   : return "D3DRS_STENCILFUNC";
+	case D3DRS_STENCILREF                    : return "D3DRS_STENCILREF";
+	case D3DRS_STENCILMASK                   : return "D3DRS_STENCILMASK";
+	case D3DRS_STENCILWRITEMASK              : return "D3DRS_STENCILWRITEMASK";
+	case D3DRS_TEXTUREFACTOR                 : return "D3DRS_TEXTUREFACTOR";
+	case D3DRS_WRAP0                         : return "D3DRS_WRAP0";
+	case D3DRS_WRAP1                         : return "D3DRS_WRAP1";
+	case D3DRS_WRAP2                         : return "D3DRS_WRAP2";
+	case D3DRS_WRAP3                         : return "D3DRS_WRAP3";
+	case D3DRS_WRAP4                         : return "D3DRS_WRAP4";
+	case D3DRS_WRAP5                         : return "D3DRS_WRAP5";
+	case D3DRS_WRAP6                         : return "D3DRS_WRAP6";
+	case D3DRS_WRAP7                         : return "D3DRS_WRAP7";
+	case D3DRS_CLIPPING                      : return "D3DRS_CLIPPING";
+	case D3DRS_LIGHTING                      : return "D3DRS_LIGHTING";
+	case D3DRS_AMBIENT                       : return "D3DRS_AMBIENT";
+	case D3DRS_FOGVERTEXMODE                 : return "D3DRS_FOGVERTEXMODE";
+	case D3DRS_COLORVERTEX                   : return "D3DRS_COLORVERTEX";
+	case D3DRS_LOCALVIEWER                   : return "D3DRS_LOCALVIEWER";
+	case D3DRS_NORMALIZENORMALS              : return "D3DRS_NORMALIZENORMALS";
+	case D3DRS_DIFFUSEMATERIALSOURCE         : return "D3DRS_DIFFUSEMATERIALSOURCE";
+	case D3DRS_SPECULARMATERIALSOURCE        : return "D3DRS_SPECULARMATERIALSOURCE";
+	case D3DRS_AMBIENTMATERIALSOURCE         : return "D3DRS_AMBIENTMATERIALSOURCE";
+	case D3DRS_EMISSIVEMATERIALSOURCE        : return "D3DRS_EMISSIVEMATERIALSOURCE";
+	case D3DRS_VERTEXBLEND                   : return "D3DRS_VERTEXBLEND";
+	case D3DRS_CLIPPLANEENABLE               : return "D3DRS_CLIPPLANEENABLE";
+	case D3DRS_SOFTWAREVERTEXPROCESSING      : return "D3DRS_SOFTWAREVERTEXPROCESSING";
+	case D3DRS_POINTSIZE                     : return "D3DRS_POINTSIZE";
+	case D3DRS_POINTSIZE_MIN                 : return "D3DRS_POINTSIZE_MIN";
+	case D3DRS_POINTSPRITEENABLE             : return "D3DRS_POINTSPRITEENABLE";
+	case D3DRS_POINTSCALEENABLE              : return "D3DRS_POINTSCALEENABLE";
+	case D3DRS_POINTSCALE_A                  : return "D3DRS_POINTSCALE_A";
+	case D3DRS_POINTSCALE_B                  : return "D3DRS_POINTSCALE_B";
+	case D3DRS_POINTSCALE_C                  : return "D3DRS_POINTSCALE_C";
+	case D3DRS_MULTISAMPLEANTIALIAS          : return "D3DRS_MULTISAMPLEANTIALIAS";
+	case D3DRS_MULTISAMPLEMASK               : return "D3DRS_MULTISAMPLEMASK";
+	case D3DRS_PATCHEDGESTYLE                : return "D3DRS_PATCHEDGESTYLE";
+	case D3DRS_PATCHSEGMENTS                 : return "D3DRS_PATCHSEGMENTS";
+	case D3DRS_DEBUGMONITORTOKEN             : return "D3DRS_DEBUGMONITORTOKEN";
+	case D3DRS_POINTSIZE_MAX                 : return "D3DRS_POINTSIZE_MAX";
+	case D3DRS_INDEXEDVERTEXBLENDENABLE      : return "D3DRS_INDEXEDVERTEXBLENDENABLE";
+	case D3DRS_COLORWRITEENABLE              : return "D3DRS_COLORWRITEENABLE";
+	case D3DRS_TWEENFACTOR                   : return "D3DRS_TWEENFACTOR";
+	case D3DRS_BLENDOP                       : return "D3DRS_BLENDOP";
+//	case D3DRS_POSITIONORDER                 : return "D3DRS_POSITIONORDER";
+//	case D3DRS_NORMALORDER                   : return "D3DRS_NORMALORDER";
+	default											  : return "UNKNOWN";
+	}
+}
+
+const char* DX8Wrapper::Get_DX8_Texture_Stage_State_Name(D3DTEXTURESTAGESTATETYPE state)
+{
+	switch (state) {
+	case D3DTSS_COLOROP                   : return "D3DTSS_COLOROP";
+	case D3DTSS_COLORARG1                 : return "D3DTSS_COLORARG1";
+	case D3DTSS_COLORARG2                 : return "D3DTSS_COLORARG2";
+	case D3DTSS_ALPHAOP                   : return "D3DTSS_ALPHAOP";
+	case D3DTSS_ALPHAARG1                 : return "D3DTSS_ALPHAARG1";
+	case D3DTSS_ALPHAARG2                 : return "D3DTSS_ALPHAARG2";
+	case D3DTSS_BUMPENVMAT00              : return "D3DTSS_BUMPENVMAT00";
+	case D3DTSS_BUMPENVMAT01              : return "D3DTSS_BUMPENVMAT01";
+	case D3DTSS_BUMPENVMAT10              : return "D3DTSS_BUMPENVMAT10";
+	case D3DTSS_BUMPENVMAT11              : return "D3DTSS_BUMPENVMAT11";
+	case D3DTSS_TEXCOORDINDEX             : return "D3DTSS_TEXCOORDINDEX";
+	case D3DTSS_ADDRESSU                  : return "D3DTSS_ADDRESSU";
+	case D3DTSS_ADDRESSV                  : return "D3DTSS_ADDRESSV";
+	case D3DTSS_BORDERCOLOR               : return "D3DTSS_BORDERCOLOR";
+	case D3DTSS_MAGFILTER                 : return "D3DTSS_MAGFILTER";
+	case D3DTSS_MINFILTER                 : return "D3DTSS_MINFILTER";
+	case D3DTSS_MIPFILTER                 : return "D3DTSS_MIPFILTER";
+	case D3DTSS_MIPMAPLODBIAS             : return "D3DTSS_MIPMAPLODBIAS";
+	case D3DTSS_MAXMIPLEVEL               : return "D3DTSS_MAXMIPLEVEL";
+	case D3DTSS_MAXANISOTROPY             : return "D3DTSS_MAXANISOTROPY";
+	case D3DTSS_BUMPENVLSCALE             : return "D3DTSS_BUMPENVLSCALE";
+	case D3DTSS_BUMPENVLOFFSET            : return "D3DTSS_BUMPENVLOFFSET";
+	case D3DTSS_TEXTURETRANSFORMFLAGS     : return "D3DTSS_TEXTURETRANSFORMFLAGS";
+	case D3DTSS_ADDRESSW                  : return "D3DTSS_ADDRESSW";
+	case D3DTSS_COLORARG0                 : return "D3DTSS_COLORARG0";
+	case D3DTSS_ALPHAARG0                 : return "D3DTSS_ALPHAARG0";
+	case D3DTSS_RESULTARG                 : return "D3DTSS_RESULTARG";
+	default										  : return "UNKNOWN";
+	}
+}
+
+void DX8Wrapper::Get_DX8_Render_State_Value_Name(StringClass& name, D3DRENDERSTATETYPE state, unsigned value)
+{
+	switch (state) {
+	case D3DRS_ZENABLE:
+		name=Get_DX8_ZBuffer_Type_Name(value);
+		break;
+
+	case D3DRS_FILLMODE:
+		name=Get_DX8_Fill_Mode_Name(value);
+		break;
+
+	case D3DRS_SHADEMODE:
+		name=Get_DX8_Shade_Mode_Name(value);
+		break;
+
+	case D3DRS_LINEPATTERN:
+	case D3DRS_FOGCOLOR:
+	case D3DRS_ALPHAREF:
+	case D3DRS_STENCILMASK:
+	case D3DRS_STENCILWRITEMASK:
+	case D3DRS_TEXTUREFACTOR:
+	case D3DRS_AMBIENT:
+	case D3DRS_CLIPPLANEENABLE:
+	case D3DRS_MULTISAMPLEMASK:
+		name.Format("0x%x",value);
+		break;
+
+	case D3DRS_ZWRITEENABLE:
+	case D3DRS_ALPHATESTENABLE:
+	case D3DRS_LASTPIXEL:
+	case D3DRS_DITHERENABLE:
+	case D3DRS_ALPHABLENDENABLE:
+	case D3DRS_FOGENABLE:
+	case D3DRS_SPECULARENABLE:
+	case D3DRS_STENCILENABLE:
+	case D3DRS_RANGEFOGENABLE:
+	case D3DRS_EDGEANTIALIAS:
+	case D3DRS_CLIPPING:
+	case D3DRS_LIGHTING:
+	case D3DRS_COLORVERTEX:
+	case D3DRS_LOCALVIEWER:
+	case D3DRS_NORMALIZENORMALS:
+	case D3DRS_SOFTWAREVERTEXPROCESSING:
+	case D3DRS_POINTSPRITEENABLE:
+	case D3DRS_POINTSCALEENABLE:
+	case D3DRS_MULTISAMPLEANTIALIAS:
+	case D3DRS_INDEXEDVERTEXBLENDENABLE:
+		name=value ? "TRUE" : "FALSE";
+		break;
+
+	case D3DRS_SRCBLEND:
+	case D3DRS_DESTBLEND:
+		name=Get_DX8_Blend_Name(value);
+		break;
+
+	case D3DRS_CULLMODE:
+		name=Get_DX8_Cull_Mode_Name(value);
+		break;
+
+	case D3DRS_ZFUNC:
+	case D3DRS_ALPHAFUNC:
+	case D3DRS_STENCILFUNC:
+		name=Get_DX8_Cmp_Func_Name(value);
+		break;
+
+	case D3DRS_ZVISIBLE:
+		name="NOTSUPPORTED";
+		break;
+
+	case D3DRS_FOGTABLEMODE:
+	case D3DRS_FOGVERTEXMODE:
+		name=Get_DX8_Fog_Mode_Name(value);
+		break;
+
+	case D3DRS_FOGSTART:
+	case D3DRS_FOGEND:
+	case D3DRS_FOGDENSITY:
+	case D3DRS_POINTSIZE:
+	case D3DRS_POINTSIZE_MIN:
+	case D3DRS_POINTSCALE_A:
+	case D3DRS_POINTSCALE_B:
+	case D3DRS_POINTSCALE_C:
+	case D3DRS_PATCHSEGMENTS:
+	case D3DRS_POINTSIZE_MAX:
+	case D3DRS_TWEENFACTOR:
+		name.Format("%f",*(float*)&value);
+		break;
+
+	case D3DRS_ZBIAS:
+	case D3DRS_STENCILREF:
+		name.Format("%d",value);
+		break;
+
+	case D3DRS_STENCILFAIL:
+	case D3DRS_STENCILZFAIL:
+	case D3DRS_STENCILPASS:
+		name=Get_DX8_Stencil_Op_Name(value);
+		break;
+
+	case D3DRS_WRAP0:
+	case D3DRS_WRAP1:
+	case D3DRS_WRAP2:
+	case D3DRS_WRAP3:
+	case D3DRS_WRAP4:
+	case D3DRS_WRAP5:
+	case D3DRS_WRAP6:
+	case D3DRS_WRAP7:
+		name="0";
+		if (value&D3DWRAP_U) name+="|D3DWRAP_U";
+		if (value&D3DWRAP_V) name+="|D3DWRAP_V";
+		if (value&D3DWRAP_W) name+="|D3DWRAP_W";
+		break;
+
+	case D3DRS_DIFFUSEMATERIALSOURCE:
+	case D3DRS_SPECULARMATERIALSOURCE:
+	case D3DRS_AMBIENTMATERIALSOURCE:
+	case D3DRS_EMISSIVEMATERIALSOURCE:
+		name=Get_DX8_Material_Source_Name(value);
+		break;
+
+	case D3DRS_VERTEXBLEND:
+		name=Get_DX8_Vertex_Blend_Flag_Name(value);
+		break;
+
+	case D3DRS_PATCHEDGESTYLE:
+		name=Get_DX8_Patch_Edge_Style_Name(value);
+		break;
+
+	case D3DRS_DEBUGMONITORTOKEN:
+		name=Get_DX8_Debug_Monitor_Token_Name(value);
+		break;
+
+	case D3DRS_COLORWRITEENABLE:
+		name="0";
+		if (value&D3DCOLORWRITEENABLE_RED) name+="|D3DCOLORWRITEENABLE_RED";
+		if (value&D3DCOLORWRITEENABLE_GREEN) name+="|D3DCOLORWRITEENABLE_GREEN";
+		if (value&D3DCOLORWRITEENABLE_BLUE) name+="|D3DCOLORWRITEENABLE_BLUE";
+		if (value&D3DCOLORWRITEENABLE_ALPHA) name+="|D3DCOLORWRITEENABLE_ALPHA";
+		break;
+	case D3DRS_BLENDOP:
+		name=Get_DX8_Blend_Op_Name(value);
+		break;
+	default:
+		name.Format("UNKNOWN (%d)",value);
+		break;
+	}
+}
+
+void DX8Wrapper::Get_DX8_Texture_Stage_State_Value_Name(StringClass& name, D3DTEXTURESTAGESTATETYPE state, unsigned value)
+{
+	switch (state) {
+	case D3DTSS_COLOROP:
+	case D3DTSS_ALPHAOP:
+		name=Get_DX8_Texture_Op_Name(value);
+		break;
+
+	case D3DTSS_COLORARG0:
+	case D3DTSS_COLORARG1:
+	case D3DTSS_COLORARG2:
+	case D3DTSS_ALPHAARG0:
+	case D3DTSS_ALPHAARG1:
+	case D3DTSS_ALPHAARG2:
+	case D3DTSS_RESULTARG:
+		name=Get_DX8_Texture_Arg_Name(value);
+		break;
+
+	case D3DTSS_ADDRESSU:
+	case D3DTSS_ADDRESSV:
+	case D3DTSS_ADDRESSW:
+		name=Get_DX8_Texture_Address_Name(value);
+		break;
+
+	case D3DTSS_MAGFILTER:
+	case D3DTSS_MINFILTER:
+	case D3DTSS_MIPFILTER:
+		name=Get_DX8_Texture_Filter_Name(value);
+		break;
+
+	case D3DTSS_TEXTURETRANSFORMFLAGS:
+		name=Get_DX8_Texture_Transform_Flag_Name(value);
+
+	// Floating point values
+	case D3DTSS_MIPMAPLODBIAS:
+	case D3DTSS_BUMPENVMAT00:
+	case D3DTSS_BUMPENVMAT01:
+	case D3DTSS_BUMPENVMAT10:
+	case D3DTSS_BUMPENVMAT11:
+	case D3DTSS_BUMPENVLSCALE:
+	case D3DTSS_BUMPENVLOFFSET:
+		name.Format("%f",*(float*)&value);
+		break;
+
+	case D3DTSS_TEXCOORDINDEX:
+		if ((value&0xffff0000)==D3DTSS_TCI_CAMERASPACENORMAL) {
+			name.Format("D3DTSS_TCI_CAMERASPACENORMAL|%d",value&0xffff);
+		}
+		else if ((value&0xffff0000)==D3DTSS_TCI_CAMERASPACEPOSITION) {
+			name.Format("D3DTSS_TCI_CAMERASPACEPOSITION|%d",value&0xffff);
+		}
+		else if ((value&0xffff0000)==D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR) {
+			name.Format("D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR|%d",value&0xffff);
+		}
+		else {
+			name.Format("%d",value);
+		}
+		break;
+
+	// Integer value
+	case D3DTSS_MAXMIPLEVEL:
+	case D3DTSS_MAXANISOTROPY:
+		name.Format("%d",value);
+		break;
+	// Hex values
+	case D3DTSS_BORDERCOLOR:
+		name.Format("0x%x",value);
+		break;
+
+	default:
+		name.Format("UNKNOWN (%d)",value);
+		break;
+	}
+}
+
+const char* DX8Wrapper::Get_DX8_Texture_Op_Name(unsigned value)
+{
+	switch (value) {
+	case D3DTOP_DISABLE                      : return "D3DTOP_DISABLE";
+	case D3DTOP_SELECTARG1                   : return "D3DTOP_SELECTARG1";
+	case D3DTOP_SELECTARG2                   : return "D3DTOP_SELECTARG2";
+	case D3DTOP_MODULATE                     : return "D3DTOP_MODULATE";
+	case D3DTOP_MODULATE2X                   : return "D3DTOP_MODULATE2X";
+	case D3DTOP_MODULATE4X                   : return "D3DTOP_MODULATE4X";
+	case D3DTOP_ADD                          : return "D3DTOP_ADD";
+	case D3DTOP_ADDSIGNED                    : return "D3DTOP_ADDSIGNED";
+	case D3DTOP_ADDSIGNED2X                  : return "D3DTOP_ADDSIGNED2X";
+	case D3DTOP_SUBTRACT                     : return "D3DTOP_SUBTRACT";
+	case D3DTOP_ADDSMOOTH                    : return "D3DTOP_ADDSMOOTH";
+	case D3DTOP_BLENDDIFFUSEALPHA            : return "D3DTOP_BLENDDIFFUSEALPHA";
+	case D3DTOP_BLENDTEXTUREALPHA            : return "D3DTOP_BLENDTEXTUREALPHA";
+	case D3DTOP_BLENDFACTORALPHA             : return "D3DTOP_BLENDFACTORALPHA";
+	case D3DTOP_BLENDTEXTUREALPHAPM          : return "D3DTOP_BLENDTEXTUREALPHAPM";
+	case D3DTOP_BLENDCURRENTALPHA            : return "D3DTOP_BLENDCURRENTALPHA";
+	case D3DTOP_PREMODULATE                  : return "D3DTOP_PREMODULATE";
+	case D3DTOP_MODULATEALPHA_ADDCOLOR       : return "D3DTOP_MODULATEALPHA_ADDCOLOR";
+	case D3DTOP_MODULATECOLOR_ADDALPHA       : return "D3DTOP_MODULATECOLOR_ADDALPHA";
+	case D3DTOP_MODULATEINVALPHA_ADDCOLOR    : return "D3DTOP_MODULATEINVALPHA_ADDCOLOR";
+	case D3DTOP_MODULATEINVCOLOR_ADDALPHA    : return "D3DTOP_MODULATEINVCOLOR_ADDALPHA";
+	case D3DTOP_BUMPENVMAP                   : return "D3DTOP_BUMPENVMAP";
+	case D3DTOP_BUMPENVMAPLUMINANCE          : return "D3DTOP_BUMPENVMAPLUMINANCE";
+	case D3DTOP_DOTPRODUCT3                  : return "D3DTOP_DOTPRODUCT3";
+	case D3DTOP_MULTIPLYADD                  : return "D3DTOP_MULTIPLYADD";
+	case D3DTOP_LERP                         : return "D3DTOP_LERP";
+	default										     : return "UNKNOWN";
+	}
+}
+
+const char* DX8Wrapper::Get_DX8_Texture_Arg_Name(unsigned value)
+{
+	switch (value) {
+	case D3DTA_CURRENT			: return "D3DTA_CURRENT";
+	case D3DTA_DIFFUSE			: return "D3DTA_DIFFUSE";
+	case D3DTA_SELECTMASK		: return "D3DTA_SELECTMASK";
+	case D3DTA_SPECULAR			: return "D3DTA_SPECULAR";
+	case D3DTA_TEMP				: return "D3DTA_TEMP";
+	case D3DTA_TEXTURE			: return "D3DTA_TEXTURE";
+	case D3DTA_TFACTOR			: return "D3DTA_TFACTOR";
+	case D3DTA_ALPHAREPLICATE	: return "D3DTA_ALPHAREPLICATE";
+	case D3DTA_COMPLEMENT		: return "D3DTA_COMPLEMENT";
+	default					      : return "UNKNOWN";
+	}
+}
+
+const char* DX8Wrapper::Get_DX8_Texture_Filter_Name(unsigned value)
+{
+	switch (value) {
+	case D3DTEXF_NONE				: return "D3DTEXF_NONE";
+	case D3DTEXF_POINT			: return "D3DTEXF_POINT";
+	case D3DTEXF_LINEAR			: return "D3DTEXF_LINEAR";
+	case D3DTEXF_ANISOTROPIC	: return "D3DTEXF_ANISOTROPIC";
+	case D3DTEXF_FLATCUBIC		: return "D3DTEXF_FLATCUBIC";
+	case D3DTEXF_GAUSSIANCUBIC	: return "D3DTEXF_GAUSSIANCUBIC";
+	default					      : return "UNKNOWN";
+	}
+}
+
+const char* DX8Wrapper::Get_DX8_Texture_Address_Name(unsigned value)
+{
+	switch (value) {
+	case D3DTADDRESS_WRAP		: return "D3DTADDRESS_WRAP";
+	case D3DTADDRESS_MIRROR		: return "D3DTADDRESS_MIRROR";
+	case D3DTADDRESS_CLAMP		: return "D3DTADDRESS_CLAMP";
+	case D3DTADDRESS_BORDER		: return "D3DTADDRESS_BORDER";
+	case D3DTADDRESS_MIRRORONCE: return "D3DTADDRESS_MIRRORONCE";
+	default					      : return "UNKNOWN";
+	}
+}
+
+const char* DX8Wrapper::Get_DX8_Texture_Transform_Flag_Name(unsigned value)
+{
+	switch (value) {
+	case D3DTTFF_DISABLE			: return "D3DTTFF_DISABLE";
+	case D3DTTFF_COUNT1			: return "D3DTTFF_COUNT1";
+	case D3DTTFF_COUNT2			: return "D3DTTFF_COUNT2";
+	case D3DTTFF_COUNT3			: return "D3DTTFF_COUNT3";
+	case D3DTTFF_COUNT4			: return "D3DTTFF_COUNT4";
+	case D3DTTFF_PROJECTED		: return "D3DTTFF_PROJECTED";
+	default					      : return "UNKNOWN";
+	}
+}
+
+const char* DX8Wrapper::Get_DX8_ZBuffer_Type_Name(unsigned value)
+{
+	switch (value) {
+	case D3DZB_FALSE				: return "D3DZB_FALSE";
+	case D3DZB_TRUE				: return "D3DZB_TRUE";
+	case D3DZB_USEW				: return "D3DZB_USEW";
+	default					      : return "UNKNOWN";
+	}
+}
+
+const char* DX8Wrapper::Get_DX8_Fill_Mode_Name(unsigned value)
+{
+	switch (value) {
+	case D3DFILL_POINT			: return "D3DFILL_POINT";
+	case D3DFILL_WIREFRAME		: return "D3DFILL_WIREFRAME";
+	case D3DFILL_SOLID			: return "D3DFILL_SOLID";
+	default					      : return "UNKNOWN";
+	}
+}
+
+const char* DX8Wrapper::Get_DX8_Shade_Mode_Name(unsigned value)
+{
+	switch (value) {
+	case D3DSHADE_FLAT			: return "D3DSHADE_FLAT";
+	case D3DSHADE_GOURAUD		: return "D3DSHADE_GOURAUD";
+	case D3DSHADE_PHONG			: return "D3DSHADE_PHONG";
+	default							: return "UNKNOWN";
+	}
+}
+
+const char* DX8Wrapper::Get_DX8_Blend_Name(unsigned value)
+{
+	switch (value) {
+	case D3DBLEND_ZERO                : return "D3DBLEND_ZERO";
+	case D3DBLEND_ONE                 : return "D3DBLEND_ONE";
+	case D3DBLEND_SRCCOLOR            : return "D3DBLEND_SRCCOLOR";
+	case D3DBLEND_INVSRCCOLOR         : return "D3DBLEND_INVSRCCOLOR";
+	case D3DBLEND_SRCALPHA            : return "D3DBLEND_SRCALPHA";
+	case D3DBLEND_INVSRCALPHA         : return "D3DBLEND_INVSRCALPHA";
+	case D3DBLEND_DESTALPHA           : return "D3DBLEND_DESTALPHA";
+	case D3DBLEND_INVDESTALPHA        : return "D3DBLEND_INVDESTALPHA";
+	case D3DBLEND_DESTCOLOR           : return "D3DBLEND_DESTCOLOR";
+	case D3DBLEND_INVDESTCOLOR        : return "D3DBLEND_INVDESTCOLOR";
+	case D3DBLEND_SRCALPHASAT         : return "D3DBLEND_SRCALPHASAT";
+	case D3DBLEND_BOTHSRCALPHA        : return "D3DBLEND_BOTHSRCALPHA";
+	case D3DBLEND_BOTHINVSRCALPHA     : return "D3DBLEND_BOTHINVSRCALPHA";
+	default									 : return "UNKNOWN";
+	}
+}
+
+const char* DX8Wrapper::Get_DX8_Cull_Mode_Name(unsigned value)
+{
+	switch (value) {
+	case D3DCULL_NONE				: return "D3DCULL_NONE";
+	case D3DCULL_CW				: return "D3DCULL_CW";
+	case D3DCULL_CCW				: return "D3DCULL_CCW";
+	default							: return "UNKNOWN";
+	}
+}
+
+const char* DX8Wrapper::Get_DX8_Cmp_Func_Name(unsigned value)
+{
+	switch (value) {
+	case D3DCMP_NEVER          : return "D3DCMP_NEVER";
+	case D3DCMP_LESS           : return "D3DCMP_LESS";
+	case D3DCMP_EQUAL          : return "D3DCMP_EQUAL";
+	case D3DCMP_LESSEQUAL      : return "D3DCMP_LESSEQUAL";
+	case D3DCMP_GREATER        : return "D3DCMP_GREATER";
+	case D3DCMP_NOTEQUAL       : return "D3DCMP_NOTEQUAL";
+	case D3DCMP_GREATEREQUAL   : return "D3DCMP_GREATEREQUAL";
+	case D3DCMP_ALWAYS         : return "D3DCMP_ALWAYS";
+	default							: return "UNKNOWN";
+	}
+}
+
+const char* DX8Wrapper::Get_DX8_Fog_Mode_Name(unsigned value)
+{
+	switch (value) {
+	case D3DFOG_NONE				: return "D3DFOG_NONE";
+	case D3DFOG_EXP				: return "D3DFOG_EXP";
+	case D3DFOG_EXP2				: return "D3DFOG_EXP2";
+	case D3DFOG_LINEAR			: return "D3DFOG_LINEAR";
+	default							: return "UNKNOWN";
+	}
+}
+
+const char* DX8Wrapper::Get_DX8_Stencil_Op_Name(unsigned value)
+{
+	switch (value) {
+	case D3DSTENCILOP_KEEP		: return "D3DSTENCILOP_KEEP";
+	case D3DSTENCILOP_ZERO		: return "D3DSTENCILOP_ZERO";
+	case D3DSTENCILOP_REPLACE	: return "D3DSTENCILOP_REPLACE";
+	case D3DSTENCILOP_INCRSAT	: return "D3DSTENCILOP_INCRSAT";
+	case D3DSTENCILOP_DECRSAT	: return "D3DSTENCILOP_DECRSAT";
+	case D3DSTENCILOP_INVERT	: return "D3DSTENCILOP_INVERT";
+	case D3DSTENCILOP_INCR		: return "D3DSTENCILOP_INCR";
+	case D3DSTENCILOP_DECR		: return "D3DSTENCILOP_DECR";
+	default							: return "UNKNOWN";
+	}
+}
+
+const char* DX8Wrapper::Get_DX8_Material_Source_Name(unsigned value)
+{
+	switch (value) {
+	case D3DMCS_MATERIAL			: return "D3DMCS_MATERIAL";
+	case D3DMCS_COLOR1			: return "D3DMCS_COLOR1";
+	case D3DMCS_COLOR2			: return "D3DMCS_COLOR2";
+	default							: return "UNKNOWN";
+	}
+}
+
+const char* DX8Wrapper::Get_DX8_Vertex_Blend_Flag_Name(unsigned value)
+{
+	switch (value) {
+	case D3DVBF_DISABLE			: return "D3DVBF_DISABLE";
+	case D3DVBF_1WEIGHTS			: return "D3DVBF_1WEIGHTS";
+	case D3DVBF_2WEIGHTS			: return "D3DVBF_2WEIGHTS";
+	case D3DVBF_3WEIGHTS			: return "D3DVBF_3WEIGHTS";
+	case D3DVBF_TWEENING			: return "D3DVBF_TWEENING";
+	case D3DVBF_0WEIGHTS			: return "D3DVBF_0WEIGHTS";
+	default							: return "UNKNOWN";
+	}
+}
+
+const char* DX8Wrapper::Get_DX8_Patch_Edge_Style_Name(unsigned value)
+{
+	switch (value) {
+	case D3DPATCHEDGE_DISCRETE	: return "D3DPATCHEDGE_DISCRETE";
+   case D3DPATCHEDGE_CONTINUOUS:return "D3DPATCHEDGE_CONTINUOUS";
+	default							: return "UNKNOWN";
+	}
+}
+
+const char* DX8Wrapper::Get_DX8_Debug_Monitor_Token_Name(unsigned value)
+{
+	switch (value) {
+	case D3DDMT_ENABLE			: return "D3DDMT_ENABLE";
+	case D3DDMT_DISABLE			: return "D3DDMT_DISABLE";
+	default							: return "UNKNOWN";
+	}
+}
+
+const char* DX8Wrapper::Get_DX8_Blend_Op_Name(unsigned value)
+{
+	switch (value) {
+	case D3DBLENDOP_ADD			: return "D3DBLENDOP_ADD";
+	case D3DBLENDOP_SUBTRACT	: return "D3DBLENDOP_SUBTRACT";
+	case D3DBLENDOP_REVSUBTRACT: return "D3DBLENDOP_REVSUBTRACT";
+	case D3DBLENDOP_MIN			: return "D3DBLENDOP_MIN";
+	case D3DBLENDOP_MAX			: return "D3DBLENDOP_MAX";
+	default							: return "UNKNOWN";
+	}
 }

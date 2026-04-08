@@ -68,42 +68,40 @@ if(RENEGADE_AUDIO_BACKEND STREQUAL "SDL_MIXER")
     add_subdirectory("${RENEGADE_SDL3_MIXER_SUBMODULE_PATH}" external/SDL_mixer EXCLUDE_FROM_ALL)
 endif()
 
-if(RENEGADE_WITH_BGFX_RENDERER)
-    set(BGFX_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-    set(BGFX_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-    set(BGFX_INSTALL OFF CACHE BOOL "" FORCE)
-    set(BGFX_CUSTOM_TARGETS OFF CACHE BOOL "" FORCE)
-    set(BGFX_BUILD_TOOLS ON CACHE BOOL "" FORCE)
-    set(BGFX_BUILD_TOOLS_SHADER ON CACHE BOOL "" FORCE)
-    set(BGFX_BUILD_TOOLS_BIN2C OFF CACHE BOOL "" FORCE)
-    set(BGFX_BUILD_TOOLS_GEOMETRY OFF CACHE BOOL "" FORCE)
-    set(BGFX_BUILD_TOOLS_TEXTURE OFF CACHE BOOL "" FORCE)
+set(BGFX_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(BGFX_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(BGFX_INSTALL OFF CACHE BOOL "" FORCE)
+set(BGFX_CUSTOM_TARGETS OFF CACHE BOOL "" FORCE)
+set(BGFX_BUILD_TOOLS ON CACHE BOOL "" FORCE)
+set(BGFX_BUILD_TOOLS_SHADER ON CACHE BOOL "" FORCE)
+set(BGFX_BUILD_TOOLS_BIN2C OFF CACHE BOOL "" FORCE)
+set(BGFX_BUILD_TOOLS_GEOMETRY OFF CACHE BOOL "" FORCE)
+set(BGFX_BUILD_TOOLS_TEXTURE OFF CACHE BOOL "" FORCE)
 
-    FetchContent_Declare(
-        bgfx_cmake
-        GIT_REPOSITORY https://github.com/bkaradzic/bgfx.cmake.git
-        GIT_TAG ${RENEGADE_BGFX_CMAKE_TAG}
-        GIT_SHALLOW TRUE
-        GIT_PROGRESS TRUE
-        GIT_SUBMODULES_RECURSE TRUE
-    )
-    FetchContent_MakeAvailable(bgfx_cmake)
+FetchContent_Declare(
+    bgfx_cmake
+    GIT_REPOSITORY https://github.com/bkaradzic/bgfx.cmake.git
+    GIT_TAG ${RENEGADE_BGFX_CMAKE_TAG}
+    GIT_SHALLOW TRUE
+    GIT_PROGRESS TRUE
+    GIT_SUBMODULES_RECURSE TRUE
+)
+FetchContent_MakeAvailable(bgfx_cmake)
 
-    set(RENEGADE_BGFX_TOOL_UTILS "${bgfx_cmake_SOURCE_DIR}/cmake/bgfxToolUtils.cmake")
-    file(READ "${RENEGADE_BGFX_TOOL_UTILS}" _renegade_bgfx_tool_utils)
-    string(REPLACE "$<IF:$<CONFIG:Debug>:0,3>" "$<IF:$<CONFIG:Debug>,0,3>" _renegade_bgfx_tool_utils_patched "${_renegade_bgfx_tool_utils}")
-    if(NOT _renegade_bgfx_tool_utils STREQUAL _renegade_bgfx_tool_utils_patched)
-        file(WRITE "${RENEGADE_BGFX_TOOL_UTILS}" "${_renegade_bgfx_tool_utils_patched}")
-    endif()
-
-    if(TARGET glsl-optimizer)
-        target_compile_definitions(glsl-optimizer PRIVATE _GNU_SOURCE)
-    endif()
-    if(TARGET fcpp)
-        target_compile_definitions(fcpp PRIVATE _GNU_SOURCE)
-    endif()
-
-    include("${bgfx_cmake_SOURCE_DIR}/cmake/bgfxToolUtils.cmake")
+set(RENEGADE_BGFX_TOOL_UTILS "${bgfx_cmake_SOURCE_DIR}/cmake/bgfxToolUtils.cmake")
+file(READ "${RENEGADE_BGFX_TOOL_UTILS}" _renegade_bgfx_tool_utils)
+string(REPLACE "$<IF:$<CONFIG:Debug>:0,3>" "$<IF:$<CONFIG:Debug>,0,3>" _renegade_bgfx_tool_utils_patched "${_renegade_bgfx_tool_utils}")
+if(NOT _renegade_bgfx_tool_utils STREQUAL _renegade_bgfx_tool_utils_patched)
+    file(WRITE "${RENEGADE_BGFX_TOOL_UTILS}" "${_renegade_bgfx_tool_utils_patched}")
 endif()
+
+if(TARGET glsl-optimizer)
+    target_compile_definitions(glsl-optimizer PRIVATE _GNU_SOURCE)
+endif()
+if(TARGET fcpp)
+    target_compile_definitions(fcpp PRIVATE _GNU_SOURCE)
+endif()
+
+include("${bgfx_cmake_SOURCE_DIR}/cmake/bgfxToolUtils.cmake")
 
 add_subdirectory(Code)

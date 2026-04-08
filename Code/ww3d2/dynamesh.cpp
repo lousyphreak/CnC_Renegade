@@ -49,7 +49,7 @@
 ** DynamicMeshModel implementation
 */
 
-DynamicMeshModel::DynamicMeshModel(uint32_t max_polys, uint32_t max_verts) :
+DynamicMeshModel::DynamicMeshModel(unsigned int max_polys, unsigned int max_verts) :
 	MeshGeometryClass(),
 	DynamicMeshPNum(0),
 	DynamicMeshVNum(0),
@@ -65,7 +65,7 @@ DynamicMeshModel::DynamicMeshModel(uint32_t max_polys, uint32_t max_verts) :
 	Reset_Geometry(max_polys, max_verts);
 }
 
-DynamicMeshModel::DynamicMeshModel(uint32_t max_polys, uint32_t max_verts, MaterialInfoClass *mat_info) :
+DynamicMeshModel::DynamicMeshModel(unsigned int max_polys, unsigned int max_verts, MaterialInfoClass *mat_info) :
 	MeshGeometryClass(),
 	DynamicMeshPNum(0),
 	DynamicMeshVNum(0),
@@ -190,7 +190,7 @@ void DynamicMeshModel::Render(RenderInfoClass & rinfo)
 	{ // scope for lock
 
 		DynamicVBAccessClass::WriteLockClass lock(&dynamic_vb);
-		uint8_t *vertices = (uint8_t*)lock.Get_Formatted_Vertex_Array();			
+		unsigned char *vertices = (unsigned char*)lock.Get_Formatted_Vertex_Array();			
 		const Vector3 *locs = Get_Vertex_Array();
 		const Vector3 *normals = Get_Vertex_Normal_Array();
 		const Vector2 *uvs = MatDesc->Get_UV_Array_By_Index(0, false);
@@ -198,7 +198,7 @@ void DynamicMeshModel::Render(RenderInfoClass & rinfo)
 		const unsigned *colors = MatDesc->Get_Color_Array(0, false);
 		const static Vector3 default_normal(0.0f, 0.0f, 0.0f);
 		const static Vector2 default_uv(0.0f, 0.0f);
-		const uint32_t default_color = 0xFFFFFFFF;
+		const unsigned int default_color = 0xFFFFFFFF;
 		for (int i=0; i < DynamicMeshVNum; i++)
 		{
 			*(Vector3 *)(vertices + fvf_info.Get_Location_Offset()) = locs[i];
@@ -215,9 +215,9 @@ void DynamicMeshModel::Render(RenderInfoClass & rinfo)
 			}
 
 			if (colors) {
-				*(uint32_t *)(vertices + fvf_info.Get_Diffuse_Offset()) = colors[i];
+				*(unsigned int *)(vertices + fvf_info.Get_Diffuse_Offset()) = colors[i];
 			} else {
-				*(uint32_t *)(vertices + fvf_info.Get_Diffuse_Offset()) = default_color;
+				*(unsigned int *)(vertices + fvf_info.Get_Diffuse_Offset()) = default_color;
 			}
 			vertices += fvf_info.Get_FVF_Size();
 		}			
@@ -233,12 +233,12 @@ void DynamicMeshModel::Render(RenderInfoClass & rinfo)
 	{ // scope for lock
 
 		DynamicIBAccessClass::WriteLockClass lock(&dynamic_ib);
-		uint16_t * indices = lock.Get_Index_Array();
+		unsigned short * indices = lock.Get_Index_Array();
 		for (int i=0; i < DynamicMeshPNum; i++)
 		{
-			indices[i*3 + 0] = (uint16_t)tris[i][0];
-			indices[i*3 + 1] = (uint16_t)tris[i][1];
-			indices[i*3 + 2] = (uint16_t)tris[i][2];
+			indices[i*3 + 0] = (unsigned short)tris[i][0];
+			indices[i*3 + 1] = (unsigned short)tris[i][1];
+			indices[i*3 + 2] = (unsigned short)tris[i][2];
 		}
 
 	} // end scope for lock
@@ -252,8 +252,8 @@ void DynamicMeshModel::Render(RenderInfoClass & rinfo)
 	/*
 	** Draw dynamesh, one pass at a time
 	*/
-	uint32_t pass_count = Get_Pass_Count();
-	for (uint32_t pass = 0; pass < pass_count; pass++) {
+	unsigned int pass_count = Get_Pass_Count();
+	for (unsigned int pass = 0; pass < pass_count; pass++) {
 
 		/*
 		** Set current render states (texture, vertex material, shader). Scan triangles until one
@@ -261,10 +261,10 @@ void DynamicMeshModel::Render(RenderInfoClass & rinfo)
 		*/
 
 		// The vertex index range used
-		uint16_t min_vert_idx = DynamicMeshVNum - 1;
-		uint16_t max_vert_idx = 0;
-		uint16_t start_tri_idx = 0;
-		uint16_t cur_tri_idx = 0;
+		unsigned short min_vert_idx = DynamicMeshVNum - 1;
+		unsigned short max_vert_idx = 0;
+		unsigned short start_tri_idx = 0;
+		unsigned short cur_tri_idx = 0;
 
 		bool done = false;
 		bool texture_changed = false;
@@ -339,13 +339,13 @@ void DynamicMeshModel::Render(RenderInfoClass & rinfo)
 
 			// Add vertex indices of tri[cur_tri_idx] to min_vert_idx, max_vert_idx
 			const TriIndex &tri = tris[cur_tri_idx];
-			uint16_t min_idx = (uint16_t)MIN(MIN(tri.I, tri.J), tri.K);
-			uint16_t max_idx = (uint16_t)MAX(MAX(tri.I, tri.J), tri.K);
+			unsigned short min_idx = (unsigned short)MIN(MIN(tri.I, tri.J), tri.K);
+			unsigned short max_idx = (unsigned short)MAX(MAX(tri.I, tri.J), tri.K);
 			min_vert_idx = MIN(min_vert_idx, min_idx);
 			max_vert_idx = MAX(max_vert_idx, max_idx);
 
 			// Check the next triangle to see if the current run has ended.
-			uint16_t next_tri_idx = cur_tri_idx + 1;
+			unsigned short next_tri_idx = cur_tri_idx + 1;
 			done = next_tri_idx >= DynamicMeshPNum;
 			if (done) {
 				texture_changed = false;
@@ -712,8 +712,7 @@ int DynamicMeshClass::Set_Vertex_Material(VertexMaterialClass *material, bool do
 	// list.  if we are not supposed to search the list for it then just add
 	// it.
 	if (!dont_search) {
-		int found = 0;
-		for (int lp = 0; lp < Peek_Material_Info()->Vertex_Material_Count(); lp ++) {
+		for (int lp = 0, found = 0; lp < Peek_Material_Info()->Vertex_Material_Count(); lp ++) {
 			VertexMaterialClass *mat = Peek_Material_Info()->Get_Vertex_Material(lp);
 			if (material == mat) {
 				VertexMaterialIdx[pass] = lp;
@@ -774,8 +773,7 @@ int DynamicMeshClass::Set_Texture(TextureClass *texture, bool dont_search, int p
 	// list.  if we are not supposed to search the list for it then just add
 	// it.
 	if (!dont_search) {
-		int found = 0;
-		for (int lp = 0; lp < Peek_Material_Info()->Texture_Count(); lp ++) {
+		for (int lp = 0, found = 0; lp < Peek_Material_Info()->Texture_Count(); lp ++) {
 			TextureClass *tex = Peek_Material_Info()->Get_Texture(lp);
 			if (texture == tex) {
 				TextureIdx[pass] = lp;

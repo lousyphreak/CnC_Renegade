@@ -24,7 +24,6 @@
 #include "rect.h"
 #include "subtitlemanager.h"
 #include "dx8caps.h"
-#include "bgfx_compat_resources.h"
 
 class BINKMovieClass
 {
@@ -307,11 +306,11 @@ void BINKMovieClass::Render()
 					h = Bink->Height-TextureInfos[t].TextureLocY;
 				}
 
-				BgfxCompatTexture *texture = BgfxCompat_To_Texture(d3d_texture);
+				BgfxTexture *texture = Bgfx_To_Texture(d3d_texture);
 				if (texture != NULL) {
-					const size_t row_bytes = static_cast<size_t>(w) * BgfxCompat_Get_Pixel_Size(texture->format);
+					const size_t row_bytes = static_cast<size_t>(w) * Bgfx_Get_Pixel_Size(texture->format);
 					for (unsigned y = 0; y < h; ++y) {
-						uint8_t *dest = texture->bytes.data() + static_cast<size_t>(y) * static_cast<size_t>(texture->width) * BgfxCompat_Get_Pixel_Size(texture->format);
+						uint8_t *dest = texture->bytes.data() + static_cast<size_t>(y) * static_cast<size_t>(texture->width) * Bgfx_Get_Pixel_Size(texture->format);
 						memcpy(dest, cur_tex_ptr, row_bytes);
 						cur_tex_ptr += Bink->Width * 2;
 					}

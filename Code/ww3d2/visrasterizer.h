@@ -38,8 +38,6 @@
 
 #if defined(_MSC_VER)
 #pragma once
-
-#include <cstdint>
 #endif
 
 #ifndef VISRASTERIZER_H
@@ -78,10 +76,10 @@ public:
 	void						Set_Resolution(int w,int h);
 	void						Get_Resolution(int * get_w,int * get_h);
 	
-	void						Set_Backface_ID(uint32_t id)		{ BackfaceID = id; }
-	void						Set_Frontface_ID(uint32_t id)	{ FrontfaceID = id; }
-	uint32_t					Get_Backface_ID(void)			{ return BackfaceID; }
-	uint32_t					Get_Frontface_ID(void)			{ return FrontfaceID; }
+	void						Set_Backface_ID(uint32 id)		{ BackfaceID = id; }
+	void						Set_Frontface_ID(uint32 id)	{ FrontfaceID = id; }
+	uint32					Get_Backface_ID(void)			{ return BackfaceID; }
+	uint32					Get_Frontface_ID(void)			{ return FrontfaceID; }
 
 	void						Enable_Two_Sided_Rendering(bool onoff)		{ TwoSidedRenderingEnabled = onoff; }
 	bool						Is_Two_Sided_Rendering_Enabled(void)		{ return TwoSidedRenderingEnabled; }
@@ -98,7 +96,7 @@ public:
 	*/
 	void						Clear(void);
 	bool						Render_Triangle(const Vector3 & p0,const Vector3 & p1,const Vector3 & p2);
-	const uint32_t *			Get_Pixel_Row(int y,int min_x,int max_x);
+	const uint32 *			Get_Pixel_Row(int y,int min_x,int max_x);
 
 protected:
 	void						Reset(void);
@@ -108,20 +106,20 @@ protected:
 	int						Render_Non_Occluder_Scanline(GradientsStruct & grads,EdgeStruct * left,EdgeStruct * right);
 	int						Pixel_Coords_To_Address(int x,int y)	{ return y*ResWidth + x; }
 
-	uint32_t					BackfaceID;
-	uint32_t					FrontfaceID;
-	uint32_t					CurID;
+	uint32					BackfaceID;
+	uint32					FrontfaceID;
+	uint32					CurID;
 	int						PixelCounter;
 	ModeType					RenderMode;
 	bool						TwoSidedRenderingEnabled;
 
 	int						ResWidth;
 	int						ResHeight;
-	uint32_t *					IDBuffer;
+	uint32 *					IDBuffer;
 	float *					ZBuffer;		// actually a 1/z buffer...
 };
 
-inline const uint32_t * IDBufferClass::Get_Pixel_Row(int y,int min_x,int max_x)
+inline const uint32 * IDBufferClass::Get_Pixel_Row(int y,int min_x,int max_x)
 {
 	WWASSERT(y>=0);
 	WWASSERT(y<ResHeight);
@@ -166,10 +164,10 @@ public:
 	void					Set_Render_Mode(IDBufferClass::ModeType mode) { IDBuffer.Set_Render_Mode(mode); }
 	IDBufferClass::ModeType	Get_Render_Mode(void)	{ return IDBuffer.Get_Render_Mode(); }
 
-	void					Set_Backface_ID(uint32_t id)		{ IDBuffer.Set_Backface_ID(id); }
-	void					Set_Frontface_ID(uint32_t id)	{ IDBuffer.Set_Frontface_ID(id); }
-	uint32_t				Get_Backface_ID(void)			{ return IDBuffer.Get_Backface_ID(); }
-	uint32_t				Get_Frontface_ID(void)			{ return IDBuffer.Get_Frontface_ID(); }
+	void					Set_Backface_ID(uint32 id)		{ IDBuffer.Set_Backface_ID(id); }
+	void					Set_Frontface_ID(uint32 id)	{ IDBuffer.Set_Frontface_ID(id); }
+	uint32				Get_Backface_ID(void)			{ return IDBuffer.Get_Backface_ID(); }
+	uint32				Get_Frontface_ID(void)			{ return IDBuffer.Get_Frontface_ID(); }
 
 	void					Enable_Two_Sided_Rendering(bool onoff)		{ IDBuffer.Enable_Two_Sided_Rendering(onoff); }
 	bool					Is_Two_Sided_Rendering_Enabled(void)		{ return IDBuffer.Is_Two_Sided_Rendering_Enabled(); }
@@ -192,7 +190,7 @@ public:
 
 	void					Clear(void)							{ IDBuffer.Clear(); }
 	bool					Render_Triangles(const Vector3 * verts,int vcount,const TriIndex * tris, int tcount,const AABoxClass & bounds);
-	const uint32_t *		Get_Pixel_Row(int y,int min_x,int max_x) { return IDBuffer.Get_Pixel_Row(y,min_x,max_x); }
+	const uint32 *		Get_Pixel_Row(int y,int min_x,int max_x) { return IDBuffer.Get_Pixel_Row(y,min_x,max_x); }
 
 protected:
 	

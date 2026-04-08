@@ -473,7 +473,7 @@ void SphereRenderObjClass::render_sphere()
 	DynamicIBAccessClass ib(BUFFER_TYPE_DYNAMIC_SORTING,mesh.face_ct*3);
 	{
 		DynamicIBAccessClass::WriteLockClass Lock(&ib);
-		uint16_t *mem=Lock.Get_Index_Array();
+		unsigned short *mem=Lock.Get_Index_Array();
 		for (int i=0; i<mesh.face_ct; i++)
 		{
 			mem[3*i]=mesh.tri_poly[i].I;
@@ -574,7 +574,7 @@ void SphereRenderObjClass::Render(RenderInfoClass & rinfo)
 	
 	// If static sort lists are enabled and this mesh has a sort level, put it on the list instead
 	// of rendering it.
-	uint32_t sort_level = (uint32_t)Get_Sort_Level();
+	unsigned int sort_level = (unsigned int)Get_Sort_Level();
 
 	if (WW3D::Are_Static_Sort_Lists_Enabled() && sort_level != SORT_LEVEL_NONE) {
 
@@ -1461,7 +1461,6 @@ void SphereMeshClass::Generate(float radius, int slices, int stacks)
 
 	// Do Fan #2
 	int vtx_idx = Vertex_ct - 1;
-	int ct = 0;
 	for (ct = fan_size; ct < (fan_size * 2); ct++) {
 		fans[ct] = vtx_idx;
 		vtx_idx--;

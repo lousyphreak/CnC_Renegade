@@ -35,8 +35,6 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #if defined(_MSC_VER)
 #pragma once
-
-#include <cstdint>
 #endif
 
 #ifndef PART_EMT_H
@@ -64,7 +62,7 @@ struct NewParticleStruct;
 template<class T> struct ParticlePropertyStruct {
 	T					Start;
 	T					Rand;
-	uint32_t	NumKeyFrames;
+	unsigned int	NumKeyFrames;
 	float *			KeyTimes;
 	T *				Values;
 };
@@ -110,7 +108,7 @@ class ParticleEmitterClass : public RenderObjClass
 	public:
 
 		// Note: all time/velocity/acceleration quantities use seconds (converted to ms internally)
-		ParticleEmitterClass(float emit_rate, uint32_t burst_size, Vector3Randomizer *pos_rnd,
+		ParticleEmitterClass(float emit_rate, unsigned int burst_size, Vector3Randomizer *pos_rnd,
 			Vector3 base_vel, Vector3Randomizer *vel_rnd, float out_vel, float vel_inherit_factor, 
 			ParticlePropertyStruct<Vector3> &color, 
 			ParticlePropertyStruct<float> &opacity,
@@ -194,7 +192,7 @@ class ParticleEmitterClass : public RenderObjClass
 		// Setting the rates too high will cause particles to be prematurely killed (to make space
 		// for new ones) - setting it too low will cause wasted space in the particle buffer.
 		// These problems can be avoided by specifying the desired buffer size in the emitter CTor.
-		void						Set_Emission_Rate (float rate)	{ EmitRate = rate > 0.0f ? (uint32_t)(1000.0f / rate) : 1000U; }
+		void						Set_Emission_Rate (float rate)	{ EmitRate = rate > 0.0f ? (unsigned int)(1000.0f / rate) : 1000U; }
 		void						Set_Burst_Size (int size)			{ BurstSize	= size != 0 ? size : 1; }
 		void						Set_One_Time_Burst(int size)		{ OneTimeBurstSize = size != 0 ? size : 1; OneTimeBurst = true; }
 
@@ -302,19 +300,19 @@ class ParticleEmitterClass : public RenderObjClass
 		// Initialize one new particle at the given NewParticleStruct
 		// address, with the given age and emitter transform (expressed as a
 		// quaternion and origin vector). (must check if address is NULL).
-		void Initialize_Particle(NewParticleStruct * newpart, uint32_t age,
+		void Initialize_Particle(NewParticleStruct * newpart, unsigned int age,
 			const Quaternion & quat, const Vector3 & orig);
 
-		uint32_t				EmitRate;			// Emission rate (1/milliseconds).
-		uint32_t				BurstSize;			// Burst size (how many particles in each emission).
-		uint32_t				OneTimeBurstSize;	// Burst size for a one-time burst.
+		unsigned int				EmitRate;			// Emission rate (1/milliseconds).
+		unsigned int				BurstSize;			// Burst size (how many particles in each emission).
+		unsigned int				OneTimeBurstSize;	// Burst size for a one-time burst.
 		bool							OneTimeBurst;		// Do we need to do a one-time burst?
 		Vector3Randomizer *		PosRand;				// Position randomizer pointer (may be NULL).
 		Vector3						BaseVel;				// Base initial emission velocity.
 		Vector3Randomizer *		VelRand;				// Velocity randomizer pointer (may be NULL).
 		float							OutwardVel;			// Size of outwards velocity.
 		float							VelInheritFactor;	// Affects emitter vel. inherited by particles.
-		uint32_t				EmitRemain;			// Millisecond emitter remainder.
+		unsigned int				EmitRemain;			// Millisecond emitter remainder.
 		Quaternion 					PrevQ;				// Previous quaternion (for interpolation).
 		Vector3						PrevOrig;			// Previous origin (for interpolation).
 		bool							Active;				// Is the emitter currently Active?

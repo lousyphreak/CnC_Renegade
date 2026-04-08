@@ -37,8 +37,6 @@
 
 #if defined(_MSC_VER)
 #pragma once
-
-#include <cstdint>
 #endif
 
 #ifndef COMPOSITE_H
@@ -80,7 +78,7 @@ public:
 	virtual bool					Intersect_OBBox(OBBoxIntersectionTestClass & boxtest);
 
 	virtual void					Create_Decal(DecalGeneratorClass * generator);
-	virtual void					Delete_Decal(uint32_t decal_id);
+	virtual void					Delete_Decal(uint32 decal_id);
 
 	virtual void					Get_Obj_Space_Bounding_Sphere(SphereClass	& sphere) const { sphere = ObjSphere; }
    virtual void					Get_Obj_Space_Bounding_Box(AABoxClass & box) const { box = ObjBox; }

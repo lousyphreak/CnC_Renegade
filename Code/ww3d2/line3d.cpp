@@ -59,7 +59,7 @@
 #include "dx8fvf.h"
 
 // 12 Triangles for index buffer
-const uint16_t Indices[]=
+const unsigned short Indices[]=
 {
 	3,5,1,
 	7,5,3,
@@ -269,14 +269,14 @@ void Line3DClass::Render(RenderInfoClass & rinfo)
 	{
 		DynamicVBAccessClass::WriteLockClass Lock(&vb);
 		const FVFInfoClass &fi=vb.FVF_Info();
-		uint8_t *vb=(uint8_t*)Lock.Get_Formatted_Vertex_Array();
+		unsigned char *vb=(unsigned char*)Lock.Get_Formatted_Vertex_Array();
 		int i;
-		uint32_t color=DX8Wrapper::Convert_Color(Color);
+		unsigned int color=DX8Wrapper::Convert_Color(Color);
 
 		for (i=0; i<8; i++)
 		{			
 			*(Vector3*)(vb+fi.Get_Location_Offset())=vert[i];
-			*(uint32_t*)(vb+fi.Get_Diffuse_Offset())=color;
+			*(unsigned int*)(vb+fi.Get_Diffuse_Offset())=color;
 			vb+=fi.Get_FVF_Size();
 		}		
 	}
@@ -284,7 +284,7 @@ void Line3DClass::Render(RenderInfoClass & rinfo)
 	DynamicIBAccessClass ib(BUFFER_TYPE_DYNAMIC_DX8,36);
 	{
 		DynamicIBAccessClass::WriteLockClass Lock(&ib);
-		uint16_t *mem=Lock.Get_Index_Array();
+		unsigned short *mem=Lock.Get_Index_Array();
 		for (int i=0; i<36; i++)
 			mem[i]=Indices[i];
 	}	

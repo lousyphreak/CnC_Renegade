@@ -73,15 +73,15 @@ const float EPSILON = 0.0001f;
 static int face_material_compare(const void *elem1, const void *elem2);
 static int pass0_stage0_compare(const void *elem1, const void *elem2);
 static int pass0_stage1_compare(const void *elem1, const void *elem2);
-static int32_t pass1_stage0_compare(const void *elem1, const void *elem2);
-static int32_t pass1_stage1_compare(const void *elem1, const void *elem2);
-static int32_t pass2_stage0_compare(const void *elem1, const void *elem2);
-static int32_t pass2_stage1_compare(const void *elem1, const void *elem2);
-static int32_t pass3_stage0_compare(const void *elem1, const void *elem2);
-static int32_t pass3_stage1_compare(const void *elem1, const void *elem2);
-static int32_t vertex_compare(const void *elem1, const void *elem2);
+static int pass1_stage0_compare(const void *elem1, const void *elem2);
+static int pass1_stage1_compare(const void *elem1, const void *elem2);
+static int pass2_stage0_compare(const void *elem1, const void *elem2);
+static int pass2_stage1_compare(const void *elem1, const void *elem2);
+static int pass3_stage0_compare(const void *elem1, const void *elem2);
+static int pass3_stage1_compare(const void *elem1, const void *elem2);
+static int vertex_compare(const void *elem1, const void *elem2);
 
-typedef int32_t (*COMPARE_FUNC_TYPE)(const void * elem1,const void * elem2);
+typedef int (*COMPARE_FUNC_TYPE)(const void * elem1,const void * elem2);
 
 COMPARE_FUNC_TYPE Texture_Compare_Funcs[MeshBuilderClass::MAX_PASSES][MeshBuilderClass::MAX_STAGES] = 
 {
@@ -193,9 +193,9 @@ public:
 	int Submit_Vertex(const MeshBuilderClass::VertClass & vert)
 	{
 		// 2D floating point hashing...
-		uint32_t lasthash = 0xFFFFFFFF;
-		uint32_t hash;
-		uint32_t shadeindex = 0xFFFFFFFF;
+		unsigned int lasthash = 0xFFFFFFFF;
+		unsigned int hash;
+		unsigned int shadeindex = 0xFFFFFFFF;
 
 		// transform the position of the point into the range
 		// -1 < p < 1  as defined by the center and extent.
@@ -357,7 +357,7 @@ private:
 	Vector3									Center;
 	Vector3									Extent;
 
-	uint32_t compute_hash(float x,float y)
+	unsigned int compute_hash(float x,float y)
 	{
 		// 12 bit hash, 6 bits for x and 6 for y, points near each other
 		// need to generate the same hash value...
@@ -1824,4 +1824,5 @@ int vertex_compare(const void *elem1, const void *elem2)
 
 	return 0;
 }
+
 

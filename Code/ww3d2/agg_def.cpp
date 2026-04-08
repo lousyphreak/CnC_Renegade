@@ -347,12 +347,24 @@ AggregateDefClass::Load_Assets (const char *passet_name)
 
 	// Param OK?
 	if (passet_name != NULL) {
+		
+		// Determine what the current working directory is
 		char path[MAX_PATH];
-		::lstrcpyn(path, passet_name, MAX_PATH);
-		if (::strchr(path, '.') == NULL) {
-			::lstrcat(path, ".w3d");
+		::GetCurrentDirectory (sizeof (path), path);
+
+		// Ensure the path is directory delimited
+		if (path[::lstrlen(path)-1] != '\\') {
+			::lstrcat (path, "\\");
 		}
-		retval = WW3DAssetManager::Get_Instance()->Load_3D_Assets(path);
+
+		// Assume the filename is simply the "asset name" + the w3d extension
+		::lstrcat (path, passet_name);
+		::lstrcat (path, ".w3d");
+
+		// If the file exists, then load it into the asset manager.
+		if (::GetFileAttributes (path) != 0xFFFFFFFF) {
+			retval = WW3DAssetManager::Get_Instance()->Load_3D_Assets (path);
+		}
 	}
 
 	// Return the true/false result code
@@ -611,7 +623,7 @@ AggregateDefClass::Read_Info (ChunkLoadClass &chunk_load)
 		ret_val = WW3D_ERROR_OK;
 
 		// Read all the subobjects from the file
-		for (uint32_t isubobject = 0;
+		for (UINT isubobject = 0;
 			  (isubobject < m_Info.SubobjectCount) && (ret_val == WW3D_ERROR_OK);
 			  isubobject ++) {
 
@@ -879,3 +891,4 @@ AggregateLoaderClass::Load_W3D (ChunkLoadClass &chunk_load)
     // Return a pointer to the prototype
 	 return pprototype;
 }
+

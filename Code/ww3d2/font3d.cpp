@@ -38,86 +38,12 @@
 #include "assetmgr.h"
 #include "texture.h"
 #include <assert.h>
-#include <algorithm>
 #include <wwdebug.h>
 #include "surfaceclass.h"
 #include "texture.h"
 #include "vector2i.h"
 
 static	SurfaceClass	*_surface;
-
-namespace
-{
-int Next_Power_Of_Two(int value)
-{
-	int result = 1;
-	while (result < value) {
-		result <<= 1;
-	}
-	return result;
-}
-
-bool Can_Pack_Font_Atlas(
-	int atlas_size,
-	float current_width,
-	float current_height,
-	float v_height,
-	const float *u_offset_table,
-	const float *v_offset_table,
-	const float *u_width_table,
-	int *failed_char = NULL,
-	int *failed_src_x = NULL,
-	int *failed_src_y = NULL,
-	int *failed_width = NULL,
-	int *failed_height = NULL,
-	int *failed_dst_y = NULL)
-{
-	int new_x = 0;
-	int new_y = 0;
-
-	for (int char_index = 0; char_index < 256; ++char_index) {
-		const int src_x = static_cast<int>(u_offset_table[char_index] * current_width + 0.5f);
-		const int src_y = static_cast<int>(v_offset_table[char_index] * current_height + 0.5f);
-		const int width = static_cast<int>(u_width_table[char_index] * current_width + 0.5f);
-		const int height = static_cast<int>(v_height * current_height + 0.5f);
-
-		if (width == 0) {
-			continue;
-		}
-
-		if (new_x + width > atlas_size) {
-			new_x = 0;
-			new_y += height;
-		}
-
-		if (new_y + height > atlas_size) {
-			if (failed_char != NULL) {
-				*failed_char = char_index;
-			}
-			if (failed_src_x != NULL) {
-				*failed_src_x = src_x;
-			}
-			if (failed_src_y != NULL) {
-				*failed_src_y = src_y;
-			}
-			if (failed_width != NULL) {
-				*failed_width = width;
-			}
-			if (failed_height != NULL) {
-				*failed_height = height;
-			}
-			if (failed_dst_y != NULL) {
-				*failed_dst_y = new_y;
-			}
-			return false;
-		}
-
-		new_x += width;
-	}
-
-	return true;
-}
-}
 
 /*********************************************************************************************** 
  *                                                                                             * 
@@ -169,35 +95,16 @@ SurfaceClass *Font3DDataClass::Minimize_Font_Image( SurfaceClass *surface )
 	float current_width = sd.Width;
 	float current_height = sd.Height;
 
-	int total_width = 0;
-	int max_height = 0;
-	for (int char_index = 0; char_index < 256; ++char_index) {
-		const int width = (int)(UWidthTable[ char_index ] * current_width + 0.5f);
-		const int height = (int)(VHeight * current_height + 0.5f);
-		total_width += width;
-		max_height = std::max(max_height, height);
+	// determine new width make the size of the new image either 128x128 or 256x256, 
+	// dependant on the width of the original image
+   int new_width;
+	if (current_width < 256) {
+		new_width = 128;
+	} else {
+		new_width = 256;
 	}
 
-	int new_width = 128;
-	const int atlas_limit = std::max(128, Next_Power_Of_Two(std::max(total_width, max_height)));
-	while (new_width < atlas_limit && !Can_Pack_Font_Atlas(new_width, current_width, current_height, VHeight, UOffsetTable, VOffsetTable, UWidthTable)) {
-		new_width <<= 1;
-	}
-
-	int failed_char = -1;
-	int failed_src_x = 0;
-	int failed_src_y = 0;
-	int failed_width = 0;
-	int failed_height = 0;
-	int failed_dst_y = 0;
-	if (!Can_Pack_Font_Atlas(new_width, current_width, current_height, VHeight, UOffsetTable, VOffsetTable, UWidthTable,
-		&failed_char, &failed_src_x, &failed_src_y, &failed_width, &failed_height, &failed_dst_y)) {
-		WWDEBUG_SAY(( "Font doesn't fit texture 2 on char=%d src=(%d,%d) size=(%d,%d) dst=(%d,%d) atlas=(%d,%d)\n",
-			failed_char, failed_src_x, failed_src_y, failed_width, failed_height, 0, failed_dst_y, new_width, new_width ));
-		WWASSERT_PRINT(0, "Font atlas repack failed");
-	}
-
-	int new_height = new_width;
+   int new_height = new_width;
 	//  create a new 4 bit alpha image to build into
 	// We dont support non-homogeneous copies just yet
 	SurfaceClass	*new_surface = NEW_REF(SurfaceClass,(new_width, new_height,WW3D_FORMAT_A4R4G4B4));
@@ -228,7 +135,12 @@ SurfaceClass *Font3DDataClass::Minimize_Font_Image( SurfaceClass *surface )
 				new_x = 0;
 				new_y += height;
 
-				WWASSERT(new_y + height <= new_height);
+				// if we have run out of lines, we have a problem
+				// we assert because we have already modified tables for some of the chars
+				if (new_y + height > new_height) {
+					new_y -= height;
+					WWDEBUG_SAY(( "Font doesn't fit texture 2 on char %c\n", char_index ));
+				}
 			}
 
 			// blit from original image to new image
@@ -511,3 +423,4 @@ float	Font3DInstanceClass::String_Width( const char *test_str )
 
 	return width;
 }
+

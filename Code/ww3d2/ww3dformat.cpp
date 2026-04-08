@@ -39,10 +39,10 @@
 #include "ww3dformat.h"
 #include "vector4.h"
 #include "wwdebug.h"
-#include "TARGA.H"
+#include "targa.h"
 #include "dx8wrapper.h"
 #include "dx8caps.h"
-#include "ww3d.h"
+#include <d3d8.h>
 
  /*
 	WW3D_FORMAT_UNKNOWN=0,
@@ -99,18 +99,18 @@ void Get_WW3D_Format_Name(WW3DFormat format, StringClass& name)
 
 
 // extract the luminance from the RGB using the CIE 709 standard
-uint8_t RGB_to_CIEY(Vector4 color)
+unsigned char RGB_to_CIEY(Vector4 color)
 {
 	float lum=0.2126f*color.X + 0.7152f*color.Y + 0.0722f*color.Z;
-	return (uint8_t) (255.0f*lum);
+	return (unsigned char) (255.0f*lum);
 }
 
-void Vector4_to_Color(uint32_t *outc,const Vector4 &inc,const WW3DFormat format)
+void Vector4_to_Color(unsigned int *outc,const Vector4 &inc,const WW3DFormat format)
 {
 	// convert to ARGB 32-bit
-	uint32_t color=DX8Wrapper::Convert_Color(inc);
-	uint8_t *argb=(uint8_t*) &color;
-	uint8_t r,g,b,a,lum;
+	unsigned int color=DX8Wrapper::Convert_Color(inc);
+	unsigned char *argb=(unsigned char*) &color;
+	unsigned char r,g,b,a,lum;
 
 	switch (format)
 	{
@@ -173,12 +173,12 @@ void Vector4_to_Color(uint32_t *outc,const Vector4 &inc,const WW3DFormat format)
 	}
 }
 
-void Color_to_Vector4(Vector4* outc,const uint32_t inc,const WW3DFormat format)
+void Color_to_Vector4(Vector4* outc,const unsigned int inc,const WW3DFormat format)
 {
 	WWASSERT(outc);
 
-	uint8_t *argb=(uint8_t*) &inc;
-	uint8_t a,r,g,b;
+	unsigned char *argb=(unsigned char*) &inc;
+	unsigned char a,r,g,b;
 	a=r=g=b=0;
 
 	switch (format)

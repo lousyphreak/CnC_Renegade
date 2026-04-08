@@ -37,8 +37,6 @@
 
 #if defined(_MSC_VER)
 #pragma once
-
-#include <cstdint>
 #endif
 
 #ifndef VERTMATERIAL_H
@@ -58,6 +56,7 @@
 
 class ChunkLoadClass;
 class ChunkSaveClass;
+struct _D3DMATERIAL8;
 
 /**
 ** VertexMaterialClass
@@ -205,7 +204,7 @@ public:
 	/*
 	** CRC, used by the loading code to build a list of the unique materials
 	*/
-	inline uint32_t Get_CRC(void) const
+	inline unsigned long Get_CRC(void) const
 	{
 		if (CRCDirty) {
 			CRC=Compute_CRC();
@@ -235,22 +234,19 @@ public:
 
 protected:
 
-	Vector3				Diffuse;
-	Vector3				Ambient;
-	Vector3				Specular;
-	Vector3				Emissive;
-	float					Opacity;
-	float					Shininess;
-	uint32_t			Flags;
-	uint32_t			AmbientColorSource;
-	uint32_t			EmissiveColorSource;
-	uint32_t			DiffuseColorSource;
+	// We're using the pointer instead of the actual structure
+	// so we don't have to include the d3d header - HY
+	_D3DMATERIAL8 *		Material;
+	unsigned int			Flags;
+	unsigned int			AmbientColorSource;
+	unsigned int			EmissiveColorSource;
+	unsigned int			DiffuseColorSource;
 	StringClass				Name;
 	TextureMapperClass *	Mapper[MeshBuilderClass::MAX_STAGES];
-	uint32_t			UVSource[MeshBuilderClass::MAX_STAGES];
+	unsigned int			UVSource[MeshBuilderClass::MAX_STAGES];
 	bool						UseLighting;
-	uint32_t			UniqueID;
-	mutable uint32_t CRC;
+	unsigned int			UniqueID;
+	mutable unsigned long CRC;
 	mutable bool			CRCDirty;
 
 private:
@@ -262,7 +258,7 @@ private:
 	** Apply the render states corresponding to a NULL vetex material to D3D
 	*/
 	static void			Apply_Null(void);
-	uint32_t		Compute_CRC(void) const;
+	unsigned long		VertexMaterialClass::Compute_CRC(void) const;
 
 	static VertexMaterialClass *Presets[PRESET_COUNT];
 };

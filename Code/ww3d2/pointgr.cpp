@@ -246,10 +246,10 @@ PointGroupClass & PointGroupClass::operator = (const PointGroupClass & that)
 void PointGroupClass::Set_Arrays(
 	ShareBufferClass<Vector3> *locs,
 	ShareBufferClass<Vector4> *diffuse,		
-	ShareBufferClass<uint32_t> *apt,
+	ShareBufferClass<unsigned int> *apt,
 	ShareBufferClass<float> *sizes,
-	ShareBufferClass<uint8_t> *orientations,
-	ShareBufferClass<uint8_t> *frames, 
+	ShareBufferClass<unsigned char> *orientations,
+	ShareBufferClass<unsigned char> *frames, 
 	int active_point_count,
 	float vpxmin, 
 	float vpymin, 
@@ -406,7 +406,7 @@ float PointGroupClass::Get_Point_Alpha(void)
  * HISTORY:                                                               * 
  *   06/28/2000 NH  : Created.                                            * 
  *========================================================================*/
-void PointGroupClass::Set_Point_Orientation(uint8_t orientation)
+void PointGroupClass::Set_Point_Orientation(unsigned char orientation)
 {
 	DefaultPointOrientation = orientation;
 }
@@ -424,7 +424,7 @@ void PointGroupClass::Set_Point_Orientation(uint8_t orientation)
  * HISTORY:                                                               * 
  *   06/28/2000 NH  : Created.                                            * 
  *========================================================================*/
-uint8_t PointGroupClass::Get_Point_Orientation(void)
+unsigned char PointGroupClass::Get_Point_Orientation(void)
 {
 	return DefaultPointOrientation;
 }
@@ -444,7 +444,7 @@ uint8_t PointGroupClass::Get_Point_Orientation(void)
  * HISTORY:                                                               * 
  *   06/28/2000 NH  : Created.                                            * 
  *========================================================================*/
-void PointGroupClass::Set_Point_Frame(uint8_t frame)
+void PointGroupClass::Set_Point_Frame(unsigned char frame)
 {
 	DefaultPointFrame = frame;
 }
@@ -462,7 +462,7 @@ void PointGroupClass::Set_Point_Frame(uint8_t frame)
  * HISTORY:                                                               * 
  *   06/28/2000 NH  : Created.                                            * 
  *========================================================================*/
-uint8_t PointGroupClass::Get_Point_Frame(void)
+unsigned char PointGroupClass::Get_Point_Frame(void)
 {
 	return DefaultPointFrame;
 }
@@ -655,7 +655,7 @@ ShaderClass PointGroupClass::Get_Shader(void)
  *   06/28/2000 NH  : Created.                                            * 
  *   02/08/2001 HY  : Upgraded to DX8                                     * 
  *========================================================================*/
-uint8_t PointGroupClass::Get_Frame_Row_Column_Count_Log2(void)
+unsigned char PointGroupClass::Get_Frame_Row_Column_Count_Log2(void)
 {
 	return FrameRowColumnCountLog2;
 }
@@ -674,7 +674,7 @@ uint8_t PointGroupClass::Get_Frame_Row_Column_Count_Log2(void)
  *   06/28/2000 NH  : Created.                                            *
  *   02/08/2001 HY  : Upgraded to DX8                                     *
  *========================================================================*/
-void PointGroupClass::Set_Frame_Row_Column_Count_Log2(uint8_t frccl2)
+void PointGroupClass::Set_Frame_Row_Column_Count_Log2(unsigned char frccl2)
 {
 	FrameRowColumnCountLog2 = MIN(frccl2, 4);
 }
@@ -720,7 +720,7 @@ int PointGroupClass::Get_Polygon_Count(void)
  *   12/10/1998 NH  : Created.                                            * 
  *   02/08/2001 HY  : Upgraded to DX8                                     *
  *========================================================================*/
-static SimpleVecClass<uint32_t> remap;
+static SimpleVecClass<unsigned long> remap;
 void PointGroupClass::Render(RenderInfoClass &rinfo)
 {
 	// NB: the winding for pointgroups is wrong, but we
@@ -739,16 +739,16 @@ void PointGroupClass::Render(RenderInfoClass &rinfo)
 	static VectorClass<Vector3>		compressed_loc;		// point locations 'compressed' by APT
 	static VectorClass<Vector4>		compressed_diffuse;	// point colors 'compressed' by APT
 	static VectorClass<float>			compressed_size;		// point sizes 'compressed' by APT
-	static VectorClass<uint8_t>	compressed_orient;	// point orientations 'compressed' by APT
-	static VectorClass<uint8_t>	compressed_frame;		// point frames 'compressed' by APT
+	static VectorClass<unsigned char>	compressed_orient;	// point orientations 'compressed' by APT
+	static VectorClass<unsigned char>	compressed_frame;		// point frames 'compressed' by APT
 	static VectorClass<Vector3>		transformed_loc;		// transformed point locations
 
 	// Pointers which point into existing buffers (member or static):
 	Vector3 *current_loc = NULL;
 	Vector4 *current_diffuse = NULL;	
 	float *current_size = NULL;
-	uint8_t *current_orient = NULL;
-	uint8_t *current_frame = NULL;
+	unsigned char *current_orient = NULL;
+	unsigned char *current_frame = NULL;
 
 	// If there is a color or alpha array enable gradient in shader - otherwise disable.
    float value_255 = 0.9961f;	//254 / 255
@@ -853,8 +853,7 @@ void PointGroupClass::Render(RenderInfoClass &rinfo)
 			transformed_loc[i].X=result.X;
 			transformed_loc[i].Y=result.Y;
 			transformed_loc[i].Z=result.Z;
-		}
-
+		}		
 		current_loc = &transformed_loc[0];				
 	} // if transform
 
@@ -899,7 +898,7 @@ void PointGroupClass::Render(RenderInfoClass &rinfo)
 		{
 			DynamicVBAccessClass::WriteLockClass Lock(&PointVerts);
 			int i;
-			uint8_t *vb=(uint8_t*)Lock.Get_Formatted_Vertex_Array();			
+			unsigned char *vb=(unsigned char*)Lock.Get_Formatted_Vertex_Array();			
 			const FVFInfoClass& fvfinfo=PointVerts.FVF_Info();			
 
 			for (i = current; i < current + delta; i++)
@@ -908,10 +907,10 @@ void PointGroupClass::Render(RenderInfoClass &rinfo)
 				*(Vector3*)(vb+fvfinfo.Get_Location_Offset())=VertexLoc[i];
 				if (current_diffuse) {
 					unsigned color=DX8Wrapper::Convert_Color_Clamp(VertexDiffuse[i]);
-					*(uint32_t*)(vb+fvfinfo.Get_Diffuse_Offset())=color;
+					*(unsigned int*)(vb+fvfinfo.Get_Diffuse_Offset())=color;
 				}
 				else
-					*(uint32_t*)(vb+fvfinfo.Get_Diffuse_Offset())=
+					*(unsigned int*)(vb+fvfinfo.Get_Diffuse_Offset())=
 						DX8Wrapper::Convert_Color_Clamp(Vector4(DefaultPointColor[0],DefaultPointColor[1],DefaultPointColor[2],DefaultPointAlpha));
 				*(Vector2*)(vb+fvfinfo.Get_Tex_Offset(0))=VertexUV[i];
 				vb+=fvfinfo.Get_FVF_Size();
@@ -927,7 +926,7 @@ void PointGroupClass::Render(RenderInfoClass &rinfo)
 		}
 		
 		current+=delta;
-	}
+	}							  
 
 	// restore the matrices
 	DX8Wrapper::Set_Transform(D3DTS_VIEW,view);
@@ -950,8 +949,8 @@ void PointGroupClass::Update_Arrays(
 	Vector3 *point_loc, 
 	Vector4 *point_diffuse,	
 	float *point_size, 
-	uint8_t *point_orientation, 
-	uint8_t *point_frame,
+	unsigned char *point_orientation, 
+	unsigned char *point_frame,
 	int active_points, 
 	int total_points, 
 	int &vnum, 
@@ -972,9 +971,9 @@ void PointGroupClass::Update_Arrays(
 	// since they always all have the same length.
 	if (VertexLoc.Length() < total_vnum) {
 		// Resize arrays (2x guardband to prevent frequent reallocations).
-		VertexLoc.Resize(total_vnum * 2);		
-		VertexUV.Resize(total_vnum * 2);
-		VertexDiffuse.Resize(total_vnum * 2);
+		VertexLoc.Resize(total_vnum * 2, false);		
+		VertexUV.Resize(total_vnum * 2, false);
+		VertexDiffuse.Resize(total_vnum * 2, false);
 	}
 
 	int vert, i, j;
@@ -1222,7 +1221,7 @@ void PointGroupClass::Update_Arrays(
 	** Fill the UV vertex array
 	*/
 
-	uint32_t frame_mask = ~(0xFFFFFFFF << (FrameRowColumnCountLog2 + FrameRowColumnCountLog2));// To ensure frames in range
+	unsigned int frame_mask = ~(0xFFFFFFFF << (FrameRowColumnCountLog2 + FrameRowColumnCountLog2));// To ensure frames in range
 	if (point_frame) {
 
 		// Fill UV array according to frame override array:
@@ -1362,8 +1361,8 @@ void PointGroupClass::_Init(void)
 
 	for (i = 0; i < 5; i++) {
 
-		uint32_t rows = 1 << i;
-		uint32_t count = rows * rows;
+		unsigned int rows = 1 << i;
+		unsigned int count = rows * rows;
 
 		Vector2 *tri_table = _TriVertexUVFrameTable[i] = new Vector2[count * 3];
 		Vector2 *quad_table = _QuadVertexUVFrameTable[i] = new Vector2[count * 4];
@@ -1373,8 +1372,8 @@ void PointGroupClass::_Init(void)
 
 		int tri_idx = 0;
 		int quad_idx = 0;
-		for (uint32_t v = 0; v < rows; v++) {
-			for (uint32_t u = 0; u < rows; u++) {
+		for (unsigned int v = 0; v < rows; v++) {
+			for (unsigned int u = 0; u < rows; u++) {
 
 				tri_table[tri_idx++] = corner + (tri_uvs[0] * scale);
 				tri_table[tri_idx++] = corner + (tri_uvs[1] * scale);
@@ -1401,14 +1400,14 @@ void PointGroupClass::_Init(void)
 	// Fill up the IBs
 	{
 		DX8IndexBufferClass::WriteLockClass locktris(Tris);
-		uint16_t *ib=locktris.Get_Index_Array();	
-		for (i=0; i<MAX_TRI_IB_SIZE; i++) ib[i]=(uint16_t) i;
+		unsigned short *ib=locktris.Get_Index_Array();	
+		for (i=0; i<MAX_TRI_IB_SIZE; i++) ib[i]=(unsigned short) i;
 	}	
 
 	{
-		uint16_t vert=0;
+		unsigned short vert=0;
 		DX8IndexBufferClass::WriteLockClass lockquads(Quads);
-		uint16_t *ib=lockquads.Get_Index_Array();
+		unsigned short *ib=lockquads.Get_Index_Array();
 		vert=0;
 		for (i=0; i<MAX_QUAD_IB_SIZE; i+=6)
 		{
@@ -1425,14 +1424,14 @@ void PointGroupClass::_Init(void)
 
 	{
 		SortingIndexBufferClass::WriteLockClass locktris(SortingTris);
-		uint16_t *ib=locktris.Get_Index_Array();	
-		for (i=0; i<MAX_TRI_IB_SIZE; i++) ib[i]=(uint16_t) i;
+		unsigned short *ib=locktris.Get_Index_Array();	
+		for (i=0; i<MAX_TRI_IB_SIZE; i++) ib[i]=(unsigned short) i;
 	}	
 
 	{
-		uint16_t vert=0;
+		unsigned short vert=0;
 		SortingIndexBufferClass::WriteLockClass lockquads(SortingQuads);
-		uint16_t *ib=lockquads.Get_Index_Array();
+		unsigned short *ib=lockquads.Get_Index_Array();
 		vert=0;
 		for (i=0; i<MAX_QUAD_IB_SIZE; i+=6)
 		{
@@ -1475,3 +1474,5 @@ void PointGroupClass::_Shutdown(void)
 	REF_PTR_RELEASE(Quads);
 	REF_PTR_RELEASE(Tris);
 }
+
+

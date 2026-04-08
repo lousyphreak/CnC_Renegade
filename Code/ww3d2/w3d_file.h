@@ -38,8 +38,6 @@
 
 #if defined(_MSC_VER)
 #pragma once
-
-#include <cstdint>
 #endif
 
 #ifndef W3D_FILE_H
@@ -347,7 +345,7 @@ enum {
 		W3D_CHUNK_VERTEX_INFLUENCES					=0x0000000E,	// Mesh Deformation vertex connections (array of W3dVertInfStruct's)
 		W3D_CHUNK_MESH_HEADER3							=0x0000001F,	//	mesh header contains general info about the mesh. (W3dMeshHeader3Struct)
 		W3D_CHUNK_TRIANGLES								=0x00000020,	// New improved triangles chunk (array of W3dTriangleStruct's)
-		W3D_CHUNK_VERTEX_SHADE_INDICES				=0x00000022,	// shade indexes for each vertex (array of uint32_t's)
+		W3D_CHUNK_VERTEX_SHADE_INDICES				=0x00000022,	// shade indexes for each vertex (array of uint32's)
 		
 		W3D_CHUNK_PRELIT_UNLIT							=0x00000023,	// optional unlit material chunk wrapper
 		W3D_CHUNK_PRELIT_VERTEX							=0x00000024,	// optional vertex-lit material chunk wrapper
@@ -371,14 +369,14 @@ enum {
 					W3D_CHUNK_TEXTURE_INFO				=0x00000033,	// optional W3dTextureInfoStruct
 			
 			W3D_CHUNK_MATERIAL_PASS						=0x00000038,	// wraps the information for a single material pass
-				W3D_CHUNK_VERTEX_MATERIAL_IDS			=0x00000039,	// single or per-vertex array of uint32_t vertex material indices (check chunk size)
-				W3D_CHUNK_SHADER_IDS						=0x0000003A,	// single or per-tri array of uint32_t shader indices (check chunk size)
+				W3D_CHUNK_VERTEX_MATERIAL_IDS			=0x00000039,	// single or per-vertex array of uint32 vertex material indices (check chunk size)
+				W3D_CHUNK_SHADER_IDS						=0x0000003A,	// single or per-tri array of uint32 shader indices (check chunk size)
 				W3D_CHUNK_DCG								=0x0000003B,	// per-vertex diffuse color values (array of W3dRGBAStruct's)
 				W3D_CHUNK_DIG								=0x0000003C,	// per-vertex diffuse illumination values (array of W3dRGBStruct's)
 				W3D_CHUNK_SCG								=0x0000003E,	// per-vertex specular color values (array of W3dRGBStruct's)
 
 				W3D_CHUNK_TEXTURE_STAGE					=0x00000048,	// wrapper around a texture stage.
-					W3D_CHUNK_TEXTURE_IDS				=0x00000049,	// single or per-tri array of uint32_t texture indices (check chunk size)
+					W3D_CHUNK_TEXTURE_IDS				=0x00000049,	// single or per-tri array of uint32 texture indices (check chunk size)
 					W3D_CHUNK_STAGE_TEXCOORDS			=0x0000004A,	// per-vertex texture coordinates (array of W3dTexCoordStruct's)
 					W3D_CHUNK_PER_FACE_TEXCOORD_IDS	=0x0000004B,	// indices to W3D_CHUNK_STAGE_TEXCOORDS, (array of Vector3i)
 
@@ -392,7 +390,7 @@ enum {
 		
 		W3D_CHUNK_AABTREE									=0x00000090,	// Axis-Aligned Box Tree for hierarchical polygon culling
 			W3D_CHUNK_AABTREE_HEADER,										// catalog of the contents of the AABTree
-			W3D_CHUNK_AABTREE_POLYINDICES,								// array of uint32_t polygon indices with count=mesh.PolyCount
+			W3D_CHUNK_AABTREE_POLYINDICES,								// array of uint32 polygon indices with count=mesh.PolyCount
 			W3D_CHUNK_AABTREE_NODES,										// array of W3dMeshAABTreeNode's with count=aabheader.NodeCount
 
 	W3D_CHUNK_HIERARCHY									=0x00000100,	// hierarchy tree definition
@@ -495,8 +493,8 @@ enum {
 
 struct W3dChunkHeader
 {
-	uint32_t		ChunkType;			// Type of chunk (see above enumeration)
-	uint32_t		ChunkSize;			// Size of the chunk, (not including the chunk header)
+	uint32		ChunkType;			// Type of chunk (see above enumeration)
+	uint32		ChunkSize;			// Size of the chunk, (not including the chunk header)
 };
 
 
@@ -531,14 +529,14 @@ struct W3dTexCoordStruct
 struct W3dRGBStruct
 {
 	W3dRGBStruct () {} 
-	W3dRGBStruct (uint8_t r, uint8_t g, uint8_t b)
+	W3dRGBStruct (uint8 r, uint8 g, uint8 b)
 	{
 		R = r;
 		G = g;
 		B = b;
 	} 
 
-	void Set (uint8_t r, uint8_t g, uint8_t b)
+	void Set (uint8 r, uint8 g, uint8 b)
 	{
 		R = r;
 		G = g;
@@ -547,9 +545,9 @@ struct W3dRGBStruct
 
 	void Set (float r, float g, float b)
 	{
-		R = (uint8_t) MIN ((float) UCHAR_MAX, MAX (0.0f, r) * ((float) (UCHAR_MAX + 1)));
-		G = (uint8_t) MIN ((float) UCHAR_MAX, MAX (0.0f, g) * ((float) (UCHAR_MAX + 1)));
-		B = (uint8_t) MIN ((float) UCHAR_MAX, MAX (0.0f, b) * ((float) (UCHAR_MAX + 1)));
+		R = (unsigned char) MIN ((float) UCHAR_MAX, MAX (0.0f, r) * ((float) (UCHAR_MAX + 1)));
+		G = (unsigned char) MIN ((float) UCHAR_MAX, MAX (0.0f, g) * ((float) (UCHAR_MAX + 1)));
+		B = (unsigned char) MIN ((float) UCHAR_MAX, MAX (0.0f, b) * ((float) (UCHAR_MAX + 1)));
 	}
 
 	bool operator == (W3dRGBStruct c)
@@ -583,18 +581,18 @@ struct W3dRGBStruct
 		return (R<<24)|(G<<16)|(B<<8);
 	}
 
-	uint8_t			R;
-	uint8_t			G;
-	uint8_t			B;
-	uint8_t			pad;
+	uint8			R;
+	uint8			G;
+	uint8			B;
+	uint8			pad;
 };
 
 struct W3dRGBAStruct
 {
-	uint8_t			R;
-	uint8_t			G;
-	uint8_t			B;
-	uint8_t			A;
+	uint8			R;
+	uint8			G;
+	uint8			B;
+	uint8			A;
 };
 
 
@@ -612,10 +610,10 @@ struct W3dRGBAStruct
 /////////////////////////////////////////////////////////////////////////////////////////////
 struct W3dMaterialInfoStruct
 {
-	uint32_t		PassCount;				// how many material passes this render object uses
-	uint32_t		VertexMaterialCount;	// how many vertex materials are used
-	uint32_t		ShaderCount;			// how many shaders are used
-	uint32_t		TextureCount;			// how many textures are used
+	uint32		PassCount;				// how many material passes this render object uses
+	uint32		VertexMaterialCount;	// how many vertex materials are used
+	uint32		ShaderCount;			// how many shaders are used
+	uint32		TextureCount;			// how many textures are used
 };
 
 
@@ -696,7 +694,7 @@ struct W3dVertexMaterialStruct
 		return (!(*this == vm));
 	}
 	
-	uint32_t					Attributes;					// bitfield for the flags defined above
+	uint32					Attributes;					// bitfield for the flags defined above
 	W3dRGBStruct			Ambient;
 	W3dRGBStruct			Diffuse;
 	W3dRGBStruct			Specular;
@@ -830,36 +828,36 @@ enum PS2_SHADER_SETTINGS {
 struct W3dShaderStruct
 {
 	W3dShaderStruct(void) {}
-	uint8_t						DepthCompare;
-	uint8_t						DepthMask;
-	uint8_t						ColorMask;		// now obsolete and ignored
-	uint8_t						DestBlend;
-	uint8_t						FogFunc;			// now obsolete and ignored
-	uint8_t						PriGradient;
-	uint8_t						SecGradient;
-	uint8_t						SrcBlend;
-	uint8_t						Texturing;
-	uint8_t						DetailColorFunc;
-	uint8_t						DetailAlphaFunc;
-	uint8_t						ShaderPreset;	// now obsolete and ignored
-	uint8_t						AlphaTest;
-	uint8_t						PostDetailColorFunc;
-	uint8_t						PostDetailAlphaFunc;
-	uint8_t						pad[1];
+	uint8						DepthCompare;
+	uint8						DepthMask;
+	uint8						ColorMask;		// now obsolete and ignored
+	uint8						DestBlend;
+	uint8						FogFunc;			// now obsolete and ignored
+	uint8						PriGradient;
+	uint8						SecGradient;
+	uint8						SrcBlend;
+	uint8						Texturing;
+	uint8						DetailColorFunc;
+	uint8						DetailAlphaFunc;
+	uint8						ShaderPreset;	// now obsolete and ignored
+	uint8						AlphaTest;
+	uint8						PostDetailColorFunc;
+	uint8						PostDetailAlphaFunc;
+	uint8						pad[1];
 };
 
 struct W3dPS2ShaderStruct
 {
-	uint8_t						DepthCompare;
-	uint8_t						DepthMask;
-	uint8_t						PriGradient;
-	uint8_t						Texturing;
-	uint8_t						AlphaTest;
-	uint8_t						AParam;
-	uint8_t						BParam;
-	uint8_t						CParam;
-	uint8_t						DParam;
-	uint8_t						pad[3];
+	uint8						DepthCompare;
+	uint8						DepthMask;
+	uint8						PriGradient;
+	uint8						Texturing;
+	uint8						AlphaTest;
+	uint8						AParam;
+	uint8						BParam;
+	uint8						CParam;
+	uint8						DParam;
+	uint8						pad[3];
 };
 
 inline void W3d_Shader_Reset(W3dShaderStruct * s)									{	
@@ -975,9 +973,9 @@ inline int W3d_Shader_Get_Post_Detail_Alpha_Func(const W3dShaderStruct * s)	 { r
 struct W3dTextureInfoStruct
 {
 	W3dTextureInfoStruct(void)	{}
-	uint16_t					Attributes;					// flags for this texture
-	uint16_t					AnimType;					// animation logic
-	uint32_t					FrameCount;					// Number of frames (1 if not animated)
+	uint16					Attributes;					// flags for this texture
+	uint16					AnimType;					// animation logic
+	uint32					FrameCount;					// Number of frames (1 if not animated)
 	float32					FrameRate;					// Frame rate, frames per second in floating point
 };
 
@@ -988,8 +986,8 @@ struct W3dTextureInfoStruct
 /////////////////////////////////////////////////////////////////////////////////////////////
 struct W3dTriStruct
 {
-	uint32_t					Vindex[3];			// vertex,vnormal,texcoord,color indices
-	uint32_t					Attributes;			// attributes bits
+	uint32					Vindex[3];			// vertex,vnormal,texcoord,color indices
+	uint32					Attributes;			// attributes bits
 	W3dVectorStruct		Normal;				// plane normal
 	float32					Dist;					// plane distance
 };
@@ -1140,8 +1138,8 @@ const char * const SURFACE_TYPE_STRINGS[SURFACE_TYPE_MAX] =
 
 struct W3dMeshHeader3Struct
 {
-	uint32_t					Version;							
-	uint32_t					Attributes;
+	uint32					Version;							
+	uint32					Attributes;
 	
 	char						MeshName[W3D_NAME_LEN];		
 	char						ContainerName[W3D_NAME_LEN];
@@ -1149,16 +1147,16 @@ struct W3dMeshHeader3Struct
 	//
 	// Counts, these can be regarded as an inventory of what is to come in the file.
 	//
-	uint32_t					NumTris;				// number of triangles
-	uint32_t					NumVertices;		// number of unique vertices
-	uint32_t					NumMaterials;		// number of unique materials
-	uint32_t					NumDamageStages;	// number of damage offset chunks
-	int32_t					SortLevel;			// static sorting level of this mesh
-	uint32_t					PrelitVersion;		// mesh generated by this version of Lightmap Tool
-	uint32_t					FutureCounts[1];	// future counts
+	uint32					NumTris;				// number of triangles
+	uint32					NumVertices;		// number of unique vertices
+	uint32					NumMaterials;		// number of unique materials
+	uint32					NumDamageStages;	// number of damage offset chunks
+	sint32					SortLevel;			// static sorting level of this mesh
+	uint32					PrelitVersion;		// mesh generated by this version of Lightmap Tool
+	uint32					FutureCounts[1];	// future counts
 
-	uint32_t					VertexChannels;	// bits for presence of types of per-vertex info
-	uint32_t					FaceChannels;		// bits for presence of types of per-face info
+	uint32					VertexChannels;	// bits for presence of types of per-vertex info
+	uint32					FaceChannels;		// bits for presence of types of per-face info
 	
 	//
 	// Bounding volumes
@@ -1176,8 +1174,8 @@ struct W3dMeshHeader3Struct
 // 
 struct W3dVertInfStruct
 {
-	uint16_t					BoneIdx;
-	uint8_t						Pad[6];
+	uint16					BoneIdx;
+	uint8						Pad[6];
 };
 
 //
@@ -1186,9 +1184,9 @@ struct W3dVertInfStruct
 // 
 struct W3dMeshDeform
 {
-	uint32_t					SetCount;
-	uint32_t					AlphaPasses;
-	uint32_t					reserved[3];
+	uint32					SetCount;
+	uint32					AlphaPasses;
+	uint32					reserved[3];
 };
 
 //
@@ -1197,9 +1195,9 @@ struct W3dMeshDeform
 // 
 struct W3dDeformSetInfo
 {	
-	uint32_t					KeyframeCount;
-	uint32_t					flags;
-	uint32_t					reserved[1];
+	uint32					KeyframeCount;
+	uint32					flags;
+	uint32					reserved[1];
 };
 
 #define W3D_DEFORM_SET_MANUAL_DEFORM	0x00000001	// set is isn't applied during sphere or point tests.
@@ -1211,8 +1209,8 @@ struct W3dDeformSetInfo
 struct W3dDeformKeyframeInfo
 {
 	float32					DeformPercent;
-	uint32_t					DataCount;
-	uint32_t					reserved[2];
+	uint32					DataCount;
+	uint32					reserved[2];
 };
 
 //
@@ -1221,10 +1219,10 @@ struct W3dDeformKeyframeInfo
 // 
 struct W3dDeformData
 {
-	uint32_t					VertexIndex;
+	uint32					VertexIndex;
 	W3dVectorStruct		Position;
 	W3dRGBAStruct			Color;
-	uint32_t					reserved[2];
+	uint32					reserved[2];
 };
 
 // 
@@ -1234,9 +1232,9 @@ struct W3dDeformData
 //
 struct W3dMeshAABTreeHeader
 {
-	uint32_t					NodeCount;
-	uint32_t					PolyCount;
-	uint32_t					Padding[6];
+	uint32					NodeCount;
+	uint32					PolyCount;
+	uint32					Padding[6];
 };
 
 // 
@@ -1249,8 +1247,8 @@ struct W3dMeshAABTreeNode
 {
 	W3dVectorStruct		Min;						// min corner of the box 
 	W3dVectorStruct		Max;						// max corner of the box
-	uint32_t					FrontOrPoly0;			// index of the front child or poly0 (if MSB is set, then leaf and poly0 is valid)
-	uint32_t					BackOrPolyCount;		// index of the back child or polycount
+	uint32					FrontOrPoly0;			// index of the front child or poly0 (if MSB is set, then leaf and poly0 is valid)
+	uint32					BackOrPolyCount;		// index of the back child or polycount
 };
 
 
@@ -1291,16 +1289,16 @@ struct W3dMeshAABTreeNode
 
 struct W3dHierarchyStruct
 {
-	uint32_t					Version;
+	uint32					Version;
 	char						Name[W3D_NAME_LEN];	// Name of the hierarchy
-	uint32_t					NumPivots;				
+	uint32					NumPivots;				
 	W3dVectorStruct		Center;					
 };
 
 struct W3dPivotStruct
 {
 	char						Name[W3D_NAME_LEN];	// Name of the node (UR_ARM, LR_LEG, TORSO, etc)
-	uint32_t					ParentIdx;					// 0xffffffff = root pivot; no parent
+	uint32					ParentIdx;					// 0xffffffff = root pivot; no parent
 	W3dVectorStruct		Translation;			// translation to pivot point
 	W3dVectorStruct		EulerAngles;			// orientation of the pivot point
 	W3dQuaternionStruct	Rotation;				// orientation of the pivot point
@@ -1329,22 +1327,22 @@ struct W3dPivotFixupStruct
 
 struct W3dAnimHeaderStruct
 {
-	uint32_t					Version;
+	uint32					Version;
 	char						Name[W3D_NAME_LEN];				
 	char						HierarchyName[W3D_NAME_LEN];
-	uint32_t					NumFrames;
-	uint32_t					FrameRate;
+	uint32					NumFrames;
+	uint32					FrameRate;
 
 };
 
 struct W3dCompressedAnimHeaderStruct
 {
-	uint32_t					Version;
+	uint32					Version;
 	char						Name[W3D_NAME_LEN];				
 	char						HierarchyName[W3D_NAME_LEN];
-	uint32_t					NumFrames;
-	uint16_t					FrameRate;
-	uint16_t					Flavor;
+	uint32					NumFrames;
+	uint16					FrameRate;
+	uint16					Flavor;
 };
 
 
@@ -1384,12 +1382,12 @@ enum
 
 struct W3dAnimChannelStruct
 {
-	uint16_t					FirstFrame;			
-	uint16_t					LastFrame;			
-	uint16_t					VectorLen;			// length of each vector in this channel
-	uint16_t					Flags;					// channel type.
-	uint16_t					Pivot;					// pivot affected by this channel
-	uint16_t					pad;
+	uint16					FirstFrame;			
+	uint16					LastFrame;			
+	uint16					VectorLen;			// length of each vector in this channel
+	uint16					Flags;					// channel type.
+	uint16					Pivot;					// pivot affected by this channel
+	uint16					pad;
 	float32					Data[1];				// will be (LastFrame - FirstFrame + 1) * VectorLen long
 };
 
@@ -1401,29 +1399,29 @@ enum
 
 struct W3dBitChannelStruct
 {
-	uint16_t					FirstFrame;			// all frames outside "First" and "Last" are assumed = DefaultVal
-	uint16_t					LastFrame;			
-	uint16_t					Flags;					// channel type.
-	uint16_t					Pivot;					// pivot affected by this channel
-	uint8_t						DefaultVal;			// default state when outside valid range.
-	uint8_t						Data[1];				// will be (LastFrame - FirstFrame + 1) / 8 long
+	uint16					FirstFrame;			// all frames outside "First" and "Last" are assumed = DefaultVal
+	uint16					LastFrame;			
+	uint16					Flags;					// channel type.
+	uint16					Pivot;					// pivot affected by this channel
+	uint8						DefaultVal;			// default state when outside valid range.
+	uint8						Data[1];				// will be (LastFrame - FirstFrame + 1) / 8 long
 };
 
 // End Classic Structures
 // Begin Time Coded Structures
 
-// A time code is a uint32_t that prefixes each vector
+// A time code is a uint32 that prefixes each vector
 // the MSB is used to indicate a binary (non interpolated) movement
 
 #define W3D_TIMECODED_BINARY_MOVEMENT_FLAG  0x80000000
 
 struct W3dTimeCodedAnimChannelStruct
 {
-	uint32_t					NumTimeCodes;		// number of time coded entries
-	uint16_t					Pivot;				// pivot affected by this channel
-	uint8_t						VectorLen;			// length of each vector in this channel
-	uint8_t						Flags;				// channel type.
-	uint32_t					Data[1];				// will be (NumTimeCodes * ((VectorLen * sizeof(uint32_t)) + sizeof(uint32_t)))
+	uint32					NumTimeCodes;		// number of time coded entries
+	uint16					Pivot;				// pivot affected by this channel
+	uint8						VectorLen;			// length of each vector in this channel
+	uint8						Flags;				// channel type.
+	uint32					Data[1];				// will be (NumTimeCodes * ((VectorLen * sizeof(uint32)) + sizeof(uint32)))
 };								  
 
 // The bit channel is encoded right into the MSB of each time code
@@ -1431,24 +1429,24 @@ struct W3dTimeCodedAnimChannelStruct
 
 struct W3dTimeCodedBitChannelStruct
 {
-	uint32_t					NumTimeCodes;  		// number of time coded entries 
-	uint16_t					Pivot;					// pivot affected by this channel
-	uint8_t						Flags;					// channel type.
-	uint8_t						DefaultVal;				// default state when outside valid range.
-	uint32_t					Data[1];					// will be (NumTimeCodes * sizeof(uint32_t))
+	uint32					NumTimeCodes;  		// number of time coded entries 
+	uint16					Pivot;					// pivot affected by this channel
+	uint8						Flags;					// channel type.
+	uint8						DefaultVal;				// default state when outside valid range.
+	uint32					Data[1];					// will be (NumTimeCodes * sizeof(uint32))
 };
 
 // End Time Coded Structures
 // Begin AdaptiveDelta Structures
 struct W3dAdaptiveDeltaAnimChannelStruct
 {
-	uint32_t					NumFrames;			// number of frames of animation
-	uint16_t					Pivot;				// pivot effected by this channel
-	uint8_t						VectorLen;			// num Channels
-	uint8_t						Flags;				// channel type
+	uint32					NumFrames;			// number of frames of animation
+	uint16					Pivot;				// pivot effected by this channel
+	uint8						VectorLen;			// num Channels
+	uint8						Flags;				// channel type
 	float						Scale;				// Filter Table Scale
 
-	uint32_t					Data[1];				// OpCode Data Stream
+	uint32					Data[1];				// OpCode Data Stream
 
 };
 // End AdaptiveDelta Structures
@@ -1479,18 +1477,18 @@ struct W3dAdaptiveDeltaAnimChannelStruct
 ********************************************************************************/
 struct W3dMorphAnimHeaderStruct
 {
-	uint32_t					Version;
+	uint32					Version;
 	char						Name[W3D_NAME_LEN];
 	char						HierarchyName[W3D_NAME_LEN];
-	uint32_t					FrameCount;
+	uint32					FrameCount;
 	float32					FrameRate;
-	uint32_t					ChannelCount;
+	uint32					ChannelCount;
 };
 
 struct W3dMorphAnimKeyStruct
 {
-	uint32_t					MorphFrame;
-	uint32_t					PoseFrame;
+	uint32					MorphFrame;
+	uint32					PoseFrame;
 };
 
 
@@ -1519,10 +1517,10 @@ struct W3dMorphAnimKeyStruct
 
 struct W3dHModelHeaderStruct
 {
-	uint32_t					Version;
+	uint32					Version;
 	char						Name[W3D_NAME_LEN];				// Name of this model
 	char						HierarchyName[W3D_NAME_LEN];	// Name of the hierarchy tree this model uses
-	uint16_t					NumConnections;				
+	uint16					NumConnections;				
 };
 
 
@@ -1530,7 +1528,7 @@ struct W3dHModelNodeStruct
 {
 	// Note: the full name of the Render object is expected to be: <HModelName>.<RenderObjName>
 	char						RenderObjName[W3D_NAME_LEN];
-	uint16_t					PivotIdx;
+	uint16					PivotIdx;
 };
 
 
@@ -1545,9 +1543,9 @@ struct W3dHModelNodeStruct
 
 struct W3dLODModelHeaderStruct
 {
-	uint32_t					Version;
+	uint32					Version;
 	char						Name[W3D_NAME_LEN];				// Name of this LOD Model
-	uint16_t					NumLODs;				
+	uint16					NumLODs;				
 };
 
 struct W3dLODStruct 
@@ -1581,10 +1579,10 @@ struct W3dLODStruct
 
 struct W3dCollectionHeaderStruct
 {
-	uint32_t		Version;
+	uint32		Version;
 	char			Name[W3D_NAME_LEN];
-	uint32_t		RenderObjectCount;
-	uint32_t		pad[2];
+	uint32		RenderObjectCount;
+	uint32		pad[2];
 };
 
 
@@ -1600,9 +1598,9 @@ struct W3dCollectionHeaderStruct
 //
 struct W3dPlaceholderStruct
 {
-	uint32_t		version;
+	uint32		version;
 	float32		transform[4][3];				// this is a direct dump of a MAX 3x4 matrix
-	uint32_t		name_len;
+	uint32		name_len;
 };
 
 
@@ -1619,9 +1617,9 @@ struct W3dPlaceholderStruct
 //
 struct W3dTransformNodeStruct
 {
-	uint32_t		version;
+	uint32		version;
 	float32		transform[4][3];				// this is a direct dump of a MAX 3x4 matrix
-	uint32_t		name_len;
+	uint32		name_len;
 };
 
 
@@ -1645,8 +1643,8 @@ struct W3dTransformNodeStruct
 
 struct W3dLightStruct
 {
-	uint32_t				Attributes;
-	uint32_t				Unused; // Old exclusion bit deprecated
+	uint32				Attributes;
+	uint32				Unused; // Old exclusion bit deprecated
 	W3dRGBStruct		Ambient;
 	W3dRGBStruct		Diffuse;
 	W3dRGBStruct		Specular;
@@ -1705,14 +1703,14 @@ extern const char *EMITTER_TYPE_NAMES[EMITTER_TYPEID_COUNT];
 
 struct W3dEmitterHeaderStruct
 {
-	uint32_t				Version;
+	uint32				Version;
 	char					Name[W3D_NAME_LEN];
 };
 
 struct W3dEmitterUserInfoStruct
 {
-	uint32_t				Type;							// One of the EMITTER_TYPEID_ enum's defined above
-	uint32_t				SizeofStringParam;		// Size (in bytes) of the following string data
+	uint32				Type;							// One of the EMITTER_TYPEID_ enum's defined above
+	uint32				SizeofStringParam;		// Size (in bytes) of the following string data
 	char					StringParam[1];			// Array of bytes.  Where "count = SizeofStringParam"
 };
 
@@ -1737,11 +1735,11 @@ struct W3dEmitterInfoStruct
 
 struct W3dVolumeRandomizerStruct
 {
-	uint32_t				ClassID;
+	uint32				ClassID;
 	float32				Value1;
 	float32				Value2;
 	float32				Value3;
-	uint32_t				reserved[4];
+	uint32				reserved[4];
 };
 
 #define W3D_EMITTER_RENDER_MODE_TRI_PARTICLES		0
@@ -1758,15 +1756,15 @@ struct W3dVolumeRandomizerStruct
 
 struct W3dEmitterInfoStructV2
 {
-	uint32_t							BurstSize;
+	uint32							BurstSize;
 	W3dVolumeRandomizerStruct	CreationVolume;
 	W3dVolumeRandomizerStruct	VelRandom;
 	float32							OutwardVel;
 	float32							VelInherit;
 	W3dShaderStruct				Shader;
-	uint32_t							RenderMode;		// render as particles or lines?
-	uint32_t							FrameMode;		// chop the texture into a grid of smaller squares?
-	uint32_t							reserved[6];
+	uint32							RenderMode;		// render as particles or lines?
+	uint32							FrameMode;		// chop the texture into a grid of smaller squares?
+	uint32							reserved[6];
 };
 
 // W3D_CHUNK_EMITTER_PROPS
@@ -1775,13 +1773,13 @@ struct W3dEmitterInfoStructV2
 
 struct W3dEmitterPropertyStruct
 {
-	uint32_t				ColorKeyframes;
-	uint32_t				OpacityKeyframes;
-	uint32_t				SizeKeyframes;
+	uint32				ColorKeyframes;
+	uint32				OpacityKeyframes;
+	uint32				SizeKeyframes;
 	W3dRGBAStruct		ColorRandom;
 	float32				OpacityRandom;
 	float32				SizeRandom;
-	uint32_t				reserved[4];
+	uint32				reserved[4];
 };
 
 
@@ -1808,10 +1806,10 @@ struct W3dEmitterSizeKeyframeStruct
 // rotational velocity keyframes.  
 struct W3dEmitterRotationHeaderStruct
 {
-	uint32_t				KeyframeCount;
+	uint32				KeyframeCount;
 	float32				Random;					// random initial rotational velocity (rotations/sec)
 	float32				OrientationRandom;	// random initial orientation (rotations, 1.0=360deg)
-	uint32_t				Reserved[1];
+	uint32				Reserved[1];
 };
 
 struct W3dEmitterRotationKeyframeStruct
@@ -1825,9 +1823,9 @@ struct W3dEmitterRotationKeyframeStruct
 // frame keyframes (sub-texture indexing)
 struct W3dEmitterFrameHeaderStruct
 {
-	uint32_t				KeyframeCount;
+	uint32				KeyframeCount;
 	float32				Random;
-	uint32_t				Reserved[2];
+	uint32				Reserved[2];
 };
 
 struct W3dEmitterFrameKeyframeStruct
@@ -1841,9 +1839,9 @@ struct W3dEmitterFrameKeyframeStruct
 // frame keyframes (sub-texture indexing)
 struct W3dEmitterBlurTimeHeaderStruct
 {
-	uint32_t				KeyframeCount;
+	uint32				KeyframeCount;
 	float32				Random;
-	uint32_t				Reserved[1];
+	uint32				Reserved[1];
 };
 
 struct W3dEmitterBlurTimeKeyframeStruct
@@ -1872,14 +1870,14 @@ struct W3dEmitterBlurTimeKeyframeStruct
 
 struct W3dEmitterLinePropertiesStruct
 {
-	uint32_t							Flags;
-	uint32_t							SubdivisionLevel;	
+	uint32							Flags;
+	uint32							SubdivisionLevel;	
 	float32							NoiseAmplitude;
 	float32							MergeAbortFactor;
 	float32							TextureTileFactor;
 	float32							UPerSec;
 	float32							VPerSec;
-	uint32_t							Reserved[9];
+	uint32							Reserved[9];
 };
 
 
@@ -1899,14 +1897,14 @@ const int MESH_PATH_ENTRY_LEN						= (W3D_NAME_LEN * 2);
 
 struct W3dAggregateHeaderStruct
 {
-	uint32_t				Version;
+	uint32				Version;
 	char					Name[W3D_NAME_LEN];
 };
 
 struct W3dAggregateInfoStruct
 {
 	char					BaseModelName[W3D_NAME_LEN*2];
-	uint32_t				SubobjectCount;
+	uint32				SubobjectCount;
 };
 
 struct W3dAggregateSubobjectStruct
@@ -1920,7 +1918,7 @@ struct W3dAggregateSubobjectStruct
 //
 struct W3dTextureReplacerHeaderStruct
 {
-	uint32_t				ReplacedTexturesCount;
+	uint32				ReplacedTexturesCount;
 };
 
 struct W3dTextureReplacerStruct
@@ -1942,9 +1940,9 @@ const int W3D_AGGREGATE_FORCE_SUB_OBJ_LOD		= 0x00000001;
 //
 struct W3dAggregateMiscInfo
 {
-	uint32_t				OriginalClassID;
-	uint32_t				Flags;
-	uint32_t				reserved[3];
+	uint32				OriginalClassID;
+	uint32				Flags;
+	uint32				reserved[3];
 };
 
 
@@ -1980,21 +1978,21 @@ struct W3dAggregateMiscInfo
 
 struct W3dHLodHeaderStruct
 {
-	uint32_t					Version;
-	uint32_t					LodCount;
+	uint32					Version;
+	uint32					LodCount;
 	char						Name[W3D_NAME_LEN];
 	char						HierarchyName[W3D_NAME_LEN];		// name of the hierarchy tree to use (\0 if none)
 };
 
 struct W3dHLodArrayHeaderStruct
 {
-	uint32_t					ModelCount;
+	uint32					ModelCount;
 	float32					MaxScreenSize;		// if model is bigger than this, switch to higher lod.
 };
 
 struct W3dHLodSubObjectStruct
 {
-	uint32_t					BoneIndex;
+	uint32					BoneIndex;
 	char						Name[W3D_NAME_LEN*2];
 };
 
@@ -2030,8 +2028,8 @@ struct W3dHLodSubObjectStruct
 
 struct W3dBoxStruct
 {
-	uint32_t				Version;						// file format version
-	uint32_t				Attributes;					// box attributes (above #define's)
+	uint32				Version;						// file format version
+	uint32				Attributes;					// box attributes (above #define's)
 	char					Name[2*W3D_NAME_LEN];	// name is in the form <containername>.<boxname>
 	W3dRGBStruct		Color;						// color to use when drawing the box
 	W3dVectorStruct	Center;						// center of the box
@@ -2053,9 +2051,9 @@ struct W3dBoxStruct
 
 struct W3dNullObjectStruct
 {
-	uint32_t				Version;						// file format version
-	uint32_t				Attributes;					// object attributes (currently un-used)
-	uint32_t				pad[2];						// pad space
+	uint32				Version;						// file format version
+	uint32				Attributes;					// object attributes (currently un-used)
+	uint32				pad[2];						// pad space
 	char					Name[2*W3D_NAME_LEN];	// name is in the form <containername>.<boxname>
 };
 
@@ -2096,10 +2094,10 @@ struct W3dNullObjectStruct
 //
 struct W3dSoundRObjHeaderStruct
 {
-	uint32_t				Version;
+	uint32				Version;
 	char					Name[W3D_NAME_LEN];
-	uint32_t				Flags;
-	uint32_t				Padding[8];
+	uint32				Flags;
+	uint32				Padding[8];
 };
 
 

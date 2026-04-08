@@ -95,7 +95,7 @@ bool TextTextureClass::Build_Texture(FontClass &font, const char *str, int fore,
 	Rect rect(0,0,fw,fh);
 	BSurface bsurf(fw, fh, 1);
 	bsurf.Fill(0);
-	font.Print(str, bsurf, rect, TPoint2D<int>(0,0), conv, (uint8_t *)default_font_palette);
+	font.Print(str, bsurf, rect, TPoint2D<int>(0,0), conv, (unsigned char *)default_font_palette);
 
 	// figure out the size of the best texture which can hold the
 	// text we wrote.  Since textures need to be assumed to be square 

@@ -482,7 +482,7 @@ int Stripify::s_mod[6] = {0,1,2,0,1,2};
 } // Strip
 
 
-template <> inline uint32_t HashTemplateKeyClass<Strip::Edge>::Get_Hash_Value(const Strip::Edge& s)
+template <> inline unsigned int HashTemplateKeyClass<Strip::Edge>::Get_Hash_Value(const Strip::Edge& s)
 {
 	return (s.v[0]*139) + (s.v[1]*7);
 }

@@ -3563,7 +3563,7 @@ void HLodClass::Create_Decal(DecalGeneratorClass * generator)
  * HISTORY:                                                                                    *
  *   1/26/00    gth : Created.                                                                 *
  *=============================================================================================*/
-void HLodClass::Delete_Decal(uint32_t decal_id)
+void HLodClass::Delete_Decal(uint32 decal_id)
 {
 	for (int lod=0; lod<LodCount; lod++) {
 		for (int model=0; model<Lod[lod].Count(); model++) {

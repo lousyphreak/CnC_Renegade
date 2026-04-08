@@ -81,9 +81,9 @@ void	W3dUtilityClass::Convert_Color(const W3dRGBStruct & rgb,Vector3 * set)
 
 void	W3dUtilityClass::Convert_Color(const Vector3 & v,W3dRGBStruct * color)
 {
-	color->R = (uint8_t)(255.0f * v.X);
-	color->G = (uint8_t)(255.0f * v.Y);
-	color->B = (uint8_t)(255.0f * v.Z);
+	color->R = (uint8)(255.0f * v.X);
+	color->G = (uint8)(255.0f * v.Y);
+	color->B = (uint8)(255.0f * v.Z);
 	color->pad = 0;
 }
 
@@ -97,10 +97,10 @@ void W3dUtilityClass::Convert_Color(const W3dRGBAStruct & rgb,Vector4 * set)
 
 void W3dUtilityClass::Convert_Color(const Vector4 & v,W3dRGBAStruct * color)
 {
-	color->R = (uint8_t)(255.0f * v.X);
-	color->G = (uint8_t)(255.0f * v.Y);
-	color->B = (uint8_t)(255.0f * v.Z);
-	color->A = (uint8_t)(255.0f * v.W);
+	color->R = (uint8)(255.0f * v.X);
+	color->G = (uint8)(255.0f * v.Y);
+	color->B = (uint8)(255.0f * v.Z);
+	color->A = (uint8)(255.0f * v.W);
 }
 
 void W3dUtilityClass::Convert_Shader(const W3dShaderStruct & shader,ShaderClass * set)

@@ -43,12 +43,10 @@
 #include "rinfo.h"
 #include "dx8wrapper.h"
 #include "sortingrenderer.h"
-#include "vertmaterial.h"
 #include "vp.h"
 #include "vector3i.h"
 #include "random.h"
 #include "v3_rnd.h"
-#include "w3d_file.h"
 #include "meshgeometry.h"
 
 
@@ -203,7 +201,7 @@ void SegLineRendererClass::Render
 (	
 	RenderInfoClass & rinfo,
 	const Matrix3D & transform,
-	uint32_t num_points,
+	unsigned int num_points,
 	Vector3 * points,
 	const SphereClass & obj_sphere
 )
@@ -218,7 +216,7 @@ void SegLineRendererClass::Render
 	/* 
 	** Handle texture UV offset animation (done once for entire line).
 	*/
-	uint32_t delta = WW3D::Get_Sync_Time() - LastUsedSyncTime;
+	unsigned int delta = WW3D::Get_Sync_Time() - LastUsedSyncTime;
 	float del = (float)delta;
 	Vector2 uv_offset = CurrentUVOffset + UVOffsetDeltaPerMS * del;
 
@@ -244,21 +242,21 @@ void SegLineRendererClass::Render
 	// after subdivision will be no higher than the allowed maximum). We know this will not reduce
 	// the chunk size below 2, since the chunk size must be at least two to the power of the
 	// maximum allowable number of subdivisions. The plus 1 is because #points = #segments + 1.
-	uint32_t chunk_size = (SEGLINE_CHUNK_SIZE >> SubdivisionLevel) + 1;
+	unsigned int chunk_size = (SEGLINE_CHUNK_SIZE >> SubdivisionLevel) + 1;
 	if (chunk_size > num_points) chunk_size = num_points;
 
 	// Chunk through the points (we increment by chunk_size - 1 because the last point of this
 	// chunk must be reused as the first point of the next chunk. This is also the reason we stop
 	// when chidx = NumPoints - 1: the last point has already been processed in the previous
 	// iteration so we don't need another one).
-	for (uint32_t chidx = 0; chidx < num_points - 1; chidx += (chunk_size - 1)) {
-		uint32_t point_cnt = num_points - chidx;
+	for (unsigned int chidx = 0; chidx < num_points - 1; chidx += (chunk_size - 1)) {
+		unsigned int point_cnt = num_points - chidx;
 		point_cnt = MIN(point_cnt, chunk_size);
 
 		// We use these different loop indices (which loop INSIDE a chunk) to improve readability:
-		uint32_t pidx;	// Point index
-		uint32_t sidx;	// Segment index
-		uint32_t iidx;	// Intersection index
+		unsigned int pidx;	// Point index
+		unsigned int sidx;	// Segment index
+		unsigned int iidx;	// Intersection index
 
 
 		/*
@@ -320,7 +318,7 @@ void SegLineRendererClass::Render
 
 		Vector3 xformed_subdiv_pts[MAX_SEGLINE_POINT_BUFFER_SIZE];
 		float subdiv_tex_v[MAX_SEGLINE_POINT_BUFFER_SIZE];
-		uint32_t sub_point_cnt;
+		unsigned int sub_point_cnt;
 
 		subdivision_util(point_cnt, xformed_pts, base_tex_v, &sub_point_cnt, xformed_subdiv_pts, subdiv_tex_v);
 
@@ -370,8 +368,8 @@ void SegLineRendererClass::Render
 
 		// Intersections. This has data for two edges (top or bottom) intersecting.
 		struct LineSegmentIntersection  {
-			uint32_t	PointCount;			// How many points does this intersection represent
-			uint32_t	NextSegmentID;		// ID of segment after this intersection
+			unsigned int	PointCount;			// How many points does this intersection represent
+			unsigned int	NextSegmentID;		// ID of segment after this intersection
 			Vector3			Direction;			// Calculated intersection direction line
 			Vector3			Point;				// Averaged 3D point on the line which this represents
 			float				TexV;					// Averaged texture V coordinate of points
@@ -464,8 +462,8 @@ void SegLineRendererClass::Render
 		** Calculate segment edge intersections:
 		*/
 
-		uint32_t numsegs = point_cnt - 1;	// Doesn't include the two dummy segments
-		uint32_t num_intersections[NUM_EDGES];
+		unsigned int numsegs = point_cnt - 1;	// Doesn't include the two dummy segments
+		unsigned int num_intersections[NUM_EDGES];
 
 		// These include the 1st, last point "intersections", not the pre-first dummy intersection
 		num_intersections[TOP_EDGE] = point_cnt;
@@ -532,7 +530,7 @@ void SegLineRendererClass::Render
 		segment[1].StartPlane = segment[0].StartPlane;
 
 		// Initialize last point "intersection" record.
-		uint32_t last_isec = num_intersections[TOP_EDGE]; // Same # top, bottom intersections
+		unsigned int last_isec = num_intersections[TOP_EDGE]; // Same # top, bottom intersections
 
 		intersection[last_isec][TOP_EDGE].PointCount = 1;
 		intersection[last_isec][TOP_EDGE].NextSegmentID = numsegs + 1; // Last dummy segment
@@ -695,8 +693,8 @@ void SegLineRendererClass::Render
 
 			// Since we are merging the intersections in-place, we have two index variables, a "read
 			// index" and a "write index".
-			uint32_t iidx_r;
-			uint32_t iidx_w;
+			unsigned int iidx_r;
+			unsigned int iidx_w;
 
 			// The merges will be repeated in multiple passes until none are performed. The reason
 			// for this is that one merge may cause the need for another merge elsewhere.
@@ -713,7 +711,7 @@ void SegLineRendererClass::Render
 					// if it needs to be merged with the next one (which is why the loop doesn't go all
 					// the way to the last intersection). We start at 1 because 0 is the dummy
 					// "pre-first-point" intersection.
-					uint32_t num_isects = num_intersections[edge];	// Capture here because will change inside loop
+					unsigned int num_isects = num_intersections[edge];	// Capture here because will change inside loop
 					for (iidx_r = 1, iidx_w = 1; iidx_r < num_isects; iidx_r++, iidx_w++) {
 
 						// Check for either of two possible reasons to merge this intersection with the
@@ -750,7 +748,7 @@ void SegLineRendererClass::Render
 							// the merge if it yields funky results.
 
 							// Find mean point (weighted so all points have same weighting)
-							uint32_t new_count = curr_int->PointCount + next_int->PointCount;
+							unsigned int new_count = curr_int->PointCount + next_int->PointCount;
 							float oo_new_count = 1.0f / (float)new_count;
 							float curr_factor = oo_new_count * (float)curr_int->PointCount;
 							float next_factor = oo_new_count * (float)curr_int->PointCount;
@@ -869,8 +867,8 @@ void SegLineRendererClass::Render
 
 #ifdef ENABLE_WWDEBUGGING
 					// Testing code - ensure total PointCount fits the number of points
-					uint32_t total_cnt = 0;
-					for (uint32_t nidx = 0; nidx <= num_intersections[edge]; nidx++) {
+					unsigned int total_cnt = 0;
+					for (unsigned int nidx = 0; nidx <= num_intersections[edge]; nidx++) {
 						total_cnt += intersection[nidx][edge].PointCount;
 					}
 					assert(total_cnt == point_cnt);
@@ -888,13 +886,13 @@ void SegLineRendererClass::Render
 		*/
 
 		// Configure vertex array and setup renderer.
-		uint32_t vnum = num_intersections[TOP_EDGE] + num_intersections[BOTTOM_EDGE];		
+		unsigned int vnum = num_intersections[TOP_EDGE] + num_intersections[BOTTOM_EDGE];		
 		VertexFormatXYZDUV1 *vArray=new VertexFormatXYZDUV1[vnum];		
 		TriIndex v_index_array[MAX_SEGLINE_POLY_BUFFER_SIZE];
 		
 		// Vertex and triangle indices
-		uint32_t vidx = 0;
-		uint32_t tidx = 0;
+		unsigned int vidx = 0;
+		unsigned int tidx = 0;
 
 // GENERALIZE FOR WHEN NO TEXTURE (DO NOT SET UV IN THESE CASES? NEED TO GENERALIZE FOR DIFFERENT TEXTURING MODES ANYWAY).
 
@@ -916,18 +914,18 @@ void SegLineRendererClass::Render
 		vArray[vidx].v1 = intersection[1][BOTTOM_EDGE].TexV + uv_offset.Y;
 		vidx++;
 		
-		uint32_t last_top_vidx = 0;
-		uint32_t last_bottom_vidx = 1;
+		unsigned int last_top_vidx = 0;
+		unsigned int last_bottom_vidx = 1;
 
 		// Loop over intersections, create new vertices and triangles.
-		uint32_t top_int_idx = 1;		// Skip "pre-first-point" dummy intersection
-		uint32_t bottom_int_idx = 1;	// Skip "pre-first-point" dummy intersection
+		unsigned int top_int_idx = 1;		// Skip "pre-first-point" dummy intersection
+		unsigned int bottom_int_idx = 1;	// Skip "pre-first-point" dummy intersection
 		pidx = 0;
-		uint32_t residual_top_points = intersection[1][TOP_EDGE].PointCount;
-		uint32_t residual_bottom_points = intersection[1][BOTTOM_EDGE].PointCount;
+		unsigned int residual_top_points = intersection[1][TOP_EDGE].PointCount;
+		unsigned int residual_bottom_points = intersection[1][BOTTOM_EDGE].PointCount;
 
 		// Reduce both pointcounts by the same amount so the smaller one is 1 (skip points)
-		uint32_t delta = MIN(residual_top_points, residual_bottom_points) - 1;
+		unsigned int delta = MIN(residual_top_points, residual_bottom_points) - 1;
 		residual_top_points -= delta;
 		residual_bottom_points -= delta;
 		pidx += delta;
@@ -1056,7 +1054,7 @@ void SegLineRendererClass::Render
 		*/
 		
 		// If color is not white or opacity not 100%, enable gradient in shader and in renderer - otherwise disable.		
-		uint32_t rgba;
+		unsigned int rgba;
 		rgba=DX8Wrapper::Convert_Color(Color,Opacity);
 		bool rgba_all=(rgba==0xFFFFFFFF);
 
@@ -1093,8 +1091,8 @@ void SegLineRendererClass::Render
 		// Copy in the data to the  VB
 		{
 			DynamicVBAccessClass::WriteLockClass Lock(&Verts);
-			uint32_t i;
-			uint8_t *vb=(uint8_t*)Lock.Get_Formatted_Vertex_Array();			
+			unsigned int i;
+			unsigned char *vb=(unsigned char*)Lock.Get_Formatted_Vertex_Array();			
 			const FVFInfoClass& fvfinfo=Verts.FVF_Info();			
 
 			for (i=0; i<vnum; i++)
@@ -1103,7 +1101,7 @@ void SegLineRendererClass::Render
 				((Vector3*)(vb+fvfinfo.Get_Location_Offset()))->X=vArray[i].x;
 				((Vector3*)(vb+fvfinfo.Get_Location_Offset()))->Y=vArray[i].y;
 				((Vector3*)(vb+fvfinfo.Get_Location_Offset()))->Z=vArray[i].z;
-				*(uint32_t*)(vb+fvfinfo.Get_Diffuse_Offset())=vArray[i].diffuse;
+				*(unsigned int*)(vb+fvfinfo.Get_Diffuse_Offset())=vArray[i].diffuse;
 				((Vector2*)(vb+fvfinfo.Get_Tex_Offset(0)))->U=vArray[i].u1;
 				((Vector2*)(vb+fvfinfo.Get_Tex_Offset(0)))->V=vArray[i].v1;				
 				vb+=fvfinfo.Get_FVF_Size();				
@@ -1112,9 +1110,9 @@ void SegLineRendererClass::Render
 		
 		DynamicIBAccessClass ib_access((sorting?BUFFER_TYPE_DYNAMIC_SORTING:BUFFER_TYPE_DYNAMIC_DX8),tidx*3);
 		{
-			uint32_t i;
+			unsigned int i;
 			DynamicIBAccessClass::WriteLockClass lock(&ib_access);
-			uint16_t* inds=lock.Get_Index_Array();
+			unsigned short* inds=lock.Get_Index_Array();
 
 			for (i=0; i<tidx; i++)
 			{
@@ -1146,8 +1144,8 @@ void SegLineRendererClass::Render
 }
 
 
-void SegLineRendererClass::subdivision_util(uint32_t point_cnt, const Vector3 *xformed_pts,
-	const float *base_tex_v, uint32_t *p_sub_point_cnt, Vector3 *xformed_subdiv_pts,
+void SegLineRendererClass::subdivision_util(unsigned int point_cnt, const Vector3 *xformed_pts,
+	const float *base_tex_v, unsigned int *p_sub_point_cnt, Vector3 *xformed_subdiv_pts,
 	float *subdiv_tex_v)
 {
 	// CAUTION: freezing the random offsets will make it more readily apparent that the offsets
@@ -1157,7 +1155,7 @@ void SegLineRendererClass::subdivision_util(uint32_t point_cnt, const Vector3 *x
 	const float oo_int_max = 1.0f / (float)INT_MAX;
 	Vector3SolidBoxRandomizer randomizer(Vector3(1,1,1));
 	Vector3 randvec(0,0,0);
-	uint32_t sub_pidx = 0;
+	unsigned int sub_pidx = 0;
 
 	struct SegLineSubdivision {
 		Vector3			StartPos;
@@ -1165,13 +1163,13 @@ void SegLineRendererClass::subdivision_util(uint32_t point_cnt, const Vector3 *x
 		float				StartTexV;	// V texture coordinate of start point
 		float				EndTexV;		// V texture coordinate of end point
 		float				Rand;
-		uint32_t	Level;		// Subdivision level
+		unsigned int	Level;		// Subdivision level
 	};
 
 	SegLineSubdivision stack[2 * MAX_SEGLINE_SUBDIV_LEVELS];	// Maximum number needed
 	int tos = 0;
 
-	for (uint32_t pidx = 0; pidx < point_cnt - 1; pidx++) {
+	for (unsigned int pidx = 0; pidx < point_cnt - 1; pidx++) {
 
 		// Subdivide the (pidx, pidx + 1) segment. Produce pidx and all subdivided points up to
 		// (not including) pidx + 1.

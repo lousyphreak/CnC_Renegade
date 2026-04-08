@@ -36,9 +36,9 @@
  * Functions:                                                                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+#if defined(_MSC_VER)
 #pragma once
-
-#include <cstdint>
+#endif
 
 #ifndef SURFACECLASS_H
 #define SURFACECLASS_H
@@ -64,8 +64,8 @@ class SurfaceClass : public RefCountClass
 
 		struct SurfaceDescription {
 			WW3DFormat		Format;	// Surface format
-			uint32_t	Width;	// Surface width in pixels
-			uint32_t	Height;	// Surface height in pixels
+			unsigned int	Width;	// Surface width in pixels
+			unsigned int	Height;	// Surface height in pixels
 		};
 
 		// Create surface with desired height, width and format.
@@ -92,31 +92,31 @@ class SurfaceClass : public RefCountClass
 
 		// copies the contents of one surface to another		
 		void Copy(
-			uint32_t dstx, uint32_t dsty,
-			uint32_t srcx, uint32_t srcy, 
-			uint32_t width, uint32_t height,
+			unsigned int dstx, unsigned int dsty,
+			unsigned int srcx, unsigned int srcy, 
+			unsigned int width, unsigned int height,
 			const SurfaceClass *other);
 
 		// support for copying from a byte array
-		void Copy(const uint8_t *other);
+		void Copy(const unsigned char *other);
 
 		// support for copying from a byte array
-		void Copy(Vector2i &min,Vector2i &max, const uint8_t *other);
+		void Copy(Vector2i &min,Vector2i &max, const unsigned char *other);
 
 		// copies the contents of one surface to another, stretches
 		void Stretch_Copy(
-			uint32_t dstx, uint32_t dsty,uint32_t dstwidth, uint32_t dstheight,
-			uint32_t srcx, uint32_t srcy, uint32_t srcwidth, uint32_t srcheight,
+			unsigned int dstx, unsigned int dsty,unsigned int dstwidth, unsigned int dstheight,
+			unsigned int srcx, unsigned int srcy, unsigned int srcwidth, unsigned int srcheight,
 			const SurfaceClass *source);
 
 		// finds the bounding box of non-zero pixels, used in font3d
 		void FindBB(Vector2i *min,Vector2i*max);
 
 		// tests a column to see if the alpha is nonzero, used in font3d
-		bool Is_Transparent_Column(uint32_t column);		
+		bool Is_Transparent_Column(unsigned int column);		
 
 		// makes a copy of the surface into a byte array
-		uint8_t *CreateCopy(int *width,int *height,int*size,bool flip=false);
+		unsigned char *CreateCopy(int *width,int *height,int*size,bool flip=false);
 
 			// For use by TextureClass:
 		IDirect3DSurface8 *Peek_D3D_Surface(void) { return D3DSurface; }
@@ -126,9 +126,9 @@ class SurfaceClass : public RefCountClass
 		void	Detach (void);
 
 		// draws a horizontal line
-		void DrawHLine(const uint32_t y,const uint32_t x1, const uint32_t x2, uint32_t color);
+		void DrawHLine(const unsigned int y,const unsigned int x1, const unsigned int x2, unsigned int color);
 
-		void DrawPixel(const uint32_t x,const uint32_t y, uint32_t color);
+		void DrawPixel(const unsigned int x,const unsigned int y, unsigned int color);
 
 		// get pixel function .. to be used infrequently
 		void Get_Pixel(Vector3 &rgb, int x,int y);
@@ -142,9 +142,9 @@ class SurfaceClass : public RefCountClass
 		//
 		//	Handy utility functions
 		//
-		uint32_t PixelSize(const SurfaceDescription &sd);
-		void Convert_Pixel(Vector3 &rgb, const SurfaceClass::SurfaceDescription &sd, const uint8_t * pixel);
-		void Convert_Pixel(uint8_t * pixel,const SurfaceClass::SurfaceDescription &sd, const Vector3 &rgb);
+		unsigned int PixelSize(const SurfaceDescription &sd);
+		void Convert_Pixel(Vector3 &rgb, const SurfaceClass::SurfaceDescription &sd, const unsigned char * pixel);
+		void Convert_Pixel(unsigned char * pixel,const SurfaceClass::SurfaceDescription &sd, const Vector3 &rgb);
 
 	private:
 
@@ -156,4 +156,5 @@ class SurfaceClass : public RefCountClass
 };
 
 #endif
+
 

@@ -34,9 +34,9 @@
  * Functions:                                                              * 
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+#if defined(_MSC_VER)
 #pragma once
-
-#include <cstdint>
+#endif
 
 #ifndef POINTGR_H
 #define POINTGR_H
@@ -83,10 +83,10 @@ public:
 	// PointGroupClass interface:
 	void						Set_Arrays(ShareBufferClass<Vector3> *locs,
 									ShareBufferClass<Vector4> *diffuse = NULL,																		
-									ShareBufferClass<uint32_t> *apt = NULL,
+									ShareBufferClass<unsigned int> *apt = NULL,
 									ShareBufferClass<float> *sizes = NULL,
-									ShareBufferClass<uint8_t> *orientations = NULL,
-									ShareBufferClass<uint8_t> *frames = NULL,
+									ShareBufferClass<unsigned char> *orientations = NULL,
+									ShareBufferClass<unsigned char> *frames = NULL,
 									int active_point_count = -1,
 									float vpxmin = 0.0f, float vpymin = 0.0f,
 									float vpxmax = 0.0f, float vpymax = 0.0f);
@@ -96,10 +96,10 @@ public:
 	Vector3				Get_Point_Color(void);
 	void						Set_Point_Alpha(float alpha);
 	float						Get_Point_Alpha(void);
-		void						Set_Point_Orientation(uint8_t orientation);
-		uint8_t			Get_Point_Orientation(void);
-		void						Set_Point_Frame(uint8_t frame);
-		uint8_t			Get_Point_Frame(void);
+	void						Set_Point_Orientation(unsigned char orientation);
+	unsigned char			Get_Point_Orientation(void);
+	void						Set_Point_Frame(unsigned char frame);
+	unsigned char			Get_Point_Frame(void);
 	void						Set_Point_Mode(PointModeEnum mode);
 	PointModeEnum			Get_Point_Mode(void);
 	void						Set_Flag(FlagsType flag, bool onoff);
@@ -114,8 +114,8 @@ public:
 	// texture determine the number of possible frames. Since it must be a power of 2, we represent
 	// it as its log base 2. This number cannot be greater than 4 (which corresponds to a 16x16
 	// square of frames, i.e. 256 frames).
-		uint8_t			Get_Frame_Row_Column_Count_Log2(void);
-		void						Set_Frame_Row_Column_Count_Log2(uint8_t frccl2);
+	unsigned char			Get_Frame_Row_Column_Count_Log2(void);
+	void						Set_Frame_Row_Column_Count_Log2(unsigned char frccl2);
 
 	int						Get_Polygon_Count(void);
 
@@ -126,8 +126,8 @@ protected:
 	void						Update_Arrays(Vector3 *point_loc,
 									Vector4 *point_diffuse,									
 									float *point_size,
-									uint8_t *point_orientation,
-									uint8_t *point_frame, 
+									unsigned char *point_orientation,
+									unsigned char *point_frame, 
 									int active_points,
 									int total_points, 
 									int &vnum, 
@@ -153,14 +153,14 @@ protected:
 	// and columns, orientations, etc. are represented as the log base 2 of the actual number.
 	ShareBufferClass<Vector3> *			PointLoc;	// World/cameraspace point locs
 	ShareBufferClass<Vector4> *			PointDiffuse; // (NULL if not used) RGBA values
-	ShareBufferClass<uint32_t> *		APT;			// (NULL if not used) active point table
+	ShareBufferClass<unsigned int> *		APT;			// (NULL if not used) active point table
 	ShareBufferClass<float> *				PointSize;	// (NULL if not used) size override table
-	ShareBufferClass<uint8_t> *	PointOrientation; // (NULL if not used) orientation indices
-	ShareBufferClass<uint8_t> *	PointFrame; // (NULL if not used) frame indices
+	ShareBufferClass<unsigned char> *	PointOrientation; // (NULL if not used) orientation indices
+	ShareBufferClass<unsigned char> *	PointFrame; // (NULL if not used) frame indices
 	int											PointCount;	// Active (if APT) or total point count
 
 	// See comments for Get/Set_Frame_Row_Column_Count_Log2 above
-	uint8_t			FrameRowColumnCountLog2;		// MUST be equal or lesser than 4
+	unsigned char			FrameRowColumnCountLog2;		// MUST be equal or lesser than 4
 
 	// These parameters are passed to the GERD:
 	TextureClass*			Texture;
@@ -168,12 +168,12 @@ protected:
 
 	// Internal state:
 	PointModeEnum			PointMode;					// are points tris or quads?
-	uint32_t			Flags;						// operation control flags
+	unsigned int			Flags;						// operation control flags
 	float						DefaultPointSize;			// point size (size array overrides if present)
 	Vector3					DefaultPointColor;		// point color (color array overrides if present)
 	float						DefaultPointAlpha;		// point alpha (alpha array overrides if present)	
-	uint8_t			DefaultPointOrientation;// point orientation (orientation array overrides if present)
-	uint8_t			DefaultPointFrame;		// point texture frame (frame array overrides if present)
+	unsigned char			DefaultPointOrientation;// point orientation (orientation array overrides if present)
+	unsigned char			DefaultPointFrame;		// point texture frame (frame array overrides if present)
 
 	// View plane rectangle (only used in SCREENSPACE mode - set by Set_Arrays
 	// and used in Update_GERD_Arrays).

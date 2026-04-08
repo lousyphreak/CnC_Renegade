@@ -25,9 +25,9 @@ void Bitmap_Assert(bool condition)
 }
 
 void BitmapHandlerClass::Create_Mipmap_B8G8R8A8(
-	uint8_t* dest_surface, 
+	unsigned char* dest_surface, 
 	unsigned dest_surface_pitch,
-	uint8_t* src_surface,
+	unsigned char* src_surface,
 	unsigned src_surface_pitch,
 	unsigned width,
 	unsigned height)
@@ -51,13 +51,13 @@ void BitmapHandlerClass::Create_Mipmap_B8G8R8A8(
 void BitmapHandlerClass::Copy_Image_Generate_Mipmap(
 	unsigned width,
 	unsigned height,
-	uint8_t* dest_surface,
+	unsigned char* dest_surface,
 	unsigned dest_pitch,
 	WW3DFormat dest_format,
-	uint8_t* src_surface,
+	unsigned char* src_surface,
 	unsigned src_pitch,
 	WW3DFormat src_format,
-	uint8_t* mip_surface,
+	unsigned char* mip_surface,
 	unsigned mip_pitch)
 {
 	// Optimized loop if source and destination are 32 bit
@@ -98,9 +98,9 @@ void BitmapHandlerClass::Copy_Image_Generate_Mipmap(
 	unsigned dest_bpp=Get_Bytes_Per_Pixel(dest_format);
 
 	for (unsigned y=0;y<height/2;++y) {
-		uint8_t* dest_ptr=dest_surface+2*y*dest_pitch;
-		uint8_t* src_ptr=src_surface+y*2*src_pitch;
-		uint8_t* mip_ptr=mip_surface+y*mip_pitch;
+		unsigned char* dest_ptr=dest_surface+2*y*dest_pitch;
+		unsigned char* src_ptr=src_surface+y*2*src_pitch;
+		unsigned char* mip_ptr=mip_surface+y*mip_pitch;
 		unsigned b8g8r8a8_00;
 		unsigned b8g8r8a8_01;
 		unsigned b8g8r8a8_10;
@@ -135,17 +135,17 @@ void BitmapHandlerClass::Copy_Image_Generate_Mipmap(
 // ----------------------------------------------------------------------------
 
 void BitmapHandlerClass::Copy_Image(
-	uint8_t* dest_surface, 
+	unsigned char* dest_surface, 
 	unsigned dest_surface_width,
 	unsigned dest_surface_height,
 	unsigned dest_surface_pitch,
 	WW3DFormat dest_surface_format,
-	uint8_t* src_surface,
+	unsigned char* src_surface,
 	unsigned src_surface_width,
 	unsigned src_surface_height,
 	unsigned src_surface_pitch,
 	WW3DFormat src_surface_format,
-	const uint8_t* src_palette,
+	const unsigned char* src_palette,
 	unsigned src_palette_bpp,
 	bool generate_mip_level)
 {
@@ -160,12 +160,12 @@ void BitmapHandlerClass::Copy_Image(
 		unsigned src_bpp=Get_Bytes_Per_Pixel(src_surface_format);
 
 		for( unsigned y=0; y<dest_surface_height; y++ ) {
-			uint8_t* dest_ptr=dest_surface;
+			unsigned char* dest_ptr=dest_surface;
 			dest_ptr+=y*dest_surface_pitch;
-			uint8_t* src_ptr_mid=src_surface;
+			unsigned char* src_ptr_mid=src_surface;
 			src_ptr_mid+=y*src_surface_pitch;
-			uint8_t* src_ptr_next_line = ( src_ptr_mid + src_surface_pitch );
-			uint8_t* src_ptr_prev_line = ( src_ptr_mid - src_surface_pitch );
+			unsigned char* src_ptr_next_line = ( src_ptr_mid + src_surface_pitch );
+			unsigned char* src_ptr_prev_line = ( src_ptr_mid - src_surface_pitch );
 
 			if( y == src_surface_height-1 )  // Don't go past the last line
 				src_ptr_next_line = src_ptr_mid;
@@ -186,11 +186,11 @@ void BitmapHandlerClass::Copy_Image(
 				Read_B8G8R8A8(pixel1M,src_ptr_next_line,src_surface_format,NULL,0);
 
 				// Convert to luminance
-				uint8_t bv00;
-				uint8_t bv01;
-				uint8_t bvM1;
-				uint8_t bv10;
-				uint8_t bv1M;
+				unsigned char bv00;
+				unsigned char bv01;
+				unsigned char bvM1;
+				unsigned char bv10;
+				unsigned char bv1M;
 				Write_B8G8R8A8(&bv00,WW3D_FORMAT_L8,pixel00);
 				Write_B8G8R8A8(&bv01,WW3D_FORMAT_L8,pixel01);
 				Write_B8G8R8A8(&bvM1,WW3D_FORMAT_L8,pixelM1);
@@ -208,26 +208,26 @@ void BitmapHandlerClass::Copy_Image(
 				}
 
 				// The luminance bump value (land masses are less shiny)
-				uint16_t uL = ( v00>1 ) ? 63 : 127;
+				unsigned short uL = ( v00>1 ) ? 63 : 127;
 
 				switch(dest_surface_format) {
 				case WW3D_FORMAT_U8V8:
-					*dest_ptr++ = (uint8_t)iDu;
-					*dest_ptr++ = (uint8_t)iDv;
+					*dest_ptr++ = (unsigned char)iDu;
+					*dest_ptr++ = (unsigned char)iDv;
 					break;
 
 				case WW3D_FORMAT_L6V5U5:
-					*(uint16_t*)dest_ptr  = (uint16_t)( ( (iDu>>3) & 0x1f ) <<  0 );
-					*(uint16_t*)dest_ptr |= (uint16_t)( ( (iDv>>3) & 0x1f ) <<  5 );
-					*(uint16_t*)dest_ptr |= (uint16_t)( ( ( uL>>2) & 0x3f ) << 10 );
+					*(unsigned short*)dest_ptr  = (unsigned short)( ( (iDu>>3) & 0x1f ) <<  0 );
+					*(unsigned short*)dest_ptr |= (unsigned short)( ( (iDv>>3) & 0x1f ) <<  5 );
+					*(unsigned short*)dest_ptr |= (unsigned short)( ( ( uL>>2) & 0x3f ) << 10 );
 					dest_ptr += 2;
 					break;
 
 				case WW3D_FORMAT_X8L8V8U8:
-					*dest_ptr++ = (uint8_t)iDu;
-					*dest_ptr++ = (uint8_t)iDv;
-					*dest_ptr++ = (uint8_t)uL;
-					*dest_ptr++ = (uint8_t)0L;
+					*dest_ptr++ = (unsigned char)iDu;
+					*dest_ptr++ = (unsigned char)iDv;
+					*dest_ptr++ = (unsigned char)uL;
+					*dest_ptr++ = (unsigned char)0L;
 					break;
 
 				default:
@@ -321,17 +321,17 @@ void BitmapHandlerClass::Copy_Image(
 		if (generate_mip_level) {
 			WWASSERT(src_surface_format!=WW3D_FORMAT_P8);	// Paletted textures can't be mipmapped
 			if (dest_surface_width==1) {
-				uint8_t* dest_ptr=dest_surface;
-				uint8_t* src_ptr=src_surface;
+				unsigned char* dest_ptr=dest_surface;
+				unsigned char* src_ptr=src_surface;
 				unsigned b8g8r8a8;
 				Read_B8G8R8A8(b8g8r8a8,src_ptr,src_surface_format,src_palette,src_palette_bpp);
 				Write_B8G8R8A8(dest_ptr,dest_surface_format,b8g8r8a8);
 			}
 			else {
 				for (unsigned y=0;y<dest_surface_height/2;++y) {
-					uint8_t* dest_ptr=dest_surface+2*y*dest_surface_pitch;
-					uint8_t* src_ptr=src_surface+y*2*src_surface_pitch;
-					uint8_t* mip_ptr=src_surface+y*src_surface_pitch;
+					unsigned char* dest_ptr=dest_surface+2*y*dest_surface_pitch;
+					unsigned char* src_ptr=src_surface+y*2*src_surface_pitch;
+					unsigned char* mip_ptr=src_surface+y*src_surface_pitch;
 					unsigned b8g8r8a8_00;
 					unsigned b8g8r8a8_01;
 					unsigned b8g8r8a8_10;
@@ -358,8 +358,8 @@ void BitmapHandlerClass::Copy_Image(
 		}
 		else {
 			for (unsigned y=0;y<dest_surface_height;++y) {
-				uint8_t* dest_ptr=dest_surface+y*dest_surface_pitch;
-				const uint8_t* src_ptr=src_surface+y*src_surface_pitch;
+				unsigned char* dest_ptr=dest_surface+y*dest_surface_pitch;
+				const unsigned char* src_ptr=src_surface+y*src_surface_pitch;
 				for (unsigned x=0;x<dest_surface_width;++x,dest_ptr+=dest_bpp,src_ptr+=src_bpp) {
 					Copy_Pixel(dest_ptr,dest_surface_format,src_ptr,src_surface_format,src_palette,src_palette_bpp);
 				}
@@ -370,9 +370,9 @@ void BitmapHandlerClass::Copy_Image(
 		
 		// For now do only point-sampling
 		for (unsigned y=0;y<dest_surface_height;++y) {
-			uint8_t* dest_ptr=dest_surface+y*dest_surface_pitch;
+			unsigned char* dest_ptr=dest_surface+y*dest_surface_pitch;
 			unsigned src_y=y*src_surface_height/dest_surface_height;
-			const uint8_t* src_ptr=src_surface+src_y*src_surface_pitch;
+			const unsigned char* src_ptr=src_surface+src_y*src_surface_pitch;
 			for (unsigned x=0;x<dest_surface_width;++x,dest_ptr+=dest_bpp) {
 				unsigned src_x=x*src_surface_width/dest_surface_width;
 				src_x*=src_bpp;

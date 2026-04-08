@@ -52,8 +52,8 @@ const float DIFFUSE_TO_AMBIENT_FRACTION = 1.0f;
 /*
 ** Static variables
 */
-static float _LightingLODCutoff			= 0.5f;	
-static float _LightingLODCutoff2			= 0.5f * 0.5f;
+static _LightingLODCutoff			= 0.5f;	
+static _LightingLODCutoff2			= 0.5f * 0.5f;
 
 
 /************************************************************************************************
@@ -240,13 +240,13 @@ void LightEnvironmentClass::Add_Light(const LightClass & light)
 void LightEnvironmentClass::Pre_Render_Update(const Matrix3D & camera_tm)
 {
 	/*
-	** In the original DX8 backend, lights were transformed to camera space here and the
-	** resulting OutputLights were pushed to D3D hardware.  In the bgfx port, Set_Light_Environment
-	** reads world-space directions from InputLights and the renderer rotates them to camera space
-	** itself (via View_Rotate_Vector).  OutputLights is therefore never consumed, so the per-light
-	** Inverse_Rotate_Vector work has been removed.  The ambient clamp must still happen here
-	** because OutputAmbient accumulates from Add_Light calls and can exceed [0,1].
+	** Transform each light into camera space
+	** and add up the ambient effect of each light
 	*/
+	for (int light_index=0; light_index<LightCount; light_index++) {
+		OutputLights[light_index].Init(InputLights[light_index],camera_tm);
+	}
+
 	OutputAmbient.X = WWMath::Clamp(OutputAmbient.X);
 	OutputAmbient.Y = WWMath::Clamp(OutputAmbient.Y);
 	OutputAmbient.Z = WWMath::Clamp(OutputAmbient.Z);

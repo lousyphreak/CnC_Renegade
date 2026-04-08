@@ -48,8 +48,8 @@
 
 
 bool ShaderClass::ShaderDirty=true;
-uint32_t ShaderClass::CurrentShader=0;
-uint32_t _PolygonCullMode = D3DCULL_CW;
+unsigned long ShaderClass::CurrentShader=0;
+unsigned long _PolygonCullMode = D3DCULL_CW;
 
 
 /*
@@ -408,9 +408,9 @@ const Blend dstBlendLUT[ShaderClass::DSTBLEND_MAX] =
  *=============================================================================================*/
 void ShaderClass::Apply()
 {
-	uint32_t diff;
+	unsigned long diff;
 
-	uint32_t TextureOpCaps=DX8Wrapper::Get_Current_Caps()->Get_DX8_Caps().TextureOpCaps;
+	unsigned int TextureOpCaps=DX8Wrapper::Get_Current_Caps()->Get_DX8_Caps().TextureOpCaps;
 
 	if (ShaderDirty)
 	{
@@ -430,7 +430,7 @@ void ShaderClass::Apply()
 
 	if(diff & (ShaderClass::MASK_COLORMASK | ShaderClass::MASK_SRCBLEND | ShaderClass::MASK_DSTBLEND | ShaderClass::MASK_ALPHATEST))
 	{
-		uint32_t planeMask = 0xffffff;
+		ULONG planeMask = 0xffffff;
 
 		if(Get_Color_Mask() != ShaderClass::COLOR_WRITE_ENABLE)
 			planeMask = 0;
@@ -452,7 +452,7 @@ void ShaderClass::Apply()
 			blendAlpha |= dstBlendLUT[ int(Get_Dst_Blend_Func()) ].useAlpha;
 		}
 
-		int32_t blendOn = FALSE;
+		BOOL blendOn = FALSE;
 
 		if(sf != D3DBLEND_ONE || df != D3DBLEND_ZERO)
 		{
@@ -462,11 +462,11 @@ void ShaderClass::Apply()
 		}
 		DX8Wrapper::Set_DX8_Render_State(D3DRS_ALPHABLENDENABLE,blendOn);
 
-		int32_t alphaTest = FALSE;
+		BOOL alphaTest = FALSE;
 
 		if(Get_Alpha_Test() == ShaderClass::ALPHATEST_ENABLE)
 		{
-			uint8_t alphareference = 0x60;	// Alpha reference value that produces best results with mip-mapped textures.
+			unsigned char alphareference = 0x60;	// Alpha reference value that produces best results with mip-mapped textures.
 			
 			if(sf == D3DBLEND_INVSRCALPHA)
 			{
@@ -494,8 +494,8 @@ void ShaderClass::Apply()
 		// can defer the "fog enabled" check inside the "fog settings changed" check.
 		if (DX8Wrapper::Get_Current_Caps()->Is_Fog_Allowed() && DX8Wrapper::Get_Fog_Enable()) {
 
-			int32_t fm = FALSE;
-			uint32_t fogColor = DX8Wrapper::Get_Fog_Color();
+			BOOL fm = FALSE;
+			D3DCOLOR fogColor = DX8Wrapper::Get_Fog_Color();
 			
 			switch(Get_Fog_Func())
 			{
@@ -535,8 +535,8 @@ void ShaderClass::Apply()
 	{
 		D3DTEXTUREOP	cOp = D3DTOP_SELECTARG1;
 		D3DTEXTUREOP	aOp = D3DTOP_SELECTARG1;
-		uint32_t	cArg1 = D3DTA_DIFFUSE, cArg2 = D3DTA_DIFFUSE;
-		uint32_t	aArg1 = D3DTA_DIFFUSE, aArg2 = D3DTA_DIFFUSE;
+		DWORD	cArg1 = D3DTA_DIFFUSE, cArg2 = D3DTA_DIFFUSE;
+		DWORD	aArg1 = D3DTA_DIFFUSE, aArg2 = D3DTA_DIFFUSE;
 
 		if(Get_Texturing() == ShaderClass::TEXTURING_ENABLE)
 		{
@@ -665,8 +665,8 @@ void ShaderClass::Apply()
 	if(diff & (ShaderClass::MASK_POSTDETAILCOLORFUNC|ShaderClass::MASK_TEXTURING))
 	{
 		D3DTEXTUREOP	cOp	= D3DTOP_DISABLE;
-		uint32_t			cArg1 = D3DTA_TEXTURE;
-		uint32_t			cArg2 = D3DTA_CURRENT;
+		DWORD			cArg1 = D3DTA_TEXTURE;
+		DWORD			cArg2 = D3DTA_CURRENT;
 
 		if(Get_Texturing()== ShaderClass::TEXTURING_ENABLE)
 		{
@@ -786,8 +786,8 @@ void ShaderClass::Apply()
 	if(diff & (ShaderClass::MASK_POSTDETAILALPHAFUNC|ShaderClass::MASK_TEXTURING))
 	{
 		D3DTEXTUREOP	aOp	= D3DTOP_DISABLE;
-		uint32_t			aArg1 = D3DTA_TEXTURE;
-		uint32_t			aArg2 = D3DTA_CURRENT;
+		DWORD			aArg1 = D3DTA_TEXTURE;
+		DWORD			aArg2 = D3DTA_CURRENT;
 
 		if(Get_Texturing() == ShaderClass::TEXTURING_ENABLE)
 		{
@@ -844,16 +844,16 @@ void ShaderClass::Apply()
 	if(!diff)
 		return;
 
-	DX8Wrapper::Set_DX8_Render_State(D3DRS_SPECULARENABLE,int32_t(Get_Secondary_Gradient()));
+	DX8Wrapper::Set_DX8_Render_State(D3DRS_SPECULARENABLE,BOOL(Get_Secondary_Gradient()));
 
 	// DEPTH COMPARE FUNCTION
 	DX8Wrapper::Set_DX8_Render_State(D3DRS_ZFUNC,D3DCMPFUNC(int(Get_Depth_Compare())+1));
 
 	// DEPTH MASK
-	DX8Wrapper::Set_DX8_Render_State(D3DRS_ZWRITEENABLE,int32_t(Get_Depth_Mask()));
+	DX8Wrapper::Set_DX8_Render_State(D3DRS_ZWRITEENABLE,BOOL(Get_Depth_Mask()));
 
 	// DITHERING
-//	DX8Wrapper::Set_DX8_Render_State(D3DRS_DITHERENABLE,int32_t(Get_Dither_Mask()));
+//	DX8Wrapper::Set_DX8_Render_State(D3DRS_DITHERENABLE,BOOL(Get_Dither_Mask()));
 
 	// CULLMODE
 	DX8Wrapper::Set_DX8_Render_State(D3DRS_CULLMODE,Get_Cull_Mode() ? _PolygonCullMode : D3DCULL_NONE);
@@ -862,11 +862,11 @@ void ShaderClass::Apply()
 	if (diff&ShaderClass::MASK_NPATCHENABLE) {
 		float level=1.0f;
 		if (Get_NPatch_Enable()) level=float(WW3D::Get_NPatches_Level());
-		DX8Wrapper::Set_DX8_Render_State(D3DRS_PATCHSEGMENTS,*((uint32_t*)&level));
+		DX8Wrapper::Set_DX8_Render_State(D3DRS_PATCHSEGMENTS,*((DWORD*)&level));
 	}
 
 	// Enable/disable alpha test
-	DX8Wrapper::Set_DX8_Render_State(D3DRS_ALPHATESTENABLE,int32_t(Get_Alpha_Test()));	
+	DX8Wrapper::Set_DX8_Render_State(D3DRS_ALPHATESTENABLE,BOOL(Get_Alpha_Test()));	
 
 	// Enable/disable stencil test
 	// Not supported yet

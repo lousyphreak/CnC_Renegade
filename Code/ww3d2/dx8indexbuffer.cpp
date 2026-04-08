@@ -49,13 +49,13 @@
 
 static bool _DynamicSortingIndexArrayInUse=false;
 static SortingIndexBufferClass* _DynamicSortingIndexArray;
-static uint16_t _DynamicSortingIndexArraySize=0;
-static uint16_t _DynamicSortingIndexArrayOffset=0;	
+static unsigned short _DynamicSortingIndexArraySize=0;
+static unsigned short _DynamicSortingIndexArrayOffset=0;	
 
 static bool _DynamicDX8IndexBufferInUse=false;
 static DX8IndexBufferClass* _DynamicDX8IndexBuffer=NULL;
-static uint16_t _DynamicDX8IndexBufferSize=DEFAULT_IB_SIZE;
-static uint16_t _DynamicDX8IndexBufferOffset=0;	
+static unsigned short _DynamicDX8IndexBufferSize=DEFAULT_IB_SIZE;
+static unsigned short _DynamicDX8IndexBufferOffset=0;	
 
 static int _IndexBufferCount;
 static int _IndexBufferTotalIndices;
@@ -67,7 +67,7 @@ static int _IndexBufferTotalSize;
 //
 // ----------------------------------------------------------------------------
 
-IndexBufferClass::IndexBufferClass(unsigned type_, uint16_t index_count_)
+IndexBufferClass::IndexBufferClass(unsigned type_, unsigned short index_count_)
 	:
 	index_count(index_count_),
 	type(type_),
@@ -78,9 +78,9 @@ IndexBufferClass::IndexBufferClass(unsigned type_, uint16_t index_count_)
 
 	_IndexBufferCount++;
 	_IndexBufferTotalIndices+=index_count;
-	_IndexBufferTotalSize+=index_count*sizeof(uint16_t);
+	_IndexBufferTotalSize+=index_count*sizeof(unsigned short);
 #ifdef VERTEX_BUFFER_LOG
-	WWDEBUG_SAY(("New IB, %d indices, size %d bytes\n",index_count,index_count*sizeof(uint16_t)));
+	WWDEBUG_SAY(("New IB, %d indices, size %d bytes\n",index_count,index_count*sizeof(unsigned short)));
 	WWDEBUG_SAY(("Total IB count: %d, total %d indices, total size %d bytes\n",
 		_IndexBufferCount,
 		_IndexBufferTotalIndices,
@@ -92,9 +92,9 @@ IndexBufferClass::~IndexBufferClass()
 {
 	_IndexBufferCount--;
 	_IndexBufferTotalIndices-=index_count;
-	_IndexBufferTotalSize-=index_count*sizeof(uint16_t);
+	_IndexBufferTotalSize-=index_count*sizeof(unsigned short);
 #ifdef VERTEX_BUFFER_LOG
-	WWDEBUG_SAY(("Delete IB, %d indices, size %d bytes\n",index_count,index_count*sizeof(uint16_t)));
+	WWDEBUG_SAY(("Delete IB, %d indices, size %d bytes\n",index_count,index_count*sizeof(unsigned short)));
 	WWDEBUG_SAY(("Total IB count: %d, total %d indices, total size %d bytes\n",
 		_IndexBufferCount,
 		_IndexBufferTotalIndices,
@@ -134,42 +134,42 @@ void IndexBufferClass::Release_Engine_Ref() const
 //
 // ----------------------------------------------------------------------------
 
-void IndexBufferClass::Copy(uint32_t* indices,unsigned first_index,unsigned count)
+void IndexBufferClass::Copy(unsigned int* indices,unsigned first_index,unsigned count)
 {
 	WWASSERT(indices);
 
 	if (first_index) {
 		DX8IndexBufferClass::AppendLockClass l(this,first_index,count);
-		uint16_t* inds=l.Get_Index_Array();
+		unsigned short* inds=l.Get_Index_Array();
 		for (unsigned v=0;v<count;++v) {
-			*inds++=uint16_t(*indices++);
+			*inds++=unsigned short(*indices++);
 		}
 	}
 	else {
 		DX8IndexBufferClass::WriteLockClass l(this);
-		uint16_t* inds=l.Get_Index_Array();
+		unsigned short* inds=l.Get_Index_Array();
 		for (unsigned v=0;v<count;++v) {
-			*inds++=uint16_t(*indices++);
+			*inds++=unsigned short(*indices++);
 		}
 	}
 }
 
 // ----------------------------------------------------------------------------
 
-void IndexBufferClass::Copy(uint16_t* indices,unsigned first_index,unsigned count)
+void IndexBufferClass::Copy(unsigned short* indices,unsigned first_index,unsigned count)
 {
 	WWASSERT(indices);
 
 	if (first_index) {
 		DX8IndexBufferClass::AppendLockClass l(this,first_index,count);
-		uint16_t* inds=l.Get_Index_Array();
+		unsigned short* inds=l.Get_Index_Array();
 		for (unsigned v=0;v<count;++v) {
 			*inds++=*indices++;
 		}
 	}
 	else {
 		DX8IndexBufferClass::WriteLockClass l(this);
-		uint16_t* inds=l.Get_Index_Array();
+		unsigned short* inds=l.Get_Index_Array();
 		for (unsigned v=0;v<count;++v) {
 			*inds++=*indices++;
 		}
@@ -192,8 +192,8 @@ IndexBufferClass::WriteLockClass::WriteLockClass(IndexBufferClass* index_buffer_
 		DX8_Assert();
 		DX8_ErrorCode(static_cast<DX8IndexBufferClass*>(index_buffer)->Get_DX8_Index_Buffer()->Lock(
 			0,
-			index_buffer->Get_Index_Count()*sizeof(uint16_t),
-			(uint8_t**)&indices,
+			index_buffer->Get_Index_Count()*sizeof(WORD),
+			(unsigned char**)&indices,
 			0));
 		break;
 	case BUFFER_TYPE_SORTING:
@@ -242,9 +242,9 @@ IndexBufferClass::AppendLockClass::AppendLockClass(IndexBufferClass* index_buffe
 	case BUFFER_TYPE_DX8:
 		DX8_Assert();
 		DX8_ErrorCode(static_cast<DX8IndexBufferClass*>(index_buffer)->index_buffer->Lock(
-			start_index*sizeof(uint16_t),
-			index_range*sizeof(uint16_t),
-			(uint8_t**)&indices,
+			start_index*sizeof(unsigned short),
+			index_range*sizeof(unsigned short),
+			(unsigned char**)&indices,
 			NULL));	// Optional pointer to receive the buffer size
 		break;
 	case BUFFER_TYPE_SORTING:
@@ -281,7 +281,7 @@ IndexBufferClass::AppendLockClass::~AppendLockClass()
 //
 // ----------------------------------------------------------------------------
 
-DX8IndexBufferClass::DX8IndexBufferClass(uint16_t index_count_,UsageType usage)
+DX8IndexBufferClass::DX8IndexBufferClass(unsigned short index_count_,UsageType usage)
 	:
 	IndexBufferClass(BUFFER_TYPE_DX8,index_count_)
 {
@@ -296,8 +296,8 @@ DX8IndexBufferClass::DX8IndexBufferClass(uint16_t index_count_,UsageType usage)
 		usage_flags|=D3DUSAGE_SOFTWAREPROCESSING;
 	}
 
-	int32_t ret=DX8Wrapper::_Get_D3D_Device8()->CreateIndexBuffer(
-		sizeof(uint16_t)*index_count,
+	HRESULT ret=DX8Wrapper::_Get_D3D_Device8()->CreateIndexBuffer(
+		sizeof(WORD)*index_count,
 		usage_flags,
 		D3DFMT_INDEX16,
 		(usage&USAGE_DYNAMIC) ? D3DPOOL_DEFAULT : D3DPOOL_MANAGED,
@@ -319,7 +319,7 @@ DX8IndexBufferClass::DX8IndexBufferClass(uint16_t index_count_,UsageType usage)
 
 	// Try again...
 	ret=DX8Wrapper::_Get_D3D_Device8()->CreateIndexBuffer(
-		sizeof(uint16_t)*index_count,
+		sizeof(WORD)*index_count,
 		usage_flags,
 		D3DFMT_INDEX16,
 		(usage&USAGE_DYNAMIC) ? D3DPOOL_DEFAULT : D3DPOOL_MANAGED,
@@ -346,14 +346,14 @@ DX8IndexBufferClass::~DX8IndexBufferClass()
 //
 // ----------------------------------------------------------------------------
 
-SortingIndexBufferClass::SortingIndexBufferClass(uint16_t index_count_)
+SortingIndexBufferClass::SortingIndexBufferClass(unsigned short index_count_)
 	:
 	IndexBufferClass(BUFFER_TYPE_SORTING,index_count_)
 {
 	WWMEMLOG(MEM_RENDERER);
 	WWASSERT(index_count);
 
-	index_buffer=new uint16_t[index_count];
+	index_buffer=new unsigned short[index_count];
 }
 
 // ----------------------------------------------------------------------------
@@ -369,7 +369,7 @@ SortingIndexBufferClass::~SortingIndexBufferClass()
 //
 // ----------------------------------------------------------------------------
 
-DynamicIBAccessClass::DynamicIBAccessClass(uint16_t type_, uint16_t index_count_)
+DynamicIBAccessClass::DynamicIBAccessClass(unsigned short type_, unsigned short index_count_)
 	:
 	IndexCount(index_count_),
 	IndexBuffer(0),
@@ -431,9 +431,9 @@ DynamicIBAccessClass::WriteLockClass::WriteLockClass(DynamicIBAccessClass* ib_ac
 		DX8_Assert();
 		DX8_ErrorCode(
 			static_cast<DX8IndexBufferClass*>(DynamicIBAccess->IndexBuffer)->Get_DX8_Index_Buffer()->Lock(
-			DynamicIBAccess->IndexBufferOffset*sizeof(uint16_t),
-			DynamicIBAccess->Get_Index_Count()*sizeof(uint16_t),
-			(uint8_t**)&Indices,
+			DynamicIBAccess->IndexBufferOffset*sizeof(WORD),
+			DynamicIBAccess->Get_Index_Count()*sizeof(WORD),
+			(unsigned char**)&Indices,
 			!DynamicIBAccess->IndexBufferOffset ? D3DLOCK_DISCARD : D3DLOCK_NOOVERWRITE));
 		break;
 	case BUFFER_TYPE_DYNAMIC_SORTING:

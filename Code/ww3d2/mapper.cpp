@@ -47,19 +47,19 @@
 
 Random4Class rand4;
 
-inline uint32_t F2DW( FLOAT f ) { return *((uint32_t*)&f); }
+inline DWORD F2DW( FLOAT f ) { return *((DWORD*)&f); }
 
 
 // HY 1/26/01
 // Rewritten to use DX 8 texture matrices
 
-TextureMapperClass::TextureMapperClass(uint32_t stage)
+TextureMapperClass::TextureMapperClass(unsigned int stage)
 {
 	Stage = stage;
 	if (Stage >= MeshMatDescClass::MAX_TEX_STAGES) Stage = MeshMatDescClass::MAX_TEX_STAGES - 1;
 }
 
-LinearOffsetTextureMapperClass::LinearOffsetTextureMapperClass(const Vector2 &offset_per_sec, const Vector2 &scale, uint32_t stage) :
+LinearOffsetTextureMapperClass::LinearOffsetTextureMapperClass(const Vector2 &offset_per_sec, const Vector2 &scale, unsigned int stage) :
 	ScaleTextureMapperClass(scale, stage),
 	LastUsedSyncTime(WW3D::Get_Sync_Time())
 {
@@ -72,7 +72,7 @@ LinearOffsetTextureMapperClass::LinearOffsetTextureMapperClass(const Vector2 &of
 	UVOffsetDeltaPerMS = offset_per_sec * -0.001f;
 }
 
-LinearOffsetTextureMapperClass::LinearOffsetTextureMapperClass(const INIClass &ini, const char *section, uint32_t stage) :
+LinearOffsetTextureMapperClass::LinearOffsetTextureMapperClass(const INIClass &ini, const char *section, unsigned int stage) :
 	ScaleTextureMapperClass(ini,section,stage),
 	LastUsedSyncTime(WW3D::Get_Sync_Time())
 {
@@ -95,7 +95,7 @@ LinearOffsetTextureMapperClass::LinearOffsetTextureMapperClass(const LinearOffse
 
 void LinearOffsetTextureMapperClass::Apply(int uv_array_index)
 {
-	uint32_t delta = WW3D::Get_Sync_Time() - LastUsedSyncTime;
+	unsigned int delta = WW3D::Get_Sync_Time() - LastUsedSyncTime;
 	float del = (float)delta;
 	float offset_u = CurrentUVOffset.X + UVOffsetDeltaPerMS.X * del;
 	float offset_v = CurrentUVOffset.Y + UVOffsetDeltaPerMS.Y * del;
@@ -113,7 +113,7 @@ void LinearOffsetTextureMapperClass::Apply(int uv_array_index)
 	m[0].X=Scale.X;
 	m[1].Z=offset_v;
 	m[1].Y=Scale.Y;
-	DX8Wrapper::Set_Transform(Texture_Transform_Slot(Stage),m);
+	DX8Wrapper::Set_Transform((D3DTRANSFORMSTATETYPE) (D3DTS_TEXTURE0+Stage),m);
 
 	// Disable Texgen
 	DX8Wrapper::Set_DX8_Texture_Stage_State(Stage,D3DTSS_TEXCOORDINDEX,D3DTSS_TCI_PASSTHRU | uv_array_index);	
@@ -129,19 +129,19 @@ void LinearOffsetTextureMapperClass::Apply(int uv_array_index)
 
 // Scale mapper
 // HY 5/16/01
-ScaleTextureMapperClass::ScaleTextureMapperClass(const Vector2 &scale, uint32_t stage) :
+ScaleTextureMapperClass::ScaleTextureMapperClass(const Vector2 &scale, unsigned int stage) :
 	TextureMapperClass(stage),
 	Scale(scale)
 {
 }
 
-ScaleTextureMapperClass::ScaleTextureMapperClass(uint32_t stage) :
+ScaleTextureMapperClass::ScaleTextureMapperClass(unsigned int stage) :
 	TextureMapperClass(stage),
 	Scale(1.0f,1.0f)
 {
 }
 
-ScaleTextureMapperClass::ScaleTextureMapperClass(const INIClass &ini, const char *section, uint32_t stage) :
+ScaleTextureMapperClass::ScaleTextureMapperClass(const INIClass &ini, const char *section, unsigned int stage) :
 	TextureMapperClass(stage)	
 {
 	Scale.U = ini.Get_Float(section, "UScale", 1.0f);
@@ -161,7 +161,7 @@ void ScaleTextureMapperClass::Apply(int uv_array_index)
 	
 	m[0].X=Scale.U;
 	m[1].Y=Scale.V;
-	DX8Wrapper::Set_Transform(Texture_Transform_Slot(Stage),m);
+	DX8Wrapper::Set_Transform((D3DTRANSFORMSTATETYPE) (D3DTS_TEXTURE0+Stage),m);
 
 	// Disable Texgen
 	DX8Wrapper::Set_DX8_Texture_Stage_State(Stage,D3DTSS_TEXCOORDINDEX,D3DTSS_TCI_PASSTHRU | uv_array_index);	
@@ -172,18 +172,18 @@ void ScaleTextureMapperClass::Apply(int uv_array_index)
 
 // Grid Mapper
 // HY 5/16/01
-GridTextureMapperClass::GridTextureMapperClass(float fps, uint32_t gridwidth_log2, uint32_t stage) :
+GridTextureMapperClass::GridTextureMapperClass(float fps, unsigned int gridwidth_log2, unsigned int stage) :
 	TextureMapperClass(stage)
 {
 	LastFrame = 0;
 	initialize(fps, gridwidth_log2);
 }
 
-GridTextureMapperClass::GridTextureMapperClass(const INIClass &ini, const char *section, uint32_t stage) :
+GridTextureMapperClass::GridTextureMapperClass(const INIClass &ini, const char *section, unsigned int stage) :
 	TextureMapperClass(stage)
 {
 	float fps = ini.Get_Float(section,"FPS", 1.0f);
-	uint32_t gridwidth_log2 = ini.Get_Int(section,"Log2Width", 1);
+	unsigned int gridwidth_log2 = ini.Get_Int(section,"Log2Width", 1);
 	LastFrame=ini.Get_Int(section,"Last",0);
 	initialize(fps, gridwidth_log2);
 }
@@ -213,7 +213,7 @@ void GridTextureMapperClass::Apply(int uv_array_index)
 	// otherwise change to translate
 	m[0].Z = u_offset;
 	m[1].Z = v_offset;
-	DX8Wrapper::Set_Transform(Texture_Transform_Slot(Stage), m);
+	DX8Wrapper::Set_Transform((D3DTRANSFORMSTATETYPE) (D3DTS_TEXTURE0+Stage), m);
 
 	// Disable Texgen
 	DX8Wrapper::Set_DX8_Texture_Stage_State(Stage, D3DTSS_TEXCOORDINDEX, D3DTSS_TCI_PASSTHRU | uv_array_index);	
@@ -234,9 +234,9 @@ void GridTextureMapperClass::Set_Frame_Per_Second(float fps)
 	initialize(fps, GridWidthLog2);
 }
 
-void GridTextureMapperClass::initialize(float fps, uint32_t gridwidth_log2)
+void GridTextureMapperClass::initialize(float fps, unsigned int gridwidth_log2)
 {
-	uint32_t grid_width = (1 << gridwidth_log2);
+	unsigned int grid_width = (1 << gridwidth_log2);
 
 	if (LastFrame == 0) LastFrame = (grid_width * grid_width);
 	LastUsedSyncTime = WW3D::Get_Sync_Time();
@@ -250,11 +250,11 @@ void GridTextureMapperClass::initialize(float fps, uint32_t gridwidth_log2)
 		CurrentFrame = 0;
 	} else if (fps < 0.0f) {
 		Sign = -1;
-		MSPerFrame = (uint32_t)(1000.0f / fabs(fps));
+		MSPerFrame = (unsigned int)(1000.0f / fabs(fps));
 		CurrentFrame = LastFrame - 1;
 	} else {
 		Sign = 1;
-		MSPerFrame = (uint32_t)(1000.0f / fabs(fps));
+		MSPerFrame = (unsigned int)(1000.0f / fabs(fps));
 		CurrentFrame = 0;
 	}
 	Remainder = 0;
@@ -262,8 +262,8 @@ void GridTextureMapperClass::initialize(float fps, uint32_t gridwidth_log2)
 
 void GridTextureMapperClass::update_temporal_state(void)
 {
-	uint32_t now = WW3D::Get_Sync_Time();
-	uint32_t delta = now - LastUsedSyncTime;
+	unsigned int now = WW3D::Get_Sync_Time();
+	unsigned int delta = now - LastUsedSyncTime;
 	Remainder += delta;
 	LastUsedSyncTime = now;
 
@@ -273,24 +273,24 @@ void GridTextureMapperClass::update_temporal_state(void)
 	if (new_frame<0) {
 		CurrentFrame=LastFrame+new_frame;
 	} else {
-		CurrentFrame=(uint32_t) new_frame;
+		CurrentFrame=(unsigned int) new_frame;
 	}
 	Remainder = Remainder % MSPerFrame;
 }
 
 void GridTextureMapperClass::calculate_uv_offset(float * u_offset, float * v_offset)
 {
-	uint32_t row_mask = ~(0xFFFFFFFF << GridWidthLog2);
-	uint32_t col_mask = row_mask << GridWidthLog2;
-	uint32_t x = CurrentFrame & row_mask;
-	uint32_t y = (CurrentFrame & col_mask) >> GridWidthLog2;
+	unsigned int row_mask = ~(0xFFFFFFFF << GridWidthLog2);
+	unsigned int col_mask = row_mask << GridWidthLog2;
+	unsigned int x = CurrentFrame & row_mask;
+	unsigned int y = (CurrentFrame & col_mask) >> GridWidthLog2;
 	*u_offset = x * OOGridWidth;
 	*v_offset = y * OOGridWidth;
 }
 
 // Rotate Mapper
 // HY 5/16/01
-RotateTextureMapperClass::RotateTextureMapperClass(float rad_per_sec, const Vector2 &center, uint32_t stage) :
+RotateTextureMapperClass::RotateTextureMapperClass(float rad_per_sec, const Vector2 &center, unsigned int stage) :
 	ScaleTextureMapperClass(stage),
 	LastUsedSyncTime(WW3D::Get_Sync_Time()),
 	CurrentAngle(0.0f),
@@ -299,7 +299,7 @@ RotateTextureMapperClass::RotateTextureMapperClass(float rad_per_sec, const Vect
 {
 }
 
-RotateTextureMapperClass::RotateTextureMapperClass(const INIClass &ini, const char *section, uint32_t stage) :	
+RotateTextureMapperClass::RotateTextureMapperClass(const INIClass &ini, const char *section, unsigned int stage) :	
 	ScaleTextureMapperClass(ini,section,stage),
 	LastUsedSyncTime(WW3D::Get_Sync_Time()),
 	CurrentAngle(0.0f)
@@ -320,8 +320,8 @@ RotateTextureMapperClass::RotateTextureMapperClass(const RotateTextureMapperClas
 
 void RotateTextureMapperClass::Apply(int uv_array_index)
 {
-	uint32_t now = WW3D::Get_Sync_Time();
-	uint32_t delta =  now - LastUsedSyncTime;
+	unsigned int now = WW3D::Get_Sync_Time();
+	unsigned int delta =  now - LastUsedSyncTime;
 	LastUsedSyncTime=now;
 
 	CurrentAngle+=RadiansPerMilliSec * delta;
@@ -341,7 +341,7 @@ void RotateTextureMapperClass::Apply(int uv_array_index)
 	m[0].Set(Scale.X*c,-Scale.X*s,-Scale.X*(c*Center.U-s*Center.V-Center.U),0.0f);
 	m[1].Set(Scale.Y*s,Scale.Y*c,-Scale.Y*(s*Center.U+c*Center.V-Center.V),0.0f);	
 
-	DX8Wrapper::Set_Transform(Texture_Transform_Slot(Stage),m);
+	DX8Wrapper::Set_Transform((D3DTRANSFORMSTATETYPE) (D3DTS_TEXTURE0+Stage),m);
 
 	// Disable Texgen
 	DX8Wrapper::Set_DX8_Texture_Stage_State(Stage,D3DTSS_TEXCOORDINDEX,D3DTSS_TCI_PASSTHRU | uv_array_index);	
@@ -352,7 +352,7 @@ void RotateTextureMapperClass::Apply(int uv_array_index)
 
 // SineLinearOffset Mapper
 // HY 5/16/01
-SineLinearOffsetTextureMapperClass::SineLinearOffsetTextureMapperClass(const Vector3 &uafp, const Vector3 &vafp, uint32_t stage) :
+SineLinearOffsetTextureMapperClass::SineLinearOffsetTextureMapperClass(const Vector3 &uafp, const Vector3 &vafp, unsigned int stage) :
 	TextureMapperClass(stage),
 	LastUsedSyncTime(WW3D::Get_Sync_Time()),
 	UAFP(uafp),
@@ -361,7 +361,7 @@ SineLinearOffsetTextureMapperClass::SineLinearOffsetTextureMapperClass(const Vec
 {
 }
 
-SineLinearOffsetTextureMapperClass::SineLinearOffsetTextureMapperClass(const INIClass &ini, const char *section, uint32_t stage) :
+SineLinearOffsetTextureMapperClass::SineLinearOffsetTextureMapperClass(const INIClass &ini, const char *section, unsigned int stage) :
 	TextureMapperClass(stage),
 	LastUsedSyncTime(WW3D::Get_Sync_Time()),
 	CurrentAngle(0.0f)
@@ -386,8 +386,8 @@ SineLinearOffsetTextureMapperClass::SineLinearOffsetTextureMapperClass(const Sin
 
 void SineLinearOffsetTextureMapperClass::Apply(int uv_array_index)
 {
-	uint32_t now = WW3D::Get_Sync_Time();
-	uint32_t delta =  now - LastUsedSyncTime;
+	unsigned int now = WW3D::Get_Sync_Time();
+	unsigned int delta =  now - LastUsedSyncTime;
 	LastUsedSyncTime=now;
 
 	const float ms_to_radians=2*WWMATH_PI/1000.0f;
@@ -408,7 +408,7 @@ void SineLinearOffsetTextureMapperClass::Apply(int uv_array_index)
 	// otherwise change to translate
 	m[0].Z=offset_u;
 	m[1].Z=offset_v;
-	DX8Wrapper::Set_Transform(Texture_Transform_Slot(Stage),m);
+	DX8Wrapper::Set_Transform((D3DTRANSFORMSTATETYPE) (D3DTS_TEXTURE0+Stage),m);
 
 	// Disable Texgen
 	DX8Wrapper::Set_DX8_Texture_Stage_State(Stage,D3DTSS_TEXCOORDINDEX,D3DTSS_TCI_PASSTHRU | uv_array_index);	
@@ -420,7 +420,7 @@ void SineLinearOffsetTextureMapperClass::Apply(int uv_array_index)
 
 // StepLinearOffset Mapper
 // HY 5/16/01
-StepLinearOffsetTextureMapperClass::StepLinearOffsetTextureMapperClass(const Vector2 &step, float steps_per_sec, uint32_t stage) :
+StepLinearOffsetTextureMapperClass::StepLinearOffsetTextureMapperClass(const Vector2 &step, float steps_per_sec, unsigned int stage) :
 	TextureMapperClass(stage),
 	LastUsedSyncTime(WW3D::Get_Sync_Time()),
 	Step(step),
@@ -430,7 +430,7 @@ StepLinearOffsetTextureMapperClass::StepLinearOffsetTextureMapperClass(const Vec
 {
 }
 
-StepLinearOffsetTextureMapperClass::StepLinearOffsetTextureMapperClass(const INIClass &ini, const char *section, uint32_t stage) :
+StepLinearOffsetTextureMapperClass::StepLinearOffsetTextureMapperClass(const INIClass &ini, const char *section, unsigned int stage) :
 	TextureMapperClass(stage),
 	LastUsedSyncTime(WW3D::Get_Sync_Time()),
 	CurrentStep(0.0f,0.0f),
@@ -453,8 +453,8 @@ StepLinearOffsetTextureMapperClass::StepLinearOffsetTextureMapperClass(const Ste
 
 void StepLinearOffsetTextureMapperClass::Apply(int uv_array_index)
 {
-	uint32_t now = WW3D::Get_Sync_Time();
-	uint32_t delta =  now - LastUsedSyncTime;
+	unsigned int now = WW3D::Get_Sync_Time();
+	unsigned int delta =  now - LastUsedSyncTime;
 	LastUsedSyncTime=now;
 
 	Remainder+=delta;
@@ -477,7 +477,7 @@ void StepLinearOffsetTextureMapperClass::Apply(int uv_array_index)
 	// otherwise change to translate
 	m[0].Z=CurrentStep.U;
 	m[1].Z=CurrentStep.V;
-	DX8Wrapper::Set_Transform(Texture_Transform_Slot(Stage),m);
+	DX8Wrapper::Set_Transform((D3DTRANSFORMSTATETYPE) (D3DTS_TEXTURE0+Stage),m);
 
 	// Disable Texgen
 	DX8Wrapper::Set_DX8_Texture_Stage_State(Stage,D3DTSS_TEXCOORDINDEX,D3DTSS_TCI_PASSTHRU | uv_array_index);	
@@ -496,7 +496,7 @@ void StepLinearOffsetTextureMapperClass::Reset(void)
 
 // ZigZagLinearOffset Mapper
 // HY 5/16/01
-ZigZagLinearOffsetTextureMapperClass::ZigZagLinearOffsetTextureMapperClass(const Vector2 &speed, float period, uint32_t stage) :
+ZigZagLinearOffsetTextureMapperClass::ZigZagLinearOffsetTextureMapperClass(const Vector2 &speed, float period, unsigned int stage) :
 	TextureMapperClass(stage),
 	LastUsedSyncTime(WW3D::Get_Sync_Time()),
 	Speed(speed/1000.0f),
@@ -508,7 +508,7 @@ ZigZagLinearOffsetTextureMapperClass::ZigZagLinearOffsetTextureMapperClass(const
 	Half_Period=0.5f*Period;
 }
 
-ZigZagLinearOffsetTextureMapperClass::ZigZagLinearOffsetTextureMapperClass(const INIClass &ini, const char *section, uint32_t stage) :
+ZigZagLinearOffsetTextureMapperClass::ZigZagLinearOffsetTextureMapperClass(const INIClass &ini, const char *section, unsigned int stage) :
 	TextureMapperClass(stage),
 	LastUsedSyncTime(WW3D::Get_Sync_Time()),
 	Remainder(0)
@@ -532,8 +532,8 @@ ZigZagLinearOffsetTextureMapperClass::ZigZagLinearOffsetTextureMapperClass(const
 
 void ZigZagLinearOffsetTextureMapperClass::Apply(int uv_array_index)
 {
-	uint32_t now = WW3D::Get_Sync_Time();
-	uint32_t delta =  now - LastUsedSyncTime;
+	unsigned int now = WW3D::Get_Sync_Time();
+	unsigned int delta =  now - LastUsedSyncTime;
 	LastUsedSyncTime=now;
 	Remainder+=delta;
 
@@ -599,7 +599,7 @@ void ClassicEnvironmentMapperClass::Apply(int uv_array_index)
 							0.0f, 0.5f, 0.0f, 0.5f,
 							0.0f, 0.0f, 1.0f, 0.0f );
 
-	DX8Wrapper::Set_Transform(Texture_Transform_Slot(Stage),matenv);
+	DX8Wrapper::Set_Transform((D3DTRANSFORMSTATETYPE) (D3DTS_TEXTURE0+Stage),matenv);
 
 	// Get camera normals
 	DX8Wrapper::Set_DX8_Texture_Stage_State(Stage,D3DTSS_TEXCOORDINDEX,D3DTSS_TCI_CAMERASPACENORMAL);
@@ -619,7 +619,7 @@ void EnvironmentMapperClass::Apply(int uv_array_index)
 							0.0f, 0.25f, 0.0f, 0.5f,
 							0.0f, 0.0f, 1.0f, 0.0f );	
 
-	DX8Wrapper::Set_Transform(Texture_Transform_Slot(Stage),matenv);
+	DX8Wrapper::Set_Transform((D3DTRANSFORMSTATETYPE) (D3DTS_TEXTURE0+Stage),matenv);
 
 	// Get camera reflection vector
 	DX8Wrapper::Set_DX8_Texture_Stage_State(Stage,D3DTSS_TEXCOORDINDEX,D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR);
@@ -629,7 +629,7 @@ void EnvironmentMapperClass::Apply(int uv_array_index)
 	
 }
 
-EdgeMapperClass::EdgeMapperClass(uint32_t stage) :
+EdgeMapperClass::EdgeMapperClass(unsigned int stage) :
 	TextureMapperClass(stage),
 	VSpeed(0.0f),
 	UseReflect(false),
@@ -638,7 +638,7 @@ EdgeMapperClass::EdgeMapperClass(uint32_t stage) :
 {
 }
 
-EdgeMapperClass::EdgeMapperClass(const INIClass &ini, const char *section, uint32_t stage) :
+EdgeMapperClass::EdgeMapperClass(const INIClass &ini, const char *section, unsigned int stage) :
 	TextureMapperClass(stage),
 	VSpeed(0.0f),
 	UseReflect(false),
@@ -661,7 +661,7 @@ EdgeMapperClass::EdgeMapperClass(const EdgeMapperClass & src):
 
 void EdgeMapperClass::Apply(int uv_array_index)
 {
-	uint32_t now=WW3D::Get_Sync_Time();
+	unsigned int now=WW3D::Get_Sync_Time();
 
 	float delta=(now-LastUsedSyncTime)*0.001f;
 	LastUsedSyncTime=now;
@@ -675,7 +675,7 @@ void EdgeMapperClass::Apply(int uv_array_index)
 							0.0f, 0.0f, 0.0f, VOffset,
 							0.0f, 0.0f, 1.0f, 0.0f );	
 
-	DX8Wrapper::Set_Transform(Texture_Transform_Slot(Stage),matenv);
+	DX8Wrapper::Set_Transform((D3DTRANSFORMSTATETYPE) (D3DTS_TEXTURE0+Stage),matenv);
 
 	// Get camera reflection vector
 	if (UseReflect)
@@ -705,13 +705,13 @@ void WSClassicEnvironmentMapperClass::Apply(int uv_array_index)
 
 	// multiply by inverse of view transform	
 	Matrix4 mat;
-	DX8Wrapper::Get_Transform(TRANSFORM_VIEW,mat);	
+	DX8Wrapper::Get_Transform(D3DTS_VIEW,mat);	
 	Matrix3D mat2(mat[0].X,mat[1].X,mat[2].X,0.0f,
 					  mat[0].Y,mat[1].Y,mat[2].Y,0.0f,
 					  mat[0].Z,mat[1].Z,mat[2].Z,0.0f);		
 	matenv=matenv*mat2;	
 
-	DX8Wrapper::Set_Transform(Texture_Transform_Slot(Stage),matenv);
+	DX8Wrapper::Set_Transform((D3DTRANSFORMSTATETYPE) (D3DTS_TEXTURE0+Stage),matenv);
 
 	// Get camera normals
 	DX8Wrapper::Set_DX8_Texture_Stage_State(Stage,D3DTSS_TEXCOORDINDEX,D3DTSS_TCI_CAMERASPACENORMAL);
@@ -733,13 +733,13 @@ void WSEnvironmentMapperClass::Apply(int uv_array_index)
 
 	// multiply by inverse of view transform	
 	Matrix4 mat;	
-	DX8Wrapper::Get_Transform(TRANSFORM_VIEW,mat);		
+	DX8Wrapper::Get_Transform(D3DTS_VIEW,mat);		
 	Matrix3D mat2(mat[0].X,mat[1].X,mat[2].X,0.0f,
 					  mat[0].Y,mat[1].Y,mat[2].Y,0.0f,
 					  mat[0].Z,mat[1].Z,mat[2].Z,0.0f);						  	
 	matenv=matenv*mat2;	
 
-	DX8Wrapper::Set_Transform(Texture_Transform_Slot(Stage),matenv);	
+	DX8Wrapper::Set_Transform((D3DTRANSFORMSTATETYPE) (D3DTS_TEXTURE0+Stage),matenv);	
 
 	// Get camera reflection
 	DX8Wrapper::Set_DX8_Texture_Stage_State(Stage,D3DTSS_TEXCOORDINDEX,D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR);
@@ -751,7 +751,7 @@ void WSEnvironmentMapperClass::Apply(int uv_array_index)
 
 void ScreenMapperClass::Apply(int uv_array_index)
 {
-	uint32_t delta = WW3D::Get_Sync_Time() - LastUsedSyncTime;
+	unsigned int delta = WW3D::Get_Sync_Time() - LastUsedSyncTime;
 	float del = (float)delta;
 	float offset_u = CurrentUVOffset.X + UVOffsetDeltaPerMS.X * del;
 	float offset_v = CurrentUVOffset.Y + UVOffsetDeltaPerMS.Y * del;
@@ -763,7 +763,7 @@ void ScreenMapperClass::Apply(int uv_array_index)
 	// multiply by projection matrix	
 	// followed by scale and translation
 	Matrix4 mat;	
-	DX8Wrapper::Get_Transform(TRANSFORM_PROJECTION,mat);	
+	DX8Wrapper::Get_Transform(D3DTS_PROJECTION,mat);	
 	mat[0]*=Scale.X; // entire row since we're pre-multiplying
 	mat[1]*=Scale.Y;
 	Vector4 last(mat[3]); // this gets the w
@@ -773,7 +773,7 @@ void ScreenMapperClass::Apply(int uv_array_index)
 	last*=offset_v;
 	mat[1]+=last;
 
-	DX8Wrapper::Set_Transform(Texture_Transform_Slot(Stage),mat);	
+	DX8Wrapper::Set_Transform((D3DTRANSFORMSTATETYPE) (D3DTS_TEXTURE0+Stage),mat);	
 
 	// Get camera space position
 	DX8Wrapper::Set_DX8_Texture_Stage_State(Stage,D3DTSS_TEXCOORDINDEX,D3DTSS_TCI_CAMERASPACEPOSITION);
@@ -801,7 +801,7 @@ void GridClassicEnvironmentMapperClass::Apply(int uv_array_index)
 							0.0f,	del,	0.0f,	v_offset + del,
 							0.0f,	0.0f,	1.0f,	0.0f				);		
 
-	DX8Wrapper::Set_Transform(Texture_Transform_Slot(Stage),tform);
+	DX8Wrapper::Set_Transform((D3DTRANSFORMSTATETYPE) (D3DTS_TEXTURE0+Stage),tform);
 
 	// Get camera normals
 	DX8Wrapper::Set_DX8_Texture_Stage_State(Stage,D3DTSS_TEXCOORDINDEX,D3DTSS_TCI_CAMERASPACENORMAL);
@@ -831,7 +831,7 @@ void GridEnvironmentMapperClass::Apply(int uv_array_index)
 							0.0f,	del,	0.0f,	v_offset + del,
 							0.0f,	0.0f,	1.0f,	0.0f				);		
 
-	DX8Wrapper::Set_Transform(Texture_Transform_Slot(Stage),tform);
+	DX8Wrapper::Set_Transform((D3DTRANSFORMSTATETYPE) (D3DTS_TEXTURE0+Stage),tform);
 
 	// Get camera space reflection
 	DX8Wrapper::Set_DX8_Texture_Stage_State(Stage,D3DTSS_TEXCOORDINDEX,D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR);
@@ -840,7 +840,7 @@ void GridEnvironmentMapperClass::Apply(int uv_array_index)
 	DX8Wrapper::Set_DX8_Texture_Stage_State(Stage,D3DTSS_TEXTURETRANSFORMFLAGS,D3DTTFF_COUNT2);
 }
 
-RandomTextureMapperClass::RandomTextureMapperClass(float fps, uint32_t stage):
+RandomTextureMapperClass::RandomTextureMapperClass(float fps, unsigned int stage):
 	TextureMapperClass(stage),
 	FPMS(fps/1000.0f),	
 	LastUsedSyncTime(WW3D::Get_Sync_Time()),
@@ -850,7 +850,7 @@ RandomTextureMapperClass::RandomTextureMapperClass(float fps, uint32_t stage):
 	randomize();
 }
 
-RandomTextureMapperClass::RandomTextureMapperClass(const INIClass &ini, const char *section, uint32_t stage):
+RandomTextureMapperClass::RandomTextureMapperClass(const INIClass &ini, const char *section, unsigned int stage):
 	TextureMapperClass(stage),	
 	LastUsedSyncTime(WW3D::Get_Sync_Time()),
 	Remainder(0)
@@ -880,8 +880,8 @@ void RandomTextureMapperClass::randomize(void)
 
 void RandomTextureMapperClass::Apply(int uv_array_index)
 {
-	uint32_t now = WW3D::Get_Sync_Time();
-	uint32_t delta=now-LastUsedSyncTime;
+	unsigned int now = WW3D::Get_Sync_Time();
+	unsigned int delta=now-LastUsedSyncTime;
 	LastUsedSyncTime=now;
 	Remainder+=delta;
 	
@@ -906,7 +906,7 @@ void RandomTextureMapperClass::Apply(int uv_array_index)
 	m[0].Z=uoff;
 	m[1].Z=voff;
 
-	DX8Wrapper::Set_Transform(Texture_Transform_Slot(Stage),m);
+	DX8Wrapper::Set_Transform((D3DTRANSFORMSTATETYPE) (D3DTS_TEXTURE0+Stage),m);
 
 	// Disable Texgen
 	DX8Wrapper::Set_DX8_Texture_Stage_State(Stage,D3DTSS_TEXCOORDINDEX,D3DTSS_TCI_PASSTHRU | uv_array_index);	
@@ -923,7 +923,7 @@ void RandomTextureMapperClass::Reset(void)
 
 // BumpEnv Mapper
 // GTH 8/22/01
-BumpEnvTextureMapperClass::BumpEnvTextureMapperClass(float rad_per_sec, float scale_factor, const Vector2 & offset_per_sec, const Vector2 &scale, uint32_t stage) :
+BumpEnvTextureMapperClass::BumpEnvTextureMapperClass(float rad_per_sec, float scale_factor, const Vector2 & offset_per_sec, const Vector2 &scale, unsigned int stage) :
 	LinearOffsetTextureMapperClass(offset_per_sec,scale, stage),
 	LastUsedSyncTime(WW3D::Get_Sync_Time()),
 	CurrentAngle(0.0f),
@@ -932,7 +932,7 @@ BumpEnvTextureMapperClass::BumpEnvTextureMapperClass(float rad_per_sec, float sc
 {
 }
 
-BumpEnvTextureMapperClass::BumpEnvTextureMapperClass(INIClass &ini, char *section, uint32_t stage) :	
+BumpEnvTextureMapperClass::BumpEnvTextureMapperClass(INIClass &ini, char *section, unsigned int stage) :	
 	LinearOffsetTextureMapperClass(ini,section,stage),
 	LastUsedSyncTime(WW3D::Get_Sync_Time()),
 	CurrentAngle(0.0f)
@@ -954,8 +954,8 @@ void BumpEnvTextureMapperClass::Apply(int uv_array_index)
 {
 	LinearOffsetTextureMapperClass::Apply(uv_array_index);
 
-	uint32_t now = WW3D::Get_Sync_Time();
-	uint32_t delta =  now - LastUsedSyncTime;
+	unsigned int now = WW3D::Get_Sync_Time();
+	unsigned int delta =  now - LastUsedSyncTime;
 	LastUsedSyncTime=now;
 
 	CurrentAngle+=RadiansPerSecond * delta * 0.001f;

@@ -31,7 +31,7 @@
 
 FrameGrabClass::FrameGrabClass(const char *filename, MODE mode, int width, int height, int bitcount, float framerate)
 {
-	int32_t          hr; 
+	HRESULT          hr; 
 	
 	Mode = mode;
 	Filename = filename;
@@ -94,8 +94,8 @@ FrameGrabClass::FrameGrabClass(const char *filename, MODE mode, int width, int h
     // Set format of new stream
 	BitmapInfoHeader.biWidth = width;
 	BitmapInfoHeader.biHeight = height; 
-	BitmapInfoHeader.biBitCount = (uint16_t)bitcount;
-    BitmapInfoHeader.biSizeImage = ((((uint32_t)BitmapInfoHeader.biBitCount * BitmapInfoHeader.biWidth + 31) & ~31) / 8) * BitmapInfoHeader.biHeight; 
+	BitmapInfoHeader.biBitCount = (unsigned short)bitcount;
+    BitmapInfoHeader.biSizeImage = ((((UINT)BitmapInfoHeader.biBitCount * BitmapInfoHeader.biWidth + 31) & ~31) / 8) * BitmapInfoHeader.biHeight; 
 	BitmapInfoHeader.biSize = sizeof(BITMAPINFOHEADER); // size of structure
 	BitmapInfoHeader.biPlanes = 1; // must be set to 1
 	BitmapInfoHeader.biCompression = BI_RGB; // uncompressed
@@ -110,7 +110,7 @@ FrameGrabClass::FrameGrabClass(const char *filename, MODE mode, int width, int h
 		return;     
 	}  
 
-    Bitmap = (uint32_t *) GlobalAllocPtr(GMEM_MOVEABLE, BitmapInfoHeader.biSizeImage); 
+    Bitmap = (long *) GlobalAllocPtr(GMEM_MOVEABLE, BitmapInfoHeader.biSizeImage); 
 }
 
 FrameGrabClass::~FrameGrabClass()
@@ -134,7 +134,7 @@ void FrameGrabClass::GrabAVI(void *BitmapPointer)
     // CompressDIB(&bi, lpOld, &biNew, lpNew);  
 
     // Save the compressed data using AVIStreamWrite. 
-    int32_t hr = AVIStreamWrite(Stream, Counter++, 1, BitmapPointer, BitmapInfoHeader.biSizeImage, AVIIF_KEYFRAME, NULL, NULL);     
+    HRESULT hr = AVIStreamWrite(Stream, Counter++, 1, BitmapPointer, BitmapInfoHeader.biSizeImage, AVIIF_KEYFRAME, NULL, NULL);     
 	if(hr != 0) {
 		char buf[256];
 		sprintf(buf, "avi write error %x/%d\n", hr, hr);
@@ -169,7 +169,7 @@ void FrameGrabClass::ConvertFrame(void *BitmapPointer)
 
 	int width = BitmapInfoHeader.biWidth;
 	int height = BitmapInfoHeader.biHeight;
-	uint32_t *image = (uint32_t *) BitmapPointer;
+	long *image = (long *) BitmapPointer;
 
 	// copy the data, doing a vertical flip & byte re-ordering of the pixel longwords
 	int y = height;
@@ -178,10 +178,10 @@ void FrameGrabClass::ConvertFrame(void *BitmapPointer)
 		int yoffset = y * width;
 		int yoffset2 = (height - y) * width;
 		while(x--) {
-			uint32_t *source = &image[yoffset + x];
-			uint32_t *dest = &Bitmap[yoffset2 + x];
+			long *source = &image[yoffset + x];
+			long *dest = &Bitmap[yoffset2 + x];
 			*dest = *source;
-			uint8_t *c = (uint8_t *) dest;
+			unsigned char *c = (unsigned char *) dest;
 			c[3] = c[0];
 			c[0] = c[2];
 			c[2] = c[3];

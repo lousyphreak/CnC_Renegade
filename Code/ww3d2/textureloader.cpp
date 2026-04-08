@@ -30,7 +30,7 @@
 #include "dx8wrapper.h"
 #include "dx8caps.h"
 #include "missingtexture.h"
-#include "TARGA.H"
+#include "targa.h"
 #include <D3dx8tex.h>
 #include <cstdio>
 #include "wwmemlog.h"
@@ -414,7 +414,7 @@ IDirect3DTexture8* TextureLoader::Load_Thumbnail(const StringClass& filename)//,
 				0));
 	}
 
-	uint8_t* src_surface=thumb->Peek_Bitmap();
+	unsigned char* src_surface=thumb->Peek_Bitmap();
 	WW3DFormat src_format=thumb->Get_Format();
 	unsigned width=thumb->Get_Width();
 	unsigned height=thumb->Get_Height();
@@ -423,17 +423,17 @@ IDirect3DTexture8* TextureLoader::Load_Thumbnail(const StringClass& filename)//,
 		BitmapHandlerClass::Copy_Image_Generate_Mipmap(
 			width,
 			height,
-			(uint8_t*)locked_rects[level].pBits,
+			(unsigned char*)locked_rects[level].pBits,
 			locked_rects[level].Pitch,
 			dest_format,
 			src_surface,
 			src_pitch,
 			src_format,
-			(uint8_t*)locked_rects[level+1].pBits,	// mipmap
+			(unsigned char*)locked_rects[level+1].pBits,	// mipmap
 			locked_rects[level+1].Pitch);// mipmap
 
 		src_format=dest_format;
-		src_surface=(uint8_t*)locked_rects[level].pBits;
+		src_surface=(unsigned char*)locked_rects[level].pBits;
 		src_pitch=locked_rects[level].Pitch;
 		width>>=1;
 		height>>=1;
@@ -510,17 +510,17 @@ IDirect3DSurface8* TextureLoader::Load_Surface_Immediate(
 	unsigned src_height=targa.Header.Height;
 
 	// NOTE: We load the palette but we do not yet support paletted textures!
-	uint8_t palette[256*4];
+	char palette[256*4];
 	targa.SetPalette(palette);
 	if (TARGA_ERROR_HANDLER(targa.Load(filename, TGAF_IMAGE, false),filename)) return MissingTexture::_Create_Missing_Surface();
 
-	uint8_t* src_surface=(uint8_t*)targa.GetImage();
+	unsigned char* src_surface=(unsigned char*)targa.GetImage();
 
 	// No paletted destination format allowed
-	uint8_t* converted_surface=NULL;
+	unsigned char* converted_surface=NULL;
 	if (src_format==WW3D_FORMAT_A1R5G5B5 || src_format==WW3D_FORMAT_R5G6B5 || src_format==WW3D_FORMAT_A4R4G4B4 ||
 		src_format==WW3D_FORMAT_P8 || src_format==WW3D_FORMAT_L8 || src_width!=width || src_height!=height) {
-		converted_surface=new uint8_t[width*height*4];
+		converted_surface=new unsigned char[width*height*4];
 		dest_format=Get_Valid_Texture_Format(WW3D_FORMAT_A8R8G8B8,false);
 		BitmapHandlerClass::Copy_Image(
 			converted_surface,
@@ -533,7 +533,7 @@ IDirect3DSurface8* TextureLoader::Load_Surface_Immediate(
 			src_height,
 			src_width*src_bpp,
 			src_format,
-			(uint8_t*)targa.GetPalette(),
+			(unsigned char*)targa.GetPalette(),
 			targa.Header.CMapDepth>>3,
 			false);
 		src_surface=converted_surface;
@@ -555,7 +555,7 @@ IDirect3DSurface8* TextureLoader::Load_Surface_Immediate(
 			0));
 
 	BitmapHandlerClass::Copy_Image(
-		(uint8_t*)locked_rect.pBits,
+		(unsigned char*)locked_rect.pBits,
 		width,
 		height,
 		locked_rect.Pitch,
@@ -565,7 +565,7 @@ IDirect3DSurface8* TextureLoader::Load_Surface_Immediate(
 		src_height,
 		src_pitch,
 		src_format,
-		(uint8_t*)targa.GetPalette(),
+		(unsigned char*)targa.GetPalette(),
 		targa.Header.CMapDepth>>3,
 		false);	// No mipmap
 
@@ -782,7 +782,7 @@ void TextureLoader::Flush_Pending_Load_Tasks(void)
 #include <mmsystem.h>
 #define UPDATE_NETWORK 											\
 	if (network_callback) {                            \
-		uint32_t time2 = timeGetTime();            \
+		unsigned long time2 = timeGetTime();            \
 		if (time2 - time > 20) {                        \
 			network_callback();                          \
 			time = time2;                                \
@@ -802,7 +802,7 @@ void TextureLoader::Update(void (*network_callback)(void))
 	// modifying texture tasks.
 	FastCriticalSectionClass::LockClass lock(_ForegroundCriticalSection);
 
-	uint32_t time = timeGetTime();
+	unsigned long time = timeGetTime();
 
 	// while we have tasks on the foreground queue
 	while (TextureLoadTaskClass *task = _ForegroundQueue.Pop_Front()) {
@@ -1240,7 +1240,7 @@ static bool	Get_Texture_Information(
 			return false;
 		}
 
-		uint32_t bpp;
+		unsigned int bpp;
 		WW3DFormat dest_format;
 		Get_WW3D_Format(dest_format,format,bpp,targa);
 
@@ -1276,14 +1276,14 @@ bool TextureLoadTaskClass::Begin_Compressed_Load(void)
 	}
 
 	// Destination size will be the next power of two square from the larger width and height...
-	uint32_t width	= orig_w;
-	uint32_t height	= orig_h;
+	unsigned int width	= orig_w;
+	unsigned int height	= orig_h;
 	TextureLoader::Validate_Texture_Size(width, height);
 
 	// If the size doesn't match, try and see if texture reduction would help... (mainly for
 	// cases where loaded texture is larger than hardware limit)
 	if (width != orig_w || height != orig_h) {
-		for (uint32_t i = 1; i < orig_mip_count; ++i) {
+		for (unsigned int i = 1; i < orig_mip_count; ++i) {
 			unsigned w=orig_w>>i;
 			if (w<4) w=4;
 			unsigned h=orig_h>>i;
@@ -1306,7 +1306,7 @@ bool TextureLoadTaskClass::Begin_Compressed_Load(void)
 	Height	= height;
 	Format	= Get_Valid_Texture_Format(orig_format, Texture->Is_Compression_Allowed());
 
-	uint32_t mip_level_count = Get_Mip_Level_Count();
+	unsigned int mip_level_count = Get_Mip_Level_Count();
 
 	// If texture wants all mip levels, take as many as the file contains (not necessarily all)
 	// Otherwise take as many mip levels as the texture wants, not to exceed the count in file...
@@ -1318,9 +1318,9 @@ bool TextureLoadTaskClass::Begin_Compressed_Load(void)
 
 	// Once more, verify that the mip level count is correct (in case it was changed here it might not
 	// match the size...well actually it doesn't have to match but it can't be bigger than the size)
-	uint32_t max_mip_level_count = 1;
-	uint32_t w = 4;
-	uint32_t h = 4;
+	unsigned int max_mip_level_count = 1;
+	unsigned int w = 4;
+	unsigned int h = 4;
 
 	while (w < Width && h < Height) {
 		w += w;
@@ -1398,7 +1398,7 @@ bool TextureLoadTaskClass::Begin_Uncompressed_Load(void)
 void TextureLoadTaskClass::Lock_Surfaces(void)
 {
 	MipLevelCount = D3DTexture->GetLevelCount();
-	for (uint32_t i = 0; i < MipLevelCount; ++i) {
+	for (unsigned int i = 0; i < MipLevelCount; ++i) {
 		D3DLOCKED_RECT locked_rect;
 		DX8_ErrorCode(
 			D3DTexture->LockRect(
@@ -1406,7 +1406,7 @@ void TextureLoadTaskClass::Lock_Surfaces(void)
 				&locked_rect,
 				NULL,
 				0));
-		LockedSurfacePtr[i]		= (uint8_t *)locked_rect.pBits;
+		LockedSurfacePtr[i]		= (unsigned char *)locked_rect.pBits;
 		LockedSurfacePitch[i]	= locked_rect.Pitch;
 	}
 }
@@ -1414,7 +1414,7 @@ void TextureLoadTaskClass::Lock_Surfaces(void)
 
 void TextureLoadTaskClass::Unlock_Surfaces(void)
 {
-	for (uint32_t i = 0; i < MipLevelCount; ++i) {
+	for (unsigned int i = 0; i < MipLevelCount; ++i) {
 		if (LockedSurfacePtr[i]) {
 			WWASSERT(ThreadClass::_Get_Current_Thread_ID() == DX8Wrapper::_Get_Main_Thread_ID());
 			DX8_ErrorCode(D3DTexture->UnlockRect(i));
@@ -1442,10 +1442,10 @@ bool TextureLoadTaskClass::Load_Compressed_Mipmap(void)
 		return false;
 	}
 
-	uint32_t width	= Get_Width();
-	uint32_t height	= Get_Height();
+	unsigned int width	= Get_Width();
+	unsigned int height	= Get_Height();
 
-	for (uint32_t level = 0; level < Get_Mip_Level_Count(); ++level) {
+	for (unsigned int level = 0; level < Get_Mip_Level_Count(); ++level) {
 		WWASSERT(width && height);
 		dds_file.Copy_Level_To_Surface(
 			level,
@@ -1479,27 +1479,27 @@ bool TextureLoadTaskClass::Load_Uncompressed_Mipmap(void)
 
 	WW3DFormat src_format;
 	WW3DFormat dest_format;
-	uint32_t src_bpp = 0;
+	unsigned int src_bpp = 0;
 	Get_WW3D_Format(dest_format,src_format,src_bpp,targa);
 	if (src_format==WW3D_FORMAT_UNKNOWN) return false;
 
 	dest_format = Get_Format();	// Texture can be requested in different format than the most obvious from the TGA
 
-	uint8_t palette[256*4];
+	char palette[256*4];
 	targa.SetPalette(palette);
 
-	uint32_t src_width	= targa.Header.Width;
-	uint32_t src_height	= targa.Header.Height;
-	uint32_t width		= Get_Width();
-	uint32_t height		= Get_Height();
+	unsigned int src_width	= targa.Header.Width;
+	unsigned int src_height	= targa.Header.Height;
+	unsigned int width		= Get_Width();
+	unsigned int height		= Get_Height();
 
 	// NOTE: We load the palette but we do not yet support paletted textures!
 	if (TARGA_ERROR_HANDLER(targa.Load(Texture->Get_Full_Path(), TGAF_IMAGE, false), Texture->Get_Full_Path())) {
 		return false;
 	}
 
-	uint8_t * src_surface			= (uint8_t*)targa.GetImage();
-	uint8_t * converted_surface	= NULL;
+	unsigned char * src_surface			= (unsigned char*)targa.GetImage();
+	unsigned char * converted_surface	= NULL;
 
 	// No paletted format allowed when generating mipmaps
 	if (	src_format	== WW3D_FORMAT_A1R5G5B5 
@@ -1510,7 +1510,7 @@ bool TextureLoadTaskClass::Load_Uncompressed_Mipmap(void)
 		|| src_width	!= width 
 		|| src_height	!= height) {
 
-		converted_surface = new uint8_t[width*height*4];
+		converted_surface = new unsigned char[width*height*4];
 		dest_format = Get_Valid_Texture_Format(WW3D_FORMAT_A8R8G8B8, false);
 
 		BitmapHandlerClass::Copy_Image(
@@ -1524,7 +1524,7 @@ bool TextureLoadTaskClass::Load_Uncompressed_Mipmap(void)
 			src_height,
 			src_width*src_bpp,
 			src_format,
-			(uint8_t*)targa.GetPalette(),
+			(unsigned char*)targa.GetPalette(),
 			targa.Header.CMapDepth>>3,
 			false);
 
@@ -1537,7 +1537,7 @@ bool TextureLoadTaskClass::Load_Uncompressed_Mipmap(void)
 
 	unsigned src_pitch = src_width * src_bpp;
 
-	for (uint32_t level = 0; level < Get_Mip_Level_Count(); ++level) {
+	for (unsigned int level = 0; level < Get_Mip_Level_Count(); ++level) {
 		WWASSERT(Get_Locked_Surface_Ptr(level));
 		BitmapHandlerClass::Copy_Image(
 			Get_Locked_Surface_Ptr(level),
@@ -1572,7 +1572,7 @@ bool TextureLoadTaskClass::Load_Uncompressed_Mipmap(void)
 }
 
 
-uint8_t * TextureLoadTaskClass::Get_Locked_Surface_Ptr(uint32_t level)
+unsigned char * TextureLoadTaskClass::Get_Locked_Surface_Ptr(unsigned int level)
 {
 	WWASSERT(level<MipLevelCount);
 	WWASSERT(LockedSurfacePtr[level]);
@@ -1587,7 +1587,7 @@ uint8_t * TextureLoadTaskClass::Get_Locked_Surface_Ptr(uint32_t level)
 //
 // ----------------------------------------------------------------------------
 
-uint32_t TextureLoadTaskClass::Get_Locked_Surface_Pitch(uint32_t level) const
+unsigned int TextureLoadTaskClass::Get_Locked_Surface_Pitch(unsigned int level) const
 {
 	WWASSERT(level<MipLevelCount);
 	WWASSERT(LockedSurfacePtr[level]);

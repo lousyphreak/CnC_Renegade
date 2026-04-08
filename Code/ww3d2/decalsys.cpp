@@ -54,7 +54,7 @@
 #include "texture.h"
 
 
-uint32_t DecalSystemClass::DecalIDGenerator = 0;
+uint32 DecalSystemClass::DecalIDGenerator = 0;
 
 
 /*
@@ -146,7 +146,7 @@ void DecalSystemClass::Unlock_Decal_Generator(DecalGeneratorClass * generator)
  * HISTORY:                                                                                    *
  *   1/26/00    gth : Created.                                                                 *
  *=============================================================================================*/
-uint32_t DecalSystemClass::Generate_Unique_Global_Decal_Id(void)			
+uint32 DecalSystemClass::Generate_Unique_Global_Decal_Id(void)			
 { 
 	return DecalIDGenerator++; 
 }
@@ -168,7 +168,7 @@ uint32_t DecalSystemClass::Generate_Unique_Global_Decal_Id(void)
  * HISTORY:                                                                                    *
  *   1/26/00    gth : Created.                                                                 *
  *=============================================================================================*/
-DecalGeneratorClass::DecalGeneratorClass(uint32_t id,DecalSystemClass * system) :
+DecalGeneratorClass::DecalGeneratorClass(uint32 id,DecalSystemClass * system) :
 	DecalID(id),
 	System(system),
 	BackfaceVal(0.0f),
@@ -292,7 +292,7 @@ void DecalGeneratorClass::Set_Mesh_Transform(const Matrix3D & mesh_transform)
 ** MultiFixedPoolDecalSystemClass implementation
 */
 
-MultiFixedPoolDecalSystemClass::MultiFixedPoolDecalSystemClass(uint32_t num_pools, const uint32_t *pool_sizes) :
+MultiFixedPoolDecalSystemClass::MultiFixedPoolDecalSystemClass(uint32 num_pools, const uint32 *pool_sizes) :
 	Pools(0),
 	PoolCount(num_pools),
 	Generator_PoolID(0),
@@ -303,7 +303,7 @@ MultiFixedPoolDecalSystemClass::MultiFixedPoolDecalSystemClass(uint32_t num_pool
 		WWASSERT(pool_sizes);
 		Pools = new LogicalDecalPoolClass [PoolCount];
 	}
-	for (uint32_t i = 0; i < PoolCount; i++) {
+	for (uint32 i = 0; i < PoolCount; i++) {
 		assert(pool_sizes[i]);
 		Pools[i].Initialize(pool_sizes[i]);
 	}
@@ -315,7 +315,7 @@ MultiFixedPoolDecalSystemClass::MultiFixedPoolDecalSystemClass(const MultiFixedP
 	Generator_PoolID(that.Generator_PoolID),
 	Generator_SlotID(that.Generator_SlotID)
 {
-	uint32_t i;
+	uint32 i;
 
 	// Allocate arrays (we dont' copy array contents because those are mesh-specific and will be
 	// filled when the state is set anyway)
@@ -351,7 +351,7 @@ void MultiFixedPoolDecalSystemClass::Unlock_Decal_Generator(DecalGeneratorClass 
 
 // This notifies the system that a mesh which has decals on it was destroyed - therefore we
 // need to remove the mesh from our list to avoid dangling pointers.
-void MultiFixedPoolDecalSystemClass::Decal_Mesh_Destroyed(uint32_t decal_id,DecalMeshClass * mesh)
+void MultiFixedPoolDecalSystemClass::Decal_Mesh_Destroyed(uint32 decal_id,DecalMeshClass * mesh)
 {
 	// We must remove this mesh from all lists where it is present. The method is: for each
 	// decal id present in the decal mesh, find the logical decal and remove the decal mesh from
@@ -363,17 +363,17 @@ void MultiFixedPoolDecalSystemClass::Decal_Mesh_Destroyed(uint32_t decal_id,Deca
 
 // Not part of the DecalSystemClass interface - this function removes any decal currently in
 // the given slot in the given pool.
-void MultiFixedPoolDecalSystemClass::Clear_Decal_Slot(uint32_t pool_id, uint32_t slot_id)
+void MultiFixedPoolDecalSystemClass::Clear_Decal_Slot(uint32 pool_id, uint32 slot_id)
 {
 	find_logical_decal(pool_id, slot_id).Clear(encode_decal_id(pool_id, slot_id));
 }
 
 // This one removes all decals in a given pool.
-void MultiFixedPoolDecalSystemClass::Clear_Pool(uint32_t pool_id)
+void MultiFixedPoolDecalSystemClass::Clear_Pool(uint32 pool_id)
 {
 	LogicalDecalPoolClass & pool = Pools[pool_id];
-	uint32_t pool_size = pool.Size;
-	for (uint32_t slot_id = 0; slot_id < pool_size; slot_id++) {
+	uint32 pool_size = pool.Size;
+	for (uint32 slot_id = 0; slot_id < pool_size; slot_id++) {
 		pool.Array[slot_id].Clear(encode_decal_id(pool_id, slot_id));
 	}
 }
@@ -381,17 +381,17 @@ void MultiFixedPoolDecalSystemClass::Clear_Pool(uint32_t pool_id)
 // And this one removes all decals in the system.
 void MultiFixedPoolDecalSystemClass::Clear_All_Decals(void)
 {
-	for (uint32_t pool_id = 0; pool_id < PoolCount; pool_id++) {
+	for (uint32 pool_id = 0; pool_id < PoolCount; pool_id++) {
 		LogicalDecalPoolClass & pool = Pools[pool_id];
-		uint32_t pool_size = pool.Size;
-		for (uint32_t slot_id = 0; slot_id < pool_size; slot_id++) {
+		uint32 pool_size = pool.Size;
+		for (uint32 slot_id = 0; slot_id < pool_size; slot_id++) {
 			pool.Array[slot_id].Clear(encode_decal_id(pool_id, slot_id));
 		}
 	}
 }
 
 // Get a reference to the logical decal at the given pool and slot id (performs range checking)
-MultiFixedPoolDecalSystemClass::LogicalDecalClass & MultiFixedPoolDecalSystemClass::find_logical_decal(uint32_t pool_id, uint32_t slot_id)
+MultiFixedPoolDecalSystemClass::LogicalDecalClass & MultiFixedPoolDecalSystemClass::find_logical_decal(uint32 pool_id, uint32 slot_id)
 {
 	assert(pool_id < PoolCount);
 	pool_id = MIN(pool_id, PoolCount);
@@ -402,9 +402,9 @@ MultiFixedPoolDecalSystemClass::LogicalDecalClass & MultiFixedPoolDecalSystemCla
 }
 
 // Get a reference to the logical decal with the given decal id
-MultiFixedPoolDecalSystemClass::LogicalDecalClass & MultiFixedPoolDecalSystemClass::find_logical_decal(uint32_t decal_id)
+MultiFixedPoolDecalSystemClass::LogicalDecalClass & MultiFixedPoolDecalSystemClass::find_logical_decal(uint32 decal_id)
 {
-	uint32_t pool_id, slot_id;
+	uint32 pool_id, slot_id;
 	decode_decal_id(decal_id, pool_id, slot_id);
 	return find_logical_decal(pool_id, slot_id);
 }
@@ -441,7 +441,7 @@ void MultiFixedPoolDecalSystemClass::LogicalDecalClass::Set(DecalGeneratorClass 
 }
 
 // Just clears any existing logical decal information, leaving the decal empty.
-void MultiFixedPoolDecalSystemClass::LogicalDecalClass::Clear(uint32_t decal_id)
+void MultiFixedPoolDecalSystemClass::LogicalDecalClass::Clear(uint32 decal_id)
 {
 	// Remove the decal with this ID from all meshes where it appears
 	NonRefRenderObjListIterator it(&MeshList);
@@ -474,7 +474,7 @@ MultiFixedPoolDecalSystemClass::LogicalDecalPoolClass::~LogicalDecalPoolClass(vo
 	}
 }
 
-void MultiFixedPoolDecalSystemClass::LogicalDecalPoolClass::Initialize(uint32_t size)
+void MultiFixedPoolDecalSystemClass::LogicalDecalPoolClass::Initialize(uint32 size)
 {
 	if (Array) {
 		delete [] Array;

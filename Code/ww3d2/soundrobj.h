@@ -36,8 +36,6 @@
 
 #if defined(_MSC_VER)
 #pragma once
-
-#include <cstdint>
 #endif
 
 #ifndef __SOUNDROBJ_H
@@ -48,7 +46,7 @@
 #include "proto.h"
 #include "w3d_file.h"
 #include "w3derr.h"
-#include "AudibleSound.h"
+#include "audiblesound.h"
 
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -127,10 +125,10 @@ public:
 	//
 	//	Flag support
 	//
-	uint32_t					Get_Flags (void) const					{ return Flags; }
-	void						Set_Flags (uint32_t flags)				{ Flags = flags; }
-	bool						Get_Flag (uint32_t flag)					{ return bool((Flags & flag) == flag); }
-	void						Set_Flag (uint32_t flag, bool onoff);
+	uint32					Get_Flags (void) const					{ return Flags; }
+	void						Set_Flags (uint32 flags)				{ Flags = flags; }
+	bool						Get_Flag (uint32 flag)					{ return bool((Flags & flag) == flag); }
+	void						Set_Flag (uint32 flag, bool onoff);
 
 
 protected:
@@ -148,7 +146,7 @@ private:
 	bool						IsInitialized;	
 	StringClass				Name;
 	AudibleSoundClass *	Sound;
-	uint32_t					Flags;
+	uint32					Flags;
 };
 
 
@@ -212,7 +210,7 @@ private:
 	///////////////////////////////////////////////////////////
 	//	Private member data
 	///////////////////////////////////////////////////////////
-	uint32_t								Version;
+	uint32								Version;
 	StringClass							Name;
 	AudibleSoundDefinitionClass 	Definition;
 	SoundRenderObjClass::FLAGS		Flags;

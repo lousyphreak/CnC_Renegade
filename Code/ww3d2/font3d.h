@@ -89,8 +89,8 @@ public:
 	** access character width and height in pixels (clamp char to 0.255)
 	*/
 	
-	uint8_t	Char_Width( WCHAR ch = (WCHAR)'H' )			{ return CharWidthTable[ch&0xFF]; }// & 0xFF]; } // No need to "& 0xff" with chars!!!
-	uint8_t	Char_Height( WCHAR /*ch = 'H'*/ )			{ return CharHeight; }
+	unsigned char	Char_Width( WCHAR ch = (WCHAR)'H' )			{ return CharWidthTable[ch&0xFF]; }// & 0xFF]; } // No need to "& 0xff" with chars!!!
+	unsigned char	Char_Height( WCHAR /*ch = 'H'*/ )			{ return CharHeight; }
 
 	// u and v are in normalized texture space
 	inline float	Char_U_Offset( WCHAR ch = (WCHAR)'H')		{ return UOffsetTable[ch&0xFF]; }// & 0xFF]; }
@@ -126,8 +126,8 @@ private:
 	float				UWidthTable[ 256 ];
 	float				VHeight;
 
-	uint8_t	CharWidthTable[ 256 ];
-	uint8_t	CharHeight;
+	unsigned char	CharWidthTable[ 256 ];
+	unsigned char	CharHeight;
 
 	/*
 	** load a targa font image (.TGA)

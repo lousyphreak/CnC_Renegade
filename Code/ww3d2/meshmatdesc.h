@@ -39,8 +39,6 @@
 #ifndef MESHMATDESC_H
 #define MESHMATDESC_H
 
-#include <cstdint>
-
 #include "always.h"
 #include "vector2.h"
 #include "vector3.h"
@@ -282,10 +280,10 @@ public:
 	bool				Is_Equal_To(const UVBufferClass & that);
 
 	void				Update_CRC(void);
-	uint32_t	Get_CRC(void) { return CRC; }
+	unsigned int	Get_CRC(void) { return CRC; }
 
 private:
-	uint32_t	CRC;
+	unsigned int	CRC;
 
 	// not implemented
 	UVBufferClass & operator = (const UVBufferClass & that);

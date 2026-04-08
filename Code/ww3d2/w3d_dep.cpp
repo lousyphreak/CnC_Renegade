@@ -437,7 +437,7 @@ static void Scan_Aggregate (ChunkLoadClass &cload, StringList &files, const char
 			}
 
 			// Iterate through the sub-objects.
-			uint32_t i;
+			unsigned int i;
 			for (i = 0; i < chunk.SubobjectCount; ++i)
 			{
 				W3dAggregateSubobjectStruct subchunk;

@@ -60,14 +60,13 @@ RectClass							Render2DClass::ScreenResolution( 0,0,0,0 );
 Render2DClass::Render2DClass( TextureClass* tex ) :
 	CoordinateScale( 1, 1 ),
 	CoordinateOffset( 0, 0 ),
-	TracksScreenResolution( false ),
 	Texture(0),
 	ZValue(0),
 	IsHidden( false ),
-	Indices(sizeof(PreAllocatedIndices)/sizeof(uint16_t),PreAllocatedIndices),
+	Indices(sizeof(PreAllocatedIndices)/sizeof(unsigned short),PreAllocatedIndices),
 	Vertices(sizeof(PreAllocatedVertices)/sizeof(Vector2),PreAllocatedVertices),
 	UVCoordinates(sizeof(PreAllocatedUVCoordinates)/sizeof(Vector2),PreAllocatedUVCoordinates),
-	Colors(sizeof(PreAllocatedColors)/sizeof(uint32_t),PreAllocatedColors)
+	Colors(sizeof(PreAllocatedColors)/sizeof(unsigned long),PreAllocatedColors)
 {
 	Set_Texture( tex );	
    Shader = Get_Default_Shader();
@@ -109,18 +108,12 @@ Render2DClass::Get_Default_Shader( void )
 
 void	Render2DClass::Reset(void)
 {
-	if (TracksScreenResolution) {
-		Set_Coordinate_Range(Get_Screen_Resolution());
-	}
-
 	Vertices.Reset_Active();
 	UVCoordinates.Reset_Active();
 	Colors.Reset_Active();
 	Indices.Reset_Active();
 
-	if (!TracksScreenResolution) {
-		Update_Bias(); // Keep the bias updated
-	}
+	Update_Bias(); // Keep the bias updated
 }
 
 void Render2DClass::Set_Texture(TextureClass* tex)
@@ -179,7 +172,6 @@ void	Render2DClass::Set_Coordinate_Range( const RectClass & range )
 	CoordinateScale.Y = -2 / range.Height();
 	CoordinateOffset.X = -(CoordinateScale.X * range.Left) - 1;
 	CoordinateOffset.Y = -(CoordinateScale.Y * range.Top) + 1;
-	TracksScreenResolution = (range == Get_Screen_Resolution());
 
 	Update_Bias();
 }
@@ -265,7 +257,7 @@ void	Render2DClass::Move( const Vector2 & move )	// Move all verts
 
 void	Render2DClass::Force_Alpha( float alpha )		// Force all alphas 
 {
-	uint32_t a = (unsigned)(WWMath::Clamp( alpha, 0, 1 ) * 255.0f);
+	unsigned long a = (unsigned)(WWMath::Clamp( alpha, 0, 1 ) * 255.0f);
 	a <<= 24;
 	for ( int i = 0; i < Colors.Count(); i++ ) {
 		Colors[i] = (Colors[i] & 0x00FFFFFF) | a;
@@ -317,9 +309,9 @@ void	Render2DClass::Internal_Add_Quad_UVs( const RectClass & uv )
 
 }
 
-void	Render2DClass::Internal_Add_Quad_Colors( uint32_t color )
+void	Render2DClass::Internal_Add_Quad_Colors( unsigned long color )
 {
-	uint32_t* colors;
+	unsigned long* colors;
 
 	colors=Colors.Uninitialized_Add();
 	*colors=color;
@@ -331,9 +323,9 @@ void	Render2DClass::Internal_Add_Quad_Colors( uint32_t color )
 	*colors=color;
 }
 
-void	Render2DClass::Internal_Add_Quad_VColors( uint32_t color1, uint32_t color2 )
+void	Render2DClass::Internal_Add_Quad_VColors( unsigned long color1, unsigned long color2 )
 {
-	uint32_t* colors;
+	unsigned long* colors;
 
 	colors=Colors.Uninitialized_Add();
 	*colors=color1;
@@ -346,9 +338,9 @@ void	Render2DClass::Internal_Add_Quad_VColors( uint32_t color1, uint32_t color2 
 
 }
 
-void	Render2DClass::Internal_Add_Quad_HColors( uint32_t color1, uint32_t color2 )
+void	Render2DClass::Internal_Add_Quad_HColors( unsigned long color1, unsigned long color2 )
 {
-	uint32_t* colors;
+	unsigned long* colors;
 
 	colors=Colors.Uninitialized_Add();
 	*colors=color1;
@@ -363,7 +355,7 @@ void	Render2DClass::Internal_Add_Quad_HColors( uint32_t color1, uint32_t color2 
 
 void	Render2DClass::Internal_Add_Quad_Indicies( int start_vert_index, bool backfaced )
 {
-	uint16_t * indices;
+	unsigned short * indices;
 	
 	if (backfaced ^ (CoordinateScale.X * CoordinateScale.Y > 0)) {
 		indices=Indices.Uninitialized_Add();
@@ -398,7 +390,7 @@ void	Render2DClass::Internal_Add_Quad_Indicies( int start_vert_index, bool backf
 }
 
 
-void	Render2DClass::Add_Quad( const Vector2 & v0, const Vector2 & v1, const Vector2 & v2, const Vector2 & v3, const RectClass & uv, uint32_t color )
+void	Render2DClass::Add_Quad( const Vector2 & v0, const Vector2 & v1, const Vector2 & v2, const Vector2 & v3, const RectClass & uv, unsigned long color )
 {
 	Internal_Add_Quad_Indicies( Vertices.Count() );
 	Internal_Add_Quad_Vertices( v0, v1, v2, v3 );
@@ -406,7 +398,7 @@ void	Render2DClass::Add_Quad( const Vector2 & v0, const Vector2 & v1, const Vect
 	Internal_Add_Quad_Colors( color );
 }
 
-void	Render2DClass::Add_Quad_Backfaced( const Vector2 & v0, const Vector2 & v1, const Vector2 & v2, const Vector2 & v3, const RectClass & uv, uint32_t color )
+void	Render2DClass::Add_Quad_Backfaced( const Vector2 & v0, const Vector2 & v1, const Vector2 & v2, const Vector2 & v3, const RectClass & uv, unsigned long color )
 {
 	Internal_Add_Quad_Indicies( Vertices.Count(), true );
 	Internal_Add_Quad_Vertices( v0, v1, v2, v3 );
@@ -414,7 +406,7 @@ void	Render2DClass::Add_Quad_Backfaced( const Vector2 & v0, const Vector2 & v1, 
 	Internal_Add_Quad_Colors( color );
 }
 
-void	Render2DClass::Add_Quad_VGradient( const RectClass & screen, uint32_t top_color, uint32_t bottom_color )
+void	Render2DClass::Add_Quad_VGradient( const RectClass & screen, unsigned long top_color, unsigned long bottom_color )
 {
 	Internal_Add_Quad_Indicies( Vertices.Count() );
 	Internal_Add_Quad_Vertices( screen );
@@ -422,7 +414,7 @@ void	Render2DClass::Add_Quad_VGradient( const RectClass & screen, uint32_t top_c
 	Internal_Add_Quad_VColors( top_color, bottom_color );
 }
 
-void	Render2DClass::Add_Quad_HGradient( const RectClass & screen, uint32_t left_color, uint32_t right_color )
+void	Render2DClass::Add_Quad_HGradient( const RectClass & screen, unsigned long left_color, unsigned long right_color )
 {
 	Internal_Add_Quad_Indicies( Vertices.Count() );
 	Internal_Add_Quad_Vertices( screen );
@@ -431,7 +423,7 @@ void	Render2DClass::Add_Quad_HGradient( const RectClass & screen, uint32_t left_
 }
 
 
-void	Render2DClass::Add_Quad( const RectClass & screen, const RectClass & uv, uint32_t color )
+void	Render2DClass::Add_Quad( const RectClass & screen, const RectClass & uv, unsigned long color )
 {
 	Internal_Add_Quad_Indicies( Vertices.Count() );
 	Internal_Add_Quad_Vertices( screen );
@@ -439,7 +431,7 @@ void	Render2DClass::Add_Quad( const RectClass & screen, const RectClass & uv, ui
 	Internal_Add_Quad_Colors( color );
 }
 
-void	Render2DClass::Add_Quad( const Vector2 & v0, const Vector2 & v1, const Vector2 & v2, const Vector2 & v3, uint32_t color )
+void	Render2DClass::Add_Quad( const Vector2 & v0, const Vector2 & v1, const Vector2 & v2, const Vector2 & v3, unsigned long color )
 {
 	Internal_Add_Quad_Indicies( Vertices.Count() );
 	Internal_Add_Quad_Vertices( v0, v1, v2, v3 );
@@ -447,7 +439,7 @@ void	Render2DClass::Add_Quad( const Vector2 & v0, const Vector2 & v1, const Vect
 	Internal_Add_Quad_Colors( color );
 }
 
-void	Render2DClass::Add_Quad( const RectClass & screen, uint32_t color )
+void	Render2DClass::Add_Quad( const RectClass & screen, unsigned long color )
 {
 	Internal_Add_Quad_Indicies( Vertices.Count() );
 	Internal_Add_Quad_Vertices( screen );
@@ -458,7 +450,7 @@ void	Render2DClass::Add_Quad( const RectClass & screen, uint32_t color )
 /*
 ** Add Tri
 */
-void	Render2DClass::Add_Tri( const Vector2 & v0, const Vector2 & v1, const Vector2 & v2, const Vector2 & uv0, const Vector2 & uv1, const Vector2 & uv2, uint32_t color )
+void	Render2DClass::Add_Tri( const Vector2 & v0, const Vector2 & v1, const Vector2 & v2, const Vector2 & uv0, const Vector2 & uv1, const Vector2 & uv2, unsigned long color )
 {
 	int old_vert_count = Vertices.Count();
 
@@ -492,12 +484,12 @@ void	Render2DClass::Add_Tri( const Vector2 & v0, const Vector2 & v1, const Vecto
 
 }
 
-void	Render2DClass::Add_Line( const Vector2 & a, const Vector2 & b, float width, uint32_t color )
+void	Render2DClass::Add_Line( const Vector2 & a, const Vector2 & b, float width, unsigned long color )
 {
 	Add_Line( a, b, width, RectClass( 0,0,1,1 ), color );
 }
 
-void	Render2DClass::Add_Line( const Vector2 & a, const Vector2 & b, float width, const RectClass & uv, uint32_t color )
+void	Render2DClass::Add_Line( const Vector2 & a, const Vector2 & b, float width, const RectClass & uv, unsigned long color )
 {
 	Vector2	corner_offset = a - b;				// get line relative to b
 	float temp = corner_offset.X;					// Rotate 90
@@ -510,7 +502,7 @@ void	Render2DClass::Add_Line( const Vector2 & a, const Vector2 & b, float width,
 }
 
 
-void	Render2DClass::Add_Rect( const RectClass & rect, float border_width, uint32_t border_color, uint32_t fill_color )
+void	Render2DClass::Add_Rect( const RectClass & rect, float border_width, uint32 border_color, uint32 fill_color )
 {
 	//
 	//	First add the outline
@@ -527,12 +519,12 @@ void	Render2DClass::Add_Rect( const RectClass & rect, float border_width, uint32
 	return ;
 }
 
-void	Render2DClass::Add_Outline( const RectClass & rect, float width, uint32_t color )
+void	Render2DClass::Add_Outline( const RectClass & rect, float width, unsigned long color )
 {
 	Add_Outline( rect, width, RectClass( 0,0,1,1 ), color );
 }
 
-void	Render2DClass::Add_Outline( const RectClass & rect, float width, const RectClass & uv, uint32_t color )
+void	Render2DClass::Add_Outline( const RectClass & rect, float width, const RectClass & uv, unsigned long color )
 {
 	//
 	//	Pretty straight forward, simply add the four side of the rectangle as lines.
@@ -555,17 +547,23 @@ void Render2DClass::Render(void)
 	Matrix4 view,proj;
 	Matrix4 identity(true);
 
-	DX8Wrapper::Get_Transform(TRANSFORM_VIEW,view);
-	DX8Wrapper::Get_Transform(TRANSFORM_PROJECTION,proj);
+	DX8Wrapper::Get_Transform(D3DTS_VIEW,view);
+	DX8Wrapper::Get_Transform(D3DTS_PROJECTION,proj);
 
 	//
 	//	Configure the viewport for entire screen
 	//
 	int width, height, bits;
 	bool windowed;
-	WW3D::Get_Render_Target_Resolution( width, height, bits, windowed );
-	RenderViewportClass viewport(0, 0, static_cast<unsigned>(width), static_cast<unsigned>(height), 0.0f, 1.0f);
-	DX8Wrapper::Set_Viewport(viewport);
+	WW3D::Get_Device_Resolution( width, height, bits, windowed );
+	D3DVIEWPORT8 vp = { 0 };
+	vp.X			= 0;
+	vp.Y			= 0;
+	vp.Width		= width;
+	vp.Height	= height;
+	vp.MinZ		= 0;
+	vp.MaxZ		= 1;
+	DX8Wrapper::Set_Viewport(&vp);
 
 	DX8Wrapper::Set_Shader(Shader);
 	DX8Wrapper::Set_Texture(0,Texture);
@@ -576,20 +574,20 @@ void Render2DClass::Render(void)
 
 	DX8Wrapper::Set_World_Identity();
 	DX8Wrapper::Set_View_Identity();
-	DX8Wrapper::Set_Transform(TRANSFORM_PROJECTION,identity);
+	DX8Wrapper::Set_Transform(D3DTS_PROJECTION,identity);
 
 	DynamicVBAccessClass vb(BUFFER_TYPE_DYNAMIC_DX8,dynamic_fvf_type,Vertices.Count());
 	{
 		DynamicVBAccessClass::WriteLockClass Lock(&vb);
 		const FVFInfoClass &fi=vb.FVF_Info();
-		uint8_t *va=(uint8_t*)Lock.Get_Formatted_Vertex_Array();
+		unsigned char *va=(unsigned char*)Lock.Get_Formatted_Vertex_Array();
 		int i;
 
 		for (i=0; i<Vertices.Count(); i++)
 		{
 			Vector3 temp(Vertices[i].X,Vertices[i].Y,ZValue);
 			*(Vector3*)(va+fi.Get_Location_Offset())=temp;
-			*(uint32_t*)(va+fi.Get_Diffuse_Offset())=Colors[i];
+			*(unsigned int*)(va+fi.Get_Diffuse_Offset())=Colors[i];
 			*(Vector2*)(va+fi.Get_Tex_Offset(0))=UVCoordinates[i];
 			va+=fi.Get_FVF_Size();
 		}		
@@ -598,7 +596,7 @@ void Render2DClass::Render(void)
 	DynamicIBAccessClass ib(BUFFER_TYPE_DYNAMIC_DX8,Indices.Count());
 	{
 		DynamicIBAccessClass::WriteLockClass Lock(&ib);
-		uint16_t *mem=Lock.Get_Index_Array();
+		unsigned short *mem=Lock.Get_Index_Array();
 		for (int i=0; i<Indices.Count(); i++)
 			mem[i]=Indices[i];
 	}	
@@ -607,8 +605,8 @@ void Render2DClass::Render(void)
 	DX8Wrapper::Set_Index_Buffer(ib,0);
 	DX8Wrapper::Draw_Triangles(0,Indices.Count()/3,0,Vertices.Count());	
 
-	DX8Wrapper::Set_Transform(TRANSFORM_VIEW,view);
-	DX8Wrapper::Set_Transform(TRANSFORM_PROJECTION,proj);
+	DX8Wrapper::Set_Transform(D3DTS_VIEW,view);
+	DX8Wrapper::Set_Transform(D3DTS_PROJECTION,proj);
 }
 
 
@@ -663,7 +661,7 @@ void	Render2DTextClass::Set_Font( Font3DInstanceClass *font )
 /*
 **
 */
-void	Render2DTextClass::Draw_Char( WCHAR ch, uint32_t color )
+void	Render2DTextClass::Draw_Char( WCHAR ch, unsigned long color )
 {
 	float char_spacing	= Font->Char_Spacing( ch );
 	float char_height		= Font->Char_Height();
@@ -695,7 +693,7 @@ void	Render2DTextClass::Draw_Char( WCHAR ch, uint32_t color )
 	Cursor.X += char_spacing;
 }
 
-void	Render2DTextClass::Draw_Text( const char * text, uint32_t color )
+void	Render2DTextClass::Draw_Text( const char * text, unsigned long color )
 {
 	WWMEMLOG(MEM_GEOMETRY);
 	WideStringClass wide(0,true);
@@ -703,7 +701,7 @@ void	Render2DTextClass::Draw_Text( const char * text, uint32_t color )
 	Draw_Text( wide, color );
 }
 
-void	Render2DTextClass::Draw_Text( const WCHAR * text, uint32_t color )
+void	Render2DTextClass::Draw_Text( const WCHAR * text, unsigned long color )
 {
 	WWMEMLOG(MEM_GEOMETRY);
 
@@ -740,7 +738,7 @@ void	Render2DTextClass::Draw_Text( const WCHAR * text, uint32_t color )
 	}
 }
 
-void	Render2DTextClass::Draw_Block( const RectClass & screen, uint32_t color )
+void	Render2DTextClass::Draw_Block( const RectClass & screen, unsigned long color )
 {
 	Internal_Add_Quad_Indicies( Vertices.Count() );
 	Internal_Add_Quad_Vertices( screen );
@@ -766,3 +764,4 @@ Vector2	Render2DTextClass::Get_Text_Extents( const WCHAR * text )
 
 	return extent;
 }
+

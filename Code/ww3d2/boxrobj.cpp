@@ -458,14 +458,14 @@ void BoxRenderObjClass::render_box(RenderInfoClass & rinfo,const Vector3 & cente
 		/*
 		** Dump the box vertices into the sorting dynamic vertex buffer. 
 		*/
-		uint32_t color = DX8Wrapper::Convert_Color(Color,Opacity);
+		DWORD color = DX8Wrapper::Convert_Color(Color,Opacity);
 		
 		int buffer_type = BUFFER_TYPE_DYNAMIC_DX8;
 
 		DynamicVBAccessClass vbaccess(buffer_type,dynamic_fvf_type,NUM_BOX_VERTS);
 		{
 			DynamicVBAccessClass::WriteLockClass lock(&vbaccess);
-			//uint8_t *vb=(uint8_t *) lock.Get_Vertex_Array();
+			//unsigned char *vb=(unsigned char *) lock.Get_Vertex_Array();
 			VertexFormatXYZNDUV2* vb=lock.Get_Formatted_Vertex_Array();
 
 			for (int i=0; i<NUM_BOX_VERTS; i++) {
@@ -493,7 +493,7 @@ void BoxRenderObjClass::render_box(RenderInfoClass & rinfo,const Vector3 & cente
 		DynamicIBAccessClass ibaccess(buffer_type,NUM_BOX_FACES*3);
 		{
 			DynamicIBAccessClass::WriteLockClass lock(&ibaccess);
-			uint16_t * indices = lock.Get_Index_Array();
+			unsigned short * indices = lock.Get_Index_Array();
 			for (int i=0; i<NUM_BOX_FACES; i++) {
 				indices[3*i] = _BoxFaces[i][0];
 				indices[3*i+1] = _BoxFaces[i][1];

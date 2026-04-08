@@ -41,7 +41,7 @@
 #include <stdio.h>
 #include <D3dx8core.h>
 #include "dx8wrapper.h"
-#include "TARGA.H"
+#include "targa.h"
 #include <nstrdup.h>
 #include "w3d_file.h"
 #include "assetmgr.h"
@@ -502,7 +502,7 @@ void TextureClass::Set_Texture_Name(const char * name)
 
 // ----------------------------------------------------------------------------
 
-uint32_t TextureClass::Get_Mip_Level_Count(void)
+unsigned int TextureClass::Get_Mip_Level_Count(void)
 {
 	if (!D3DTexture) {
 		WWASSERT_PRINT(0, "Get_Mip_Level_Count: D3DTexture is NULL!\n");
@@ -514,7 +514,7 @@ uint32_t TextureClass::Get_Mip_Level_Count(void)
 
 // ----------------------------------------------------------------------------
 
-SurfaceClass *TextureClass::Get_Surface_Level(uint32_t level)
+SurfaceClass *TextureClass::Get_Surface_Level(unsigned int level)
 {
 	if (!D3DTexture) {
 		WWASSERT_PRINT(0, "Get_Surface_Level: D3DTexture is NULL!\n");
@@ -530,7 +530,7 @@ SurfaceClass *TextureClass::Get_Surface_Level(uint32_t level)
 
 // ----------------------------------------------------------------------------
 
-IDirect3DSurface8 *TextureClass::Get_D3D_Surface_Level(uint32_t level)
+IDirect3DSurface8 *TextureClass::Get_D3D_Surface_Level(unsigned int level)
 {
 	if (!D3DTexture) {
 		WWASSERT_PRINT(0, "Get_D3D_Surface_Level: D3DTexture is NULL!\n");
@@ -544,7 +544,7 @@ IDirect3DSurface8 *TextureClass::Get_D3D_Surface_Level(uint32_t level)
 
 // ----------------------------------------------------------------------------
 
-uint32_t TextureClass::Get_Priority(void)
+unsigned int TextureClass::Get_Priority(void)
 {
 	if (!D3DTexture) {
 		WWASSERT_PRINT(0, "Get_Priority: D3DTexture is NULL!\n");
@@ -556,7 +556,7 @@ uint32_t TextureClass::Get_Priority(void)
 
 // ----------------------------------------------------------------------------
 
-uint32_t TextureClass::Set_Priority(uint32_t priority)
+unsigned int TextureClass::Set_Priority(unsigned int priority)
 {
 	if (!D3DTexture) {
 		WWASSERT_PRINT(0, "Set_Priority: D3DTexture is NULL!\n");
@@ -590,7 +590,7 @@ unsigned TextureClass::Get_Reduction() const
 
 // ----------------------------------------------------------------------------
 
-void TextureClass::Apply(uint32_t stage)
+void TextureClass::Apply(unsigned int stage)
 {
 	if (!Initialized) {
 		Init();
@@ -637,7 +637,7 @@ void TextureClass::Apply(uint32_t stage)
 
 // ----------------------------------------------------------------------------
 
-void TextureClass::Apply_Null(uint32_t stage)
+void TextureClass::Apply_Null(unsigned int stage)
 {
 	// This function sets the render states for a "NULL" texture
 	DX8Wrapper::Set_DX8_Texture(stage, NULL);

@@ -41,6 +41,7 @@
 #include "vertmaterial.h"
 #include "realcrc.h"
 #include	"dx8wrapper.h"
+#include "dx8caps.h"
 #include "meshmdl.h"
 
 
@@ -160,7 +161,7 @@ bool UVBufferClass::Is_Equal_To(const UVBufferClass & that)
 
 void UVBufferClass::Update_CRC(void)
 {
-	CRC = CRC_Memory((uint8_t *)Get_Array(),Get_Count() * sizeof(Vector2));
+	CRC = CRC_Memory((unsigned char *)Get_Array(),Get_Count() * sizeof(Vector2));
 }
 
 
@@ -599,7 +600,7 @@ void MeshMatDescClass::Install_UV_Array(int pass,int stage,Vector2 * uvs,int cou
 	/*
 	** Compute the crc of this uv array
 	*/
-	uint32_t crc = CRC_Memory((uint8_t *)uvs,count * sizeof(Vector2));
+	unsigned int crc = CRC_Memory((unsigned char *)uvs,count * sizeof(Vector2));
 
 	/*
 	** See if there is an existing uv-array that matches the one just loaded
@@ -849,7 +850,6 @@ void MeshMatDescClass::Post_Load_Process(bool lighting_enabled,MeshModelClass * 
 	** HACK: Kill BUMPENV passes on hardware that doesn't support BUMPENV
 	** HACK: Set lighting to false on all passes if all passes are of type NO DIFFUSE, NO AMBIENT, YES EMISSIVE
 	*/
-	int pass = 0;
 	for (pass=0; pass<PassCount; pass++) {
 		bool kill_pass = false;
 

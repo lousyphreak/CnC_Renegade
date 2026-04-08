@@ -36,9 +36,9 @@
 
 
 #include "soundrobj.h"
-#include "AudibleSound.h"
-#include "Sound3D.h"
-#include "WWAudio.h"
+#include "audiblesound.h"
+#include "sound3d.h"
+#include "wwaudio.h"
 #include "ffactory.h"
 #include "wwfile.h"
 #include "chunkio.h"
@@ -339,7 +339,7 @@ SoundRenderObjClass::Get_Sound (void) const
 //
 //////////////////////////////////////////////////////////////////////////////
 void
-SoundRenderObjClass::Set_Flag (uint32_t flag, bool onoff)
+SoundRenderObjClass::Set_Flag (uint32 flag, bool onoff)
 {
 	Flags &= ~flag;
 	if (onoff) {

@@ -40,7 +40,6 @@
 #include "htree.h"
 #include "vp.h"
 #include "visrasterizer.h"
-#include "dx8fvf.h"
 #include "dx8polygonrenderer.h"
 #include "bwrender.h"
 #include "camera.h"
@@ -56,7 +55,7 @@
 static DynamicVectorClass<Vector3>	_TempVertexBuffer;
 static DynamicVectorClass<Vector3>	_TempNormalBuffer;
 static DynamicVectorClass<Vector4>	_TempTransformedVertexBuffer;
-static DynamicVectorClass<uint32_t> _TempClipFlagBuffer;
+static DynamicVectorClass<unsigned long> _TempClipFlagBuffer;
 
 
 /*
@@ -263,7 +262,7 @@ void MeshModelClass::Shadow_Render(SpecialRenderInfoClass & rinfo,const Matrix3D
 		for (int a=0;a<VertexCount;++a,++optr) *tptr++=Vector2((*optr)[0],-(*optr)[1]);
 
 		rinfo.BWRenderer->Set_Vertex_Locations(reinterpret_cast<Vector2*>(transf_ptr),VertexCount);
-		rinfo.BWRenderer->Render_Triangles(reinterpret_cast<const uint32_t*>(Poly->Get_Array()),PolyCount*3);
+		rinfo.BWRenderer->Render_Triangles(reinterpret_cast<const unsigned long*>(Poly->Get_Array()),PolyCount*3);
 		return;
 	}
 }
@@ -272,7 +271,7 @@ void MeshModelClass::Shadow_Render(SpecialRenderInfoClass & rinfo,const Matrix3D
 void MeshModelClass::get_deformed_vertices(Vector3 *dst_vert,const HTreeClass * htree)
 {
 	Vector3 * src_vert = Vertex->Get_Array();
-	uint16_t * bonelink = VertexBoneLink->Get_Array();
+	uint16 * bonelink = VertexBoneLink->Get_Array();
 	for (int vi = 0; vi < Get_Vertex_Count(); vi++) {
 		const Matrix3D & tm = htree->Get_Transform(bonelink[vi]);
 		Matrix3D::Transform_Vector(tm, src_vert[vi], &(dst_vert[vi]));
@@ -291,7 +290,7 @@ void MeshModelClass::get_deformed_vertices(Vector3 *dst_vert, Vector3 *dst_norm,
 #else
 	Vector3 * src_norm = VertexNorm->Get_Array();
 #endif
-	uint16_t * bonelink = VertexBoneLink->Get_Array();
+	uint16 * bonelink = VertexBoneLink->Get_Array();
 
 	for (vi = 0; vi < vertex_count;) {
 		const Matrix3D & tm = htree->Get_Transform(bonelink[vi]);
@@ -330,7 +329,7 @@ void MeshModelClass::compose_deformed_vertex_buffer(
 #else
 	Vector3 * src_norm = VertexNorm->Get_Array();
 #endif
-	uint16_t * bonelink = VertexBoneLink->Get_Array();
+	uint16 * bonelink = VertexBoneLink->Get_Array();
 
 	for (vi = 0; vi < vertex_count;) {
 		const Matrix3D & tm = htree->Get_Transform(bonelink[vi]);
@@ -379,15 +378,14 @@ void MeshModelClass::get_deformed_screenspace_vertices(Vector4 *dst_vert,const R
 	int vertex_count=Get_Vertex_Count();
 	
 	if (Get_Flag(SKIN) && VertexBoneLink && htree) {
-		uint16_t * bonelink = VertexBoneLink->Get_Array();
+		uint16 * bonelink = VertexBoneLink->Get_Array();
 		for (int vi = 0; vi < vertex_count;) {
 			int idx=bonelink[vi];
-			int cnt = vi;
 
 			Matrix4 tm = prj * htree->Get_Transform(idx);
 
 			// Count equal matrices (the vertices should be pre-sorted by matrices they use)
-			for (cnt = vi; cnt < vertex_count; cnt++) if (idx!=bonelink[cnt]) break;
+			for (int cnt = vi; cnt < vertex_count; cnt++) if (idx!=bonelink[cnt]) break;
 
 			// Transform to screenspace (x,y,z,w)
 			VectorProcessorClass::Transform(
@@ -516,11 +514,11 @@ struct TriangleSide
 
 // Get_Hash_Value specialization for Vector3.
 
-template <> inline uint32_t HashTemplateKeyClass<Vector3>::Get_Hash_Value(const Vector3& location)
+template <> inline unsigned int HashTemplateKeyClass<Vector3>::Get_Hash_Value(const Vector3& location)
 {
-	const uint8_t* buffer=(const uint8_t*)&location;
-	uint32_t hval=0;
-	for (uint32_t a=0;a<sizeof(Vector3);++a) {
+	const unsigned char* buffer=(const unsigned char*)&location;
+	unsigned int hval=0;
+	for (unsigned int a=0;a<sizeof(Vector3);++a) {
 		hval+=37*hval+buffer[a];
 	}
 	return hval;
@@ -528,11 +526,11 @@ template <> inline uint32_t HashTemplateKeyClass<Vector3>::Get_Hash_Value(const 
 
 // Get_Hash_Value specialization for TriangleSide.
 
-template <> inline uint32_t HashTemplateKeyClass<TriangleSide>::Get_Hash_Value(const TriangleSide& side)
+template <> inline unsigned int HashTemplateKeyClass<TriangleSide>::Get_Hash_Value(const TriangleSide& side)
 {
-	const uint8_t* buffer=(const uint8_t*)&side;
-	uint32_t hval=0;
-	for (uint32_t a=0;a<sizeof(TriangleSide);++a) {
+	const unsigned char* buffer=(const unsigned char*)&side;
+	unsigned int hval=0;
+	for (unsigned int a=0;a<sizeof(TriangleSide);++a) {
 		hval+=37*hval+buffer[a];
 	}
 	return hval;
@@ -540,8 +538,8 @@ template <> inline uint32_t HashTemplateKeyClass<TriangleSide>::Get_Hash_Value(c
 
 struct SideIndexInfo
 {
-	uint16_t vidx1;
-	uint16_t vidx2;
+	unsigned short vidx1;
+	unsigned short vidx2;
 	unsigned polygon_index;
 	SideIndexInfo() {}
 	SideIndexInfo(int i) { WWASSERT(0); }
@@ -762,8 +760,7 @@ void MeshModelClass::Init_For_NPatch_Rendering()
 	DuplicateLocationHash.Remove_All();
 	SideHash.Remove_All();
 
-	unsigned i = 0;
-	for (i=0;i<vertex_count;++i) {
+	for (unsigned i=0;i<vertex_count;++i) {
 		if (LocationHash.Exists(locations[i])) {
 			if (!DuplicateLocationHash.Exists(locations[i])) {
 				DuplicateLocationHash.Insert(locations[i],i);

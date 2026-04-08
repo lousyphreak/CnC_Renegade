@@ -107,8 +107,8 @@ int						shatter=0;
 
 // Foward declarations of functions included in this code module:
 ATOM						MyRegisterClass(HINSTANCE hInstance);
-intptr_t CALLBACK		WndProc(HWND, uint32_t, uintptr_t, intptr_t);
-intptr_t CALLBACK		About(HWND, uint32_t, uintptr_t, intptr_t);
+LRESULT CALLBACK		WndProc(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK		About(HWND, UINT, WPARAM, LPARAM);
 void						Enable_Alternate_Materials(RenderObjClass * model,bool onoff);
 void						Render();
 void						Render2();
@@ -465,7 +465,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 
 // ----------------------------------------------------------------------------
 //
-//  FUNCTION: WndProc(HWND, unsigned, uint16_t, int32_t)
+//  FUNCTION: WndProc(HWND, unsigned, WORD, LONG)
 //
 //  PURPOSE:  Processes messages for the main window.
 //
@@ -476,7 +476,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //
 // ----------------------------------------------------------------------------
 
-intptr_t CALLBACK WndProc(HWND hWnd, uint32_t message, uintptr_t wParam, intptr_t lParam)
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	int wmId, wmEvent;
 	PAINTSTRUCT ps;
@@ -609,7 +609,7 @@ intptr_t CALLBACK WndProc(HWND hWnd, uint32_t message, uintptr_t wParam, intptr_
 
 
 // Mesage handler for about box.
-intptr_t CALLBACK About(HWND hDlg, uint32_t message, uintptr_t wParam, intptr_t lParam)
+LRESULT CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
 	{
@@ -866,7 +866,7 @@ MaterialPassClass *	Create_Bump_Material_Pass(void)
 	Vector3 light_vector(0.0f,0.0f,1.0f);
 
 	// Store the light vector, so it can be referenced in D3DTA_TFACTOR
-	uint32_t dwFactor = VectortoRGBA( light_vector, 0.0f );
+	DWORD dwFactor = VectortoRGBA( light_vector, 0.0f );
 	DX8Wrapper::Set_DX8_Render_State( D3DRS_TEXTUREFACTOR, dwFactor );
 
 	TextureClass * texture = WW3DAssetManager::Get_Instance()->Get_Texture(

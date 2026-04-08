@@ -297,7 +297,7 @@ int TexProjectClass::Get_Texture_Size(void)
  * HISTORY:                                                                                    *
  *   1/4/00     gth : Created.                                                                 *
  *=============================================================================================*/
-void TexProjectClass::Set_Flag(uint32_t flag,bool onoff)	
+void TexProjectClass::Set_Flag(uint32 flag,bool onoff)	
 { 
 	if (onoff) { 
 		Flags |= flag; 
@@ -321,7 +321,7 @@ void TexProjectClass::Set_Flag(uint32_t flag,bool onoff)
  * HISTORY:                                                                                    *
  *   1/4/00     gth : Created.                                                                 *
  *=============================================================================================*/
-bool TexProjectClass::Get_Flag(uint32_t flag) const
+bool TexProjectClass::Get_Flag(uint32 flag) const
 { 
 	return (Flags & flag) == flag; 
 }
@@ -1148,7 +1148,7 @@ bool TexProjectClass::Compute_Texture(RenderObjClass * model,SpecialRenderInfoCl
 	/*
 	** Render the object with the BW Renderer into our color surface
 	*/
-	BWRenderClass bwr((uint8_t*)shadow_surface->getDataPtr(),tex_size);
+	BWRenderClass bwr((unsigned char*)shadow_surface->getDataPtr(),tex_size);
 	bwr.Fill(0xff);
 	context->BWRenderer = &bwr;
 	model->Special_Render(*context);

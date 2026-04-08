@@ -37,8 +37,6 @@
 
 #if defined(_MSC_VER)
 #pragma once
-
-#include <cstdint>
 #endif
 
 #ifndef RENDOBJ_H
@@ -186,7 +184,7 @@ public:
 
 	RenderObjClass(void);
 	RenderObjClass(const RenderObjClass & src);
-	RenderObjClass & operator = (const RenderObjClass &);
+	RenderObjClass & RenderObjClass::operator = (const RenderObjClass &);
 	virtual ~RenderObjClass(void)																					{ }
 
 
@@ -369,7 +367,7 @@ public:
 	// Render Object Interface - Decals
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	virtual void					Create_Decal(DecalGeneratorClass * generator)						{ }
-	virtual void					Delete_Decal(uint32_t decal_id)												{ }
+	virtual void					Delete_Decal(uint32 decal_id)												{ }
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Render Object Interface - Attributes, Options, Properties, etc
@@ -461,7 +459,7 @@ protected:
 		DEFAULT_BITS =					COLLISION_TYPE_ALL | IS_NOT_HIDDEN | IS_NOT_ANIMATION_HIDDEN,
 	};
 
-	mutable uint32_t		Bits;
+	mutable unsigned long		Bits;
 	Matrix3D							Transform;
 	mutable SphereClass			CachedBoundingSphere;
 	mutable AABoxClass			CachedBoundingBox;

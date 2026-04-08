@@ -38,8 +38,6 @@
 
 #if defined(_MSC_VER)
 #pragma once
-
-#include <cstdint>
 #endif
 
 #ifndef DECALMSH_H
@@ -93,13 +91,13 @@ public:
 
 	virtual bool											Create_Decal(	DecalGeneratorClass * generator,
 																					const OBBoxClass & localbox,
-																					SimpleDynVecClass<uint32_t> & apt,
+																					SimpleDynVecClass<uint32> & apt,
 																					const DynamicVectorClass<Vector3> * world_vertex_locs = 0) = 0;
 
-	virtual bool											Delete_Decal(uint32_t id) = 0;
+	virtual bool											Delete_Decal(uint32 id) = 0;
 
 	virtual int												Decal_Count(void) = 0;
-	virtual uint32_t											Get_Decal_ID(int decal_index) = 0;
+	virtual uint32											Get_Decal_ID(int decal_index) = 0;
 
 	MeshClass *												Peek_Parent(void);
 	DecalSystemClass *									Peek_System(void);
@@ -136,13 +134,13 @@ public:
 
 	virtual bool											Create_Decal(	DecalGeneratorClass * generator,
 																					const OBBoxClass & localbox,
-																					SimpleDynVecClass<uint32_t> & apt,
+																					SimpleDynVecClass<uint32> & apt,
 																					const DynamicVectorClass<Vector3> * world_vertex_locs = 0);
 
-	virtual bool											Delete_Decal(uint32_t id);
+	virtual bool											Delete_Decal(uint32 id);
 
 	int														Decal_Count(void);
-	uint32_t													Get_Decal_ID(int decal_index);
+	uint32													Get_Decal_ID(int decal_index);
 
 protected:
 
@@ -172,11 +170,11 @@ protected:
 	*/
 	struct DecalStruct
 	{	
-		uint32_t	DecalID;
-		uint16_t	VertexStartIndex;
-		uint16_t	VertexCount;
-		uint16_t	FaceStartIndex;
-		uint16_t	FaceCount;
+		uint32	DecalID;
+		uint16	VertexStartIndex;
+		uint16	VertexCount;
+		uint16	FaceStartIndex;
+		uint16	FaceCount;
 	};
 	
 	SimpleDynVecClass<DecalStruct>					Decals;
@@ -201,13 +199,13 @@ public:
 
 	virtual bool											Create_Decal(	DecalGeneratorClass * generator,
 																					const OBBoxClass & localbox,
-																					SimpleDynVecClass<uint32_t> & apt,
+																					SimpleDynVecClass<uint32> & apt,
 																					const DynamicVectorClass<Vector3> * world_vertex_locs);
 
-	virtual bool											Delete_Decal(uint32_t id);
+	virtual bool											Delete_Decal(uint32 id);
 
 	int														Decal_Count(void);
-	uint32_t													Get_Decal_ID(int decal_index);
+	uint32													Get_Decal_ID(int decal_index);
 
 protected:
 
@@ -221,7 +219,7 @@ protected:
 	/*
 	** Indirected vertex indices (for copying dynamically updated mesh geometry)
 	*/
-	SimpleDynVecClass<uint32_t> 							ParentVertexIndices;
+	SimpleDynVecClass<uint32> 							ParentVertexIndices;
 
 	/*
 	** Materials
@@ -236,11 +234,11 @@ protected:
 	*/
 	struct DecalStruct
 	{	
-		uint32_t	DecalID;
-		uint16_t	VertexStartIndex;
-		uint16_t	VertexCount;
-		uint16_t	FaceStartIndex;
-		uint16_t	FaceCount;
+		uint32	DecalID;
+		uint16	VertexStartIndex;
+		uint16	VertexCount;
+		uint16	FaceStartIndex;
+		uint16	FaceCount;
 	};
 	
 	SimpleDynVecClass<DecalStruct>					Decals;
@@ -271,7 +269,7 @@ inline int RigidDecalMeshClass::Decal_Count(void)
 	return Decals.Count();
 }
 
-inline uint32_t RigidDecalMeshClass::Get_Decal_ID(int decal_index)
+inline uint32 RigidDecalMeshClass::Get_Decal_ID(int decal_index)
 {
 	return Decals[decal_index].DecalID;
 }
@@ -286,7 +284,7 @@ inline int SkinDecalMeshClass::Decal_Count(void)
 	return Decals.Count();
 }
 
-inline uint32_t SkinDecalMeshClass::Get_Decal_ID(int decal_index)
+inline uint32 SkinDecalMeshClass::Get_Decal_ID(int decal_index)
 {
 	return Decals[decal_index].DecalID;
 }

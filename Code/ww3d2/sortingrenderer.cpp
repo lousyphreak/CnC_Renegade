@@ -31,21 +31,21 @@ bool SortingRendererClass::_EnableTriangleDraw=true;
 
 struct ShortVectorIStruct
 {
-	uint16_t i;
-	uint16_t j;
-	uint16_t k;
+	unsigned short i;
+	unsigned short j;
+	unsigned short k;
 
-	ShortVectorIStruct(uint16_t i_,uint16_t j_,uint16_t k_) : i(i_),j(j_),k(k_) {}
+	ShortVectorIStruct(unsigned short i_,unsigned short j_,unsigned short k_) : i(i_),j(j_),k(k_) {}
 	ShortVectorIStruct() {}
 };
 
 struct TempIndexStruct
 {
 	ShortVectorIStruct tri;
-	uint16_t idx;
+	unsigned short idx;
 
 	TempIndexStruct() {}
-	TempIndexStruct(const ShortVectorIStruct& tri_, uint16_t idx_)
+	TempIndexStruct(const ShortVectorIStruct& tri_, unsigned short idx_)
 		:
 		tri(tri_),
 		idx(idx_)
@@ -187,10 +187,10 @@ struct SortingNodeStruct : DLNodeClass<SortingNodeStruct>
 	SphereClass bounding_sphere;
 
 	Vector3 transformed_center;
-	uint16_t start_index;			// First index used in the ib
-	uint16_t polygon_count;			// Polygon count to process (3 indices = one polygon)
-	uint16_t min_vertex_index;		// First index used in the vb
-	uint16_t vertex_count;			// Number of vertices used in vb
+	unsigned short start_index;			// First index used in the ib
+	unsigned short polygon_count;			// Polygon count to process (3 indices = one polygon)
+	unsigned short min_vertex_index;		// First index used in the vb
+	unsigned short vertex_count;			// Number of vertices used in vb
 };
 
 static DLListClass<SortingNodeStruct> sorted_list;
@@ -297,10 +297,10 @@ static ShortVectorIStruct* Get_Polygon_Index_Array(unsigned count)
 
 void SortingRendererClass::Insert_Triangles(
 	const SphereClass& bounding_sphere,
-	uint16_t start_index, 
-	uint16_t polygon_count,
-	uint16_t min_vertex_index,
-	uint16_t vertex_count)
+	unsigned short start_index, 
+	unsigned short polygon_count,
+	unsigned short min_vertex_index,
+	unsigned short vertex_count)
 {
 	if (!WW3D::Is_Sorting_Enabled()) {
 		DX8Wrapper::Draw_Triangles(start_index,polygon_count,min_vertex_index,vertex_count);
@@ -352,7 +352,7 @@ void SortingRendererClass::Insert_Triangles(
 	if (!node) sorted_list.Add_Tail(state);
 
 #ifdef WWDEBUG
-	uint16_t* indices=NULL;
+	unsigned short* indices=NULL;
 	SortingIndexBufferClass* index_buffer=static_cast<SortingIndexBufferClass*>(state->sorting_state.index_buffer);
 	WWASSERT(index_buffer);
 	indices=index_buffer->index_buffer;
@@ -361,9 +361,9 @@ void SortingRendererClass::Insert_Triangles(
 	indices+=state->sorting_state.iba_offset;
 
 	for (int i=0;i<state->polygon_count;++i) {
-		uint16_t idx1=indices[i*3]-state->min_vertex_index;
-		uint16_t idx2=indices[i*3+1]-state->min_vertex_index;
-		uint16_t idx3=indices[i*3+2]-state->min_vertex_index;
+		unsigned short idx1=indices[i*3]-state->min_vertex_index;
+		unsigned short idx2=indices[i*3+1]-state->min_vertex_index;
+		unsigned short idx3=indices[i*3+2]-state->min_vertex_index;
 		WWASSERT(idx1<state->vertex_count);
 		WWASSERT(idx2<state->vertex_count);
 		WWASSERT(idx3<state->vertex_count);
@@ -378,10 +378,10 @@ void SortingRendererClass::Insert_Triangles(
 // ----------------------------------------------------------------------------
 
 void SortingRendererClass::Insert_Triangles(
-	uint16_t start_index, 
-	uint16_t polygon_count,
-	uint16_t min_vertex_index,
-	uint16_t vertex_count)
+	unsigned short start_index, 
+	unsigned short polygon_count,
+	unsigned short min_vertex_index,
+	unsigned short vertex_count)
 {
 	SphereClass sphere(Vector3(0.0f,0.0f,0.0f),0.0f);
 	Insert_Triangles(sphere,start_index,polygon_count,min_vertex_index,vertex_count);
@@ -531,7 +531,7 @@ void SortingRendererClass::Flush_Sorting_Pool()
 				*dest_verts++=*src_verts;
 			}
 
-			uint16_t* indices=NULL;
+			unsigned short* indices=NULL;
 			SortingIndexBufferClass* index_buffer=static_cast<SortingIndexBufferClass*>(state->sorting_state.index_buffer);
 			WWASSERT(index_buffer);
 			indices=index_buffer->index_buffer;
@@ -540,9 +540,9 @@ void SortingRendererClass::Flush_Sorting_Pool()
 			indices+=state->sorting_state.iba_offset;
 
 			for (i=0;i<state->polygon_count;++i) {
-				uint16_t idx1=indices[i*3]-state->min_vertex_index;
-				uint16_t idx2=indices[i*3+1]-state->min_vertex_index;
-				uint16_t idx3=indices[i*3+2]-state->min_vertex_index;
+				unsigned short idx1=indices[i*3]-state->min_vertex_index;
+				unsigned short idx2=indices[i*3+1]-state->min_vertex_index;
+				unsigned short idx3=indices[i*3+2]-state->min_vertex_index;
 				WWASSERT(idx1<state->vertex_count);
 				WWASSERT(idx2<state->vertex_count);
 				WWASSERT(idx3<state->vertex_count);

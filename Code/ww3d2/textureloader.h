@@ -19,9 +19,9 @@
 #ifndef TEXTURELOADER_H
 #define TEXTURELOADER_H
 
+#if defined(_MSC_VER)
 #pragma once
-
-#include <cstdint>
+#endif
 
 #include "always.h"
 #include "texture.h"
@@ -29,7 +29,6 @@
 class StringClass;
 struct IDirect3DTexture8;
 class TextureLoadTaskClass;
-class TextureLoadTaskListClass;
 
 class TextureLoader
 {
@@ -187,13 +186,13 @@ class TextureLoadTaskClass : public TextureLoadTaskListNodeClass
 		StateType				Get_State					(void) const		{ return State;			}
 
 		WW3DFormat				Get_Format					(void) const		{ return Format;			}
-		uint32_t			Get_Width					(void) const		{ return Width;			}
-		uint32_t			Get_Height					(void) const		{ return Height;			}
-		uint32_t			Get_Mip_Level_Count		(void) const		{ return MipLevelCount; }
-		uint32_t			Get_Reduction				(void) const		{ return Reduction;		}
+		unsigned int			Get_Width					(void) const		{ return Width;			}
+		unsigned int			Get_Height					(void) const		{ return Height;			}
+		unsigned int			Get_Mip_Level_Count		(void) const		{ return MipLevelCount; }
+		unsigned int			Get_Reduction				(void) const		{ return Reduction;		}
 
-		uint8_t *		Get_Locked_Surface_Ptr	(uint32_t level);
-		uint32_t			Get_Locked_Surface_Pitch(uint32_t level) const;
+		unsigned char *		Get_Locked_Surface_Ptr	(unsigned int level);
+		unsigned int			Get_Locked_Surface_Pitch(unsigned int level) const;
 
 		TextureClass *			Peek_Texture				(void)				{ return Texture;			}
 		IDirect3DTexture8	*	Peek_D3D_Texture			(void)				{ return D3DTexture;		}
@@ -224,13 +223,13 @@ class TextureLoadTaskClass : public TextureLoadTaskListNodeClass
 		IDirect3DTexture8 *	D3DTexture;
 		WW3DFormat				Format;
 
-		uint32_t			Width;
-		uint32_t			Height;
-		uint32_t			MipLevelCount;
-		uint32_t			Reduction;
+		unsigned int			Width;
+		unsigned	int			Height;
+		unsigned	int			MipLevelCount;
+		unsigned	int			Reduction;
 
-		uint8_t *		LockedSurfacePtr[TextureClass::MIP_LEVELS_MAX];
-		uint32_t			LockedSurfacePitch[TextureClass::MIP_LEVELS_MAX];
+		unsigned char *		LockedSurfacePtr[TextureClass::MIP_LEVELS_MAX];
+		unsigned	int			LockedSurfacePitch[TextureClass::MIP_LEVELS_MAX];
 
 		TaskType					Type;
 		PriorityType			Priority;

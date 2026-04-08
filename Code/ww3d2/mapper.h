@@ -36,8 +36,6 @@
 
 #if defined(_MSC_VER)
 #pragma once
-
-#include <cstdint>
 #endif
 
 #ifndef VERTEXMAPPER_H
@@ -85,7 +83,7 @@ class TextureMapperClass : public RefCountClass
 			MAPPER_ID_BUMPENV,
 		};
 
-		TextureMapperClass(uint32_t stage=0);
+		TextureMapperClass(unsigned int stage=0);
 		TextureMapperClass(const TextureMapperClass & src) : Stage(src.Stage) { }
 
 		virtual void Reset(void) { }
@@ -100,7 +98,7 @@ class TextureMapperClass : public RefCountClass
 		int										Get_Stage(void) const { return Stage; }
 
 	protected:
-		uint32_t							Stage;
+		unsigned int							Stage;
 };
 
 /*
@@ -110,9 +108,9 @@ class TextureMapperClass : public RefCountClass
 class ScaleTextureMapperClass : public TextureMapperClass
 {
 public:	
-	ScaleTextureMapperClass(uint32_t stage);
-	ScaleTextureMapperClass(const Vector2 &scale, uint32_t stage);
-	ScaleTextureMapperClass(const INIClass &ini, const char *section, uint32_t stage);
+	ScaleTextureMapperClass(unsigned int stage);
+	ScaleTextureMapperClass(const Vector2 &scale, unsigned int stage);
+	ScaleTextureMapperClass(const INIClass &ini, const char *section, unsigned int stage);
 	ScaleTextureMapperClass(const ScaleTextureMapperClass & src);
 
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_SCALE;}
@@ -132,8 +130,8 @@ protected:
 class LinearOffsetTextureMapperClass : public ScaleTextureMapperClass
 {
 public:
-	LinearOffsetTextureMapperClass(const Vector2 &offset_per_sec, const Vector2 &scale, uint32_t stage);
-	LinearOffsetTextureMapperClass(const INIClass &ini, const char *section, uint32_t stage);
+	LinearOffsetTextureMapperClass(const Vector2 &offset_per_sec, const Vector2 &scale, unsigned int stage);
+	LinearOffsetTextureMapperClass(const INIClass &ini, const char *section, unsigned int stage);
 	LinearOffsetTextureMapperClass(const LinearOffsetTextureMapperClass & src);
 
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_LINEAR_OFFSET;}
@@ -156,7 +154,7 @@ public:
 protected:
 	Vector2			CurrentUVOffset;		// Current UV offset
 	Vector2			UVOffsetDeltaPerMS;	// Amount to increase offset each millisec
-	uint32_t	LastUsedSyncTime;		// Sync time last used to update offset
+	unsigned int	LastUsedSyncTime;		// Sync time last used to update offset
 };
 
 /*
@@ -166,8 +164,8 @@ protected:
 class GridTextureMapperClass : public TextureMapperClass
 {
 public:
-	GridTextureMapperClass(float fps, uint32_t gridwidth_log2, uint32_t stage);
-	GridTextureMapperClass(const INIClass &ini, const char *section, uint32_t stage);
+	GridTextureMapperClass(float fps, unsigned int gridwidth_log2, unsigned int stage);
+	GridTextureMapperClass(const INIClass &ini, const char *section, unsigned int stage);
 	GridTextureMapperClass(const GridTextureMapperClass & src);
 
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_GRID;}
@@ -180,27 +178,27 @@ public:
 
 	virtual bool Is_Time_Variant(void) { return true; }
 
-	void Set_Frame(uint32_t frame) { CurrentFrame=frame; }
+	void Set_Frame(unsigned int frame) { CurrentFrame=frame; }
 
 	void Set_Frame_Per_Second(float fps);
 	
 protected:	
 	// Utility functions
-	void initialize(float fps, uint32_t gridwidth_log2);
+	void initialize(float fps, unsigned int gridwidth_log2);
 	void update_temporal_state(void);
 	void calculate_uv_offset(float * u_offset, float * v_offset);
 
 	// Constant properties
 	int				Sign;					// +1 if frame rate positive, -1 otherwise
-	uint32_t	MSPerFrame;			// milliseconds per frame
+	unsigned int	MSPerFrame;			// milliseconds per frame
 	float				OOGridWidth;		// 1.0f / size of the side of the grid)
-	uint32_t	GridWidthLog2;		// log base 2 of size of the side of the grid
-	uint32_t	LastFrame;				// Last frame to use
+	unsigned int	GridWidthLog2;		// log base 2 of size of the side of the grid
+	unsigned int	LastFrame;				// Last frame to use
 
 	// Temporal state
-	uint32_t	Remainder;			// used for timing calculations
-	uint32_t	CurrentFrame;		// current frame
-	uint32_t	LastUsedSyncTime;	// Sync time last used to update offset
+	unsigned int	Remainder;			// used for timing calculations
+	unsigned int	CurrentFrame;		// current frame
+	unsigned int	LastUsedSyncTime;	// Sync time last used to update offset
 };
 
 /*
@@ -210,8 +208,8 @@ protected:
 class RotateTextureMapperClass : public ScaleTextureMapperClass
 {
 public:
-	RotateTextureMapperClass(float rad_per_sec, const Vector2& center, uint32_t stage);
-	RotateTextureMapperClass(const INIClass &ini, const char *section, uint32_t stage);
+	RotateTextureMapperClass(float rad_per_sec, const Vector2& center, unsigned int stage);
+	RotateTextureMapperClass(const INIClass &ini, const char *section, unsigned int stage);
 	RotateTextureMapperClass(const RotateTextureMapperClass & src);
 
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_ROTATE;}
@@ -228,7 +226,7 @@ private:
 	float CurrentAngle;
 	float RadiansPerMilliSec;
 	Vector2 Center;
-	uint32_t	LastUsedSyncTime;		// Sync time last used to update offset
+	unsigned int	LastUsedSyncTime;		// Sync time last used to update offset
 };
 
 /*
@@ -238,8 +236,8 @@ private:
 class SineLinearOffsetTextureMapperClass : public TextureMapperClass
 {
 public:
-	SineLinearOffsetTextureMapperClass(const Vector3 &uafp, const Vector3 &vafp, uint32_t stage);
-	SineLinearOffsetTextureMapperClass(const INIClass &ini, const char *section, uint32_t stage);
+	SineLinearOffsetTextureMapperClass(const Vector3 &uafp, const Vector3 &vafp, unsigned int stage);
+	SineLinearOffsetTextureMapperClass(const INIClass &ini, const char *section, unsigned int stage);
 	SineLinearOffsetTextureMapperClass(const SineLinearOffsetTextureMapperClass & src);
 
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_SINE_LINEAR_OFFSET;}
@@ -256,7 +254,7 @@ private:
 	Vector3 UAFP;								// U Coordinate Amplitude frequency phase
 	Vector3 VAFP;								// V Coordinate Amplitude frequency phase
 	float CurrentAngle;
-	uint32_t	LastUsedSyncTime;		// Sync time last used to update offset
+	unsigned int	LastUsedSyncTime;		// Sync time last used to update offset
 };
 
 /*
@@ -266,8 +264,8 @@ private:
 class StepLinearOffsetTextureMapperClass : public TextureMapperClass
 {
 public:
-	StepLinearOffsetTextureMapperClass(const Vector2 &step, float steps_per_sec, uint32_t stage);
-	StepLinearOffsetTextureMapperClass(const INIClass &ini, const char *section, uint32_t stage);
+	StepLinearOffsetTextureMapperClass(const Vector2 &step, float steps_per_sec, unsigned int stage);
+	StepLinearOffsetTextureMapperClass(const INIClass &ini, const char *section, unsigned int stage);
 	StepLinearOffsetTextureMapperClass(const StepLinearOffsetTextureMapperClass & src);
 
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_STEP_LINEAR_OFFSET;}
@@ -285,7 +283,7 @@ private:
 	float StepsPerMilliSec;					// Steps per millisecond
 	Vector2 CurrentStep;						// Current step
 	float	Remainder;							// Remainder time
-	uint32_t	LastUsedSyncTime;		// Sync time last used to update offset
+	unsigned int	LastUsedSyncTime;		// Sync time last used to update offset
 };
 
 /*
@@ -295,8 +293,8 @@ private:
 class ZigZagLinearOffsetTextureMapperClass : public TextureMapperClass
 {
 public:
-	ZigZagLinearOffsetTextureMapperClass(const Vector2 &speed, float period, uint32_t stage);
-	ZigZagLinearOffsetTextureMapperClass(const INIClass &ini, const char *section, uint32_t stage);
+	ZigZagLinearOffsetTextureMapperClass(const Vector2 &speed, float period, unsigned int stage);
+	ZigZagLinearOffsetTextureMapperClass(const INIClass &ini, const char *section, unsigned int stage);
 	ZigZagLinearOffsetTextureMapperClass(const ZigZagLinearOffsetTextureMapperClass & src);
 
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_ZIGZAG_LINEAR_OFFSET;}
@@ -314,7 +312,7 @@ private:
 	float Period;								// Time taken for a period	in milliseconds
 	float Half_Period;						// Half of period
 	float Remainder;							// Remainder time in milliseconds
-	uint32_t	LastUsedSyncTime;		// Sync time last used to update offset
+	unsigned int	LastUsedSyncTime;		// Sync time last used to update offset
 };
 
 // ----------------------------------------------------------------------------
@@ -327,7 +325,7 @@ private:
 class ClassicEnvironmentMapperClass : public TextureMapperClass
 {
 public:
-	ClassicEnvironmentMapperClass(uint32_t stage) : TextureMapperClass(stage) { }
+	ClassicEnvironmentMapperClass(unsigned int stage) : TextureMapperClass(stage) { }
 	ClassicEnvironmentMapperClass(const ClassicEnvironmentMapperClass & src) : TextureMapperClass(src) { }
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_CLASSIC_ENVIRONMENT;}
 	virtual TextureMapperClass* Clone() const { return NEW_REF( ClassicEnvironmentMapperClass, (*this)); }
@@ -338,7 +336,7 @@ public:
 class EnvironmentMapperClass : public TextureMapperClass
 {
 public:
-	EnvironmentMapperClass(uint32_t stage) : TextureMapperClass(stage) { }
+	EnvironmentMapperClass(unsigned int stage) : TextureMapperClass(stage) { }
 	EnvironmentMapperClass(const EnvironmentMapperClass & src) : TextureMapperClass(src) { }
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_ENVIRONMENT;}
 	virtual TextureMapperClass* Clone() const { return NEW_REF( EnvironmentMapperClass, (*this)); }
@@ -349,8 +347,8 @@ public:
 class EdgeMapperClass : public TextureMapperClass
 {
 public:
-	EdgeMapperClass(uint32_t stage);
-	EdgeMapperClass(const INIClass &ini, const char *section, uint32_t stage);
+	EdgeMapperClass(unsigned int stage);
+	EdgeMapperClass(const INIClass &ini, const char *section, unsigned int stage);
 	EdgeMapperClass(const EdgeMapperClass & src);
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_EDGE;}
 	virtual TextureMapperClass* Clone() const { return NEW_REF( EdgeMapperClass, (*this)); }
@@ -360,7 +358,7 @@ public:
 	virtual bool Needs_Normals(void) { return true; }
 
 protected:
-	uint32_t	LastUsedSyncTime;		// Sync time last used to update offset
+	unsigned int	LastUsedSyncTime;		// Sync time last used to update offset
 	float VSpeed,VOffset;
 	bool UseReflect;
 };
@@ -368,7 +366,7 @@ protected:
 class WSClassicEnvironmentMapperClass : public TextureMapperClass
 {
 public:
-	WSClassicEnvironmentMapperClass(uint32_t stage) : TextureMapperClass(stage) { }
+	WSClassicEnvironmentMapperClass(unsigned int stage) : TextureMapperClass(stage) { }
 	WSClassicEnvironmentMapperClass(const WSClassicEnvironmentMapperClass & src) : TextureMapperClass(src) { }
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_WS_CLASSIC_ENVIRONMENT;}
 	virtual TextureMapperClass* Clone() const { return NEW_REF( WSClassicEnvironmentMapperClass, (*this)); }
@@ -379,7 +377,7 @@ public:
 class WSEnvironmentMapperClass : public TextureMapperClass
 {
 public:
-	WSEnvironmentMapperClass(uint32_t stage) : TextureMapperClass(stage) { }
+	WSEnvironmentMapperClass(unsigned int stage) : TextureMapperClass(stage) { }
 	WSEnvironmentMapperClass(const WSEnvironmentMapperClass & src) : TextureMapperClass(src) { }
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_WS_ENVIRONMENT;}
 	virtual TextureMapperClass* Clone() const { return NEW_REF( WSEnvironmentMapperClass, (*this)); }
@@ -390,8 +388,8 @@ public:
 class GridClassicEnvironmentMapperClass : public GridTextureMapperClass
 {
 public:
-	GridClassicEnvironmentMapperClass(float fps,uint32_t gridwidth, uint32_t stage):GridTextureMapperClass(fps,gridwidth,stage) { }
-	GridClassicEnvironmentMapperClass(const INIClass &ini, const char *section, uint32_t stage) : GridTextureMapperClass(ini,section,stage) { }
+	GridClassicEnvironmentMapperClass(float fps,unsigned int gridwidth, unsigned int stage):GridTextureMapperClass(fps,gridwidth,stage) { }
+	GridClassicEnvironmentMapperClass(const INIClass &ini, const char *section, unsigned int stage) : GridTextureMapperClass(ini,section,stage) { }
 	GridClassicEnvironmentMapperClass(const GridTextureMapperClass & src) : GridTextureMapperClass(src) { }
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_GRID_CLASSIC_ENVIRONMENT;}
 	virtual TextureMapperClass* Clone() const { return NEW_REF( GridClassicEnvironmentMapperClass, (*this)); }
@@ -402,8 +400,8 @@ public:
 class GridEnvironmentMapperClass : public GridTextureMapperClass
 {
 public:	
-	GridEnvironmentMapperClass(float fps,uint32_t gridwidth, uint32_t stage):GridTextureMapperClass(fps,gridwidth,stage) { }
-	GridEnvironmentMapperClass(const INIClass &ini, const char *section, uint32_t stage) : GridTextureMapperClass(ini,section,stage) { }
+	GridEnvironmentMapperClass(float fps,unsigned int gridwidth, unsigned int stage):GridTextureMapperClass(fps,gridwidth,stage) { }
+	GridEnvironmentMapperClass(const INIClass &ini, const char *section, unsigned int stage) : GridTextureMapperClass(ini,section,stage) { }
 	GridEnvironmentMapperClass(const GridTextureMapperClass & src) : GridTextureMapperClass(src) { }
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_GRID_ENVIRONMENT;}
 	virtual TextureMapperClass* Clone() const { return NEW_REF( GridEnvironmentMapperClass, (*this)); }
@@ -420,8 +418,8 @@ public:
 class ScreenMapperClass : public LinearOffsetTextureMapperClass
 {
 public:
-	ScreenMapperClass(const Vector2 &offset_per_sec, const Vector2 &scale, uint32_t stage):LinearOffsetTextureMapperClass(offset_per_sec,scale,stage) { }
-	ScreenMapperClass(const INIClass &ini, const char *section, uint32_t stage):LinearOffsetTextureMapperClass(ini,section,stage) { }
+	ScreenMapperClass(const Vector2 &offset_per_sec, const Vector2 &scale, unsigned int stage):LinearOffsetTextureMapperClass(offset_per_sec,scale,stage) { }
+	ScreenMapperClass(const INIClass &ini, const char *section, unsigned int stage):LinearOffsetTextureMapperClass(ini,section,stage) { }
 	ScreenMapperClass(const LinearOffsetTextureMapperClass & src):LinearOffsetTextureMapperClass(src) { }
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_SCREEN;}
 	virtual TextureMapperClass* Clone() const { return NEW_REF( ScreenMapperClass, (*this)); }
@@ -436,8 +434,8 @@ public:
 class RandomTextureMapperClass : public TextureMapperClass
 {
 public:
-	RandomTextureMapperClass(float fps, uint32_t stage);
-	RandomTextureMapperClass(const INIClass &ini, const char *section, uint32_t stage);
+	RandomTextureMapperClass(float fps, unsigned int stage);
+	RandomTextureMapperClass(const INIClass &ini, const char *section, unsigned int stage);
 	RandomTextureMapperClass(const RandomTextureMapperClass & src);
 
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_RANDOM;}
@@ -456,7 +454,7 @@ protected:
 	float CurrentAngle;
 	Vector2 Center;
 	Vector2 Speed;
-	uint32_t	LastUsedSyncTime;		// Sync time last used to update offset
+	unsigned int	LastUsedSyncTime;		// Sync time last used to update offset
 };
 
 /**
@@ -467,8 +465,8 @@ protected:
 class BumpEnvTextureMapperClass : public LinearOffsetTextureMapperClass
 {
 public:
-	BumpEnvTextureMapperClass(float rad_per_sec, float scale_factor, const Vector2 & offset_per_sec, const Vector2 &scale, uint32_t stage);
-	BumpEnvTextureMapperClass(INIClass &ini, char *section, uint32_t stage);
+	BumpEnvTextureMapperClass(float rad_per_sec, float scale_factor, const Vector2 & offset_per_sec, const Vector2 &scale, unsigned int stage);
+	BumpEnvTextureMapperClass(INIClass &ini, char *section, unsigned int stage);
 	BumpEnvTextureMapperClass(const BumpEnvTextureMapperClass & src);
 
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_BUMPENV;}
@@ -479,7 +477,7 @@ public:
 
 protected:
 
-	uint32_t	LastUsedSyncTime;		// Sync time last used to update offset
+	unsigned int	LastUsedSyncTime;		// Sync time last used to update offset
 	float				CurrentAngle;
 	float				RadiansPerSecond;
 	float				ScaleFactor;

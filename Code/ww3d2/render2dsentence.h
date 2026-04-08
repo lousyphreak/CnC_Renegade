@@ -38,8 +38,6 @@
 #pragma once
 #endif
 
-#include <cstdint>
-
 #ifndef RENDER2DSENTENCE_H
 #define RENDER2DSENTENCE_H
 
@@ -69,7 +67,7 @@ public:
 	int	Get_Char_Width( WCHAR ch );
 	int	Get_Char_Spacing( WCHAR ch );
 
-	void	Blit_Char( WCHAR ch, uint16_t *dest_ptr, int dest_stride, int x, int y );
+	void	Blit_Char( WCHAR ch, uint16 *dest_ptr, int dest_stride, int x, int y );
 
 private:
 
@@ -78,8 +76,8 @@ private:
 	//
 	struct CharDataStruct {
 		WCHAR				Value;
-		int16_t			Width;
-		uint16_t *			Buffer;
+		short				Width;
+		uint16 *			Buffer;
 	};
 
 	//
@@ -98,8 +96,8 @@ private:
 	//	Private member data
 	//
 	StringClass							Name;
-	DynamicVectorClass<uint16_t *>	BufferList;
-	uint16_t*								PreAllocatedBufferList[16];	// We'll use this with BufferList first
+	DynamicVectorClass<uint16 *>	BufferList;
+	uint16*								PreAllocatedBufferList[16];	// We'll use this with BufferList first
 	int									CurrPixelOffset;
 	int									CharHeight;
 	int									PointSize;
@@ -108,12 +106,12 @@ private:
 	HBITMAP								OldGDIBitmap;
 	HBITMAP								GDIBitmap;	
 	HFONT									GDIFont;
-	uint8_t *								GDIBitmapBits;
+	uint8 *								GDIBitmapBits;
 	HDC									MemDC;
 	CharDataStruct *					ASCIICharArray[256];
 	CharDataStruct **					UnicodeCharArray;
-	uint16_t								FirstUnicodeChar;
-	uint16_t								LastUnicodeChar;
+	uint16								FirstUnicodeChar;
+	uint16								LastUnicodeChar;
 	bool									IsBold;
 };
 
@@ -132,13 +130,10 @@ public:
 
 	FontCharsClass *	Peek_Font( void )						{ return Font; }
 	void	Set_Font( FontCharsClass *font );
-	void	Set_Font_Tracking_ID (int id)					{ TrackedFontID = id; }
-	int		Get_Font_Tracking_ID (void) const			{ return TrackedFontID; }
-	static void	Refresh_Tracked_Fonts (FontCharsClass *const *fonts, int font_count);
 
 	void	Set_Location( const Vector2 & loc );
 	void	Set_Base_Location( const Vector2 & loc );
-	void	Set_Wrapping_Width (float width)					{ if (WrapWidth != width) { WrapWidth = width; SentenceDirty = true; } }
+	void	Set_Wrapping_Width (float width)					{ WrapWidth = width; }
 	
 	void	Set_Tabstop(float stop);
 
@@ -156,7 +151,7 @@ public:
 	ShaderClass	Get_Shader (void) const						{ return Shader; }
 	void			Set_Shader (ShaderClass shader);
 
-//	void	Draw_Block( const RectClass & screen, uint32_t color = 0xFFFFFFFF );
+//	void	Draw_Block( const RectClass & screen, unsigned long color = 0xFFFFFFFF );
 
 	const RectClass & Get_Draw_Extents( void )			{ return DrawExtents; }
 //	const RectClass & Get_Total_Extents( void )			{ return TotalExtents; }
@@ -170,15 +165,15 @@ public:
 	//	Sentence control
 	//
 	void	Build_Sentence (const WCHAR *text);
-	void	Draw_Sentence (uint32_t color = 0xFFFFFFFF);
+	void	Draw_Sentence (uint32 color = 0xFFFFFFFF);
 
 	//
 	//	Texture hint
 	//
-	void	Set_Texture_Size_Hint( int hint )				{ if (TextureSizeHint != hint) { TextureSizeHint = hint; SentenceDirty = true; } }
+	void	Set_Texture_Size_Hint( int hint )				{ TextureSizeHint = hint; }
 	int	Get_Texture_Size_Hint( void ) const				{ return TextureSizeHint; }
 
-	void	Set_Mono_Spaced( bool onoff )						{ if (MonoSpaced != onoff) { MonoSpaced = onoff; SentenceDirty = true; } }
+	void	Set_Mono_Spaced( bool onoff )						{ MonoSpaced = onoff; }
 
 	// Force all alphas 
 	void	Force_Alpha( float alpha );
@@ -248,13 +243,10 @@ private:
 	RectClass										DrawExtents;
 	bool												IsClippedEnabled;
 													
-	uint16_t *											LockedPtr;
+	uint16 *											LockedPtr;
 	int												LockedStride;
 	TextureClass *									CurTexture;
 	ShaderClass										Shader;
-	int												TrackedFontID;
-	WideStringClass								CachedSentenceText;
-	bool												SentenceDirty;
 };
 
 #endif	// RENDER2DSENTENCE_H

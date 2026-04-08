@@ -41,150 +41,12 @@
 #include "wwmemlog.h"
 #include "dx8wrapper.h"
 
-#if !defined(_WIN32)
-#include <freetype2/ft2build.h>
-#include FT_FREETYPE_H
-
-#include <filesystem>
-#include <unordered_map>
-#include <vector>
-#endif
-
 
 ////////////////////////////////////////////////////////////////////////////////////
 //	Local constants
 ////////////////////////////////////////////////////////////////////////////////////
 const int CHAR_TEXTURE_SIZE	= 256;
 const int CHAR_BUFFER_LEN		= 32768;
-
-namespace {
-
-DynamicVectorClass<Render2DSentenceClass *> &Get_Live_Sentence_Renderers()
-{
-	static DynamicVectorClass<Render2DSentenceClass *> renderers;
-	return renderers;
-}
-
-}
-
-#if !defined(_WIN32)
-namespace {
-
-struct BgfxFontFaceState {
-	FT_Face Face = nullptr;
-	int Ascender = 0;
-	int Height = 0;
-	std::string Path;
-};
-
-std::unordered_map<const FontCharsClass *, BgfxFontFaceState> g_bgfx_font_faces;
-
-FT_Library Get_FreeType_Library()
-{
-	static FT_Library library = nullptr;
-	static bool initialized = false;
-	if (!initialized) {
-		initialized = true;
-		if (FT_Init_FreeType(&library) != 0) {
-			library = nullptr;
-			WWRELEASE_SAY(("Render2DSentence: FreeType initialization failed\n"));
-		}
-	}
-	return library;
-}
-
-bool File_Exists(const std::filesystem::path &path)
-{
-	std::error_code error;
-	return !path.empty() && std::filesystem::exists(path, error) && std::filesystem::is_regular_file(path, error);
-}
-
-std::filesystem::path Find_Font_By_Filename(const std::vector<std::string> &candidates)
-{
-	static const std::vector<std::filesystem::path> roots = {
-		"/usr/share/fonts/truetype/dejavu",
-		"/usr/share/fonts/truetype/liberation2",
-		"/usr/share/fonts/liberation",
-		"/usr/share/fonts/TTF",
-		"/usr/local/share/fonts",
-		std::filesystem::path(std::getenv("HOME") != nullptr ? std::getenv("HOME") : "") / ".fonts"
-	};
-
-	for (const auto &root : roots) {
-		for (const auto &candidate : candidates) {
-			const std::filesystem::path full_path = root / candidate;
-			if (File_Exists(full_path)) {
-				return full_path;
-			}
-		}
-	}
-
-	for (const auto &root : roots) {
-		std::error_code error;
-		if (!std::filesystem::exists(root, error)) {
-			continue;
-		}
-
-		for (std::filesystem::recursive_directory_iterator iter(root, error), end; iter != end && !error; iter.increment(error)) {
-			if (!iter->is_regular_file()) {
-				continue;
-			}
-
-			const std::string filename = iter->path().filename().string();
-			for (const auto &candidate : candidates) {
-				if (::strcasecmp(filename.c_str(), candidate.c_str()) == 0) {
-					return iter->path();
-				}
-			}
-		}
-	}
-
-	return {};
-}
-
-std::filesystem::path Resolve_Font_Path(const char *font_name, bool is_bold)
-{
-	if (font_name != nullptr) {
-		const std::filesystem::path direct_path(font_name);
-		if (File_Exists(direct_path)) {
-			return direct_path;
-		}
-	}
-
-	const std::string requested = font_name != nullptr ? font_name : "";
-	std::vector<std::string> candidates;
-	if (requested.find("Regatta") != std::string::npos) {
-		candidates = is_bold
-			? std::vector<std::string>{"DejaVuSansCondensed-Bold.ttf", "LiberationSans-Bold.ttf", "LiberationSansNarrow-Bold.ttf"}
-			: std::vector<std::string>{"DejaVuSansCondensed.ttf", "LiberationSans-Regular.ttf", "LiberationSansNarrow-Regular.ttf"};
-	} else {
-		candidates = is_bold
-			? std::vector<std::string>{"LiberationSans-Bold.ttf", "Arimo-Bold.ttf", "DejaVuSans-Bold.ttf"}
-			: std::vector<std::string>{"LiberationSans-Regular.ttf", "Arimo-Regular.ttf", "DejaVuSans.ttf"};
-	}
-
-	return Find_Font_By_Filename(candidates);
-}
-
-int Fallback_Char_Width(int point_size, WCHAR ch)
-{
-	if (ch == L' ') {
-		return std::max(point_size / 3, 1);
-	}
-	if (ch == L'\t') {
-		return std::max(point_size, 1);
-	}
-	return std::max((point_size * 3) / 5, 1);
-}
-
-BgfxFontFaceState *Get_Font_State(FontCharsClass *font)
-{
-	auto it = g_bgfx_font_faces.find(font);
-	return it != g_bgfx_font_faces.end() ? &it->second : nullptr;
-}
-
-} // namespace
-#endif
 
 
 // Macros.
@@ -217,12 +79,8 @@ Render2DSentenceClass::Render2DSentenceClass (void) :
 	WrapWidth (0),
 	TabStop (5.0),
 	DrawExtents (0, 0, 0, 0),
-	Renderers(sizeof(PreAllocatedRenderers)/sizeof(RendererDataStruct),PreAllocatedRenderers),
-	TrackedFontID (-1),
-	CachedSentenceText (0),
-	SentenceDirty (true)
+	Renderers(sizeof(PreAllocatedRenderers)/sizeof(RendererDataStruct),PreAllocatedRenderers)
 {
-	Get_Live_Sentence_Renderers ().Add (this);
 	Shader = Render2DClass::Get_Default_Shader ();
 	return ;
 }
@@ -235,11 +93,6 @@ Render2DSentenceClass::Render2DSentenceClass (void) :
 ////////////////////////////////////////////////////////////////////////////////////
 Render2DSentenceClass::~Render2DSentenceClass (void)
 {
-	int id = Get_Live_Sentence_Renderers ().ID (this);
-	if (id != -1) {
-		Get_Live_Sentence_Renderers ().Delete (id);
-	}
-
 	REF_PTR_RELEASE (Font);
 	Reset ();
 	return ;
@@ -254,44 +107,8 @@ Render2DSentenceClass::~Render2DSentenceClass (void)
 void
 Render2DSentenceClass::Set_Font (FontCharsClass *font)
 {
-	if (Font == font) {
-		return ;
-	}
-
 	Reset ();
-	TrackedFontID = -1;
 	REF_PTR_SET (Font, font);
-	SentenceDirty = true;
-	return ;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////
-//
-//	Refresh_Tracked_Fonts
-//
-////////////////////////////////////////////////////////////////////////////////////
-void
-Render2DSentenceClass::Refresh_Tracked_Fonts (FontCharsClass *const *fonts, int font_count)
-{
-	if (fonts == NULL || font_count <= 0) {
-		return ;
-	}
-
-	DynamicVectorClass<Render2DSentenceClass *> &renderers = Get_Live_Sentence_Renderers ();
-	for (int index = 0; index < renderers.Count (); index ++) {
-		Render2DSentenceClass *renderer = renderers[index];
-		if (renderer == NULL) {
-			continue;
-		}
-
-		const int tracked_font_id = renderer->TrackedFontID;
-		if (tracked_font_id >= 0 && tracked_font_id < font_count) {
-			renderer->Set_Font (fonts[tracked_font_id]);
-			renderer->TrackedFontID = tracked_font_id;
-		}
-	}
-
 	return ;
 }
 
@@ -343,8 +160,6 @@ Render2DSentenceClass::Reset (void)
 
 	Cursor.Set (0, 0);
 	MonoSpaced = false;
-	CachedSentenceText = L"";
-	SentenceDirty = true;
 
 	Release_Pending_Surfaces ();
 	Reset_Sentence_Data ();
@@ -451,13 +266,11 @@ Render2DSentenceClass::Set_Location (const Vector2 &loc)
 void
 Render2DSentenceClass::Set_Tabstop(float stop)
 {
-	const float new_tab_stop = (stop > 0.0F) ? stop : 1.0F;
-	if (TabStop != new_tab_stop) {
-		TabStop = new_tab_stop;
-		SentenceDirty = true;
+	if (stop > 0.0) {
+		TabStop = stop;
+	} else {
+		TabStop = 1.0;
 	}
-
-	return ;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -732,7 +545,14 @@ Render2DSentenceClass::Build_Textures (void)
 		//
 		//	Create the new texture
 		//
-		TextureClass *new_texture = new TextureClass (curr_surface, TextureClass::MIP_LEVELS_1);
+		TextureClass *new_texture = new TextureClass (desc.Width, desc.Width, WW3D_FORMAT_A4R4G4B4, TextureClass::MIP_LEVELS_1);
+		SurfaceClass *texture_surface = new_texture->Get_Surface_Level ();
+
+		//
+		//	Copy the contents of the texture from the surface
+		//
+		DX8Wrapper::_Copy_DX8_Rects (curr_surface->Peek_D3D_Surface (), NULL, 0, texture_surface->Peek_D3D_Surface (), NULL);
+		REF_PTR_RELEASE (texture_surface);
 
 		//
 		//	Assign this texture to any renderers that need it
@@ -763,7 +583,7 @@ Render2DSentenceClass::Build_Textures (void)
 //
 ////////////////////////////////////////////////////////////////////////////////////
 void
-Render2DSentenceClass::Draw_Sentence (uint32_t color)
+Render2DSentenceClass::Draw_Sentence (uint32 color)
 {
 	Render2DClass *curr_renderer	= NULL;
 	SurfaceClass *curr_surface		= NULL;
@@ -1061,12 +881,6 @@ Render2DSentenceClass::Build_Sentence (const WCHAR *text)
 		return;
 	}
 
-	const WCHAR *original_text = text;
-
-	if (!SentenceDirty && CachedSentenceText == original_text) {
-		return ;
-	}
-
 	//
 	//	Start fresh
 	//
@@ -1174,7 +988,7 @@ Render2DSentenceClass::Build_Sentence (const WCHAR *text)
 			//	Ensure the surface is locked
 			//
 			if (LockedPtr == NULL) {
-				LockedPtr = (uint16_t *)CurSurface->Lock (&LockedStride);
+				LockedPtr = (uint16 *)CurSurface->Lock (&LockedStride);
 				WWASSERT (LockedPtr != NULL);
 			}
 
@@ -1191,8 +1005,6 @@ Render2DSentenceClass::Build_Sentence (const WCHAR *text)
 		}
 	}
 
-	CachedSentenceText = original_text;
-	SentenceDirty = false;
 	return ;
 }
 
@@ -1228,7 +1040,7 @@ FontCharsClass::FontCharsClass (void) :
 	FirstUnicodeChar( 0xFFFF ),
 	LastUnicodeChar( 0 ),
 	IsBold (false),
-	BufferList(sizeof(PreAllocatedBufferList)/sizeof(uint16_t*),PreAllocatedBufferList)
+	BufferList(sizeof(PreAllocatedBufferList)/sizeof(uint16*),PreAllocatedBufferList)
 {
 	::memset( ASCIICharArray, 0, sizeof (ASCIICharArray) );
 	return ;
@@ -1261,11 +1073,6 @@ FontCharsClass::~FontCharsClass (void)
 const FontCharsClass::CharDataStruct *
 FontCharsClass::Get_Char_Data (WCHAR ch)
 {
-	if (ch < 0 || static_cast<uint32_t>(ch) > 0xFFFFu) {
-		WWASSERT(0);
-		ch = L'?';
-	}
-
 	const CharDataStruct *retval = NULL;
 
 	if ( ch < 256 ) {
@@ -1329,7 +1136,7 @@ FontCharsClass::Get_Char_Spacing (WCHAR ch)
 //
 ////////////////////////////////////////////////////////////////////////////////////
 void
-FontCharsClass::Blit_Char (WCHAR ch, uint16_t *dest_ptr, int dest_stride, int x, int y)
+FontCharsClass::Blit_Char (WCHAR ch, uint16 *dest_ptr, int dest_stride, int x, int y)
 {
 	const CharDataStruct	* data = Get_Char_Data( ch );
 	if ( data != NULL && data->Width != 0 ) {
@@ -1338,7 +1145,7 @@ FontCharsClass::Blit_Char (WCHAR ch, uint16_t *dest_ptr, int dest_stride, int x,
 		//	Setup the src and destination pointers
 		//
 		int dest_inc		= (dest_stride >> 1);
-		uint16_t *src_ptr	= data->Buffer;
+		uint16 *src_ptr	= data->Buffer;
 		dest_ptr				+= (dest_inc * y) + x;
 
 		//
@@ -1364,7 +1171,6 @@ FontCharsClass::Blit_Char (WCHAR ch, uint16_t *dest_ptr, int dest_stride, int x,
 const FontCharsClass::CharDataStruct *
 FontCharsClass::Store_GDI_Char (WCHAR ch)
 {
-#if defined(_WIN32)
 	int width	= PointSize * 2;
 	int height	= PointSize * 2;
 
@@ -1394,7 +1200,7 @@ FontCharsClass::Store_GDI_Char (WCHAR ch)
 	//	Get a pointer to the surface that this character should use
 	//
 	Update_Current_Buffer( char_size.cx );
-	uint16_t *curr_buffer = BufferList[BufferList.Count () - 1];
+	uint16 *curr_buffer = BufferList[BufferList.Count () - 1];
 	curr_buffer += CurrPixelOffset;
 
 	//
@@ -1416,10 +1222,10 @@ FontCharsClass::Store_GDI_Char (WCHAR ch)
 			//
 			//	Get the pixel color at this location
 			//
-			uint8_t pixel_value = GDIBitmapBits[index];
+			uint8 pixel_value = GDIBitmapBits[index];
 			index += 3;
 
-			uint16_t pixel_color = 0;
+			uint16 pixel_color = 0;
 			if (pixel_value != 0) {
 				pixel_color = 0x0FFF;
 			}
@@ -1428,7 +1234,7 @@ FontCharsClass::Store_GDI_Char (WCHAR ch)
 			//	Convert the pixel intensity from 8bit to 4bit and
 			// store it in our buffer
 			//
-			uint8_t alpha_value	= ((pixel_value >> 4) & 0xF);
+			uint8 alpha_value	= ((pixel_value >> 4) & 0xF);
 			*curr_buffer ++	= pixel_color | (alpha_value << 12);
 		}
 	}
@@ -1459,55 +1265,6 @@ FontCharsClass::Store_GDI_Char (WCHAR ch)
 	//	Return the index of the entry we just added
 	//
 	return char_data;
-#else
-	BgfxFontFaceState *font_state = Get_Font_State(this);
-	const int char_height = std::max(CharHeight, 1);
-	int glyph_width = 0;
-	std::vector<uint16_t> glyph_pixels;
-
-	if (font_state != nullptr && font_state->Face != nullptr && FT_Load_Char(font_state->Face, static_cast<FT_ULong>(ch), FT_LOAD_RENDER | FT_LOAD_TARGET_NORMAL) == 0) {
-		FT_GlyphSlot glyph = font_state->Face->glyph;
-		const int advance = std::max(static_cast<int>((glyph->advance.x + 63) >> 6), 0);
-		glyph_width = std::max(std::max(advance - 1, static_cast<int>(glyph->bitmap.width)), (ch == L' ' ? advance : 1));
-		glyph_pixels.assign(static_cast<size_t>(std::max(glyph_width, 1)) * static_cast<size_t>(char_height), 0);
-
-		const int top = std::max(font_state->Ascender - static_cast<int>(glyph->bitmap_top), 0);
-		const int max_rows = std::min(static_cast<int>(glyph->bitmap.rows), std::max(char_height - top, 0));
-		const int max_cols = std::min(static_cast<int>(glyph->bitmap.width), std::max(glyph_width, 0));
-		for (int row = 0; row < max_rows; ++row) {
-			for (int col = 0; col < max_cols; ++col) {
-				const uint8_t alpha = glyph->bitmap.buffer[row * glyph->bitmap.pitch + col];
-				if (alpha != 0) {
-					glyph_pixels[static_cast<size_t>(top + row) * static_cast<size_t>(glyph_width) + static_cast<size_t>(col)] = static_cast<uint16_t>(0x0FFF | (((alpha >> 4) & 0x0F) << 12));
-				}
-			}
-		}
-	} else {
-		glyph_width = Fallback_Char_Width(PointSize, ch);
-		glyph_pixels.assign(static_cast<size_t>(std::max(glyph_width, 1)) * static_cast<size_t>(char_height), 0);
-		if (ch != L' ') {
-			for (int row = 0; row < char_height; ++row) {
-				for (int col = 0; col < glyph_width; ++col) {
-					glyph_pixels[static_cast<size_t>(row) * static_cast<size_t>(glyph_width) + static_cast<size_t>(col)] = 0xFFFF;
-				}
-			}
-		}
-	}
-
-	CharDataStruct *char_data = new CharDataStruct;
-	char_data->Value = ch;
-	char_data->Width = static_cast<int16_t>(glyph_width);
-	char_data->Buffer = new uint16_t[static_cast<size_t>(std::max(glyph_width, 1)) * static_cast<size_t>(char_height)];
-	::memcpy(char_data->Buffer, glyph_pixels.data(), sizeof(uint16_t) * static_cast<size_t>(std::max(glyph_width, 1)) * static_cast<size_t>(char_height));
-
-	if (ch < 256) {
-		ASCIICharArray[ch] = char_data;
-	} else {
-		UnicodeCharArray[ch - FirstUnicodeChar] = char_data;
-	}
-
-	return char_data;
-#endif
 }
 
 
@@ -1519,7 +1276,6 @@ FontCharsClass::Store_GDI_Char (WCHAR ch)
 void
 FontCharsClass::Update_Current_Buffer (int char_width)
 {
-#if defined(_WIN32)
 	//
 	//	Check to see if we need to allocate a new buffer
 	//
@@ -1538,16 +1294,12 @@ FontCharsClass::Update_Current_Buffer (int char_width)
 	//	Do we need to create a new surface?
 	//
 	if (needs_new_buffer) {
-		uint16_t *new_buffer = new uint16_t[CHAR_BUFFER_LEN];
+		uint16 *new_buffer = new uint16[CHAR_BUFFER_LEN];
 		BufferList.Add( new_buffer );
 		CurrPixelOffset = 0;
 	}
 
 	return ;
-#else
-	(void)char_width;
-	return;
-#endif
 }
 
 
@@ -1559,7 +1311,6 @@ FontCharsClass::Update_Current_Buffer (int char_width)
 void
 FontCharsClass::Create_GDI_Font (const char *font_name)
 {
-#if defined(_WIN32)
 	HDC screen_dc = ::GetDC (NULL);
 
 	//
@@ -1570,9 +1321,9 @@ FontCharsClass::Create_GDI_Font (const char *font_name)
 	//
 	//	Create the Windows font
 	//
-	uint32_t bold		= IsBold ? FW_BOLD : FW_NORMAL;
-	uint32_t italic	= 0;
-	uint32_t	charset;
+	DWORD bold		= IsBold ? FW_BOLD : FW_NORMAL;
+	DWORD italic	= 0;
+	DWORD	charset;
 
 	// Map the current code page to a font character set.
 	switch (GetACP()) {
@@ -1656,31 +1407,6 @@ FontCharsClass::Create_GDI_Font (const char *font_name)
 	//
 	::ReleaseDC (NULL, screen_dc);
 	return ;
-#else
-	BgfxFontFaceState &font_state = g_bgfx_font_faces[this];
-	font_state = BgfxFontFaceState();
-
-	FT_Library library = Get_FreeType_Library();
-	const std::filesystem::path font_path = Resolve_Font_Path(font_name, IsBold);
-	if (library != nullptr && !font_path.empty() && FT_New_Face(library, font_path.string().c_str(), 0, &font_state.Face) == 0) {
-		FT_Set_Pixel_Sizes(font_state.Face, 0, std::max(PointSize, 1));
-		font_state.Ascender = static_cast<int>(font_state.Face->size->metrics.ascender >> 6);
-		font_state.Height = std::max(static_cast<int>(font_state.Face->size->metrics.height >> 6), std::max(PointSize, 1));
-		font_state.Path = font_path.string();
-		CharHeight = font_state.Height;
-	} else {
-		font_state.Face = nullptr;
-		font_state.Ascender = std::max(PointSize, 1);
-		font_state.Height = std::max(PointSize, 1);
-		CharHeight = font_state.Height;
-	}
-
-	GDIFont = NULL;
-	GDIBitmap = NULL;
-	GDIBitmapBits = NULL;
-	MemDC = NULL;
-	return;
-#endif
 }
 
 
@@ -1692,7 +1418,6 @@ FontCharsClass::Create_GDI_Font (const char *font_name)
 void
 FontCharsClass::Free_GDI_Font (void)
 {
-#if defined(_WIN32)
 	//
 	//	Select the old font back into the DC and delete
 	// our font object
@@ -1722,22 +1447,6 @@ FontCharsClass::Free_GDI_Font (void)
 	}
 
 	return ;
-#else
-	auto it = g_bgfx_font_faces.find(this);
-	if (it != g_bgfx_font_faces.end()) {
-		if (it->second.Face != nullptr) {
-			FT_Done_Face(it->second.Face);
-			it->second.Face = nullptr;
-		}
-		g_bgfx_font_faces.erase(it);
-	}
-
-	GDIFont = NULL;
-	GDIBitmap = NULL;
-	GDIBitmapBits = NULL;
-	MemDC = NULL;
-	return;
-#endif
 }
 
 
@@ -1815,9 +1524,9 @@ FontCharsClass::Grow_Unicode_Array (WCHAR ch)
 		return ;
 	}
 
-	uint16_t first_index	= std::min<uint16_t>( FirstUnicodeChar, static_cast<uint16_t>(ch) );
-	uint16_t last_index		= std::max<uint16_t>( LastUnicodeChar, static_cast<uint16_t>(ch) );
-	uint16_t count			= (last_index - first_index) + 1;
+	uint16 first_index	= min( FirstUnicodeChar, ch );
+	uint16 last_index		= max( LastUnicodeChar, ch );
+	uint16 count			= (last_index - first_index) + 1;
 
 	//
 	//	Allocate enough memory to hold the new cells
@@ -1864,7 +1573,6 @@ FontCharsClass::Free_Character_Arrays (void)
 		//
 		for (int index = 0; index < count; index ++) {
 			if ( UnicodeCharArray[index] != NULL ) {
-				delete [] UnicodeCharArray[index]->Buffer;
 				delete UnicodeCharArray[index];
 				UnicodeCharArray[index] = NULL;
 			}
@@ -1882,7 +1590,6 @@ FontCharsClass::Free_Character_Arrays (void)
 	//
 	for (int index = 0; index < 256; index ++) {
 		if ( ASCIICharArray[index] != NULL ) {
-			delete [] ASCIICharArray[index]->Buffer;
 			delete ASCIICharArray[index];
 			ASCIICharArray[index] = NULL;
 		}
@@ -1890,3 +1597,4 @@ FontCharsClass::Free_Character_Arrays (void)
 
 	return ;
 }
+

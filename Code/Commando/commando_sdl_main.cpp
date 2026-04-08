@@ -53,7 +53,6 @@ void PrintCommandoBanner()
         << "  x86 asm enabled: " << RENEGADE_WITH_X86_ASM << '\n'
         << "  stacktrace backend: std::stacktrace with log fallback\n"
         << "  dx8 renderer enabled: " << RENEGADE_WITH_DX8_RENDERER << '\n'
-        << "  bgfx bootstrap enabled: " << RENEGADE_WITH_BGFX_RENDERER << '\n'
         << "  combat input backend: SDL3\n"
         << "  commando slice: " << Renegade_Commando_Bootstrap_Summary() << '\n';
 }
@@ -371,9 +370,8 @@ int main(int argc, char **argv)
     SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_HIGH_PIXEL_DENSITY_BOOLEAN, true);
     SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_HIDDEN_BOOLEAN, smoke_test);
     SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, !smoke_test);
-#if RENEGADE_WITH_BGFX_RENDERER
     SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_EXTERNAL_GRAPHICS_CONTEXT_BOOLEAN, true);
-#endif
+
     SDL_Window *window = SDL_CreateWindowWithProperties(window_props);
     SDL_DestroyProperties(window_props);
     if (window == nullptr) {

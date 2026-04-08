@@ -37,8 +37,6 @@
 
 #if defined(_MSC_VER)
 #pragma once
-
-#include <cstdint>
 #endif
 
 #ifndef SHADER_H
@@ -250,13 +248,13 @@ public:
 	ShaderClass(const ShaderClass & s)
 	{	ShaderBits=s.ShaderBits; }
 
-	ShaderClass(const uint32_t d)
+	ShaderClass(const unsigned int d)
 	{	ShaderBits=d;	}
 
 	bool operator == (const ShaderClass & s) { return ShaderBits == s.ShaderBits; }
 	bool operator != (const ShaderClass & s) { return ShaderBits != s.ShaderBits; }
 
-	inline uint32_t Get_Bits(void) const
+	inline unsigned int Get_Bits(void) const
 	{	return ShaderBits; }
 
 	inline int Uses_Alpha(void) const
@@ -452,10 +450,10 @@ protected:
 	// Debug warning.
 	void Report_Unable_To_Fog (const char *source);
 
-	uint32_t ShaderBits;
+	unsigned int ShaderBits;
 
 	static bool ShaderDirty;
-	static uint32_t CurrentShader;
+	static unsigned long CurrentShader;
 };
 
 inline void ShaderClass::Reset()

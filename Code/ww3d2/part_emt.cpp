@@ -65,7 +65,7 @@ bool ParticleEmitterClass::DebugDisable = false;
 bool ParticleEmitterClass::DefaultRemoveOnComplete = true;
 
 
-ParticleEmitterClass::ParticleEmitterClass(float emit_rate, uint32_t burst_size,
+ParticleEmitterClass::ParticleEmitterClass(float emit_rate, unsigned int burst_size,
 			Vector3Randomizer *pos_rnd, Vector3 base_vel, Vector3Randomizer *vel_rnd, float out_vel,
 			float vel_inherit_factor, 
 			ParticlePropertyStruct<Vector3> &color,
@@ -98,7 +98,7 @@ ParticleEmitterClass::ParticleEmitterClass(float emit_rate, uint32_t burst_size,
 	UserString(NULL),
 	IsInScene(false)
 {
-	EmitRate		= emit_rate	>	0.0f ? (uint32_t)(1000.0f / emit_rate) : 1000U;
+	EmitRate		= emit_rate	>	0.0f ? (unsigned int)(1000.0f / emit_rate) : 1000U;
 	BurstSize	= burst_size != 0	? burst_size : 1;
 	max_age		= max_age	> 	0.0f ? max_age : 1.0f;
 	VelRand->Scale(0.001f);
@@ -558,15 +558,15 @@ void ParticleEmitterClass::Create_New_Particles(const Quaternion & curr_quat, co
 	// the previous interval when the last particle was emitted) is added to
 	// the size of the current frame to yield the time currently available
 	// for emitting particles.
-	uint32_t frametime = WW3D::Get_Frame_Time();
+	unsigned int frametime = WW3D::Get_Frame_Time();
 	// Since the particles are written into a wraparound buffer, we can take the time modulo a time
 	// constant which represents the time it takes to fill up the entire buffer with new particles.
 	// We will do this so we don't run into performance problems with very large frame times.
 	if (frametime > 100 * EmitRate) {	// If the loop will run over 100 times
-		uint32_t buf_size = Buffer->Get_Buffer_Size();
-		uint32_t gcd = Greatest_Common_Divisor(buf_size, BurstSize);
-		uint32_t bursts = buf_size / gcd;
-		uint32_t cycle_time = EmitRate * bursts;
+		unsigned int buf_size = Buffer->Get_Buffer_Size();
+		unsigned int gcd = Greatest_Common_Divisor(buf_size, BurstSize);
+		unsigned int bursts = buf_size / gcd;
+		unsigned int cycle_time = EmitRate * bursts;
 		if (cycle_time > 1) {
 			frametime = frametime % cycle_time;
 		} else {
@@ -611,16 +611,16 @@ void ParticleEmitterClass::Create_New_Particles(const Quaternion & curr_quat, co
 		// Initialize BurstSize new particles with the given age and emitter
 		// transform (expressed as a quaternion and origin vector), and add it
 		// to the particle buffer's new particle vector.
-		uint32_t age = WW3D::Get_Sync_Time() - EmitRemain;
-		uint32_t burst_size = BurstSize;
+		unsigned int age = WW3D::Get_Sync_Time() - EmitRemain;
+		unsigned int burst_size = BurstSize;
 		if (OneTimeBurst) {
 			burst_size = OneTimeBurstSize;
 			OneTimeBurst = false;
 		}
 
 		if ( ParticlesLeft > 0 ) {			// if we are counting,
-			if (burst_size > (uint32_t)ParticlesLeft) {
-				burst_size = (uint32_t)ParticlesLeft;
+			if (burst_size > (unsigned int)ParticlesLeft) {
+				burst_size = (unsigned int)ParticlesLeft;
 				ParticlesLeft = 0;
 			} else {
 				ParticlesLeft -= burst_size;
@@ -630,7 +630,7 @@ void ParticleEmitterClass::Create_New_Particles(const Quaternion & curr_quat, co
 			}
 		}
 
-		for (uint32_t i = 0; i < burst_size; i++) {
+		for (unsigned int i = 0; i < burst_size; i++) {
 			Initialize_Particle(Buffer->Add_Uninitialized_New_Particle(), age, quat, orig);
 		}
 
@@ -643,7 +643,7 @@ void ParticleEmitterClass::Create_New_Particles(const Quaternion & curr_quat, co
 // the given age and emitter transform (expressed as a quaternion and origin
 // vector). (must check if address is NULL).
 void ParticleEmitterClass::Initialize_Particle(NewParticleStruct * newpart,
-   uint32_t timestamp, const Quaternion & quat, const Vector3 & orig)
+   unsigned int timestamp, const Quaternion & quat, const Vector3 & orig)
 {
    // Set time stamp.
 	newpart->TimeStamp = timestamp;

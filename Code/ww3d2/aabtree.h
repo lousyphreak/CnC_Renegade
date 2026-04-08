@@ -36,8 +36,6 @@
 
 #if defined(_MSC_VER)
 #pragma once
-
-#include <cstdint>
 #endif
 
 #ifndef AABTREE_H
@@ -98,12 +96,12 @@ public:
 	int						Get_Node_Count(void) { return NodeCount; }
 	int						Get_Poly_Count(void) { return PolyCount; }
 	int						Compute_Ram_Size(void);
-	void						Generate_APT(const OBBoxClass & box,SimpleDynVecClass<uint32_t> & apt);
-	void						Generate_APT(const OBBoxClass & box,const Vector3 & viewdir,SimpleDynVecClass<uint32_t> & apt);
+	void						Generate_APT(const OBBoxClass & box,SimpleDynVecClass<uint32> & apt);
+	void						Generate_APT(const OBBoxClass & box,const Vector3 & viewdir,SimpleDynVecClass<uint32> & apt);
 
 	bool						Cast_Ray(RayCollisionTestClass & raytest);
 	int						Cast_Semi_Infinite_Axis_Aligned_Ray(const Vector3 & start_point,
-									int axis_dir, uint8_t & flags);
+									int axis_dir, unsigned char & flags);
 	bool						Cast_AABox(AABoxCollisionTestClass & boxtest);
 	bool						Cast_OBBox(OBBoxCollisionTestClass & boxtest);
 	bool						Intersect_OBBox(OBBoxIntersectionTestClass & boxtest);
@@ -134,8 +132,8 @@ private:
 		Vector3				Min;
 		Vector3				Max;
 		
-		uint32_t				FrontOrPoly0;
-		uint32_t				BackOrPolyCount;
+		uint32				FrontOrPoly0;
+		uint32				BackOrPolyCount;
 
 		// accessors
 		inline bool			Is_Leaf(void);				
@@ -146,10 +144,10 @@ private:
 		inline int			Get_Poly_Count(void);		// returns polygon count (only call on LEAFs)
 
 		// initialization
-		inline void			Set_Front_Child(uint32_t index);
-		inline void			Set_Back_Child(uint32_t index);
-		inline void			Set_Poly0(uint32_t index);
-		inline void			Set_Poly_Count(uint32_t count);
+		inline void			Set_Front_Child(uint32 index);
+		inline void			Set_Back_Child(uint32 index);
+		inline void			Set_Poly0(uint32 index);
+		inline void			Set_Poly_Count(uint32 count);
 	};
 
 	/*
@@ -158,12 +156,12 @@ private:
 	*/
 	struct OBBoxAPTContextStruct
 	{
-		OBBoxAPTContextStruct(const OBBoxClass & box,SimpleDynVecClass<uint32_t> & apt) : 
+		OBBoxAPTContextStruct(const OBBoxClass & box,SimpleDynVecClass<uint32> & apt) : 
 			Box(box), APT(apt)
 		{ }
 
 		OBBoxClass							Box;
-		SimpleDynVecClass<uint32_t> &	APT;
+		SimpleDynVecClass<uint32> &	APT;
 	};
 
 	/**
@@ -172,7 +170,7 @@ private:
 	*/
 	struct OBBoxRayAPTContextStruct
 	{
-		OBBoxRayAPTContextStruct(const OBBoxClass & box,const Vector3 & viewdir,SimpleDynVecClass<uint32_t> & apt) :
+		OBBoxRayAPTContextStruct(const OBBoxClass & box,const Vector3 & viewdir,SimpleDynVecClass<uint32> & apt) :
 			Box(box),
 			ViewVector(viewdir),
 			APT(apt)
@@ -180,7 +178,7 @@ private:
 
 		OBBoxClass							Box;
 		Vector3								ViewVector;
-		SimpleDynVecClass<uint32_t> &	APT;
+		SimpleDynVecClass<uint32> &	APT;
 	};
 
 	void						Generate_OBBox_APT_Recursive(CullNodeStruct * node,OBBoxAPTContextStruct & context);
@@ -188,14 +186,14 @@ private:
 
 	bool						Cast_Ray_Recursive(CullNodeStruct * node,RayCollisionTestClass & raytest);
 	int						Cast_Semi_Infinite_Axis_Aligned_Ray_Recursive(CullNodeStruct * node, const Vector3 & start_point,
-									int axis_r, int axis_1, int axis_2, int direction, uint8_t & flags);
+									int axis_r, int axis_1, int axis_2, int direction, unsigned char & flags);
 	bool						Cast_AABox_Recursive(CullNodeStruct * node,AABoxCollisionTestClass & boxtest);
 	bool						Cast_OBBox_Recursive(CullNodeStruct * node,OBBoxCollisionTestClass & boxtest);
 	bool						Intersect_OBBox_Recursive(CullNodeStruct * node,OBBoxIntersectionTestClass & boxtest);
 
 	bool						Cast_Ray_To_Polys(CullNodeStruct * node,RayCollisionTestClass & raytest);
 	int						Cast_Semi_Infinite_Axis_Aligned_Ray_To_Polys(CullNodeStruct * node, const Vector3 & start_point,
-									int axis_r, int axis_1, int axis_2, int direction, uint8_t & flags);
+									int axis_r, int axis_1, int axis_2, int direction, unsigned char & flags);
 	bool						Cast_AABox_To_Polys(CullNodeStruct * node,AABoxCollisionTestClass & boxtest);
 	bool						Cast_OBBox_To_Polys(CullNodeStruct * node,OBBoxCollisionTestClass & boxtest);
 	bool						Intersect_OBBox_With_Polys(CullNodeStruct * node,OBBoxIntersectionTestClass & boxtest);
@@ -205,7 +203,7 @@ private:
 	int						NodeCount;			// number of nodes in the tree
 	CullNodeStruct *		Nodes;				// array of nodes
 	int						PolyCount;			// number of polygons in the parent mesh (and the number of indexes in our array)
-	uint32_t *					PolyIndices;		// linear array of polygon indices, nodes index into this array
+	uint32 *					PolyIndices;		// linear array of polygon indices, nodes index into this array
 	MeshGeometryClass *	Mesh;					// pointer to the parent mesh (non-ref-counted; we are a member of this mesh)
 
 	friend class MeshClass;
@@ -229,7 +227,7 @@ inline bool AABTreeClass::Cast_Ray(RayCollisionTestClass & raytest)
 }
 
 inline int AABTreeClass::Cast_Semi_Infinite_Axis_Aligned_Ray(const Vector3 & start_point,
-	int axis_dir, uint8_t & flags)
+	int axis_dir, unsigned char & flags)
 {
 	// These tables translate between the axis_dir representation (which is an integer in which 0
 	// indicates a ray along the positive x axis, 1 along the negative x axis, 2 the positive y
@@ -321,25 +319,25 @@ inline int AABTreeClass::CullNodeStruct::Get_Poly_Count(void)
 	return BackOrPolyCount;
 }
 
-inline void AABTreeClass::CullNodeStruct::Set_Front_Child(uint32_t index)
+inline void AABTreeClass::CullNodeStruct::Set_Front_Child(uint32 index)
 {
 	WWASSERT(index < 0x7FFFFFFF);
 	FrontOrPoly0 = index;
 }
 
-inline void AABTreeClass::CullNodeStruct::Set_Back_Child(uint32_t index)
+inline void AABTreeClass::CullNodeStruct::Set_Back_Child(uint32 index)
 {
 	WWASSERT(index < 0x7FFFFFFF);
 	BackOrPolyCount = index;
 }
 
-inline void AABTreeClass::CullNodeStruct::Set_Poly0(uint32_t index)
+inline void AABTreeClass::CullNodeStruct::Set_Poly0(uint32 index)
 {
 	WWASSERT(index < 0x7FFFFFFF);
 	FrontOrPoly0 = (index | AABTREE_LEAF_FLAG);
 }
 
-inline void AABTreeClass::CullNodeStruct::Set_Poly_Count(uint32_t count)
+inline void AABTreeClass::CullNodeStruct::Set_Poly_Count(uint32 count)
 {
 	WWASSERT(count < 0x7FFFFFFF);
 	BackOrPolyCount = count;

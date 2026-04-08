@@ -36,8 +36,6 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #if defined(_MSC_VER)
 #pragma once
-
-#include <cstdint>
 #endif
 
 #ifndef TEXTFCACH_H
@@ -82,7 +80,7 @@ class TextureFileCache
 		bool Validate_Texture(const char* texturename);
 
 		// Load a surface from the file cache, null if does not exist.
-		srColorSurfaceIFace *Get_Surface(const char *texturename, uint32_t reduce_factor);
+		srColorSurfaceIFace *Get_Surface(const char *texturename, unsigned int reduce_factor);
 
 	protected:
 		struct FileHeader {
@@ -109,7 +107,7 @@ class TextureFileCache
 		struct TextureBlockHeader 
 		{
 			// Time data stamp of file.
-			uint32_t 								FileTime;
+			unsigned long 								FileTime;
 
 			// Number of mip maps in texture (including first one).
 			int											NumMipMaps;

@@ -17,7 +17,6 @@ void PrintDedicatedBanner()
         << "  x86 asm enabled: " << RENEGADE_WITH_X86_ASM << '\n'
         << "  stacktrace backend: std::stacktrace with log fallback\n"
         << "  dx8 renderer enabled: " << RENEGADE_WITH_DX8_RENDERER << '\n'
-        << "  bgfx bootstrap enabled: " << RENEGADE_WITH_BGFX_RENDERER << '\n'
         << "  combat input backend: SDL3\n"
         << "  dedicated build define: 1\n"
         << "  commando slice: " << Renegade_Commando_Bootstrap_Summary() << '\n'

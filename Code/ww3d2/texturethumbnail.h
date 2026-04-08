@@ -19,9 +19,9 @@
 #ifndef TEXTURETHUMBNAIL_H
 #define TEXTURETHUMBNAIL_H
 
+#if defined(_MSC_VER)
 #pragma once
-
-#include <cstdint>
+#endif
 
 #include "always.h"
 #include "wwstring.h"
@@ -38,21 +38,21 @@ class ThumbnailClass
 	friend ThumbnailManagerClass;
 
 	StringClass Name;
-	uint8_t* Bitmap;
+	unsigned char* Bitmap;
 	unsigned Width;
 	unsigned Height;
 	unsigned OriginalTextureWidth;
 	unsigned OriginalTextureHeight;
 	unsigned OriginalTextureMipLevelCount;
 	WW3DFormat OriginalTextureFormat;
-	uint32_t DateTime;
+	unsigned long DateTime;
 	bool Allocated;	// if true, destructor will free the memory
 	ThumbnailManagerClass* Manager;
 
 	ThumbnailClass(
 		ThumbnailManagerClass* manager,
 		const char* name, 
-		uint8_t* bitmap, 
+		unsigned char* bitmap, 
 		unsigned w, 
 		unsigned h, 
 		unsigned original_w, 
@@ -60,14 +60,14 @@ class ThumbnailClass
 		unsigned original_mip_level_count,
 		WW3DFormat original_format,
 		bool allocated,
-		uint32_t date_time);
+		unsigned long date_time);
 	ThumbnailClass(
 		ThumbnailManagerClass* manager,
 		const StringClass& filename);
 	~ThumbnailClass();
 public:
 
-	uint8_t* Peek_Bitmap() { return Bitmap; }
+	unsigned char* Peek_Bitmap() { return Bitmap; }
 	WW3DFormat Get_Format() { return WW3D_FORMAT_A4R4G4B4; }
 	unsigned Get_Width() const { return Width; }
 	unsigned Get_Height() const { return Height; }
@@ -75,7 +75,7 @@ public:
 	unsigned Get_Original_Texture_Height() const { return OriginalTextureHeight; }
 	unsigned Get_Original_Texture_Mip_Level_Count() const { return OriginalTextureMipLevelCount; }
 	WW3DFormat Get_Original_Texture_Format() const { return OriginalTextureFormat; }
-	uint32_t Get_Date_Time() const { return DateTime; }
+	unsigned long Get_Date_Time() const { return DateTime; }
 	const StringClass& Get_Name() const { return Name; }
 
 };
@@ -91,18 +91,18 @@ class ThumbnailManagerClass : public DLNodeClass<ThumbnailManagerClass>
 	StringClass ThumbnailFileName;
 	StringClass MixFileName;
 	HashTemplateClass<StringClass,ThumbnailClass*> ThumbnailHash;
-	uint8_t* ThumbnailMemory;
+	unsigned char* ThumbnailMemory;
 	bool Changed;
-	uint32_t DateTime;
+	unsigned long DateTime;
 
 	static DLListClass<ThumbnailManagerClass> ThumbnailManagerList;
 
 	ThumbnailManagerClass(const char* thumbnail_filename, const char* mix_file_name);
 	~ThumbnailManagerClass();
 
-	void Remove_From_Hash(ThumbnailClass* thumb);
-	void Insert_To_Hash(ThumbnailClass* thumb);
-	ThumbnailClass* Get_From_Hash(const StringClass& name);
+	void ThumbnailManagerClass::Remove_From_Hash(ThumbnailClass* thumb);
+	void ThumbnailManagerClass::Insert_To_Hash(ThumbnailClass* thumb);
+	ThumbnailClass* ThumbnailManagerClass::Get_From_Hash(const StringClass& name);
 
 	void Create_Thumbnails();
 	static void Update_Thumbnail_File(const char* mix_file_name, bool display_message_box);

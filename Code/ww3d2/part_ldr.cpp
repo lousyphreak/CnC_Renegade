@@ -40,7 +40,6 @@
 #include "win.h"		// for lstrcpy, can this be improved?
 #include "assetmgr.h"
 #include "texture.h"
-#include <cstdint>
 
 #ifndef SAFE_DELETE
 #define SAFE_DELETE(pointer) \
@@ -761,7 +760,7 @@ ParticleEmitterDefClass::Read_Props (ChunkLoadClass &chunk_load)
 		W3dEmitterPropertyStruct info = { 0 };
 		if (chunk_load.Read (&info, sizeof (info)) == sizeof (info)) {
 
-			uint32_t index=0;
+			unsigned int index=0;
 			
 			//ParticlePropertyStruct<Vector3>
 			m_ColorKeyframes.NumKeyFrames		= info.ColorKeyframes - 1;
@@ -1027,7 +1026,7 @@ ParticleEmitterDefClass::Read_Rotation_Keyframes (ChunkLoadClass &chunk_load)
 	}
 
 	// Read in the keys
-	for (uint32_t i=0; (i<header.KeyframeCount) && (ret_val == WW3D_ERROR_OK); i++) {
+	for (unsigned int i=0; (i<header.KeyframeCount) && (ret_val == WW3D_ERROR_OK); i++) {
 		W3dEmitterRotationKeyframeStruct key;
 		if (chunk_load.Read(&key,sizeof(key)) == sizeof(key)) {
 			m_RotationKeyframes.KeyTimes[i] = key.Time;
@@ -1074,7 +1073,7 @@ ParticleEmitterDefClass::Read_Frame_Keyframes (ChunkLoadClass &chunk_load)
 	}
 
 	// Read in the keys
-	for (uint32_t i=0; (i<header.KeyframeCount) && (ret_val == WW3D_ERROR_OK); i++) {
+	for (unsigned int i=0; (i<header.KeyframeCount) && (ret_val == WW3D_ERROR_OK); i++) {
 		W3dEmitterFrameKeyframeStruct key;
 		if (chunk_load.Read(&key,sizeof(key)) != sizeof(key)) {
 			ret_val = WW3D_ERROR_LOAD_FAILED;
@@ -1117,7 +1116,7 @@ ParticleEmitterDefClass::Read_Blur_Time_Keyframes (ChunkLoadClass &chunk_load)
 	}
 
 	// Read in the keys
-	for (uint32_t i=0; (i<header.KeyframeCount) && (ret_val == WW3D_ERROR_OK); i++) {
+	for (unsigned int i=0; (i<header.KeyframeCount) && (ret_val == WW3D_ERROR_OK); i++) {
 		W3dEmitterBlurTimeKeyframeStruct key;
 		if (chunk_load.Read(&key,sizeof(key)) != sizeof(key)) {
 			ret_val = WW3D_ERROR_LOAD_FAILED;
@@ -1213,7 +1212,7 @@ ParticleEmitterDefClass::Save_User_Data (ChunkSaveClass &chunk_save)
 	// Begin a chunk that contains user information
 	if (chunk_save.Begin_Chunk (W3D_CHUNK_EMITTER_USER_DATA) == TRUE) {
 		
-		uint32_t string_len = m_pUserString ? (::lstrlen (m_pUserString) + 1) : 0;
+		DWORD string_len = m_pUserString ? (::lstrlen (m_pUserString) + 1) : 0;
 
 		// Fill the header structure
 		W3dEmitterUserInfoStruct user_info = { 0 };
@@ -1524,7 +1523,7 @@ ParticleEmitterDefClass::Save_Rotation_Keyframes (ChunkSaveClass & chunk_save)
 		chunk_save.Write (&key, sizeof (key));
 
 		// Write the remaining keyframes
-		for (uint32_t index = 0; (index < header.KeyframeCount) && success; index ++) {			
+		for (unsigned int index = 0; (index < header.KeyframeCount) && success; index ++) {			
 			key.Time = m_RotationKeyframes.KeyTimes[index];
 			key.Rotation = m_RotationKeyframes.Values[index];
 			success = (chunk_save.Write (&key, sizeof (key)) == sizeof (key));
@@ -1572,7 +1571,7 @@ ParticleEmitterDefClass::Save_Frame_Keyframes (ChunkSaveClass & chunk_save)
 		chunk_save.Write (&key, sizeof (key));
 
 		// Write the remaining keyframes
-		for (uint32_t index = 0; (index < header.KeyframeCount) && success; index ++) {			
+		for (unsigned int index = 0; (index < header.KeyframeCount) && success; index ++) {			
 			key.Time = m_FrameKeyframes.KeyTimes[index];
 			key.Frame = m_FrameKeyframes.Values[index];
 			success = (chunk_save.Write (&key, sizeof (key)) == sizeof (key));
@@ -1619,7 +1618,7 @@ ParticleEmitterDefClass::Save_Blur_Time_Keyframes (ChunkSaveClass & chunk_save)
 		chunk_save.Write (&key, sizeof (key));
 
 		// Write the remaining keyframes
-		for (uint32_t index = 0; (index < header.KeyframeCount) && success; index ++) {			
+		for (unsigned int index = 0; (index < header.KeyframeCount) && success; index ++) {			
 			key.Time = m_BlurTimeKeyframes.KeyTimes[index];
 			key.BlurTime = m_BlurTimeKeyframes.Values[index];
 			success = (chunk_save.Write (&key, sizeof (key)) == sizeof (key));

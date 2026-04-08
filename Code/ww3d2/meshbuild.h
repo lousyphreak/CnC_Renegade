@@ -36,8 +36,6 @@
 
 #if defined(_MSC_VER)
 #pragma once
-
-#include <cstdint>
 #endif
 
 #ifndef MESHBUILD_H
@@ -163,7 +161,7 @@ public:
 		int						Attributes;										// user-set attributes
 		int						TextureIndex[MAX_PASSES][MAX_STAGES];	// texture to use for each pass
 		int						ShaderIndex[MAX_PASSES];					// shader for each pass
-		uint32_t					SurfaceType;									// surface type identifier
+		uint32					SurfaceType;									// surface type identifier
 
 		int						AddIndex;			// set by builder: index of addition
 		int						VertIdx[3];			// set by builder: "optimized" vertex indices

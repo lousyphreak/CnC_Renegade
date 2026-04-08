@@ -668,8 +668,7 @@ void DazzleRenderObjClass::Init_Type(const DazzleInitClass& i)
 	if (i.type>=type_count) {
 		unsigned new_count=i.type+1;
 		DazzleTypeClass** new_types=new DazzleTypeClass*[new_count];
-		unsigned a=0;
-		for (;a<type_count;++a) {
+		for (unsigned a=0;a<type_count;++a) {
 			new_types[a]=types[a];
 		}
 		for (;a<new_count;++a) {
@@ -692,8 +691,7 @@ void DazzleRenderObjClass::Init_Lensflare(const LensflareInitClass& i)
 	if (i.type>=lensflare_count) {
 		unsigned new_count=i.type+1;
 		LensflareTypeClass** new_lensflares=new LensflareTypeClass*[new_count];
-		unsigned a=0;
-		for (;a<lensflare_count;++a) {
+		for (unsigned a=0;a<lensflare_count;++a) {
 			new_lensflares[a]=lensflares[a];
 		}
 		for (;a<new_count;++a) {
@@ -1182,16 +1180,16 @@ void DazzleRenderObjClass::Render_Dazzle(CameraClass* camera)
 	DynamicIBAccessClass ib_access(BUFFER_TYPE_DYNAMIC_DX8,poly_count*3);
 	{
 		DynamicIBAccessClass::WriteLockClass lock(&ib_access);
-		uint16_t* inds=lock.Get_Index_Array();
+		unsigned short* inds=lock.Get_Index_Array();
 
 		// Proceed two polygons at a time
 		for (int a=0;a<poly_count/2;a++) {
-			*inds++=static_cast<uint16_t>(4 * a);
-			*inds++=static_cast<uint16_t>(4 * a + 1);
-			*inds++=static_cast<uint16_t>(4 * a + 2);
-			*inds++=static_cast<uint16_t>(4 * a);
-			*inds++=static_cast<uint16_t>(4 * a + 2);
-			*inds++=static_cast<uint16_t>(4 * a + 3);
+			*inds++=short(4*a);
+			*inds++=short(4*a+1);
+			*inds++=short(4*a+2);
+			*inds++=short(4*a);
+			*inds++=short(4*a+2);
+			*inds++=short(4*a+3);
 		}
 	}
 
@@ -1404,7 +1402,7 @@ void DazzleRenderObjClass::Special_Render(SpecialRenderInfoClass & rinfo)
 
 class DazzlePersistFactoryClass : public PersistFactoryClass
 {
-	virtual uint32_t				Chunk_ID(void) const;
+	virtual uint32				Chunk_ID(void) const;
 	virtual PersistClass *	Load(ChunkLoadClass & cload) const;
 	virtual void				Save(ChunkSaveClass & csave,PersistClass * obj)	const;
 
@@ -1420,7 +1418,7 @@ class DazzlePersistFactoryClass : public PersistFactoryClass
 
 static DazzlePersistFactoryClass _DazzleFactory;
 
-uint32_t DazzlePersistFactoryClass::Chunk_ID(void) const
+uint32 DazzlePersistFactoryClass::Chunk_ID(void) const
 {
 	return WW3D_PERSIST_CHUNKID_DAZZLE;
 }
@@ -1493,7 +1491,7 @@ PersistClass *	DazzlePersistFactoryClass::Load(ChunkLoadClass & cload) const
 void DazzlePersistFactoryClass::Save(ChunkSaveClass & csave,PersistClass * obj)	const
 {
 	DazzleRenderObjClass * robj = (DazzleRenderObjClass *)obj;
-	uint32_t dazzle_type = robj->Get_Dazzle_Type();
+	unsigned int dazzle_type = robj->Get_Dazzle_Type();
 	const char * dazzle_type_name = DazzleRenderObjClass::Get_Type_Name(dazzle_type);
 	Matrix3D tm = robj->Get_Transform();
 
@@ -1532,7 +1530,7 @@ DazzleLayerClass::DazzleLayerClass(void) :
 		WWASSERT(type_count);
 
 		visible_lists = new DazzleRenderObjClass *[type_count];
-		for (uint32_t i = 0; i < type_count; i++) {
+		for (unsigned int i = 0; i < type_count; i++) {
 			visible_lists[i] = NULL;
 		}
 	}
@@ -1543,7 +1541,7 @@ DazzleLayerClass::~DazzleLayerClass(void)
 	// NOTE - this destructor must be called BEFORE DeInit().
 	WWASSERT(type_count);
 
-	for (uint32_t i = 0; i < type_count; i++) {
+	for (unsigned int i = 0; i < type_count; i++) {
 		Clear_Visible_List(i);
 	}
 
@@ -1580,7 +1578,7 @@ void DazzleLayerClass::Render(CameraClass* camera)
 
 // ----------------------------------------------------------------------------
 
-int DazzleLayerClass::Get_Visible_Item_Count(uint32_t type) const
+int DazzleLayerClass::Get_Visible_Item_Count(unsigned int type) const
 {
 	if (type >= type_count) {
 		WWASSERT(0);
@@ -1599,7 +1597,7 @@ int DazzleLayerClass::Get_Visible_Item_Count(uint32_t type) const
 
 // ----------------------------------------------------------------------------
 
-void DazzleLayerClass::Clear_Visible_List(uint32_t type)
+void DazzleLayerClass::Clear_Visible_List(unsigned int type)
 {
 	if (type >= type_count) {
 		WWASSERT(0);

@@ -27,8 +27,10 @@
 #include "ffactory.h"
 #include "rawfile.h"
 #include "mixfile.h"
+#include "wwdebug.h"
 #include <windows.h>
 #include <filesystem>
+#include <vector>
 
 DLListClass<ThumbnailManagerClass> ThumbnailManagerClass::ThumbnailManagerList;
 static bool message_box_displayed=false;
@@ -305,10 +307,31 @@ void ThumbnailManagerClass::Load()
 			thumb_file->Read(&total_header_length,sizeof(int));
 			thumb_file->Read(&total_data_length,sizeof(int));
 			if (total_thumb_count) {
-				WWASSERT(total_data_length && total_header_length);
+				struct PendingThumbnailHeader
+				{
+					StringClass Name;
+					int Offset;
+					int Width;
+					int Height;
+					int OriginalWidth;
+					int OriginalHeight;
+					int OriginalMipLevelCount;
+					WW3DFormat OriginalFormat;
+					unsigned long DateTime;
+				};
+
+				if (total_thumb_count < 0 || total_header_length <= 0 || total_data_length <= 0) {
+					WWDEBUG_SAY(("ThumbnailManagerClass::Load ignoring malformed thumbnail header '%s'\n", ThumbnailFileName.Peek_Buffer()));
+					thumb_file->Close();
+					return;
+				}
+
 				ThumbnailMemory=new unsigned char[total_data_length];
-				// Load thumbs
-				for (int i=0;i<total_thumb_count;++i) {
+				std::vector<PendingThumbnailHeader> headers;
+				headers.reserve(total_thumb_count);
+				bool header_valid = true;
+
+				for (int i=0;i<total_thumb_count && header_valid;++i) {
 					char name[256];
 					int offset;
 					int width;
@@ -328,18 +351,51 @@ void ThumbnailManagerClass::Load()
 					thumb_file->Read(&original_mip_level_count,sizeof(int));
 					thumb_file->Read(&original_format,sizeof(int));
 					thumb_file->Read(&name_len,sizeof(int));
-					WWASSERT(name_len<255);
+
+					const bool offset_valid = offset >= total_header_length && offset < (total_header_length + total_data_length);
+					const bool dimensions_valid = width > 0 && height > 0 && original_width > 0 && original_height > 0 && original_mip_level_count > 0;
+					if (name_len <= 0 || name_len >= 256 || !offset_valid || !dimensions_valid) {
+						WWDEBUG_SAY(("ThumbnailManagerClass::Load ignoring malformed thumbnail entry %d from '%s'\n", i, ThumbnailFileName.Peek_Buffer()));
+						header_valid = false;
+						break;
+					}
+
 					thumb_file->Read(name,name_len);
 					name[name_len]='\0';
+
+					PendingThumbnailHeader header = {};
+					header.Name = name;
+					header.Offset = offset;
+					header.Width = width;
+					header.Height = height;
+					header.OriginalWidth = original_width;
+					header.OriginalHeight = original_height;
+					header.OriginalMipLevelCount = original_mip_level_count;
+					header.OriginalFormat = original_format;
+					header.DateTime = date_time;
+					headers.push_back(header);
+				}
+
+				if (!header_valid) {
+					delete[] ThumbnailMemory;
+					ThumbnailMemory = NULL;
+					thumb_file->Close();
+					return;
+				}
+
+				thumb_file->Read(ThumbnailMemory,total_data_length);
+
+				for (int i=0;i<headers.size();++i) {
+					const PendingThumbnailHeader &header = headers[i];
 
 					// If per-texture time stamp test is enabled, thumbnail is only used if its time stamp
 					// matches the texture's time stamp.
 					bool valid=true;
 					if (Is_Per_Texture_Time_Stamp_Used()) {
-						file_auto_ptr texture_file(_TheFileFactory, name);
+						file_auto_ptr texture_file(_TheFileFactory, header.Name);
 						if (texture_file->Is_Available()) {
 							texture_file->Open();
-							if (texture_file->Get_Date_Time()!=date_time) {
+							if (texture_file->Get_Date_Time()!=header.DateTime) {
 								valid=false;
 							}
 							texture_file->Close();
@@ -352,19 +408,18 @@ void ThumbnailManagerClass::Load()
 					if (valid) {
 						new ThumbnailClass(
 							this,
-							name,
-							ThumbnailMemory+offset-total_header_length,
-							width,
-							height,
-							original_width,
-							original_height,
-							original_mip_level_count,
-							original_format,
+							header.Name,
+							ThumbnailMemory + header.Offset - total_header_length,
+							header.Width,
+							header.Height,
+							header.OriginalWidth,
+							header.OriginalHeight,
+							header.OriginalMipLevelCount,
+							header.OriginalFormat,
 							false,
-							date_time);
+							header.DateTime);
 					}
 				}
-				thumb_file->Read(ThumbnailMemory,total_data_length);
 			}
 		}
 		thumb_file->Close();

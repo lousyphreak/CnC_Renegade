@@ -169,12 +169,10 @@ public:
 
     void traceVargs(const char *file_path, uint16_t line, const char *format, va_list arg_list) override
     {
-        char buffer[2048];
-        std::vsnprintf(buffer, sizeof(buffer), format, arg_list);
-        WWDEBUG_SAY(("bgfx trace %s:%u %s",
-            file_path != nullptr ? file_path : "<unknown>",
-            static_cast<unsigned>(line),
-            buffer));
+        (void)file_path;
+        (void)line;
+        (void)format;
+        (void)arg_list;
     }
 
     void profilerBegin(const char *, uint32_t, const char *, uint16_t) override {}
@@ -336,6 +334,8 @@ bool Query_Native_Window(SDL_Window *window, bgfx::PlatformData &platform_data)
         return false;
     }
 
+    platform_data.type = bgfx::NativeWindowHandleType::Default;
+
     const SDL_PropertiesID window_properties = SDL_GetWindowProperties(window);
     if (window_properties == 0) {
         return false;
@@ -349,6 +349,7 @@ bool Query_Native_Window(SDL_Window *window, bgfx::PlatformData &platform_data)
 
         platform_data.ndt = wayland_display;
         platform_data.nwh = wayland_surface;
+        platform_data.type = bgfx::NativeWindowHandleType::Wayland;
         return true;
     }
 
@@ -360,6 +361,7 @@ bool Query_Native_Window(SDL_Window *window, bgfx::PlatformData &platform_data)
 
         platform_data.ndt = x11_display;
         platform_data.nwh = reinterpret_cast<void *>(x11_window);
+        platform_data.type = bgfx::NativeWindowHandleType::Default;
         return true;
     }
 
@@ -374,6 +376,20 @@ bool Query_Native_Window(SDL_Window *window, bgfx::PlatformData &platform_data)
     }
 
     return false;
+}
+
+bool Should_Use_Single_Threaded_Bgfx(SDL_Window *window)
+{
+    if (window == nullptr) {
+        return false;
+    }
+
+    const SDL_PropertiesID window_properties = SDL_GetWindowProperties(window);
+    if (window_properties == 0) {
+        return false;
+    }
+
+    return SDL_GetPointerProperty(window_properties, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr) != nullptr;
 }
 
 uint8_t Expand_4_To_8(uint8_t value)
@@ -754,6 +770,13 @@ bool BgfxRenderer::Init(void *window_handle, bool lite)
     if (!Update_Platform_Window(window_handle)) {
         WWDEBUG_SAY(("BgfxRenderer::Init failed to query native window data\n"));
         return false;
+    }
+
+    if (Should_Use_Single_Threaded_Bgfx(reinterpret_cast<SDL_Window *>(window_handle))) {
+        // Calling renderFrame before init on the same thread keeps bgfx off its
+        // internal render thread, which avoids X11/Vulkan startup crashes when
+        // bgfx is given SDL's X11 display and window handles.
+        bgfx::renderFrame();
     }
 
     bgfx::Init init;

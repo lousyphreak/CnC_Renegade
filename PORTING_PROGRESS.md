@@ -114,6 +114,8 @@
   - `cmake --build build -j20` succeeds.
   - `Renegade` now initializes bgfx cleanly, enters the main loop, survives a normal interactive validation run for more than 300 seconds without ASAN/UBSAN failures, and shuts down cleanly when stopped.
   - a redirected `timeout 300s ./Renegade > ...` run can still self-exit early with status `0`, so any future automation around the 300-second check should keep using the normal launch path that matches the successful live validation rather than assuming redirected execution is equivalent.
+- Fixed another Linux/X11 startup crash visible through `launch.sh`: when bgfx was allowed to create its own render thread, the Vulkan swapchain could crash inside X11/GLX while using SDL-owned X11 display/window handles. `BgfxRenderer` now forces bgfx's documented single-threaded startup mode on X11 by calling `bgfx::renderFrame()` before `bgfx::init()`, keeping that window/surface creation on the main thread without changing higher-level game behavior.
+- Fixed the matching Wayland-side startup bug in `BgfxRenderer`'s SDL native-handle bridge: when SDL provided Wayland display/surface pointers, `bgfx::PlatformData.type` was left at bgfx's Linux default (`X11`). That let bgfx misinterpret Wayland handles as X11 handles during renderer bring-up, which can surface as an X11/Vulkan crash even from a Wayland session. The bridge now marks Wayland handles explicitly with `bgfx::NativeWindowHandleType::Wayland`.
 
 ## Next work
 

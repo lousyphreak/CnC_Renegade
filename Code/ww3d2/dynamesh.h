@@ -45,7 +45,6 @@
 #include "matinfo.h"
 #include "rendobj.h"
 #include "polyinfo.h"
-#include "dx8wrapper.h"
 
 class	ShaderClass;
 class	IntersectionClass;
@@ -277,18 +276,7 @@ public:
 	// WARNING: does not validate index
 	Vector3 & Get_Normal(int index) { return Model->Get_Non_Const_Vertex_Normal_Array()[index]; }
 
-	void Color(float r, float g, float b, float a, int color_array_index = 0)
-	{
-//		Vector4 * color = Model->Get_Color_Array(color_array_index);
-		unsigned * color = Model->Get_Color_Array(color_array_index);
-		assert(color);
-
-		color[VertCount]=DX8Wrapper::Convert_Color_Clamp(Vector4(r,g,b,a));
-//		color[VertCount].X = r;
-//		color[VertCount].Y = g;
-//		color[VertCount].Z = b;
-//		color[VertCount].W = a;
-	}
+	void Color(float r, float g, float b, float a, int color_array_index = 0);
 	void Color(const Vector4 &v, int color_array_index = 0) { Color(v.X, v.Y, v.Z, v.W, color_array_index); }
 	void Color(unsigned v, int color_array_index=0)
 	{
@@ -354,20 +342,7 @@ public:
 	void Translate_Vertices(const Vector3 & offset);
 
 	// For changing the color of a vertex after DynaMesh has been created.
-	virtual void Change_Vertex_Color(int index, const Vector4 &color, int color_array_index)
-	{
-		// check if switching to multivertexcolor
-		if (!MultiVertexColor[color_array_index]) {
-			Switch_To_Multi_Vertex_Color(color_array_index);
-		}
-		CurVertexColor[color_array_index].X = color.X;
-		CurVertexColor[color_array_index].Y = color.Y;
-		CurVertexColor[color_array_index].Z = color.Z;
-		CurVertexColor[color_array_index].W = color.W;
-//		Vector4 * color_list = Model->Get_Color_Array(color_array_index);
-		unsigned * color_list = Model->Get_Color_Array(color_array_index);
-		color_list[index] = DX8Wrapper::Convert_Color_Clamp(color);
-	}
+	virtual void Change_Vertex_Color(int index, const Vector4 &color, int color_array_index);
 
 
 	/*
@@ -472,30 +447,6 @@ inline void DynamicMeshClass::Get_Obj_Space_Bounding_Box(AABoxClass & box) const
 		Model->Compute_Bounds(NULL);	
 	}
 	Model->Get_Bounding_Box(&box);
-}
-
-/*
-**
-*/
-void DynamicMeshClass::Switch_To_Multi_Vertex_Color(int color_array_index)
-{
-/*	Vector4 * color_list = Model->Get_Color_Array(color_array_index);
-	// set the proper color for all the existing vertices
-	for (int lp = 0; lp < VertCount; lp++) {
-		color_list[lp].X = CurVertexColor[color_array_index].X;
-		color_list[lp].Y = CurVertexColor[color_array_index].Y;
-		color_list[lp].Z = CurVertexColor[color_array_index].Z;
-		color_list[lp].W = CurVertexColor[color_array_index].W;
-	}
-*/
-	unsigned * color_list = Model->Get_Color_Array(color_array_index);
-	// set the proper color for all the existing vertices
-	unsigned vertex_color=DX8Wrapper::Convert_Color_Clamp(CurVertexColor[color_array_index]);
-	for (int lp = 0; lp < VertCount; lp++) {
-		color_list[lp]=vertex_color;
-	}
-
-	MultiVertexColor[color_array_index]  = true;
 }
 
 /*

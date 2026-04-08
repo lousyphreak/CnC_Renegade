@@ -5,6 +5,7 @@
 #ifndef _WIN32
 
 #include <cstdio>
+#include <cstdlib>
 #include <cwchar>
 
 #ifndef DLL_PROCESS_ATTACH
@@ -13,6 +14,17 @@
 
 #ifndef DLL_PROCESS_DETACH
 #define DLL_PROCESS_DETACH 0
+#endif
+
+#ifndef RENEGADE_COMPAT_WINDOWS_TYPES_DEFINED
+#define RENEGADE_COMPAT_WINDOWS_TYPES_DEFINED
+using UINT = unsigned int;
+using DWORD = unsigned long;
+using ULONG = unsigned long;
+#endif
+
+#ifndef _strdup
+#define _strdup strdup
 #endif
 
 inline void OutputDebugStringA(const char * text)

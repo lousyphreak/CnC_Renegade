@@ -108,6 +108,36 @@ DynamicMeshModel::~DynamicMeshModel(void)
 	REF_PTR_RELEASE(MatInfo);
 }
 
+void DynamicMeshClass::Color(float r, float g, float b, float a, int color_array_index)
+{
+	unsigned *color = Model->Get_Color_Array(color_array_index);
+	assert(color);
+
+	color[VertCount] = DX8Wrapper::Convert_Color_Clamp(Vector4(r, g, b, a));
+}
+
+void DynamicMeshClass::Change_Vertex_Color(int index, const Vector4 &color, int color_array_index)
+{
+	if (!MultiVertexColor[color_array_index]) {
+		Switch_To_Multi_Vertex_Color(color_array_index);
+	}
+
+	CurVertexColor[color_array_index] = color;
+	unsigned *color_list = Model->Get_Color_Array(color_array_index);
+	color_list[index] = DX8Wrapper::Convert_Color_Clamp(color);
+}
+
+void DynamicMeshClass::Switch_To_Multi_Vertex_Color(int color_array_index)
+{
+	unsigned *color_list = Model->Get_Color_Array(color_array_index);
+	const unsigned vertex_color = DX8Wrapper::Convert_Color_Clamp(CurVertexColor[color_array_index]);
+	for (int lp = 0; lp < VertCount; lp++) {
+		color_list[lp] = vertex_color;
+	}
+
+	MultiVertexColor[color_array_index] = true;
+}
+
 void DynamicMeshModel::Compute_Plane_Equations(void)
 {
 	// Make sure the arrays are allocated before we do this
@@ -826,5 +856,4 @@ void DynamicScreenMeshClass::Reset( void )
 	Reset_Flags();	
 	Reset_Mesh_Counters();	
 }
-
 

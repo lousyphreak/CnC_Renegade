@@ -52,6 +52,7 @@
 
 
 #include "htree.h"
+#include "osdep.h"
 #include "hanim.h"
 #include "hcanim.h"
 #include <string.h>
@@ -761,7 +762,7 @@ void HTreeClass::Combo_Update
 
 			pivot->IsVisible = false;
 
-			for ( anim_num = 0; (anim_num < anim->Get_Num_Anims()) && (!pivot->IsVisible); anim_num++ ) {
+			for (int anim_num = 0; (anim_num < anim->Get_Num_Anims()) && (!pivot->IsVisible); anim_num++ ) {
 				HAnimClass *motion = anim->Get_Motion( anim_num );
 				if ( motion != NULL ) {
 					float frame_num = anim->Get_Frame( anim_num );
@@ -1021,4 +1022,3 @@ HTreeClass * HTreeClass::Create_Interpolated(const HTreeClass * tree_base,
 
 	return new_tree;
 }
-

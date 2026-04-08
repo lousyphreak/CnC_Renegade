@@ -47,7 +47,7 @@
 #include "rendobj.h"
 #include "bittype.h"
 #include "w3derr.h"
-#include "dx8polygonrenderer.h"
+#include "dx8list.h"
 
 class MeshBuilderClass;
 class HModelClass;
@@ -225,4 +225,3 @@ inline MeshModelClass * MeshClass::Peek_Model(void)
 void Set_MeshModel_Flag(RenderObjClass *robj, int flag, int onoff);
 
 #endif /*MESH_H*/
-

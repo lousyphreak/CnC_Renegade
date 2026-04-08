@@ -269,6 +269,7 @@ static int Build_List_From_String
 		}
 	
 		if (count > 0) {
+			const char *entry = NULL;
 
 			//
 			// Allocate enough StringClass objects to hold all the strings in the list

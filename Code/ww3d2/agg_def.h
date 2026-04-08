@@ -47,6 +47,7 @@
 #include "vector.h"
 #include "bittype.h"
 #include <string.h>
+#include <stdlib.h>
 
 #ifdef _UNIX
 #include "osdep.h"
@@ -110,14 +111,14 @@ class AggregateDefClass
 		virtual WW3DErrorType	Load_W3D (ChunkLoadClass &chunk_load);
 		virtual WW3DErrorType	Save_W3D (ChunkSaveClass &chunk_save);
 		const char *				Get_Name (void) const					{ return m_pName; }
-		void							Set_Name (const char *pname)			{ SAFE_FREE (m_pName); m_pName = ::_strdup (pname); }
+		void							Set_Name (const char *pname)			{ SAFE_FREE (m_pName); m_pName = ::strdup (pname); }
 		RenderObjClass *			Create (void);
 		AggregateDefClass *		Clone (void) const						{ return new AggregateDefClass (*this); }
 
 		//
 		//	Public accessors
 		//
-		ULONG							Class_ID (void) const					{ return m_MiscInfo.OriginalClassID; }
+		unsigned long				Class_ID (void) const					{ return m_MiscInfo.OriginalClassID; }
 
 		//
 		//	Initialization
@@ -189,7 +190,7 @@ class AggregateDefClass
 		//
 		//	Private member data
 		//
-		DWORD																m_Version;
+		uint32																m_Version;
 		DynamicVectorClass<W3dAggregateSubobjectStruct *>	m_SubobjectList;
 		W3dAggregateInfoStruct										m_Info;
 		W3dAggregateMiscInfo											m_MiscInfo;

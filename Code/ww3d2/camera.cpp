@@ -71,7 +71,7 @@
 #include "camera.h"
 #include "ww3d.h"
 #include "matrix4.h"
-#include "dx8wrapper.h"
+#include "bgfxrenderer.h"
 
 
 /***********************************************************************************************
@@ -717,19 +717,15 @@ void CameraClass::Apply(void)
 	bool windowed;
 	WW3D::Get_Render_Target_Resolution(width,height,bits,windowed);
 	
-	D3DVIEWPORT8 vp;
-	vp.X = (DWORD)(Viewport.Min.X * (float)width);
-	vp.Y = (DWORD)(Viewport.Min.Y * (float)height);
-	vp.Width = (DWORD)((Viewport.Max.X - Viewport.Min.X) * (float)width);
-	vp.Height = (DWORD)((Viewport.Max.Y - Viewport.Min.Y) * (float)height);
-	vp.MinZ = ZBufferMin;
-	vp.MaxZ = ZBufferMax;
-	DX8Wrapper::Set_Viewport(&vp);
+	const uint32_t viewport_x = static_cast<uint32_t>(Viewport.Min.X * static_cast<float>(width));
+	const uint32_t viewport_y = static_cast<uint32_t>(Viewport.Min.Y * static_cast<float>(height));
+	const uint32_t viewport_width = static_cast<uint32_t>((Viewport.Max.X - Viewport.Min.X) * static_cast<float>(width));
+	const uint32_t viewport_height = static_cast<uint32_t>((Viewport.Max.Y - Viewport.Min.Y) * static_cast<float>(height));
+	BgfxRenderer::Set_Viewport(viewport_x, viewport_y, viewport_width, viewport_height);
 
 	Matrix4 d3dprojection;
 	Get_D3D_Projection_Matrix(&d3dprojection);
-	DX8Wrapper::Set_Projection_Transform_With_Z_Bias(d3dprojection,ZNear,ZFar);
-	DX8Wrapper::Set_Transform(D3DTS_VIEW,CameraInvTransform);
+	BgfxRenderer::Set_Camera(CameraInvTransform, d3dprojection);
 }
 
 void CameraClass::Set_Clip_Planes(float znear,float zfar)						

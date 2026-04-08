@@ -1,6 +1,9 @@
 #include "bgfxrenderer.h"
 
 #include <cstdint>
+#include <cstdio>
+#include <string>
+#include <vector>
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_pixels.h>
@@ -18,9 +21,93 @@ uint32_t BgfxRenderer::Height = 0;
 uint32_t BgfxRenderer::BitDepth = 32;
 bool BgfxRenderer::Windowed = true;
 void *BgfxRenderer::WindowHandle = nullptr;
+bgfx::VertexLayout BgfxRenderer::PosColorTexcoordLayout;
+bgfx::TextureHandle BgfxRenderer::WhiteTexture = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::ColorTextureUniform = BGFX_INVALID_HANDLE;
 
 namespace
 {
+constexpr uint16_t MainViewId = 0;
+
+const char *Get_Shader_Profile_Directory()
+{
+    switch (bgfx::getRendererType()) {
+    case bgfx::RendererType::Direct3D11:
+    case bgfx::RendererType::Direct3D12:
+        return "dxbc";
+    case bgfx::RendererType::Metal:
+        return "metal";
+    case bgfx::RendererType::OpenGLES:
+        return "essl";
+    case bgfx::RendererType::OpenGL:
+        return "glsl";
+    case bgfx::RendererType::Vulkan:
+        return "spirv";
+    default:
+        return "spirv";
+    }
+}
+
+uint64_t Convert_Blend_Factor(ShaderClass::SrcBlendFuncType factor)
+{
+    switch (factor) {
+    case ShaderClass::SRCBLEND_ZERO:
+        return BGFX_STATE_BLEND_ZERO;
+    case ShaderClass::SRCBLEND_ONE:
+        return BGFX_STATE_BLEND_ONE;
+    case ShaderClass::SRCBLEND_SRC_ALPHA:
+        return BGFX_STATE_BLEND_SRC_ALPHA;
+    case ShaderClass::SRCBLEND_ONE_MINUS_SRC_ALPHA:
+        return BGFX_STATE_BLEND_INV_SRC_ALPHA;
+    default:
+        return BGFX_STATE_BLEND_ONE;
+    }
+}
+
+uint64_t Convert_Blend_Factor(ShaderClass::DstBlendFuncType factor)
+{
+    switch (factor) {
+    case ShaderClass::DSTBLEND_ZERO:
+        return BGFX_STATE_BLEND_ZERO;
+    case ShaderClass::DSTBLEND_ONE:
+        return BGFX_STATE_BLEND_ONE;
+    case ShaderClass::DSTBLEND_SRC_COLOR:
+        return BGFX_STATE_BLEND_SRC_COLOR;
+    case ShaderClass::DSTBLEND_ONE_MINUS_SRC_COLOR:
+        return BGFX_STATE_BLEND_INV_SRC_COLOR;
+    case ShaderClass::DSTBLEND_SRC_ALPHA:
+        return BGFX_STATE_BLEND_SRC_ALPHA;
+    case ShaderClass::DSTBLEND_ONE_MINUS_SRC_ALPHA:
+        return BGFX_STATE_BLEND_INV_SRC_ALPHA;
+    default:
+        return BGFX_STATE_BLEND_ZERO;
+    }
+}
+
+uint64_t Convert_Depth_Test(ShaderClass::DepthCompareType compare)
+{
+    switch (compare) {
+    case ShaderClass::PASS_NEVER:
+        return BGFX_STATE_DEPTH_TEST_NEVER;
+    case ShaderClass::PASS_LESS:
+        return BGFX_STATE_DEPTH_TEST_LESS;
+    case ShaderClass::PASS_EQUAL:
+        return BGFX_STATE_DEPTH_TEST_EQUAL;
+    case ShaderClass::PASS_LEQUAL:
+        return BGFX_STATE_DEPTH_TEST_LEQUAL;
+    case ShaderClass::PASS_GREATER:
+        return BGFX_STATE_DEPTH_TEST_GREATER;
+    case ShaderClass::PASS_NOTEQUAL:
+        return BGFX_STATE_DEPTH_TEST_NOTEQUAL;
+    case ShaderClass::PASS_GEQUAL:
+        return BGFX_STATE_DEPTH_TEST_GEQUAL;
+    case ShaderClass::PASS_ALWAYS:
+        return BGFX_STATE_DEPTH_TEST_ALWAYS;
+    default:
+        return BGFX_STATE_DEPTH_TEST_LEQUAL;
+    }
+}
+
 bool Query_Native_Window(SDL_Window *window, bgfx::PlatformData &platform_data)
 {
     if (window == nullptr) {
@@ -90,8 +177,14 @@ bool BgfxRenderer::Init(void *window_handle, bool lite)
         return false;
     }
 
-    bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x000000ff, 1.0f, 0);
-    bgfx::setViewRect(0, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
+    if (!Init_Render_Resources()) {
+        WWDEBUG_SAY(("BgfxRenderer::Init failed to initialize renderer resources\n"));
+        bgfx::shutdown();
+        return false;
+    }
+
+    bgfx::setViewClear(MainViewId, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x000000ff, 1.0f, 0);
+    bgfx::setViewRect(MainViewId, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
 
     IsInitted = true;
     return true;
@@ -103,6 +196,7 @@ void BgfxRenderer::Shutdown()
         return;
     }
 
+    Shutdown_Render_Resources();
     bgfx::shutdown();
     Width = 0;
     Height = 0;
@@ -119,7 +213,7 @@ bool BgfxRenderer::Reset()
     }
 
     bgfx::reset(Width, Height, BGFX_RESET_VSYNC);
-    bgfx::setViewRect(0, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
+    bgfx::setViewRect(MainViewId, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
     return true;
 }
 
@@ -149,7 +243,7 @@ void BgfxRenderer::Set_Viewport(uint32_t x, uint32_t y, uint32_t width, uint32_t
     }
 
     bgfx::setViewRect(
-        0,
+        MainViewId,
         static_cast<uint16_t>(x),
         static_cast<uint16_t>(y),
         static_cast<uint16_t>(width),
@@ -163,7 +257,7 @@ void BgfxRenderer::Set_Camera(const Matrix3D &view, const Matrix4 &projection)
     }
 
     const Matrix4 view_matrix(view);
-    bgfx::setViewTransform(0, &view_matrix[0][0], &projection[0][0]);
+    bgfx::setViewTransform(MainViewId, &view_matrix[0][0], &projection[0][0]);
 }
 
 void BgfxRenderer::End_Frame()
@@ -186,6 +280,118 @@ void BgfxRenderer::Get_Render_Target_Resolution(int &width, int &height, int &bi
 void BgfxRenderer::Get_Device_Resolution(int &width, int &height, int &bits, bool &windowed)
 {
     Get_Render_Target_Resolution(width, height, bits, windowed);
+}
+
+const bgfx::VertexLayout &BgfxRenderer::Get_Pos_Color_Texcoord_Layout()
+{
+    return PosColorTexcoordLayout;
+}
+
+bgfx::TextureHandle BgfxRenderer::Get_White_Texture()
+{
+    return WhiteTexture;
+}
+
+bgfx::UniformHandle BgfxRenderer::Get_Color_Texture_Uniform()
+{
+    return ColorTextureUniform;
+}
+
+bgfx::ProgramHandle BgfxRenderer::Load_Program(const char *vertex_shader_name, const char *fragment_shader_name)
+{
+    bgfx::ShaderHandle vertex_shader = Load_Shader(vertex_shader_name);
+    if (!bgfx::isValid(vertex_shader)) {
+        return BGFX_INVALID_HANDLE;
+    }
+
+    bgfx::ShaderHandle fragment_shader = Load_Shader(fragment_shader_name);
+    if (!bgfx::isValid(fragment_shader)) {
+        bgfx::destroy(vertex_shader);
+        return BGFX_INVALID_HANDLE;
+    }
+
+    return bgfx::createProgram(vertex_shader, fragment_shader, true);
+}
+
+void BgfxRenderer::Destroy_Program(bgfx::ProgramHandle &program)
+{
+    if (bgfx::isValid(program)) {
+        bgfx::destroy(program);
+        program = BGFX_INVALID_HANDLE;
+    }
+}
+
+uint64_t BgfxRenderer::Build_Render_State(const ShaderClass &shader)
+{
+    uint64_t state = BGFX_STATE_MSAA;
+
+    if (shader.Get_Color_Mask() == ShaderClass::COLOR_WRITE_ENABLE) {
+        state |= BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A;
+    }
+
+    if (shader.Get_Depth_Mask() == ShaderClass::DEPTH_WRITE_ENABLE) {
+        state |= BGFX_STATE_WRITE_Z;
+    }
+
+    state |= Convert_Depth_Test(shader.Get_Depth_Compare());
+
+    if (shader.Get_Cull_Mode() == ShaderClass::CULL_MODE_ENABLE) {
+        state |= BGFX_STATE_CULL_CW;
+    }
+
+    if (shader.Get_Src_Blend_Func() != ShaderClass::SRCBLEND_ONE
+        || shader.Get_Dst_Blend_Func() != ShaderClass::DSTBLEND_ZERO) {
+        state |= BGFX_STATE_BLEND_FUNC(
+            Convert_Blend_Factor(shader.Get_Src_Blend_Func()),
+            Convert_Blend_Factor(shader.Get_Dst_Blend_Func()));
+    }
+
+    return state;
+}
+
+bool BgfxRenderer::Init_Render_Resources()
+{
+    PosColorTexcoordLayout.begin()
+        .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true, true)
+        .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+        .end();
+
+    if (!bgfx::isValid(ColorTextureUniform)) {
+        ColorTextureUniform = bgfx::createUniform("s_texColor", bgfx::UniformType::Sampler);
+    }
+
+    if (!bgfx::isValid(ColorTextureUniform)) {
+        return false;
+    }
+
+    if (!bgfx::isValid(WhiteTexture)) {
+        constexpr uint32_t white_pixel = 0xffffffffu;
+        const bgfx::Memory *texture_memory = bgfx::copy(&white_pixel, sizeof(white_pixel));
+        WhiteTexture = bgfx::createTexture2D(
+            1,
+            1,
+            false,
+            1,
+            bgfx::TextureFormat::BGRA8,
+            BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT,
+            texture_memory);
+    }
+
+    return bgfx::isValid(WhiteTexture);
+}
+
+void BgfxRenderer::Shutdown_Render_Resources()
+{
+    if (bgfx::isValid(WhiteTexture)) {
+        bgfx::destroy(WhiteTexture);
+        WhiteTexture = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(ColorTextureUniform)) {
+        bgfx::destroy(ColorTextureUniform);
+        ColorTextureUniform = BGFX_INVALID_HANDLE;
+    }
 }
 
 bool BgfxRenderer::Update_Platform_Window(void *window_handle)
@@ -252,6 +458,54 @@ void BgfxRenderer::Apply_Clear(bool clear_color, bool clear_depth, float red, fl
         | (static_cast<uint32_t>(clear_b) << 8)
         | 0xffu;
 
-    bgfx::setViewClear(0, clear_flags, clear_rgba, 1.0f, 0);
-    bgfx::touch(0);
+    bgfx::setViewClear(MainViewId, clear_flags, clear_rgba, 1.0f, 0);
+    bgfx::touch(MainViewId);
+}
+
+bgfx::ShaderHandle BgfxRenderer::Load_Shader(const char *shader_name)
+{
+    if (shader_name == nullptr || shader_name[0] == '\0') {
+        return BGFX_INVALID_HANDLE;
+    }
+
+#ifndef RENEGADE_WW3D2_SHADER_DIR
+#define RENEGADE_WW3D2_SHADER_DIR ""
+#endif
+
+    const char *profile_directory = Get_Shader_Profile_Directory();
+    const std::string shader_directory = std::string(RENEGADE_WW3D2_SHADER_DIR)
+        + "/"
+        + profile_directory
+        + "/";
+
+    std::string shader_path = shader_directory + shader_name + ".bin";
+    std::FILE *shader_file = std::fopen(shader_path.c_str(), "rb");
+    if (shader_file == nullptr) {
+        shader_path = shader_directory + shader_name + ".sc.bin";
+        shader_file = std::fopen(shader_path.c_str(), "rb");
+    }
+    if (shader_file == nullptr) {
+        WWDEBUG_SAY(("BgfxRenderer::Load_Shader unable to open '%s'\n", shader_path.c_str()));
+        return BGFX_INVALID_HANDLE;
+    }
+
+    std::fseek(shader_file, 0, SEEK_END);
+    const long shader_size = std::ftell(shader_file);
+    std::fseek(shader_file, 0, SEEK_SET);
+    if (shader_size <= 0) {
+        std::fclose(shader_file);
+        WWDEBUG_SAY(("BgfxRenderer::Load_Shader invalid shader size for '%s'\n", shader_path.c_str()));
+        return BGFX_INVALID_HANDLE;
+    }
+
+    std::vector<uint8_t> shader_data(static_cast<size_t>(shader_size));
+    const size_t read_size = std::fread(shader_data.data(), 1, shader_data.size(), shader_file);
+    std::fclose(shader_file);
+    if (read_size != shader_data.size()) {
+        WWDEBUG_SAY(("BgfxRenderer::Load_Shader short read for '%s'\n", shader_path.c_str()));
+        return BGFX_INVALID_HANDLE;
+    }
+
+    const bgfx::Memory *shader_memory = bgfx::copy(shader_data.data(), static_cast<uint32_t>(shader_data.size()));
+    return bgfx::createShader(shader_memory);
 }

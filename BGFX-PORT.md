@@ -14,3 +14,19 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
 - no shims, no stubs, no wrappers - we want to have a complete and functional port as soon as possible, even if it's not perfect or optimized, we want to have a working port as soon as possible, and then we can improve it later, but we don't want to have any shims or stubs that are not fully functional, because that can cause confusion and can make it harder to track progress and to identify any issues or challenges that may arise during the porting process.
 
 **it is better to have compile errors, than disabled code so we find the missing pieces faster**
+
+## Current clean-port milestones
+
+- `BgfxRenderer` now owns bgfx startup, frame begin/end, clear, viewport, and camera submission.
+- `ww3d2` now has build-integrated bgfx shader compilation for renderer-owned shader assets.
+- The first shared bgfx shader set (`vs_color_tex.sc` / `fs_color_tex.sc`) and varying definition live in `Code/ww3d2/shaders/`.
+- `BgfxRenderer` now also owns:
+  - a canonical position/color/texcoord vertex layout
+  - runtime shader/program loading from build-generated shader binaries
+  - a white fallback texture and sampler uniform
+  - `ShaderClass` to bgfx render-state translation for API state that belongs in bgfx state bits
+
+## Immediate next slice
+
+- Port a real draw path onto this substrate without reviving DX8 submission semantics.
+- The best near-term candidate is a self-contained unlit path such as `Render2D`, followed by the rigid mesh path once texture/backend ownership is cleaned up enough to bind real textures directly through bgfx.

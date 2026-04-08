@@ -54,6 +54,21 @@
   - `WW3D::Init()` / `Shutdown()` now initialize and tear down `BgfxRenderer` directly at the top-level renderer boundary
 - Extended `BgfxRenderer` with renderer-owned resolution/window state tracking and a view-clear helper so `WW3D` no longer needs DX8-era viewport/clear plumbing for basic frame ownership.
 - Rebuilt after the lifecycle slice and confirmed the new bgfx-owned code compiles cleanly enough that the remaining failures are in older untouched files (`dazzle.cpp`, `dynamesh.cpp`, `mapper.cpp`, `mesh*.cpp`, `metalmap.cpp`) rather than in the new bgfx lifecycle path.
+- Added the first build-integrated bgfx shader pipeline for `ww3d2` instead of keeping shaders as an external/manual step:
+  - `Code/ww3d2/CMakeLists.txt` now compiles bgfx shaders during the normal build via `bgfx_compile_shaders(...)`
+  - added `Code/ww3d2/shaders/varying.def.sc`
+  - added `Code/ww3d2/shaders/vs_color_tex.sc`
+  - added `Code/ww3d2/shaders/fs_color_tex.sc`
+- Extended `BgfxRenderer` with renderer-owned GPU submission prerequisites rather than more DX8-facing glue:
+  - canonical position/color/texcoord vertex layout
+  - renderer-owned white fallback texture and sampler uniform
+  - runtime shader binary loading using the active bgfx renderer profile directory
+  - program creation/destruction helpers
+  - `ShaderClass` to bgfx render-state translation for depth, color-write, blend, and cull state
+- Rebuilt after the shader substrate slice and verified:
+  - bgfx shader generation succeeds for `spirv`, `glsl`, and `essl`
+  - the new `bgfxrenderer.cpp` changes compile successfully inside the real `ww3d2` target
+  - the full build now advances into pre-existing untouched C++ portability failures in `dazzle.cpp` and `dynamesh.cpp`, not into the new bgfx shader/backend work
 
 ## Next work
 
@@ -61,3 +76,4 @@
 - Continue replacing or deleting the remaining direct `<d3d8.h>` / `<D3dx8core.h>` includes in source files, starting with the backend-local files that now represent the true D3D dependency boundary.
 - Remove the remaining DX8-era initialization dependence under `WW3D::Init()` by porting the mesh/state/render-target path onto bgfx-owned implementations instead of keeping `DX8Wrapper` alive as a fallback frame manager.
 - Replace the D3D-format conversion surface in `formconv.*` and texture loading with backend-neutral or bgfx-backed format handling.
+- Use the new bgfx shader/program/state substrate to port the first real draw path end-to-end, starting with `Render2D` or another self-contained unlit path before tackling the rigid mesh pipeline.

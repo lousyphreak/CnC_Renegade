@@ -46,6 +46,20 @@
 - For the remaining backend-local raw return paths, ownership should be concentrated inside `TextureClass` / `SurfaceClass` implementation files rather than repeated in shared callers. That keeps COM-style `AddRef` / `Release` logic out of the broader engine while the DX8 backend still exists.
 - `WW3D` frame ownership is a separate seam from mesh/state rendering. Camera submission was already moved to bgfx, and the next clean follow-up was to move top-level frame begin/end/clear/resolution handling there too. That reduces DX8-era code to the parts that still actually implement rendering behavior rather than letting it remain the global frame manager by inertia.
 - `BgfxRenderer` now needs to own a small amount of renderer state beyond raw bgfx startup: drawable size, window mode, bit depth, and view-clear submission. Those are renderer-owned concerns and are appropriate to keep there; they are not a compatibility wrapper around Direct3D.
+- A clean bgfx port also needs build-owned shader assets, not ad hoc runtime assumptions. `bgfx_compile_shaders(...)` from `bgfxToolUtils.cmake` works correctly in this tree and can generate the per-renderer shader binaries as part of the normal `cmake --build` flow.
+- bgfx shader compilation in this project needs two include roots:
+  - the local shader directory in `Code/ww3d2/shaders`
+  - `${bgfx_cmake_SOURCE_DIR}/bgfx/src` so `bgfx_shader.sh` is available
+- `varying.def.sc` must declare both vertex inputs and shader varyings for bgfx's multi-profile shader compiler. Declaring only the varyings is not enough; the vertex shader then fails with missing `a_position` / attribute symbols.
+- A useful renderer-owned baseline is now in `BgfxRenderer`:
+  - reusable position/color/texcoord vertex layout
+  - renderer-profile-aware shader binary loader
+  - bgfx program creation helper
+  - canonical white texture + sampler uniform for non-textured submission
+  - `ShaderClass` to bgfx render-state translation for the state bits that are API state rather than shader logic
+- `ShaderClass` features do not map 1:1 into bgfx state:
+  - depth compare, depth write, color write, cull, and blend map cleanly to bgfx state bits
+  - fog, alpha test, gradient modes, and detail combiners are shader-program concerns and must be handled by shader variants or uniforms rather than by pretending bgfx has DX8 texture-stage state
 
 ## Repository observations
 

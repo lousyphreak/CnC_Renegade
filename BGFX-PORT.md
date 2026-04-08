@@ -24,9 +24,13 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
   - a canonical position/color/texcoord vertex layout
   - runtime shader/program loading from build-generated shader binaries
   - a white fallback texture and sampler uniform
+  - a dedicated overlay view for screen-space submission
+  - surface-to-bgfx texture upload for renderer-native texture binding
   - `ShaderClass` to bgfx render-state translation for API state that belongs in bgfx state bits
+- `TextureClass` now has a native bgfx texture path for renderer-driven binding instead of requiring `DX8Wrapper` state submission.
+- `Render2D` now submits directly to bgfx using renderer-owned programs, state, and buffers rather than the DX8 dynamic buffer path.
 
 ## Immediate next slice
 
-- Port a real draw path onto this substrate without reviving DX8 submission semantics.
-- The best near-term candidate is a self-contained unlit path such as `Render2D`, followed by the rigid mesh path once texture/backend ownership is cleaned up enough to bind real textures directly through bgfx.
+- Expand the same native bgfx submission approach from `Render2D` into the next real material/mesh path, starting with rigid meshes and shared texture ownership cleanup.
+- Replace the remaining texture-loader and surface-management DX8 dependencies so bgfx textures are created at source rather than lazily from the legacy backend objects.

@@ -13,6 +13,7 @@
 #include <bgfx/bgfx.h>
 #include <bgfx/platform.h>
 
+#include "surfaceclass.h"
 #include "wwdebug.h"
 
 bool BgfxRenderer::IsInitted = false;
@@ -24,10 +25,17 @@ void *BgfxRenderer::WindowHandle = nullptr;
 bgfx::VertexLayout BgfxRenderer::PosColorTexcoordLayout;
 bgfx::TextureHandle BgfxRenderer::WhiteTexture = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::ColorTextureUniform = BGFX_INVALID_HANDLE;
+bgfx::ProgramHandle BgfxRenderer::ColorTextureProgram = BGFX_INVALID_HANDLE;
 
 namespace
 {
 constexpr uint16_t MainViewId = 0;
+constexpr uint16_t OverlayViewId = 1;
+const float IdentityMatrix[16] = {
+    1.0f, 0.0f, 0.0f, 0.0f,
+    0.0f, 1.0f, 0.0f, 0.0f,
+    0.0f, 0.0f, 1.0f, 0.0f,
+    0.0f, 0.0f, 0.0f, 1.0f};
 
 const char *Get_Shader_Profile_Directory()
 {
@@ -153,6 +161,150 @@ bool Query_Native_Window(SDL_Window *window, bgfx::PlatformData &platform_data)
 
     return false;
 }
+
+uint8_t Expand_4_To_8(uint8_t value)
+{
+    return static_cast<uint8_t>((value << 4) | value);
+}
+
+uint8_t Expand_5_To_8(uint8_t value)
+{
+    return static_cast<uint8_t>((value << 3) | (value >> 2));
+}
+
+bool Convert_Surface_Copy_To_BGRA8(
+    const SurfaceClass::SurfaceDescription &description,
+    const uint8_t *source_pixels,
+    std::vector<uint8_t> &converted_pixels)
+{
+    if (source_pixels == nullptr || description.Width == 0 || description.Height == 0) {
+        return false;
+    }
+
+    const size_t pixel_count = static_cast<size_t>(description.Width) * static_cast<size_t>(description.Height);
+    converted_pixels.resize(pixel_count * 4);
+
+    for (size_t pixel_index = 0; pixel_index < pixel_count; ++pixel_index) {
+        const uint8_t *source = source_pixels;
+        uint8_t *destination = &converted_pixels[pixel_index * 4];
+
+        switch (description.Format) {
+        case WW3D_FORMAT_A8R8G8B8:
+            destination[0] = source[0];
+            destination[1] = source[1];
+            destination[2] = source[2];
+            destination[3] = source[3];
+            source_pixels += 4;
+            break;
+        case WW3D_FORMAT_X8R8G8B8:
+            destination[0] = source[0];
+            destination[1] = source[1];
+            destination[2] = source[2];
+            destination[3] = 0xff;
+            source_pixels += 4;
+            break;
+        case WW3D_FORMAT_R8G8B8:
+            destination[0] = source[0];
+            destination[1] = source[1];
+            destination[2] = source[2];
+            destination[3] = 0xff;
+            source_pixels += 3;
+            break;
+        case WW3D_FORMAT_R5G6B5: {
+            const uint16_t packed = static_cast<uint16_t>(source[0]) | (static_cast<uint16_t>(source[1]) << 8);
+            destination[0] = Expand_5_To_8(static_cast<uint8_t>(packed & 0x1f));
+            destination[1] = static_cast<uint8_t>(((packed >> 5) & 0x3f) * 255 / 63);
+            destination[2] = Expand_5_To_8(static_cast<uint8_t>((packed >> 11) & 0x1f));
+            destination[3] = 0xff;
+            source_pixels += 2;
+            break;
+        }
+        case WW3D_FORMAT_X1R5G5B5:
+        case WW3D_FORMAT_A1R5G5B5: {
+            const uint16_t packed = static_cast<uint16_t>(source[0]) | (static_cast<uint16_t>(source[1]) << 8);
+            destination[0] = Expand_5_To_8(static_cast<uint8_t>(packed & 0x1f));
+            destination[1] = Expand_5_To_8(static_cast<uint8_t>((packed >> 5) & 0x1f));
+            destination[2] = Expand_5_To_8(static_cast<uint8_t>((packed >> 10) & 0x1f));
+            destination[3] = (description.Format == WW3D_FORMAT_A1R5G5B5 && (packed & 0x8000u) == 0) ? 0x00 : 0xff;
+            source_pixels += 2;
+            break;
+        }
+        case WW3D_FORMAT_A4R4G4B4: {
+            const uint16_t packed = static_cast<uint16_t>(source[0]) | (static_cast<uint16_t>(source[1]) << 8);
+            destination[0] = Expand_4_To_8(static_cast<uint8_t>(packed & 0x000f));
+            destination[1] = Expand_4_To_8(static_cast<uint8_t>((packed >> 4) & 0x000f));
+            destination[2] = Expand_4_To_8(static_cast<uint8_t>((packed >> 8) & 0x000f));
+            destination[3] = Expand_4_To_8(static_cast<uint8_t>((packed >> 12) & 0x000f));
+            source_pixels += 2;
+            break;
+        }
+        case WW3D_FORMAT_X4R4G4B4: {
+            const uint16_t packed = static_cast<uint16_t>(source[0]) | (static_cast<uint16_t>(source[1]) << 8);
+            destination[0] = Expand_4_To_8(static_cast<uint8_t>(packed & 0x000f));
+            destination[1] = Expand_4_To_8(static_cast<uint8_t>((packed >> 4) & 0x000f));
+            destination[2] = Expand_4_To_8(static_cast<uint8_t>((packed >> 8) & 0x000f));
+            destination[3] = 0xff;
+            source_pixels += 2;
+            break;
+        }
+        case WW3D_FORMAT_A8: {
+            destination[0] = 0xff;
+            destination[1] = 0xff;
+            destination[2] = 0xff;
+            destination[3] = source[0];
+            source_pixels += 1;
+            break;
+        }
+        case WW3D_FORMAT_L8: {
+            destination[0] = source[0];
+            destination[1] = source[0];
+            destination[2] = source[0];
+            destination[3] = 0xff;
+            source_pixels += 1;
+            break;
+        }
+        case WW3D_FORMAT_A8L8: {
+            destination[0] = source[0];
+            destination[1] = source[0];
+            destination[2] = source[0];
+            destination[3] = source[1];
+            source_pixels += 2;
+            break;
+        }
+        case WW3D_FORMAT_A4L4: {
+            const uint8_t luminance = Expand_4_To_8(static_cast<uint8_t>(source[0] & 0x0f));
+            destination[0] = luminance;
+            destination[1] = luminance;
+            destination[2] = luminance;
+            destination[3] = Expand_4_To_8(static_cast<uint8_t>((source[0] >> 4) & 0x0f));
+            source_pixels += 1;
+            break;
+        }
+        case WW3D_FORMAT_R3G3B2: {
+            const uint8_t packed = source[0];
+            destination[0] = static_cast<uint8_t>((packed & 0x03) * 255 / 3);
+            destination[1] = static_cast<uint8_t>(((packed >> 2) & 0x07) * 255 / 7);
+            destination[2] = static_cast<uint8_t>(((packed >> 5) & 0x07) * 255 / 7);
+            destination[3] = 0xff;
+            source_pixels += 1;
+            break;
+        }
+        case WW3D_FORMAT_A8R3G3B2: {
+            const uint8_t packed_color = source[0];
+            destination[0] = static_cast<uint8_t>((packed_color & 0x03) * 255 / 3);
+            destination[1] = static_cast<uint8_t>(((packed_color >> 2) & 0x07) * 255 / 7);
+            destination[2] = static_cast<uint8_t>(((packed_color >> 5) & 0x07) * 255 / 7);
+            destination[3] = source[1];
+            source_pixels += 2;
+            break;
+        }
+        default:
+            return false;
+        }
+    }
+
+    return true;
+}
 }
 
 bool BgfxRenderer::Init(void *window_handle, bool lite)
@@ -260,6 +412,18 @@ void BgfxRenderer::Set_Camera(const Matrix3D &view, const Matrix4 &projection)
     bgfx::setViewTransform(MainViewId, &view_matrix[0][0], &projection[0][0]);
 }
 
+void BgfxRenderer::Prepare_Overlay_View()
+{
+    if (!IsInitted) {
+        return;
+    }
+
+    bgfx::setViewMode(OverlayViewId, bgfx::ViewMode::Sequential);
+    bgfx::setViewRect(OverlayViewId, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
+    bgfx::setViewTransform(OverlayViewId, IdentityMatrix, IdentityMatrix);
+    bgfx::setViewClear(OverlayViewId, 0, 0, 1.0f, 0);
+}
+
 void BgfxRenderer::End_Frame()
 {
     if (!IsInitted) {
@@ -287,6 +451,11 @@ const bgfx::VertexLayout &BgfxRenderer::Get_Pos_Color_Texcoord_Layout()
     return PosColorTexcoordLayout;
 }
 
+uint16_t BgfxRenderer::Get_Overlay_View_Id()
+{
+    return OverlayViewId;
+}
+
 bgfx::TextureHandle BgfxRenderer::Get_White_Texture()
 {
     return WhiteTexture;
@@ -295,6 +464,45 @@ bgfx::TextureHandle BgfxRenderer::Get_White_Texture()
 bgfx::UniformHandle BgfxRenderer::Get_Color_Texture_Uniform()
 {
     return ColorTextureUniform;
+}
+
+bgfx::ProgramHandle BgfxRenderer::Get_Color_Texture_Program()
+{
+    return ColorTextureProgram;
+}
+
+bgfx::TextureHandle BgfxRenderer::Create_Texture_From_Surface(SurfaceClass &surface)
+{
+    int width = 0;
+    int height = 0;
+    int source_pixel_size = 0;
+    uint8_t *source_pixels = surface.CreateCopy(&width, &height, &source_pixel_size, false);
+    if (source_pixels == nullptr || width <= 0 || height <= 0) {
+        delete[] source_pixels;
+        return BGFX_INVALID_HANDLE;
+    }
+
+    SurfaceClass::SurfaceDescription description;
+    surface.Get_Description(description);
+
+    std::vector<uint8_t> converted_pixels;
+    const bool converted = Convert_Surface_Copy_To_BGRA8(description, source_pixels, converted_pixels);
+    delete[] source_pixels;
+
+    if (!converted) {
+        WWDEBUG_SAY(("BgfxRenderer::Create_Texture_From_Surface unsupported surface format %d\n", description.Format));
+        return BGFX_INVALID_HANDLE;
+    }
+
+    const bgfx::Memory *texture_memory = bgfx::copy(converted_pixels.data(), static_cast<uint32_t>(converted_pixels.size()));
+    return bgfx::createTexture2D(
+        static_cast<uint16_t>(width),
+        static_cast<uint16_t>(height),
+        false,
+        1,
+        bgfx::TextureFormat::BGRA8,
+        BGFX_TEXTURE_NONE,
+        texture_memory);
 }
 
 bgfx::ProgramHandle BgfxRenderer::Load_Program(const char *vertex_shader_name, const char *fragment_shader_name)
@@ -378,11 +586,21 @@ bool BgfxRenderer::Init_Render_Resources()
             texture_memory);
     }
 
-    return bgfx::isValid(WhiteTexture);
+    if (!bgfx::isValid(WhiteTexture)) {
+        return false;
+    }
+
+    if (!bgfx::isValid(ColorTextureProgram)) {
+        ColorTextureProgram = Load_Program("vs_color_tex", "fs_color_tex");
+    }
+
+    return bgfx::isValid(ColorTextureProgram);
 }
 
 void BgfxRenderer::Shutdown_Render_Resources()
 {
+    Destroy_Program(ColorTextureProgram);
+
     if (bgfx::isValid(WhiteTexture)) {
         bgfx::destroy(WhiteTexture);
         WhiteTexture = BGFX_INVALID_HANDLE;

@@ -49,6 +49,8 @@
 #include "ww3dformat.h"
 #include "wwstring.h"
 
+#include <bgfx/bgfx.h>
+
 class DX8Wrapper;
 struct IDirect3DTexture8;
 class TextureLoader;
@@ -222,6 +224,8 @@ class TextureClass : public RefCountClass
 			return D3DTexture;
 		}
 		IDirect3DTexture8 *Acquire_DX8_Texture();
+		bgfx::TextureHandle Get_Bgfx_Texture();
+		uint32_t Get_Bgfx_Sampler_Flags() const;
 
 		bool Is_Missing_Texture();
 
@@ -243,6 +247,7 @@ class TextureClass : public RefCountClass
 		// Apply this texture's settings into D3D
 		void Apply(unsigned int stage);
 		void Load_Locked_Surface();
+		void Release_Bgfx_Texture();
 
 		// Apply a Null texture's settings into D3D
 		static void Apply_Null(unsigned int stage);
@@ -256,6 +261,7 @@ class TextureClass : public RefCountClass
 
 		// Direct3D texture object
 		IDirect3DTexture8 *D3DTexture;
+		bgfx::TextureHandle BgfxTexture;
 		bool Initialized;
 
 		// Name

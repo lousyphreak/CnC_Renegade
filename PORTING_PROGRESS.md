@@ -69,6 +69,12 @@
   - bgfx shader generation succeeds for `spirv`, `glsl`, and `essl`
   - the new `bgfxrenderer.cpp` changes compile successfully inside the real `ww3d2` target
   - the full build now advances into pre-existing untouched C++ portability failures in `dazzle.cpp` and `dynamesh.cpp`, not into the new bgfx shader/backend work
+- Ported the first real bgfx draw path instead of extending DX8 submission semantics further:
+  - `BgfxRenderer` now owns a dedicated overlay view and keeps the shared color/texture shader program alive as a renderer-owned resource
+  - `TextureClass` now has native bgfx texture ownership plus sampler-flag translation so higher-level code can bind textures directly through bgfx
+  - `Render2DClass::Render()` now submits screen-space geometry through bgfx vertex/index buffers and renderer-owned state/program binding instead of the DX8 dynamic VB/IB path
+- This `Render2D` slice currently uploads top-level surface data into bgfx and is sufficient for the existing 2D/font path, but it does not yet eliminate the remaining legacy DX8 texture-loader backend used to source some `TextureClass` instances.
+- Rebuilt after the `Render2D` slice and confirmed the build is still blocked by pre-existing unrelated renderer/C++ issues (`dx8renderer.h`, `mapper.cpp`, `dynamesh.cpp`, `mesh*.cpp`, `metalmap.cpp`, `motchan.cpp`) rather than by the new bgfx `Render2D` code.
 
 ## Next work
 
@@ -76,4 +82,4 @@
 - Continue replacing or deleting the remaining direct `<d3d8.h>` / `<D3dx8core.h>` includes in source files, starting with the backend-local files that now represent the true D3D dependency boundary.
 - Remove the remaining DX8-era initialization dependence under `WW3D::Init()` by porting the mesh/state/render-target path onto bgfx-owned implementations instead of keeping `DX8Wrapper` alive as a fallback frame manager.
 - Replace the D3D-format conversion surface in `formconv.*` and texture loading with backend-neutral or bgfx-backed format handling.
-- Use the new bgfx shader/program/state substrate to port the first real draw path end-to-end, starting with `Render2D` or another self-contained unlit path before tackling the rigid mesh pipeline.
+- Carry the same renderer-owned bgfx submission model from `Render2D` into the rigid mesh pipeline, then remove the remaining DX8 texture-loader seam rather than preserving it as a permanent source of textures.

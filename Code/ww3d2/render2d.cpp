@@ -39,19 +39,38 @@
 #include "font3d.h"
 #include "rect.h"
 #include "texture.h"
-#include "matrix4.h"
-#include "matrix3d.h"
-#include "dx8wrapper.h"
-#include "dx8indexbuffer.h"
-#include "dx8vertexbuffer.h"
-#include "sortingrenderer.h"
-#include "vertmaterial.h"
-#include "dx8fvf.h"
+#include "bgfxrenderer.h"
 #include "wwprofile.h"
 #include "wwmemlog.h"
 #include "assetmgr.h"
 
+#include <cstring>
+#include <vector>
+
 RectClass							Render2DClass::ScreenResolution( 0,0,0,0 );
+
+namespace
+{
+struct Render2DVertex
+{
+	float X;
+	float Y;
+	float Z;
+	uint32_t Color;
+	float U;
+	float V;
+};
+
+uint32_t Convert_ARGB_To_ABGR(unsigned long color)
+{
+	const uint32_t argb = static_cast<uint32_t>(color);
+	const uint32_t alpha = argb & 0xff000000u;
+	const uint32_t red = (argb >> 16) & 0xffu;
+	const uint32_t green = (argb >> 8) & 0xffu;
+	const uint32_t blue = argb & 0xffu;
+	return alpha | (blue << 16) | (green << 8) | red;
+}
+}
 
 
 /*
@@ -538,75 +557,80 @@ void	Render2DClass::Add_Outline( const RectClass & rect, float width, const Rect
 
 void Render2DClass::Render(void)
 {
-	if ( !Indices.Count() || IsHidden) {
+	if ( !Indices.Count() || IsHidden || !BgfxRenderer::Is_Initted()) {
 		return;
 	}
 
-
-	// save the view and projection matrices since we're nuking them
-	Matrix4 view,proj;
-	Matrix4 identity(true);
-
-	DX8Wrapper::Get_Transform(D3DTS_VIEW,view);
-	DX8Wrapper::Get_Transform(D3DTS_PROJECTION,proj);
-
-	//
-	//	Configure the viewport for entire screen
-	//
-	int width, height, bits;
-	bool windowed;
-	WW3D::Get_Device_Resolution( width, height, bits, windowed );
-	D3DVIEWPORT8 vp = { 0 };
-	vp.X			= 0;
-	vp.Y			= 0;
-	vp.Width		= width;
-	vp.Height	= height;
-	vp.MinZ		= 0;
-	vp.MaxZ		= 1;
-	DX8Wrapper::Set_Viewport(&vp);
-
-	DX8Wrapper::Set_Shader(Shader);
-	DX8Wrapper::Set_Texture(0,Texture);
-
-	VertexMaterialClass *vm=VertexMaterialClass::Get_Preset(VertexMaterialClass::PRELIT_DIFFUSE);
-	DX8Wrapper::Set_Material(vm);
-	REF_PTR_RELEASE(vm);
-
-	DX8Wrapper::Set_World_Identity();
-	DX8Wrapper::Set_View_Identity();
-	DX8Wrapper::Set_Transform(D3DTS_PROJECTION,identity);
-
-	DynamicVBAccessClass vb(BUFFER_TYPE_DYNAMIC_DX8,dynamic_fvf_type,Vertices.Count());
-	{
-		DynamicVBAccessClass::WriteLockClass Lock(&vb);
-		const FVFInfoClass &fi=vb.FVF_Info();
-		unsigned char *va=(unsigned char*)Lock.Get_Formatted_Vertex_Array();
-		int i;
-
-		for (i=0; i<Vertices.Count(); i++)
-		{
-			Vector3 temp(Vertices[i].X,Vertices[i].Y,ZValue);
-			*(Vector3*)(va+fi.Get_Location_Offset())=temp;
-			*(unsigned int*)(va+fi.Get_Diffuse_Offset())=Colors[i];
-			*(Vector2*)(va+fi.Get_Tex_Offset(0))=UVCoordinates[i];
-			va+=fi.Get_FVF_Size();
-		}		
+	bgfx::ProgramHandle program = BgfxRenderer::Get_Color_Texture_Program();
+	if (!bgfx::isValid(program)) {
+		return;
 	}
 
-	DynamicIBAccessClass ib(BUFFER_TYPE_DYNAMIC_DX8,Indices.Count());
-	{
-		DynamicIBAccessClass::WriteLockClass Lock(&ib);
-		unsigned short *mem=Lock.Get_Index_Array();
-		for (int i=0; i<Indices.Count(); i++)
-			mem[i]=Indices[i];
-	}	
+	std::vector<Render2DVertex> submission_vertices(static_cast<size_t>(Vertices.Count()));
+	for (int index = 0; index < Vertices.Count(); ++index) {
+		Render2DVertex &vertex = submission_vertices[static_cast<size_t>(index)];
+		vertex.X = Vertices[index].X;
+		vertex.Y = Vertices[index].Y;
+		vertex.Z = ZValue;
+		vertex.Color = Convert_ARGB_To_ABGR(Colors[index]);
+		vertex.U = UVCoordinates[index].X;
+		vertex.V = UVCoordinates[index].Y;
+	}
 
-	DX8Wrapper::Set_Vertex_Buffer(vb);
-	DX8Wrapper::Set_Index_Buffer(ib,0);
-	DX8Wrapper::Draw_Triangles(0,Indices.Count()/3,0,Vertices.Count());	
+	BgfxRenderer::Prepare_Overlay_View();
 
-	DX8Wrapper::Set_Transform(D3DTS_VIEW,view);
-	DX8Wrapper::Set_Transform(D3DTS_PROJECTION,proj);
+	bgfx::TextureHandle texture_handle = BgfxRenderer::Get_White_Texture();
+	uint32_t sampler_flags = BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT;
+	if (Shader.Get_Texturing() != ShaderClass::TEXTURING_DISABLE && Texture != NULL) {
+		texture_handle = Texture->Get_Bgfx_Texture();
+		sampler_flags = Texture->Get_Bgfx_Sampler_Flags();
+		if (!bgfx::isValid(texture_handle)) {
+			texture_handle = BgfxRenderer::Get_White_Texture();
+		}
+	}
+
+	const bgfx::VertexLayout &layout = BgfxRenderer::Get_Pos_Color_Texcoord_Layout();
+	const uint32_t vertex_count = static_cast<uint32_t>(submission_vertices.size());
+	const uint32_t index_count = static_cast<uint32_t>(Indices.Count());
+	const bool can_use_transient =
+		bgfx::getAvailTransientVertexBuffer(vertex_count, layout) == vertex_count &&
+		bgfx::getAvailTransientIndexBuffer(index_count) == index_count;
+
+	if (can_use_transient) {
+		bgfx::TransientVertexBuffer vertex_buffer;
+		bgfx::TransientIndexBuffer index_buffer;
+		bgfx::allocTransientVertexBuffer(&vertex_buffer, vertex_count, layout);
+		bgfx::allocTransientIndexBuffer(&index_buffer, index_count);
+
+		memcpy(vertex_buffer.data, submission_vertices.data(), submission_vertices.size() * sizeof(Render2DVertex));
+		memcpy(index_buffer.data, &Indices[0], static_cast<size_t>(index_count) * sizeof(unsigned short));
+
+		bgfx::setVertexBuffer(0, &vertex_buffer);
+		bgfx::setIndexBuffer(&index_buffer);
+	} else {
+		const bgfx::Memory *vertex_memory = bgfx::copy(
+			submission_vertices.data(),
+			static_cast<uint32_t>(submission_vertices.size() * sizeof(Render2DVertex)));
+		const bgfx::Memory *index_memory = bgfx::copy(
+			&Indices[0],
+			static_cast<uint32_t>(index_count * sizeof(unsigned short)));
+		bgfx::VertexBufferHandle vertex_buffer = bgfx::createVertexBuffer(vertex_memory, layout);
+		bgfx::IndexBufferHandle index_buffer = bgfx::createIndexBuffer(index_memory);
+
+		bgfx::setVertexBuffer(0, vertex_buffer);
+		bgfx::setIndexBuffer(index_buffer);
+		bgfx::setTexture(0, BgfxRenderer::Get_Color_Texture_Uniform(), texture_handle, sampler_flags);
+		bgfx::setState(BgfxRenderer::Build_Render_State(Shader));
+		bgfx::submit(BgfxRenderer::Get_Overlay_View_Id(), program);
+
+		bgfx::destroy(index_buffer);
+		bgfx::destroy(vertex_buffer);
+		return;
+	}
+
+	bgfx::setTexture(0, BgfxRenderer::Get_Color_Texture_Uniform(), texture_handle, sampler_flags);
+	bgfx::setState(BgfxRenderer::Build_Render_State(Shader));
+	bgfx::submit(BgfxRenderer::Get_Overlay_View_Id(), program);
 }
 
 
@@ -764,4 +788,3 @@ Vector2	Render2DTextClass::Get_Text_Extents( const WCHAR * text )
 
 	return extent;
 }
-

@@ -8,6 +8,8 @@
 
 #include <bgfx/bgfx.h>
 
+class SurfaceClass;
+
 class BgfxRenderer
 {
 public:
@@ -19,11 +21,15 @@ public:
     static void End_Frame();
     static void Set_Viewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
     static void Set_Camera(const Matrix3D &view, const Matrix4 &projection);
+    static void Prepare_Overlay_View();
     static void Get_Render_Target_Resolution(int &width, int &height, int &bits, bool &windowed);
     static void Get_Device_Resolution(int &width, int &height, int &bits, bool &windowed);
     static const bgfx::VertexLayout &Get_Pos_Color_Texcoord_Layout();
+    static uint16_t Get_Overlay_View_Id();
     static bgfx::TextureHandle Get_White_Texture();
     static bgfx::UniformHandle Get_Color_Texture_Uniform();
+    static bgfx::ProgramHandle Get_Color_Texture_Program();
+    static bgfx::TextureHandle Create_Texture_From_Surface(SurfaceClass &surface);
     static bgfx::ProgramHandle Load_Program(const char *vertex_shader_name, const char *fragment_shader_name);
     static void Destroy_Program(bgfx::ProgramHandle &program);
     static uint64_t Build_Render_State(const ShaderClass &shader);
@@ -49,4 +55,5 @@ private:
     static bgfx::VertexLayout PosColorTexcoordLayout;
     static bgfx::TextureHandle WhiteTexture;
     static bgfx::UniformHandle ColorTextureUniform;
+    static bgfx::ProgramHandle ColorTextureProgram;
 };

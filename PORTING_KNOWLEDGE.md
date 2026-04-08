@@ -60,6 +60,12 @@
 - `ShaderClass` features do not map 1:1 into bgfx state:
   - depth compare, depth write, color write, cull, and blend map cleanly to bgfx state bits
   - fog, alpha test, gradient modes, and detail combiners are shader-program concerns and must be handled by shader variants or uniforms rather than by pretending bgfx has DX8 texture-stage state
+- `Render2D` is a good clean-port pattern for screen-space rendering:
+  - keep the higher-level vertex/color/UV accumulation logic intact
+  - use a renderer-owned overlay view in bgfx instead of mutating the main camera view state the way the DX8 path did
+  - convert packed engine ARGB colors to bgfx's expected ABGR vertex packing at submission time
+- `TextureClass` can now provide a native bgfx texture directly to renderer code. That is a better migration seam than reusing `DX8Wrapper::Set_Texture(...)`, because sampler/addressing policy can be translated into bgfx flags per bind without reviving texture-stage state abstractions.
+- `SurfaceClass::CreateCopy()` is currently the cleanest existing engine-level hook for moving legacy texture pixel data into bgfx. It works well for the `Render2D`/font path, but the broader port still needs a renderer-native texture loading path so file-backed textures are not sourced through legacy DX8 objects first.
 
 ## Repository observations
 

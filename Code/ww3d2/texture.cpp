@@ -38,8 +38,10 @@
 #include "texture.h"
 
 #include <d3d8.h>
+#include <cstdint>
 #include <stdio.h>
 #include <D3dx8core.h>
+#include "bgfxrenderer.h"
 #include "dx8wrapper.h"
 #include "targa.h"
 #include <nstrdup.h>
@@ -90,6 +92,7 @@ static int Calculate_Texture_Memory_Usage(const TextureClass* texture,int red_fa
 TextureClass::TextureClass(unsigned width, unsigned height, WW3DFormat format, MipCountType mip_level_count, PoolType pool,bool rendertarget)
 	:
 	D3DTexture(NULL),
+	BgfxTexture(BGFX_INVALID_HANDLE),
 	texture_id(unused_texture_id++),
 	Initialized(true),
 	TextureMinFilter(FILTER_TYPE_DEFAULT),
@@ -161,6 +164,7 @@ TextureClass::TextureClass(
 	bool allow_compression)
 	:
 	D3DTexture(NULL),
+	BgfxTexture(BGFX_INVALID_HANDLE),
 	texture_id(unused_texture_id++),
 	Initialized(false),
 	TextureMinFilter(FILTER_TYPE_DEFAULT),
@@ -264,6 +268,7 @@ TextureClass::TextureClass(
 TextureClass::TextureClass(SurfaceClass *surface, MipCountType mip_level_count)
 	:
 	D3DTexture(NULL),
+	BgfxTexture(BGFX_INVALID_HANDLE),
 	texture_id(unused_texture_id++),
 	Initialized(true),
 	TextureMinFilter(FILTER_TYPE_DEFAULT),
@@ -304,6 +309,9 @@ TextureClass::TextureClass(SurfaceClass *surface, MipCountType mip_level_count)
 	}
 
 	D3DTexture = DX8Wrapper::_Create_DX8_Texture(surface->Peek_D3D_Surface(), mip_level_count);
+	if (BgfxRenderer::Is_Initted()) {
+		BgfxTexture = BgfxRenderer::Create_Texture_From_Surface(*surface);
+	}
 	LastAccessed=WW3D::Get_Sync_Time();
 }
 
@@ -312,6 +320,7 @@ TextureClass::TextureClass(SurfaceClass *surface, MipCountType mip_level_count)
 TextureClass::TextureClass(IDirect3DTexture8* d3d_texture)
 	:
 	D3DTexture(d3d_texture),
+	BgfxTexture(BGFX_INVALID_HANDLE),
 	texture_id(unused_texture_id++),
 	Initialized(true),
 	TextureMinFilter(FILTER_TYPE_DEFAULT),
@@ -366,6 +375,8 @@ TextureClass::~TextureClass(void)
 	TextureLoadTask=NULL;
 	delete ThumbnailLoadTask;
 	ThumbnailLoadTask=NULL;
+
+	Release_Bgfx_Texture();
 
 	if (D3DTexture) {
 		D3DTexture->Release();
@@ -456,6 +467,8 @@ void TextureClass::Invalidate()
 		return;
 	}
 
+	Release_Bgfx_Texture();
+
 	if (D3DTexture) {
 		D3DTexture->Release();
 		D3DTexture = NULL;
@@ -470,6 +483,7 @@ void TextureClass::Invalidate()
 
 void TextureClass::Load_Locked_Surface()
 {
+	Release_Bgfx_Texture();
 	if (D3DTexture) D3DTexture->Release();
 	D3DTexture=0;
 	TextureLoader::Request_Thumbnail(this);
@@ -502,6 +516,92 @@ IDirect3DTexture8 *TextureClass::Acquire_DX8_Texture()
 	}
 
 	return D3DTexture;
+}
+
+// ----------------------------------------------------------------------------
+
+bgfx::TextureHandle TextureClass::Get_Bgfx_Texture()
+{
+	if (bgfx::isValid(BgfxTexture)) {
+		return BgfxTexture;
+	}
+
+	if (!Initialized) {
+		Init();
+	}
+
+	if (!Initialized || !BgfxRenderer::Is_Initted()) {
+		return BGFX_INVALID_HANDLE;
+	}
+
+	SurfaceClass *surface = Get_Surface_Level(0);
+	if (surface == NULL) {
+		return BGFX_INVALID_HANDLE;
+	}
+
+	BgfxTexture = BgfxRenderer::Create_Texture_From_Surface(*surface);
+	surface->Release_Ref();
+	return BgfxTexture;
+}
+
+uint32_t TextureClass::Get_Bgfx_Sampler_Flags() const
+{
+	uint32_t flags = 0;
+
+	switch (TextureMinFilter) {
+	case FILTER_TYPE_NONE:
+		flags |= BGFX_SAMPLER_MIN_POINT;
+		break;
+	case FILTER_TYPE_FAST:
+	case FILTER_TYPE_BEST:
+	case FILTER_TYPE_DEFAULT:
+	default:
+		flags |= BGFX_SAMPLER_MIN_LINEAR;
+		break;
+	}
+
+	switch (TextureMagFilter) {
+	case FILTER_TYPE_NONE:
+		flags |= BGFX_SAMPLER_MAG_POINT;
+		break;
+	case FILTER_TYPE_FAST:
+	case FILTER_TYPE_BEST:
+	case FILTER_TYPE_DEFAULT:
+	default:
+		flags |= BGFX_SAMPLER_MAG_LINEAR;
+		break;
+	}
+
+	switch (MipMapFilter) {
+	case FILTER_TYPE_NONE:
+	case FILTER_TYPE_FAST:
+		flags |= BGFX_SAMPLER_MIP_POINT;
+		break;
+	case FILTER_TYPE_BEST:
+	case FILTER_TYPE_DEFAULT:
+	default:
+		flags |= BGFX_SAMPLER_MIP_LINEAR;
+		break;
+	}
+
+	if (Get_U_Addr_Mode() == TEXTURE_ADDRESS_CLAMP) {
+		flags |= BGFX_SAMPLER_U_CLAMP;
+	}
+	if (Get_V_Addr_Mode() == TEXTURE_ADDRESS_CLAMP) {
+		flags |= BGFX_SAMPLER_V_CLAMP;
+	}
+
+	return flags;
+}
+
+void TextureClass::Release_Bgfx_Texture()
+{
+	if (bgfx::isValid(BgfxTexture)) {
+		if (BgfxRenderer::Is_Initted()) {
+			bgfx::destroy(BgfxTexture);
+		}
+		BgfxTexture = BGFX_INVALID_HANDLE;
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -658,6 +758,7 @@ void TextureClass::Apply_Null(unsigned int stage)
 
 void TextureClass::Apply_New_Surface(IDirect3DTexture8* d3d_texture,bool initialized)
 {
+	Release_Bgfx_Texture();
 	if (D3DTexture) D3DTexture->Release();
 	D3DTexture=d3d_texture;//TextureLoadTask->Peek_D3D_Texture();
 	D3DTexture->AddRef();

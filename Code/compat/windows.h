@@ -6,6 +6,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <cstdint>
 #include <cwchar>
 
 #ifndef DLL_PROCESS_ATTACH
@@ -19,8 +20,8 @@
 #if !defined(RENEGADE_COMPAT_WINDOWS_TYPES_DEFINED) && !defined(RENEGADE_RENDERER_TYPES_DEFINED)
 #define RENEGADE_COMPAT_WINDOWS_TYPES_DEFINED
 using UINT = unsigned int;
-using DWORD = unsigned long;
-using ULONG = unsigned long;
+using DWORD = std::uint32_t;
+using ULONG = std::uint32_t;
 #endif
 
 #ifndef _strdup

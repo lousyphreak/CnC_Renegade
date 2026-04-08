@@ -377,8 +377,6 @@ void
 StyleMgrClass::Refresh_Fonts (void)
 {
 	Load_Fonts_From_Configuration ();
-	Render2DSentenceClass::Refresh_Tracked_Fonts (Fonts, FONT_MAX);
-	WW3DAssetManager::Get_Instance()->Release_Unused_FontChars ();
 	return ;
 }
 
@@ -455,7 +453,6 @@ void
 StyleMgrClass::Assign_Font (Render2DSentenceClass *renderer, FONT_STYLE style)
 {
 	renderer->Set_Font (Fonts[style]);
-	renderer->Set_Font_Tracking_ID (style);
 	return ;
 }
 

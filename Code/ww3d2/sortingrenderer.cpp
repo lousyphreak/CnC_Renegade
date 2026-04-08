@@ -22,8 +22,7 @@
 #include "dx8wrapper.h"
 #include "vertmaterial.h"
 #include "texture.h"
-#include "d3d8.h"
-#include "D3dx8math.h"
+#include "matrix4.h"
 #include "statistics.h"
 #include <wwprofile.h>
 
@@ -329,13 +328,9 @@ void SortingRendererClass::Insert_Triangles(
 
 	// Transform the center point to view space for sorting
 
-	D3DXMATRIX mtx=(D3DXMATRIX&)state->sorting_state.world*(D3DXMATRIX&)state->sorting_state.view;
-	D3DXVECTOR3 vec=(D3DXVECTOR3&)state->bounding_sphere.Center;
-	D3DXVECTOR4 transformed_vec;
-	D3DXVec3Transform(
-		&transformed_vec,
-		&vec,
-		&mtx); 
+	Matrix4 mtx = state->sorting_state.world * state->sorting_state.view;
+	Vector4 transformed_vec;
+	Matrix4::Transform_Vector(mtx, state->bounding_sphere.Center, &transformed_vec);
 	state->transformed_center=Vector3(transformed_vec[0],transformed_vec[1],transformed_vec[2]);
 
 	SortingNodeStruct* node=sorted_list.Head();
@@ -517,9 +512,7 @@ void SortingRendererClass::Flush_Sorting_Pool()
 			src_verts+=state->sorting_state.index_base_offset;
 			src_verts+=state->min_vertex_index;
 
-			D3DXMATRIX d3d_mtx=(D3DXMATRIX&)state->sorting_state.world*(D3DXMATRIX&)state->sorting_state.view;
-			D3DXMatrixTranspose(&d3d_mtx,&d3d_mtx);
-			const Matrix4& mtx=(const Matrix4&)d3d_mtx;
+			const Matrix4 mtx = (state->sorting_state.world * state->sorting_state.view).Transpose();
 			for (unsigned i=0;i<state->vertex_count;++i,++src_verts) {
 				vertex_z_array[i] = (mtx[2][0] * src_verts->x + mtx[2][1] * src_verts->y + mtx[2][2] * src_verts->z + mtx[2][3]);
 
@@ -539,7 +532,7 @@ void SortingRendererClass::Flush_Sorting_Pool()
 			indices+=state->start_index;
 			indices+=state->sorting_state.iba_offset;
 
-			for (i=0;i<state->polygon_count;++i) {
+			for (unsigned i = 0; i < state->polygon_count; ++i) {
 				unsigned short idx1=indices[i*3]-state->min_vertex_index;
 				unsigned short idx2=indices[i*3+1]-state->min_vertex_index;
 				unsigned short idx3=indices[i*3+2]-state->min_vertex_index;
@@ -579,7 +572,7 @@ void SortingRendererClass::Flush_Sorting_Pool()
 		DynamicIBAccessClass::WriteLockClass lock(&dyn_ib_access);
 		ShortVectorIStruct* sorted_polygon_index_array=(ShortVectorIStruct*)lock.Get_Index_Array();
 
-		for (a=0;a<overlapping_polygon_count;++a) {
+		for (unsigned a = 0; a < overlapping_polygon_count; ++a) {
 			sorted_polygon_index_array[a]=tis[a].tri;
 		}
 	}
@@ -724,4 +717,3 @@ void SortingRendererClass::Deinit()
 	temp_index_array=NULL;
 	temp_index_array_count=0;
 }
-

@@ -29,6 +29,8 @@ bgfx::VertexLayout BgfxRenderer::PosColorTexcoordLayout;
 bgfx::TextureHandle BgfxRenderer::WhiteTexture = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::ColorTextureUniform = BGFX_INVALID_HANDLE;
 bgfx::ProgramHandle BgfxRenderer::ColorTextureProgram = BGFX_INVALID_HANDLE;
+Matrix4 BgfxRenderer::CurrentViewMatrix(true);
+Matrix4 BgfxRenderer::CurrentProjectionMatrix(true);
 
 namespace
 {
@@ -514,8 +516,9 @@ void BgfxRenderer::Set_Camera(const Matrix3D &view, const Matrix4 &projection)
         return;
     }
 
-    const Matrix4 view_matrix(view);
-    bgfx::setViewTransform(MainViewId, &view_matrix[0][0], &projection[0][0]);
+    CurrentViewMatrix = Matrix4(view);
+    CurrentProjectionMatrix = projection;
+    bgfx::setViewTransform(MainViewId, &CurrentViewMatrix[0][0], &CurrentProjectionMatrix[0][0]);
 }
 
 void BgfxRenderer::Prepare_Overlay_View()
@@ -557,9 +560,24 @@ const bgfx::VertexLayout &BgfxRenderer::Get_Pos_Color_Texcoord_Layout()
     return PosColorTexcoordLayout;
 }
 
+uint16_t BgfxRenderer::Get_Main_View_Id()
+{
+    return MainViewId;
+}
+
 uint16_t BgfxRenderer::Get_Overlay_View_Id()
 {
     return OverlayViewId;
+}
+
+const Matrix4 &BgfxRenderer::Get_Current_View_Matrix()
+{
+    return CurrentViewMatrix;
+}
+
+const Matrix4 &BgfxRenderer::Get_Current_Projection_Matrix()
+{
+    return CurrentProjectionMatrix;
 }
 
 bgfx::TextureHandle BgfxRenderer::Get_White_Texture()

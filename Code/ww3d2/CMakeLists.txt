@@ -11,11 +11,9 @@ endif()
 
 list(REMOVE_ITEM WW3D2_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/dx8caps.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/dx8fvf.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/dx8indexbuffer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/dx8polygonrenderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/dx8renderer.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/dx8rendererdebugger.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/dx8texman.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/dx8vertexbuffer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/dx8wrapper.cpp"
@@ -66,6 +64,7 @@ target_include_directories(ww3d2
     PUBLIC
         ${WW3D2_COMPAT_INCLUDE_DIRS}
         "${CMAKE_CURRENT_SOURCE_DIR}"
+        "${PROJECT_SOURCE_DIR}/external/stb"
         "${PROJECT_SOURCE_DIR}/Code/wwlib"
         "${PROJECT_SOURCE_DIR}/Code/wwdebug"
         "${PROJECT_SOURCE_DIR}/Code/WWMath"
@@ -76,8 +75,9 @@ target_include_directories(ww3d2
 )
 
 target_link_libraries(ww3d2
-    PRIVATE
+    PUBLIC
         bgfx
+    PRIVATE
         wwlib
         wwdebug
         WWMath

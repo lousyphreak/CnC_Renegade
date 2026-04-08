@@ -19,8 +19,8 @@
 #include "texturethumbnail.h"
 #include "hashtemplate.h"
 #include "missingtexture.h"
-#include "targa.h"
 #include "ww3dformat.h"
+#include "TARGA.H"
 #include "ddsfile.h"
 #include "textureloader.h"
 #include "bitmaphandler.h"
@@ -28,6 +28,7 @@
 #include "rawfile.h"
 #include "mixfile.h"
 #include <windows.h>
+#include <filesystem>
 
 DLListClass<ThumbnailManagerClass> ThumbnailManagerClass::ThumbnailManagerList;
 static bool message_box_displayed=false;
@@ -646,26 +647,18 @@ void ThumbnailManagerClass::Pre_Init(bool display_message_box)
 	// Collect all mix file names
 	DynamicVectorClass<StringClass> mix_names;
 
-	char cur_dir[256];
-	GetCurrentDirectory(sizeof(cur_dir),cur_dir);
-	StringClass new_dir(cur_dir,true);
-	new_dir+="\\Data";
-	SetCurrentDirectory(new_dir);
-
-	WIN32_FIND_DATA find_data;
-	HANDLE handle=FindFirstFile("*.mix",&find_data);
-	if (handle!=INVALID_HANDLE_VALUE) {
-		for (;;) {
-			if (!(find_data.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY)) {
-				mix_names.Add(find_data.cFileName);
+	const std::filesystem::path data_dir = std::filesystem::current_path() / "Data";
+	if (std::filesystem::exists(data_dir)) {
+		for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(data_dir)) {
+			if (!entry.is_regular_file()) {
+				continue;
 			}
-			if (!FindNextFile(handle,&find_data)) {
-				FindClose(handle);
-				break;
+
+			if (entry.path().extension() == ".mix") {
+				mix_names.Add(entry.path().filename().string().c_str());
 			}
 		}
 	}
-	SetCurrentDirectory(cur_dir);
 
 	// First generate thumbnails for always.dat
 	Update_Thumbnail_File("always.dat",display_message_box);

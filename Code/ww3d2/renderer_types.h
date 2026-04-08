@@ -175,6 +175,10 @@ constexpr D3DPOOL D3DPOOL_DEFAULT = 0;
 constexpr D3DPOOL D3DPOOL_MANAGED = 1;
 constexpr D3DPOOL D3DPOOL_SYSTEMMEM = 2;
 
+using D3DTEXTUREADDRESS = std::uint32_t;
+constexpr D3DTEXTUREADDRESS D3DTADDRESS_WRAP = 1;
+constexpr D3DTEXTUREADDRESS D3DTADDRESS_CLAMP = 3;
+
 using D3DPRIMITIVETYPE = std::uint32_t;
 constexpr D3DPRIMITIVETYPE D3DPT_TRIANGLELIST = 0;
 constexpr D3DPRIMITIVETYPE D3DPT_TRIANGLESTRIP = 1;
@@ -274,6 +278,7 @@ constexpr D3DRENDERSTATETYPE D3DRS_ZVISIBLE = 74;
 constexpr D3DRENDERSTATETYPE D3DRS_LINEPATTERN = 75;
 
 using D3DTEXTURESTAGESTATETYPE = std::uint32_t;
+using D3DTEXTUREOP = DWORD;
 constexpr D3DTEXTURESTAGESTATETYPE D3DTSS_COLOROP = 0;
 constexpr D3DTEXTURESTAGESTATETYPE D3DTSS_COLORARG1 = 1;
 constexpr D3DTEXTURESTAGESTATETYPE D3DTSS_COLORARG2 = 2;
@@ -553,6 +558,20 @@ struct D3DLOCKED_RECT
     void *pBits;
 };
 
+using D3DRESOURCETYPE = std::uint32_t;
+
+struct D3DSURFACE_DESC
+{
+    D3DFORMAT Format;
+    D3DRESOURCETYPE Type;
+    DWORD Usage;
+    D3DPOOL Pool;
+    UINT Size;
+    UINT MultiSampleType;
+    UINT Width;
+    UINT Height;
+};
+
 struct D3DCAPS8
 {
     UINT AdapterOrdinal;
@@ -574,12 +593,34 @@ struct D3DMATRIX
     float m[4][4];
 };
 
-constexpr DWORD D3DRTYPE_SURFACE = 1;
-constexpr DWORD D3DRTYPE_TEXTURE = 3;
+constexpr D3DRESOURCETYPE D3DRTYPE_SURFACE = 1;
+constexpr D3DRESOURCETYPE D3DRTYPE_TEXTURE = 3;
 
-struct IDirect3DBaseTexture8;
-struct IDirect3DTexture8;
-struct IDirect3DSurface8;
+struct IDirect3DBaseTexture8
+{
+    virtual ~IDirect3DBaseTexture8() = default;
+    virtual ULONG AddRef() = 0;
+    virtual ULONG Release() = 0;
+};
+
+struct IDirect3DSurface8
+{
+    virtual ~IDirect3DSurface8() = default;
+    virtual ULONG AddRef() = 0;
+    virtual ULONG Release() = 0;
+    virtual HRESULT GetDesc(D3DSURFACE_DESC *desc) = 0;
+    virtual HRESULT LockRect(D3DLOCKED_RECT *locked_rect, const RECT *rect, DWORD flags) = 0;
+    virtual HRESULT UnlockRect() = 0;
+};
+
+struct IDirect3DTexture8 : public IDirect3DBaseTexture8
+{
+    virtual UINT GetLevelCount() = 0;
+    virtual HRESULT GetSurfaceLevel(UINT level, IDirect3DSurface8 **surface) = 0;
+    virtual HRESULT LockRect(UINT level, D3DLOCKED_RECT *locked_rect, const RECT *rect, DWORD flags) = 0;
+    virtual HRESULT UnlockRect(UINT level) = 0;
+};
+
 struct IDirect3DSwapChain8;
 struct IDirect3D8;
 struct IDirect3DDevice8;

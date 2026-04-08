@@ -373,28 +373,17 @@ DynamicIBAccessClass::DynamicIBAccessClass(unsigned short type_, unsigned short 
 	:
 	IndexCount(index_count_),
 	IndexBuffer(0),
-	Type(type_)
+	Type(type_ == BUFFER_TYPE_DYNAMIC_DX8 ? BUFFER_TYPE_DYNAMIC_SORTING : type_)
 {
-	WWASSERT(Type==BUFFER_TYPE_DYNAMIC_DX8 || Type==BUFFER_TYPE_DYNAMIC_SORTING);
-	if (Type==BUFFER_TYPE_DYNAMIC_DX8) {
-		Allocate_DX8_Dynamic_Buffer();
-	}
-	else {
-		Allocate_Sorting_Dynamic_Buffer();
-	}
+	WWASSERT(Type==BUFFER_TYPE_DYNAMIC_SORTING);
+	Allocate_Sorting_Dynamic_Buffer();
 }
 
 DynamicIBAccessClass::~DynamicIBAccessClass()
 {
 	REF_PTR_RELEASE(IndexBuffer);
-	if (Type==BUFFER_TYPE_DYNAMIC_DX8) {
-		_DynamicDX8IndexBufferInUse=false;
-		_DynamicDX8IndexBufferOffset+=IndexCount;
-	}
-	else {
-		_DynamicSortingIndexArrayInUse=false;
-		_DynamicSortingIndexArrayOffset+=IndexCount;
-	}
+	_DynamicSortingIndexArrayInUse=false;
+	_DynamicSortingIndexArrayOffset+=IndexCount;
 }
 
 void DynamicIBAccessClass::_Deinit()
@@ -425,17 +414,6 @@ DynamicIBAccessClass::WriteLockClass::WriteLockClass(DynamicIBAccessClass* ib_ac
 	DX8_THREAD_ASSERT();
 	DynamicIBAccess->IndexBuffer->Add_Ref();
 	switch (DynamicIBAccess->Get_Type()) {
-	case BUFFER_TYPE_DYNAMIC_DX8:
-		WWASSERT(DynamicIBAccess);
-//		WWASSERT(!dynamic_dx8_index_buffer->Engine_Refs());
-		DX8_Assert();
-		DX8_ErrorCode(
-			static_cast<DX8IndexBufferClass*>(DynamicIBAccess->IndexBuffer)->Get_DX8_Index_Buffer()->Lock(
-			DynamicIBAccess->IndexBufferOffset*sizeof(WORD),
-			DynamicIBAccess->Get_Index_Count()*sizeof(WORD),
-			(unsigned char**)&Indices,
-			!DynamicIBAccess->IndexBufferOffset ? D3DLOCK_DISCARD : D3DLOCK_NOOVERWRITE));
-		break;
 	case BUFFER_TYPE_DYNAMIC_SORTING:
 		Indices=static_cast<SortingIndexBufferClass*>(DynamicIBAccess->IndexBuffer)->index_buffer;
 		Indices+=DynamicIBAccess->IndexBufferOffset;
@@ -450,10 +428,6 @@ DynamicIBAccessClass::WriteLockClass::~WriteLockClass()
 {
 	DX8_THREAD_ASSERT();
 	switch (DynamicIBAccess->Get_Type()) {
-	case BUFFER_TYPE_DYNAMIC_DX8:
-		DX8_Assert();
-		DX8_ErrorCode(static_cast<DX8IndexBufferClass*>(DynamicIBAccess->IndexBuffer)->Get_DX8_Index_Buffer()->Unlock());
-		break;
 	case BUFFER_TYPE_DYNAMIC_SORTING:
 		break;
 	default:
@@ -533,4 +507,3 @@ void DynamicIBAccessClass::_Reset(bool frame_changed)
 	_DynamicSortingIndexArrayOffset=0;
 	if (frame_changed) _DynamicDX8IndexBufferOffset=0;
 }
-

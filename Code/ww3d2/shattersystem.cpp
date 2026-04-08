@@ -47,6 +47,7 @@
 #include "wwstring.h"
 #include "vp.h"
 #include "meshmatdesc.h"
+#include "dx8wrapper.h"
 #include <stdlib.h>
 
 /*

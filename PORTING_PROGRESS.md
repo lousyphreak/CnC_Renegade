@@ -96,6 +96,13 @@
   - dropped the dead texture-priority path, stopped materializing a DX8 texture just to answer `Get_Mip_Level_Count()` / `Get_Surface_Level()`, and removed the thumbnail loader’s dependence on the backend texture pointer
   - render-target texture creation now starts using bgfx-native ownership: `TextureClass` allocates bgfx framebuffers for render-target textures, `BgfxRenderer` tracks the active render-target dimensions/framebuffer, and `TexProjectClass` restores the default bgfx target instead of forcing the D3D surface reset path
 - Rebuilt after the source-ownership slice and confirmed the edited texture files are not the active build frontier; the target still stops in older untouched portability failures (`motchan.cpp`, `mesh*.cpp`, `meshmatdesc.cpp`, `part_buf.cpp`, `meshmdlio.cpp`)
+- Continued the cleanup needed to keep advancing toward a bgfx-native mesh/render path instead of getting stuck behind stale portability failures:
+  - fixed the Linux include-case issues in `shader.cpp`, `soundrobj.h`, and `soundrobj.cpp` so the build stops failing on missing headers before reaching the renderer logic
+  - fixed a batch of strict-modern-C++ compile errors in renderer-adjacent files (`prim_anim.h`, `dx8renderer.h`, `meshmdl.cpp`, `meshmdlio.cpp`, `meshmatdesc.cpp`, `motchan.cpp`, `metalmap.cpp`, `pointgr.cpp`, `part_buf.cpp`, `sphereobj.cpp`, `textureloader.h`)
+  - replaced `sortingrenderer.cpp`'s remaining `d3d8.h` / `D3dx8math.h` dependency with direct `Matrix4` math, removing one more high-level source file from the old D3D SDK surface
+  - updated `shattersystem.cpp` to include the real `dx8wrapper.h` declaration instead of relying on an incomplete forward declaration for color conversion helpers
+  - removed one more raw surface-copy dependency from shared high-level code: `render2dsentence.cpp` now copies text staging data through `SurfaceClass::Copy(...)` instead of reaching through `Peek_D3D_Surface()` and `DX8Wrapper::_Copy_DX8_Rects(...)`
+- Rebuilt after the cleanup batch and moved the active frontier again. The main remaining blocker before the next bgfx renderer slice can be validated is now concentrated in `render2dsentence.cpp`, which still hard-depends on a large Win32/GDI font rasterization path (`GetDC`, `CreateFont`, `CreateDIBSection`, `GetTextExtentPoint32W`, etc.) that does not exist on Linux yet. This is now the most urgent non-bgfx blocker in `ww3d2` because it prevents a truthful full build of the renderer target.
 
 ## Next work
 

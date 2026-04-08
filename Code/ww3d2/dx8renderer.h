@@ -315,11 +315,12 @@ struct MeshRegKeyStruct
 };
 
 
-inline unsigned int HashTemplateKeyClass<MeshRegKeyStruct>::Get_Hash_Value(const MeshRegKeyStruct& key)
+template <>
+inline uint32_t HashTemplateKeyClass<MeshRegKeyStruct>::Get_Hash_Value(const MeshRegKeyStruct& key)
 {
-	unsigned int hval = (unsigned int)(key.Model) + (unsigned int)(key.UserLighting);
+	uintptr_t hval = reinterpret_cast<uintptr_t>(key.Model) + reinterpret_cast<uintptr_t>(key.UserLighting);
 	hval = hval + (hval>>5) + (hval>>10) + (hval >> 20);
-	return hval;
+	return static_cast<uint32_t>(hval);
 }
 
 

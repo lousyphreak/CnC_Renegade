@@ -1022,7 +1022,7 @@ static bool Test_Render_Target_Surface(TextureClass* render_target)
 	SurfaceClass::SurfaceDescription desc;
 	surf->Get_Description(desc);
 	SurfaceClass * new_surf = NEW_REF(SurfaceClass,(desc.Width,desc.Height,desc.Format));
-	DX8Wrapper::_Copy_DX8_Rects(surf->Peek_D3D_Surface(),NULL,0,new_surf->Peek_D3D_Surface(),NULL);
+	new_surf->Copy(0, 0, 0, 0, desc.Width, desc.Height, surf);
 	REF_PTR_RELEASE(surf);
 
 	int pitch;
@@ -1292,7 +1292,7 @@ void PhysicsSceneClass::Setup_Static_Directional_Shadow
 		SurfaceClass::SurfaceDescription desc;
 		surf->Get_Description(desc);
 		SurfaceClass * new_surf = NEW_REF(SurfaceClass,(desc.Width,desc.Height,desc.Format));
-		DX8Wrapper::_Copy_DX8_Rects(surf->Peek_D3D_Surface(),NULL,0,new_surf->Peek_D3D_Surface(),NULL);
+		new_surf->Copy(0, 0, 0, 0, desc.Width, desc.Height, surf);
 
 		TextureClass * new_texture = NEW_REF(TextureClass,(new_surf));
 

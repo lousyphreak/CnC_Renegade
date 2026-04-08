@@ -37,13 +37,11 @@
 
 #include "texture.h"
 
-#include <d3d8.h>
 #include <cstdint>
 #include <stdio.h>
-#include <D3dx8core.h>
+#include "renderer_types.h"
 #include "bgfxrenderer.h"
 #include "dx8wrapper.h"
-#include "targa.h"
 #include <nstrdup.h>
 #include "w3d_file.h"
 #include "assetmgr.h"
@@ -606,7 +604,6 @@ uint32_t TextureClass::Get_Bgfx_Sampler_Flags() const
 	case FILTER_TYPE_BEST:
 	case FILTER_TYPE_DEFAULT:
 	default:
-		flags |= BGFX_SAMPLER_MIN_LINEAR;
 		break;
 	}
 
@@ -618,7 +615,6 @@ uint32_t TextureClass::Get_Bgfx_Sampler_Flags() const
 	case FILTER_TYPE_BEST:
 	case FILTER_TYPE_DEFAULT:
 	default:
-		flags |= BGFX_SAMPLER_MAG_LINEAR;
 		break;
 	}
 
@@ -630,7 +626,6 @@ uint32_t TextureClass::Get_Bgfx_Sampler_Flags() const
 	case FILTER_TYPE_BEST:
 	case FILTER_TYPE_DEFAULT:
 	default:
-		flags |= BGFX_SAMPLER_MIP_LINEAR;
 		break;
 	}
 
@@ -1033,7 +1028,7 @@ void TextureClass::_Init_Filters(TextureClass::TextureFilterMode filter_type)
 	}
 
 	// Set default to best. The level of best filter mode is controlled by the input parameter.
-	for (i=0;i<MAX_TEXTURE_STAGES;++i) {
+	for (int i = 0; i < MAX_TEXTURE_STAGES; ++i) {
 		_MinTextureFilters[i][FILTER_TYPE_DEFAULT]=_MinTextureFilters[i][FILTER_TYPE_BEST];
 		_MagTextureFilters[i][FILTER_TYPE_DEFAULT]=_MagTextureFilters[i][FILTER_TYPE_BEST];
 		_MipMapFilters[i][FILTER_TYPE_DEFAULT]=_MipMapFilters[i][FILTER_TYPE_BEST];

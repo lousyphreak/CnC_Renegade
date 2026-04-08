@@ -36,9 +36,9 @@
 
 
 #include "soundrobj.h"
-#include "audiblesound.h"
-#include "sound3d.h"
-#include "WWAudio.h"
+#include "WWAudio/AudibleSound.h"
+#include "WWAudio/Sound3D.h"
+#include "WWAudio/WWAudio.h"
 #include "ffactory.h"
 #include "wwfile.h"
 #include "chunkio.h"
@@ -764,4 +764,3 @@ SoundRenderObjLoaderClass::Load_W3D (ChunkLoadClass &cload)
 
 	return prototype;
 }
-

@@ -41,6 +41,21 @@
 #include "wwmemlog.h"
 #include "dx8wrapper.h"
 
+#include <algorithm>
+#include <array>
+#include <cctype>
+#include <cerrno>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <string>
+#include <vector>
+
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "stb_truetype.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 //	Local constants
@@ -54,6 +69,144 @@ const int CHAR_BUFFER_LEN		= 32768;
 //			  Therefore treat each of these characters as a word which can be preceeded by a line break.
 // NOTE 1: This is a simplification. Some Korean characters should not be line break characters.
 #define IS_BREAK_CHAR(ch) ((ch == L' ') || ((ch >= 0x3000) && (ch <= 0xdfff)))
+
+namespace
+{
+constexpr float LogicalDpi = 96.0f;
+constexpr const char *FontSearchRoots[] = {
+	"/usr/share/fonts",
+	"/usr/local/share/fonts",
+};
+
+std::string Normalize_Font_Family(const std::string &text)
+{
+	std::string normalized;
+	normalized.reserve(text.size());
+
+	for (unsigned char ch : text) {
+		if (std::isalnum(ch) != 0) {
+			normalized.push_back(static_cast<char>(std::tolower(ch)));
+		}
+	}
+
+	return normalized;
+}
+
+bool Font_File_Extension_Matches(const std::filesystem::path &path)
+{
+	std::string extension = path.extension().string();
+	std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char ch) {
+		return static_cast<char>(std::tolower(ch));
+	});
+
+	return extension == ".ttf" || extension == ".otf" || extension == ".ttc";
+}
+
+bool Filename_Indicates_Bold(const std::string &text)
+{
+	return text.find("bold") != std::string::npos || text.find("demi") != std::string::npos || text.find("black") != std::string::npos;
+}
+
+int Score_Font_Candidate(const std::string &stem, const std::vector<std::string> &families, bool is_bold)
+{
+	int best_score = -1;
+	const bool candidate_is_bold = Filename_Indicates_Bold(stem);
+
+	for (size_t index = 0; index < families.size(); ++index) {
+		if (stem.find(families[index]) == std::string::npos) {
+			continue;
+		}
+
+		int score = 100 - static_cast<int>(index * 10);
+		if (candidate_is_bold == is_bold) {
+			score += 25;
+		}
+
+		best_score = std::max(best_score, score);
+	}
+
+	return best_score;
+}
+
+bool Read_Binary_File(const std::filesystem::path &path, std::vector<unsigned char> &contents)
+{
+	std::ifstream input(path, std::ios::binary | std::ios::ate);
+	if (!input) {
+		return false;
+	}
+
+	const std::ifstream::pos_type file_size = input.tellg();
+	if (file_size <= 0) {
+		return false;
+	}
+
+	contents.resize(static_cast<size_t>(file_size));
+	input.seekg(0, std::ios::beg);
+	input.read(reinterpret_cast<char *>(contents.data()), file_size);
+	return input.good();
+}
+
+bool Resolve_Font_Path(const char *font_name, bool is_bold, std::filesystem::path &resolved_path)
+{
+	if (font_name == nullptr || *font_name == '\0') {
+		return false;
+	}
+
+	std::filesystem::path direct_path(font_name);
+	if (std::filesystem::exists(direct_path) && std::filesystem::is_regular_file(direct_path)) {
+		resolved_path = direct_path;
+		return true;
+	}
+
+	std::vector<std::string> requested_families;
+	requested_families.emplace_back(Normalize_Font_Family(font_name));
+
+	if (requested_families[0].find("arial") != std::string::npos) {
+		requested_families.emplace_back("notosans");
+		requested_families.emplace_back("liberationsans");
+		requested_families.emplace_back("dejavusans");
+	}
+
+	std::vector<std::filesystem::path> search_roots(std::begin(FontSearchRoots), std::end(FontSearchRoots));
+	if (const char *home = std::getenv("HOME")) {
+		search_roots.emplace_back(std::filesystem::path(home) / ".fonts");
+		search_roots.emplace_back(std::filesystem::path(home) / ".local/share/fonts");
+	}
+
+	int best_score = -1;
+	for (const std::filesystem::path &root : search_roots) {
+		if (!std::filesystem::exists(root)) {
+			continue;
+		}
+
+		std::error_code ec;
+		for (std::filesystem::recursive_directory_iterator it(root, std::filesystem::directory_options::skip_permission_denied, ec), end; it != end; it.increment(ec)) {
+			if (ec) {
+				ec.clear();
+				continue;
+			}
+
+			if (!it->is_regular_file()) {
+				continue;
+			}
+
+			const std::filesystem::path &path = it->path();
+			if (!Font_File_Extension_Matches(path)) {
+				continue;
+			}
+
+			const std::string stem = Normalize_Font_Family(path.stem().string());
+			const int score = Score_Font_Candidate(stem, requested_families, is_bold);
+			if (score > best_score) {
+				best_score = score;
+				resolved_path = path;
+			}
+		}
+	}
+
+	return best_score >= 0;
+}
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -551,7 +704,7 @@ Render2DSentenceClass::Build_Textures (void)
 		//
 		//	Copy the contents of the texture from the surface
 		//
-		DX8Wrapper::_Copy_DX8_Rects (curr_surface->Peek_D3D_Surface (), NULL, 0, texture_surface->Peek_D3D_Surface (), NULL);
+		texture_surface->Copy(0, 0, 0, 0, desc.Width, desc.Height, curr_surface);
 		REF_PTR_RELEASE (texture_surface);
 
 		//
@@ -1027,15 +1180,15 @@ void	Render2DSentenceClass::Force_Alpha( float alpha )
 //
 ////////////////////////////////////////////////////////////////////////////////////
 FontCharsClass::FontCharsClass (void) :
-	OldGDIFont(	NULL ),
-	OldGDIBitmap( NULL ),
-	GDIFont( NULL ),
-	GDIBitmap( NULL ),
-	GDIBitmapBits ( NULL ),
-	MemDC( NULL ),
 	CurrPixelOffset( 0 ),
 	PointSize( 0 ),
 	CharHeight( 0 ),
+	FontScale( 0.0f ),
+	FontPixelHeight( 0.0f ),
+	FontAscent( 0 ),
+	FontDescent( 0 ),
+	FontLineGap( 0 ),
+	FontInfo( NULL ),
 	UnicodeCharArray( NULL ),
 	FirstUnicodeChar( 0xFFFF ),
 	LastUnicodeChar( 0 ),
@@ -1059,7 +1212,7 @@ FontCharsClass::~FontCharsClass (void)
 	}
 	BufferList.Reset_Active();
 
-	Free_GDI_Font();
+	Release_Font();
 	Free_Character_Arrays();
 	return ;
 }
@@ -1086,7 +1239,7 @@ FontCharsClass::Get_Char_Data (WCHAR ch)
 	//	If the character wasn't found, then add it to our list
 	//
 	if ( retval == NULL ) {
-		retval = Store_GDI_Char( ch );
+		retval = Store_Glyph( ch );
 	}
 
 	WWASSERT( retval->Value == ch );
@@ -1165,77 +1318,74 @@ FontCharsClass::Blit_Char (WCHAR ch, uint16 *dest_ptr, int dest_stride, int x, i
 
 ////////////////////////////////////////////////////////////////////////////////////
 //
-//	Store_GDI_Char
+//	Store_Glyph
 //
 ////////////////////////////////////////////////////////////////////////////////////
 const FontCharsClass::CharDataStruct *
-FontCharsClass::Store_GDI_Char (WCHAR ch)
+FontCharsClass::Store_Glyph (WCHAR ch)
 {
-	int width	= PointSize * 2;
-	int height	= PointSize * 2;
+	WWASSERT(FontInfo != NULL);
 
-	//
-	//	Get the size of the character we just drew
-	//
-	SIZE char_size = { 0 };
-	::GetTextExtentPoint32W( MemDC, &ch, 1, &char_size );
-	int x_pos = 0;
+	int advance = 0;
+	int left_side_bearing = 0;
+	stbtt_GetCodepointHMetrics(FontInfo, static_cast<int>(ch), &advance, &left_side_bearing);
 
-	//
-	//	HACK HACK -- With the default font that Renegade uses the
-	// W and V characters need to be moved over one pixel.
-	//
-	if ( (ch == 'W' || ch == 'V') && (GDIFontName.Compare_No_Case ("Arial MT") == 0) ) {
-		x_pos				= 1;
-		char_size.cx	+= 1;
-	}
+	int x0 = 0;
+	int y0 = 0;
+	int x1 = 0;
+	int y1 = 0;
+	stbtt_GetCodepointBitmapBox(FontInfo, static_cast<int>(ch), FontScale, FontScale, &x0, &y0, &x1, &y1);
 
-	//
-	//	Draw the character into the memory DC
-	//
-	RECT rect = { 0, 0, width, height };
-	::ExtTextOutW( MemDC, x_pos, 0, ETO_OPAQUE, &rect, &ch, 1, NULL);
+	const int bitmap_width = std::max(0, x1 - x0);
+	const int bitmap_height = std::max(0, y1 - y0);
+	const int left_padding = std::max(0, -x0);
+	const int advance_width = std::max(0, static_cast<int>(std::ceil(static_cast<float>(advance) * FontScale)));
+	const int char_width = std::max(advance_width + left_padding, std::max(1, x1 + left_padding));
+	const int baseline = static_cast<int>(std::ceil(static_cast<float>(FontAscent) * FontScale));
 
 	//
 	//	Get a pointer to the surface that this character should use
 	//
-	Update_Current_Buffer( char_size.cx );
+	Update_Current_Buffer( char_width );
 	uint16 *curr_buffer = BufferList[BufferList.Count () - 1];
 	curr_buffer += CurrPixelOffset;
+	::memset(curr_buffer, 0, sizeof(uint16) * char_width * CharHeight);
 
-	//
-	//	Copy the BMP contents to the buffer
-	//
-	int stride = (((width * 3) + 3) & ~3);
-	for (int row = 0; row < char_size.cy; row ++) {
+	if (bitmap_width > 0 && bitmap_height > 0) {
+		std::vector<unsigned char> glyph_bitmap(static_cast<size_t>(bitmap_width) * static_cast<size_t>(bitmap_height));
+		stbtt_MakeCodepointBitmap(
+			FontInfo,
+			glyph_bitmap.data(),
+			bitmap_width,
+			bitmap_height,
+			bitmap_width,
+			FontScale,
+			FontScale,
+			static_cast<int>(ch));
 
-		//
-		//	Compute the indices into the BMP and surface
-		//
-		int index = (row * stride);
-
-		//
-		//	Loop over each column
-		//
-		for (int col = 0; col < char_size.cx; col ++) {
-
-			//
-			//	Get the pixel color at this location
-			//
-			uint8 pixel_value = GDIBitmapBits[index];
-			index += 3;
-
-			uint16 pixel_color = 0;
-			if (pixel_value != 0) {
-				pixel_color = 0x0FFF;
+		const int top = baseline + y0;
+		const int left = left_padding + x0;
+		for (int row = 0; row < bitmap_height; ++row) {
+			const int dest_y = top + row;
+			if (dest_y < 0 || dest_y >= CharHeight) {
+				continue;
 			}
 
-			//
-			//	Convert the pixel intensity from 8bit to 4bit and
-			// store it in our buffer
-			//
-			uint8 alpha_value	= ((pixel_value >> 4) & 0xF);
-			*curr_buffer ++	= pixel_color | (alpha_value << 12);
+			for (int col = 0; col < bitmap_width; ++col) {
+				const int dest_x = left + col;
+				if (dest_x < 0 || dest_x >= char_width) {
+					continue;
+				}
+
+				const uint8 pixel_value = glyph_bitmap[static_cast<size_t>(row) * static_cast<size_t>(bitmap_width) + static_cast<size_t>(col)];
+				uint16 pixel_color = 0;
+				if (pixel_value != 0) {
+					pixel_color = 0x0FFF;
+				}
+
+				const uint8 alpha_value = static_cast<uint8>((pixel_value >> 4) & 0x0F);
+				curr_buffer[dest_y * char_width + dest_x] = static_cast<uint16>(pixel_color | (alpha_value << 12));
+			}
 		}
 	}
 
@@ -1244,7 +1394,7 @@ FontCharsClass::Store_GDI_Char (WCHAR ch)
 	//
 	CharDataStruct *char_data	= new CharDataStruct;
 	char_data->Value				= ch;
-	char_data->Width				= char_size.cx;
+	char_data->Width				= static_cast<short>(char_width);
 	char_data->Buffer				= BufferList[BufferList.Count () - 1] + CurrPixelOffset;
 
 	//
@@ -1259,7 +1409,7 @@ FontCharsClass::Store_GDI_Char (WCHAR ch)
 	//
 	//	Advance the character position
 	//
-	CurrPixelOffset += (char_size.cx * CharHeight);
+	CurrPixelOffset += (char_width * CharHeight);
 
 	//
 	//	Return the index of the entry we just added
@@ -1305,158 +1455,71 @@ FontCharsClass::Update_Current_Buffer (int char_width)
 
 ////////////////////////////////////////////////////////////////////////////////////
 //
-//	Create_GDI_Font
+//	Load_Font
 //
 ////////////////////////////////////////////////////////////////////////////////////
 void
-FontCharsClass::Create_GDI_Font (const char *font_name)
+FontCharsClass::Load_Font (const char *font_name)
 {
-	HDC screen_dc = ::GetDC (NULL);
+	Release_Font();
 
-	//
-	//	Calculate the height of the font in logical units
-	//
-	int font_height = -MulDiv (PointSize, ::GetDeviceCaps (screen_dc, LOGPIXELSY), 72);
-
-	//
-	//	Create the Windows font
-	//
-	DWORD bold		= IsBold ? FW_BOLD : FW_NORMAL;
-	DWORD italic	= 0;
-	DWORD	charset;
-
-	// Map the current code page to a font character set.
-	switch (GetACP()) {
-
-		// Chinese.
-		case 936:
-		case 950:
-			charset = CHINESEBIG5_CHARSET;
-			break;
-
-		// Japanese.
-		case 932:
-			charset = SHIFTJIS_CHARSET;
-			break;
-
-		// Korean.
-		case 949:
-			charset = HANGUL_CHARSET;
-			break;
-
-		// Anything else.
-		default:
-			charset = DEFAULT_CHARSET;
-			break;
+	std::filesystem::path font_path;
+	if (!Resolve_Font_Path(font_name, IsBold, font_path)) {
+		WWDEBUG_SAY(("Failed to resolve font path for '%s'\n", font_name));
+		return;
 	}
 
-	GDIFont = ::CreateFont (font_height, 0, 0, 0, bold, italic,
-									FALSE, FALSE, charset, OUT_DEFAULT_PRECIS,
-									CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY,
-									VARIABLE_PITCH, font_name);
+	if (!Read_Binary_File(font_path, FontFileData)) {
+		WWDEBUG_SAY(("Failed to read font file '%s'\n", font_path.string().c_str()));
+		return;
+	}
 
-	//
-	// Set-up the fields of the BITMAPINFOHEADER
-	//	Note: Top-down DIBs use negative height in Win32.
-	//
-	BITMAPINFOHEADER bitmap_info = { 0 };
-	bitmap_info.biSize				= sizeof (BITMAPINFOHEADER);
-	bitmap_info.biWidth				= PointSize * 2;
-	bitmap_info.biHeight				= -(PointSize * 2);
-	bitmap_info.biPlanes				= 1;
-	bitmap_info.biBitCount			= 24;
-	bitmap_info.biCompression		= BI_RGB;
-	bitmap_info.biSizeImage			= ((PointSize * PointSize * 4) * 3);
-	bitmap_info.biXPelsPerMeter	= 0;
-	bitmap_info.biYPelsPerMeter	= 0;
-	bitmap_info.biClrUsed			= 0;
-	bitmap_info.biClrImportant		= 0;
+	FontInfo = new stbtt_fontinfo;
+	if (!stbtt_InitFont(FontInfo, FontFileData.data(), 0)) {
+		delete FontInfo;
+		FontInfo = NULL;
+		FontFileData.clear();
+		WWDEBUG_SAY(("Failed to initialize stb font '%s'\n", font_path.string().c_str()));
+		return;
+	}
 
-	//
-	// Create a bitmap that we can access the bits directly of
-	//
-	GDIBitmap	= ::CreateDIBSection (	screen_dc,
-													(const BITMAPINFO *)&bitmap_info,
-													DIB_RGB_COLORS,
-													(void **)&GDIBitmapBits,
-													NULL,
-													0L);
-
-	//
-	//	Create a device context we can select the font and bitmap into
-	//
-	MemDC = ::CreateCompatibleDC (NULL);
-
-	//
-	//	Now select the BMP and font into the DC
-	//
-	OldGDIBitmap	= (HBITMAP)::SelectObject (MemDC, GDIBitmap);
-	OldGDIFont		= (HFONT)::SelectObject (MemDC, GDIFont);
-	::SetBkColor (MemDC, RGB (0, 0, 0));
-	::SetTextColor (MemDC, RGB (255, 255, 255));
-
-	//
-	//	Lookup the pixel height of the font
-	//
-	TEXTMETRIC text_metric = { 0 };
-	::GetTextMetrics (MemDC, &text_metric);
-	CharHeight = text_metric.tmHeight;
-
-	//
-	// Release our temporary screen DC
-	//
-	::ReleaseDC (NULL, screen_dc);
-	return ;
+	FontPixelHeight = (static_cast<float>(PointSize) * LogicalDpi) / 72.0f;
+	FontScale = stbtt_ScaleForPixelHeight(FontInfo, FontPixelHeight);
+	stbtt_GetFontVMetrics(FontInfo, &FontAscent, &FontDescent, &FontLineGap);
+	CharHeight = std::max(1, static_cast<int>(std::ceil((static_cast<float>(FontAscent - FontDescent + FontLineGap)) * FontScale)));
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////////
 //
-//	Free_GDI_Font
+//	Release_Font
 //
 ////////////////////////////////////////////////////////////////////////////////////
 void
-FontCharsClass::Free_GDI_Font (void)
+FontCharsClass::Release_Font (void)
 {
-	//
-	//	Select the old font back into the DC and delete
-	// our font object
-	//
-	if ( GDIFont != NULL ) {
-		::SelectObject( MemDC, OldGDIFont );
-		::DeleteObject( GDIFont );
-		GDIFont = NULL;
+	if (FontInfo != NULL) {
+		delete FontInfo;
+		FontInfo = NULL;
 	}
 
-	//
-	//	Select the old bitmap back into the DC and delete
-	// our bitmap object
-	//
-	if ( GDIBitmap != NULL ) {
-		::SelectObject( MemDC, OldGDIBitmap );
-		::DeleteObject( GDIBitmap );
-		GDIBitmap = NULL;
-	}
-
-	//
-	//	Delete our memory DC
-	//
-	if ( MemDC != NULL ) {
-		::DeleteDC( MemDC );
-		MemDC = NULL;
-	}
-
-	return ;
+	FontFileData.clear();
+	FontScale = 0.0f;
+	FontPixelHeight = 0.0f;
+	FontAscent = 0;
+	FontDescent = 0;
+	FontLineGap = 0;
+	CharHeight = 0;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////////
 //
-//	Initialize_GDI_Font
+//	Initialize_Font
 //
 ////////////////////////////////////////////////////////////////////////////////////
 void
-FontCharsClass::Initialize_GDI_Font (const char *font_name, int point_size, bool is_bold)
+FontCharsClass::Initialize_Font (const char *font_name, int point_size, bool is_bold)
 {
 	//
 	//	Build a unique name from the font name and its size
@@ -1466,14 +1529,14 @@ FontCharsClass::Initialize_GDI_Font (const char *font_name, int point_size, bool
 	//
 	//	Remember these settings
 	//
-	GDIFontName	= font_name;
+	FontName	= font_name;
 	PointSize	= point_size;
 	IsBold		= is_bold;
 
 	//
 	//	Create the actual font object
 	//
-	Create_GDI_Font (font_name);
+	Load_Font (font_name);
 	return ;
 }
 
@@ -1491,7 +1554,7 @@ FontCharsClass::Is_Font (const char *font_name, int point_size, bool is_bold)
 	//
 	//	Check to see if both the name and height matches...
 	//
-	if (	(GDIFontName.Compare_No_Case (font_name) == 0) &&
+	if (	(FontName.Compare_No_Case (font_name) == 0) &&
 			(point_size == PointSize) &&
 			(is_bold == IsBold))
 	{
@@ -1524,8 +1587,8 @@ FontCharsClass::Grow_Unicode_Array (WCHAR ch)
 		return ;
 	}
 
-	uint16 first_index	= min( FirstUnicodeChar, ch );
-	uint16 last_index		= max( LastUnicodeChar, ch );
+	uint16 first_index	= min( FirstUnicodeChar, static_cast<uint16>(ch) );
+	uint16 last_index		= max( LastUnicodeChar, static_cast<uint16>(ch) );
 	uint16 count			= (last_index - first_index) + 1;
 
 	//
@@ -1597,4 +1660,3 @@ FontCharsClass::Free_Character_Arrays (void)
 
 	return ;
 }
-

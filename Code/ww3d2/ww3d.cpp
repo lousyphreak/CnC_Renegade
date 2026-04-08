@@ -108,12 +108,11 @@
 #include "bgfxrenderer.h"
 #include <cstdio>
 #include "dx8wrapper.h"
-#include "targa.h"
 #include "sortingrenderer.h"
 #include "thread.h"
-#include "cpudetect.h"
 #include "dx8texman.h"
 #include "formconv.h"
+#include "TARGA.H"
 #include "animatedsoundmgr.h"
 
 
@@ -280,9 +279,6 @@ WW3DErrorType WW3D::Init(void *hwnd, char *defaultpal, bool lite)
 	}
 	WWDEBUG_SAY(("Allocate Debug Resources\n"));
 	Allocate_Debug_Resources();
-
- 	MMRESULT r=timeBeginPeriod(1);
-	WWASSERT(r==TIMERR_NOERROR);
 
 	/*
 	** Initialize the dazzle system
@@ -1047,20 +1043,24 @@ WW3DErrorType WW3D::End_Render(bool flip_frame)
 		return(WW3D_ERROR_OK);
 	}
 
-	WWPROFILE("WW3D::End_Render");
+	{
+		WWPROFILE("WW3D::End_Render");
 
-	assert(IsRendering);
-	assert(IsInitted);
+		assert(IsRendering);
+		assert(IsInitted);
 
-	// If sorting renderer flush isn't called from within any of the render functions
-	// the sorting arrays will overflow!
+		// If sorting renderer flush isn't called from within any of the render functions
+		// the sorting arrays will overflow!
 
-	SortingRendererClass::Flush();
+		SortingRendererClass::Flush();
 
-	IsRendering = false;
+		IsRendering = false;
+	}
 
-	WWPROFILE("BgfxRenderer::End_Frame");
-	BgfxRenderer::End_Frame();
+	{
+		WWPROFILE("BgfxRenderer::End_Frame");
+		BgfxRenderer::End_Frame();
+	}
 
 	FrameCount++;
 
@@ -1276,8 +1276,11 @@ void WW3D::Make_Screen_Shot( const char * filename_base )
 	D3DSURFACE_DESC desc;
 	fb->GetDesc(&desc);
 
-	RECT bounds;
-	GetWindowRect(_Hwnd,&bounds);
+	RECT bounds = {};
+	bounds.left = 0;
+	bounds.top = 0;
+	bounds.right = static_cast<long>(BgfxRenderer::Get_Width());
+	bounds.bottom = static_cast<long>(BgfxRenderer::Get_Height());
 
 	D3DLOCKED_RECT lrect;
 
@@ -1352,10 +1355,8 @@ void WW3D::Start_Movie_Capture( const char * filename_base, float frame_rate )
 	WWASSERT( !IsCapturing);
 	IsCapturing = true;
 
-	RECT bounds;
-	GetWindowRect(_Hwnd,&bounds);
-	int height=bounds.bottom-bounds.top;
-	int width=bounds.right-bounds.left;
+	const int width = static_cast<int>(BgfxRenderer::Get_Width());
+	const int height = static_cast<int>(BgfxRenderer::Get_Height());
 	int depth=24;
 
 	WWASSERT( Movie == NULL);
@@ -1558,8 +1559,11 @@ void WW3D::Update_Movie_Capture( void )
 	D3DSURFACE_DESC desc;
 	fb->GetDesc(&desc);
 
-	RECT bounds;
-	GetWindowRect(_Hwnd,&bounds);
+	RECT bounds = {};
+	bounds.left = 0;
+	bounds.top = 0;
+	bounds.right = static_cast<long>(BgfxRenderer::Get_Width());
+	bounds.bottom = static_cast<long>(BgfxRenderer::Get_Height());
 
 	D3DLOCKED_RECT lrect;
 

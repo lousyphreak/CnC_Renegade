@@ -41,6 +41,7 @@
 #include "staticphys.h"
 #include "rendobj.h"
 #include "mesh.h"
+#include "meshmdl.h"
 #include "dx8renderer.h"
 #include "simplevec.h"
 #include "vp.h"
@@ -600,7 +601,6 @@ bool LightSolveClass::Does_Model_Get_Static_Light_Solve(RenderObjClass * model)
 
 	return true;
 }
-
 
 
 

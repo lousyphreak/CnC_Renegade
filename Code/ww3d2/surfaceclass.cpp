@@ -54,7 +54,6 @@
 #include "vector2i.h"
 #include "colorspace.h"
 #include "bound.h"
-#include <d3dx8.h>
 
 /***********************************************************************************************
  * PixelSize -- Helper Function to find the size in bytes of a pixel                           *
@@ -629,8 +628,6 @@ void SurfaceClass::Copy(
 	unsigned int width, unsigned int height,
 	const SurfaceClass *other)
 {
-	Materialize_DX8_Surface();
-	const_cast<SurfaceClass *>(other)->Materialize_DX8_Surface();
 	WWASSERT(other);
 	WWASSERT(width);
 	WWASSERT(height);
@@ -639,35 +636,71 @@ void SurfaceClass::Copy(
 	Get_Description(sd);
 	const_cast <SurfaceClass*>(other)->Get_Description(osd);
 
-	RECT src;
-	src.left=srcx;
-	src.right=srcx+width;
-	src.top=srcy;
-	src.bottom=srcy+height;
-
-	if (src.right>int(osd.Width)) src.right=int(osd.Width);
-	if (src.bottom>int(osd.Height)) src.bottom=int(osd.Height);	
-
-	if (sd.Format==osd.Format && sd.Width==osd.Width && sd.Height==osd.Height)
-	{
-		POINT dst;
-		dst.x=dstx;
-		dst.y=dsty;	
-		DX8Wrapper::_Copy_DX8_Rects(other->DX8Surface,&src,1,DX8Surface,&dst);
+	WWASSERT(sd.Format == osd.Format);
+	if (sd.Format != osd.Format) {
+		return;
 	}
-	else
-	{
-		RECT dest;
-		dest.left=dstx;
-		dest.right=dstx+width;
-		dest.top=dsty;
-		dest.bottom=dsty+height;
 
-		if (dest.right>int(sd.Width)) dest.right=int(sd.Width);
-		if (dest.bottom>int(sd.Height)) dest.bottom=int(sd.Height);
+	const unsigned compressed_row_size = Get_Compressed_Row_Size(sd);
+	const bool is_compressed = (compressed_row_size != 0);
+	const unsigned pixel_size = is_compressed ? 0 : PixelSize(sd);
 
-		DX8_ErrorCode(D3DXLoadSurfaceFromSurface(DX8Surface,NULL,&dest,other->DX8Surface,NULL,&src,D3DX_FILTER_NONE,0));
+	if (srcx >= osd.Width || srcy >= osd.Height || dstx >= sd.Width || dsty >= sd.Height) {
+		return;
 	}
+
+	width = MIN(width, osd.Width - srcx);
+	height = MIN(height, osd.Height - srcy);
+	width = MIN(width, sd.Width - dstx);
+	height = MIN(height, sd.Height - dsty);
+
+	if (width == 0 || height == 0) {
+		return;
+	}
+
+	if (is_compressed) {
+		WWASSERT((srcx % 4) == 0 && (srcy % 4) == 0 && (dstx % 4) == 0 && (dsty % 4) == 0);
+		WWASSERT((width % 4) == 0 && (height % 4) == 0);
+
+		const unsigned src_block_x = srcx / 4;
+		const unsigned src_block_y = srcy / 4;
+		const unsigned dst_block_x = dstx / 4;
+		const unsigned dst_block_y = dsty / 4;
+		const unsigned block_count_x = width / 4;
+		const unsigned block_count_y = height / 4;
+		const unsigned block_size = compressed_row_size / ((sd.Width + 3) / 4);
+
+		int src_pitch = 0;
+		unsigned char *src_mem = static_cast<unsigned char *>(const_cast<SurfaceClass *>(other)->Lock(&src_pitch));
+		int dst_pitch = 0;
+		unsigned char *dst_mem = static_cast<unsigned char *>(Lock(&dst_pitch));
+
+		for (unsigned y = 0; y < block_count_y; ++y) {
+			memcpy(
+				dst_mem + (dst_block_y + y) * dst_pitch + dst_block_x * block_size,
+				src_mem + (src_block_y + y) * src_pitch + src_block_x * block_size,
+				block_count_x * block_size);
+		}
+
+		Unlock();
+		const_cast<SurfaceClass *>(other)->Unlock();
+		return;
+	}
+
+	int src_pitch = 0;
+	unsigned char *src_mem = static_cast<unsigned char *>(const_cast<SurfaceClass *>(other)->Lock(&src_pitch));
+	int dst_pitch = 0;
+	unsigned char *dst_mem = static_cast<unsigned char *>(Lock(&dst_pitch));
+
+	for (unsigned y = 0; y < height; ++y) {
+		memcpy(
+			dst_mem + (dsty + y) * dst_pitch + dstx * pixel_size,
+			src_mem + (srcy + y) * src_pitch + srcx * pixel_size,
+			width * pixel_size);
+	}
+
+	Unlock();
+	const_cast<SurfaceClass *>(other)->Unlock();
 }
 
 /***********************************************************************************************
@@ -690,27 +723,50 @@ void SurfaceClass::Stretch_Copy(
 	unsigned int srcx, unsigned int srcy, unsigned int srcwidth, unsigned int srcheight,
 	const SurfaceClass *other)
 {
-	Materialize_DX8_Surface();
-	const_cast<SurfaceClass *>(other)->Materialize_DX8_Surface();
 	WWASSERT(other);
 
 	SurfaceDescription sd,osd;
 	Get_Description(sd);
 	const_cast <SurfaceClass*>(other)->Get_Description(osd);
 
-	RECT src;
-	src.left=srcx;
-	src.right=srcx+srcwidth;
-	src.top=srcy;	
-	src.bottom=srcy+srcheight;
+	WWASSERT(sd.Format == osd.Format);
+	WWASSERT(Get_Compressed_Row_Size(sd) == 0);
+	if (sd.Format != osd.Format || Get_Compressed_Row_Size(sd) != 0) {
+		return;
+	}
 
-	RECT dest;
-	dest.left=dstx;
-	dest.right=dstx+dstwidth;
-	dest.top=dsty;
-	dest.bottom=dsty+dstheight;
+	if (srcx >= osd.Width || srcy >= osd.Height || dstx >= sd.Width || dsty >= sd.Height) {
+		return;
+	}
 
-	DX8_ErrorCode(D3DXLoadSurfaceFromSurface(DX8Surface,NULL,&dest,other->DX8Surface,NULL,&src,D3DX_FILTER_TRIANGLE ,0));
+	srcwidth = MIN(srcwidth, osd.Width - srcx);
+	srcheight = MIN(srcheight, osd.Height - srcy);
+	dstwidth = MIN(dstwidth, sd.Width - dstx);
+	dstheight = MIN(dstheight, sd.Height - dsty);
+
+	if (srcwidth == 0 || srcheight == 0 || dstwidth == 0 || dstheight == 0) {
+		return;
+	}
+
+	const unsigned pixel_size = PixelSize(sd);
+	int src_pitch = 0;
+	unsigned char *src_mem = static_cast<unsigned char *>(const_cast<SurfaceClass *>(other)->Lock(&src_pitch));
+	int dst_pitch = 0;
+	unsigned char *dst_mem = static_cast<unsigned char *>(Lock(&dst_pitch));
+
+	for (unsigned y = 0; y < dstheight; ++y) {
+		const unsigned sample_y = srcy + (y * srcheight) / dstheight;
+		for (unsigned x = 0; x < dstwidth; ++x) {
+			const unsigned sample_x = srcx + (x * srcwidth) / dstwidth;
+			memcpy(
+				dst_mem + (dsty + y) * dst_pitch + (dstx + x) * pixel_size,
+				src_mem + sample_y * src_pitch + sample_x * pixel_size,
+				pixel_size);
+		}
+	}
+
+	Unlock();
+	const_cast<SurfaceClass *>(other)->Unlock();
 }
 
 /***********************************************************************************************

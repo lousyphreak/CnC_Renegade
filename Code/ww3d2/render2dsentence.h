@@ -48,10 +48,13 @@
 #include "wwstring.h"
 #include "win.h"
 
+#include <vector>
+
 /*
 ** FontCharsClass
 */
 class	SurfaceClass;
+struct stbtt_fontinfo;
 
 class FontCharsClass : public RefCountClass {
 
@@ -59,7 +62,7 @@ public:
 	FontCharsClass( void );
 	~FontCharsClass();
 
-	void	Initialize_GDI_Font( const char *font_name, int point_size, bool is_bold );
+	void	Initialize_Font( const char *font_name, int point_size, bool is_bold );
 	bool	Is_Font( const char *font_name, int point_size, bool is_bold );
 	const char * Get_Name( void )			{ return Name; }	
 
@@ -83,9 +86,9 @@ private:
 	//
 	//	Private methods
 	//
-	void							Create_GDI_Font( const char *font_name );
-	void							Free_GDI_Font( void );
-	const CharDataStruct *	Store_GDI_Char( WCHAR ch );
+	void							Load_Font( const char *font_name );
+	void							Release_Font( void );
+	const CharDataStruct *	Store_Glyph( WCHAR ch );
 	void							Update_Current_Buffer( int char_width );
 	const CharDataStruct	*	Get_Char_Data( WCHAR ch );
 
@@ -101,13 +104,14 @@ private:
 	int									CurrPixelOffset;
 	int									CharHeight;
 	int									PointSize;
-	StringClass							GDIFontName;
-	HFONT									OldGDIFont;
-	HBITMAP								OldGDIBitmap;
-	HBITMAP								GDIBitmap;	
-	HFONT									GDIFont;
-	uint8 *								GDIBitmapBits;
-	HDC									MemDC;
+	float									FontScale;
+	float									FontPixelHeight;
+	int									FontAscent;
+	int									FontDescent;
+	int									FontLineGap;
+	StringClass							FontName;
+	std::vector<unsigned char>		FontFileData;
+	stbtt_fontinfo *					FontInfo;
 	CharDataStruct *					ASCIICharArray[256];
 	CharDataStruct **					UnicodeCharArray;
 	uint16								FirstUnicodeChar;

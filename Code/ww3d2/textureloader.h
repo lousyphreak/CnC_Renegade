@@ -28,6 +28,7 @@
 
 class StringClass;
 class TextureLoadTaskClass;
+class TextureLoadTaskListClass;
 class SurfaceClass;
 
 class TextureLoader

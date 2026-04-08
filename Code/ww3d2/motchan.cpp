@@ -45,6 +45,7 @@
 
 
 #include "motchan.h"
+#include <cmath>
 #include "w3d_file.h"
 #include "chunkio.h"
 #include "vector.h"
@@ -1282,7 +1283,7 @@ return;
 	int count=datasize/sizeof(float);
 	for (int i=0;i<count;i++) {
 		float value=Data[i];
-		if (_isnan(value)) value=0.0f;
+		if (std::isnan(value)) value=0.0f;
 		if (value>100000.0f) value=0.0f;
 		if (value<-100000.0f) value=0.0f;
 		Data[i]=value;
@@ -1303,12 +1304,12 @@ return;
 		inv_scale=1.0f/ValueScale;
 	}
 	inv_scale*=65535.0f;
-	for (i=0;i<count;++i) {
+	for (int i=0;i<count;++i) {
 		float value=Data[i];
 		value-=ValueOffset;
 		value*=inv_scale;
 		int ivalue=WWMath::Float_To_Int_Floor(value);
-		CompressedData[i]=unsigned short(ivalue);
+		CompressedData[i]=static_cast<unsigned short>(ivalue);
 
 		float new_scale=ValueScale/65535.0f;
 		float new_value=int(CompressedData[i]);
@@ -1347,4 +1348,3 @@ Get_Vector(int frame,float * setvec) const{
 }
 
 // EOF - motchan.cpp
-

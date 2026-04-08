@@ -46,7 +46,7 @@
 #include "proto.h"
 #include "w3d_file.h"
 #include "w3derr.h"
-#include "audiblesound.h"
+#include "WWAudio/AudibleSound.h"
 
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -272,4 +272,3 @@ extern SoundRenderObjLoaderClass		_SoundRenderObjLoader;
 
 
 #endif //__SOUNDROBJ_H
-

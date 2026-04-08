@@ -28,7 +28,10 @@ public:
     static void Get_Render_Target_Resolution(int &width, int &height, int &bits, bool &windowed);
     static void Get_Device_Resolution(int &width, int &height, int &bits, bool &windowed);
     static const bgfx::VertexLayout &Get_Pos_Color_Texcoord_Layout();
+    static uint16_t Get_Main_View_Id();
     static uint16_t Get_Overlay_View_Id();
+    static const Matrix4 &Get_Current_View_Matrix();
+    static const Matrix4 &Get_Current_Projection_Matrix();
     static bgfx::TextureHandle Get_White_Texture();
     static bgfx::UniformHandle Get_Color_Texture_Uniform();
     static bgfx::ProgramHandle Get_Color_Texture_Program();
@@ -62,4 +65,6 @@ private:
     static bgfx::TextureHandle WhiteTexture;
     static bgfx::UniformHandle ColorTextureUniform;
     static bgfx::ProgramHandle ColorTextureProgram;
+    static Matrix4 CurrentViewMatrix;
+    static Matrix4 CurrentProjectionMatrix;
 };

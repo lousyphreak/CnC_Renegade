@@ -19,10 +19,16 @@
 - Updated `dx8vertexbuffer.*` to consume the new FVF definitions directly instead of raw `D3DFVF_*` macros.
 - Dropped the dead `dx8wrapper.h` include from `part_buf.cpp`; an attempted removal from `ddsfile.cpp` showed that DDS upload code is still directly tied to DX8 surface types and needs a later surface-format port rather than a blind include trim.
 - Rebuilt after the FVF cleanup and confirmed the next renderer blocker is still the broad `dx8wrapper.h` API surface, which exposes D3D viewport/light/material/transform types to high-level code.
+- Added `Code/ww3d2/renderer_types.h` as an engine-owned replacement for the shared Direct3D SDK value types and constants that were leaking through renderer headers.
+- Switched `dx8wrapper.h`, `dx8caps.h`, `rddesc.h`, and `vertmaterial.h` onto the engine-owned renderer type header so high-level translation units no longer fail immediately on missing `d3d8.h` / `d3d8caps.h`.
+- Replaced the x86-only `cpudetect.h` / inline assembly color packing path in `dx8wrapper.h` with portable C++ helpers, which removed another dead Windows-era dependency from the shared renderer header.
+- Rebuilt after the type-surface refactor and moved the failure frontier from missing D3D SDK headers in many high-level files to backend-local issues:
+  - `dx8wrapper.h` still contains inline functions that call `IDirect3DDevice8` / `IDirect3DBaseTexture8` methods directly, so those bodies need to move out of the shared header and into backend-local implementation.
+  - a handful of `.cpp` files still include `<D3dx8core.h>` / `<d3d8.h>` directly (`assetmgr.cpp`, `missingtexture.cpp`, `sortingrenderer.cpp`, `texture.cpp`, `ww3dformat.cpp`, `dx8vertexbuffer.cpp`, `dx8wrapper.cpp`).
 
 ## Next work
 
-- Continue removing `dx8wrapper.h` from high-level runtime files that only need camera/state submission.
-- Replace the D3D types in `dx8wrapper.h`/`rddesc.h` with engine-owned renderer data structures so shared headers stop requiring missing Direct3D SDK headers.
+- Move the D3D-calling inline bodies out of `dx8wrapper.h` so only backend implementation files need complete device/texture interfaces.
+- Continue replacing or deleting the remaining direct `<d3d8.h>` / `<D3dx8core.h>` includes in source files, starting with the ones that only use format constants or math helpers.
 - Replace `WW3D::Init()` / frame lifecycle calls with direct bgfx backend calls.
 - Replace the D3D-format conversion surface in `formconv.*` and texture loading with backend-neutral or bgfx-backed format handling.

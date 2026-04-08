@@ -43,9 +43,8 @@
 #define RDDESC_H
 
 #include "vector.h"
+#include "renderer_types.h"
 #include "wwstring.h"
-#include <d3d8types.h>
-#include <d3d8caps.h>
 
 class ResolutionDescClass
 {
@@ -169,4 +168,3 @@ inline void RenderDeviceDescClass::add_resolution(int w,int h,int bits)
 
 
 #endif 
-

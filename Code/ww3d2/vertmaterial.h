@@ -50,13 +50,13 @@
 #include "meshbuild.h"
 #include "w3derr.h"
 #include "mapper.h"
+#include "renderer_types.h"
 #include "wwstring.h"
 
 #include <string.h>
 
 class ChunkLoadClass;
 class ChunkSaveClass;
-struct _D3DMATERIAL8;
 
 /**
 ** VertexMaterialClass
@@ -236,7 +236,7 @@ protected:
 
 	// We're using the pointer instead of the actual structure
 	// so we don't have to include the d3d header - HY
-	_D3DMATERIAL8 *		Material;
+	D3DMATERIAL8 *		Material;
 	unsigned int			Flags;
 	unsigned int			AmbientColorSource;
 	unsigned int			EmissiveColorSource;
@@ -308,4 +308,3 @@ inline bool VertexMaterialClass::Are_Mappers_Time_Variant(void) const
 }
 
 #endif //VERTMATERIAL_H
-

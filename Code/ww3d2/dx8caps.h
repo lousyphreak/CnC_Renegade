@@ -44,8 +44,8 @@
 #define DX8CAPS_H
 
 #include "always.h"
+#include "renderer_types.h"
 #include "ww3dformat.h"
-#include <d3d8.h>
 
 class DX8Caps
 {

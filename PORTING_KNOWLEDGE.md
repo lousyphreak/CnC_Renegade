@@ -23,12 +23,17 @@
 ## Fresh blockers uncovered by rebuild
 
 - The largest compile blocker is still the transitive `#include "dx8wrapper.h"` surface, because it drags in `d3d8.h` from many otherwise high-level files.
+- Replacing the shared Direct3D SDK structs/enums with an engine-owned renderer vocabulary is viable as an intermediate cleanup step, but it only solves the header dependency if `dx8wrapper.h` also stops inlining calls that dereference D3D COM interfaces.
 - The `dx8fvf.*` layer did not need Direct3D at all; it only needed bitfield definitions and vertex-layout sizing. That metadata can live entirely in engine-owned code without a compatibility header.
 - `dx8vertexbuffer.h` was one of the highest-impact include points for the old FVF macros, so moving it onto engine-owned flags trims DX8 leakage from many renderer-adjacent compilation units even before the full draw path is ported.
 - Some failures are separate Linux/cross-platform hygiene issues rather than renderer design issues:
   - case-sensitive include mismatches such as `audiblesound.h` vs `AudibleSound.h`
   - Windows-only typedef/macros (`DWORD`, `ULONG`, `_strdup`) still embedded in shared headers
 - `CameraClass::Apply()` was a narrow, clean dependency on DX8 state submission only. It can be ported directly to bgfx without introducing any compatibility layer by sending viewport and view/projection matrices straight to `BgfxRenderer`.
+- `dx8wrapper.h` still mixes two very different roles:
+  - renderer-facing cached state and utility APIs that can live in engine-owned code
+  - backend-local device calls (`SetTransform`, `SetRenderState`, `SetTexture`, `CopyRects`, `AddRef` / `Release`) that should no longer be inline in a shared header
+- After introducing `renderer_types.h`, the next clean architectural step is to push those backend-local inline bodies into `.cpp` implementation so the rest of the engine can compile against the renderer API without needing a concrete Direct3D device type.
 
 ## Repository observations
 

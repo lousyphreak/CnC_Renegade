@@ -45,24 +45,89 @@
 #define DX8_FVF_H
 
 #include "always.h"
-#include <d3d8.h>
 #ifdef WWDEBUG
 #include "wwdebug.h"
 #endif
 
 class StringClass;
 
+enum
+{
+	DX8_FVF_FLAG_XYZ				= 0x0002,
+	DX8_FVF_FLAG_XYZB4			= 0x000c,
+	DX8_FVF_FLAG_NORMAL			= 0x0010,
+	DX8_FVF_FLAG_DIFFUSE		= 0x0040,
+	DX8_FVF_FLAG_SPECULAR		= 0x0080,
+	DX8_FVF_FLAG_TEXCOUNT_SHIFT	= 8,
+	DX8_FVF_FLAG_TEX1			= 0x0100,
+	DX8_FVF_FLAG_TEX2			= 0x0200,
+	DX8_FVF_FLAG_TEX3			= 0x0300,
+	DX8_FVF_FLAG_TEX4			= 0x0400,
+	DX8_FVF_FLAG_TEX5			= 0x0500,
+	DX8_FVF_FLAG_TEX6			= 0x0600,
+	DX8_FVF_FLAG_TEX7			= 0x0700,
+	DX8_FVF_FLAG_TEX8			= 0x0800,
+	DX8_FVF_FLAG_TEXCOUNT_MASK	= 0x0f00,
+	DX8_FVF_FLAG_LASTBETA_UBYTE4 = 0x1000,
+	DX8_FVF_MAX_TEXCOORD		= 8
+};
+
+WWINLINE unsigned DX8_FVF_TEXCOORDSIZE_SHIFT(unsigned index)
+{
+	return 16u + (index * 2u);
+}
+
+WWINLINE unsigned DX8_FVF_TEXCOORDSIZE1(unsigned index)
+{
+	return 3u << DX8_FVF_TEXCOORDSIZE_SHIFT(index);
+}
+
+WWINLINE unsigned DX8_FVF_TEXCOORDSIZE2(unsigned index)
+{
+	return 0u << DX8_FVF_TEXCOORDSIZE_SHIFT(index);
+}
+
+WWINLINE unsigned DX8_FVF_TEXCOORDSIZE3(unsigned index)
+{
+	return 1u << DX8_FVF_TEXCOORDSIZE_SHIFT(index);
+}
+
+WWINLINE unsigned DX8_FVF_TEXCOORDSIZE4(unsigned index)
+{
+	return 2u << DX8_FVF_TEXCOORDSIZE_SHIFT(index);
+}
+
+WWINLINE unsigned DX8_FVF_Get_Texcoord_Count(unsigned FVF)
+{
+	return (FVF & DX8_FVF_FLAG_TEXCOUNT_MASK) >> DX8_FVF_FLAG_TEXCOUNT_SHIFT;
+}
+
+WWINLINE unsigned DX8_FVF_Get_Texcoord_Size(unsigned FVF, unsigned index)
+{
+	const unsigned size = (FVF >> DX8_FVF_TEXCOORDSIZE_SHIFT(index)) & 0x3u;
+	switch (size) {
+		case 1:
+			return 3;
+		case 2:
+			return 4;
+		case 3:
+			return 1;
+		default:
+			return 2;
+	}
+}
+
 enum {
-	DX8_FVF_XYZ				= D3DFVF_XYZ,
-	DX8_FVF_XYZN			= D3DFVF_XYZ|D3DFVF_NORMAL,
-	DX8_FVF_XYZNUV1		= D3DFVF_XYZ|D3DFVF_NORMAL|D3DFVF_TEX1,
-	DX8_FVF_XYZNUV2		= D3DFVF_XYZ|D3DFVF_NORMAL|D3DFVF_TEX2,
-	DX8_FVF_XYZNDUV1		= D3DFVF_XYZ|D3DFVF_NORMAL|D3DFVF_TEX1|D3DFVF_DIFFUSE,
-	DX8_FVF_XYZNDUV2		= D3DFVF_XYZ|D3DFVF_NORMAL|D3DFVF_TEX2|D3DFVF_DIFFUSE,
-	DX8_FVF_XYZDUV1		= D3DFVF_XYZ|D3DFVF_TEX1|D3DFVF_DIFFUSE,
-	DX8_FVF_XYZDUV2		= D3DFVF_XYZ|D3DFVF_TEX2|D3DFVF_DIFFUSE,
-	DX8_FVF_XYZUV1			= D3DFVF_XYZ|D3DFVF_TEX1,
-	DX8_FVF_XYZUV2			= D3DFVF_XYZ|D3DFVF_TEX2
+	DX8_FVF_XYZ				= DX8_FVF_FLAG_XYZ,
+	DX8_FVF_XYZN			= DX8_FVF_FLAG_XYZ | DX8_FVF_FLAG_NORMAL,
+	DX8_FVF_XYZNUV1		= DX8_FVF_FLAG_XYZ | DX8_FVF_FLAG_NORMAL | DX8_FVF_FLAG_TEX1,
+	DX8_FVF_XYZNUV2		= DX8_FVF_FLAG_XYZ | DX8_FVF_FLAG_NORMAL | DX8_FVF_FLAG_TEX2,
+	DX8_FVF_XYZNDUV1		= DX8_FVF_FLAG_XYZ | DX8_FVF_FLAG_NORMAL | DX8_FVF_FLAG_TEX1 | DX8_FVF_FLAG_DIFFUSE,
+	DX8_FVF_XYZNDUV2		= DX8_FVF_FLAG_XYZ | DX8_FVF_FLAG_NORMAL | DX8_FVF_FLAG_TEX2 | DX8_FVF_FLAG_DIFFUSE,
+	DX8_FVF_XYZDUV1		= DX8_FVF_FLAG_XYZ | DX8_FVF_FLAG_TEX1 | DX8_FVF_FLAG_DIFFUSE,
+	DX8_FVF_XYZDUV2		= DX8_FVF_FLAG_XYZ | DX8_FVF_FLAG_TEX2 | DX8_FVF_FLAG_DIFFUSE,
+	DX8_FVF_XYZUV1			= DX8_FVF_FLAG_XYZ | DX8_FVF_FLAG_TEX1,
+	DX8_FVF_XYZUV2			= DX8_FVF_FLAG_XYZ | DX8_FVF_FLAG_TEX2
 };
 
 // ----------------------------------------------------------------------------
@@ -196,7 +261,7 @@ class FVFInfoClass
 	unsigned							location_offset;
 	unsigned							normal_offset;
 	unsigned							blend_offset;
-	unsigned							texcoord_offset[D3DDP_MAXTEXCOORD];	
+	unsigned							texcoord_offset[DX8_FVF_MAX_TEXCOORD];
 	unsigned							diffuse_offset;
 	unsigned							specular_offset;
 public:
@@ -205,7 +270,7 @@ public:
 	inline unsigned Get_Location_Offset() const { return location_offset; }
 	inline unsigned Get_Normal_Offset() const { return normal_offset; }
 #ifdef WWDEBUG
-	inline unsigned Get_Tex_Offset(unsigned int n) const { WWASSERT(n<D3DDP_MAXTEXCOORD); return texcoord_offset[n]; }	
+	inline unsigned Get_Tex_Offset(unsigned int n) const { WWASSERT(n<DX8_FVF_MAX_TEXCOORD); return texcoord_offset[n]; }	
 #else
 	inline unsigned Get_Tex_Offset(unsigned int n) const { return texcoord_offset[n]; }	
 #endif

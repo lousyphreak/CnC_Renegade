@@ -23,6 +23,8 @@
 ## Fresh blockers uncovered by rebuild
 
 - The largest compile blocker is still the transitive `#include "dx8wrapper.h"` surface, because it drags in `d3d8.h` from many otherwise high-level files.
+- The `dx8fvf.*` layer did not need Direct3D at all; it only needed bitfield definitions and vertex-layout sizing. That metadata can live entirely in engine-owned code without a compatibility header.
+- `dx8vertexbuffer.h` was one of the highest-impact include points for the old FVF macros, so moving it onto engine-owned flags trims DX8 leakage from many renderer-adjacent compilation units even before the full draw path is ported.
 - Some failures are separate Linux/cross-platform hygiene issues rather than renderer design issues:
   - case-sensitive include mismatches such as `audiblesound.h` vs `AudibleSound.h`
   - Windows-only typedef/macros (`DWORD`, `ULONG`, `_strdup`) still embedded in shared headers

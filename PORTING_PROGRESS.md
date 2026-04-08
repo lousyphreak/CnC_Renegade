@@ -15,9 +15,14 @@
 - Fixed two Linux-port blockers uncovered by the fresh build:
   - corrected `animatedsoundmgr.cpp` to include `WWAudio/AudibleSound.h` with the filesystem's actual case
   - removed `agg_def.h`'s dependence on Windows-only typedefs/macros for `DWORD`, `ULONG`, and `_strdup`
+- Replaced the `dx8fvf.*` vertex-format metadata layer's dependency on `d3d8.h`/`D3dx8core.h` with engine-owned FVF flags and local vertex-size computation.
+- Updated `dx8vertexbuffer.*` to consume the new FVF definitions directly instead of raw `D3DFVF_*` macros.
+- Dropped the dead `dx8wrapper.h` include from `part_buf.cpp`; an attempted removal from `ddsfile.cpp` showed that DDS upload code is still directly tied to DX8 surface types and needs a later surface-format port rather than a blind include trim.
+- Rebuilt after the FVF cleanup and confirmed the next renderer blocker is still the broad `dx8wrapper.h` API surface, which exposes D3D viewport/light/material/transform types to high-level code.
 
 ## Next work
 
 - Continue removing `dx8wrapper.h` from high-level runtime files that only need camera/state submission.
+- Replace the D3D types in `dx8wrapper.h`/`rddesc.h` with engine-owned renderer data structures so shared headers stop requiring missing Direct3D SDK headers.
 - Replace `WW3D::Init()` / frame lifecycle calls with direct bgfx backend calls.
 - Replace the D3D-format conversion surface in `formconv.*` and texture loading with backend-neutral or bgfx-backed format handling.

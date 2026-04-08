@@ -53,6 +53,7 @@
 #include "dx8texman.h"
 #include "meshmatdesc.h"
 #include "texturethumbnail.h"
+#include "wwdebug.h"
 
 const unsigned DEFAULT_INACTIVATION_TIME=20000;
 
@@ -680,6 +681,17 @@ unsigned int TextureClass::Get_Mip_Level_Count(void)
 
 SurfaceClass *TextureClass::Get_Surface_Level(unsigned int level)
 {
+	if (SurfaceLevels.empty()) {
+		if (DX8Texture != NULL) {
+			Cache_Surface_Levels();
+		} else if (!Initialized) {
+			Init();
+			if (DX8Texture != NULL && SurfaceLevels.empty()) {
+				Cache_Surface_Levels();
+			}
+		}
+	}
+
 	if (!SurfaceLevels.empty()) {
 		if (level >= SurfaceLevels.size()) {
 			WWASSERT_PRINT(0, "Get_Surface_Level: level out of range!\n");
@@ -690,7 +702,7 @@ SurfaceClass *TextureClass::Get_Surface_Level(unsigned int level)
 		return SurfaceLevels[level];
 	}
 
-	WWASSERT_PRINT(0, "Get_Surface_Level: surface data is unavailable!\n");
+	WWDEBUG_SAY(("TextureClass::Get_Surface_Level(%u) could not provide surface data for '%s'\n", level, Name.Peek_Buffer()));
 	return 0;
 }
 

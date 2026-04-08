@@ -40,6 +40,7 @@
 #include "rect.h"
 #include "texture.h"
 #include "bgfxrenderer.h"
+#include "dx8wrapper.h"
 #include "wwprofile.h"
 #include "wwmemlog.h"
 #include "assetmgr.h"
@@ -56,19 +57,66 @@ struct Render2DVertex
 	float X;
 	float Y;
 	float Z;
-	uint32_t Color;
-	float U;
-	float V;
+	float NX;
+	float NY;
+	float NZ;
+	uint32_t Diffuse;
+	uint32_t Specular;
+	float U0;
+	float V0;
+	float U1;
+	float V1;
 };
 
-uint32_t Convert_ARGB_To_ABGR(unsigned long color)
+unsigned Sanitize_Render2D_Texture_Stage_State(unsigned stage, D3DTEXTURESTAGESTATETYPE state)
 {
-	const uint32_t argb = static_cast<uint32_t>(color);
-	const uint32_t alpha = argb & 0xff000000u;
-	const uint32_t red = (argb >> 16) & 0xffu;
-	const uint32_t green = (argb >> 8) & 0xffu;
-	const uint32_t blue = argb & 0xffu;
-	return alpha | (blue << 16) | (green << 8) | red;
+	unsigned value = DX8Wrapper::Get_Texture_Stage_State(stage, state);
+	if (value != 0x12345678u) {
+		return value;
+	}
+
+	switch (state) {
+	case D3DTSS_COLOROP:
+		return stage == 0 ? D3DTOP_MODULATE : D3DTOP_DISABLE;
+	case D3DTSS_COLORARG0:
+		return D3DTA_CURRENT;
+	case D3DTSS_COLORARG1:
+		return D3DTA_TEXTURE;
+	case D3DTSS_COLORARG2:
+		return D3DTA_CURRENT;
+	case D3DTSS_ALPHAOP:
+		return stage == 0 ? D3DTOP_SELECTARG1 : D3DTOP_DISABLE;
+	case D3DTSS_ALPHAARG0:
+		return D3DTA_CURRENT;
+	case D3DTSS_ALPHAARG1:
+		return D3DTA_TEXTURE;
+	case D3DTSS_ALPHAARG2:
+		return D3DTA_CURRENT;
+	default:
+		return 0u;
+	}
+}
+
+void Populate_Render2D_Fixed_Function_Inputs(BgfxRenderer::FixedFunctionShaderInputs &shader_inputs)
+{
+	const unsigned texture_factor = DX8Wrapper::Get_DX8_Render_State(D3DRS_TEXTUREFACTOR);
+	shader_inputs.TextureFactor = texture_factor != 0x12345678u ? texture_factor : 0xffffffffu;
+	shader_inputs.Stage0Color[0] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(0, D3DTSS_COLOROP));
+	shader_inputs.Stage0Color[1] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(0, D3DTSS_COLORARG0));
+	shader_inputs.Stage0Color[2] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(0, D3DTSS_COLORARG1));
+	shader_inputs.Stage0Color[3] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(0, D3DTSS_COLORARG2));
+	shader_inputs.Stage0Alpha[0] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(0, D3DTSS_ALPHAOP));
+	shader_inputs.Stage0Alpha[1] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(0, D3DTSS_ALPHAARG0));
+	shader_inputs.Stage0Alpha[2] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(0, D3DTSS_ALPHAARG1));
+	shader_inputs.Stage0Alpha[3] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(0, D3DTSS_ALPHAARG2));
+	shader_inputs.Stage1Color[0] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(1, D3DTSS_COLOROP));
+	shader_inputs.Stage1Color[1] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(1, D3DTSS_COLORARG0));
+	shader_inputs.Stage1Color[2] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(1, D3DTSS_COLORARG1));
+	shader_inputs.Stage1Color[3] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(1, D3DTSS_COLORARG2));
+	shader_inputs.Stage1Alpha[0] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(1, D3DTSS_ALPHAOP));
+	shader_inputs.Stage1Alpha[1] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(1, D3DTSS_ALPHAARG0));
+	shader_inputs.Stage1Alpha[2] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(1, D3DTSS_ALPHAARG1));
+	shader_inputs.Stage1Alpha[3] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(1, D3DTSS_ALPHAARG2));
 }
 }
 
@@ -561,7 +609,7 @@ void Render2DClass::Render(void)
 		return;
 	}
 
-	bgfx::ProgramHandle program = BgfxRenderer::Get_Color_Texture_Program();
+	bgfx::ProgramHandle program = BgfxRenderer::Get_Fixed_Function_Program();
 	if (!bgfx::isValid(program)) {
 		return;
 	}
@@ -572,9 +620,15 @@ void Render2DClass::Render(void)
 		vertex.X = Vertices[index].X;
 		vertex.Y = Vertices[index].Y;
 		vertex.Z = ZValue;
-		vertex.Color = Convert_ARGB_To_ABGR(Colors[index]);
-		vertex.U = UVCoordinates[index].X;
-		vertex.V = UVCoordinates[index].Y;
+		vertex.NX = 0.0f;
+		vertex.NY = 0.0f;
+		vertex.NZ = 1.0f;
+		vertex.Diffuse = BgfxRenderer::Convert_Packed_Color(static_cast<uint32_t>(Colors[index]));
+		vertex.Specular = 0u;
+		vertex.U0 = UVCoordinates[index].X;
+		vertex.V0 = UVCoordinates[index].Y;
+		vertex.U1 = 0.0f;
+		vertex.V1 = 0.0f;
 	}
 
 	BgfxRenderer::Prepare_Overlay_View();
@@ -589,7 +643,7 @@ void Render2DClass::Render(void)
 		}
 	}
 
-	const bgfx::VertexLayout &layout = BgfxRenderer::Get_Pos_Color_Texcoord_Layout();
+	const bgfx::VertexLayout &layout = BgfxRenderer::Get_Fixed_Function_Layout();
 	const uint32_t vertex_count = static_cast<uint32_t>(submission_vertices.size());
 	const uint32_t index_count = static_cast<uint32_t>(Indices.Count());
 	const bool can_use_transient =
@@ -619,7 +673,25 @@ void Render2DClass::Render(void)
 
 		bgfx::setVertexBuffer(0, vertex_buffer);
 		bgfx::setIndexBuffer(index_buffer);
-		bgfx::setTexture(0, BgfxRenderer::Get_Color_Texture_Uniform(), texture_handle, sampler_flags);
+		bgfx::setTexture(0, BgfxRenderer::Get_Texture0_Uniform(), texture_handle, sampler_flags);
+		bgfx::setTexture(1, BgfxRenderer::Get_Texture1_Uniform(), BgfxRenderer::Get_White_Texture(), sampler_flags);
+		DX8Wrapper::Set_Shader(Shader);
+		DX8Wrapper::Apply_Render_State_Changes();
+		BgfxRenderer::FixedFunctionShaderInputs shader_inputs;
+		Populate_Render2D_Fixed_Function_Inputs(shader_inputs);
+		if (Shader.Get_Texturing() == ShaderClass::TEXTURING_DISABLE || Texture == NULL) {
+			shader_inputs.Stage0Color[0] = static_cast<float>(D3DTOP_SELECTARG1);
+			shader_inputs.Stage0Color[1] = static_cast<float>(D3DTA_CURRENT);
+			shader_inputs.Stage0Color[2] = static_cast<float>(D3DTA_CURRENT);
+			shader_inputs.Stage0Color[3] = static_cast<float>(D3DTA_CURRENT);
+			shader_inputs.Stage0Alpha[0] = static_cast<float>(D3DTOP_SELECTARG1);
+			shader_inputs.Stage0Alpha[1] = static_cast<float>(D3DTA_CURRENT);
+			shader_inputs.Stage0Alpha[2] = static_cast<float>(D3DTA_CURRENT);
+			shader_inputs.Stage0Alpha[3] = static_cast<float>(D3DTA_CURRENT);
+			shader_inputs.Stage1Color[0] = static_cast<float>(D3DTOP_DISABLE);
+			shader_inputs.Stage1Alpha[0] = static_cast<float>(D3DTOP_DISABLE);
+		}
+		BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(Shader, shader_inputs);
 		bgfx::setState(BgfxRenderer::Build_Render_State(Shader));
 		bgfx::submit(BgfxRenderer::Get_Overlay_View_Id(), program);
 
@@ -628,7 +700,25 @@ void Render2DClass::Render(void)
 		return;
 	}
 
-	bgfx::setTexture(0, BgfxRenderer::Get_Color_Texture_Uniform(), texture_handle, sampler_flags);
+	bgfx::setTexture(0, BgfxRenderer::Get_Texture0_Uniform(), texture_handle, sampler_flags);
+	bgfx::setTexture(1, BgfxRenderer::Get_Texture1_Uniform(), BgfxRenderer::Get_White_Texture(), sampler_flags);
+	DX8Wrapper::Set_Shader(Shader);
+	DX8Wrapper::Apply_Render_State_Changes();
+	BgfxRenderer::FixedFunctionShaderInputs shader_inputs;
+	Populate_Render2D_Fixed_Function_Inputs(shader_inputs);
+	if (Shader.Get_Texturing() == ShaderClass::TEXTURING_DISABLE || Texture == NULL) {
+		shader_inputs.Stage0Color[0] = static_cast<float>(D3DTOP_SELECTARG1);
+		shader_inputs.Stage0Color[1] = static_cast<float>(D3DTA_CURRENT);
+		shader_inputs.Stage0Color[2] = static_cast<float>(D3DTA_CURRENT);
+		shader_inputs.Stage0Color[3] = static_cast<float>(D3DTA_CURRENT);
+		shader_inputs.Stage0Alpha[0] = static_cast<float>(D3DTOP_SELECTARG1);
+		shader_inputs.Stage0Alpha[1] = static_cast<float>(D3DTA_CURRENT);
+		shader_inputs.Stage0Alpha[2] = static_cast<float>(D3DTA_CURRENT);
+		shader_inputs.Stage0Alpha[3] = static_cast<float>(D3DTA_CURRENT);
+		shader_inputs.Stage1Color[0] = static_cast<float>(D3DTOP_DISABLE);
+		shader_inputs.Stage1Alpha[0] = static_cast<float>(D3DTOP_DISABLE);
+	}
+	BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(Shader, shader_inputs);
 	bgfx::setState(BgfxRenderer::Build_Render_State(Shader));
 	bgfx::submit(BgfxRenderer::Get_Overlay_View_Id(), program);
 }

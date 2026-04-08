@@ -129,6 +129,8 @@ struct RenderStateStruct
 {
 	ShaderClass shader;
 	VertexMaterialClass* material;
+	unsigned long material_crc;
+	bool material_state_dirty;
 	TextureClass * Textures[MAX_TEXTURE_STAGES];
 	D3DLIGHT8 Lights[4];
 	bool LightEnable[4];
@@ -261,8 +263,10 @@ public:
 
 	static void Set_DX8_Light(int index,D3DLIGHT8* light);
 	static void Set_DX8_Render_State(D3DRENDERSTATETYPE state, unsigned value);
+	static unsigned Get_DX8_Render_State(D3DRENDERSTATETYPE state);
 	static void Set_DX8_Texture_Stage_State(unsigned stage, D3DTEXTURESTAGESTATETYPE state, unsigned value);
 	static void Set_DX8_Texture(unsigned int stage, IDirect3DBaseTexture8* texture);
+	static unsigned Get_Texture_Stage_State(unsigned stage, D3DTEXTURESTAGESTATETYPE state);
 	static void Set_Light_Environment(LightEnvironmentClass* light_env);
 	static void Set_Fog(bool enable, const Vector3 &color, float start, float end);
 
@@ -543,6 +547,7 @@ protected:
 	static float							ZNear;
 	static float							ZFar;
 	static Matrix4							ProjectionMatrix;
+	static Matrix4							TextureMatrices[MAX_TEXTURE_STAGES];
 
 	friend void DX8_Assert();
 	friend class WW3D;
@@ -727,6 +732,24 @@ WWINLINE void DX8Wrapper::Get_Shader(ShaderClass& shader)
 	shader=render_state.shader;
 }
 
+WWINLINE unsigned DX8Wrapper::Get_Texture_Stage_State(unsigned stage, D3DTEXTURESTAGESTATETYPE state)
+{
+	if (stage >= MAX_TEXTURE_STAGES || state >= 32) {
+		return 0u;
+	}
+
+	return TextureStageStates[stage][state];
+}
+
+WWINLINE unsigned DX8Wrapper::Get_DX8_Render_State(D3DRENDERSTATETYPE state)
+{
+	if (state >= 256) {
+		return 0u;
+	}
+
+	return RenderStates[state];
+}
+
 WWINLINE void DX8Wrapper::Set_Texture(unsigned stage,TextureClass* texture)
 {
 	WWASSERT(stage<MAX_TEXTURE_STAGES);
@@ -737,8 +760,10 @@ WWINLINE void DX8Wrapper::Set_Texture(unsigned stage,TextureClass* texture)
 
 WWINLINE void DX8Wrapper::Set_Material(const VertexMaterialClass* material)
 {
-	if (material==render_state.material) return;
+	const unsigned long material_crc = material != nullptr ? material->Get_CRC() : 0u;
+	if (material == render_state.material && material_crc == render_state.material_crc && !render_state.material_state_dirty) return;
 	REF_PTR_SET(render_state.material,const_cast<VertexMaterialClass*>(material));
+	render_state.material_crc = material_crc;
 	render_state_changed|=MATERIAL_CHANGED;
 }
 
@@ -850,6 +875,8 @@ WWINLINE void DX8Wrapper::Release_Render_State()
 WWINLINE RenderStateStruct::RenderStateStruct()
 	:
 	material(0),
+	material_crc(0),
+	material_state_dirty(false),
 	vertex_buffer(0),
 	index_buffer(0)
 {
@@ -868,6 +895,8 @@ WWINLINE RenderStateStruct::~RenderStateStruct()
 WWINLINE RenderStateStruct& RenderStateStruct::operator= (const RenderStateStruct& src)
 {
 	REF_PTR_SET(material,src.material);
+	material_crc = src.material_crc;
+	material_state_dirty = src.material_state_dirty;
 	REF_PTR_SET(vertex_buffer,src.vertex_buffer);
 	REF_PTR_SET(index_buffer,src.index_buffer);
 	for (unsigned i=0;i<MAX_TEXTURE_STAGES;++i) REF_PTR_SET(Textures[i],src.Textures[i]);

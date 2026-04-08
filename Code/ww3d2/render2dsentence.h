@@ -62,6 +62,9 @@ public:
 	FontCharsClass( void );
 	~FontCharsClass();
 
+	static void Register_Font_File(const char *filename);
+	static void Unregister_Font_File(const char *filename);
+
 	void	Initialize_Font( const char *font_name, int point_size, bool is_bold );
 	bool	Is_Font( const char *font_name, int point_size, bool is_bold );
 	const char * Get_Name( void )			{ return Name; }	

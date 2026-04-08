@@ -1,7 +1,11 @@
 #include "bgfxrenderer.h"
 
+#include <cstdarg>
 #include <cstdint>
+#include <cstdlib>
 #include <cstdio>
+#include <cstring>
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -13,6 +17,7 @@
 #include <bgfx/bgfx.h>
 #include <bgfx/platform.h>
 
+#include "rawfile.h"
 #include "surfaceclass.h"
 #include "texture.h"
 #include "wwdebug.h"
@@ -26,22 +31,225 @@ uint32_t BgfxRenderer::BitDepth = 32;
 bool BgfxRenderer::Windowed = true;
 void *BgfxRenderer::WindowHandle = nullptr;
 bgfx::PlatformData BgfxRenderer::PlatformData = {};
-bgfx::VertexLayout BgfxRenderer::PosColorTexcoordLayout;
+bgfx::VertexLayout BgfxRenderer::FixedFunctionLayout;
 bgfx::TextureHandle BgfxRenderer::WhiteTexture = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::ColorTextureUniform = BGFX_INVALID_HANDLE;
-bgfx::ProgramHandle BgfxRenderer::ColorTextureProgram = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::Texture0Uniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::Texture1Uniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionConfig1Uniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionFogColorUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionTextureFactorUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionStage0ColorUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionStage0AlphaUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionStage1ColorUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionStage1AlphaUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionBumpEnvMatrixUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionBumpEnvParamsUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionMaterialAmbientUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionMaterialDiffuseUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionMaterialEmissiveUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionSceneAmbientUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionLightingConfigUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionMaterialSourceConfigUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionLightDirectionsUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionLightDiffuseUniform = BGFX_INVALID_HANDLE;
+bgfx::ProgramHandle BgfxRenderer::FixedFunctionProgram = BGFX_INVALID_HANDLE;
 Matrix4 BgfxRenderer::CurrentViewMatrix(true);
 Matrix4 BgfxRenderer::CurrentProjectionMatrix(true);
 
 namespace
 {
-constexpr uint16_t MainViewId = 0;
-constexpr uint16_t OverlayViewId = 1;
+constexpr uint16_t ClearViewId = 0;
+constexpr uint16_t MainViewBaseId = 1;
+constexpr uint16_t MaxMainViewId = 254;
+constexpr uint16_t OverlayViewId = 255;
+constexpr unsigned kD3DCullCW = 2u;
+constexpr unsigned kD3DCullCCW = 3u;
 const float IdentityMatrix[16] = {
     1.0f, 0.0f, 0.0f, 0.0f,
     0.0f, 1.0f, 0.0f, 0.0f,
     0.0f, 0.0f, 1.0f, 0.0f,
     0.0f, 0.0f, 0.0f, 1.0f};
+bool AutoScreenshotEnabled = false;
+bool AutoScreenshotRequested = false;
+uint32_t AutoScreenshotDelayMs = 0;
+uint32_t AutoScreenshotStartTicks = 0;
+std::string AutoScreenshotPath;
+uint16_t CurrentMainViewId = MainViewBaseId;
+uint16_t NextMainViewId = MainViewBaseId;
+uint32_t PendingViewportX = 0;
+uint32_t PendingViewportY = 0;
+uint32_t PendingViewportWidth = 0;
+uint32_t PendingViewportHeight = 0;
+bgfx::FrameBufferHandle CurrentFrameBuffer = BGFX_INVALID_HANDLE;
+
+void Reset_Main_View_State(uint32_t width, uint32_t height)
+{
+    CurrentMainViewId = MainViewBaseId;
+    NextMainViewId = MainViewBaseId;
+    PendingViewportX = 0;
+    PendingViewportY = 0;
+    PendingViewportWidth = width;
+    PendingViewportHeight = height;
+}
+
+uint16_t Acquire_Main_View()
+{
+    if (NextMainViewId > MaxMainViewId) {
+        return CurrentMainViewId;
+    }
+
+    CurrentMainViewId = NextMainViewId++;
+    bgfx::setViewMode(CurrentMainViewId, bgfx::ViewMode::Sequential);
+    bgfx::setViewFrameBuffer(CurrentMainViewId, CurrentFrameBuffer);
+    bgfx::setViewRect(
+        CurrentMainViewId,
+        static_cast<uint16_t>(PendingViewportX),
+        static_cast<uint16_t>(PendingViewportY),
+        static_cast<uint16_t>(PendingViewportWidth),
+        static_cast<uint16_t>(PendingViewportHeight));
+    bgfx::setViewClear(CurrentMainViewId, 0, 0, 1.0f, 0);
+    return CurrentMainViewId;
+}
+
+bool Write_BGRA_TGA(const char *file_path, uint32_t width, uint32_t height, uint32_t pitch, const void *data, bool yflip)
+{
+    if (file_path == nullptr || *file_path == '\0' || data == nullptr || width == 0 || height == 0 || pitch < width * 4u) {
+        return false;
+    }
+
+    RawFileClass file(file_path);
+    if (!file.Create() || !file.Open(FileClass::WRITE)) {
+        return false;
+    }
+
+    uint8_t header[18] = {};
+    header[2] = 2;
+    header[12] = static_cast<uint8_t>(width & 0xffu);
+    header[13] = static_cast<uint8_t>((width >> 8) & 0xffu);
+    header[14] = static_cast<uint8_t>(height & 0xffu);
+    header[15] = static_cast<uint8_t>((height >> 8) & 0xffu);
+    header[16] = 32;
+    header[17] = 8 | 0x20;
+
+    if (file.Write(header, sizeof(header)) != static_cast<int>(sizeof(header))) {
+        file.Close();
+        return false;
+    }
+
+    const uint8_t *source = static_cast<const uint8_t *>(data);
+    const int row_bytes = static_cast<int>(width * 4u);
+
+    for (uint32_t row = 0; row < height; ++row) {
+        const uint32_t source_row = yflip ? (height - 1u - row) : row;
+        if (file.Write(source + source_row * pitch, row_bytes) != row_bytes) {
+            file.Close();
+            return false;
+        }
+    }
+
+    file.Close();
+    return true;
+}
+
+class BgfxCallback final : public bgfx::CallbackI
+{
+public:
+    void fatal(const char *file_path, uint16_t line, bgfx::Fatal::Enum code, const char *message) override
+    {
+        WWDEBUG_SAY(("bgfx fatal at %s:%u code=%u message=%s\n",
+            file_path != nullptr ? file_path : "<unknown>",
+            static_cast<unsigned>(line),
+            static_cast<unsigned>(code),
+            message != nullptr ? message : "<none>"));
+
+        if (code != bgfx::Fatal::DebugCheck) {
+            std::abort();
+        }
+    }
+
+    void traceVargs(const char *file_path, uint16_t line, const char *format, va_list arg_list) override
+    {
+        char buffer[2048];
+        std::vsnprintf(buffer, sizeof(buffer), format, arg_list);
+        WWDEBUG_SAY(("bgfx trace %s:%u %s",
+            file_path != nullptr ? file_path : "<unknown>",
+            static_cast<unsigned>(line),
+            buffer));
+    }
+
+    void profilerBegin(const char *, uint32_t, const char *, uint16_t) override {}
+    void profilerBeginLiteral(const char *, uint32_t, const char *, uint16_t) override {}
+    void profilerEnd() override {}
+    uint32_t cacheReadSize(uint64_t) override { return 0; }
+    bool cacheRead(uint64_t, void *, uint32_t) override { return false; }
+    void cacheWrite(uint64_t, const void *, uint32_t) override {}
+
+    void screenShot(
+        const char *file_path,
+        uint32_t width,
+        uint32_t height,
+        uint32_t pitch,
+        bgfx::TextureFormat::Enum,
+        const void *data,
+        uint32_t,
+        bool yflip) override
+    {
+        const bool saved = Write_BGRA_TGA(file_path, width, height, pitch, data, yflip);
+        WWDEBUG_SAY(("bgfx screenshot %s %ux%u %s\n",
+            file_path != nullptr ? file_path : "<null>",
+            static_cast<unsigned>(width),
+            static_cast<unsigned>(height),
+            saved ? "saved" : "failed"));
+    }
+
+    void captureBegin(uint32_t, uint32_t, uint32_t, bgfx::TextureFormat::Enum, bool) override {}
+    void captureEnd() override {}
+    void captureFrame(const void *, uint32_t) override {}
+};
+
+BgfxCallback Callback;
+
+void Configure_Auto_Screenshot()
+{
+    AutoScreenshotEnabled = false;
+    AutoScreenshotRequested = false;
+    AutoScreenshotDelayMs = 0;
+    AutoScreenshotStartTicks = 0;
+    AutoScreenshotPath.clear();
+
+    const char *delay_value = std::getenv("RENEGADE_BGFX_SCREENSHOT_AFTER_MS");
+    if (delay_value == nullptr || *delay_value == '\0') {
+        return;
+    }
+
+    char *end = nullptr;
+    const unsigned long parsed_delay = std::strtoul(delay_value, &end, 10);
+    if (end == delay_value || (end != nullptr && *end != '\0')) {
+        WWDEBUG_SAY(("BgfxRenderer invalid RENEGADE_BGFX_SCREENSHOT_AFTER_MS value '%s'\n", delay_value));
+        return;
+    }
+
+    const char *path_value = std::getenv("RENEGADE_BGFX_SCREENSHOT_PATH");
+    AutoScreenshotPath = (path_value != nullptr && *path_value != '\0') ? path_value : "BgfxScreenShot.tga";
+    AutoScreenshotDelayMs = static_cast<uint32_t>(parsed_delay);
+    AutoScreenshotStartTicks = static_cast<uint32_t>(SDL_GetTicks() & 0xffffffffu);
+    AutoScreenshotEnabled = true;
+}
+
+void Maybe_Request_Auto_Screenshot()
+{
+    if (!AutoScreenshotEnabled || AutoScreenshotRequested) {
+        return;
+    }
+
+    const uint32_t now = static_cast<uint32_t>(SDL_GetTicks() & 0xffffffffu);
+    if ((now - AutoScreenshotStartTicks) < AutoScreenshotDelayMs) {
+        return;
+    }
+
+    BgfxRenderer::Request_Screen_Shot(AutoScreenshotPath.c_str());
+    AutoScreenshotRequested = true;
+}
 
 const char *Get_Shader_Profile_Directory()
 {
@@ -176,6 +384,165 @@ uint8_t Expand_4_To_8(uint8_t value)
 uint8_t Expand_5_To_8(uint8_t value)
 {
     return static_cast<uint8_t>((value << 3) | (value >> 2));
+}
+
+uint32_t Convert_ARGB_To_ABGR(uint32_t argb_color)
+{
+    const uint32_t alpha = argb_color & 0xff000000u;
+    const uint32_t red = (argb_color >> 16) & 0xffu;
+    const uint32_t green = (argb_color >> 8) & 0xffu;
+    const uint32_t blue = argb_color & 0xffu;
+    return alpha | (blue << 16) | (green << 8) | red;
+}
+
+uint32_t Expand_RGB565_To_ARGB8888(uint16_t rgb)
+{
+    const uint32_t blue = static_cast<uint32_t>((rgb & 0x001fu) << 3);
+    const uint32_t green = static_cast<uint32_t>((rgb & 0x07e0u) << 5);
+    const uint32_t red = static_cast<uint32_t>((rgb & 0xf800u) << 8);
+    return red | green | blue;
+}
+
+uint32_t Interpolate_RGB888(uint32_t color1, uint32_t color2, uint32_t weight1)
+{
+    const uint32_t weight2 = 255u - weight1;
+
+    const uint32_t red_blue_mask = 0x00ff00ffu;
+    const uint32_t green_mask = 0x0000ff00u;
+
+    uint32_t red_blue_1 = (color1 & red_blue_mask) * weight1;
+    uint32_t red_blue_2 = (color2 & red_blue_mask) * weight2;
+    uint32_t green_1 = (color1 & green_mask) * weight1;
+    uint32_t green_2 = (color2 & green_mask) * weight2;
+
+    red_blue_1 = (red_blue_1 + red_blue_2) >> 8;
+    green_1 = (green_1 + green_2) >> 8;
+    return (red_blue_1 & red_blue_mask) | (green_1 & green_mask);
+}
+
+void Write_ARGB8888_To_BGRA8(std::vector<uint8_t> &destination, uint32_t width, uint32_t x, uint32_t y, uint32_t argb)
+{
+    const size_t pixel_index = (static_cast<size_t>(y) * width + x) * 4u;
+    destination[pixel_index + 0] = static_cast<uint8_t>(argb & 0xffu);
+    destination[pixel_index + 1] = static_cast<uint8_t>((argb >> 8) & 0xffu);
+    destination[pixel_index + 2] = static_cast<uint8_t>((argb >> 16) & 0xffu);
+    destination[pixel_index + 3] = static_cast<uint8_t>((argb >> 24) & 0xffu);
+}
+
+bool Convert_Compressed_Copy_To_BGRA8(
+    WW3DFormat format,
+    uint32_t width,
+    uint32_t height,
+    const uint8_t *source_pixels,
+    std::vector<uint8_t> &converted_pixels)
+{
+    if (source_pixels == nullptr || width == 0 || height == 0) {
+        return false;
+    }
+
+    const uint32_t block_width = (width + 3u) / 4u;
+    const uint32_t block_height = (height + 3u) / 4u;
+    const uint32_t block_size =
+        format == WW3D_FORMAT_DXT1 ? 8u :
+        format == WW3D_FORMAT_DXT3 || format == WW3D_FORMAT_DXT5 ? 16u : 0u;
+    if (block_size == 0u) {
+        return false;
+    }
+
+    converted_pixels.assign(static_cast<size_t>(width) * static_cast<size_t>(height) * 4u, 0u);
+
+    for (uint32_t block_y = 0; block_y < block_height; ++block_y) {
+        for (uint32_t block_x = 0; block_x < block_width; ++block_x) {
+            const uint8_t *block = source_pixels + ((static_cast<size_t>(block_y) * block_width + block_x) * block_size);
+
+            uint32_t alphas[16] = {};
+            if (format == WW3D_FORMAT_DXT1) {
+                std::fill(std::begin(alphas), std::end(alphas), 255u);
+            } else if (format == WW3D_FORMAT_DXT3) {
+                for (uint32_t row = 0; row < 4u; ++row) {
+                    const uint16_t alpha_row = static_cast<uint16_t>(block[row * 2u]) |
+                        (static_cast<uint16_t>(block[row * 2u + 1u]) << 8);
+                    for (uint32_t column = 0; column < 4u; ++column) {
+                        const uint32_t alpha4 = (alpha_row >> (column * 4u)) & 0x0fu;
+                        alphas[row * 4u + column] = (alpha4 << 4) | alpha4;
+                    }
+                }
+            } else if (format == WW3D_FORMAT_DXT5) {
+                const uint8_t alpha0 = block[0];
+                const uint8_t alpha1 = block[1];
+                uint32_t alpha_palette[8] = {};
+                alpha_palette[0] = alpha0;
+                alpha_palette[1] = alpha1;
+                if (alpha0 > alpha1) {
+                    alpha_palette[2] = (6u * alpha0 + 1u * alpha1 + 3u) / 7u;
+                    alpha_palette[3] = (5u * alpha0 + 2u * alpha1 + 3u) / 7u;
+                    alpha_palette[4] = (4u * alpha0 + 3u * alpha1 + 3u) / 7u;
+                    alpha_palette[5] = (3u * alpha0 + 4u * alpha1 + 3u) / 7u;
+                    alpha_palette[6] = (2u * alpha0 + 5u * alpha1 + 3u) / 7u;
+                    alpha_palette[7] = (1u * alpha0 + 6u * alpha1 + 3u) / 7u;
+                } else {
+                    alpha_palette[2] = (4u * alpha0 + 1u * alpha1 + 2u) / 5u;
+                    alpha_palette[3] = (3u * alpha0 + 2u * alpha1 + 2u) / 5u;
+                    alpha_palette[4] = (2u * alpha0 + 3u * alpha1 + 2u) / 5u;
+                    alpha_palette[5] = (1u * alpha0 + 4u * alpha1 + 2u) / 5u;
+                    alpha_palette[6] = 0u;
+                    alpha_palette[7] = 255u;
+                }
+
+                uint64_t alpha_bits = 0u;
+                for (uint32_t index = 0; index < 6u; ++index) {
+                    alpha_bits |= static_cast<uint64_t>(block[2u + index]) << (index * 8u);
+                }
+                for (uint32_t index = 0; index < 16u; ++index) {
+                    alphas[index] = alpha_palette[(alpha_bits >> (index * 3u)) & 0x7u];
+                }
+            }
+
+            const uint8_t *color_block = block + (block_size - 8u);
+            const uint16_t color0_565 = static_cast<uint16_t>(color_block[0]) |
+                (static_cast<uint16_t>(color_block[1]) << 8);
+            const uint16_t color1_565 = static_cast<uint16_t>(color_block[2]) |
+                (static_cast<uint16_t>(color_block[3]) << 8);
+
+            uint32_t colors[4] = {};
+            colors[0] = Expand_RGB565_To_ARGB8888(color0_565);
+            colors[1] = Expand_RGB565_To_ARGB8888(color1_565);
+
+            const bool has_dxt1_transparency = format == WW3D_FORMAT_DXT1 && color0_565 <= color1_565;
+            if (has_dxt1_transparency) {
+                colors[2] = Interpolate_RGB888(colors[0], colors[1], 128u);
+                colors[3] = 0u;
+            } else {
+                colors[2] = Interpolate_RGB888(colors[1], colors[0], 85u);
+                colors[3] = Interpolate_RGB888(colors[0], colors[1], 85u);
+            }
+
+            for (uint32_t row = 0; row < 4u; ++row) {
+                uint8_t color_indices = color_block[4u + row];
+                for (uint32_t column = 0; column < 4u; ++column) {
+                    const uint32_t pixel_x = block_x * 4u + column;
+                    const uint32_t pixel_y = block_y * 4u + row;
+                    if (pixel_x >= width || pixel_y >= height) {
+                        color_indices >>= 2;
+                        continue;
+                    }
+
+                    const uint32_t color_index = color_indices & 0x3u;
+                    color_indices >>= 2;
+
+                    uint32_t alpha = alphas[row * 4u + column];
+                    if (format == WW3D_FORMAT_DXT1 && has_dxt1_transparency && color_index == 3u) {
+                        alpha = 0u;
+                    }
+
+                    const uint32_t argb = (alpha << 24) | colors[color_index];
+                    Write_ARGB8888_To_BGRA8(converted_pixels, width, pixel_x, pixel_y, argb);
+                }
+            }
+        }
+    }
+
+    return true;
 }
 
 bool Convert_Surface_Copy_To_BGRA8(
@@ -391,6 +758,7 @@ bool BgfxRenderer::Init(void *window_handle, bool lite)
 
     bgfx::Init init;
     init.type = bgfx::RendererType::Count;
+    init.callback = &Callback;
     init.platformData = PlatformData;
     init.resolution.width = Width;
     init.resolution.height = Height;
@@ -407,10 +775,14 @@ bool BgfxRenderer::Init(void *window_handle, bool lite)
         return false;
     }
 
-    bgfx::setViewClear(MainViewId, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x000000ff, 1.0f, 0);
-    bgfx::setViewRect(MainViewId, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
+    CurrentFrameBuffer = BGFX_INVALID_HANDLE;
+    bgfx::setViewClear(ClearViewId, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x000000ff, 1.0f, 0);
+    bgfx::setViewFrameBuffer(ClearViewId, CurrentFrameBuffer);
+    bgfx::setViewRect(ClearViewId, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
     ActiveWidth = Width;
     ActiveHeight = Height;
+    Reset_Main_View_State(ActiveWidth, ActiveHeight);
+    Configure_Auto_Screenshot();
 
     IsInitted = true;
     return true;
@@ -433,6 +805,13 @@ void BgfxRenderer::Shutdown()
     WindowHandle = nullptr;
     PlatformData = {};
     IsInitted = false;
+    AutoScreenshotEnabled = false;
+    AutoScreenshotRequested = false;
+    AutoScreenshotDelayMs = 0;
+    AutoScreenshotStartTicks = 0;
+    AutoScreenshotPath.clear();
+    CurrentFrameBuffer = BGFX_INVALID_HANDLE;
+    Reset_Main_View_State(0, 0);
 }
 
 bool BgfxRenderer::Reset()
@@ -444,9 +823,11 @@ bool BgfxRenderer::Reset()
     bgfx::reset(Width, Height, BGFX_RESET_VSYNC);
     ActiveWidth = Width;
     ActiveHeight = Height;
-    bgfx::setViewFrameBuffer(MainViewId, BGFX_INVALID_HANDLE);
+    CurrentFrameBuffer = BGFX_INVALID_HANDLE;
+    bgfx::setViewFrameBuffer(ClearViewId, CurrentFrameBuffer);
     bgfx::setViewFrameBuffer(OverlayViewId, BGFX_INVALID_HANDLE);
-    bgfx::setViewRect(MainViewId, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
+    bgfx::setViewRect(ClearViewId, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
+    Reset_Main_View_State(ActiveWidth, ActiveHeight);
     return true;
 }
 
@@ -475,12 +856,10 @@ void BgfxRenderer::Set_Viewport(uint32_t x, uint32_t y, uint32_t width, uint32_t
         return;
     }
 
-    bgfx::setViewRect(
-        MainViewId,
-        static_cast<uint16_t>(x),
-        static_cast<uint16_t>(y),
-        static_cast<uint16_t>(width),
-        static_cast<uint16_t>(height));
+    PendingViewportX = x;
+    PendingViewportY = y;
+    PendingViewportWidth = width;
+    PendingViewportHeight = height;
 }
 
 bool BgfxRenderer::Set_Render_Target(TextureClass &texture)
@@ -496,10 +875,12 @@ bool BgfxRenderer::Set_Render_Target(TextureClass &texture)
 
     ActiveWidth = static_cast<uint32_t>(texture.Get_Width());
     ActiveHeight = static_cast<uint32_t>(texture.Get_Height());
-    bgfx::setViewFrameBuffer(MainViewId, frame_buffer);
+    CurrentFrameBuffer = frame_buffer;
+    bgfx::setViewFrameBuffer(ClearViewId, CurrentFrameBuffer);
     bgfx::setViewFrameBuffer(OverlayViewId, frame_buffer);
-    bgfx::setViewRect(MainViewId, 0, 0, static_cast<uint16_t>(ActiveWidth), static_cast<uint16_t>(ActiveHeight));
+    bgfx::setViewRect(ClearViewId, 0, 0, static_cast<uint16_t>(ActiveWidth), static_cast<uint16_t>(ActiveHeight));
     bgfx::setViewRect(OverlayViewId, 0, 0, static_cast<uint16_t>(ActiveWidth), static_cast<uint16_t>(ActiveHeight));
+    Reset_Main_View_State(ActiveWidth, ActiveHeight);
     return true;
 }
 
@@ -511,10 +892,12 @@ void BgfxRenderer::Reset_Render_Target()
 
     ActiveWidth = Width;
     ActiveHeight = Height;
-    bgfx::setViewFrameBuffer(MainViewId, BGFX_INVALID_HANDLE);
+    CurrentFrameBuffer = BGFX_INVALID_HANDLE;
+    bgfx::setViewFrameBuffer(ClearViewId, CurrentFrameBuffer);
     bgfx::setViewFrameBuffer(OverlayViewId, BGFX_INVALID_HANDLE);
-    bgfx::setViewRect(MainViewId, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
+    bgfx::setViewRect(ClearViewId, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
     bgfx::setViewRect(OverlayViewId, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
+    Reset_Main_View_State(ActiveWidth, ActiveHeight);
 }
 
 void BgfxRenderer::Set_Camera(const Matrix3D &view, const Matrix4 &projection)
@@ -525,7 +908,10 @@ void BgfxRenderer::Set_Camera(const Matrix3D &view, const Matrix4 &projection)
 
     CurrentViewMatrix = Matrix4(view);
     CurrentProjectionMatrix = projection;
-    bgfx::setViewTransform(MainViewId, &CurrentViewMatrix[0][0], &CurrentProjectionMatrix[0][0]);
+    const Matrix4 bgfx_view = CurrentViewMatrix.Transpose();
+    const Matrix4 bgfx_projection = CurrentProjectionMatrix.Transpose();
+    const uint16_t view_id = Acquire_Main_View();
+    bgfx::setViewTransform(view_id, &bgfx_view[0][0], &bgfx_projection[0][0]);
 }
 
 void BgfxRenderer::Prepare_Overlay_View()
@@ -535,6 +921,7 @@ void BgfxRenderer::Prepare_Overlay_View()
     }
 
     bgfx::setViewMode(OverlayViewId, bgfx::ViewMode::Sequential);
+    bgfx::setViewFrameBuffer(OverlayViewId, CurrentFrameBuffer);
     bgfx::setViewRect(OverlayViewId, 0, 0, static_cast<uint16_t>(ActiveWidth), static_cast<uint16_t>(ActiveHeight));
     bgfx::setViewTransform(OverlayViewId, IdentityMatrix, IdentityMatrix);
     bgfx::setViewClear(OverlayViewId, 0, 0, 1.0f, 0);
@@ -546,7 +933,18 @@ void BgfxRenderer::End_Frame()
         return;
     }
 
+    Maybe_Request_Auto_Screenshot();
     bgfx::frame();
+}
+
+void BgfxRenderer::Request_Screen_Shot(const char *file_path)
+{
+    if (!IsInitted) {
+        return;
+    }
+
+    const char *resolved_path = (file_path != nullptr && *file_path != '\0') ? file_path : "ScreenShot.tga";
+    bgfx::requestScreenShot(BGFX_INVALID_HANDLE, resolved_path);
 }
 
 void BgfxRenderer::Get_Render_Target_Resolution(int &width, int &height, int &bits, bool &windowed)
@@ -562,14 +960,14 @@ void BgfxRenderer::Get_Device_Resolution(int &width, int &height, int &bits, boo
     Get_Render_Target_Resolution(width, height, bits, windowed);
 }
 
-const bgfx::VertexLayout &BgfxRenderer::Get_Pos_Color_Texcoord_Layout()
+const bgfx::VertexLayout &BgfxRenderer::Get_Fixed_Function_Layout()
 {
-    return PosColorTexcoordLayout;
+    return FixedFunctionLayout;
 }
 
 uint16_t BgfxRenderer::Get_Main_View_Id()
 {
-    return MainViewId;
+    return CurrentMainViewId;
 }
 
 uint16_t BgfxRenderer::Get_Overlay_View_Id()
@@ -592,14 +990,19 @@ bgfx::TextureHandle BgfxRenderer::Get_White_Texture()
     return WhiteTexture;
 }
 
-bgfx::UniformHandle BgfxRenderer::Get_Color_Texture_Uniform()
+bgfx::UniformHandle BgfxRenderer::Get_Texture0_Uniform()
 {
-    return ColorTextureUniform;
+    return Texture0Uniform;
 }
 
-bgfx::ProgramHandle BgfxRenderer::Get_Color_Texture_Program()
+bgfx::UniformHandle BgfxRenderer::Get_Texture1_Uniform()
 {
-    return ColorTextureProgram;
+    return Texture1Uniform;
+}
+
+bgfx::ProgramHandle BgfxRenderer::Get_Fixed_Function_Program()
+{
+    return FixedFunctionProgram;
 }
 
 bgfx::TextureHandle BgfxRenderer::Create_Texture_From_Surface(SurfaceClass &surface)
@@ -771,7 +1174,7 @@ void BgfxRenderer::Destroy_Program(bgfx::ProgramHandle &program)
     }
 }
 
-uint64_t BgfxRenderer::Build_Render_State(const ShaderClass &shader)
+uint64_t BgfxRenderer::Build_Render_State(const ShaderClass &shader, unsigned cull_mode)
 {
     uint64_t state = BGFX_STATE_MSAA;
 
@@ -786,7 +1189,7 @@ uint64_t BgfxRenderer::Build_Render_State(const ShaderClass &shader)
     state |= Convert_Depth_Test(shader.Get_Depth_Compare());
 
     if (shader.Get_Cull_Mode() == ShaderClass::CULL_MODE_ENABLE) {
-        state |= BGFX_STATE_CULL_CW;
+        state |= (cull_mode == kD3DCullCCW) ? BGFX_STATE_CULL_CCW : BGFX_STATE_CULL_CW;
     }
 
     if (shader.Get_Src_Blend_Func() != ShaderClass::SRCBLEND_ONE
@@ -799,19 +1202,174 @@ uint64_t BgfxRenderer::Build_Render_State(const ShaderClass &shader)
     return state;
 }
 
-bool BgfxRenderer::Init_Render_Resources()
+void BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(const ShaderClass &shader, const FixedFunctionShaderInputs &inputs)
 {
-    PosColorTexcoordLayout.begin()
-        .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
-        .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true, true)
-        .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
-        .end();
-
-    if (!bgfx::isValid(ColorTextureUniform)) {
-        ColorTextureUniform = bgfx::createUniform("s_texColor", bgfx::UniformType::Sampler);
+    const float alpha_reference = 0x60f / 255.0f;
+    float alpha_test_function = 0.0f;
+    if (shader.Get_Alpha_Test() == ShaderClass::ALPHATEST_ENABLE) {
+        alpha_test_function = shader.Get_Src_Blend_Func() == ShaderClass::SRCBLEND_ONE_MINUS_SRC_ALPHA ? 2.0f : 1.0f;
     }
 
-    if (!bgfx::isValid(ColorTextureUniform)) {
+    float config1[4] = {
+        alpha_test_function,
+        alpha_reference,
+        inputs.FogEnabled ? static_cast<float>(shader.Get_Fog_Func()) : 0.0f,
+        shader.Get_Secondary_Gradient() == ShaderClass::SECONDARY_GRADIENT_ENABLE ? 1.0f : 0.0f};
+
+    float fog_color[4] = {
+        static_cast<float>((inputs.FogColor >> 16) & 0xffu) / 255.0f,
+        static_cast<float>((inputs.FogColor >> 8) & 0xffu) / 255.0f,
+        static_cast<float>(inputs.FogColor & 0xffu) / 255.0f,
+        static_cast<float>((inputs.FogColor >> 24) & 0xffu) / 255.0f};
+
+    float texture_factor[4] = {
+        static_cast<float>((inputs.TextureFactor >> 16) & 0xffu) / 255.0f,
+        static_cast<float>((inputs.TextureFactor >> 8) & 0xffu) / 255.0f,
+        static_cast<float>(inputs.TextureFactor & 0xffu) / 255.0f,
+        static_cast<float>((inputs.TextureFactor >> 24) & 0xffu) / 255.0f};
+
+    float bump_env_matrix[4] = {
+        inputs.BumpEnvMatrix[0],
+        inputs.BumpEnvMatrix[1],
+        inputs.BumpEnvMatrix[2],
+        inputs.BumpEnvMatrix[3]};
+
+    float bump_env_params[4] = {
+        inputs.BumpEnvLuminanceScale,
+        inputs.BumpEnvLuminanceOffset,
+        0.0f,
+        0.0f};
+
+    bgfx::setUniform(FixedFunctionConfig1Uniform, config1);
+    bgfx::setUniform(FixedFunctionFogColorUniform, fog_color);
+    bgfx::setUniform(FixedFunctionTextureFactorUniform, texture_factor);
+    bgfx::setUniform(FixedFunctionStage0ColorUniform, inputs.Stage0Color);
+    bgfx::setUniform(FixedFunctionStage0AlphaUniform, inputs.Stage0Alpha);
+    bgfx::setUniform(FixedFunctionStage1ColorUniform, inputs.Stage1Color);
+    bgfx::setUniform(FixedFunctionStage1AlphaUniform, inputs.Stage1Alpha);
+    bgfx::setUniform(FixedFunctionBumpEnvMatrixUniform, bump_env_matrix);
+    bgfx::setUniform(FixedFunctionBumpEnvParamsUniform, bump_env_params);
+    bgfx::setUniform(FixedFunctionMaterialAmbientUniform, inputs.MaterialAmbient);
+    bgfx::setUniform(FixedFunctionMaterialDiffuseUniform, inputs.MaterialDiffuse);
+    bgfx::setUniform(FixedFunctionMaterialEmissiveUniform, inputs.MaterialEmissive);
+    bgfx::setUniform(FixedFunctionSceneAmbientUniform, inputs.SceneAmbient);
+    bgfx::setUniform(FixedFunctionLightingConfigUniform, inputs.LightingConfig);
+    bgfx::setUniform(FixedFunctionMaterialSourceConfigUniform, inputs.MaterialSourceConfig);
+    bgfx::setUniform(FixedFunctionLightDirectionsUniform, inputs.LightDirections, 4);
+    bgfx::setUniform(FixedFunctionLightDiffuseUniform, inputs.LightDiffuse, 4);
+}
+
+std::uint32_t BgfxRenderer::Convert_Packed_Color(std::uint32_t argb_color)
+{
+    return Convert_ARGB_To_ABGR(argb_color);
+}
+
+bool BgfxRenderer::Init_Render_Resources()
+{
+    FixedFunctionLayout.begin()
+        .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::Normal, 3, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
+        .add(bgfx::Attrib::Color1, 4, bgfx::AttribType::Uint8, true)
+        .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord1, 2, bgfx::AttribType::Float)
+        .end();
+
+    if (!bgfx::isValid(Texture0Uniform)) {
+        Texture0Uniform = bgfx::createUniform("s_texColor0", bgfx::UniformType::Sampler);
+    }
+
+    if (!bgfx::isValid(Texture1Uniform)) {
+        Texture1Uniform = bgfx::createUniform("s_texColor1", bgfx::UniformType::Sampler);
+    }
+
+    if (!bgfx::isValid(FixedFunctionConfig1Uniform)) {
+        FixedFunctionConfig1Uniform = bgfx::createUniform("u_ffpConfig1", bgfx::UniformType::Vec4);
+    }
+
+    if (!bgfx::isValid(FixedFunctionFogColorUniform)) {
+        FixedFunctionFogColorUniform = bgfx::createUniform("u_ffpFogColor", bgfx::UniformType::Vec4);
+    }
+
+    if (!bgfx::isValid(FixedFunctionTextureFactorUniform)) {
+        FixedFunctionTextureFactorUniform = bgfx::createUniform("u_ffpTextureFactor", bgfx::UniformType::Vec4);
+    }
+
+    if (!bgfx::isValid(FixedFunctionStage0ColorUniform)) {
+        FixedFunctionStage0ColorUniform = bgfx::createUniform("u_ffpStage0Color", bgfx::UniformType::Vec4);
+    }
+
+    if (!bgfx::isValid(FixedFunctionStage0AlphaUniform)) {
+        FixedFunctionStage0AlphaUniform = bgfx::createUniform("u_ffpStage0Alpha", bgfx::UniformType::Vec4);
+    }
+
+    if (!bgfx::isValid(FixedFunctionStage1ColorUniform)) {
+        FixedFunctionStage1ColorUniform = bgfx::createUniform("u_ffpStage1Color", bgfx::UniformType::Vec4);
+    }
+
+    if (!bgfx::isValid(FixedFunctionStage1AlphaUniform)) {
+        FixedFunctionStage1AlphaUniform = bgfx::createUniform("u_ffpStage1Alpha", bgfx::UniformType::Vec4);
+    }
+
+    if (!bgfx::isValid(FixedFunctionBumpEnvMatrixUniform)) {
+        FixedFunctionBumpEnvMatrixUniform = bgfx::createUniform("u_ffpBumpEnvMatrix", bgfx::UniformType::Vec4);
+    }
+
+    if (!bgfx::isValid(FixedFunctionBumpEnvParamsUniform)) {
+        FixedFunctionBumpEnvParamsUniform = bgfx::createUniform("u_ffpBumpEnvParams", bgfx::UniformType::Vec4);
+    }
+
+    if (!bgfx::isValid(FixedFunctionMaterialAmbientUniform)) {
+        FixedFunctionMaterialAmbientUniform = bgfx::createUniform("u_ffpMaterialAmbient", bgfx::UniformType::Vec4);
+    }
+
+    if (!bgfx::isValid(FixedFunctionMaterialDiffuseUniform)) {
+        FixedFunctionMaterialDiffuseUniform = bgfx::createUniform("u_ffpMaterialDiffuse", bgfx::UniformType::Vec4);
+    }
+
+    if (!bgfx::isValid(FixedFunctionMaterialEmissiveUniform)) {
+        FixedFunctionMaterialEmissiveUniform = bgfx::createUniform("u_ffpMaterialEmissive", bgfx::UniformType::Vec4);
+    }
+
+    if (!bgfx::isValid(FixedFunctionSceneAmbientUniform)) {
+        FixedFunctionSceneAmbientUniform = bgfx::createUniform("u_ffpSceneAmbient", bgfx::UniformType::Vec4);
+    }
+
+    if (!bgfx::isValid(FixedFunctionLightingConfigUniform)) {
+        FixedFunctionLightingConfigUniform = bgfx::createUniform("u_ffpLightingConfig", bgfx::UniformType::Vec4);
+    }
+
+    if (!bgfx::isValid(FixedFunctionMaterialSourceConfigUniform)) {
+        FixedFunctionMaterialSourceConfigUniform = bgfx::createUniform("u_ffpMaterialSourceConfig", bgfx::UniformType::Vec4);
+    }
+
+    if (!bgfx::isValid(FixedFunctionLightDirectionsUniform)) {
+        FixedFunctionLightDirectionsUniform = bgfx::createUniform("u_ffpLightDirections", bgfx::UniformType::Vec4, 4);
+    }
+
+    if (!bgfx::isValid(FixedFunctionLightDiffuseUniform)) {
+        FixedFunctionLightDiffuseUniform = bgfx::createUniform("u_ffpLightDiffuse", bgfx::UniformType::Vec4, 4);
+    }
+
+    if (!bgfx::isValid(Texture0Uniform)
+        || !bgfx::isValid(Texture1Uniform)
+        || !bgfx::isValid(FixedFunctionConfig1Uniform)
+        || !bgfx::isValid(FixedFunctionFogColorUniform)
+        || !bgfx::isValid(FixedFunctionTextureFactorUniform)
+        || !bgfx::isValid(FixedFunctionStage0ColorUniform)
+        || !bgfx::isValid(FixedFunctionStage0AlphaUniform)
+        || !bgfx::isValid(FixedFunctionStage1ColorUniform)
+        || !bgfx::isValid(FixedFunctionStage1AlphaUniform)
+        || !bgfx::isValid(FixedFunctionBumpEnvMatrixUniform)
+        || !bgfx::isValid(FixedFunctionBumpEnvParamsUniform)
+        || !bgfx::isValid(FixedFunctionMaterialAmbientUniform)
+        || !bgfx::isValid(FixedFunctionMaterialDiffuseUniform)
+        || !bgfx::isValid(FixedFunctionMaterialEmissiveUniform)
+        || !bgfx::isValid(FixedFunctionSceneAmbientUniform)
+        || !bgfx::isValid(FixedFunctionLightingConfigUniform)
+        || !bgfx::isValid(FixedFunctionMaterialSourceConfigUniform)
+        || !bgfx::isValid(FixedFunctionLightDirectionsUniform)
+        || !bgfx::isValid(FixedFunctionLightDiffuseUniform)) {
         return false;
     }
 
@@ -832,25 +1390,115 @@ bool BgfxRenderer::Init_Render_Resources()
         return false;
     }
 
-    if (!bgfx::isValid(ColorTextureProgram)) {
-        ColorTextureProgram = Load_Program("vs_color_tex", "fs_color_tex");
+    if (!bgfx::isValid(FixedFunctionProgram)) {
+        FixedFunctionProgram = Load_Program("vs_fixed_function", "fs_fixed_function");
     }
 
-    return bgfx::isValid(ColorTextureProgram);
+    return bgfx::isValid(FixedFunctionProgram);
 }
 
 void BgfxRenderer::Shutdown_Render_Resources()
 {
-    Destroy_Program(ColorTextureProgram);
+    Destroy_Program(FixedFunctionProgram);
+
+    if (bgfx::isValid(FixedFunctionLightDiffuseUniform)) {
+        bgfx::destroy(FixedFunctionLightDiffuseUniform);
+        FixedFunctionLightDiffuseUniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(FixedFunctionLightDirectionsUniform)) {
+        bgfx::destroy(FixedFunctionLightDirectionsUniform);
+        FixedFunctionLightDirectionsUniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(FixedFunctionMaterialSourceConfigUniform)) {
+        bgfx::destroy(FixedFunctionMaterialSourceConfigUniform);
+        FixedFunctionMaterialSourceConfigUniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(FixedFunctionLightingConfigUniform)) {
+        bgfx::destroy(FixedFunctionLightingConfigUniform);
+        FixedFunctionLightingConfigUniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(FixedFunctionSceneAmbientUniform)) {
+        bgfx::destroy(FixedFunctionSceneAmbientUniform);
+        FixedFunctionSceneAmbientUniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(FixedFunctionMaterialEmissiveUniform)) {
+        bgfx::destroy(FixedFunctionMaterialEmissiveUniform);
+        FixedFunctionMaterialEmissiveUniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(FixedFunctionMaterialDiffuseUniform)) {
+        bgfx::destroy(FixedFunctionMaterialDiffuseUniform);
+        FixedFunctionMaterialDiffuseUniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(FixedFunctionMaterialAmbientUniform)) {
+        bgfx::destroy(FixedFunctionMaterialAmbientUniform);
+        FixedFunctionMaterialAmbientUniform = BGFX_INVALID_HANDLE;
+    }
 
     if (bgfx::isValid(WhiteTexture)) {
         bgfx::destroy(WhiteTexture);
         WhiteTexture = BGFX_INVALID_HANDLE;
     }
 
-    if (bgfx::isValid(ColorTextureUniform)) {
-        bgfx::destroy(ColorTextureUniform);
-        ColorTextureUniform = BGFX_INVALID_HANDLE;
+    if (bgfx::isValid(FixedFunctionBumpEnvParamsUniform)) {
+        bgfx::destroy(FixedFunctionBumpEnvParamsUniform);
+        FixedFunctionBumpEnvParamsUniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(FixedFunctionBumpEnvMatrixUniform)) {
+        bgfx::destroy(FixedFunctionBumpEnvMatrixUniform);
+        FixedFunctionBumpEnvMatrixUniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(FixedFunctionFogColorUniform)) {
+        bgfx::destroy(FixedFunctionFogColorUniform);
+        FixedFunctionFogColorUniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(FixedFunctionConfig1Uniform)) {
+        bgfx::destroy(FixedFunctionConfig1Uniform);
+        FixedFunctionConfig1Uniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(FixedFunctionStage1AlphaUniform)) {
+        bgfx::destroy(FixedFunctionStage1AlphaUniform);
+        FixedFunctionStage1AlphaUniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(FixedFunctionStage1ColorUniform)) {
+        bgfx::destroy(FixedFunctionStage1ColorUniform);
+        FixedFunctionStage1ColorUniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(FixedFunctionStage0AlphaUniform)) {
+        bgfx::destroy(FixedFunctionStage0AlphaUniform);
+        FixedFunctionStage0AlphaUniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(FixedFunctionStage0ColorUniform)) {
+        bgfx::destroy(FixedFunctionStage0ColorUniform);
+        FixedFunctionStage0ColorUniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(FixedFunctionTextureFactorUniform)) {
+        bgfx::destroy(FixedFunctionTextureFactorUniform);
+        FixedFunctionTextureFactorUniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(Texture1Uniform)) {
+        bgfx::destroy(Texture1Uniform);
+        Texture1Uniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(Texture0Uniform)) {
+        bgfx::destroy(Texture0Uniform);
+        Texture0Uniform = BGFX_INVALID_HANDLE;
     }
 }
 
@@ -919,8 +1567,11 @@ void BgfxRenderer::Apply_Clear(bool clear_color, bool clear_depth, float red, fl
         | (static_cast<uint32_t>(clear_b) << 8)
         | 0xffu;
 
-    bgfx::setViewClear(MainViewId, clear_flags, clear_rgba, 1.0f, 0);
-    bgfx::touch(MainViewId);
+    Reset_Main_View_State(ActiveWidth, ActiveHeight);
+    bgfx::setViewClear(ClearViewId, clear_flags, clear_rgba, 1.0f, 0);
+    bgfx::setViewFrameBuffer(ClearViewId, CurrentFrameBuffer);
+    bgfx::setViewRect(ClearViewId, 0, 0, static_cast<uint16_t>(ActiveWidth), static_cast<uint16_t>(ActiveHeight));
+    bgfx::touch(ClearViewId);
 }
 
 bgfx::ShaderHandle BgfxRenderer::Load_Shader(const char *shader_name)

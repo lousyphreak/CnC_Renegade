@@ -1247,7 +1247,6 @@ void WW3D::Normalize_Coordinates(int x, int y, float &fx, float &fy)
  *=============================================================================================*/
 void WW3D::Make_Screen_Shot( const char * filename_base )
 {
-
 	WWASSERT(!IsRendering);
 
 	char filename[80];
@@ -1268,68 +1267,7 @@ void WW3D::Make_Screen_Shot( const char * filename_base )
 	}
 
 	WWDEBUG_SAY(( "Creating Screen Shot %s\n", filename ));
-
-	// Lock front buffer and copy
-
-	IDirect3DSurface8 *fb;
-	fb=DX8Wrapper::_Get_DX8_Front_Buffer();
-	D3DSURFACE_DESC desc;
-	fb->GetDesc(&desc);
-
-	RECT bounds = {};
-	bounds.left = 0;
-	bounds.top = 0;
-	bounds.right = static_cast<long>(BgfxRenderer::Get_Width());
-	bounds.bottom = static_cast<long>(BgfxRenderer::Get_Height());
-
-	D3DLOCKED_RECT lrect;
-
-	DX8_ErrorCode(fb->LockRect(&lrect,&bounds,D3DLOCK_READONLY));
-
-	unsigned int x,y,index,index2,width,height;
-
-	width=bounds.right-bounds.left;
-	height=bounds.bottom-bounds.top;
-
-	char *image=new char[3*width*height];
-
-	for (y=0; y<height; y++)
-	{
-		for (x=0; x<width; x++)
-		{
-			// index for image
-			index=3*(x+y*width);
-			// index for fb
-			index2=y*lrect.Pitch+4*x;
-
-			image[index]=*((char *) lrect.pBits + index2+2);
-			image[index+1]=*((char *) lrect.pBits + index2+1);
-			image[index+2]=*((char *) lrect.pBits + index2+0);
-		}
-	}
-
-	fb->Release();
-
-	Targa targ;
-	memset(&targ.Header,0,sizeof(targ.Header));
-	targ.Header.Width=width;
-	targ.Header.Height=height;
-	targ.Header.PixelDepth=24;
-	targ.Header.ImageType=TGA_TRUECOLOR;
-	targ.SetImage(image);
-	targ.YFlip();
-
-	FileClass*file=_TheWritingFileFactory->Get_File( filename );
-	if ( file ) {
-		file->Create();
-		file->Close();
-		_TheWritingFileFactory->Return_File( file );
-	}
-
-	targ.Save(filename,TGAF_IMAGE,false);
-
-	delete [] image;
-
+	BgfxRenderer::Request_Screen_Shot(filename);
 }
 
 

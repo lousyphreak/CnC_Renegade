@@ -40,6 +40,8 @@
 #include "wwprofile.h"
 #include "wwmemlog.h"
 #include "dx8wrapper.h"
+#include "ffactory.h"
+#include "wwfile.h"
 
 #include <algorithm>
 #include <array>
@@ -77,6 +79,7 @@ constexpr const char *FontSearchRoots[] = {
 	"/usr/share/fonts",
 	"/usr/local/share/fonts",
 };
+std::vector<std::string> RegisteredFontFiles;
 
 std::string Normalize_Font_Family(const std::string &text)
 {
@@ -107,10 +110,33 @@ bool Filename_Indicates_Bold(const std::string &text)
 	return text.find("bold") != std::string::npos || text.find("demi") != std::string::npos || text.find("black") != std::string::npos;
 }
 
+bool Filename_Indicates_Italic(const std::string &text)
+{
+	return text.find("italic") != std::string::npos || text.find("oblique") != std::string::npos;
+}
+
+bool Stem_Looks_Script_Specific(const std::string &stem)
+{
+	static const char *tokens[] = {
+		"arabic", "armenian", "bengali", "cherokee", "cjk", "devanagari", "ethiopic", "georgian",
+		"gujarati", "gurmukhi", "hebrew", "jp", "japanese", "kannada", "khmer", "kr", "korean",
+		"lao", "malayalam", "myanmar", "oriya", "sinhala", "tamil", "telugu", "thai", "tibetan"
+	};
+
+	for (const char *token : tokens) {
+		if (stem.find(token) != std::string::npos) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 int Score_Font_Candidate(const std::string &stem, const std::vector<std::string> &families, bool is_bold)
 {
 	int best_score = -1;
 	const bool candidate_is_bold = Filename_Indicates_Bold(stem);
+	const bool candidate_is_italic = Filename_Indicates_Italic(stem);
 
 	for (size_t index = 0; index < families.size(); ++index) {
 		if (stem.find(families[index]) == std::string::npos) {
@@ -121,8 +147,41 @@ int Score_Font_Candidate(const std::string &stem, const std::vector<std::string>
 		if (candidate_is_bold == is_bold) {
 			score += 25;
 		}
+		if (candidate_is_italic) {
+			score -= is_bold ? 10 : 25;
+		}
+		if (Stem_Looks_Script_Specific(stem)) {
+			score -= 60;
+		}
 
 		best_score = std::max(best_score, score);
+	}
+
+	return best_score;
+}
+
+int Score_Font_Aliases(const std::vector<std::string> &aliases, const std::vector<std::string> &families, bool is_bold, const std::string &stem)
+{
+	int best_score = -1;
+	const bool candidate_is_bold = Filename_Indicates_Bold(stem);
+	const bool candidate_is_italic = Filename_Indicates_Italic(stem);
+
+	for (size_t family_index = 0; family_index < families.size(); ++family_index) {
+		for (const std::string &alias : aliases) {
+			if (alias != families[family_index]) {
+				continue;
+			}
+
+			int score = 200 - static_cast<int>(family_index * 10);
+			if (candidate_is_bold == is_bold) {
+				score += 25;
+			}
+			if (candidate_is_italic) {
+				score -= is_bold ? 10 : 25;
+			}
+
+			best_score = std::max(best_score, score);
+		}
 	}
 
 	return best_score;
@@ -144,6 +203,211 @@ bool Read_Binary_File(const std::filesystem::path &path, std::vector<unsigned ch
 	input.seekg(0, std::ios::beg);
 	input.read(reinterpret_cast<char *>(contents.data()), file_size);
 	return input.good();
+}
+
+bool Resolve_Font_Path(const char *font_name, bool is_bold, std::filesystem::path &resolved_path);
+
+bool Read_File_Data(FileClass &file, std::vector<unsigned char> &contents)
+{
+	if (!file.Is_Available()) {
+		return false;
+	}
+
+	if (!file.Is_Open() && file.Open(FileClass::READ) == 0) {
+		return false;
+	}
+
+	const int file_size = file.Size();
+	if (file_size <= 0) {
+		file.Close();
+		return false;
+	}
+
+	contents.resize(static_cast<size_t>(file_size));
+	const int bytes_read = file.Read(contents.data(), file_size);
+	file.Close();
+	return bytes_read == file_size;
+}
+
+uint16_t Read_Big_Endian_U16(const unsigned char *data)
+{
+	return static_cast<uint16_t>((static_cast<uint16_t>(data[0]) << 8) | static_cast<uint16_t>(data[1]));
+}
+
+uint32_t Read_Big_Endian_U32(const unsigned char *data)
+{
+	return
+		(static_cast<uint32_t>(data[0]) << 24) |
+		(static_cast<uint32_t>(data[1]) << 16) |
+		(static_cast<uint32_t>(data[2]) << 8) |
+		static_cast<uint32_t>(data[3]);
+}
+
+std::string Decode_Font_Name_String(const unsigned char *data, size_t length, uint16_t platform_id)
+{
+	std::string decoded;
+
+	if ((platform_id == 0 || platform_id == 3) && (length % 2) == 0) {
+		decoded.reserve(length / 2);
+		for (size_t index = 0; index < length; index += 2) {
+			const uint16_t code_unit = Read_Big_Endian_U16(data + index);
+			if (code_unit == 0) {
+				continue;
+			}
+
+			if (code_unit <= 0x7F) {
+				decoded.push_back(static_cast<char>(code_unit));
+			}
+		}
+	} else {
+		decoded.assign(reinterpret_cast<const char *>(data), length);
+	}
+
+	return decoded;
+}
+
+void Extract_Font_Name_Aliases(const std::vector<unsigned char> &font_data, std::vector<std::string> &aliases)
+{
+	if (font_data.size() < 12) {
+		return;
+	}
+
+	const uint16_t table_count = Read_Big_Endian_U16(font_data.data() + 4);
+	size_t table_offset = 12;
+	uint32_t name_offset = 0;
+	uint32_t name_length = 0;
+
+	for (uint16_t index = 0; index < table_count && (table_offset + 16) <= font_data.size(); ++index, table_offset += 16) {
+		const unsigned char *record = font_data.data() + table_offset;
+		if (std::memcmp(record, "name", 4) == 0) {
+			name_offset = Read_Big_Endian_U32(record + 8);
+			name_length = Read_Big_Endian_U32(record + 12);
+			break;
+		}
+	}
+
+	if (name_offset == 0 || name_length < 6 || (static_cast<size_t>(name_offset) + static_cast<size_t>(name_length)) > font_data.size()) {
+		return;
+	}
+
+	const unsigned char *name_table = font_data.data() + name_offset;
+	const uint16_t record_count = Read_Big_Endian_U16(name_table + 2);
+	const uint16_t string_offset = Read_Big_Endian_U16(name_table + 4);
+	size_t record_offset = 6;
+
+	for (uint16_t index = 0; index < record_count && (record_offset + 12) <= name_length; ++index, record_offset += 12) {
+		const unsigned char *record = name_table + record_offset;
+		const uint16_t platform_id = Read_Big_Endian_U16(record + 0);
+		const uint16_t name_id = Read_Big_Endian_U16(record + 6);
+		const uint16_t value_length = Read_Big_Endian_U16(record + 8);
+		const uint16_t value_offset = Read_Big_Endian_U16(record + 10);
+
+		if (name_id != 1 && name_id != 4 && name_id != 6) {
+			continue;
+		}
+
+		const size_t value_start = static_cast<size_t>(string_offset) + static_cast<size_t>(value_offset);
+		if ((value_start + value_length) > name_length) {
+			continue;
+		}
+
+		const std::string decoded = Decode_Font_Name_String(name_table + value_start, value_length, platform_id);
+		const std::string normalized = Normalize_Font_Family(decoded);
+		if (!normalized.empty()) {
+			aliases.push_back(normalized);
+		}
+	}
+}
+
+bool Read_Resource_Font_File(const char *filename, std::vector<unsigned char> &contents)
+{
+	if (filename == nullptr || *filename == '\0' || _TheFileFactory == NULL) {
+		return false;
+	}
+
+	file_auto_ptr file(_TheFileFactory, filename);
+	if (file.get() == NULL) {
+		return false;
+	}
+
+	return Read_File_Data(*file, contents);
+}
+
+bool Resolve_Registered_Font_File(const char *font_name, bool is_bold, std::string &resolved_file)
+{
+	if (font_name == nullptr || *font_name == '\0') {
+		return false;
+	}
+
+	const std::string requested_family = Normalize_Font_Family(font_name);
+
+	for (const std::string &registered_file : RegisteredFontFiles) {
+		std::vector<unsigned char> font_data;
+		if (!Read_Resource_Font_File(registered_file.c_str(), font_data) || font_data.empty()) {
+			continue;
+		}
+
+		std::vector<std::string> aliases;
+		Extract_Font_Name_Aliases(font_data, aliases);
+		for (const std::string &alias : aliases) {
+			if (alias == requested_family) {
+				resolved_file = registered_file;
+				return true;
+			}
+		}
+	}
+
+	std::vector<std::string> requested_families;
+	requested_families.emplace_back(requested_family);
+
+	if (requested_families[0].find("arial") != std::string::npos) {
+		requested_families.emplace_back("arial");
+		requested_families.emplace_back("arialmt");
+	}
+
+	if (requested_families[0].find("regatta") != std::string::npos) {
+		requested_families.emplace_back("regatta");
+		requested_families.emplace_back("regattacondensedlet");
+	}
+
+	int best_score = -1;
+	for (const std::string &registered_file : RegisteredFontFiles) {
+		const std::filesystem::path path(registered_file);
+		const int score = Score_Font_Candidate(Normalize_Font_Family(path.stem().string()), requested_families, is_bold);
+		if (score > best_score) {
+			best_score = score;
+			resolved_file = registered_file;
+		}
+	}
+
+	return best_score >= 0;
+}
+
+bool Read_Font_Data(const char *font_name, bool is_bold, std::vector<unsigned char> &contents, std::string &source_name)
+{
+	contents.clear();
+	source_name.clear();
+
+	if (Read_Resource_Font_File(font_name, contents)) {
+		source_name = font_name;
+		return true;
+	}
+
+	std::string registered_file;
+	if (Resolve_Registered_Font_File(font_name, is_bold, registered_file) &&
+		Read_Resource_Font_File(registered_file.c_str(), contents))
+	{
+		source_name = registered_file;
+		return true;
+	}
+
+	std::filesystem::path font_path;
+	if (Resolve_Font_Path(font_name, is_bold, font_path) && Read_Binary_File(font_path, contents)) {
+		source_name = font_path.string();
+		return true;
+	}
+
+	return false;
 }
 
 bool Resolve_Font_Path(const char *font_name, bool is_bold, std::filesystem::path &resolved_path)
@@ -212,7 +476,18 @@ bool Resolve_Font_Path(const char *font_name, bool is_bold, std::filesystem::pat
 			}
 
 			const std::string stem = Normalize_Font_Family(path.stem().string());
-			const int score = Score_Font_Candidate(stem, requested_families, is_bold);
+			int score = -1;
+
+			std::vector<unsigned char> font_data;
+			if (Read_Binary_File(path, font_data)) {
+				std::vector<std::string> aliases;
+				Extract_Font_Name_Aliases(font_data, aliases);
+				score = Score_Font_Aliases(aliases, requested_families, is_bold, stem);
+			}
+
+			if (score < 0) {
+				score = Score_Font_Candidate(stem, requested_families, is_bold);
+			}
 			if (score > best_score) {
 				best_score = score;
 				resolved_path = path;
@@ -227,6 +502,36 @@ bool Resolve_Font_Path(const char *font_name, bool is_bold, std::filesystem::pat
 
 	return best_score >= 0;
 }
+}
+
+void FontCharsClass::Register_Font_File(const char *filename)
+{
+	if (filename == nullptr || *filename == '\0') {
+		return;
+	}
+
+	for (const std::string &registered_file : RegisteredFontFiles) {
+		if (stricmp(registered_file.c_str(), filename) == 0) {
+			return;
+		}
+	}
+
+	RegisteredFontFiles.emplace_back(filename);
+}
+
+void FontCharsClass::Unregister_Font_File(const char *filename)
+{
+	if (filename == nullptr || *filename == '\0') {
+		return;
+	}
+
+	const auto it = std::remove_if(
+		RegisteredFontFiles.begin(),
+		RegisteredFontFiles.end(),
+		[filename](const std::string &registered_file) {
+			return stricmp(registered_file.c_str(), filename) == 0;
+		});
+	RegisteredFontFiles.erase(it, RegisteredFontFiles.end());
 }
 
 
@@ -350,7 +655,7 @@ void
 Render2DSentenceClass::Make_Additive (void)
 {
 	Shader.Set_Dst_Blend_Func (ShaderClass::DSTBLEND_ONE);
-	Shader.Set_Src_Blend_Func (ShaderClass::SRCBLEND_ONE);
+	Shader.Set_Src_Blend_Func (ShaderClass::SRCBLEND_SRC_ALPHA);
 	Shader.Set_Primary_Gradient (ShaderClass::GRADIENT_MODULATE);
 	Shader.Set_Secondary_Gradient (ShaderClass::SECONDARY_GRADIENT_DISABLE);
 
@@ -715,11 +1020,14 @@ Render2DSentenceClass::Build_Textures (void)
 		//
 		SurfaceClass::SurfaceDescription desc;
 		curr_surface->Get_Description (desc);
-
 		//
 		//	Create the new texture
 		//
 		TextureClass *new_texture = new TextureClass (desc.Width, desc.Width, WW3D_FORMAT_A4R4G4B4, TextureClass::MIP_LEVELS_1);
+		new_texture->Set_U_Addr_Mode(TextureClass::TEXTURE_ADDRESS_CLAMP);
+		new_texture->Set_V_Addr_Mode(TextureClass::TEXTURE_ADDRESS_CLAMP);
+		new_texture->Set_Min_Filter(TextureClass::FILTER_TYPE_NONE);
+		new_texture->Set_Mag_Filter(TextureClass::FILTER_TYPE_NONE);
 		SurfaceClass *texture_surface = new_texture->Get_Surface_Level ();
 
 		//
@@ -1484,23 +1792,17 @@ FontCharsClass::Load_Font (const char *font_name)
 {
 	Release_Font();
 
-	std::filesystem::path font_path;
-	if (!Resolve_Font_Path(font_name, IsBold, font_path)) {
-		WWDEBUG_SAY(("Failed to resolve font path for '%s'\n", font_name));
+	std::string font_source;
+	if (!Read_Font_Data(font_name, IsBold, FontFileData, font_source)) {
+		WWDEBUG_SAY(("Failed to read font data for '%s'\n", font_name));
 		return;
 	}
-
-	if (!Read_Binary_File(font_path, FontFileData)) {
-		WWDEBUG_SAY(("Failed to read font file '%s'\n", font_path.string().c_str()));
-		return;
-	}
-
 	FontInfo = new stbtt_fontinfo;
 	if (!stbtt_InitFont(FontInfo, FontFileData.data(), 0)) {
 		delete FontInfo;
 		FontInfo = NULL;
 		FontFileData.clear();
-		WWDEBUG_SAY(("Failed to initialize stb font '%s'\n", font_path.string().c_str()));
+		WWDEBUG_SAY(("Failed to initialize stb font '%s'\n", font_source.c_str()));
 		return;
 	}
 

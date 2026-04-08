@@ -7,6 +7,7 @@
 #include "vector3.h"
 
 #include <bgfx/bgfx.h>
+#include <cstdint>
 
 class SurfaceClass;
 class TextureClass;
@@ -14,6 +15,36 @@ class TextureClass;
 class BgfxRenderer
 {
 public:
+    struct FixedFunctionShaderInputs
+    {
+        bool FogEnabled = false;
+        std::uint32_t FogColor = 0;
+        std::uint32_t TextureFactor = 0xffffffffu;
+        float BumpEnvMatrix[4] = {1.0f, 0.0f, 0.0f, 1.0f};
+        float BumpEnvLuminanceScale = 1.0f;
+        float BumpEnvLuminanceOffset = 0.0f;
+        float Stage0Color[4] = {4.0f, 0.0f, 2.0f, 1.0f};
+        float Stage0Alpha[4] = {2.0f, 0.0f, 2.0f, 1.0f};
+        float Stage1Color[4] = {1.0f, 0.0f, 2.0f, 1.0f};
+        float Stage1Alpha[4] = {1.0f, 0.0f, 2.0f, 1.0f};
+        float MaterialAmbient[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+        float MaterialDiffuse[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+        float MaterialEmissive[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+        float SceneAmbient[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+        float LightingConfig[4] = {0.0f, 0.0f, 1.0f, 0.0f};
+        float MaterialSourceConfig[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+        float LightDirections[16] = {
+            0.0f, 0.0f, 1.0f, 0.0f,
+            0.0f, 0.0f, 1.0f, 0.0f,
+            0.0f, 0.0f, 1.0f, 0.0f,
+            0.0f, 0.0f, 1.0f, 0.0f};
+        float LightDiffuse[16] = {
+            0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f};
+    };
+
     static bool Init(void *window_handle, bool lite);
     static void Shutdown();
     static bool Reset();
@@ -27,19 +58,23 @@ public:
     static void Prepare_Overlay_View();
     static void Get_Render_Target_Resolution(int &width, int &height, int &bits, bool &windowed);
     static void Get_Device_Resolution(int &width, int &height, int &bits, bool &windowed);
-    static const bgfx::VertexLayout &Get_Pos_Color_Texcoord_Layout();
+    static const bgfx::VertexLayout &Get_Fixed_Function_Layout();
     static uint16_t Get_Main_View_Id();
     static uint16_t Get_Overlay_View_Id();
     static const Matrix4 &Get_Current_View_Matrix();
     static const Matrix4 &Get_Current_Projection_Matrix();
     static bgfx::TextureHandle Get_White_Texture();
-    static bgfx::UniformHandle Get_Color_Texture_Uniform();
-    static bgfx::ProgramHandle Get_Color_Texture_Program();
+    static bgfx::UniformHandle Get_Texture0_Uniform();
+    static bgfx::UniformHandle Get_Texture1_Uniform();
+    static bgfx::ProgramHandle Get_Fixed_Function_Program();
     static bgfx::TextureHandle Create_Texture_From_Surface(SurfaceClass &surface);
     static bgfx::TextureHandle Create_Texture(TextureClass &texture);
     static bgfx::ProgramHandle Load_Program(const char *vertex_shader_name, const char *fragment_shader_name);
     static void Destroy_Program(bgfx::ProgramHandle &program);
-    static uint64_t Build_Render_State(const ShaderClass &shader);
+    static uint64_t Build_Render_State(const ShaderClass &shader, unsigned cull_mode = 2u);
+    static void Apply_Fixed_Function_Shader_Inputs(const ShaderClass &shader, const FixedFunctionShaderInputs &inputs);
+    static std::uint32_t Convert_Packed_Color(std::uint32_t argb_color);
+    static void Request_Screen_Shot(const char *file_path);
 
     static bool Is_Initted() { return IsInitted; }
     static uint32_t Get_Width() { return Width; }
@@ -62,10 +97,28 @@ private:
     static bool Windowed;
     static void *WindowHandle;
     static bgfx::PlatformData PlatformData;
-    static bgfx::VertexLayout PosColorTexcoordLayout;
+    static bgfx::VertexLayout FixedFunctionLayout;
     static bgfx::TextureHandle WhiteTexture;
-    static bgfx::UniformHandle ColorTextureUniform;
-    static bgfx::ProgramHandle ColorTextureProgram;
+    static bgfx::UniformHandle Texture0Uniform;
+    static bgfx::UniformHandle Texture1Uniform;
+    static bgfx::UniformHandle FixedFunctionConfig1Uniform;
+    static bgfx::UniformHandle FixedFunctionFogColorUniform;
+    static bgfx::UniformHandle FixedFunctionTextureFactorUniform;
+    static bgfx::UniformHandle FixedFunctionStage0ColorUniform;
+    static bgfx::UniformHandle FixedFunctionStage0AlphaUniform;
+    static bgfx::UniformHandle FixedFunctionStage1ColorUniform;
+    static bgfx::UniformHandle FixedFunctionStage1AlphaUniform;
+    static bgfx::UniformHandle FixedFunctionBumpEnvMatrixUniform;
+    static bgfx::UniformHandle FixedFunctionBumpEnvParamsUniform;
+    static bgfx::UniformHandle FixedFunctionMaterialAmbientUniform;
+    static bgfx::UniformHandle FixedFunctionMaterialDiffuseUniform;
+    static bgfx::UniformHandle FixedFunctionMaterialEmissiveUniform;
+    static bgfx::UniformHandle FixedFunctionSceneAmbientUniform;
+    static bgfx::UniformHandle FixedFunctionLightingConfigUniform;
+    static bgfx::UniformHandle FixedFunctionMaterialSourceConfigUniform;
+    static bgfx::UniformHandle FixedFunctionLightDirectionsUniform;
+    static bgfx::UniformHandle FixedFunctionLightDiffuseUniform;
+    static bgfx::ProgramHandle FixedFunctionProgram;
     static Matrix4 CurrentViewMatrix;
     static Matrix4 CurrentProjectionMatrix;
 };

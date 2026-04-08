@@ -964,7 +964,7 @@ TextureClass * WW3DAssetManager::Get_Texture(
 	** Didn't have it so we have to create a new texture
 	*/
 	if (!tex) {
-		tex = NEW_REF(TextureClass,(lower_case_name, NULL, mip_level_count, texture_format, allow_compression));
+		tex = NEW_REF(TextureClass, (lower_case_name, filename, mip_level_count, texture_format, allow_compression));
 		TextureHash.Insert(tex->Get_Texture_Name(),tex);
 	}
 

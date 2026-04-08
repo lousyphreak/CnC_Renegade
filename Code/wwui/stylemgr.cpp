@@ -311,6 +311,7 @@ StyleMgrClass::Initialize_From_INI (const char *filename)
 			//	Install the font into windows
 			//
 			::AddFontResource (filename);
+			FontCharsClass::Register_Font_File(filename);
 			FontFileList.Add (filename);
 		}
 
@@ -400,6 +401,7 @@ StyleMgrClass::Shutdown (void)
 	//	Unregister this font with windows
 	//
 	for (int index = 0; index < FontFileList.Count (); index ++) {
+		FontCharsClass::Unregister_Font_File(FontFileList[index]);
 		::RemoveFontResource (FontFileList[index]);
 	}
 

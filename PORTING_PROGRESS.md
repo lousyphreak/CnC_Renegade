@@ -25,10 +25,39 @@
 - Rebuilt after the type-surface refactor and moved the failure frontier from missing D3D SDK headers in many high-level files to backend-local issues:
   - `dx8wrapper.h` still contains inline functions that call `IDirect3DDevice8` / `IDirect3DBaseTexture8` methods directly, so those bodies need to move out of the shared header and into backend-local implementation.
   - a handful of `.cpp` files still include `<D3dx8core.h>` / `<d3d8.h>` directly (`assetmgr.cpp`, `missingtexture.cpp`, `sortingrenderer.cpp`, `texture.cpp`, `ww3dformat.cpp`, `dx8vertexbuffer.cpp`, `dx8wrapper.cpp`).
+- Moved the remaining Direct3D device-calling inline bodies out of `dx8wrapper.h` and into `dx8wrapper.cpp`, including:
+  - transform getters/setters
+  - projection/z-bias state submission
+  - material, light, render-state, texture-stage, texture, and `CopyRects` submission
+- Rebuilt after the header cleanup and confirmed the shared-header failure is gone: the compiler now advances into the next real renderer blockers instead of exploding inside `dx8wrapper.h`.
+- Removed the direct `D3dx8core.h` include from `assetmgr.cpp`; that file now fails for the more honest reason that it still reaches through `IDirect3DTexture8` to query `GetLevelDesc`, so it needs a renderer-owned texture/surface description path rather than a D3DX include.
+- Replaced `missingtexture.cpp`'s D3DX box-filter mip generation with explicit local box-filter mip generation logic so the only remaining blocker there is the broader raw-D3D interface dependency, not the missing D3DX helper itself.
+- The rebuild frontier after this slice is now:
+  - raw `IDirect3DTexture8` / `IDirect3DSurface8` usage in `missingtexture.cpp`, `ddsfile.cpp`, and `assetmgr.cpp`
+  - unrelated Linux/C++ portability issues already present in files such as `motchan.cpp`, `metalmap.cpp`, `mapper.cpp`, and `compat/windows.h`
+- Continued the clean removal of raw D3D usage from shared engine code instead of adding another renderer facade:
+  - `assetmgr.cpp` texture statistics now use `TextureClass::Get_Surface_Level()` and `SurfaceClass::Get_Description()` instead of querying `IDirect3DTexture8::GetLevelDesc()`
+  - `DDSFileClass` now copies compressed mip data into `SurfaceClass` directly instead of exposing `IDirect3DSurface8*` in its public copy helper
+  - `textureloader.cpp` now adapts raw DX8 surfaces into `SurfaceClass` immediately when feeding DDS data, shrinking the raw-surface seam
+  - `missingtexture.cpp` now builds and downsamples the missing texture through `TextureClass` / `SurfaceClass` instead of locking raw Direct3D objects in shared code
+- Added explicit backend-edge ownership helpers on `TextureClass` / `SurfaceClass` so shared engine code no longer needs to manually `AddRef()` raw DX8 objects just to hand them back to the remaining backend-local callers.
+- Rebuilt after this slice and confirmed the new removal work itself compiles far enough to expose older blockers instead:
+  - `compat/windows.h` still conflicts with engine-owned `DWORD` / `ULONG` in `renderer_types.h`
+  - several pre-existing modern C++ port issues remain in files like `dynamesh.cpp`, `dazzle.cpp`, and other untouched renderer code
+  - `WW3D` frame/init ownership is still downstream of the texture/surface cleanup and the broader build stabilization
+- Moved top-level renderer lifecycle ownership further onto bgfx:
+  - `WW3D::Get_Render_Target_Resolution()` and `WW3D::Get_Device_Resolution()` now read from `BgfxRenderer` instead of delegating to `DX8Wrapper`
+  - `WW3D::Begin_Render()` now begins the frame through `BgfxRenderer`, sets the full-frame viewport there, and performs whole-frame clears through bgfx
+  - `WW3D::Render(SceneClass*,...)` now clears the active view through `BgfxRenderer` after camera setup instead of calling `DX8Wrapper::Clear()`
+  - `WW3D::End_Render()` now submits the frame through `BgfxRenderer::End_Frame()`
+  - `SceneClass` extra-pass clear-line mode now clears through `BgfxRenderer` as well
+  - `WW3D::Init()` / `Shutdown()` now initialize and tear down `BgfxRenderer` directly at the top-level renderer boundary
+- Extended `BgfxRenderer` with renderer-owned resolution/window state tracking and a view-clear helper so `WW3D` no longer needs DX8-era viewport/clear plumbing for basic frame ownership.
+- Rebuilt after the lifecycle slice and confirmed the new bgfx-owned code compiles cleanly enough that the remaining failures are in older untouched files (`dazzle.cpp`, `dynamesh.cpp`, `mapper.cpp`, `mesh*.cpp`, `metalmap.cpp`) rather than in the new bgfx lifecycle path.
 
 ## Next work
 
-- Move the D3D-calling inline bodies out of `dx8wrapper.h` so only backend implementation files need complete device/texture interfaces.
-- Continue replacing or deleting the remaining direct `<d3d8.h>` / `<D3dx8core.h>` includes in source files, starting with the ones that only use format constants or math helpers.
-- Replace `WW3D::Init()` / frame lifecycle calls with direct bgfx backend calls.
+- Continue shrinking the remaining raw texture/surface return paths (`MissingTexture`, `TextureLoader`, `TextureClass`, `SurfaceClass`) so only backend-local code can touch concrete DX8 objects.
+- Continue replacing or deleting the remaining direct `<d3d8.h>` / `<D3dx8core.h>` includes in source files, starting with the backend-local files that now represent the true D3D dependency boundary.
+- Remove the remaining DX8-era initialization dependence under `WW3D::Init()` by porting the mesh/state/render-target path onto bgfx-owned implementations instead of keeping `DX8Wrapper` alive as a fallback frame manager.
 - Replace the D3D-format conversion surface in `formconv.*` and texture loading with backend-neutral or bgfx-backed format handling.

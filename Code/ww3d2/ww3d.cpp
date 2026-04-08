@@ -105,6 +105,7 @@
 #include "bound.h"
 #include "rddesc.h"
 #include "vector3i.h"
+#include "bgfxrenderer.h"
 #include <cstdio>
 #include "dx8wrapper.h"
 #include "targa.h"
@@ -264,11 +265,17 @@ WW3DErrorType WW3D::Init(void *hwnd, char *defaultpal, bool lite)
 	Lite = lite;
 
 	/*
-	** Initialize d3d, this also enumerates the available devices and resolutions.
+	** Initialize the renderer backend first so WW3D owns frame lifecycle through bgfx.
 	*/
 	Init_D3D_To_WW3_Conversion();
+	WWDEBUG_SAY(("Init BgfxRenderer\n"));
+	if (!BgfxRenderer::Init(hwnd, lite)) {
+		return(WW3D_ERROR_DIRECTX8_INITIALIZATION_FAILED);
+	}
+
 	WWDEBUG_SAY(("Init DX8Wrapper\n"));
 	if (!DX8Wrapper::Init(_Hwnd, lite)) {
+		BgfxRenderer::Shutdown();
 		return(WW3D_ERROR_DIRECTX8_INITIALIZATION_FAILED);
 	}
 	WWDEBUG_SAY(("Allocate Debug Resources\n"));
@@ -354,6 +361,7 @@ WW3DErrorType WW3D::Shutdown(void)
 	DX8TextureManagerClass::Shutdown();
 	if (!Lite) {
 		DX8Wrapper::Shutdown();
+		BgfxRenderer::Shutdown();
 	}
 
 	/*
@@ -638,7 +646,7 @@ WW3DErrorType WW3D::Set_Device_Resolution(int width,int height,int bits,int wind
  *=============================================================================================*/
 void WW3D::Get_Render_Target_Resolution(int & set_w,int & set_h,int & set_bits,bool & set_windowed)
 {
-	DX8Wrapper::Get_Render_Target_Resolution(set_w,set_h,set_bits,set_windowed);
+	BgfxRenderer::Get_Render_Target_Resolution(set_w,set_h,set_bits,set_windowed);
 }
 
 
@@ -657,7 +665,7 @@ void WW3D::Get_Render_Target_Resolution(int & set_w,int & set_h,int & set_bits,b
  *=============================================================================================*/
 void WW3D::Get_Device_Resolution(int & set_w,int & set_h,int & set_bits,bool & set_windowed)
 {
-	DX8Wrapper::Get_Device_Resolution(set_w,set_h,set_bits,set_windowed);
+	BgfxRenderer::Get_Device_Resolution(set_w,set_h,set_bits,set_windowed);
 }
 
 
@@ -808,23 +816,11 @@ WW3DErrorType WW3D::Begin_Render(bool clear,bool clearz,const Vector3 & color, v
 	IsRendering = true;
 
 	// If we want to clear the screen, we need to set the viewport to include the entire screen:
-	if (clear || clearz) {
-		D3DVIEWPORT8 vp;
-		int width, height, bits;
-		bool windowed;
-		WW3D::Get_Render_Target_Resolution(width, height, bits, windowed);
-		vp.X = 0;
-		vp.Y = 0;
-		vp.Width = width;
-		vp.Height = height;
-		vp.MinZ = 0.0f;;
-		vp.MaxZ = 1.0f;
-		DX8Wrapper::Set_Viewport(&vp);
-		DX8Wrapper::Clear(clear, clearz, color);
-	}
-
-	// Notify D3D that we are beginning to render the frame
-	DX8Wrapper::Begin_Scene();
+	int width, height, bits;
+	bool windowed;
+	WW3D::Get_Render_Target_Resolution(width, height, bits, windowed);
+	BgfxRenderer::Set_Viewport(0, 0, width, height);
+	BgfxRenderer::Begin_Frame(clear, clearz, color.X, color.Y, color.Z);
 
 	return WW3D_ERROR_OK;
 }
@@ -921,7 +917,7 @@ WW3DErrorType WW3D::Render(SceneClass * scene,CameraClass * cam,bool clear,bool 
 
 	// Clear the viewport
 	if (clear || clearz) {
-		DX8Wrapper::Clear(clear, clearz, color);
+		BgfxRenderer::Clear_View(clear, clearz, color);
 	}
 
 	// set the rendering mode
@@ -1063,10 +1059,8 @@ WW3DErrorType WW3D::End_Render(bool flip_frame)
 
 	IsRendering = false;
 
-	{
-		WWPROFILE("DX8Wrapper::End_Scene");
-		DX8Wrapper::End_Scene(flip_frame);
-	}
+	WWPROFILE("BgfxRenderer::End_Frame");
+	BgfxRenderer::End_Frame();
 
 	FrameCount++;
 

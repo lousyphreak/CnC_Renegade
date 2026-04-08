@@ -18,8 +18,62 @@
 
 #include "missingtexture.h"
 #include "texture.h"
-#include "dx8wrapper.h"
-#include <D3dx8core.h>
+#include "surfaceclass.h"
+
+namespace
+{
+unsigned Average_Color(unsigned c0, unsigned c1, unsigned c2, unsigned c3)
+{
+	const unsigned a = (((c0 >> 24) & 0xff) + ((c1 >> 24) & 0xff) + ((c2 >> 24) & 0xff) + ((c3 >> 24) & 0xff) + 2) / 4;
+	const unsigned r = (((c0 >> 16) & 0xff) + ((c1 >> 16) & 0xff) + ((c2 >> 16) & 0xff) + ((c3 >> 16) & 0xff) + 2) / 4;
+	const unsigned g = (((c0 >> 8) & 0xff) + ((c1 >> 8) & 0xff) + ((c2 >> 8) & 0xff) + ((c3 >> 8) & 0xff) + 2) / 4;
+	const unsigned b = (((c0 >> 0) & 0xff) + ((c1 >> 0) & 0xff) + ((c2 >> 0) & 0xff) + ((c3 >> 0) & 0xff) + 2) / 4;
+
+	return (a << 24) | (r << 16) | (g << 8) | b;
+}
+
+unsigned Read_Color(const unsigned char *surface_bits, int pitch, unsigned x, unsigned y)
+{
+	const unsigned char *row = surface_bits + (pitch * y);
+	return reinterpret_cast<const unsigned *>(row)[x];
+}
+
+void Write_Color(unsigned char *surface_bits, int pitch, unsigned x, unsigned y, unsigned color)
+{
+	unsigned char *row = surface_bits + (pitch * y);
+	reinterpret_cast<unsigned *>(row)[x] = color;
+}
+
+void Generate_Mip_Level(SurfaceClass *src, SurfaceClass *dst)
+{
+	SurfaceClass::SurfaceDescription src_desc;
+	SurfaceClass::SurfaceDescription dst_desc;
+	src->Get_Description(src_desc);
+	dst->Get_Description(dst_desc);
+	int src_pitch = 0;
+	int dst_pitch = 0;
+	unsigned char *src_bits = static_cast<unsigned char *>(src->Lock(&src_pitch));
+	unsigned char *dst_bits = static_cast<unsigned char *>(dst->Lock(&dst_pitch));
+
+	for (unsigned y = 0; y < dst_desc.Height; ++y) {
+		const unsigned src_y0 = y * 2;
+		const unsigned src_y1 = (src_y0 + 1 < src_desc.Height) ? (src_y0 + 1) : src_y0;
+
+		for (unsigned x = 0; x < dst_desc.Width; ++x) {
+			const unsigned src_x0 = x * 2;
+			const unsigned src_x1 = (src_x0 + 1 < src_desc.Width) ? (src_x0 + 1) : src_x0;
+			const unsigned c0 = Read_Color(src_bits, src_pitch, src_x0, src_y0);
+			const unsigned c1 = Read_Color(src_bits, src_pitch, src_x1, src_y0);
+			const unsigned c2 = Read_Color(src_bits, src_pitch, src_x0, src_y1);
+			const unsigned c3 = Read_Color(src_bits, src_pitch, src_x1, src_y1);
+			Write_Color(dst_bits, dst_pitch, x, y, Average_Color(c0, c1, c2, c3));
+		}
+	}
+
+	dst->Unlock();
+	src->Unlock();
+}
+}
 
 static unsigned missing_image_width=128;
 static unsigned missing_image_height=128;
@@ -29,60 +83,51 @@ static unsigned missing_image_run_count=7331;
 extern unsigned char missing_image_run_lengths[];
 extern unsigned missing_image_color_values[];
 
-static IDirect3DTexture8 * _MissingTexture = NULL;
+static TextureClass * _MissingTexture = NULL;
 
 IDirect3DTexture8* MissingTexture::_Get_Missing_Texture()
 {
 	WWASSERT(_MissingTexture);
-	_MissingTexture->AddRef();
-	return _MissingTexture;
+	return _MissingTexture->Acquire_DX8_Texture();
 }
 
 IDirect3DSurface8* MissingTexture::_Create_Missing_Surface()
 {
-	IDirect3DSurface8 *texture_surface = NULL;
-	DX8_ErrorCode(_MissingTexture->GetSurfaceLevel(0, &texture_surface));
-	D3DSURFACE_DESC texture_surface_desc;
-	::ZeroMemory(&texture_surface_desc, sizeof(D3DSURFACE_DESC));
-	DX8_ErrorCode(texture_surface->GetDesc(&texture_surface_desc));
-	
-	IDirect3DSurface8 *surface = NULL;	
-	DX8CALL(CreateImageSurface(
-		texture_surface_desc.Width, 
-		texture_surface_desc.Height, 
-		texture_surface_desc.Format, 
-		&surface));
-	DX8CALL(CopyRects(texture_surface, NULL, 0, surface, NULL));
-	texture_surface->Release();
-	return surface;
+	SurfaceClass *texture_surface = _MissingTexture->Get_Surface_Level(0);
+	WWASSERT(texture_surface);
+	SurfaceClass::SurfaceDescription texture_surface_desc;
+	texture_surface->Get_Description(texture_surface_desc);
+
+	SurfaceClass *surface = new SurfaceClass(
+		texture_surface_desc.Width,
+		texture_surface_desc.Height,
+		texture_surface_desc.Format);
+	surface->Copy(0, 0, 0, 0, texture_surface_desc.Width, texture_surface_desc.Height, texture_surface);
+
+	IDirect3DSurface8 *result = surface->Acquire_D3D_Surface();
+	surface->Release_Ref();
+	texture_surface->Release_Ref();
+	return result;
 }
 
 void MissingTexture::_Init()
 {
 	WWASSERT(!_MissingTexture);
 
-	IDirect3DTexture8* tex=DX8Wrapper::_Create_DX8_Texture(
+	TextureClass *tex = new TextureClass(
 		missing_image_width,
 		missing_image_height,
 		WW3D_FORMAT_A8R8G8B8,
 		TextureClass::MIP_LEVELS_ALL);
 
-	D3DLOCKED_RECT locked_rect;
-	RECT rect;
-	rect.left=0;
-	rect.right=missing_image_width;
-	rect.top=0;
-	rect.bottom=missing_image_height;
-	DX8_ErrorCode(
-		tex->LockRect(
-			0,
-			&locked_rect,
-			&rect,
-			0));
+	SurfaceClass *surface = tex->Get_Surface_Level(0);
+	WWASSERT(surface);
+	int pitch = 0;
+	unsigned char *surface_bits = static_cast<unsigned char *>(surface->Lock(&pitch));
 
 	unsigned x=0;
 	unsigned y=missing_image_height;
-	unsigned *buffer=(unsigned*)locked_rect.pBits;
+	unsigned *buffer=reinterpret_cast<unsigned *>(surface_bits);
 	unsigned pixcount=0;
 	for (unsigned run=0;run<missing_image_run_count;++run) {
 		unsigned color=missing_image_color_values[run];
@@ -94,31 +139,21 @@ void MissingTexture::_Init()
 			if (x>=missing_image_width) {
 				y--;
 				x=0;
-				buffer=(unsigned*)locked_rect.pBits;
-				buffer+=locked_rect.Pitch/sizeof(unsigned)*y;
+				buffer=reinterpret_cast<unsigned *>(surface_bits);
+				buffer+=pitch/sizeof(unsigned)*y;
 			}
 		}
 	}
 
-	DX8_ErrorCode(tex->UnlockRect(0));
+	surface->Unlock();
+	surface->Release_Ref();
 
-	for (unsigned i=1;i<tex->GetLevelCount();++i) {
-		IDirect3DSurface8 *src,*dst;
-		DX8_ErrorCode(tex->GetSurfaceLevel(i-1,&src));
-		DX8_ErrorCode(tex->GetSurfaceLevel(i,&dst));
-
-		DX8_ErrorCode(D3DXLoadSurfaceFromSurface(
-			dst,
-			NULL,	// palette
-			NULL,	// rect
-			src,
-			NULL,	// palette
-			NULL,	// rect
-			D3DX_FILTER_BOX,	// box is good for 2:1 filtering
-			0));
-
-		src->Release();
-		dst->Release();
+	for (unsigned i = 1; i < tex->Get_Mip_Level_Count(); ++i) {
+		SurfaceClass *src = tex->Get_Surface_Level(i - 1);
+		SurfaceClass *dst = tex->Get_Surface_Level(i);
+		Generate_Mip_Level(src, dst);
+		src->Release_Ref();
+		dst->Release_Ref();
 	}
 
 	_MissingTexture=tex;
@@ -126,7 +161,7 @@ void MissingTexture::_Init()
 
 void MissingTexture::_Deinit()
 {
-	_MissingTexture->Release();
+	_MissingTexture->Release_Ref();
 	_MissingTexture=0;
 }
 

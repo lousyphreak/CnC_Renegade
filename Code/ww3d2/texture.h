@@ -221,6 +221,7 @@ class TextureClass : public RefCountClass
 		{
 			return D3DTexture;
 		}
+		IDirect3DTexture8 *Acquire_DX8_Texture();
 
 		bool Is_Missing_Texture();
 

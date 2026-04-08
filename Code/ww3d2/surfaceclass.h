@@ -118,8 +118,9 @@ class SurfaceClass : public RefCountClass
 		// makes a copy of the surface into a byte array
 		unsigned char *CreateCopy(int *width,int *height,int*size,bool flip=false);
 
-			// For use by TextureClass:
+		// For use by TextureClass:
 		IDirect3DSurface8 *Peek_D3D_Surface(void) { return D3DSurface; }
+		IDirect3DSurface8 *Acquire_D3D_Surface(void);
 
 		// Attaching and detaching a surface pointer
 		void	Attach (IDirect3DSurface8 *surface);
@@ -156,5 +157,4 @@ class SurfaceClass : public RefCountClass
 };
 
 #endif
-
 

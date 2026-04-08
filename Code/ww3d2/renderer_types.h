@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef RENEGADE_RENDERER_TYPES_DEFINED
+#define RENEGADE_RENDERER_TYPES_DEFINED
+#endif
+
 #include <cstdint>
 
 #ifndef TRUE

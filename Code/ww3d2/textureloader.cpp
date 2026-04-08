@@ -246,8 +246,10 @@ IDirect3DTexture8* Load_Compressed_Texture(
 		IDirect3DSurface8* d3d_surface=NULL;
 		WWASSERT(d3d_texture);
 		DX8_ErrorCode(d3d_texture->GetSurfaceLevel(level/*-reduction_factor*/,&d3d_surface));
-		dds_file.Copy_Level_To_Surface(level,d3d_surface);
+		SurfaceClass *surface = new SurfaceClass(d3d_surface);
 		d3d_surface->Release();
+		dds_file.Copy_Level_To_Surface(level, surface);
+		surface->Release_Ref();
 	}
 	return d3d_texture;
 }

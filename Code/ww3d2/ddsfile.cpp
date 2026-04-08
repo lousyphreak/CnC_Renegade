@@ -20,6 +20,7 @@
 #include "ffactory.h"
 #include "bufffile.h"
 #include "formconv.h"
+#include "surfaceclass.h"
 #include "dx8wrapper.h"
 #include "bitmaphandler.h"
 #include <string.h>
@@ -101,7 +102,7 @@ DDSFileClass::DDSFileClass(const char* name,unsigned reduction_factor)
 			level_size/=4;
 		}
 	}
-	for (level=0;level<MipLevels;++level) {
+	for (unsigned level=0;level<MipLevels;++level) {
 		LevelSizes[level]=level_size;
 		LevelOffsets[level]=level_offset;
 		level_offset+=level_size;
@@ -216,27 +217,23 @@ bool DDSFileClass::Load()
 //
 // ----------------------------------------------------------------------------
 
-void DDSFileClass::Copy_Level_To_Surface(unsigned level,IDirect3DSurface8* d3d_surface)
+void DDSFileClass::Copy_Level_To_Surface(unsigned level, SurfaceClass *surface)
 {
-	WWASSERT(d3d_surface);
-	// Verify that the destination surface size matches the source surface size
-	D3DSURFACE_DESC surface_desc;
-	DX8_ErrorCode(d3d_surface->GetDesc(&surface_desc));
-
-	// First lock the surface
-	D3DLOCKED_RECT locked_rect;
-	DX8_ErrorCode(d3d_surface->LockRect(&locked_rect,NULL,0));
+	WWASSERT(surface);
+	SurfaceClass::SurfaceDescription surface_desc;
+	surface->Get_Description(surface_desc);
+	int pitch = 0;
+	unsigned char *surface_bits = static_cast<unsigned char *>(surface->Lock(&pitch));
 
 	Copy_Level_To_Surface(
 		level,
-		D3DFormat_To_WW3DFormat(surface_desc.Format),
+		surface_desc.Format,
 		surface_desc.Width,
 		surface_desc.Height,
-		reinterpret_cast<unsigned char*>(locked_rect.pBits),
-		locked_rect.Pitch);
+		surface_bits,
+		pitch);
 
-	// Finally, unlock the surface
-	DX8_ErrorCode(d3d_surface->UnlockRect());
+	surface->Unlock();
 }
 
 // ----------------------------------------------------------------------------

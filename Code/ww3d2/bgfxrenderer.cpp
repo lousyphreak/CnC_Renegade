@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_pixels.h>
 #include <SDL3/SDL_properties.h>
 #include <SDL3/SDL_video.h>
 
@@ -14,6 +15,9 @@
 bool BgfxRenderer::IsInitted = false;
 uint32_t BgfxRenderer::Width = 0;
 uint32_t BgfxRenderer::Height = 0;
+uint32_t BgfxRenderer::BitDepth = 32;
+bool BgfxRenderer::Windowed = true;
+void *BgfxRenderer::WindowHandle = nullptr;
 
 namespace
 {
@@ -102,6 +106,9 @@ void BgfxRenderer::Shutdown()
     bgfx::shutdown();
     Width = 0;
     Height = 0;
+    BitDepth = 32;
+    Windowed = true;
+    WindowHandle = nullptr;
     IsInitted = false;
 }
 
@@ -122,25 +129,17 @@ bool BgfxRenderer::Begin_Frame(bool clear_color, bool clear_depth, float red, fl
         return false;
     }
 
-    uint16_t clear_flags = 0;
-    if (clear_color) {
-        clear_flags |= BGFX_CLEAR_COLOR;
-    }
-    if (clear_depth) {
-        clear_flags |= BGFX_CLEAR_DEPTH;
-    }
-
-    const uint8_t clear_r = static_cast<uint8_t>(red * 255.0f);
-    const uint8_t clear_g = static_cast<uint8_t>(green * 255.0f);
-    const uint8_t clear_b = static_cast<uint8_t>(blue * 255.0f);
-    const uint32_t clear_rgba = (static_cast<uint32_t>(clear_r) << 24)
-        | (static_cast<uint32_t>(clear_g) << 16)
-        | (static_cast<uint32_t>(clear_b) << 8)
-        | 0xffu;
-
-    bgfx::setViewClear(0, clear_flags, clear_rgba, 1.0f, 0);
-    bgfx::touch(0);
+    Apply_Clear(clear_color, clear_depth, red, green, blue);
     return true;
+}
+
+void BgfxRenderer::Clear_View(bool clear_color, bool clear_depth, const Vector3 &color)
+{
+    if (!IsInitted) {
+        return;
+    }
+
+    Apply_Clear(clear_color, clear_depth, color.X, color.Y, color.Z);
 }
 
 void BgfxRenderer::Set_Viewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
@@ -176,6 +175,19 @@ void BgfxRenderer::End_Frame()
     bgfx::frame();
 }
 
+void BgfxRenderer::Get_Render_Target_Resolution(int &width, int &height, int &bits, bool &windowed)
+{
+    width = static_cast<int>(Width);
+    height = static_cast<int>(Height);
+    bits = static_cast<int>(BitDepth);
+    windowed = Windowed;
+}
+
+void BgfxRenderer::Get_Device_Resolution(int &width, int &height, int &bits, bool &windowed)
+{
+    Get_Render_Target_Resolution(width, height, bits, windowed);
+}
+
 bool BgfxRenderer::Update_Platform_Window(void *window_handle)
 {
     bgfx::PlatformData platform_data = {};
@@ -190,8 +202,16 @@ bool BgfxRenderer::Update_Platform_Window(void *window_handle)
         return false;
     }
 
+    WindowHandle = window_handle;
     Width = drawable_width;
     Height = drawable_height;
+    const SDL_PixelFormatDetails *pixel_details = SDL_GetPixelFormatDetails(SDL_GetWindowPixelFormat(window));
+    if (pixel_details != nullptr && pixel_details->bits_per_pixel > 0) {
+        BitDepth = pixel_details->bits_per_pixel;
+    } else {
+        BitDepth = 32;
+    }
+    Windowed = (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) == 0;
     bgfx::setPlatformData(platform_data);
     return true;
 }
@@ -212,4 +232,26 @@ bool BgfxRenderer::Query_Drawable_Size(void *window_handle, uint32_t &width, uin
     width = static_cast<uint32_t>(pixel_width);
     height = static_cast<uint32_t>(pixel_height);
     return true;
+}
+
+void BgfxRenderer::Apply_Clear(bool clear_color, bool clear_depth, float red, float green, float blue)
+{
+    uint16_t clear_flags = 0;
+    if (clear_color) {
+        clear_flags |= BGFX_CLEAR_COLOR;
+    }
+    if (clear_depth) {
+        clear_flags |= BGFX_CLEAR_DEPTH;
+    }
+
+    const uint8_t clear_r = static_cast<uint8_t>(red * 255.0f);
+    const uint8_t clear_g = static_cast<uint8_t>(green * 255.0f);
+    const uint8_t clear_b = static_cast<uint8_t>(blue * 255.0f);
+    const uint32_t clear_rgba = (static_cast<uint32_t>(clear_r) << 24)
+        | (static_cast<uint32_t>(clear_g) << 16)
+        | (static_cast<uint32_t>(clear_b) << 8)
+        | 0xffu;
+
+    bgfx::setViewClear(0, clear_flags, clear_rgba, 1.0f, 0);
+    bgfx::touch(0);
 }

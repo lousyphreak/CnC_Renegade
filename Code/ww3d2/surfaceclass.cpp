@@ -271,6 +271,15 @@ void SurfaceClass::Unlock(void)
 	DX8_ErrorCode(D3DSurface->UnlockRect());
 }
 
+IDirect3DSurface8 *SurfaceClass::Acquire_D3D_Surface(void)
+{
+	if (D3DSurface != NULL) {
+		D3DSurface->AddRef();
+	}
+
+	return D3DSurface;
+}
+
 /***********************************************************************************************
  * SurfaceClass::Clear -- Clears a surface to 0                                                *
  *                                                                                             *

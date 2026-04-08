@@ -34,6 +34,18 @@
   - renderer-facing cached state and utility APIs that can live in engine-owned code
   - backend-local device calls (`SetTransform`, `SetRenderState`, `SetTexture`, `CopyRects`, `AddRef` / `Release`) that should no longer be inline in a shared header
 - After introducing `renderer_types.h`, the next clean architectural step is to push those backend-local inline bodies into `.cpp` implementation so the rest of the engine can compile against the renderer API without needing a concrete Direct3D device type.
+- Moving the `dx8wrapper.h` device-calling inlines into `dx8wrapper.cpp` successfully collapses a large class of transitive compile failures. Once that is done, the next blockers become much more concrete:
+  - files that still inspect raw `IDirect3DTexture8` / `IDirect3DSurface8` objects directly (`assetmgr.cpp`, `ddsfile.cpp`, `missingtexture.cpp`)
+  - backend-local files that still depend on D3DX utility helpers for texture creation, image loading, or mip generation
+- `assetmgr.cpp`'s texture logging path is a good example of the next cleanup target: it no longer needs D3DX at all, but it still needs a renderer-owned way to ask a texture for width/height/format instead of calling `GetLevelDesc` on a raw D3D texture.
+- `missingtexture.cpp` only needed D3DX for mip generation, not for the missing texture image itself. The mip generation can be expressed directly as a local box-filter over locked surface data; the remaining dependency is ownership/access to the concrete texture and surface interfaces.
+- After the shared-header cleanup, build failures are more trustworthy: if a file still breaks on Direct3D types, it is because it truly still owns backend-specific work rather than because `dx8wrapper.h` dragged the device interface into it accidentally.
+- A useful clean-port pattern is to move shared code onto existing engine objects before inventing any new renderer API. `TextureClass` and `SurfaceClass` already encapsulate texture/surface description, locking, copying, and format reporting well enough to remove many raw `IDirect3D*` touch points without introducing another abstraction layer.
+- `assetmgr.cpp` texture statistics did not need a Direct3D texture at all; switching them to `SurfaceClass::Get_Description()` removes a D3D-ism without affecting renderer behavior.
+- `DDSFileClass` is a good seam-reduction target because its real contract is “copy this mip level into a writable surface”, not “copy this mip level into a Direct3D COM object”. Moving that API to `SurfaceClass` keeps the DDS loader renderer-neutral at the shared-engine layer.
+- For the remaining backend-local raw return paths, ownership should be concentrated inside `TextureClass` / `SurfaceClass` implementation files rather than repeated in shared callers. That keeps COM-style `AddRef` / `Release` logic out of the broader engine while the DX8 backend still exists.
+- `WW3D` frame ownership is a separate seam from mesh/state rendering. Camera submission was already moved to bgfx, and the next clean follow-up was to move top-level frame begin/end/clear/resolution handling there too. That reduces DX8-era code to the parts that still actually implement rendering behavior rather than letting it remain the global frame manager by inertia.
+- `BgfxRenderer` now needs to own a small amount of renderer state beyond raw bgfx startup: drawable size, window mode, bit depth, and view-clear submission. Those are renderer-owned concerns and are appropriate to keep there; they are not a compatibility wrapper around Direct3D.
 
 ## Repository observations
 

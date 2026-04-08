@@ -167,6 +167,262 @@ Direct3DCreate8Type	Direct3DCreate8Ptr = NULL;
 HINSTANCE D3D8Lib = NULL;
 
 
+void DX8Wrapper::_Set_DX8_Transform(D3DTRANSFORMSTATETYPE transform,const Matrix4& m)
+{
+	SNAPSHOT_SAY(("DX8 - SetTransform\n"));
+	DX8_RECORD_MATRIX_CHANGE();
+	DX8CALL(SetTransform(transform,(D3DMATRIX*)&m));
+}
+
+
+void DX8Wrapper::_Set_DX8_Transform(D3DTRANSFORMSTATETYPE transform,const Matrix3D& m)
+{
+	SNAPSHOT_SAY(("DX8 - SetTransform\n"));
+	DX8_RECORD_MATRIX_CHANGE();
+	DX8CALL(SetTransform(transform,(D3DMATRIX*)&m));
+}
+
+
+void DX8Wrapper::_Get_DX8_Transform(D3DTRANSFORMSTATETYPE transform, Matrix4& m)
+{
+	DX8CALL(GetTransform(transform,(D3DMATRIX*)&m));
+}
+
+
+void DX8Wrapper::Set_DX8_Material(const D3DMATERIAL8* mat)
+{
+	DX8_RECORD_MATERIAL_CHANGE();
+	WWASSERT(mat);
+	SNAPSHOT_SAY(("DX8 - SetMaterial\n"));
+	DX8CALL(SetMaterial(mat));
+}
+
+
+void DX8Wrapper::Set_DX8_Light(int index, D3DLIGHT8* light)
+{
+	if (light) {
+		DX8_RECORD_LIGHT_CHANGE();
+		DX8CALL(SetLight(index,light));
+		DX8CALL(LightEnable(index,TRUE));
+		CurrentDX8LightEnables[index]=true;
+		SNAPSHOT_SAY(("DX8 - SetLight\n"));
+	}
+	else if (CurrentDX8LightEnables[index]) {
+		DX8_RECORD_LIGHT_CHANGE();
+		CurrentDX8LightEnables[index]=false;
+		DX8CALL(LightEnable(index,FALSE));
+		SNAPSHOT_SAY(("DX8 - DisableLight\n"));
+	}
+}
+
+
+void DX8Wrapper::Set_DX8_Render_State(D3DRENDERSTATETYPE state, unsigned value)
+{
+	// Can't monitor state changes because setShader call to GERD may change the states!
+	if (RenderStates[state]==value) return;
+
+#ifdef MESH_RENDER_SNAPSHOT_ENABLED
+	if (WW3D::Is_Snapshot_Activated()) {
+		StringClass value_name(0,true);
+		Get_DX8_Render_State_Value_Name(value_name,state,value);
+		SNAPSHOT_SAY(("DX8 - SetRenderState(state: %s, value: %s)\n",
+			Get_DX8_Render_State_Name(state),
+			value_name));
+	}
+#endif
+
+	RenderStates[state]=value;
+	DX8CALL(SetRenderState( state, value ));
+	DX8_RECORD_RENDER_STATE_CHANGE();
+}
+
+
+void DX8Wrapper::Set_DX8_Texture_Stage_State(unsigned stage, D3DTEXTURESTAGESTATETYPE state, unsigned value)
+{
+	// Can't monitor state changes because setShader call to GERD may change the states!
+	if (TextureStageStates[stage][(unsigned int)state]==value) return;
+#ifdef MESH_RENDER_SNAPSHOT_ENABLED
+	if (WW3D::Is_Snapshot_Activated()) {
+		StringClass value_name(0,true);
+		Get_DX8_Texture_Stage_State_Value_Name(value_name,state,value);
+		SNAPSHOT_SAY(("DX8 - SetTextureStageState(stage: %d, state: %s, value: %s)\n",
+			stage,
+			Get_DX8_Texture_Stage_State_Name(state),
+			value_name));
+	}
+#endif
+
+	TextureStageStates[stage][(unsigned int)state]=value;
+	DX8CALL(SetTextureStageState( stage, state, value ));
+	DX8_RECORD_TEXTURE_STAGE_STATE_CHANGE();
+}
+
+
+void DX8Wrapper::Set_DX8_Texture(unsigned int stage, IDirect3DBaseTexture8* texture)
+{
+	if (Textures[stage]==texture) return;
+
+	SNAPSHOT_SAY(("DX8 - SetTexture(%x) \n",texture));
+
+	if (Textures[stage]) Textures[stage]->Release();
+	Textures[stage] = texture;
+	if (Textures[stage]) Textures[stage]->AddRef();
+	DX8CALL(SetTexture(stage, texture));
+	DX8_RECORD_TEXTURE_CHANGE();
+}
+
+
+void DX8Wrapper::_Copy_DX8_Rects(
+	IDirect3DSurface8* pSourceSurface,
+	CONST RECT* pSourceRectsArray,
+	UINT cRects,
+	IDirect3DSurface8* pDestinationSurface,
+	CONST POINT* pDestPointsArray
+)
+{
+	DX8CALL(CopyRects(
+		pSourceSurface,
+		pSourceRectsArray,
+		cRects,
+		pDestinationSurface,
+		pDestPointsArray));
+}
+
+
+void DX8Wrapper::Set_Projection_Transform_With_Z_Bias(const Matrix4& matrix, float znear, float zfar)
+{
+	ZFar=zfar;
+	ZNear=znear;
+	ProjectionMatrix=matrix.Transpose();
+
+	if (!Get_Current_Caps()->Support_ZBias() && ZNear!=ZFar) {
+		Matrix4 tmp=ProjectionMatrix;
+		float tmp_zbias=ZBias;
+		tmp_zbias*=(1.0f/16.0f);
+		tmp_zbias*=1.0f / (ZFar - ZNear);
+		tmp[2][2]-=tmp_zbias*tmp[3][2];
+		DX8CALL(SetTransform(D3DTS_PROJECTION,(D3DMATRIX*)&tmp));
+	}
+	else {
+		DX8CALL(SetTransform(D3DTS_PROJECTION,(D3DMATRIX*)&ProjectionMatrix));
+	}
+}
+
+
+void DX8Wrapper::Set_Pseudo_ZBias(int zbias)
+{
+	if (zbias==ZBias) return;
+	if (zbias>15) zbias=15;
+	if (zbias<0) zbias=0;
+	ZBias=zbias;
+
+	Matrix4 tmp=ProjectionMatrix;
+	float tmp_zbias=ZBias;
+	tmp_zbias*=(1.0f/64.0f);
+	tmp_zbias*=1.0f / (ZFar - ZNear);
+	tmp[2][2]-=tmp_zbias*tmp[3][2];
+	DX8CALL(SetTransform(D3DTS_PROJECTION,(D3DMATRIX*)&tmp));
+}
+
+
+void DX8Wrapper::Set_DX8_ZBias(int zbias)
+{
+	if (zbias==ZBias) return;
+	if (zbias>15) zbias=15;
+	if (zbias<0) zbias=0;
+	ZBias=zbias;
+
+	if (!Get_Current_Caps()->Support_ZBias() && ZNear!=ZFar) {
+		Matrix4 tmp=ProjectionMatrix;
+		float tmp_zbias=ZBias;
+		tmp_zbias*=(1.0f/16.0f);
+		tmp_zbias*=1.0f / (ZFar - ZNear);
+		tmp[2][2]-=tmp_zbias*tmp[3][2];
+		DX8CALL(SetTransform(D3DTS_PROJECTION,(D3DMATRIX*)&tmp));
+	}
+	else {
+		Set_DX8_Render_State (D3DRS_ZBIAS, ZBias);
+	}
+}
+
+
+void DX8Wrapper::Set_Transform(D3DTRANSFORMSTATETYPE transform,const Matrix4& m)
+{
+	switch ((int)transform) {
+	case D3DTS_WORLD:
+		render_state.world=m.Transpose();
+		render_state_changed|=(unsigned)WORLD_CHANGED;
+		render_state_changed&=~(unsigned)WORLD_IDENTITY;
+		break;
+	case D3DTS_VIEW:
+		render_state.view=m.Transpose();
+		render_state_changed|=(unsigned)VIEW_CHANGED;
+		render_state_changed&=~(unsigned)VIEW_IDENTITY;
+		break;
+	case D3DTS_PROJECTION:
+		{
+			Matrix4 ProjectionMatrix=m.Transpose();
+			ZFar=0.0f;
+			ZNear=0.0f;
+			DX8CALL(SetTransform(D3DTS_PROJECTION,(D3DMATRIX*)&ProjectionMatrix));
+		}
+		break;
+	default:
+		DX8_RECORD_MATRIX_CHANGE();
+		{
+			Matrix4 m2=m.Transpose();
+			DX8CALL(SetTransform(transform,(D3DMATRIX*)&m2));
+		}
+		break;
+	}
+}
+
+
+void DX8Wrapper::Set_Transform(D3DTRANSFORMSTATETYPE transform,const Matrix3D& m)
+{
+	Matrix4 m2(m);
+	switch ((int)transform) {
+	case D3DTS_WORLD:
+		render_state.world=m2.Transpose();
+		render_state_changed|=(unsigned)WORLD_CHANGED;
+		render_state_changed&=~(unsigned)WORLD_IDENTITY;
+		break;
+	case D3DTS_VIEW:
+		render_state.view=m2.Transpose();
+		render_state_changed|=(unsigned)VIEW_CHANGED;
+		render_state_changed&=~(unsigned)VIEW_IDENTITY;
+		break;
+	default:
+		DX8_RECORD_MATRIX_CHANGE();
+		m2=m2.Transpose();
+		DX8CALL(SetTransform(transform,(D3DMATRIX*)&m2));
+		break;
+	}
+}
+
+
+void DX8Wrapper::Get_Transform(D3DTRANSFORMSTATETYPE transform, Matrix4& m)
+{
+	D3DMATRIX mat;
+
+	switch ((int)transform) {
+	case D3DTS_WORLD:
+		if (render_state_changed&WORLD_IDENTITY) m.Make_Identity();
+		else m=render_state.world.Transpose();
+		break;
+	case D3DTS_VIEW:
+		if (render_state_changed&VIEW_IDENTITY) m.Make_Identity();
+		else m=render_state.view.Transpose();
+		break;
+	default:
+		DX8CALL(GetTransform(transform,&mat));
+		m=*(Matrix4*)&mat;
+		m=m.Transpose();
+		break;
+	}
+}
+
+
 /***********************************************************************************
 **
 ** DX8Wrapper Implementation

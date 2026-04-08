@@ -107,7 +107,6 @@
 #include <ini.h>
 #include <windows.h>
 #include <stdio.h>
-#include <D3dx8core.h>
 #include "texture.h"
 #include "wwprofile.h"
 #include "assetstatus.h"
@@ -299,49 +298,37 @@ static void Log_Textures(bool inited,unsigned& total_count, unsigned& total_mem)
 		TextureClass * tex=ite.Peek_Value();
 		if (tex->Is_Initialized()!=inited) continue;
 
-		D3DSURFACE_DESC desc;
-		IDirect3DTexture8* d3d_texture=tex->Peek_DX8_Texture();
-		if (!d3d_texture) continue;
-		DX8_ErrorCode(d3d_texture->GetLevelDesc(0,&desc));
+		SurfaceClass *surface = tex->Get_Surface_Level(0);
+		if (surface == NULL) continue;
+		SurfaceClass::SurfaceDescription desc;
+		surface->Get_Description(desc);
 
 		StringClass tex_format="Unknown";
 		switch (desc.Format) {
-		case D3DFMT_A8R8G8B8: tex_format="D3DFMT_A8R8G8B8"; break;
-		case D3DFMT_R8G8B8: tex_format="D3DFMT_R8G8B8"; break;
-		case D3DFMT_A4R4G4B4: tex_format="D3DFMT_A4R4G4B4"; break;
-		case D3DFMT_A1R5G5B5: tex_format="D3DFMT_A1R5G5B5"; break;
-		case D3DFMT_R5G6B5: tex_format="D3DFMT_R5G6B5"; break;
-		case D3DFMT_L8: tex_format="D3DFMT_L8"; break;
-		case D3DFMT_A8: tex_format="D3DFMT_A8"; break;
-		case D3DFMT_P8: tex_format="D3DFMT_P8"; break;
-		case D3DFMT_X8R8G8B8: tex_format="D3DFMT_X8R8G8B8"; break;
-		case D3DFMT_X1R5G5B5: tex_format="D3DFMT_X1R5G5B5"; break;
-		case D3DFMT_R3G3B2: tex_format="D3DFMT_R3G3B2"; break;
-		case D3DFMT_A8R3G3B2: tex_format="D3DFMT_A8R3G3B2"; break;
-		case D3DFMT_X4R4G4B4: tex_format="D3DFMT_X4R4G4B4"; break;
-		case D3DFMT_A8P8: tex_format="D3DFMT_A8P8"; break;
-		case D3DFMT_A8L8: tex_format="D3DFMT_A8L8"; break;
-		case D3DFMT_A4L4: tex_format="D3DFMT_A4L4"; break;
-		case D3DFMT_V8U8: tex_format="D3DFMT_V8U8"; break;
-		case D3DFMT_L6V5U5: tex_format="D3DFMT_L6V5U5"; break;  
-		case D3DFMT_X8L8V8U8: tex_format="D3DFMT_X8L8V8U8"; break;
-		case D3DFMT_Q8W8V8U8: tex_format="D3DFMT_Q8W8V8U8"; break;
-		case D3DFMT_V16U16: tex_format="D3DFMT_V16U16"; break;
-		case D3DFMT_W11V11U10: tex_format="D3DFMT_W11V11U10"; break;
-		case D3DFMT_UYVY: tex_format="D3DFMT_UYVY"; break;
-		case D3DFMT_YUY2: tex_format="D3DFMT_YUY2"; break;
-		case D3DFMT_DXT1: tex_format="D3DFMT_DXT1"; break;
-		case D3DFMT_DXT2: tex_format="D3DFMT_DXT2"; break;
-		case D3DFMT_DXT3: tex_format="D3DFMT_DXT3"; break;
-		case D3DFMT_DXT4: tex_format="D3DFMT_DXT4"; break;
-		case D3DFMT_DXT5: tex_format="D3DFMT_DXT5"; break;
-		case D3DFMT_D16_LOCKABLE: tex_format="D3DFMT_D16_LOCKABLE"; break;
-		case D3DFMT_D32: tex_format="D3DFMT_D32"; break;
-		case D3DFMT_D15S1: tex_format="D3DFMT_D15S1"; break;
-		case D3DFMT_D24S8: tex_format="D3DFMT_D24S8"; break;
-		case D3DFMT_D16: tex_format="D3DFMT_D16"; break;
-		case D3DFMT_D24X8: tex_format="D3DFMT_D24X8"; break;
-		case D3DFMT_D24X4S4: tex_format="D3DFMT_D24X4S4"; break;
+		case WW3D_FORMAT_A8R8G8B8: tex_format="WW3D_FORMAT_A8R8G8B8"; break;
+		case WW3D_FORMAT_R8G8B8: tex_format="WW3D_FORMAT_R8G8B8"; break;
+		case WW3D_FORMAT_A4R4G4B4: tex_format="WW3D_FORMAT_A4R4G4B4"; break;
+		case WW3D_FORMAT_A1R5G5B5: tex_format="WW3D_FORMAT_A1R5G5B5"; break;
+		case WW3D_FORMAT_R5G6B5: tex_format="WW3D_FORMAT_R5G6B5"; break;
+		case WW3D_FORMAT_L8: tex_format="WW3D_FORMAT_L8"; break;
+		case WW3D_FORMAT_A8: tex_format="WW3D_FORMAT_A8"; break;
+		case WW3D_FORMAT_P8: tex_format="WW3D_FORMAT_P8"; break;
+		case WW3D_FORMAT_X8R8G8B8: tex_format="WW3D_FORMAT_X8R8G8B8"; break;
+		case WW3D_FORMAT_X1R5G5B5: tex_format="WW3D_FORMAT_X1R5G5B5"; break;
+		case WW3D_FORMAT_R3G3B2: tex_format="WW3D_FORMAT_R3G3B2"; break;
+		case WW3D_FORMAT_A8R3G3B2: tex_format="WW3D_FORMAT_A8R3G3B2"; break;
+		case WW3D_FORMAT_X4R4G4B4: tex_format="WW3D_FORMAT_X4R4G4B4"; break;
+		case WW3D_FORMAT_A8P8: tex_format="WW3D_FORMAT_A8P8"; break;
+		case WW3D_FORMAT_A8L8: tex_format="WW3D_FORMAT_A8L8"; break;
+		case WW3D_FORMAT_A4L4: tex_format="WW3D_FORMAT_A4L4"; break;
+		case WW3D_FORMAT_U8V8: tex_format="WW3D_FORMAT_U8V8"; break;
+		case WW3D_FORMAT_L6V5U5: tex_format="WW3D_FORMAT_L6V5U5"; break;  
+		case WW3D_FORMAT_X8L8V8U8: tex_format="WW3D_FORMAT_X8L8V8U8"; break;
+		case WW3D_FORMAT_DXT1: tex_format="WW3D_FORMAT_DXT1"; break;
+		case WW3D_FORMAT_DXT2: tex_format="WW3D_FORMAT_DXT2"; break;
+		case WW3D_FORMAT_DXT3: tex_format="WW3D_FORMAT_DXT3"; break;
+		case WW3D_FORMAT_DXT4: tex_format="WW3D_FORMAT_DXT4"; break;
+		case WW3D_FORMAT_DXT5: tex_format="WW3D_FORMAT_DXT5"; break;
 		default:	break;
 		}
 
@@ -359,6 +346,8 @@ static void Log_Textures(bool inited,unsigned& total_count, unsigned& total_mem)
 			tex->Is_Initialized(),
 			number,
 			tex->Num_Refs()));
+
+		surface->Release_Ref();
 
 	}	
 }
@@ -1575,5 +1564,3 @@ const char * HTreeIterator::Current_Item_Name(void)
 {
 	return WW3DAssetManager::Get_Instance()->HTreeManager.Get_Tree(Index)->Get_Name();
 }
-
-

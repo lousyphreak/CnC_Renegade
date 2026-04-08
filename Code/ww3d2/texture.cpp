@@ -495,6 +495,17 @@ bool TextureClass::Is_Missing_Texture()
 
 // ----------------------------------------------------------------------------
 
+IDirect3DTexture8 *TextureClass::Acquire_DX8_Texture()
+{
+	if (D3DTexture != NULL) {
+		D3DTexture->AddRef();
+	}
+
+	return D3DTexture;
+}
+
+// ----------------------------------------------------------------------------
+
 void TextureClass::Set_Texture_Name(const char * name)
 {
 	Name=name;

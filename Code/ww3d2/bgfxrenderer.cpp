@@ -755,6 +755,31 @@ bool Get_Bgfx_Texture_Format(WW3DFormat format, bgfx::TextureFormat::Enum &bgfx_
         return true;
     }
 }
+
+const char *Get_Renderer_Name(bgfx::RendererType::Enum renderer_type)
+{
+    switch (renderer_type) {
+    case bgfx::RendererType::Direct3D11:
+        return "Direct3D11";
+    case bgfx::RendererType::Direct3D12:
+        return "Direct3D12";
+    case bgfx::RendererType::Metal:
+        return "Metal";
+    case bgfx::RendererType::OpenGLES:
+        return "OpenGLES";
+    case bgfx::RendererType::OpenGL:
+        return "OpenGL";
+    case bgfx::RendererType::Vulkan:
+        return "Vulkan";
+    default:
+        return "auto";
+    }
+}
+
+bgfx::RendererType::Enum Choose_Preferred_Renderer(void)
+{
+    return bgfx::RendererType::Count;
+}
 }
 
 bool BgfxRenderer::Init(void *window_handle, bool lite)
@@ -773,21 +798,36 @@ bool BgfxRenderer::Init(void *window_handle, bool lite)
     }
 
     if (Should_Use_Single_Threaded_Bgfx(reinterpret_cast<SDL_Window *>(window_handle))) {
-        // Calling renderFrame before init on the same thread keeps bgfx off its
-        // internal render thread, which avoids X11/Vulkan startup crashes when
-        // bgfx is given SDL's X11 display and window handles.
-        bgfx::renderFrame();
+        WWDEBUG_SAY(("BgfxRenderer::Init using bgfx render thread on X11 to avoid slow single-threaded startup\n"));
     }
 
     bgfx::Init init;
-    init.type = bgfx::RendererType::Count;
     init.callback = &Callback;
     init.platformData = PlatformData;
     init.resolution.width = Width;
     init.resolution.height = Height;
     init.resolution.reset = BGFX_RESET_VSYNC;
 
-    if (!bgfx::init(init)) {
+    bool initialized = false;
+    const bgfx::RendererType::Enum preferred_renderer = Choose_Preferred_Renderer();
+    if (preferred_renderer != bgfx::RendererType::Count) {
+        WWDEBUG_SAY(("BgfxRenderer::Init preferring %s on SDL video driver '%s'\n",
+            Get_Renderer_Name(preferred_renderer),
+            SDL_GetCurrentVideoDriver()));
+        init.type = preferred_renderer;
+        initialized = bgfx::init(init);
+        if (!initialized) {
+            WWDEBUG_SAY(("BgfxRenderer::Init preferred %s backend failed, falling back to auto selection\n",
+                Get_Renderer_Name(preferred_renderer)));
+        }
+    }
+
+    if (!initialized) {
+        init.type = bgfx::RendererType::Count;
+        initialized = bgfx::init(init);
+    }
+
+    if (!initialized) {
         WWDEBUG_SAY(("BgfxRenderer::Init bgfx::init failed\n"));
         return false;
     }

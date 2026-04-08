@@ -36,10 +36,13 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
 - `Render2D` now submits directly to bgfx using renderer-owned programs, state, and buffers rather than the DX8 dynamic buffer path.
 - Runtime validation has moved beyond startup-only bring-up:
   - bgfx/X11/Vulkan initialization now survives the real `WW3D::Init()` + `DX8Wrapper::Init()` sequence without falling back to headless or failing on repeated init.
-  - Linux/X11 startup now also avoids the bgfx/Vulkan/X11 render-thread crash seen through `launch.sh` by forcing bgfx into its documented single-threaded mode on X11 before `bgfx::init()`.
+  - Linux/X11 startup should currently keep bgfx on its render thread. Re-testing the old single-threaded `bgfx::renderFrame()` workaround against the live menu path showed that it had become a major startup bottleneck, while the threaded path now survives real startup and long-run validation in this tree.
   - SDL native-window bridging now tags Wayland handles with `bgfx::NativeWindowHandleType::Wayland` instead of relying on bgfx's Linux default handle type, preventing Wayland sessions from falling into bgfx's X11 surface path during startup.
   - the bgfx-backed lifecycle now restores the legacy one-time renderer subsystem init/shutdown steps needed by textures, materials, mesh rendering, and related systems while those codepaths are still being ported.
   - late runtime/shutdown ASAN failures in `dx8renderer.cpp`'s deferred delete bookkeeping were fixed, and the executable now survives a live validation run longer than 300 seconds under ASAN/UBSAN.
+- Startup-specific runtime knowledge from menu bring-up work:
+  - do not initialize `AnimatedSoundMgrClass` before the definition hash is live; the null-definition-hash lookup storm is a real seconds-scale startup regression.
+  - do not let menu font setup rescan the system font tree per font load; cache font candidates/aliases once and reuse them across `StyleMgrClass` font creation.
 
 ## Immediate next slice
 

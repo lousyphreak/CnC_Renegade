@@ -240,4 +240,3 @@ MenuGameModeClass2::Deactivate (void)
 	GameModeClass::Deactivate();
 	return ;
 }
-

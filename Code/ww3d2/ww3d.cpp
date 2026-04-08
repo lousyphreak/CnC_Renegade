@@ -114,6 +114,7 @@
 #include "formconv.h"
 #include "TARGA.H"
 #include "animatedsoundmgr.h"
+#include "definitionmgr.h"
 
 
 #ifndef _UNIX
@@ -303,7 +304,9 @@ WW3DErrorType WW3D::Init(void *hwnd, char *defaultpal, bool lite)
 	** Initialize the animation-triggered sound system
 	*/
 	if (!lite) {
-		AnimatedSoundMgrClass::Initialize ();
+		if (DefinitionMgrClass::Is_Hash_Ready()) {
+			AnimatedSoundMgrClass::Initialize ();
+		}
 		IsInitted = true;
 	}
 	WWDEBUG_SAY(("WW3D Init completed\n"));

@@ -53,6 +53,7 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #define STB_TRUETYPE_IMPLEMENTATION
@@ -80,6 +81,16 @@ constexpr const char *FontSearchRoots[] = {
 	"/usr/local/share/fonts",
 };
 std::vector<std::string> RegisteredFontFiles;
+struct FontCandidateInfo
+{
+	std::filesystem::path Path;
+	std::string Stem;
+	std::vector<std::string> Aliases;
+};
+std::vector<FontCandidateInfo> CachedSystemFontCandidates;
+bool CachedSystemFontCandidatesScanned = false;
+std::unordered_map<std::string, std::vector<std::string> > CachedRegisteredFontAliases;
+std::unordered_map<std::string, std::filesystem::path> CachedResolvedFontPaths;
 
 std::string Normalize_Font_Family(const std::string &text)
 {
@@ -333,6 +344,107 @@ bool Read_Resource_Font_File(const char *filename, std::vector<unsigned char> &c
 	return Read_File_Data(*file, contents);
 }
 
+std::vector<std::string> Build_Requested_Font_Families(const char *font_name)
+{
+	std::vector<std::string> requested_families;
+	requested_families.emplace_back(Normalize_Font_Family(font_name));
+
+	if (requested_families[0].find("arial") != std::string::npos) {
+		requested_families.emplace_back("arial");
+		requested_families.emplace_back("arialmt");
+		requested_families.emplace_back("notosans");
+		requested_families.emplace_back("liberationsans");
+		requested_families.emplace_back("dejavusans");
+	}
+
+	if (requested_families[0].find("regatta") != std::string::npos) {
+		requested_families.emplace_back("regatta");
+		requested_families.emplace_back("regattacondensedlet");
+		requested_families.emplace_back("notosans");
+		requested_families.emplace_back("liberationsansnarrow");
+		requested_families.emplace_back("liberationsans");
+		requested_families.emplace_back("dejavusans");
+	}
+
+	requested_families.emplace_back("notosans");
+	requested_families.emplace_back("liberationsans");
+	requested_families.emplace_back("dejavusans");
+	return requested_families;
+}
+
+std::string Build_Font_Request_Key(const char *font_name, bool is_bold)
+{
+	std::string key = Normalize_Font_Family(font_name != nullptr ? font_name : "");
+	key += is_bold ? "|bold" : "|regular";
+	return key;
+}
+
+const std::vector<std::string> &Get_Registered_Font_Aliases(const std::string &registered_file)
+{
+	std::unordered_map<std::string, std::vector<std::string> >::const_iterator cached_aliases =
+		CachedRegisteredFontAliases.find(registered_file);
+	if (cached_aliases != CachedRegisteredFontAliases.end()) {
+		return cached_aliases->second;
+	}
+
+	std::vector<unsigned char> font_data;
+	std::vector<std::string> aliases;
+	if (Read_Resource_Font_File(registered_file.c_str(), font_data) && !font_data.empty()) {
+		Extract_Font_Name_Aliases(font_data, aliases);
+	}
+
+	return CachedRegisteredFontAliases.insert(std::make_pair(registered_file, aliases)).first->second;
+}
+
+void Cache_System_Font_Candidates(void)
+{
+	if (CachedSystemFontCandidatesScanned) {
+		return;
+	}
+
+	CachedSystemFontCandidatesScanned = true;
+
+	std::vector<std::filesystem::path> search_roots(std::begin(FontSearchRoots), std::end(FontSearchRoots));
+	if (const char *home = std::getenv("HOME")) {
+		search_roots.emplace_back(std::filesystem::path(home) / ".fonts");
+		search_roots.emplace_back(std::filesystem::path(home) / ".local/share/fonts");
+	}
+
+	for (const std::filesystem::path &root : search_roots) {
+		if (!std::filesystem::exists(root)) {
+			continue;
+		}
+
+		std::error_code ec;
+		for (std::filesystem::recursive_directory_iterator it(root, std::filesystem::directory_options::skip_permission_denied, ec), end; it != end; it.increment(ec)) {
+			if (ec) {
+				ec.clear();
+				continue;
+			}
+
+			if (!it->is_regular_file()) {
+				continue;
+			}
+
+			const std::filesystem::path &path = it->path();
+			if (!Font_File_Extension_Matches(path)) {
+				continue;
+			}
+
+			FontCandidateInfo candidate;
+			candidate.Path = path;
+			candidate.Stem = Normalize_Font_Family(path.stem().string());
+
+			std::vector<unsigned char> font_data;
+			if (Read_Binary_File(path, font_data)) {
+				Extract_Font_Name_Aliases(font_data, candidate.Aliases);
+			}
+
+			CachedSystemFontCandidates.push_back(candidate);
+		}
+	}
+}
+
 bool Resolve_Registered_Font_File(const char *font_name, bool is_bold, std::string &resolved_file)
 {
 	if (font_name == nullptr || *font_name == '\0') {
@@ -342,13 +454,7 @@ bool Resolve_Registered_Font_File(const char *font_name, bool is_bold, std::stri
 	const std::string requested_family = Normalize_Font_Family(font_name);
 
 	for (const std::string &registered_file : RegisteredFontFiles) {
-		std::vector<unsigned char> font_data;
-		if (!Read_Resource_Font_File(registered_file.c_str(), font_data) || font_data.empty()) {
-			continue;
-		}
-
-		std::vector<std::string> aliases;
-		Extract_Font_Name_Aliases(font_data, aliases);
+		const std::vector<std::string> &aliases = Get_Registered_Font_Aliases(registered_file);
 		for (const std::string &alias : aliases) {
 			if (alias == requested_family) {
 				resolved_file = registered_file;
@@ -357,18 +463,7 @@ bool Resolve_Registered_Font_File(const char *font_name, bool is_bold, std::stri
 		}
 	}
 
-	std::vector<std::string> requested_families;
-	requested_families.emplace_back(requested_family);
-
-	if (requested_families[0].find("arial") != std::string::npos) {
-		requested_families.emplace_back("arial");
-		requested_families.emplace_back("arialmt");
-	}
-
-	if (requested_families[0].find("regatta") != std::string::npos) {
-		requested_families.emplace_back("regatta");
-		requested_families.emplace_back("regattacondensedlet");
-	}
+	std::vector<std::string> requested_families = Build_Requested_Font_Families(font_name);
 
 	int best_score = -1;
 	for (const std::string &registered_file : RegisteredFontFiles) {
@@ -422,85 +517,53 @@ bool Resolve_Font_Path(const char *font_name, bool is_bold, std::filesystem::pat
 		return true;
 	}
 
-	std::vector<std::string> requested_families;
-	requested_families.emplace_back(Normalize_Font_Family(font_name));
-
-	if (requested_families[0].find("arial") != std::string::npos) {
-		requested_families.emplace_back("notosans");
-		requested_families.emplace_back("liberationsans");
-		requested_families.emplace_back("dejavusans");
-	}
-
-	if (requested_families[0].find("regatta") != std::string::npos) {
-		requested_families.emplace_back("notosans");
-		requested_families.emplace_back("liberationsansnarrow");
-		requested_families.emplace_back("liberationsans");
-		requested_families.emplace_back("dejavusans");
-	}
-
-	requested_families.emplace_back("notosans");
-	requested_families.emplace_back("liberationsans");
-	requested_families.emplace_back("dejavusans");
-
-	std::vector<std::filesystem::path> search_roots(std::begin(FontSearchRoots), std::end(FontSearchRoots));
-	if (const char *home = std::getenv("HOME")) {
-		search_roots.emplace_back(std::filesystem::path(home) / ".fonts");
-		search_roots.emplace_back(std::filesystem::path(home) / ".local/share/fonts");
-	}
-
-	int best_score = -1;
-	std::filesystem::path first_font_path;
-	for (const std::filesystem::path &root : search_roots) {
-		if (!std::filesystem::exists(root)) {
-			continue;
-		}
-
-		std::error_code ec;
-		for (std::filesystem::recursive_directory_iterator it(root, std::filesystem::directory_options::skip_permission_denied, ec), end; it != end; it.increment(ec)) {
-			if (ec) {
-				ec.clear();
-				continue;
-			}
-
-			if (!it->is_regular_file()) {
-				continue;
-			}
-
-			const std::filesystem::path &path = it->path();
-			if (!Font_File_Extension_Matches(path)) {
-				continue;
-			}
-
-			if (first_font_path.empty()) {
-				first_font_path = path;
-			}
-
-			const std::string stem = Normalize_Font_Family(path.stem().string());
-			int score = -1;
-
-			std::vector<unsigned char> font_data;
-			if (Read_Binary_File(path, font_data)) {
-				std::vector<std::string> aliases;
-				Extract_Font_Name_Aliases(font_data, aliases);
-				score = Score_Font_Aliases(aliases, requested_families, is_bold, stem);
-			}
-
-			if (score < 0) {
-				score = Score_Font_Candidate(stem, requested_families, is_bold);
-			}
-			if (score > best_score) {
-				best_score = score;
-				resolved_path = path;
-			}
-		}
-	}
-
-	if (best_score < 0 && !first_font_path.empty()) {
-		resolved_path = first_font_path;
+	const std::string request_key = Build_Font_Request_Key(font_name, is_bold);
+	std::unordered_map<std::string, std::filesystem::path>::const_iterator cached_path =
+		CachedResolvedFontPaths.find(request_key);
+	if (cached_path != CachedResolvedFontPaths.end()) {
+		resolved_path = cached_path->second;
 		return true;
 	}
 
-	return best_score >= 0;
+	std::vector<std::string> requested_families = Build_Requested_Font_Families(font_name);
+	Cache_System_Font_Candidates();
+
+	int best_score = -1;
+	std::filesystem::path first_font_path;
+	for (std::vector<FontCandidateInfo>::const_iterator it = CachedSystemFontCandidates.begin();
+		it != CachedSystemFontCandidates.end();
+		++it)
+	{
+		if (first_font_path.empty()) {
+			first_font_path = it->Path;
+		}
+
+		int score = -1;
+		if (!it->Aliases.empty()) {
+			score = Score_Font_Aliases(it->Aliases, requested_families, is_bold, it->Stem);
+		}
+
+		if (score < 0) {
+			score = Score_Font_Candidate(it->Stem, requested_families, is_bold);
+		}
+		if (score > best_score) {
+			best_score = score;
+			resolved_path = it->Path;
+		}
+	}
+
+	if (best_score >= 0) {
+		CachedResolvedFontPaths.insert(std::make_pair(request_key, resolved_path));
+		return true;
+	}
+
+	if (!first_font_path.empty()) {
+		resolved_path = first_font_path;
+		CachedResolvedFontPaths.insert(std::make_pair(request_key, resolved_path));
+		return true;
+	}
+
+	return false;
 }
 }
 

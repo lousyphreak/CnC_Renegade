@@ -85,13 +85,12 @@ extern unsigned missing_image_color_values[];
 
 static TextureClass * _MissingTexture = NULL;
 
-IDirect3DTexture8* MissingTexture::_Get_Missing_Texture()
+TextureClass* MissingTexture::_Peek_Missing_Texture_Instance()
 {
-	WWASSERT(_MissingTexture);
-	return _MissingTexture->Acquire_DX8_Texture();
+	return _MissingTexture;
 }
 
-IDirect3DSurface8* MissingTexture::_Create_Missing_Surface()
+SurfaceClass* MissingTexture::_Create_Missing_Surface_Instance()
 {
 	SurfaceClass *texture_surface = _MissingTexture->Get_Surface_Level(0);
 	WWASSERT(texture_surface);
@@ -103,11 +102,8 @@ IDirect3DSurface8* MissingTexture::_Create_Missing_Surface()
 		texture_surface_desc.Height,
 		texture_surface_desc.Format);
 	surface->Copy(0, 0, 0, 0, texture_surface_desc.Width, texture_surface_desc.Height, texture_surface);
-
-	IDirect3DSurface8 *result = surface->Acquire_D3D_Surface();
-	surface->Release_Ref();
 	texture_surface->Release_Ref();
-	return result;
+	return surface;
 }
 
 void MissingTexture::_Init()

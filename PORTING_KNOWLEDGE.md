@@ -66,6 +66,18 @@
   - convert packed engine ARGB colors to bgfx's expected ABGR vertex packing at submission time
 - `TextureClass` can now provide a native bgfx texture directly to renderer code. That is a better migration seam than reusing `DX8Wrapper::Set_Texture(...)`, because sampler/addressing policy can be translated into bgfx flags per bind without reviving texture-stage state abstractions.
 - `SurfaceClass::CreateCopy()` is currently the cleanest existing engine-level hook for moving legacy texture pixel data into bgfx. It works well for the `Render2D`/font path, but the broader port still needs a renderer-native texture loading path so file-backed textures are not sourced through legacy DX8 objects first.
+- A better intermediate seam than “flatten mip 0 and hope” is to let `TextureClass` cache its mip surfaces and make `BgfxRenderer` consume the full chain. That preserves texture reduction, authored mip counts, and compressed DDS payloads without resurrecting DX8 texture-stage abstractions in the draw path.
+- DXT textures can stay native in bgfx even before the source loader is fully ported: `SurfaceClass::CreateCopy()` can copy the block-compressed mip payload directly from locked legacy surfaces, and bgfx accepts those levels as `BC1` / `BC2` / `BC3` updates.
+- For legacy uncompressed formats, a practical clean-port rule is:
+  - preserve native compressed uploads when possible
+  - preserve authored mip structure always
+  - only convert the formats that do not have a clean 1:1 bgfx upload representation in the current backend slice
+- Comparing textures by raw backend pointer identity is a bad seam for the port. Missing-texture detection is safer and cleaner when it compares against the engine-owned singleton `TextureClass` instance instead of comparing `IDirect3DTexture8*`.
+- `SurfaceClass` is the right ownership seam for the loader port, not a new renderer shim. It already owns format, locking, copies, and per-level size information, so adding CPU-backed storage there keeps texture data engine-owned without inventing another abstraction layer.
+- Once `TextureClass` has real `SurfaceLevels`, “loaded texture” must no longer mean “has a DX8 texture pointer”. Thumbnail-loaded textures are a concrete example: they should be treated as loaded source data immediately, with any remaining DX8 object materialized only on demand for backend-local code.
+- `TextureLoader::Load_Surface_Immediate(...)` is a good seam-reduction target because shared callers really want decoded surface data, while only backend-local code still wants to turn that into an `IDirect3DSurface8*`. Returning `SurfaceClass*` there shrinks the raw DX8 boundary without changing higher-level behavior.
+- A good hygiene check for the clean port is “does this shared header still mention `IDirect3D*` in its public API?”. If the answer is yes, the seam is probably still in the wrong place. Backend-local files can still bridge to DX8 temporarily, but shared texture APIs should traffic in engine-owned `TextureClass` / `SurfaceClass` data instead.
+- Render targets are a separate texture seam from file-backed mip data. A clean bgfx port should treat them as bgfx-owned framebuffer attachments, not as a special case of “make a D3D texture/surface and then recover the bits later”. `WW3D::Begin_Render()` already uses bgfx views, so binding the projector target through `bgfx::setViewFrameBuffer` is the correct direction for that path.
 
 ## Repository observations
 

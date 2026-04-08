@@ -47,7 +47,7 @@
 
 Random4Class rand4;
 
-inline DWORD F2DW( FLOAT f ) { return *((DWORD*)&f); }
+inline DWORD F2DW(float f) { return *reinterpret_cast<DWORD*>(&f); }
 
 
 // HY 1/26/01

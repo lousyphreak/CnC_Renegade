@@ -27,8 +27,8 @@
 #include "texture.h"
 
 class StringClass;
-struct IDirect3DTexture8;
 class TextureLoadTaskClass;
+class SurfaceClass;
 
 class TextureLoader
 {
@@ -39,11 +39,11 @@ public:
 	// Modify given texture size to nearest valid size on current hardware.
 	static void Validate_Texture_Size(unsigned& width, unsigned& height);
 
-	static IDirect3DTexture8 * Load_Thumbnail(
+	static SurfaceClass * Load_Thumbnail(
 		const StringClass& filename);
 //		WW3DFormat texture_format);	// Pass WW3D_FORMAT_UNKNOWN if you don't care
 
-	static IDirect3DSurface8 *		Load_Surface_Immediate(
+	static SurfaceClass *		Load_Surface_Immediate(
 		const StringClass& filename,
 		WW3DFormat surface_format,		// Pass WW3D_FORMAT_UNKNOWN if you don't care
 		bool allow_compression);
@@ -195,7 +195,7 @@ class TextureLoadTaskClass : public TextureLoadTaskListNodeClass
 		unsigned int			Get_Locked_Surface_Pitch(unsigned int level) const;
 
 		TextureClass *			Peek_Texture				(void)				{ return Texture;			}
-		IDirect3DTexture8	*	Peek_D3D_Texture			(void)				{ return D3DTexture;		}
+		SurfaceClass	*	Peek_Surface_Level		(unsigned int level) const { return LoadedSurfaces[level]; }
 
 		void						Set_Type						(TaskType t)		{ Type		= t;			}
 		void						Set_Priority				(PriorityType p)	{ Priority	= p;			}
@@ -220,7 +220,7 @@ class TextureLoadTaskClass : public TextureLoadTaskListNodeClass
 		void						Apply							(bool initialize);
 		
 		TextureClass*			Texture;
-		IDirect3DTexture8 *	D3DTexture;
+		SurfaceClass *		LoadedSurfaces[TextureClass::MIP_LEVELS_MAX];
 		WW3DFormat				Format;
 
 		unsigned int			Width;

@@ -50,8 +50,10 @@
 #include "wwstring.h"
 
 #include <bgfx/bgfx.h>
+#include <vector>
 
 class DX8Wrapper;
+class BgfxRenderer;
 struct IDirect3DTexture8;
 class TextureLoader;
 class LoaderThreadClass;
@@ -69,6 +71,7 @@ class TextureLoadTaskClass;
 class TextureClass : public RefCountClass
 {
 	friend DX8Wrapper;
+	friend BgfxRenderer;
 	friend TextureLoader;
 	friend LoaderThreadClass;
 	friend DX8TextureManagerClass;
@@ -140,8 +143,6 @@ class TextureClass : public RefCountClass
 			SurfaceClass *surface, 
 			MipCountType mip_level_count=MIP_LEVELS_ALL);		
 
-		TextureClass(IDirect3DTexture8* d3d_texture);
-
 		virtual ~TextureClass(void);
 
 		// Names
@@ -174,11 +175,6 @@ class TextureClass : public RefCountClass
 
 		// Get the surface of one of the mipmap levels (defaults to highest-resolution one)
 		SurfaceClass *Get_Surface_Level(unsigned int level = 0);
-		IDirect3DSurface8 *Get_D3D_Surface_Level(unsigned int level = 0);
-
-		// Texture priority affects texture management and caching.
-		unsigned int Get_Priority(void);
-		unsigned int Set_Priority(unsigned int priority);	// Returns previous priority
 
 		// Filter and MIPmap settings:
 		FilterType Get_Min_Filter(void) const { return TextureMinFilter; }
@@ -199,6 +195,7 @@ class TextureClass : public RefCountClass
 		bool Is_Initialized() const { return Initialized; }
 		bool Is_Lightmap() const { return IsLightmap; }
 		bool Is_Procedural() const { return IsProcedural; }
+		bool Is_Render_Target_Texture() const { return IsRenderTargetTexture; }
 
 		static int _Get_Total_Locked_Surface_Size();
 		static int _Get_Total_Texture_Size();
@@ -219,12 +216,8 @@ class TextureClass : public RefCountClass
 		// This utility function processes the texture reduction (used during rendering)
 		void Invalidate();
 
-		IDirect3DTexture8 *Peek_DX8_Texture()
-		{
-			return D3DTexture;
-		}
-		IDirect3DTexture8 *Acquire_DX8_Texture();
 		bgfx::TextureHandle Get_Bgfx_Texture();
+		bgfx::FrameBufferHandle Get_Bgfx_Frame_Buffer();
 		uint32_t Get_Bgfx_Sampler_Flags() const;
 
 		bool Is_Missing_Texture();
@@ -244,12 +237,17 @@ class TextureClass : public RefCountClass
 		static void Invalidate_Old_Unused_Textures(unsigned inactive_time_override);
 
 	private:
-		// Apply this texture's settings into D3D
+		// Apply this texture's settings into the DX8 backend
 		void Apply(unsigned int stage);
 		void Load_Locked_Surface();
 		void Release_Bgfx_Texture();
+		void Release_Surface_Levels();
+		void Cache_Surface_Levels();
+		void Materialize_DX8_Texture();
+		void Apply_New_Surface(SurfaceClass *surface, bool initialized);
+		void Apply_New_Surface(SurfaceClass *const *surfaces, unsigned level_count, bool initialized);
 
-		// Apply a Null texture's settings into D3D
+		// Apply a Null texture's settings into the DX8 backend
 		static void Apply_Null(unsigned int stage);
 
 		// State not contained in the Direct3D texture object:
@@ -259,9 +257,11 @@ class TextureClass : public RefCountClass
 		TxtAddrMode UAddressMode;
 		TxtAddrMode VAddressMode;
 
-		// Direct3D texture object
-		IDirect3DTexture8 *D3DTexture;
+		// Legacy backend texture object
+		IDirect3DTexture8 *DX8Texture;
 		bgfx::TextureHandle BgfxTexture;
+		bgfx::FrameBufferHandle BgfxFrameBuffer;
+		std::vector<SurfaceClass *> SurfaceLevels;
 		bool Initialized;
 
 		// Name
@@ -295,6 +295,7 @@ class TextureClass : public RefCountClass
 
 		PoolType Pool;
 		bool Dirty;
+		bool IsRenderTargetTexture;
 public:
 		MipCountType MipLevelCount;
 
@@ -306,10 +307,6 @@ private:
 // been above the ThumbnailLoadTask or not.
 		TextureLoadTaskClass* ThumbnailLoadTask;
 public:
-
-		// Background texture loader will call this when texture has been loaded
-		void Apply_New_Surface(IDirect3DTexture8* tex, bool initialized);	// If the parameter is true, the texture will be flagged as initialised
-
 };
 
 

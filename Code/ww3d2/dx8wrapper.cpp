@@ -58,6 +58,8 @@
 #include "boxrobj.h"
 #include "pointgr.h"
 #include "render2d.h"
+#include "bgfxrenderer.h"
+#include "surfaceclass.h"
 #include "sortingrenderer.h"
 #include "shattersystem.h"
 #include "light.h"
@@ -2464,7 +2466,14 @@ IDirect3DTexture8 * DX8Wrapper::_Create_DX8_Texture(
 		&texture);
 
 	if (result != D3D_OK) {
-		return MissingTexture::_Get_Missing_Texture();
+		SurfaceClass *missing_surface = MissingTexture::_Create_Missing_Surface_Instance();
+		WWASSERT(missing_surface != NULL);
+		IDirect3DSurface8 *missing_d3d_surface = missing_surface->Acquire_DX8_Surface();
+		missing_surface->Release_Ref();
+		WWASSERT(missing_d3d_surface != NULL);
+		texture = _Create_DX8_Texture(missing_d3d_surface, mip_level_count);
+		missing_d3d_surface->Release();
+		return texture;
 	}
 
 	// Make sure texture wasn't paletted!
@@ -2472,7 +2481,14 @@ IDirect3DTexture8 * DX8Wrapper::_Create_DX8_Texture(
 	texture->GetLevelDesc(0,&desc);
 	if (desc.Format==D3DFMT_P8) {
 		texture->Release();
-		return MissingTexture::_Get_Missing_Texture();
+		SurfaceClass *missing_surface = MissingTexture::_Create_Missing_Surface_Instance();
+		WWASSERT(missing_surface != NULL);
+		IDirect3DSurface8 *missing_d3d_surface = missing_surface->Acquire_DX8_Surface();
+		missing_surface->Release_Ref();
+		WWASSERT(missing_d3d_surface != NULL);
+		texture = _Create_DX8_Texture(missing_d3d_surface, mip_level_count);
+		missing_d3d_surface->Release();
+		return texture;
 	}
 	return texture;
 }
@@ -2544,15 +2560,24 @@ IDirect3DSurface8 * DX8Wrapper::_Create_DX8_Surface(const char *filename_)
 		file_auto_ptr myfile(_TheFileFactory,filename_);
 		// If file not found, create a surface with missing texture in it
 		if (!myfile->Is_Available()) {
-			return MissingTexture::_Create_Missing_Surface();
+			SurfaceClass *missing_surface = MissingTexture::_Create_Missing_Surface_Instance();
+			WWASSERT(missing_surface != NULL);
+			surface = missing_surface->Acquire_DX8_Surface();
+			missing_surface->Release_Ref();
+			return surface;
 		}
 	}
 
 	StringClass filename_string(filename_,true);
-	surface=TextureLoader::Load_Surface_Immediate(
+	SurfaceClass *loaded_surface = TextureLoader::Load_Surface_Immediate(
 		filename_string,
 		WW3D_FORMAT_UNKNOWN,
 		true);
+	if (!loaded_surface) {
+		return NULL;
+	}
+	surface = loaded_surface->Acquire_DX8_Surface();
+	loaded_surface->Release_Ref();
 	return surface;
 }
 
@@ -2578,7 +2603,7 @@ void DX8Wrapper::_Update_Texture(TextureClass *system, TextureClass *video)
 	WWASSERT(video);
 	WWASSERT(system->Pool==TextureClass::POOL_SYSTEMMEM);
 	WWASSERT(video->Pool==TextureClass::POOL_DEFAULT);
-	DX8CALL(UpdateTexture(system->D3DTexture,video->D3DTexture));
+	DX8CALL(UpdateTexture(system->DX8Texture,video->DX8Texture));
 }
 
 void DX8Wrapper::Compute_Caps(WW3DFormat display_format)
@@ -2733,6 +2758,35 @@ SurfaceClass * DX8Wrapper::_Get_DX8_Back_Buffer(unsigned int num)
 TextureClass *
 DX8Wrapper::Create_Render_Target (int width, int height, WW3DFormat format)
 {
+	if (BgfxRenderer::Is_Initted()) {
+		if (format == WW3D_FORMAT_UNKNOWN) {
+			format = WW3D_FORMAT_A8R8G8B8;
+		}
+
+		const bgfx::Caps *caps = bgfx::getCaps();
+		if (caps == NULL) {
+			return NULL;
+		}
+
+		uint32_t max_size = caps->limits.maxTextureSize;
+		float poweroftwosize = width;
+		if (height > 0 && height < width) {
+			poweroftwosize = height;
+		}
+		poweroftwosize = ::Find_POT(poweroftwosize);
+		if (poweroftwosize > max_size) {
+			poweroftwosize = static_cast<float>(max_size);
+		}
+
+		width = height = static_cast<int>(poweroftwosize);
+		TextureClass *tex = NEW_REF(TextureClass,(width,height,format,TextureClass::MIP_LEVELS_1,TextureClass::POOL_DEFAULT,true));
+		if (!bgfx::isValid(tex->Get_Bgfx_Texture()) || !bgfx::isValid(tex->Get_Bgfx_Frame_Buffer())) {
+			WWDEBUG_SAY(("DX8Wrapper - bgfx render target creation failed!\r\n"));
+			REF_PTR_RELEASE(tex);
+		}
+		return tex;
+	}
+
 	DX8_THREAD_ASSERT();
 	DX8_Assert();
 	number_of_DX8_calls++;
@@ -2776,9 +2830,12 @@ DX8Wrapper::Create_Render_Target (int width, int height, WW3DFormat format)
 
 	// 3dfx drivers are lying in the CheckDeviceFormat call and claiming
 	// that they support render targets!
-	if (tex->Peek_DX8_Texture() == NULL) {
+	SurfaceClass *render_target_surface = tex->Get_Surface_Level();
+	if (render_target_surface == NULL) {
 		WWDEBUG_SAY(("DX8Wrapper - Render target creation failed!\r\n"));
 		REF_PTR_RELEASE(tex);
+	} else {
+		render_target_surface->Release_Ref();
 	}
 
 	return tex;
@@ -2789,7 +2846,15 @@ void
 DX8Wrapper::Set_Render_Target (TextureClass * texture)
 {
 	WWASSERT(texture != NULL);
-	IDirect3DSurface8 * d3d_surf = texture->Get_D3D_Surface_Level();
+	if (BgfxRenderer::Is_Initted()) {
+		WWASSERT(BgfxRenderer::Set_Render_Target(*texture));
+		IsRenderToTexture = true;
+		return;
+	}
+	SurfaceClass *surface = texture->Get_Surface_Level();
+	WWASSERT(surface != NULL);
+	IDirect3DSurface8 * d3d_surf = surface->Acquire_DX8_Surface();
+	surface->Release_Ref();
 	WWASSERT(d3d_surf != NULL);
 	Set_Render_Target(d3d_surf);
 	d3d_surf->Release();

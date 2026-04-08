@@ -28,9 +28,14 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
   - surface-to-bgfx texture upload for renderer-native texture binding
   - `ShaderClass` to bgfx render-state translation for API state that belongs in bgfx state bits
 - `TextureClass` now has a native bgfx texture path for renderer-driven binding instead of requiring `DX8Wrapper` state submission.
+- The bgfx texture upload path now consumes full `TextureClass` mip chains, preserves native BC1/BC2/BC3 uploads for DXT textures, and keeps per-level surface data available for renderer-native texture creation instead of rebuilding only level 0.
+- `SurfaceClass` now supports engine-owned CPU texture storage with lazy DX8 materialization at the remaining backend edge, so texture source data is no longer forced to originate in a D3D allocation.
+- `TextureLoader` thumbnail and immediate surface loading now produce `SurfaceClass` mip data directly, and thumbnail-backed textures no longer treat the absence of a legacy DX8 texture object as “not loaded”.
+- Shared texture-facing headers no longer expose the D3D-returning `MissingTexture` helpers or the unused `TextureClass` DX8 accessors that were leaking `IDirect3D*` back out of the backend boundary.
+- Render-target textures are starting to move onto bgfx-native ownership: `TextureClass` now carries a bgfx framebuffer handle, `BgfxRenderer` can bind a texture as the active render target, and projector render-to-texture setup no longer needs a D3D surface when bgfx is active.
 - `Render2D` now submits directly to bgfx using renderer-owned programs, state, and buffers rather than the DX8 dynamic buffer path.
 
 ## Immediate next slice
 
 - Expand the same native bgfx submission approach from `Render2D` into the next real material/mesh path, starting with rigid meshes and shared texture ownership cleanup.
-- Replace the remaining texture-loader and surface-management DX8 dependencies so bgfx textures are created at source rather than lazily from the legacy backend objects.
+- Finish the remaining texture ownership cleanup so render-targets and background texture loads no longer depend on legacy DX8 texture objects except at the shrinking backend-local boundary.

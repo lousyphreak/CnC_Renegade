@@ -107,6 +107,61 @@ unsigned int SurfaceClass::PixelSize(const SurfaceClass::SurfaceDescription &sd)
 	return size;
 }
 
+static unsigned Get_Compressed_Row_Size(const SurfaceClass::SurfaceDescription &sd)
+{
+	switch (sd.Format)
+	{
+	case WW3D_FORMAT_DXT1:
+		return ((sd.Width + 3) / 4) * 8;
+	case WW3D_FORMAT_DXT2:
+	case WW3D_FORMAT_DXT3:
+	case WW3D_FORMAT_DXT4:
+	case WW3D_FORMAT_DXT5:
+		return ((sd.Width + 3) / 4) * 16;
+	default:
+		return 0;
+	}
+}
+
+static unsigned Get_Compressed_Copy_Size(const SurfaceClass::SurfaceDescription &sd)
+{
+	unsigned row_size = Get_Compressed_Row_Size(sd);
+	if (row_size == 0) {
+		return 0;
+	}
+	return row_size * ((sd.Height + 3) / 4);
+}
+
+static unsigned Calculate_Surface_Pitch(unsigned width, WW3DFormat format)
+{
+	SurfaceClass::SurfaceDescription desc;
+	desc.Width = width;
+	desc.Height = 1;
+	desc.Format = format;
+
+	unsigned compressed_pitch = Get_Compressed_Row_Size(desc);
+	if (compressed_pitch != 0) {
+		return compressed_pitch;
+	}
+
+	return width * Get_Bytes_Per_Pixel(format);
+}
+
+static unsigned Calculate_Surface_Size(unsigned width, unsigned height, WW3DFormat format)
+{
+	SurfaceClass::SurfaceDescription desc;
+	desc.Width = width;
+	desc.Height = height;
+	desc.Format = format;
+
+	unsigned compressed_size = Get_Compressed_Copy_Size(desc);
+	if (compressed_size != 0) {
+		return compressed_size;
+	}
+
+	return Calculate_Surface_Pitch(width, format) * height;
+}
+
 void SurfaceClass::Convert_Pixel(Vector3 &rgb, const SurfaceClass::SurfaceDescription &sd, const unsigned char * pixel)
 {
 	const float scale=1/255.0f;
@@ -213,25 +268,37 @@ void SurfaceClass::Convert_Pixel(unsigned char * pixel,const SurfaceClass::Surfa
 **                             SurfaceClass
 *************************************************************************/
 SurfaceClass::SurfaceClass(unsigned width, unsigned height, WW3DFormat format):
-	D3DSurface(NULL),
+	DX8Surface(NULL),
+	SurfaceWidth(width),
+	SurfaceHeight(height),
+	SurfacePitch(Calculate_Surface_Pitch(width, format)),
+	SurfaceLocked(false),
 	SurfaceFormat(format)
 {
 	WWASSERT(width);
 	WWASSERT(height);
-	D3DSurface = DX8Wrapper::_Create_DX8_Surface(width, height, format);
+	SurfaceMemory.resize(Calculate_Surface_Size(width, height, format));
 }
 
 SurfaceClass::SurfaceClass(const char *filename):
-	D3DSurface(NULL)
+	DX8Surface(NULL),
+	SurfaceWidth(0),
+	SurfaceHeight(0),
+	SurfacePitch(0),
+	SurfaceLocked(false)
 {
-	D3DSurface = DX8Wrapper::_Create_DX8_Surface(filename);
+	DX8Surface = DX8Wrapper::_Create_DX8_Surface(filename);
 	SurfaceDescription desc;
 	Get_Description(desc);
 	SurfaceFormat=desc.Format;
 }
 
 SurfaceClass::SurfaceClass(IDirect3DSurface8 *d3d_surface)	:
-	D3DSurface (NULL)
+	DX8Surface (NULL),
+	SurfaceWidth(0),
+	SurfaceHeight(0),
+	SurfacePitch(0),
+	SurfaceLocked(false)
 {
 	Attach (d3d_surface);
 	SurfaceDescription desc;
@@ -241,17 +308,24 @@ SurfaceClass::SurfaceClass(IDirect3DSurface8 *d3d_surface)	:
 
 SurfaceClass::~SurfaceClass(void)
 {
-	if (D3DSurface) {
-		D3DSurface->Release();
-		D3DSurface = NULL;
+	if (DX8Surface) {
+		DX8Surface->Release();
+		DX8Surface = NULL;
 	}
 }
 
 void SurfaceClass::Get_Description(SurfaceDescription &surface_desc)
 {
+	if (!SurfaceMemory.empty()) {
+		surface_desc.Format = SurfaceFormat;
+		surface_desc.Height = SurfaceHeight;
+		surface_desc.Width = SurfaceWidth;
+		return;
+	}
+
 	D3DSURFACE_DESC d3d_desc;
 	::ZeroMemory(&d3d_desc, sizeof(D3DSURFACE_DESC));
-	DX8_ErrorCode(D3DSurface->GetDesc(&d3d_desc));
+	DX8_ErrorCode(DX8Surface->GetDesc(&d3d_desc));
 	surface_desc.Format = D3DFormat_To_WW3DFormat(d3d_desc.Format);
 	surface_desc.Height = d3d_desc.Height;
 	surface_desc.Width = d3d_desc.Width;
@@ -259,25 +333,45 @@ void SurfaceClass::Get_Description(SurfaceDescription &surface_desc)
 
 void * SurfaceClass::Lock(int * pitch)
 {
+	if (!SurfaceMemory.empty()) {
+		WWASSERT(!SurfaceLocked);
+		SurfaceLocked = true;
+		*pitch = SurfacePitch;
+		return SurfaceMemory.data();
+	}
+
 	D3DLOCKED_RECT lock_rect;	
 	::ZeroMemory(&lock_rect, sizeof(D3DLOCKED_RECT));
-	DX8_ErrorCode(D3DSurface->LockRect(&lock_rect, 0, 0));
+	DX8_ErrorCode(DX8Surface->LockRect(&lock_rect, 0, 0));
 	*pitch = lock_rect.Pitch;
 	return (void *)lock_rect.pBits;
 }
 
 void SurfaceClass::Unlock(void)
 {
-	DX8_ErrorCode(D3DSurface->UnlockRect());
-}
-
-IDirect3DSurface8 *SurfaceClass::Acquire_D3D_Surface(void)
-{
-	if (D3DSurface != NULL) {
-		D3DSurface->AddRef();
+	if (!SurfaceMemory.empty()) {
+		WWASSERT(SurfaceLocked);
+		SurfaceLocked = false;
+		return;
 	}
 
-	return D3DSurface;
+	DX8_ErrorCode(DX8Surface->UnlockRect());
+}
+
+IDirect3DSurface8 *SurfaceClass::Acquire_DX8_Surface(void)
+{
+	Materialize_DX8_Surface();
+	if (DX8Surface != NULL) {
+		DX8Surface->AddRef();
+	}
+
+	return DX8Surface;
+}
+
+IDirect3DSurface8 *SurfaceClass::Peek_DX8_Surface(void)
+{
+	Materialize_DX8_Surface();
+	return DX8Surface;
 }
 
 /***********************************************************************************************
@@ -302,10 +396,14 @@ void SurfaceClass::Clear()
 
 	// size of each pixel in bytes
 	unsigned int size=PixelSize(sd);
+	if (!SurfaceMemory.empty()) {
+		memset(SurfaceMemory.data(), 0, Calculate_Surface_Size(sd.Width, sd.Height, sd.Format));
+		return;
+	}
 
 	D3DLOCKED_RECT lock_rect;	
 	::ZeroMemory(&lock_rect, sizeof(D3DLOCKED_RECT));
-	DX8_ErrorCode(D3DSurface->LockRect(&lock_rect,0,0));
+	DX8_ErrorCode(DX8Surface->LockRect(&lock_rect,0,0));
 	unsigned int i;
 	unsigned char *mem=(unsigned char *) lock_rect.pBits;
 
@@ -315,7 +413,7 @@ void SurfaceClass::Clear()
 		mem+=lock_rect.Pitch;
 	}
 	
-	DX8_ErrorCode(D3DSurface->UnlockRect());
+	DX8_ErrorCode(DX8Surface->UnlockRect());
 }
 
 
@@ -341,10 +439,18 @@ void SurfaceClass::Copy(const unsigned char *other)
 
 	// size of each pixel in bytes
 	unsigned int size=PixelSize(sd);
+	if (!SurfaceMemory.empty()) {
+		unsigned char *mem = SurfaceMemory.data();
+		for (unsigned int i = 0; i < sd.Height; i++) {
+			memcpy(mem, &other[i * sd.Width * size], size * sd.Width);
+			mem += SurfacePitch;
+		}
+		return;
+	}
 
 	D3DLOCKED_RECT lock_rect;	
 	::ZeroMemory(&lock_rect, sizeof(D3DLOCKED_RECT));
-	DX8_ErrorCode(D3DSurface->LockRect(&lock_rect,0,0));
+	DX8_ErrorCode(DX8Surface->LockRect(&lock_rect,0,0));
 	unsigned int i;
 	unsigned char *mem=(unsigned char *) lock_rect.pBits;
 
@@ -354,7 +460,7 @@ void SurfaceClass::Copy(const unsigned char *other)
 		mem+=lock_rect.Pitch;
 	}
 	
-	DX8_ErrorCode(D3DSurface->UnlockRect());
+	DX8_ErrorCode(DX8Surface->UnlockRect());
 }
 
 
@@ -380,6 +486,15 @@ void SurfaceClass::Copy(Vector2i &min,Vector2i &max, const unsigned char *other)
 
 	// size of each pixel in bytes
 	unsigned int size=PixelSize(sd);
+	if (!SurfaceMemory.empty()) {
+		unsigned char *mem = SurfaceMemory.data() + min.J * SurfacePitch + min.I * size;
+		int dx=max.I-min.I;
+		for (int i=min.J; i<max.J; i++) {
+			memcpy(mem,&other[(i*sd.Width+min.I)*size],size*dx);
+			mem += SurfacePitch;
+		}
+		return;
+	}
 
 	D3DLOCKED_RECT lock_rect;	
 	::ZeroMemory(&lock_rect, sizeof(D3DLOCKED_RECT));
@@ -388,7 +503,7 @@ void SurfaceClass::Copy(Vector2i &min,Vector2i &max, const unsigned char *other)
 	rect.right=max.I;
 	rect.top=min.J;
 	rect.bottom=max.J;
-	DX8_ErrorCode(D3DSurface->LockRect(&lock_rect,&rect,0));
+	DX8_ErrorCode(DX8Surface->LockRect(&lock_rect,&rect,0));
 	int i;
 	unsigned char *mem=(unsigned char *) lock_rect.pBits;	
 	int dx=max.I-min.I;
@@ -399,7 +514,7 @@ void SurfaceClass::Copy(Vector2i &min,Vector2i &max, const unsigned char *other)
 		mem+=lock_rect.Pitch;
 	}
 	
-	DX8_ErrorCode(D3DSurface->UnlockRect());
+	DX8_ErrorCode(DX8Surface->UnlockRect());
 }
 
 
@@ -429,28 +544,65 @@ unsigned char *SurfaceClass::CreateCopy(int *width,int *height,int*size,bool fli
 	*width=sd.Width;
 	*height=sd.Height;
 	*size=mysize;
+	const unsigned compressed_copy_size = Get_Compressed_Copy_Size(sd);
+	const unsigned copy_size = compressed_copy_size ? compressed_copy_size : (sd.Height * sd.Width * mysize);
 
-	unsigned char *other=new unsigned char [sd.Height*sd.Width*mysize];
+	if (copy_size == 0) {
+		return NULL;
+	}
+
+	unsigned char *other=new unsigned char [copy_size];
+	if (!SurfaceMemory.empty()) {
+		const unsigned char *mem = SurfaceMemory.data();
+		if (compressed_copy_size) {
+			unsigned row_size = Get_Compressed_Row_Size(sd);
+			unsigned row_count = (sd.Height + 3) / 4;
+			for (unsigned i = 0; i < row_count; ++i) {
+				memcpy(&other[i * row_size], mem, row_size);
+				mem += SurfacePitch;
+			}
+		} else {
+			for (unsigned int i = 0; i < sd.Height; i++) {
+				if (flip) {
+					memcpy(&other[(sd.Height-i-1)*sd.Width*mysize],mem,mysize*sd.Width);
+				} else {
+					memcpy(&other[i*sd.Width*mysize],mem,mysize*sd.Width);
+				}
+				mem += SurfacePitch;
+			}
+		}
+		return other;
+	}
 
 	D3DLOCKED_RECT lock_rect;	
 	::ZeroMemory(&lock_rect, sizeof(D3DLOCKED_RECT));
-	DX8_ErrorCode(D3DSurface->LockRect(&lock_rect,0,D3DLOCK_READONLY));
-	unsigned int i;
+	DX8_ErrorCode(DX8Surface->LockRect(&lock_rect,0,D3DLOCK_READONLY));
 	unsigned char *mem=(unsigned char *) lock_rect.pBits;
 
-	for (i=0; i<sd.Height; i++)
-	{
-		if (flip)
-		{
-			memcpy(&other[(sd.Height-i-1)*sd.Width*mysize],mem,mysize*sd.Width);		
-		} else
-		{
-			memcpy(&other[i*sd.Width*mysize],mem,mysize*sd.Width);		
+	if (compressed_copy_size) {
+		unsigned row_size = Get_Compressed_Row_Size(sd);
+		unsigned row_count = (sd.Height + 3) / 4;
+		for (unsigned i = 0; i < row_count; ++i) {
+			memcpy(&other[i * row_size], mem, row_size);
+			mem += lock_rect.Pitch;
 		}
-		mem+=lock_rect.Pitch;
+	}
+	else {
+		unsigned int i;
+		for (i=0; i<sd.Height; i++)
+		{
+			if (flip)
+			{
+				memcpy(&other[(sd.Height-i-1)*sd.Width*mysize],mem,mysize*sd.Width);		
+			} else
+			{
+				memcpy(&other[i*sd.Width*mysize],mem,mysize*sd.Width);		
+			}
+			mem+=lock_rect.Pitch;
+		}
 	}
 	
-	DX8_ErrorCode(D3DSurface->UnlockRect());
+	DX8_ErrorCode(DX8Surface->UnlockRect());
 
 	return other;
 }
@@ -477,6 +629,8 @@ void SurfaceClass::Copy(
 	unsigned int width, unsigned int height,
 	const SurfaceClass *other)
 {
+	Materialize_DX8_Surface();
+	const_cast<SurfaceClass *>(other)->Materialize_DX8_Surface();
 	WWASSERT(other);
 	WWASSERT(width);
 	WWASSERT(height);
@@ -499,7 +653,7 @@ void SurfaceClass::Copy(
 		POINT dst;
 		dst.x=dstx;
 		dst.y=dsty;	
-		DX8Wrapper::_Copy_DX8_Rects(other->D3DSurface,&src,1,D3DSurface,&dst);
+		DX8Wrapper::_Copy_DX8_Rects(other->DX8Surface,&src,1,DX8Surface,&dst);
 	}
 	else
 	{
@@ -512,7 +666,7 @@ void SurfaceClass::Copy(
 		if (dest.right>int(sd.Width)) dest.right=int(sd.Width);
 		if (dest.bottom>int(sd.Height)) dest.bottom=int(sd.Height);
 
-		DX8_ErrorCode(D3DXLoadSurfaceFromSurface(D3DSurface,NULL,&dest,other->D3DSurface,NULL,&src,D3DX_FILTER_NONE,0));
+		DX8_ErrorCode(D3DXLoadSurfaceFromSurface(DX8Surface,NULL,&dest,other->DX8Surface,NULL,&src,D3DX_FILTER_NONE,0));
 	}
 }
 
@@ -536,6 +690,8 @@ void SurfaceClass::Stretch_Copy(
 	unsigned int srcx, unsigned int srcy, unsigned int srcwidth, unsigned int srcheight,
 	const SurfaceClass *other)
 {
+	Materialize_DX8_Surface();
+	const_cast<SurfaceClass *>(other)->Materialize_DX8_Surface();
 	WWASSERT(other);
 
 	SurfaceDescription sd,osd;
@@ -554,7 +710,7 @@ void SurfaceClass::Stretch_Copy(
 	dest.top=dsty;
 	dest.bottom=dsty+dstheight;
 
-	DX8_ErrorCode(D3DXLoadSurfaceFromSurface(D3DSurface,NULL,&dest,other->D3DSurface,NULL,&src,D3DX_FILTER_TRIANGLE ,0));
+	DX8_ErrorCode(D3DXLoadSurfaceFromSurface(DX8Surface,NULL,&dest,other->DX8Surface,NULL,&src,D3DX_FILTER_TRIANGLE ,0));
 }
 
 /***********************************************************************************************
@@ -574,6 +730,7 @@ void SurfaceClass::Stretch_Copy(
  *=============================================================================================*/
 void SurfaceClass::FindBB(Vector2i *min,Vector2i*max)
 {
+	Materialize_DX8_Surface();
 	SurfaceDescription sd;
 	Get_Description(sd);
 
@@ -601,7 +758,7 @@ void SurfaceClass::FindBB(Vector2i *min,Vector2i*max)
 	rect.left=min->I;
 	rect.right=max->I;
 
-	DX8_ErrorCode(D3DSurface->LockRect(&lock_rect,&rect,D3DLOCK_READONLY));
+	DX8_ErrorCode(DX8Surface->LockRect(&lock_rect,&rect,D3DLOCK_READONLY));
 
 	int x,y;
 	unsigned int size=PixelSize(sd);
@@ -625,7 +782,7 @@ void SurfaceClass::FindBB(Vector2i *min,Vector2i*max)
 		}
 	}
 
-	DX8_ErrorCode(D3DSurface->UnlockRect());
+	DX8_ErrorCode(DX8Surface->UnlockRect());
 
 	*max=realmax;
 	*min=realmin;
@@ -649,6 +806,7 @@ void SurfaceClass::FindBB(Vector2i *min,Vector2i*max)
  *=============================================================================================*/
 bool SurfaceClass::Is_Transparent_Column(unsigned int column)
 {
+	Materialize_DX8_Surface();
 	SurfaceDescription sd;
 	Get_Description(sd);
 
@@ -679,7 +837,7 @@ bool SurfaceClass::Is_Transparent_Column(unsigned int column)
 	rect.left=column;
 	rect.right=column+1;
 
-	DX8_ErrorCode(D3DSurface->LockRect(&lock_rect,&rect,D3DLOCK_READONLY));
+	DX8_ErrorCode(DX8Surface->LockRect(&lock_rect,&rect,D3DLOCK_READONLY));
 
 	int y;	
 	
@@ -691,12 +849,12 @@ bool SurfaceClass::Is_Transparent_Column(unsigned int column)
 		unsigned char myalpha=alpha[size-1];		
 		myalpha=(myalpha>>(8-alphabits)) & mask;		
 		if (myalpha) {
-			DX8_ErrorCode(D3DSurface->UnlockRect());
+			DX8_ErrorCode(DX8Surface->UnlockRect());
 			return false;			
 		}		
 	}
 
-	DX8_ErrorCode(D3DSurface->UnlockRect());
+	DX8_ErrorCode(DX8Surface->UnlockRect());
 	return true;
 }
 
@@ -717,6 +875,7 @@ bool SurfaceClass::Is_Transparent_Column(unsigned int column)
  *=============================================================================================*/
 void SurfaceClass::Get_Pixel(Vector3 &rgb, int x,int y)
 {
+	Materialize_DX8_Surface();
 	SurfaceDescription sd;
 	Get_Description(sd);
 
@@ -733,9 +892,50 @@ void SurfaceClass::Get_Pixel(Vector3 &rgb, int x,int y)
 	rect.left=x;
 	rect.right=x+1;
 
-	DX8_ErrorCode(D3DSurface->LockRect(&lock_rect,&rect,D3DLOCK_READONLY));	
+	DX8_ErrorCode(DX8Surface->LockRect(&lock_rect,&rect,D3DLOCK_READONLY));	
 	Convert_Pixel(rgb,sd,(unsigned char *) lock_rect.pBits);
-	DX8_ErrorCode(D3DSurface->UnlockRect());	
+	DX8_ErrorCode(DX8Surface->UnlockRect());	
+}
+
+void SurfaceClass::Materialize_DX8_Surface()
+{
+	if (DX8Surface != NULL || SurfaceMemory.empty()) {
+		return;
+	}
+
+	DX8Surface = DX8Wrapper::_Create_DX8_Surface(SurfaceWidth, SurfaceHeight, SurfaceFormat);
+	WWASSERT(DX8Surface != NULL);
+
+	D3DLOCKED_RECT lock_rect;
+	::ZeroMemory(&lock_rect, sizeof(D3DLOCKED_RECT));
+	DX8_ErrorCode(DX8Surface->LockRect(&lock_rect, NULL, 0));
+
+	SurfaceDescription desc;
+	Get_Description(desc);
+
+	const unsigned compressed_row_size = Get_Compressed_Row_Size(desc);
+	if (compressed_row_size != 0) {
+		const unsigned row_count = (desc.Height + 3) / 4;
+		const unsigned char *src = SurfaceMemory.data();
+		unsigned char *dst = static_cast<unsigned char *>(lock_rect.pBits);
+		for (unsigned i = 0; i < row_count; ++i) {
+			memcpy(dst, src, compressed_row_size);
+			src += SurfacePitch;
+			dst += lock_rect.Pitch;
+		}
+	}
+	else {
+		const unsigned row_size = SurfaceWidth * Get_Bytes_Per_Pixel(SurfaceFormat);
+		const unsigned char *src = SurfaceMemory.data();
+		unsigned char *dst = static_cast<unsigned char *>(lock_rect.pBits);
+		for (unsigned i = 0; i < SurfaceHeight; ++i) {
+			memcpy(dst, src, row_size);
+			src += SurfacePitch;
+			dst += lock_rect.Pitch;
+		}
+	}
+
+	DX8_ErrorCode(DX8Surface->UnlockRect());
 }
 
 /***********************************************************************************************
@@ -756,13 +956,22 @@ void SurfaceClass::Get_Pixel(Vector3 &rgb, int x,int y)
 void SurfaceClass::Attach (IDirect3DSurface8 *surface)
 {
 	Detach ();
-	D3DSurface = surface;
-	
+	DX8Surface = surface;
+	SurfaceMemory.clear();
+
 	//
 	//	Lock a reference onto the object
 	//
-	if (D3DSurface != NULL) {
-		D3DSurface->AddRef ();
+	if (DX8Surface != NULL) {
+		DX8Surface->AddRef ();
+
+		D3DSURFACE_DESC d3d_desc;
+		::ZeroMemory(&d3d_desc, sizeof(D3DSURFACE_DESC));
+		DX8_ErrorCode(DX8Surface->GetDesc(&d3d_desc));
+		SurfaceWidth = d3d_desc.Width;
+		SurfaceHeight = d3d_desc.Height;
+		SurfaceFormat = D3DFormat_To_WW3DFormat(d3d_desc.Format);
+		SurfacePitch = Calculate_Surface_Pitch(SurfaceWidth, SurfaceFormat);
 	}
 
 	return ;
@@ -789,11 +998,11 @@ void SurfaceClass::Detach (void)
 	//
 	//	Release the hold we have on the D3D object
 	//
-	if (D3DSurface != NULL) {
-		D3DSurface->Release ();
+	if (DX8Surface != NULL) {
+		DX8Surface->Release ();
 	}
 
-	D3DSurface = NULL;
+	DX8Surface = NULL;
 	return ;
 }
 
@@ -814,6 +1023,7 @@ void SurfaceClass::Detach (void)
  *=============================================================================================*/
 void SurfaceClass::DrawPixel(const unsigned int x,const unsigned int y, unsigned int color)
 {
+	Materialize_DX8_Surface();
 	SurfaceDescription sd;
 	Get_Description(sd);
 
@@ -829,7 +1039,7 @@ void SurfaceClass::DrawPixel(const unsigned int x,const unsigned int y, unsigned
 	rect.left=x;
 	rect.right=x+1;
 
-	DX8_ErrorCode(D3DSurface->LockRect(&lock_rect,&rect,0));
+	DX8_ErrorCode(DX8Surface->LockRect(&lock_rect,&rect,0));
 	unsigned char *cptr=(unsigned char*)lock_rect.pBits;
 	unsigned short *sptr=(unsigned short*)lock_rect.pBits;
 	unsigned int *lptr=(unsigned int*)lock_rect.pBits;
@@ -847,7 +1057,7 @@ void SurfaceClass::DrawPixel(const unsigned int x,const unsigned int y, unsigned
 		break;
 	}
 
-	DX8_ErrorCode(D3DSurface->UnlockRect());
+	DX8_ErrorCode(DX8Surface->UnlockRect());
 }
 
 /***********************************************************************************************
@@ -868,6 +1078,7 @@ void SurfaceClass::DrawPixel(const unsigned int x,const unsigned int y, unsigned
  *=============================================================================================*/
 void SurfaceClass::DrawHLine(const unsigned int y,const unsigned int x1, const unsigned int x2, unsigned int color)
 { 
+	Materialize_DX8_Surface();
 	SurfaceDescription sd;
 	Get_Description(sd);
 
@@ -883,7 +1094,7 @@ void SurfaceClass::DrawHLine(const unsigned int y,const unsigned int x1, const u
 	rect.left=x1;
 	rect.right=x2+1;
 
-	DX8_ErrorCode(D3DSurface->LockRect(&lock_rect,&rect,0));
+	DX8_ErrorCode(DX8Surface->LockRect(&lock_rect,&rect,0));
 	unsigned char *cptr=(unsigned char*)lock_rect.pBits;
 	unsigned short *sptr=(unsigned short*)lock_rect.pBits;
 	unsigned int *lptr=(unsigned int*)lock_rect.pBits;
@@ -906,7 +1117,7 @@ void SurfaceClass::DrawHLine(const unsigned int y,const unsigned int x1, const u
 		}
 	}
 
-	DX8_ErrorCode(D3DSurface->UnlockRect());
+	DX8_ErrorCode(DX8Surface->UnlockRect());
 }
 
 

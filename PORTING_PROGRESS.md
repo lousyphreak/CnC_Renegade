@@ -75,6 +75,27 @@
   - `Render2DClass::Render()` now submits screen-space geometry through bgfx vertex/index buffers and renderer-owned state/program binding instead of the DX8 dynamic VB/IB path
 - This `Render2D` slice currently uploads top-level surface data into bgfx and is sufficient for the existing 2D/font path, but it does not yet eliminate the remaining legacy DX8 texture-loader backend used to source some `TextureClass` instances.
 - Rebuilt after the `Render2D` slice and confirmed the build is still blocked by pre-existing unrelated renderer/C++ issues (`dx8renderer.h`, `mapper.cpp`, `dynamesh.cpp`, `mesh*.cpp`, `metalmap.cpp`, `motchan.cpp`) rather than by the new bgfx `Render2D` code.
+- Continued the texture port along the clean bgfx path instead of extending the old DX8 stage-binding model:
+  - `TextureClass` now caches mip-level `SurfaceClass` objects from its source texture so shared engine code can reason about real texture data without going back through `IDirect3DTexture8`
+  - `BgfxRenderer` now creates textures from the full mip chain, not just mip 0
+  - native DXT uploads now stay compressed in bgfx (`BC1` / `BC2` / `BC3`) instead of being silently flattened to one converted level
+  - uncompressed formats still fall back to renderer-local BGRA8 conversion when there is not a 1:1 bgfx upload path yet, so the texture bind path remains functional across legacy source formats
+  - `SurfaceClass::CreateCopy()` now understands compressed mip surfaces well enough to hand renderer upload code the exact block-compressed payload for a bgfx update
+  - `TextureClass::Is_Missing_Texture()` now uses the shared missing-texture singleton directly instead of comparing raw backend texture pointers
+- Rebuilt after the mip-chain texture slice and confirmed:
+  - the new texture/bgfx files compile far enough that the failure frontier moves back into pre-existing unrelated modern-C++ / cross-platform issues (`prim_anim.cpp`, `motchan.cpp`, `mesh*.cpp`, `part_ldr.cpp`, `render2dsentence.cpp`)
+  - the remaining blocker for a fully clean texture path is source ownership: file loading and some render-target workflows still originate in DX8-backed allocations even though bgfx now consumes the full texture data correctly
+- Started moving texture source ownership onto engine-owned surfaces instead of feeding bgfx from temporary DX8 objects:
+  - `SurfaceClass(width,height,format)` now allocates and owns CPU texture storage directly and only materializes a DX8 surface lazily for the remaining backend-local callers
+  - shared `SurfaceClass` operations (`Lock`, `Unlock`, `CreateCopy`, `Copy`, `Clear`, and description queries) now work against that engine-owned storage path
+  - `TextureLoader::Load_Surface_Immediate(...)` and thumbnail loading now return `SurfaceClass*` so shared loading code hands around engine-owned mip data instead of raw `IDirect3DSurface8*`
+  - `TextureClass` now keeps those surface levels as first-class texture ownership and can rebuild a legacy DX8 texture lazily only when an old backend-local path still asks for one
+  - thumbnail-backed textures no longer trigger foreground loading just because no DX8 texture object exists yet; the presence of engine-owned surface levels is now treated as real loaded texture data
+  - deleted the now-unused `Load_Compressed_Texture(...)` DX8 helper from `textureloader.cpp` rather than leaving a dead legacy path behind
+  - removed the D3D-returning `MissingTexture` helpers from the shared header and deleted the unused `TextureClass` DX8-facing accessors/constructor so the texture API surface stops advertising `IDirect3DTexture8` / `IDirect3DSurface8`
+  - dropped the dead texture-priority path, stopped materializing a DX8 texture just to answer `Get_Mip_Level_Count()` / `Get_Surface_Level()`, and removed the thumbnail loader’s dependence on the backend texture pointer
+  - render-target texture creation now starts using bgfx-native ownership: `TextureClass` allocates bgfx framebuffers for render-target textures, `BgfxRenderer` tracks the active render-target dimensions/framebuffer, and `TexProjectClass` restores the default bgfx target instead of forcing the D3D surface reset path
+- Rebuilt after the source-ownership slice and confirmed the edited texture files are not the active build frontier; the target still stops in older untouched portability failures (`motchan.cpp`, `mesh*.cpp`, `meshmatdesc.cpp`, `part_buf.cpp`, `meshmdlio.cpp`)
 
 ## Next work
 
@@ -83,3 +104,4 @@
 - Remove the remaining DX8-era initialization dependence under `WW3D::Init()` by porting the mesh/state/render-target path onto bgfx-owned implementations instead of keeping `DX8Wrapper` alive as a fallback frame manager.
 - Replace the D3D-format conversion surface in `formconv.*` and texture loading with backend-neutral or bgfx-backed format handling.
 - Carry the same renderer-owned bgfx submission model from `Render2D` into the rigid mesh pipeline, then remove the remaining DX8 texture-loader seam rather than preserving it as a permanent source of textures.
+- Finish the remaining `TextureLoadTaskClass` and render-target cleanup so the texture path no longer needs legacy DX8 texture allocation as an intermediate ownership model.

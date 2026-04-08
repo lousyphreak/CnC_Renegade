@@ -14,11 +14,14 @@
 #include <bgfx/platform.h>
 
 #include "surfaceclass.h"
+#include "texture.h"
 #include "wwdebug.h"
 
 bool BgfxRenderer::IsInitted = false;
 uint32_t BgfxRenderer::Width = 0;
 uint32_t BgfxRenderer::Height = 0;
+uint32_t BgfxRenderer::ActiveWidth = 0;
+uint32_t BgfxRenderer::ActiveHeight = 0;
 uint32_t BgfxRenderer::BitDepth = 32;
 bool BgfxRenderer::Windowed = true;
 void *BgfxRenderer::WindowHandle = nullptr;
@@ -305,6 +308,67 @@ bool Convert_Surface_Copy_To_BGRA8(
 
     return true;
 }
+
+bool Is_Compressed_Format(WW3DFormat format)
+{
+    switch (format) {
+    case WW3D_FORMAT_DXT1:
+    case WW3D_FORMAT_DXT2:
+    case WW3D_FORMAT_DXT3:
+    case WW3D_FORMAT_DXT4:
+    case WW3D_FORMAT_DXT5:
+        return true;
+    default:
+        return false;
+    }
+}
+
+uint32_t Get_Compressed_Level_Size(WW3DFormat format, uint32_t width, uint32_t height)
+{
+    const uint32_t block_width = (width + 3u) / 4u;
+    const uint32_t block_height = (height + 3u) / 4u;
+
+    switch (format) {
+    case WW3D_FORMAT_DXT1:
+        return block_width * block_height * 8u;
+    case WW3D_FORMAT_DXT2:
+    case WW3D_FORMAT_DXT3:
+    case WW3D_FORMAT_DXT4:
+    case WW3D_FORMAT_DXT5:
+        return block_width * block_height * 16u;
+    default:
+        return 0u;
+    }
+}
+
+bool Get_Bgfx_Texture_Format(WW3DFormat format, bgfx::TextureFormat::Enum &bgfx_format, bool &direct_copy)
+{
+    direct_copy = true;
+
+    switch (format) {
+    case WW3D_FORMAT_A8R8G8B8:
+        bgfx_format = bgfx::TextureFormat::BGRA8;
+        return true;
+    case WW3D_FORMAT_X8R8G8B8:
+        bgfx_format = bgfx::TextureFormat::BGRA8;
+        return true;
+    case WW3D_FORMAT_DXT1:
+        bgfx_format = bgfx::TextureFormat::BC1;
+        return true;
+    case WW3D_FORMAT_DXT2:
+    case WW3D_FORMAT_DXT3:
+        bgfx_format = bgfx::TextureFormat::BC2;
+        return true;
+    case WW3D_FORMAT_DXT4:
+    case WW3D_FORMAT_DXT5:
+        bgfx_format = bgfx::TextureFormat::BC3;
+        return true;
+    default:
+        bgfx_format = bgfx::TextureFormat::BGRA8;
+        direct_copy = false;
+        return true;
+    }
+}
 }
 
 bool BgfxRenderer::Init(void *window_handle, bool lite)
@@ -337,6 +401,8 @@ bool BgfxRenderer::Init(void *window_handle, bool lite)
 
     bgfx::setViewClear(MainViewId, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x000000ff, 1.0f, 0);
     bgfx::setViewRect(MainViewId, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
+    ActiveWidth = Width;
+    ActiveHeight = Height;
 
     IsInitted = true;
     return true;
@@ -352,6 +418,8 @@ void BgfxRenderer::Shutdown()
     bgfx::shutdown();
     Width = 0;
     Height = 0;
+    ActiveWidth = 0;
+    ActiveHeight = 0;
     BitDepth = 32;
     Windowed = true;
     WindowHandle = nullptr;
@@ -365,6 +433,10 @@ bool BgfxRenderer::Reset()
     }
 
     bgfx::reset(Width, Height, BGFX_RESET_VSYNC);
+    ActiveWidth = Width;
+    ActiveHeight = Height;
+    bgfx::setViewFrameBuffer(MainViewId, BGFX_INVALID_HANDLE);
+    bgfx::setViewFrameBuffer(OverlayViewId, BGFX_INVALID_HANDLE);
     bgfx::setViewRect(MainViewId, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
     return true;
 }
@@ -402,6 +474,40 @@ void BgfxRenderer::Set_Viewport(uint32_t x, uint32_t y, uint32_t width, uint32_t
         static_cast<uint16_t>(height));
 }
 
+bool BgfxRenderer::Set_Render_Target(TextureClass &texture)
+{
+    if (!IsInitted) {
+        return false;
+    }
+
+    bgfx::FrameBufferHandle frame_buffer = texture.Get_Bgfx_Frame_Buffer();
+    if (!bgfx::isValid(frame_buffer)) {
+        return false;
+    }
+
+    ActiveWidth = static_cast<uint32_t>(texture.Get_Width());
+    ActiveHeight = static_cast<uint32_t>(texture.Get_Height());
+    bgfx::setViewFrameBuffer(MainViewId, frame_buffer);
+    bgfx::setViewFrameBuffer(OverlayViewId, frame_buffer);
+    bgfx::setViewRect(MainViewId, 0, 0, static_cast<uint16_t>(ActiveWidth), static_cast<uint16_t>(ActiveHeight));
+    bgfx::setViewRect(OverlayViewId, 0, 0, static_cast<uint16_t>(ActiveWidth), static_cast<uint16_t>(ActiveHeight));
+    return true;
+}
+
+void BgfxRenderer::Reset_Render_Target()
+{
+    if (!IsInitted) {
+        return;
+    }
+
+    ActiveWidth = Width;
+    ActiveHeight = Height;
+    bgfx::setViewFrameBuffer(MainViewId, BGFX_INVALID_HANDLE);
+    bgfx::setViewFrameBuffer(OverlayViewId, BGFX_INVALID_HANDLE);
+    bgfx::setViewRect(MainViewId, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
+    bgfx::setViewRect(OverlayViewId, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
+}
+
 void BgfxRenderer::Set_Camera(const Matrix3D &view, const Matrix4 &projection)
 {
     if (!IsInitted) {
@@ -419,7 +525,7 @@ void BgfxRenderer::Prepare_Overlay_View()
     }
 
     bgfx::setViewMode(OverlayViewId, bgfx::ViewMode::Sequential);
-    bgfx::setViewRect(OverlayViewId, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
+    bgfx::setViewRect(OverlayViewId, 0, 0, static_cast<uint16_t>(ActiveWidth), static_cast<uint16_t>(ActiveHeight));
     bgfx::setViewTransform(OverlayViewId, IdentityMatrix, IdentityMatrix);
     bgfx::setViewClear(OverlayViewId, 0, 0, 1.0f, 0);
 }
@@ -435,8 +541,8 @@ void BgfxRenderer::End_Frame()
 
 void BgfxRenderer::Get_Render_Target_Resolution(int &width, int &height, int &bits, bool &windowed)
 {
-    width = static_cast<int>(Width);
-    height = static_cast<int>(Height);
+    width = static_cast<int>(ActiveWidth);
+    height = static_cast<int>(ActiveHeight);
     bits = static_cast<int>(BitDepth);
     windowed = Windowed;
 }
@@ -503,6 +609,117 @@ bgfx::TextureHandle BgfxRenderer::Create_Texture_From_Surface(SurfaceClass &surf
         bgfx::TextureFormat::BGRA8,
         BGFX_TEXTURE_NONE,
         texture_memory);
+}
+
+bgfx::TextureHandle BgfxRenderer::Create_Texture(TextureClass &texture)
+{
+    bgfx::TextureFormat::Enum texture_format = bgfx::TextureFormat::BGRA8;
+    bool direct_copy = false;
+    if (texture.Is_Render_Target_Texture()) {
+        if (!Get_Bgfx_Texture_Format(texture.Get_Texture_Format(), texture_format, direct_copy)) {
+            return BGFX_INVALID_HANDLE;
+        }
+
+        bgfx::TextureHandle handle = bgfx::createTexture2D(
+            static_cast<uint16_t>(texture.Get_Width()),
+            static_cast<uint16_t>(texture.Get_Height()),
+            false,
+            1,
+            texture_format,
+            BGFX_TEXTURE_RT);
+        if (!bgfx::isValid(handle)) {
+            return BGFX_INVALID_HANDLE;
+        }
+
+        bgfx::Attachment attachment;
+        attachment.init(handle);
+        texture.BgfxFrameBuffer = bgfx::createFrameBuffer(1, &attachment, false);
+        if (!bgfx::isValid(texture.BgfxFrameBuffer)) {
+            bgfx::destroy(handle);
+            return BGFX_INVALID_HANDLE;
+        }
+        return handle;
+    }
+
+    SurfaceClass *base_surface = texture.Get_Surface_Level(0);
+    if (base_surface == nullptr) {
+        return BGFX_INVALID_HANDLE;
+    }
+
+    SurfaceClass::SurfaceDescription base_description;
+    base_surface->Get_Description(base_description);
+
+    if (!Get_Bgfx_Texture_Format(base_description.Format, texture_format, direct_copy)) {
+        base_surface->Release_Ref();
+        return BGFX_INVALID_HANDLE;
+    }
+
+    const unsigned mip_level_count = texture.Get_Mip_Level_Count();
+    const bool has_mips = mip_level_count > 1;
+    bgfx::TextureHandle handle = bgfx::createTexture2D(
+        static_cast<uint16_t>(base_description.Width),
+        static_cast<uint16_t>(base_description.Height),
+        has_mips,
+        1,
+        texture_format,
+        BGFX_TEXTURE_NONE);
+    base_surface->Release_Ref();
+
+    if (!bgfx::isValid(handle)) {
+        return handle;
+    }
+
+    for (unsigned level = 0; level < mip_level_count; ++level) {
+        SurfaceClass *surface = texture.Get_Surface_Level(level);
+        if (surface == nullptr) {
+            bgfx::destroy(handle);
+            return BGFX_INVALID_HANDLE;
+        }
+
+        SurfaceClass::SurfaceDescription description;
+        surface->Get_Description(description);
+
+        int width = 0;
+        int height = 0;
+        int source_pixel_size = 0;
+        uint8_t *source_pixels = surface->CreateCopy(&width, &height, &source_pixel_size, false);
+        surface->Release_Ref();
+
+        if (source_pixels == nullptr || width <= 0 || height <= 0) {
+            delete[] source_pixels;
+            bgfx::destroy(handle);
+            return BGFX_INVALID_HANDLE;
+        }
+
+        const bgfx::Memory *memory = nullptr;
+        std::vector<uint8_t> converted_pixels;
+        if (direct_copy) {
+            const uint32_t data_size = Is_Compressed_Format(description.Format)
+                ? Get_Compressed_Level_Size(description.Format, static_cast<uint32_t>(width), static_cast<uint32_t>(height))
+                : static_cast<uint32_t>(width) * static_cast<uint32_t>(height) * static_cast<uint32_t>(source_pixel_size);
+            memory = bgfx::copy(source_pixels, data_size);
+        } else {
+            if (!Convert_Surface_Copy_To_BGRA8(description, source_pixels, converted_pixels)) {
+                delete[] source_pixels;
+                bgfx::destroy(handle);
+                return BGFX_INVALID_HANDLE;
+            }
+            memory = bgfx::copy(converted_pixels.data(), static_cast<uint32_t>(converted_pixels.size()));
+        }
+
+        delete[] source_pixels;
+        bgfx::updateTexture2D(
+            handle,
+            0,
+            static_cast<uint8_t>(level),
+            0,
+            0,
+            static_cast<uint16_t>(width),
+            static_cast<uint16_t>(height),
+            memory);
+    }
+
+    return handle;
 }
 
 bgfx::ProgramHandle BgfxRenderer::Load_Program(const char *vertex_shader_name, const char *fragment_shader_name)

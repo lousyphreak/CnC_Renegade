@@ -72,6 +72,7 @@
 
 
 #include "texproject.h"
+#include "bgfxrenderer.h"
 #include "vertmaterial.h"
 #include "shader.h"
 #include "texture.h"
@@ -1120,7 +1121,11 @@ bool TexProjectClass::Compute_Texture(RenderObjClass * model,SpecialRenderInfoCl
 		/*
 		** Set the render target
 		*/
-		DX8Wrapper::Set_Render_Target(rtarget);
+		if (BgfxRenderer::Is_Initted()) {
+			WWASSERT(BgfxRenderer::Set_Render_Target(*rtarget));
+		} else {
+			DX8Wrapper::Set_Render_Target(rtarget);
+		}
 
 		/*
 		** Set up the camera
@@ -1139,7 +1144,11 @@ bool TexProjectClass::Compute_Texture(RenderObjClass * model,SpecialRenderInfoCl
 		WW3D::Render(*model,*context);
 		WW3D::End_Render(false);
 
-		DX8Wrapper::Set_Render_Target((IDirect3DSurface8 *)NULL);
+		if (BgfxRenderer::Is_Initted()) {
+			BgfxRenderer::Reset_Render_Target();
+		} else {
+			DX8Wrapper::Set_Render_Target((IDirect3DSurface8 *)NULL);
+		}
 
 	}
 
@@ -1344,4 +1353,3 @@ void TexProjectClass::Update_WS_Bounding_Volume(void)
 	WorldBoundingVolume.Compute_Axis_Aligned_Extent(&extent);
 	Set_Cull_Box(AABoxClass(WorldBoundingVolume.Center,extent));
 }
-

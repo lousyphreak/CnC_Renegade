@@ -45,6 +45,7 @@
 
 #include "ww3dformat.h"
 #include "refcount.h"
+#include <vector>
 
 struct IDirect3DSurface8;
 class Vector2i;
@@ -118,9 +119,9 @@ class SurfaceClass : public RefCountClass
 		// makes a copy of the surface into a byte array
 		unsigned char *CreateCopy(int *width,int *height,int*size,bool flip=false);
 
-		// For use by TextureClass:
-		IDirect3DSurface8 *Peek_D3D_Surface(void) { return D3DSurface; }
-		IDirect3DSurface8 *Acquire_D3D_Surface(void);
+		// For use by the remaining DX8 backend edge:
+		IDirect3DSurface8 *Peek_DX8_Surface(void);
+		IDirect3DSurface8 *Acquire_DX8_Surface(void);
 
 		// Attaching and detaching a surface pointer
 		void	Attach (IDirect3DSurface8 *surface);
@@ -148,13 +149,18 @@ class SurfaceClass : public RefCountClass
 		void Convert_Pixel(unsigned char * pixel,const SurfaceClass::SurfaceDescription &sd, const Vector3 &rgb);
 
 	private:
+		void Materialize_DX8_Surface();
 
-		// Direct3D surface object
-		IDirect3DSurface8 *D3DSurface;
+		// Legacy backend surface object
+		IDirect3DSurface8 *DX8Surface;
+		std::vector<unsigned char> SurfaceMemory;
+		unsigned SurfaceWidth;
+		unsigned SurfaceHeight;
+		unsigned SurfacePitch;
+		bool SurfaceLocked;
 
 		WW3DFormat SurfaceFormat;
 	friend class TextureClass;	
 };
 
 #endif
-

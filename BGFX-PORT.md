@@ -40,6 +40,7 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
   - SDL native-window bridging now tags Wayland handles with `bgfx::NativeWindowHandleType::Wayland` instead of relying on bgfx's Linux default handle type, preventing Wayland sessions from falling into bgfx's X11 surface path during startup.
   - the bgfx-backed lifecycle now restores the legacy one-time renderer subsystem init/shutdown steps needed by textures, materials, mesh rendering, and related systems while those codepaths are still being ported.
   - late runtime/shutdown ASAN failures in `dx8renderer.cpp`'s deferred delete bookkeeping were fixed, and the executable now survives a live validation run longer than 300 seconds under ASAN/UBSAN.
+  - static shadow projector validation/caching still contains a DX8-era CPU-readback assumption (`TextureClass::Get_Surface_Level()` on a render target). bgfx render targets may not expose CPU-readable surfaces, so that path must fail closed rather than crash until the projector cache is ported to a GPU-native copy/sampling flow.
 - Startup-specific runtime knowledge from menu bring-up work:
   - do not initialize `AnimatedSoundMgrClass` before the definition hash is live; the null-definition-hash lookup storm is a real seconds-scale startup regression.
   - do not let menu font setup rescan the system font tree per font load; cache font candidates/aliases once and reuse them across `StyleMgrClass` font creation.

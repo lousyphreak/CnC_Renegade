@@ -1019,6 +1019,11 @@ static void Create_Render_Target_Test(TextureClass* render_target)
 static bool Test_Render_Target_Surface(TextureClass* render_target)
 {
 	SurfaceClass * surf = render_target->Get_Surface_Level();
+	if (surf == NULL) {
+		WWDEBUG_SAY(("Render target surface data is unavailable for projector validation. Disabling static projectors.\n"));
+		return false;
+	}
+
 	SurfaceClass::SurfaceDescription desc;
 	surf->Get_Description(desc);
 	SurfaceClass * new_surf = NEW_REF(SurfaceClass,(desc.Width,desc.Height,desc.Format));
@@ -1288,6 +1293,13 @@ void PhysicsSceneClass::Setup_Static_Directional_Shadow
 		}
 
 		SurfaceClass * surf = shadow_texture->Get_Surface_Level();
+		if (surf == NULL) {
+			WWDEBUG_SAY(("Static shadow texture surface data is unavailable for object type %d; skipping cached static projector generation\n",type_id));
+			shadow_projector->Set_Render_Target(NULL);
+			REF_PTR_RELEASE(shadow_texture);
+			REF_PTR_RELEASE(shadow_projector);
+			return;
+		}
 
 		SurfaceClass::SurfaceDescription desc;
 		surf->Get_Description(desc);

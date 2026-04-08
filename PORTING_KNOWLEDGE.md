@@ -91,6 +91,9 @@
   - for the explicit long-run validation requirement, the most trustworthy signal so far is a normal live launch under ASAN/UBSAN. Redirected `timeout ... > file` runs may self-exit early even when the same binary stays alive well past 300 seconds in the normal interactive launch path.
 - Linux menu/font startup has one easy-to-miss porting trap: the stb/font fallback path in `render2dsentence.cpp` can become seconds-slow if it rescans `/usr/share/fonts`, `/usr/local/share/fonts`, and the user's font directories for every requested UI font. Cache the discovered system font candidates and extracted aliases once, then score against that cached list for each requested family/style.
 - `AnimatedSoundMgrClass::Initialize()` is not safe to call before `DefinitionMgrClass::Is_Hash_Ready()` becomes true. If it runs too early during startup, it performs a large batch of `Find_Typed_Definition(...)` lookups against a null hash and creates a seconds-scale startup stall before the real menu comes up.
+- Static shadow projector generation still contains a legacy CPU-readback seam in `Code/wwphys/pscene_projectors.cpp`: it renders into a shared render target, then calls `TextureClass::Get_Surface_Level()` and copies the result into a standalone texture for caching.
+- That assumption is valid for the old DX8 path but not for the bgfx render-target path, where a render target may be perfectly usable for rendering while exposing no CPU-readable `SurfaceClass`.
+- Until static projector caching is ported to a renderer-native GPU path, missing surface data must be treated as “static projector caching unsupported on this backend” and handled by skipping/disabling that path rather than dereferencing null or forcing a GPU readback.
 
 ## Repository observations
 

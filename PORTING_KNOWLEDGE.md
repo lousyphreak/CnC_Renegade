@@ -78,6 +78,15 @@
 - `TextureLoader::Load_Surface_Immediate(...)` is a good seam-reduction target because shared callers really want decoded surface data, while only backend-local code still wants to turn that into an `IDirect3DSurface8*`. Returning `SurfaceClass*` there shrinks the raw DX8 boundary without changing higher-level behavior.
 - A good hygiene check for the clean port is “does this shared header still mention `IDirect3D*` in its public API?”. If the answer is yes, the seam is probably still in the wrong place. Backend-local files can still bridge to DX8 temporarily, but shared texture APIs should traffic in engine-owned `TextureClass` / `SurfaceClass` data instead.
 - Render targets are a separate texture seam from file-backed mip data. A clean bgfx port should treat them as bgfx-owned framebuffer attachments, not as a special case of “make a D3D texture/surface and then recover the bits later”. `WW3D::Begin_Render()` already uses bgfx views, so binding the projector target through `bgfx::setViewFrameBuffer` is the correct direction for that path.
+- Runtime bring-up exposed several non-obvious renderer port requirements that do not show up in compile-only work:
+  - `BgfxRenderer::Init(...)` is reached twice during startup (`WW3D::Init()` and again via `DX8Wrapper::Init()`), so “already initialized” must be treated as success. Returning failure on the second call breaks startup even though bgfx itself was already initialized correctly.
+  - bgfx platform/window data must stay valid across renderer init; probing the SDL/X11/Vulkan handles once and then discarding them is not enough.
+  - the bgfx-backed `DX8Wrapper` path still has to preserve the legacy device-dependent subsystem lifecycle until those systems are ported off it entirely. Missing `MissingTexture`, filter, mesh renderer, material, point/shatter, texture loader, cached-state, or default-state init steps show up later as seemingly unrelated runtime failures.
+  - engine asset loading cannot be replaced with direct host-filesystem image loads. Surface creation must go through the engine file-factory path because many game assets are resolved from archives rather than plain disk paths.
+  - `surfaceclass.cpp` had latent x64 pointer truncation bugs that only become visible once real font/texture surfaces are exercised on Linux.
+  - optional `.dds` sidecar probing must treat malformed files as a miss, not as a fatal error.
+  - the old deferred delete queues in `dx8renderer.cpp` are not reliable owners during shutdown. Once renderer invalidation starts reclaiming the mesh/category graph directly, those queues may contain stale pointers and should be treated as teardown bookkeeping only.
+  - for the explicit long-run validation requirement, the most trustworthy signal so far is a normal live launch under ASAN/UBSAN. Redirected `timeout ... > file` runs may self-exit early even when the same binary stays alive well past 300 seconds in the normal interactive launch path.
 
 ## Repository observations
 

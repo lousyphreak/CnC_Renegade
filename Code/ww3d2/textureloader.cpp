@@ -275,9 +275,6 @@ static unsigned Get_Full_Mip_Count(unsigned width, unsigned height, bool compres
 void TextureLoader::Init()
 {
 	WWASSERT(!_TextureLoadThread.Is_Running());
-
-	ThumbnailManagerClass::Init();
-
 	_TextureLoadThread.Execute();
 	_TextureLoadThread.Set_Priority(-4);
 }

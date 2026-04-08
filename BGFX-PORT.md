@@ -34,6 +34,10 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
 - Shared texture-facing headers no longer expose the D3D-returning `MissingTexture` helpers or the unused `TextureClass` DX8 accessors that were leaking `IDirect3D*` back out of the backend boundary.
 - Render-target textures are starting to move onto bgfx-native ownership: `TextureClass` now carries a bgfx framebuffer handle, `BgfxRenderer` can bind a texture as the active render target, and projector render-to-texture setup no longer needs a D3D surface when bgfx is active.
 - `Render2D` now submits directly to bgfx using renderer-owned programs, state, and buffers rather than the DX8 dynamic buffer path.
+- Runtime validation has moved beyond startup-only bring-up:
+  - bgfx/X11/Vulkan initialization now survives the real `WW3D::Init()` + `DX8Wrapper::Init()` sequence without falling back to headless or failing on repeated init.
+  - the bgfx-backed lifecycle now restores the legacy one-time renderer subsystem init/shutdown steps needed by textures, materials, mesh rendering, and related systems while those codepaths are still being ported.
+  - late runtime/shutdown ASAN failures in `dx8renderer.cpp`'s deferred delete bookkeeping were fixed, and the executable now survives a live validation run longer than 300 seconds under ASAN/UBSAN.
 
 ## Immediate next slice
 

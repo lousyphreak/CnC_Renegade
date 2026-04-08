@@ -728,11 +728,11 @@ void TextureClass::Apply(unsigned int stage)
 
 	DX8_RECORD_TEXTURE(this);
 
-	// Set texture itself
+	// Bind the engine texture directly; bgfx submission resolves native ownership at draw time.
 	if (WW3D::Is_Texturing_Enabled()) {
-		DX8Wrapper::Set_DX8_Texture(stage, DX8Texture);
+		DX8Wrapper::Set_Texture(stage, this);
 	} else {
-		DX8Wrapper::Set_DX8_Texture(stage, NULL);
+		DX8Wrapper::Set_Texture(stage, NULL);
 	}
 
 	DX8Wrapper::Set_DX8_Texture_Stage_State(stage,D3DTSS_MINFILTER,_MinTextureFilters[stage][TextureMinFilter]);
@@ -768,8 +768,7 @@ void TextureClass::Apply(unsigned int stage)
 
 void TextureClass::Apply_Null(unsigned int stage)
 {
-	// This function sets the render states for a "NULL" texture
-	DX8Wrapper::Set_DX8_Texture(stage, NULL);
+	DX8Wrapper::Set_Texture(stage, NULL);
 }
 
 // ----------------------------------------------------------------------------

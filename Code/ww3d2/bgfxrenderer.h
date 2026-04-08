@@ -61,6 +61,7 @@ private:
     static uint32_t BitDepth;
     static bool Windowed;
     static void *WindowHandle;
+    static bgfx::PlatformData PlatformData;
     static bgfx::VertexLayout PosColorTexcoordLayout;
     static bgfx::TextureHandle WhiteTexture;
     static bgfx::UniformHandle ColorTextureUniform;

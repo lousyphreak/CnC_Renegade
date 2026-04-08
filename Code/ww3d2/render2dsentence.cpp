@@ -167,6 +167,17 @@ bool Resolve_Font_Path(const char *font_name, bool is_bold, std::filesystem::pat
 		requested_families.emplace_back("dejavusans");
 	}
 
+	if (requested_families[0].find("regatta") != std::string::npos) {
+		requested_families.emplace_back("notosans");
+		requested_families.emplace_back("liberationsansnarrow");
+		requested_families.emplace_back("liberationsans");
+		requested_families.emplace_back("dejavusans");
+	}
+
+	requested_families.emplace_back("notosans");
+	requested_families.emplace_back("liberationsans");
+	requested_families.emplace_back("dejavusans");
+
 	std::vector<std::filesystem::path> search_roots(std::begin(FontSearchRoots), std::end(FontSearchRoots));
 	if (const char *home = std::getenv("HOME")) {
 		search_roots.emplace_back(std::filesystem::path(home) / ".fonts");
@@ -174,6 +185,7 @@ bool Resolve_Font_Path(const char *font_name, bool is_bold, std::filesystem::pat
 	}
 
 	int best_score = -1;
+	std::filesystem::path first_font_path;
 	for (const std::filesystem::path &root : search_roots) {
 		if (!std::filesystem::exists(root)) {
 			continue;
@@ -195,6 +207,10 @@ bool Resolve_Font_Path(const char *font_name, bool is_bold, std::filesystem::pat
 				continue;
 			}
 
+			if (first_font_path.empty()) {
+				first_font_path = path;
+			}
+
 			const std::string stem = Normalize_Font_Family(path.stem().string());
 			const int score = Score_Font_Candidate(stem, requested_families, is_bold);
 			if (score > best_score) {
@@ -202,6 +218,11 @@ bool Resolve_Font_Path(const char *font_name, bool is_bold, std::filesystem::pat
 				resolved_path = path;
 			}
 		}
+	}
+
+	if (best_score < 0 && !first_font_path.empty()) {
+		resolved_path = first_font_path;
+		return true;
 	}
 
 	return best_score >= 0;

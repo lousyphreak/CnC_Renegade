@@ -499,9 +499,6 @@ void ThumbnailManagerClass::Add_Thumbnail_Manager(const char* thumbnail_filename
 		man=man->Succ();
 	}
 
-	// Always update thumbnail files when they're out of date
-	Update_Thumbnail_File(mix_filename,false);
-
 	// Not found, create and add to the list.
 	man=new ThumbnailManagerClass(thumbnail_filename,mix_filename);
 	ThumbnailManagerList.Add_Tail(man);

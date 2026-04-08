@@ -103,6 +103,17 @@
   - updated `shattersystem.cpp` to include the real `dx8wrapper.h` declaration instead of relying on an incomplete forward declaration for color conversion helpers
   - removed one more raw surface-copy dependency from shared high-level code: `render2dsentence.cpp` now copies text staging data through `SurfaceClass::Copy(...)` instead of reaching through `Peek_D3D_Surface()` and `DX8Wrapper::_Copy_DX8_Rects(...)`
 - Rebuilt after the cleanup batch and moved the active frontier again. The main remaining blocker before the next bgfx renderer slice can be validated is now concentrated in `render2dsentence.cpp`, which still hard-depends on a large Win32/GDI font rasterization path (`GetDC`, `CreateFont`, `CreateDIBSection`, `GetTextExtentPoint32W`, etc.) that does not exist on Linux yet. This is now the most urgent non-bgfx blocker in `ww3d2` because it prevents a truthful full build of the renderer target.
+- Continued from compile-only bgfx progress into full runtime validation against the real executable under ASAN/UBSAN and fixed a chain of late startup/shutdown blockers instead of leaving partial renderer restoration in place:
+  - `BgfxRenderer` now persists platform data across init and treats repeated init calls as success, which fixed the bgfx/X11/Vulkan startup path when `WW3D::Init()` and `DX8Wrapper::Init()` both touch renderer initialization.
+  - restored `_MainThreadID` setup and the missing device-dependent init/shutdown sequence in the bgfx-backed `DX8Wrapper` path so `MissingTexture`, texture filters, mesh renderer state, vertex materials, point/shatter systems, texture loading, and default render-state setup all come up in the same order the legacy renderer expected.
+  - replaced host-filesystem-only image loading with engine-native `TextureLoader::Load_Surface_Immediate(...)` for surface creation, so assets living in the game's file-factory/mix path load correctly during runtime.
+  - fixed 64-bit pointer truncation in `surfaceclass.cpp`, broadened Linux/system-font fallback in `render2dsentence.cpp`, and made malformed optional DDS sidecar probes fail closed instead of aborting startup.
+  - removed eager thumbnail-cache generation from normal texture-loader startup because it was crashing on malformed assets and is not required for renderer bring-up.
+  - fixed late shutdown ownership bugs in `dx8renderer.cpp`: deferred texture/FVF delete queues are now treated as stale shutdown bookkeeping rather than secondary owners, which eliminated the long-run ASAN heap-use-after-free previously firing in `DX8MeshRendererClass::Clear_Pending_Delete_Lists()`.
+- Validation status after the shutdown/runtime stabilization slice:
+  - `cmake --build build -j20` succeeds.
+  - `Renegade` now initializes bgfx cleanly, enters the main loop, survives a normal interactive validation run for more than 300 seconds without ASAN/UBSAN failures, and shuts down cleanly when stopped.
+  - a redirected `timeout 300s ./Renegade > ...` run can still self-exit early with status `0`, so any future automation around the 300-second check should keep using the normal launch path that matches the successful live validation rather than assuming redirected execution is equivalent.
 
 ## Next work
 

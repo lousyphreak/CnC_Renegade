@@ -1,18 +1,38 @@
 #include "dx8wrapper.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <cstring>
+#include <memory>
+#include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include <bgfx/bgfx.h>
 
 #include "bgfxrenderer.h"
+#include "boxrobj.h"
+#include "dx8renderer.h"
+#include "dx8texman.h"
+#include "formconv.h"
+#include "missingtexture.h"
+#include "pointgr.h"
+#include "rddesc.h"
+#include "render2d.h"
+#include "shattersystem.h"
+#include "surfaceclass.h"
+#include "texture.h"
+#include "textureloader.h"
+#include "vertmaterial.h"
+#include "ww3d.h"
+#include "light.h"
 
 namespace
 {
 const unsigned kDefaultDynamicVertexCount = 5000;
 static const FVFInfoClass kDynamicFVFInfo(dynamic_fvf_type);
+DX8Caps *Ensure_Caps();
 
 struct SubmissionVertex
 {
@@ -33,7 +53,10 @@ unsigned g_vertex_buffer_count = 0;
 unsigned g_vertex_buffer_total_vertices = 0;
 unsigned g_vertex_buffer_total_size = 0;
 
+RenderDeviceDescClass g_render_device_desc;
 DX8Caps *g_stub_caps = nullptr;
+int g_swap_interval = 0;
+constexpr HRESULT kD3DErrInvalidCall = -11;
 std::unordered_map<const DX8VertexBufferClass *, std::vector<unsigned char>> g_dx8_vertex_buffers;
 
 bgfx::TextureHandle Resolve_Texture_Handle(TextureClass *texture)
@@ -395,6 +418,8 @@ void DynamicVBAccessClass::Allocate_DX8_Dynamic_Buffer()
 bool DX8Wrapper::Init(void *hwnd, bool lite)
 {
 	Hwnd = hwnd;
+	_MainThreadID = ThreadClass::_Get_Current_Thread_ID();
+	WWDEBUG_SAY(("DX8Wrapper main thread: 0x%x\n", _MainThreadID));
 	IsInitted = BgfxRenderer::Init(hwnd, lite);
 	if (!IsInitted) {
 		return false;
@@ -415,14 +440,75 @@ void DX8Wrapper::Shutdown(void)
 
 void DX8Wrapper::Do_Onetime_Device_Dependent_Inits(void)
 {
+	CurrentCaps = Ensure_Caps();
+	Invalidate_Cached_Render_States();
 	render_state.view = BgfxRenderer::Get_Current_View_Matrix();
 	ProjectionMatrix = BgfxRenderer::Get_Current_Projection_Matrix();
+	Render2DClass::Set_Screen_Resolution(RectClass(0, 0, ResolutionWidth, ResolutionHeight));
+	MissingTexture::_Init();
+	TextureClass::_Init_Filters((TextureClass::TextureFilterMode)WW3D::Get_Texture_Filter());
+	TheDX8MeshRenderer.Init();
+	BoxRenderObjClass::Init();
+	VertexMaterialClass::Init();
+	PointGroupClass::_Init();
+	ShatterSystem::Init();
+	TextureLoader::Init();
+	Set_Default_Global_Render_States();
 }
 
 void DX8Wrapper::Do_Onetime_Device_Dependent_Shutdowns(void)
 {
+	TextureLoader::Deinit();
+	ShatterSystem::Shutdown();
+	PointGroupClass::_Shutdown();
+	VertexMaterialClass::Shutdown();
+	BoxRenderObjClass::Shutdown();
+	TheDX8MeshRenderer.Shutdown();
+	MissingTexture::_Deinit();
 	DynamicVBAccessClass::_Deinit();
 	DynamicIBAccessClass::_Deinit();
+}
+
+void DX8Wrapper::Invalidate_Cached_Render_States(void)
+{
+	for (unsigned &state : RenderStates) {
+		state = 0x12345678;
+	}
+
+	for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
+		for (unsigned index = 0; index < 32; ++index) {
+			TextureStageStates[stage][index] = 0x12345678;
+		}
+		Textures[stage] = nullptr;
+	}
+
+	ShaderClass::Invalidate();
+}
+
+namespace
+{
+inline DWORD F2DW(float value)
+{
+	return *reinterpret_cast<unsigned *>(&value);
+}
+}
+
+void DX8Wrapper::Set_Default_Global_Render_States(void)
+{
+	const D3DCAPS8 &caps = Get_Current_Caps()->Get_DX8_Caps();
+
+	Set_DX8_Render_State(D3DRS_RANGEFOGENABLE, (caps.RasterCaps & D3DPRASTERCAPS_FOGRANGE) ? TRUE : FALSE);
+	Set_DX8_Render_State(D3DRS_FOGTABLEMODE, D3DFOG_NONE);
+	Set_DX8_Render_State(D3DRS_FOGVERTEXMODE, D3DFOG_LINEAR);
+	Set_DX8_Render_State(D3DRS_SPECULARMATERIALSOURCE, D3DMCS_MATERIAL);
+	Set_DX8_Render_State(D3DRS_COLORVERTEX, TRUE);
+	Set_DX8_Render_State(D3DRS_ZBIAS, 0);
+	Set_DX8_Texture_Stage_State(1, D3DTSS_BUMPENVLSCALE, F2DW(1.0f));
+	Set_DX8_Texture_Stage_State(1, D3DTSS_BUMPENVLOFFSET, F2DW(0.0f));
+	Set_DX8_Texture_Stage_State(0, D3DTSS_BUMPENVMAT00, F2DW(1.0f));
+	Set_DX8_Texture_Stage_State(0, D3DTSS_BUMPENVMAT01, F2DW(0.0f));
+	Set_DX8_Texture_Stage_State(0, D3DTSS_BUMPENVMAT10, F2DW(0.0f));
+	Set_DX8_Texture_Stage_State(0, D3DTSS_BUMPENVMAT11, F2DW(1.0f));
 }
 
 void DX8Wrapper::Begin_Scene(void)
@@ -825,4 +911,517 @@ unsigned DX8Wrapper::Get_Last_Frame_Texture_Stage_State_Changes()
 unsigned DX8Wrapper::Get_Last_Frame_DX8_Calls()
 {
 	return g_last_frame_dx8_calls;
+}
+
+
+namespace
+{
+unsigned Bytes_Per_Pixel(D3DFORMAT format)
+{
+    switch (format) {
+    case D3DFMT_A8R8G8B8:
+    case D3DFMT_X8R8G8B8:
+        return 4;
+    case D3DFMT_R8G8B8:
+        return 3;
+    case D3DFMT_R5G6B5:
+    case D3DFMT_X1R5G5B5:
+    case D3DFMT_A1R5G5B5:
+    case D3DFMT_A4R4G4B4:
+    case D3DFMT_X4R4G4B4:
+    case D3DFMT_A8L8:
+    case D3DFMT_V8U8:
+        return 2;
+    case D3DFMT_A8:
+    case D3DFMT_L8:
+    case D3DFMT_A4L4:
+    case D3DFMT_R3G3B2:
+        return 1;
+    case D3DFMT_A8R3G3B2:
+        return 2;
+    default:
+        return 4;
+    }
+}
+
+unsigned Block_Size(D3DFORMAT format)
+{
+    switch (format) {
+    case D3DFMT_DXT1:
+        return 8;
+    case D3DFMT_DXT2:
+    case D3DFMT_DXT3:
+    case D3DFMT_DXT4:
+    case D3DFMT_DXT5:
+        return 16;
+    default:
+        return 0;
+    }
+}
+
+unsigned Surface_Pitch(unsigned width, D3DFORMAT format)
+{
+    const unsigned block_size = Block_Size(format);
+    if (block_size != 0) {
+        return std::max(1u, (width + 3u) / 4u) * block_size;
+    }
+    return width * Bytes_Per_Pixel(format);
+}
+
+unsigned Surface_Size(unsigned width, unsigned height, D3DFORMAT format)
+{
+    const unsigned block_size = Block_Size(format);
+    if (block_size != 0) {
+        return std::max(1u, (width + 3u) / 4u) * std::max(1u, (height + 3u) / 4u) * block_size;
+    }
+    return Surface_Pitch(width, format) * height;
+}
+
+class BgfxSurface8 final : public IDirect3DSurface8
+{
+public:
+    BgfxSurface8(unsigned width, unsigned height, D3DFORMAT format)
+        : ref_count_(1), desc_{format, D3DRTYPE_SURFACE, 0, D3DPOOL_SYSTEMMEM, Surface_Size(width, height, format), 0, width, height}, pitch_(Surface_Pitch(width, format)), data_(desc_.Size), locked_(false)
+    {
+    }
+
+    ULONG AddRef() override { return ++ref_count_; }
+    ULONG Release() override
+    {
+        const ULONG remaining = --ref_count_;
+        if (remaining == 0) {
+            delete this;
+        }
+        return remaining;
+    }
+    HRESULT GetDesc(D3DSURFACE_DESC *desc) override
+    {
+        if (desc == nullptr) {
+            return kD3DErrInvalidCall;
+        }
+        *desc = desc_;
+        return D3D_OK;
+    }
+    HRESULT LockRect(D3DLOCKED_RECT *locked_rect, const RECT *rect, DWORD) override
+    {
+        if (locked_ || locked_rect == nullptr) {
+            return kD3DErrInvalidCall;
+        }
+        locked_ = true;
+        locked_rect->Pitch = static_cast<int>(pitch_);
+        unsigned offset = 0;
+        if (rect != nullptr) {
+            const unsigned block_size = Block_Size(desc_.Format);
+            if (block_size != 0) {
+                offset = (static_cast<unsigned>(rect->top) / 4u) * pitch_ + (static_cast<unsigned>(rect->left) / 4u) * block_size;
+            } else {
+                offset = static_cast<unsigned>(rect->top) * pitch_ + static_cast<unsigned>(rect->left) * Bytes_Per_Pixel(desc_.Format);
+            }
+        }
+        locked_rect->pBits = data_.data() + offset;
+        return D3D_OK;
+    }
+    HRESULT UnlockRect() override
+    {
+        if (!locked_) {
+            return kD3DErrInvalidCall;
+        }
+        locked_ = false;
+        return D3D_OK;
+    }
+
+    unsigned char *Data() { return data_.data(); }
+    const unsigned char *Data() const { return data_.data(); }
+    unsigned Pitch() const { return pitch_; }
+
+private:
+    ULONG ref_count_;
+    D3DSURFACE_DESC desc_;
+    unsigned pitch_;
+    std::vector<unsigned char> data_;
+    bool locked_;
+};
+
+class BgfxTexture8 final : public IDirect3DTexture8
+{
+public:
+    BgfxTexture8(unsigned width, unsigned height, D3DFORMAT format, unsigned mip_count, D3DPOOL pool)
+        : ref_count_(1), pool_(pool)
+    {
+        unsigned level_width = std::max(1u, width);
+        unsigned level_height = std::max(1u, height);
+        const unsigned resolved_mip_count = (mip_count == 0) ? 1u : mip_count;
+        surfaces_.reserve(resolved_mip_count);
+        for (unsigned i = 0; i < resolved_mip_count; ++i) {
+            surfaces_.push_back(new BgfxSurface8(level_width, level_height, format));
+            level_width = std::max(1u, level_width / 2u);
+            level_height = std::max(1u, level_height / 2u);
+        }
+    }
+
+    ~BgfxTexture8() override
+    {
+        for (BgfxSurface8 *surface : surfaces_) {
+            surface->Release();
+        }
+    }
+
+    ULONG AddRef() override { return ++ref_count_; }
+    ULONG Release() override
+    {
+        const ULONG remaining = --ref_count_;
+        if (remaining == 0) {
+            delete this;
+        }
+        return remaining;
+    }
+    UINT GetLevelCount() override { return static_cast<UINT>(surfaces_.size()); }
+    HRESULT GetSurfaceLevel(UINT level, IDirect3DSurface8 **surface) override
+    {
+        if (surface == nullptr || level >= surfaces_.size()) {
+            return kD3DErrInvalidCall;
+        }
+        surfaces_[level]->AddRef();
+        *surface = surfaces_[level];
+        return D3D_OK;
+    }
+    HRESULT LockRect(UINT level, D3DLOCKED_RECT *locked_rect, const RECT *rect, DWORD flags) override
+    {
+        if (level >= surfaces_.size()) {
+            return kD3DErrInvalidCall;
+        }
+        return surfaces_[level]->LockRect(locked_rect, rect, flags);
+    }
+    HRESULT UnlockRect(UINT level) override
+    {
+        if (level >= surfaces_.size()) {
+            return kD3DErrInvalidCall;
+        }
+        return surfaces_[level]->UnlockRect();
+    }
+    D3DPOOL Pool() const { return pool_; }
+
+private:
+    ULONG ref_count_;
+    D3DPOOL pool_;
+    std::vector<BgfxSurface8 *> surfaces_;
+};
+
+DX8Caps *Ensure_Caps()
+{
+    if (g_stub_caps == nullptr) {
+        D3DCAPS8 caps = {};
+        caps.AdapterOrdinal = 0;
+        caps.DeviceType = D3DDEVTYPE_HAL;
+        caps.DevCaps = D3DDEVCAPS_HWTRANSFORMANDLIGHT;
+        caps.RasterCaps = D3DPRASTERCAPS_ZBIAS;
+        caps.TextureFilterCaps = D3DPTFILTERCAPS_MINFLINEAR | D3DPTFILTERCAPS_MAGFLINEAR | D3DPTFILTERCAPS_MIPFLINEAR | D3DPTFILTERCAPS_MINFANISOTROPIC | D3DPTFILTERCAPS_MAGFANISOTROPIC;
+        caps.TextureOpCaps = D3DTEXOPCAPS_DISABLE | D3DTEXOPCAPS_SELECTARG1 | D3DTEXOPCAPS_MODULATE | D3DTEXOPCAPS_ADD | D3DTEXOPCAPS_SUBTRACT | D3DTEXOPCAPS_ADDSMOOTH | D3DTEXOPCAPS_BLENDTEXTUREALPHA;
+        caps.MaxTextureWidth = 16384;
+        caps.MaxTextureHeight = 16384;
+        caps.MaxSimultaneousTextures = 2;
+
+        D3DADAPTER_IDENTIFIER8 adapter = {};
+        const char *name = bgfx::getRendererName(bgfx::getRendererType());
+        std::snprintf(adapter.Driver, sizeof(adapter.Driver), "bgfx");
+        std::snprintf(adapter.Description, sizeof(adapter.Description), "%s", name != nullptr ? name : "bgfx");
+        std::snprintf(adapter.DeviceName, sizeof(adapter.DeviceName), "bgfx");
+        adapter.DriverVersion.HighPart = 1;
+        adapter.DriverVersion.LowPart = 0;
+        g_stub_caps = new DX8Caps(nullptr, caps, WW3D_FORMAT_A8R8G8B8, adapter);
+    }
+    return g_stub_caps;
+}
+
+void Copy_Surface_Level(BgfxSurface8 &surface, const unsigned char *source_pixels, int source_width, int source_height, int source_pixel_size)
+{
+    const D3DSURFACE_DESC &desc = [&]() -> const D3DSURFACE_DESC & { static D3DSURFACE_DESC tmp; surface.GetDesc(&tmp); return tmp; }();
+    const unsigned row_size = Block_Size(desc.Format) != 0 ? Surface_Pitch(desc.Width, desc.Format) : static_cast<unsigned>(source_width) * static_cast<unsigned>(source_pixel_size);
+    const unsigned row_count = Block_Size(desc.Format) != 0 ? std::max(1u, (desc.Height + 3u) / 4u) : desc.Height;
+    for (unsigned row = 0; row < row_count; ++row) {
+        std::memcpy(surface.Data() + row * surface.Pitch(), source_pixels + row * row_size, row_size);
+    }
+}
+}
+
+void DX8Wrapper::Set_DX8_Material(const D3DMATERIAL8 *mat)
+{
+    ++material_changes;
+    if (mat != nullptr) {
+        std::memcpy(&RenderStates[D3DRS_AMBIENT], mat, 0);
+    }
+}
+
+void DX8Wrapper::Set_DX8_Light(int index, D3DLIGHT8 *light)
+{
+    if (index < 0 || index >= 4) {
+        return;
+    }
+    ++light_changes;
+    if (light != nullptr) {
+        render_state.Lights[index] = *light;
+        render_state.LightEnable[index] = true;
+    } else {
+        std::memset(&render_state.Lights[index], 0, sizeof(D3DLIGHT8));
+        render_state.LightEnable[index] = false;
+    }
+    CurrentDX8LightEnables[index] = render_state.LightEnable[index];
+}
+
+void DX8Wrapper::Set_DX8_Texture_Stage_State(unsigned stage, D3DTEXTURESTAGESTATETYPE state, unsigned value)
+{
+    if (stage < MAX_TEXTURE_STAGES && state < 32) {
+        TextureStageStates[stage][state] = value;
+        ++texture_stage_state_changes;
+    }
+}
+
+void DX8Wrapper::Set_DX8_Texture(unsigned int stage, IDirect3DBaseTexture8 *texture)
+{
+    if (stage >= MAX_TEXTURE_STAGES) {
+        return;
+    }
+    Textures[stage] = texture;
+    ++texture_changes;
+}
+
+void DX8Wrapper::Set_Light(unsigned index, const LightClass &light)
+{
+    if (index >= 4) {
+        return;
+    }
+
+    D3DLIGHT8 dx_light = {};
+    dx_light.Type = (light.Get_Type() == LightClass::DIRECTIONAL) ? D3DLIGHT_DIRECTIONAL : D3DLIGHT_POINT;
+    Vector3 ambient;
+    Vector3 diffuse;
+    Vector3 specular;
+    light.Get_Ambient(&ambient);
+    light.Get_Diffuse(&diffuse);
+    light.Get_Specular(&specular);
+    const Vector3 position = light.Get_Position();
+    Vector3 direction;
+    light.Get_Spot_Direction(direction);
+    dx_light.Ambient = {ambient.X, ambient.Y, ambient.Z, 1.0f};
+    dx_light.Diffuse = {diffuse.X, diffuse.Y, diffuse.Z, 1.0f};
+    dx_light.Specular = {specular.X, specular.Y, specular.Z, 1.0f};
+    dx_light.Position = {position.X, position.Y, position.Z};
+    dx_light.Direction = {direction.X, direction.Y, direction.Z};
+    double far_start = 0.0;
+    double far_end = 0.0;
+    light.Get_Far_Attenuation_Range(far_start, far_end);
+    dx_light.Range = static_cast<float>(far_end);
+    dx_light.Attenuation0 = 1.0f;
+    dx_light.Attenuation1 = 0.0f;
+    dx_light.Attenuation2 = 0.0f;
+    Set_DX8_Light(static_cast<int>(index), &dx_light);
+}
+
+void DX8Wrapper::Begin_Statistics() {}
+void DX8Wrapper::End_Statistics() {}
+
+bool DX8Wrapper::Set_Any_Render_Device(void)
+{
+    return Set_Render_Device(0, ResolutionWidth, ResolutionHeight, BitDepth, IsWindowed ? 1 : 0, false);
+}
+
+bool DX8Wrapper::Set_Render_Device(const char *, int width, int height, int bits, int windowed, bool resize_window)
+{
+    return Set_Render_Device(0, width, height, bits, windowed, resize_window);
+}
+
+bool DX8Wrapper::Set_Render_Device(int dev, int width, int height, int bits, int windowed, bool)
+{
+    CurRenderDevice = (dev < 0) ? 0 : dev;
+    if (width > 0) {
+        ResolutionWidth = width;
+    }
+    if (height > 0) {
+        ResolutionHeight = height;
+    }
+    if (bits > 0) {
+        BitDepth = bits;
+    }
+    if (windowed >= 0) {
+        IsWindowed = (windowed != 0);
+    }
+    Ensure_Caps();
+    CurrentCaps = g_stub_caps;
+    if (BgfxRenderer::Is_Initted()) {
+        BgfxRenderer::Reset();
+    }
+    return true;
+}
+
+bool DX8Wrapper::Set_Next_Render_Device(void)
+{
+    return true;
+}
+
+bool DX8Wrapper::Toggle_Windowed(void)
+{
+    IsWindowed = !IsWindowed;
+    return Set_Render_Device(CurRenderDevice, ResolutionWidth, ResolutionHeight, BitDepth, IsWindowed ? 1 : 0, false);
+}
+
+int DX8Wrapper::Get_Render_Device_Count(void)
+{
+    return 1;
+}
+
+int DX8Wrapper::Get_Render_Device(void)
+{
+    return CurRenderDevice < 0 ? 0 : CurRenderDevice;
+}
+
+const RenderDeviceDescClass &DX8Wrapper::Get_Render_Device_Desc(int)
+{
+    const char *renderer_name = bgfx::getRendererName(bgfx::getRendererType());
+    if (renderer_name == nullptr) {
+        renderer_name = "bgfx";
+    }
+    g_render_device_desc.reset_resolution_list();
+    g_render_device_desc.set_device_name(renderer_name);
+    g_render_device_desc.set_device_vendor("bgfx");
+    g_render_device_desc.set_device_platform("Cross-platform");
+    g_render_device_desc.set_driver_name("bgfx");
+    g_render_device_desc.set_driver_vendor("bgfx");
+    g_render_device_desc.set_driver_version("1");
+    g_render_device_desc.set_hardware_name(renderer_name);
+    g_render_device_desc.set_hardware_vendor("bgfx");
+    g_render_device_desc.set_hardware_chipset(renderer_name);
+    g_render_device_desc.Caps = Ensure_Caps()->Get_DX8_Caps();
+    g_render_device_desc.AdapterIdentifier = D3DADAPTER_IDENTIFIER8{};
+    std::snprintf(g_render_device_desc.AdapterIdentifier.Driver, sizeof(g_render_device_desc.AdapterIdentifier.Driver), "bgfx");
+    std::snprintf(g_render_device_desc.AdapterIdentifier.Description, sizeof(g_render_device_desc.AdapterIdentifier.Description), "%s", renderer_name);
+    std::snprintf(g_render_device_desc.AdapterIdentifier.DeviceName, sizeof(g_render_device_desc.AdapterIdentifier.DeviceName), "bgfx");
+    g_render_device_desc.add_resolution(ResolutionWidth, ResolutionHeight, BitDepth);
+    return g_render_device_desc;
+}
+
+const char *DX8Wrapper::Get_Render_Device_Name(int)
+{
+    return Get_Render_Device_Desc(0).Get_Device_Name();
+}
+
+bool DX8Wrapper::Set_Device_Resolution(int width, int height, int bits, int windowed, bool resize_window)
+{
+    return Set_Render_Device(CurRenderDevice, width, height, bits, windowed, resize_window);
+}
+
+bool DX8Wrapper::Registry_Save_Render_Device(const char *)
+{
+    return true;
+}
+
+bool DX8Wrapper::Registry_Save_Render_Device(const char *, int, int, int, int, bool, int)
+{
+    return true;
+}
+
+bool DX8Wrapper::Registry_Load_Render_Device(const char *, bool resize_window)
+{
+    return Set_Render_Device(CurRenderDevice, ResolutionWidth, ResolutionHeight, BitDepth, IsWindowed ? 1 : 0, resize_window);
+}
+
+bool DX8Wrapper::Registry_Load_Render_Device(const char *, char *device, int device_len, int &width, int &height, int &depth, int &windowed, int &texture_depth)
+{
+    if (device != nullptr && device_len > 0) {
+        std::snprintf(device, static_cast<size_t>(device_len), "%s", Get_Render_Device_Name(0));
+    }
+    width = ResolutionWidth;
+    height = ResolutionHeight;
+    depth = BitDepth;
+    windowed = IsWindowed ? 1 : 0;
+    texture_depth = TextureBitDepth;
+    return true;
+}
+
+void DX8Wrapper::Set_Swap_Interval(int swap)
+{
+    g_swap_interval = swap;
+}
+
+int DX8Wrapper::Get_Swap_Interval(void)
+{
+    return g_swap_interval;
+}
+
+IDirect3DSwapChain8 *DX8Wrapper::Create_Additional_Swap_Chain(HWND)
+{
+    return nullptr;
+}
+
+IDirect3DTexture8 *DX8Wrapper::_Create_DX8_Texture(unsigned int width, unsigned int height, WW3DFormat format, TextureClass::MipCountType mip_level_count, D3DPOOL pool, bool)
+{
+    return new BgfxTexture8(width, height, WW3DFormat_To_D3DFormat(format), static_cast<unsigned>(mip_level_count == TextureClass::MIP_LEVELS_ALL ? 1 : mip_level_count), pool);
+}
+
+IDirect3DTexture8 *DX8Wrapper::_Create_DX8_Texture(const char *filename, TextureClass::MipCountType mip_level_count)
+{
+    IDirect3DSurface8 *surface = _Create_DX8_Surface(filename);
+    if (surface == nullptr) {
+        return nullptr;
+    }
+    IDirect3DTexture8 *texture = _Create_DX8_Texture(surface, mip_level_count);
+    surface->Release();
+    return texture;
+}
+
+IDirect3DTexture8 *DX8Wrapper::_Create_DX8_Texture(IDirect3DSurface8 *surface, TextureClass::MipCountType mip_level_count)
+{
+    if (surface == nullptr) {
+        return nullptr;
+    }
+    D3DSURFACE_DESC desc = {};
+    if (FAILED(surface->GetDesc(&desc))) {
+        return nullptr;
+    }
+
+    BgfxTexture8 *texture = new BgfxTexture8(desc.Width, desc.Height, desc.Format, static_cast<unsigned>(mip_level_count == TextureClass::MIP_LEVELS_ALL ? 1 : mip_level_count), D3DPOOL_MANAGED);
+    BgfxSurface8 *level0 = nullptr;
+    IDirect3DSurface8 *surface_level = nullptr;
+    if (SUCCEEDED(texture->GetSurfaceLevel(0, &surface_level))) {
+        level0 = static_cast<BgfxSurface8 *>(surface_level);
+        D3DLOCKED_RECT locked = {};
+        if (SUCCEEDED(surface->LockRect(&locked, nullptr, 0))) {
+            Copy_Surface_Level(*level0, static_cast<const unsigned char *>(locked.pBits), static_cast<int>(desc.Width), static_cast<int>(desc.Height), static_cast<int>(Bytes_Per_Pixel(desc.Format)));
+            surface->UnlockRect();
+        }
+        surface_level->Release();
+    }
+    return texture;
+}
+
+IDirect3DSurface8 *DX8Wrapper::_Create_DX8_Surface(unsigned int width, unsigned int height, WW3DFormat format)
+{
+    return new BgfxSurface8(width, height, WW3DFormat_To_D3DFormat(format));
+}
+
+IDirect3DSurface8 *DX8Wrapper::_Create_DX8_Surface(const char *filename)
+{
+    if (filename == nullptr || filename[0] == '\0') {
+        return nullptr;
+    }
+
+    StringClass filename_string(filename, true);
+    SurfaceClass *loaded_surface = TextureLoader::Load_Surface_Immediate(
+        filename_string,
+        WW3D_FORMAT_UNKNOWN,
+        true);
+    if (loaded_surface == nullptr) {
+        loaded_surface = MissingTexture::_Create_Missing_Surface_Instance();
+    }
+    if (loaded_surface == nullptr) {
+        return nullptr;
+    }
+
+    IDirect3DSurface8 *surface = loaded_surface->Acquire_DX8_Surface();
+    loaded_surface->Release_Ref();
+    return surface;
+}
+
+IDirect3DSurface8 *DX8Wrapper::_Get_DX8_Front_Buffer()
+{
+    return nullptr;
 }

@@ -25,6 +25,7 @@ uint32_t BgfxRenderer::ActiveHeight = 0;
 uint32_t BgfxRenderer::BitDepth = 32;
 bool BgfxRenderer::Windowed = true;
 void *BgfxRenderer::WindowHandle = nullptr;
+bgfx::PlatformData BgfxRenderer::PlatformData = {};
 bgfx::VertexLayout BgfxRenderer::PosColorTexcoordLayout;
 bgfx::TextureHandle BgfxRenderer::WhiteTexture = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::ColorTextureUniform = BGFX_INVALID_HANDLE;
@@ -375,8 +376,12 @@ bool Get_Bgfx_Texture_Format(WW3DFormat format, bgfx::TextureFormat::Enum &bgfx_
 
 bool BgfxRenderer::Init(void *window_handle, bool lite)
 {
-    if (lite || IsInitted) {
-        return lite;
+    if (lite) {
+        return true;
+    }
+
+    if (IsInitted) {
+        return true;
     }
 
     if (!Update_Platform_Window(window_handle)) {
@@ -386,6 +391,7 @@ bool BgfxRenderer::Init(void *window_handle, bool lite)
 
     bgfx::Init init;
     init.type = bgfx::RendererType::Count;
+    init.platformData = PlatformData;
     init.resolution.width = Width;
     init.resolution.height = Height;
     init.resolution.reset = BGFX_RESET_VSYNC;
@@ -425,6 +431,7 @@ void BgfxRenderer::Shutdown()
     BitDepth = 32;
     Windowed = true;
     WindowHandle = nullptr;
+    PlatformData = {};
     IsInitted = false;
 }
 
@@ -849,8 +856,8 @@ void BgfxRenderer::Shutdown_Render_Resources()
 
 bool BgfxRenderer::Update_Platform_Window(void *window_handle)
 {
-    bgfx::PlatformData platform_data = {};
     SDL_Window *window = reinterpret_cast<SDL_Window *>(window_handle);
+    bgfx::PlatformData platform_data = {};
     if (!Query_Native_Window(window, platform_data)) {
         return false;
     }
@@ -871,6 +878,7 @@ bool BgfxRenderer::Update_Platform_Window(void *window_handle)
         BitDepth = 32;
     }
     Windowed = (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) == 0;
+    PlatformData = platform_data;
     bgfx::setPlatformData(platform_data);
     return true;
 }

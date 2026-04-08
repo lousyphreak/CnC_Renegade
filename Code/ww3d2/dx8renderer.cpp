@@ -72,8 +72,17 @@ DX8MeshRendererClass TheDX8MeshRenderer;
 static DynamicVectorClass<Vector3>				_TempVertexBuffer;
 static DynamicVectorClass<Vector3>				_TempNormalBuffer;
 
-static TextureCategoryList							texture_category_delete_list;
-static FVFCategoryList								fvf_category_container_delete_list;
+static DynamicVectorClass<DX8TextureCategoryClass *> &Get_Texture_Category_Delete_List()
+{
+	static auto *delete_list = new DynamicVectorClass<DX8TextureCategoryClass *>();
+	return *delete_list;
+}
+
+static DynamicVectorClass<DX8FVFCategoryContainer *> &Get_FVF_Category_Container_Delete_List()
+{
+	static auto *delete_list = new DynamicVectorClass<DX8FVFCategoryContainer *>();
+	return *delete_list;
+}
 
 
 // helper data structure
@@ -252,7 +261,7 @@ void DX8TextureCategoryClass::Remove_Polygon_Renderer(DX8PolygonRendererClass* p
 	p_renderer->Set_Texture_Category(NULL);
 	if (PolygonRendererList.Peek_Head() == NULL) {
 		container->Remove_Texture_Category(this);
-		texture_category_delete_list.Add_Tail(this);
+		Get_Texture_Category_Delete_List().Add(this);
 	}
 }
 
@@ -262,11 +271,11 @@ void DX8FVFCategoryContainer::Remove_Texture_Category(DX8TextureCategoryClass* t
 	for (unsigned pass=0;pass<passes;++pass) {
 		texture_category_list[pass].Remove(tex_category);
 	}
-	for (pass=0; pass<passes; pass++) {
+	for (unsigned pass=0; pass<passes; pass++) {
 		// If any of the texture category lists has anything in it, no need to delete this container
 		if (texture_category_list[pass].Peek_Head() != NULL) return;
 	}
-	fvf_category_container_delete_list.Add_Tail(this);
+	Get_FVF_Category_Container_Delete_List().Add(this);
 }
 
 void DX8FVFCategoryContainer::Add_Visible_Material_Pass(MaterialPassClass * pass,MeshClass * mesh)
@@ -1534,7 +1543,7 @@ unsigned DX8TextureCategoryClass::Add_Mesh(
 					for (unsigned i=0;i<index_count;++i) {
 						unsigned short idx;
 
-						idx=unsigned short(strip[i+1]);
+						idx=static_cast<unsigned short>(strip[i+1]);
 						vmin=MIN(vmin,idx);
 						vmax=MAX(vmax,idx);
 						*dst_indices++=idx;
@@ -1580,19 +1589,19 @@ unsigned DX8TextureCategoryClass::Add_Mesh(
 				if (all_textures_same && Equal_Material(mat,material) && shd==shader) {
 					unsigned short idx;
 
-					idx=unsigned short(src_indices[i][0]+vertex_offset);
+					idx=static_cast<unsigned short>(src_indices[i][0] + vertex_offset);
 					vmin=MIN(vmin,idx);
 					vmax=MAX(vmax,idx);
 					*dst_indices++=idx;
 //					WWDEBUG_SAY(("%d, ",idx));
 
-					idx=unsigned short(src_indices[i][1]+vertex_offset);
+					idx=static_cast<unsigned short>(src_indices[i][1] + vertex_offset);
 					vmin=MIN(vmin,idx);
 					vmax=MAX(vmax,idx);
 					*dst_indices++=idx;
 //					WWDEBUG_SAY(("%d, ",idx));
 
-					idx=unsigned short(src_indices[i][2]+vertex_offset);
+					idx=static_cast<unsigned short>(src_indices[i][2] + vertex_offset);
 					vmin=MIN(vmin,idx);
 					vmax=MAX(vmax,idx);
 					*dst_indices++=idx;
@@ -1813,12 +1822,14 @@ void DX8MeshRendererClass::Shutdown(void)
 
 void DX8MeshRendererClass::Clear_Pending_Delete_Lists()
 {
-	while (DX8TextureCategoryClass* category=texture_category_delete_list.Remove_Head()) {
-		delete category;
-	}
-	while (DX8FVFCategoryContainer* container=fvf_category_container_delete_list.Remove_Head()) {
-		delete container;
-	}
+	DynamicVectorClass<DX8TextureCategoryClass *> &texture_delete_list = Get_Texture_Category_Delete_List();
+	// These queues are only flushed during renderer teardown. At that point the
+	// owning mesh/container graphs are already being invalidated, so queued entries
+	// may legitimately point at objects reclaimed elsewhere during shutdown.
+	texture_delete_list.Delete_All();
+
+	DynamicVectorClass<DX8FVFCategoryContainer *> &fvf_delete_list = Get_FVF_Category_Container_Delete_List();
+	fvf_delete_list.Delete_All();
 }
 
 // ----------------------------------------------------------------------------
@@ -1920,8 +1931,9 @@ void DX8MeshRendererClass::Register_Mesh_Type(MeshClass* mesh)
 			/*
 			** Search for an existing FVF Category Container that matches this mesh
 			*/
-			for (int i=0;i<texture_category_container_lists_rigid.Count();++i) {
-				FVFCategoryList * list=texture_category_container_lists_rigid[i];
+			int rigid_list_index = 0;
+			for (; rigid_list_index < texture_category_container_lists_rigid.Count(); ++rigid_list_index) {
+				FVFCategoryList * list=texture_category_container_lists_rigid[rigid_list_index];
 				WWASSERT(list);
 				DX8FVFCategoryContainer * container=list->Peek_Head();
 				if (container && container->Get_FVF()!=fvf) continue;
@@ -1930,7 +1942,7 @@ void DX8MeshRendererClass::Register_Mesh_Type(MeshClass* mesh)
 				break;
 			}
 
-			if (i==texture_category_container_lists_rigid.Count()) {
+			if (rigid_list_index == texture_category_container_lists_rigid.Count()) {
 
 				/*
 				** We couldn't find an existing FVF category container so we have to add one.  Future
@@ -2093,10 +2105,6 @@ void DX8MeshRendererClass::Invalidate()
 
 	texture_category_container_lists_rigid.Delete_All();
 }
-
-
-
-
 
 
 

@@ -1113,7 +1113,10 @@ void DX8Wrapper::Draw_Triangles(unsigned short start_index, unsigned short polyg
 	DX8Wrapper::Get_Transform(D3DTS_TEXTURE1, texture1_transform);
 
 	SubmissionVertex *submission_vertices = reinterpret_cast<SubmissionVertex *>(transient_vertex_buffer.data);
-	VertexBufferClass::AppendLockClass vertex_lock(render_state.vertex_buffer, render_state.vba_offset + min_vertex_index, vertex_count);
+	VertexBufferClass::AppendLockClass vertex_lock(
+		render_state.vertex_buffer,
+		render_state.vba_offset + render_state.index_base_offset + min_vertex_index,
+		vertex_count);
 	const unsigned char *source_vertices = reinterpret_cast<const unsigned char *>(vertex_lock.Get_Vertex_Array());
 	for (unsigned short vertex_index = 0; vertex_index < vertex_count; ++vertex_index) {
 		const unsigned char *vertex = source_vertices + vertex_index * render_state.vertex_buffer->FVF_Info().Get_FVF_Size();
@@ -1184,8 +1187,7 @@ void DX8Wrapper::Draw_Triangles(unsigned short start_index, unsigned short polyg
 	IndexBufferClass::AppendLockClass index_lock(render_state.index_buffer, render_state.iba_offset + start_index, triangle_index_count);
 	const unsigned short *source_indices = index_lock.Get_Index_Array();
 	for (uint32_t index = 0; index < triangle_index_count; ++index) {
-		const unsigned short resolved_index = static_cast<unsigned short>(source_indices[index] + render_state.index_base_offset);
-		submission_indices[index] = static_cast<uint16_t>(resolved_index - min_vertex_index);
+		submission_indices[index] = static_cast<uint16_t>(source_indices[index] - min_vertex_index);
 	}
 
 	const Matrix4 world_transform = render_state.world.Transpose();
@@ -1219,9 +1221,9 @@ void DX8Wrapper::Draw_Triangles(unsigned short start_index, unsigned short polyg
 	bgfx::submit(BgfxRenderer::Get_Main_View_Id(), BgfxRenderer::Get_Fixed_Function_Program());
 }
 
-void DX8Wrapper::Draw_Strip(unsigned short start_index, unsigned short index_count, unsigned short min_vertex_index, unsigned short vertex_count)
+void DX8Wrapper::Draw_Strip(unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count)
 {
-	if (index_count < 3 || render_state.index_buffer == nullptr || render_state.vertex_buffer == nullptr) {
+	if (polygon_count == 0 || render_state.index_buffer == nullptr || render_state.vertex_buffer == nullptr) {
 		return;
 	}
 
@@ -1232,7 +1234,7 @@ void DX8Wrapper::Draw_Strip(unsigned short start_index, unsigned short index_cou
 
 	Apply_Render_State_Changes();
 
-	const unsigned short polygon_count = static_cast<unsigned short>(index_count - 2);
+	const unsigned short strip_index_count = static_cast<unsigned short>(polygon_count + 2);
 	const uint32_t triangle_index_count = static_cast<uint32_t>(polygon_count) * 3u;
 
 	const bgfx::VertexLayout &layout = BgfxRenderer::Get_Fixed_Function_Layout();
@@ -1256,7 +1258,10 @@ void DX8Wrapper::Draw_Strip(unsigned short start_index, unsigned short index_cou
 	DX8Wrapper::Get_Transform(D3DTS_TEXTURE1, texture1_transform);
 
 	SubmissionVertex *submission_vertices = reinterpret_cast<SubmissionVertex *>(transient_vertex_buffer.data);
-	VertexBufferClass::AppendLockClass vertex_lock(render_state.vertex_buffer, render_state.vba_offset + min_vertex_index, vertex_count);
+	VertexBufferClass::AppendLockClass vertex_lock(
+		render_state.vertex_buffer,
+		render_state.vba_offset + render_state.index_base_offset + min_vertex_index,
+		vertex_count);
 	const unsigned char *source_vertices = reinterpret_cast<const unsigned char *>(vertex_lock.Get_Vertex_Array());
 	for (unsigned short vertex_index = 0; vertex_index < vertex_count; ++vertex_index) {
 		const unsigned char *vertex = source_vertices + vertex_index * render_state.vertex_buffer->FVF_Info().Get_FVF_Size();
@@ -1324,16 +1329,16 @@ void DX8Wrapper::Draw_Strip(unsigned short start_index, unsigned short index_cou
 	}
 
 	uint16_t *submission_indices = reinterpret_cast<uint16_t *>(transient_index_buffer.data);
-	IndexBufferClass::AppendLockClass index_lock(render_state.index_buffer, render_state.iba_offset + start_index, index_count);
+	IndexBufferClass::AppendLockClass index_lock(render_state.index_buffer, render_state.iba_offset + start_index, strip_index_count);
 	const unsigned short *strip_indices = index_lock.Get_Index_Array();
 	for (unsigned short triangle = 0; triangle < polygon_count; ++triangle) {
 		const bool odd_triangle = (triangle & 1u) != 0u;
 		const unsigned short a = strip_indices[triangle + (odd_triangle ? 1 : 0)];
 		const unsigned short b = strip_indices[triangle + (odd_triangle ? 0 : 1)];
 		const unsigned short c = strip_indices[triangle + 2];
-		submission_indices[triangle * 3 + 0] = static_cast<uint16_t>(a + render_state.index_base_offset - min_vertex_index);
-		submission_indices[triangle * 3 + 1] = static_cast<uint16_t>(b + render_state.index_base_offset - min_vertex_index);
-		submission_indices[triangle * 3 + 2] = static_cast<uint16_t>(c + render_state.index_base_offset - min_vertex_index);
+		submission_indices[triangle * 3 + 0] = static_cast<uint16_t>(a - min_vertex_index);
+		submission_indices[triangle * 3 + 1] = static_cast<uint16_t>(b - min_vertex_index);
+		submission_indices[triangle * 3 + 2] = static_cast<uint16_t>(c - min_vertex_index);
 	}
 
 	const Matrix4 world_transform = render_state.world.Transpose();

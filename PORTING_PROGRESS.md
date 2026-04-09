@@ -128,6 +128,19 @@
   - `cmake --build build -j20` succeeds.
   - `timeout 310 ./Renegade` stayed alive until the timeout killed it (`124`), which satisfies the required long-run stability check for this task.
   - timed startup probes still show bgfx/Vulkan bring-up as the dominant remaining startup cost, but the old animated-sound definition storm is gone and the pre-network/menu bootstrap gap after input init is down substantially because the menu font bootstrap no longer rescans the host font tree per font load.
+- Fixed a bgfx mesh-submission bug affecting subsetted dynamic/animated draws:
+  - `Code/ww3d2/bgfxdynamicbuffer.cpp` was remapping indices with `render_state.index_base_offset` but still copying the transient vertex subset from `vba_offset + min_vertex_index` instead of `vba_offset + index_base_offset + min_vertex_index`.
+  - that mismatch meant the uploaded vertices and remapped indices referenced different base vertices, which can manifest as exploded or screen-spanning triangles on animated/dynamic meshes that render only a subset of a larger shared vertex buffer.
+  - the bgfx triangle-list and strip submission paths now copy vertices from the same effective base that the remapped indices target, matching the legacy DX8 semantics more closely.
+- Fixed a second bgfx mesh corruption bug in stripified draws:
+  - `DX8Wrapper::Draw_Strip(...)` is called with triangle-strip primitive count (`index_count - 2` in the DX8-era API surface), not raw strip index count.
+  - the bgfx port had renamed that parameter to `index_count` and then used it as though it were the number of source strip indices, so stripified mesh draws read too few indices from the source buffer before expanding them into a triangle list.
+  - the bgfx path now treats the parameter as `polygon_count`, derives the real strip source length as `polygon_count + 2`, and expands the correct source window into transient list indices. This matches the legacy DX8 `DrawIndexedPrimitive(D3DPT_TRIANGLESTRIP, ..., primitiveCount)` semantics and is a strong fit for the long screen-spanning spikes seen on affected vehicles/animated meshes.
+- Found and fixed a deeper DX8-vs-bgfx index remap mismatch in subsetted indexed draws:
+  - the legacy DX8 path effectively uses `index_base_offset` only to shift the vertex-base window (`SetIndices(..., index_base_offset + vba_offset)`), while the per-index values copied from the source index buffer remain mesh-local or already-baked absolute values depending on the caller.
+  - `Code/ww3d2/dx8wrapper.cpp`'s proven fallback path (`Draw_Sorting_IB_VB`) copies vertices from `vba_offset + index_base_offset + min_vertex_index` but remaps indices with only `index -= min_vertex_index`.
+  - the bgfx path had been adding `render_state.index_base_offset` into both the copied vertex window and each remapped transient index, which double-applied the base offset on skinned / base-vertex-indexed draws and fits the remaining stretched-vehicle geometry.
+  - `Code/ww3d2/bgfxdynamicbuffer.cpp` now matches the legacy semantics: vertex copy uses `vba_offset + index_base_offset + min_vertex_index`, while transient list indices subtract only `min_vertex_index`.
 
 ## Next work
 

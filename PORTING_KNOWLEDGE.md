@@ -94,6 +94,16 @@
 - Static shadow projector generation still contains a legacy CPU-readback seam in `Code/wwphys/pscene_projectors.cpp`: it renders into a shared render target, then calls `TextureClass::Get_Surface_Level()` and copies the result into a standalone texture for caching.
 - That assumption is valid for the old DX8 path but not for the bgfx render-target path, where a render target may be perfectly usable for rendering while exposing no CPU-readable `SurfaceClass`.
 - Until static projector caching is ported to a renderer-native GPU path, missing surface data must be treated as “static projector caching unsupported on this backend” and handled by skipping/disabling that path rather than dereferencing null or forcing a GPU readback.
+- The bgfx transient indexed-draw path in `Code/ww3d2/bgfxdynamicbuffer.cpp` must apply `render_state.index_base_offset` consistently to both sides of subsetted draws:
+  - when indices are remapped as `source_index + index_base_offset - min_vertex_index`, the copied vertex window must start at `vba_offset + index_base_offset + min_vertex_index`
+  - if the vertex copy omits `index_base_offset`, indices and uploaded vertices reference different base vertices, which shows up as animated/dynamic mesh triangles stretching wildly across the screen rather than as a clean crash.
+- `DX8Wrapper::Draw_Strip(...)` keeps the legacy DX8 calling convention where the second argument is triangle-strip primitive count, not raw source index count.
+  - in the bgfx port, converting strips to transient triangle lists must therefore read `polygon_count + 2` source strip indices and emit `polygon_count * 3` list indices.
+  - treating that argument as raw strip index count truncates the source strip read window and can produce obviously corrupted long-span triangles on stripified rigid/skinned meshes.
+- For subsetted indexed draws, the legacy DX8 behavior is best modeled as:
+  - copy the source vertex window starting at `vba_offset + index_base_offset + min_vertex_index`
+  - remap copied indices as `source_index - min_vertex_index`
+- In other words, `index_base_offset` affects which vertices are made visible to the draw, but it should not be added again to each transient remapped index. The old `Draw_Sorting_IB_VB(...)` path in `Code/ww3d2/dx8wrapper.cpp` is the reliable reference implementation for this behavior.
 
 ## Repository observations
 

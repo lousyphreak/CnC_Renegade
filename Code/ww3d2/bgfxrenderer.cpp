@@ -58,6 +58,13 @@ Matrix4 BgfxRenderer::CurrentProjectionMatrix(true);
 
 namespace
 {
+struct ViewTransformState
+{
+    Matrix4 View;
+    Matrix4 Projection;
+    uint16_t ViewId = 0;
+};
+
 constexpr uint16_t ClearViewId = 0;
 constexpr uint16_t MainViewBaseId = 1;
 constexpr uint16_t MaxMainViewId = 254;
@@ -81,6 +88,19 @@ uint32_t PendingViewportY = 0;
 uint32_t PendingViewportWidth = 0;
 uint32_t PendingViewportHeight = 0;
 bgfx::FrameBufferHandle CurrentFrameBuffer = BGFX_INVALID_HANDLE;
+std::vector<ViewTransformState> ConfiguredViews;
+
+bool Matrices_Are_Equal(const Matrix4 &a, const Matrix4 &b)
+{
+    for (int row = 0; row < 4; ++row) {
+        for (int column = 0; column < 4; ++column) {
+            if (a[row][column] != b[row][column]) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
 
 void Reset_Main_View_State(uint32_t width, uint32_t height)
 {
@@ -90,6 +110,7 @@ void Reset_Main_View_State(uint32_t width, uint32_t height)
     PendingViewportY = 0;
     PendingViewportWidth = width;
     PendingViewportHeight = height;
+    ConfiguredViews.clear();
 }
 
 uint16_t Acquire_Main_View()
@@ -109,6 +130,24 @@ uint16_t Acquire_Main_View()
         static_cast<uint16_t>(PendingViewportHeight));
     bgfx::setViewClear(CurrentMainViewId, 0, 0, 1.0f, 0);
     return CurrentMainViewId;
+}
+
+uint16_t Configure_View(const Matrix4 &view, const Matrix4 &projection)
+{
+    for (const ViewTransformState &configured_view : ConfiguredViews) {
+        if (Matrices_Are_Equal(configured_view.View, view) &&
+            Matrices_Are_Equal(configured_view.Projection, projection)) {
+            CurrentMainViewId = configured_view.ViewId;
+            return configured_view.ViewId;
+        }
+    }
+
+    const uint16_t view_id = Acquire_Main_View();
+    const Matrix4 bgfx_view = view.Transpose();
+    const Matrix4 bgfx_projection = projection.Transpose();
+    bgfx::setViewTransform(view_id, &bgfx_view[0][0], &bgfx_projection[0][0]);
+    ConfiguredViews.push_back({view, projection, view_id});
+    return view_id;
 }
 
 bool Write_BGRA_TGA(const char *file_path, uint32_t width, uint32_t height, uint32_t pitch, const void *data, bool yflip)
@@ -971,10 +1010,7 @@ void BgfxRenderer::Set_Camera(const Matrix3D &view, const Matrix4 &projection)
 
     CurrentViewMatrix = Matrix4(view);
     CurrentProjectionMatrix = projection;
-    const Matrix4 bgfx_view = CurrentViewMatrix.Transpose();
-    const Matrix4 bgfx_projection = CurrentProjectionMatrix.Transpose();
-    const uint16_t view_id = Acquire_Main_View();
-    bgfx::setViewTransform(view_id, &bgfx_view[0][0], &bgfx_projection[0][0]);
+    Configure_View(CurrentViewMatrix, CurrentProjectionMatrix);
 }
 
 void BgfxRenderer::Prepare_Overlay_View()
@@ -1031,6 +1067,15 @@ const bgfx::VertexLayout &BgfxRenderer::Get_Fixed_Function_Layout()
 uint16_t BgfxRenderer::Get_Main_View_Id()
 {
     return CurrentMainViewId;
+}
+
+uint16_t BgfxRenderer::Get_View_Id(const Matrix4 &view, const Matrix4 &projection)
+{
+    if (!IsInitted) {
+        return CurrentMainViewId;
+    }
+
+    return Configure_View(view, projection);
 }
 
 uint16_t BgfxRenderer::Get_Overlay_View_Id()

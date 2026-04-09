@@ -72,6 +72,7 @@
 #include "ww3d.h"
 #include "matrix4.h"
 #include "bgfxrenderer.h"
+#include "dx8wrapper.h"
 
 
 /***********************************************************************************************
@@ -726,6 +727,8 @@ void CameraClass::Apply(void)
 	Matrix4 d3dprojection;
 	Get_D3D_Projection_Matrix(&d3dprojection);
 	BgfxRenderer::Set_Camera(CameraInvTransform, d3dprojection);
+	DX8Wrapper::Set_Transform(D3DTS_VIEW, CameraInvTransform);
+	DX8Wrapper::Set_Transform(D3DTS_PROJECTION, d3dprojection);
 }
 
 void CameraClass::Set_Clip_Planes(float znear,float zfar)						

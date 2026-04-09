@@ -53,6 +53,7 @@ public:
     static void End_Frame();
     static void Set_Viewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
     static void Set_Camera(const Matrix3D &view, const Matrix4 &projection);
+    static uint16_t Get_View_Id(const Matrix4 &view, const Matrix4 &projection);
     static bool Set_Render_Target(TextureClass &texture);
     static void Reset_Render_Target();
     static void Prepare_Overlay_View();

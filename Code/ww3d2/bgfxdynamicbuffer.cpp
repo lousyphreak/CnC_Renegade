@@ -1218,7 +1218,7 @@ void DX8Wrapper::Draw_Triangles(unsigned short start_index, unsigned short polyg
 	bgfx::setTexture(1, BgfxRenderer::Get_Texture1_Uniform(), Resolve_Texture_Handle(render_state.Textures[1]), Resolve_Sampler_Flags(render_state.Textures[1]));
 	BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(render_state.shader, shader_inputs);
 	bgfx::setState(BgfxRenderer::Build_Render_State(render_state.shader, RenderStates[D3DRS_CULLMODE]));
-	bgfx::submit(BgfxRenderer::Get_Main_View_Id(), BgfxRenderer::Get_Fixed_Function_Program());
+	bgfx::submit(BgfxRenderer::Get_View_Id(render_state.view, ProjectionMatrix), BgfxRenderer::Get_Fixed_Function_Program());
 }
 
 void DX8Wrapper::Draw_Strip(unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count)
@@ -1369,7 +1369,7 @@ void DX8Wrapper::Draw_Strip(unsigned short start_index, unsigned short polygon_c
 	bgfx::setTexture(1, BgfxRenderer::Get_Texture1_Uniform(), Resolve_Texture_Handle(render_state.Textures[1]), Resolve_Sampler_Flags(render_state.Textures[1]));
 	BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(render_state.shader, shader_inputs);
 	bgfx::setState(BgfxRenderer::Build_Render_State(render_state.shader, RenderStates[D3DRS_CULLMODE]));
-	bgfx::submit(BgfxRenderer::Get_Main_View_Id(), BgfxRenderer::Get_Fixed_Function_Program());
+	bgfx::submit(BgfxRenderer::Get_View_Id(render_state.view, ProjectionMatrix), BgfxRenderer::Get_Fixed_Function_Program());
 }
 
 TextureClass *DX8Wrapper::Create_Render_Target(int width, int height, WW3DFormat format)

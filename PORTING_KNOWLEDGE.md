@@ -104,6 +104,17 @@
   - copy the source vertex window starting at `vba_offset + index_base_offset + min_vertex_index`
   - remap copied indices as `source_index - min_vertex_index`
 - In other words, `index_base_offset` affects which vertices are made visible to the draw, but it should not be added again to each transient remapped index. The old `Draw_Sorting_IB_VB(...)` path in `Code/ww3d2/dx8wrapper.cpp` is the reliable reference implementation for this behavior.
+- Legacy WW3D still has several renderers that intentionally submit geometry in camera space and depend on per-draw `DX8Wrapper` matrix overrides instead of the frame's main camera:
+  - `PointGroupClass` camera-facing particles transform world positions into camera space themselves, build billboard vertices in camera space, then set `WORLD`/`VIEW` to identity before drawing.
+  - `SegLineRendererClass`, `LineGroupClass`, `SphereRenderObjClass`, and some dazzle/sorting paths use the same pattern for camera-space or screen-space special cases.
+- In the bgfx port, the main camera view is configured through `BgfxRenderer::Set_Camera(...)`, but fixed-function draws still source their local matrix state from `DX8Wrapper`'s cached `render_state.view` and `ProjectionMatrix`.
+- That means a clean bgfx port must preserve two matrix concepts at once:
+  - the current frame/main camera view and projection
+  - the actively overridden per-draw wrapper matrices requested by legacy callers
+- A practical compatibility rule for this codebase is:
+  - ordinary world draws should inherit the camera by having `CameraClass::Apply()` update both bgfx's main camera and `DX8Wrapper`'s cached `VIEW`/`PROJECTION`
+  - special legacy draw paths may then override those cached wrapper matrices for a single draw, and the bgfx submission path must honor that override instead of blindly reusing the main camera view ID
+- If fixed-function bgfx submission starts using wrapper matrices without also syncing `CameraClass::Apply()` back into `DX8Wrapper`, the most obvious regression is a black or missing 3D/menu background while pure overlay/UI elements still render. That symptom is a strong sign that world draws are submitting with stale wrapper camera state rather than with the active frame camera.
 
 ## Repository observations
 

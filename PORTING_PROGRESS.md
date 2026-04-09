@@ -141,6 +141,12 @@
   - `Code/ww3d2/dx8wrapper.cpp`'s proven fallback path (`Draw_Sorting_IB_VB`) copies vertices from `vba_offset + index_base_offset + min_vertex_index` but remaps indices with only `index -= min_vertex_index`.
   - the bgfx path had been adding `render_state.index_base_offset` into both the copied vertex window and each remapped transient index, which double-applied the base offset on skinned / base-vertex-indexed draws and fits the remaining stretched-vehicle geometry.
   - `Code/ww3d2/bgfxdynamicbuffer.cpp` now matches the legacy semantics: vertex copy uses `vba_offset + index_base_offset + min_vertex_index`, while transient list indices subtract only `min_vertex_index`.
+- Fixed camera-facing particle alignment in the bgfx port without changing legacy particle gameplay code:
+  - the original WW3D particle billboard path (`PointGroupClass`, `LineGroupClass`, `SegLineRendererClass`, and related camera-space special cases) still builds geometry in camera space, then temporarily overrides the DX8-era `VIEW`/`PROJECTION` state to identity or other per-draw matrices before submission.
+  - the bgfx transient submission path in `Code/ww3d2/bgfxdynamicbuffer.cpp` had been ignoring those per-draw wrapper matrix overrides and always submitting through the current main bgfx camera view, which double-applied the camera transform for camera-space billboards and made particles appear misaligned to the camera.
+  - `Code/ww3d2/bgfxrenderer.cpp` now allocates/reuses bgfx view IDs per active `VIEW`/`PROJECTION` matrix pair so fixed-function draws can submit with the exact wrapper transform state that legacy callers requested.
+  - syncing submission to wrapper matrices exposed a second integration bug immediately: normal world/menu rendering still relied on `CameraClass::Apply()` updating the real bgfx camera, but the wrapper's cached `VIEW`/`PROJECTION` matrices were left stale for ordinary draws. `Code/ww3d2/camera.cpp` now also updates `DX8Wrapper`'s cached `VIEW` and `PROJECTION` state from the active camera so ordinary world draws keep using the current camera while particle code can still override it per draw.
+  - validated the fix by rebuilding successfully, reproducing the menu-background regression from the first attempt, fixing the camera-state handoff, then re-running `Renegade` with the bgfx screenshot hook. The follow-up menu screenshot showed the background restored, and the 310-second runtime validation completed by timeout (`124`) instead of crashing.
 
 ## Next work
 

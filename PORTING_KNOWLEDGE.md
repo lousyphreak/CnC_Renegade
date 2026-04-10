@@ -121,3 +121,9 @@
 - `BGFX-PORT.md` explicitly rejects shims, stubs, wrappers, and placeholders.
 - The repository root already fetches bgfx via `bgfx.cmake`, so the project-level dependency plumbing exists.
 - `Code/ww3d2/CMakeLists.txt` had to be reconstructed to get the renderer target building again.
+
+## Focus handling
+
+- Current SDL desktop focus-loss handling for the main game should be treated as a platform-integration concern, not gameplay state.
+- `GameInFocus` gates a large amount of legacy behavior (`Input::Update()`, `GameModeManager::Render()`, and dialog reset behavior), so dropping it on SDL focus loss effectively pauses the game even though the main loop is still alive.
+- For the current port, the correct unfocused-window behavior is to ignore SDL deactivation/focus-loss transitions and keep `GameInFocus` true while the main window exists. That preserves normal simulation/render flow when the user tabs away without changing game logic.

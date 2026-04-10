@@ -147,6 +147,11 @@
   - `Code/ww3d2/bgfxrenderer.cpp` now allocates/reuses bgfx view IDs per active `VIEW`/`PROJECTION` matrix pair so fixed-function draws can submit with the exact wrapper transform state that legacy callers requested.
   - syncing submission to wrapper matrices exposed a second integration bug immediately: normal world/menu rendering still relied on `CameraClass::Apply()` updating the real bgfx camera, but the wrapper's cached `VIEW`/`PROJECTION` matrices were left stale for ordinary draws. `Code/ww3d2/camera.cpp` now also updates `DX8Wrapper`'s cached `VIEW` and `PROJECTION` state from the active camera so ordinary world draws keep using the current camera while particle code can still override it per draw.
   - validated the fix by rebuilding successfully, reproducing the menu-background regression from the first attempt, fixing the camera-state handoff, then re-running `Renegade` with the bgfx screenshot hook. The follow-up menu screenshot showed the background restored, and the 310-second runtime validation completed by timeout (`124`) instead of crashing.
+- Changed SDL activation/deactivation handling so desktop focus loss no longer pauses the game:
+  - `Code/Commando/commando_sdl_main.cpp` now ignores SDL focus-lost events instead of marking the game inactive, deactivating `WW3D`, and unacquiring input.
+  - `Code/Combat/directinput.cpp` still treats focus gain as active, but it no longer clears `GameInFocus` on focus/background loss events.
+  - `DirectInput::Init()` now seeds `GameInFocus` from `MainWindow` existence instead of current SDL keyboard/mouse focus, so startup behavior no longer depends on the window already owning focus.
+  - validation after the change: `cmake --build build -j20` succeeded, and `timeout 310 ./Renegade` stayed alive until the timeout killed it (`124`), so the current port still satisfies the long-run runtime check with the new unfocused-window behavior in place.
 
 ## Next work
 

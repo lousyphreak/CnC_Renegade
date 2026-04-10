@@ -345,7 +345,6 @@ bool SDLCALL DirectInput_Event_Watch(void *, SDL_Event *event)
 		case SDL_EVENT_WILL_ENTER_BACKGROUND:
 		case SDL_EVENT_DID_ENTER_BACKGROUND:
 		case SDL_EVENT_WINDOW_FOCUS_LOST:
-			GameInFocus = false;
 			break;
 
 		case SDL_EVENT_KEY_DOWN:
@@ -470,7 +469,7 @@ void DirectInput::Init( void )
 		}
 	}
 
-	GameInFocus = (Get_Input_Window() != NULL);
+	GameInFocus = (MainWindow != NULL);
 	Acquire();
 }
 

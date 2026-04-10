@@ -169,9 +169,7 @@ void Handle_Window_Focus_Gained()
 
 void Handle_Window_Focus_Lost()
 {
-    GameInFocus = false;
-    WW3D::On_Deactivate_App();
-    DirectInput::Unacquire();
+    // Keep the simulation/render loop active when the SDL window loses focus.
 }
 
 SDL_Window *Get_Text_Input_Window()

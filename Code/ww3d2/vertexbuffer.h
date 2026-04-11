@@ -48,6 +48,11 @@
 #include "refcount.h"
 #include "vertexformat.h"
 
+#if RENEGADE_WITH_BGFX_RENDERER
+#include <vector>
+#include <bgfx/bgfx.h>
+#endif
+
 const unsigned dynamic_vertex_format = VERTEX_FORMAT_FLAG_XYZ | VERTEX_FORMAT_FLAG_NORMAL | VERTEX_FORMAT_FLAG_TEX2 | VERTEX_FORMAT_FLAG_DIFFUSE;
 
 class DX8Wrapper;
@@ -230,12 +235,28 @@ public:
 	void Copy(const Vector3* loc, const Vector3* norm, const Vector2* uv, const Vector4* diffuse, unsigned first_vertex, unsigned count);
 	void Copy(const Vector3* loc, const Vector2* uv, const Vector4* diffuse, unsigned first_vertex, unsigned count);
 
+#if RENEGADE_WITH_BGFX_RENDERER
+	unsigned char *Get_Source_Vertex_Data();
+	const unsigned char *Get_Source_Vertex_Data() const;
+	bool Ensure_Bgfx_Buffer() const;
+	bgfx::DynamicVertexBufferHandle Get_Bgfx_Vertex_Buffer() const;
+#endif
+
 protected:
 #if !RENEGADE_WITH_BGFX_RENDERER
 	IDirect3DVertexBuffer8*		VertexBuffer;
+#else
+	mutable bgfx::DynamicVertexBufferHandle BgfxVertexBuffer;
+	mutable bool BgfxVertexBufferDirty;
+	std::vector<unsigned char> VertexData;
 #endif
 
 	void Create_Vertex_Buffer(UsageType usage);
+
+#if RENEGADE_WITH_BGFX_RENDERER
+	void Mark_Bgfx_Buffer_Dirty();
+	bool Sync_Bgfx_Buffer() const;
+#endif
 };
 
 

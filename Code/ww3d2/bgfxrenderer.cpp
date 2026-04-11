@@ -46,6 +46,8 @@ bgfx::UniformHandle BgfxRenderer::FixedFunctionStage0ColorUniform = BGFX_INVALID
 bgfx::UniformHandle BgfxRenderer::FixedFunctionStage0AlphaUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::FixedFunctionStage1ColorUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::FixedFunctionStage1AlphaUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionTextureStageConfigUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionTextureTransformUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::FixedFunctionBumpEnvMatrixUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::FixedFunctionBumpEnvParamsUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::FixedFunctionMaterialAmbientUniform = BGFX_INVALID_HANDLE;
@@ -1868,6 +1870,8 @@ void BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(
     bgfx::setUniform(FixedFunctionStage0AlphaUniform, inputs.Stage0Alpha);
     bgfx::setUniform(FixedFunctionStage1ColorUniform, inputs.Stage1Color);
     bgfx::setUniform(FixedFunctionStage1AlphaUniform, inputs.Stage1Alpha);
+    bgfx::setUniform(FixedFunctionTextureStageConfigUniform, inputs.TextureStageConfig, 2);
+    bgfx::setUniform(FixedFunctionTextureTransformUniform, inputs.TextureTransformRows, 8);
     bgfx::setUniform(FixedFunctionBumpEnvMatrixUniform, bump_env_matrix);
     bgfx::setUniform(FixedFunctionBumpEnvParamsUniform, bump_env_params);
     bgfx::setUniform(FixedFunctionMaterialAmbientUniform, inputs.MaterialAmbient);
@@ -1942,6 +1946,14 @@ bool BgfxRenderer::Init_Render_Resources()
 
     if (!bgfx::isValid(FixedFunctionStage1AlphaUniform)) {
         FixedFunctionStage1AlphaUniform = bgfx::createUniform("u_ffpStage1Alpha", bgfx::UniformType::Vec4);
+    }
+
+    if (!bgfx::isValid(FixedFunctionTextureStageConfigUniform)) {
+        FixedFunctionTextureStageConfigUniform = bgfx::createUniform("u_ffpTexcoordConfig", bgfx::UniformType::Vec4, 2);
+    }
+
+    if (!bgfx::isValid(FixedFunctionTextureTransformUniform)) {
+        FixedFunctionTextureTransformUniform = bgfx::createUniform("u_ffpTextureMatrix", bgfx::UniformType::Vec4, 8);
     }
 
     if (!bgfx::isValid(FixedFunctionBumpEnvMatrixUniform)) {
@@ -2188,6 +2200,16 @@ void BgfxRenderer::Shutdown_Render_Resources()
     if (bgfx::isValid(FixedFunctionStage1AlphaUniform)) {
         bgfx::destroy(FixedFunctionStage1AlphaUniform);
         FixedFunctionStage1AlphaUniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(FixedFunctionTextureTransformUniform)) {
+        bgfx::destroy(FixedFunctionTextureTransformUniform);
+        FixedFunctionTextureTransformUniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(FixedFunctionTextureStageConfigUniform)) {
+        bgfx::destroy(FixedFunctionTextureStageConfigUniform);
+        FixedFunctionTextureStageConfigUniform = BGFX_INVALID_HANDLE;
     }
 
     if (bgfx::isValid(FixedFunctionStage1ColorUniform)) {

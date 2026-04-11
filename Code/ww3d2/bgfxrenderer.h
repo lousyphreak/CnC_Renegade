@@ -33,6 +33,24 @@ public:
         float Stage0Alpha[4] = {2.0f, 0.0f, 2.0f, 1.0f};
         float Stage1Color[4] = {1.0f, 0.0f, 2.0f, 1.0f};
         float Stage1Alpha[4] = {1.0f, 0.0f, 2.0f, 1.0f};
+        float TextureStageConfig[8] = {
+            static_cast<float>(D3DTSS_TCI_PASSTHRU),
+            static_cast<float>(D3DTTFF_DISABLE),
+            0.0f,
+            0.0f,
+            static_cast<float>(D3DTSS_TCI_PASSTHRU | 1u),
+            static_cast<float>(D3DTTFF_DISABLE),
+            0.0f,
+            0.0f};
+        float TextureTransformRows[32] = {
+            1.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 1.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 1.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f,
+            1.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 1.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 1.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f};
         float MaterialAmbient[4] = {1.0f, 1.0f, 1.0f, 1.0f};
         float MaterialDiffuse[4] = {1.0f, 1.0f, 1.0f, 1.0f};
         float MaterialSpecular[4] = {0.0f, 0.0f, 0.0f, 1.0f};
@@ -196,6 +214,8 @@ private:
     static bgfx::UniformHandle FixedFunctionStage0AlphaUniform;
     static bgfx::UniformHandle FixedFunctionStage1ColorUniform;
     static bgfx::UniformHandle FixedFunctionStage1AlphaUniform;
+    static bgfx::UniformHandle FixedFunctionTextureStageConfigUniform;
+    static bgfx::UniformHandle FixedFunctionTextureTransformUniform;
     static bgfx::UniformHandle FixedFunctionBumpEnvMatrixUniform;
     static bgfx::UniformHandle FixedFunctionBumpEnvParamsUniform;
     static bgfx::UniformHandle FixedFunctionMaterialAmbientUniform;

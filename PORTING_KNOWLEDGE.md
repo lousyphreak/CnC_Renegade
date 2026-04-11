@@ -220,6 +220,18 @@
 - `D3DRS_SPECULARENABLE` should be treated as the authoritative “add secondary/specular contribution” switch in the bgfx path:
   - `ShaderClass::SECONDARY_GRADIENT_*` usually drives that state in Renegade, but the live renderer contract still exposes/specifies the D3D render state itself
   - using the live render-state value keeps bgfx aligned with direct state changes and avoids baking another shader-only approximation into the port
+- Cached render buffers in the bgfx path can keep the old lock/copy API without staying “CPU-backed” in the draw path:
+  - `RenderVertexBufferClass` / `RenderIndexBufferClass` can own a CPU shadow copy purely for mesh-building and lock/write compatibility while also owning the persistent bgfx dynamic buffer that the renderer actually binds
+  - the practical rule is “dirty on lock/write, upload on first draw after mutation,” not “rebuild transient vertices/indices on every draw”
+  - moving that ownership into the buffer objects themselves is cleaner than keeping global maps keyed by buffer pointer because the renderer can then reason about lifetime, dirty state, and bgfx resource validity in one place
+- Fixed-function texcoord generation belongs in the shader path, not in per-draw CPU repacking:
+  - cached render buffers should store raw UV sets plus the normalized position/normal/color data needed by the fixed-function layout
+  - legacy `D3DTSS_TEXCOORDINDEX` and `D3DTSS_TEXTURETRANSFORMFLAGS` semantics can be expressed as explicit bgfx uniforms and shader logic, which preserves projector/env-map style behavior without throwing away the benefit of persistent GPU buffers
+  - after that move, the remaining transient submit cases are the ones that truly change primitive topology at draw time (for example wireframe expansion and triangle-strip-to-list rewriting), not ordinary cached triangle-list draws
+- bgfx direct indexed draws are not a drop-in equivalent for D3D8 `SetIndices(baseVertexIndex)`:
+  - Renegade's cached rigid-mesh index buffers are authored with absolute indices into the category vertex buffer, and the old D3D path applies any extra per-mesh base through `SetIndices(baseVertexIndex)`
+  - bgfx lets the renderer bind index-buffer ranges and vertex-buffer ranges, but it does not apply a separate base-vertex addend to those stored indices
+  - for the active bgfx port that means a persistent direct index-buffer path must either bind the full referenced vertex buffer or upload a separately rebased index stream; binding a `min_vertex_index`-sliced vertex window against the original cached indices will scramble static meshes immediately
 
 ## Repository observations
 

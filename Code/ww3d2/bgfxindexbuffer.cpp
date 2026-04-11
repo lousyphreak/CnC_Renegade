@@ -1,8 +1,8 @@
 #include "indexbuffer.h"
 #include "dx8wrapper.h"
+#include "bgfxrenderer.h"
 
 #include <algorithm>
-#include <unordered_map>
 #include <vector>
 
 namespace
@@ -17,13 +17,6 @@ unsigned short g_dynamic_sorting_index_buffer_offset = 0;
 unsigned g_index_buffer_count = 0;
 unsigned g_index_buffer_total_indices = 0;
 unsigned g_index_buffer_total_size = 0;
-
-std::unordered_map<const RenderIndexBufferClass *, std::vector<unsigned short>> g_render_index_buffers;
-
-std::vector<unsigned short> &Get_Render_Index_Data(const RenderIndexBufferClass *buffer)
-{
-	return g_render_index_buffers[buffer];
-}
 }
 
 IndexBufferClass::IndexBufferClass(unsigned type_, unsigned short index_count_)
@@ -73,7 +66,7 @@ IndexBufferClass::WriteLockClass::WriteLockClass(IndexBufferClass *index_buffer_
 	index_buffer->Add_Ref();
 	switch (index_buffer->Type()) {
 	case BUFFER_TYPE_RENDER:
-		indices = Get_Render_Index_Data(static_cast<RenderIndexBufferClass *>(index_buffer)).data();
+		indices = static_cast<RenderIndexBufferClass *>(index_buffer)->Get_Source_Index_Data();
 		break;
 	case BUFFER_TYPE_SORTING:
 		indices = static_cast<SortingIndexBufferClass *>(index_buffer)->index_buffer;
@@ -95,7 +88,7 @@ IndexBufferClass::AppendLockClass::AppendLockClass(IndexBufferClass *index_buffe
 	index_buffer->Add_Ref();
 	switch (index_buffer->Type()) {
 	case BUFFER_TYPE_RENDER:
-		indices = Get_Render_Index_Data(static_cast<RenderIndexBufferClass *>(index_buffer)).data() + start_index;
+		indices = static_cast<RenderIndexBufferClass *>(index_buffer)->Get_Source_Index_Data() + start_index;
 		break;
 	case BUFFER_TYPE_SORTING:
 		indices = static_cast<SortingIndexBufferClass *>(index_buffer)->index_buffer + start_index;
@@ -145,15 +138,24 @@ RenderIndexBufferClass::RenderIndexBufferClass(unsigned short index_count_, Usag
 #if !RENEGADE_WITH_BGFX_RENDERER
 	: IndexBufferClass(BUFFER_TYPE_RENDER, index_count_), index_buffer(nullptr)
 #else
-	: IndexBufferClass(BUFFER_TYPE_RENDER, index_count_)
+	: IndexBufferClass(BUFFER_TYPE_RENDER, index_count_),
+	  BgfxIndexBuffer(BGFX_INVALID_HANDLE),
+	  BgfxIndexBufferDirty(true),
+	  IndexData(index_count_)
 #endif
 {
-	g_render_index_buffers[this].resize(index_count_);
 }
 
 RenderIndexBufferClass::~RenderIndexBufferClass()
 {
-	g_render_index_buffers.erase(this);
+#if RENEGADE_WITH_BGFX_RENDERER
+	if (bgfx::isValid(BgfxIndexBuffer)) {
+		if (BgfxRenderer::Is_Initted()) {
+			bgfx::destroy(BgfxIndexBuffer);
+		}
+		BgfxIndexBuffer = BGFX_INVALID_HANDLE;
+	}
+#endif
 }
 
 void RenderIndexBufferClass::Copy(unsigned int *indices_, unsigned start_index, unsigned index_count_)
@@ -165,6 +167,60 @@ void RenderIndexBufferClass::Copy(unsigned short *indices_, unsigned start_index
 {
 	IndexBufferClass::Copy(indices_, start_index, index_count_);
 }
+
+#if RENEGADE_WITH_BGFX_RENDERER
+unsigned short *RenderIndexBufferClass::Get_Source_Index_Data()
+{
+	Mark_Bgfx_Buffer_Dirty();
+	return IndexData.data();
+}
+
+const unsigned short *RenderIndexBufferClass::Get_Source_Index_Data() const
+{
+	return IndexData.data();
+}
+
+bool RenderIndexBufferClass::Ensure_Bgfx_Buffer() const
+{
+	return Sync_Bgfx_Buffer();
+}
+
+bgfx::DynamicIndexBufferHandle RenderIndexBufferClass::Get_Bgfx_Index_Buffer() const
+{
+	return BgfxIndexBuffer;
+}
+
+void RenderIndexBufferClass::Mark_Bgfx_Buffer_Dirty()
+{
+	BgfxIndexBufferDirty = true;
+}
+
+bool RenderIndexBufferClass::Sync_Bgfx_Buffer() const
+{
+	if (!BgfxRenderer::Is_Initted()) {
+		return false;
+	}
+
+	if (!bgfx::isValid(BgfxIndexBuffer)) {
+		BgfxIndexBuffer = bgfx::createDynamicIndexBuffer(index_count);
+		if (!bgfx::isValid(BgfxIndexBuffer)) {
+			return false;
+		}
+		BgfxIndexBufferDirty = true;
+	}
+
+	if (!BgfxIndexBufferDirty) {
+		return true;
+	}
+
+	const bgfx::Memory *index_memory = bgfx::copy(
+		IndexData.data(),
+		static_cast<uint32_t>(IndexData.size() * sizeof(unsigned short)));
+	bgfx::update(BgfxIndexBuffer, 0, index_memory);
+	BgfxIndexBufferDirty = false;
+	return true;
+}
+#endif
 
 SortingIndexBufferClass::SortingIndexBufferClass(unsigned short index_count_) : IndexBufferClass(BUFFER_TYPE_SORTING, index_count_), index_buffer(new unsigned short[index_count_])
 {

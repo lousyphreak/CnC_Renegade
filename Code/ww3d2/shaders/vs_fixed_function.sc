@@ -11,6 +11,8 @@ uniform vec4 u_ffpMaterialParams;
 uniform vec4 u_ffpSceneAmbient;
 uniform vec4 u_ffpLightingConfig;
 uniform vec4 u_ffpMaterialSourceConfig;
+uniform vec4 u_ffpTexcoordConfig[2];
+uniform vec4 u_ffpTextureMatrix[8];
 uniform vec4 u_ffpLightPositions[4];
 uniform vec4 u_ffpLightDirections[4];
 uniform vec4 u_ffpLightAmbient[4];
@@ -34,12 +36,81 @@ vec4 ResolveColorSource(float source, vec4 materialColor, vec4 color0, vec4 colo
     return color1;
 }
 
+vec4 ResolvePassthroughTexcoord(float sourceSet, vec2 texcoord0, vec2 texcoord1)
+{
+    return sourceSet > 0.5 ? vec4(texcoord1, 0.0, 1.0) : vec4(texcoord0, 0.0, 1.0);
+}
+
+vec4 MultiplyTextureMatrix(int stage, vec4 coordinate)
+{
+    int rowOffset = stage * 4;
+    return vec4(
+        dot(u_ffpTextureMatrix[rowOffset + 0], coordinate),
+        dot(u_ffpTextureMatrix[rowOffset + 1], coordinate),
+        dot(u_ffpTextureMatrix[rowOffset + 2], coordinate),
+        dot(u_ffpTextureMatrix[rowOffset + 3], coordinate));
+}
+
+float ResolveTextureCoordCount(float transformFlags)
+{
+    float count = mod(transformFlags, 256.0);
+    if (count >= 1.0 && count <= 4.0) {
+        return count;
+    }
+
+    return 2.0;
+}
+
+vec2 ResolveStageTexcoord(
+    int stage,
+    vec2 texcoord0,
+    vec2 texcoord1,
+    vec3 viewPosition,
+    vec3 viewNormal)
+{
+    float texcoordIndex = u_ffpTexcoordConfig[stage].x;
+    float transformFlags = u_ffpTexcoordConfig[stage].y;
+    float texcoordMode = floor(texcoordIndex / 65536.0 + 0.5);
+    float sourceSet = texcoordIndex - texcoordMode * 65536.0;
+    vec4 coordinate = ResolvePassthroughTexcoord(sourceSet, texcoord0, texcoord1);
+
+    if (texcoordMode > 0.5) {
+        if (texcoordMode < 1.5) {
+            coordinate = vec4(viewNormal, 1.0);
+        } else if (texcoordMode < 2.5) {
+            coordinate = vec4(viewPosition, 1.0);
+        } else {
+            vec3 eyeVector = normalize(-viewPosition);
+            vec3 reflection = viewNormal * (2.0 * dot(viewNormal, eyeVector)) - eyeVector;
+            coordinate = vec4(reflection, 1.0);
+        }
+    }
+
+    if (transformFlags > 0.5) {
+        coordinate = MultiplyTextureMatrix(stage, coordinate);
+
+        if (mod(floor(transformFlags / 256.0), 2.0) > 0.5) {
+            float coordCount = ResolveTextureCoordCount(transformFlags);
+            float q = coordCount < 2.5
+                ? coordinate.y
+                : (coordCount < 3.5 ? coordinate.z : coordinate.w);
+            if (abs(q) > 1.0e-6) {
+                coordinate.xy /= q;
+            }
+        }
+    }
+
+    return coordinate.xy;
+}
+
 void main()
 {
     gl_Position = mul(u_modelViewProj, vec4(a_position, 1.0));
     vec4 worldPosition4 = mul(u_model[0], vec4(a_position, 1.0));
     vec3 worldPosition = worldPosition4.xyz;
     vec3 viewPosition = mul(u_view, worldPosition4).xyz;
+    vec3 worldNormal = normalize(mul(u_model[0], vec4(a_normal, 0.0)).xyz);
+    vec3 viewNormal = normalize(mul(u_view, vec4(worldNormal, 0.0)).xyz);
     float fogMode = abs(u_ffpFogParams.w);
     v_fogFactor = 0.0;
 
@@ -66,8 +137,8 @@ void main()
             // Prelit meshes can request lighting while omitting normals. D3D fixed-function
             // uses the vertex diffuse color directly in that case instead of material sources.
             v_color0 = a_color0;
-            v_texcoord0 = a_texcoord0;
-            v_texcoord1 = a_texcoord1;
+            v_texcoord0 = ResolveStageTexcoord(0, a_texcoord0, a_texcoord1, viewPosition, viewNormal);
+            v_texcoord1 = ResolveStageTexcoord(1, a_texcoord0, a_texcoord1, viewPosition, viewNormal);
             v_specular0 = a_color1;
             return;
         }
@@ -78,7 +149,6 @@ void main()
         vec3 litColor = emissive.rgb + (u_ffpSceneAmbient.rgb * ambient.rgb);
         vec3 specularColor = a_color1.rgb;
 
-        vec3 worldNormal = normalize(mul(u_model[0], vec4(a_normal, 0.0)).xyz);
         for (int lightIndex = 0; lightIndex < 4; ++lightIndex) {
             float lightType = u_ffpLightPositions[lightIndex].w;
             if (lightType > 0.5) {
@@ -134,6 +204,6 @@ void main()
         v_color0 = a_color0;
         v_specular0 = a_color1;
     }
-    v_texcoord0 = a_texcoord0;
-    v_texcoord1 = a_texcoord1;
+    v_texcoord0 = ResolveStageTexcoord(0, a_texcoord0, a_texcoord1, viewPosition, viewNormal);
+    v_texcoord1 = ResolveStageTexcoord(1, a_texcoord0, a_texcoord1, viewPosition, viewNormal);
 }

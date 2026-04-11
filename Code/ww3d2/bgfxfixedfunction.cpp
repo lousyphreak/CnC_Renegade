@@ -12,10 +12,7 @@
 #include "vertexbuffer.h"
 #include "dx8wrapper.h"
 #include "texture.h"
-#include "vector2.h"
-#include "vector4.h"
 #include "vertmaterial.h"
-#include "wwmath.h"
 
 namespace
 {
@@ -141,125 +138,6 @@ unsigned Sanitize_Texture_Transform_Flags(unsigned stage)
     return value != 0x12345678u ? value : D3DTTFF_DISABLE;
 }
 
-unsigned Get_Texture_Coord_Count(unsigned transform_flags)
-{
-    const unsigned count = transform_flags & 0xffu;
-    if (count >= 1u && count <= 4u) {
-        return count;
-    }
-
-    return 2u;
-}
-
-Vector4 Get_Passthrough_Texcoord(unsigned source_set, float u0, float v0, float u1, float v1)
-{
-    switch (source_set) {
-    case 1u:
-        return Vector4(u1, v1, 0.0f, 1.0f);
-    default:
-        return Vector4(u0, v0, 0.0f, 1.0f);
-    }
-}
-
-Vector4 Transform_Position_To_Camera(const SubmissionVertex &vertex, const Matrix4 &world, const Matrix4 &view)
-{
-    const Vector4 position(vertex.x, vertex.y, vertex.z, 1.0f);
-    Vector4 world_position;
-    Vector4 camera_position;
-    Matrix4::Transform_Vector(world, position, &world_position);
-    Matrix4::Transform_Vector(view, world_position, &camera_position);
-    return camera_position;
-}
-
-Vector4 Transform_Normal_To_Camera(const SubmissionVertex &vertex, const Matrix4 &world, const Matrix4 &view)
-{
-    const Vector4 normal(vertex.nx, vertex.ny, vertex.nz, 0.0f);
-    Vector4 world_normal;
-    Vector4 camera_normal;
-    Matrix4::Transform_Vector(world, normal, &world_normal);
-    Matrix4::Transform_Vector(view, world_normal, &camera_normal);
-
-    Vector3 normalized(camera_normal.X, camera_normal.Y, camera_normal.Z);
-    if (normalized.Length2() > 1.0e-12f) {
-        normalized.Normalize();
-    }
-
-    return Vector4(normalized.X, normalized.Y, normalized.Z, 1.0f);
-}
-
-Vector4 Resolve_Texture_Coordinate_Source(
-    const SubmissionVertex &vertex,
-    float u0,
-    float v0,
-    float u1,
-    float v1,
-    unsigned texcoord_index,
-    const Matrix4 &world,
-    const Matrix4 &view)
-{
-    const unsigned source_set = texcoord_index & 0xffffu;
-    switch (texcoord_index & 0xffff0000u) {
-    case D3DTSS_TCI_CAMERASPACENORMAL:
-        return Transform_Normal_To_Camera(vertex, world, view);
-
-    case D3DTSS_TCI_CAMERASPACEPOSITION:
-        return Transform_Position_To_Camera(vertex, world, view);
-
-    case D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR:
-    {
-        const Vector4 camera_position = Transform_Position_To_Camera(vertex, world, view);
-        const Vector4 camera_normal = Transform_Normal_To_Camera(vertex, world, view);
-        Vector3 eye_vector(-camera_position.X, -camera_position.Y, -camera_position.Z);
-        Vector3 normal(camera_normal.X, camera_normal.Y, camera_normal.Z);
-        if (eye_vector.Length2() > 1.0e-12f) {
-            eye_vector.Normalize();
-        }
-        if (normal.Length2() > 1.0e-12f) {
-            normal.Normalize();
-        }
-
-        const float ndote = Vector3::Dot_Product(normal, eye_vector);
-        const Vector3 reflection = normal * (2.0f * ndote) - eye_vector;
-        return Vector4(reflection.X, reflection.Y, reflection.Z, 1.0f);
-    }
-
-    default:
-        return Get_Passthrough_Texcoord(source_set, u0, v0, u1, v1);
-    }
-}
-
-Vector2 Resolve_Texture_Coordinates(
-    const SubmissionVertex &vertex,
-    float u0,
-    float v0,
-    float u1,
-    float v1,
-    unsigned texcoord_index,
-    unsigned transform_flags,
-    const Matrix4 &texture_transform,
-    const Matrix4 &world,
-    const Matrix4 &view)
-{
-    Vector4 coordinate = Resolve_Texture_Coordinate_Source(vertex, u0, v0, u1, v1, texcoord_index, world, view);
-    if (transform_flags != D3DTTFF_DISABLE) {
-        Vector4 transformed;
-        Matrix4::Transform_Vector(texture_transform, coordinate, &transformed);
-        coordinate = transformed;
-
-        if ((transform_flags & D3DTTFF_PROJECTED) != 0u) {
-            const unsigned count = Get_Texture_Coord_Count(transform_flags);
-            const unsigned q_index = count > 1u ? count - 1u : 1u;
-            const float q = coordinate[static_cast<int>(q_index)];
-            if (WWMath::Fabs(q) > 1.0e-6f) {
-                coordinate.X /= q;
-                coordinate.Y /= q;
-            }
-        }
-    }
-
-    return Vector2(coordinate.X, coordinate.Y);
-}
-
 enum class FillMode
 {
     Solid,
@@ -334,6 +212,26 @@ void Populate_Fixed_Function_Stage_Inputs(BgfxRenderer::FixedFunctionShaderInput
     shader_inputs.Stage1Alpha[1] = static_cast<float>(Sanitize_Texture_Stage_State(1, D3DTSS_ALPHAARG0));
     shader_inputs.Stage1Alpha[2] = static_cast<float>(Sanitize_Texture_Stage_State(1, D3DTSS_ALPHAARG1));
     shader_inputs.Stage1Alpha[3] = static_cast<float>(Sanitize_Texture_Stage_State(1, D3DTSS_ALPHAARG2));
+}
+
+void Populate_Fixed_Function_Texture_Inputs(BgfxRenderer::FixedFunctionShaderInputs &shader_inputs)
+{
+    for (unsigned stage = 0; stage < kFixedFunctionTextureStages; ++stage) {
+        shader_inputs.TextureStageConfig[stage * 4 + 0] = static_cast<float>(Sanitize_Texcoord_Index(stage));
+        shader_inputs.TextureStageConfig[stage * 4 + 1] = static_cast<float>(Sanitize_Texture_Transform_Flags(stage));
+        shader_inputs.TextureStageConfig[stage * 4 + 2] = 0.0f;
+        shader_inputs.TextureStageConfig[stage * 4 + 3] = 0.0f;
+
+        Matrix4 texture_transform(true);
+        DX8Wrapper::Get_Transform(static_cast<D3DTRANSFORMSTATETYPE>(D3DTS_TEXTURE0 + stage), texture_transform);
+        for (unsigned row = 0; row < 4u; ++row) {
+            const size_t offset = static_cast<size_t>(stage) * 16u + row * 4u;
+            shader_inputs.TextureTransformRows[offset + 0] = texture_transform[static_cast<int>(row)][0];
+            shader_inputs.TextureTransformRows[offset + 1] = texture_transform[static_cast<int>(row)][1];
+            shader_inputs.TextureTransformRows[offset + 2] = texture_transform[static_cast<int>(row)][2];
+            shader_inputs.TextureTransformRows[offset + 3] = texture_transform[static_cast<int>(row)][3];
+        }
+    }
 }
 
 void Populate_Fixed_Function_Lighting_Inputs(
@@ -459,161 +357,220 @@ bool Submit_Cached_Fixed_Function_Draw(
         ? static_cast<unsigned short>(polygon_count + 2)
         : static_cast<unsigned short>(polygon_count * 3u);
 
+    bool use_direct_vertex_buffer = false;
+    if (vertex_buffer.Type() == BUFFER_TYPE_RENDER) {
+        if (!static_cast<const RenderVertexBufferClass &>(vertex_buffer).Ensure_Bgfx_Buffer()) {
+            return false;
+        }
+        use_direct_vertex_buffer = true;
+    }
+
+    bool use_direct_index_buffer = false;
+    if (use_direct_vertex_buffer &&
+        index_buffer.Type() == BUFFER_TYPE_RENDER &&
+        fill_mode != FillMode::Wireframe &&
+        (!strip || fill_mode == FillMode::Points)) {
+        if (!static_cast<const RenderIndexBufferClass &>(index_buffer).Ensure_Bgfx_Buffer()) {
+            return false;
+        }
+        use_direct_index_buffer = true;
+    }
+
     const bgfx::VertexLayout &layout = BgfxRenderer::Get_Fixed_Function_Layout();
-    if (bgfx::getAvailTransientVertexBuffer(vertex_count, layout) < vertex_count ||
-        bgfx::getAvailTransientIndexBuffer(submitted_index_count) < submitted_index_count) {
+    if ((!use_direct_vertex_buffer && bgfx::getAvailTransientVertexBuffer(vertex_count, layout) < vertex_count) ||
+        (!use_direct_index_buffer && bgfx::getAvailTransientIndexBuffer(submitted_index_count) < submitted_index_count)) {
         return false;
     }
 
     bgfx::TransientVertexBuffer transient_vertex_buffer;
     bgfx::TransientIndexBuffer transient_index_buffer;
-    bgfx::allocTransientVertexBuffer(&transient_vertex_buffer, vertex_count, layout);
-    bgfx::allocTransientIndexBuffer(&transient_index_buffer, submitted_index_count);
+    SubmissionVertex *submission_vertices = nullptr;
+    if (!use_direct_vertex_buffer) {
+        bgfx::allocTransientVertexBuffer(&transient_vertex_buffer, vertex_count, layout);
+        submission_vertices = reinterpret_cast<SubmissionVertex *>(transient_vertex_buffer.data);
 
-    Matrix4 texture_transforms[kFixedFunctionTextureStages] = {Matrix4(true), Matrix4(true)};
-    for (unsigned stage = 0; stage < kFixedFunctionTextureStages; ++stage) {
-        DX8Wrapper::Get_Transform(static_cast<D3DTRANSFORMSTATETYPE>(D3DTS_TEXTURE0 + stage), texture_transforms[stage]);
-    }
+        VertexBufferClass::AppendLockClass vertex_lock(
+            const_cast<VertexBufferClass *>(&vertex_buffer),
+            vertex_buffer_offset + index_base_offset + min_vertex_index,
+            vertex_count);
+        const unsigned char *source_vertices = reinterpret_cast<const unsigned char *>(vertex_lock.Get_Vertex_Array());
+        const unsigned fvf = vertex_buffer.Vertex_Format_Info().Get_Vertex_Format();
+        const unsigned fvf_size = vertex_buffer.Vertex_Format_Info().Get_Vertex_Size();
+        const bool has_normals = (fvf & VERTEX_FORMAT_FLAG_NORMAL) != 0u;
+        const unsigned texcoord_count = VERTEX_FORMAT_Get_Texcoord_Count(fvf);
 
-    const unsigned texcoord_indices[kFixedFunctionTextureStages] = {
-        Sanitize_Texcoord_Index(0),
-        Sanitize_Texcoord_Index(1)};
-    const unsigned texture_transform_flags[kFixedFunctionTextureStages] = {
-        Sanitize_Texture_Transform_Flags(0),
-        Sanitize_Texture_Transform_Flags(1)};
+        for (unsigned short vertex_index = 0; vertex_index < vertex_count; ++vertex_index) {
+            const unsigned char *vertex = source_vertices + vertex_index * fvf_size;
+            submission_vertices[vertex_index].x = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Location_Offset())[0];
+            submission_vertices[vertex_index].y = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Location_Offset())[1];
+            submission_vertices[vertex_index].z = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Location_Offset())[2];
 
-    SubmissionVertex *submission_vertices = reinterpret_cast<SubmissionVertex *>(transient_vertex_buffer.data);
-    VertexBufferClass::AppendLockClass vertex_lock(
-        const_cast<VertexBufferClass *>(&vertex_buffer),
-        vertex_buffer_offset + index_base_offset + min_vertex_index,
-        vertex_count);
-    const unsigned char *source_vertices = reinterpret_cast<const unsigned char *>(vertex_lock.Get_Vertex_Array());
-    const unsigned fvf = vertex_buffer.Vertex_Format_Info().Get_Vertex_Format();
-    const unsigned fvf_size = vertex_buffer.Vertex_Format_Info().Get_Vertex_Size();
-    const bool has_normals = (fvf & VERTEX_FORMAT_FLAG_NORMAL) != 0u;
-    const unsigned texcoord_count = VERTEX_FORMAT_Get_Texcoord_Count(fvf);
-
-    for (unsigned short vertex_index = 0; vertex_index < vertex_count; ++vertex_index) {
-        const unsigned char *vertex = source_vertices + vertex_index * fvf_size;
-        submission_vertices[vertex_index].x = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Location_Offset())[0];
-        submission_vertices[vertex_index].y = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Location_Offset())[1];
-        submission_vertices[vertex_index].z = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Location_Offset())[2];
-
-        if (has_normals) {
-            submission_vertices[vertex_index].nx = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Normal_Offset())[0];
-            submission_vertices[vertex_index].ny = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Normal_Offset())[1];
-            submission_vertices[vertex_index].nz = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Normal_Offset())[2];
-        } else {
-            submission_vertices[vertex_index].nx = 0.0f;
-            submission_vertices[vertex_index].ny = 0.0f;
-            submission_vertices[vertex_index].nz = 1.0f;
-        }
-
-        submission_vertices[vertex_index].diffuse =
-            vertex_buffer.Vertex_Format_Info().Get_Diffuse_Offset() < fvf_size
-            ? BgfxRenderer::Convert_Packed_Color(*reinterpret_cast<const unsigned *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Diffuse_Offset()))
-            : 0xffffffffu;
-        submission_vertices[vertex_index].specular =
-            vertex_buffer.Vertex_Format_Info().Get_Specular_Offset() < fvf_size
-            ? BgfxRenderer::Convert_Packed_Color(*reinterpret_cast<const unsigned *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Specular_Offset()))
-            : 0u;
-
-        float raw_u0 = 0.0f;
-        float raw_v0 = 0.0f;
-        if (texcoord_count > 0u) {
-            raw_u0 = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Tex_Offset(0))[0];
-            raw_v0 = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Tex_Offset(0))[1];
-        }
-        submission_vertices[vertex_index].u0 = raw_u0;
-        submission_vertices[vertex_index].v0 = raw_v0;
-
-        float raw_u1 = 0.0f;
-        float raw_v1 = 0.0f;
-        if (texcoord_count > 1u) {
-            raw_u1 = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Tex_Offset(1))[0];
-            raw_v1 = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Tex_Offset(1))[1];
-        }
-        submission_vertices[vertex_index].u1 = raw_u1;
-        submission_vertices[vertex_index].v1 = raw_v1;
-
-        const Vector2 resolved_tc0 = Resolve_Texture_Coordinates(
-            submission_vertices[vertex_index],
-            raw_u0,
-            raw_v0,
-            raw_u1,
-            raw_v1,
-            texcoord_indices[0],
-            texture_transform_flags[0],
-            texture_transforms[0],
-            world,
-            view);
-        submission_vertices[vertex_index].u0 = resolved_tc0.X;
-        submission_vertices[vertex_index].v0 = resolved_tc0.Y;
-
-        const Vector2 resolved_tc1 = Resolve_Texture_Coordinates(
-            submission_vertices[vertex_index],
-            raw_u0,
-            raw_v0,
-            raw_u1,
-            raw_v1,
-            texcoord_indices[1],
-            texture_transform_flags[1],
-            texture_transforms[1],
-            world,
-            view);
-        submission_vertices[vertex_index].u1 = resolved_tc1.X;
-        submission_vertices[vertex_index].v1 = resolved_tc1.Y;
-    }
-
-    uint16_t *submission_indices = reinterpret_cast<uint16_t *>(transient_index_buffer.data);
-    IndexBufferClass::AppendLockClass index_lock(
-        const_cast<IndexBufferClass *>(&index_buffer),
-        index_buffer_offset + start_index,
-        source_index_count);
-    const unsigned short *source_indices = index_lock.Get_Index_Array();
-
-    if (fill_mode == FillMode::Wireframe) {
-        for (unsigned short triangle = 0; triangle < polygon_count; ++triangle) {
-            unsigned short a = 0;
-            unsigned short b = 0;
-            unsigned short c = 0;
-            if (strip) {
-                const bool odd_triangle = (triangle & 1u) != 0u;
-                a = source_indices[triangle + (odd_triangle ? 1 : 0)];
-                b = source_indices[triangle + (odd_triangle ? 0 : 1)];
-                c = source_indices[triangle + 2];
+            if (has_normals) {
+                submission_vertices[vertex_index].nx = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Normal_Offset())[0];
+                submission_vertices[vertex_index].ny = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Normal_Offset())[1];
+                submission_vertices[vertex_index].nz = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Normal_Offset())[2];
             } else {
-                a = source_indices[triangle * 3 + 0];
-                b = source_indices[triangle * 3 + 1];
-                c = source_indices[triangle * 3 + 2];
+                submission_vertices[vertex_index].nx = 0.0f;
+                submission_vertices[vertex_index].ny = 0.0f;
+                submission_vertices[vertex_index].nz = 1.0f;
             }
 
-            Write_Wireframe_Triangle(submission_indices + triangle * 6u, a, b, c, min_vertex_index);
+            submission_vertices[vertex_index].diffuse =
+                vertex_buffer.Vertex_Format_Info().Get_Diffuse_Offset() < fvf_size
+                ? BgfxRenderer::Convert_Packed_Color(*reinterpret_cast<const unsigned *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Diffuse_Offset()))
+                : 0xffffffffu;
+            submission_vertices[vertex_index].specular =
+                vertex_buffer.Vertex_Format_Info().Get_Specular_Offset() < fvf_size
+                ? BgfxRenderer::Convert_Packed_Color(*reinterpret_cast<const unsigned *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Specular_Offset()))
+                : 0u;
+
+            submission_vertices[vertex_index].u0 = 0.0f;
+            submission_vertices[vertex_index].v0 = 0.0f;
+            if (texcoord_count > 0u) {
+                submission_vertices[vertex_index].u0 = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Tex_Offset(0))[0];
+                submission_vertices[vertex_index].v0 = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Tex_Offset(0))[1];
+            }
+
+            submission_vertices[vertex_index].u1 = 0.0f;
+            submission_vertices[vertex_index].v1 = 0.0f;
+            if (texcoord_count > 1u) {
+                submission_vertices[vertex_index].u1 = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Tex_Offset(1))[0];
+                submission_vertices[vertex_index].v1 = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Tex_Offset(1))[1];
+            }
         }
-    } else if (fill_mode == FillMode::Points) {
-        for (uint32_t index = 0; index < submitted_index_count; ++index) {
-            submission_indices[index] = static_cast<uint16_t>(source_indices[index] - min_vertex_index);
+    }
+
+    if (!use_direct_index_buffer) {
+        bgfx::allocTransientIndexBuffer(&transient_index_buffer, submitted_index_count);
+    }
+
+    uint16_t *submission_indices = !use_direct_index_buffer
+        ? reinterpret_cast<uint16_t *>(transient_index_buffer.data)
+        : nullptr;
+
+    if (!use_direct_index_buffer) {
+        const unsigned short *source_indices = nullptr;
+        if (index_buffer.Type() == BUFFER_TYPE_RENDER) {
+            source_indices =
+                static_cast<const RenderIndexBufferClass &>(index_buffer).Get_Source_Index_Data()
+                + index_buffer_offset
+                + start_index;
+        } else {
+            IndexBufferClass::AppendLockClass index_lock(
+                const_cast<IndexBufferClass *>(&index_buffer),
+                index_buffer_offset + start_index,
+                source_index_count);
+            source_indices = index_lock.Get_Index_Array();
+
+            if (fill_mode == FillMode::Wireframe) {
+                for (unsigned short triangle = 0; triangle < polygon_count; ++triangle) {
+                    unsigned short a = 0;
+                    unsigned short b = 0;
+                    unsigned short c = 0;
+                    if (strip) {
+                        const bool odd_triangle = (triangle & 1u) != 0u;
+                        a = source_indices[triangle + (odd_triangle ? 1 : 0)];
+                        b = source_indices[triangle + (odd_triangle ? 0 : 1)];
+                        c = source_indices[triangle + 2];
+                    } else {
+                        a = source_indices[triangle * 3 + 0];
+                        b = source_indices[triangle * 3 + 1];
+                        c = source_indices[triangle * 3 + 2];
+                    }
+
+                    Write_Wireframe_Triangle(submission_indices + triangle * 6u, a, b, c, min_vertex_index);
+                }
+            } else if (fill_mode == FillMode::Points) {
+                for (uint32_t index = 0; index < submitted_index_count; ++index) {
+                    submission_indices[index] = static_cast<uint16_t>(source_indices[index] - min_vertex_index);
+                }
+            } else if (strip) {
+                for (unsigned short triangle = 0; triangle < polygon_count; ++triangle) {
+                    const bool odd_triangle = (triangle & 1u) != 0u;
+                    const unsigned short a = source_indices[triangle + (odd_triangle ? 1 : 0)];
+                    const unsigned short b = source_indices[triangle + (odd_triangle ? 0 : 1)];
+                    const unsigned short c = source_indices[triangle + 2];
+                    submission_indices[triangle * 3 + 0] = static_cast<uint16_t>(a - min_vertex_index);
+                    submission_indices[triangle * 3 + 1] = static_cast<uint16_t>(b - min_vertex_index);
+                    submission_indices[triangle * 3 + 2] = static_cast<uint16_t>(c - min_vertex_index);
+                }
+            } else {
+                for (uint32_t index = 0; index < submitted_index_count; ++index) {
+                    submission_indices[index] = static_cast<uint16_t>(source_indices[index] - min_vertex_index);
+                }
+            }
+            source_indices = nullptr;
         }
-    } else if (strip) {
-        for (unsigned short triangle = 0; triangle < polygon_count; ++triangle) {
-            const bool odd_triangle = (triangle & 1u) != 0u;
-            const unsigned short a = source_indices[triangle + (odd_triangle ? 1 : 0)];
-            const unsigned short b = source_indices[triangle + (odd_triangle ? 0 : 1)];
-            const unsigned short c = source_indices[triangle + 2];
-            submission_indices[triangle * 3 + 0] = static_cast<uint16_t>(a - min_vertex_index);
-            submission_indices[triangle * 3 + 1] = static_cast<uint16_t>(b - min_vertex_index);
-            submission_indices[triangle * 3 + 2] = static_cast<uint16_t>(c - min_vertex_index);
-        }
-    } else {
-        for (uint32_t index = 0; index < submitted_index_count; ++index) {
-            submission_indices[index] = static_cast<uint16_t>(source_indices[index] - min_vertex_index);
+
+        if (source_indices != nullptr) {
+            if (fill_mode == FillMode::Wireframe) {
+                for (unsigned short triangle = 0; triangle < polygon_count; ++triangle) {
+                    unsigned short a = 0;
+                    unsigned short b = 0;
+                    unsigned short c = 0;
+                    if (strip) {
+                        const bool odd_triangle = (triangle & 1u) != 0u;
+                        a = source_indices[triangle + (odd_triangle ? 1 : 0)];
+                        b = source_indices[triangle + (odd_triangle ? 0 : 1)];
+                        c = source_indices[triangle + 2];
+                    } else {
+                        a = source_indices[triangle * 3 + 0];
+                        b = source_indices[triangle * 3 + 1];
+                        c = source_indices[triangle * 3 + 2];
+                    }
+
+                    Write_Wireframe_Triangle(submission_indices + triangle * 6u, a, b, c, min_vertex_index);
+                }
+            } else if (fill_mode == FillMode::Points) {
+                for (uint32_t index = 0; index < submitted_index_count; ++index) {
+                    submission_indices[index] = static_cast<uint16_t>(source_indices[index] - min_vertex_index);
+                }
+            } else if (strip) {
+                for (unsigned short triangle = 0; triangle < polygon_count; ++triangle) {
+                    const bool odd_triangle = (triangle & 1u) != 0u;
+                    const unsigned short a = source_indices[triangle + (odd_triangle ? 1 : 0)];
+                    const unsigned short b = source_indices[triangle + (odd_triangle ? 0 : 1)];
+                    const unsigned short c = source_indices[triangle + 2];
+                    submission_indices[triangle * 3 + 0] = static_cast<uint16_t>(a - min_vertex_index);
+                    submission_indices[triangle * 3 + 1] = static_cast<uint16_t>(b - min_vertex_index);
+                    submission_indices[triangle * 3 + 2] = static_cast<uint16_t>(c - min_vertex_index);
+                }
+            } else {
+                for (uint32_t index = 0; index < submitted_index_count; ++index) {
+                    submission_indices[index] = static_cast<uint16_t>(source_indices[index] - min_vertex_index);
+                }
+            }
         }
     }
 
     const Matrix4 world_transform = world.Transpose();
     bgfx::setTransform(&world_transform[0][0]);
-    bgfx::setVertexBuffer(0, &transient_vertex_buffer);
-    bgfx::setIndexBuffer(&transient_index_buffer);
+    if (use_direct_index_buffer) {
+        // The cached render index buffers keep the original absolute vertex indices.
+        // Unlike D3D8's SetIndices(baseVertexIndex), bgfx does not apply a separate
+        // base-vertex offset to indexed draws, so direct indexed submission must bind
+        // the full cached vertex buffer rather than a min-vertex slice.
+        bgfx::setVertexBuffer(
+            0,
+            static_cast<const RenderVertexBufferClass &>(vertex_buffer).Get_Bgfx_Vertex_Buffer());
+    } else if (use_direct_vertex_buffer) {
+        bgfx::setVertexBuffer(
+            0,
+            static_cast<const RenderVertexBufferClass &>(vertex_buffer).Get_Bgfx_Vertex_Buffer(),
+            vertex_buffer_offset + index_base_offset + min_vertex_index,
+            vertex_count);
+    } else {
+        bgfx::setVertexBuffer(0, &transient_vertex_buffer);
+    }
+
+    if (use_direct_index_buffer) {
+        bgfx::setIndexBuffer(
+            static_cast<const RenderIndexBufferClass &>(index_buffer).Get_Bgfx_Index_Buffer(),
+            index_buffer_offset + start_index,
+            fill_mode == FillMode::Points && strip ? source_index_count : submitted_index_count);
+    } else {
+        bgfx::setIndexBuffer(&transient_index_buffer);
+    }
 
     BgfxRenderer::FixedFunctionShaderInputs shader_inputs;
     shader_inputs.FogEnabled = DX8Wrapper::Get_Fog_Enable();
@@ -625,6 +582,7 @@ bool Submit_Cached_Fixed_Function_Draw(
     shader_inputs.BumpEnvLuminanceScale = Decode_Float_From_Dword(DX8Wrapper::Get_Texture_Stage_State(1, D3DTSS_BUMPENVLSCALE));
     shader_inputs.BumpEnvLuminanceOffset = Decode_Float_From_Dword(DX8Wrapper::Get_Texture_Stage_State(1, D3DTSS_BUMPENVLOFFSET));
     Populate_Fixed_Function_Stage_Inputs(shader_inputs);
+    Populate_Fixed_Function_Texture_Inputs(shader_inputs);
     Populate_Fixed_Function_Lighting_Inputs(shader_inputs, vertex_buffer, material);
 
     TextureClass *stage0_texture = textures != nullptr ? textures[0] : nullptr;

@@ -6,7 +6,6 @@
 #include <cstring>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -66,11 +65,49 @@ RenderDeviceDescClass g_render_device_desc;
 DX8Caps *g_bgfx_caps = nullptr;
 int g_swap_interval = 0;
 constexpr HRESULT kD3DErrInvalidCall = -11;
-std::unordered_map<const RenderVertexBufferClass *, std::vector<unsigned char>> g_render_vertex_buffers;
 
-std::vector<unsigned char> &Get_Render_Vertex_Data(const RenderVertexBufferClass *buffer)
+void Populate_Submission_Vertex(
+	SubmissionVertex &destination,
+	const unsigned char *source_vertex,
+	const VertexFormatInfoClass &format_info)
 {
-	return g_render_vertex_buffers[buffer];
+	const unsigned vertex_size = format_info.Get_Vertex_Size();
+	destination.x = reinterpret_cast<const float *>(source_vertex + format_info.Get_Location_Offset())[0];
+	destination.y = reinterpret_cast<const float *>(source_vertex + format_info.Get_Location_Offset())[1];
+	destination.z = reinterpret_cast<const float *>(source_vertex + format_info.Get_Location_Offset())[2];
+
+	if (format_info.Get_Normal_Offset() < vertex_size) {
+		destination.nx = reinterpret_cast<const float *>(source_vertex + format_info.Get_Normal_Offset())[0];
+		destination.ny = reinterpret_cast<const float *>(source_vertex + format_info.Get_Normal_Offset())[1];
+		destination.nz = reinterpret_cast<const float *>(source_vertex + format_info.Get_Normal_Offset())[2];
+	} else {
+		destination.nx = 0.0f;
+		destination.ny = 0.0f;
+		destination.nz = 1.0f;
+	}
+
+	destination.diffuse =
+		format_info.Get_Diffuse_Offset() < vertex_size
+			? BgfxRenderer::Convert_Packed_Color(*reinterpret_cast<const unsigned *>(source_vertex + format_info.Get_Diffuse_Offset()))
+			: 0xffffffffu;
+	destination.specular =
+		format_info.Get_Specular_Offset() < vertex_size
+			? BgfxRenderer::Convert_Packed_Color(*reinterpret_cast<const unsigned *>(source_vertex + format_info.Get_Specular_Offset()))
+			: 0u;
+
+	destination.u0 = 0.0f;
+	destination.v0 = 0.0f;
+	if (format_info.Get_Tex_Offset(0) < vertex_size) {
+		destination.u0 = reinterpret_cast<const float *>(source_vertex + format_info.Get_Tex_Offset(0))[0];
+		destination.v0 = reinterpret_cast<const float *>(source_vertex + format_info.Get_Tex_Offset(0))[1];
+	}
+
+	destination.u1 = 0.0f;
+	destination.v1 = 0.0f;
+	if (format_info.Get_Tex_Offset(1) < vertex_size) {
+		destination.u1 = reinterpret_cast<const float *>(source_vertex + format_info.Get_Tex_Offset(1))[0];
+		destination.v1 = reinterpret_cast<const float *>(source_vertex + format_info.Get_Tex_Offset(1))[1];
+	}
 }
 }
 
@@ -329,7 +366,7 @@ VertexBufferClass::WriteLockClass::WriteLockClass(VertexBufferClass *vertex_buff
 	vertex_buffer->Add_Ref();
 	switch (vertex_buffer->Type()) {
 	case BUFFER_TYPE_RENDER:
-		Vertices = Get_Render_Vertex_Data(static_cast<RenderVertexBufferClass *>(vertex_buffer)).data();
+		Vertices = static_cast<RenderVertexBufferClass *>(vertex_buffer)->Get_Source_Vertex_Data();
 		break;
 	case BUFFER_TYPE_SORTING:
 		Vertices = static_cast<SortingVertexBufferClass *>(vertex_buffer)->VertexBuffer;
@@ -353,7 +390,7 @@ VertexBufferClass::AppendLockClass::AppendLockClass(VertexBufferClass *vertex_bu
 	vertex_buffer->Add_Ref();
 	switch (vertex_buffer->Type()) {
 	case BUFFER_TYPE_RENDER:
-		Vertices = Get_Render_Vertex_Data(static_cast<RenderVertexBufferClass *>(vertex_buffer)).data() + start_index * vertex_buffer->Vertex_Format_Info().Get_Vertex_Size();
+		Vertices = static_cast<RenderVertexBufferClass *>(vertex_buffer)->Get_Source_Vertex_Data() + start_index * vertex_buffer->Vertex_Format_Info().Get_Vertex_Size();
 		break;
 	case BUFFER_TYPE_SORTING:
 		Vertices = static_cast<SortingVertexBufferClass *>(vertex_buffer)->VertexBuffer + start_index;
@@ -384,10 +421,12 @@ RenderVertexBufferClass::RenderVertexBufferClass(unsigned FVF, unsigned short ve
 #if !RENEGADE_WITH_BGFX_RENDERER
 	: VertexBufferClass(BUFFER_TYPE_RENDER, FVF, vertex_count_), VertexBuffer(nullptr)
 #else
-	: VertexBufferClass(BUFFER_TYPE_RENDER, FVF, vertex_count_)
+	: VertexBufferClass(BUFFER_TYPE_RENDER, FVF, vertex_count_),
+	  BgfxVertexBuffer(BGFX_INVALID_HANDLE),
+	  BgfxVertexBufferDirty(true),
+	  VertexData(static_cast<size_t>(Vertex_Format_Info().Get_Vertex_Size()) * vertex_count_)
 #endif
 {
-	g_render_vertex_buffers[this].resize(static_cast<size_t>(Vertex_Format_Info().Get_Vertex_Size()) * vertex_count_);
 }
 
 RenderVertexBufferClass::RenderVertexBufferClass(const Vector3 *vertices, const Vector3 *normals, const Vector2 *tex_coords, unsigned short vertex_count_, UsageType usage)
@@ -416,16 +455,26 @@ RenderVertexBufferClass::RenderVertexBufferClass(const Vector3 *vertices, const 
 
 RenderVertexBufferClass::~RenderVertexBufferClass()
 {
-	g_render_vertex_buffers.erase(this);
+#if RENEGADE_WITH_BGFX_RENDERER
+	if (bgfx::isValid(BgfxVertexBuffer)) {
+		if (BgfxRenderer::Is_Initted()) {
+			bgfx::destroy(BgfxVertexBuffer);
+		}
+		BgfxVertexBuffer = BGFX_INVALID_HANDLE;
+	}
+#endif
 }
 
 void RenderVertexBufferClass::Create_Vertex_Buffer(UsageType)
 {
+#if RENEGADE_WITH_BGFX_RENDERER
+	Mark_Bgfx_Buffer_Dirty();
+#endif
 }
 
 void RenderVertexBufferClass::Copy(const Vector3 *loc, unsigned first_vertex, unsigned count)
 {
-	unsigned char *vertices = Get_Render_Vertex_Data(this).data() + first_vertex * Vertex_Format_Info().Get_Vertex_Size();
+	unsigned char *vertices = Get_Source_Vertex_Data() + first_vertex * Vertex_Format_Info().Get_Vertex_Size();
 	for (unsigned i = 0; i < count; ++i) {
 		*reinterpret_cast<Vector3 *>(vertices + Vertex_Format_Info().Get_Location_Offset()) = loc[i];
 		vertices += Vertex_Format_Info().Get_Vertex_Size();
@@ -434,7 +483,7 @@ void RenderVertexBufferClass::Copy(const Vector3 *loc, unsigned first_vertex, un
 
 void RenderVertexBufferClass::Copy(const Vector3 *loc, const Vector2 *uv, unsigned first_vertex, unsigned count)
 {
-	unsigned char *vertices = Get_Render_Vertex_Data(this).data() + first_vertex * Vertex_Format_Info().Get_Vertex_Size();
+	unsigned char *vertices = Get_Source_Vertex_Data() + first_vertex * Vertex_Format_Info().Get_Vertex_Size();
 	for (unsigned i = 0; i < count; ++i) {
 		*reinterpret_cast<Vector3 *>(vertices + Vertex_Format_Info().Get_Location_Offset()) = loc[i];
 		*reinterpret_cast<Vector2 *>(vertices + Vertex_Format_Info().Get_Tex_Offset(0)) = uv[i];
@@ -444,7 +493,7 @@ void RenderVertexBufferClass::Copy(const Vector3 *loc, const Vector2 *uv, unsign
 
 void RenderVertexBufferClass::Copy(const Vector3 *loc, const Vector3 *norm, unsigned first_vertex, unsigned count)
 {
-	unsigned char *vertices = Get_Render_Vertex_Data(this).data() + first_vertex * Vertex_Format_Info().Get_Vertex_Size();
+	unsigned char *vertices = Get_Source_Vertex_Data() + first_vertex * Vertex_Format_Info().Get_Vertex_Size();
 	for (unsigned i = 0; i < count; ++i) {
 		*reinterpret_cast<Vector3 *>(vertices + Vertex_Format_Info().Get_Location_Offset()) = loc[i];
 		*reinterpret_cast<Vector3 *>(vertices + Vertex_Format_Info().Get_Normal_Offset()) = norm[i];
@@ -454,7 +503,7 @@ void RenderVertexBufferClass::Copy(const Vector3 *loc, const Vector3 *norm, unsi
 
 void RenderVertexBufferClass::Copy(const Vector3 *loc, const Vector3 *norm, const Vector2 *uv, unsigned first_vertex, unsigned count)
 {
-	unsigned char *vertices = Get_Render_Vertex_Data(this).data() + first_vertex * Vertex_Format_Info().Get_Vertex_Size();
+	unsigned char *vertices = Get_Source_Vertex_Data() + first_vertex * Vertex_Format_Info().Get_Vertex_Size();
 	for (unsigned i = 0; i < count; ++i) {
 		*reinterpret_cast<Vector3 *>(vertices + Vertex_Format_Info().Get_Location_Offset()) = loc[i];
 		*reinterpret_cast<Vector3 *>(vertices + Vertex_Format_Info().Get_Normal_Offset()) = norm[i];
@@ -465,7 +514,7 @@ void RenderVertexBufferClass::Copy(const Vector3 *loc, const Vector3 *norm, cons
 
 void RenderVertexBufferClass::Copy(const Vector3 *loc, const Vector3 *norm, const Vector2 *uv, const Vector4 *diffuse, unsigned first_vertex, unsigned count)
 {
-	unsigned char *vertices = Get_Render_Vertex_Data(this).data() + first_vertex * Vertex_Format_Info().Get_Vertex_Size();
+	unsigned char *vertices = Get_Source_Vertex_Data() + first_vertex * Vertex_Format_Info().Get_Vertex_Size();
 	for (unsigned i = 0; i < count; ++i) {
 		*reinterpret_cast<Vector3 *>(vertices + Vertex_Format_Info().Get_Location_Offset()) = loc[i];
 		*reinterpret_cast<Vector3 *>(vertices + Vertex_Format_Info().Get_Normal_Offset()) = norm[i];
@@ -477,7 +526,7 @@ void RenderVertexBufferClass::Copy(const Vector3 *loc, const Vector3 *norm, cons
 
 void RenderVertexBufferClass::Copy(const Vector3 *loc, const Vector2 *uv, const Vector4 *diffuse, unsigned first_vertex, unsigned count)
 {
-	unsigned char *vertices = Get_Render_Vertex_Data(this).data() + first_vertex * Vertex_Format_Info().Get_Vertex_Size();
+	unsigned char *vertices = Get_Source_Vertex_Data() + first_vertex * Vertex_Format_Info().Get_Vertex_Size();
 	for (unsigned i = 0; i < count; ++i) {
 		*reinterpret_cast<Vector3 *>(vertices + Vertex_Format_Info().Get_Location_Offset()) = loc[i];
 		*reinterpret_cast<unsigned *>(vertices + Vertex_Format_Info().Get_Diffuse_Offset()) = DX8Wrapper::Convert_Color(diffuse[i]);
@@ -485,6 +534,70 @@ void RenderVertexBufferClass::Copy(const Vector3 *loc, const Vector2 *uv, const 
 		vertices += Vertex_Format_Info().Get_Vertex_Size();
 	}
 }
+
+#if RENEGADE_WITH_BGFX_RENDERER
+unsigned char *RenderVertexBufferClass::Get_Source_Vertex_Data()
+{
+	Mark_Bgfx_Buffer_Dirty();
+	return VertexData.data();
+}
+
+const unsigned char *RenderVertexBufferClass::Get_Source_Vertex_Data() const
+{
+	return VertexData.data();
+}
+
+bool RenderVertexBufferClass::Ensure_Bgfx_Buffer() const
+{
+	return Sync_Bgfx_Buffer();
+}
+
+bgfx::DynamicVertexBufferHandle RenderVertexBufferClass::Get_Bgfx_Vertex_Buffer() const
+{
+	return BgfxVertexBuffer;
+}
+
+void RenderVertexBufferClass::Mark_Bgfx_Buffer_Dirty()
+{
+	BgfxVertexBufferDirty = true;
+}
+
+bool RenderVertexBufferClass::Sync_Bgfx_Buffer() const
+{
+	if (!BgfxRenderer::Is_Initted()) {
+		return false;
+	}
+
+	if (!bgfx::isValid(BgfxVertexBuffer)) {
+		BgfxVertexBuffer = bgfx::createDynamicVertexBuffer(VertexCount, BgfxRenderer::Get_Fixed_Function_Layout());
+		if (!bgfx::isValid(BgfxVertexBuffer)) {
+			return false;
+		}
+		BgfxVertexBufferDirty = true;
+	}
+
+	if (!BgfxVertexBufferDirty) {
+		return true;
+	}
+
+	std::vector<SubmissionVertex> upload_vertices(static_cast<size_t>(VertexCount));
+	const unsigned vertex_size = Vertex_Format_Info().Get_Vertex_Size();
+	const unsigned char *source_vertices = VertexData.data();
+	for (unsigned short vertex_index = 0; vertex_index < VertexCount; ++vertex_index) {
+		Populate_Submission_Vertex(
+			upload_vertices[static_cast<size_t>(vertex_index)],
+			source_vertices + static_cast<size_t>(vertex_index) * vertex_size,
+			Vertex_Format_Info());
+	}
+
+	const bgfx::Memory *vertex_memory = bgfx::copy(
+		upload_vertices.data(),
+		static_cast<uint32_t>(upload_vertices.size() * sizeof(SubmissionVertex)));
+	bgfx::update(BgfxVertexBuffer, 0, vertex_memory);
+	BgfxVertexBufferDirty = false;
+	return true;
+}
+#endif
 
 DynamicVBAccessClass::DynamicVBAccessClass(unsigned type, unsigned fvf, unsigned short vertex_count)
 	: FVFInfo(kDynamicFVFInfo), Type(type == BUFFER_TYPE_DYNAMIC_RENDER ? BUFFER_TYPE_DYNAMIC_SORTING : type), VertexCount(vertex_count), VertexBufferOffset(0), VertexBuffer(nullptr)

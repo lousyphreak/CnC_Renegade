@@ -48,6 +48,11 @@
 #include "refcount.h"
 #include "sphere.h"
 
+#if RENEGADE_WITH_BGFX_RENDERER
+#include <vector>
+#include <bgfx/bgfx.h>
+#endif
+
 class DX8Wrapper;
 class SortingRendererClass;
 #if !RENEGADE_WITH_BGFX_RENDERER
@@ -174,6 +179,13 @@ public:
 	void Copy(unsigned int* indices,unsigned start_index,unsigned index_count);
 	void Copy(unsigned short* indices,unsigned start_index,unsigned index_count);
 
+#if RENEGADE_WITH_BGFX_RENDERER
+	unsigned short *Get_Source_Index_Data();
+	const unsigned short *Get_Source_Index_Data() const;
+	bool Ensure_Bgfx_Buffer() const;
+	bgfx::DynamicIndexBufferHandle Get_Bgfx_Index_Buffer() const;
+#endif
+
 #if !RENEGADE_WITH_BGFX_RENDERER
 	inline IDirect3DIndexBuffer8* Get_Native_Index_Buffer()	{ return index_buffer; }
 #endif
@@ -181,6 +193,13 @@ public:
 private:
 #if !RENEGADE_WITH_BGFX_RENDERER
 	IDirect3DIndexBuffer8*	index_buffer;		// actual dx8 index buffer
+#else
+	mutable bgfx::DynamicIndexBufferHandle BgfxIndexBuffer;
+	mutable bool BgfxIndexBufferDirty;
+	std::vector<unsigned short> IndexData;
+
+	void Mark_Bgfx_Buffer_Dirty();
+	bool Sync_Bgfx_Buffer() const;
 #endif
 };
 

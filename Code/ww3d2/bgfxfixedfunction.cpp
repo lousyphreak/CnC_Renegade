@@ -20,7 +20,6 @@
 namespace
 {
 constexpr unsigned kFixedFunctionTextureStages = 2u;
-constexpr unsigned kD3DCullCW = 2u;
 
 struct SubmissionVertex
 {
@@ -626,7 +625,7 @@ bool Submit_Cached_Fixed_Function_Draw(
 
     const unsigned cull_mode = DX8Wrapper::Get_DX8_Render_State(D3DRS_CULLMODE);
     bgfx::setState(
-        BgfxRenderer::Build_Render_State(shader, cull_mode != 0x12345678u ? cull_mode : kD3DCullCW)
+        BgfxRenderer::Build_Render_State(shader, cull_mode != 0x12345678u ? cull_mode : D3DCULL_CW)
             | Resolve_Primitive_State(fill_mode));
     bgfx::submit(BgfxRenderer::Get_View_Id(view, projection), BgfxRenderer::Get_Fixed_Function_Program());
     return true;

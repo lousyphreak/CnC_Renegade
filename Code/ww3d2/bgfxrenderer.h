@@ -3,6 +3,7 @@
 #include "always.h"
 #include "matrix3d.h"
 #include "matrix4.h"
+#include "renderer_types.h"
 #include "shader.h"
 #include "vector3.h"
 #include "ww3dformat.h"
@@ -148,7 +149,7 @@ public:
     static bgfx::TextureHandle Create_Texture(TextureClass &texture);
     static bgfx::ProgramHandle Load_Program(const char *vertex_shader_name, const char *fragment_shader_name);
     static void Destroy_Program(bgfx::ProgramHandle &program);
-    static uint64_t Build_Render_State(const ShaderClass &shader, unsigned cull_mode = 2u);
+    static uint64_t Build_Render_State(const ShaderClass &shader, unsigned cull_mode = D3DCULL_CW);
     static void Apply_Fixed_Function_Shader_Inputs(const ShaderClass &shader, const FixedFunctionShaderInputs &inputs);
     static std::uint32_t Convert_Packed_Color(std::uint32_t argb_color);
     static void Request_Screen_Shot(const char *file_path);

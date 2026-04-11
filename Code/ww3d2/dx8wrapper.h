@@ -298,6 +298,7 @@ public:
 	static SurfaceClass * _Get_DX8_Back_Buffer(unsigned int num=0);
 #endif
 
+#if !RENEGADE_WITH_BGFX_RENDERER
 	static void _Copy_DX8_Rects(
 			IDirect3DSurface8* pSourceSurface,
 			CONST RECT* pSourceRectsArray,
@@ -305,6 +306,7 @@ public:
 			IDirect3DSurface8* pDestinationSurface,
 			CONST POINT* pDestPointsArray
 	);
+#endif
 
 	static void _Update_Texture(TextureClass *system, TextureClass *video);
 	static void Flush_DX8_Resource_Manager(unsigned int bytes=0);
@@ -618,6 +620,7 @@ void DX8Wrapper::Set_DX8_Texture_Stage_State(unsigned stage, D3DTEXTURESTAGESTAT
 void DX8Wrapper::Set_DX8_Texture(unsigned int stage, IDirect3DBaseTexture8* texture);
 #endif
 
+#if !RENEGADE_WITH_BGFX_RENDERER
 void DX8Wrapper::_Copy_DX8_Rects(
   IDirect3DSurface8* pSourceSurface,
   CONST RECT* pSourceRectsArray,
@@ -625,6 +628,7 @@ void DX8Wrapper::_Copy_DX8_Rects(
   IDirect3DSurface8* pDestinationSurface,
   CONST POINT* pDestPointsArray
 );
+#endif
 
 WWINLINE Vector4 DX8Wrapper::Convert_Color(unsigned color)
 {

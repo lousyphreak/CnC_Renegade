@@ -208,6 +208,15 @@
   - `Code/ww3d2/surfaceclass.cpp` now includes `dx8wrapper.h` only for the non-bgfx backend, which flushed out and fixed an implicit-include dependency on `vector3.h` while keeping the bgfx path cleaner and more self-contained.
   - `Code/ww3d2/dx8wrapper.h` now hides dead `_Create_DX8_Texture(...)`, `_Create_DX8_Surface(...)`, and `_Get_DX8_Back_Buffer(...)` declarations from the bgfx build, matching the existing `ww3d2` CMake setup that already excludes `dx8wrapper.cpp`.
   - added a backend-neutral `DX8Wrapper::Reset_Render_Target()` entry point and switched `Code/ww3d2/texproject.cpp` / `Code/wwphys/pscene_projectors.cpp` to use it, so high-level bgfx code no longer resets the render target by spelling a null `IDirect3DSurface8 *`.
+- Continued the bgfx header-surface cleanup so the active renderer target depends on fewer fake Direct3D types:
+  - `Code/ww3d2/renderer_types.h` now only forward-declares `IDirect3DBaseTexture8`, `IDirect3DSurface8`, `IDirect3DTexture8`, `IDirect3D8`, `IDirect3DDevice8`, and `IDirect3DSwapChain8` when `RENEGADE_WITH_BGFX_RENDERER` is enabled instead of publishing fake COM-style method shells into the bgfx build.
+  - `Code/ww3d2/dx8wrapper.h` now hides `_Copy_DX8_Rects(...)` from the bgfx build alongside the other DX8-only resource helpers, so the live renderer headers stop advertising an excluded surface-copy path.
+  - removed the stale `bgfxmeshstubs.cpp` exclusion entry from `Code/ww3d2/CMakeLists.txt`; the file no longer exists, so keeping the dead reference around only obscured the real active source set.
+  - revalidated the cleanup with `cmake --build build -j20`; the tree still builds cleanly after the header/dead-code trim.
+- Fixed a real cull-mode parity bug in the bgfx path instead of leaving the renderer on mismatched DX8 constants:
+  - `Code/ww3d2/renderer_types.h` now uses the real Direct3D cull enum values (`NONE=1`, `CW=2`, `CCW=3`) instead of the previous off-by-one placeholders.
+  - `Code/ww3d2/bgfxrenderer.cpp` / `.h` and `Code/ww3d2/bgfxfixedfunction.cpp` now consume the shared `D3DCULL_*` constants directly instead of hardcoding parallel bgfx-side guesses for CW/CCW.
+  - this removes a subtle mismatch where wrapper state could request `D3DCULL_CCW` while bgfx interpreted the value as `CW`, which is the kind of parity bug that can flip mesh winding/culling without producing an obvious crash.
   - deleted the unused bgfx-side `CurrentRenderTarget` / `DefaultRenderTarget` / `DefaultDepthBuffer` static definitions from `Code/ww3d2/bgfxdynamicbuffer.cpp` because that state only belongs to the excluded DX8 backend implementation.
 - Rebuilt immediately after the header/surface cleanup and confirmed `cmake --build build -j20` still succeeds on the active bgfx tree.
 - Revalidated the new tree with `cd build/bin && timeout 210 ./Renegade`; the executable stayed alive until timeout exit `124` instead of crashing, and the captured runtime log did not show ASAN/UBSAN/assert/fatal renderer failures during the run.

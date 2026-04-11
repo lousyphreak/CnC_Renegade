@@ -89,8 +89,6 @@ constexpr uint16_t ClearViewId = 0;
 constexpr uint16_t MainViewBaseId = 1;
 constexpr uint16_t MaxMainViewId = 254;
 constexpr uint16_t OverlayViewId = 255;
-constexpr unsigned kD3DCullCW = 2u;
-constexpr unsigned kD3DCullCCW = 3u;
 const float IdentityMatrix[16] = {
     1.0f, 0.0f, 0.0f, 0.0f,
     0.0f, 1.0f, 0.0f, 0.0f,
@@ -1622,7 +1620,7 @@ uint64_t BgfxRenderer::Build_Render_State(const ShaderClass &shader, unsigned cu
     state |= Convert_Depth_Test(shader.Get_Depth_Compare());
 
     if (shader.Get_Cull_Mode() == ShaderClass::CULL_MODE_ENABLE) {
-        state |= (cull_mode == kD3DCullCCW) ? BGFX_STATE_CULL_CCW : BGFX_STATE_CULL_CW;
+        state |= (cull_mode == D3DCULL_CCW) ? BGFX_STATE_CULL_CCW : BGFX_STATE_CULL_CW;
     }
 
     if (shader.Get_Src_Blend_Func() != ShaderClass::SRCBLEND_ONE

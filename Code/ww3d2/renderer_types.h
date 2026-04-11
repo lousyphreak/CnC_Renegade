@@ -4,6 +4,8 @@
 #define RENEGADE_RENDERER_TYPES_DEFINED
 #endif
 
+#include "renegade_build_config.h"
+
 #include <cstdint>
 
 #ifndef TRUE
@@ -346,9 +348,9 @@ constexpr D3DFOGMODE D3DFOG_EXP2 = 2;
 constexpr D3DFOGMODE D3DFOG_LINEAR = 3;
 
 using D3DCULL = std::uint32_t;
-constexpr D3DCULL D3DCULL_NONE = 0;
-constexpr D3DCULL D3DCULL_CW = 1;
-constexpr D3DCULL D3DCULL_CCW = 2;
+constexpr D3DCULL D3DCULL_NONE = 1;
+constexpr D3DCULL D3DCULL_CW = 2;
+constexpr D3DCULL D3DCULL_CCW = 3;
 
 using D3DFILLMODE = std::uint32_t;
 constexpr D3DFILLMODE D3DFILL_POINT = 0;
@@ -596,6 +598,14 @@ struct D3DMATRIX
 constexpr D3DRESOURCETYPE D3DRTYPE_SURFACE = 1;
 constexpr D3DRESOURCETYPE D3DRTYPE_TEXTURE = 3;
 
+#if RENEGADE_WITH_BGFX_RENDERER
+struct IDirect3DBaseTexture8;
+struct IDirect3DSurface8;
+struct IDirect3DTexture8;
+struct IDirect3DSwapChain8;
+struct IDirect3D8;
+struct IDirect3DDevice8;
+#else
 struct IDirect3DBaseTexture8
 {
     virtual ~IDirect3DBaseTexture8() = default;
@@ -624,6 +634,7 @@ struct IDirect3DTexture8 : public IDirect3DBaseTexture8
 struct IDirect3DSwapChain8;
 struct IDirect3D8;
 struct IDirect3DDevice8;
+#endif
 
 constexpr D3DCOLOR D3DCOLOR_COLORVALUE(float r, float g, float b, float a)
 {

@@ -7,7 +7,6 @@ list(REMOVE_ITEM WW3D2_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/dx8indexbuffer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/dx8vertexbuffer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/dx8wrapper.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/bgfxmeshstubs.cpp"
 )
 
 add_library(ww3d2 STATIC ${WW3D2_SOURCES} ${WW3D2_HEADERS})

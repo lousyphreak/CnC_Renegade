@@ -111,6 +111,12 @@
 - Because `Code/ww3d2/CMakeLists.txt` excludes `dx8wrapper.cpp` in the active bgfx build, DX8 resource helpers that only live in shared headers are real cleanup opportunities, not hidden runtime dependencies:
   - `SurfaceClass`'s DX8-only constructor, attach/detach helpers, and `Acquire_DX8_Surface()` / `Peek_DX8_Surface()` should be compile-gated out of the bgfx build once no live caller remains
   - dead `_Create_DX8_Texture(...)`, `_Create_DX8_Surface(...)`, and `_Get_DX8_Back_Buffer(...)` declarations in `dx8wrapper.h` should also be hidden from the bgfx build so the active renderer target stops advertising excluded backend code as though it were still live
+- The same rule also applies to shared D3D interface type definitions:
+  - the active bgfx build should only need forward declarations for legacy `IDirect3D*` names that survive in compile-gated headers; publishing fake COM-style method vtables in `renderer_types.h` keeps a shim-shaped ownership boundary alive longer than necessary
+  - after switching the bgfx build to forward declarations only, any accidental method-level dependency on those fake interfaces becomes an honest compile failure instead of silently leaning on placeholder type shells
+- Keep the shared compatibility constants truthful when the port still consumes legacy state names:
+  - `renderer_types.h`'s `D3DCULL_*` values need to match real Direct3D (`NONE=1`, `CW=2`, `CCW=3`), because the bgfx path still receives wrapper cull state numerically through shared code
+  - duplicating those numbers again in renderer-local helpers is risky; the safer pattern is to let bgfx submission consume the shared `D3DCULL_*` constants directly so enum drift cannot silently invert winding/culling
 - The same rule applies to the remaining wrapper-global D3D surface:
   - if the bgfx build does not compile `dx8wrapper.cpp`, it should not expose `_Get_D3D8`, `_Get_D3D_Device8`, `Create_Additional_Swap_Chain(...)`, D3D-only `Set_Render_Target(...)` overloads, or raw `IDirect3D*` / `IDirect3DBaseTexture8*` static state just to satisfy null stubs in `bgfxdynamicbuffer.cpp`
   - for that active build, accidental `DX8CALL*` use should fail loudly instead of quietly depending on getters for backend objects that do not exist

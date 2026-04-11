@@ -34,16 +34,43 @@ public:
         float Stage1Alpha[4] = {1.0f, 0.0f, 2.0f, 1.0f};
         float MaterialAmbient[4] = {1.0f, 1.0f, 1.0f, 1.0f};
         float MaterialDiffuse[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+        float MaterialSpecular[4] = {0.0f, 0.0f, 0.0f, 1.0f};
         float MaterialEmissive[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+        float MaterialParams[4] = {1.0f, 0.0f, 0.0f, 0.0f};
         float SceneAmbient[4] = {0.0f, 0.0f, 0.0f, 1.0f};
         float LightingConfig[4] = {0.0f, 0.0f, 1.0f, 0.0f};
         float MaterialSourceConfig[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+        float LightPositions[16] = {
+            0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f};
         float LightDirections[16] = {
             0.0f, 0.0f, 1.0f, 0.0f,
             0.0f, 0.0f, 1.0f, 0.0f,
             0.0f, 0.0f, 1.0f, 0.0f,
             0.0f, 0.0f, 1.0f, 0.0f};
+        float LightAmbient[16] = {
+            0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f};
         float LightDiffuse[16] = {
+            0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f};
+        float LightSpecular[16] = {
+            0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f};
+        float LightAttenuation[16] = {
+            1.0f, 0.0f, 0.0f, 0.0f,
+            1.0f, 0.0f, 0.0f, 0.0f,
+            1.0f, 0.0f, 0.0f, 0.0f,
+            1.0f, 0.0f, 0.0f, 0.0f};
+        float LightSpotParams[16] = {
             0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f,
@@ -168,12 +195,20 @@ private:
     static bgfx::UniformHandle FixedFunctionBumpEnvParamsUniform;
     static bgfx::UniformHandle FixedFunctionMaterialAmbientUniform;
     static bgfx::UniformHandle FixedFunctionMaterialDiffuseUniform;
+    static bgfx::UniformHandle FixedFunctionMaterialSpecularUniform;
     static bgfx::UniformHandle FixedFunctionMaterialEmissiveUniform;
+    static bgfx::UniformHandle FixedFunctionMaterialParamsUniform;
+    static bgfx::UniformHandle FixedFunctionCameraPositionUniform;
     static bgfx::UniformHandle FixedFunctionSceneAmbientUniform;
     static bgfx::UniformHandle FixedFunctionLightingConfigUniform;
     static bgfx::UniformHandle FixedFunctionMaterialSourceConfigUniform;
+    static bgfx::UniformHandle FixedFunctionLightPositionsUniform;
     static bgfx::UniformHandle FixedFunctionLightDirectionsUniform;
+    static bgfx::UniformHandle FixedFunctionLightAmbientUniform;
     static bgfx::UniformHandle FixedFunctionLightDiffuseUniform;
+    static bgfx::UniformHandle FixedFunctionLightSpecularUniform;
+    static bgfx::UniformHandle FixedFunctionLightAttenuationUniform;
+    static bgfx::UniformHandle FixedFunctionLightSpotParamsUniform;
     static bgfx::ProgramHandle FixedFunctionProgram;
     static Matrix4 CurrentViewMatrix;
     static Matrix4 CurrentProjectionMatrix;

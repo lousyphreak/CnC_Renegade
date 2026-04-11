@@ -226,9 +226,14 @@
   - the live concrete buffer types are now `RenderVertexBufferClass` / `RenderIndexBufferClass`, `VertexFormatInfoClass` now carries the format metadata, and the active buffer-type enum values now use `BUFFER_TYPE_RENDER` / `BUFFER_TYPE_DYNAMIC_RENDER` instead of DX8-specific names.
   - the bgfx implementations in `bgfxdynamicbuffer.cpp` / `bgfxindexbuffer.cpp` were renamed along with the public headers, so the active build no longer advertises DX8 ownership in its buffer-layer API even though the remaining mesh/render pipeline still needs broader cleanup.
 - Revalidated after the buffer/FVF rename slice: `cmake --build build -j20` succeeded, and `cd build/bin && timeout 210 ./Renegade` again stayed alive until timeout exit `124` with no sanitizer/assert/fatal markers in the captured runtime output.
+- Finished the next fixed-function lighting parity slice so the live bgfx path stops treating every light as directional diffuse only:
+  - `Code/ww3d2/bgfxfixedfunction.cpp` now snapshots the active DX8-style material state alongside the existing `VertexMaterialClass` data, feeds material specular/shininess plus full per-light position/type/ambient/diffuse/specular/attenuation/spot parameters into `BgfxRenderer::FixedFunctionShaderInputs`, and keeps the shader-facing light data truthful to the live wrapper state.
+  - `Code/ww3d2/bgfxdynamicbuffer.cpp` now restores the original `DX8Wrapper::Set_Light(const LightClass&)` packing behavior for point, directional, and spot lights, including intensity scaling, spot parameters, range, and inverse-linear attenuation instead of the earlier simplified approximation.
+  - `Code/ww3d2/bgfxrenderer.cpp` / `.h` and `Code/ww3d2/shaders/vs_fixed_function.sc` now allocate/bind the extra fixed-function uniforms and evaluate directional, point, and spot lights with ambient/diffuse/specular contributions while preserving the legacy `COLOR1.a` fog/specular channel split.
+- Revalidated after the lighting slice: `cmake --build build -j20` succeeded, and `timeout 210s build/bin/Renegade` again stayed alive until timeout exit `124` with no sanitizer/assert/fatal markers in the captured runtime output.
 
 ## Next work
 
-- Continue de-DX8ing the live render pipeline above the renamed buffer layer, starting with the remaining `dx8renderer.*` / `dx8polygonrenderer.*` / `DX8Wrapper` state surfaces that the bgfx build still exposes.
+- Continue de-DX8ing the live render pipeline above the renamed buffer layer, starting with the remaining `dx8renderer.*` / `dx8polygonrenderer.*` / `DX8Wrapper` state surfaces and the still-D3D-shaped format/sampler API that the bgfx build exposes.
 - Replace the remaining D3D-format conversion surface in `formconv.*` and texture loading with backend-neutral or bgfx-backed format handling.
 - Keep deleting or hiding DX8-only API from shared headers whenever the active bgfx build already excludes the corresponding backend `.cpp`.

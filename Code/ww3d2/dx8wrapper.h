@@ -135,6 +135,7 @@ struct RenderStateStruct
 {
 	ShaderClass shader;
 	VertexMaterialClass* material;
+	D3DMATERIAL8 material_state;
 	unsigned long material_crc;
 	bool material_state_dirty;
 	TextureClass * Textures[MAX_TEXTURE_STAGES];

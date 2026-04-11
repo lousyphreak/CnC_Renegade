@@ -159,6 +159,10 @@
 - The same “capture current bound state, keep submission renderer-owned” rule also works for the remaining special-case renderers:
   - a small `BgfxRenderer::Submit_Current_Fixed_Function_*` seam is enough for sorting flushes, camera-space particles/lines, debug quads, dazzle quads, decals, and other procedural callers that already describe their state through the legacy wrapper caches
   - that keeps `BgfxRenderer` as the only live fixed-function submit owner in the bgfx path without pushing another D3D-shaped render-state object up through the rest of the engine
+- Fixed-function lighting parity in this tree depends on using the live `D3DLIGHT8`/material state truthfully, not on re-deriving a smaller bgfx-only light model:
+  - scene rendering still submits point and spot lights through `DX8Wrapper::Set_Light(...)`, so a bgfx path that only uploads light direction plus diffuse color will silently flatten real scene lighting
+  - the original DX8 wrapper packed light intensity into ambient/diffuse/specular colors and encoded far attenuation as `Attenuation0 = 1`, `Attenuation1 = 1 / farAttenStart`, `Range = farAttenEnd`; matching that packing in the bgfx build keeps the fixed-function shader aligned with the old device-facing semantics
+  - the bgfx fixed-function shader can keep using `COLOR1.rgb` for the legacy secondary-gradient/specular add path as long as it preserves `COLOR1.a` as the fog factor channel
 - In the bgfx port, the main camera view is configured through `BgfxRenderer::Set_Camera(...)`, but fixed-function draws still source their local matrix state from `DX8Wrapper`'s cached `render_state.view` and `ProjectionMatrix`.
 - That means a clean bgfx port must preserve two matrix concepts at once:
   - the current frame/main camera view and projection

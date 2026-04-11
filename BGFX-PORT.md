@@ -55,6 +55,10 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
   - sorting flush, polygon renderer draws, line/segment renderers, point groups, decals, dazzle/lens flare quads, debug boxes, terrain patch runs, and related procedural callers now use `BgfxRenderer::Submit_Current_Fixed_Function_*` after applying their legacy state instead of keeping `DX8Wrapper::Draw_*` as the live draw owner
   - weather particles, haze/starfield/cloud layer/sky glow background passes, and the remaining terrain-patch procedural draws now submit directly to `BgfxRenderer::Submit_Current_Fixed_Function_*`
   - the bgfx-side `DX8Wrapper::Draw_*` compatibility bridge has been deleted, so fixed-function submission ownership now sits only in `BgfxRenderer`
+- The active fixed-function lighting path now consumes truthful light/material data instead of a directional-diffuse-only subset:
+  - `BgfxRenderer::FixedFunctionShaderInputs` now carries material specular/power, camera position, and per-light position/type/ambient/diffuse/specular/attenuation/spot data for the live bgfx shader path
+  - the bgfx-side `DX8Wrapper::Set_Light(...)` packing now matches the original DX8 behavior for light type, intensity scaling, range, spot parameters, and inverse-linear attenuation instead of flattening most lights into a point/directional approximation
+  - `vs_fixed_function.sc` now evaluates directional, point, and spot lights with ambient, diffuse, and specular terms, so the bgfx build no longer drops non-directional fixed-function lighting features on real scene lights
 - Runtime validation has moved beyond startup-only bring-up:
   - bgfx/X11/Vulkan initialization now survives the real `WW3D::Init()` + `DX8Wrapper::Init()` sequence without falling back to headless or failing on repeated init.
   - Linux/X11 startup should currently keep bgfx on its render thread. Re-testing the old single-threaded `bgfx::renderFrame()` workaround against the live menu path showed that it had become a major startup bottleneck, while the threaded path now survives real startup and long-run validation in this tree.

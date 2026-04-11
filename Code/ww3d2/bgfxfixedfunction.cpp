@@ -1,5 +1,6 @@
 #include "bgfxrenderer.h"
 
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -67,6 +68,14 @@ void Copy_Color_Vector(float *destination, const Vector3 &source, float alpha)
     destination[1] = source.Y;
     destination[2] = source.Z;
     destination[3] = alpha;
+}
+
+void Copy_Color_Value(float *destination, const D3DCOLORVALUE &source)
+{
+    destination[0] = source.r;
+    destination[1] = source.g;
+    destination[2] = source.b;
+    destination[3] = source.a;
 }
 
 void Copy_Packed_Color(float *destination, unsigned color)
@@ -276,21 +285,48 @@ void Populate_Fixed_Function_Lighting_Inputs(
     const VertexBufferClass &vertex_buffer,
     const VertexMaterialClass *material)
 {
+    RenderStateStruct render_state;
+    DX8Wrapper::Get_Render_State(render_state);
+
     Vector3 ambient(1.0f, 1.0f, 1.0f);
     Vector3 diffuse(1.0f, 1.0f, 1.0f);
+    Vector3 specular(0.0f, 0.0f, 0.0f);
     Vector3 emissive(0.0f, 0.0f, 0.0f);
     float diffuse_alpha = 1.0f;
+    float specular_power = render_state.material_state.Power;
 
     if (material != nullptr) {
         material->Get_Ambient(&ambient);
         material->Get_Diffuse(&diffuse);
+        material->Get_Specular(&specular);
         material->Get_Emissive(&emissive);
         diffuse_alpha = material->Get_Opacity();
+        specular_power = material->Get_Shininess();
+    } else {
+        ambient = Vector3(
+            render_state.material_state.Ambient.r,
+            render_state.material_state.Ambient.g,
+            render_state.material_state.Ambient.b);
+        diffuse = Vector3(
+            render_state.material_state.Diffuse.r,
+            render_state.material_state.Diffuse.g,
+            render_state.material_state.Diffuse.b);
+        specular = Vector3(
+            render_state.material_state.Specular.r,
+            render_state.material_state.Specular.g,
+            render_state.material_state.Specular.b);
+        emissive = Vector3(
+            render_state.material_state.Emissive.r,
+            render_state.material_state.Emissive.g,
+            render_state.material_state.Emissive.b);
+        diffuse_alpha = render_state.material_state.Diffuse.a;
     }
 
     Copy_Color_Vector(shader_inputs.MaterialAmbient, ambient, 1.0f);
     Copy_Color_Vector(shader_inputs.MaterialDiffuse, diffuse, diffuse_alpha);
+    Copy_Color_Vector(shader_inputs.MaterialSpecular, specular, 1.0f);
     Copy_Color_Vector(shader_inputs.MaterialEmissive, emissive, 1.0f);
+    shader_inputs.MaterialParams[0] = std::max(specular_power, 1.0f);
 
     const unsigned ambient_color = DX8Wrapper::Get_DX8_Render_State(D3DRS_AMBIENT);
     Copy_Packed_Color(shader_inputs.SceneAmbient, ambient_color != 0x12345678u ? ambient_color : 0u);
@@ -301,18 +337,30 @@ void Populate_Fixed_Function_Lighting_Inputs(
     shader_inputs.LightingConfig[2] = static_cast<float>(Normalize_Material_Source(DX8Wrapper::Get_DX8_Render_State(D3DRS_DIFFUSEMATERIALSOURCE)));
     shader_inputs.LightingConfig[3] = static_cast<float>(Normalize_Material_Source(DX8Wrapper::Get_DX8_Render_State(D3DRS_AMBIENTMATERIALSOURCE)));
     shader_inputs.MaterialSourceConfig[0] = static_cast<float>(Normalize_Material_Source(DX8Wrapper::Get_DX8_Render_State(D3DRS_EMISSIVEMATERIALSOURCE)));
+    shader_inputs.MaterialSourceConfig[1] = static_cast<float>(Normalize_Material_Source(DX8Wrapper::Get_DX8_Render_State(D3DRS_SPECULARMATERIALSOURCE)));
 
     for (unsigned light_index = 0; light_index < 4u; ++light_index) {
         const D3DLIGHT8 &light = DX8Wrapper::Peek_Light(light_index);
         const size_t offset = static_cast<size_t>(light_index) * 4u;
+        shader_inputs.LightPositions[offset + 0] = light.Position.x;
+        shader_inputs.LightPositions[offset + 1] = light.Position.y;
+        shader_inputs.LightPositions[offset + 2] = light.Position.z;
+        shader_inputs.LightPositions[offset + 3] = DX8Wrapper::Is_Light_Enabled(light_index) ? static_cast<float>(light.Type) : 0.0f;
         shader_inputs.LightDirections[offset + 0] = light.Direction.x;
         shader_inputs.LightDirections[offset + 1] = light.Direction.y;
         shader_inputs.LightDirections[offset + 2] = light.Direction.z;
         shader_inputs.LightDirections[offset + 3] = 0.0f;
-        shader_inputs.LightDiffuse[offset + 0] = light.Diffuse.r;
-        shader_inputs.LightDiffuse[offset + 1] = light.Diffuse.g;
-        shader_inputs.LightDiffuse[offset + 2] = light.Diffuse.b;
-        shader_inputs.LightDiffuse[offset + 3] = DX8Wrapper::Is_Light_Enabled(light_index) ? 1.0f : 0.0f;
+        Copy_Color_Value(shader_inputs.LightAmbient + offset, light.Ambient);
+        Copy_Color_Value(shader_inputs.LightDiffuse + offset, light.Diffuse);
+        Copy_Color_Value(shader_inputs.LightSpecular + offset, light.Specular);
+        shader_inputs.LightAttenuation[offset + 0] = light.Attenuation0;
+        shader_inputs.LightAttenuation[offset + 1] = light.Attenuation1;
+        shader_inputs.LightAttenuation[offset + 2] = light.Attenuation2;
+        shader_inputs.LightAttenuation[offset + 3] = light.Range;
+        shader_inputs.LightSpotParams[offset + 0] = std::cos(light.Phi);
+        shader_inputs.LightSpotParams[offset + 1] = light.Falloff;
+        shader_inputs.LightSpotParams[offset + 2] = light.Theta;
+        shader_inputs.LightSpotParams[offset + 3] = light.Phi;
     }
 }
 

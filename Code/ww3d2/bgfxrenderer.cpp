@@ -47,12 +47,20 @@ bgfx::UniformHandle BgfxRenderer::FixedFunctionBumpEnvMatrixUniform = BGFX_INVAL
 bgfx::UniformHandle BgfxRenderer::FixedFunctionBumpEnvParamsUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::FixedFunctionMaterialAmbientUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::FixedFunctionMaterialDiffuseUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionMaterialSpecularUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::FixedFunctionMaterialEmissiveUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionMaterialParamsUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionCameraPositionUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::FixedFunctionSceneAmbientUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::FixedFunctionLightingConfigUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::FixedFunctionMaterialSourceConfigUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionLightPositionsUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::FixedFunctionLightDirectionsUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionLightAmbientUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::FixedFunctionLightDiffuseUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionLightSpecularUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionLightAttenuationUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionLightSpotParamsUniform = BGFX_INVALID_HANDLE;
 bgfx::ProgramHandle BgfxRenderer::FixedFunctionProgram = BGFX_INVALID_HANDLE;
 Matrix4 BgfxRenderer::CurrentViewMatrix(true);
 Matrix4 BgfxRenderer::CurrentProjectionMatrix(true);
@@ -121,6 +129,18 @@ bool Matrices_Are_Equal(const Matrix4 &a, const Matrix4 &b)
         }
     }
     return true;
+}
+
+void Extract_Camera_Position(const Matrix4 &view_matrix, float *camera_position)
+{
+    const float tx = view_matrix[0][3];
+    const float ty = view_matrix[1][3];
+    const float tz = view_matrix[2][3];
+
+    camera_position[0] = -(view_matrix[0][0] * tx + view_matrix[1][0] * ty + view_matrix[2][0] * tz);
+    camera_position[1] = -(view_matrix[0][1] * tx + view_matrix[1][1] * ty + view_matrix[2][1] * tz);
+    camera_position[2] = -(view_matrix[0][2] * tx + view_matrix[1][2] * ty + view_matrix[2][2] * tz);
+    camera_position[3] = 1.0f;
 }
 
 void Reset_Main_View_State(uint32_t width, uint32_t height)
@@ -1621,6 +1641,8 @@ void BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(const ShaderClass &shader,
         inputs.BumpEnvLuminanceOffset,
         0.0f,
         0.0f};
+    float camera_position[4];
+    Extract_Camera_Position(CurrentViewMatrix, camera_position);
 
     bgfx::setUniform(FixedFunctionConfig1Uniform, config1);
     bgfx::setUniform(FixedFunctionFogColorUniform, fog_color);
@@ -1633,12 +1655,20 @@ void BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(const ShaderClass &shader,
     bgfx::setUniform(FixedFunctionBumpEnvParamsUniform, bump_env_params);
     bgfx::setUniform(FixedFunctionMaterialAmbientUniform, inputs.MaterialAmbient);
     bgfx::setUniform(FixedFunctionMaterialDiffuseUniform, inputs.MaterialDiffuse);
+    bgfx::setUniform(FixedFunctionMaterialSpecularUniform, inputs.MaterialSpecular);
     bgfx::setUniform(FixedFunctionMaterialEmissiveUniform, inputs.MaterialEmissive);
+    bgfx::setUniform(FixedFunctionMaterialParamsUniform, inputs.MaterialParams);
     bgfx::setUniform(FixedFunctionSceneAmbientUniform, inputs.SceneAmbient);
     bgfx::setUniform(FixedFunctionLightingConfigUniform, inputs.LightingConfig);
     bgfx::setUniform(FixedFunctionMaterialSourceConfigUniform, inputs.MaterialSourceConfig);
+    bgfx::setUniform(FixedFunctionLightPositionsUniform, inputs.LightPositions, 4);
     bgfx::setUniform(FixedFunctionLightDirectionsUniform, inputs.LightDirections, 4);
+    bgfx::setUniform(FixedFunctionLightAmbientUniform, inputs.LightAmbient, 4);
     bgfx::setUniform(FixedFunctionLightDiffuseUniform, inputs.LightDiffuse, 4);
+    bgfx::setUniform(FixedFunctionLightSpecularUniform, inputs.LightSpecular, 4);
+    bgfx::setUniform(FixedFunctionLightAttenuationUniform, inputs.LightAttenuation, 4);
+    bgfx::setUniform(FixedFunctionLightSpotParamsUniform, inputs.LightSpotParams, 4);
+    bgfx::setUniform(FixedFunctionCameraPositionUniform, camera_position);
 }
 
 std::uint32_t BgfxRenderer::Convert_Packed_Color(std::uint32_t argb_color)
@@ -1709,8 +1739,20 @@ bool BgfxRenderer::Init_Render_Resources()
         FixedFunctionMaterialDiffuseUniform = bgfx::createUniform("u_ffpMaterialDiffuse", bgfx::UniformType::Vec4);
     }
 
+    if (!bgfx::isValid(FixedFunctionMaterialSpecularUniform)) {
+        FixedFunctionMaterialSpecularUniform = bgfx::createUniform("u_ffpMaterialSpecular", bgfx::UniformType::Vec4);
+    }
+
     if (!bgfx::isValid(FixedFunctionMaterialEmissiveUniform)) {
         FixedFunctionMaterialEmissiveUniform = bgfx::createUniform("u_ffpMaterialEmissive", bgfx::UniformType::Vec4);
+    }
+
+    if (!bgfx::isValid(FixedFunctionMaterialParamsUniform)) {
+        FixedFunctionMaterialParamsUniform = bgfx::createUniform("u_ffpMaterialParams", bgfx::UniformType::Vec4);
+    }
+
+    if (!bgfx::isValid(FixedFunctionCameraPositionUniform)) {
+        FixedFunctionCameraPositionUniform = bgfx::createUniform("u_ffpCameraPosition", bgfx::UniformType::Vec4);
     }
 
     if (!bgfx::isValid(FixedFunctionSceneAmbientUniform)) {
@@ -1725,12 +1767,32 @@ bool BgfxRenderer::Init_Render_Resources()
         FixedFunctionMaterialSourceConfigUniform = bgfx::createUniform("u_ffpMaterialSourceConfig", bgfx::UniformType::Vec4);
     }
 
+    if (!bgfx::isValid(FixedFunctionLightPositionsUniform)) {
+        FixedFunctionLightPositionsUniform = bgfx::createUniform("u_ffpLightPositions", bgfx::UniformType::Vec4, 4);
+    }
+
     if (!bgfx::isValid(FixedFunctionLightDirectionsUniform)) {
         FixedFunctionLightDirectionsUniform = bgfx::createUniform("u_ffpLightDirections", bgfx::UniformType::Vec4, 4);
     }
 
+    if (!bgfx::isValid(FixedFunctionLightAmbientUniform)) {
+        FixedFunctionLightAmbientUniform = bgfx::createUniform("u_ffpLightAmbient", bgfx::UniformType::Vec4, 4);
+    }
+
     if (!bgfx::isValid(FixedFunctionLightDiffuseUniform)) {
         FixedFunctionLightDiffuseUniform = bgfx::createUniform("u_ffpLightDiffuse", bgfx::UniformType::Vec4, 4);
+    }
+
+    if (!bgfx::isValid(FixedFunctionLightSpecularUniform)) {
+        FixedFunctionLightSpecularUniform = bgfx::createUniform("u_ffpLightSpecular", bgfx::UniformType::Vec4, 4);
+    }
+
+    if (!bgfx::isValid(FixedFunctionLightAttenuationUniform)) {
+        FixedFunctionLightAttenuationUniform = bgfx::createUniform("u_ffpLightAttenuation", bgfx::UniformType::Vec4, 4);
+    }
+
+    if (!bgfx::isValid(FixedFunctionLightSpotParamsUniform)) {
+        FixedFunctionLightSpotParamsUniform = bgfx::createUniform("u_ffpLightSpotParams", bgfx::UniformType::Vec4, 4);
     }
 
     if (!bgfx::isValid(Texture0Uniform)
@@ -1746,12 +1808,20 @@ bool BgfxRenderer::Init_Render_Resources()
         || !bgfx::isValid(FixedFunctionBumpEnvParamsUniform)
         || !bgfx::isValid(FixedFunctionMaterialAmbientUniform)
         || !bgfx::isValid(FixedFunctionMaterialDiffuseUniform)
+        || !bgfx::isValid(FixedFunctionMaterialSpecularUniform)
         || !bgfx::isValid(FixedFunctionMaterialEmissiveUniform)
+        || !bgfx::isValid(FixedFunctionMaterialParamsUniform)
+        || !bgfx::isValid(FixedFunctionCameraPositionUniform)
         || !bgfx::isValid(FixedFunctionSceneAmbientUniform)
         || !bgfx::isValid(FixedFunctionLightingConfigUniform)
         || !bgfx::isValid(FixedFunctionMaterialSourceConfigUniform)
+        || !bgfx::isValid(FixedFunctionLightPositionsUniform)
         || !bgfx::isValid(FixedFunctionLightDirectionsUniform)
-        || !bgfx::isValid(FixedFunctionLightDiffuseUniform)) {
+        || !bgfx::isValid(FixedFunctionLightAmbientUniform)
+        || !bgfx::isValid(FixedFunctionLightDiffuseUniform)
+        || !bgfx::isValid(FixedFunctionLightSpecularUniform)
+        || !bgfx::isValid(FixedFunctionLightAttenuationUniform)
+        || !bgfx::isValid(FixedFunctionLightSpotParamsUniform)) {
         return false;
     }
 
@@ -1783,14 +1853,39 @@ void BgfxRenderer::Shutdown_Render_Resources()
 {
     Destroy_Program(FixedFunctionProgram);
 
+    if (bgfx::isValid(FixedFunctionLightSpotParamsUniform)) {
+        bgfx::destroy(FixedFunctionLightSpotParamsUniform);
+        FixedFunctionLightSpotParamsUniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(FixedFunctionLightAttenuationUniform)) {
+        bgfx::destroy(FixedFunctionLightAttenuationUniform);
+        FixedFunctionLightAttenuationUniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(FixedFunctionLightSpecularUniform)) {
+        bgfx::destroy(FixedFunctionLightSpecularUniform);
+        FixedFunctionLightSpecularUniform = BGFX_INVALID_HANDLE;
+    }
+
     if (bgfx::isValid(FixedFunctionLightDiffuseUniform)) {
         bgfx::destroy(FixedFunctionLightDiffuseUniform);
         FixedFunctionLightDiffuseUniform = BGFX_INVALID_HANDLE;
     }
 
+    if (bgfx::isValid(FixedFunctionLightAmbientUniform)) {
+        bgfx::destroy(FixedFunctionLightAmbientUniform);
+        FixedFunctionLightAmbientUniform = BGFX_INVALID_HANDLE;
+    }
+
     if (bgfx::isValid(FixedFunctionLightDirectionsUniform)) {
         bgfx::destroy(FixedFunctionLightDirectionsUniform);
         FixedFunctionLightDirectionsUniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(FixedFunctionLightPositionsUniform)) {
+        bgfx::destroy(FixedFunctionLightPositionsUniform);
+        FixedFunctionLightPositionsUniform = BGFX_INVALID_HANDLE;
     }
 
     if (bgfx::isValid(FixedFunctionMaterialSourceConfigUniform)) {
@@ -1811,6 +1906,21 @@ void BgfxRenderer::Shutdown_Render_Resources()
     if (bgfx::isValid(FixedFunctionMaterialEmissiveUniform)) {
         bgfx::destroy(FixedFunctionMaterialEmissiveUniform);
         FixedFunctionMaterialEmissiveUniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(FixedFunctionMaterialParamsUniform)) {
+        bgfx::destroy(FixedFunctionMaterialParamsUniform);
+        FixedFunctionMaterialParamsUniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(FixedFunctionCameraPositionUniform)) {
+        bgfx::destroy(FixedFunctionCameraPositionUniform);
+        FixedFunctionCameraPositionUniform = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(FixedFunctionMaterialSpecularUniform)) {
+        bgfx::destroy(FixedFunctionMaterialSpecularUniform);
+        FixedFunctionMaterialSpecularUniform = BGFX_INVALID_HANDLE;
     }
 
     if (bgfx::isValid(FixedFunctionMaterialDiffuseUniform)) {

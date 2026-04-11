@@ -1,6 +1,7 @@
 #include "dx8wrapper.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <memory>
@@ -134,6 +135,11 @@ static unsigned g_last_frame_dx8_calls = 0;
 
 RenderStateStruct::RenderStateStruct()
 	: material(nullptr),
+	  material_state{{1.0f, 1.0f, 1.0f, 1.0f},
+		{1.0f, 1.0f, 1.0f, 1.0f},
+		{0.0f, 0.0f, 0.0f, 0.0f},
+		{0.0f, 0.0f, 0.0f, 0.0f},
+		1.0f},
 	  material_crc(0),
 	  material_state_dirty(false),
 	  vertex_buffer(nullptr),
@@ -157,6 +163,7 @@ RenderStateStruct::~RenderStateStruct()
 RenderStateStruct &RenderStateStruct::operator=(const RenderStateStruct &src)
 {
 	REF_PTR_SET(material, src.material);
+	material_state = src.material_state;
 	material_crc = src.material_crc;
 	material_state_dirty = src.material_state_dirty;
 	REF_PTR_SET(vertex_buffer, src.vertex_buffer);
@@ -1008,8 +1015,10 @@ unsigned DX8Wrapper::Get_Last_Frame_DX8_Calls()
 }
 void DX8Wrapper::Set_DX8_Material(const D3DMATERIAL8 *mat)
 {
-    ++material_changes;
-    (void)mat;
+	++material_changes;
+	if (mat != nullptr) {
+		render_state.material_state = *mat;
+	}
 }
 
 void DX8Wrapper::Set_DX8_Light(int index, D3DLIGHT8 *light)
@@ -1041,34 +1050,62 @@ void DX8Wrapper::Set_DX8_Texture_Stage_State(unsigned stage, D3DTEXTURESTAGESTAT
 
 void DX8Wrapper::Set_Light(unsigned index, const LightClass &light)
 {
-    if (index >= 4) {
-        return;
-    }
+	if (index >= 4) {
+		return;
+	}
 
-    D3DLIGHT8 dx_light = {};
-    dx_light.Type = (light.Get_Type() == LightClass::DIRECTIONAL) ? D3DLIGHT_DIRECTIONAL : D3DLIGHT_POINT;
-    Vector3 ambient;
-    Vector3 diffuse;
-    Vector3 specular;
-    light.Get_Ambient(&ambient);
-    light.Get_Diffuse(&diffuse);
-    light.Get_Specular(&specular);
-    const Vector3 position = light.Get_Position();
-    Vector3 direction;
-    light.Get_Spot_Direction(direction);
-    dx_light.Ambient = {ambient.X, ambient.Y, ambient.Z, 1.0f};
-    dx_light.Diffuse = {diffuse.X, diffuse.Y, diffuse.Z, 1.0f};
-    dx_light.Specular = {specular.X, specular.Y, specular.Z, 1.0f};
-    dx_light.Position = {position.X, position.Y, position.Z};
-    dx_light.Direction = {direction.X, direction.Y, direction.Z};
-    double far_start = 0.0;
-    double far_end = 0.0;
-    light.Get_Far_Attenuation_Range(far_start, far_end);
-    dx_light.Range = static_cast<float>(far_end);
-    dx_light.Attenuation0 = 1.0f;
-    dx_light.Attenuation1 = 0.0f;
-    dx_light.Attenuation2 = 0.0f;
-    Set_DX8_Light(static_cast<int>(index), &dx_light);
+	D3DLIGHT8 dx_light = {};
+	Vector3 color;
+	std::memset(&dx_light, 0, sizeof(dx_light));
+
+	switch (light.Get_Type()) {
+	case LightClass::POINT:
+		dx_light.Type = D3DLIGHT_POINT;
+		break;
+	case LightClass::DIRECTIONAL:
+		dx_light.Type = D3DLIGHT_DIRECTIONAL;
+		break;
+	case LightClass::SPOT:
+		dx_light.Type = D3DLIGHT_SPOT;
+		break;
+	}
+
+	light.Get_Diffuse(&color);
+	color *= light.Get_Intensity();
+	dx_light.Diffuse = {color.X, color.Y, color.Z, 1.0f};
+
+	light.Get_Specular(&color);
+	color *= light.Get_Intensity();
+	dx_light.Specular = {color.X, color.Y, color.Z, 1.0f};
+
+	light.Get_Ambient(&color);
+	color *= light.Get_Intensity();
+	dx_light.Ambient = {color.X, color.Y, color.Z, 1.0f};
+
+	const Vector3 position = light.Get_Position();
+	dx_light.Position = {position.X, position.Y, position.Z};
+
+	Vector3 direction;
+	light.Get_Spot_Direction(direction);
+	dx_light.Direction = {direction.X, direction.Y, direction.Z};
+
+	dx_light.Range = light.Get_Attenuation_Range();
+	dx_light.Falloff = light.Get_Spot_Exponent();
+	dx_light.Theta = light.Get_Spot_Angle();
+	dx_light.Phi = light.Get_Spot_Angle();
+
+	double atten_start = 0.0;
+	double atten_end = 0.0;
+	light.Get_Far_Attenuation_Range(atten_start, atten_end);
+	dx_light.Attenuation0 = 1.0f;
+	if (std::abs(atten_start - atten_end) < 1.0e-5) {
+		dx_light.Attenuation1 = 0.0f;
+	} else {
+		dx_light.Attenuation1 = static_cast<float>(1.0 / atten_start);
+	}
+	dx_light.Attenuation2 = 0.0f;
+
+	Set_DX8_Light(static_cast<int>(index), &dx_light);
 }
 
 void DX8Wrapper::Begin_Statistics() {}

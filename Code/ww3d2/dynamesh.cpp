@@ -35,14 +35,14 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "dynamesh.h"
-#include "dx8vertexbuffer.h"
-#include "dx8indexbuffer.h"
+#include "vertexbuffer.h"
+#include "indexbuffer.h"
 #include "dx8wrapper.h"
 #include "bgfxrenderer.h"
 #include "sortingrenderer.h"
 #include "rinfo.h"
 #include "camera.h"
-#include "dx8fvf.h"
+#include "vertexformat.h"
 
 
 
@@ -208,15 +208,15 @@ void DynamicMeshModel::Render(RenderInfoClass & rinfo)
 	// Process texture reductions:
 //	MatInfo->Process_Texture_Reduction();
 
-	unsigned buffer_type=(Get_Flag(MeshGeometryClass::SORT)&& WW3D::Is_Sorting_Enabled()) ? BUFFER_TYPE_DYNAMIC_SORTING : BUFFER_TYPE_DYNAMIC_DX8;
+	unsigned buffer_type=(Get_Flag(MeshGeometryClass::SORT)&& WW3D::Is_Sorting_Enabled()) ? BUFFER_TYPE_DYNAMIC_SORTING : BUFFER_TYPE_DYNAMIC_RENDER;
 
 	/*
 	** Write the vertex data to the vertex buffer. We assume the FVF contains positions, normals,
 	** one texture channel, and the diffuse color channel (color0). If it does not contain all
 	** these components, the code will fail.
 	*/
-	DynamicVBAccessClass dynamic_vb(buffer_type,dynamic_fvf_type,DynamicMeshVNum);
-	const FVFInfoClass &fvf_info = dynamic_vb.FVF_Info();
+	DynamicVBAccessClass dynamic_vb(buffer_type,dynamic_vertex_format,DynamicMeshVNum);
+	const VertexFormatInfoClass &fvf_info = dynamic_vb.Vertex_Format_Info();
 	
 	{ // scope for lock
 
@@ -250,7 +250,7 @@ void DynamicMeshModel::Render(RenderInfoClass & rinfo)
 			} else {
 				*(unsigned int *)(vertices + fvf_info.Get_Diffuse_Offset()) = default_color;
 			}
-			vertices += fvf_info.Get_FVF_Size();
+			vertices += fvf_info.Get_Vertex_Size();
 		}			
 
 	} // end scope for lock

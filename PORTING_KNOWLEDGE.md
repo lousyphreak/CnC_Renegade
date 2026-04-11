@@ -25,7 +25,7 @@
 - The largest compile blocker is still the transitive `#include "dx8wrapper.h"` surface, because it drags in `d3d8.h` from many otherwise high-level files.
 - Replacing the shared Direct3D SDK structs/enums with an engine-owned renderer vocabulary is viable as an intermediate cleanup step, but it only solves the header dependency if `dx8wrapper.h` also stops inlining calls that dereference D3D COM interfaces.
 - The `dx8fvf.*` layer did not need Direct3D at all; it only needed bitfield definitions and vertex-layout sizing. That metadata can live entirely in engine-owned code without a compatibility header.
-- `dx8vertexbuffer.h` was one of the highest-impact include points for the old FVF macros, so moving it onto engine-owned flags trims DX8 leakage from many renderer-adjacent compilation units even before the full draw path is ported.
+- `vertexbuffer.h` was one of the highest-impact include points for the old FVF macros, so moving it onto engine-owned flags trims DX8 leakage from many renderer-adjacent compilation units even before the full draw path is ported.
 - Some failures are separate Linux/cross-platform hygiene issues rather than renderer design issues:
   - case-sensitive include mismatches such as `audiblesound.h` vs `AudibleSound.h`
   - Windows-only typedef/macros (`DWORD`, `ULONG`, `_strdup`) still embedded in shared headers
@@ -111,6 +111,15 @@
 - Because `Code/ww3d2/CMakeLists.txt` excludes `dx8wrapper.cpp` in the active bgfx build, DX8 resource helpers that only live in shared headers are real cleanup opportunities, not hidden runtime dependencies:
   - `SurfaceClass`'s DX8-only constructor, attach/detach helpers, and `Acquire_DX8_Surface()` / `Peek_DX8_Surface()` should be compile-gated out of the bgfx build once no live caller remains
   - dead `_Create_DX8_Texture(...)`, `_Create_DX8_Surface(...)`, and `_Get_DX8_Back_Buffer(...)` declarations in `dx8wrapper.h` should also be hidden from the bgfx build so the active renderer target stops advertising excluded backend code as though it were still live
+- The same rule applies to the remaining wrapper-global D3D surface:
+  - if the bgfx build does not compile `dx8wrapper.cpp`, it should not expose `_Get_D3D8`, `_Get_D3D_Device8`, `Create_Additional_Swap_Chain(...)`, D3D-only `Set_Render_Target(...)` overloads, or raw `IDirect3D*` / `IDirect3DBaseTexture8*` static state just to satisfy null stubs in `bgfxdynamicbuffer.cpp`
+  - for that active build, accidental `DX8CALL*` use should fail loudly instead of quietly depending on getters for backend objects that do not exist
+- `DX8Caps` follows the same seam rule in the active bgfx build:
+  - bgfx only needs a truthful `D3DCAPS8` snapshot plus adapter-identification data for legacy feature queries
+  - keeping a null `IDirect3D8*` constructor/member alive there just preserves a false D3D ownership boundary, so the bgfx build should construct `DX8Caps` from caps data directly and hide the raw D3D member / `Init_Caps(IDirect3DDevice8*)` entry point
+- The same rule applies to the active buffer/FVF API surface:
+  - if the active bgfx build's implementations live in `bgfxdynamicbuffer.cpp`, `bgfxindexbuffer.cpp`, and `vertexformat.cpp`, the public headers should not keep advertising `dx8vertexbuffer.h`, `dx8indexbuffer.h`, `dx8fvf.h`, `DX8VertexBufferClass`, `DX8IndexBufferClass`, or `BUFFER_TYPE_DX8` as though those were still the truthful engine-facing names
+  - renaming the live headers/types first is a safe seam-reduction step because the bgfx build already compiles those paths through backend-neutral CPU/bgfx code; it reduces DX8 leakage for both game code and tools without adding a compatibility wrapper
 - A good follow-up seam for projector/render-target code is to name the intent, not the old D3D mechanism:
   - high-level code should reset render targets through a renderer-neutral helper like `DX8Wrapper::Reset_Render_Target()`
   - that keeps bgfx callers from spelling “restore the main target” as a null `IDirect3DSurface8 *`, which is both D3D-shaped and noisier than the real operation

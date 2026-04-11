@@ -288,7 +288,7 @@ SOURCE=.\dx8caps.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\dx8fvf.cpp
+SOURCE=.\vertexformat.cpp
 # End Source File
 # Begin Source File
 
@@ -717,11 +717,11 @@ SOURCE=.\dx8caps.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\dx8fvf.h
+SOURCE=.\vertexformat.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\dx8indexbuffer.h
+SOURCE=.\indexbuffer.h
 # End Source File
 # Begin Source File
 
@@ -745,7 +745,7 @@ SOURCE=.\dx8texman.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\dx8vertexbuffer.h
+SOURCE=.\vertexbuffer.h
 # End Source File
 # Begin Source File
 

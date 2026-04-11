@@ -67,7 +67,7 @@ class PhysicsSceneClass;
 #if WEATHER_PARTICLE_SORT
 class SortingIndexBufferClass;
 #else
-class	DX8IndexBufferClass;
+class	RenderIndexBufferClass;
 #endif
 
 class AudibleSoundClass;
@@ -224,7 +224,7 @@ class WeatherSystemClass : public RenderObjClass
 		#if WEATHER_PARTICLE_SORT
 		SortingIndexBufferClass				*IndexBuffer;
 		#else
-		DX8IndexBufferClass					*IndexBuffer;
+		RenderIndexBufferClass					*IndexBuffer;
 		#endif
 
 		VertexMaterialClass					*Material;

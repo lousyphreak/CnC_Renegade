@@ -1,4 +1,4 @@
-#include "dx8indexbuffer.h"
+#include "indexbuffer.h"
 #include "dx8wrapper.h"
 
 #include <algorithm>
@@ -18,11 +18,11 @@ unsigned g_index_buffer_count = 0;
 unsigned g_index_buffer_total_indices = 0;
 unsigned g_index_buffer_total_size = 0;
 
-std::unordered_map<const DX8IndexBufferClass *, std::vector<unsigned short>> g_dx8_index_buffers;
+std::unordered_map<const RenderIndexBufferClass *, std::vector<unsigned short>> g_render_index_buffers;
 
-std::vector<unsigned short> &Get_DX8_Index_Data(const DX8IndexBufferClass *buffer)
+std::vector<unsigned short> &Get_Render_Index_Data(const RenderIndexBufferClass *buffer)
 {
-	return g_dx8_index_buffers[buffer];
+	return g_render_index_buffers[buffer];
 }
 }
 
@@ -72,8 +72,8 @@ IndexBufferClass::WriteLockClass::WriteLockClass(IndexBufferClass *index_buffer_
 	WWASSERT(index_buffer != nullptr);
 	index_buffer->Add_Ref();
 	switch (index_buffer->Type()) {
-	case BUFFER_TYPE_DX8:
-		indices = Get_DX8_Index_Data(static_cast<DX8IndexBufferClass *>(index_buffer)).data();
+	case BUFFER_TYPE_RENDER:
+		indices = Get_Render_Index_Data(static_cast<RenderIndexBufferClass *>(index_buffer)).data();
 		break;
 	case BUFFER_TYPE_SORTING:
 		indices = static_cast<SortingIndexBufferClass *>(index_buffer)->index_buffer;
@@ -94,8 +94,8 @@ IndexBufferClass::AppendLockClass::AppendLockClass(IndexBufferClass *index_buffe
 	WWASSERT(index_buffer != nullptr);
 	index_buffer->Add_Ref();
 	switch (index_buffer->Type()) {
-	case BUFFER_TYPE_DX8:
-		indices = Get_DX8_Index_Data(static_cast<DX8IndexBufferClass *>(index_buffer)).data() + start_index;
+	case BUFFER_TYPE_RENDER:
+		indices = Get_Render_Index_Data(static_cast<RenderIndexBufferClass *>(index_buffer)).data() + start_index;
 		break;
 	case BUFFER_TYPE_SORTING:
 		indices = static_cast<SortingIndexBufferClass *>(index_buffer)->index_buffer + start_index;
@@ -141,22 +141,27 @@ void IndexBufferClass::Copy(unsigned short *indices_, unsigned first_index, unsi
 	std::copy(indices_, indices_ + count, lock.Get_Index_Array());
 }
 
-DX8IndexBufferClass::DX8IndexBufferClass(unsigned short index_count_, UsageType) : IndexBufferClass(BUFFER_TYPE_DX8, index_count_), index_buffer(nullptr)
+RenderIndexBufferClass::RenderIndexBufferClass(unsigned short index_count_, UsageType)
+#if !RENEGADE_WITH_BGFX_RENDERER
+	: IndexBufferClass(BUFFER_TYPE_RENDER, index_count_), index_buffer(nullptr)
+#else
+	: IndexBufferClass(BUFFER_TYPE_RENDER, index_count_)
+#endif
 {
-	g_dx8_index_buffers[this].resize(index_count_);
+	g_render_index_buffers[this].resize(index_count_);
 }
 
-DX8IndexBufferClass::~DX8IndexBufferClass()
+RenderIndexBufferClass::~RenderIndexBufferClass()
 {
-	g_dx8_index_buffers.erase(this);
+	g_render_index_buffers.erase(this);
 }
 
-void DX8IndexBufferClass::Copy(unsigned int *indices_, unsigned start_index, unsigned index_count_)
+void RenderIndexBufferClass::Copy(unsigned int *indices_, unsigned start_index, unsigned index_count_)
 {
 	IndexBufferClass::Copy(indices_, start_index, index_count_);
 }
 
-void DX8IndexBufferClass::Copy(unsigned short *indices_, unsigned start_index, unsigned index_count_)
+void RenderIndexBufferClass::Copy(unsigned short *indices_, unsigned start_index, unsigned index_count_)
 {
 	IndexBufferClass::Copy(indices_, start_index, index_count_);
 }
@@ -171,7 +176,7 @@ SortingIndexBufferClass::~SortingIndexBufferClass()
 }
 
 DynamicIBAccessClass::DynamicIBAccessClass(unsigned short type_, unsigned short index_count_)
-	: Type(type_ == BUFFER_TYPE_DYNAMIC_DX8 ? BUFFER_TYPE_DYNAMIC_SORTING : type_), IndexCount(index_count_), IndexBufferOffset(0), IndexBuffer(nullptr)
+	: Type(type_ == BUFFER_TYPE_DYNAMIC_RENDER ? BUFFER_TYPE_DYNAMIC_SORTING : type_), IndexCount(index_count_), IndexBufferOffset(0), IndexBuffer(nullptr)
 {
 	WWASSERT(Type == BUFFER_TYPE_DYNAMIC_SORTING);
 	Allocate_Sorting_Dynamic_Buffer();
@@ -209,7 +214,7 @@ DynamicIBAccessClass::WriteLockClass::~WriteLockClass()
 	DynamicIBAccess->IndexBuffer->Release_Ref();
 }
 
-void DynamicIBAccessClass::Allocate_DX8_Dynamic_Buffer()
+void DynamicIBAccessClass::Allocate_Render_Dynamic_Buffer()
 {
 	Allocate_Sorting_Dynamic_Buffer();
 }

@@ -41,8 +41,8 @@
 #include "rinfo.h"
 #include "texture.h"
 #include "dx8wrapper.h"
-#include "dx8vertexbuffer.h"
-#include "dx8indexbuffer.h"
+#include "vertexbuffer.h"
+#include "indexbuffer.h"
 #include "sortingrenderer.h"
 
 
@@ -261,7 +261,7 @@ ScreenCursorClass::Render (RenderInfoClass &rinfo)
 	/*
 	** Dump the vertices into the dynamic sorting vertex buffer.
 	*/
-	DynamicVBAccessClass vbaccess(BUFFER_TYPE_DYNAMIC_SORTING,dynamic_fvf_type,VERTEX_COUNT);
+	DynamicVBAccessClass vbaccess(BUFFER_TYPE_DYNAMIC_SORTING,dynamic_vertex_format,VERTEX_COUNT);
 	{
 		DynamicVBAccessClass::WriteLockClass lock(&vbaccess);
 		VertexFormatXYZNDUV2* vb=lock.Get_Formatted_Vertex_Array();

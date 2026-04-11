@@ -41,6 +41,8 @@
 #include "seglinerenderer.h"
 #include "ww3d.h"
 #include "rinfo.h"
+#include "indexbuffer.h"
+#include "vertexbuffer.h"
 #include "dx8wrapper.h"
 #include "bgfxrenderer.h"
 #include "sortingrenderer.h"
@@ -1088,13 +1090,13 @@ void SegLineRendererClass::Render
 		** Render
 		*/		
 		
-		DynamicVBAccessClass Verts((sorting?BUFFER_TYPE_DYNAMIC_SORTING:BUFFER_TYPE_DYNAMIC_DX8),dynamic_fvf_type,vnum);
+		DynamicVBAccessClass Verts((sorting?BUFFER_TYPE_DYNAMIC_SORTING:BUFFER_TYPE_DYNAMIC_RENDER),dynamic_vertex_format,vnum);
 		// Copy in the data to the  VB
 		{
 			DynamicVBAccessClass::WriteLockClass Lock(&Verts);
 			unsigned int i;
 			unsigned char *vb=(unsigned char*)Lock.Get_Formatted_Vertex_Array();			
-			const FVFInfoClass& fvfinfo=Verts.FVF_Info();			
+			const VertexFormatInfoClass& fvfinfo=Verts.Vertex_Format_Info();			
 
 			for (i=0; i<vnum; i++)
 			{
@@ -1105,11 +1107,11 @@ void SegLineRendererClass::Render
 				*(unsigned int*)(vb+fvfinfo.Get_Diffuse_Offset())=vArray[i].diffuse;
 				((Vector2*)(vb+fvfinfo.Get_Tex_Offset(0)))->U=vArray[i].u1;
 				((Vector2*)(vb+fvfinfo.Get_Tex_Offset(0)))->V=vArray[i].v1;				
-				vb+=fvfinfo.Get_FVF_Size();				
+				vb+=fvfinfo.Get_Vertex_Size();				
 			}			
 		} // copy
 		
-		DynamicIBAccessClass ib_access((sorting?BUFFER_TYPE_DYNAMIC_SORTING:BUFFER_TYPE_DYNAMIC_DX8),tidx*3);
+		DynamicIBAccessClass ib_access((sorting?BUFFER_TYPE_DYNAMIC_SORTING:BUFFER_TYPE_DYNAMIC_RENDER),tidx*3);
 		{
 			unsigned int i;
 			DynamicIBAccessClass::WriteLockClass lock(&ib_access);

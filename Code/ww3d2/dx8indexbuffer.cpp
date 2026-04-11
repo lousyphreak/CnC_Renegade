@@ -38,7 +38,7 @@
 
 //#define INDEX_BUFFER_LOG
 
-#include "dx8indexbuffer.h"
+#include "indexbuffer.h"
 #include "dx8wrapper.h"
 #include "dx8caps.h"
 #include "sphere.h"
@@ -53,7 +53,7 @@ static unsigned short _DynamicSortingIndexArraySize=0;
 static unsigned short _DynamicSortingIndexArrayOffset=0;	
 
 static bool _DynamicDX8IndexBufferInUse=false;
-static DX8IndexBufferClass* _DynamicDX8IndexBuffer=NULL;
+static RenderIndexBufferClass* _DynamicRenderIndexBuffer=NULL;
 static unsigned short _DynamicDX8IndexBufferSize=DEFAULT_IB_SIZE;
 static unsigned short _DynamicDX8IndexBufferOffset=0;	
 
@@ -73,7 +73,7 @@ IndexBufferClass::IndexBufferClass(unsigned type_, unsigned short index_count_)
 	type(type_),
 	engine_refs(0)
 {
-	WWASSERT(type==BUFFER_TYPE_DX8 || type==BUFFER_TYPE_SORTING);
+	WWASSERT(type==BUFFER_TYPE_RENDER || type==BUFFER_TYPE_SORTING);
 	WWASSERT(index_count);
 
 	_IndexBufferCount++;
@@ -139,14 +139,14 @@ void IndexBufferClass::Copy(unsigned int* indices,unsigned first_index,unsigned 
 	WWASSERT(indices);
 
 	if (first_index) {
-		DX8IndexBufferClass::AppendLockClass l(this,first_index,count);
+		RenderIndexBufferClass::AppendLockClass l(this,first_index,count);
 		unsigned short* inds=l.Get_Index_Array();
 		for (unsigned v=0;v<count;++v) {
 			*inds++=unsigned short(*indices++);
 		}
 	}
 	else {
-		DX8IndexBufferClass::WriteLockClass l(this);
+		RenderIndexBufferClass::WriteLockClass l(this);
 		unsigned short* inds=l.Get_Index_Array();
 		for (unsigned v=0;v<count;++v) {
 			*inds++=unsigned short(*indices++);
@@ -161,14 +161,14 @@ void IndexBufferClass::Copy(unsigned short* indices,unsigned first_index,unsigne
 	WWASSERT(indices);
 
 	if (first_index) {
-		DX8IndexBufferClass::AppendLockClass l(this,first_index,count);
+		RenderIndexBufferClass::AppendLockClass l(this,first_index,count);
 		unsigned short* inds=l.Get_Index_Array();
 		for (unsigned v=0;v<count;++v) {
 			*inds++=*indices++;
 		}
 	}
 	else {
-		DX8IndexBufferClass::WriteLockClass l(this);
+		RenderIndexBufferClass::WriteLockClass l(this);
 		unsigned short* inds=l.Get_Index_Array();
 		for (unsigned v=0;v<count;++v) {
 			*inds++=*indices++;
@@ -188,9 +188,9 @@ IndexBufferClass::WriteLockClass::WriteLockClass(IndexBufferClass* index_buffer_
 	WWASSERT(!index_buffer->Engine_Refs());
 	index_buffer->Add_Ref();
 	switch (index_buffer->Type()) {
-	case BUFFER_TYPE_DX8:
+	case BUFFER_TYPE_RENDER:
 		DX8_Assert();
-		DX8_ErrorCode(static_cast<DX8IndexBufferClass*>(index_buffer)->Get_DX8_Index_Buffer()->Lock(
+		DX8_ErrorCode(static_cast<RenderIndexBufferClass*>(index_buffer)->Get_Native_Index_Buffer()->Lock(
 			0,
 			index_buffer->Get_Index_Count()*sizeof(WORD),
 			(unsigned char**)&indices,
@@ -214,9 +214,9 @@ IndexBufferClass::WriteLockClass::~WriteLockClass()
 {
 	DX8_THREAD_ASSERT();
 	switch (index_buffer->Type()) {
-	case BUFFER_TYPE_DX8:
+	case BUFFER_TYPE_RENDER:
 		DX8_Assert();
-		DX8_ErrorCode(static_cast<DX8IndexBufferClass*>(index_buffer)->index_buffer->Unlock());
+		DX8_ErrorCode(static_cast<RenderIndexBufferClass*>(index_buffer)->index_buffer->Unlock());
 		break;
 	case BUFFER_TYPE_SORTING:
 		break;
@@ -239,9 +239,9 @@ IndexBufferClass::AppendLockClass::AppendLockClass(IndexBufferClass* index_buffe
 	WWASSERT(!index_buffer->Engine_Refs());
 	index_buffer->Add_Ref();
 	switch (index_buffer->Type()) {
-	case BUFFER_TYPE_DX8:
+	case BUFFER_TYPE_RENDER:
 		DX8_Assert();
-		DX8_ErrorCode(static_cast<DX8IndexBufferClass*>(index_buffer)->index_buffer->Lock(
+		DX8_ErrorCode(static_cast<RenderIndexBufferClass*>(index_buffer)->index_buffer->Lock(
 			start_index*sizeof(unsigned short),
 			index_range*sizeof(unsigned short),
 			(unsigned char**)&indices,
@@ -262,9 +262,9 @@ IndexBufferClass::AppendLockClass::~AppendLockClass()
 {
 	DX8_THREAD_ASSERT();
 	switch (index_buffer->Type()) {
-	case BUFFER_TYPE_DX8:
+	case BUFFER_TYPE_RENDER:
 		DX8_Assert();
-		DX8_ErrorCode(static_cast<DX8IndexBufferClass*>(index_buffer)->index_buffer->Unlock());
+		DX8_ErrorCode(static_cast<RenderIndexBufferClass*>(index_buffer)->index_buffer->Unlock());
 		break;
 	case BUFFER_TYPE_SORTING:
 		break;
@@ -281,9 +281,9 @@ IndexBufferClass::AppendLockClass::~AppendLockClass()
 //
 // ----------------------------------------------------------------------------
 
-DX8IndexBufferClass::DX8IndexBufferClass(unsigned short index_count_,UsageType usage)
+RenderIndexBufferClass::RenderIndexBufferClass(unsigned short index_count_,UsageType usage)
 	:
-	IndexBufferClass(BUFFER_TYPE_DX8,index_count_)
+	IndexBufferClass(BUFFER_TYPE_RENDER,index_count_)
 {
 	DX8_THREAD_ASSERT();
 	WWASSERT(index_count);
@@ -335,7 +335,7 @@ DX8IndexBufferClass::DX8IndexBufferClass(unsigned short index_count_,UsageType u
 
 // ----------------------------------------------------------------------------
 
-DX8IndexBufferClass::~DX8IndexBufferClass()
+RenderIndexBufferClass::~RenderIndexBufferClass()
 {
 	index_buffer->Release();
 }
@@ -373,7 +373,7 @@ DynamicIBAccessClass::DynamicIBAccessClass(unsigned short type_, unsigned short 
 	:
 	IndexCount(index_count_),
 	IndexBuffer(0),
-	Type(type_ == BUFFER_TYPE_DYNAMIC_DX8 ? BUFFER_TYPE_DYNAMIC_SORTING : type_)
+	Type(type_ == BUFFER_TYPE_DYNAMIC_RENDER ? BUFFER_TYPE_DYNAMIC_SORTING : type_)
 {
 	WWASSERT(Type==BUFFER_TYPE_DYNAMIC_SORTING);
 	Allocate_Sorting_Dynamic_Buffer();
@@ -388,8 +388,8 @@ DynamicIBAccessClass::~DynamicIBAccessClass()
 
 void DynamicIBAccessClass::_Deinit()
 {
-	WWASSERT ((_DynamicDX8IndexBuffer == NULL) || (_DynamicDX8IndexBuffer->Num_Refs() == 1));
-	REF_PTR_RELEASE(_DynamicDX8IndexBuffer);
+	WWASSERT ((_DynamicRenderIndexBuffer == NULL) || (_DynamicRenderIndexBuffer->Num_Refs() == 1));
+	REF_PTR_RELEASE(_DynamicRenderIndexBuffer);
 	_DynamicDX8IndexBufferInUse=false;
 	_DynamicDX8IndexBufferSize=DEFAULT_IB_SIZE;
 	_DynamicDX8IndexBufferOffset=0;
@@ -443,7 +443,7 @@ DynamicIBAccessClass::WriteLockClass::~WriteLockClass()
 //
 // ----------------------------------------------------------------------------
 
-void DynamicIBAccessClass::Allocate_DX8_Dynamic_Buffer()
+void DynamicIBAccessClass::Allocate_Render_Dynamic_Buffer()
 {
 	WWMEMLOG(MEM_RENDERER);
 	WWASSERT(!_DynamicDX8IndexBufferInUse);
@@ -452,21 +452,21 @@ void DynamicIBAccessClass::Allocate_DX8_Dynamic_Buffer()
 	// If requesting more indices than dynamic index buffer can fit, delete the ib
 	// and adjust the size to the new count.
 	if (IndexCount>_DynamicDX8IndexBufferSize) {
-		REF_PTR_RELEASE(_DynamicDX8IndexBuffer);
+		REF_PTR_RELEASE(_DynamicRenderIndexBuffer);
 		_DynamicDX8IndexBufferSize=IndexCount;
 		if (_DynamicDX8IndexBufferSize<DEFAULT_IB_SIZE) _DynamicDX8IndexBufferSize=DEFAULT_IB_SIZE;
 	}
 
 	// Create a new vb if one doesn't exist currently
-	if (!_DynamicDX8IndexBuffer) {
-		unsigned usage=DX8IndexBufferClass::USAGE_DYNAMIC;
+	if (!_DynamicRenderIndexBuffer) {
+		unsigned usage=RenderIndexBufferClass::USAGE_DYNAMIC;
 		if (DX8Wrapper::Get_Current_Caps()->Support_NPatches()) {
-			usage|=DX8IndexBufferClass::USAGE_NPATCHES;
+			usage|=RenderIndexBufferClass::USAGE_NPATCHES;
 		}
 
-		_DynamicDX8IndexBuffer=NEW_REF(DX8IndexBufferClass,(
+		_DynamicRenderIndexBuffer=NEW_REF(RenderIndexBufferClass,(
 			_DynamicDX8IndexBufferSize,
-			(DX8IndexBufferClass::UsageType)usage));
+			(RenderIndexBufferClass::UsageType)usage));
 		_DynamicDX8IndexBufferOffset=0;
 	}
 
@@ -475,7 +475,7 @@ void DynamicIBAccessClass::Allocate_DX8_Dynamic_Buffer()
 		_DynamicDX8IndexBufferOffset=0;
 	}
 
-	REF_PTR_SET(IndexBuffer,_DynamicDX8IndexBuffer);
+	REF_PTR_SET(IndexBuffer,_DynamicRenderIndexBuffer);
 	IndexBufferOffset=_DynamicDX8IndexBufferOffset;
 }
 

@@ -6,9 +6,9 @@
 
 #include <bgfx/bgfx.h>
 
-#include "dx8fvf.h"
-#include "dx8indexbuffer.h"
-#include "dx8vertexbuffer.h"
+#include "vertexformat.h"
+#include "indexbuffer.h"
+#include "vertexbuffer.h"
 #include "dx8wrapper.h"
 #include "texture.h"
 #include "vector2.h"
@@ -295,9 +295,9 @@ void Populate_Fixed_Function_Lighting_Inputs(
     const unsigned ambient_color = DX8Wrapper::Get_DX8_Render_State(D3DRS_AMBIENT);
     Copy_Packed_Color(shader_inputs.SceneAmbient, ambient_color != 0x12345678u ? ambient_color : 0u);
 
-    const unsigned fvf = vertex_buffer.FVF_Info().Get_FVF();
+    const unsigned fvf = vertex_buffer.Vertex_Format_Info().Get_Vertex_Format();
     shader_inputs.LightingConfig[0] = DX8Wrapper::Get_DX8_Render_State(D3DRS_LIGHTING) != 0u ? 1.0f : 0.0f;
-    shader_inputs.LightingConfig[1] = (fvf & DX8_FVF_FLAG_NORMAL) != 0u ? 1.0f : 0.0f;
+    shader_inputs.LightingConfig[1] = (fvf & VERTEX_FORMAT_FLAG_NORMAL) != 0u ? 1.0f : 0.0f;
     shader_inputs.LightingConfig[2] = static_cast<float>(Normalize_Material_Source(DX8Wrapper::Get_DX8_Render_State(D3DRS_DIFFUSEMATERIALSOURCE)));
     shader_inputs.LightingConfig[3] = static_cast<float>(Normalize_Material_Source(DX8Wrapper::Get_DX8_Render_State(D3DRS_AMBIENTMATERIALSOURCE)));
     shader_inputs.MaterialSourceConfig[0] = static_cast<float>(Normalize_Material_Source(DX8Wrapper::Get_DX8_Render_State(D3DRS_EMISSIVEMATERIALSOURCE)));
@@ -338,8 +338,8 @@ bool Submit_Cached_Fixed_Function_Draw(
         return false;
     }
 
-    if ((vertex_buffer.Type() != BUFFER_TYPE_SORTING && vertex_buffer.Type() != BUFFER_TYPE_DX8) ||
-        (index_buffer.Type() != BUFFER_TYPE_SORTING && index_buffer.Type() != BUFFER_TYPE_DX8)) {
+    if ((vertex_buffer.Type() != BUFFER_TYPE_SORTING && vertex_buffer.Type() != BUFFER_TYPE_RENDER) ||
+        (index_buffer.Type() != BUFFER_TYPE_SORTING && index_buffer.Type() != BUFFER_TYPE_RENDER)) {
         return false;
     }
 
@@ -377,21 +377,21 @@ bool Submit_Cached_Fixed_Function_Draw(
         vertex_buffer_offset + index_base_offset + min_vertex_index,
         vertex_count);
     const unsigned char *source_vertices = reinterpret_cast<const unsigned char *>(vertex_lock.Get_Vertex_Array());
-    const unsigned fvf = vertex_buffer.FVF_Info().Get_FVF();
-    const unsigned fvf_size = vertex_buffer.FVF_Info().Get_FVF_Size();
-    const bool has_normals = (fvf & DX8_FVF_FLAG_NORMAL) != 0u;
-    const unsigned texcoord_count = DX8_FVF_Get_Texcoord_Count(fvf);
+    const unsigned fvf = vertex_buffer.Vertex_Format_Info().Get_Vertex_Format();
+    const unsigned fvf_size = vertex_buffer.Vertex_Format_Info().Get_Vertex_Size();
+    const bool has_normals = (fvf & VERTEX_FORMAT_FLAG_NORMAL) != 0u;
+    const unsigned texcoord_count = VERTEX_FORMAT_Get_Texcoord_Count(fvf);
 
     for (unsigned short vertex_index = 0; vertex_index < vertex_count; ++vertex_index) {
         const unsigned char *vertex = source_vertices + vertex_index * fvf_size;
-        submission_vertices[vertex_index].x = reinterpret_cast<const float *>(vertex + vertex_buffer.FVF_Info().Get_Location_Offset())[0];
-        submission_vertices[vertex_index].y = reinterpret_cast<const float *>(vertex + vertex_buffer.FVF_Info().Get_Location_Offset())[1];
-        submission_vertices[vertex_index].z = reinterpret_cast<const float *>(vertex + vertex_buffer.FVF_Info().Get_Location_Offset())[2];
+        submission_vertices[vertex_index].x = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Location_Offset())[0];
+        submission_vertices[vertex_index].y = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Location_Offset())[1];
+        submission_vertices[vertex_index].z = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Location_Offset())[2];
 
         if (has_normals) {
-            submission_vertices[vertex_index].nx = reinterpret_cast<const float *>(vertex + vertex_buffer.FVF_Info().Get_Normal_Offset())[0];
-            submission_vertices[vertex_index].ny = reinterpret_cast<const float *>(vertex + vertex_buffer.FVF_Info().Get_Normal_Offset())[1];
-            submission_vertices[vertex_index].nz = reinterpret_cast<const float *>(vertex + vertex_buffer.FVF_Info().Get_Normal_Offset())[2];
+            submission_vertices[vertex_index].nx = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Normal_Offset())[0];
+            submission_vertices[vertex_index].ny = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Normal_Offset())[1];
+            submission_vertices[vertex_index].nz = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Normal_Offset())[2];
         } else {
             submission_vertices[vertex_index].nx = 0.0f;
             submission_vertices[vertex_index].ny = 0.0f;
@@ -399,19 +399,19 @@ bool Submit_Cached_Fixed_Function_Draw(
         }
 
         submission_vertices[vertex_index].diffuse =
-            vertex_buffer.FVF_Info().Get_Diffuse_Offset() < fvf_size
-            ? BgfxRenderer::Convert_Packed_Color(*reinterpret_cast<const unsigned *>(vertex + vertex_buffer.FVF_Info().Get_Diffuse_Offset()))
+            vertex_buffer.Vertex_Format_Info().Get_Diffuse_Offset() < fvf_size
+            ? BgfxRenderer::Convert_Packed_Color(*reinterpret_cast<const unsigned *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Diffuse_Offset()))
             : 0xffffffffu;
         submission_vertices[vertex_index].specular =
-            vertex_buffer.FVF_Info().Get_Specular_Offset() < fvf_size
-            ? BgfxRenderer::Convert_Packed_Color(*reinterpret_cast<const unsigned *>(vertex + vertex_buffer.FVF_Info().Get_Specular_Offset()))
+            vertex_buffer.Vertex_Format_Info().Get_Specular_Offset() < fvf_size
+            ? BgfxRenderer::Convert_Packed_Color(*reinterpret_cast<const unsigned *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Specular_Offset()))
             : 0u;
 
         float raw_u0 = 0.0f;
         float raw_v0 = 0.0f;
         if (texcoord_count > 0u) {
-            raw_u0 = reinterpret_cast<const float *>(vertex + vertex_buffer.FVF_Info().Get_Tex_Offset(0))[0];
-            raw_v0 = reinterpret_cast<const float *>(vertex + vertex_buffer.FVF_Info().Get_Tex_Offset(0))[1];
+            raw_u0 = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Tex_Offset(0))[0];
+            raw_v0 = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Tex_Offset(0))[1];
         }
         submission_vertices[vertex_index].u0 = raw_u0;
         submission_vertices[vertex_index].v0 = raw_v0;
@@ -419,8 +419,8 @@ bool Submit_Cached_Fixed_Function_Draw(
         float raw_u1 = 0.0f;
         float raw_v1 = 0.0f;
         if (texcoord_count > 1u) {
-            raw_u1 = reinterpret_cast<const float *>(vertex + vertex_buffer.FVF_Info().Get_Tex_Offset(1))[0];
-            raw_v1 = reinterpret_cast<const float *>(vertex + vertex_buffer.FVF_Info().Get_Tex_Offset(1))[1];
+            raw_u1 = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Tex_Offset(1))[0];
+            raw_v1 = reinterpret_cast<const float *>(vertex + vertex_buffer.Vertex_Format_Info().Get_Tex_Offset(1))[1];
         }
         submission_vertices[vertex_index].u1 = raw_u1;
         submission_vertices[vertex_index].v1 = raw_v1;

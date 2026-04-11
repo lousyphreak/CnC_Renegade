@@ -42,6 +42,7 @@
 #include "bgfxrenderer.h"
 #include "camera.h"
 #include "dazzle.h"
+#include "vertexbuffer.h"
 #include "dx8wrapper.h"
 #include "gameobjmanager.h"
 #include "gametype.h"
@@ -127,9 +128,9 @@ HazeClass::HazeClass (float radius)
 	}
 
 	// Define triangles.
-	IndexBuffer = NEW_REF (DX8IndexBufferClass, (TriangleCount * VERTICES_PER_TRIANGLE));
+	IndexBuffer = NEW_REF (RenderIndexBufferClass, (TriangleCount * VERTICES_PER_TRIANGLE));
 	{
-		DX8IndexBufferClass::WriteLockClass lock (IndexBuffer);
+		RenderIndexBufferClass::WriteLockClass lock (IndexBuffer);
 		uint16_t *indices = lock.Get_Index_Array();
 
 		i = 0;
@@ -329,7 +330,7 @@ void HazeClass::Render()
 
 		// Copy the vertices into a dynamic vertex buffer.
 		// NOTE: Vertex normals and UV's are uninitialized.
-		DynamicVBAccessClass dynamicvb (BUFFER_TYPE_DYNAMIC_DX8, dynamic_fvf_type, VertexCount);
+		DynamicVBAccessClass dynamicvb (BUFFER_TYPE_DYNAMIC_RENDER, dynamic_vertex_format, VertexCount);
 		{
 			DynamicVBAccessClass::WriteLockClass lock (&dynamicvb);
 			VertexFormatXYZNDUV2 *vertex = lock.Get_Formatted_Vertex_Array();
@@ -375,9 +376,9 @@ StarfieldClass::StarfieldClass (float extent, unsigned starcount)
 	WWASSERT (VertexArray != NULL);
 
 	// Define triangles.
-	IndexBuffer = NEW_REF (DX8IndexBufferClass, (VertexCount));
+	IndexBuffer = NEW_REF (RenderIndexBufferClass, (VertexCount));
 	{
-		DX8IndexBufferClass::WriteLockClass lock (IndexBuffer);
+		RenderIndexBufferClass::WriteLockClass lock (IndexBuffer);
 		uint16_t *indices = lock.Get_Index_Array();
 
 		for (uint16_t i = 0; i < VertexCount; i++) {
@@ -629,7 +630,7 @@ void StarfieldClass::Render()
 
 		// Copy the vertices into a dynamic vertex buffer.
 		// NOTE: Vertex normals and stage 1 UV's are uninitialized.
-		DynamicVBAccessClass dynamicvb (BUFFER_TYPE_DYNAMIC_DX8, dynamic_fvf_type, ActiveVertexCount);
+		DynamicVBAccessClass dynamicvb (BUFFER_TYPE_DYNAMIC_RENDER, dynamic_vertex_format, ActiveVertexCount);
 		{
 			const float	texcoordarray [VERTICES_PER_TRIANGLE][2] = {{0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 0.0f}};
 
@@ -693,11 +694,11 @@ SkyObjectClass::SkyObjectClass (ShaderClass shader)
 
 	// Define triangles.
 	// NOTE: For simplicity, assume that there are exactly 8 vertices and 6 triangles.
-	IndexBuffer = NEW_REF (DX8IndexBufferClass, (TriangleCount * VERTICES_PER_TRIANGLE));
+	IndexBuffer = NEW_REF (RenderIndexBufferClass, (TriangleCount * VERTICES_PER_TRIANGLE));
 	{
 		static const uint16_t _indices [] = {0, 4, 5, 5, 1, 0, 1, 5, 6, 6, 2, 1, 2, 6, 7, 7, 3, 2};
 
-		DX8IndexBufferClass::WriteLockClass lock (IndexBuffer);
+		RenderIndexBufferClass::WriteLockClass lock (IndexBuffer);
 		uint16_t *indices = lock.Get_Index_Array();
 
 		for (uint16_t i = 0; i < TriangleCount * VERTICES_PER_TRIANGLE; i++) {
@@ -949,7 +950,7 @@ void SkyObjectClass::Render()
 
 		// Copy the vertices into the dynamic vertex buffer.
 		// NOTE: Vertex normals and stage 1 UV's are uninitialized.
-		DynamicVBAccessClass dynamicvb (BUFFER_TYPE_DYNAMIC_DX8, dynamic_fvf_type, VertexCount);
+		DynamicVBAccessClass dynamicvb (BUFFER_TYPE_DYNAMIC_RENDER, dynamic_vertex_format, VertexCount);
 		{
 			DynamicVBAccessClass::WriteLockClass lock (&dynamicvb);
 			VertexFormatXYZNDUV2 *vertex = lock.Get_Formatted_Vertex_Array();
@@ -1027,9 +1028,9 @@ CloudLayerClass::CloudLayerClass (float maxdistance, const char *texturename, co
 	}
 
 	// Define triangles.
-	IndexBuffer = NEW_REF (DX8IndexBufferClass, (TriangleCount * VERTICES_PER_TRIANGLE));
+	IndexBuffer = NEW_REF (RenderIndexBufferClass, (TriangleCount * VERTICES_PER_TRIANGLE));
 	{
-		DX8IndexBufferClass::WriteLockClass lock (IndexBuffer);
+		RenderIndexBufferClass::WriteLockClass lock (IndexBuffer);
 		uint16_t *indices = lock.Get_Index_Array();
 
 		i = 0;
@@ -1303,7 +1304,7 @@ void CloudLayerClass::Render()
 
 		// Copy the vertices into the dynamic vertex buffer.
 		// NOTE: Vertex normals and stage 1 UV's are uninitialized.
-		DynamicVBAccessClass dynamicvb (BUFFER_TYPE_DYNAMIC_DX8, dynamic_fvf_type, VertexCount);
+		DynamicVBAccessClass dynamicvb (BUFFER_TYPE_DYNAMIC_RENDER, dynamic_vertex_format, VertexCount);
 		{
 			DynamicVBAccessClass::WriteLockClass lock (&dynamicvb);
 			VertexFormatXYZNDUV2 *vertex = lock.Get_Formatted_Vertex_Array();
@@ -1378,9 +1379,9 @@ SkyGlowClass::SkyGlowClass (float radius)
 	}
 
 	// Define triangles.
-	IndexBuffer = NEW_REF (DX8IndexBufferClass, (TriangleCount * VERTICES_PER_TRIANGLE));
+	IndexBuffer = NEW_REF (RenderIndexBufferClass, (TriangleCount * VERTICES_PER_TRIANGLE));
 	{
-		DX8IndexBufferClass::WriteLockClass lock (IndexBuffer);
+		RenderIndexBufferClass::WriteLockClass lock (IndexBuffer);
 		uint16_t *indices = lock.Get_Index_Array();
 
 		i = 0;
@@ -1527,7 +1528,7 @@ void SkyGlowClass::Render()
 
 		// Copy the vertices into a dynamic vertex buffer.
 		// NOTE: Vertex normals and UV's are uninitialized.
-		DynamicVBAccessClass dynamicvb (BUFFER_TYPE_DYNAMIC_DX8, dynamic_fvf_type, VertexCount);
+		DynamicVBAccessClass dynamicvb (BUFFER_TYPE_DYNAMIC_RENDER, dynamic_vertex_format, VertexCount);
 		{
 			DynamicVBAccessClass::WriteLockClass lock (&dynamicvb);
 			VertexFormatXYZNDUV2 *vertex = lock.Get_Formatted_Vertex_Array();

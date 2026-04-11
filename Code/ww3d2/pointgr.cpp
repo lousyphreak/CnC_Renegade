@@ -77,11 +77,11 @@
 #include "matrix4.h"
 #include "dx8wrapper.h"
 #include "bgfxrenderer.h"
-#include "dx8vertexbuffer.h"
-#include "dx8indexbuffer.h"
+#include "vertexbuffer.h"
+#include "indexbuffer.h"
 #include "rinfo.h"
 #include "camera.h"
-#include "dx8fvf.h"
+#include "vertexformat.h"
 #include "sortingrenderer.h"
 
 // Upgraded to DX8 2/2/01 HY
@@ -116,7 +116,7 @@ VectorClass<Vector2>			VertexUV;		// vertex texture coords
 #define MAX_QUAD_POINTS		MAX_VB_SIZE/4
 #define MAX_QUAD_IB_SIZE	6*MAX_QUAD_POINTS
 
-DX8IndexBufferClass			*Tris, *Quads;						// Index buffers.
+RenderIndexBufferClass			*Tris, *Quads;						// Index buffers.
 SortingIndexBufferClass		*SortingTris, *SortingQuads;	// Sorting index buffers.
 
 /************************************************************************** 
@@ -893,14 +893,14 @@ void PointGroupClass::Render(RenderInfoClass &rinfo)
 	while (current<vnum)
 	{
 		delta=MIN(vnum-current,MAX_VB_SIZE);
-		DynamicVBAccessClass PointVerts (sort ? BUFFER_TYPE_DYNAMIC_SORTING : BUFFER_TYPE_DYNAMIC_DX8, dynamic_fvf_type, delta);
+		DynamicVBAccessClass PointVerts (sort ? BUFFER_TYPE_DYNAMIC_SORTING : BUFFER_TYPE_DYNAMIC_RENDER, dynamic_vertex_format, delta);
 
 		// Copy in the data to the VB
 		{
 			DynamicVBAccessClass::WriteLockClass Lock(&PointVerts);
 			int i;
 			unsigned char *vb=(unsigned char*)Lock.Get_Formatted_Vertex_Array();			
-			const FVFInfoClass& fvfinfo=PointVerts.FVF_Info();			
+			const VertexFormatInfoClass& fvfinfo=PointVerts.Vertex_Format_Info();			
 
 			for (i = current; i < current + delta; i++)
 			{
@@ -914,7 +914,7 @@ void PointGroupClass::Render(RenderInfoClass &rinfo)
 					*(unsigned int*)(vb+fvfinfo.Get_Diffuse_Offset())=
 						DX8Wrapper::Convert_Color_Clamp(Vector4(DefaultPointColor[0],DefaultPointColor[1],DefaultPointColor[2],DefaultPointAlpha));
 				*(Vector2*)(vb+fvfinfo.Get_Tex_Offset(0))=VertexUV[i];
-				vb+=fvfinfo.Get_FVF_Size();
+				vb+=fvfinfo.Get_Vertex_Size();
 			}			
 		} // copy
 
@@ -1393,21 +1393,21 @@ void PointGroupClass::_Init(void)
 	}
 
 	// Create the IBs
-	Tris=NEW_REF(DX8IndexBufferClass,(MAX_TRI_IB_SIZE));	
-	Quads=NEW_REF(DX8IndexBufferClass,(MAX_QUAD_IB_SIZE));	
+	Tris=NEW_REF(RenderIndexBufferClass,(MAX_TRI_IB_SIZE));	
+	Quads=NEW_REF(RenderIndexBufferClass,(MAX_QUAD_IB_SIZE));	
 	SortingTris=NEW_REF(SortingIndexBufferClass,(MAX_TRI_IB_SIZE));	
 	SortingQuads=NEW_REF(SortingIndexBufferClass,(MAX_QUAD_IB_SIZE));	
 
 	// Fill up the IBs
 	{
-		DX8IndexBufferClass::WriteLockClass locktris(Tris);
+		RenderIndexBufferClass::WriteLockClass locktris(Tris);
 		unsigned short *ib=locktris.Get_Index_Array();	
 		for (i=0; i<MAX_TRI_IB_SIZE; i++) ib[i]=(unsigned short) i;
 	}	
 
 	{
 		unsigned short vert=0;
-		DX8IndexBufferClass::WriteLockClass lockquads(Quads);
+		RenderIndexBufferClass::WriteLockClass lockquads(Quads);
 		unsigned short *ib=lockquads.Get_Index_Array();
 		vert=0;
 		for (i=0; i<MAX_QUAD_IB_SIZE; i+=6)

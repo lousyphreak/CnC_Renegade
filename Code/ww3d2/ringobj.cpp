@@ -86,8 +86,8 @@
 #include "statistics.h"
 #include "dx8wrapper.h"
 #include "bgfxrenderer.h"
-#include "dx8indexbuffer.h"
-#include "dx8vertexbuffer.h"
+#include "indexbuffer.h"
+#include "vertexbuffer.h"
 #include "sortingrenderer.h"
 #include "vector3i.h"
 #include "visrasterizer.h"
@@ -515,7 +515,7 @@ void RingRenderObjClass::render_ring(RenderInfoClass & rinfo,const Vector3 & cen
 	DX8Wrapper::Set_Texture(0,RingTexture);
 	DX8Wrapper::Set_Material(RingMaterial);	
 
-	DynamicVBAccessClass vb(BUFFER_TYPE_DYNAMIC_SORTING,dynamic_fvf_type,ring.Vertex_ct);
+	DynamicVBAccessClass vb(BUFFER_TYPE_DYNAMIC_SORTING,dynamic_vertex_format,ring.Vertex_ct);
 	{
 		DynamicVBAccessClass::WriteLockClass Lock(&vb);
 		VertexFormatXYZNDUV2 *vb = Lock.Get_Formatted_Vertex_Array();

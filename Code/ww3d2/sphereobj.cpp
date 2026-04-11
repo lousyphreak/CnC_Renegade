@@ -80,8 +80,8 @@
 #include "statistics.h"
 #include "dx8wrapper.h"
 #include "bgfxrenderer.h"
-#include "dx8vertexbuffer.h"
-#include "dx8indexbuffer.h"
+#include "vertexbuffer.h"
+#include "indexbuffer.h"
 #include "sortingrenderer.h"
 #include "visrasterizer.h"
 
@@ -442,7 +442,7 @@ void SphereRenderObjClass::render_sphere()
 	DX8Wrapper::Set_Texture(0,SphereTexture);
 	DX8Wrapper::Set_Material(SphereMaterial);	
 
-	DynamicVBAccessClass vb(BUFFER_TYPE_DYNAMIC_SORTING,dynamic_fvf_type,mesh.Vertex_ct);
+	DynamicVBAccessClass vb(BUFFER_TYPE_DYNAMIC_SORTING,dynamic_vertex_format,mesh.Vertex_ct);
 	{
 		DynamicVBAccessClass::WriteLockClass Lock(&vb);
 		VertexFormatXYZNDUV2 *vb = Lock.Get_Formatted_Vertex_Array();

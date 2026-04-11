@@ -42,9 +42,9 @@
 #define WW3D_DEVTYPE D3DDEVTYPE_HAL
 
 #include "dx8wrapper.h"
-#include "dx8fvf.h"
-#include "dx8vertexbuffer.h"
-#include "dx8indexbuffer.h"
+#include "vertexformat.h"
+#include "vertexbuffer.h"
+#include "indexbuffer.h"
 #include "dx8renderer.h"
 #include "ww3d.h"
 #include "camera.h"
@@ -1996,14 +1996,14 @@ void DX8Wrapper::Apply_Render_State_Changes()
 		SNAPSHOT_SAY(("DX8 - apply vb change\n"));
 		if (render_state.vertex_buffer) {
 			switch (render_state.vertex_buffer_type) {//->Type()) {
-			case BUFFER_TYPE_DX8:
-			case BUFFER_TYPE_DYNAMIC_DX8:
+			case BUFFER_TYPE_RENDER:
+			case BUFFER_TYPE_DYNAMIC_RENDER:
 				DX8CALL(SetStreamSource(
 					0,
-					static_cast<DX8VertexBufferClass*>(render_state.vertex_buffer)->Get_DX8_Vertex_Buffer(),
-					render_state.vertex_buffer->FVF_Info().Get_FVF_Size()));
+					static_cast<RenderVertexBufferClass*>(render_state.vertex_buffer)->Get_Native_Vertex_Buffer(),
+					render_state.vertex_buffer->Vertex_Format_Info().Get_Vertex_Size()));
 				DX8_RECORD_VERTEX_BUFFER_CHANGE();
-				DX8CALL(SetVertexShader(render_state.vertex_buffer->FVF_Info().Get_FVF()));
+				DX8CALL(SetVertexShader(render_state.vertex_buffer->Vertex_Format_Info().Get_Vertex_Format()));
 				break;
 			case BUFFER_TYPE_SORTING:
 			case BUFFER_TYPE_DYNAMIC_SORTING:
@@ -2020,10 +2020,10 @@ void DX8Wrapper::Apply_Render_State_Changes()
 		SNAPSHOT_SAY(("DX8 - apply ib change\n"));
 		if (render_state.index_buffer) {
 			switch (render_state.index_buffer_type) {//->Type()) {
-			case BUFFER_TYPE_DX8:
-			case BUFFER_TYPE_DYNAMIC_DX8:
+			case BUFFER_TYPE_RENDER:
+			case BUFFER_TYPE_DYNAMIC_RENDER:
 				DX8CALL(SetIndices(
-					static_cast<DX8IndexBufferClass*>(render_state.index_buffer)->Get_DX8_Index_Buffer(),
+					static_cast<RenderIndexBufferClass*>(render_state.index_buffer)->Get_Native_Index_Buffer(),
 					render_state.index_base_offset+render_state.vba_offset));
 				DX8_RECORD_INDEX_BUFFER_CHANGE();
 				break;

@@ -78,7 +78,9 @@
 #include "w3d_file.h"		// for SURFACE_TYPE_STRINGS
 #include "colors.h"
 #include "chatshre.h"
+#include "indexbuffer.h"
 #include "dx8renderer.h"
+#include "vertexbuffer.h"
 #include "dx8wrapper.h"
 #include "umbrasupport.h"
 #include "render2d.h"
@@ -1765,7 +1767,6 @@ void	ConsoleGameModeClass::Update_Memory_Log( void )
 
 	StatisticsDisplayManager::Set_Stat( "memory", memory_string, 0xffffffff );
 }
-
 
 
 

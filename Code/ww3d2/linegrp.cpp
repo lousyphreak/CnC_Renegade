@@ -45,8 +45,8 @@
 #include "wwmath.h"
 #include "rinfo.h"
 #include "camera.h"
-#include "dx8indexbuffer.h"
-#include "dx8vertexbuffer.h"
+#include "indexbuffer.h"
+#include "vertexbuffer.h"
 #include "sortingrenderer.h"
 
 // Line groups are a rendering primitive similar to point groups
@@ -319,7 +319,7 @@ void	LineGroupClass::Render(RenderInfoClass &rinfo)
 	// construct the tetrahedra in the index buffers
 	// assume first vertex is the apex, followed by offset[0-3]	
 
-	DynamicIBAccessClass iba(sort?BUFFER_TYPE_DYNAMIC_SORTING:BUFFER_TYPE_DYNAMIC_DX8,num_indices);
+	DynamicIBAccessClass iba(sort?BUFFER_TYPE_DYNAMIC_SORTING:BUFFER_TYPE_DYNAMIC_RENDER,num_indices);
 
 	{
 		DynamicIBAccessClass::WriteLockClass lock(&iba);
@@ -387,7 +387,7 @@ void	LineGroupClass::Render(RenderInfoClass &rinfo)
 
 	// make the vertex buffers	
 
-	DynamicVBAccessClass vba(sort ? BUFFER_TYPE_DYNAMIC_SORTING : BUFFER_TYPE_DYNAMIC_DX8,dynamic_fvf_type,num_vertices);
+	DynamicVBAccessClass vba(sort ? BUFFER_TYPE_DYNAMIC_SORTING : BUFFER_TYPE_DYNAMIC_RENDER,dynamic_vertex_format,num_vertices);
 
 	{
 		DynamicVBAccessClass::WriteLockClass lock(&vba);

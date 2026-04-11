@@ -211,12 +211,24 @@
   - deleted the unused bgfx-side `CurrentRenderTarget` / `DefaultRenderTarget` / `DefaultDepthBuffer` static definitions from `Code/ww3d2/bgfxdynamicbuffer.cpp` because that state only belongs to the excluded DX8 backend implementation.
 - Rebuilt immediately after the header/surface cleanup and confirmed `cmake --build build -j20` still succeeds on the active bgfx tree.
 - Revalidated the new tree with `cd build/bin && timeout 210 ./Renegade`; the executable stayed alive until timeout exit `124` instead of crashing, and the captured runtime log did not show ASAN/UBSAN/assert/fatal renderer failures during the run.
+- Finished the next bgfx header-cleanup slice so the active build stops advertising more excluded DX8 backend ownership:
+  - `Code/ww3d2/dx8wrapper.h` now hides `_Get_D3D8()`, `_Get_D3D_Device8()`, `Create_Additional_Swap_Chain(...)`, the D3D-only `Set_Render_Target(...)` overloads, the raw `IDirect3DBaseTexture8*` cache, and the raw `IDirect3D8*` / `IDirect3DDevice8*` wrapper state from the bgfx build instead of leaving them exposed as null-backed stubs.
+  - bgfx-only `DX8CALL*` macro use now fails loudly in the active build, so new code cannot silently depend on DX8 backend objects that are excluded from `ww3d2`.
+  - `Code/ww3d2/bgfxdynamicbuffer.cpp` deletes the matching bgfx-side null definitions/stub entry points and the last stale invalidation of the removed raw D3D texture cache.
+- Revalidated after the DX8-wrapper cleanup slice: `cmake --build build -j20` succeeded, and `cd build/bin && timeout 210 ./Renegade` again stayed alive until timeout exit `124` with no sanitizer/assert/fatal markers in the captured runtime output.
+- Tightened the active bgfx capability path so it stops pretending to own a D3D interface object:
+  - `Code/ww3d2/dx8caps.h` now exposes a bgfx-build constructor that takes only `D3DCAPS8` plus adapter data, while the D3D-interface constructors, `Init_Caps(IDirect3DDevice8*)`, and the raw `Direct3D` member stay on the non-bgfx backend side.
+  - `Code/ww3d2/bgfxcaps.cpp` now builds `DX8Caps` directly from caps data instead of threading a null `IDirect3D8*` through the active build, and the now-dead bgfx-side adapter helper was deleted along with that D3D-shaped constructor path.
+  - `Code/ww3d2/bgfxdynamicbuffer.cpp` now instantiates the bgfx caps snapshot through that direct data constructor, which keeps the active capability bootstrap honest about not owning a live D3D interface.
+- Revalidated after the `DX8Caps` cleanup slice: `cmake --build build -j20` succeeded, and `cd build/bin && timeout 210 ./Renegade` again stayed alive until timeout exit `124` with no sanitizer/assert/fatal markers in the captured runtime output.
+- Finished the next active-build cleanup slice by renaming the shared buffer/FVF surface onto engine-owned names instead of keeping DX8 names alive in bgfx-visible headers:
+  - `Code/ww3d2/dx8vertexbuffer.h`, `Code/ww3d2/dx8indexbuffer.h`, and `Code/ww3d2/dx8fvf.*` are now `vertexbuffer.h`, `indexbuffer.h`, and `vertexformat.*`, and all in-tree includes/project-file references were updated to match.
+  - the live concrete buffer types are now `RenderVertexBufferClass` / `RenderIndexBufferClass`, `VertexFormatInfoClass` now carries the format metadata, and the active buffer-type enum values now use `BUFFER_TYPE_RENDER` / `BUFFER_TYPE_DYNAMIC_RENDER` instead of DX8-specific names.
+  - the bgfx implementations in `bgfxdynamicbuffer.cpp` / `bgfxindexbuffer.cpp` were renamed along with the public headers, so the active build no longer advertises DX8 ownership in its buffer-layer API even though the remaining mesh/render pipeline still needs broader cleanup.
+- Revalidated after the buffer/FVF rename slice: `cmake --build build -j20` succeeded, and `cd build/bin && timeout 210 ./Renegade` again stayed alive until timeout exit `124` with no sanitizer/assert/fatal markers in the captured runtime output.
 
 ## Next work
 
-- Continue shrinking the remaining bgfx-visible DX8 API in shared headers (`_Get_D3D8`, `_Get_D3D_Device8`, swap-chain/render-target overloads, raw `IDirect3D*` static state) so the active build stops advertising backend ownership that only exists in excluded code.
-- Continue replacing or deleting the remaining direct `<d3d8.h>` / `<D3dx8core.h>` includes in source files, starting with the backend-local files that now represent the true D3D dependency boundary.
-- Remove the remaining DX8-era initialization dependence under `WW3D::Init()` by porting the mesh/state/render-target path onto bgfx-owned implementations instead of keeping `DX8Wrapper` alive as a fallback frame manager.
-- Replace the D3D-format conversion surface in `formconv.*` and texture loading with backend-neutral or bgfx-backed format handling.
-- Delete the now-non-live bgfx `DX8Wrapper::Draw_*` compatibility bridge once the last backend-local references can be removed cleanly.
-- Finish the remaining `TextureLoadTaskClass` and render-target cleanup so the texture path no longer needs legacy DX8 texture allocation as an intermediate ownership model.
+- Continue de-DX8ing the live render pipeline above the renamed buffer layer, starting with the remaining `dx8renderer.*` / `dx8polygonrenderer.*` / `DX8Wrapper` state surfaces that the bgfx build still exposes.
+- Replace the remaining D3D-format conversion surface in `formconv.*` and texture loading with backend-neutral or bgfx-backed format handling.
+- Keep deleting or hiding DX8-only API from shared headers whenever the active bgfx build already excludes the corresponding backend `.cpp`.

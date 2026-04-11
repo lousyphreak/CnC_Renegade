@@ -56,8 +56,8 @@
 
 #include "dx8wrapper.h"
 #include "bgfxrenderer.h"
-#include "dx8vertexbuffer.h"
-#include "dx8indexbuffer.h"
+#include "vertexbuffer.h"
+#include "indexbuffer.h"
 
 
 const float DEBUG_RENDER_DIST2 = (50.0f*50.0f);
@@ -379,7 +379,7 @@ void PhysClass::Push_Effects(RenderInfoClass & rinfo)
 			if (tex != NULL) {
 				DX8Wrapper::Set_Texture(0,tex);
 
-				DynamicVBAccessClass vbaccess(BUFFER_TYPE_DYNAMIC_DX8,4);
+				DynamicVBAccessClass vbaccess(BUFFER_TYPE_DYNAMIC_RENDER,4);
 				{
 					DynamicVBAccessClass::WriteLockClass lock(&vbaccess);
 					VertexFormatXYZNDUV2 * verts = lock.Get_Formatted_Vertex_Array();
@@ -412,7 +412,7 @@ void PhysClass::Push_Effects(RenderInfoClass & rinfo)
 					verts[3].diffuse = 0xFFFFFFFF;
 				}
 
-				DynamicIBAccessClass ibaccess(BUFFER_TYPE_DYNAMIC_DX8,2*3);
+				DynamicIBAccessClass ibaccess(BUFFER_TYPE_DYNAMIC_RENDER,2*3);
 				{
 					DynamicIBAccessClass::WriteLockClass lock(&ibaccess);
 					uint16_t * indices = lock.Get_Index_Array();

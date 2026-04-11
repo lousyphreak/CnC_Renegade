@@ -43,6 +43,7 @@
 #include "dx8polygonrenderer.h"
 #include "bwrender.h"
 #include "camera.h"
+#include "vertexformat.h"
 #include "dx8renderer.h"
 #include "hashtemplate.h"
 

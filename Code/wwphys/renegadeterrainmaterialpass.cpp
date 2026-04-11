@@ -37,8 +37,8 @@
 #include "renegadeterrainmaterialpass.h"
 #include "terrainmaterial.h"
 #include "vector2.h"
-#include "dx8vertexbuffer.h"
-#include "dx8indexbuffer.h"
+#include "vertexbuffer.h"
+#include "indexbuffer.h"
 #include "chunkio.h"
 
 

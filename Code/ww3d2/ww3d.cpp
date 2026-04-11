@@ -100,6 +100,8 @@
 #include "ini.h"
 #include "dazzle.h"
 #include "meshmdl.h"
+#include "indexbuffer.h"
+#include "vertexbuffer.h"
 #include "dx8renderer.h"
 #include "render2d.h"
 #include "bound.h"

@@ -99,9 +99,9 @@
 #include "inttest.h"
 #include "dx8wrapper.h"
 #include "bgfxrenderer.h"
-#include "dx8indexbuffer.h"
-#include "dx8vertexbuffer.h"
-#include "dx8fvf.h"
+#include "indexbuffer.h"
+#include "vertexbuffer.h"
+#include "vertexformat.h"
 #include "sortingrenderer.h"
 #include "visrasterizer.h"
 #include "meshgeometry.h"
@@ -461,9 +461,9 @@ void BoxRenderObjClass::render_box(RenderInfoClass & rinfo,const Vector3 & cente
 		*/
 		DWORD color = DX8Wrapper::Convert_Color(Color,Opacity);
 		
-		int buffer_type = BUFFER_TYPE_DYNAMIC_DX8;
+		int buffer_type = BUFFER_TYPE_DYNAMIC_RENDER;
 
-		DynamicVBAccessClass vbaccess(buffer_type,dynamic_fvf_type,NUM_BOX_VERTS);
+		DynamicVBAccessClass vbaccess(buffer_type,dynamic_vertex_format,NUM_BOX_VERTS);
 		{
 			DynamicVBAccessClass::WriteLockClass lock(&vbaccess);
 			//unsigned char *vb=(unsigned char *) lock.Get_Vertex_Array();

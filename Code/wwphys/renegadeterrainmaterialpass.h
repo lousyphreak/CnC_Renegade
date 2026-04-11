@@ -47,8 +47,8 @@
 //////////////////////////////////////////////////////////////////////
 class Vector2;
 class TerrainMaterialClass;
-class DX8IndexBufferClass;
-class DX8VertexBufferClass;
+class RenderIndexBufferClass;
+class RenderVertexBufferClass;
 class ChunkSaveClass;
 class ChunkLoadClass;
 
@@ -103,8 +103,8 @@ public:
 	DynamicVectorClass<int>		VertexRenderList[PASS_COUNT];
 	int *								VertexIndexMap[PASS_COUNT];
 
-	DX8IndexBufferClass *		IndexBuffers[PASS_COUNT];
-	DX8VertexBufferClass *		VertexBuffers[PASS_COUNT];
+	RenderIndexBufferClass *		IndexBuffers[PASS_COUNT];
+	RenderVertexBufferClass *		VertexBuffers[PASS_COUNT];
 };
 
 

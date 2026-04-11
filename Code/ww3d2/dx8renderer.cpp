@@ -42,10 +42,10 @@
 #include "dx8renderer.h"
 #include "dx8wrapper.h"
 #include "dx8polygonrenderer.h"
-#include "dx8vertexbuffer.h"
-#include "dx8indexbuffer.h"
+#include "vertexbuffer.h"
+#include "indexbuffer.h"
 #include "bgfxrenderer.h"
-#include "dx8fvf.h"
+#include "vertexformat.h"
 #include "dx8caps.h"
 #include "dx8rendererdebugger.h"
 #include "wwdebug.h"
@@ -775,7 +775,7 @@ void DX8FVFCategoryContainer::Change_Polygon_Renderer_Material(
 unsigned DX8FVFCategoryContainer::Define_FVF(MeshModelClass* mmc,unsigned int * user_lighting,bool enable_lighting)
 {
 	if ((!!mmc->Get_Flag(MeshGeometryClass::SORT)) && WW3D::Is_Sorting_Enabled()) {
-		return dynamic_fvf_type;
+		return dynamic_vertex_format;
 	}
 
 	unsigned fvf=D3DFVF_XYZ;
@@ -840,7 +840,7 @@ void DX8RigidFVFCategoryContainer::Log(bool only_visible)
 	WWDEBUG_SAY((work));
 	if (vertex_buffer) {
 		StringClass fvfname(255,true);
-		vertex_buffer->FVF_Info().Get_FVF_Name(fvfname);
+		vertex_buffer->Vertex_Format_Info().Get_Vertex_Format_Name(fvfname);
 		work.Format("VB size (used/total): %d/%d FVF: %s\n",used_vertices,vertex_buffer->Get_Vertex_Count(),fvfname);
 		WWDEBUG_SAY((work));
 	}
@@ -1099,13 +1099,13 @@ void DX8RigidFVFCategoryContainer::Add_Mesh(MeshClass* mesh_)
 		if (vb_size<needed_vertices) vb_size=needed_vertices;
 		if (sorting) {
 			vertex_buffer=NEW_REF(SortingVertexBufferClass,(vb_size));
-			WWASSERT(vertex_buffer->FVF_Info().Get_FVF()==FVF);	// Only one sorting FVF type!
+			WWASSERT(vertex_buffer->Vertex_Format_Info().Get_Vertex_Format()==FVF);	// Only one sorting FVF type!
 		}
 		else {
-			vertex_buffer=NEW_REF(DX8VertexBufferClass,(
+			vertex_buffer=NEW_REF(RenderVertexBufferClass,(
 				FVF,
 				vb_size,
-				(DX8Wrapper::Get_Current_Caps()->Support_NPatches() && WW3D::Get_NPatches_Level()>1) ? DX8VertexBufferClass::USAGE_NPATCHES : DX8VertexBufferClass::USAGE_DEFAULT));
+				(DX8Wrapper::Get_Current_Caps()->Support_NPatches() && WW3D::Get_NPatches_Level()>1) ? RenderVertexBufferClass::USAGE_NPATCHES : RenderVertexBufferClass::USAGE_DEFAULT));
 		}
 	}
 
@@ -1114,7 +1114,7 @@ void DX8RigidFVFCategoryContainer::Add_Mesh(MeshClass* mesh_)
 	*/
 
 	VertexBufferClass::AppendLockClass l(vertex_buffer,used_vertices,split_table.Get_Vertex_Count());
-	const FVFInfoClass fi=vertex_buffer->FVF_Info();
+	const VertexFormatInfoClass fi=vertex_buffer->Vertex_Format_Info();
 	unsigned char *vb=(unsigned char*) l.Get_Vertex_Array();
 	unsigned int i;
 	const Vector3 *locs=split_table.Get_Vertex_Array();
@@ -1145,7 +1145,7 @@ void DX8RigidFVFCategoryContainer::Add_Mesh(MeshClass* mesh_)
 			}
 		}
 
-		vb+=fi.Get_FVF_Size();
+		vb+=fi.Get_Vertex_Size();
 	}
 	
 
@@ -1185,7 +1185,7 @@ void DX8RigidFVFCategoryContainer::Add_Mesh(MeshClass* mesh_)
 			for (i=0; i<split_table.Get_Vertex_Count(); i++)
 			{
 				*(Vector2*)(vb+fi.Get_Tex_Offset(j))=uvs[i];
-				vb+=fi.Get_FVF_Size();
+				vb+=fi.Get_Vertex_Size();
 			}		
 		}
 	}
@@ -1301,9 +1301,9 @@ void DX8FVFCategoryContainer::Generate_Texture_Categories(Vertex_Split_Table& sp
 			index_buffer=NEW_REF(SortingIndexBufferClass,(ib_size));
 		}
 		else {
-			index_buffer=NEW_REF(DX8IndexBufferClass,(
+			index_buffer=NEW_REF(RenderIndexBufferClass,(
 				ib_size,
-				(DX8Wrapper::Get_Current_Caps()->Support_NPatches() && WW3D::Get_NPatches_Level()>1) ? DX8IndexBufferClass::USAGE_NPATCHES : DX8IndexBufferClass::USAGE_DEFAULT));
+				(DX8Wrapper::Get_Current_Caps()->Support_NPatches() && WW3D::Get_NPatches_Level()>1) ? RenderIndexBufferClass::USAGE_NPATCHES : RenderIndexBufferClass::USAGE_DEFAULT));
 		}
 	}
 
@@ -1334,7 +1334,7 @@ void DX8FVFCategoryContainer::Generate_Texture_Categories(Vertex_Split_Table& sp
 
 DX8SkinFVFCategoryContainer::DX8SkinFVFCategoryContainer(bool sorting)
 	:
-	DX8FVFCategoryContainer(DX8_FVF_XYZNUV1,sorting),
+	DX8FVFCategoryContainer(VERTEX_FORMAT_XYZNUV1,sorting),
 	VisibleVertexCount(0),
 	VisibleSkinHead(NULL)
 {
@@ -1388,8 +1388,8 @@ void DX8SkinFVFCategoryContainer::Render(void)
 														// (in case it is the dynamic, which may have to be resized)
 
 	DynamicVBAccessClass vb(
-		sorting ? BUFFER_TYPE_DYNAMIC_SORTING : BUFFER_TYPE_DYNAMIC_DX8,
-		dynamic_fvf_type,
+		sorting ? BUFFER_TYPE_DYNAMIC_SORTING : BUFFER_TYPE_DYNAMIC_RENDER,
+		dynamic_vertex_format,
 		VisibleVertexCount);
 	SNAPSHOT_SAY(("DynamicVBAccess - %s - %d vertices\n",sorting ? "sorting" : "non-sorting",VisibleVertexCount));
 
@@ -2079,7 +2079,7 @@ void DX8MeshRendererClass::Register_Mesh_Type(MeshClass* mesh)
 				FVFCategoryList * list=texture_category_container_lists_rigid[rigid_list_index];
 				WWASSERT(list);
 				DX8FVFCategoryContainer * container=list->Peek_Head();
-				if (container && container->Get_FVF()!=fvf) continue;
+				if (container && container->Get_Vertex_Format()!=fvf) continue;
 
 				Add_Rigid_Mesh_To_Container(list,fvf,mesh);
 				break;

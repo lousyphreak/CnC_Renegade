@@ -11,6 +11,8 @@
 
 #include <bgfx/bgfx.h>
 
+#include "indexbuffer.h"
+#include "vertexbuffer.h"
 #include "bgfxrenderer.h"
 #include "boxrobj.h"
 #include "dx8renderer.h"
@@ -31,7 +33,7 @@
 namespace
 {
 const unsigned kDefaultDynamicVertexCount = 5000;
-static const FVFInfoClass kDynamicFVFInfo(dynamic_fvf_type);
+static const VertexFormatInfoClass kDynamicFVFInfo(dynamic_vertex_format);
 
 struct SubmissionVertex
 {
@@ -62,11 +64,11 @@ RenderDeviceDescClass g_render_device_desc;
 DX8Caps *g_stub_caps = nullptr;
 int g_swap_interval = 0;
 constexpr HRESULT kD3DErrInvalidCall = -11;
-std::unordered_map<const DX8VertexBufferClass *, std::vector<unsigned char>> g_dx8_vertex_buffers;
+std::unordered_map<const RenderVertexBufferClass *, std::vector<unsigned char>> g_render_vertex_buffers;
 
-std::vector<unsigned char> &Get_DX8_Vertex_Data(const DX8VertexBufferClass *buffer)
+std::vector<unsigned char> &Get_Render_Vertex_Data(const RenderVertexBufferClass *buffer)
 {
-	return g_dx8_vertex_buffers[buffer];
+	return g_render_vertex_buffers[buffer];
 }
 }
 
@@ -98,7 +100,6 @@ D3DMATRIX DX8Wrapper::old_prj = {};
 bool DX8Wrapper::world_identity = true;
 unsigned DX8Wrapper::RenderStates[256] = {};
 unsigned DX8Wrapper::TextureStageStates[MAX_TEXTURE_STAGES][32] = {};
-IDirect3DBaseTexture8 *DX8Wrapper::Textures[MAX_TEXTURE_STAGES] = {};
 bool DX8Wrapper::FogEnable = false;
 D3DCOLOR DX8Wrapper::FogColor = 0;
 unsigned DX8Wrapper::matrix_changes = 0;
@@ -113,8 +114,6 @@ bool DX8Wrapper::CurrentDX8LightEnables[4] = {};
 unsigned long DX8Wrapper::FrameCount = 0;
 DX8Caps *DX8Wrapper::CurrentCaps = g_stub_caps;
 D3DADAPTER_IDENTIFIER8 DX8Wrapper::CurrentAdapterIdentifier = {};
-IDirect3D8 *DX8Wrapper::D3DInterface = nullptr;
-IDirect3DDevice8 *DX8Wrapper::D3DDevice = nullptr;
 bool DX8Wrapper::IsRenderToTexture = false;
 int DX8Wrapper::ZBias = 0;
 float DX8Wrapper::ZNear = 0.0f;
@@ -132,6 +131,109 @@ static unsigned g_last_frame_texture_changes = 0;
 static unsigned g_last_frame_render_state_changes = 0;
 static unsigned g_last_frame_texture_stage_state_changes = 0;
 static unsigned g_last_frame_dx8_calls = 0;
+
+RenderStateStruct::RenderStateStruct()
+	: material(nullptr),
+	  material_crc(0),
+	  material_state_dirty(false),
+	  vertex_buffer(nullptr),
+	  index_buffer(nullptr)
+{
+	for (unsigned i = 0; i < MAX_TEXTURE_STAGES; ++i) {
+		Textures[i] = nullptr;
+	}
+}
+
+RenderStateStruct::~RenderStateStruct()
+{
+	REF_PTR_RELEASE(material);
+	REF_PTR_RELEASE(vertex_buffer);
+	REF_PTR_RELEASE(index_buffer);
+	for (unsigned i = 0; i < MAX_TEXTURE_STAGES; ++i) {
+		REF_PTR_RELEASE(Textures[i]);
+	}
+}
+
+RenderStateStruct &RenderStateStruct::operator=(const RenderStateStruct &src)
+{
+	REF_PTR_SET(material, src.material);
+	material_crc = src.material_crc;
+	material_state_dirty = src.material_state_dirty;
+	REF_PTR_SET(vertex_buffer, src.vertex_buffer);
+	REF_PTR_SET(index_buffer, src.index_buffer);
+	for (unsigned i = 0; i < MAX_TEXTURE_STAGES; ++i) {
+		REF_PTR_SET(Textures[i], src.Textures[i]);
+	}
+
+	LightEnable[0] = src.LightEnable[0];
+	LightEnable[1] = src.LightEnable[1];
+	LightEnable[2] = src.LightEnable[2];
+	LightEnable[3] = src.LightEnable[3];
+	if (LightEnable[0]) {
+		Lights[0] = src.Lights[0];
+		if (LightEnable[1]) {
+			Lights[1] = src.Lights[1];
+			if (LightEnable[2]) {
+				Lights[2] = src.Lights[2];
+				if (LightEnable[3]) {
+					Lights[3] = src.Lights[3];
+				}
+			}
+		}
+	}
+
+	shader = src.shader;
+	world = src.world;
+	view = src.view;
+	vertex_buffer_type = src.vertex_buffer_type;
+	index_buffer_type = src.index_buffer_type;
+	vba_offset = src.vba_offset;
+	vba_count = src.vba_count;
+	iba_offset = src.iba_offset;
+	index_base_offset = src.index_base_offset;
+
+	return *this;
+}
+
+void DX8Wrapper::Set_Render_State(const RenderStateStruct &state)
+{
+	if (render_state.index_buffer != nullptr) {
+		render_state.index_buffer->Release_Engine_Ref();
+	}
+
+	if (render_state.vertex_buffer != nullptr) {
+		render_state.vertex_buffer->Release_Engine_Ref();
+	}
+
+	render_state = state;
+	render_state_changed = 0xffffffff;
+
+	if (render_state.index_buffer != nullptr) {
+		render_state.index_buffer->Add_Engine_Ref();
+	}
+
+	if (render_state.vertex_buffer != nullptr) {
+		render_state.vertex_buffer->Add_Engine_Ref();
+	}
+}
+
+void DX8Wrapper::Release_Render_State()
+{
+	if (render_state.index_buffer != nullptr) {
+		render_state.index_buffer->Release_Engine_Ref();
+	}
+
+	if (render_state.vertex_buffer != nullptr) {
+		render_state.vertex_buffer->Release_Engine_Ref();
+	}
+
+	REF_PTR_RELEASE(render_state.vertex_buffer);
+	REF_PTR_RELEASE(render_state.index_buffer);
+	REF_PTR_RELEASE(render_state.material);
+	for (unsigned i = 0; i < MAX_TEXTURE_STAGES; ++i) {
+		REF_PTR_RELEASE(render_state.Textures[i]);
+	}
+}
 
 static DX8Caps *Ensure_Caps()
 {
@@ -165,25 +267,25 @@ static DX8Caps *Ensure_Caps()
 		std::snprintf(adapter.DeviceName, sizeof(adapter.DeviceName), "bgfx");
 		adapter.DriverVersion.HighPart = 1;
 		adapter.DriverVersion.LowPart = 0;
-		g_stub_caps = new DX8Caps(nullptr, caps, WW3D_FORMAT_A8R8G8B8, adapter);
+		g_stub_caps = new DX8Caps(caps, WW3D_FORMAT_A8R8G8B8, adapter);
 	}
 
 	return g_stub_caps;
 }
 
 VertexBufferClass::VertexBufferClass(unsigned type_, unsigned FVF, unsigned short vertex_count_)
-	: type(type_), VertexCount(vertex_count_), engine_refs(0), fvf_info(new FVFInfoClass(FVF))
+	: type(type_), VertexCount(vertex_count_), engine_refs(0), fvf_info(new VertexFormatInfoClass(FVF))
 {
 	++g_vertex_buffer_count;
 	g_vertex_buffer_total_vertices += VertexCount;
-	g_vertex_buffer_total_size += VertexCount * fvf_info->Get_FVF_Size();
+	g_vertex_buffer_total_size += VertexCount * fvf_info->Get_Vertex_Size();
 }
 
 VertexBufferClass::~VertexBufferClass()
 {
 	--g_vertex_buffer_count;
 	g_vertex_buffer_total_vertices -= VertexCount;
-	g_vertex_buffer_total_size -= VertexCount * fvf_info->Get_FVF_Size();
+	g_vertex_buffer_total_size -= VertexCount * fvf_info->Get_Vertex_Size();
 	delete fvf_info;
 }
 
@@ -218,8 +320,8 @@ VertexBufferClass::WriteLockClass::WriteLockClass(VertexBufferClass *vertex_buff
 	WWASSERT(vertex_buffer != nullptr);
 	vertex_buffer->Add_Ref();
 	switch (vertex_buffer->Type()) {
-	case BUFFER_TYPE_DX8:
-		Vertices = Get_DX8_Vertex_Data(static_cast<DX8VertexBufferClass *>(vertex_buffer)).data();
+	case BUFFER_TYPE_RENDER:
+		Vertices = Get_Render_Vertex_Data(static_cast<RenderVertexBufferClass *>(vertex_buffer)).data();
 		break;
 	case BUFFER_TYPE_SORTING:
 		Vertices = static_cast<SortingVertexBufferClass *>(vertex_buffer)->VertexBuffer;
@@ -242,8 +344,8 @@ VertexBufferClass::AppendLockClass::AppendLockClass(VertexBufferClass *vertex_bu
 	WWASSERT(vertex_buffer != nullptr);
 	vertex_buffer->Add_Ref();
 	switch (vertex_buffer->Type()) {
-	case BUFFER_TYPE_DX8:
-		Vertices = Get_DX8_Vertex_Data(static_cast<DX8VertexBufferClass *>(vertex_buffer)).data() + start_index * vertex_buffer->FVF_Info().Get_FVF_Size();
+	case BUFFER_TYPE_RENDER:
+		Vertices = Get_Render_Vertex_Data(static_cast<RenderVertexBufferClass *>(vertex_buffer)).data() + start_index * vertex_buffer->Vertex_Format_Info().Get_Vertex_Size();
 		break;
 	case BUFFER_TYPE_SORTING:
 		Vertices = static_cast<SortingVertexBufferClass *>(vertex_buffer)->VertexBuffer + start_index;
@@ -261,7 +363,7 @@ VertexBufferClass::AppendLockClass::~AppendLockClass()
 }
 
 SortingVertexBufferClass::SortingVertexBufferClass(unsigned short vertex_count)
-	: VertexBufferClass(BUFFER_TYPE_SORTING, dynamic_fvf_type, vertex_count), VertexBuffer(new VertexFormatXYZNDUV2[vertex_count])
+	: VertexBufferClass(BUFFER_TYPE_SORTING, dynamic_vertex_format, vertex_count), VertexBuffer(new VertexFormatXYZNDUV2[vertex_count])
 {
 }
 
@@ -270,112 +372,116 @@ SortingVertexBufferClass::~SortingVertexBufferClass()
 	delete[] VertexBuffer;
 }
 
-DX8VertexBufferClass::DX8VertexBufferClass(unsigned FVF, unsigned short vertex_count_, UsageType)
-	: VertexBufferClass(BUFFER_TYPE_DX8, FVF, vertex_count_), VertexBuffer(nullptr)
+RenderVertexBufferClass::RenderVertexBufferClass(unsigned FVF, unsigned short vertex_count_, UsageType)
+#if !RENEGADE_WITH_BGFX_RENDERER
+	: VertexBufferClass(BUFFER_TYPE_RENDER, FVF, vertex_count_), VertexBuffer(nullptr)
+#else
+	: VertexBufferClass(BUFFER_TYPE_RENDER, FVF, vertex_count_)
+#endif
 {
-	g_dx8_vertex_buffers[this].resize(static_cast<size_t>(FVF_Info().Get_FVF_Size()) * vertex_count_);
+	g_render_vertex_buffers[this].resize(static_cast<size_t>(Vertex_Format_Info().Get_Vertex_Size()) * vertex_count_);
 }
 
-DX8VertexBufferClass::DX8VertexBufferClass(const Vector3 *vertices, const Vector3 *normals, const Vector2 *tex_coords, unsigned short vertex_count_, UsageType usage)
-	: DX8VertexBufferClass(DX8_FVF_FLAG_XYZ | DX8_FVF_FLAG_TEX1 | DX8_FVF_FLAG_NORMAL, vertex_count_, usage)
+RenderVertexBufferClass::RenderVertexBufferClass(const Vector3 *vertices, const Vector3 *normals, const Vector2 *tex_coords, unsigned short vertex_count_, UsageType usage)
+	: RenderVertexBufferClass(VERTEX_FORMAT_FLAG_XYZ | VERTEX_FORMAT_FLAG_TEX1 | VERTEX_FORMAT_FLAG_NORMAL, vertex_count_, usage)
 {
 	Copy(vertices, normals, tex_coords, 0, vertex_count_);
 }
 
-DX8VertexBufferClass::DX8VertexBufferClass(const Vector3 *vertices, const Vector3 *normals, const Vector4 *diffuse, const Vector2 *tex_coords, unsigned short vertex_count_, UsageType usage)
-	: DX8VertexBufferClass(DX8_FVF_FLAG_XYZ | DX8_FVF_FLAG_TEX1 | DX8_FVF_FLAG_NORMAL | DX8_FVF_FLAG_DIFFUSE, vertex_count_, usage)
+RenderVertexBufferClass::RenderVertexBufferClass(const Vector3 *vertices, const Vector3 *normals, const Vector4 *diffuse, const Vector2 *tex_coords, unsigned short vertex_count_, UsageType usage)
+	: RenderVertexBufferClass(VERTEX_FORMAT_FLAG_XYZ | VERTEX_FORMAT_FLAG_TEX1 | VERTEX_FORMAT_FLAG_NORMAL | VERTEX_FORMAT_FLAG_DIFFUSE, vertex_count_, usage)
 {
 	Copy(vertices, normals, tex_coords, diffuse, 0, vertex_count_);
 }
 
-DX8VertexBufferClass::DX8VertexBufferClass(const Vector3 *vertices, const Vector4 *diffuse, const Vector2 *tex_coords, unsigned short vertex_count_, UsageType usage)
-	: DX8VertexBufferClass(DX8_FVF_FLAG_XYZ | DX8_FVF_FLAG_TEX1 | DX8_FVF_FLAG_DIFFUSE, vertex_count_, usage)
+RenderVertexBufferClass::RenderVertexBufferClass(const Vector3 *vertices, const Vector4 *diffuse, const Vector2 *tex_coords, unsigned short vertex_count_, UsageType usage)
+	: RenderVertexBufferClass(VERTEX_FORMAT_FLAG_XYZ | VERTEX_FORMAT_FLAG_TEX1 | VERTEX_FORMAT_FLAG_DIFFUSE, vertex_count_, usage)
 {
 	Copy(vertices, tex_coords, diffuse, 0, vertex_count_);
 }
 
-DX8VertexBufferClass::DX8VertexBufferClass(const Vector3 *vertices, const Vector2 *tex_coords, unsigned short vertex_count_, UsageType usage)
-	: DX8VertexBufferClass(DX8_FVF_FLAG_XYZ | DX8_FVF_FLAG_TEX1, vertex_count_, usage)
+RenderVertexBufferClass::RenderVertexBufferClass(const Vector3 *vertices, const Vector2 *tex_coords, unsigned short vertex_count_, UsageType usage)
+	: RenderVertexBufferClass(VERTEX_FORMAT_FLAG_XYZ | VERTEX_FORMAT_FLAG_TEX1, vertex_count_, usage)
 {
 	Copy(vertices, tex_coords, 0, vertex_count_);
 }
 
-DX8VertexBufferClass::~DX8VertexBufferClass()
+RenderVertexBufferClass::~RenderVertexBufferClass()
 {
-	g_dx8_vertex_buffers.erase(this);
+	g_render_vertex_buffers.erase(this);
 }
 
-void DX8VertexBufferClass::Create_Vertex_Buffer(UsageType)
+void RenderVertexBufferClass::Create_Vertex_Buffer(UsageType)
 {
 }
 
-void DX8VertexBufferClass::Copy(const Vector3 *loc, unsigned first_vertex, unsigned count)
+void RenderVertexBufferClass::Copy(const Vector3 *loc, unsigned first_vertex, unsigned count)
 {
-	unsigned char *vertices = Get_DX8_Vertex_Data(this).data() + first_vertex * FVF_Info().Get_FVF_Size();
+	unsigned char *vertices = Get_Render_Vertex_Data(this).data() + first_vertex * Vertex_Format_Info().Get_Vertex_Size();
 	for (unsigned i = 0; i < count; ++i) {
-		*reinterpret_cast<Vector3 *>(vertices + FVF_Info().Get_Location_Offset()) = loc[i];
-		vertices += FVF_Info().Get_FVF_Size();
+		*reinterpret_cast<Vector3 *>(vertices + Vertex_Format_Info().Get_Location_Offset()) = loc[i];
+		vertices += Vertex_Format_Info().Get_Vertex_Size();
 	}
 }
 
-void DX8VertexBufferClass::Copy(const Vector3 *loc, const Vector2 *uv, unsigned first_vertex, unsigned count)
+void RenderVertexBufferClass::Copy(const Vector3 *loc, const Vector2 *uv, unsigned first_vertex, unsigned count)
 {
-	unsigned char *vertices = Get_DX8_Vertex_Data(this).data() + first_vertex * FVF_Info().Get_FVF_Size();
+	unsigned char *vertices = Get_Render_Vertex_Data(this).data() + first_vertex * Vertex_Format_Info().Get_Vertex_Size();
 	for (unsigned i = 0; i < count; ++i) {
-		*reinterpret_cast<Vector3 *>(vertices + FVF_Info().Get_Location_Offset()) = loc[i];
-		*reinterpret_cast<Vector2 *>(vertices + FVF_Info().Get_Tex_Offset(0)) = uv[i];
-		vertices += FVF_Info().Get_FVF_Size();
+		*reinterpret_cast<Vector3 *>(vertices + Vertex_Format_Info().Get_Location_Offset()) = loc[i];
+		*reinterpret_cast<Vector2 *>(vertices + Vertex_Format_Info().Get_Tex_Offset(0)) = uv[i];
+		vertices += Vertex_Format_Info().Get_Vertex_Size();
 	}
 }
 
-void DX8VertexBufferClass::Copy(const Vector3 *loc, const Vector3 *norm, unsigned first_vertex, unsigned count)
+void RenderVertexBufferClass::Copy(const Vector3 *loc, const Vector3 *norm, unsigned first_vertex, unsigned count)
 {
-	unsigned char *vertices = Get_DX8_Vertex_Data(this).data() + first_vertex * FVF_Info().Get_FVF_Size();
+	unsigned char *vertices = Get_Render_Vertex_Data(this).data() + first_vertex * Vertex_Format_Info().Get_Vertex_Size();
 	for (unsigned i = 0; i < count; ++i) {
-		*reinterpret_cast<Vector3 *>(vertices + FVF_Info().Get_Location_Offset()) = loc[i];
-		*reinterpret_cast<Vector3 *>(vertices + FVF_Info().Get_Normal_Offset()) = norm[i];
-		vertices += FVF_Info().Get_FVF_Size();
+		*reinterpret_cast<Vector3 *>(vertices + Vertex_Format_Info().Get_Location_Offset()) = loc[i];
+		*reinterpret_cast<Vector3 *>(vertices + Vertex_Format_Info().Get_Normal_Offset()) = norm[i];
+		vertices += Vertex_Format_Info().Get_Vertex_Size();
 	}
 }
 
-void DX8VertexBufferClass::Copy(const Vector3 *loc, const Vector3 *norm, const Vector2 *uv, unsigned first_vertex, unsigned count)
+void RenderVertexBufferClass::Copy(const Vector3 *loc, const Vector3 *norm, const Vector2 *uv, unsigned first_vertex, unsigned count)
 {
-	unsigned char *vertices = Get_DX8_Vertex_Data(this).data() + first_vertex * FVF_Info().Get_FVF_Size();
+	unsigned char *vertices = Get_Render_Vertex_Data(this).data() + first_vertex * Vertex_Format_Info().Get_Vertex_Size();
 	for (unsigned i = 0; i < count; ++i) {
-		*reinterpret_cast<Vector3 *>(vertices + FVF_Info().Get_Location_Offset()) = loc[i];
-		*reinterpret_cast<Vector3 *>(vertices + FVF_Info().Get_Normal_Offset()) = norm[i];
-		*reinterpret_cast<Vector2 *>(vertices + FVF_Info().Get_Tex_Offset(0)) = uv[i];
-		vertices += FVF_Info().Get_FVF_Size();
+		*reinterpret_cast<Vector3 *>(vertices + Vertex_Format_Info().Get_Location_Offset()) = loc[i];
+		*reinterpret_cast<Vector3 *>(vertices + Vertex_Format_Info().Get_Normal_Offset()) = norm[i];
+		*reinterpret_cast<Vector2 *>(vertices + Vertex_Format_Info().Get_Tex_Offset(0)) = uv[i];
+		vertices += Vertex_Format_Info().Get_Vertex_Size();
 	}
 }
 
-void DX8VertexBufferClass::Copy(const Vector3 *loc, const Vector3 *norm, const Vector2 *uv, const Vector4 *diffuse, unsigned first_vertex, unsigned count)
+void RenderVertexBufferClass::Copy(const Vector3 *loc, const Vector3 *norm, const Vector2 *uv, const Vector4 *diffuse, unsigned first_vertex, unsigned count)
 {
-	unsigned char *vertices = Get_DX8_Vertex_Data(this).data() + first_vertex * FVF_Info().Get_FVF_Size();
+	unsigned char *vertices = Get_Render_Vertex_Data(this).data() + first_vertex * Vertex_Format_Info().Get_Vertex_Size();
 	for (unsigned i = 0; i < count; ++i) {
-		*reinterpret_cast<Vector3 *>(vertices + FVF_Info().Get_Location_Offset()) = loc[i];
-		*reinterpret_cast<Vector3 *>(vertices + FVF_Info().Get_Normal_Offset()) = norm[i];
-		*reinterpret_cast<unsigned *>(vertices + FVF_Info().Get_Diffuse_Offset()) = DX8Wrapper::Convert_Color(diffuse[i]);
-		*reinterpret_cast<Vector2 *>(vertices + FVF_Info().Get_Tex_Offset(0)) = uv[i];
-		vertices += FVF_Info().Get_FVF_Size();
+		*reinterpret_cast<Vector3 *>(vertices + Vertex_Format_Info().Get_Location_Offset()) = loc[i];
+		*reinterpret_cast<Vector3 *>(vertices + Vertex_Format_Info().Get_Normal_Offset()) = norm[i];
+		*reinterpret_cast<unsigned *>(vertices + Vertex_Format_Info().Get_Diffuse_Offset()) = DX8Wrapper::Convert_Color(diffuse[i]);
+		*reinterpret_cast<Vector2 *>(vertices + Vertex_Format_Info().Get_Tex_Offset(0)) = uv[i];
+		vertices += Vertex_Format_Info().Get_Vertex_Size();
 	}
 }
 
-void DX8VertexBufferClass::Copy(const Vector3 *loc, const Vector2 *uv, const Vector4 *diffuse, unsigned first_vertex, unsigned count)
+void RenderVertexBufferClass::Copy(const Vector3 *loc, const Vector2 *uv, const Vector4 *diffuse, unsigned first_vertex, unsigned count)
 {
-	unsigned char *vertices = Get_DX8_Vertex_Data(this).data() + first_vertex * FVF_Info().Get_FVF_Size();
+	unsigned char *vertices = Get_Render_Vertex_Data(this).data() + first_vertex * Vertex_Format_Info().Get_Vertex_Size();
 	for (unsigned i = 0; i < count; ++i) {
-		*reinterpret_cast<Vector3 *>(vertices + FVF_Info().Get_Location_Offset()) = loc[i];
-		*reinterpret_cast<unsigned *>(vertices + FVF_Info().Get_Diffuse_Offset()) = DX8Wrapper::Convert_Color(diffuse[i]);
-		*reinterpret_cast<Vector2 *>(vertices + FVF_Info().Get_Tex_Offset(0)) = uv[i];
-		vertices += FVF_Info().Get_FVF_Size();
+		*reinterpret_cast<Vector3 *>(vertices + Vertex_Format_Info().Get_Location_Offset()) = loc[i];
+		*reinterpret_cast<unsigned *>(vertices + Vertex_Format_Info().Get_Diffuse_Offset()) = DX8Wrapper::Convert_Color(diffuse[i]);
+		*reinterpret_cast<Vector2 *>(vertices + Vertex_Format_Info().Get_Tex_Offset(0)) = uv[i];
+		vertices += Vertex_Format_Info().Get_Vertex_Size();
 	}
 }
 
 DynamicVBAccessClass::DynamicVBAccessClass(unsigned type, unsigned fvf, unsigned short vertex_count)
-	: FVFInfo(kDynamicFVFInfo), Type(type == BUFFER_TYPE_DYNAMIC_DX8 ? BUFFER_TYPE_DYNAMIC_SORTING : type), VertexCount(vertex_count), VertexBufferOffset(0), VertexBuffer(nullptr)
+	: FVFInfo(kDynamicFVFInfo), Type(type == BUFFER_TYPE_DYNAMIC_RENDER ? BUFFER_TYPE_DYNAMIC_SORTING : type), VertexCount(vertex_count), VertexBufferOffset(0), VertexBuffer(nullptr)
 {
-	WWASSERT(fvf == dynamic_fvf_type);
+	WWASSERT(fvf == dynamic_vertex_format);
 	WWASSERT(Type == BUFFER_TYPE_DYNAMIC_SORTING);
 	Allocate_Sorting_Dynamic_Buffer();
 }
@@ -434,7 +540,7 @@ void DynamicVBAccessClass::Allocate_Sorting_Dynamic_Buffer()
 	VertexBufferOffset = g_dynamic_sorting_vertex_buffer_offset;
 }
 
-void DynamicVBAccessClass::Allocate_DX8_Dynamic_Buffer()
+void DynamicVBAccessClass::Allocate_Render_Dynamic_Buffer()
 {
 	Allocate_Sorting_Dynamic_Buffer();
 }
@@ -503,7 +609,6 @@ void DX8Wrapper::Invalidate_Cached_Render_States(void)
 		for (unsigned index = 0; index < 32; ++index) {
 			TextureStageStates[stage][index] = 0x12345678;
 		}
-		Textures[stage] = nullptr;
 	}
 
 	ShaderClass::Invalidate();
@@ -842,18 +947,6 @@ void DX8Wrapper::Set_Render_Target(TextureClass *texture)
 	}
 }
 
-void DX8Wrapper::Set_Render_Target(IDirect3DSurface8 *, bool)
-{
-	BgfxRenderer::Reset_Render_Target();
-	IsRenderToTexture = false;
-}
-
-void DX8Wrapper::Set_Render_Target(IDirect3DSwapChain8 *)
-{
-	BgfxRenderer::Reset_Render_Target();
-	IsRenderToTexture = false;
-}
-
 void DX8Wrapper::Get_Device_Resolution(int &set_w, int &set_h, int &set_bits, bool &set_windowed)
 {
 	BgfxRenderer::Get_Device_Resolution(set_w, set_h, set_bits, set_windowed);
@@ -944,15 +1037,6 @@ void DX8Wrapper::Set_DX8_Texture_Stage_State(unsigned stage, D3DTEXTURESTAGESTAT
         }
         ++texture_stage_state_changes;
     }
-}
-
-void DX8Wrapper::Set_DX8_Texture(unsigned int stage, IDirect3DBaseTexture8 *texture)
-{
-    if (stage >= MAX_TEXTURE_STAGES) {
-        return;
-    }
-    Textures[stage] = texture;
-    ++texture_changes;
 }
 
 void DX8Wrapper::Set_Light(unsigned index, const LightClass &light)
@@ -1115,9 +1199,4 @@ void DX8Wrapper::Set_Swap_Interval(int swap)
 int DX8Wrapper::Get_Swap_Interval(void)
 {
     return g_swap_interval;
-}
-
-IDirect3DSwapChain8 *DX8Wrapper::Create_Additional_Swap_Chain(HWND)
-{
-    return nullptr;
 }

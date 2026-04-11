@@ -22,7 +22,7 @@
  *                                                                                             *
  *                 Project Name : ww3d                                                         *
  *                                                                                             *
- *                     $Archive:: /Commando/Code/ww3d2/dx8indexbuffer.h                       $*
+ *                     $Archive:: /Commando/Code/ww3d2/indexbuffer.h                       $*
  *                                                                                             *
  *              Original Author:: Greg Hjelstrom                                               *
  *                                                                                             *
@@ -40,8 +40,8 @@
 #pragma once
 #endif
 
-#ifndef DX8INDEXBUFFER_H
-#define DX8INDEXBUFFER_H
+#ifndef INDEXBUFFER_H
+#define INDEXBUFFER_H
 
 #include "always.h"
 #include "wwdebug.h"
@@ -50,8 +50,10 @@
 
 class DX8Wrapper;
 class SortingRendererClass;
+#if !RENEGADE_WITH_BGFX_RENDERER
 struct IDirect3DIndexBuffer8;
-class DX8IndexBufferClass;
+#endif
+class RenderIndexBufferClass;
 class SortingIndexBufferClass;
 
 // ----------------------------------------------------------------------------
@@ -120,7 +122,7 @@ class DynamicIBAccessClass
 	IndexBufferClass* IndexBuffer;
 
 	void Allocate_Sorting_Dynamic_Buffer();
-	void Allocate_DX8_Dynamic_Buffer();
+	void Allocate_Render_Dynamic_Buffer();
 
 public:
 	DynamicIBAccessClass(unsigned short type, unsigned short index_count);
@@ -151,10 +153,10 @@ public:
 
 
 /**
-** DX8IndexBufferClass
-** This class wraps a DX8 index buffer.
+** RenderIndexBufferClass
+** Concrete render-index-buffer implementation used by the active renderer backends.
 */
-class DX8IndexBufferClass : public IndexBufferClass
+class RenderIndexBufferClass : public IndexBufferClass
 {
 	friend IndexBufferClass::WriteLockClass;
 	friend IndexBufferClass::AppendLockClass;
@@ -166,16 +168,20 @@ public:
 		USAGE_NPATCHES=4
 	};
 
-	DX8IndexBufferClass(unsigned short index_count,UsageType usage=USAGE_DEFAULT);
-	~DX8IndexBufferClass();
+	RenderIndexBufferClass(unsigned short index_count,UsageType usage=USAGE_DEFAULT);
+	~RenderIndexBufferClass();
 
 	void Copy(unsigned int* indices,unsigned start_index,unsigned index_count);
 	void Copy(unsigned short* indices,unsigned start_index,unsigned index_count);
 
-	inline IDirect3DIndexBuffer8* Get_DX8_Index_Buffer()	{ return index_buffer; }
+#if !RENEGADE_WITH_BGFX_RENDERER
+	inline IDirect3DIndexBuffer8* Get_Native_Index_Buffer()	{ return index_buffer; }
+#endif
 	
 private:
+#if !RENEGADE_WITH_BGFX_RENDERER
 	IDirect3DIndexBuffer8*	index_buffer;		// actual dx8 index buffer
+#endif
 };
 
 
@@ -195,5 +201,4 @@ protected:
 	unsigned short* index_buffer;
 };
 
-#endif //DX8INDEXBUFFER_H
-
+#endif //INDEXBUFFER_H

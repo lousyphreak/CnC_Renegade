@@ -17,8 +17,8 @@
 */
 
 #include "sortingrenderer.h"
-#include "dx8vertexbuffer.h"
-#include "dx8indexbuffer.h"
+#include "vertexbuffer.h"
+#include "indexbuffer.h"
 #include "dx8wrapper.h"
 #include "bgfxrenderer.h"
 #include "vertmaterial.h"
@@ -493,7 +493,7 @@ void SortingRendererClass::Flush_Sorting_Pool()
 	float* polygon_z_array=Get_Polygon_Z_Array(overlapping_polygon_count);
 	ShortVectorIStruct* polygon_idx_array=(ShortVectorIStruct*)Get_Polygon_Index_Array(overlapping_polygon_count);
 
-	DynamicVBAccessClass dyn_vb_access(BUFFER_TYPE_DYNAMIC_DX8,dynamic_fvf_type,overlapping_vertex_count);
+	DynamicVBAccessClass dyn_vb_access(BUFFER_TYPE_DYNAMIC_RENDER,dynamic_vertex_format,overlapping_vertex_count);
 	{
 		DynamicVBAccessClass::WriteLockClass lock(&dyn_vb_access);
 		VertexFormatXYZNDUV2* dest_verts=lock.Get_Formatted_Vertex_Array();
@@ -568,7 +568,7 @@ void SortingRendererClass::Flush_Sorting_Pool()
 	}
 	Sort<TempIndexStruct,float>(tis,polygon_z_array,overlapping_polygon_count);
 
-	DynamicIBAccessClass dyn_ib_access(BUFFER_TYPE_DYNAMIC_DX8,overlapping_polygon_count*3);
+	DynamicIBAccessClass dyn_ib_access(BUFFER_TYPE_DYNAMIC_RENDER,overlapping_polygon_count*3);
 	{
 		DynamicIBAccessClass::WriteLockClass lock(&dyn_ib_access);
 		ShortVectorIStruct* sorted_polygon_index_array=(ShortVectorIStruct*)lock.Get_Index_Array();

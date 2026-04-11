@@ -55,9 +55,9 @@
 #include "rinfo.h"
 #include "dx8wrapper.h"
 #include "bgfxrenderer.h"
-#include "dx8vertexbuffer.h"
-#include "dx8indexbuffer.h"
-#include "dx8fvf.h"
+#include "vertexbuffer.h"
+#include "indexbuffer.h"
+#include "vertexformat.h"
 
 // 12 Triangles for index buffer
 const unsigned short Indices[]=
@@ -266,10 +266,10 @@ void Line3DClass::Render(RenderInfoClass & rinfo)
 
 	DX8Wrapper::Set_Transform(D3DTS_WORLD,Transform);	
 
-	DynamicVBAccessClass vb(BUFFER_TYPE_DYNAMIC_DX8,dynamic_fvf_type,8);
+	DynamicVBAccessClass vb(BUFFER_TYPE_DYNAMIC_RENDER,dynamic_vertex_format,8);
 	{
 		DynamicVBAccessClass::WriteLockClass Lock(&vb);
-		const FVFInfoClass &fi=vb.FVF_Info();
+		const VertexFormatInfoClass &fi=vb.Vertex_Format_Info();
 		unsigned char *vb=(unsigned char*)Lock.Get_Formatted_Vertex_Array();
 		int i;
 		unsigned int color=DX8Wrapper::Convert_Color(Color);
@@ -278,11 +278,11 @@ void Line3DClass::Render(RenderInfoClass & rinfo)
 		{			
 			*(Vector3*)(vb+fi.Get_Location_Offset())=vert[i];
 			*(unsigned int*)(vb+fi.Get_Diffuse_Offset())=color;
-			vb+=fi.Get_FVF_Size();
+			vb+=fi.Get_Vertex_Size();
 		}		
 	}
 
-	DynamicIBAccessClass ib(BUFFER_TYPE_DYNAMIC_DX8,36);
+	DynamicIBAccessClass ib(BUFFER_TYPE_DYNAMIC_RENDER,36);
 	{
 		DynamicIBAccessClass::WriteLockClass Lock(&ib);
 		unsigned short *mem=Lock.Get_Index_Array();

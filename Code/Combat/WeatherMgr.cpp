@@ -46,7 +46,8 @@
 #include "gametype.h"
 #include "bgfxrenderer.h"
 #include "light.h"
-#include "dx8indexbuffer.h"
+#include "indexbuffer.h"
+#include "vertexbuffer.h"
 #include "dx8wrapper.h"
 
 #include "vertmaterial.h"
@@ -298,7 +299,7 @@ WeatherSystemClass::WeatherSystemClass	(PhysicsSceneClass *scene,
 	#if WEATHER_PARTICLE_SORT
 	IndexBuffer = NEW_REF (SortingIndexBufferClass, (MAX_IB_PARTICLE_COUNT * VERTICES_PER_TRIANGLE));
 	#else
-	IndexBuffer = NEW_REF (DX8IndexBufferClass, (MAX_IB_PARTICLE_COUNT * VERTICES_PER_TRIANGLE));
+	IndexBuffer = NEW_REF (RenderIndexBufferClass, (MAX_IB_PARTICLE_COUNT * VERTICES_PER_TRIANGLE));
 	#endif
 	{
 		SortingIndexBufferClass::WriteLockClass lock (IndexBuffer);
@@ -1067,9 +1068,9 @@ void WeatherSystemClass::Render (RenderInfoClass &rinfo)
 			unsigned particlecount, submittedparticlecount;
 
 			#if WEATHER_PARTICLE_SORT
-			DynamicVBAccessClass dynamicvb (BUFFER_TYPE_DYNAMIC_SORTING, dynamic_fvf_type, bufferparticlecount * VERTICES_PER_TRIANGLE);
+			DynamicVBAccessClass dynamicvb (BUFFER_TYPE_DYNAMIC_SORTING, dynamic_vertex_format, bufferparticlecount * VERTICES_PER_TRIANGLE);
 			#else
-			DynamicVBAccessClass dynamicvb (BUFFER_TYPE_DYNAMIC_DX8, dynamic_fvf_type, bufferparticlecount * VERTICES_PER_TRIANGLE);
+			DynamicVBAccessClass dynamicvb (BUFFER_TYPE_DYNAMIC_RENDER, dynamic_vertex_format, bufferparticlecount * VERTICES_PER_TRIANGLE);
 			#endif
 
 			// Copy the data into the sorting vertex buffer.

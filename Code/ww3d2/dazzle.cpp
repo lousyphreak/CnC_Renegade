@@ -58,8 +58,8 @@
 #include "ww3dids.h"
 #include "dx8wrapper.h"
 #include "bgfxrenderer.h"
-#include "dx8vertexbuffer.h"
-#include "dx8indexbuffer.h"
+#include "vertexbuffer.h"
+#include "indexbuffer.h"
 #include "sortingrenderer.h"
 #include "texture.h"
 #include "scene.h"
@@ -1053,7 +1053,7 @@ void DazzleRenderObjClass::Render_Dazzle(CameraClass* camera)
 		lens_max_verts=4*lensflare->lic.flare_count;
 	}
 
-	DynamicVBAccessClass vb_access(BUFFER_TYPE_DYNAMIC_DX8,dynamic_fvf_type,vertex_count*2+lens_max_verts);
+	DynamicVBAccessClass vb_access(BUFFER_TYPE_DYNAMIC_RENDER,dynamic_vertex_format,vertex_count*2+lens_max_verts);
 	{
 		DynamicVBAccessClass::WriteLockClass lock(&vb_access);
 		VertexFormatXYZNDUV2* verts=lock.Get_Formatted_Vertex_Array();
@@ -1180,7 +1180,7 @@ void DazzleRenderObjClass::Render_Dazzle(CameraClass* camera)
 
 	DX8Wrapper::Set_Vertex_Buffer(vb_access);
 
-	DynamicIBAccessClass ib_access(BUFFER_TYPE_DYNAMIC_DX8,poly_count*3);
+	DynamicIBAccessClass ib_access(BUFFER_TYPE_DYNAMIC_RENDER,poly_count*3);
 	{
 		DynamicIBAccessClass::WriteLockClass lock(&ib_access);
 		unsigned short* inds=lock.Get_Index_Array();

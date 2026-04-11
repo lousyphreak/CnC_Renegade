@@ -43,7 +43,7 @@
 // Includes.
 #include "combat.h"
 #include "combatchunkid.h"
-#include "dx8indexbuffer.h"
+#include "indexbuffer.h"
 #include "networkobject.h"
 #include	"rendobj.h"
 #include "saveloadsubsystem.h"
@@ -107,7 +107,7 @@ class HazeClass : public VisibilityClass
 		unsigned					 VertexCount;
 		Vector3				   *VertexArray;
 		unsigned					 TriangleCount;
-		DX8IndexBufferClass  *IndexBuffer;
+		RenderIndexBufferClass  *IndexBuffer;
 		unsigned					*DiffuseArray;
 		VertexMaterialClass	*Material;
 		ShaderClass			    Shader;
@@ -143,7 +143,7 @@ class StarfieldClass : public VisibilityClass
 		unsigned					VertexCount;
 		Vector3				  *VertexArray;
 		unsigned					TriangleCount;
-		DX8IndexBufferClass *IndexBuffer;
+		RenderIndexBufferClass *IndexBuffer;
 		VertexMaterialClass *Material;
 		ShaderClass			   Shader;
 		TextureClass		  *Texture;
@@ -185,7 +185,7 @@ class SkyObjectClass	: public VisibilityClass
 		unsigned					VertexCount;
 		Vector3				  *VertexArray;
 		unsigned					TriangleCount;
-		DX8IndexBufferClass *IndexBuffer;
+		RenderIndexBufferClass *IndexBuffer;
 		VertexMaterialClass *Material;
 		ShaderClass			   Shader;
 		TextureClass		  *Texture;
@@ -226,7 +226,7 @@ class CloudLayerClass : public VisibilityClass
 		unsigned					VertexCount;
 		Vector3				  *VertexArray;
 		unsigned					TriangleCount;
-		DX8IndexBufferClass *IndexBuffer;
+		RenderIndexBufferClass *IndexBuffer;
 		VertexMaterialClass *Material;
 		ShaderClass			   Shader;
 		TextureClass		  *Texture;
@@ -264,7 +264,7 @@ class SkyGlowClass : public VisibilityClass
 		unsigned					 VertexCount;
 		Vector3				   *VertexArray;
 		unsigned					 TriangleCount;
-		DX8IndexBufferClass  *IndexBuffer;
+		RenderIndexBufferClass  *IndexBuffer;
 		unsigned					*DiffuseArray;
 		VertexMaterialClass	*Material;
 		ShaderClass			    Shader;

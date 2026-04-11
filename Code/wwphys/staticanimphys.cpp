@@ -51,9 +51,9 @@
 #include "wwprofile.h"
 #include "assetmgr.h"
 
-#include "dx8fvf.h"
-#include "dx8vertexbuffer.h"
-#include "dx8indexbuffer.h"
+#include "vertexformat.h"
+#include "vertexbuffer.h"
+#include "indexbuffer.h"
 #include "vertmaterial.h"
 #include "dx8wrapper.h"
 #include "bgfxrenderer.h"
@@ -203,7 +203,7 @@ void StaticAnimPhysClass::Debug_Display_Shadow(const Vector2 & v0,const Vector2 
 		
 			DX8Wrapper::Set_Texture(0,tex);
 
-			DynamicVBAccessClass vbaccess(BUFFER_TYPE_DYNAMIC_DX8,dynamic_fvf_type,4);
+			DynamicVBAccessClass vbaccess(BUFFER_TYPE_DYNAMIC_RENDER,dynamic_vertex_format,4);
 			{
 				DynamicVBAccessClass::WriteLockClass lock(&vbaccess);
 				VertexFormatXYZNDUV2 * verts = lock.Get_Formatted_Vertex_Array();
@@ -236,7 +236,7 @@ void StaticAnimPhysClass::Debug_Display_Shadow(const Vector2 & v0,const Vector2 
 				verts[3].diffuse = 0xFFFFFFFF;
 			}
 
-			DynamicIBAccessClass ibaccess(BUFFER_TYPE_DYNAMIC_DX8,2*3);
+			DynamicIBAccessClass ibaccess(BUFFER_TYPE_DYNAMIC_RENDER,2*3);
 			{
 				DynamicIBAccessClass::WriteLockClass lock(&ibaccess);
 				uint16_t * indices = lock.Get_Index_Array();

@@ -204,7 +204,7 @@ public:
 	virtual void Log(bool only_visible)=0;
 	virtual bool Check_If_Mesh_Fits(MeshModelClass* mmc)=0;
 
-	inline unsigned Get_FVF() const { return FVF; }
+	inline unsigned Get_Vertex_Format() const { return FVF; }
 	
 	inline void Add_Visible_Texture_Category(DX8TextureCategoryClass * tex_category,int pass) 
 	{

@@ -67,10 +67,16 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
   - `BgfxRenderer` now distinguishes native bgfx-uploadable formats from formats that still require CPU conversion, instead of silently treating X-channel source formats as though their undefined alpha bits were valid
   - bgfx-backed capability reporting now reflects live bgfx texture/framebuffer support rather than a copied DX8-era static support table
   - projector render-target allocation under bgfx now creates verified bgfx-native framebuffer textures directly instead of going through the DX8 wrapper's render-target façade
+- the active bgfx build no longer advertises excluded DX8 backend ownership through `dx8wrapper.h`:
+  - `_Get_D3D8`, `_Get_D3D_Device8`, `Create_Additional_Swap_Chain(...)`, the D3D-only `Set_Render_Target(...)` overloads, and the raw `IDirect3D*` / `IDirect3DBaseTexture8*` wrapper state are now hidden from the bgfx build instead of being exposed as null-backed stubs
+  - bgfx-only `DX8CALL*` use now fails loudly instead of silently depending on getters for backend objects that do not exist in the active build
+- `DX8Caps` in the active bgfx build now owns only caps data, not fake D3D interface identity:
+  - the bgfx path constructs `DX8Caps` directly from synthesized `D3DCAPS8` / adapter data instead of threading a null `IDirect3D8*` through the active build
+  - the bgfx build no longer exposes `DX8Caps::Init_Caps(IDirect3DDevice8*)` or the raw `Direct3D` member in its header surface
+- The active bgfx buffer/FVF surface now uses engine-owned names instead of DX8 names for the public API that high-level code includes:
+  - `dx8vertexbuffer.h`, `dx8indexbuffer.h`, and `dx8fvf.*` have been renamed to `vertexbuffer.h`, `indexbuffer.h`, and `vertexformat.*`
+  - the live concrete buffer classes are now `RenderVertexBufferClass` / `RenderIndexBufferClass`, and the live buffer-type enums no longer advertise `BUFFER_TYPE_DX8` / `BUFFER_TYPE_DYNAMIC_DX8` in the bgfx build
+  - the 210-second `Renegade` validation run after that rename slice again stayed alive until timeout exit `124` with no sanitizer/assert/fatal markers in the captured output
 - Startup-specific runtime knowledge from menu bring-up work:
   - do not initialize `AnimatedSoundMgrClass` before the definition hash is live; the null-definition-hash lookup storm is a real seconds-scale startup regression.
   - do not let menu font setup rescan the system font tree per font load; cache font candidates/aliases once and reuse them across `StyleMgrClass` font creation.
-
-## Immediate next slice
-
-- Audit the remaining bgfx-visible `DX8Wrapper` header surface (`_Get_D3D8`, `_Get_D3D_Device8`, swap-chain/render-target overloads, raw `IDirect3D*` static state) and delete any declarations, so the clean build stops advertising DX8 ownership that only exists in excluded backend code. Then clean up all callers that were still using those declarations, and update them to use bgfx-native entry points instead of relying on the DX8 wrapper as a compatibility seam.

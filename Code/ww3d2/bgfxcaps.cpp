@@ -8,53 +8,9 @@
 
 namespace
 {
-D3DCAPS8 Build_Default_Caps()
-{
-    D3DCAPS8 caps = {};
-    caps.AdapterOrdinal = 0;
-    caps.DeviceType = D3DDEVTYPE_HAL;
-    caps.DevCaps = D3DDEVCAPS_HWTRANSFORMANDLIGHT;
-    caps.RasterCaps = D3DPRASTERCAPS_ZBIAS;
-    caps.TextureFilterCaps = D3DPTFILTERCAPS_MINFLINEAR | D3DPTFILTERCAPS_MAGFLINEAR | D3DPTFILTERCAPS_MIPFLINEAR | D3DPTFILTERCAPS_MINFANISOTROPIC | D3DPTFILTERCAPS_MAGFANISOTROPIC;
-    caps.TextureOpCaps =
-        D3DTEXOPCAPS_DISABLE |
-        D3DTEXOPCAPS_SELECTARG1 |
-        D3DTEXOPCAPS_MODULATE |
-        D3DTEXOPCAPS_ADD |
-        D3DTEXOPCAPS_ADDSMOOTH |
-        D3DTEXOPCAPS_BLENDTEXTUREALPHA |
-        D3DTEXOPCAPS_BLENDCURRENTALPHA |
-        D3DTEXOPCAPS_BUMPENVMAP |
-        D3DTEXOPCAPS_BUMPENVMAPLUMINANCE |
-        D3DTEXOPCAPS_DOTPRODUCT3 |
-        D3DTEXOPCAPS_SUBTRACT;
-    caps.MaxTextureWidth = 16384;
-    caps.MaxTextureHeight = 16384;
-    caps.MaxSimultaneousTextures = 2;
-    caps.VertexShaderVersion = 0;
-    caps.PixelShaderVersion = 0;
-    return caps;
 }
 
-D3DADAPTER_IDENTIFIER8 Build_Default_Adapter()
-{
-    D3DADAPTER_IDENTIFIER8 adapter = {};
-    const bgfx::RendererType::Enum renderer_type = bgfx::getRendererType();
-    const char *description = bgfx::getRendererName(renderer_type);
-    if (description == nullptr) {
-        description = "bgfx";
-    }
-    std::snprintf(adapter.Driver, sizeof(adapter.Driver), "bgfx");
-    std::snprintf(adapter.Description, sizeof(adapter.Description), "%s", description);
-    std::snprintf(adapter.DeviceName, sizeof(adapter.DeviceName), "bgfx");
-    adapter.DriverVersion.HighPart = 1;
-    adapter.DriverVersion.LowPart = 0;
-    return adapter;
-}
-
-}
-
-DX8Caps::DX8Caps(IDirect3D8*, const D3DCAPS8& caps, WW3DFormat display_format, const D3DADAPTER_IDENTIFIER8& adapter_id)
+DX8Caps::DX8Caps(const D3DCAPS8& caps, WW3DFormat display_format, const D3DADAPTER_IDENTIFIER8& adapter_id)
     : MaxDisplayWidth(16384),
       MaxDisplayHeight(16384),
       Caps(caps),
@@ -74,8 +30,7 @@ DX8Caps::DX8Caps(IDirect3D8*, const D3DCAPS8& caps, WW3DFormat display_format, c
       DeviceId(0),
       DriverBuildVersion(0),
       DriverVersionStatus(DRIVER_STATUS_GOOD),
-      VendorId(VENDOR_UNKNOWN),
-      Direct3D(nullptr)
+      VendorId(VENDOR_UNKNOWN)
 {
     std::memset(SupportTextureFormat, 0, sizeof(SupportTextureFormat));
     std::memset(SupportRenderToTextureFormat, 0, sizeof(SupportRenderToTextureFormat));
@@ -87,11 +42,6 @@ DX8Caps::DX8Caps(IDirect3D8*, const D3DCAPS8& caps, WW3DFormat display_format, c
 
     Caps = caps;
     Compute_Caps(display_format, adapter_id);
-}
-
-DX8Caps::DX8Caps(IDirect3D8* direct3d, IDirect3DDevice8*, WW3DFormat display_format, const D3DADAPTER_IDENTIFIER8& adapter_id)
-    : DX8Caps(direct3d, Build_Default_Caps(), display_format, adapter_id)
-{
 }
 
 void DX8Caps::Compute_Caps(WW3DFormat, const D3DADAPTER_IDENTIFIER8& adapter_id)

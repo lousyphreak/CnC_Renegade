@@ -56,8 +56,6 @@
 #include "dx8caps.h"
 
 #include "texture.h"
-#include "dx8vertexbuffer.h"
-#include "dx8indexbuffer.h"
 #include "vertmaterial.h"
 
 /*
@@ -73,9 +71,9 @@
 const unsigned MAX_TEXTURE_STAGES=2;
 
 enum {
-	BUFFER_TYPE_DX8,
+	BUFFER_TYPE_RENDER,
 	BUFFER_TYPE_SORTING,
-	BUFFER_TYPE_DYNAMIC_DX8,
+	BUFFER_TYPE_DYNAMIC_RENDER,
 	BUFFER_TYPE_DYNAMIC_SORTING,
 	BUFFER_TYPE_INVALID
 };
@@ -114,6 +112,7 @@ WWINLINE void DX8_ErrorCode(unsigned res)
 	Log_DX8_ErrorCode(res);
 }
 
+#if !RENEGADE_WITH_BGFX_RENDERER
 #ifdef WWDEBUG
 #define DX8CALL_HRES(x,res) DX8_Assert(); res = DX8Wrapper::_Get_D3D_Device8()->x; DX8_ErrorCode(res); number_of_DX8_calls++;
 #define DX8CALL(x) DX8_Assert(); DX8_ErrorCode(DX8Wrapper::_Get_D3D_Device8()->x); number_of_DX8_calls++;
@@ -123,6 +122,12 @@ WWINLINE void DX8_ErrorCode(unsigned res)
 #define DX8CALL_HRES(x,res) res = DX8Wrapper::_Get_D3D_Device8()->x; number_of_DX8_calls++;
 #define DX8CALL(x) DX8Wrapper::_Get_D3D_Device8()->x; number_of_DX8_calls++;
 #define DX8CALL_D3D(x) DX8Wrapper::_Get_D3D8()->x; number_of_DX8_calls++;
+#define DX8_THREAD_ASSERT() ;
+#endif
+#else
+#define DX8CALL_HRES(x,res) WWASSERT_PRINT(false,"DX8CALL_HRES is only valid in the DX8 backend"); res = static_cast<HRESULT>(-1);
+#define DX8CALL(x) WWASSERT_PRINT(false,"DX8CALL is only valid in the DX8 backend");
+#define DX8CALL_D3D(x) WWASSERT_PRINT(false,"DX8CALL_D3D is only valid in the DX8 backend");
 #define DX8_THREAD_ASSERT() ;
 #endif
 
@@ -252,7 +257,9 @@ public:
 	static void Set_DX8_Render_State(D3DRENDERSTATETYPE state, unsigned value);
 	static unsigned Get_DX8_Render_State(D3DRENDERSTATETYPE state);
 	static void Set_DX8_Texture_Stage_State(unsigned stage, D3DTEXTURESTAGESTATETYPE state, unsigned value);
+#if !RENEGADE_WITH_BGFX_RENDERER
 	static void Set_DX8_Texture(unsigned int stage, IDirect3DBaseTexture8* texture);
+#endif
 	static unsigned Get_Texture_Stage_State(unsigned stage, D3DTEXTURESTAGESTATETYPE state);
 	static void Set_Light_Environment(LightEnvironmentClass* light_env);
 	static void Set_Fog(bool enable, const Vector3 &color, float start, float end);
@@ -356,7 +363,9 @@ public:
 	**	DX8Wrapper::Reset_Render_Target ();
 	**
 	*/
+#if !RENEGADE_WITH_BGFX_RENDERER
 	static IDirect3DSwapChain8 *	Create_Additional_Swap_Chain (HWND render_window);
+#endif
 
 	/*
 	** Render target interface. If render target format is WW3D_FORMAT_UNKNOWN, current display format is used.
@@ -364,8 +373,10 @@ public:
 	static TextureClass *	Create_Render_Target (int width, int height, WW3DFormat format);
 
 	static void					Set_Render_Target (TextureClass * texture);
+#if !RENEGADE_WITH_BGFX_RENDERER
 	static void					Set_Render_Target (IDirect3DSurface8 *render_target, bool use_default_depth_buffer = false);
 	static void					Set_Render_Target (IDirect3DSwapChain8 *swap_chain);
+#endif
 	static void					Reset_Render_Target (void)
 	{
 #if RENEGADE_WITH_BGFX_RENDERER
@@ -376,8 +387,10 @@ public:
 	}
 	static bool					Is_Render_To_Texture(void) { return IsRenderToTexture; }
 
+#if !RENEGADE_WITH_BGFX_RENDERER
 	static IDirect3DDevice8* _Get_D3D_Device8() { return D3DDevice; }
 	static IDirect3D8* _Get_D3D8() { return D3DInterface; }
+#endif
 
 	static const DX8Caps*	Get_Current_Caps() { WWASSERT(CurrentCaps); return CurrentCaps; }
 
@@ -490,7 +503,9 @@ protected:
 	static bool								world_identity;
 	static unsigned						RenderStates[256];
 	static unsigned						TextureStageStates[MAX_TEXTURE_STAGES][32];
+#if !RENEGADE_WITH_BGFX_RENDERER
 	static IDirect3DBaseTexture8 *	Textures[MAX_TEXTURE_STAGES];
+#endif
 
 	// These fog settings are constant for all objects in a given scene,
 	// unlike the matching renderstates which vary based on shader settings.
@@ -513,8 +528,10 @@ protected:
 
 	static D3DADAPTER_IDENTIFIER8		CurrentAdapterIdentifier;
 
+#if !RENEGADE_WITH_BGFX_RENDERER
 	static IDirect3D8 *					D3DInterface;			//d3d8;
 	static IDirect3DDevice8 *			D3DDevice;				//d3ddevice8;
+#endif
 
 #if !RENEGADE_WITH_BGFX_RENDERER
 	static IDirect3DSurface8 *			CurrentRenderTarget;
@@ -532,8 +549,8 @@ protected:
 
 	friend void DX8_Assert();
 	friend class WW3D;
-	friend class DX8IndexBufferClass;
-	friend class DX8VertexBufferClass;
+	friend class RenderIndexBufferClass;
+	friend class RenderVertexBufferClass;
 };
 
 
@@ -596,7 +613,9 @@ void DX8Wrapper::Set_DX8_Render_State(D3DRENDERSTATETYPE state, unsigned value);
 
 void DX8Wrapper::Set_DX8_Texture_Stage_State(unsigned stage, D3DTEXTURESTAGESTATETYPE state, unsigned value);
 
+#if !RENEGADE_WITH_BGFX_RENDERER
 void DX8Wrapper::Set_DX8_Texture(unsigned int stage, IDirect3DBaseTexture8* texture);
+#endif
 
 void DX8Wrapper::_Copy_DX8_Rects(
   IDirect3DSurface8* pSourceSurface,
@@ -811,105 +830,6 @@ WWINLINE const D3DLIGHT8& DX8Wrapper::Peek_Light(unsigned index)
 WWINLINE bool DX8Wrapper::Is_Light_Enabled(unsigned index)
 {
 	return render_state.LightEnable[index];
-}
-
-
-WWINLINE void DX8Wrapper::Set_Render_State(const RenderStateStruct& state)
-{
-	if (render_state.index_buffer) {
-		render_state.index_buffer->Release_Engine_Ref();
-	}
-
-	if (render_state.vertex_buffer) {
-		render_state.vertex_buffer->Release_Engine_Ref();
-	}
-
-	render_state=state;
-	render_state_changed=0xffffffff;
-
-	if (render_state.index_buffer) {
-		render_state.index_buffer->Add_Engine_Ref();
-	}
-
-	if (render_state.vertex_buffer) {
-		render_state.vertex_buffer->Add_Engine_Ref();
-	}
-}
-
-WWINLINE void DX8Wrapper::Release_Render_State()
-{
-	if (render_state.index_buffer) {
-		render_state.index_buffer->Release_Engine_Ref();
-	}
-
-	if (render_state.vertex_buffer) {
-		render_state.vertex_buffer->Release_Engine_Ref();
-	}
-
-	REF_PTR_RELEASE(render_state.vertex_buffer);
-	REF_PTR_RELEASE(render_state.index_buffer);
-	REF_PTR_RELEASE(render_state.material);
-	for (unsigned i=0;i<MAX_TEXTURE_STAGES;++i) REF_PTR_RELEASE(render_state.Textures[i]);
-}
-
-
-WWINLINE RenderStateStruct::RenderStateStruct()
-	:
-	material(0),
-	material_crc(0),
-	material_state_dirty(false),
-	vertex_buffer(0),
-	index_buffer(0)
-{
-	for (unsigned i=0;i<MAX_TEXTURE_STAGES;++i) Textures[i]=0;
-}
-
-WWINLINE RenderStateStruct::~RenderStateStruct()
-{
-	REF_PTR_RELEASE(material);
-	REF_PTR_RELEASE(vertex_buffer);
-	REF_PTR_RELEASE(index_buffer);
-	for (unsigned i=0;i<MAX_TEXTURE_STAGES;++i) REF_PTR_RELEASE(Textures[i]);
-}
-
-
-WWINLINE RenderStateStruct& RenderStateStruct::operator= (const RenderStateStruct& src)
-{
-	REF_PTR_SET(material,src.material);
-	material_crc = src.material_crc;
-	material_state_dirty = src.material_state_dirty;
-	REF_PTR_SET(vertex_buffer,src.vertex_buffer);
-	REF_PTR_SET(index_buffer,src.index_buffer);
-	for (unsigned i=0;i<MAX_TEXTURE_STAGES;++i) REF_PTR_SET(Textures[i],src.Textures[i]);
-
-	LightEnable[0]=src.LightEnable[0];
-	LightEnable[1]=src.LightEnable[1];
-	LightEnable[2]=src.LightEnable[2];
-	LightEnable[3]=src.LightEnable[3];
-	if (LightEnable[0]) {
-		Lights[0]=src.Lights[0];
-		if (LightEnable[1]) {
-			Lights[1]=src.Lights[1];
-			if (LightEnable[2]) {
-				Lights[2]=src.Lights[2];
-				if (LightEnable[3]) {
-					Lights[3]=src.Lights[3];
-				}
-			}
-		}
-	}
-
-	shader=src.shader;
-	world=src.world;
-	view=src.view;
-	vertex_buffer_type=src.vertex_buffer_type;
-	index_buffer_type=src.index_buffer_type;
-	vba_offset=src.vba_offset;
-	vba_count=src.vba_count;
-	iba_offset=src.iba_offset;
-	index_base_offset=src.index_base_offset;
-
-	return *this;
 }
 
 

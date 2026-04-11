@@ -36,14 +36,14 @@
 
 #include "renegadeterrainpatch.h"
 
-#include "dx8vertexbuffer.h"
-#include "dx8indexbuffer.h"
+#include "vertexbuffer.h"
+#include "indexbuffer.h"
 #include "dx8wrapper.h"
 #include "bgfxrenderer.h"
 #include "sortingrenderer.h"
 #include "rinfo.h"
 #include "camera.h"
-#include "dx8fvf.h"
+#include "vertexformat.h"
 #include "vector2i.h"
 #include "terrainmaterial.h"
 #include "renegadeterrainmaterialpass.h"
@@ -422,7 +422,7 @@ RenegadeTerrainPatchClass::Render_Procedural_Material_Pass(MaterialPassClass * m
 	
 		if (temp_apt.Count() > 0) {
 
-			int buftype = BUFFER_TYPE_DYNAMIC_DX8;
+			int buftype = BUFFER_TYPE_DYNAMIC_RENDER;
 			if (Model->Get_Flag(MeshGeometryClass::SORT) && WW3D::Is_Sorting_Enabled()) {
 				buftype = BUFFER_TYPE_DYNAMIC_SORTING;
 			}
@@ -672,8 +672,8 @@ RenegadeTerrainPatchClass::Build_Rendering_Buffers (int texture_index, int pass_
 	//
 	//	Allocate the vertex and index buffers
 	//
-	material_pass->IndexBuffers[pass_type]		= new DX8IndexBufferClass (poly_count * 3);
-	material_pass->VertexBuffers[pass_type]	= new DX8VertexBufferClass (DX8_FVF_XYZNDUV1, vert_count);
+	material_pass->IndexBuffers[pass_type]		= new RenderIndexBufferClass (poly_count * 3);
+	material_pass->VertexBuffers[pass_type]	= new RenderVertexBufferClass (VERTEX_FORMAT_XYZNDUV1, vert_count);
 
 	//
 	// Write index data to index buffers

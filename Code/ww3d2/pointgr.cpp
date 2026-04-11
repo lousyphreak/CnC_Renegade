@@ -76,6 +76,7 @@
 #include "vp.h"
 #include "matrix4.h"
 #include "dx8wrapper.h"
+#include "bgfxrenderer.h"
 #include "dx8vertexbuffer.h"
 #include "dx8indexbuffer.h"
 #include "rinfo.h"
@@ -922,7 +923,7 @@ void PointGroupClass::Render(RenderInfoClass &rinfo)
 		if (sort) {
 			SortingRendererClass::Insert_Triangles (0, delta / verticesperprimitive, 0, delta);
 		} else {
-			DX8Wrapper::Draw_Triangles (0, delta / verticesperprimitive, 0, delta);
+			BgfxRenderer::Submit_Current_Fixed_Function_Triangles (0, delta / verticesperprimitive, 0, delta);
 		}
 		
 		current+=delta;
@@ -1474,4 +1475,3 @@ void PointGroupClass::_Shutdown(void)
 	REF_PTR_RELEASE(Quads);
 	REF_PTR_RELEASE(Tris);
 }
-

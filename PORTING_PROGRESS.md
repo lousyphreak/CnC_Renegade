@@ -189,12 +189,21 @@
   - `Code/ww3d2/mesh.cpp` now renders procedural material passes (skin, rigid, and per-polygon-cull/APT cases) through the same renderer-owned bgfx helper instead of routing the real indexed draw through `DX8Wrapper::Draw_Triangles(...)`.
   - this slice preserves the DX8-era base-offset behavior that matters for correctness: polygon-renderer draws still overwrite index-base offset per mesh, while direct procedural draws keep using the currently bound index-buffer base; both paths now also consume live `vba_offset` / `iba_offset` from the bound buffer state so shared dynamic-buffer suballocations render against the correct window under bgfx.
   - revalidated after the slice: `cmake --build build -j20` succeeded, and `timeout 310 ./Renegade` stayed alive until timeout killed it with exit `124`.
+- Finished the next special-case bgfx cleanup slice so the wrapper no longer owns live fixed-function submission outside its compatibility bridge:
+  - added renderer-owned `BgfxRenderer::Submit_Current_Fixed_Function_Triangles(...)` / `...Strip(...)` helpers that snapshot the currently applied legacy state and submit through the existing bgfx fixed-function path
+  - switched the remaining sorted/special-case draw callers over to those helpers (`sortingrenderer.cpp`, `dx8polygonrenderer.h`, `seglinerenderer.cpp`, `linegrp.cpp`, `line3d.cpp`, `pointgr.cpp`, `decalmsh.cpp`, `dynamesh.cpp`, `dazzle.cpp`, `boxrobj.cpp`, `ringobj.cpp`, `sphereobj.cpp`, `renegadeterrainpatch.cpp`, and the relevant debug/shadow overlay helpers in `wwphys`)
+  - in the bgfx build, `DX8Wrapper::Draw_*` is now only a compatibility bridge; the real fixed-function submit ownership for those paths sits in `BgfxRenderer`
+- Removed the static-shadow projector CPU-readback seam in `Code/wwphys/pscene_projectors.cpp` instead of preserving the old DX8 copy model:
+  - cached static shadows now allocate their own render-target textures directly and keep that GPU-native texture as the cached projector texture
+  - deleted the old render-target validation/readback test plus the `SurfaceClass` copy path that tried to rebuild cached shadows through `Get_Surface_Level()` on a render target
+  - dynamic projector pooling remains unchanged; static projector caching now has a separate ownership model that matches bgfx render-target behavior
+- Revalidated after the final submit/projector slice: `cmake --build build -j20` succeeded, and `timeout 210 ./build/bin/Renegade` stayed alive until timeout exit `124` on the final tree with no sanitizer/assert markers in the captured log.
 
 ## Next work
 
-- Continue shrinking the remaining raw surface return paths (`MissingTexture`, `TextureClass` render-target reads, projector caching, and any residual CPU readback helpers) so the last backend edge no longer needs fake or real DX8 surface objects in the bgfx build.
+- Continue shrinking the remaining raw surface return paths (`MissingTexture`, backend-local `TextureClass` render-target reads, and any residual CPU readback helpers) so the last backend edge no longer needs fake or real DX8 surface objects in the bgfx build.
 - Continue replacing or deleting the remaining direct `<d3d8.h>` / `<D3dx8core.h>` includes in source files, starting with the backend-local files that now represent the true D3D dependency boundary.
 - Remove the remaining DX8-era initialization dependence under `WW3D::Init()` by porting the mesh/state/render-target path onto bgfx-owned implementations instead of keeping `DX8Wrapper` alive as a fallback frame manager.
 - Replace the D3D-format conversion surface in `formconv.*` and texture loading with backend-neutral or bgfx-backed format handling.
-- Delete or port the remaining `DX8Wrapper::Draw_*` callers outside the mesh-category/material-pass flow so the wrapper stops owning any real bgfx fixed-function submission path.
+- Delete the now-non-live bgfx `DX8Wrapper::Draw_*` compatibility bridge once the last backend-local references can be removed cleanly.
 - Finish the remaining `TextureLoadTaskClass` and render-target cleanup so the texture path no longer needs legacy DX8 texture allocation as an intermediate ownership model.

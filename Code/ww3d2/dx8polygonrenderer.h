@@ -51,6 +51,7 @@
 #include "sortingrenderer.h"
 #include "mesh.h"
 #include "dx8wrapper.h"
+#include "bgfxrenderer.h"
 
 class DX8PolygonRendererClass;
 class DX8TextureCategoryClass;
@@ -127,7 +128,7 @@ inline void DX8PolygonRendererClass::Render(/*const Matrix3D & tm,*/int base_ver
 	DX8Wrapper::Set_Index_Buffer_Index_Offset(base_vertex_offset);
 	if (strip) {
 		SNAPSHOT_SAY(("Draw_Strip(%d,%d,%d,%d)\n",index_offset,index_count-2,min_vertex_index,vertex_index_range));
-		DX8Wrapper::Draw_Strip(
+		BgfxRenderer::Submit_Current_Fixed_Function_Strip(
 			index_offset,
 			index_count-2,
 			min_vertex_index,
@@ -135,7 +136,7 @@ inline void DX8PolygonRendererClass::Render(/*const Matrix3D & tm,*/int base_ver
 	}
 	else {
 		SNAPSHOT_SAY(("Draw_Triangles(%d,%d,%d,%d)\n",index_offset,index_count-2,min_vertex_index,vertex_index_range));
-		DX8Wrapper::Draw_Triangles(
+		BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
 			index_offset,
 			index_count/3,
 			min_vertex_index,

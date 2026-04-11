@@ -85,6 +85,7 @@
 #include "camera.h"
 #include "statistics.h"
 #include "dx8wrapper.h"
+#include "bgfxrenderer.h"
 #include "dx8indexbuffer.h"
 #include "dx8vertexbuffer.h"
 #include "sortingrenderer.h"
@@ -565,7 +566,7 @@ void RingRenderObjClass::render_ring(RenderInfoClass & rinfo,const Vector3 & cen
 	DX8Wrapper::Set_Index_Buffer(ib,0);
 	
 #if (STATIC_SORT_RINGS)
-	DX8Wrapper::Draw_Triangles(0,ring.face_ct,0,ring.Vertex_ct);
+	BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0,ring.face_ct,0,ring.Vertex_ct);
 #else
 	SortingRendererClass::Insert_Triangles(
 		Get_Bounding_Sphere(),

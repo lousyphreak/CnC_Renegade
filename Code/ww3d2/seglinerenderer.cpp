@@ -42,6 +42,7 @@
 #include "ww3d.h"
 #include "rinfo.h"
 #include "dx8wrapper.h"
+#include "bgfxrenderer.h"
 #include "sortingrenderer.h"
 #include "vp.h"
 #include "vector3i.h"
@@ -1131,7 +1132,7 @@ void SegLineRendererClass::Render
 		if (sorting) {	
 			SortingRendererClass::Insert_Triangles(obj_sphere,0,tidx,0,vnum);
 		} else {
-			DX8Wrapper::Draw_Triangles(0,tidx,0,vnum);
+			BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0,tidx,0,vnum);
 		}
 		
 		REF_PTR_RELEASE(mat);

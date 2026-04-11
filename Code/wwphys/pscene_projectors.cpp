@@ -58,8 +58,6 @@
 #include "pot.h"
 #include "materialeffect.h"
 #include "wwmemlog.h"
-#include "TARGA.H"
-#include "bitmaphandler.h"
 #include "dx8caps.h"
 #include "vertmaterial.h"
 
@@ -178,11 +176,12 @@ static TextureClass* Create_Projector_Render_Target(unsigned w,unsigned h)
 
 }
 
-static TextureClass *Create_Static_Shadow_Texture(TextureClass *shared_render_target)
+static TextureClass *Create_Static_Shadow_Texture(void)
 {
-	TextureClass *texture = shared_render_target;
+	TextureClass *texture = Create_Projector_Render_Target(STATIC_PROJECTOR_RESOLUTION,STATIC_PROJECTOR_RESOLUTION);
 	if (texture != NULL) {
-		texture->Add_Ref();
+		texture->Set_U_Addr_Mode(TextureClass::TEXTURE_ADDRESS_CLAMP);
+		texture->Set_V_Addr_Mode(TextureClass::TEXTURE_ADDRESS_CLAMP);
 	}
 	return texture;
 }
@@ -903,183 +902,6 @@ void PhysicsSceneClass::Apply_Projector_To_Objects
 	REF_PTR_RELEASE(effect);
 }
 
-static void Create_Render_Target_Test(TextureClass* render_target)
-{
-	Matrix4 old_view_transform;
-	Matrix4 old_world_transform;
-	Matrix4 old_projection_transform;
-	DX8Wrapper::Get_Transform(D3DTS_VIEW,old_view_transform);
-	DX8Wrapper::Get_Transform(D3DTS_WORLD,old_world_transform);
-	DX8Wrapper::Get_Transform(D3DTS_PROJECTION,old_projection_transform);
-
-	/*
-	** Set the render target
-	*/
-	DX8Wrapper::Set_Render_Target(render_target);
-
-		/*
-		** Set up the camera
-		*/
-//		Configure_Camera(context->Camera);
-
-	/*
-	** Render the object
-	*/
-	Vector3 color(0.0f,0.0f,0.0f);
-	WW3D::Begin_Render(true,false,color);	// false to zclear as we don't have z-buffer
-
-	DX8Wrapper::Set_World_Identity();
-	DX8Wrapper::Set_View_Identity();
-	DX8Wrapper::Set_Transform(D3DTS_PROJECTION,Matrix4(true));
-
-	const int vertex_count=9;
-	const int polygon_count=3;
-	DynamicVBAccessClass vb_access(BUFFER_TYPE_DYNAMIC_DX8,dynamic_fvf_type,vertex_count);
-	{
-		DynamicVBAccessClass::WriteLockClass lock(&vb_access);
-		VertexFormatXYZNDUV2* verts=lock.Get_Formatted_Vertex_Array();
-
-		Vector3 vertices[vertex_count]={
-			Vector3(-1.0f, 1.0f,0.0f),
-			Vector3(-1.0f,-1.0f,0.0f),
-			Vector3( 0.0f,-1.0f,0.0f),
-
-			Vector3(-1.0f,-1.0f,0.0f),
-			Vector3( 1.0f,-1.0f,0.0f),
-			Vector3( 1.0f, 0.0f,0.0f),
-
-			Vector3( 1.0f,-1.0f,0.0f),
-			Vector3( 1.0f, 1.0f,0.0f),
-			Vector3( 0.0f, 1.0f,0.0f)
-		};
-
-		unsigned colors[vertex_count]={
-			0xff0000,
-			0xff0000,
-			0xff0000,
-			0x00ff00,
-			0x00ff00,
-			0x00ff00,
-			0x0000ff,
-			0x0000ff,
-			0x0000ff
-		};
-
-		for (int v=0;v<vertex_count;++v) {
-			verts[v].x=vertices[v][0];
-			verts[v].y=vertices[v][1];
-			verts[v].z=vertices[v][2];
-			verts[v].nx=0.0f;
-			verts[v].ny=0.0f;
-			verts[v].nz=0.0f;
-			verts[v].diffuse=colors[v];
-			verts[v].u1=0.0f;
-			verts[v].v1=0.0f;
-			verts[v].u2=0.0f;
-			verts[v].v2=0.0f;
-		}
-	}
-
-	DX8Wrapper::Set_Vertex_Buffer(vb_access);
-
-	DynamicIBAccessClass ib_access(BUFFER_TYPE_DYNAMIC_DX8,polygon_count*3);
-	{
-		DynamicIBAccessClass::WriteLockClass lock(&ib_access);
-		uint16_t* inds=lock.Get_Index_Array();
-
-		for (int i=0;i<polygon_count*3;++i) {
-			*inds++=static_cast<uint16_t>(i);
-		}
-	}
-
-	ShaderClass shader;
-	shader.Set_Cull_Mode( ShaderClass::CULL_MODE_DISABLE );
-	shader.Set_Depth_Mask( ShaderClass::DEPTH_WRITE_DISABLE );
-	shader.Set_Depth_Compare( ShaderClass::PASS_ALWAYS );
-	shader.Set_Dst_Blend_Func( ShaderClass::DSTBLEND_ONE );
-	shader.Set_Src_Blend_Func( ShaderClass::SRCBLEND_ONE );
-	shader.Set_Fog_Func( ShaderClass::FOG_DISABLE );
-	shader.Set_Primary_Gradient( ShaderClass::GRADIENT_MODULATE );
-	shader.Set_Texturing( ShaderClass::TEXTURING_DISABLE );
-
-	DX8Wrapper::Set_Index_Buffer(ib_access,0);
-	DX8Wrapper::Set_Shader(shader);
-	DX8Wrapper::Set_Texture(0,NULL);
-	DX8Wrapper::Draw_Triangles(0,polygon_count,0,vertex_count);
-
-//	WW3D::Render(*model,*context);
-	WW3D::End_Render(false);
-
-	DX8Wrapper::Set_Render_Target((IDirect3DSurface8 *)NULL);
-	DX8Wrapper::Set_Transform(D3DTS_PROJECTION,old_projection_transform);
-	DX8Wrapper::Set_Transform(D3DTS_VIEW,old_view_transform);
-	DX8Wrapper::Set_Transform(D3DTS_WORLD,old_world_transform);
-}
-
-static bool Test_Render_Target_Surface(TextureClass* render_target)
-{
-	SurfaceClass * surf = render_target->Get_Surface_Level();
-	if (surf == NULL) {
-		WWDEBUG_SAY(("Render target surface data is unavailable for projector validation. Disabling static projectors.\n"));
-		return false;
-	}
-
-	SurfaceClass::SurfaceDescription desc;
-	surf->Get_Description(desc);
-	SurfaceClass * new_surf = NEW_REF(SurfaceClass,(desc.Width,desc.Height,desc.Format));
-	new_surf->Copy(0, 0, 0, 0, desc.Width, desc.Height, surf);
-	REF_PTR_RELEASE(surf);
-
-	int pitch;
-	uint8_t* tmpbits=(uint8_t*)new_surf->Lock(&pitch);
-
-	unsigned color1,color2,color3,color4;
-	BitmapHandlerClass::Read_B8G8R8A8(
-		color1, tmpbits, desc.Format,
-		1*desc.Width/4,
-		1*desc.Height/4,
-		desc.Width,	desc.Height, NULL, 0);
-
-	BitmapHandlerClass::Read_B8G8R8A8(
-		color2, tmpbits, desc.Format,
-		3*desc.Width/4,
-		1*desc.Height/4,
-		desc.Width,	desc.Height, NULL, 0);
-
-	BitmapHandlerClass::Read_B8G8R8A8(
-		color3, tmpbits, desc.Format,
-		3*desc.Width/4,
-		3*desc.Height/4,
-		desc.Width,	desc.Height, NULL, 0);
-
-	BitmapHandlerClass::Read_B8G8R8A8(
-		color4, tmpbits, desc.Format,
-		1*desc.Width/4,
-		3*desc.Height/4,
-		desc.Width,	desc.Height, NULL, 0);
-
-	new_surf->Unlock();
-	REF_PTR_RELEASE(new_surf);
-
-	WWDEBUG_SAY(("Render target test: 0x%8.8x, 0x%8.8x, 0x%8.8x, 0x%8.8x\n",
-		color1&0x00ffffff,
-		color2&0x00ffffff,
-		color3&0x00ffffff,
-		color4&0x00ffffff));
-	// color1 is 0x00000000
-	if (color1&0x00ffffff) return false;
-	// color2 is 0x000000ff
-	if (color2&0x00ffff00) return false;
-	if (!(color2&0x000000ff)) return false;
-	// color3 is 0x0000ff00
-	if (color3&0x00ff00ff) return false;
-	if (!(color3&0x0000ff00)) return false;
-	// color4 is 0x00ff0000
-	if (color4&0x0000ffff) return false;
-	if (!(color4&0x00ff0000)) return false;
-	return true;
-}
-
 void PhysicsSceneClass::Invalidate_Static_Shadow_Projectors()
 {
 	/*
@@ -1138,80 +960,21 @@ void PhysicsSceneClass::Generate_Static_Shadow_Projectors(void)
 	*/
 	_StaticShadowTexMgr.Reset();
 
-	TextureClass * render_target = NULL;
 	/*
-	** Allocate a render target texture for all of the static shadows to share
+	** Generate a new shadow for each one. Each shadow now renders directly into the
+	** cached bgfx texture instead of copying from a shared render target through SurfaceClass.
 	*/
-	render_target = Create_Projector_Render_Target(STATIC_PROJECTOR_RESOLUTION,STATIC_PROJECTOR_RESOLUTION);
-//	render_target = DX8Wrapper::Create_Render_Target(STATIC_PROJECTOR_RESOLUTION,STATIC_PROJECTOR_RESOLUTION);
+	RefPhysListIterator shadow_gen_iterator(&shadow_gen_list);
+	for (shadow_gen_iterator.First(); !shadow_gen_iterator.Is_Done(); shadow_gen_iterator.Next()) {
 
-	// Test render target functionality. Some NVidia driver versions have issues with rendering to a texture and
-	// copying surface to another texture. If this fails, we'll not use static shadow projectors. Dynamic shadow
-	// projectors may still work however, as they work differently.
-	if (render_target) {
-		Create_Render_Target_Test(render_target);
-		if (!Test_Render_Target_Surface(render_target)) {
-			WWDEBUG_SAY(("Render target locking doesn't work correctly. Disabling static projectors\n"));
-			REF_PTR_RELEASE(render_target);
-		}
-
-/*
-		char* bits=new char[desc.Width*desc.Height*3];
-		//memcpy(bits,tmpbits,desc.Width*desc.Height*4);
-		for (uint32_t y=0;y<desc.Height;++y) {
-			for (uint32_t x=0;x<desc.Width;++x) {
-				// index for image
-				unsigned index=3*(x+y*desc.Width);
-				// index for fb
-				unsigned index2=y*pitch+4*x;
-
-				bits[index]=*(tmpbits + index2+2);
-				bits[index+1]=*(tmpbits + index2+1);
-				bits[index+2]=*(tmpbits + index2+0);
-			}
-		}
-		new_surf->Unlock();
-		Targa targ;
-		memset(&targ.Header,0,sizeof(targ.Header));
-		targ.Header.Width=desc.Width;
-		targ.Header.Height=desc.Height;
-		targ.Header.PixelDepth=24;
-		targ.Header.ImageType=TGA_TRUECOLOR;
-		targ.SetImage(bits);
-		targ.YFlip();
-
-		const char* filename="shadowtex.tga";
-
-		targ.Save(filename,TGAF_IMAGE,false);
-		delete[] bits;
-*/
-
-	}
-
-	if (render_target != NULL) {
-		if (render_target != NULL) {
-			SET_REF_OWNER(render_target);
-		}
+		StaticAnimPhysClass * obj = (StaticAnimPhysClass *)shadow_gen_iterator.Peek_Obj();
 
 		/*
-		** Generate a new shadow for each one.  Each time we find a new object-lightsource
-		** combination, generate a new texture.
+		** Setup the shadow projector for this object
 		*/
-		RefPhysListIterator shadow_gen_iterator(&shadow_gen_list);
-		for (shadow_gen_iterator.First(); !shadow_gen_iterator.Is_Done(); shadow_gen_iterator.Next()) {
-
-			StaticAnimPhysClass * obj = (StaticAnimPhysClass *)shadow_gen_iterator.Peek_Obj();
-
-			/*
-			** Setup the shadow projector for this object
-			*/
-			Vector3 sunvector;
-			Get_Sun_Light_Vector(&sunvector);
-			Setup_Static_Directional_Shadow(*obj,sunvector,render_target);
-		}
-
-		DX8Wrapper::Set_Render_Target((IDirect3DSurface8 *)NULL);
-		REF_PTR_RELEASE(render_target);
+		Vector3 sunvector;
+		Get_Sun_Light_Vector(&sunvector);
+		Setup_Static_Directional_Shadow(*obj,sunvector);
 	}
 	StaticProjectorsDirty=false;
 }
@@ -1219,8 +982,7 @@ void PhysicsSceneClass::Generate_Static_Shadow_Projectors(void)
 void PhysicsSceneClass::Setup_Static_Directional_Shadow
 (
 	StaticAnimPhysClass & obj,
-	const Vector3 & light_dir,
-	TextureClass * render_target
+	const Vector3 & light_dir
 )
 {
 	/*
@@ -1276,7 +1038,7 @@ void PhysicsSceneClass::Setup_Static_Directional_Shadow
 	*/
 	if (existing_texture == NULL) {
 
-		TextureClass * shadow_texture = Create_Static_Shadow_Texture(render_target);
+		TextureClass * shadow_texture = Create_Static_Shadow_Texture();
 		if (shadow_texture == NULL) {
 			WWDEBUG_SAY(("Failed to allocate static shadow texture for object type %d\n",type_id));
 			REF_PTR_RELEASE(shadow_projector);
@@ -1292,28 +1054,8 @@ void PhysicsSceneClass::Setup_Static_Directional_Shadow
 			return;
 		}
 
-		SurfaceClass * surf = shadow_texture->Get_Surface_Level();
-		if (surf == NULL) {
-			WWDEBUG_SAY(("Static shadow texture surface data is unavailable for object type %d; skipping cached static projector generation\n",type_id));
-			shadow_projector->Set_Render_Target(NULL);
-			REF_PTR_RELEASE(shadow_texture);
-			REF_PTR_RELEASE(shadow_projector);
-			return;
-		}
-
-		SurfaceClass::SurfaceDescription desc;
-		surf->Get_Description(desc);
-		SurfaceClass * new_surf = NEW_REF(SurfaceClass,(desc.Width,desc.Height,desc.Format));
-		new_surf->Copy(0, 0, 0, 0, desc.Width, desc.Height, surf);
-
-		TextureClass * new_texture = NEW_REF(TextureClass,(new_surf));
-
 		shadow_projector->Set_Render_Target(NULL);
-		shadow_projector->Set_Texture(new_texture);
-
-		REF_PTR_RELEASE(surf);
-		REF_PTR_RELEASE(new_surf);
-		REF_PTR_RELEASE(new_texture);
+		shadow_projector->Set_Texture(shadow_texture);
 
 		_StaticShadowTexMgr.Add_Shadow_Texture(type_id,obj_orientation,shadow_projector->Peek_Texture());
 		REF_PTR_RELEASE(shadow_texture);

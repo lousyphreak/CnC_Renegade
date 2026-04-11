@@ -79,6 +79,7 @@
 #include "camera.h"
 #include "statistics.h"
 #include "dx8wrapper.h"
+#include "bgfxrenderer.h"
 #include "dx8vertexbuffer.h"
 #include "dx8indexbuffer.h"
 #include "sortingrenderer.h"
@@ -486,7 +487,7 @@ void SphereRenderObjClass::render_sphere()
 	DX8Wrapper::Set_Index_Buffer(ib,0);
 
 #if (STATIC_SORT_SPHERES)
-	DX8Wrapper::Draw_Triangles(0,mesh.face_ct,0,mesh.Vertex_ct);
+	BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0,mesh.face_ct,0,mesh.Vertex_ct);
 #else
 	SortingRendererClass::Insert_Triangles(
 		Get_Bounding_Sphere(),

@@ -56,6 +56,7 @@
 #include "dx8indexbuffer.h"
 #include "vertmaterial.h"
 #include "dx8wrapper.h"
+#include "bgfxrenderer.h"
 
 DECLARE_FORCE_LINK(staticanimphys);
 
@@ -250,7 +251,7 @@ void StaticAnimPhysClass::Debug_Display_Shadow(const Vector2 & v0,const Vector2 
 
 			DX8Wrapper::Set_Vertex_Buffer(vbaccess);
 			DX8Wrapper::Set_Index_Buffer(ibaccess,0);
-			DX8Wrapper::Draw_Triangles(0,2,0,4);
+			BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0,2,0,4);
 
 			DX8Wrapper::Set_Transform(D3DTS_VIEW,view);
 			DX8Wrapper::Set_Transform(D3DTS_PROJECTION,proj);
@@ -581,4 +582,3 @@ bool StaticAnimPhysDefClass::Load(ChunkLoadClass &cload)
 	}
 	return true;
 }
-

@@ -46,18 +46,22 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
 - The same renderer-owned fixed-function submit path now covers the remaining mesh-category callers that were still using wrapper-owned indexed draws:
   - skinned texture-category base passes in `DX8TextureCategoryClass::Render(...)` now capture the currently bound dynamic VB/IB state and submit directly through `BgfxRenderer` instead of falling back to `DX8PolygonRendererClass::Render(...)`
   - `MeshClass::Render_Material_Pass(...)` now submits skin, rigid, and per-polygon-cull procedural passes through that same bgfx helper, preserving legacy base-vertex semantics and shared dynamic-buffer offsets without reviving `DX8Wrapper::Draw_*` as the true draw owner
+- The remaining special-case fixed-function callers now submit through renderer-owned bgfx entry points as well:
+  - sorting flush, polygon renderer draws, line/segment renderers, point groups, decals, dazzle/lens flare quads, debug boxes, terrain patch runs, and related procedural callers now use `BgfxRenderer::Submit_Current_Fixed_Function_*` after applying their legacy state instead of keeping `DX8Wrapper::Draw_*` as the live draw owner
+  - the bgfx-side `DX8Wrapper::Draw_*` implementations remain only as non-live compatibility bridges; real bgfx submission ownership now sits in `BgfxRenderer`
 - Runtime validation has moved beyond startup-only bring-up:
   - bgfx/X11/Vulkan initialization now survives the real `WW3D::Init()` + `DX8Wrapper::Init()` sequence without falling back to headless or failing on repeated init.
   - Linux/X11 startup should currently keep bgfx on its render thread. Re-testing the old single-threaded `bgfx::renderFrame()` workaround against the live menu path showed that it had become a major startup bottleneck, while the threaded path now survives real startup and long-run validation in this tree.
   - SDL native-window bridging now tags Wayland handles with `bgfx::NativeWindowHandleType::Wayland` instead of relying on bgfx's Linux default handle type, preventing Wayland sessions from falling into bgfx's X11 surface path during startup.
   - the bgfx-backed lifecycle now restores the legacy one-time renderer subsystem init/shutdown steps needed by textures, materials, mesh rendering, and related systems while those codepaths are still being ported.
   - late runtime/shutdown ASAN failures in `dx8renderer.cpp`'s deferred delete bookkeeping were fixed, and the executable now survives a live validation run longer than 300 seconds under ASAN/UBSAN.
-  - static shadow projector validation/caching still contains a DX8-era CPU-readback assumption (`TextureClass::Get_Surface_Level()` on a render target). bgfx render targets may not expose CPU-readable surfaces, so that path must fail closed rather than crash until the projector cache is ported to a GPU-native copy/sampling flow.
+  - static shadow projector caching no longer depends on `TextureClass::Get_Surface_Level()` for render targets. Each cached static shadow now renders directly into its own GPU-native render-target texture, and the old CPU readback/validation copy path in `pscene_projectors.cpp` has been deleted.
+  - the current executable survives a 210-second timed `build/bin/Renegade` validation run on the final tree after the special-case submit and static-projector cache changes.
 - Startup-specific runtime knowledge from menu bring-up work:
   - do not initialize `AnimatedSoundMgrClass` before the definition hash is live; the null-definition-hash lookup storm is a real seconds-scale startup regression.
   - do not let menu font setup rescan the system font tree per font load; cache font candidates/aliases once and reuse them across `StyleMgrClass` font creation.
 
 ## Immediate next slice
 
-- Delete or port the remaining wrapper-owned fixed-function draw callers outside the mesh-category/material-pass flow (notably sorted/special-case geometry paths) so `DX8Wrapper::Draw_*` stops being a live submission path instead of a transitional bridge.
-- Finish the remaining true CPU-readback/render-target cleanup so projector caching and any residual surface-return paths stop assuming bgfx render targets can expose legacy DX8-style CPU surfaces.
+- Delete the now-non-live bgfx `DX8Wrapper::Draw_*` compatibility bridge once the last backend-local users are gone, so `BgfxRenderer` is the only fixed-function submit owner in the bgfx build.
+- Audit the remaining render-target/backend-edge `Get_Surface_Level()` callers and convert any lingering DX8-style readback assumptions to GPU-native ownership or explicit fail-closed behavior.

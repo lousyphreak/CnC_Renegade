@@ -54,6 +54,7 @@
 #include "ww3d.h"
 #include "rinfo.h"
 #include "dx8wrapper.h"
+#include "bgfxrenderer.h"
 #include "dx8vertexbuffer.h"
 #include "dx8indexbuffer.h"
 #include "dx8fvf.h"
@@ -291,7 +292,7 @@ void Line3DClass::Render(RenderInfoClass & rinfo)
 
 	DX8Wrapper::Set_Vertex_Buffer(vb);
 	DX8Wrapper::Set_Index_Buffer(ib,0);
-	DX8Wrapper::Draw_Triangles(0,36/3,0,8);
+	BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0,36/3,0,8);
 }
 
 /************************************************************************** 
@@ -492,4 +493,3 @@ int Line3DClass::Get_Num_Polys(void) const
 { 
 	return 12;
 }
-

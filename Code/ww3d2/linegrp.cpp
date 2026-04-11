@@ -41,6 +41,7 @@
 #include "texture.h"
 #include "vertmaterial.h"
 #include "dx8wrapper.h"
+#include "bgfxrenderer.h"
 #include "wwmath.h"
 #include "rinfo.h"
 #include "camera.h"
@@ -471,7 +472,7 @@ void	LineGroupClass::Render(RenderInfoClass &rinfo)
 	if (sort) {
 		SortingRendererClass::Insert_Triangles(0, num_tris, 0, num_vertices);
 	} else {
-		DX8Wrapper::Draw_Triangles(0, num_tris, 0, num_vertices);
+		BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0, num_tris, 0, num_vertices);
 	}		
 	
 	// restore the matrices

@@ -505,6 +505,80 @@ bool Submit_Cached_Fixed_Function_Draw(
     bgfx::submit(BgfxRenderer::Get_View_Id(view, projection), BgfxRenderer::Get_Fixed_Function_Program());
     return true;
 }
+
+bool Submit_Current_Fixed_Function_Draw(
+    unsigned short start_index,
+    unsigned short polygon_count,
+    unsigned short min_vertex_index,
+    unsigned short vertex_count,
+    bool strip)
+{
+    if (!BgfxRenderer::Is_Initted() || !DX8Wrapper::_Is_Triangle_Draw_Enabled()) {
+        return false;
+    }
+
+    DX8Wrapper::Apply_Render_State_Changes();
+
+    RenderStateStruct render_state;
+    DX8Wrapper::Get_Render_State(render_state);
+    if (render_state.vertex_buffer == nullptr || render_state.index_buffer == nullptr) {
+        return false;
+    }
+
+    Matrix4 projection;
+    DX8Wrapper::Get_Transform(D3DTS_PROJECTION, projection);
+
+    TextureClass *textures[2] = {render_state.Textures[0], render_state.Textures[1]};
+    if (strip) {
+        return BgfxRenderer::Submit_Cached_Fixed_Function_Strip(
+            *render_state.vertex_buffer,
+            render_state.vba_offset,
+            *render_state.index_buffer,
+            render_state.iba_offset,
+            render_state.index_base_offset,
+            start_index,
+            polygon_count,
+            min_vertex_index,
+            vertex_count,
+            textures,
+            render_state.material,
+            render_state.shader,
+            render_state.world,
+            render_state.view,
+            projection);
+    }
+
+    return BgfxRenderer::Submit_Cached_Fixed_Function_Triangles(
+        *render_state.vertex_buffer,
+        render_state.vba_offset,
+        *render_state.index_buffer,
+        render_state.iba_offset,
+        render_state.index_base_offset,
+        start_index,
+        polygon_count,
+        min_vertex_index,
+        vertex_count,
+        textures,
+        render_state.material,
+        render_state.shader,
+        render_state.world,
+        render_state.view,
+        projection);
+}
+}
+
+bool BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
+    unsigned short start_index,
+    unsigned short polygon_count,
+    unsigned short min_vertex_index,
+    unsigned short vertex_count)
+{
+    return Submit_Current_Fixed_Function_Draw(
+        start_index,
+        polygon_count,
+        min_vertex_index,
+        vertex_count,
+        false);
 }
 
 bool BgfxRenderer::Submit_Cached_Fixed_Function_Triangles(
@@ -541,6 +615,20 @@ bool BgfxRenderer::Submit_Cached_Fixed_Function_Triangles(
         view,
         projection,
         false);
+}
+
+bool BgfxRenderer::Submit_Current_Fixed_Function_Strip(
+    unsigned short start_index,
+    unsigned short polygon_count,
+    unsigned short min_vertex_index,
+    unsigned short vertex_count)
+{
+    return Submit_Current_Fixed_Function_Draw(
+        start_index,
+        polygon_count,
+        min_vertex_index,
+        vertex_count,
+        true);
 }
 
 bool BgfxRenderer::Submit_Cached_Fixed_Function_Strip(

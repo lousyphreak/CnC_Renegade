@@ -98,6 +98,7 @@
 #include "coltest.h"
 #include "inttest.h"
 #include "dx8wrapper.h"
+#include "bgfxrenderer.h"
 #include "dx8indexbuffer.h"
 #include "dx8vertexbuffer.h"
 #include "dx8fvf.h"
@@ -514,7 +515,11 @@ void BoxRenderObjClass::render_box(RenderInfoClass & rinfo,const Vector3 & cente
 		SphereClass sphere;
 		Get_Obj_Space_Bounding_Sphere(sphere); 
 
-		DX8Wrapper::Draw_Triangles(buffer_type,0,NUM_BOX_FACES,0,NUM_BOX_VERTS);
+		if (buffer_type == BUFFER_TYPE_SORTING || buffer_type == BUFFER_TYPE_DYNAMIC_SORTING) {
+			SortingRendererClass::Insert_Triangles(sphere,0,NUM_BOX_FACES,0,NUM_BOX_VERTS);
+		} else {
+			BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0,NUM_BOX_FACES,0,NUM_BOX_VERTS);
+		}
 	}
 }
 
@@ -1387,5 +1392,4 @@ RenderObjClass * BoxPrototypeClass::Create(void)
 ** Global instance of the box loader
 */
 BoxLoaderClass _BoxLoader;
-
 

@@ -872,7 +872,7 @@ public:
 	*/
 	void							Invalidate_Static_Shadow_Projectors(void);
 	void							Generate_Static_Shadow_Projectors(void);
-	void							Setup_Static_Directional_Shadow(StaticAnimPhysClass & obj,const Vector3 & light_dir,TextureClass * render_target);
+	void							Setup_Static_Directional_Shadow(StaticAnimPhysClass & obj,const Vector3 & light_dir);
 	
 	/*
 	** Decal system

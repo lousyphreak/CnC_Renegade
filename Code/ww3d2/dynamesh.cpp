@@ -38,6 +38,7 @@
 #include "dx8vertexbuffer.h"
 #include "dx8indexbuffer.h"
 #include "dx8wrapper.h"
+#include "bgfxrenderer.h"
 #include "sortingrenderer.h"
 #include "rinfo.h"
 #include "camera.h"
@@ -360,7 +361,7 @@ void DynamicMeshModel::Render(RenderInfoClass & rinfo)
 				SortingRendererClass::Insert_Triangles(sphere,0, DynamicMeshPNum, 0, DynamicMeshVNum);
 			}
 			else {
-				DX8Wrapper::Draw_Triangles(0, DynamicMeshPNum, 0, DynamicMeshVNum);
+				BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0, DynamicMeshPNum, 0, DynamicMeshVNum);
 			}
 			continue;
 		}
@@ -400,7 +401,7 @@ void DynamicMeshModel::Render(RenderInfoClass & rinfo)
 						1 + max_vert_idx - min_vert_idx);
 				}
 				else {
-					DX8Wrapper::Draw_Triangles(
+					BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
 						(start_tri_idx * 3),
 						(1 + cur_tri_idx - start_tri_idx), 
 						min_vert_idx, 
@@ -858,4 +859,3 @@ void DynamicScreenMeshClass::Reset( void )
 	Reset_Flags();	
 	Reset_Mesh_Counters();	
 }
-

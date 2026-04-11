@@ -91,9 +91,10 @@
   - for the explicit long-run validation requirement, the most trustworthy signal so far is a normal live launch under ASAN/UBSAN. Redirected `timeout ... > file` runs may self-exit early even when the same binary stays alive well past 300 seconds in the normal interactive launch path.
 - Linux menu/font startup has one easy-to-miss porting trap: the stb/font fallback path in `render2dsentence.cpp` can become seconds-slow if it rescans `/usr/share/fonts`, `/usr/local/share/fonts`, and the user's font directories for every requested UI font. Cache the discovered system font candidates and extracted aliases once, then score against that cached list for each requested family/style.
 - `AnimatedSoundMgrClass::Initialize()` is not safe to call before `DefinitionMgrClass::Is_Hash_Ready()` becomes true. If it runs too early during startup, it performs a large batch of `Find_Typed_Definition(...)` lookups against a null hash and creates a seconds-scale startup stall before the real menu comes up.
-- Static shadow projector generation still contains a legacy CPU-readback seam in `Code/wwphys/pscene_projectors.cpp`: it renders into a shared render target, then calls `TextureClass::Get_Surface_Level()` and copies the result into a standalone texture for caching.
-- That assumption is valid for the old DX8 path but not for the bgfx render-target path, where a render target may be perfectly usable for rendering while exposing no CPU-readable `SurfaceClass`.
-- Until static projector caching is ported to a renderer-native GPU path, missing surface data must be treated as “static projector caching unsupported on this backend” and handled by skipping/disabling that path rather than dereferencing null or forcing a GPU readback.
+- Static and dynamic projector textures are different ownership problems in this tree:
+  - dynamic projectors benefit from a shared render-target pool because their textures are transient and re-rendered frequently
+  - cached static projectors do not need a shared target once the render is complete; the clean bgfx solution is to render each cached shadow directly into its own final texture and keep that texture for sampling
+- That split removes the old DX8-era CPU-readback seam in `Code/wwphys/pscene_projectors.cpp`: bgfx render targets no longer need to expose a CPU-readable `SurfaceClass` just so static projector caching can copy them into another texture afterward.
 - `TextureClass` no longer needs a fake `IDirect3DTexture8` in the bgfx build to represent procedural or file-backed texture ownership. A cleaner rule here is:
   - engine-owned `SurfaceClass` mip levels are the authoritative texture source
   - bgfx textures/framebuffers are transient renderer resources created from those surfaces on demand
@@ -136,6 +137,9 @@
   - skinned texture-category rendering can reuse the renderer-owned bgfx submitter by reading `RenderStateStruct` for the currently bound dynamic VB/IB plus `vba_offset` / `iba_offset`
   - procedural material passes can use that same pattern for both ordinary mesh polygon-renderer loops and APT-generated dynamic index-buffer draws, as long as they preserve the old distinction between “per-mesh polygon-renderer base offset” and “currently bound index-buffer base offset”
   - this lets `DX8TextureCategoryClass::Render(...)` and `MeshClass::Render_Material_Pass(...)` stop depending on `DX8Wrapper::Draw_*` without introducing a new D3D-shaped abstraction just to thread dynamic-buffer offsets around
+- The same “capture current bound state, keep submission renderer-owned” rule also works for the remaining special-case renderers:
+  - a small `BgfxRenderer::Submit_Current_Fixed_Function_*` seam is enough for sorting flushes, camera-space particles/lines, debug quads, dazzle quads, decals, and other procedural callers that already describe their state through the legacy wrapper caches
+  - that keeps `BgfxRenderer` as the only live fixed-function submit owner in the bgfx path without pushing another D3D-shaped render-state object up through the rest of the engine
 - In the bgfx port, the main camera view is configured through `BgfxRenderer::Set_Camera(...)`, but fixed-function draws still source their local matrix state from `DX8Wrapper`'s cached `render_state.view` and `ProjectionMatrix`.
 - That means a clean bgfx port must preserve two matrix concepts at once:
   - the current frame/main camera view and projection

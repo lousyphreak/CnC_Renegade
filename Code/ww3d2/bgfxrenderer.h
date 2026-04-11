@@ -14,6 +14,7 @@ class IndexBufferClass;
 class TextureClass;
 class VertexBufferClass;
 class VertexMaterialClass;
+struct RenderStateStruct;
 
 class BgfxRenderer
 {
@@ -87,6 +88,11 @@ public:
         const Matrix4 &world,
         const Matrix4 &view,
         const Matrix4 &projection);
+    static bool Submit_Current_Fixed_Function_Triangles(
+        unsigned short start_index,
+        unsigned short polygon_count,
+        unsigned short min_vertex_index,
+        unsigned short vertex_count);
     static bool Submit_Cached_Fixed_Function_Strip(
         const VertexBufferClass &vertex_buffer,
         unsigned vertex_buffer_offset,
@@ -103,6 +109,11 @@ public:
         const Matrix4 &world,
         const Matrix4 &view,
         const Matrix4 &projection);
+    static bool Submit_Current_Fixed_Function_Strip(
+        unsigned short start_index,
+        unsigned short polygon_count,
+        unsigned short min_vertex_index,
+        unsigned short vertex_count);
     static bgfx::TextureHandle Create_Texture_From_Surface(SurfaceClass &surface);
     static bgfx::TextureHandle Create_Texture(TextureClass &texture);
     static bgfx::ProgramHandle Load_Program(const char *vertex_shader_name, const char *fragment_shader_name);

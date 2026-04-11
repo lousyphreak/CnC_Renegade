@@ -55,6 +55,7 @@
 #endif
 
 #include "dx8wrapper.h"
+#include "bgfxrenderer.h"
 #include "dx8vertexbuffer.h"
 #include "dx8indexbuffer.h"
 
@@ -426,7 +427,7 @@ void PhysClass::Push_Effects(RenderInfoClass & rinfo)
 
 				DX8Wrapper::Set_Vertex_Buffer(vbaccess);
 				DX8Wrapper::Set_Index_Buffer(ibaccess,0);
-				DX8Wrapper::Draw_Triangles(0,2,0,4);
+				BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0,2,0,4);
 			}
 		}
 
@@ -801,4 +802,3 @@ bool PhysDefClass::Is_Type(const char * type_name)
 		return false;
 	}
 }
-

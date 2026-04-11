@@ -829,75 +829,17 @@ void DX8Wrapper::Apply_Render_State_Changes()
 
 void DX8Wrapper::Draw_Triangles(unsigned, unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count)
 {
-	Draw_Triangles(start_index, polygon_count, min_vertex_index, vertex_count);
+	BgfxRenderer::Submit_Current_Fixed_Function_Triangles(start_index, polygon_count, min_vertex_index, vertex_count);
 }
 
 void DX8Wrapper::Draw_Triangles(unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count)
 {
-	if (!BgfxRenderer::Is_Initted() || !_EnableTriangleDraw || render_state.vertex_buffer == nullptr || render_state.index_buffer == nullptr) {
-		return;
-	}
-
-	if ((render_state.vertex_buffer->Type() != BUFFER_TYPE_SORTING && render_state.vertex_buffer->Type() != BUFFER_TYPE_DX8) ||
-		(render_state.index_buffer->Type() != BUFFER_TYPE_SORTING && render_state.index_buffer->Type() != BUFFER_TYPE_DX8)) {
-		return;
-	}
-
-	if (vertex_count == 0 || polygon_count == 0) {
-		return;
-	}
-
-	Apply_Render_State_Changes();
-
-	TextureClass *textures[2] = { render_state.Textures[0], render_state.Textures[1] };
-	BgfxRenderer::Submit_Cached_Fixed_Function_Triangles(
-		*render_state.vertex_buffer,
-		render_state.vba_offset,
-		*render_state.index_buffer,
-		render_state.iba_offset,
-		render_state.index_base_offset,
-		start_index,
-		polygon_count,
-		min_vertex_index,
-		vertex_count,
-		textures,
-		render_state.material,
-		render_state.shader,
-		render_state.world,
-		render_state.view,
-		ProjectionMatrix);
+	BgfxRenderer::Submit_Current_Fixed_Function_Triangles(start_index, polygon_count, min_vertex_index, vertex_count);
 }
 
 void DX8Wrapper::Draw_Strip(unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count)
 {
-	if (polygon_count == 0 || render_state.index_buffer == nullptr || render_state.vertex_buffer == nullptr) {
-		return;
-	}
-
-	if ((render_state.index_buffer->Type() != BUFFER_TYPE_SORTING && render_state.index_buffer->Type() != BUFFER_TYPE_DX8) ||
-		(render_state.vertex_buffer->Type() != BUFFER_TYPE_SORTING && render_state.vertex_buffer->Type() != BUFFER_TYPE_DX8)) {
-		return;
-	}
-
-	Apply_Render_State_Changes();
-
-	TextureClass *textures[2] = { render_state.Textures[0], render_state.Textures[1] };
-	BgfxRenderer::Submit_Cached_Fixed_Function_Strip(
-		*render_state.vertex_buffer,
-		render_state.vba_offset,
-		*render_state.index_buffer,
-		render_state.iba_offset,
-		render_state.index_base_offset,
-		start_index,
-		polygon_count,
-		min_vertex_index,
-		vertex_count,
-		textures,
-		render_state.material,
-		render_state.shader,
-		render_state.world,
-		render_state.view,
-		ProjectionMatrix);
+	BgfxRenderer::Submit_Current_Fixed_Function_Strip(start_index, polygon_count, min_vertex_index, vertex_count);
 }
 
 TextureClass *DX8Wrapper::Create_Render_Target(int width, int height, WW3DFormat format)

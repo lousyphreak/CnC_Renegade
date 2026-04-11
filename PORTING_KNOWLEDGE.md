@@ -132,6 +132,10 @@
 - That pattern works especially well for rigid meshes because the category renderer already knows the real vertex/index buffers and the active mesh transform:
   - rigid texture-category rendering can call the renderer-owned bgfx submitter directly once legacy state is applied
   - skinned and legacy fallback paths can still share the same bgfx submitter through `DX8Wrapper::Draw_*` until their own call sites are ported
+- The next clean follow-up after rigid meshes is to capture current bound buffer state rather than widen the API around dynamic-buffer internals:
+  - skinned texture-category rendering can reuse the renderer-owned bgfx submitter by reading `RenderStateStruct` for the currently bound dynamic VB/IB plus `vba_offset` / `iba_offset`
+  - procedural material passes can use that same pattern for both ordinary mesh polygon-renderer loops and APT-generated dynamic index-buffer draws, as long as they preserve the old distinction between “per-mesh polygon-renderer base offset” and “currently bound index-buffer base offset”
+  - this lets `DX8TextureCategoryClass::Render(...)` and `MeshClass::Render_Material_Pass(...)` stop depending on `DX8Wrapper::Draw_*` without introducing a new D3D-shaped abstraction just to thread dynamic-buffer offsets around
 - In the bgfx port, the main camera view is configured through `BgfxRenderer::Set_Camera(...)`, but fixed-function draws still source their local matrix state from `DX8Wrapper`'s cached `render_state.view` and `ProjectionMatrix`.
 - That means a clean bgfx port must preserve two matrix concepts at once:
   - the current frame/main camera view and projection

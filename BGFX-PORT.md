@@ -43,6 +43,9 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
 - `BgfxRenderer` now owns the shared fixed-function indexed mesh submit path for CPU-backed WW3D buffers:
   - rigid texture-category base passes submit directly through a renderer-owned bgfx helper instead of routing their real draw through `DX8Wrapper::Draw_*`
   - the legacy wrapper draw entry points now delegate to that same renderer-owned submitter, so the fixed-function triangle-list/strip expansion logic lives in one bgfx-native place instead of being duplicated behind the DX8 façade
+- The same renderer-owned fixed-function submit path now covers the remaining mesh-category callers that were still using wrapper-owned indexed draws:
+  - skinned texture-category base passes in `DX8TextureCategoryClass::Render(...)` now capture the currently bound dynamic VB/IB state and submit directly through `BgfxRenderer` instead of falling back to `DX8PolygonRendererClass::Render(...)`
+  - `MeshClass::Render_Material_Pass(...)` now submits skin, rigid, and per-polygon-cull procedural passes through that same bgfx helper, preserving legacy base-vertex semantics and shared dynamic-buffer offsets without reviving `DX8Wrapper::Draw_*` as the true draw owner
 - Runtime validation has moved beyond startup-only bring-up:
   - bgfx/X11/Vulkan initialization now survives the real `WW3D::Init()` + `DX8Wrapper::Init()` sequence without falling back to headless or failing on repeated init.
   - Linux/X11 startup should currently keep bgfx on its render thread. Re-testing the old single-threaded `bgfx::renderFrame()` workaround against the live menu path showed that it had become a major startup bottleneck, while the threaded path now survives real startup and long-run validation in this tree.
@@ -56,5 +59,5 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
 
 ## Immediate next slice
 
-- Carry the same renderer-owned bgfx submission model through the remaining mesh paths, starting with skinned meshes and delayed/procedural material passes so texture-category rendering no longer depends on `DX8Wrapper` draw ownership even when rigid meshes are done.
+- Delete or port the remaining wrapper-owned fixed-function draw callers outside the mesh-category/material-pass flow (notably sorted/special-case geometry paths) so `DX8Wrapper::Draw_*` stops being a live submission path instead of a transitional bridge.
 - Finish the remaining true CPU-readback/render-target cleanup so projector caching and any residual surface-return paths stop assuming bgfx render targets can expose legacy DX8-style CPU surfaces.

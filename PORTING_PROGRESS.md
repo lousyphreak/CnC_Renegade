@@ -184,6 +184,11 @@
   - trimmed `bgfxrenderer.cpp` back to renderer ownership concerns (init, view/camera state, render targets, shader/resource setup, screenshots/movie capture, and texture creation) while preserving the same `BgfxRenderer` API surface used by the rigid mesh slice.
   - rebuilt immediately after the split to confirm the new file is picked up cleanly by the existing `ww3d2` CMake glob and that the refactor does not change renderer behavior.
   - revalidated the cleanup with `timeout 230 ./Renegade`; the executable again stayed alive until timeout exit `124`, and the captured log did not show ASAN/UBSAN or renderer-failure markers.
+- Carried the renderer-owned fixed-function submit path through the next real mesh seam instead of leaving skinned/procedural draws behind the wrapper:
+  - `Code/ww3d2/dx8renderer.cpp` now captures the currently bound VB/IB state when texture categories render without explicit rigid buffers and submits skinned texture-category base passes directly through `BgfxRenderer`. That removes the old fallback to `DX8PolygonRendererClass::Render(...)` / `DX8Wrapper::Draw_*` for skin base passes.
+  - `Code/ww3d2/mesh.cpp` now renders procedural material passes (skin, rigid, and per-polygon-cull/APT cases) through the same renderer-owned bgfx helper instead of routing the real indexed draw through `DX8Wrapper::Draw_Triangles(...)`.
+  - this slice preserves the DX8-era base-offset behavior that matters for correctness: polygon-renderer draws still overwrite index-base offset per mesh, while direct procedural draws keep using the currently bound index-buffer base; both paths now also consume live `vba_offset` / `iba_offset` from the bound buffer state so shared dynamic-buffer suballocations render against the correct window under bgfx.
+  - revalidated after the slice: `cmake --build build -j20` succeeded, and `timeout 310 ./Renegade` stayed alive until timeout killed it with exit `124`.
 
 ## Next work
 
@@ -191,5 +196,5 @@
 - Continue replacing or deleting the remaining direct `<d3d8.h>` / `<D3dx8core.h>` includes in source files, starting with the backend-local files that now represent the true D3D dependency boundary.
 - Remove the remaining DX8-era initialization dependence under `WW3D::Init()` by porting the mesh/state/render-target path onto bgfx-owned implementations instead of keeping `DX8Wrapper` alive as a fallback frame manager.
 - Replace the D3D-format conversion surface in `formconv.*` and texture loading with backend-neutral or bgfx-backed format handling.
-- Carry the same renderer-owned bgfx submission model through the remaining skinned-mesh and delayed/procedural material passes, then remove the remaining `DX8Wrapper`-owned draw flow instead of preserving it as a permanent mesh submission seam.
+- Delete or port the remaining `DX8Wrapper::Draw_*` callers outside the mesh-category/material-pass flow so the wrapper stops owning any real bgfx fixed-function submission path.
 - Finish the remaining `TextureLoadTaskClass` and render-target cleanup so the texture path no longer needs legacy DX8 texture allocation as an intermediate ownership model.

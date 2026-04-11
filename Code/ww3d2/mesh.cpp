@@ -113,6 +113,7 @@
 #include "inttest.h"
 #include "decalmsh.h"
 #include "decalsys.h"
+#include "bgfxrenderer.h"
 #include "dx8polygonrenderer.h"
 #include "dx8indexbuffer.h"
 #include "dx8renderer.h"
@@ -126,6 +127,104 @@ static unsigned MeshDebugIdCount;
 
 bool MeshClass::Legacy_Meshes_Fogged = true;
 static SimpleDynVecClass<uint32> temp_apt;
+
+namespace
+{
+bool Submit_Fixed_Function_Draw(
+	const VertexBufferClass & vertex_buffer,
+	unsigned vertex_buffer_offset,
+	const IndexBufferClass & index_buffer,
+	unsigned index_buffer_offset,
+	unsigned index_base_offset,
+	unsigned short start_index,
+	unsigned short polygon_count,
+	unsigned short min_vertex_index,
+	unsigned short vertex_count,
+	bool strip,
+	TextureClass * const * textures,
+	const VertexMaterialClass * material,
+	const ShaderClass & shader,
+	const Matrix4 & world,
+	const Matrix4 & view,
+	const Matrix4 & projection)
+{
+	if (strip) {
+		return BgfxRenderer::Submit_Cached_Fixed_Function_Strip(
+			vertex_buffer,
+			vertex_buffer_offset,
+			index_buffer,
+			index_buffer_offset,
+			index_base_offset,
+			start_index,
+			polygon_count,
+			min_vertex_index,
+			vertex_count,
+			textures,
+			material,
+			shader,
+			world,
+			view,
+			projection);
+	}
+
+	return BgfxRenderer::Submit_Cached_Fixed_Function_Triangles(
+		vertex_buffer,
+		vertex_buffer_offset,
+		index_buffer,
+		index_buffer_offset,
+		index_base_offset,
+		start_index,
+		polygon_count,
+		min_vertex_index,
+		vertex_count,
+		textures,
+		material,
+		shader,
+		world,
+		view,
+		projection);
+}
+
+bool Submit_Polygon_Renderer_Fixed_Function(
+	const DX8PolygonRendererClass & renderer,
+	unsigned index_base_offset,
+	const VertexBufferClass & vertex_buffer,
+	unsigned vertex_buffer_offset,
+	const IndexBufferClass & index_buffer,
+	unsigned index_buffer_offset,
+	TextureClass * const * textures,
+	const VertexMaterialClass * material,
+	const ShaderClass & shader,
+	const Matrix4 & world,
+	const Matrix4 & view,
+	const Matrix4 & projection)
+{
+	return Submit_Fixed_Function_Draw(
+		vertex_buffer,
+		vertex_buffer_offset,
+		index_buffer,
+		index_buffer_offset,
+		index_base_offset,
+		static_cast<unsigned short>(renderer.Get_Index_Offset()),
+		static_cast<unsigned short>(renderer.Is_Strip() ? renderer.Get_Index_Count() - 2 : renderer.Get_Index_Count() / 3),
+		static_cast<unsigned short>(renderer.Get_Min_Vertex_Index()),
+		static_cast<unsigned short>(renderer.Get_Vertex_Index_Range()),
+		renderer.Is_Strip(),
+		textures,
+		material,
+		shader,
+		world,
+		view,
+		projection);
+}
+
+void Build_Material_Pass_Texture_Array(const MaterialPassClass * pass, TextureClass * textures[MAX_TEXTURE_STAGES])
+{
+	for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
+		textures[stage] = pass->Peek_Texture(stage);
+	}
+}
+}
 
 /*
 ** This #define causes the collision code to always recompute the triangle normals rather
@@ -840,6 +939,11 @@ void MeshClass::Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass *
 		DX8Wrapper::Set_Light_Environment(LightEnvironment);
 	}
 
+	TextureClass * pass_textures[MAX_TEXTURE_STAGES] = {};
+	Build_Material_Pass_Texture_Array(pass, pass_textures);
+	Matrix4 projection_transform(true);
+	DX8Wrapper::Get_Transform(D3DTS_PROJECTION, projection_transform);
+
 	if (Model->Get_Flag(MeshModelClass::SKIN)) {
 
 		/*
@@ -850,10 +954,31 @@ void MeshClass::Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass *
 
 		SNAPSHOT_SAY(("Set_World_Identity\n"));
 		DX8Wrapper::Set_World_Identity();
+		DX8Wrapper::Apply_Render_State_Changes();
+
+		RenderStateStruct active_state;
+		DX8Wrapper::Get_Render_State(active_state);
+		WWASSERT(active_state.vertex_buffer != NULL);
+		WWASSERT(active_state.index_buffer != NULL);
 
 		DX8PolygonRendererListIterator it(&PolygonRendererList);
 		while (!it.Is_Done()) {
-			it.Peek_Obj()->Render(BaseVertexOffset);
+			if (active_state.vertex_buffer != NULL && active_state.index_buffer != NULL) {
+				const bool submitted = Submit_Polygon_Renderer_Fixed_Function(
+					*it.Peek_Obj(),
+					BaseVertexOffset,
+					*active_state.vertex_buffer,
+					active_state.vba_offset,
+					*active_state.index_buffer,
+					active_state.iba_offset,
+					pass_textures,
+					pass->Peek_Material(),
+					pass->Peek_Shader(),
+					active_state.world,
+					active_state.view,
+					projection_transform);
+				WWASSERT(submitted);
+			}
 			it.Next();
 		}
 
@@ -927,12 +1052,32 @@ void MeshClass::Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass *
 			
 			DX8Wrapper::Set_Transform(D3DTS_WORLD,Get_Transform());
 			DX8Wrapper::Set_Index_Buffer(dynamic_ib,vertex_offset);
+			DX8Wrapper::Apply_Render_State_Changes();
 
-			DX8Wrapper::Draw_Triangles(
-				0,
-				temp_apt.Count(),
-				min_v,
-				max_v-min_v+1);
+			RenderStateStruct active_state;
+			DX8Wrapper::Get_Render_State(active_state);
+			WWASSERT(active_state.vertex_buffer != NULL);
+			WWASSERT(active_state.index_buffer != NULL);
+			if (active_state.vertex_buffer != NULL && active_state.index_buffer != NULL) {
+				const bool submitted = Submit_Fixed_Function_Draw(
+					*active_state.vertex_buffer,
+					active_state.vba_offset,
+					*active_state.index_buffer,
+					active_state.iba_offset,
+					active_state.index_base_offset,
+					0,
+					static_cast<unsigned short>(temp_apt.Count()),
+					static_cast<unsigned short>(min_v),
+					static_cast<unsigned short>(max_v - min_v + 1),
+					false,
+					pass_textures,
+					pass->Peek_Material(),
+					pass->Peek_Shader(),
+					active_state.world,
+					active_state.view,
+					projection_transform);
+				WWASSERT(submitted);
+			}
 		}
 	} else {		
 		
@@ -944,10 +1089,31 @@ void MeshClass::Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass *
 
 		SNAPSHOT_SAY(("Set_World_Transform\n"));
 		DX8Wrapper::Set_Transform(D3DTS_WORLD,Transform);
+		DX8Wrapper::Apply_Render_State_Changes();
+
+		RenderStateStruct active_state;
+		DX8Wrapper::Get_Render_State(active_state);
+		WWASSERT(active_state.vertex_buffer != NULL);
+		WWASSERT(active_state.index_buffer != NULL);
 
 		DX8PolygonRendererListIterator it(&PolygonRendererList);
 		while (!it.Is_Done()) {
-			it.Peek_Obj()->Render(BaseVertexOffset);
+			if (active_state.vertex_buffer != NULL && active_state.index_buffer != NULL) {
+				const bool submitted = Submit_Polygon_Renderer_Fixed_Function(
+					*it.Peek_Obj(),
+					BaseVertexOffset,
+					*active_state.vertex_buffer,
+					active_state.vba_offset,
+					*active_state.index_buffer,
+					active_state.iba_offset,
+					pass_textures,
+					pass->Peek_Material(),
+					pass->Peek_Shader(),
+					active_state.world,
+					active_state.view,
+					projection_transform);
+				WWASSERT(submitted);
+			}
 			it.Next();
 		}
 	}
@@ -1596,7 +1762,6 @@ void MeshClass::Load_User_Lighting (ChunkLoadClass & cload)
 
 	Set_Has_User_Lighting(true);
 }
-
 
 
 

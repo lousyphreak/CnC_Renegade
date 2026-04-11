@@ -8,6 +8,15 @@
   - `TexProjectClass::Compute_Texture()` now binds and resets projector render targets directly through `BgfxRenderer`.
   - `DazzleRenderObjClass` now queries active render-target state from `BgfxRenderer` instead of the DX8-era `DX8Wrapper::Is_Render_To_Texture()` flag.
   - Deleted the bgfx-side `DX8Wrapper::Create_Render_Target(...)`, `Set_Render_Target(TextureClass *)`, and `IsRenderToTexture` state because the active bgfx build no longer uses that compatibility surface.
+- Fixed the bgfx shadow/projector path so offscreen shadow-map passes behave like real bgfx passes instead of reusing DX8-era assumptions:
+  - `BgfxRenderer` now allocates clear and camera views as frame-local bgfx passes, keyed by framebuffer + viewport + transform, instead of resetting/reusing view IDs whenever a render target changes.
+  - `TexProjectClass::Compute_Texture()` now clears depth for projector/shadow renders, which is required now that bgfx projector targets own a real depth attachment.
+  - `DynamicShadowManagerClass` no longer leaves local-light projected shadows compiled out; it now selects a dominant static light, uses perspective projection for point/spot lights, and keeps directional lights orthographic.
+  - dynamic shadow light IDs now use `uintptr_t` instead of truncating light pointers to `uint32_t`, avoiding aliasing bugs on the 64-bit Linux port.
+- Fixed two shadow bring-up bugs outside the raw bgfx draw path that were still preventing visible shadows in practice:
+  - `SystemSettings` now re-applies the stored shadow/projector settings to newly created combat scenes during level load instead of reading the new scene's constructor defaults back into the settings table and saving shadow mode `NONE` again.
+  - added a one-time `Bgfx_Shadow_Defaults_Version` migration that repairs the legacy bgfx/Linux preference tuple which had saved `Shadow_Mode=0` and `Dynamic_Projectors=0`, so existing installs stop booting with dynamic shadows silently disabled.
+  - `TexProjectClass::Pre_Render_Update()` now resolves projector texture size safely for lazily initialized textures by initializing the source texture first, falling back to the assigned render target size, and logging instead of asserting when the size still is not available that frame.
 - Reset the bgfx renderer effort to a clean-slate plan based on `BGFX-PORT.md`.
 - Identified the primary renderer migration boundary in `Code/ww3d2`:
   - `dx8wrapper.*` for device lifecycle and render state orchestration

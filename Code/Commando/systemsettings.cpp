@@ -56,6 +56,67 @@
 */
 DynamicVectorClass<SystemSettingEntry *>	SystemSettings::SettingList;
 
+namespace
+{
+	const int BgfxShadowDefaultsVersion = 2;
+	const char * BgfxShadowDefaultsVersionName = "Bgfx_Shadow_Defaults_Version";
+
+	bool Registry_Has_Value(RegistryClass & registry,const char * name)
+	{
+		DynamicVectorClass<StringClass> value_list;
+		registry.Get_Value_List(value_list);
+		for (int index = 0; index < value_list.Count(); ++index) {
+			if (stricmp(value_list[index],name) == 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void Upgrade_Bgfx_Shadow_Defaults(const char * sub_key)
+	{
+		RegistryClass registry(sub_key);
+		if (!registry.Is_Valid()) {
+			return;
+		}
+
+		if (registry.Get_Int(BgfxShadowDefaultsVersionName,0) >= BgfxShadowDefaultsVersion) {
+			return;
+		}
+
+		const bool has_shadow_mode = Registry_Has_Value(registry,"Shadow_Mode");
+		const bool has_dynamic_projectors = Registry_Has_Value(registry,"Dynamic_Projectors");
+		const bool has_static_projectors = Registry_Has_Value(registry,"Static_Projectors");
+
+		if (!has_shadow_mode) {
+			registry.Set_Int("Shadow_Mode",PhysicsSceneClass::SHADOW_MODE_BLOBS_PLUS);
+		}
+		if (!has_dynamic_projectors) {
+			registry.Set_Bool("Dynamic_Projectors",true);
+		}
+		if (!has_static_projectors) {
+			registry.Set_Bool("Static_Projectors",true);
+		}
+
+		/*
+		** Earlier bgfx builds saved the shadow defaults straight from the zero-initialized
+		** system-setting entries, which disabled dynamic shadows before the renderer path
+		** ever had a chance to run. Migrate that legacy startup tuple once.
+		*/
+		const int shadow_mode = registry.Get_Int("Shadow_Mode",PhysicsSceneClass::SHADOW_MODE_NONE);
+		const bool dynamic_projectors = registry.Get_Bool("Dynamic_Projectors",false);
+		const bool static_projectors = registry.Get_Bool("Static_Projectors",false);
+		if ((shadow_mode == PhysicsSceneClass::SHADOW_MODE_NONE) &&
+			 (dynamic_projectors == false) &&
+			 (static_projectors == true)) {
+			registry.Set_Int("Shadow_Mode",PhysicsSceneClass::SHADOW_MODE_BLOBS_PLUS);
+			registry.Set_Bool("Dynamic_Projectors",true);
+		}
+
+		registry.Set_Int(BgfxShadowDefaultsVersionName,BgfxShadowDefaultsVersion);
+	}
+}
+
 /*
 **
 */
@@ -125,6 +186,7 @@ SystemSettingEntryBool::SystemSettingEntryBool( void ) :
 
 void	SystemSettingEntryBool::Apply( void )
 {
+	Set_Bool( State );
 	State = Get_Bool();
 }
 
@@ -182,6 +244,7 @@ SystemSettingEntrySlider::SystemSettingEntrySlider( void ) :
 
 void	SystemSettingEntrySlider::Apply( void )
 {
+	Set_Slider( Value );
 	Value = Get_Slider();
 }
 
@@ -234,6 +297,7 @@ SystemSettingEntryEnum::SystemSettingEntryEnum( void ) :
 
 void	SystemSettingEntryEnum::Apply( void )
 {
+	Set_Enum( Selection );
 	Selection = Get_Enum();
 }
 
@@ -614,6 +678,8 @@ public:
 
 void SystemSettings::Init( void )
 {
+	Upgrade_Bgfx_Shadow_Defaults(APPLICATION_SUB_KEY_NAME_SYSTEM_SETTINGS);
+
 	Add_Setting( new SystemSettingEntryStaticProjectors );
 	Add_Setting( new SystemSettingEntryDynamicProjectors );
 	Add_Setting( new SystemSettingEntryTextureResolution );

@@ -1137,7 +1137,7 @@ bool TexProjectClass::Compute_Texture(RenderObjClass * model,SpecialRenderInfoCl
 			color.Set(1.0f,1.0f,1.0f);
 		}
 
-		WW3D::Begin_Render(true,false,color);	// false to zclear as we don't have z-buffer
+		WW3D::Begin_Render(true,true,color);
 		WW3D::Render(*model,*context);
 		WW3D::End_Render(false);
 
@@ -1310,10 +1310,23 @@ void TexProjectClass::Pre_Render_Update(const Matrix3D & camera)
 	}
 
 	if (Get_Texture_Size() == 0) {
-//		SurfaceClass::SurfaceDescription surface_desc;
-//		MaterialPass->Peek_Texture()->Get_Level_Description(surface_desc);
-		Set_Texture_Size(MaterialPass->Peek_Texture()->Get_Width());
-		WWASSERT(Get_Texture_Size() != 0);
+		TextureClass * texture = MaterialPass->Peek_Texture();
+		if (texture != NULL) {
+			texture->Init();
+		}
+
+		int texture_size = (texture != NULL) ? texture->Get_Width() : 0;
+		if ((texture_size <= 0) && (RenderTarget != NULL)) {
+			texture_size = RenderTarget->Get_Width();
+		}
+
+		if (texture_size <= 0) {
+			WWDEBUG_SAY(("TexProjectClass::Pre_Render_Update could not resolve projector texture size for %s\n",
+				(texture != NULL) ? texture->Get_Texture_Name().Peek_Buffer() : "<null>"));
+			return;
+		}
+
+		Set_Texture_Size(texture_size);
 	}
 	
 	Mapper->Set_Texture_Transform(view_to_texture,Get_Texture_Size());

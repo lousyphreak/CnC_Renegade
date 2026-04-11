@@ -43,7 +43,7 @@
 
 DynTexProjectClass::DynTexProjectClass(PhysClass * shadow_generator) : 
 	ProjectionObject(shadow_generator),
-	LightSourceID(0xFFFFFFFF),
+	LightSourceID(static_cast<uintptr_t>(-1)),
 	LightVector(0.0f,0.0f,-1.0f)
 {
 	Set_Flag(VOLATILE,true);
@@ -72,12 +72,12 @@ PhysClass * DynTexProjectClass::Peek_Projection_Object(void) const
 	return ProjectionObject;
 }
 
-void DynTexProjectClass::Set_Light_Source_ID(uint32_t id)
+void DynTexProjectClass::Set_Light_Source_ID(uintptr_t id)
 {
 	LightSourceID = id;
 }
 
-uint32_t DynTexProjectClass::Get_Light_Source_ID(void)
+uintptr_t DynTexProjectClass::Get_Light_Source_ID(void)
 {
 	return LightSourceID;
 }

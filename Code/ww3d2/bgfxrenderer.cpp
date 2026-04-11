@@ -73,10 +73,17 @@ Matrix4 BgfxRenderer::CurrentProjectionMatrix(true);
 
 namespace
 {
+constexpr uint16_t InvalidFrameBufferIndex = UINT16_MAX;
+
 struct ViewTransformState
 {
     Matrix4 View;
     Matrix4 Projection;
+    uint16_t FrameBufferIndex = InvalidFrameBufferIndex;
+    uint16_t ViewportX = 0;
+    uint16_t ViewportY = 0;
+    uint16_t ViewportWidth = 0;
+    uint16_t ViewportHeight = 0;
     uint16_t ViewId = 0;
 };
 
@@ -90,9 +97,8 @@ struct CapturedMovieFrame
     uint64_t Sequence = 0;
 };
 
-constexpr uint16_t ClearViewId = 0;
-constexpr uint16_t MainViewBaseId = 1;
-constexpr uint16_t MaxMainViewId = 254;
+constexpr uint16_t FirstDynamicViewId = 0;
+constexpr uint16_t MaxDynamicViewId = 254;
 constexpr uint16_t OverlayViewId = 255;
 const float IdentityMatrix[16] = {
     1.0f, 0.0f, 0.0f, 0.0f,
@@ -104,8 +110,8 @@ bool AutoScreenshotRequested = false;
 uint32_t AutoScreenshotDelayMs = 0;
 uint32_t AutoScreenshotStartTicks = 0;
 std::string AutoScreenshotPath;
-uint16_t CurrentMainViewId = MainViewBaseId;
-uint16_t NextMainViewId = MainViewBaseId;
+uint16_t CurrentMainViewId = FirstDynamicViewId;
+uint16_t NextDynamicViewId = FirstDynamicViewId;
 uint32_t PendingViewportX = 0;
 uint32_t PendingViewportY = 0;
 uint32_t PendingViewportWidth = 0;
@@ -178,56 +184,80 @@ float Decode_Dword_Float(unsigned value)
     return decoded;
 }
 
-void Reset_Main_View_Sequence()
+void Reset_Frame_View_Allocation()
 {
-    CurrentMainViewId = MainViewBaseId;
-    NextMainViewId = MainViewBaseId;
+    CurrentMainViewId = FirstDynamicViewId;
+    NextDynamicViewId = FirstDynamicViewId;
     ConfiguredViews.clear();
 }
 
-void Reset_Main_View_State(uint32_t width, uint32_t height)
+void Invalidate_Configured_Views()
 {
-    Reset_Main_View_Sequence();
+    ConfiguredViews.clear();
+}
+
+void Reset_Default_Viewport(uint32_t width, uint32_t height)
+{
     PendingViewportX = 0;
     PendingViewportY = 0;
     PendingViewportWidth = width;
     PendingViewportHeight = height;
 }
 
-uint16_t Acquire_Main_View()
+void Reset_Frame_State(uint32_t width, uint32_t height)
 {
-    if (NextMainViewId > MaxMainViewId) {
+    Reset_Frame_View_Allocation();
+    Reset_Default_Viewport(width, height);
+}
+
+uint16_t Acquire_View()
+{
+    if (NextDynamicViewId > MaxDynamicViewId) {
         return CurrentMainViewId;
     }
 
-    CurrentMainViewId = NextMainViewId++;
-    bgfx::setViewMode(CurrentMainViewId, bgfx::ViewMode::Sequential);
-    bgfx::setViewFrameBuffer(CurrentMainViewId, CurrentFrameBuffer);
+    const uint16_t view_id = NextDynamicViewId++;
+    bgfx::setViewMode(view_id, bgfx::ViewMode::Sequential);
+    bgfx::setViewFrameBuffer(view_id, CurrentFrameBuffer);
     bgfx::setViewRect(
-        CurrentMainViewId,
+        view_id,
         static_cast<uint16_t>(PendingViewportX),
         static_cast<uint16_t>(PendingViewportY),
         static_cast<uint16_t>(PendingViewportWidth),
         static_cast<uint16_t>(PendingViewportHeight));
-    bgfx::setViewClear(CurrentMainViewId, 0, 0, 1.0f, 0);
-    return CurrentMainViewId;
+    bgfx::setViewClear(view_id, 0, 0, 1.0f, 0);
+    return view_id;
 }
 
 uint16_t Configure_View(const Matrix4 &view, const Matrix4 &projection)
 {
     for (const ViewTransformState &configured_view : ConfiguredViews) {
         if (Matrices_Are_Equal(configured_view.View, view) &&
-            Matrices_Are_Equal(configured_view.Projection, projection)) {
+            Matrices_Are_Equal(configured_view.Projection, projection) &&
+            configured_view.FrameBufferIndex == CurrentFrameBuffer.idx &&
+            configured_view.ViewportX == PendingViewportX &&
+            configured_view.ViewportY == PendingViewportY &&
+            configured_view.ViewportWidth == PendingViewportWidth &&
+            configured_view.ViewportHeight == PendingViewportHeight) {
             CurrentMainViewId = configured_view.ViewId;
             return configured_view.ViewId;
         }
     }
 
-    const uint16_t view_id = Acquire_Main_View();
+    const uint16_t view_id = Acquire_View();
     const Matrix4 bgfx_view = view.Transpose();
     const Matrix4 bgfx_projection = projection.Transpose();
     bgfx::setViewTransform(view_id, &bgfx_view[0][0], &bgfx_projection[0][0]);
-    ConfiguredViews.push_back({view, projection, view_id});
+    ConfiguredViews.push_back({
+        view,
+        projection,
+        CurrentFrameBuffer.idx,
+        static_cast<uint16_t>(PendingViewportX),
+        static_cast<uint16_t>(PendingViewportY),
+        static_cast<uint16_t>(PendingViewportWidth),
+        static_cast<uint16_t>(PendingViewportHeight),
+        view_id});
+    CurrentMainViewId = view_id;
     return view_id;
 }
 
@@ -1221,12 +1251,9 @@ bool BgfxRenderer::Init(void *window_handle, bool lite)
     }
 
     CurrentFrameBuffer = BGFX_INVALID_HANDLE;
-    bgfx::setViewClear(ClearViewId, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x000000ff, 1.0f, 0);
-    bgfx::setViewFrameBuffer(ClearViewId, CurrentFrameBuffer);
-    bgfx::setViewRect(ClearViewId, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
     ActiveWidth = Width;
     ActiveHeight = Height;
-    Reset_Main_View_State(ActiveWidth, ActiveHeight);
+    Reset_Frame_State(ActiveWidth, ActiveHeight);
     Configure_Auto_Screenshot();
 
     IsInitted = true;
@@ -1256,7 +1283,7 @@ void BgfxRenderer::Shutdown()
     AutoScreenshotStartTicks = 0;
     AutoScreenshotPath.clear();
     CurrentFrameBuffer = BGFX_INVALID_HANDLE;
-    Reset_Main_View_State(0, 0);
+    Reset_Frame_State(0, 0);
 }
 
 bool BgfxRenderer::Reset()
@@ -1275,10 +1302,8 @@ void BgfxRenderer::Apply_Reset_State()
     ActiveWidth = Width;
     ActiveHeight = Height;
     CurrentFrameBuffer = BGFX_INVALID_HANDLE;
-    bgfx::setViewFrameBuffer(ClearViewId, CurrentFrameBuffer);
     bgfx::setViewFrameBuffer(OverlayViewId, BGFX_INVALID_HANDLE);
-    bgfx::setViewRect(ClearViewId, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
-    Reset_Main_View_State(ActiveWidth, ActiveHeight);
+    Reset_Frame_State(ActiveWidth, ActiveHeight);
 }
 
 bool BgfxRenderer::Begin_Frame(bool clear_color, bool clear_depth, float red, float green, float blue)
@@ -1326,11 +1351,10 @@ bool BgfxRenderer::Set_Render_Target(TextureClass &texture)
     ActiveWidth = static_cast<uint32_t>(texture.Get_Width());
     ActiveHeight = static_cast<uint32_t>(texture.Get_Height());
     CurrentFrameBuffer = frame_buffer;
-    bgfx::setViewFrameBuffer(ClearViewId, CurrentFrameBuffer);
     bgfx::setViewFrameBuffer(OverlayViewId, frame_buffer);
-    bgfx::setViewRect(ClearViewId, 0, 0, static_cast<uint16_t>(ActiveWidth), static_cast<uint16_t>(ActiveHeight));
     bgfx::setViewRect(OverlayViewId, 0, 0, static_cast<uint16_t>(ActiveWidth), static_cast<uint16_t>(ActiveHeight));
-    Reset_Main_View_State(ActiveWidth, ActiveHeight);
+    Reset_Default_Viewport(ActiveWidth, ActiveHeight);
+    Invalidate_Configured_Views();
     return true;
 }
 
@@ -1380,11 +1404,10 @@ void BgfxRenderer::Reset_Render_Target()
     ActiveWidth = Width;
     ActiveHeight = Height;
     CurrentFrameBuffer = BGFX_INVALID_HANDLE;
-    bgfx::setViewFrameBuffer(ClearViewId, CurrentFrameBuffer);
     bgfx::setViewFrameBuffer(OverlayViewId, BGFX_INVALID_HANDLE);
-    bgfx::setViewRect(ClearViewId, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
     bgfx::setViewRect(OverlayViewId, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
-    Reset_Main_View_State(ActiveWidth, ActiveHeight);
+    Reset_Default_Viewport(ActiveWidth, ActiveHeight);
+    Invalidate_Configured_Views();
 }
 
 bool BgfxRenderer::Has_Render_Target()
@@ -1424,6 +1447,7 @@ void BgfxRenderer::End_Frame()
 
     Maybe_Request_Auto_Screenshot();
     bgfx::frame();
+    Reset_Frame_View_Allocation();
 }
 
 void BgfxRenderer::Request_Screen_Shot(const char *file_path)
@@ -2335,6 +2359,10 @@ bool BgfxRenderer::Query_Drawable_Size(void *window_handle, uint32_t &width, uin
 
 void BgfxRenderer::Apply_Clear(bool clear_color, bool clear_depth, float red, float green, float blue)
 {
+    // A clear starts a new logical bgfx pass. Keep view IDs monotonic for the frame,
+    // but stop reusing cached camera views across pass boundaries.
+    Invalidate_Configured_Views();
+
     uint16_t clear_flags = 0;
     if (clear_color) {
         clear_flags |= BGFX_CLEAR_COLOR;
@@ -2351,16 +2379,16 @@ void BgfxRenderer::Apply_Clear(bool clear_color, bool clear_depth, float red, fl
         | (static_cast<uint32_t>(clear_b) << 8)
         | 0xffu;
 
-    Reset_Main_View_Sequence();
-    bgfx::setViewClear(ClearViewId, clear_flags, clear_rgba, 1.0f, 0);
-    bgfx::setViewFrameBuffer(ClearViewId, CurrentFrameBuffer);
+    const uint16_t clear_view_id = Acquire_View();
+    bgfx::setViewClear(clear_view_id, clear_flags, clear_rgba, 1.0f, 0);
+    bgfx::setViewFrameBuffer(clear_view_id, CurrentFrameBuffer);
     bgfx::setViewRect(
-        ClearViewId,
+        clear_view_id,
         static_cast<uint16_t>(PendingViewportX),
         static_cast<uint16_t>(PendingViewportY),
         static_cast<uint16_t>(PendingViewportWidth),
         static_cast<uint16_t>(PendingViewportHeight));
-    bgfx::touch(ClearViewId);
+    bgfx::touch(clear_view_id);
 }
 
 bgfx::ShaderHandle BgfxRenderer::Load_Shader(const char *shader_name)

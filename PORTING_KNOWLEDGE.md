@@ -83,6 +83,15 @@
   - allocate them through `BgfxRenderer`, not `DX8Wrapper`
   - validate the bgfx framebuffer at creation time, not later during bind
   - query “am I rendering to a texture?” from renderer-owned framebuffer state, not from a duplicated DX8-era boolean
+- Shadow bring-up on the port has a settings/lifecycle trap that is independent of the actual bgfx draw code:
+  - `PhysicsSceneClass` constructor defaults leave shadow mode and projectors off
+  - `SystemSettings::Registry_Load(...)` applies the stored values correctly, but `SystemSettings::Apply_All()` is also called during level load after fresh combat scenes are created
+  - that method must push the stored values back into the new scene; if it only snapshots the scene state, the new scene's constructor defaults overwrite the loaded shadow settings and the game saves `Shadow_Mode=0` / `Dynamic_Projectors=0` again on shutdown
+- Existing Linux/bgfx preference stores may already contain that bad zero-shadow tuple from earlier builds, so the port needs a one-time migration path for shadow settings instead of only fixing fresh installs.
+- Projector code cannot assume `TextureClass::Get_Width()` is immediately valid for every projected texture in the bgfx port:
+  - file-backed textures can still be lazily initialized when `TexProjectClass::Pre_Render_Update()` first needs the projector texel size
+  - initialize the texture first, then use its width, and fall back to the assigned render-target size for dynamic shadow maps
+  - if neither size is available yet, log and defer that projector update instead of asserting
 - Runtime bring-up exposed several non-obvious renderer port requirements that do not show up in compile-only work:
   - `BgfxRenderer::Init(...)` is reached twice during startup (`WW3D::Init()` and again via `DX8Wrapper::Init()`), so “already initialized” must be treated as success. Returning failure on the second call breaks startup even though bgfx itself was already initialized correctly.
   - bgfx platform/window data must stay valid across renderer init; probing the SDL/X11/Vulkan handles once and then discarding them is not enough.
@@ -125,10 +134,13 @@
 - Keep the shared compatibility constants truthful when the port still consumes legacy state names:
   - `renderer_types.h`'s `D3DCULL_*` values need to match real Direct3D (`NONE=1`, `CW=2`, `CCW=3`), because the bgfx path still receives wrapper cull state numerically through shared code
   - duplicating those numbers again in renderer-local helpers is risky; the safer pattern is to let bgfx submission consume the shared `D3DCULL_*` constants directly so enum drift cannot silently invert winding/culling
-- Viewport ownership and bgfx view-allocation reset are separate concerns:
-  - `BgfxRenderer::Apply_Clear(...)` still needs to reset the per-frame cached bgfx view IDs before a clear, but it must not also reset the active viewport back to the full target
-  - keeping those operations coupled causes a subtle D3D-vs-bgfx parity bug where per-camera/layer clears wipe the whole render target even though the subsequent draw submits into a smaller viewport
-  - the clean fix is to preserve the pending viewport rectangle across clear submission and reset only the configured-view cache / next-view allocator state
+- Viewport ownership and bgfx view allocation are separate concerns:
+  - do **not** reset/reuse bgfx view IDs inside the same `bgfx::frame()` just because a render target or clear changes
+  - projector shadow renders, main-scene renders, and per-layer clears can all happen in one frame, so each clear/view submission needs a unique frame-local bgfx view ID unless it truly matches the same framebuffer + viewport + transform state
+  - the safe cache key for bgfx view reuse in this renderer is framebuffer + viewport rectangle + view/projection matrices
+  - resetting that allocator belongs at frame boundaries (`bgfx::frame()` / renderer reset), not in `Apply_Clear(...)` or render-target switches
+- Projector shadow textures now own a real bgfx depth attachment, so projector renders must clear depth every time they render into a reused target. The old DX8-era “no z-buffer” assumption in `TexProjectClass::Compute_Texture()` is no longer valid under bgfx.
+- Dynamic shadow tracking must keep light identities pointer-sized on the active 64-bit port. Using `uint32_t` for light-source IDs is no longer safe once lights are keyed by pointer value.
 - Fixed-function fog in the bgfx path needs two independent pieces of information:
   - the legacy shader-level fog blend mode (`FOG_ENABLE`, `FOG_SCALE_FRAGMENT`, `FOG_WHITE`) still decides how the final fragment color is combined with fog
   - but the actual fog amount must come from render-state-driven fog equations (`FOGSTART`, `FOGEND`, `FOGDENSITY`, fog mode, and range-fog enable), not from hijacking vertex specular alpha

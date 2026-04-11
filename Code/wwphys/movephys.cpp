@@ -63,10 +63,6 @@
 DECLARE_FORCE_LINK(movephys);
 
 
-#define SINGLE_SHADOW_CODE				1
-#define TRUE_PERSPECTIVE_SHADOWS		0
-
-
 /***********************************************************************************************
 **
 ** MoveablePhysClass Implementation
@@ -623,4 +619,3 @@ bool MoveablePhysDefClass::Is_Type(const char * type_name)
 		return DynamicPhysDefClass::Is_Type(type_name);
 	}
 }
-

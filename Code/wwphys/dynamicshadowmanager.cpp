@@ -47,8 +47,58 @@
 #include "texture.h"
 #include "physresourcemgr.h"
 
+#include <cfloat>
+#include <cstdint>
 
-#define SINGLE_SHADOW_CODE 1
+namespace
+{
+uintptr_t Get_Light_Source_Key(const LightClass *light)
+{
+	return reinterpret_cast<uintptr_t>(light);
+}
+
+Vector3 Get_Directional_Light_Vector(const LightClass &light)
+{
+	Vector3 direction = -(light.Get_Transform().Get_Z_Vector());
+	direction.Normalize();
+	return direction;
+}
+
+LightClass *Find_Dominant_Local_Shadow_Light(PhysicsSceneClass &scene,const Vector3 &position)
+{
+	NonRefPhysListClass lightlist;
+	scene.Collect_Lights(position,true,false,&lightlist);
+
+	LightClass * best_light = NULL;
+	float best_dist2 = FLT_MAX;
+
+	NonRefPhysListIterator it(&lightlist);
+	for (it.First(); !it.Is_Done(); it.Next()) {
+		PhysClass * light_phys = it.Peek_Obj();
+		if (light_phys == NULL) {
+			continue;
+		}
+
+		RenderObjClass * light_model = light_phys->Peek_Model();
+		if ((light_model == NULL) || (light_model->Class_ID() != RenderObjClass::CLASSID_LIGHT)) {
+			continue;
+		}
+
+		LightClass * light = static_cast<LightClass *>(light_model);
+		if (!light->Are_Shadows_Enabled() || light->Get_Intensity() <= 0.0f) {
+			continue;
+		}
+
+		const float dist2 = (light->Get_Position() - position).Length2();
+		if (dist2 < best_dist2) {
+			best_dist2 = dist2;
+			best_light = light;
+		}
+	}
+
+	return best_light;
+}
+}
 
 DynamicShadowManagerClass::DynamicShadowManagerClass(PhysClass & parent) :
 	Parent(parent),
@@ -68,7 +118,6 @@ DynamicShadowManagerClass::~DynamicShadowManagerClass(void)
 
 void DynamicShadowManagerClass::Update_Shadow(void)
 {
-#if SINGLE_SHADOW_CODE	
 	/*
 	** Shadow Update
 	** - if shadows are off, release projector and RETURN
@@ -161,60 +210,35 @@ void DynamicShadowManagerClass::Update_Shadow(void)
 		*/
 		LightClass * sun = scene->Get_Sun_Light();
 		Shadow->Enable_Perspective(false);
-		Shadow->Set_Light_Source_ID((uint32_t)sun);
+		Shadow->Set_Light_Source_ID(Get_Light_Source_Key(sun));
 		Shadow->Set_Light_Vector(sunlight);
 		sun->Release_Ref();
 		found_light = true;
 
 	} else {
-
-#pragma message ("(gth) Disabling local shadows")
-#if 0
 		/*
 		** We couldn't use the sunlight so now we look for the nearest
 		** local light source which casts shadows.  If we find one, initialize
 		** our shadow projector with it.
 		*/
-		NonRefPhysListClass lightlist;
-		scene->Collect_Lights(position,true,false,&lightlist);
-	
-		if (!lightlist.Is_Empty()) {
-
-			/*
-			** Ensure that a shadow is allocated!
-			*/
+		LightClass * best_light = Find_Dominant_Local_Shadow_Light(*scene,position);
+		if (best_light != NULL) {
 			Allocate_Shadow();
 
-			LightClass * best_light = NULL;
-			NonRefPhysListIterator it(&lightlist);
-			for (it.First(); !it.Is_Done(); it.Next()) {
-				best_light = (LightClass *)(it.Peek_Obj()->Peek_Model());
-				break;				
-			}
+			const bool perspective_shadow =
+				(best_light->Get_Type() == LightClass::POINT) ||
+				(best_light->Get_Type() == LightClass::SPOT);
 
-			if (best_light) {
-
-#if TRUE_PERSPECTIVE_SHADOWS		// This code uses true perspective projection for local light sources
-				Shadow->Enable_Perspective(true);
-				Shadow->Set_Light_Source_ID((uint32_t)best_light);
+			Shadow->Enable_Perspective(perspective_shadow);
+			Shadow->Set_Light_Source_ID(Get_Light_Source_Key(best_light));
+			if (perspective_shadow) {
 				Shadow->Set_Light_Vector(best_light->Get_Position());
-
-#else			// This code uses an orthographic approximation 
-				Shadow->Enable_Perspective(false);
-				Shadow->Set_Light_Source_ID((uint32_t)best_light);
-				
-				Vector3 direction;
-				Get_Position(&direction);
-				direction -= best_light->Get_Position();
-				direction.Normalize();
-				Shadow->Set_Light_Vector(direction);
-#endif
-				found_light = true;
-
-				DEBUG_RENDER_VECTOR(position,best_light->Get_Position()-position,Vector3(1,1,1));
+			} else {
+				Shadow->Set_Light_Vector(Get_Directional_Light_Vector(*best_light));
 			}
-		} 
-#endif //0
+
+			found_light = true;
+		}
 	}
 
 	if (found_light) {
@@ -252,27 +276,6 @@ void DynamicShadowManagerClass::Update_Shadow(void)
 		}
 	
 	}
-
-#else
-
-	/*
-	** - Collect all lights that want to and can cast a shadow with this object (raytest, etc)
-	** - Reduce number of lights in list to MaxShadowsPerObject
-	** - Create new empty shadow object list
-	** - For each light
-	**   - Try to find shadow which used this light from prev-frame's shadow list, if found
-	**     remove it from prev-frame's list and put in current frame's shadow list
-	**     Else create a new shadow object, immediately set its intensity to zero (since it is turning on)
-	**   - Initialize projector with light parameters
-	** - For each shadow still in prev-frame's list
-	**   - If intensity is zero, destroy it.
-	**     Else
-	**     - Set target intensity to zero
-	**     - Update projection parameters, move into this frame's shadow list
-	*/
-	
-
-#endif
 }
 
 
@@ -303,4 +306,3 @@ void DynamicShadowManagerClass::Release_Shadow(void)
 		Shadow = NULL;
 	}
 }
-

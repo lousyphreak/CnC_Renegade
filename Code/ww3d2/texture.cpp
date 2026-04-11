@@ -628,6 +628,11 @@ unsigned int TextureClass::Get_Mip_Level_Count(void)
 
 SurfaceClass *TextureClass::Get_Surface_Level(unsigned int level)
 {
+	if (IsRenderTargetTexture) {
+		WWDEBUG_SAY(("TextureClass::Get_Surface_Level(%u) is unavailable for render target '%s'\n", level, Name.Peek_Buffer()));
+		return 0;
+	}
+
 	if (SurfaceLevels.empty()) {
 		if (!Initialized) {
 			Init();

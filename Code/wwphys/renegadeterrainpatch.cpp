@@ -503,7 +503,7 @@ RenegadeTerrainPatchClass::Render_Procedural_Material_Pass(MaterialPassClass * m
 			//
 			//	Draw the mesh!
 			//
-			DX8Wrapper::Draw_Triangles (BUFFER_TYPE_DYNAMIC_DX8, 0, poly_count, 0, vert_count);
+			BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0, poly_count, 0, vert_count);
 		}
 //	}
 }
@@ -590,7 +590,7 @@ RenegadeTerrainPatchClass::Render_By_Texture (int texture_index, int pass_type)
 	//
 	//	Draw the mesh!
 	//
-	DX8Wrapper::Draw_Triangles (BUFFER_TYPE_DYNAMIC_DX8, 0, poly_count, 0, vert_count);
+	BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0, poly_count, 0, vert_count);
 	return ;
 }
 

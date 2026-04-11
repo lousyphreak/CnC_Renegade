@@ -185,20 +185,6 @@ class DX8Wrapper
 			LIGHT0_CHANGED|LIGHT1_CHANGED|LIGHT2_CHANGED|LIGHT3_CHANGED,
 	};
 
-	static void Draw_Sorting_IB_VB(
-		unsigned primitive_type,
-		unsigned short start_index,
-		unsigned short polygon_count,
-		unsigned short min_vertex_index,
-		unsigned short vertex_count);
-
-	static void Draw(
-		unsigned primitive_type,
-		unsigned short start_index,
-		unsigned short polygon_count,
-		unsigned short min_vertex_index=0,
-		unsigned short vertex_count=0);
-
 public:
 
 	static bool Init(void * hwnd, bool lite = false);
@@ -282,24 +268,7 @@ public:
 	static void Set_Light(unsigned index,const D3DLIGHT8* light);
 	static void Set_Light(unsigned index,const LightClass &light);
 
-	static void Apply_Render_State_Changes();	// Apply deferred render state changes (will be called automatically by Draw...)
-
-	static void Draw_Triangles(
-		unsigned buffer_type,
-		unsigned short start_index,
-		unsigned short polygon_count,
-		unsigned short min_vertex_index,
-		unsigned short vertex_count);
-	static void Draw_Triangles(
-		unsigned short start_index,
-		unsigned short polygon_count,
-		unsigned short min_vertex_index,
-		unsigned short vertex_count);
-	static void Draw_Strip(
-		unsigned short start_index,
-		unsigned short polygon_count,
-		unsigned short min_vertex_index,
-		unsigned short vertex_count);
+	static void Apply_Render_State_Changes();	// Apply deferred render state changes before renderer-owned bgfx submission.
 
 	/*
 	** Resources

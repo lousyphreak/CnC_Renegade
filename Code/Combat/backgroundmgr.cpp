@@ -39,6 +39,7 @@
 #include "apppackettypes.h"
 #include "assetmgr.h"
 #include "AudibleSound.h"
+#include "bgfxrenderer.h"
 #include "camera.h"
 #include "dazzle.h"
 #include "dx8wrapper.h"
@@ -346,7 +347,7 @@ void HazeClass::Render()
 		DX8Wrapper::Set_Shader (Shader);
 		DX8Wrapper::Set_Index_Buffer (IndexBuffer, 0);
 		DX8Wrapper::Set_Vertex_Buffer (dynamicvb);
-		DX8Wrapper::Draw_Triangles (0, TriangleCount, 0, VertexCount);
+		BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0, TriangleCount, 0, VertexCount);
 	}
 }
 
@@ -656,7 +657,7 @@ void StarfieldClass::Render()
 		DX8Wrapper::Set_Shader (Shader);
 		DX8Wrapper::Set_Index_Buffer (IndexBuffer, 0);
 		DX8Wrapper::Set_Vertex_Buffer (dynamicvb);
-		DX8Wrapper::Draw_Triangles (0, ActiveTriangleCount, 0, ActiveVertexCount);
+		BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0, ActiveTriangleCount, 0, ActiveVertexCount);
 
 		// Restore alphas for those stars that were modified prior to rendering.
 		for (i = 0; i < activeflickercount; i++) {
@@ -969,7 +970,7 @@ void SkyObjectClass::Render()
 		DX8Wrapper::Set_Shader (Shader);
 		DX8Wrapper::Set_Index_Buffer (IndexBuffer, 0);
 		DX8Wrapper::Set_Vertex_Buffer (dynamicvb);
-		DX8Wrapper::Draw_Triangles (0, TriangleCount, 0, VertexCount);
+		BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0, TriangleCount, 0, VertexCount);
 	}
 }
 
@@ -1323,7 +1324,7 @@ void CloudLayerClass::Render()
 		DX8Wrapper::Set_Shader (Shader);
 		DX8Wrapper::Set_Index_Buffer (IndexBuffer, 0);
 		DX8Wrapper::Set_Vertex_Buffer (dynamicvb);
-		DX8Wrapper::Draw_Triangles (0, TriangleCount, 0, VertexCount);
+		BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0, TriangleCount, 0, VertexCount);
 	}
 }
 
@@ -1544,7 +1545,7 @@ void SkyGlowClass::Render()
 		DX8Wrapper::Set_Shader (Shader);
 		DX8Wrapper::Set_Index_Buffer (IndexBuffer, 0);
 		DX8Wrapper::Set_Vertex_Buffer (dynamicvb);
-		DX8Wrapper::Draw_Triangles (0, TriangleCount, 0, VertexCount);
+		BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0, TriangleCount, 0, VertexCount);
 	}
 }
 

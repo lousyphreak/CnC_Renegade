@@ -827,21 +827,6 @@ void DX8Wrapper::Apply_Render_State_Changes()
 	render_state_changed = 0;
 }
 
-void DX8Wrapper::Draw_Triangles(unsigned, unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count)
-{
-	BgfxRenderer::Submit_Current_Fixed_Function_Triangles(start_index, polygon_count, min_vertex_index, vertex_count);
-}
-
-void DX8Wrapper::Draw_Triangles(unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count)
-{
-	BgfxRenderer::Submit_Current_Fixed_Function_Triangles(start_index, polygon_count, min_vertex_index, vertex_count);
-}
-
-void DX8Wrapper::Draw_Strip(unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count)
-{
-	BgfxRenderer::Submit_Current_Fixed_Function_Strip(start_index, polygon_count, min_vertex_index, vertex_count);
-}
-
 TextureClass *DX8Wrapper::Create_Render_Target(int width, int height, WW3DFormat format)
 {
 	if (format == WW3D_FORMAT_UNKNOWN) {

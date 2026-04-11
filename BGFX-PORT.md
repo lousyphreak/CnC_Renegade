@@ -33,6 +33,7 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
 - `SurfaceClass` now supports engine-owned CPU texture storage with lazy DX8 materialization at the remaining backend edge, so texture source data is no longer forced to originate in a D3D allocation.
 - `TextureLoader` thumbnail and immediate surface loading now produce `SurfaceClass` mip data directly, and thumbnail-backed textures no longer treat the absence of a legacy DX8 texture object as “not loaded”.
 - Shared texture-facing headers no longer expose the D3D-returning `MissingTexture` helpers or the unused `TextureClass` DX8 accessors that were leaking `IDirect3D*` back out of the backend boundary.
+- bgfx render-target textures now fail closed on `TextureClass::Get_Surface_Level()` instead of implying a late CPU surface path still exists.
 - `SurfaceClass` utility work in the bgfx build now stays on engine-owned CPU memory instead of materializing fake D3D surfaces:
   - the filename-loading constructor now copies decoded `SurfaceClass` data directly
   - font/hue/pixel utility methods (`FindBB`, `Is_Transparent_Column`, `Get_Pixel`, `DrawPixel`, `DrawHLine`) now operate through `Lock` / `Unlock`
@@ -48,7 +49,8 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
   - `MeshClass::Render_Material_Pass(...)` now submits skin, rigid, and per-polygon-cull procedural passes through that same bgfx helper, preserving legacy base-vertex semantics and shared dynamic-buffer offsets without reviving `DX8Wrapper::Draw_*` as the true draw owner
 - The remaining special-case fixed-function callers now submit through renderer-owned bgfx entry points as well:
   - sorting flush, polygon renderer draws, line/segment renderers, point groups, decals, dazzle/lens flare quads, debug boxes, terrain patch runs, and related procedural callers now use `BgfxRenderer::Submit_Current_Fixed_Function_*` after applying their legacy state instead of keeping `DX8Wrapper::Draw_*` as the live draw owner
-  - the bgfx-side `DX8Wrapper::Draw_*` implementations remain only as non-live compatibility bridges; real bgfx submission ownership now sits in `BgfxRenderer`
+  - weather particles, haze/starfield/cloud layer/sky glow background passes, and the remaining terrain-patch procedural draws now submit directly to `BgfxRenderer::Submit_Current_Fixed_Function_*`
+  - the bgfx-side `DX8Wrapper::Draw_*` compatibility bridge has been deleted, so fixed-function submission ownership now sits only in `BgfxRenderer`
 - Runtime validation has moved beyond startup-only bring-up:
   - bgfx/X11/Vulkan initialization now survives the real `WW3D::Init()` + `DX8Wrapper::Init()` sequence without falling back to headless or failing on repeated init.
   - Linux/X11 startup should currently keep bgfx on its render thread. Re-testing the old single-threaded `bgfx::renderFrame()` workaround against the live menu path showed that it had become a major startup bottleneck, while the threaded path now survives real startup and long-run validation in this tree.
@@ -63,5 +65,4 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
 
 ## Immediate next slice
 
-- Delete the now-non-live bgfx `DX8Wrapper::Draw_*` compatibility bridge once the last backend-local users are gone, so `BgfxRenderer` is the only fixed-function submit owner in the bgfx build.
 - Audit the remaining render-target/backend-edge `Get_Surface_Level()` callers and convert any lingering DX8-style readback assumptions to GPU-native ownership or explicit fail-closed behavior.

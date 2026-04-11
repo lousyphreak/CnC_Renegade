@@ -44,6 +44,7 @@
 #include "combat.h"
 #include "gameobjmanager.h"
 #include "gametype.h"
+#include "bgfxrenderer.h"
 #include "light.h"
 #include "dx8indexbuffer.h"
 #include "dx8wrapper.h"
@@ -1209,7 +1210,11 @@ void WeatherSystemClass::Render (RenderInfoClass &rinfo)
 				#if WEATHER_PARTICLE_SORT
 				SortingRendererClass::Insert_Triangles (0, submittedparticlecount, 0, submittedparticlecount * VERTICES_PER_TRIANGLE);
 				#else
-				DX8Wrapper::Draw_Triangles (0, submittedparticlecount, 0, submittedparticlecount * VERTICES_PER_TRIANGLE);
+				BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
+					0,
+					submittedparticlecount,
+					0,
+					submittedparticlecount * VERTICES_PER_TRIANGLE);
 				#endif
 			}
 

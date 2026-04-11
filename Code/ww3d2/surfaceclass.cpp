@@ -49,9 +49,12 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "surfaceclass.h"
+#include "renegade_build_config.h"
 #include "formconv.h"
 #include "dx8wrapper.h"
+#include "textureloader.h"
 #include "vector2i.h"
+#include "wwstring.h"
 #include "colorspace.h"
 #include "bound.h"
 
@@ -284,12 +287,36 @@ SurfaceClass::SurfaceClass(const char *filename):
 	SurfaceWidth(0),
 	SurfaceHeight(0),
 	SurfacePitch(0),
-	SurfaceLocked(false)
+	SurfaceLocked(false),
+	SurfaceFormat(WW3D_FORMAT_UNKNOWN)
 {
+#if RENEGADE_WITH_BGFX_RENDERER
+	WWASSERT(filename != NULL && filename[0] != '\0');
+	if (filename != NULL && filename[0] != '\0') {
+		StringClass filename_string(filename, true);
+		SurfaceClass *loaded_surface = TextureLoader::Load_Surface_Immediate(
+			filename_string,
+			WW3D_FORMAT_UNKNOWN,
+			true);
+		WWASSERT(loaded_surface != NULL);
+		if (loaded_surface != NULL) {
+			SurfaceDescription desc;
+			loaded_surface->Get_Description(desc);
+			SurfaceWidth = desc.Width;
+			SurfaceHeight = desc.Height;
+			SurfaceFormat = desc.Format;
+			SurfacePitch = Calculate_Surface_Pitch(SurfaceWidth, SurfaceFormat);
+			SurfaceMemory.resize(Calculate_Surface_Size(SurfaceWidth, SurfaceHeight, SurfaceFormat));
+			Copy(0, 0, 0, 0, SurfaceWidth, SurfaceHeight, loaded_surface);
+			loaded_surface->Release_Ref();
+		}
+	}
+#else
 	DX8Surface = DX8Wrapper::_Create_DX8_Surface(filename);
 	SurfaceDescription desc;
 	Get_Description(desc);
 	SurfaceFormat=desc.Format;
+#endif
 }
 
 SurfaceClass::SurfaceClass(IDirect3DSurface8 *d3d_surface)	:
@@ -359,18 +386,28 @@ void SurfaceClass::Unlock(void)
 
 IDirect3DSurface8 *SurfaceClass::Acquire_DX8_Surface(void)
 {
+#if RENEGADE_WITH_BGFX_RENDERER
+	WWASSERT_PRINT(0, "SurfaceClass::Acquire_DX8_Surface is not supported on the bgfx renderer.\n");
+	return NULL;
+#else
 	Materialize_DX8_Surface();
 	if (DX8Surface != NULL) {
 		DX8Surface->AddRef();
 	}
 
 	return DX8Surface;
+#endif
 }
 
 IDirect3DSurface8 *SurfaceClass::Peek_DX8_Surface(void)
 {
+#if RENEGADE_WITH_BGFX_RENDERER
+	WWASSERT_PRINT(0, "SurfaceClass::Peek_DX8_Surface is not supported on the bgfx renderer.\n");
+	return NULL;
+#else
 	Materialize_DX8_Surface();
 	return DX8Surface;
+#endif
 }
 
 /***********************************************************************************************
@@ -786,7 +823,6 @@ void SurfaceClass::Stretch_Copy(
  *=============================================================================================*/
 void SurfaceClass::FindBB(Vector2i *min,Vector2i*max)
 {
-	Materialize_DX8_Surface();
 	SurfaceDescription sd;
 	Get_Description(sd);
 
@@ -804,17 +840,8 @@ void SurfaceClass::FindBB(Vector2i *min,Vector2i*max)
 		break;
 	}
 
-	D3DLOCKED_RECT lock_rect;
-	::ZeroMemory(&lock_rect, sizeof(D3DLOCKED_RECT));
-	RECT rect;
-	::ZeroMemory(&rect, sizeof(RECT));
-
-	rect.bottom=max->J;
-	rect.top=min->J;
-	rect.left=min->I;
-	rect.right=max->I;
-
-	DX8_ErrorCode(DX8Surface->LockRect(&lock_rect,&rect,D3DLOCK_READONLY));
+	int pitch = 0;
+	unsigned char *bits = static_cast<unsigned char *>(Lock(&pitch));
 
 	int x,y;
 	unsigned int size=PixelSize(sd);
@@ -826,7 +853,7 @@ void SurfaceClass::FindBB(Vector2i *min,Vector2i*max)
 		for (x = min->I; x < max->I; x++) {
 
 			// HY - this is not endian safe
-			unsigned char *alpha = static_cast<unsigned char *>(lock_rect.pBits) + (y - min->J) * lock_rect.Pitch + (x - min->I) * size;
+			unsigned char *alpha = bits + y * pitch + x * size;
 			unsigned char myalpha=alpha[size-1];
 			myalpha=(myalpha>>(8-alphabits)) & mask;
 			if (myalpha) {
@@ -838,7 +865,7 @@ void SurfaceClass::FindBB(Vector2i *min,Vector2i*max)
 		}
 	}
 
-	DX8_ErrorCode(DX8Surface->UnlockRect());
+	Unlock();
 
 	*max=realmax;
 	*min=realmin;
@@ -862,7 +889,6 @@ void SurfaceClass::FindBB(Vector2i *min,Vector2i*max)
  *=============================================================================================*/
 bool SurfaceClass::Is_Transparent_Column(unsigned int column)
 {
-	Materialize_DX8_Surface();
 	SurfaceDescription sd;
 	Get_Description(sd);
 
@@ -882,18 +908,8 @@ bool SurfaceClass::Is_Transparent_Column(unsigned int column)
 	}
 
 	unsigned int size=PixelSize(sd);
-
-	D3DLOCKED_RECT lock_rect;
-	::ZeroMemory(&lock_rect, sizeof(D3DLOCKED_RECT));
-	RECT rect;
-	::ZeroMemory(&rect, sizeof(RECT));
-
-	rect.bottom=sd.Height;
-	rect.top=0;
-	rect.left=column;
-	rect.right=column+1;
-
-	DX8_ErrorCode(DX8Surface->LockRect(&lock_rect,&rect,D3DLOCK_READONLY));
+	int pitch = 0;
+	unsigned char *bits = static_cast<unsigned char *>(Lock(&pitch));
 
 	int y;	
 	
@@ -901,16 +917,16 @@ bool SurfaceClass::Is_Transparent_Column(unsigned int column)
 	for (y = 0; y < (int) sd.Height; y++)
 	{
 		// HY - this is not endian safe
-		unsigned char *alpha = static_cast<unsigned char *>(lock_rect.pBits) + y * lock_rect.Pitch;
+		unsigned char *alpha = bits + y * pitch + column * size;
 		unsigned char myalpha=alpha[size-1];		
 		myalpha=(myalpha>>(8-alphabits)) & mask;		
 		if (myalpha) {
-			DX8_ErrorCode(DX8Surface->UnlockRect());
+			Unlock();
 			return false;			
 		}		
 	}
 
-	DX8_ErrorCode(DX8Surface->UnlockRect());
+	Unlock();
 	return true;
 }
 
@@ -931,30 +947,24 @@ bool SurfaceClass::Is_Transparent_Column(unsigned int column)
  *=============================================================================================*/
 void SurfaceClass::Get_Pixel(Vector3 &rgb, int x,int y)
 {
-	Materialize_DX8_Surface();
 	SurfaceDescription sd;
 	Get_Description(sd);
 
 	x = min(x,(int)sd.Width - 1);
 	y = min(y,(int)sd.Height - 1);
-
-	D3DLOCKED_RECT lock_rect;
-	::ZeroMemory(&lock_rect, sizeof(D3DLOCKED_RECT));
-	RECT rect;
-	::ZeroMemory(&rect, sizeof(RECT));
-
-	rect.bottom=y+1;
-	rect.top=y;
-	rect.left=x;
-	rect.right=x+1;
-
-	DX8_ErrorCode(DX8Surface->LockRect(&lock_rect,&rect,D3DLOCK_READONLY));	
-	Convert_Pixel(rgb,sd,(unsigned char *) lock_rect.pBits);
-	DX8_ErrorCode(DX8Surface->UnlockRect());	
+	int pitch = 0;
+	unsigned char *bits = static_cast<unsigned char *>(Lock(&pitch));
+	const unsigned pixel_size = PixelSize(sd);
+	Convert_Pixel(rgb,sd,bits + y * pitch + x * pixel_size);
+	Unlock();	
 }
 
 void SurfaceClass::Materialize_DX8_Surface()
 {
+#if RENEGADE_WITH_BGFX_RENDERER
+	WWASSERT_PRINT(0, "SurfaceClass::Materialize_DX8_Surface is not supported on the bgfx renderer.\n");
+	return;
+#else
 	if (DX8Surface != NULL || SurfaceMemory.empty()) {
 		return;
 	}
@@ -992,6 +1002,7 @@ void SurfaceClass::Materialize_DX8_Surface()
 	}
 
 	DX8_ErrorCode(DX8Surface->UnlockRect());
+#endif
 }
 
 /***********************************************************************************************
@@ -1079,26 +1090,15 @@ void SurfaceClass::Detach (void)
  *=============================================================================================*/
 void SurfaceClass::DrawPixel(const unsigned int x,const unsigned int y, unsigned int color)
 {
-	Materialize_DX8_Surface();
 	SurfaceDescription sd;
 	Get_Description(sd);
 
 	unsigned int size=PixelSize(sd);
-
-	D3DLOCKED_RECT lock_rect;
-	::ZeroMemory(&lock_rect, sizeof(D3DLOCKED_RECT));
-	RECT rect;
-	::ZeroMemory(&rect, sizeof(RECT));
-
-	rect.bottom=y+1;
-	rect.top=y;
-	rect.left=x;
-	rect.right=x+1;
-
-	DX8_ErrorCode(DX8Surface->LockRect(&lock_rect,&rect,0));
-	unsigned char *cptr=(unsigned char*)lock_rect.pBits;
-	unsigned short *sptr=(unsigned short*)lock_rect.pBits;
-	unsigned int *lptr=(unsigned int*)lock_rect.pBits;
+	int pitch = 0;
+	unsigned char *bits = static_cast<unsigned char *>(Lock(&pitch));
+	unsigned char *cptr = bits + y * pitch + x * size;
+	unsigned short *sptr = reinterpret_cast<unsigned short *>(cptr);
+	unsigned int *lptr = reinterpret_cast<unsigned int *>(cptr);
 
 	switch (size)
 	{
@@ -1113,7 +1113,7 @@ void SurfaceClass::DrawPixel(const unsigned int x,const unsigned int y, unsigned
 		break;
 	}
 
-	DX8_ErrorCode(DX8Surface->UnlockRect());
+	Unlock();
 }
 
 /***********************************************************************************************
@@ -1134,26 +1134,15 @@ void SurfaceClass::DrawPixel(const unsigned int x,const unsigned int y, unsigned
  *=============================================================================================*/
 void SurfaceClass::DrawHLine(const unsigned int y,const unsigned int x1, const unsigned int x2, unsigned int color)
 { 
-	Materialize_DX8_Surface();
 	SurfaceDescription sd;
 	Get_Description(sd);
 
 	unsigned int size=PixelSize(sd);
-
-	D3DLOCKED_RECT lock_rect;
-	::ZeroMemory(&lock_rect, sizeof(D3DLOCKED_RECT));
-	RECT rect;
-	::ZeroMemory(&rect, sizeof(RECT));
-
-	rect.bottom=y+1;
-	rect.top=y;
-	rect.left=x1;
-	rect.right=x2+1;
-
-	DX8_ErrorCode(DX8Surface->LockRect(&lock_rect,&rect,0));
-	unsigned char *cptr=(unsigned char*)lock_rect.pBits;
-	unsigned short *sptr=(unsigned short*)lock_rect.pBits;
-	unsigned int *lptr=(unsigned int*)lock_rect.pBits;
+	int pitch = 0;
+	unsigned char *bits = static_cast<unsigned char *>(Lock(&pitch));
+	unsigned char *cptr = bits + y * pitch + x1 * size;
+	unsigned short *sptr = reinterpret_cast<unsigned short *>(cptr);
+	unsigned int *lptr = reinterpret_cast<unsigned int *>(cptr);
 
 	unsigned int x;
 	// the assumption here is that whenever a pixel has alpha it's in the MSB
@@ -1173,7 +1162,7 @@ void SurfaceClass::DrawHLine(const unsigned int y,const unsigned int x1, const u
 		}
 	}
 
-	DX8_ErrorCode(DX8Surface->UnlockRect());
+	Unlock();
 }
 
 

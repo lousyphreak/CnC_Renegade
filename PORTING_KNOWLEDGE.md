@@ -103,6 +103,10 @@
   - `SurfaceClass` still has a lazy DX8/fake-surface materialization path
   - screenshots and movie capture no longer need a front-buffer `IDirect3DSurface8`; the bgfx backend can source those directly from bgfx callback data and write them out without reviving a DX8 readback object
   - the remaining cleanup work should therefore target true `SurfaceClass` / CPU-readback users, not rebuild a wider fake D3D layer just to serve capture paths
+- A useful seam-reduction checkpoint for `SurfaceClass` is “can this operation already be expressed through `Lock` / `Unlock` on engine-owned memory?”:
+  - if yes (`FindBB`, `Is_Transparent_Column`, `Get_Pixel`, `DrawPixel`, `DrawHLine`, filename-copy setup), the bgfx build should do that directly instead of lazily materializing a fake `IDirect3DSurface8`
+  - once those callers are moved, `Acquire_DX8_Surface()` / `Peek_DX8_Surface()` should fail closed under bgfx so any remaining backend-edge readback dependency becomes obvious instead of silently reviving another fake surface layer
+  - that in turn lets `Code/ww3d2/bgfxdynamicbuffer.cpp` delete the fake surface object and `_Create_DX8_Surface(...)` helpers entirely rather than preserving dead D3D-shaped ownership
 - For bgfx movie capture in this tree, the clean ownership model is:
   - keep capture lifecycle in `BgfxRenderer` by toggling `BGFX_RESET_CAPTURE`
   - let the bgfx callback own the raw captured frame handoff

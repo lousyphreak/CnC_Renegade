@@ -54,7 +54,8 @@ class Vector3;
 /*************************************************************************
 **                             SurfaceClass
 **
-** This is our surface class, which wraps IDirect3DSurface8.
+** This is our surface class. It owns CPU surface data directly and only
+** touches legacy IDirect3DSurface8 objects at the remaining backend edge.
 **
 ** Hector Yee 2/12/01 - added in fills, blits etc for font3d class
 **

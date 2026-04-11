@@ -33,6 +33,10 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
 - `SurfaceClass` now supports engine-owned CPU texture storage with lazy DX8 materialization at the remaining backend edge, so texture source data is no longer forced to originate in a D3D allocation.
 - `TextureLoader` thumbnail and immediate surface loading now produce `SurfaceClass` mip data directly, and thumbnail-backed textures no longer treat the absence of a legacy DX8 texture object as “not loaded”.
 - Shared texture-facing headers no longer expose the D3D-returning `MissingTexture` helpers or the unused `TextureClass` DX8 accessors that were leaking `IDirect3D*` back out of the backend boundary.
+- `SurfaceClass` utility work in the bgfx build now stays on engine-owned CPU memory instead of materializing fake D3D surfaces:
+  - the filename-loading constructor now copies decoded `SurfaceClass` data directly
+  - font/hue/pixel utility methods (`FindBB`, `Is_Transparent_Column`, `Get_Pixel`, `DrawPixel`, `DrawHLine`) now operate through `Lock` / `Unlock`
+  - the bgfx-side fake `IDirect3DSurface8` implementation and `_Create_DX8_Surface(...)` helpers have been deleted instead of preserved as another compatibility seam
 - Render-target textures are starting to move onto bgfx-native ownership: `TextureClass` now carries a bgfx framebuffer handle, `BgfxRenderer` can bind a texture as the active render target, and projector render-to-texture setup no longer needs a D3D surface when bgfx is active.
 - `Render2D` now submits directly to bgfx using renderer-owned programs, state, and buffers rather than the DX8 dynamic buffer path.
 - The bgfx fixed-function path now advertises the texture-operation coverage it already implements in `fs_fixed_function.sc`: the bgfx-side caps/bootstrap tables expose bump-env, bump-env-luminance, dot3, and current-alpha detail blending so `ShaderClass` no longer silently downgrades those material paths under bgfx.
@@ -50,4 +54,4 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
 ## Immediate next slice
 
 - Expand the same native bgfx submission approach from `Render2D` into the next real material/mesh path, starting with rigid meshes and shared texture ownership cleanup.
-- Finish the remaining surface-side cleanup so `SurfaceClass`, screenshots/movie capture, and any CPU readback paths stop depending on legacy DX8 surface objects at the backend boundary.
+- Finish the remaining true CPU-readback/render-target cleanup so projector caching and any residual surface-return paths stop assuming bgfx render targets can expose legacy DX8-style CPU surfaces.

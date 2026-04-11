@@ -262,6 +262,11 @@
   - `TextureClass::Get_Bgfx_Sampler_Flags(...)` now takes the texture stage explicitly, and the fixed-function bgfx submit path binds stage 0 and stage 1 with their own sampler flags so detail/bump/env-map passes consume the correct filter policy.
   - `Render2DClass` now uses the same stage-0 sampler helper, so the active bgfx build has one renderer-owned sampler-resolution path instead of a mix of DX8 texture-stage writes and ad hoc bgfx defaults.
 - Revalidated after the sampler-state cleanup slice: `cmake --build build -j20` succeeded.
+- Tightened another fixed-function parity seam so the active bgfx path stops drifting away from the live D3D state cache in eye/material handling:
+  - `Code/ww3d2/bgfxfixedfunction.cpp` now treats `D3DRS_COLORVERTEX` as a real gate when resolving `D3DRS_*MATERIALSOURCE`, so bgfx correctly falls back to material colors when legacy callers disable color-vertex instead of continuing to consume stale `COLOR1` / `COLOR2` sources.
+  - `Code/ww3d2/bgfxrenderer.cpp` / `.h`, `Code/ww3d2/render2d.cpp`, and `Code/ww3d2/shaders/vs_fixed_function.sc` now derive the fixed-function viewer uniform from the exact view matrix used for each draw instead of from the renderer's last main-camera state. This keeps local-viewer/specular behavior aligned with per-draw matrix overrides and overlay submissions.
+  - the same bgfx uniform/config path now consumes the live `D3DRS_SPECULARENABLE` state for the final secondary/specular add instead of inferring that only from `ShaderClass`, which keeps the active renderer contract truthful to the wrapper state cache.
+  - `Code/ww3d2/bgfxdynamicbuffer.cpp` now seeds `D3DRS_LOCALVIEWER` and `D3DRS_NORMALIZENORMALS` with explicit bgfx-side defaults during render-state bootstrap so those fixed-function states stop surfacing as uninitialized sentinel values in the active build.
 
 ## Next work
 

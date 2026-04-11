@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
+#include <cmath>
 #include <mutex>
 #include <algorithm>
 #include <string>
@@ -52,7 +53,7 @@ bgfx::UniformHandle BgfxRenderer::FixedFunctionMaterialDiffuseUniform = BGFX_INV
 bgfx::UniformHandle BgfxRenderer::FixedFunctionMaterialSpecularUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::FixedFunctionMaterialEmissiveUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::FixedFunctionMaterialParamsUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionCameraPositionUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionViewerUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::FixedFunctionSceneAmbientUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::FixedFunctionLightingConfigUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::FixedFunctionMaterialSourceConfigUniform = BGFX_INVALID_HANDLE;
@@ -131,16 +132,40 @@ bool Matrices_Are_Equal(const Matrix4 &a, const Matrix4 &b)
     return true;
 }
 
-void Extract_Camera_Position(const Matrix4 &view_matrix, float *camera_position)
+void Extract_Viewer_State(const Matrix4 &view_matrix, bool local_viewer, float *viewer_state)
 {
+    if (!local_viewer) {
+        viewer_state[0] = view_matrix[0][2];
+        viewer_state[1] = view_matrix[1][2];
+        viewer_state[2] = view_matrix[2][2];
+        viewer_state[3] = 0.0f;
+
+        const float length_squared =
+            viewer_state[0] * viewer_state[0]
+            + viewer_state[1] * viewer_state[1]
+            + viewer_state[2] * viewer_state[2];
+        if (length_squared > 1.0e-12f) {
+            const float inverse_length = 1.0f / std::sqrt(length_squared);
+            viewer_state[0] *= inverse_length;
+            viewer_state[1] *= inverse_length;
+            viewer_state[2] *= inverse_length;
+        } else {
+            viewer_state[0] = 0.0f;
+            viewer_state[1] = 0.0f;
+            viewer_state[2] = 1.0f;
+        }
+
+        return;
+    }
+
     const float tx = view_matrix[0][3];
     const float ty = view_matrix[1][3];
     const float tz = view_matrix[2][3];
 
-    camera_position[0] = -(view_matrix[0][0] * tx + view_matrix[1][0] * ty + view_matrix[2][0] * tz);
-    camera_position[1] = -(view_matrix[0][1] * tx + view_matrix[1][1] * ty + view_matrix[2][1] * tz);
-    camera_position[2] = -(view_matrix[0][2] * tx + view_matrix[1][2] * ty + view_matrix[2][2] * tz);
-    camera_position[3] = 1.0f;
+    viewer_state[0] = -(view_matrix[0][0] * tx + view_matrix[1][0] * ty + view_matrix[2][0] * tz);
+    viewer_state[1] = -(view_matrix[0][1] * tx + view_matrix[1][1] * ty + view_matrix[2][1] * tz);
+    viewer_state[2] = -(view_matrix[0][2] * tx + view_matrix[1][2] * ty + view_matrix[2][2] * tz);
+    viewer_state[3] = 1.0f;
 }
 
 float Decode_Dword_Float(unsigned value)
@@ -1646,12 +1671,23 @@ uint64_t BgfxRenderer::Build_Render_State(const ShaderClass &shader, unsigned cu
     return state;
 }
 
-void BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(const ShaderClass &shader, const FixedFunctionShaderInputs &inputs)
+void BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(
+    const ShaderClass &shader,
+    const FixedFunctionShaderInputs &inputs,
+    const Matrix4 &view_matrix)
 {
     const unsigned alpha_reference_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_ALPHAREF);
     const unsigned alpha_function_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_ALPHAFUNC);
+    const unsigned specular_enable_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_SPECULARENABLE);
+    const unsigned local_viewer_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_LOCALVIEWER);
     unsigned fog_mode_state = D3DFOG_NONE;
     bool range_fog_enabled = false;
+    const bool specular_enabled =
+        specular_enable_state != 0x12345678u
+            ? specular_enable_state != FALSE
+            : shader.Get_Secondary_Gradient() == ShaderClass::SECONDARY_GRADIENT_ENABLE;
+    const bool local_viewer_enabled =
+        local_viewer_state != 0x12345678u ? local_viewer_state != FALSE : true;
     float alpha_test_function = -1.0f;
     float alpha_reference = static_cast<float>(alpha_reference_state & 0xffu) / 255.0f;
     if (shader.Get_Alpha_Test() == ShaderClass::ALPHATEST_ENABLE) {
@@ -1682,7 +1718,7 @@ void BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(const ShaderClass &shader,
         alpha_test_function,
         alpha_reference,
         inputs.FogEnabled ? static_cast<float>(shader.Get_Fog_Func()) : 0.0f,
-        shader.Get_Secondary_Gradient() == ShaderClass::SECONDARY_GRADIENT_ENABLE ? 1.0f : 0.0f};
+        specular_enabled ? 1.0f : 0.0f};
 
     float fog_color[4] = {
         static_cast<float>((inputs.FogColor >> 16) & 0xffu) / 255.0f,
@@ -1712,8 +1748,8 @@ void BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(const ShaderClass &shader,
         Decode_Dword_Float(DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGEND)),
         Decode_Dword_Float(DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGDENSITY)),
         range_fog_enabled ? -static_cast<float>(fog_mode_state) : static_cast<float>(fog_mode_state)};
-    float camera_position[4];
-    Extract_Camera_Position(CurrentViewMatrix, camera_position);
+    float viewer_state[4];
+    Extract_Viewer_State(view_matrix, local_viewer_enabled, viewer_state);
 
     bgfx::setUniform(FixedFunctionConfig1Uniform, config1);
     bgfx::setUniform(FixedFunctionFogColorUniform, fog_color);
@@ -1740,7 +1776,7 @@ void BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(const ShaderClass &shader,
     bgfx::setUniform(FixedFunctionLightSpecularUniform, inputs.LightSpecular, 4);
     bgfx::setUniform(FixedFunctionLightAttenuationUniform, inputs.LightAttenuation, 4);
     bgfx::setUniform(FixedFunctionLightSpotParamsUniform, inputs.LightSpotParams, 4);
-    bgfx::setUniform(FixedFunctionCameraPositionUniform, camera_position);
+    bgfx::setUniform(FixedFunctionViewerUniform, viewer_state);
 }
 
 std::uint32_t BgfxRenderer::Convert_Packed_Color(std::uint32_t argb_color)
@@ -1827,8 +1863,8 @@ bool BgfxRenderer::Init_Render_Resources()
         FixedFunctionMaterialParamsUniform = bgfx::createUniform("u_ffpMaterialParams", bgfx::UniformType::Vec4);
     }
 
-    if (!bgfx::isValid(FixedFunctionCameraPositionUniform)) {
-        FixedFunctionCameraPositionUniform = bgfx::createUniform("u_ffpCameraPosition", bgfx::UniformType::Vec4);
+    if (!bgfx::isValid(FixedFunctionViewerUniform)) {
+        FixedFunctionViewerUniform = bgfx::createUniform("u_ffpViewer", bgfx::UniformType::Vec4);
     }
 
     if (!bgfx::isValid(FixedFunctionSceneAmbientUniform)) {
@@ -1888,7 +1924,7 @@ bool BgfxRenderer::Init_Render_Resources()
         || !bgfx::isValid(FixedFunctionMaterialSpecularUniform)
         || !bgfx::isValid(FixedFunctionMaterialEmissiveUniform)
         || !bgfx::isValid(FixedFunctionMaterialParamsUniform)
-        || !bgfx::isValid(FixedFunctionCameraPositionUniform)
+        || !bgfx::isValid(FixedFunctionViewerUniform)
         || !bgfx::isValid(FixedFunctionSceneAmbientUniform)
         || !bgfx::isValid(FixedFunctionLightingConfigUniform)
         || !bgfx::isValid(FixedFunctionMaterialSourceConfigUniform)
@@ -1990,9 +2026,9 @@ void BgfxRenderer::Shutdown_Render_Resources()
         FixedFunctionMaterialParamsUniform = BGFX_INVALID_HANDLE;
     }
 
-    if (bgfx::isValid(FixedFunctionCameraPositionUniform)) {
-        bgfx::destroy(FixedFunctionCameraPositionUniform);
-        FixedFunctionCameraPositionUniform = BGFX_INVALID_HANDLE;
+    if (bgfx::isValid(FixedFunctionViewerUniform)) {
+        bgfx::destroy(FixedFunctionViewerUniform);
+        FixedFunctionViewerUniform = BGFX_INVALID_HANDLE;
     }
 
     if (bgfx::isValid(FixedFunctionMaterialSpecularUniform)) {

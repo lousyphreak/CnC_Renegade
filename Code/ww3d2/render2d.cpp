@@ -632,6 +632,7 @@ void Render2DClass::Render(void)
 	}
 
 	BgfxRenderer::Prepare_Overlay_View();
+	const Matrix4 overlay_view(true);
 
 	bgfx::TextureHandle texture_handle = BgfxRenderer::Get_White_Texture();
 	uint32_t sampler_flags = BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT;
@@ -691,7 +692,7 @@ void Render2DClass::Render(void)
 			shader_inputs.Stage1Color[0] = static_cast<float>(D3DTOP_DISABLE);
 			shader_inputs.Stage1Alpha[0] = static_cast<float>(D3DTOP_DISABLE);
 		}
-		BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(Shader, shader_inputs);
+		BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(Shader, shader_inputs, overlay_view);
 		bgfx::setState(BgfxRenderer::Build_Render_State(Shader));
 		bgfx::submit(BgfxRenderer::Get_Overlay_View_Id(), program);
 
@@ -718,7 +719,7 @@ void Render2DClass::Render(void)
 		shader_inputs.Stage1Color[0] = static_cast<float>(D3DTOP_DISABLE);
 		shader_inputs.Stage1Alpha[0] = static_cast<float>(D3DTOP_DISABLE);
 	}
-	BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(Shader, shader_inputs);
+	BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(Shader, shader_inputs, overlay_view);
 	bgfx::setState(BgfxRenderer::Build_Render_State(Shader));
 	bgfx::submit(BgfxRenderer::Get_Overlay_View_Id(), program);
 }

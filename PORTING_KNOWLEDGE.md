@@ -199,6 +199,16 @@
   - the clean bgfx seam is therefore “resolve bgfx sampler flags from that engine-owned texture state at bind time”, not “write `D3DTSS_MINFILTER` / `MAGFILTER` / `MIPFILTER` / `ADDRESS*` and then hope a bgfx path decodes them later”
   - stage awareness matters for parity: Renegade's old filter init lets stage 0 stay anisotropic while later stages downgrade to linear, so a stage-agnostic bgfx sampler helper silently changes detail/bump/env-map behavior even if the high-level texture/filter settings look unchanged
   - once the bgfx path binds textures through stage-aware `Get_Bgfx_Sampler_Flags(stage)`, the active build no longer needs those DX8 sampler writes at all; keeping them would only preserve dead D3D-shaped state traffic
+- Another fixed-function parity seam is “viewer-dependent state must follow the submitted draw matrices, not the last main camera”:
+  - `BgfxRenderer::Get_View_Id(...)` already lets special-case draws submit through overridden `VIEW`/`PROJECTION` pairs, but fixed-function uniforms that still derive eye state from `CurrentViewMatrix` silently drift back toward the frame camera
+  - the safe rule is to derive viewer/camera-dependent uniforms from the exact view matrix passed with that draw, even for overlay/camera-space special cases
+  - this matters for more than one state: local-viewer specular, camera-relative texgen, and any future eye-dependent fixed-function emulation all break in the same way if the renderer falls back to the main camera
+- `D3DRS_COLORVERTEX` is a real compatibility gate in this tree, not just legacy noise:
+  - material-source states (`D3DRS_*MATERIALSOURCE`) can legitimately remain set to `D3DMCS_COLOR1` / `D3DMCS_COLOR2`, but when color-vertex is disabled the fixed-function path must collapse those requests back to material colors
+  - honoring only the source enums without checking `D3DRS_COLORVERTEX` leaves bgfx with a subtly wrong lighting/material model even though the state cache looks superficially complete
+- `D3DRS_SPECULARENABLE` should be treated as the authoritative “add secondary/specular contribution” switch in the bgfx path:
+  - `ShaderClass::SECONDARY_GRADIENT_*` usually drives that state in Renegade, but the live renderer contract still exposes/specifies the D3D render state itself
+  - using the live render-state value keeps bgfx aligned with direct state changes and avoids baking another shader-only approximation into the port
 
 ## Repository observations
 

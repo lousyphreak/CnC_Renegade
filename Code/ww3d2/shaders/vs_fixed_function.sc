@@ -18,7 +18,7 @@ uniform vec4 u_ffpLightDiffuse[4];
 uniform vec4 u_ffpLightSpecular[4];
 uniform vec4 u_ffpLightAttenuation[4];
 uniform vec4 u_ffpLightSpotParams[4];
-uniform vec4 u_ffpCameraPosition;
+uniform vec4 u_ffpViewer;
 uniform vec4 u_ffpFogParams;
 
 vec4 ResolveColorSource(float source, vec4 materialColor, vec4 color0, vec4 color1)
@@ -116,7 +116,9 @@ void main()
                 litColor += u_ffpLightDiffuse[lightIndex].rgb * diffuse.rgb * ndotl * attenuation;
 
                 if (ndotl > 0.0) {
-                    vec3 viewVector = normalize(u_ffpCameraPosition.xyz - worldPosition);
+                    vec3 viewVector = u_ffpViewer.w > 0.5
+                        ? normalize(u_ffpViewer.xyz - worldPosition)
+                        : normalize(u_ffpViewer.xyz);
                     vec3 halfVector = normalize(lightVector + viewVector);
                     float specularFactor = pow(max(dot(worldNormal, halfVector), 0.0), max(u_ffpMaterialParams.x, 1.0));
                     specularColor += u_ffpLightSpecular[lightIndex].rgb * specular.rgb * specularFactor * attenuation;

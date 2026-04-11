@@ -150,7 +150,10 @@ public:
     static bgfx::ProgramHandle Load_Program(const char *vertex_shader_name, const char *fragment_shader_name);
     static void Destroy_Program(bgfx::ProgramHandle &program);
     static uint64_t Build_Render_State(const ShaderClass &shader, unsigned cull_mode = D3DCULL_CW);
-    static void Apply_Fixed_Function_Shader_Inputs(const ShaderClass &shader, const FixedFunctionShaderInputs &inputs);
+    static void Apply_Fixed_Function_Shader_Inputs(
+        const ShaderClass &shader,
+        const FixedFunctionShaderInputs &inputs,
+        const Matrix4 &view_matrix);
     static std::uint32_t Convert_Packed_Color(std::uint32_t argb_color);
     static void Request_Screen_Shot(const char *file_path);
     static bool Start_Movie_Capture(const char *file_path_base, float frame_rate);
@@ -200,7 +203,7 @@ private:
     static bgfx::UniformHandle FixedFunctionMaterialSpecularUniform;
     static bgfx::UniformHandle FixedFunctionMaterialEmissiveUniform;
     static bgfx::UniformHandle FixedFunctionMaterialParamsUniform;
-    static bgfx::UniformHandle FixedFunctionCameraPositionUniform;
+    static bgfx::UniformHandle FixedFunctionViewerUniform;
     static bgfx::UniformHandle FixedFunctionSceneAmbientUniform;
     static bgfx::UniformHandle FixedFunctionLightingConfigUniform;
     static bgfx::UniformHandle FixedFunctionMaterialSourceConfigUniform;

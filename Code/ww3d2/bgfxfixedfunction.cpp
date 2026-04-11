@@ -85,8 +85,12 @@ void Copy_Packed_Color(float *destination, unsigned color)
     destination[3] = static_cast<float>((color >> 24) & 0xffu) / 255.0f;
 }
 
-unsigned Normalize_Material_Source(unsigned source)
+unsigned Normalize_Material_Source(unsigned source, bool color_vertex_enabled)
 {
+    if (!color_vertex_enabled) {
+        return D3DMCS_MATERIAL;
+    }
+
     switch (source) {
     case D3DMCS_COLOR1:
     case D3DMCS_COLOR2:
@@ -384,12 +388,18 @@ void Populate_Fixed_Function_Lighting_Inputs(
     Copy_Packed_Color(shader_inputs.SceneAmbient, ambient_color != 0x12345678u ? ambient_color : 0u);
 
     const unsigned fvf = vertex_buffer.Vertex_Format_Info().Get_Vertex_Format();
+    const unsigned color_vertex_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_COLORVERTEX);
+    const bool color_vertex_enabled = color_vertex_state != 0x12345678u ? color_vertex_state != FALSE : true;
     shader_inputs.LightingConfig[0] = DX8Wrapper::Get_DX8_Render_State(D3DRS_LIGHTING) != 0u ? 1.0f : 0.0f;
     shader_inputs.LightingConfig[1] = (fvf & VERTEX_FORMAT_FLAG_NORMAL) != 0u ? 1.0f : 0.0f;
-    shader_inputs.LightingConfig[2] = static_cast<float>(Normalize_Material_Source(DX8Wrapper::Get_DX8_Render_State(D3DRS_DIFFUSEMATERIALSOURCE)));
-    shader_inputs.LightingConfig[3] = static_cast<float>(Normalize_Material_Source(DX8Wrapper::Get_DX8_Render_State(D3DRS_AMBIENTMATERIALSOURCE)));
-    shader_inputs.MaterialSourceConfig[0] = static_cast<float>(Normalize_Material_Source(DX8Wrapper::Get_DX8_Render_State(D3DRS_EMISSIVEMATERIALSOURCE)));
-    shader_inputs.MaterialSourceConfig[1] = static_cast<float>(Normalize_Material_Source(DX8Wrapper::Get_DX8_Render_State(D3DRS_SPECULARMATERIALSOURCE)));
+    shader_inputs.LightingConfig[2] = static_cast<float>(
+        Normalize_Material_Source(DX8Wrapper::Get_DX8_Render_State(D3DRS_DIFFUSEMATERIALSOURCE), color_vertex_enabled));
+    shader_inputs.LightingConfig[3] = static_cast<float>(
+        Normalize_Material_Source(DX8Wrapper::Get_DX8_Render_State(D3DRS_AMBIENTMATERIALSOURCE), color_vertex_enabled));
+    shader_inputs.MaterialSourceConfig[0] = static_cast<float>(
+        Normalize_Material_Source(DX8Wrapper::Get_DX8_Render_State(D3DRS_EMISSIVEMATERIALSOURCE), color_vertex_enabled));
+    shader_inputs.MaterialSourceConfig[1] = static_cast<float>(
+        Normalize_Material_Source(DX8Wrapper::Get_DX8_Render_State(D3DRS_SPECULARMATERIALSOURCE), color_vertex_enabled));
 
     for (unsigned light_index = 0; light_index < 4u; ++light_index) {
         const D3DLIGHT8 &light = DX8Wrapper::Peek_Light(light_index);
@@ -621,7 +631,7 @@ bool Submit_Cached_Fixed_Function_Draw(
     TextureClass *stage1_texture = textures != nullptr ? textures[1] : nullptr;
     bgfx::setTexture(0, BgfxRenderer::Get_Texture0_Uniform(), Resolve_Texture_Handle(stage0_texture), Resolve_Sampler_Flags(stage0_texture, 0));
     bgfx::setTexture(1, BgfxRenderer::Get_Texture1_Uniform(), Resolve_Texture_Handle(stage1_texture), Resolve_Sampler_Flags(stage1_texture, 1));
-    BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(shader, shader_inputs);
+    BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(shader, shader_inputs, view);
 
     const unsigned cull_mode = DX8Wrapper::Get_DX8_Render_State(D3DRS_CULLMODE);
     bgfx::setState(

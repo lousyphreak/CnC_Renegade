@@ -72,7 +72,6 @@
 
 
 #include "texproject.h"
-#include "bgfxrenderer.h"
 #include "vertmaterial.h"
 #include "shader.h"
 #include "texture.h"
@@ -1121,11 +1120,7 @@ bool TexProjectClass::Compute_Texture(RenderObjClass * model,SpecialRenderInfoCl
 		/*
 		** Set the render target
 		*/
-		if (BgfxRenderer::Is_Initted()) {
-			WWASSERT(BgfxRenderer::Set_Render_Target(*rtarget));
-		} else {
-			DX8Wrapper::Set_Render_Target(rtarget);
-		}
+		DX8Wrapper::Set_Render_Target(rtarget);
 
 		/*
 		** Set up the camera
@@ -1144,11 +1139,7 @@ bool TexProjectClass::Compute_Texture(RenderObjClass * model,SpecialRenderInfoCl
 		WW3D::Render(*model,*context);
 		WW3D::End_Render(false);
 
-		if (BgfxRenderer::Is_Initted()) {
-			BgfxRenderer::Reset_Render_Target();
-		} else {
-			DX8Wrapper::Set_Render_Target((IDirect3DSurface8 *)NULL);
-		}
+		DX8Wrapper::Reset_Render_Target();
 
 	}
 

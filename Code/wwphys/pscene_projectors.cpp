@@ -857,11 +857,7 @@ void PhysicsSceneClass::Apply_Projectors
 		it.Next();
 	}
 
-	if (BgfxRenderer::Is_Initted()) {
-		BgfxRenderer::Reset_Render_Target();
-	} else {
-		DX8Wrapper::Set_Render_Target((IDirect3DSurface8 *)NULL);
-	}
+	DX8Wrapper::Reset_Render_Target();
 }
 
 void PhysicsSceneClass::Apply_Projector_To_Objects

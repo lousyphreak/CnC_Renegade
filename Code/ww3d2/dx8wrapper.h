@@ -44,6 +44,7 @@
 #define DX8_WRAPPER_H
 
 #include "always.h"
+#include "renegade_build_config.h"
 #include "dllist.h"
 #include "renderer_types.h"
 #include "matrix4.h"
@@ -273,6 +274,7 @@ public:
 	/*
 	** Resources
 	*/
+#if !RENEGADE_WITH_BGFX_RENDERER
 	static IDirect3DTexture8 * _Create_DX8_Texture(
 		unsigned int width,
 		unsigned int height,
@@ -286,6 +288,7 @@ public:
 	static IDirect3DSurface8 * _Create_DX8_Surface(unsigned int width, unsigned int height, WW3DFormat format);
 	static IDirect3DSurface8 * _Create_DX8_Surface(const char *filename);
 	static SurfaceClass * _Get_DX8_Back_Buffer(unsigned int num=0);
+#endif
 
 	static void _Copy_DX8_Rects(
 			IDirect3DSurface8* pSourceSurface,
@@ -350,7 +353,7 @@ public:
 	**
 	**	swap_chain_ptr->Present (NULL, NULL, NULL, NULL);
 	**
-	**	DX8Wrapper::Set_Render_Target ((IDirect3DSurface8 *)NULL);
+	**	DX8Wrapper::Reset_Render_Target ();
 	**
 	*/
 	static IDirect3DSwapChain8 *	Create_Additional_Swap_Chain (HWND render_window);
@@ -363,6 +366,14 @@ public:
 	static void					Set_Render_Target (TextureClass * texture);
 	static void					Set_Render_Target (IDirect3DSurface8 *render_target, bool use_default_depth_buffer = false);
 	static void					Set_Render_Target (IDirect3DSwapChain8 *swap_chain);
+	static void					Reset_Render_Target (void)
+	{
+#if RENEGADE_WITH_BGFX_RENDERER
+		Set_Render_Target((TextureClass *)NULL);
+#else
+		Set_Render_Target((IDirect3DSurface8 *)NULL);
+#endif
+	}
 	static bool					Is_Render_To_Texture(void) { return IsRenderToTexture; }
 
 	static IDirect3DDevice8* _Get_D3D_Device8() { return D3DDevice; }
@@ -505,9 +516,11 @@ protected:
 	static IDirect3D8 *					D3DInterface;			//d3d8;
 	static IDirect3DDevice8 *			D3DDevice;				//d3ddevice8;
 
+#if !RENEGADE_WITH_BGFX_RENDERER
 	static IDirect3DSurface8 *			CurrentRenderTarget;
 	static IDirect3DSurface8 *			DefaultRenderTarget;
 	static IDirect3DSurface8 *			DefaultDepthBuffer;
+#endif
 
 	static bool								IsRenderToTexture;
 

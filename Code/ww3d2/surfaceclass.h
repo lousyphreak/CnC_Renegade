@@ -43,11 +43,14 @@
 #ifndef SURFACECLASS_H
 #define SURFACECLASS_H
 
+#include "renegade_build_config.h"
 #include "ww3dformat.h"
 #include "refcount.h"
 #include <vector>
 
+#if !RENEGADE_WITH_BGFX_RENDERER
 struct IDirect3DSurface8;
+#endif
 class Vector2i;
 class Vector3;
 
@@ -76,8 +79,10 @@ class SurfaceClass : public RefCountClass
 		// Create surface from a file.
 		SurfaceClass(const char *filename);
 
+#if !RENEGADE_WITH_BGFX_RENDERER
 		// Create the surface from a D3D pointer
 		SurfaceClass(IDirect3DSurface8 *d3d_surface);
+#endif
 
 		~SurfaceClass(void);
 
@@ -121,12 +126,14 @@ class SurfaceClass : public RefCountClass
 		unsigned char *CreateCopy(int *width,int *height,int*size,bool flip=false);
 
 		// For use by the remaining DX8 backend edge:
+#if !RENEGADE_WITH_BGFX_RENDERER
 		IDirect3DSurface8 *Peek_DX8_Surface(void);
 		IDirect3DSurface8 *Acquire_DX8_Surface(void);
 
 		// Attaching and detaching a surface pointer
 		void	Attach (IDirect3DSurface8 *surface);
 		void	Detach (void);
+#endif
 
 		// draws a horizontal line
 		void DrawHLine(const unsigned int y,const unsigned int x1, const unsigned int x2, unsigned int color);
@@ -150,10 +157,12 @@ class SurfaceClass : public RefCountClass
 		void Convert_Pixel(unsigned char * pixel,const SurfaceClass::SurfaceDescription &sd, const Vector3 &rgb);
 
 	private:
+#if !RENEGADE_WITH_BGFX_RENDERER
 		void Materialize_DX8_Surface();
 
 		// Legacy backend surface object
 		IDirect3DSurface8 *DX8Surface;
+#endif
 		std::vector<unsigned char> SurfaceMemory;
 		unsigned SurfaceWidth;
 		unsigned SurfaceHeight;

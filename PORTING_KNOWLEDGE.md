@@ -108,6 +108,12 @@
   - if yes (`FindBB`, `Is_Transparent_Column`, `Get_Pixel`, `DrawPixel`, `DrawHLine`, filename-copy setup), the bgfx build should do that directly instead of lazily materializing a fake `IDirect3DSurface8`
   - once those callers are moved, `Acquire_DX8_Surface()` / `Peek_DX8_Surface()` should fail closed under bgfx so any remaining backend-edge readback dependency becomes obvious instead of silently reviving another fake surface layer
   - that in turn lets `Code/ww3d2/bgfxdynamicbuffer.cpp` delete the fake surface object and `_Create_DX8_Surface(...)` helpers entirely rather than preserving dead D3D-shaped ownership
+- Because `Code/ww3d2/CMakeLists.txt` excludes `dx8wrapper.cpp` in the active bgfx build, DX8 resource helpers that only live in shared headers are real cleanup opportunities, not hidden runtime dependencies:
+  - `SurfaceClass`'s DX8-only constructor, attach/detach helpers, and `Acquire_DX8_Surface()` / `Peek_DX8_Surface()` should be compile-gated out of the bgfx build once no live caller remains
+  - dead `_Create_DX8_Texture(...)`, `_Create_DX8_Surface(...)`, and `_Get_DX8_Back_Buffer(...)` declarations in `dx8wrapper.h` should also be hidden from the bgfx build so the active renderer target stops advertising excluded backend code as though it were still live
+- A good follow-up seam for projector/render-target code is to name the intent, not the old D3D mechanism:
+  - high-level code should reset render targets through a renderer-neutral helper like `DX8Wrapper::Reset_Render_Target()`
+  - that keeps bgfx callers from spelling “restore the main target” as a null `IDirect3DSurface8 *`, which is both D3D-shaped and noisier than the real operation
 - bgfx format support needs to be treated as a live renderer capability query, not as a hard-coded copy of old DX8 assumptions:
   - some WW3D formats map cleanly to native bgfx formats (`A8R8G8B8` -> `BGRA8`, `R5G6B5` -> `R5G6B5`, `A4R4G4B4` -> `BGRA4`, `A1R5G5B5` -> `BGR5A1`, DXTn -> BCn)
   - X-channel formats like `X8R8G8B8`, `X1R5G5B5`, and `X4R4G4B4` should stay on an explicit conversion path when sampled as textures, because passing them through as native alpha-bearing formats leaks undefined source alpha bits into the shader path

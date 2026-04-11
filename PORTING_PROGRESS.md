@@ -203,10 +203,18 @@
   - deleted the old render-target validation/readback test plus the `SurfaceClass` copy path that tried to rebuild cached shadows through `Get_Surface_Level()` on a render target
   - dynamic projector pooling remains unchanged; static projector caching now has a separate ownership model that matches bgfx render-target behavior
 - Revalidated after the final submit/projector slice: `cmake --build build -j20` succeeded, and `timeout 210 ./build/bin/Renegade` stayed alive until timeout exit `124` on the final tree with no sanitizer/assert markers in the captured log.
+- Finished the next bgfx cleanup pass by deleting the last dead surface-shaped API from the active build instead of keeping it around in headers:
+  - `Code/ww3d2/surfaceclass.h` now hides the DX8-only constructor, attach/detach helpers, and `Acquire_DX8_Surface()` / `Peek_DX8_Surface()` from the bgfx build, and `surfaceclass.cpp` now compiles a pure engine-owned-memory implementation on the bgfx path instead of carrying unreachable lazy-DX8 materialization branches there.
+  - `Code/ww3d2/surfaceclass.cpp` now includes `dx8wrapper.h` only for the non-bgfx backend, which flushed out and fixed an implicit-include dependency on `vector3.h` while keeping the bgfx path cleaner and more self-contained.
+  - `Code/ww3d2/dx8wrapper.h` now hides dead `_Create_DX8_Texture(...)`, `_Create_DX8_Surface(...)`, and `_Get_DX8_Back_Buffer(...)` declarations from the bgfx build, matching the existing `ww3d2` CMake setup that already excludes `dx8wrapper.cpp`.
+  - added a backend-neutral `DX8Wrapper::Reset_Render_Target()` entry point and switched `Code/ww3d2/texproject.cpp` / `Code/wwphys/pscene_projectors.cpp` to use it, so high-level bgfx code no longer resets the render target by spelling a null `IDirect3DSurface8 *`.
+  - deleted the unused bgfx-side `CurrentRenderTarget` / `DefaultRenderTarget` / `DefaultDepthBuffer` static definitions from `Code/ww3d2/bgfxdynamicbuffer.cpp` because that state only belongs to the excluded DX8 backend implementation.
+- Rebuilt immediately after the header/surface cleanup and confirmed `cmake --build build -j20` still succeeds on the active bgfx tree.
+- Revalidated the new tree with `cd build/bin && timeout 210 ./Renegade`; the executable stayed alive until timeout exit `124` instead of crashing, and the captured runtime log did not show ASAN/UBSAN/assert/fatal renderer failures during the run.
 
 ## Next work
 
-- Continue shrinking the remaining raw surface return paths (`MissingTexture`, backend-local `TextureClass` render-target reads, and any residual CPU readback helpers) so the last backend edge no longer needs fake or real DX8 surface objects in the bgfx build.
+- Continue shrinking the remaining bgfx-visible DX8 API in shared headers (`_Get_D3D8`, `_Get_D3D_Device8`, swap-chain/render-target overloads, raw `IDirect3D*` static state) so the active build stops advertising backend ownership that only exists in excluded code.
 - Continue replacing or deleting the remaining direct `<d3d8.h>` / `<D3dx8core.h>` includes in source files, starting with the backend-local files that now represent the true D3D dependency boundary.
 - Remove the remaining DX8-era initialization dependence under `WW3D::Init()` by porting the mesh/state/render-target path onto bgfx-owned implementations instead of keeping `DX8Wrapper` alive as a fallback frame manager.
 - Replace the D3D-format conversion surface in `formconv.*` and texture loading with backend-neutral or bgfx-backed format handling.

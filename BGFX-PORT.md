@@ -38,6 +38,10 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
   - the filename-loading constructor now copies decoded `SurfaceClass` data directly
   - font/hue/pixel utility methods (`FindBB`, `Is_Transparent_Column`, `Get_Pixel`, `DrawPixel`, `DrawHLine`) now operate through `Lock` / `Unlock`
   - the bgfx-side fake `IDirect3DSurface8` implementation and `_Create_DX8_Surface(...)` helpers have been deleted instead of preserved as another compatibility seam
+- The surface-shaped backend edge is now smaller and more truthful in the active bgfx build:
+  - `SurfaceClass` no longer exposes DX8-only constructors, attach/detach helpers, or `Acquire_DX8_Surface()` / `Peek_DX8_Surface()` in the bgfx build at all; the bgfx path compiles only the engine-owned surface-memory implementation instead of carrying dead lazy-DX8 materialization code in public headers
+  - `dx8wrapper.h` now hides dead `_Create_DX8_Texture(...)`, `_Create_DX8_Surface(...)`, and `_Get_DX8_Back_Buffer(...)` declarations from the bgfx build, matching the existing `ww3d2` build that already excludes `dx8wrapper.cpp`
+  - high-level projector/render-target restore code now uses a backend-neutral `DX8Wrapper::Reset_Render_Target()` helper instead of spelling reset as a null `IDirect3DSurface8 *`
 - Render-target textures are starting to move onto bgfx-native ownership: `TextureClass` now carries a bgfx framebuffer handle, `BgfxRenderer` can bind a texture as the active render target, and projector render-to-texture setup no longer needs a D3D surface when bgfx is active.
 - `Render2D` now submits directly to bgfx using renderer-owned programs, state, and buffers rather than the DX8 dynamic buffer path.
 - The bgfx fixed-function path now advertises the texture-operation coverage it already implements in `fs_fixed_function.sc`: the bgfx-side caps/bootstrap tables expose bump-env, bump-env-luminance, dot3, and current-alpha detail blending so `ShaderClass` no longer silently downgrades those material paths under bgfx.
@@ -69,4 +73,4 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
 
 ## Immediate next slice
 
-- Audit the remaining surface-shaped backend edge (`Acquire_DX8_Surface`, `Peek_DX8_Surface`, `_Create_DX8_Surface`) and delete any caller that still keeps fake D3D surface ownership alive under bgfx when the work can be expressed with engine-owned surface data or GPU-native render-target ownership.
+- Audit the remaining bgfx-visible `DX8Wrapper` header surface (`_Get_D3D8`, `_Get_D3D_Device8`, swap-chain/render-target overloads, raw `IDirect3D*` static state) and delete any declarations, so the clean build stops advertising DX8 ownership that only exists in excluded backend code. Then clean up all callers that were still using those declarations, and update them to use bgfx-native entry points instead of relying on the DX8 wrapper as a compatibility seam.

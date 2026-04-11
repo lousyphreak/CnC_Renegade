@@ -51,9 +51,12 @@
 #include "surfaceclass.h"
 #include "renegade_build_config.h"
 #include "formconv.h"
+#if !RENEGADE_WITH_BGFX_RENDERER
 #include "dx8wrapper.h"
+#endif
 #include "textureloader.h"
 #include "vector2i.h"
+#include "vector3.h"
 #include "wwstring.h"
 #include "colorspace.h"
 #include "bound.h"
@@ -270,7 +273,9 @@ void SurfaceClass::Convert_Pixel(unsigned char * pixel,const SurfaceClass::Surfa
 **                             SurfaceClass
 *************************************************************************/
 SurfaceClass::SurfaceClass(unsigned width, unsigned height, WW3DFormat format):
+#if !RENEGADE_WITH_BGFX_RENDERER
 	DX8Surface(NULL),
+#endif
 	SurfaceWidth(width),
 	SurfaceHeight(height),
 	SurfacePitch(Calculate_Surface_Pitch(width, format)),
@@ -283,7 +288,9 @@ SurfaceClass::SurfaceClass(unsigned width, unsigned height, WW3DFormat format):
 }
 
 SurfaceClass::SurfaceClass(const char *filename):
+#if !RENEGADE_WITH_BGFX_RENDERER
 	DX8Surface(NULL),
+#endif
 	SurfaceWidth(0),
 	SurfaceHeight(0),
 	SurfacePitch(0),
@@ -319,6 +326,7 @@ SurfaceClass::SurfaceClass(const char *filename):
 #endif
 }
 
+#if !RENEGADE_WITH_BGFX_RENDERER
 SurfaceClass::SurfaceClass(IDirect3DSurface8 *d3d_surface)	:
 	DX8Surface (NULL),
 	SurfaceWidth(0),
@@ -331,17 +339,25 @@ SurfaceClass::SurfaceClass(IDirect3DSurface8 *d3d_surface)	:
 	Get_Description(desc);
 	SurfaceFormat=desc.Format;
 }
+#endif
 
 SurfaceClass::~SurfaceClass(void)
 {
+#if !RENEGADE_WITH_BGFX_RENDERER
 	if (DX8Surface) {
 		DX8Surface->Release();
 		DX8Surface = NULL;
 	}
+#endif
 }
 
 void SurfaceClass::Get_Description(SurfaceDescription &surface_desc)
 {
+#if RENEGADE_WITH_BGFX_RENDERER
+	surface_desc.Format = SurfaceFormat;
+	surface_desc.Height = SurfaceHeight;
+	surface_desc.Width = SurfaceWidth;
+#else
 	if (!SurfaceMemory.empty()) {
 		surface_desc.Format = SurfaceFormat;
 		surface_desc.Height = SurfaceHeight;
@@ -355,10 +371,18 @@ void SurfaceClass::Get_Description(SurfaceDescription &surface_desc)
 	surface_desc.Format = D3DFormat_To_WW3DFormat(d3d_desc.Format);
 	surface_desc.Height = d3d_desc.Height;
 	surface_desc.Width = d3d_desc.Width;
+#endif
 }
 
 void * SurfaceClass::Lock(int * pitch)
 {
+#if RENEGADE_WITH_BGFX_RENDERER
+	WWASSERT(!SurfaceMemory.empty());
+	WWASSERT(!SurfaceLocked);
+	SurfaceLocked = true;
+	*pitch = SurfacePitch;
+	return SurfaceMemory.data();
+#else
 	if (!SurfaceMemory.empty()) {
 		WWASSERT(!SurfaceLocked);
 		SurfaceLocked = true;
@@ -371,10 +395,15 @@ void * SurfaceClass::Lock(int * pitch)
 	DX8_ErrorCode(DX8Surface->LockRect(&lock_rect, 0, 0));
 	*pitch = lock_rect.Pitch;
 	return (void *)lock_rect.pBits;
+#endif
 }
 
 void SurfaceClass::Unlock(void)
 {
+#if RENEGADE_WITH_BGFX_RENDERER
+	WWASSERT(SurfaceLocked);
+	SurfaceLocked = false;
+#else
 	if (!SurfaceMemory.empty()) {
 		WWASSERT(SurfaceLocked);
 		SurfaceLocked = false;
@@ -382,33 +411,26 @@ void SurfaceClass::Unlock(void)
 	}
 
 	DX8_ErrorCode(DX8Surface->UnlockRect());
+#endif
 }
 
+#if !RENEGADE_WITH_BGFX_RENDERER
 IDirect3DSurface8 *SurfaceClass::Acquire_DX8_Surface(void)
 {
-#if RENEGADE_WITH_BGFX_RENDERER
-	WWASSERT_PRINT(0, "SurfaceClass::Acquire_DX8_Surface is not supported on the bgfx renderer.\n");
-	return NULL;
-#else
 	Materialize_DX8_Surface();
 	if (DX8Surface != NULL) {
 		DX8Surface->AddRef();
 	}
 
 	return DX8Surface;
-#endif
 }
 
 IDirect3DSurface8 *SurfaceClass::Peek_DX8_Surface(void)
 {
-#if RENEGADE_WITH_BGFX_RENDERER
-	WWASSERT_PRINT(0, "SurfaceClass::Peek_DX8_Surface is not supported on the bgfx renderer.\n");
-	return NULL;
-#else
 	Materialize_DX8_Surface();
 	return DX8Surface;
-#endif
 }
+#endif
 
 /***********************************************************************************************
  * SurfaceClass::Clear -- Clears a surface to 0                                                *
@@ -432,6 +454,9 @@ void SurfaceClass::Clear()
 
 	// size of each pixel in bytes
 	unsigned int size=PixelSize(sd);
+#if RENEGADE_WITH_BGFX_RENDERER
+	memset(SurfaceMemory.data(), 0, Calculate_Surface_Size(sd.Width, sd.Height, sd.Format));
+#else
 	if (!SurfaceMemory.empty()) {
 		memset(SurfaceMemory.data(), 0, Calculate_Surface_Size(sd.Width, sd.Height, sd.Format));
 		return;
@@ -450,6 +475,7 @@ void SurfaceClass::Clear()
 	}
 	
 	DX8_ErrorCode(DX8Surface->UnlockRect());
+#endif
 }
 
 
@@ -475,6 +501,13 @@ void SurfaceClass::Copy(const unsigned char *other)
 
 	// size of each pixel in bytes
 	unsigned int size=PixelSize(sd);
+#if RENEGADE_WITH_BGFX_RENDERER
+	unsigned char *mem = SurfaceMemory.data();
+	for (unsigned int i = 0; i < sd.Height; i++) {
+		memcpy(mem, &other[i * sd.Width * size], size * sd.Width);
+		mem += SurfacePitch;
+	}
+#else
 	if (!SurfaceMemory.empty()) {
 		unsigned char *mem = SurfaceMemory.data();
 		for (unsigned int i = 0; i < sd.Height; i++) {
@@ -497,6 +530,7 @@ void SurfaceClass::Copy(const unsigned char *other)
 	}
 	
 	DX8_ErrorCode(DX8Surface->UnlockRect());
+#endif
 }
 
 
@@ -522,6 +556,14 @@ void SurfaceClass::Copy(Vector2i &min,Vector2i &max, const unsigned char *other)
 
 	// size of each pixel in bytes
 	unsigned int size=PixelSize(sd);
+#if RENEGADE_WITH_BGFX_RENDERER
+	unsigned char *mem = SurfaceMemory.data() + min.J * SurfacePitch + min.I * size;
+	int dx=max.I-min.I;
+	for (int i=min.J; i<max.J; i++) {
+		memcpy(mem,&other[(i*sd.Width+min.I)*size],size*dx);
+		mem += SurfacePitch;
+	}
+#else
 	if (!SurfaceMemory.empty()) {
 		unsigned char *mem = SurfaceMemory.data() + min.J * SurfacePitch + min.I * size;
 		int dx=max.I-min.I;
@@ -551,6 +593,7 @@ void SurfaceClass::Copy(Vector2i &min,Vector2i &max, const unsigned char *other)
 	}
 	
 	DX8_ErrorCode(DX8Surface->UnlockRect());
+#endif
 }
 
 
@@ -588,6 +631,27 @@ unsigned char *SurfaceClass::CreateCopy(int *width,int *height,int*size,bool fli
 	}
 
 	unsigned char *other=new unsigned char [copy_size];
+#if RENEGADE_WITH_BGFX_RENDERER
+	const unsigned char *mem = SurfaceMemory.data();
+	if (compressed_copy_size) {
+		unsigned row_size = Get_Compressed_Row_Size(sd);
+		unsigned row_count = (sd.Height + 3) / 4;
+		for (unsigned i = 0; i < row_count; ++i) {
+			memcpy(&other[i * row_size], mem, row_size);
+			mem += SurfacePitch;
+		}
+	} else {
+		for (unsigned int i = 0; i < sd.Height; i++) {
+			if (flip) {
+				memcpy(&other[(sd.Height-i-1)*sd.Width*mysize],mem,mysize*sd.Width);
+			} else {
+				memcpy(&other[i*sd.Width*mysize],mem,mysize*sd.Width);
+			}
+			mem += SurfacePitch;
+		}
+	}
+	return other;
+#else
 	if (!SurfaceMemory.empty()) {
 		const unsigned char *mem = SurfaceMemory.data();
 		if (compressed_copy_size) {
@@ -641,6 +705,7 @@ unsigned char *SurfaceClass::CreateCopy(int *width,int *height,int*size,bool fli
 	DX8_ErrorCode(DX8Surface->UnlockRect());
 
 	return other;
+#endif
 }
 
 
@@ -959,12 +1024,9 @@ void SurfaceClass::Get_Pixel(Vector3 &rgb, int x,int y)
 	Unlock();	
 }
 
+#if !RENEGADE_WITH_BGFX_RENDERER
 void SurfaceClass::Materialize_DX8_Surface()
 {
-#if RENEGADE_WITH_BGFX_RENDERER
-	WWASSERT_PRINT(0, "SurfaceClass::Materialize_DX8_Surface is not supported on the bgfx renderer.\n");
-	return;
-#else
 	if (DX8Surface != NULL || SurfaceMemory.empty()) {
 		return;
 	}
@@ -1002,7 +1064,6 @@ void SurfaceClass::Materialize_DX8_Surface()
 	}
 
 	DX8_ErrorCode(DX8Surface->UnlockRect());
-#endif
 }
 
 /***********************************************************************************************
@@ -1072,6 +1133,7 @@ void SurfaceClass::Detach (void)
 	DX8Surface = NULL;
 	return ;
 }
+#endif
 
 
 /***********************************************************************************************

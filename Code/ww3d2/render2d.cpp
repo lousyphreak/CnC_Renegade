@@ -637,7 +637,7 @@ void Render2DClass::Render(void)
 	uint32_t sampler_flags = BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT;
 	if (Shader.Get_Texturing() != ShaderClass::TEXTURING_DISABLE && Texture != NULL) {
 		texture_handle = Texture->Get_Bgfx_Texture();
-		sampler_flags = Texture->Get_Bgfx_Sampler_Flags();
+		sampler_flags = Texture->Get_Bgfx_Sampler_Flags(0);
 		if (!bgfx::isValid(texture_handle)) {
 			texture_handle = BgfxRenderer::Get_White_Texture();
 		}

@@ -194,6 +194,11 @@
   - green = V
   - alpha = luminance when present (or `0xff` when the format has no luminance channel)
   - blue can stay zero because the current fixed-function bump-env shader does not consume it
+- The active bgfx build should not route texture sampling policy back through DX8 texture-stage sampler state:
+  - `TextureClass` already owns the authoritative per-texture filter/address choices, and `_Init_Filters(...)` already computes the legacy per-stage “best/default” policy from caps
+  - the clean bgfx seam is therefore “resolve bgfx sampler flags from that engine-owned texture state at bind time”, not “write `D3DTSS_MINFILTER` / `MAGFILTER` / `MIPFILTER` / `ADDRESS*` and then hope a bgfx path decodes them later”
+  - stage awareness matters for parity: Renegade's old filter init lets stage 0 stay anisotropic while later stages downgrade to linear, so a stage-agnostic bgfx sampler helper silently changes detail/bump/env-map behavior even if the high-level texture/filter settings look unchanged
+  - once the bgfx path binds textures through stage-aware `Get_Bgfx_Sampler_Flags(stage)`, the active build no longer needs those DX8 sampler writes at all; keeping them would only preserve dead D3D-shaped state traffic
 
 ## Repository observations
 

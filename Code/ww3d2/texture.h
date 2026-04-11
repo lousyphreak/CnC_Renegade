@@ -217,7 +217,7 @@ class TextureClass : public RefCountClass
 
 		bgfx::TextureHandle Get_Bgfx_Texture();
 		bgfx::FrameBufferHandle Get_Bgfx_Frame_Buffer();
-		uint32_t Get_Bgfx_Sampler_Flags() const;
+		uint32_t Get_Bgfx_Sampler_Flags(unsigned stage = 0) const;
 
 		bool Is_Missing_Texture();
 
@@ -236,7 +236,7 @@ class TextureClass : public RefCountClass
 		static void Invalidate_Old_Unused_Textures(unsigned inactive_time_override);
 
 	private:
-		// Apply this texture's settings into the DX8 backend
+		// Apply this texture's settings into the active renderer backend.
 		void Apply(unsigned int stage);
 		void Load_Locked_Surface();
 		void Release_Bgfx_Texture();
@@ -244,7 +244,7 @@ class TextureClass : public RefCountClass
 		void Apply_New_Surface(SurfaceClass *surface, bool initialized);
 		void Apply_New_Surface(SurfaceClass *const *surfaces, unsigned level_count, bool initialized);
 
-		// Apply a Null texture's settings into the DX8 backend
+		// Apply a null texture's settings into the active renderer backend.
 		static void Apply_Null(unsigned int stage);
 
 		// State not contained in the Direct3D texture object:

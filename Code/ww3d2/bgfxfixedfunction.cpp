@@ -49,9 +49,9 @@ bgfx::TextureHandle Resolve_Texture_Handle(TextureClass *texture)
     return BgfxRenderer::Get_White_Texture();
 }
 
-uint32_t Resolve_Sampler_Flags(TextureClass *texture)
+uint32_t Resolve_Sampler_Flags(TextureClass *texture, unsigned stage)
 {
-    return texture != nullptr ? texture->Get_Bgfx_Sampler_Flags() : 0u;
+    return texture != nullptr ? texture->Get_Bgfx_Sampler_Flags(stage) : 0u;
 }
 
 float Decode_Float_From_Dword(unsigned value)
@@ -619,8 +619,8 @@ bool Submit_Cached_Fixed_Function_Draw(
 
     TextureClass *stage0_texture = textures != nullptr ? textures[0] : nullptr;
     TextureClass *stage1_texture = textures != nullptr ? textures[1] : nullptr;
-    bgfx::setTexture(0, BgfxRenderer::Get_Texture0_Uniform(), Resolve_Texture_Handle(stage0_texture), Resolve_Sampler_Flags(stage0_texture));
-    bgfx::setTexture(1, BgfxRenderer::Get_Texture1_Uniform(), Resolve_Texture_Handle(stage1_texture), Resolve_Sampler_Flags(stage1_texture));
+    bgfx::setTexture(0, BgfxRenderer::Get_Texture0_Uniform(), Resolve_Texture_Handle(stage0_texture), Resolve_Sampler_Flags(stage0_texture, 0));
+    bgfx::setTexture(1, BgfxRenderer::Get_Texture1_Uniform(), Resolve_Texture_Handle(stage1_texture), Resolve_Sampler_Flags(stage1_texture, 1));
     BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(shader, shader_inputs);
 
     const unsigned cull_mode = DX8Wrapper::Get_DX8_Render_State(D3DRS_CULLMODE);

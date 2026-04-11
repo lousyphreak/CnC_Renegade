@@ -152,6 +152,62 @@ static unsigned Get_Requested_Mip_Count(unsigned width, unsigned height, WW3DFor
 	return std::min<unsigned>(Get_Full_Mip_Count(width, height, Is_Compressed_Format(format)), TextureClass::MIP_LEVELS_MAX);
 }
 
+static unsigned Clamp_Texture_Stage(unsigned stage)
+{
+	if (stage >= MAX_TEXTURE_STAGES) {
+		return MAX_TEXTURE_STAGES - 1;
+	}
+
+	return stage;
+}
+
+static uint32_t Resolve_Bgfx_Min_Filter_Flags(unsigned filter)
+{
+#if RENEGADE_WITH_BGFX_RENDERER
+	return static_cast<uint32_t>(filter);
+#else
+	switch (filter) {
+	case D3DTEXF_POINT:
+		return BGFX_SAMPLER_MIN_POINT;
+	case D3DTEXF_ANISOTROPIC:
+		return BGFX_SAMPLER_MIN_ANISOTROPIC;
+	default:
+		return 0u;
+	}
+#endif
+}
+
+static uint32_t Resolve_Bgfx_Mag_Filter_Flags(unsigned filter)
+{
+#if RENEGADE_WITH_BGFX_RENDERER
+	return static_cast<uint32_t>(filter);
+#else
+	switch (filter) {
+	case D3DTEXF_POINT:
+		return BGFX_SAMPLER_MAG_POINT;
+	case D3DTEXF_ANISOTROPIC:
+		return BGFX_SAMPLER_MAG_ANISOTROPIC;
+	default:
+		return 0u;
+	}
+#endif
+}
+
+static uint32_t Resolve_Bgfx_Mip_Filter_Flags(unsigned filter)
+{
+#if RENEGADE_WITH_BGFX_RENDERER
+	return static_cast<uint32_t>(filter);
+#else
+	switch (filter) {
+	case D3DTEXF_POINT:
+	case D3DTEXF_NONE:
+		return BGFX_SAMPLER_MIP_POINT;
+	default:
+		return 0u;
+	}
+#endif
+}
+
 /*************************************************************************
 **                             TextureClass
 *************************************************************************/
@@ -540,42 +596,14 @@ bgfx::FrameBufferHandle TextureClass::Get_Bgfx_Frame_Buffer()
 	return BgfxFrameBuffer;
 }
 
-uint32_t TextureClass::Get_Bgfx_Sampler_Flags() const
+uint32_t TextureClass::Get_Bgfx_Sampler_Flags(unsigned stage) const
 {
+	const unsigned sampler_stage = Clamp_Texture_Stage(stage);
 	uint32_t flags = 0;
 
-	switch (TextureMinFilter) {
-	case FILTER_TYPE_NONE:
-		flags |= BGFX_SAMPLER_MIN_POINT;
-		break;
-	case FILTER_TYPE_FAST:
-	case FILTER_TYPE_BEST:
-	case FILTER_TYPE_DEFAULT:
-	default:
-		break;
-	}
-
-	switch (TextureMagFilter) {
-	case FILTER_TYPE_NONE:
-		flags |= BGFX_SAMPLER_MAG_POINT;
-		break;
-	case FILTER_TYPE_FAST:
-	case FILTER_TYPE_BEST:
-	case FILTER_TYPE_DEFAULT:
-	default:
-		break;
-	}
-
-	switch (MipMapFilter) {
-	case FILTER_TYPE_NONE:
-	case FILTER_TYPE_FAST:
-		flags |= BGFX_SAMPLER_MIP_POINT;
-		break;
-	case FILTER_TYPE_BEST:
-	case FILTER_TYPE_DEFAULT:
-	default:
-		break;
-	}
+	flags |= Resolve_Bgfx_Min_Filter_Flags(_MinTextureFilters[sampler_stage][TextureMinFilter]);
+	flags |= Resolve_Bgfx_Mag_Filter_Flags(_MagTextureFilters[sampler_stage][TextureMagFilter]);
+	flags |= Resolve_Bgfx_Mip_Filter_Flags(_MipMapFilters[sampler_stage][MipMapFilter]);
 
 	if (Get_U_Addr_Mode() == TEXTURE_ADDRESS_CLAMP) {
 		flags |= BGFX_SAMPLER_U_CLAMP;
@@ -693,6 +721,7 @@ void TextureClass::Apply(unsigned int stage)
 		DX8Wrapper::Set_Texture(stage, NULL);
 	}
 
+#if !RENEGADE_WITH_BGFX_RENDERER
 	DX8Wrapper::Set_DX8_Texture_Stage_State(stage,D3DTSS_MINFILTER,_MinTextureFilters[stage][TextureMinFilter]);
 	DX8Wrapper::Set_DX8_Texture_Stage_State(stage,D3DTSS_MAGFILTER,_MagTextureFilters[stage][TextureMagFilter]);
 	DX8Wrapper::Set_DX8_Texture_Stage_State(stage,D3DTSS_MIPFILTER,_MipMapFilters[stage][MipMapFilter]);
@@ -720,6 +749,7 @@ void TextureClass::Apply(unsigned int stage)
 			break;
 
 	}
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -914,6 +944,63 @@ void TextureClass::_Init_Filters(TextureClass::TextureFilterMode filter_type)
 {
 	const D3DCAPS8& dx8caps=DX8Wrapper::Get_Current_Caps()->Get_DX8_Caps();
 
+#if RENEGADE_WITH_BGFX_RENDERER
+	_MinTextureFilters[0][FILTER_TYPE_NONE]=BGFX_SAMPLER_MIN_POINT;
+	_MagTextureFilters[0][FILTER_TYPE_NONE]=BGFX_SAMPLER_MAG_POINT;
+	_MipMapFilters[0][FILTER_TYPE_NONE]=BGFX_SAMPLER_MIP_POINT;
+
+	_MinTextureFilters[0][FILTER_TYPE_FAST]=0u;
+	_MagTextureFilters[0][FILTER_TYPE_FAST]=0u;
+	_MipMapFilters[0][FILTER_TYPE_FAST]=BGFX_SAMPLER_MIP_POINT;
+
+	_MagTextureFilters[0][FILTER_TYPE_BEST]=BGFX_SAMPLER_MAG_POINT;
+	_MinTextureFilters[0][FILTER_TYPE_BEST]=BGFX_SAMPLER_MIN_POINT;
+	_MipMapFilters[0][FILTER_TYPE_BEST]=BGFX_SAMPLER_MIP_POINT;
+
+	if (dx8caps.TextureFilterCaps&D3DPTFILTERCAPS_MAGFLINEAR) _MagTextureFilters[0][FILTER_TYPE_BEST]=0u;
+	if (dx8caps.TextureFilterCaps&D3DPTFILTERCAPS_MINFLINEAR) _MinTextureFilters[0][FILTER_TYPE_BEST]=0u;
+
+	if (filter_type==TextureClass::TEXTURE_FILTER_ANISOTROPIC) {
+		if (dx8caps.TextureFilterCaps&D3DPTFILTERCAPS_MAGFANISOTROPIC) _MagTextureFilters[0][FILTER_TYPE_BEST]=BGFX_SAMPLER_MAG_ANISOTROPIC;
+		if (dx8caps.TextureFilterCaps&D3DPTFILTERCAPS_MINFANISOTROPIC) _MinTextureFilters[0][FILTER_TYPE_BEST]=BGFX_SAMPLER_MIN_ANISOTROPIC;
+	}
+
+	if (filter_type==TextureClass::TEXTURE_FILTER_ANISOTROPIC || filter_type==TextureClass::TEXTURE_FILTER_TRILINEAR) {
+		if (dx8caps.TextureFilterCaps&D3DPTFILTERCAPS_MIPFLINEAR) _MipMapFilters[0][FILTER_TYPE_BEST]=0u;
+	}
+
+	for (int i=1;i<MAX_TEXTURE_STAGES;++i) {
+		_MinTextureFilters[i][FILTER_TYPE_NONE]=_MinTextureFilters[i-1][FILTER_TYPE_NONE];
+		_MagTextureFilters[i][FILTER_TYPE_NONE]=_MagTextureFilters[i-1][FILTER_TYPE_NONE];
+		_MipMapFilters[i][FILTER_TYPE_NONE]=_MipMapFilters[i-1][FILTER_TYPE_NONE];
+
+		_MinTextureFilters[i][FILTER_TYPE_FAST]=_MinTextureFilters[i-1][FILTER_TYPE_FAST];
+		_MagTextureFilters[i][FILTER_TYPE_FAST]=_MagTextureFilters[i-1][FILTER_TYPE_FAST];
+		_MipMapFilters[i][FILTER_TYPE_FAST]=_MipMapFilters[i-1][FILTER_TYPE_FAST];
+
+		if (_MagTextureFilters[i-1][FILTER_TYPE_BEST]==BGFX_SAMPLER_MAG_ANISOTROPIC) {
+			_MagTextureFilters[i][FILTER_TYPE_BEST]=0u;
+		}
+		else {
+			_MagTextureFilters[i][FILTER_TYPE_BEST]=_MagTextureFilters[i-1][FILTER_TYPE_BEST];
+		}
+
+		if (_MinTextureFilters[i-1][FILTER_TYPE_BEST]==BGFX_SAMPLER_MIN_ANISOTROPIC) {
+			_MinTextureFilters[i][FILTER_TYPE_BEST]=0u;
+		}
+		else {
+			_MinTextureFilters[i][FILTER_TYPE_BEST]=_MinTextureFilters[i-1][FILTER_TYPE_BEST];
+		}
+
+		_MipMapFilters[i][FILTER_TYPE_BEST]=_MipMapFilters[i-1][FILTER_TYPE_BEST];
+	}
+
+	for (int i = 0; i < MAX_TEXTURE_STAGES; ++i) {
+		_MinTextureFilters[i][FILTER_TYPE_DEFAULT]=_MinTextureFilters[i][FILTER_TYPE_BEST];
+		_MagTextureFilters[i][FILTER_TYPE_DEFAULT]=_MagTextureFilters[i][FILTER_TYPE_BEST];
+		_MipMapFilters[i][FILTER_TYPE_DEFAULT]=_MipMapFilters[i][FILTER_TYPE_BEST];
+	}
+#else
 	_MinTextureFilters[0][FILTER_TYPE_NONE]=D3DTEXF_POINT;
 	_MagTextureFilters[0][FILTER_TYPE_NONE]=D3DTEXF_POINT;
 	_MipMapFilters[0][FILTER_TYPE_NONE]=D3DTEXF_NONE;
@@ -988,6 +1075,7 @@ void TextureClass::_Init_Filters(TextureClass::TextureFilterMode filter_type)
 
 		DX8Wrapper::Set_DX8_Texture_Stage_State(i,D3DTSS_MAXANISOTROPY,2);
 	}
+#endif
 
 }
 

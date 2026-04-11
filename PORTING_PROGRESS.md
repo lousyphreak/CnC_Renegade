@@ -256,9 +256,15 @@
   - `Code/ww3d2/bgfxdynamicbuffer.cpp` now tracks `D3DRS_ZBIAS` in the active bgfx build and folds that bias back into `DX8Wrapper::Get_Transform(D3DTS_PROJECTION, ...)`, so legacy callers that rely on z-bias for decal/extra-pass separation regain an actual depth offset instead of writing dead state.
   - `Code/ww3d2/bgfxfixedfunction.cpp` now honors `D3DRS_FILLMODE` in the renderer-owned fixed-function submitter: solid draws keep the existing triangle path, wireframe draws expand to line primitives, and point-mode draws submit as point primitives instead of silently rendering solid triangles.
   - `Code/ww3d2/bgfxrenderer.cpp` now decodes bump-map upload formats (`WW3D_FORMAT_U8V8`, `WW3D_FORMAT_L6V5U5`, and `WW3D_FORMAT_X8L8V8U8`) into BGRA8 channels that match the live bgfx fixed-function shader's bump-env sampling contract, so authored bump textures no longer fail the CPU-conversion path as unsupported.
+- Removed the last live DX8 sampler-state traffic from the active bgfx texture bind path and tightened sampler parity at the same time:
+  - `Code/ww3d2/texture.cpp` now resolves bgfx sampler flags from engine-owned per-stage filter profiles instead of pushing `D3DTSS_MINFILTER` / `MAGFILTER` / `MIPFILTER` / `ADDRESSU` / `ADDRESSV` writes through `DX8Wrapper` in the bgfx build.
+  - `_Init_Filters(...)` now builds those stage-aware bgfx sampler profiles directly from the legacy caps snapshot, preserving the original “stage 0 may stay anisotropic, later stages downgrade to linear” rule instead of silently flattening everything through stage-agnostic defaults.
+  - `TextureClass::Get_Bgfx_Sampler_Flags(...)` now takes the texture stage explicitly, and the fixed-function bgfx submit path binds stage 0 and stage 1 with their own sampler flags so detail/bump/env-map passes consume the correct filter policy.
+  - `Render2DClass` now uses the same stage-0 sampler helper, so the active bgfx build has one renderer-owned sampler-resolution path instead of a mix of DX8 texture-stage writes and ad hoc bgfx defaults.
+- Revalidated after the sampler-state cleanup slice: `cmake --build build -j20` succeeded.
 
 ## Next work
 
-- Continue de-DX8ing the live render pipeline above the renamed buffer layer, starting with the remaining `dx8renderer.*` / `dx8polygonrenderer.*` / `DX8Wrapper` state surfaces and the still-D3D-shaped format/sampler API that the bgfx build exposes.
+- Continue de-DX8ing the live render pipeline above the renamed buffer layer, starting with the remaining `dx8renderer.*` / `dx8polygonrenderer.*` / `DX8Wrapper` state surfaces and the still-D3D-shaped format API that the bgfx build exposes.
 - Replace the remaining D3D-format conversion surface in `formconv.*` and texture loading with backend-neutral or bgfx-backed format handling.
 - Keep deleting or hiding DX8-only API from shared headers whenever the active bgfx build already excludes the corresponding backend `.cpp`.

@@ -35,6 +35,7 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
 - Shared texture-facing headers no longer expose the D3D-returning `MissingTexture` helpers or the unused `TextureClass` DX8 accessors that were leaking `IDirect3D*` back out of the backend boundary.
 - Render-target textures are starting to move onto bgfx-native ownership: `TextureClass` now carries a bgfx framebuffer handle, `BgfxRenderer` can bind a texture as the active render target, and projector render-to-texture setup no longer needs a D3D surface when bgfx is active.
 - `Render2D` now submits directly to bgfx using renderer-owned programs, state, and buffers rather than the DX8 dynamic buffer path.
+- The bgfx fixed-function path now advertises the texture-operation coverage it already implements in `fs_fixed_function.sc`: the bgfx-side caps/bootstrap tables expose bump-env, bump-env-luminance, dot3, and current-alpha detail blending so `ShaderClass` no longer silently downgrades those material paths under bgfx.
 - Runtime validation has moved beyond startup-only bring-up:
   - bgfx/X11/Vulkan initialization now survives the real `WW3D::Init()` + `DX8Wrapper::Init()` sequence without falling back to headless or failing on repeated init.
   - Linux/X11 startup should currently keep bgfx on its render thread. Re-testing the old single-threaded `bgfx::renderFrame()` workaround against the live menu path showed that it had become a major startup bottleneck, while the threaded path now survives real startup and long-run validation in this tree.

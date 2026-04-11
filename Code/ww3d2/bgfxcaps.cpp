@@ -14,7 +14,18 @@ D3DCAPS8 Build_Default_Caps()
     caps.DevCaps = D3DDEVCAPS_HWTRANSFORMANDLIGHT;
     caps.RasterCaps = D3DPRASTERCAPS_ZBIAS;
     caps.TextureFilterCaps = D3DPTFILTERCAPS_MINFLINEAR | D3DPTFILTERCAPS_MAGFLINEAR | D3DPTFILTERCAPS_MIPFLINEAR | D3DPTFILTERCAPS_MINFANISOTROPIC | D3DPTFILTERCAPS_MAGFANISOTROPIC;
-    caps.TextureOpCaps = D3DTEXOPCAPS_DISABLE | D3DTEXOPCAPS_SELECTARG1 | D3DTEXOPCAPS_MODULATE | D3DTEXOPCAPS_ADD | D3DTEXOPCAPS_SUBTRACT | D3DTEXOPCAPS_ADDSMOOTH | D3DTEXOPCAPS_BLENDTEXTUREALPHA;
+    caps.TextureOpCaps =
+        D3DTEXOPCAPS_DISABLE |
+        D3DTEXOPCAPS_SELECTARG1 |
+        D3DTEXOPCAPS_MODULATE |
+        D3DTEXOPCAPS_ADD |
+        D3DTEXOPCAPS_ADDSMOOTH |
+        D3DTEXOPCAPS_BLENDTEXTUREALPHA |
+        D3DTEXOPCAPS_BLENDCURRENTALPHA |
+        D3DTEXOPCAPS_BUMPENVMAP |
+        D3DTEXOPCAPS_BUMPENVMAPLUMINANCE |
+        D3DTEXOPCAPS_DOTPRODUCT3 |
+        D3DTEXOPCAPS_SUBTRACT;
     caps.MaxTextureWidth = 16384;
     caps.MaxTextureHeight = 16384;
     caps.MaxSimultaneousTextures = 2;
@@ -117,6 +128,23 @@ void DX8Caps::Compute_Caps(WW3DFormat, const D3DADAPTER_IDENTIFIER8& adapter_id)
     VendorId = Define_Vendor(adapter_id.VendorId);
     CapsLog = adapter_id.Description;
     CompactLog = adapter_id.Description;
+
+    SupportTnL = (Caps.DevCaps & D3DDEVCAPS_HWTRANSFORMANDLIGHT) == D3DDEVCAPS_HWTRANSFORMANDLIGHT;
+    SupportZBias = (Caps.RasterCaps & D3DPRASTERCAPS_ZBIAS) == D3DPRASTERCAPS_ZBIAS;
+    SupportAnisotropicFiltering =
+        (Caps.TextureFilterCaps & D3DPTFILTERCAPS_MAGFANISOTROPIC) != 0 &&
+        (Caps.TextureFilterCaps & D3DPTFILTERCAPS_MINFANISOTROPIC) != 0;
+    SupportBumpEnvmap = (Caps.TextureOpCaps & D3DTEXOPCAPS_BUMPENVMAP) != 0;
+    SupportBumpEnvmapLuminance = (Caps.TextureOpCaps & D3DTEXOPCAPS_BUMPENVMAPLUMINANCE) != 0;
+    SupportDXTC =
+        SupportTextureFormat[WW3D_FORMAT_DXT1] ||
+        SupportTextureFormat[WW3D_FORMAT_DXT2] ||
+        SupportTextureFormat[WW3D_FORMAT_DXT3] ||
+        SupportTextureFormat[WW3D_FORMAT_DXT4] ||
+        SupportTextureFormat[WW3D_FORMAT_DXT5];
+    MaxTexturesPerPass = static_cast<int>(Caps.MaxSimultaneousTextures);
+    VertexShaderVersion = Caps.VertexShaderVersion;
+    PixelShaderVersion = Caps.PixelShaderVersion;
 }
 
 bool DX8Caps::Is_Valid_Display_Format(int width, int height, WW3DFormat format)

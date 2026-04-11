@@ -158,6 +158,11 @@
   - deleted the fake bgfx-side `IDirect3DTexture8` implementation and `_Create_DX8_Texture(...)` helpers from `Code/ww3d2/bgfxdynamicbuffer.cpp`; the remaining fake surface object is now the smaller, explicit backend edge still to be removed.
   - trimmed an unnecessary `dx8wrapper.h` include from `Code/ww3d2/dx8texman.h` while touching that seam.
   - rebuilt after the cleanup and confirmed the renderer target and game still build cleanly with the fake texture COM layer gone.
+- Extended bgfx fixed-function capability coverage to match the shader path that already exists instead of leaving valid material paths disabled:
+  - `Code/ww3d2/bgfxcaps.cpp` now derives runtime support flags like `SupportBumpEnvmap`, `SupportBumpEnvmapLuminance`, anisotropic filtering, DXTC, and `MaxTexturesPerPass` from the bgfx-backed `D3DCAPS8` snapshot instead of leaving several of them at constructor defaults.
+  - both bgfx capability bootstrap tables (`bgfxcaps.cpp` and the `Ensure_Caps()` path in `bgfxdynamicbuffer.cpp`) now advertise the texture ops that `fs_fixed_function.sc` already executes: bump-env, bump-env-luminance, dot3, and current-alpha detail blending, alongside the previously exposed add/subtract/modulate/detail ops.
+  - this keeps `ShaderClass::Apply()` from silently degrading those material states under bgfx just because the caps table was stale, which is a necessary step toward full rigid-mesh/material feature parity on the clean bgfx path.
+  - rebuilt after the capability fix and launched `build/bin/Renegade` under a 300-second timeout for live validation; the executable reached the main loop, loaded into gameplay, and timed out normally with exit `124` rather than crashing, with no ASAN/UBSAN/runtime-failure markers in the captured output.
 
 ## Next work
 

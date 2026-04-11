@@ -257,6 +257,59 @@ Vector2 Resolve_Texture_Coordinates(
     return Vector2(coordinate.X, coordinate.Y);
 }
 
+enum class FillMode
+{
+    Solid,
+    Wireframe,
+    Points,
+};
+
+FillMode Resolve_Fill_Mode()
+{
+    switch (DX8Wrapper::Get_DX8_Render_State(D3DRS_FILLMODE)) {
+    case D3DFILL_POINT:
+        return FillMode::Points;
+    case D3DFILL_WIREFRAME:
+        return FillMode::Wireframe;
+    default:
+        return FillMode::Solid;
+    }
+}
+
+uint64_t Resolve_Primitive_State(FillMode fill_mode)
+{
+    switch (fill_mode) {
+    case FillMode::Wireframe:
+        return BGFX_STATE_PT_LINES;
+    case FillMode::Points:
+        return BGFX_STATE_PT_POINTS | BGFX_STATE_POINT_SIZE(1);
+    default:
+        return 0u;
+    }
+}
+
+uint32_t Resolve_Submitted_Index_Count(FillMode fill_mode, bool strip, unsigned short polygon_count)
+{
+    switch (fill_mode) {
+    case FillMode::Wireframe:
+        return static_cast<uint32_t>(polygon_count) * 6u;
+    case FillMode::Points:
+        return strip ? static_cast<uint32_t>(polygon_count) + 2u : static_cast<uint32_t>(polygon_count) * 3u;
+    default:
+        return static_cast<uint32_t>(polygon_count) * 3u;
+    }
+}
+
+void Write_Wireframe_Triangle(uint16_t *destination, unsigned short a, unsigned short b, unsigned short c, unsigned short min_vertex_index)
+{
+    destination[0] = static_cast<uint16_t>(a - min_vertex_index);
+    destination[1] = static_cast<uint16_t>(b - min_vertex_index);
+    destination[2] = static_cast<uint16_t>(b - min_vertex_index);
+    destination[3] = static_cast<uint16_t>(c - min_vertex_index);
+    destination[4] = static_cast<uint16_t>(c - min_vertex_index);
+    destination[5] = static_cast<uint16_t>(a - min_vertex_index);
+}
+
 void Populate_Fixed_Function_Stage_Inputs(BgfxRenderer::FixedFunctionShaderInputs &shader_inputs)
 {
     const unsigned texture_factor = DX8Wrapper::Get_DX8_Render_State(D3DRS_TEXTUREFACTOR);
@@ -391,7 +444,8 @@ bool Submit_Cached_Fixed_Function_Draw(
         return false;
     }
 
-    const uint32_t submitted_index_count = static_cast<uint32_t>(polygon_count) * 3u;
+    const FillMode fill_mode = Resolve_Fill_Mode();
+    const uint32_t submitted_index_count = Resolve_Submitted_Index_Count(fill_mode, strip, polygon_count);
     const unsigned short source_index_count = strip
         ? static_cast<unsigned short>(polygon_count + 2)
         : static_cast<unsigned short>(polygon_count * 3u);
@@ -509,7 +563,29 @@ bool Submit_Cached_Fixed_Function_Draw(
         source_index_count);
     const unsigned short *source_indices = index_lock.Get_Index_Array();
 
-    if (strip) {
+    if (fill_mode == FillMode::Wireframe) {
+        for (unsigned short triangle = 0; triangle < polygon_count; ++triangle) {
+            unsigned short a = 0;
+            unsigned short b = 0;
+            unsigned short c = 0;
+            if (strip) {
+                const bool odd_triangle = (triangle & 1u) != 0u;
+                a = source_indices[triangle + (odd_triangle ? 1 : 0)];
+                b = source_indices[triangle + (odd_triangle ? 0 : 1)];
+                c = source_indices[triangle + 2];
+            } else {
+                a = source_indices[triangle * 3 + 0];
+                b = source_indices[triangle * 3 + 1];
+                c = source_indices[triangle * 3 + 2];
+            }
+
+            Write_Wireframe_Triangle(submission_indices + triangle * 6u, a, b, c, min_vertex_index);
+        }
+    } else if (fill_mode == FillMode::Points) {
+        for (uint32_t index = 0; index < submitted_index_count; ++index) {
+            submission_indices[index] = static_cast<uint16_t>(source_indices[index] - min_vertex_index);
+        }
+    } else if (strip) {
         for (unsigned short triangle = 0; triangle < polygon_count; ++triangle) {
             const bool odd_triangle = (triangle & 1u) != 0u;
             const unsigned short a = source_indices[triangle + (odd_triangle ? 1 : 0)];
@@ -549,7 +625,9 @@ bool Submit_Cached_Fixed_Function_Draw(
     BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(shader, shader_inputs);
 
     const unsigned cull_mode = DX8Wrapper::Get_DX8_Render_State(D3DRS_CULLMODE);
-    bgfx::setState(BgfxRenderer::Build_Render_State(shader, cull_mode != 0x12345678u ? cull_mode : kD3DCullCW));
+    bgfx::setState(
+        BgfxRenderer::Build_Render_State(shader, cull_mode != 0x12345678u ? cull_mode : kD3DCullCW)
+            | Resolve_Primitive_State(fill_mode));
     bgfx::submit(BgfxRenderer::Get_View_Id(view, projection), BgfxRenderer::Get_Fixed_Function_Program());
     return true;
 }

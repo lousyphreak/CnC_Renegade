@@ -18,6 +18,7 @@
 #include <bgfx/bgfx.h>
 #include <bgfx/platform.h>
 
+#include "dx8wrapper.h"
 #include "rawfile.h"
 #include "surfaceclass.h"
 #include "texture.h"
@@ -598,6 +599,11 @@ uint8_t Expand_5_To_8(uint8_t value)
     return static_cast<uint8_t>((value << 3) | (value >> 2));
 }
 
+uint8_t Expand_6_To_8(uint8_t value)
+{
+    return static_cast<uint8_t>((value << 2) | (value >> 4));
+}
+
 uint32_t Convert_ARGB_To_ABGR(uint32_t argb_color)
 {
     const uint32_t alpha = argb_color & 0xff000000u;
@@ -838,6 +844,31 @@ bool Convert_Surface_Copy_To_BGRA8(
             destination[2] = 0xff;
             destination[3] = source[0];
             source_pixels += 1;
+            break;
+        }
+        case WW3D_FORMAT_U8V8: {
+            destination[0] = 0x00;
+            destination[1] = source[1];
+            destination[2] = source[0];
+            destination[3] = 0xff;
+            source_pixels += 2;
+            break;
+        }
+        case WW3D_FORMAT_L6V5U5: {
+            const uint16_t packed = static_cast<uint16_t>(source[0]) | (static_cast<uint16_t>(source[1]) << 8);
+            destination[0] = 0x00;
+            destination[1] = Expand_5_To_8(static_cast<uint8_t>((packed >> 5) & 0x1f));
+            destination[2] = Expand_5_To_8(static_cast<uint8_t>(packed & 0x1f));
+            destination[3] = Expand_6_To_8(static_cast<uint8_t>((packed >> 10) & 0x3f));
+            source_pixels += 2;
+            break;
+        }
+        case WW3D_FORMAT_X8L8V8U8: {
+            destination[0] = source[3];
+            destination[1] = source[1];
+            destination[2] = source[0];
+            destination[3] = source[2];
+            source_pixels += 4;
             break;
         }
         case WW3D_FORMAT_L8: {
@@ -1606,10 +1637,18 @@ uint64_t BgfxRenderer::Build_Render_State(const ShaderClass &shader, unsigned cu
 
 void BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(const ShaderClass &shader, const FixedFunctionShaderInputs &inputs)
 {
-    const float alpha_reference = 0x60f / 255.0f;
-    float alpha_test_function = 0.0f;
+    const unsigned alpha_reference_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_ALPHAREF);
+    const unsigned alpha_function_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_ALPHAFUNC);
+    float alpha_test_function = -1.0f;
+    float alpha_reference = static_cast<float>(alpha_reference_state & 0xffu) / 255.0f;
     if (shader.Get_Alpha_Test() == ShaderClass::ALPHATEST_ENABLE) {
-        alpha_test_function = shader.Get_Src_Blend_Func() == ShaderClass::SRCBLEND_ONE_MINUS_SRC_ALPHA ? 2.0f : 1.0f;
+        unsigned alpha_function = alpha_function_state;
+        if (alpha_function > D3DCMP_ALWAYS || (alpha_function == 0u && alpha_reference_state == 0u)) {
+            alpha_function = D3DCMP_GREATEREQUAL;
+            alpha_reference = 0x60 / 255.0f;
+        }
+
+        alpha_test_function = static_cast<float>(alpha_function);
     }
 
     float config1[4] = {

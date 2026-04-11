@@ -664,6 +664,7 @@ void DX8Wrapper::Set_Default_Global_Render_States(void)
 	const D3DCAPS8 &caps = Get_Current_Caps()->Get_DX8_Caps();
 
 	Set_DX8_Render_State(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
+	Set_DX8_Render_State(D3DRS_FILLMODE, D3DFILL_SOLID);
 	Set_DX8_Render_State(D3DRS_ZWRITEENABLE, TRUE);
 	Set_DX8_Render_State(D3DRS_ALPHATESTENABLE, FALSE);
 	Set_DX8_Render_State(D3DRS_CULLMODE, D3DCULL_CW);
@@ -741,12 +742,12 @@ void DX8Wrapper::Set_Projection_Transform_With_Z_Bias(const Matrix4 &matrix, flo
 
 void DX8Wrapper::Set_DX8_ZBias(int zbias)
 {
-	ZBias = zbias;
+	Set_DX8_Render_State(D3DRS_ZBIAS, static_cast<unsigned>(zbias));
 }
 
 void DX8Wrapper::Set_Pseudo_ZBias(int zbias)
 {
-	ZBias = zbias;
+	Set_DX8_Render_State(D3DRS_ZBIAS, static_cast<unsigned>(zbias));
 }
 
 void DX8Wrapper::Set_Gamma(float, float, float, bool, bool)
@@ -768,6 +769,8 @@ void DX8Wrapper::Set_Transform(D3DTRANSFORMSTATETYPE transform, const Matrix4 &m
 		break;
 	case D3DTS_PROJECTION:
 		ProjectionMatrix = m;
+		ZNear = 0.0f;
+		ZFar = 0.0f;
 		break;
 	default:
 		if (transform >= D3DTS_TEXTURE0 && transform < D3DTS_TEXTURE0 + MAX_TEXTURE_STAGES) {
@@ -794,6 +797,15 @@ void DX8Wrapper::Get_Transform(D3DTRANSFORMSTATETYPE transform, Matrix4 &m)
 		break;
 	case D3DTS_PROJECTION:
 		m = ProjectionMatrix;
+		if (ZNear != ZFar) {
+			const int zbias = static_cast<int>(Get_DX8_Render_State(D3DRS_ZBIAS));
+			if (zbias != 0) {
+				float projection_bias = static_cast<float>(zbias);
+				projection_bias *= (1.0f / 16.0f);
+				projection_bias *= 1.0f / (ZFar - ZNear);
+				m[2][2] -= projection_bias * m[3][2];
+			}
+		}
 		break;
 	default:
 		if (transform >= D3DTS_TEXTURE0 && transform < D3DTS_TEXTURE0 + MAX_TEXTURE_STAGES) {
@@ -824,6 +836,9 @@ void DX8Wrapper::Set_DX8_Render_State(D3DRENDERSTATETYPE state, unsigned value)
 {
 	if (state < 256) {
 		RenderStates[state] = value;
+	}
+	if (state == D3DRS_ZBIAS) {
+		ZBias = static_cast<int>(value);
 	}
 	if (Is_Material_Render_State(state)) {
 		render_state.material_state_dirty = true;

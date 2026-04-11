@@ -171,6 +171,15 @@
   - ordinary world draws should inherit the camera by having `CameraClass::Apply()` update both bgfx's main camera and `DX8Wrapper`'s cached `VIEW`/`PROJECTION`
   - special legacy draw paths may then override those cached wrapper matrices for a single draw, and the bgfx submission path must honor that override instead of blindly reusing the main camera view ID
 - If fixed-function bgfx submission starts using wrapper matrices without also syncing `CameraClass::Apply()` back into `DX8Wrapper`, the most obvious regression is a black or missing 3D/menu background while pure overlay/UI elements still render. That symptom is a strong sign that world draws are submitting with stale wrapper camera state rather than with the active frame camera.
+- The active bgfx fixed-function path still depends on some legacy render-state values that are not encoded in `ShaderClass` bits alone:
+  - alpha test must consume the live `D3DRS_ALPHAREF` / `D3DRS_ALPHAFUNC` values rather than inferring behavior from blend mode
+  - z-bias must affect the effective projection returned through `DX8Wrapper::Get_Transform(D3DTS_PROJECTION, ...)`, otherwise extra-pass/decal callers can keep writing `D3DRS_ZBIAS` without any visible depth separation in bgfx
+  - fill mode (`D3DRS_FILLMODE`) still matters for debug/scene special cases and has to be honored in the renderer-owned fixed-function submitter instead of being silently ignored
+- The authored bump-map formats in this tree (`WW3D_FORMAT_U8V8`, `WW3D_FORMAT_L6V5U5`, and `WW3D_FORMAT_X8L8V8U8`) are already converted by `bitmaphandler.cpp` into engine-native U/V(/L) encodings. In the bgfx port, the practical clean path is to decode those formats during CPU texture conversion into the exact channels the bump-env shader samples:
+  - red = U
+  - green = V
+  - alpha = luminance when present (or `0xff` when the format has no luminance channel)
+  - blue can stay zero because the current fixed-function bump-env shader does not consume it
 
 ## Repository observations
 

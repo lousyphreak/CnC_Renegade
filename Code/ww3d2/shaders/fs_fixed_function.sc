@@ -25,6 +25,44 @@ float SaturateScalar(float value)
     return clamp(value, 0.0, 1.0);
 }
 
+bool AlphaTestPasses(float alpha, float func, float reference)
+{
+    if (func < 0.0) {
+        return true;
+    }
+
+    float delta = alpha - reference;
+    if (func < 0.5) {
+        return false;
+    }
+
+    if (func < 1.5) {
+        return delta < 0.0;
+    }
+
+    if (func < 2.5) {
+        return abs(delta) <= (0.5 / 255.0);
+    }
+
+    if (func < 3.5) {
+        return delta <= 0.0;
+    }
+
+    if (func < 4.5) {
+        return delta > 0.0;
+    }
+
+    if (func < 5.5) {
+        return abs(delta) > (0.5 / 255.0);
+    }
+
+    if (func < 6.5) {
+        return delta >= 0.0;
+    }
+
+    return true;
+}
+
 bool HasFlag(float value, float divisor)
 {
     return mod(floor(value / divisor), 2.0) > 0.5;
@@ -305,14 +343,8 @@ void main()
 
     current = ApplyFog(current, v_specular0);
 
-    if (u_ffpConfig1.x > 0.5) {
-        if (u_ffpConfig1.x < 1.5) {
-            if (current.a < u_ffpConfig1.y) {
-                discard;
-            }
-        } else if (current.a > (1.0 - u_ffpConfig1.y)) {
-            discard;
-        }
+    if (!AlphaTestPasses(current.a, u_ffpConfig1.x, u_ffpConfig1.y)) {
+        discard;
     }
 
     gl_FragColor = current;

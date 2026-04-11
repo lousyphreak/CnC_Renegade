@@ -231,6 +231,11 @@
   - `Code/ww3d2/bgfxdynamicbuffer.cpp` now restores the original `DX8Wrapper::Set_Light(const LightClass&)` packing behavior for point, directional, and spot lights, including intensity scaling, spot parameters, range, and inverse-linear attenuation instead of the earlier simplified approximation.
   - `Code/ww3d2/bgfxrenderer.cpp` / `.h` and `Code/ww3d2/shaders/vs_fixed_function.sc` now allocate/bind the extra fixed-function uniforms and evaluate directional, point, and spot lights with ambient/diffuse/specular contributions while preserving the legacy `COLOR1.a` fog/specular channel split.
 - Revalidated after the lighting slice: `cmake --build build -j20` succeeded, and `timeout 210s build/bin/Renegade` again stayed alive until timeout exit `124` with no sanitizer/assert/fatal markers in the captured runtime output.
+- Tightened the active bgfx fixed-function draw-state path so it stops silently diverging from live DX8-era state in common scene/debug draws:
+  - `Code/ww3d2/bgfxrenderer.cpp` and `Code/ww3d2/shaders/fs_fixed_function.sc` now consume the real `D3DRS_ALPHAREF` / `D3DRS_ALPHAFUNC` values for alpha test instead of hardcoding a blend-derived threshold/function pair in the bgfx shader path.
+  - `Code/ww3d2/bgfxdynamicbuffer.cpp` now tracks `D3DRS_ZBIAS` in the active bgfx build and folds that bias back into `DX8Wrapper::Get_Transform(D3DTS_PROJECTION, ...)`, so legacy callers that rely on z-bias for decal/extra-pass separation regain an actual depth offset instead of writing dead state.
+  - `Code/ww3d2/bgfxfixedfunction.cpp` now honors `D3DRS_FILLMODE` in the renderer-owned fixed-function submitter: solid draws keep the existing triangle path, wireframe draws expand to line primitives, and point-mode draws submit as point primitives instead of silently rendering solid triangles.
+  - `Code/ww3d2/bgfxrenderer.cpp` now decodes bump-map upload formats (`WW3D_FORMAT_U8V8`, `WW3D_FORMAT_L6V5U5`, and `WW3D_FORMAT_X8L8V8U8`) into BGRA8 channels that match the live bgfx fixed-function shader's bump-env sampling contract, so authored bump textures no longer fail the CPU-conversion path as unsupported.
 
 ## Next work
 

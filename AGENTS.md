@@ -38,7 +38,7 @@ The build should alway be Debug mode with ASAN and UBSAN enabled, to catch any m
 - when you port a part of the renderer, remove the corresponding null and headless renderer parts
 - stay as close to the d3d original as possible
 - make sure to not do a lot of CPU work, we are porting to modern render APIs so use the GPU where feasible
-- there is a document at `BGFX-PORT.md`, use it for reference, and keep it updated as you work
+- there is a document at `BGFX-PORT.md`, use it for reference, and keep it updated as you work, DO NOT USE IT AS A TIMELINE DOCUMENT
 
 ## **ACCEPTABLE CHANGES**
 

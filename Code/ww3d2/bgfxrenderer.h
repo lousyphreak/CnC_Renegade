@@ -10,7 +10,10 @@
 #include <cstdint>
 
 class SurfaceClass;
+class IndexBufferClass;
 class TextureClass;
+class VertexBufferClass;
+class VertexMaterialClass;
 
 class BgfxRenderer
 {
@@ -68,6 +71,38 @@ public:
     static bgfx::UniformHandle Get_Texture0_Uniform();
     static bgfx::UniformHandle Get_Texture1_Uniform();
     static bgfx::ProgramHandle Get_Fixed_Function_Program();
+    static bool Submit_Cached_Fixed_Function_Triangles(
+        const VertexBufferClass &vertex_buffer,
+        unsigned vertex_buffer_offset,
+        const IndexBufferClass &index_buffer,
+        unsigned index_buffer_offset,
+        unsigned index_base_offset,
+        unsigned short start_index,
+        unsigned short polygon_count,
+        unsigned short min_vertex_index,
+        unsigned short vertex_count,
+        TextureClass *const *textures,
+        const VertexMaterialClass *material,
+        const ShaderClass &shader,
+        const Matrix4 &world,
+        const Matrix4 &view,
+        const Matrix4 &projection);
+    static bool Submit_Cached_Fixed_Function_Strip(
+        const VertexBufferClass &vertex_buffer,
+        unsigned vertex_buffer_offset,
+        const IndexBufferClass &index_buffer,
+        unsigned index_buffer_offset,
+        unsigned index_base_offset,
+        unsigned short start_index,
+        unsigned short polygon_count,
+        unsigned short min_vertex_index,
+        unsigned short vertex_count,
+        TextureClass *const *textures,
+        const VertexMaterialClass *material,
+        const ShaderClass &shader,
+        const Matrix4 &world,
+        const Matrix4 &view,
+        const Matrix4 &projection);
     static bgfx::TextureHandle Create_Texture_From_Surface(SurfaceClass &surface);
     static bgfx::TextureHandle Create_Texture(TextureClass &texture);
     static bgfx::ProgramHandle Load_Program(const char *vertex_shader_name, const char *fragment_shader_name);

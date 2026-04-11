@@ -89,6 +89,10 @@ public:
 	
 	unsigned							Get_Vertex_Offset(void)	{ return vertex_offset; }
 	unsigned							Get_Index_Offset(void)	{ return index_offset; }
+	unsigned							Get_Index_Count(void) const { return index_count; }
+	unsigned							Get_Min_Vertex_Index(void) const { return min_vertex_index; }
+	unsigned							Get_Vertex_Index_Range(void) const { return vertex_index_range; }
+	bool								Is_Strip(void) const { return strip; }
 
 	MeshClass*						Get_Mesh_Class() { return mesh; }
 //	MeshModelClass*				Get_Mesh_Model_Class() { return mesh->Peek_Model(); }

@@ -44,6 +44,7 @@
 #include "dx8polygonrenderer.h"
 #include "dx8vertexbuffer.h"
 #include "dx8indexbuffer.h"
+#include "bgfxrenderer.h"
 #include "dx8fvf.h"
 #include "dx8caps.h"
 #include "dx8rendererdebugger.h"
@@ -799,7 +800,7 @@ void DX8RigidFVFCategoryContainer::Render(void)
 	for (unsigned p=0;p<passes;++p) {
 		SNAPSHOT_SAY(("Pass: %d\n",p));
 		while (DX8TextureCategoryClass * tex = visible_texture_category_list[p].Remove_Head()) {
-			tex->Render();
+			tex->Render(vertex_buffer,index_buffer);
 		}
 		zbias++;
 		if (zbias>15) zbias=15;
@@ -1624,7 +1625,7 @@ unsigned DX8TextureCategoryClass::Add_Mesh(
 
 // ----------------------------------------------------------------------------
 
-void DX8TextureCategoryClass::Render(void)
+void DX8TextureCategoryClass::Render(VertexBufferClass *vertex_buffer, IndexBufferClass *index_buffer)
 {
 	#ifdef WWDEBUG
 	if (!WW3D::Expose_Prelit()) {
@@ -1644,6 +1645,11 @@ void DX8TextureCategoryClass::Render(void)
 
 	SNAPSHOT_SAY(("Set_Shader(0x%x)\n",Get_Shader()));
 	DX8Wrapper::Set_Shader(Get_Shader());
+
+	Matrix4 view_transform(true);
+	Matrix4 projection_transform(true);
+	DX8Wrapper::Get_Transform(D3DTS_VIEW, view_transform);
+	DX8Wrapper::Get_Transform(D3DTS_PROJECTION, projection_transform);
 	
 	PolyRenderTaskClass * prt = render_task_head;
 	while (prt) {
@@ -1655,6 +1661,8 @@ void DX8TextureCategoryClass::Render(void)
 		MeshClass * mesh = prt->Peek_Mesh();
 
 		SNAPSHOT_SAY(("mesh = %s\n",mesh->Get_Name()));
+
+		TextureClass *applied_textures[MAX_TEXTURE_STAGES] = {};
 
 		#ifdef WWDEBUG	
 		// Debug rendering: if it exists, expose prelighting on this mesh by disabling all base textures.
@@ -1668,6 +1676,7 @@ void DX8TextureCategoryClass::Render(void)
 					// Disable texturing on all stages and passes.
 					for (i = 0; i < MAX_TEXTURE_STAGES; i++) {
 						DX8Wrapper::Set_Texture (i, NULL);
+						applied_textures[i] = NULL;
 					}
 					break;
 
@@ -1677,10 +1686,12 @@ void DX8TextureCategoryClass::Render(void)
 					if (pass == mesh->Peek_Model()->Get_Pass_Count() - 1) {
 						for (i = 0; i < MAX_TEXTURE_STAGES; i++) {
 							DX8Wrapper::Set_Texture (i, Peek_Texture (i));
+							applied_textures[i] = Peek_Texture(i);
 						}
 					} else {
 						for (i = 0; i < MAX_TEXTURE_STAGES; i++) {
 							DX8Wrapper::Set_Texture (i, NULL);
+							applied_textures[i] = NULL;
 						}
 					}
 					break;
@@ -1689,19 +1700,27 @@ void DX8TextureCategoryClass::Render(void)
 					
 					// Disable texturing on all but the zeroth stage of each pass.
 					DX8Wrapper::Set_Texture (0, Peek_Texture (0));
+					applied_textures[0] = Peek_Texture(0);
 					for (i = 1; i < MAX_TEXTURE_STAGES; i++) {
 						DX8Wrapper::Set_Texture (i, NULL);
+						applied_textures[i] = NULL;
 					}
 					break;
 
 				default:
 					for (i = 0; i < MAX_TEXTURE_STAGES; i++) {
 						DX8Wrapper::Set_Texture (i, Peek_Texture (i));
+						applied_textures[i] = Peek_Texture(i);
 					}
 					break;
 			}
-		}
+		} else
 		#endif
+		{
+			for (unsigned i = 0; i < MAX_TEXTURE_STAGES; ++i) {
+				applied_textures[i] = Peek_Texture(i);
+			}
+		}
 
 		/*
 		** If the user is not installing LightEnvironmentClasses, we leave the lighting render
@@ -1773,7 +1792,47 @@ void DX8TextureCategoryClass::Render(void)
 			if ((!!mesh->Peek_Model()->Get_Flag(MeshGeometryClass::SORT)) && WW3D::Is_Sorting_Enabled()) {
 				renderer->Render_Sorted(mesh->Get_Base_Vertex_Offset(),mesh->Get_Bounding_Sphere());
 			} else {
-				renderer->Render(mesh->Get_Base_Vertex_Offset());
+				DX8Wrapper::Apply_Render_State_Changes();
+				Matrix4 world_matrix(*world_transform);
+				if (vertex_buffer != NULL && index_buffer != NULL) {
+					if (renderer->Is_Strip()) {
+						BgfxRenderer::Submit_Cached_Fixed_Function_Strip(
+							*vertex_buffer,
+							0,
+							*index_buffer,
+							0,
+							mesh->Get_Base_Vertex_Offset(),
+							static_cast<unsigned short>(renderer->Get_Index_Offset()),
+							static_cast<unsigned short>(renderer->Get_Index_Count() - 2),
+							static_cast<unsigned short>(renderer->Get_Min_Vertex_Index()),
+							static_cast<unsigned short>(renderer->Get_Vertex_Index_Range()),
+							applied_textures,
+							Peek_Material(),
+							Get_Shader(),
+							world_matrix,
+							view_transform,
+							projection_transform);
+					} else {
+						BgfxRenderer::Submit_Cached_Fixed_Function_Triangles(
+							*vertex_buffer,
+							0,
+							*index_buffer,
+							0,
+							mesh->Get_Base_Vertex_Offset(),
+							static_cast<unsigned short>(renderer->Get_Index_Offset()),
+							static_cast<unsigned short>(renderer->Get_Index_Count() / 3),
+							static_cast<unsigned short>(renderer->Get_Min_Vertex_Index()),
+							static_cast<unsigned short>(renderer->Get_Vertex_Index_Range()),
+							applied_textures,
+							Peek_Material(),
+							Get_Shader(),
+							world_matrix,
+							view_transform,
+							projection_transform);
+					}
+				} else {
+					renderer->Render(mesh->Get_Base_Vertex_Offset());
+				}
 			}
 		}
 
@@ -2105,6 +2164,3 @@ void DX8MeshRendererClass::Invalidate()
 
 	texture_category_container_lists_rigid.Delete_All();
 }
-
-
-

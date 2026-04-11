@@ -173,6 +173,17 @@
   - `SurfaceClass::Acquire_DX8_Surface()`, `Peek_DX8_Surface()`, and `Materialize_DX8_Surface()` now fail closed under the bgfx renderer instead of quietly recreating a fake DX8 surface path.
   - deleted the bgfx-side fake `IDirect3DSurface8` implementation and `_Create_DX8_Surface(...)` helpers from `Code/ww3d2/bgfxdynamicbuffer.cpp`; with the shared surface utilities ported, that dead compatibility layer no longer had any bgfx callers.
   - revalidated after the cleanup: `cmake --build build -j20` succeeded, and `timeout 210 ./Renegade` stayed alive until timeout killed it with exit `124`.
+- Moved rigid-mesh fixed-function indexed submission onto a renderer-owned bgfx path instead of keeping `DX8Wrapper` as the real draw owner:
+  - `Code/ww3d2/bgfxrenderer.cpp` / `.h` now own the shared cached fixed-function triangle-list and strip submitters for indexed meshes. The renderer allocates transient bgfx buffers, unpacks the CPU-backed DX8 vertex/index data, resolves texture-coordinate generation/texture transforms, populates the existing fixed-function material/light/stage uniforms, and submits through bgfx with renderer-owned state/program binding.
+  - `Code/ww3d2/dx8renderer.cpp` now feeds rigid texture-category base passes the real vertex/index buffers and calls the new `BgfxRenderer` path directly from `DX8TextureCategoryClass::Render(...)`. The legacy `renderer->Render(...)` path remains only as a fallback for callers not ported in this slice yet (notably skin/sorted paths), so rigid base passes no longer depend on wrapper-owned indexed draw submission.
+  - `Code/ww3d2/bgfxdynamicbuffer.cpp`'s `DX8Wrapper::Draw_Triangles(...)` and `Draw_Strip(...)` now only apply deferred wrapper state and delegate to `BgfxRenderer`, and the old duplicated helper block/stale material cache were deleted instead of leaving two bgfx fixed-function submission implementations alive.
+  - Updated `BGFX-PORT.md` and `PORTING_KNOWLEDGE.md` to record the new seam: renderer-owned fixed-function submission, legacy state definition.
+  - Revalidated after the slice and cleanup: `cmake --build build -- -j20` succeeded, and `timeout 310 ./Renegade` stayed alive until timeout killed it with exit `124`. The captured output reached normal gameplay/runtime logging and did not show ASAN/UBSAN or renderer-crash markers during the run.
+- Split the new fixed-function bgfx mesh submission implementation back out of `Code/ww3d2/bgfxrenderer.cpp` so the renderer code stays separated by responsibility:
+  - moved the renderer-owned fixed-function mesh submit helpers and the `BgfxRenderer::Submit_Cached_Fixed_Function_*` method bodies into a dedicated `Code/ww3d2/bgfxfixedfunction.cpp` translation unit instead of keeping lifecycle/resource code and indexed mesh submission in one file.
+  - trimmed `bgfxrenderer.cpp` back to renderer ownership concerns (init, view/camera state, render targets, shader/resource setup, screenshots/movie capture, and texture creation) while preserving the same `BgfxRenderer` API surface used by the rigid mesh slice.
+  - rebuilt immediately after the split to confirm the new file is picked up cleanly by the existing `ww3d2` CMake glob and that the refactor does not change renderer behavior.
+  - revalidated the cleanup with `timeout 230 ./Renegade`; the executable again stayed alive until timeout exit `124`, and the captured log did not show ASAN/UBSAN or renderer-failure markers.
 
 ## Next work
 
@@ -180,5 +191,5 @@
 - Continue replacing or deleting the remaining direct `<d3d8.h>` / `<D3dx8core.h>` includes in source files, starting with the backend-local files that now represent the true D3D dependency boundary.
 - Remove the remaining DX8-era initialization dependence under `WW3D::Init()` by porting the mesh/state/render-target path onto bgfx-owned implementations instead of keeping `DX8Wrapper` alive as a fallback frame manager.
 - Replace the D3D-format conversion surface in `formconv.*` and texture loading with backend-neutral or bgfx-backed format handling.
-- Carry the same renderer-owned bgfx submission model from `Render2D` into the rigid mesh pipeline, then remove the remaining DX8 texture-loader seam rather than preserving it as a permanent source of textures.
+- Carry the same renderer-owned bgfx submission model through the remaining skinned-mesh and delayed/procedural material passes, then remove the remaining `DX8Wrapper`-owned draw flow instead of preserving it as a permanent mesh submission seam.
 - Finish the remaining `TextureLoadTaskClass` and render-target cleanup so the texture path no longer needs legacy DX8 texture allocation as an intermediate ownership model.

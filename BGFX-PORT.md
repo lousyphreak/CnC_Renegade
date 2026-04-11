@@ -40,6 +40,9 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
 - Render-target textures are starting to move onto bgfx-native ownership: `TextureClass` now carries a bgfx framebuffer handle, `BgfxRenderer` can bind a texture as the active render target, and projector render-to-texture setup no longer needs a D3D surface when bgfx is active.
 - `Render2D` now submits directly to bgfx using renderer-owned programs, state, and buffers rather than the DX8 dynamic buffer path.
 - The bgfx fixed-function path now advertises the texture-operation coverage it already implements in `fs_fixed_function.sc`: the bgfx-side caps/bootstrap tables expose bump-env, bump-env-luminance, dot3, and current-alpha detail blending so `ShaderClass` no longer silently downgrades those material paths under bgfx.
+- `BgfxRenderer` now owns the shared fixed-function indexed mesh submit path for CPU-backed WW3D buffers:
+  - rigid texture-category base passes submit directly through a renderer-owned bgfx helper instead of routing their real draw through `DX8Wrapper::Draw_*`
+  - the legacy wrapper draw entry points now delegate to that same renderer-owned submitter, so the fixed-function triangle-list/strip expansion logic lives in one bgfx-native place instead of being duplicated behind the DX8 façade
 - Runtime validation has moved beyond startup-only bring-up:
   - bgfx/X11/Vulkan initialization now survives the real `WW3D::Init()` + `DX8Wrapper::Init()` sequence without falling back to headless or failing on repeated init.
   - Linux/X11 startup should currently keep bgfx on its render thread. Re-testing the old single-threaded `bgfx::renderFrame()` workaround against the live menu path showed that it had become a major startup bottleneck, while the threaded path now survives real startup and long-run validation in this tree.
@@ -53,5 +56,5 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
 
 ## Immediate next slice
 
-- Expand the same native bgfx submission approach from `Render2D` into the next real material/mesh path, starting with rigid meshes and shared texture ownership cleanup.
+- Carry the same renderer-owned bgfx submission model through the remaining mesh paths, starting with skinned meshes and delayed/procedural material passes so texture-category rendering no longer depends on `DX8Wrapper` draw ownership even when rigid meshes are done.
 - Finish the remaining true CPU-readback/render-target cleanup so projector caching and any residual surface-return paths stop assuming bgfx render targets can expose legacy DX8-style CPU surfaces.

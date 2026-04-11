@@ -125,6 +125,13 @@
 - Legacy WW3D still has several renderers that intentionally submit geometry in camera space and depend on per-draw `DX8Wrapper` matrix overrides instead of the frame's main camera:
   - `PointGroupClass` camera-facing particles transform world positions into camera space themselves, build billboard vertices in camera space, then set `WORLD`/`VIEW` to identity before drawing.
   - `SegLineRendererClass`, `LineGroupClass`, `SphereRenderObjClass`, and some dazzle/sorting paths use the same pattern for camera-space or screen-space special cases.
+- A useful clean-port seam for mesh work in this tree is “renderer-owned fixed-function submission, legacy state definition”:
+  - let legacy `ShaderClass`, `TextureClass`, and `VertexMaterialClass` code keep defining texture-stage/material semantics for now
+  - move the actual indexed triangle/strip upload, UV generation, and bgfx submit call into `BgfxRenderer`
+  - then have `DX8Wrapper::Draw_*` become thin callers of that renderer-owned submitter instead of the permanent owner of mesh draw implementation
+- That pattern works especially well for rigid meshes because the category renderer already knows the real vertex/index buffers and the active mesh transform:
+  - rigid texture-category rendering can call the renderer-owned bgfx submitter directly once legacy state is applied
+  - skinned and legacy fallback paths can still share the same bgfx submitter through `DX8Wrapper::Draw_*` until their own call sites are ported
 - In the bgfx port, the main camera view is configured through `BgfxRenderer::Set_Camera(...)`, but fixed-function draws still source their local matrix state from `DX8Wrapper`'s cached `render_state.view` and `ProjectionMatrix`.
 - That means a clean bgfx port must preserve two matrix concepts at once:
   - the current frame/main camera view and projection

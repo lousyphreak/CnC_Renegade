@@ -156,10 +156,9 @@ void DX8TextureManagerClass::Release_Textures()
 
 	while (!it.Is_Done())
 	{
-		DX8TextureTrackerClass *track=it.Peek_Obj();		
-		WWASSERT(track->Texture->DX8Texture);
-		track->Texture->DX8Texture->Release();
-		track->Texture->DX8Texture=NULL;
+		DX8TextureTrackerClass *track=it.Peek_Obj();
+		track->Texture->Release_Bgfx_Texture();
+		track->Texture->Dirty=true;
 		it.Next();
 	}
 }
@@ -187,9 +186,6 @@ void DX8TextureManagerClass::Recreate_Textures()
 	while (!it.Is_Done())
 	{
 		DX8TextureTrackerClass *track=it.Peek_Obj();
-		WWASSERT(track->Texture->DX8Texture==NULL);
-		track->Texture->DX8Texture=DX8Wrapper::_Create_DX8_Texture(track->Width,track->Height,
-			track->Format,track->Mip_level_count,D3DPOOL_DEFAULT,track->RenderTarget);
 		track->Texture->Dirty=true;
 		it.Next();
 	}

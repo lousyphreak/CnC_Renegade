@@ -54,7 +54,6 @@
 
 class DX8Wrapper;
 class BgfxRenderer;
-struct IDirect3DTexture8;
 class TextureLoader;
 class LoaderThreadClass;
 class DX8TextureManagerClass;
@@ -242,8 +241,6 @@ class TextureClass : public RefCountClass
 		void Load_Locked_Surface();
 		void Release_Bgfx_Texture();
 		void Release_Surface_Levels();
-		void Cache_Surface_Levels();
-		void Materialize_DX8_Texture();
 		void Apply_New_Surface(SurfaceClass *surface, bool initialized);
 		void Apply_New_Surface(SurfaceClass *const *surfaces, unsigned level_count, bool initialized);
 
@@ -257,8 +254,6 @@ class TextureClass : public RefCountClass
 		TxtAddrMode UAddressMode;
 		TxtAddrMode VAddressMode;
 
-		// Legacy backend texture object
-		IDirect3DTexture8 *DX8Texture;
 		bgfx::TextureHandle BgfxTexture;
 		bgfx::FrameBufferHandle BgfxFrameBuffer;
 		std::vector<SurfaceClass *> SurfaceLevels;

@@ -111,13 +111,53 @@ static unsigned Clamp_Mip_Dimension(unsigned value, bool compressed)
 	return value;
 }
 
+static bool Is_Compressed_Format(WW3DFormat format)
+{
+	switch (format) {
+	case WW3D_FORMAT_DXT1:
+	case WW3D_FORMAT_DXT2:
+	case WW3D_FORMAT_DXT3:
+	case WW3D_FORMAT_DXT4:
+	case WW3D_FORMAT_DXT5:
+		return true;
+	default:
+		return false;
+	}
+}
+
+static unsigned Get_Full_Mip_Count(unsigned width, unsigned height, bool compressed)
+{
+	unsigned count = 1;
+	const unsigned min_dimension = compressed ? 4U : 1U;
+	while (width > min_dimension || height > min_dimension) {
+		width >>= 1;
+		height >>= 1;
+		if (width < min_dimension) {
+			width = min_dimension;
+		}
+		if (height < min_dimension) {
+			height = min_dimension;
+		}
+		++count;
+	}
+	return count;
+}
+
+static unsigned Get_Requested_Mip_Count(unsigned width, unsigned height, WW3DFormat format, TextureClass::MipCountType mip_level_count)
+{
+	if (mip_level_count != TextureClass::MIP_LEVELS_ALL) {
+		return std::min<unsigned>(mip_level_count, TextureClass::MIP_LEVELS_MAX);
+	}
+
+	return std::min<unsigned>(Get_Full_Mip_Count(width, height, Is_Compressed_Format(format)), TextureClass::MIP_LEVELS_MAX);
+}
+
 /*************************************************************************
 **                             TextureClass
 *************************************************************************/
 
 TextureClass::TextureClass(unsigned width, unsigned height, WW3DFormat format, MipCountType mip_level_count, PoolType pool,bool rendertarget)
 	:
-	DX8Texture(NULL),
 	BgfxTexture(BGFX_INVALID_HANDLE),
 	BgfxFrameBuffer(BGFX_INVALID_HANDLE),
 	texture_id(unused_texture_id++),
@@ -156,23 +196,16 @@ TextureClass::TextureClass(unsigned width, unsigned height, WW3DFormat format, M
 		break;
 	}
 	if (!rendertarget) {
-		D3DPOOL d3dpool=(D3DPOOL) 0;
-		switch(pool)
-		{
-		case POOL_DEFAULT:
-			d3dpool=D3DPOOL_DEFAULT;
-			break;
-		case POOL_MANAGED:
-			d3dpool=D3DPOOL_MANAGED;
-			break;
-		case POOL_SYSTEMMEM:
-			d3dpool=D3DPOOL_SYSTEMMEM;
-			break;
-		default:
-			WWASSERT(0);
+		const bool compressed = Is_Compressed_Format(format);
+		const unsigned level_count = Get_Requested_Mip_Count(width, height, format, mip_level_count);
+		unsigned mip_width = Clamp_Mip_Dimension(width, compressed);
+		unsigned mip_height = Clamp_Mip_Dimension(height, compressed);
+		SurfaceLevels.reserve(level_count);
+		for (unsigned i = 0; i < level_count; ++i) {
+			SurfaceLevels.push_back(new SurfaceClass(mip_width, mip_height, format));
+			mip_width = Clamp_Mip_Dimension(MAX(mip_width >> 1, 1U), compressed);
+			mip_height = Clamp_Mip_Dimension(MAX(mip_height >> 1, 1U), compressed);
 		}
-		DX8Texture = DX8Wrapper::_Create_DX8_Texture(width, height, format, mip_level_count,d3dpool,rendertarget);
-		Cache_Surface_Levels();
 	}
 	if (pool==POOL_DEFAULT)
 	{
@@ -194,7 +227,6 @@ TextureClass::TextureClass(
 	WW3DFormat texture_format,
 	bool allow_compression)
 	:
-	DX8Texture(NULL),
 	BgfxTexture(BGFX_INVALID_HANDLE),
 	BgfxFrameBuffer(BGFX_INVALID_HANDLE),
 	texture_id(unused_texture_id++),
@@ -269,7 +301,6 @@ TextureClass::TextureClass(
 	WWASSERT(name[0]!='\0');
 	if (!WW3D::Is_Texturing_Enabled()) {
 		Initialized=true;
-		DX8Texture=0;
 	}
 
 	// Find original size from the thumbnail (but don't create thumbnail texture yet!)
@@ -300,7 +331,6 @@ TextureClass::TextureClass(
 
 TextureClass::TextureClass(SurfaceClass *surface, MipCountType mip_level_count)
 	:
-	DX8Texture(NULL),
 	BgfxTexture(BGFX_INVALID_HANDLE),
 	BgfxFrameBuffer(BGFX_INVALID_HANDLE),
 	texture_id(unused_texture_id++),
@@ -361,11 +391,6 @@ TextureClass::~TextureClass(void)
 
 	Release_Bgfx_Texture();
 	Release_Surface_Levels();
-
-	if (DX8Texture) {
-		DX8Texture->Release();
-		DX8Texture = NULL;
-	}
 	DX8TextureManagerClass::Remove(this);
 }
 
@@ -377,77 +402,6 @@ void TextureClass::Release_Surface_Levels()
 		}
 	}
 	SurfaceLevels.clear();
-}
-
-void TextureClass::Cache_Surface_Levels()
-{
-	Release_Surface_Levels();
-
-	if (DX8Texture == NULL) {
-		return;
-	}
-
-	const unsigned level_count = DX8Texture->GetLevelCount();
-	SurfaceLevels.reserve(level_count);
-	for (unsigned level = 0; level < level_count; ++level) {
-		IDirect3DSurface8 *d3d_surface = NULL;
-		DX8_ErrorCode(DX8Texture->GetSurfaceLevel(level, &d3d_surface));
-		SurfaceClass *surface = new SurfaceClass(d3d_surface);
-		d3d_surface->Release();
-		SurfaceLevels.push_back(surface);
-	}
-}
-
-void TextureClass::Materialize_DX8_Texture()
-{
-	if (DX8Texture != NULL || SurfaceLevels.empty()) {
-		return;
-	}
-
-	const unsigned level_count = SurfaceLevels.size();
-	DX8Texture = DX8Wrapper::_Create_DX8_Texture(
-		Width,
-		Height,
-		TextureFormat,
-		(MipCountType)level_count,
-		D3DPOOL_MANAGED,
-		IsRenderTargetTexture);
-	WWASSERT(DX8Texture != NULL);
-
-	const bool compressed = (
-		TextureFormat == WW3D_FORMAT_DXT1 ||
-		TextureFormat == WW3D_FORMAT_DXT2 ||
-		TextureFormat == WW3D_FORMAT_DXT3 ||
-		TextureFormat == WW3D_FORMAT_DXT4 ||
-		TextureFormat == WW3D_FORMAT_DXT5);
-
-	for (unsigned level = 0; level < level_count; ++level) {
-		int source_width = 0;
-		int source_height = 0;
-		int source_pixel_size = 0;
-		unsigned char *source_pixels = SurfaceLevels[level]->CreateCopy(&source_width, &source_height, &source_pixel_size, false);
-		WWASSERT(source_pixels != NULL);
-
-		D3DLOCKED_RECT locked_rect;
-		::ZeroMemory(&locked_rect, sizeof(D3DLOCKED_RECT));
-		DX8_ErrorCode(DX8Texture->LockRect(level, &locked_rect, NULL, 0));
-
-		const unsigned source_row_size = compressed
-			? (((source_width + 3) / 4) * ((TextureFormat == WW3D_FORMAT_DXT1) ? 8 : 16))
-			: (source_width * source_pixel_size);
-		const unsigned row_count = compressed ? ((source_height + 3) / 4) : source_height;
-		const unsigned source_pitch = compressed
-			? ((source_width + 3) / 4) * ((TextureFormat == WW3D_FORMAT_DXT1) ? 8 : 16)
-			: source_row_size;
-
-		unsigned char *dest_bits = static_cast<unsigned char *>(locked_rect.pBits);
-		for (unsigned row = 0; row < row_count; ++row) {
-			memcpy(dest_bits + row * locked_rect.Pitch, source_pixels + row * source_pitch, source_row_size);
-		}
-
-		DX8_ErrorCode(DX8Texture->UnlockRect(level));
-		delete[] source_pixels;
-	}
 }
 
 void TextureClass::Invalidate_Old_Unused_Textures(unsigned invalidation_time_override)
@@ -535,11 +489,6 @@ void TextureClass::Invalidate()
 	Release_Bgfx_Texture();
 	Release_Surface_Levels();
 
-	if (DX8Texture) {
-		DX8Texture->Release();
-		DX8Texture = NULL;
-	}
-
 	Initialized=false;
 
 	LastAccessed=WW3D::Get_Sync_Time();
@@ -551,8 +500,6 @@ void TextureClass::Load_Locked_Surface()
 {
 	Release_Bgfx_Texture();
 	Release_Surface_Levels();
-	if (DX8Texture) DX8Texture->Release();
-	DX8Texture=0;
 	TextureLoader::Request_Thumbnail(this);
 	Initialized=false;
 }
@@ -682,13 +629,8 @@ unsigned int TextureClass::Get_Mip_Level_Count(void)
 SurfaceClass *TextureClass::Get_Surface_Level(unsigned int level)
 {
 	if (SurfaceLevels.empty()) {
-		if (DX8Texture != NULL) {
-			Cache_Surface_Levels();
-		} else if (!Initialized) {
+		if (!Initialized) {
 			Init();
-			if (DX8Texture != NULL && SurfaceLevels.empty()) {
-				Cache_Surface_Levels();
-			}
 		}
 	}
 
@@ -735,7 +677,6 @@ void TextureClass::Apply(unsigned int stage)
 	if (!Initialized) {
 		Init();
 	}
-	Materialize_DX8_Texture();
 	LastAccessed=WW3D::Get_Sync_Time();
 
 	DX8_RECORD_TEXTURE(this);
@@ -798,10 +739,6 @@ void TextureClass::Apply_New_Surface(SurfaceClass *const *surfaces, unsigned lev
 
 	Release_Bgfx_Texture();
 	Release_Surface_Levels();
-	if (DX8Texture) {
-		DX8Texture->Release();
-		DX8Texture = NULL;
-	}
 
 	SurfaceLevels.reserve(level_count);
 	for (unsigned i = 0; i < level_count; ++i) {

@@ -29,6 +29,7 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
   - `ShaderClass` to bgfx render-state translation for API state that belongs in bgfx state bits
 - `TextureClass` now has a native bgfx texture path for renderer-driven binding instead of requiring `DX8Wrapper` state submission.
 - The bgfx texture upload path now consumes full `TextureClass` mip chains, preserves native BC1/BC2/BC3 uploads for DXT textures, and keeps per-level surface data available for renderer-native texture creation instead of rebuilding only level 0.
+- `TextureClass` no longer materializes fake `IDirect3DTexture8` ownership in the bgfx build. Procedural textures now allocate engine-owned `SurfaceClass` mip levels directly, `dx8texman` no longer pretends to recreate DX8 textures on bgfx resets, and the bgfx-side fake texture COM object has been deleted instead of preserved as a compatibility seam.
 - `SurfaceClass` now supports engine-owned CPU texture storage with lazy DX8 materialization at the remaining backend edge, so texture source data is no longer forced to originate in a D3D allocation.
 - `TextureLoader` thumbnail and immediate surface loading now produce `SurfaceClass` mip data directly, and thumbnail-backed textures no longer treat the absence of a legacy DX8 texture object as “not loaded”.
 - Shared texture-facing headers no longer expose the D3D-returning `MissingTexture` helpers or the unused `TextureClass` DX8 accessors that were leaking `IDirect3D*` back out of the backend boundary.
@@ -48,4 +49,4 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
 ## Immediate next slice
 
 - Expand the same native bgfx submission approach from `Render2D` into the next real material/mesh path, starting with rigid meshes and shared texture ownership cleanup.
-- Finish the remaining texture ownership cleanup so render-targets and background texture loads no longer depend on legacy DX8 texture objects except at the shrinking backend-local boundary.
+- Finish the remaining surface-side cleanup so `SurfaceClass`, screenshots/movie capture, and any CPU readback paths stop depending on legacy DX8 surface objects at the backend boundary.

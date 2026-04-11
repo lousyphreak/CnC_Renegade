@@ -1591,71 +1591,6 @@ private:
     bool locked_;
 };
 
-class BgfxTexture8 final : public IDirect3DTexture8
-{
-public:
-    BgfxTexture8(unsigned width, unsigned height, D3DFORMAT format, unsigned mip_count, D3DPOOL pool)
-        : ref_count_(1), pool_(pool)
-    {
-        unsigned level_width = std::max(1u, width);
-        unsigned level_height = std::max(1u, height);
-        const unsigned resolved_mip_count = (mip_count == 0) ? 1u : mip_count;
-        surfaces_.reserve(resolved_mip_count);
-        for (unsigned i = 0; i < resolved_mip_count; ++i) {
-            surfaces_.push_back(new BgfxSurface8(level_width, level_height, format));
-            level_width = std::max(1u, level_width / 2u);
-            level_height = std::max(1u, level_height / 2u);
-        }
-    }
-
-    ~BgfxTexture8() override
-    {
-        for (BgfxSurface8 *surface : surfaces_) {
-            surface->Release();
-        }
-    }
-
-    ULONG AddRef() override { return ++ref_count_; }
-    ULONG Release() override
-    {
-        const ULONG remaining = --ref_count_;
-        if (remaining == 0) {
-            delete this;
-        }
-        return remaining;
-    }
-    UINT GetLevelCount() override { return static_cast<UINT>(surfaces_.size()); }
-    HRESULT GetSurfaceLevel(UINT level, IDirect3DSurface8 **surface) override
-    {
-        if (surface == nullptr || level >= surfaces_.size()) {
-            return kD3DErrInvalidCall;
-        }
-        surfaces_[level]->AddRef();
-        *surface = surfaces_[level];
-        return D3D_OK;
-    }
-    HRESULT LockRect(UINT level, D3DLOCKED_RECT *locked_rect, const RECT *rect, DWORD flags) override
-    {
-        if (level >= surfaces_.size()) {
-            return kD3DErrInvalidCall;
-        }
-        return surfaces_[level]->LockRect(locked_rect, rect, flags);
-    }
-    HRESULT UnlockRect(UINT level) override
-    {
-        if (level >= surfaces_.size()) {
-            return kD3DErrInvalidCall;
-        }
-        return surfaces_[level]->UnlockRect();
-    }
-    D3DPOOL Pool() const { return pool_; }
-
-private:
-    ULONG ref_count_;
-    D3DPOOL pool_;
-    std::vector<BgfxSurface8 *> surfaces_;
-};
-
 DX8Caps *Ensure_Caps()
 {
     if (g_stub_caps == nullptr) {
@@ -1682,15 +1617,6 @@ DX8Caps *Ensure_Caps()
     return g_stub_caps;
 }
 
-void Copy_Surface_Level(BgfxSurface8 &surface, const unsigned char *source_pixels, int source_width, int source_height, int source_pixel_size)
-{
-    const D3DSURFACE_DESC &desc = [&]() -> const D3DSURFACE_DESC & { static D3DSURFACE_DESC tmp; surface.GetDesc(&tmp); return tmp; }();
-    const unsigned row_size = Block_Size(desc.Format) != 0 ? Surface_Pitch(desc.Width, desc.Format) : static_cast<unsigned>(source_width) * static_cast<unsigned>(source_pixel_size);
-    const unsigned row_count = Block_Size(desc.Format) != 0 ? std::max(1u, (desc.Height + 3u) / 4u) : desc.Height;
-    for (unsigned row = 0; row < row_count; ++row) {
-        std::memcpy(surface.Data() + row * surface.Pitch(), source_pixels + row * row_size, row_size);
-    }
-}
 }
 
 void DX8Wrapper::Set_DX8_Material(const D3DMATERIAL8 *mat)
@@ -1902,47 +1828,6 @@ int DX8Wrapper::Get_Swap_Interval(void)
 IDirect3DSwapChain8 *DX8Wrapper::Create_Additional_Swap_Chain(HWND)
 {
     return nullptr;
-}
-
-IDirect3DTexture8 *DX8Wrapper::_Create_DX8_Texture(unsigned int width, unsigned int height, WW3DFormat format, TextureClass::MipCountType mip_level_count, D3DPOOL pool, bool)
-{
-    return new BgfxTexture8(width, height, WW3DFormat_To_D3DFormat(format), static_cast<unsigned>(mip_level_count == TextureClass::MIP_LEVELS_ALL ? 1 : mip_level_count), pool);
-}
-
-IDirect3DTexture8 *DX8Wrapper::_Create_DX8_Texture(const char *filename, TextureClass::MipCountType mip_level_count)
-{
-    IDirect3DSurface8 *surface = _Create_DX8_Surface(filename);
-    if (surface == nullptr) {
-        return nullptr;
-    }
-    IDirect3DTexture8 *texture = _Create_DX8_Texture(surface, mip_level_count);
-    surface->Release();
-    return texture;
-}
-
-IDirect3DTexture8 *DX8Wrapper::_Create_DX8_Texture(IDirect3DSurface8 *surface, TextureClass::MipCountType mip_level_count)
-{
-    if (surface == nullptr) {
-        return nullptr;
-    }
-    D3DSURFACE_DESC desc = {};
-    if (FAILED(surface->GetDesc(&desc))) {
-        return nullptr;
-    }
-
-    BgfxTexture8 *texture = new BgfxTexture8(desc.Width, desc.Height, desc.Format, static_cast<unsigned>(mip_level_count == TextureClass::MIP_LEVELS_ALL ? 1 : mip_level_count), D3DPOOL_MANAGED);
-    BgfxSurface8 *level0 = nullptr;
-    IDirect3DSurface8 *surface_level = nullptr;
-    if (SUCCEEDED(texture->GetSurfaceLevel(0, &surface_level))) {
-        level0 = static_cast<BgfxSurface8 *>(surface_level);
-        D3DLOCKED_RECT locked = {};
-        if (SUCCEEDED(surface->LockRect(&locked, nullptr, 0))) {
-            Copy_Surface_Level(*level0, static_cast<const unsigned char *>(locked.pBits), static_cast<int>(desc.Width), static_cast<int>(desc.Height), static_cast<int>(Bytes_Per_Pixel(desc.Format)));
-            surface->UnlockRect();
-        }
-        surface_level->Release();
-    }
-    return texture;
 }
 
 IDirect3DSurface8 *DX8Wrapper::_Create_DX8_Surface(unsigned int width, unsigned int height, WW3DFormat format)

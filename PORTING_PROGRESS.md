@@ -152,10 +152,16 @@
   - `Code/Combat/directinput.cpp` still treats focus gain as active, but it no longer clears `GameInFocus` on focus/background loss events.
   - `DirectInput::Init()` now seeds `GameInFocus` from `MainWindow` existence instead of current SDL keyboard/mouse focus, so startup behavior no longer depends on the window already owning focus.
   - validation after the change: `cmake --build build -j20` succeeded, and `timeout 310 ./Renegade` stayed alive until the timeout killed it (`124`), so the current port still satisfies the long-run runtime check with the new unfocused-window behavior in place.
+- Removed another real DX8 compatibility seam from the bgfx build instead of preserving fake D3D ownership:
+  - `Code/ww3d2/texture.cpp` no longer creates, caches, or re-materializes fake `IDirect3DTexture8` objects for bgfx. Procedural/non-render-target textures now allocate their mip chains directly as engine-owned `SurfaceClass` levels, and `TextureClass::Get_Surface_Level()` / bgfx upload now consume that engine-owned data as the only texture source in the bgfx build.
+  - `Code/ww3d2/dx8texman.cpp` now releases bgfx texture handles instead of trying to release/recreate a legacy DX8 texture object, so default-pool tracking no longer pretends bgfx resources are D3D textures.
+  - deleted the fake bgfx-side `IDirect3DTexture8` implementation and `_Create_DX8_Texture(...)` helpers from `Code/ww3d2/bgfxdynamicbuffer.cpp`; the remaining fake surface object is now the smaller, explicit backend edge still to be removed.
+  - trimmed an unnecessary `dx8wrapper.h` include from `Code/ww3d2/dx8texman.h` while touching that seam.
+  - rebuilt after the cleanup and confirmed the renderer target and game still build cleanly with the fake texture COM layer gone.
 
 ## Next work
 
-- Continue shrinking the remaining raw texture/surface return paths (`MissingTexture`, `TextureLoader`, `TextureClass`, `SurfaceClass`) so only backend-local code can touch concrete DX8 objects.
+ - Continue shrinking the remaining raw surface return paths (`MissingTexture`, `TextureLoader`, `SurfaceClass`, screenshots/movie capture) so the last CPU-readback/backend edge no longer needs fake or real DX8 surface objects in the bgfx build.
 - Continue replacing or deleting the remaining direct `<d3d8.h>` / `<D3dx8core.h>` includes in source files, starting with the backend-local files that now represent the true D3D dependency boundary.
 - Remove the remaining DX8-era initialization dependence under `WW3D::Init()` by porting the mesh/state/render-target path onto bgfx-owned implementations instead of keeping `DX8Wrapper` alive as a fallback frame manager.
 - Replace the D3D-format conversion surface in `formconv.*` and texture loading with backend-neutral or bgfx-backed format handling.

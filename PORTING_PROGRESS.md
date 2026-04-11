@@ -163,10 +163,15 @@
   - both bgfx capability bootstrap tables (`bgfxcaps.cpp` and the `Ensure_Caps()` path in `bgfxdynamicbuffer.cpp`) now advertise the texture ops that `fs_fixed_function.sc` already executes: bump-env, bump-env-luminance, dot3, and current-alpha detail blending, alongside the previously exposed add/subtract/modulate/detail ops.
   - this keeps `ShaderClass::Apply()` from silently degrading those material states under bgfx just because the caps table was stale, which is a necessary step toward full rigid-mesh/material feature parity on the clean bgfx path.
   - rebuilt after the capability fix and launched `build/bin/Renegade` under a 300-second timeout for live validation; the executable reached the main loop, loaded into gameplay, and timed out normally with exit `124` rather than crashing, with no ASAN/UBSAN/runtime-failure markers in the captured output.
+- Replaced the dead DX8 front-buffer movie path with renderer-owned bgfx capture instead of preserving another fake D3D seam:
+  - `Code/ww3d2/bgfxrenderer.cpp` now owns movie-capture lifecycle on the bgfx backend via `BGFX_RESET_CAPTURE` and the existing bgfx callback path that already handled screenshots. Captured frames are written as numbered TGA files from the renderer's latest completed back-buffer image instead of locking a fake front buffer.
+  - `Code/ww3d2/ww3d.cpp` movie capture entry points (`Start_Movie_Capture`, `Stop_Movie_Capture`, `Update_Movie_Capture`, readiness/frame-rate queries, and shutdown cleanup) now talk directly to `BgfxRenderer` instead of the old `FrameGrabClass` / `_Get_DX8_Front_Buffer()` path.
+  - deleted the dead `framgrab.*` AVI implementation and the now-unused `_Get_DX8_Front_Buffer()` helpers from both DX8 backends, which keeps the bgfx build from advertising a front-buffer COM object it no longer needs.
+  - rebuilt after the capture cleanup and confirmed the full project still compiles successfully; runtime validation is being kept on the normal live-launch path rather than redirected output because that remains the most trustworthy long-run signal in this tree.
 
 ## Next work
 
- - Continue shrinking the remaining raw surface return paths (`MissingTexture`, `TextureLoader`, `SurfaceClass`, screenshots/movie capture) so the last CPU-readback/backend edge no longer needs fake or real DX8 surface objects in the bgfx build.
+ - Continue shrinking the remaining raw surface return paths (`MissingTexture`, `TextureLoader`, `SurfaceClass`, and any residual CPU readback helpers) so the last backend edge no longer needs fake or real DX8 surface objects in the bgfx build.
 - Continue replacing or deleting the remaining direct `<d3d8.h>` / `<D3dx8core.h>` includes in source files, starting with the backend-local files that now represent the true D3D dependency boundary.
 - Remove the remaining DX8-era initialization dependence under `WW3D::Init()` by porting the mesh/state/render-target path onto bgfx-owned implementations instead of keeping `DX8Wrapper` alive as a fallback frame manager.
 - Replace the D3D-format conversion surface in `formconv.*` and texture loading with backend-neutral or bgfx-backed format handling.

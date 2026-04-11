@@ -76,6 +76,11 @@ public:
     static void Apply_Fixed_Function_Shader_Inputs(const ShaderClass &shader, const FixedFunctionShaderInputs &inputs);
     static std::uint32_t Convert_Packed_Color(std::uint32_t argb_color);
     static void Request_Screen_Shot(const char *file_path);
+    static bool Start_Movie_Capture(const char *file_path_base, float frame_rate);
+    static void Stop_Movie_Capture();
+    static bool Write_Latest_Movie_Frame();
+    static bool Is_Movie_Capture_Active();
+    static float Get_Movie_Capture_Frame_Rate();
 
     static bool Is_Initted() { return IsInitted; }
     static uint32_t Get_Width() { return Width; }
@@ -87,6 +92,7 @@ private:
     static bool Update_Platform_Window(void *window_handle);
     static bool Query_Drawable_Size(void *window_handle, uint32_t &width, uint32_t &height);
     static void Apply_Clear(bool clear_color, bool clear_depth, float red, float green, float blue);
+    static void Apply_Reset_State();
     static bgfx::ShaderHandle Load_Shader(const char *shader_name);
 
     static bool IsInitted;

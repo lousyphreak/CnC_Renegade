@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
+#include <mutex>
 #include <algorithm>
 #include <string>
 #include <vector>
@@ -65,6 +66,16 @@ struct ViewTransformState
     uint16_t ViewId = 0;
 };
 
+struct CapturedMovieFrame
+{
+    uint32_t Width = 0;
+    uint32_t Height = 0;
+    uint32_t Pitch = 0;
+    bool YFlip = false;
+    std::vector<uint8_t> Pixels;
+    uint64_t Sequence = 0;
+};
+
 constexpr uint16_t ClearViewId = 0;
 constexpr uint16_t MainViewBaseId = 1;
 constexpr uint16_t MaxMainViewId = 254;
@@ -89,6 +100,16 @@ uint32_t PendingViewportWidth = 0;
 uint32_t PendingViewportHeight = 0;
 bgfx::FrameBufferHandle CurrentFrameBuffer = BGFX_INVALID_HANDLE;
 std::vector<ViewTransformState> ConfiguredViews;
+std::mutex MovieCaptureMutex;
+bool MovieCaptureActive = false;
+bool MovieCaptureConfigured = false;
+bgfx::TextureFormat::Enum MovieCaptureFormat = bgfx::TextureFormat::Count;
+float MovieCaptureFrameRate = 0.0f;
+std::string MovieCaptureBasePath;
+uint32_t MovieCaptureFrameIndex = 0;
+uint64_t MovieCaptureSequence = 0;
+uint64_t MovieCaptureConsumedSequence = 0;
+CapturedMovieFrame LatestMovieFrame;
 
 bool Matrices_Are_Equal(const Matrix4 &a, const Matrix4 &b)
 {
@@ -190,6 +211,80 @@ bool Write_BGRA_TGA(const char *file_path, uint32_t width, uint32_t height, uint
     return true;
 }
 
+uint32_t Get_Reset_Flags()
+{
+    std::lock_guard<std::mutex> lock(MovieCaptureMutex);
+    return BGFX_RESET_VSYNC | (MovieCaptureActive ? BGFX_RESET_CAPTURE : 0u);
+}
+
+bool Convert_Capture_Frame_To_BGRA8(
+    bgfx::TextureFormat::Enum format,
+    uint32_t width,
+    uint32_t height,
+    uint32_t pitch,
+    const void *data,
+    CapturedMovieFrame &frame)
+{
+    if (data == nullptr || width == 0 || height == 0) {
+        return false;
+    }
+
+    const uint8_t *source = static_cast<const uint8_t *>(data);
+    frame.Width = width;
+    frame.Height = height;
+
+    switch (format) {
+    case bgfx::TextureFormat::BGRA8:
+        frame.Pitch = pitch;
+        frame.Pixels.assign(source, source + static_cast<size_t>(pitch) * height);
+        return true;
+
+    case bgfx::TextureFormat::RGBA8:
+        frame.Pitch = width * 4u;
+        frame.Pixels.resize(static_cast<size_t>(frame.Pitch) * height);
+        for (uint32_t row = 0; row < height; ++row) {
+            const uint8_t *src_row = source + static_cast<size_t>(row) * pitch;
+            uint8_t *dst_row = frame.Pixels.data() + static_cast<size_t>(row) * frame.Pitch;
+            for (uint32_t column = 0; column < width; ++column) {
+                const uint8_t *src_pixel = src_row + column * 4u;
+                uint8_t *dst_pixel = dst_row + column * 4u;
+                dst_pixel[0] = src_pixel[2];
+                dst_pixel[1] = src_pixel[1];
+                dst_pixel[2] = src_pixel[0];
+                dst_pixel[3] = src_pixel[3];
+            }
+        }
+        return true;
+
+    case bgfx::TextureFormat::RGB8:
+        frame.Pitch = width * 4u;
+        frame.Pixels.resize(static_cast<size_t>(frame.Pitch) * height);
+        for (uint32_t row = 0; row < height; ++row) {
+            const uint8_t *src_row = source + static_cast<size_t>(row) * pitch;
+            uint8_t *dst_row = frame.Pixels.data() + static_cast<size_t>(row) * frame.Pitch;
+            for (uint32_t column = 0; column < width; ++column) {
+                const uint8_t *src_pixel = src_row + column * 3u;
+                uint8_t *dst_pixel = dst_row + column * 4u;
+                dst_pixel[0] = src_pixel[2];
+                dst_pixel[1] = src_pixel[1];
+                dst_pixel[2] = src_pixel[0];
+                dst_pixel[3] = 0xffu;
+            }
+        }
+        return true;
+
+    default:
+        return false;
+    }
+}
+
+std::string Build_Movie_Frame_Path(const std::string &base_path, uint32_t frame_index)
+{
+    char path[512];
+    std::snprintf(path, sizeof(path), "%s%06u.tga", base_path.c_str(), frame_index);
+    return std::string(path);
+}
+
 class BgfxCallback final : public bgfx::CallbackI
 {
 public:
@@ -239,9 +334,51 @@ public:
             saved ? "saved" : "failed"));
     }
 
-    void captureBegin(uint32_t, uint32_t, uint32_t, bgfx::TextureFormat::Enum, bool) override {}
-    void captureEnd() override {}
-    void captureFrame(const void *, uint32_t) override {}
+    void captureBegin(
+        uint32_t width,
+        uint32_t height,
+        uint32_t pitch,
+        bgfx::TextureFormat::Enum format,
+        bool yflip) override
+    {
+        std::lock_guard<std::mutex> lock(MovieCaptureMutex);
+        LatestMovieFrame = {};
+        LatestMovieFrame.Width = width;
+        LatestMovieFrame.Height = height;
+        LatestMovieFrame.Pitch = pitch;
+        LatestMovieFrame.YFlip = yflip;
+        MovieCaptureFormat = format;
+        MovieCaptureConfigured = true;
+    }
+
+    void captureEnd() override
+    {
+        std::lock_guard<std::mutex> lock(MovieCaptureMutex);
+        MovieCaptureConfigured = false;
+        MovieCaptureFormat = bgfx::TextureFormat::Count;
+        LatestMovieFrame = {};
+    }
+
+    void captureFrame(const void *data, uint32_t) override
+    {
+        std::lock_guard<std::mutex> lock(MovieCaptureMutex);
+        if (!MovieCaptureActive || !MovieCaptureConfigured) {
+            return;
+        }
+
+        CapturedMovieFrame frame;
+        frame.Width = LatestMovieFrame.Width;
+        frame.Height = LatestMovieFrame.Height;
+        frame.Pitch = LatestMovieFrame.Pitch;
+        frame.YFlip = LatestMovieFrame.YFlip;
+        if (!Convert_Capture_Frame_To_BGRA8(MovieCaptureFormat, frame.Width, frame.Height, frame.Pitch, data, frame)) {
+            WWDEBUG_SAY(("bgfx movie capture skipped unsupported format %u\n", static_cast<unsigned>(MovieCaptureFormat)));
+            return;
+        }
+
+        frame.Sequence = ++MovieCaptureSequence;
+        LatestMovieFrame = std::move(frame);
+    }
 };
 
 BgfxCallback Callback;
@@ -922,7 +1059,13 @@ bool BgfxRenderer::Reset()
         return false;
     }
 
-    bgfx::reset(Width, Height, BGFX_RESET_VSYNC);
+    Apply_Reset_State();
+    return true;
+}
+
+void BgfxRenderer::Apply_Reset_State()
+{
+    bgfx::reset(Width, Height, Get_Reset_Flags());
     ActiveWidth = Width;
     ActiveHeight = Height;
     CurrentFrameBuffer = BGFX_INVALID_HANDLE;
@@ -930,7 +1073,6 @@ bool BgfxRenderer::Reset()
     bgfx::setViewFrameBuffer(OverlayViewId, BGFX_INVALID_HANDLE);
     bgfx::setViewRect(ClearViewId, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
     Reset_Main_View_State(ActiveWidth, ActiveHeight);
-    return true;
 }
 
 bool BgfxRenderer::Begin_Frame(bool clear_color, bool clear_depth, float red, float green, float blue)
@@ -1044,6 +1186,92 @@ void BgfxRenderer::Request_Screen_Shot(const char *file_path)
 
     const char *resolved_path = (file_path != nullptr && *file_path != '\0') ? file_path : "ScreenShot.tga";
     bgfx::requestScreenShot(BGFX_INVALID_HANDLE, resolved_path);
+}
+
+bool BgfxRenderer::Start_Movie_Capture(const char *file_path_base, float frame_rate)
+{
+    if (!IsInitted) {
+        return false;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(MovieCaptureMutex);
+        MovieCaptureActive = true;
+        MovieCaptureConfigured = false;
+        MovieCaptureFormat = bgfx::TextureFormat::Count;
+        MovieCaptureFrameRate = frame_rate;
+        MovieCaptureBasePath = (file_path_base != nullptr && *file_path_base != '\0') ? file_path_base : "Movie";
+        MovieCaptureFrameIndex = 0;
+        MovieCaptureSequence = 0;
+        MovieCaptureConsumedSequence = 0;
+        LatestMovieFrame = {};
+    }
+
+    Apply_Reset_State();
+    return true;
+}
+
+void BgfxRenderer::Stop_Movie_Capture()
+{
+    if (!IsInitted) {
+        return;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(MovieCaptureMutex);
+        if (!MovieCaptureActive) {
+            return;
+        }
+        MovieCaptureActive = false;
+        MovieCaptureConfigured = false;
+        MovieCaptureFormat = bgfx::TextureFormat::Count;
+        MovieCaptureFrameRate = 0.0f;
+        MovieCaptureBasePath.clear();
+        MovieCaptureFrameIndex = 0;
+        MovieCaptureSequence = 0;
+        MovieCaptureConsumedSequence = 0;
+        LatestMovieFrame = {};
+    }
+
+    Apply_Reset_State();
+}
+
+bool BgfxRenderer::Write_Latest_Movie_Frame()
+{
+    CapturedMovieFrame frame;
+    std::string base_path;
+    uint32_t frame_index = 0;
+
+    {
+        std::lock_guard<std::mutex> lock(MovieCaptureMutex);
+        if (!MovieCaptureActive || LatestMovieFrame.Sequence == 0 || LatestMovieFrame.Sequence == MovieCaptureConsumedSequence) {
+            return false;
+        }
+
+        frame = LatestMovieFrame;
+        MovieCaptureConsumedSequence = LatestMovieFrame.Sequence;
+        base_path = MovieCaptureBasePath;
+        frame_index = MovieCaptureFrameIndex++;
+    }
+
+    const std::string file_path = Build_Movie_Frame_Path(base_path, frame_index);
+    const bool saved = Write_BGRA_TGA(file_path.c_str(), frame.Width, frame.Height, frame.Pitch, frame.Pixels.data(), frame.YFlip);
+    if (!saved) {
+        WWDEBUG_SAY(("bgfx movie capture failed to write %s\n", file_path.c_str()));
+    }
+    return saved;
+}
+
+bool BgfxRenderer::Is_Movie_Capture_Active()
+{
+    std::lock_guard<std::mutex> lock(MovieCaptureMutex);
+    return MovieCaptureActive;
+}
+
+float BgfxRenderer::Get_Movie_Capture_Frame_Rate()
+{
+    std::lock_guard<std::mutex> lock(MovieCaptureMutex);
+    return MovieCaptureFrameRate;
 }
 
 void BgfxRenderer::Get_Render_Target_Resolution(int &width, int &height, int &bits, bool &windowed)

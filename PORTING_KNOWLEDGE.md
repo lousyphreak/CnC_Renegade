@@ -101,8 +101,13 @@
 - That cleanup removes a whole compatibility seam from `Code/ww3d2/bgfxdynamicbuffer.cpp`: once no caller needs `_Create_DX8_Texture(...)`, the fake `IDirect3DTexture8` implementation should be deleted rather than left behind “just in case”.
 - The remaining texture-adjacent DX8 seam is now almost entirely surface-shaped, not texture-shaped:
   - `SurfaceClass` still has a lazy DX8/fake-surface materialization path
-  - screenshot / movie-capture code and any remaining CPU-readback paths still assume an `IDirect3DSurface8`-style object exists
-  - that should be removed by porting those callers to engine-owned surface memory or bgfx-native readback flows, not by rebuilding a wider fake D3D layer
+  - screenshots and movie capture no longer need a front-buffer `IDirect3DSurface8`; the bgfx backend can source those directly from bgfx callback data and write them out without reviving a DX8 readback object
+  - the remaining cleanup work should therefore target true `SurfaceClass` / CPU-readback users, not rebuild a wider fake D3D layer just to serve capture paths
+- For bgfx movie capture in this tree, the clean ownership model is:
+  - keep capture lifecycle in `BgfxRenderer` by toggling `BGFX_RESET_CAPTURE`
+  - let the bgfx callback own the raw captured frame handoff
+  - have `WW3D` consume the latest completed renderer-owned frame via its existing movie-capture control flow instead of locking a front buffer
+- Deleting dead feature code is often part of the port, not just follow-up cleanup: once `WW3D` stopped using `framgrab.*` and `_Get_DX8_Front_Buffer()`, keeping those Windows/DX8-only paths around would only preserve a false dependency boundary.
 - The bgfx transient indexed-draw path in `Code/ww3d2/bgfxdynamicbuffer.cpp` must apply `render_state.index_base_offset` consistently to both sides of subsetted draws:
   - when indices are remapped as `source_index + index_base_offset - min_vertex_index`, the copied vertex window must start at `vba_offset + index_base_offset + min_vertex_index`
   - if the vertex copy omits `index_base_offset`, indices and uploaded vertices reference different base vertices, which shows up as animated/dynamic mesh triangles stretching wildly across the screen rather than as a clean crash.

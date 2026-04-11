@@ -1868,8 +1868,3 @@ IDirect3DSurface8 *DX8Wrapper::_Create_DX8_Surface(const char *filename)
     loaded_surface->Release_Ref();
     return surface;
 }
-
-IDirect3DSurface8 *DX8Wrapper::_Get_DX8_Front_Buffer()
-{
-    return nullptr;
-}

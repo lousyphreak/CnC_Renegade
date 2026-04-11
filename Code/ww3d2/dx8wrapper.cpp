@@ -2723,21 +2723,6 @@ void DX8Wrapper::Set_Light_Environment(LightEnvironmentClass* light_env)
 */
 }
 
-IDirect3DSurface8 * DX8Wrapper::_Get_DX8_Front_Buffer()
-{
-	DX8_THREAD_ASSERT();
-	D3DDISPLAYMODE mode;
-
-	DX8CALL(GetDisplayMode(&mode));
-
-	IDirect3DSurface8 * fb=NULL;
-
-	DX8CALL(CreateImageSurface(mode.Width,mode.Height,D3DFMT_A8R8G8B8,&fb));
-
-	DX8CALL(GetFrontBuffer(fb));
-	return fb;
-}
-
 SurfaceClass * DX8Wrapper::_Get_DX8_Back_Buffer(unsigned int num)
 {
 	DX8_THREAD_ASSERT();

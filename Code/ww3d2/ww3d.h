@@ -54,7 +54,6 @@ class		ShaderClass;
 class		DX8Wrapper;
 
 struct	RenderStatistics;
-class		FrameGrabClass;
 class		VertexMaterialClass;
 class		ExtraMaterialPassClass;
 class		RenderInfoClass;
@@ -326,7 +325,7 @@ private:
 	static bool							AreStaticSortListsEnabled;
 	static bool							MungeSortOnLoad;
 
-	static FrameGrabClass *			Movie;
+	static float						MovieFrameRate;
 	static bool							PauseRecord;
 	static bool							RecordNextFrame;
 	static int							FrameCount;

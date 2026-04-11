@@ -59,10 +59,14 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
   - late runtime/shutdown ASAN failures in `dx8renderer.cpp`'s deferred delete bookkeeping were fixed, and the executable now survives a live validation run longer than 300 seconds under ASAN/UBSAN.
   - static shadow projector caching no longer depends on `TextureClass::Get_Surface_Level()` for render targets. Each cached static shadow now renders directly into its own GPU-native render-target texture, and the old CPU readback/validation copy path in `pscene_projectors.cpp` has been deleted.
   - the current executable survives a 210-second timed `build/bin/Renegade` validation run on the final tree after the special-case submit and static-projector cache changes.
+- bgfx format ownership is now more truthful and less DX8-shaped:
+  - `BgfxRenderer` now distinguishes native bgfx-uploadable formats from formats that still require CPU conversion, instead of silently treating X-channel source formats as though their undefined alpha bits were valid
+  - bgfx-backed capability reporting now reflects live bgfx texture/framebuffer support rather than a copied DX8-era static support table
+  - projector render-target allocation under bgfx now creates verified bgfx-native framebuffer textures directly instead of going through the DX8 wrapper's render-target façade
 - Startup-specific runtime knowledge from menu bring-up work:
   - do not initialize `AnimatedSoundMgrClass` before the definition hash is live; the null-definition-hash lookup storm is a real seconds-scale startup regression.
   - do not let menu font setup rescan the system font tree per font load; cache font candidates/aliases once and reuse them across `StyleMgrClass` font creation.
 
 ## Immediate next slice
 
-- Audit the remaining render-target/backend-edge `Get_Surface_Level()` callers and convert any lingering DX8-style readback assumptions to GPU-native ownership or explicit fail-closed behavior.
+- Audit the remaining surface-shaped backend edge (`Acquire_DX8_Surface`, `Peek_DX8_Surface`, `_Create_DX8_Surface`) and delete any caller that still keeps fake D3D surface ownership alive under bgfx when the work can be expressed with engine-owned surface data or GPU-native render-target ownership.

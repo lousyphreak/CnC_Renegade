@@ -5,6 +5,7 @@
 #include "matrix4.h"
 #include "shader.h"
 #include "vector3.h"
+#include "ww3dformat.h"
 
 #include <bgfx/bgfx.h>
 #include <cstdint>
@@ -72,6 +73,8 @@ public:
     static bgfx::UniformHandle Get_Texture0_Uniform();
     static bgfx::UniformHandle Get_Texture1_Uniform();
     static bgfx::ProgramHandle Get_Fixed_Function_Program();
+    static bool Supports_Texture_Format(WW3DFormat format);
+    static bool Supports_Render_Target_Format(WW3DFormat format);
     static bool Submit_Cached_Fixed_Function_Triangles(
         const VertexBufferClass &vertex_buffer,
         unsigned vertex_buffer_offset,

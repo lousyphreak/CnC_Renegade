@@ -108,6 +108,10 @@
   - if yes (`FindBB`, `Is_Transparent_Column`, `Get_Pixel`, `DrawPixel`, `DrawHLine`, filename-copy setup), the bgfx build should do that directly instead of lazily materializing a fake `IDirect3DSurface8`
   - once those callers are moved, `Acquire_DX8_Surface()` / `Peek_DX8_Surface()` should fail closed under bgfx so any remaining backend-edge readback dependency becomes obvious instead of silently reviving another fake surface layer
   - that in turn lets `Code/ww3d2/bgfxdynamicbuffer.cpp` delete the fake surface object and `_Create_DX8_Surface(...)` helpers entirely rather than preserving dead D3D-shaped ownership
+- bgfx format support needs to be treated as a live renderer capability query, not as a hard-coded copy of old DX8 assumptions:
+  - some WW3D formats map cleanly to native bgfx formats (`A8R8G8B8` -> `BGRA8`, `R5G6B5` -> `R5G6B5`, `A4R4G4B4` -> `BGRA4`, `A1R5G5B5` -> `BGR5A1`, DXTn -> BCn)
+  - X-channel formats like `X8R8G8B8`, `X1R5G5B5`, and `X4R4G4B4` should stay on an explicit conversion path when sampled as textures, because passing them through as native alpha-bearing formats leaks undefined source alpha bits into the shader path
+  - projector/render-target allocation is a good place to consume those capability checks directly: under bgfx the correct rule is “pick a format that bgfx says can be a framebuffer attachment and allocate a real render-target texture”, not “ask the DX8 wrapper for a surface-like render target and hope it materializes”
 - For bgfx movie capture in this tree, the clean ownership model is:
   - keep capture lifecycle in `BgfxRenderer` by toggling `BGFX_RESET_CAPTURE`
   - let the bgfx callback own the raw captured frame handoff

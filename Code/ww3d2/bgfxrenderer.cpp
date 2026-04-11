@@ -908,11 +908,30 @@ bool Get_Bgfx_Texture_Format(WW3DFormat format, bgfx::TextureFormat::Enum &bgfx_
     direct_copy = true;
 
     switch (format) {
+    case WW3D_FORMAT_UNKNOWN:
     case WW3D_FORMAT_A8R8G8B8:
         bgfx_format = bgfx::TextureFormat::BGRA8;
         return true;
     case WW3D_FORMAT_X8R8G8B8:
         bgfx_format = bgfx::TextureFormat::BGRA8;
+        direct_copy = false;
+        return true;
+    case WW3D_FORMAT_R5G6B5:
+        bgfx_format = bgfx::TextureFormat::R5G6B5;
+        return true;
+    case WW3D_FORMAT_A1R5G5B5:
+        bgfx_format = bgfx::TextureFormat::BGR5A1;
+        return true;
+    case WW3D_FORMAT_X1R5G5B5:
+        bgfx_format = bgfx::TextureFormat::BGR5A1;
+        direct_copy = false;
+        return true;
+    case WW3D_FORMAT_A4R4G4B4:
+        bgfx_format = bgfx::TextureFormat::BGRA4;
+        return true;
+    case WW3D_FORMAT_X4R4G4B4:
+        bgfx_format = bgfx::TextureFormat::BGRA4;
+        direct_copy = false;
         return true;
     case WW3D_FORMAT_DXT1:
         bgfx_format = bgfx::TextureFormat::BC1;
@@ -950,6 +969,22 @@ const char *Get_Renderer_Name(bgfx::RendererType::Enum renderer_type)
     default:
         return "auto";
     }
+}
+
+bool Is_Texture_Format_Supported(WW3DFormat format, uint32_t capability_flags)
+{
+    bgfx::TextureFormat::Enum bgfx_format = bgfx::TextureFormat::Count;
+    bool direct_copy = false;
+    if (!Get_Bgfx_Texture_Format(format, bgfx_format, direct_copy)) {
+        return false;
+    }
+
+    const bgfx::Caps *caps = bgfx::getCaps();
+    if (caps == nullptr) {
+        return true;
+    }
+
+    return (caps->formats[bgfx_format] & capability_flags) != 0;
 }
 
 bgfx::RendererType::Enum Choose_Preferred_Renderer(void)
@@ -1341,6 +1376,16 @@ bgfx::ProgramHandle BgfxRenderer::Get_Fixed_Function_Program()
     return FixedFunctionProgram;
 }
 
+bool BgfxRenderer::Supports_Texture_Format(WW3DFormat format)
+{
+    return Is_Texture_Format_Supported(format, BGFX_CAPS_FORMAT_TEXTURE_2D);
+}
+
+bool BgfxRenderer::Supports_Render_Target_Format(WW3DFormat format)
+{
+    return Is_Texture_Format_Supported(format, BGFX_CAPS_FORMAT_TEXTURE_FRAMEBUFFER);
+}
+
 bgfx::TextureHandle BgfxRenderer::Create_Texture_From_Surface(SurfaceClass &surface)
 {
     int width = 0;
@@ -1380,7 +1425,8 @@ bgfx::TextureHandle BgfxRenderer::Create_Texture(TextureClass &texture)
     bgfx::TextureFormat::Enum texture_format = bgfx::TextureFormat::BGRA8;
     bool direct_copy = false;
     if (texture.Is_Render_Target_Texture()) {
-        if (!Get_Bgfx_Texture_Format(texture.Get_Texture_Format(), texture_format, direct_copy)) {
+        if (!Get_Bgfx_Texture_Format(texture.Get_Texture_Format(), texture_format, direct_copy) ||
+            !Supports_Render_Target_Format(texture.Get_Texture_Format())) {
             return BGFX_INVALID_HANDLE;
         }
 

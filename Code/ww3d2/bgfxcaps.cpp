@@ -4,6 +4,8 @@
 #include <cstdio>
 #include <cstring>
 
+#include "bgfxrenderer.h"
+
 namespace
 {
 D3DCAPS8 Build_Default_Caps()
@@ -50,34 +52,6 @@ D3DADAPTER_IDENTIFIER8 Build_Default_Adapter()
     return adapter;
 }
 
-bool Is_Supported_Texture_Format(WW3DFormat format)
-{
-    switch (format) {
-    case WW3D_FORMAT_UNKNOWN:
-    case WW3D_FORMAT_R8G8B8:
-    case WW3D_FORMAT_A8R8G8B8:
-    case WW3D_FORMAT_X8R8G8B8:
-    case WW3D_FORMAT_R5G6B5:
-    case WW3D_FORMAT_X1R5G5B5:
-    case WW3D_FORMAT_A1R5G5B5:
-    case WW3D_FORMAT_A4R4G4B4:
-    case WW3D_FORMAT_R3G3B2:
-    case WW3D_FORMAT_A8:
-    case WW3D_FORMAT_A8R3G3B2:
-    case WW3D_FORMAT_X4R4G4B4:
-    case WW3D_FORMAT_A4L4:
-    case WW3D_FORMAT_L8:
-    case WW3D_FORMAT_A8L8:
-    case WW3D_FORMAT_DXT1:
-    case WW3D_FORMAT_DXT2:
-    case WW3D_FORMAT_DXT3:
-    case WW3D_FORMAT_DXT4:
-    case WW3D_FORMAT_DXT5:
-        return true;
-    default:
-        return false;
-    }
-}
 }
 
 DX8Caps::DX8Caps(IDirect3D8*, const D3DCAPS8& caps, WW3DFormat display_format, const D3DADAPTER_IDENTIFIER8& adapter_id)
@@ -106,9 +80,9 @@ DX8Caps::DX8Caps(IDirect3D8*, const D3DCAPS8& caps, WW3DFormat display_format, c
     std::memset(SupportTextureFormat, 0, sizeof(SupportTextureFormat));
     std::memset(SupportRenderToTextureFormat, 0, sizeof(SupportRenderToTextureFormat));
     for (int i = 0; i < WW3D_FORMAT_COUNT; ++i) {
-        const bool supported = Is_Supported_Texture_Format(static_cast<WW3DFormat>(i));
-        SupportTextureFormat[i] = supported;
-        SupportRenderToTextureFormat[i] = supported;
+        const WW3DFormat format = static_cast<WW3DFormat>(i);
+        SupportTextureFormat[i] = BgfxRenderer::Supports_Texture_Format(format);
+        SupportRenderToTextureFormat[i] = BgfxRenderer::Supports_Render_Target_Format(format);
     }
 
     Caps = caps;
@@ -149,7 +123,7 @@ void DX8Caps::Compute_Caps(WW3DFormat, const D3DADAPTER_IDENTIFIER8& adapter_id)
 
 bool DX8Caps::Is_Valid_Display_Format(int width, int height, WW3DFormat format)
 {
-    return width > 0 && height > 0 && Is_Supported_Texture_Format(format);
+    return width > 0 && height > 0 && BgfxRenderer::Supports_Texture_Format(format);
 }
 
 DX8Caps::VendorIdType DX8Caps::Define_Vendor(unsigned vendor_id)

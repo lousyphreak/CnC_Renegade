@@ -51,6 +51,7 @@
 #include "vertmaterial.h"
 #include "wwprofile.h"
 #include "texture.h"
+#include "bgfxrenderer.h"
 #include "dx8fvf.h"
 #include "dx8vertexbuffer.h"
 #include "dx8indexbuffer.h"
@@ -58,7 +59,6 @@
 #include "pot.h"
 #include "materialeffect.h"
 #include "wwmemlog.h"
-#include "dx8caps.h"
 #include "vertmaterial.h"
 
 
@@ -157,6 +157,31 @@ static DynamicShadowTexMgrClass		_DynamicShadowTexMgr;
 
 static TextureClass* Create_Projector_Render_Target(unsigned w,unsigned h)
 {
+	if (BgfxRenderer::Is_Initted()) {
+		static const WW3DFormat preferred_formats[] = {
+			WW3D_FORMAT_R5G6B5,
+			WW3D_FORMAT_A4R4G4B4,
+			WW3D_FORMAT_A1R5G5B5,
+			WW3D_FORMAT_A8R8G8B8
+		};
+
+		for (unsigned int i = 0; i < sizeof(preferred_formats) / sizeof(preferred_formats[0]); ++i) {
+			const WW3DFormat format = preferred_formats[i];
+			if (!BgfxRenderer::Supports_Render_Target_Format(format)) {
+				continue;
+			}
+
+			TextureClass *texture = NEW_REF(TextureClass, (w, h, format, TextureClass::MIP_LEVELS_1, TextureClass::POOL_DEFAULT, true));
+			if (texture != NULL && bgfx::isValid(texture->Get_Bgfx_Texture()) && bgfx::isValid(texture->Get_Bgfx_Frame_Buffer())) {
+				return texture;
+			}
+
+			REF_PTR_RELEASE(texture);
+		}
+
+		return NULL;
+	}
+
 	WW3DFormat format=WW3D_FORMAT_UNKNOWN;
 	// Try if 8 or 16 bit render target formats would be supported
 	if (DX8Wrapper::Get_Current_Caps()->Support_Render_To_Texture_Format(WW3D_FORMAT_R3G3B2)) format=WW3D_FORMAT_R3G3B2;
@@ -832,7 +857,11 @@ void PhysicsSceneClass::Apply_Projectors
 		it.Next();
 	}
 
-	DX8Wrapper::Set_Render_Target((IDirect3DSurface8 *)NULL);
+	if (BgfxRenderer::Is_Initted()) {
+		BgfxRenderer::Reset_Render_Target();
+	} else {
+		DX8Wrapper::Set_Render_Target((IDirect3DSurface8 *)NULL);
+	}
 }
 
 void PhysicsSceneClass::Apply_Projector_To_Objects

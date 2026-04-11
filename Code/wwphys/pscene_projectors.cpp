@@ -157,48 +157,22 @@ static DynamicShadowTexMgrClass		_DynamicShadowTexMgr;
 
 static TextureClass* Create_Projector_Render_Target(unsigned w,unsigned h)
 {
-	if (BgfxRenderer::Is_Initted()) {
-		static const WW3DFormat preferred_formats[] = {
-			WW3D_FORMAT_R5G6B5,
-			WW3D_FORMAT_A4R4G4B4,
-			WW3D_FORMAT_A1R5G5B5,
-			WW3D_FORMAT_A8R8G8B8
-		};
+	static const WW3DFormat preferred_formats[] = {
+		WW3D_FORMAT_R5G6B5,
+		WW3D_FORMAT_A4R4G4B4,
+		WW3D_FORMAT_X1R5G5B5,
+		WW3D_FORMAT_A1R5G5B5,
+		WW3D_FORMAT_A8R8G8B8
+	};
 
-		for (unsigned int i = 0; i < sizeof(preferred_formats) / sizeof(preferred_formats[0]); ++i) {
-			const WW3DFormat format = preferred_formats[i];
-			if (!BgfxRenderer::Supports_Render_Target_Format(format)) {
-				continue;
-			}
-
-			TextureClass *texture = NEW_REF(TextureClass, (w, h, format, TextureClass::MIP_LEVELS_1, TextureClass::POOL_DEFAULT, true));
-			if (texture != NULL && bgfx::isValid(texture->Get_Bgfx_Texture()) && bgfx::isValid(texture->Get_Bgfx_Frame_Buffer())) {
-				return texture;
-			}
-
-			REF_PTR_RELEASE(texture);
+	for (unsigned int i = 0; i < sizeof(preferred_formats) / sizeof(preferred_formats[0]); ++i) {
+		TextureClass *texture = BgfxRenderer::Create_Render_Target_Texture(w, h, preferred_formats[i]);
+		if (texture != NULL) {
+			return texture;
 		}
-
-		return NULL;
 	}
 
-	WW3DFormat format=WW3D_FORMAT_UNKNOWN;
-	// Try if 8 or 16 bit render target formats would be supported
-	if (DX8Wrapper::Get_Current_Caps()->Support_Render_To_Texture_Format(WW3D_FORMAT_R3G3B2)) format=WW3D_FORMAT_R3G3B2;
-	else if (DX8Wrapper::Get_Current_Caps()->Support_Render_To_Texture_Format(WW3D_FORMAT_R5G6B5)) format=WW3D_FORMAT_R5G6B5;
-	else if (DX8Wrapper::Get_Current_Caps()->Support_Render_To_Texture_Format(WW3D_FORMAT_A4R4G4B4)) format=WW3D_FORMAT_A4R4G4B4;
-	else if (DX8Wrapper::Get_Current_Caps()->Support_Render_To_Texture_Format(WW3D_FORMAT_X1R5G5B5)) format=WW3D_FORMAT_X1R5G5B5;
-
-	TextureClass* texture = DX8Wrapper::Create_Render_Target(w,h,format);
-	if (texture) return texture;
-
-	// As a last resort, try creating with unknown format (which means using the current display resolution)
-	if (format!=WW3D_FORMAT_UNKNOWN) {
-		format=WW3D_FORMAT_UNKNOWN;
-		return DX8Wrapper::Create_Render_Target(w,h,format);
-	}
 	return NULL;
-
 }
 
 static TextureClass *Create_Static_Shadow_Texture(void)
@@ -857,7 +831,7 @@ void PhysicsSceneClass::Apply_Projectors
 		it.Next();
 	}
 
-	DX8Wrapper::Reset_Render_Target();
+	BgfxRenderer::Reset_Render_Target();
 }
 
 void PhysicsSceneClass::Apply_Projector_To_Objects

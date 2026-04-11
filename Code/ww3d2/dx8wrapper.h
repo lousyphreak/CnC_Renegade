@@ -373,22 +373,17 @@ public:
 	/*
 	** Render target interface. If render target format is WW3D_FORMAT_UNKNOWN, current display format is used.
 	*/
-	static TextureClass *	Create_Render_Target (int width, int height, WW3DFormat format);
-
-	static void					Set_Render_Target (TextureClass * texture);
 #if !RENEGADE_WITH_BGFX_RENDERER
+	static TextureClass *	Create_Render_Target (int width, int height, WW3DFormat format);
+	static void					Set_Render_Target (TextureClass * texture);
 	static void					Set_Render_Target (IDirect3DSurface8 *render_target, bool use_default_depth_buffer = false);
 	static void					Set_Render_Target (IDirect3DSwapChain8 *swap_chain);
-#endif
 	static void					Reset_Render_Target (void)
 	{
-#if RENEGADE_WITH_BGFX_RENDERER
-		Set_Render_Target((TextureClass *)NULL);
-#else
 		Set_Render_Target((IDirect3DSurface8 *)NULL);
-#endif
 	}
 	static bool					Is_Render_To_Texture(void) { return IsRenderToTexture; }
+#endif
 
 #if !RENEGADE_WITH_BGFX_RENDERER
 	static IDirect3DDevice8* _Get_D3D_Device8() { return D3DDevice; }
@@ -542,7 +537,9 @@ protected:
 	static IDirect3DSurface8 *			DefaultDepthBuffer;
 #endif
 
+#if !RENEGADE_WITH_BGFX_RENDERER
 	static bool								IsRenderToTexture;
+#endif
 
 	static int								ZBias;
 	static float							ZNear;

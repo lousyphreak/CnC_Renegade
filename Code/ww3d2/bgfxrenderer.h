@@ -105,8 +105,10 @@ public:
     static void Set_Viewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
     static void Set_Camera(const Matrix3D &view, const Matrix4 &projection);
     static uint16_t Get_View_Id(const Matrix4 &view, const Matrix4 &projection);
+    static TextureClass *Create_Render_Target_Texture(uint32_t width, uint32_t height, WW3DFormat format);
     static bool Set_Render_Target(TextureClass &texture);
     static void Reset_Render_Target();
+    static bool Has_Render_Target();
     static void Prepare_Overlay_View();
     static void Get_Render_Target_Resolution(int &width, int &height, int &bits, bool &windowed);
     static void Get_Device_Resolution(int &width, int &height, int &bits, bool &windowed);

@@ -2,6 +2,12 @@
 
 ## BGFX renderer fresh start
 
+- Removed the active bgfx build's remaining DX8Wrapper render-target public seam for projector rendering:
+  - `BgfxRenderer` now owns render-target texture creation via `Create_Render_Target_Texture(...)`, including the existing power-of-two/max-size policy and framebuffer validation.
+  - `pscene_projectors.cpp` now allocates projector shadow textures directly through `BgfxRenderer` instead of selecting formats through `DX8Wrapper` and then bouncing back into bgfx.
+  - `TexProjectClass::Compute_Texture()` now binds and resets projector render targets directly through `BgfxRenderer`.
+  - `DazzleRenderObjClass` now queries active render-target state from `BgfxRenderer` instead of the DX8-era `DX8Wrapper::Is_Render_To_Texture()` flag.
+  - Deleted the bgfx-side `DX8Wrapper::Create_Render_Target(...)`, `Set_Render_Target(TextureClass *)`, and `IsRenderToTexture` state because the active bgfx build no longer uses that compatibility surface.
 - Reset the bgfx renderer effort to a clean-slate plan based on `BGFX-PORT.md`.
 - Identified the primary renderer migration boundary in `Code/ww3d2`:
   - `dx8wrapper.*` for device lifecycle and render state orchestration

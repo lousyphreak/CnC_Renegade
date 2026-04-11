@@ -20,6 +20,7 @@
 #include <bgfx/platform.h>
 
 #include "dx8wrapper.h"
+#include "pot.h"
 #include "rawfile.h"
 #include "surfaceclass.h"
 #include "texture.h"
@@ -1333,6 +1334,43 @@ bool BgfxRenderer::Set_Render_Target(TextureClass &texture)
     return true;
 }
 
+TextureClass *BgfxRenderer::Create_Render_Target_Texture(uint32_t width, uint32_t height, WW3DFormat format)
+{
+    if (!IsInitted || width == 0 || height == 0 || !Supports_Render_Target_Format(format)) {
+        return nullptr;
+    }
+
+    const bgfx::Caps *caps = bgfx::getCaps();
+    if (caps == nullptr || caps->limits.maxTextureSize == 0) {
+        return nullptr;
+    }
+
+    uint32_t size = width;
+    if (height < width) {
+        size = height;
+    }
+
+    size = static_cast<uint32_t>(::Find_POT(static_cast<int>(size)));
+    size = std::min(size, caps->limits.maxTextureSize);
+    if (size == 0) {
+        return nullptr;
+    }
+
+    TextureClass *texture = NEW_REF(
+        TextureClass,
+        (size, size, format, TextureClass::MIP_LEVELS_1, TextureClass::POOL_DEFAULT, true));
+    if (texture == nullptr) {
+        return nullptr;
+    }
+
+    if (!bgfx::isValid(texture->Get_Bgfx_Texture()) || !bgfx::isValid(texture->Get_Bgfx_Frame_Buffer())) {
+        REF_PTR_RELEASE(texture);
+        return nullptr;
+    }
+
+    return texture;
+}
+
 void BgfxRenderer::Reset_Render_Target()
 {
     if (!IsInitted) {
@@ -1347,6 +1385,11 @@ void BgfxRenderer::Reset_Render_Target()
     bgfx::setViewRect(ClearViewId, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
     bgfx::setViewRect(OverlayViewId, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
     Reset_Main_View_State(ActiveWidth, ActiveHeight);
+}
+
+bool BgfxRenderer::Has_Render_Target()
+{
+    return IsInitted && bgfx::isValid(CurrentFrameBuffer);
 }
 
 void BgfxRenderer::Set_Camera(const Matrix3D &view, const Matrix4 &projection)

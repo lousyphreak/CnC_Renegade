@@ -81,7 +81,7 @@
 #include "matpass.h"
 #include "bwrender.h"
 #include "assetmgr.h"
-#include "dx8wrapper.h"
+#include "bgfxrenderer.h"
 
 
 // DEBUG DEBUG
@@ -1120,7 +1120,9 @@ bool TexProjectClass::Compute_Texture(RenderObjClass * model,SpecialRenderInfoCl
 		/*
 		** Set the render target
 		*/
-		DX8Wrapper::Set_Render_Target(rtarget);
+		if (!BgfxRenderer::Set_Render_Target(*rtarget)) {
+			return false;
+		}
 
 		/*
 		** Set up the camera
@@ -1139,7 +1141,7 @@ bool TexProjectClass::Compute_Texture(RenderObjClass * model,SpecialRenderInfoCl
 		WW3D::Render(*model,*context);
 		WW3D::End_Render(false);
 
-		DX8Wrapper::Reset_Render_Target();
+		BgfxRenderer::Reset_Render_Target();
 
 	}
 

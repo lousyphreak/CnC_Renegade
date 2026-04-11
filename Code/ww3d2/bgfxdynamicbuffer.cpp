@@ -26,7 +26,6 @@
 #include "surfaceclass.h"
 #include "texture.h"
 #include "textureloader.h"
-#include "pot.h"
 #include "vertmaterial.h"
 #include "ww3d.h"
 #include "light.h"
@@ -153,7 +152,6 @@ bool DX8Wrapper::CurrentDX8LightEnables[4] = {};
 unsigned long DX8Wrapper::FrameCount = 0;
 DX8Caps *DX8Wrapper::CurrentCaps = g_bgfx_caps;
 D3DADAPTER_IDENTIFIER8 DX8Wrapper::CurrentAdapterIdentifier = {};
-bool DX8Wrapper::IsRenderToTexture = false;
 int DX8Wrapper::ZBias = 0;
 float DX8Wrapper::ZNear = 0.0f;
 float DX8Wrapper::ZFar = 1.0f;
@@ -1065,62 +1063,6 @@ void DX8Wrapper::Apply_Render_State_Changes()
 	}
 
 	render_state_changed = 0;
-}
-
-TextureClass *DX8Wrapper::Create_Render_Target(int width, int height, WW3DFormat format)
-{
-	if (format == WW3D_FORMAT_UNKNOWN) {
-		format = WW3D_FORMAT_A8R8G8B8;
-	}
-
-	if (!Get_Current_Caps()->Support_Render_To_Texture_Format(format)) {
-		WWDEBUG_SAY(("DX8Wrapper::Create_Render_Target unsupported format %d\n", format));
-		return nullptr;
-	}
-
-	const D3DCAPS8 &dx8caps = Get_Current_Caps()->Get_DX8_Caps();
-	float power_of_two_size = static_cast<float>(width);
-	if (height > 0 && height < width) {
-		power_of_two_size = static_cast<float>(height);
-	}
-
-	power_of_two_size = static_cast<float>(::Find_POT(static_cast<int>(power_of_two_size)));
-	if (power_of_two_size > dx8caps.MaxTextureWidth) {
-		power_of_two_size = static_cast<float>(dx8caps.MaxTextureWidth);
-	}
-	if (power_of_two_size > dx8caps.MaxTextureHeight) {
-		power_of_two_size = static_cast<float>(dx8caps.MaxTextureHeight);
-	}
-
-	TextureClass *texture = NEW_REF(
-		TextureClass,
-		(static_cast<unsigned>(power_of_two_size),
-		 static_cast<unsigned>(power_of_two_size),
-		 format,
-		 TextureClass::MIP_LEVELS_1,
-		 TextureClass::POOL_DEFAULT,
-		 true));
-	if (!bgfx::isValid(texture->Get_Bgfx_Texture()) || !bgfx::isValid(texture->Get_Bgfx_Frame_Buffer())) {
-		WWDEBUG_SAY(("DX8Wrapper::Create_Render_Target failed to create a valid bgfx frame buffer\n"));
-		REF_PTR_RELEASE(texture);
-		return nullptr;
-	}
-
-	return texture;
-}
-
-void DX8Wrapper::Set_Render_Target(TextureClass *texture)
-{
-	if (texture != nullptr) {
-		IsRenderToTexture = BgfxRenderer::Set_Render_Target(*texture);
-		if (!IsRenderToTexture) {
-			WWDEBUG_SAY(("DX8Wrapper::Set_Render_Target failed for texture id %u\n", texture->Get_ID()));
-			BgfxRenderer::Reset_Render_Target();
-		}
-	} else {
-		IsRenderToTexture = false;
-		BgfxRenderer::Reset_Render_Target();
-	}
 }
 
 void DX8Wrapper::Get_Device_Resolution(int &set_w, int &set_h, int &set_bits, bool &set_windowed)

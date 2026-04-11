@@ -19,6 +19,7 @@
 - Prefer compile failures that expose missing bgfx work over temporary fallbacks or disabled paths.
 - The first slice should replace initialization/device ownership and force the build system to acknowledge bgfx as the renderer backend in `ww3d2`.
 - A clean port does not need to preserve `dx8wrapper.h` as the migration seam; higher-level systems can move directly to `BgfxRenderer` when the dependency is only viewport, clear, or matrix submission.
+- The active `ww3d2` bgfx build does not compile `dx8wrapper.cpp`; bgfx runtime behavior lives in `bgfxdynamicbuffer.cpp` plus `BgfxRenderer`. When removing DX8-era seams, target that active path first and delete bgfx-side wrapper entry points instead of editing the dormant D3D implementation.
 
 ## Fresh blockers uncovered by rebuild
 
@@ -78,6 +79,10 @@
 - `TextureLoader::Load_Surface_Immediate(...)` is a good seam-reduction target because shared callers really want decoded surface data, while only backend-local code still wants to turn that into an `IDirect3DSurface8*`. Returning `SurfaceClass*` there shrinks the raw DX8 boundary without changing higher-level behavior.
 - A good hygiene check for the clean port is “does this shared header still mention `IDirect3D*` in its public API?”. If the answer is yes, the seam is probably still in the wrong place. Backend-local files can still bridge to DX8 temporarily, but shared texture APIs should traffic in engine-owned `TextureClass` / `SurfaceClass` data instead.
 - Render targets are a separate texture seam from file-backed mip data. A clean bgfx port should treat them as bgfx-owned framebuffer attachments, not as a special case of “make a D3D texture/surface and then recover the bits later”. `WW3D::Begin_Render()` already uses bgfx views, so binding the projector target through `bgfx::setViewFrameBuffer` is the correct direction for that path.
+- Projector/shadow render targets are now a concrete example of that rule in practice:
+  - allocate them through `BgfxRenderer`, not `DX8Wrapper`
+  - validate the bgfx framebuffer at creation time, not later during bind
+  - query “am I rendering to a texture?” from renderer-owned framebuffer state, not from a duplicated DX8-era boolean
 - Runtime bring-up exposed several non-obvious renderer port requirements that do not show up in compile-only work:
   - `BgfxRenderer::Init(...)` is reached twice during startup (`WW3D::Init()` and again via `DX8Wrapper::Init()`), so “already initialized” must be treated as success. Returning failure on the second call breaks startup even though bgfx itself was already initialized correctly.
   - bgfx platform/window data must stay valid across renderer init; probing the SDL/X11/Vulkan handles once and then discarding them is not enough.

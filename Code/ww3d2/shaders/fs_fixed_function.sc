@@ -1,4 +1,4 @@
-$input v_color0, v_texcoord0, v_texcoord1, v_specular0
+$input v_color0, v_texcoord0, v_texcoord1, v_specular0, v_fogFactor
 
 #include <bgfx_shader.sh>
 
@@ -310,13 +310,13 @@ vec4 ExecuteStage(vec4 current, vec4 diffuse, vec4 specular, vec4 tfactor, vec4 
     return vec4(color_result, alpha_result);
 }
 
-vec4 ApplyFog(vec4 color, vec4 specular)
+vec4 ApplyFog(vec4 color, float fogFactor)
 {
     if (u_ffpConfig1.z < 0.5) {
         return color;
     }
 
-    float fog_amount = SaturateScalar(specular.a);
+    float fog_amount = SaturateScalar(fogFactor);
     if (u_ffpConfig1.z < 1.5) {
         return vec4(mix(color.rgb, u_ffpFogColor.rgb, fog_amount), color.a);
     }
@@ -341,7 +341,7 @@ void main()
         current.rgb = SaturateRgb(current.rgb + v_specular0.rgb);
     }
 
-    current = ApplyFog(current, v_specular0);
+    current = ApplyFog(current, v_fogFactor);
 
     if (!AlphaTestPasses(current.a, u_ffpConfig1.x, u_ffpConfig1.y)) {
         discard;

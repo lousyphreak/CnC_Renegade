@@ -1,5 +1,5 @@
 $input a_position, a_normal, a_color0, a_color1, a_texcoord0, a_texcoord1
-$output v_color0, v_texcoord0, v_texcoord1, v_specular0
+$output v_color0, v_texcoord0, v_texcoord1, v_specular0, v_fogFactor
 
 #include <bgfx_shader.sh>
 
@@ -19,6 +19,7 @@ uniform vec4 u_ffpLightSpecular[4];
 uniform vec4 u_ffpLightAttenuation[4];
 uniform vec4 u_ffpLightSpotParams[4];
 uniform vec4 u_ffpCameraPosition;
+uniform vec4 u_ffpFogParams;
 
 vec4 ResolveColorSource(float source, vec4 materialColor, vec4 color0, vec4 color1)
 {
@@ -36,6 +37,28 @@ vec4 ResolveColorSource(float source, vec4 materialColor, vec4 color0, vec4 colo
 void main()
 {
     gl_Position = mul(u_modelViewProj, vec4(a_position, 1.0));
+    vec4 worldPosition4 = mul(u_model[0], vec4(a_position, 1.0));
+    vec3 worldPosition = worldPosition4.xyz;
+    vec3 viewPosition = mul(u_view, worldPosition4).xyz;
+    float fogMode = abs(u_ffpFogParams.w);
+    v_fogFactor = 0.0;
+
+    if (fogMode > 0.5) {
+        float fogDistance = u_ffpFogParams.w < 0.0 ? length(viewPosition) : abs(viewPosition.z);
+        float fogFactor = 1.0;
+
+        if (fogMode < 1.5) {
+            fogFactor = exp(-max(u_ffpFogParams.z, 0.0) * fogDistance);
+        } else if (fogMode < 2.5) {
+            float fogDensityDistance = max(u_ffpFogParams.z, 0.0) * fogDistance;
+            fogFactor = exp(-(fogDensityDistance * fogDensityDistance));
+        } else {
+            fogFactor = (u_ffpFogParams.y - fogDistance) / max(u_ffpFogParams.y - u_ffpFogParams.x, 1.0e-4);
+        }
+
+        v_fogFactor = 1.0 - clamp(fogFactor, 0.0, 1.0);
+    }
+
     vec4 diffuse = ResolveColorSource(u_ffpLightingConfig.z, u_ffpMaterialDiffuse, a_color0, a_color1);
 
     if (u_ffpLightingConfig.x > 0.5) {
@@ -54,7 +77,6 @@ void main()
         vec4 emissive = ResolveColorSource(u_ffpMaterialSourceConfig.x, u_ffpMaterialEmissive, a_color0, a_color1);
         vec3 litColor = emissive.rgb + (u_ffpSceneAmbient.rgb * ambient.rgb);
         vec3 specularColor = a_color1.rgb;
-        vec3 worldPosition = mul(u_model[0], vec4(a_position, 1.0)).xyz;
 
         vec3 worldNormal = normalize(mul(u_model[0], vec4(a_normal, 0.0)).xyz);
         for (int lightIndex = 0; lightIndex < 4; ++lightIndex) {

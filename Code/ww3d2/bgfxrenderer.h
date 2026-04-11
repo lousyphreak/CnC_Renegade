@@ -187,6 +187,7 @@ private:
     static bgfx::UniformHandle Texture1Uniform;
     static bgfx::UniformHandle FixedFunctionConfig1Uniform;
     static bgfx::UniformHandle FixedFunctionFogColorUniform;
+    static bgfx::UniformHandle FixedFunctionFogParamsUniform;
     static bgfx::UniformHandle FixedFunctionTextureFactorUniform;
     static bgfx::UniformHandle FixedFunctionStage0ColorUniform;
     static bgfx::UniformHandle FixedFunctionStage0AlphaUniform;

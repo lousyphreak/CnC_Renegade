@@ -117,6 +117,14 @@
 - Keep the shared compatibility constants truthful when the port still consumes legacy state names:
   - `renderer_types.h`'s `D3DCULL_*` values need to match real Direct3D (`NONE=1`, `CW=2`, `CCW=3`), because the bgfx path still receives wrapper cull state numerically through shared code
   - duplicating those numbers again in renderer-local helpers is risky; the safer pattern is to let bgfx submission consume the shared `D3DCULL_*` constants directly so enum drift cannot silently invert winding/culling
+- Viewport ownership and bgfx view-allocation reset are separate concerns:
+  - `BgfxRenderer::Apply_Clear(...)` still needs to reset the per-frame cached bgfx view IDs before a clear, but it must not also reset the active viewport back to the full target
+  - keeping those operations coupled causes a subtle D3D-vs-bgfx parity bug where per-camera/layer clears wipe the whole render target even though the subsequent draw submits into a smaller viewport
+  - the clean fix is to preserve the pending viewport rectangle across clear submission and reset only the configured-view cache / next-view allocator state
+- Fixed-function fog in the bgfx path needs two independent pieces of information:
+  - the legacy shader-level fog blend mode (`FOG_ENABLE`, `FOG_SCALE_FRAGMENT`, `FOG_WHITE`) still decides how the final fragment color is combined with fog
+  - but the actual fog amount must come from render-state-driven fog equations (`FOGSTART`, `FOGEND`, `FOGDENSITY`, fog mode, and range-fog enable), not from hijacking vertex specular alpha
+  - a clean way to model that is to keep the blend mode in the existing config uniform and send the fog equation inputs separately (`u_ffpFogParams`), then compute a dedicated fog varying in the vertex shader
 - The same rule applies to the remaining wrapper-global D3D surface:
   - if the bgfx build does not compile `dx8wrapper.cpp`, it should not expose `_Get_D3D8`, `_Get_D3D_Device8`, `Create_Additional_Swap_Chain(...)`, D3D-only `Set_Render_Target(...)` overloads, or raw `IDirect3D*` / `IDirect3DBaseTexture8*` static state just to satisfy null stubs in `bgfxdynamicbuffer.cpp`
   - for that active build, accidental `DX8CALL*` use should fail loudly instead of quietly depending on getters for backend objects that do not exist

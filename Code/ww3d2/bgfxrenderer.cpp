@@ -39,6 +39,7 @@ bgfx::UniformHandle BgfxRenderer::Texture0Uniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::Texture1Uniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::FixedFunctionConfig1Uniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::FixedFunctionFogColorUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::FixedFunctionFogParamsUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::FixedFunctionTextureFactorUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::FixedFunctionStage0ColorUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::FixedFunctionStage0AlphaUniform = BGFX_INVALID_HANDLE;
@@ -142,15 +143,27 @@ void Extract_Camera_Position(const Matrix4 &view_matrix, float *camera_position)
     camera_position[3] = 1.0f;
 }
 
-void Reset_Main_View_State(uint32_t width, uint32_t height)
+float Decode_Dword_Float(unsigned value)
+{
+    float decoded = 0.0f;
+    std::memcpy(&decoded, &value, sizeof(decoded));
+    return decoded;
+}
+
+void Reset_Main_View_Sequence()
 {
     CurrentMainViewId = MainViewBaseId;
     NextMainViewId = MainViewBaseId;
+    ConfiguredViews.clear();
+}
+
+void Reset_Main_View_State(uint32_t width, uint32_t height)
+{
+    Reset_Main_View_Sequence();
     PendingViewportX = 0;
     PendingViewportY = 0;
     PendingViewportWidth = width;
     PendingViewportHeight = height;
-    ConfiguredViews.clear();
 }
 
 uint16_t Acquire_Main_View()
@@ -1637,6 +1650,8 @@ void BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(const ShaderClass &shader,
 {
     const unsigned alpha_reference_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_ALPHAREF);
     const unsigned alpha_function_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_ALPHAFUNC);
+    unsigned fog_mode_state = D3DFOG_NONE;
+    bool range_fog_enabled = false;
     float alpha_test_function = -1.0f;
     float alpha_reference = static_cast<float>(alpha_reference_state & 0xffu) / 255.0f;
     if (shader.Get_Alpha_Test() == ShaderClass::ALPHATEST_ENABLE) {
@@ -1647,6 +1662,20 @@ void BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(const ShaderClass &shader,
         }
 
         alpha_test_function = static_cast<float>(alpha_function);
+    }
+
+    if (inputs.FogEnabled) {
+        fog_mode_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGTABLEMODE);
+        if (fog_mode_state == D3DFOG_NONE) {
+            fog_mode_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGVERTEXMODE);
+        }
+
+        if (fog_mode_state > D3DFOG_LINEAR) {
+            fog_mode_state = D3DFOG_NONE;
+        }
+
+        range_fog_enabled = fog_mode_state != D3DFOG_NONE
+            && DX8Wrapper::Get_DX8_Render_State(D3DRS_RANGEFOGENABLE) != FALSE;
     }
 
     float config1[4] = {
@@ -1678,11 +1707,17 @@ void BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(const ShaderClass &shader,
         inputs.BumpEnvLuminanceOffset,
         0.0f,
         0.0f};
+    float fog_params[4] = {
+        Decode_Dword_Float(DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGSTART)),
+        Decode_Dword_Float(DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGEND)),
+        Decode_Dword_Float(DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGDENSITY)),
+        range_fog_enabled ? -static_cast<float>(fog_mode_state) : static_cast<float>(fog_mode_state)};
     float camera_position[4];
     Extract_Camera_Position(CurrentViewMatrix, camera_position);
 
     bgfx::setUniform(FixedFunctionConfig1Uniform, config1);
     bgfx::setUniform(FixedFunctionFogColorUniform, fog_color);
+    bgfx::setUniform(FixedFunctionFogParamsUniform, fog_params);
     bgfx::setUniform(FixedFunctionTextureFactorUniform, texture_factor);
     bgfx::setUniform(FixedFunctionStage0ColorUniform, inputs.Stage0Color);
     bgfx::setUniform(FixedFunctionStage0AlphaUniform, inputs.Stage0Alpha);
@@ -1738,6 +1773,10 @@ bool BgfxRenderer::Init_Render_Resources()
 
     if (!bgfx::isValid(FixedFunctionFogColorUniform)) {
         FixedFunctionFogColorUniform = bgfx::createUniform("u_ffpFogColor", bgfx::UniformType::Vec4);
+    }
+
+    if (!bgfx::isValid(FixedFunctionFogParamsUniform)) {
+        FixedFunctionFogParamsUniform = bgfx::createUniform("u_ffpFogParams", bgfx::UniformType::Vec4);
     }
 
     if (!bgfx::isValid(FixedFunctionTextureFactorUniform)) {
@@ -1836,6 +1875,7 @@ bool BgfxRenderer::Init_Render_Resources()
         || !bgfx::isValid(Texture1Uniform)
         || !bgfx::isValid(FixedFunctionConfig1Uniform)
         || !bgfx::isValid(FixedFunctionFogColorUniform)
+        || !bgfx::isValid(FixedFunctionFogParamsUniform)
         || !bgfx::isValid(FixedFunctionTextureFactorUniform)
         || !bgfx::isValid(FixedFunctionStage0ColorUniform)
         || !bgfx::isValid(FixedFunctionStage0AlphaUniform)
@@ -1990,6 +2030,11 @@ void BgfxRenderer::Shutdown_Render_Resources()
         FixedFunctionFogColorUniform = BGFX_INVALID_HANDLE;
     }
 
+    if (bgfx::isValid(FixedFunctionFogParamsUniform)) {
+        bgfx::destroy(FixedFunctionFogParamsUniform);
+        FixedFunctionFogParamsUniform = BGFX_INVALID_HANDLE;
+    }
+
     if (bgfx::isValid(FixedFunctionConfig1Uniform)) {
         bgfx::destroy(FixedFunctionConfig1Uniform);
         FixedFunctionConfig1Uniform = BGFX_INVALID_HANDLE;
@@ -2096,10 +2141,15 @@ void BgfxRenderer::Apply_Clear(bool clear_color, bool clear_depth, float red, fl
         | (static_cast<uint32_t>(clear_b) << 8)
         | 0xffu;
 
-    Reset_Main_View_State(ActiveWidth, ActiveHeight);
+    Reset_Main_View_Sequence();
     bgfx::setViewClear(ClearViewId, clear_flags, clear_rgba, 1.0f, 0);
     bgfx::setViewFrameBuffer(ClearViewId, CurrentFrameBuffer);
-    bgfx::setViewRect(ClearViewId, 0, 0, static_cast<uint16_t>(ActiveWidth), static_cast<uint16_t>(ActiveHeight));
+    bgfx::setViewRect(
+        ClearViewId,
+        static_cast<uint16_t>(PendingViewportX),
+        static_cast<uint16_t>(PendingViewportY),
+        static_cast<uint16_t>(PendingViewportWidth),
+        static_cast<uint16_t>(PendingViewportHeight));
     bgfx::touch(ClearViewId);
 }
 

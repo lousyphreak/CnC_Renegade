@@ -217,6 +217,17 @@
   - `Code/ww3d2/renderer_types.h` now uses the real Direct3D cull enum values (`NONE=1`, `CW=2`, `CCW=3`) instead of the previous off-by-one placeholders.
   - `Code/ww3d2/bgfxrenderer.cpp` / `.h` and `Code/ww3d2/bgfxfixedfunction.cpp` now consume the shared `D3DCULL_*` constants directly instead of hardcoding parallel bgfx-side guesses for CW/CCW.
   - this removes a subtle mismatch where wrapper state could request `D3DCULL_CCW` while bgfx interpreted the value as `CW`, which is the kind of parity bug that can flip mesh winding/culling without producing an obvious crash.
+- Fixed the bgfx viewport-clear path so camera/layer clears no longer silently expand to the full render target:
+  - `Code/ww3d2/bgfxrenderer.cpp` now separates main-view allocation reset from viewport ownership. `Apply_Clear(...)` resets only the cached bgfx view sequence and preserves the current pending viewport rect when configuring `ClearViewId`.
+  - that means `CameraClass::Apply()` followed by `WW3D::Render(..., clear=...)` now clears the same sub-viewport that the camera is about to render into, instead of resetting the clear rect back to the full active target.
+  - this also fixes the extra clear pass used from `Code/ww3d2/scene.cpp` (`EXTRA_PASS_CLEAR_LINE`) so those clears stay scoped to the active camera view rather than wiping the whole target.
+  - rebuilt successfully and re-ran `build/bin/Renegade` for the usual timeout validation window; the executable again stayed alive until timeout without new sanitizer/assert markers in the captured log.
+- Implemented the next fog-parity slice in the bgfx fixed-function pipeline instead of continuing to rely on the old specular-alpha shortcut:
+  - `Code/ww3d2/bgfxrenderer.cpp` now uploads fog start, fog end, fog density, fog mode, and range-fog selection from the legacy render-state cache via a dedicated `u_ffpFogParams` uniform.
+  - `Code/ww3d2/shaders/vs_fixed_function.sc` now computes a fog factor from camera-space distance/depth for `LINEAR`, `EXP`, and `EXP2` fog and passes that through a dedicated varying instead of overloading vertex specular alpha.
+  - `Code/ww3d2/shaders/fs_fixed_function.sc` now applies the existing shader fog blend modes (`FOG_ENABLE`, `FOG_SCALE_FRAGMENT`, `FOG_WHITE`) using the computed fog factor, so the bgfx path finally uses the real fog equations driven by scene state.
+  - updated `Code/ww3d2/shaders/varying.def.sc` accordingly and rebuilt the generated bgfx shader set as part of the normal build.
+  - revalidated the fog slice with another `timeout 220s ./build/bin/Renegade` run; the executable again stayed alive until timeout and the captured log did not show new sanitizer/assert failures.
   - deleted the unused bgfx-side `CurrentRenderTarget` / `DefaultRenderTarget` / `DefaultDepthBuffer` static definitions from `Code/ww3d2/bgfxdynamicbuffer.cpp` because that state only belongs to the excluded DX8 backend implementation.
 - Rebuilt immediately after the header/surface cleanup and confirmed `cmake --build build -j20` still succeeds on the active bgfx tree.
 - Revalidated the new tree with `cd build/bin && timeout 210 ./Renegade`; the executable stayed alive until timeout exit `124` instead of crashing, and the captured runtime log did not show ASAN/UBSAN/assert/fatal renderer failures during the run.

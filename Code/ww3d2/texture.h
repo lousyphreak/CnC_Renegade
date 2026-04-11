@@ -255,6 +255,7 @@ class TextureClass : public RefCountClass
 		TxtAddrMode VAddressMode;
 
 		bgfx::TextureHandle BgfxTexture;
+		bgfx::TextureHandle BgfxDepthTexture;
 		bgfx::FrameBufferHandle BgfxFrameBuffer;
 		std::vector<SurfaceClass *> SurfaceLevels;
 		bool Initialized;

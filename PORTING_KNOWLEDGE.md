@@ -124,6 +124,17 @@
 - Fixed-function fog in the bgfx path needs two independent pieces of information:
   - the legacy shader-level fog blend mode (`FOG_ENABLE`, `FOG_SCALE_FRAGMENT`, `FOG_WHITE`) still decides how the final fragment color is combined with fog
   - but the actual fog amount must come from render-state-driven fog equations (`FOGSTART`, `FOGEND`, `FOGDENSITY`, fog mode, and range-fog enable), not from hijacking vertex specular alpha
+- For the active bgfx backend, “this format can be uploaded as a texture” and “this format can be used as a render target” are different contracts:
+  - many legacy source formats can be converted through BGRA8 for ordinary texture uploads
+  - that does **not** make them truthful `Support_Render_To_Texture_Format(...)` answers, because projector/shadow target selection expects actual framebuffer-compatible formats
+- Render-target parity also still depends on preserving DX8's creation semantics even after the backend is bgfx:
+  - `Create_Render_Target(...)` is expected to validate format support up front
+  - it still needs to round to the old power-of-two square target size used by projector/shadow code
+  - and the created bgfx framebuffer needs a real depth attachment, not just a color texture, or offscreen depth-tested passes will diverge from the original renderer
+- A good bgfx rule for offscreen passes in this tree is:
+  - use the narrowest truthful color format that bgfx can attach as a framebuffer
+  - keep a dedicated depth attachment alongside it
+  - reserve BGRA8 conversion fallback for source-texture ingestion, not framebuffer capability reporting
   - a clean way to model that is to keep the blend mode in the existing config uniform and send the fog equation inputs separately (`u_ffpFogParams`), then compute a dedicated fog varying in the vertex shader
 - The same rule applies to the remaining wrapper-global D3D surface:
   - if the bgfx build does not compile `dx8wrapper.cpp`, it should not expose `_Get_D3D8`, `_Get_D3D_Device8`, `Create_Additional_Swap_Chain(...)`, D3D-only `Set_Render_Target(...)` overloads, or raw `IDirect3D*` / `IDirect3DBaseTexture8*` static state just to satisfy null stubs in `bgfxdynamicbuffer.cpp`

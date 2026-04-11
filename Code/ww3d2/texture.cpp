@@ -215,6 +215,7 @@ static uint32_t Resolve_Bgfx_Mip_Filter_Flags(unsigned filter)
 TextureClass::TextureClass(unsigned width, unsigned height, WW3DFormat format, MipCountType mip_level_count, PoolType pool,bool rendertarget)
 	:
 	BgfxTexture(BGFX_INVALID_HANDLE),
+	BgfxDepthTexture(BGFX_INVALID_HANDLE),
 	BgfxFrameBuffer(BGFX_INVALID_HANDLE),
 	texture_id(unused_texture_id++),
 	Initialized(true),
@@ -284,6 +285,7 @@ TextureClass::TextureClass(
 	bool allow_compression)
 	:
 	BgfxTexture(BGFX_INVALID_HANDLE),
+	BgfxDepthTexture(BGFX_INVALID_HANDLE),
 	BgfxFrameBuffer(BGFX_INVALID_HANDLE),
 	texture_id(unused_texture_id++),
 	Initialized(false),
@@ -388,6 +390,7 @@ TextureClass::TextureClass(
 TextureClass::TextureClass(SurfaceClass *surface, MipCountType mip_level_count)
 	:
 	BgfxTexture(BGFX_INVALID_HANDLE),
+	BgfxDepthTexture(BGFX_INVALID_HANDLE),
 	BgfxFrameBuffer(BGFX_INVALID_HANDLE),
 	texture_id(unused_texture_id++),
 	Initialized(true),
@@ -617,21 +620,25 @@ uint32_t TextureClass::Get_Bgfx_Sampler_Flags(unsigned stage) const
 
 void TextureClass::Release_Bgfx_Texture()
 {
-	if (bgfx::isValid(BgfxTexture)) {
-		if (bgfx::isValid(BgfxFrameBuffer) && BgfxRenderer::Is_Initted()) {
-			bgfx::destroy(BgfxFrameBuffer);
-		}
-		BgfxFrameBuffer = BGFX_INVALID_HANDLE;
-		if (BgfxRenderer::Is_Initted()) {
-			bgfx::destroy(BgfxTexture);
-		}
-		BgfxTexture = BGFX_INVALID_HANDLE;
-	}
 	if (bgfx::isValid(BgfxFrameBuffer)) {
 		if (BgfxRenderer::Is_Initted()) {
 			bgfx::destroy(BgfxFrameBuffer);
 		}
 		BgfxFrameBuffer = BGFX_INVALID_HANDLE;
+	}
+
+	if (bgfx::isValid(BgfxTexture)) {
+		if (BgfxRenderer::Is_Initted()) {
+			bgfx::destroy(BgfxTexture);
+		}
+		BgfxTexture = BGFX_INVALID_HANDLE;
+	}
+
+	if (bgfx::isValid(BgfxDepthTexture)) {
+		if (BgfxRenderer::Is_Initted()) {
+			bgfx::destroy(BgfxDepthTexture);
+		}
+		BgfxDepthTexture = BGFX_INVALID_HANDLE;
 	}
 }
 

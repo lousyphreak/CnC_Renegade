@@ -267,9 +267,16 @@
   - `Code/ww3d2/bgfxrenderer.cpp` / `.h`, `Code/ww3d2/render2d.cpp`, and `Code/ww3d2/shaders/vs_fixed_function.sc` now derive the fixed-function viewer uniform from the exact view matrix used for each draw instead of from the renderer's last main-camera state. This keeps local-viewer/specular behavior aligned with per-draw matrix overrides and overlay submissions.
   - the same bgfx uniform/config path now consumes the live `D3DRS_SPECULARENABLE` state for the final secondary/specular add instead of inferring that only from `ShaderClass`, which keeps the active renderer contract truthful to the wrapper state cache.
   - `Code/ww3d2/bgfxdynamicbuffer.cpp` now seeds `D3DRS_LOCALVIEWER` and `D3DRS_NORMALIZENORMALS` with explicit bgfx-side defaults during render-state bootstrap so those fixed-function states stop surfacing as uninitialized sentinel values in the active build.
+- Tightened the bgfx render-target path so offscreen passes stop quietly diverging from the old DX8 contract:
+  - `Code/ww3d2/bgfxrenderer.cpp` now distinguishes between texture-upload support and true framebuffer-capable render-target formats. BGRA8-convertible source formats still work for normal texture uploads, but they are no longer advertised as valid RTT formats just because the conversion path exists.
+  - the same renderer path now allocates a dedicated depth attachment for render-target textures and creates a two-attachment bgfx framebuffer instead of a color-only framebuffer, restoring depth-tested offscreen rendering behavior for projector/shadow-style passes.
+  - `Code/ww3d2/bgfxdynamicbuffer.cpp` now mirrors the legacy `Create_Render_Target(...)` behavior more closely by validating RTT format support, rounding targets to the old power-of-two square size, validating the resulting bgfx texture/framebuffer immediately, and logging/resetting if a render-target bind fails instead of silently marking RTT as active.
+  - the bgfx caps bootstrap in `Code/ww3d2/bgfxdynamicbuffer.cpp` also drops the misleading “stub caps” naming and marks range-fog support in the active caps snapshot so the remaining DX8-era state consumers see a more truthful renderer contract.
+- Revalidated after the render-target/depth slice: `cmake --build build -j20` succeeded, and `timeout 210s ./build/bin/Renegade` stayed alive until timeout exit `124` with no renderer crash/assert markers in the captured runtime output.
 
 ## Next work
 
+- Replace the CPU-backed “render” vertex/index buffer storage plus transient-per-draw repacking with real bgfx-owned GPU buffers; this is now the biggest remaining renderer parity/performance gap.
 - Continue de-DX8ing the live render pipeline above the renamed buffer layer, starting with the remaining `dx8renderer.*` / `dx8polygonrenderer.*` / `DX8Wrapper` state surfaces and the still-D3D-shaped format API that the bgfx build exposes.
 - Replace the remaining D3D-format conversion surface in `formconv.*` and texture loading with backend-neutral or bgfx-backed format handling.
 - Keep deleting or hiding DX8-only API from shared headers whenever the active bgfx build already excludes the corresponding backend `.cpp`.

@@ -27,6 +27,7 @@
 #include "surfaceclass.h"
 #include "texture.h"
 #include "textureloader.h"
+#include "pot.h"
 #include "vertmaterial.h"
 #include "ww3d.h"
 #include "light.h"
@@ -62,7 +63,7 @@ unsigned g_vertex_buffer_total_vertices = 0;
 unsigned g_vertex_buffer_total_size = 0;
 
 RenderDeviceDescClass g_render_device_desc;
-DX8Caps *g_stub_caps = nullptr;
+DX8Caps *g_bgfx_caps = nullptr;
 int g_swap_interval = 0;
 constexpr HRESULT kD3DErrInvalidCall = -11;
 std::unordered_map<const RenderVertexBufferClass *, std::vector<unsigned char>> g_render_vertex_buffers;
@@ -113,7 +114,7 @@ unsigned DX8Wrapper::render_state_changes = 0;
 unsigned DX8Wrapper::texture_stage_state_changes = 0;
 bool DX8Wrapper::CurrentDX8LightEnables[4] = {};
 unsigned long DX8Wrapper::FrameCount = 0;
-DX8Caps *DX8Wrapper::CurrentCaps = g_stub_caps;
+DX8Caps *DX8Wrapper::CurrentCaps = g_bgfx_caps;
 D3DADAPTER_IDENTIFIER8 DX8Wrapper::CurrentAdapterIdentifier = {};
 bool DX8Wrapper::IsRenderToTexture = false;
 int DX8Wrapper::ZBias = 0;
@@ -244,12 +245,12 @@ void DX8Wrapper::Release_Render_State()
 
 static DX8Caps *Ensure_Caps()
 {
-	if (g_stub_caps == nullptr) {
+	if (g_bgfx_caps == nullptr) {
 		D3DCAPS8 caps = {};
 		caps.AdapterOrdinal = 0;
 		caps.DeviceType = D3DDEVTYPE_HAL;
 		caps.DevCaps = D3DDEVCAPS_HWTRANSFORMANDLIGHT;
-		caps.RasterCaps = D3DPRASTERCAPS_ZBIAS;
+		caps.RasterCaps = D3DPRASTERCAPS_ZBIAS | D3DPRASTERCAPS_FOGRANGE;
 		caps.TextureFilterCaps = D3DPTFILTERCAPS_MINFLINEAR | D3DPTFILTERCAPS_MAGFLINEAR | D3DPTFILTERCAPS_MIPFLINEAR | D3DPTFILTERCAPS_MINFANISOTROPIC | D3DPTFILTERCAPS_MAGFANISOTROPIC;
 		caps.TextureOpCaps =
 			D3DTEXOPCAPS_DISABLE |
@@ -274,10 +275,10 @@ static DX8Caps *Ensure_Caps()
 		std::snprintf(adapter.DeviceName, sizeof(adapter.DeviceName), "bgfx");
 		adapter.DriverVersion.HighPart = 1;
 		adapter.DriverVersion.LowPart = 0;
-		g_stub_caps = new DX8Caps(caps, WW3D_FORMAT_A8R8G8B8, adapter);
+		g_bgfx_caps = new DX8Caps(caps, WW3D_FORMAT_A8R8G8B8, adapter);
 	}
 
-	return g_stub_caps;
+	return g_bgfx_caps;
 }
 
 VertexBufferClass::VertexBufferClass(unsigned type_, unsigned FVF, unsigned short vertex_count_)
@@ -958,15 +959,53 @@ TextureClass *DX8Wrapper::Create_Render_Target(int width, int height, WW3DFormat
 	if (format == WW3D_FORMAT_UNKNOWN) {
 		format = WW3D_FORMAT_A8R8G8B8;
 	}
-	return NEW_REF(TextureClass, (static_cast<unsigned>(width), static_cast<unsigned>(height), format, TextureClass::MIP_LEVELS_1, TextureClass::POOL_DEFAULT, true));
+
+	if (!Get_Current_Caps()->Support_Render_To_Texture_Format(format)) {
+		WWDEBUG_SAY(("DX8Wrapper::Create_Render_Target unsupported format %d\n", format));
+		return nullptr;
+	}
+
+	const D3DCAPS8 &dx8caps = Get_Current_Caps()->Get_DX8_Caps();
+	float power_of_two_size = static_cast<float>(width);
+	if (height > 0 && height < width) {
+		power_of_two_size = static_cast<float>(height);
+	}
+
+	power_of_two_size = static_cast<float>(::Find_POT(static_cast<int>(power_of_two_size)));
+	if (power_of_two_size > dx8caps.MaxTextureWidth) {
+		power_of_two_size = static_cast<float>(dx8caps.MaxTextureWidth);
+	}
+	if (power_of_two_size > dx8caps.MaxTextureHeight) {
+		power_of_two_size = static_cast<float>(dx8caps.MaxTextureHeight);
+	}
+
+	TextureClass *texture = NEW_REF(
+		TextureClass,
+		(static_cast<unsigned>(power_of_two_size),
+		 static_cast<unsigned>(power_of_two_size),
+		 format,
+		 TextureClass::MIP_LEVELS_1,
+		 TextureClass::POOL_DEFAULT,
+		 true));
+	if (!bgfx::isValid(texture->Get_Bgfx_Texture()) || !bgfx::isValid(texture->Get_Bgfx_Frame_Buffer())) {
+		WWDEBUG_SAY(("DX8Wrapper::Create_Render_Target failed to create a valid bgfx frame buffer\n"));
+		REF_PTR_RELEASE(texture);
+		return nullptr;
+	}
+
+	return texture;
 }
 
 void DX8Wrapper::Set_Render_Target(TextureClass *texture)
 {
-	IsRenderToTexture = texture != nullptr;
 	if (texture != nullptr) {
-		BgfxRenderer::Set_Render_Target(*texture);
+		IsRenderToTexture = BgfxRenderer::Set_Render_Target(*texture);
+		if (!IsRenderToTexture) {
+			WWDEBUG_SAY(("DX8Wrapper::Set_Render_Target failed for texture id %u\n", texture->Get_ID()));
+			BgfxRenderer::Reset_Render_Target();
+		}
 	} else {
+		IsRenderToTexture = false;
 		BgfxRenderer::Reset_Render_Target();
 	}
 }
@@ -1153,8 +1192,7 @@ bool DX8Wrapper::Set_Render_Device(int dev, int width, int height, int bits, int
     if (windowed >= 0) {
         IsWindowed = (windowed != 0);
     }
-    Ensure_Caps();
-    CurrentCaps = g_stub_caps;
+    CurrentCaps = Ensure_Caps();
     if (BgfxRenderer::Is_Initted()) {
         BgfxRenderer::Reset();
     }

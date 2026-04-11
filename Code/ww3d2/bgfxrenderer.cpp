@@ -1031,11 +1031,85 @@ bool Get_Bgfx_Texture_Format(WW3DFormat format, bgfx::TextureFormat::Enum &bgfx_
     case WW3D_FORMAT_DXT5:
         bgfx_format = bgfx::TextureFormat::BC3;
         return true;
-    default:
+    case WW3D_FORMAT_R8G8B8:
+    case WW3D_FORMAT_R3G3B2:
+    case WW3D_FORMAT_A8:
+    case WW3D_FORMAT_A8R3G3B2:
+    case WW3D_FORMAT_L8:
+    case WW3D_FORMAT_A8L8:
+    case WW3D_FORMAT_A4L4:
+    case WW3D_FORMAT_U8V8:
+    case WW3D_FORMAT_L6V5U5:
+    case WW3D_FORMAT_X8L8V8U8:
         bgfx_format = bgfx::TextureFormat::BGRA8;
         direct_copy = false;
         return true;
+    default:
+        bgfx_format = bgfx::TextureFormat::Count;
+        direct_copy = false;
+        return false;
     }
+}
+
+bool Get_Bgfx_Render_Target_Format(WW3DFormat format, bgfx::TextureFormat::Enum &bgfx_format)
+{
+    switch (format) {
+    case WW3D_FORMAT_A8R8G8B8:
+    case WW3D_FORMAT_X8R8G8B8:
+        bgfx_format = bgfx::TextureFormat::BGRA8;
+        return true;
+    case WW3D_FORMAT_R5G6B5:
+        bgfx_format = bgfx::TextureFormat::R5G6B5;
+        return true;
+    case WW3D_FORMAT_A1R5G5B5:
+    case WW3D_FORMAT_X1R5G5B5:
+        bgfx_format = bgfx::TextureFormat::BGR5A1;
+        return true;
+    case WW3D_FORMAT_A4R4G4B4:
+    case WW3D_FORMAT_X4R4G4B4:
+        bgfx_format = bgfx::TextureFormat::BGRA4;
+        return true;
+    default:
+        bgfx_format = bgfx::TextureFormat::Count;
+        return false;
+    }
+}
+
+bool Is_Bgfx_Texture_Format_Supported(bgfx::TextureFormat::Enum bgfx_format, uint64_t texture_flags, uint32_t capability_flags)
+{
+    if (bgfx_format == bgfx::TextureFormat::Count) {
+        return false;
+    }
+
+    const bgfx::Caps *caps = bgfx::getCaps();
+    if (caps == nullptr) {
+        return true;
+    }
+
+    return (caps->formats[bgfx_format] & capability_flags) != 0
+        && bgfx::isTextureValid(0, false, 1, bgfx_format, texture_flags);
+}
+
+bool Get_Render_Target_Depth_Format(bgfx::TextureFormat::Enum &depth_format)
+{
+    static constexpr bgfx::TextureFormat::Enum kDepthFormats[] = {
+        bgfx::TextureFormat::D24S8,
+        bgfx::TextureFormat::D32,
+        bgfx::TextureFormat::D24,
+        bgfx::TextureFormat::D16,
+        bgfx::TextureFormat::D32F,
+        bgfx::TextureFormat::D24F,
+        bgfx::TextureFormat::D16F};
+
+    for (bgfx::TextureFormat::Enum candidate : kDepthFormats) {
+        if (Is_Bgfx_Texture_Format_Supported(candidate, BGFX_TEXTURE_RT | BGFX_TEXTURE_RT_WRITE_ONLY, BGFX_CAPS_FORMAT_TEXTURE_FRAMEBUFFER)) {
+            depth_format = candidate;
+            return true;
+        }
+    }
+
+    depth_format = bgfx::TextureFormat::Count;
+    return false;
 }
 
 const char *Get_Renderer_Name(bgfx::RendererType::Enum renderer_type)
@@ -1058,7 +1132,7 @@ const char *Get_Renderer_Name(bgfx::RendererType::Enum renderer_type)
     }
 }
 
-bool Is_Texture_Format_Supported(WW3DFormat format, uint32_t capability_flags)
+bool Is_Runtime_Texture_Format_Supported(WW3DFormat format)
 {
     bgfx::TextureFormat::Enum bgfx_format = bgfx::TextureFormat::Count;
     bool direct_copy = false;
@@ -1066,12 +1140,19 @@ bool Is_Texture_Format_Supported(WW3DFormat format, uint32_t capability_flags)
         return false;
     }
 
-    const bgfx::Caps *caps = bgfx::getCaps();
-    if (caps == nullptr) {
-        return true;
+    return Is_Bgfx_Texture_Format_Supported(bgfx_format, BGFX_TEXTURE_NONE, BGFX_CAPS_FORMAT_TEXTURE_2D);
+}
+
+bool Is_Render_Target_Format_Supported(WW3DFormat format)
+{
+    bgfx::TextureFormat::Enum color_format = bgfx::TextureFormat::Count;
+    if (!Get_Bgfx_Render_Target_Format(format, color_format)) {
+        return false;
     }
 
-    return (caps->formats[bgfx_format] & capability_flags) != 0;
+    bgfx::TextureFormat::Enum depth_format = bgfx::TextureFormat::Count;
+    return Get_Render_Target_Depth_Format(depth_format)
+        && Is_Bgfx_Texture_Format_Supported(color_format, BGFX_TEXTURE_RT, BGFX_CAPS_FORMAT_TEXTURE_FRAMEBUFFER);
 }
 
 bgfx::RendererType::Enum Choose_Preferred_Renderer(void)
@@ -1465,12 +1546,12 @@ bgfx::ProgramHandle BgfxRenderer::Get_Fixed_Function_Program()
 
 bool BgfxRenderer::Supports_Texture_Format(WW3DFormat format)
 {
-    return Is_Texture_Format_Supported(format, BGFX_CAPS_FORMAT_TEXTURE_2D);
+    return format != WW3D_FORMAT_UNKNOWN && Is_Runtime_Texture_Format_Supported(format);
 }
 
 bool BgfxRenderer::Supports_Render_Target_Format(WW3DFormat format)
 {
-    return Is_Texture_Format_Supported(format, BGFX_CAPS_FORMAT_TEXTURE_FRAMEBUFFER);
+    return format != WW3D_FORMAT_UNKNOWN && Is_Render_Target_Format_Supported(format);
 }
 
 bgfx::TextureHandle BgfxRenderer::Create_Texture_From_Surface(SurfaceClass &surface)
@@ -1512,8 +1593,14 @@ bgfx::TextureHandle BgfxRenderer::Create_Texture(TextureClass &texture)
     bgfx::TextureFormat::Enum texture_format = bgfx::TextureFormat::BGRA8;
     bool direct_copy = false;
     if (texture.Is_Render_Target_Texture()) {
-        if (!Get_Bgfx_Texture_Format(texture.Get_Texture_Format(), texture_format, direct_copy) ||
+        if (!Get_Bgfx_Render_Target_Format(texture.Get_Texture_Format(), texture_format) ||
             !Supports_Render_Target_Format(texture.Get_Texture_Format())) {
+            return BGFX_INVALID_HANDLE;
+        }
+
+        bgfx::TextureFormat::Enum depth_format = bgfx::TextureFormat::Count;
+        if (!Get_Render_Target_Depth_Format(depth_format)) {
+            WWDEBUG_SAY(("BgfxRenderer::Create_Texture could not find a depth format for render target textures\n"));
             return BGFX_INVALID_HANDLE;
         }
 
@@ -1528,10 +1615,32 @@ bgfx::TextureHandle BgfxRenderer::Create_Texture(TextureClass &texture)
             return BGFX_INVALID_HANDLE;
         }
 
-        bgfx::Attachment attachment;
-        attachment.init(handle);
-        texture.BgfxFrameBuffer = bgfx::createFrameBuffer(1, &attachment, false);
+        texture.BgfxDepthTexture = bgfx::createTexture2D(
+            static_cast<uint16_t>(texture.Get_Width()),
+            static_cast<uint16_t>(texture.Get_Height()),
+            false,
+            1,
+            depth_format,
+            BGFX_TEXTURE_RT | BGFX_TEXTURE_RT_WRITE_ONLY);
+        if (!bgfx::isValid(texture.BgfxDepthTexture)) {
+            bgfx::destroy(handle);
+            return BGFX_INVALID_HANDLE;
+        }
+
+        bgfx::Attachment attachments[2];
+        attachments[0].init(handle);
+        attachments[1].init(texture.BgfxDepthTexture);
+        if (!bgfx::isFrameBufferValid(2, attachments)) {
+            bgfx::destroy(texture.BgfxDepthTexture);
+            texture.BgfxDepthTexture = BGFX_INVALID_HANDLE;
+            bgfx::destroy(handle);
+            return BGFX_INVALID_HANDLE;
+        }
+
+        texture.BgfxFrameBuffer = bgfx::createFrameBuffer(2, attachments, false);
         if (!bgfx::isValid(texture.BgfxFrameBuffer)) {
+            bgfx::destroy(texture.BgfxDepthTexture);
+            texture.BgfxDepthTexture = BGFX_INVALID_HANDLE;
             bgfx::destroy(handle);
             return BGFX_INVALID_HANDLE;
         }

@@ -264,7 +264,7 @@ WW3DErrorType WW3D::Init(void *hwnd, char *defaultpal, bool lite)
 	/*
 	** Initialize the renderer backend first so WW3D owns frame lifecycle through bgfx.
 	*/
-	Init_D3D_To_WW3_Conversion();
+	Init_Renderer_Format_Conversion();
 	WWDEBUG_SAY(("Init BgfxRenderer\n"));
 	if (!BgfxRenderer::Init(hwnd, lite)) {
 		return(WW3D_ERROR_DIRECTX8_INITIALIZATION_FAILED);

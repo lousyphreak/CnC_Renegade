@@ -587,7 +587,7 @@ void DX8Wrapper::Do_Onetime_Device_Dependent_Inits(void)
 	/*
 	** Set Global render states (some of which depend on caps)
 	*/
-	Compute_Caps(D3DFormat_To_WW3DFormat(_PresentParameters.BackBufferFormat));
+	Compute_Caps(Renderer_Format_To_WW3DFormat(_PresentParameters.BackBufferFormat));
 
    /*
 	** Initalize any other subsystems inside of WW3D
@@ -710,7 +710,7 @@ bool DX8Wrapper::Create_Device(void)
 	DX8Caps dx8_caps(
 		D3DInterface,
 		caps, 
-		D3DFormat_To_WW3DFormat(_PresentParameters.BackBufferFormat), 
+		Renderer_Format_To_WW3DFormat(_PresentParameters.BackBufferFormat), 
 		CurrentAdapterIdentifier);
 	if (dx8_caps.Get_Vendor()==DX8Caps::VENDOR_ATI) {
 		_PresentParameters.Flags=D3DPRESENTFLAG_LOCKABLE_BACKBUFFER;
@@ -866,7 +866,7 @@ void DX8Wrapper::Enumerate_Devices()
 					}
 
 					// Some cards fail in certain modes, DX8Caps keeps list of those.
-					if (!dx8caps.Is_Valid_Display_Format(d3dmode.Width,d3dmode.Height,D3DFormat_To_WW3DFormat(d3dmode.Format))) {
+					if (!dx8caps.Is_Valid_Display_Format(d3dmode.Width,d3dmode.Height,Renderer_Format_To_WW3DFormat(d3dmode.Format))) {
 						bits=0;
 					}
 
@@ -2072,7 +2072,7 @@ IDirect3DTexture8 * DX8Wrapper::_Create_DX8_Texture(
 			height,
 			mip_level_count,
 			D3DUSAGE_RENDERTARGET,
-			WW3DFormat_To_D3DFormat(format),
+			WW3DFormat_To_Renderer_Format(format),
 			pool,
 			&texture);
 
@@ -2096,7 +2096,7 @@ IDirect3DTexture8 * DX8Wrapper::_Create_DX8_Texture(
 				height,
 				mip_level_count,
 				D3DUSAGE_RENDERTARGET,
-				WW3DFormat_To_D3DFormat(format),
+				WW3DFormat_To_Renderer_Format(format),
 				pool,
 				&texture);
 
@@ -2127,7 +2127,7 @@ IDirect3DTexture8 * DX8Wrapper::_Create_DX8_Texture(
 		height,
 		mip_level_count,
 		0,
-		WW3DFormat_To_D3DFormat(format),
+		WW3DFormat_To_Renderer_Format(format),
 		pool,
 		&texture);
 
@@ -2146,7 +2146,7 @@ IDirect3DTexture8 * DX8Wrapper::_Create_DX8_Texture(
 			height,
 			mip_level_count,
 			0,
-			WW3DFormat_To_D3DFormat(format),
+			WW3DFormat_To_Renderer_Format(format),
 			pool,
 			&texture);
 		if (SUCCEEDED(ret)) {
@@ -2235,7 +2235,7 @@ IDirect3DTexture8 * DX8Wrapper::_Create_DX8_Texture(
 
 	// This function will create a texture with a different (but similar) format if the surface is
 	// not in a supported texture format.
-	WW3DFormat format=D3DFormat_To_WW3DFormat(surface_desc.Format);
+	WW3DFormat format = Renderer_Format_To_WW3DFormat(surface_desc.Format);
 	texture = _Create_DX8_Texture(surface_desc.Width, surface_desc.Height, format, mip_level_count);
 
 	// Copy the surface to the texture
@@ -2263,7 +2263,7 @@ IDirect3DSurface8 * DX8Wrapper::_Create_DX8_Surface(unsigned int width, unsigned
 	// Paletted surfaces not supported!
 	WWASSERT(format!=D3DFMT_P8);
 
-	DX8CALL(CreateImageSurface(width, height, WW3DFormat_To_D3DFormat(format), &surface));
+	DX8CALL(CreateImageSurface(width, height, WW3DFormat_To_Renderer_Format(format), &surface));
 
 	return surface;
 }
@@ -2508,7 +2508,7 @@ DX8Wrapper::Create_Render_Target (int width, int height, WW3DFormat format)
 	if (format==WW3D_FORMAT_UNKNOWN) {
 		D3DDISPLAYMODE mode;
 		DX8CALL(GetDisplayMode(&mode));
-		format=D3DFormat_To_WW3DFormat(mode.Format);
+		format = Renderer_Format_To_WW3DFormat(mode.Format);
 	}
 
 	// If render target format isn't supported return NULL

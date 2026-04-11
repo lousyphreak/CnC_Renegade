@@ -119,6 +119,9 @@
 - The same rule also applies to shared D3D interface type definitions:
   - the active bgfx build should only need forward declarations for legacy `IDirect3D*` names that survive in compile-gated headers; publishing fake COM-style method vtables in `renderer_types.h` keeps a shim-shaped ownership boundary alive longer than necessary
   - after switching the bgfx build to forward declarations only, any accidental method-level dependency on those fake interfaces becomes an honest compile failure instead of silently leaning on placeholder type shells
+- The format-conversion seam should be named after what it does, not after Direct3D:
+  - `formconv.*` still has to translate between WW3D's stored format enum and the legacy numeric format codes used by DDS headers and DX8 capability tables
+  - but the active bgfx build does not benefit from exposing those helpers as `WW3DFormat_To_D3DFormat` / `D3DFormat_To_WW3DFormat`; renderer-neutral format-code names keep the compatibility surface narrower without changing the underlying numeric values
 - Keep the shared compatibility constants truthful when the port still consumes legacy state names:
   - `renderer_types.h`'s `D3DCULL_*` values need to match real Direct3D (`NONE=1`, `CW=2`, `CCW=3`), because the bgfx path still receives wrapper cull state numerically through shared code
   - duplicating those numbers again in renderer-local helpers is risky; the safer pattern is to let bgfx submission consume the shared `D3DCULL_*` constants directly so enum drift cannot silently invert winding/culling

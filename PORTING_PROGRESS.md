@@ -289,6 +289,10 @@
   - `Code/ww3d2/bgfxfixedfunction.cpp` now binds the full cached render vertex buffer when using the persistent direct index-buffer path instead of binding a `min_vertex_index`-sliced vertex window.
   - root cause: the cached render indices remain authored as absolute indices into the category vertex buffer, matching D3D8's `SetIndices(baseVertexIndex)` behavior. bgfx direct indexed draws do not expose that same base-vertex addend, so slicing the bound vertex buffer while keeping the original indices made static meshes fetch unrelated vertices and explode visually.
 - Revalidated after the static-mesh corruption fix: `cmake --build build -j20` succeeded, and `timeout 210s ./build/bin/Renegade` again stayed alive until timeout exit `124` with no renderer crash/assert/fatal markers in the captured runtime output.
+- Removed another active D3D-shaped seam from the shared format path instead of keeping the bgfx build speaking in `D3DFORMAT` terms:
+  - `Code/ww3d2/formconv.*` now exposes renderer-neutral conversion entry points (`WW3DFormat_To_Renderer_Format`, `Renderer_Format_To_WW3DFormat`, `Init_Renderer_Format_Conversion`) and reuses the shared format constants from `renderer_types.h` instead of carrying a duplicate local `D3DFMT_*` table.
+  - updated the live call sites in `ww3d2` plus `Tools/WWConfig` to use those renderer-neutral helpers, so the active bgfx tree stops advertising format conversion itself as a Direct3D-specific contract.
+  - trimmed the stale `D3DFORMAT` wording in `ww3dformat.h` and deleted the old commented-out conversion table from `formconv.cpp`, preserving the original numeric format behavior while keeping the active renderer surface cleaner.
 
 ## Next work
 

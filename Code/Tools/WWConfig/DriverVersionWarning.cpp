@@ -166,7 +166,7 @@ void CheckDriverVersion()
 	}
 	else {
 		// Init D3D
-		Init_D3D_To_WW3_Conversion();
+		Init_Renderer_Format_Conversion();
 		d3d=Direct3DCreate8(D3D_SDK_VERSION);		// TODO: handle failure cases...
 		if (!d3d) {
 			return;

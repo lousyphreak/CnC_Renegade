@@ -37,44 +37,14 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #include "formconv.h"
 
+#include "renderer_types.h"
+
 namespace
 {
-constexpr uint32 Make_FourCC(char a, char b, char c, char d)
-{
-	return static_cast<uint32>(static_cast<uint8>(a))
-		| (static_cast<uint32>(static_cast<uint8>(b)) << 8)
-		| (static_cast<uint32>(static_cast<uint8>(c)) << 16)
-		| (static_cast<uint32>(static_cast<uint8>(d)) << 24);
+constexpr uint32 kHighestSupportedRendererFormat = D3DFMT_X8L8V8U8;
 }
 
-constexpr uint32 D3DFMT_UNKNOWN = 0;
-constexpr uint32 D3DFMT_R8G8B8 = 20;
-constexpr uint32 D3DFMT_A8R8G8B8 = 21;
-constexpr uint32 D3DFMT_X8R8G8B8 = 22;
-constexpr uint32 D3DFMT_R5G6B5 = 23;
-constexpr uint32 D3DFMT_X1R5G5B5 = 24;
-constexpr uint32 D3DFMT_A1R5G5B5 = 25;
-constexpr uint32 D3DFMT_A4R4G4B4 = 26;
-constexpr uint32 D3DFMT_R3G3B2 = 27;
-constexpr uint32 D3DFMT_A8 = 28;
-constexpr uint32 D3DFMT_A8R3G3B2 = 29;
-constexpr uint32 D3DFMT_X4R4G4B4 = 30;
-constexpr uint32 D3DFMT_A8P8 = 40;
-constexpr uint32 D3DFMT_P8 = 41;
-constexpr uint32 D3DFMT_L8 = 50;
-constexpr uint32 D3DFMT_A8L8 = 51;
-constexpr uint32 D3DFMT_A4L4 = 52;
-constexpr uint32 D3DFMT_V8U8 = 60;
-constexpr uint32 D3DFMT_L6V5U5 = 61;
-constexpr uint32 D3DFMT_X8L8V8U8 = 62;
-constexpr uint32 D3DFMT_DXT1 = Make_FourCC('D', 'X', 'T', '1');
-constexpr uint32 D3DFMT_DXT2 = Make_FourCC('D', 'X', 'T', '2');
-constexpr uint32 D3DFMT_DXT3 = Make_FourCC('D', 'X', 'T', '3');
-constexpr uint32 D3DFMT_DXT4 = Make_FourCC('D', 'X', 'T', '4');
-constexpr uint32 D3DFMT_DXT5 = Make_FourCC('D', 'X', 'T', '5');
-}
-
-uint32 WW3DFormatToD3DFormatConversionArray[WW3D_FORMAT_COUNT] = {
+uint32 WW3DFormatToRendererFormatConversionArray[WW3D_FORMAT_COUNT] = {
 	D3DFMT_UNKNOWN,
 	D3DFMT_R8G8B8,
 	D3DFMT_A8R8G8B8,
@@ -102,53 +72,20 @@ uint32 WW3DFormatToD3DFormatConversionArray[WW3D_FORMAT_COUNT] = {
 	D3DFMT_DXT5
 };
 
-/*
-#define HIGHEST_SUPPORTED_D3DFORMAT D3DFMT_X8L8V8U8	//A4L4
-WW3DFormat D3DFormatToWW3DFormatConversionArray[HIGHEST_SUPPORTED_D3DFORMAT + 1] = {
-	WW3D_FORMAT_UNKNOWN,		// 0
-	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,
-	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,
-	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,
-	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,
-	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,
-	WW3D_FORMAT_R8G8B8,		// 20
-	WW3D_FORMAT_A8R8G8B8,
-	WW3D_FORMAT_X8R8G8B8,
-	WW3D_FORMAT_R5G6B5,
-	WW3D_FORMAT_X1R5G5B5,
-	WW3D_FORMAT_A1R5G5B5,
-	WW3D_FORMAT_A4R4G4B4,
-	WW3D_FORMAT_R3G3B2,
-	WW3D_FORMAT_A8,
-	WW3D_FORMAT_A8R3G3B2,
-	WW3D_FORMAT_X4R4G4B4,	// 30
-	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,
-	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,
-	WW3D_FORMAT_UNKNOWN,
-	WW3D_FORMAT_A8P8,			// 40
-	WW3D_FORMAT_P8,
-	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,
-	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,	WW3D_FORMAT_UNKNOWN,
-	WW3D_FORMAT_L8,			// 50
-	WW3D_FORMAT_A8L8,
-	WW3D_FORMAT_A4L4
-};
-*/
+WW3DFormat RendererFormatToWW3DFormatConversionArray[kHighestSupportedRendererFormat + 1];
 
-#define HIGHEST_SUPPORTED_D3DFORMAT D3DFMT_X8L8V8U8
-WW3DFormat D3DFormatToWW3DFormatConversionArray[HIGHEST_SUPPORTED_D3DFORMAT + 1];
-
-uint32 WW3DFormat_To_D3DFormat(WW3DFormat ww3d_format) {
+uint32 WW3DFormat_To_Renderer_Format(WW3DFormat ww3d_format)
+{
 	if (ww3d_format >= WW3D_FORMAT_COUNT) {
 		return D3DFMT_UNKNOWN;
 	} else {
-		return WW3DFormatToD3DFormatConversionArray[(unsigned int)ww3d_format];
+		return WW3DFormatToRendererFormatConversionArray[(unsigned int)ww3d_format];
 	}
 }
 
-WW3DFormat D3DFormat_To_WW3DFormat(uint32 d3d_format)
+WW3DFormat Renderer_Format_To_WW3DFormat(uint32 renderer_format)
 {
-	switch (d3d_format) {
+	switch (renderer_format) {
 	// The DXT-codes are created with FOURCC macro and thus can't be placed in the conversion table
 	case D3DFMT_DXT1: return WW3D_FORMAT_DXT1;
 	case D3DFMT_DXT2: return WW3D_FORMAT_DXT2;
@@ -156,39 +93,39 @@ WW3DFormat D3DFormat_To_WW3DFormat(uint32 d3d_format)
 	case D3DFMT_DXT4: return WW3D_FORMAT_DXT4;
 	case D3DFMT_DXT5: return WW3D_FORMAT_DXT5;
 	default:
-		if (d3d_format > HIGHEST_SUPPORTED_D3DFORMAT) {
+		if (renderer_format > kHighestSupportedRendererFormat) {
 			return WW3D_FORMAT_UNKNOWN;
 		} else {
-			return D3DFormatToWW3DFormatConversionArray[(unsigned int)d3d_format];
+			return RendererFormatToWW3DFormatConversionArray[(unsigned int)renderer_format];
 		}
 		break;
 	}
 }
 
-void Init_D3D_To_WW3_Conversion()
+void Init_Renderer_Format_Conversion()
 {
-	for (int i=0;i<HIGHEST_SUPPORTED_D3DFORMAT;++i) {
-		D3DFormatToWW3DFormatConversionArray[i]=WW3D_FORMAT_UNKNOWN;
+	for (uint32 i = 0; i <= kHighestSupportedRendererFormat; ++i) {
+		RendererFormatToWW3DFormatConversionArray[i] = WW3D_FORMAT_UNKNOWN;
 	}
 
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_R8G8B8]=WW3D_FORMAT_R8G8B8;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_A8R8G8B8]=WW3D_FORMAT_A8R8G8B8;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_X8R8G8B8]=WW3D_FORMAT_X8R8G8B8;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_R5G6B5]=WW3D_FORMAT_R5G6B5;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_X1R5G5B5]=WW3D_FORMAT_X1R5G5B5;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_A1R5G5B5]=WW3D_FORMAT_A1R5G5B5;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_A4R4G4B4]=WW3D_FORMAT_A4R4G4B4;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_R3G3B2]=WW3D_FORMAT_R3G3B2;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_A8]=WW3D_FORMAT_A8;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_A8R3G3B2]=WW3D_FORMAT_A8R3G3B2;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_X4R4G4B4]=WW3D_FORMAT_X4R4G4B4;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_A8P8]=WW3D_FORMAT_A8P8;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_P8]=WW3D_FORMAT_P8;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_L8]=WW3D_FORMAT_L8;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_A8L8]=WW3D_FORMAT_A8L8;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_A4L4]=WW3D_FORMAT_A4L4;
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_V8U8]=WW3D_FORMAT_U8V8;				// Bumpmap
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_L6V5U5]=WW3D_FORMAT_L6V5U5;		// Bumpmap
-	D3DFormatToWW3DFormatConversionArray[D3DFMT_X8L8V8U8]=WW3D_FORMAT_X8L8V8U8;	// Bumpmap
+	RendererFormatToWW3DFormatConversionArray[D3DFMT_R8G8B8] = WW3D_FORMAT_R8G8B8;
+	RendererFormatToWW3DFormatConversionArray[D3DFMT_A8R8G8B8] = WW3D_FORMAT_A8R8G8B8;
+	RendererFormatToWW3DFormatConversionArray[D3DFMT_X8R8G8B8] = WW3D_FORMAT_X8R8G8B8;
+	RendererFormatToWW3DFormatConversionArray[D3DFMT_R5G6B5] = WW3D_FORMAT_R5G6B5;
+	RendererFormatToWW3DFormatConversionArray[D3DFMT_X1R5G5B5] = WW3D_FORMAT_X1R5G5B5;
+	RendererFormatToWW3DFormatConversionArray[D3DFMT_A1R5G5B5] = WW3D_FORMAT_A1R5G5B5;
+	RendererFormatToWW3DFormatConversionArray[D3DFMT_A4R4G4B4] = WW3D_FORMAT_A4R4G4B4;
+	RendererFormatToWW3DFormatConversionArray[D3DFMT_R3G3B2] = WW3D_FORMAT_R3G3B2;
+	RendererFormatToWW3DFormatConversionArray[D3DFMT_A8] = WW3D_FORMAT_A8;
+	RendererFormatToWW3DFormatConversionArray[D3DFMT_A8R3G3B2] = WW3D_FORMAT_A8R3G3B2;
+	RendererFormatToWW3DFormatConversionArray[D3DFMT_X4R4G4B4] = WW3D_FORMAT_X4R4G4B4;
+	RendererFormatToWW3DFormatConversionArray[D3DFMT_A8P8] = WW3D_FORMAT_A8P8;
+	RendererFormatToWW3DFormatConversionArray[D3DFMT_P8] = WW3D_FORMAT_P8;
+	RendererFormatToWW3DFormatConversionArray[D3DFMT_L8] = WW3D_FORMAT_L8;
+	RendererFormatToWW3DFormatConversionArray[D3DFMT_A8L8] = WW3D_FORMAT_A8L8;
+	RendererFormatToWW3DFormatConversionArray[D3DFMT_A4L4] = WW3D_FORMAT_A4L4;
+	RendererFormatToWW3DFormatConversionArray[D3DFMT_V8U8] = WW3D_FORMAT_U8V8;				// Bumpmap
+	RendererFormatToWW3DFormatConversionArray[D3DFMT_L6V5U5] = WW3D_FORMAT_L6V5U5;		// Bumpmap
+	RendererFormatToWW3DFormatConversionArray[D3DFMT_X8L8V8U8] = WW3D_FORMAT_X8L8V8U8;	// Bumpmap
 
 };

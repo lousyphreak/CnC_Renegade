@@ -368,7 +368,7 @@ void SurfaceClass::Get_Description(SurfaceDescription &surface_desc)
 	D3DSURFACE_DESC d3d_desc;
 	::ZeroMemory(&d3d_desc, sizeof(D3DSURFACE_DESC));
 	DX8_ErrorCode(DX8Surface->GetDesc(&d3d_desc));
-	surface_desc.Format = D3DFormat_To_WW3DFormat(d3d_desc.Format);
+	surface_desc.Format = Renderer_Format_To_WW3DFormat(d3d_desc.Format);
 	surface_desc.Height = d3d_desc.Height;
 	surface_desc.Width = d3d_desc.Width;
 #endif
@@ -1098,7 +1098,7 @@ void SurfaceClass::Attach (IDirect3DSurface8 *surface)
 		DX8_ErrorCode(DX8Surface->GetDesc(&d3d_desc));
 		SurfaceWidth = d3d_desc.Width;
 		SurfaceHeight = d3d_desc.Height;
-		SurfaceFormat = D3DFormat_To_WW3DFormat(d3d_desc.Format);
+		SurfaceFormat = Renderer_Format_To_WW3DFormat(d3d_desc.Format);
 		SurfacePitch = Calculate_Surface_Pitch(SurfaceWidth, SurfaceFormat);
 	}
 

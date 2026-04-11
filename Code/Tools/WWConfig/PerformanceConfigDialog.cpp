@@ -785,7 +785,7 @@ void AutoConfigSettings()
 	}
 	else {
 		// Init D3D
-		Init_D3D_To_WW3_Conversion();
+		Init_Renderer_Format_Conversion();
 		d3d=Direct3DCreate8(D3D_SDK_VERSION);		// TODO: handle failure cases...
 		if (!d3d) {
 			return;
@@ -897,7 +897,7 @@ void AutoConfigSettings()
 
 	}
 
-	DX8Caps caps(d3d,*d3dcaps,D3DFormat_To_WW3DFormat(display_format),adapter_id);
+	DX8Caps caps(d3d,*d3dcaps,Renderer_Format_To_WW3DFormat(display_format),adapter_id);
 	CanDoMultiPass=caps.Can_Do_Multi_Pass();
 
 	bool high_end_processor = true;
@@ -933,7 +933,7 @@ void AutoConfigSettings()
 // Set high shadow detail if render to texture is supported AND HWTL available
 // Set medium shadow detail if render to texture is supported but no HWTL
 // Set low shadow detail if no render to texture is available
-	if (caps.Support_Render_To_Texture_Format(D3DFormat_To_WW3DFormat(display_format))) {
+	if (caps.Support_Render_To_Texture_Format(Renderer_Format_To_WW3DFormat(display_format))) {
 		if (caps.Support_TnL()) {
 			registry.Set_Int (VALUE_NAME_SHADOW_MODE, 3);
 			registry.Set_Int (VALUE_NAME_STATIC_SHADOWS, 1);
@@ -1118,7 +1118,7 @@ PerformanceConfigDialogClass::OnShowWindow(int32_t bShow, uint32_t nStatus)
 				display_format=D3DFMT_R5G6B5;
 			}
 
-			DX8Caps caps(d3d,video->Get_Current_Caps(),D3DFormat_To_WW3DFormat(display_format),adapter_id);
+			DX8Caps caps(d3d,video->Get_Current_Caps(),Renderer_Format_To_WW3DFormat(display_format),adapter_id);
 			CanDoMultiPass=caps.Can_Do_Multi_Pass();
 
 			//
@@ -1196,4 +1196,3 @@ PerformanceConfigDialogClass::OnShowWindow(int32_t bShow, uint32_t nStatus)
 
 	return ;
 }
-

@@ -682,7 +682,7 @@ void DX8Caps::Check_Texture_Format_Support(WW3DFormat display_format,const D3DCA
 		}
 		return;
 	}
-	D3DFORMAT d3d_display_format=WW3DFormat_To_D3DFormat(display_format);
+	D3DFORMAT d3d_display_format = WW3DFormat_To_Renderer_Format(display_format);
 	for (unsigned i=0;i<WW3D_FORMAT_COUNT;++i) {
 		if (i==WW3D_FORMAT_UNKNOWN) {
 			SupportTextureFormat[i]=false;
@@ -696,7 +696,7 @@ void DX8Caps::Check_Texture_Format_Support(WW3DFormat display_format,const D3DCA
 					d3d_display_format,
 					0,
 					D3DRTYPE_TEXTURE,
-					WW3DFormat_To_D3DFormat(format)));
+					WW3DFormat_To_Renderer_Format(format)));
 			if (SupportTextureFormat[i]) {
 				StringClass name(0,true);
 				Get_WW3D_Format_Name(format,name);
@@ -714,7 +714,7 @@ void DX8Caps::Check_Render_To_Texture_Support(WW3DFormat display_format,const D3
 		}
 		return;
 	}
-	D3DFORMAT d3d_display_format=WW3DFormat_To_D3DFormat(display_format);
+	D3DFORMAT d3d_display_format = WW3DFormat_To_Renderer_Format(display_format);
 	for (unsigned i=0;i<WW3D_FORMAT_COUNT;++i) {
 		if (i==WW3D_FORMAT_UNKNOWN) {
 			SupportRenderToTextureFormat[i]=false;
@@ -728,7 +728,7 @@ void DX8Caps::Check_Render_To_Texture_Support(WW3DFormat display_format,const D3
 					d3d_display_format,
 					D3DUSAGE_RENDERTARGET,
 					D3DRTYPE_TEXTURE,
-					WW3DFormat_To_D3DFormat(format)));
+					WW3DFormat_To_Renderer_Format(format)));
 			if (SupportRenderToTextureFormat[i]) {
 				StringClass name(0,true);
 				Get_WW3D_Format_Name(format,name);
@@ -1059,4 +1059,3 @@ void DX8Caps::Vendor_Specific_Hacks(const D3DADAPTER_IDENTIFIER8& adapter_id)
 
 	}
 }
-

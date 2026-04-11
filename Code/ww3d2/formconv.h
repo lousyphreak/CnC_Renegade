@@ -47,12 +47,12 @@
 #include "ww3dformat.h"
 
 /*
-** This file is used for conversions between legacy Direct3D format codes and WW3DFormat.
+** This file is used for conversions between legacy renderer format codes and WW3DFormat.
 */
 
-uint32 WW3DFormat_To_D3DFormat(WW3DFormat ww3d_format);
-WW3DFormat D3DFormat_To_WW3DFormat(uint32 d3d_format);
+uint32 WW3DFormat_To_Renderer_Format(WW3DFormat ww3d_format);
+WW3DFormat Renderer_Format_To_WW3DFormat(uint32 renderer_format);
 
-void Init_D3D_To_WW3_Conversion();
+void Init_Renderer_Format_Conversion();
 
 #endif

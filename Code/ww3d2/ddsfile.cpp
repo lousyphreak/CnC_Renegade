@@ -67,7 +67,7 @@ DDSFileClass::DDSFileClass(const char* name,unsigned reduction_factor)
 		return;
 	}
 
-	Format=D3DFormat_To_WW3DFormat((D3DFORMAT)SurfaceDesc.PixelFormat.FourCC);
+	Format = Renderer_Format_To_WW3DFormat((D3DFORMAT)SurfaceDesc.PixelFormat.FourCC);
 	WWASSERT(
 		Format==WW3D_FORMAT_DXT1 ||
 		Format==WW3D_FORMAT_DXT2 ||

@@ -346,8 +346,19 @@ bool Submit_Cached_Fixed_Function_Draw(
         return false;
     }
 
-    if ((vertex_buffer.Type() != BUFFER_TYPE_SORTING && vertex_buffer.Type() != BUFFER_TYPE_RENDER) ||
-        (index_buffer.Type() != BUFFER_TYPE_SORTING && index_buffer.Type() != BUFFER_TYPE_RENDER)) {
+    const auto vertex_buffer_type = vertex_buffer.Type();
+    const auto index_buffer_type = index_buffer.Type();
+    const bool supported_vertex_buffer =
+        vertex_buffer_type == BUFFER_TYPE_RENDER ||
+        vertex_buffer_type == BUFFER_TYPE_SORTING ||
+        vertex_buffer_type == BUFFER_TYPE_DYNAMIC_RENDER ||
+        vertex_buffer_type == BUFFER_TYPE_DYNAMIC_SORTING;
+    const bool supported_index_buffer =
+        index_buffer_type == BUFFER_TYPE_RENDER ||
+        index_buffer_type == BUFFER_TYPE_SORTING ||
+        index_buffer_type == BUFFER_TYPE_DYNAMIC_RENDER ||
+        index_buffer_type == BUFFER_TYPE_DYNAMIC_SORTING;
+    if (!supported_vertex_buffer || !supported_index_buffer) {
         return false;
     }
 
@@ -358,7 +369,7 @@ bool Submit_Cached_Fixed_Function_Draw(
         : static_cast<unsigned short>(polygon_count * 3u);
 
     bool use_direct_vertex_buffer = false;
-    if (vertex_buffer.Type() == BUFFER_TYPE_RENDER) {
+    if (vertex_buffer_type == BUFFER_TYPE_RENDER) {
         if (!static_cast<const RenderVertexBufferClass &>(vertex_buffer).Ensure_Bgfx_Buffer()) {
             return false;
         }
@@ -367,7 +378,7 @@ bool Submit_Cached_Fixed_Function_Draw(
 
     bool use_direct_index_buffer = false;
     if (use_direct_vertex_buffer &&
-        index_buffer.Type() == BUFFER_TYPE_RENDER &&
+        index_buffer_type == BUFFER_TYPE_RENDER &&
         fill_mode != FillMode::Wireframe &&
         (!strip || fill_mode == FillMode::Points)) {
         if (!static_cast<const RenderIndexBufferClass &>(index_buffer).Ensure_Bgfx_Buffer()) {
@@ -450,7 +461,7 @@ bool Submit_Cached_Fixed_Function_Draw(
 
     if (!use_direct_index_buffer) {
         const unsigned short *source_indices = nullptr;
-        if (index_buffer.Type() == BUFFER_TYPE_RENDER) {
+        if (index_buffer_type == BUFFER_TYPE_RENDER) {
             source_indices =
                 static_cast<const RenderIndexBufferClass &>(index_buffer).Get_Source_Index_Data()
                 + index_buffer_offset
@@ -587,15 +598,18 @@ bool Submit_Cached_Fixed_Function_Draw(
 
     TextureClass *stage0_texture = textures != nullptr ? textures[0] : nullptr;
     TextureClass *stage1_texture = textures != nullptr ? textures[1] : nullptr;
+
     bgfx::setTexture(0, BgfxRenderer::Get_Texture0_Uniform(), Resolve_Texture_Handle(stage0_texture), Resolve_Sampler_Flags(stage0_texture, 0));
     bgfx::setTexture(1, BgfxRenderer::Get_Texture1_Uniform(), Resolve_Texture_Handle(stage1_texture), Resolve_Sampler_Flags(stage1_texture, 1));
     BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(shader, shader_inputs, view);
 
     const unsigned cull_mode = DX8Wrapper::Get_DX8_Render_State(D3DRS_CULLMODE);
+    uint16_t view_id = BgfxRenderer::Get_View_Id(view, projection);
+
     bgfx::setState(
         BgfxRenderer::Build_Render_State(shader, cull_mode != 0x12345678u ? cull_mode : D3DCULL_CW)
             | Resolve_Primitive_State(fill_mode));
-    bgfx::submit(BgfxRenderer::Get_View_Id(view, projection), BgfxRenderer::Get_Fixed_Function_Program());
+    bgfx::submit(view_id, BgfxRenderer::Get_Fixed_Function_Program());
     return true;
 }
 

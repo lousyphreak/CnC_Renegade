@@ -55,6 +55,7 @@ SortingVertexBufferClass *g_dynamic_sorting_vertex_buffer = nullptr;
 bool g_dynamic_sorting_vertex_buffer_in_use = false;
 unsigned short g_dynamic_sorting_vertex_buffer_size = 0;
 unsigned short g_dynamic_sorting_vertex_buffer_offset = 0;
+std::vector<SortingVertexBufferClass *> g_stale_dynamic_sorting_vertex_buffers;
 
 unsigned g_vertex_buffer_count = 0;
 unsigned g_vertex_buffer_total_vertices = 0;
@@ -64,6 +65,22 @@ RenderDeviceDescClass g_render_device_desc;
 DX8Caps *g_bgfx_caps = nullptr;
 int g_swap_interval = 0;
 constexpr HRESULT kD3DErrInvalidCall = -11;
+
+void Release_Stale_Dynamic_Sorting_Vertex_Buffers()
+{
+	auto it = g_stale_dynamic_sorting_vertex_buffers.begin();
+	while (it != g_stale_dynamic_sorting_vertex_buffers.end()) {
+		SortingVertexBufferClass *buffer = *it;
+		if ((buffer == nullptr) || (buffer->Engine_Refs() == 0)) {
+			if (buffer != nullptr) {
+				buffer->Release_Ref();
+			}
+			it = g_stale_dynamic_sorting_vertex_buffers.erase(it);
+		} else {
+			++it;
+		}
+	}
+}
 
 void Populate_Submission_Vertex(
 	SubmissionVertex &destination,
@@ -615,6 +632,12 @@ DynamicVBAccessClass::~DynamicVBAccessClass()
 void DynamicVBAccessClass::_Deinit()
 {
 	REF_PTR_RELEASE(g_dynamic_sorting_vertex_buffer);
+	for (SortingVertexBufferClass *buffer : g_stale_dynamic_sorting_vertex_buffers) {
+		if (buffer != nullptr) {
+			buffer->Release_Ref();
+		}
+	}
+	g_stale_dynamic_sorting_vertex_buffers.clear();
 	g_dynamic_sorting_vertex_buffer_in_use = false;
 	g_dynamic_sorting_vertex_buffer_size = 0;
 	g_dynamic_sorting_vertex_buffer_offset = 0;
@@ -622,6 +645,7 @@ void DynamicVBAccessClass::_Deinit()
 
 void DynamicVBAccessClass::_Reset(bool)
 {
+	Release_Stale_Dynamic_Sorting_Vertex_Buffers();
 	g_dynamic_sorting_vertex_buffer_offset = 0;
 }
 
@@ -646,7 +670,14 @@ void DynamicVBAccessClass::Allocate_Sorting_Dynamic_Buffer()
 	const unsigned required_vertex_count = g_dynamic_sorting_vertex_buffer_offset + VertexCount;
 	WWASSERT(required_vertex_count < 65536);
 	if (required_vertex_count > g_dynamic_sorting_vertex_buffer_size) {
-		REF_PTR_RELEASE(g_dynamic_sorting_vertex_buffer);
+		if (g_dynamic_sorting_vertex_buffer != nullptr) {
+			if (g_dynamic_sorting_vertex_buffer->Engine_Refs() > 0) {
+				g_stale_dynamic_sorting_vertex_buffers.push_back(g_dynamic_sorting_vertex_buffer);
+			} else {
+				REF_PTR_RELEASE(g_dynamic_sorting_vertex_buffer);
+			}
+			g_dynamic_sorting_vertex_buffer = nullptr;
+		}
 		g_dynamic_sorting_vertex_buffer_size = std::max<unsigned short>(static_cast<unsigned short>(required_vertex_count), static_cast<unsigned short>(kDefaultDynamicVertexCount));
 	}
 

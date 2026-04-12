@@ -388,7 +388,6 @@ void DX8FVFCategoryContainer::Render_Procedural_Material_Passes(void)
 	// additional passes
 	MatPassTaskClass * mpr = visible_matpass_head;
 	while (mpr != NULL) {
-	
 		mpr->Peek_Mesh()->Render_Material_Pass(mpr->Peek_Material_Pass(),index_buffer);
 		MatPassTaskClass * next_mpr = mpr->Get_Next_Visible();
 		

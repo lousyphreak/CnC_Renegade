@@ -118,6 +118,32 @@
 #include "indexbuffer.h"
 #include "dx8renderer.h"
 #include "visrasterizer.h"
+
+namespace
+{
+bool Mesh_Uses_Alpha_Blending(const MeshModelClass & model)
+{
+	if (model.Has_Shader_Array(0)) {
+		for (int poly_index = 0; poly_index < model.Get_Polygon_Count(); ++poly_index) {
+			ShaderClass shader = model.Get_Shader(poly_index,0);
+			if (shader.Get_Dst_Blend_Func() != ShaderClass::DSTBLEND_ZERO &&
+				shader.Get_Alpha_Test() == ShaderClass::ALPHATEST_DISABLE)
+			{
+				return true;
+			}
+		}
+	} else {
+		ShaderClass shader = model.Get_Single_Shader(0);
+		if (shader.Get_Dst_Blend_Func() != ShaderClass::DSTBLEND_ZERO &&
+			shader.Get_Alpha_Test() == ShaderClass::ALPHATEST_DISABLE)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+}
 #include "wwmemlog.h"
 #include "dx8rendererdebugger.h"
 #include <stdio.h>
@@ -846,6 +872,7 @@ void MeshClass::Render(RenderInfoClass & rinfo)
 			bool render_base_passes = ((rinfo.Current_Override_Flags() & RenderInfoClass::RINFO_OVERRIDE_ADDITIONAL_PASSES_ONLY) == 0);
 			bool is_alpha =	(Model->Get_Single_Shader().Get_Alpha_Test() == ShaderClass::ALPHATEST_ENABLE) || 
 									(Model->Get_Single_Shader().Get_Src_Blend_Func() == ShaderClass::SRCBLEND_SRC_ALPHA);
+			const bool is_alpha_blended = Mesh_Uses_Alpha_Blending(*Model);
 			
 			if (	(rinfo.Current_Override_Flags() & RenderInfoClass::RINFO_OVERRIDE_SHADOW_RENDERING) && 
 					(is_alpha == true))
@@ -877,7 +904,7 @@ void MeshClass::Render(RenderInfoClass & rinfo)
 				
 				MaterialPassClass * matpass = rinfo.Peek_Additional_Pass(i);
 
-				if ((!Is_Translucent()) || (matpass->Is_Enabled_On_Translucent_Meshes())) {
+				if ((!is_alpha_blended) || (matpass->Is_Enabled_On_Translucent_Meshes())) {
 					
 					/*
 					** If the base pass for this mesh has been disabled, we have to make sure
@@ -1080,7 +1107,7 @@ void MeshClass::Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass *
 			}
 		}
 	} else {		
-		
+
 		/*
 		** Normal mesh case, render polys with this mesh's transform
 		*/
@@ -1762,7 +1789,6 @@ void MeshClass::Load_User_Lighting (ChunkLoadClass & cload)
 
 	Set_Has_User_Lighting(true);
 }
-
 
 
 

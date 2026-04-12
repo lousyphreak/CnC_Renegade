@@ -1149,8 +1149,25 @@ void PhysicsSceneClass::Pre_Render_Processing(CameraClass & camera)
 		RefPhysListClass vis_obj_list;
 		{
 			WWPROFILE("Umbra!");
-			UmbraSupport::Collect_Visible_Objects(camera,VisibleDynamicObjectList);
+			UmbraSupport::Collect_Visible_Objects(camera,vis_obj_list);
 		}
+
+		for (RefPhysListIterator it(&vis_obj_list); !it.Is_Done(); it.Next()) {
+			PhysClass * obj = it.Peek_Obj();
+			if (obj->As_DynamicPhysClass() != NULL) {
+				VisibleDynamicObjectList.Add(obj);
+			} else {
+				WWASSERT(obj->As_StaticPhysClass() != NULL);
+				if (obj->Is_World_Space_Mesh()) {
+					VisibleWSMeshList.Add(obj);
+				} else {
+					VisibleStaticObjectList.Add(obj);
+				}
+			}
+		}
+
+		Optimize_LODs(camera,&VisibleDynamicObjectList,&VisibleStaticObjectList,&VisibleWSMeshList);
+		Apply_Projectors(camera);
 #endif
 	}
 

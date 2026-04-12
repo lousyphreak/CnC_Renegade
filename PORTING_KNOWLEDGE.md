@@ -98,11 +98,43 @@
   - allocate them through `BgfxRenderer`, not `DX8Wrapper`
   - validate the bgfx framebuffer at creation time, not later during bind
   - query “am I rendering to a texture?” from renderer-owned framebuffer state, not from a duplicated DX8-era boolean
+- The remaining missing unit shadows were not a shader/render-target problem; they were primarily three legacy receiver filters in the projected-shadow application path:
+  - `DynamicShadowManagerClass::Allocate_Shadow()` turning off `Enable_Affect_Dynamic_Objects(...)` disables all dynamic receivers, so unit shadows can never land on units until that flag is restored.
+  - `PhysicsSceneClass::Apply_Projector_To_Objects()` excluding `Get_Projection_Object_ID()` blocks self-shadowing and can also suppress visible dynamic-caster shadow updates when no other receiver survives that frame.
+  - after static culling already collects receiver candidates against the projector volume, an extra `StaticPhysClass::Intersects(projector_volume)` check is too strict for some terrain/static meshes. The projector material pass already carries the world-space cull volume and performs the final per-polygon clipping, so that second object-level reject loses valid receivers.
+- Umbra has its own shadow/projector trap in `PhysicsSceneClass::Pre_Render_Processing()`:
+  - the non-Umbra path collects visible static/dynamic/world-space-mesh receiver lists, runs LOD prep, and then calls `Apply_Projectors(...)`
+  - the Umbra path originally only dumped everything into one visible-object list and skipped projector application entirely
+  - to preserve projected shadows under Umbra, the Umbra-visible set must be reclassified back into `VisibleDynamicObjectList`, `VisibleStaticObjectList`, and `VisibleWSMeshList`, then passed through the same `Optimize_LODs(...)` and `Apply_Projectors(...)` steps as the normal path
+- On the bgfx port, projected-shadow receiver failures can come from the *receiver draw submission* even when projector collection and material-pass setup are already correct:
+  - `TexProjectClass` always assigns a cull volume to projector material passes, and `MeshClass::Render_Material_Pass()` responds by building a clipped dynamic index buffer for the receiver polygons inside that volume
+  - the bgfx fixed-function submit path originally rejected `BUFFER_TYPE_DYNAMIC_RENDER` / `BUFFER_TYPE_DYNAMIC_SORTING`, so those clipped receiver passes never rendered on bgfx even though the projector had reached the mesh correctly
+  - once that path is re-enabled, the bgfx dynamic sorting buffer pools also need resize-safe lifetime handling. Releasing the old shared buffer immediately during growth can race against renderer-held engine refs and produces ASAN use-after-free faults in the newly exercised projector receiver path
+- Shadow/projector receiver filtering should distinguish alpha-tested cutout meshes from truly alpha-blended meshes:
+  - this codebase marks a mesh as “translucent” if any pass-0 polygon alpha-tests *or* blends
+  - using that mesh-wide flag directly for projector rejection drops cutout/static receiver meshes such as fence/foliage-style assets even though they should still receive shadows
+  - the safer rule is to keep rejecting genuinely alpha-blended receivers by default while allowing projector passes on meshes that are only alpha-tested
+- The receiver-side active-polygon-table build in `MeshClass::Render_Material_Pass()` should not also backface-cull projector receivers by projector view direction:
+  - the projector cull volume already restricts the receiver polygons spatially
+  - extra backface filtering can drop valid floors/walls with inconsistent winding or two-sided receiver materials
+  - using the cull-volume-only `Generate_Rigid_APT(local_box, ...)` path is the safer correctness-first choice for projected shadows on the port
+- The bgfx port must preserve the semantic difference between `WW3D::End_Render(true)` and `WW3D::End_Render(false)`:
+  - `TexProjectClass::Compute_Texture()` uses `End_Render(false)` for offscreen shadow/render-target work
+  - the bgfx path originally ignored that flag and always ended the frame, which breaks the intended “render projector texture, then use it on receivers in the same frame” flow
+  - only the visible frame boundary should call `BgfxRenderer::End_Frame()`
+- Projected-texture matrix setup is more fragile on bgfx than it was on the old fixed-function API because the bgfx shader consumes an explicit uploaded 4x4 matrix:
+  - `MatrixMapperClass::Apply()` only overwrites the rows needed for each mapping mode
+  - if the matrix is not initialized first, bgfx still uploads the untouched garbage rows and the shader sees undefined projector texcoord state
+  - initializing the matrix to identity before filling the active rows keeps projected, depth-gradient, and normal-gradient modes deterministic
+- `ProjectorClass::Set_Perspective_Projection()` uses its own bounding OBB for receiver collection/cull-volume decisions, independent of the projection matrix itself:
+  - the projection matrix can still look structurally correct while the projector volume is wrong
+  - using `tan(fov)` instead of `tan(fov * 0.5f)` there shrinks/warps the effective receiver bounds and can make projector application look like a receiver-side failure even when the shader and texture stage setup are correct
 - Shadow bring-up on the port has a settings/lifecycle trap that is independent of the actual bgfx draw code:
   - `PhysicsSceneClass` constructor defaults leave shadow mode and projectors off
   - `SystemSettings::Registry_Load(...)` applies the stored values correctly, but `SystemSettings::Apply_All()` is also called during level load after fresh combat scenes are created
   - that method must push the stored values back into the new scene; if it only snapshots the scene state, the new scene's constructor defaults overwrite the loaded shadow settings and the game saves `Shadow_Mode=0` / `Dynamic_Projectors=0` again on shutdown
 - Existing Linux/bgfx preference stores may already contain that bad zero-shadow tuple from earlier builds, so the port needs a one-time migration path for shadow settings instead of only fixing fresh installs.
+- D3D8 fixed-function lighting with no-normal vertices: when a vertex has no normal but `D3DRS_LIGHTING` is enabled, D3D8 only uses the emissive material term in the lit color — diffuse and specular require a normal for N·L and N·H dot products. The bgfx vertex shader must replicate this by resolving emissive from `ResolveColorSource(emissiveSource, materialEmissive, a_color0, a_color1)` instead of using the vertex diffuse color directly. This matters for shadow projections on prelit terrain meshes (FVF with DIFFUSE but no NORMAL): shadow material uses emissive=(1−intensity) for darkening, and bypassing it makes shadow draws produce white output (texture + vertex_diffuse ≈ 1.0), making multiplicative blending invisible.
 - Projector code cannot assume `TextureClass::Get_Width()` is immediately valid for every projected texture in the bgfx port:
   - file-backed textures can still be lazily initialized when `TexProjectClass::Pre_Render_Update()` first needs the projector texel size
   - initialize the texture first, then use its width, and fall back to the assigned render-target size for dynamic shadow maps

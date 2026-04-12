@@ -676,6 +676,17 @@ void PhysicsSceneClass::Apply_Projectors
 {
 	WWPROFILE("pscene::Apply_Projectors");
 
+	static int _dbg_frame = 0;
+	_dbg_frame++;
+	if (_dbg_frame == 10) {
+		int vis_total = 0, vis_ws = 0;
+		RefPhysListIterator vis_it(&VisibleStaticObjectList);
+		for (vis_it.First(); !vis_it.Is_Done(); vis_it.Next()) vis_total++;
+		RefPhysListIterator ws_it(&VisibleWSMeshList);
+		for (ws_it.First(); !ws_it.Is_Done(); ws_it.Next()) vis_ws++;
+		fprintf(stderr, "SHADOW F10: VisStatic=%d VisWS=%d\n", vis_total, vis_ws);
+	}
+
 	Vector3 view_pos;
 	Vector3 view_dir;
 	camera.Get_Transform().Get_Translation(&view_pos);
@@ -853,18 +864,9 @@ void PhysicsSceneClass::Apply_Projector_To_Objects
 
 		StaticPhysClass * static_obj = (StaticPhysClass *)StaticCullingSystem->Get_First_Collected_Object();
 		while (static_obj) {
-
-			/*
-			** for each static object, if it also in our visible list, add this projector to it
-			** since the visible static objects are split into two lists we check both.
-			*/
 			if (VisibleStaticObjectList.Contains(static_obj) || VisibleWSMeshList.Is_In_List(static_obj)) {
-
-				// check if our volume actually intersects the mesh!
-				if (static_obj->Intersects(tex_proj->Get_Bounding_Volume())) {
-					static_obj->Add_Effect_To_Me(effect);
-					projector_update_needed = true;
-				}
+				static_obj->Add_Effect_To_Me(effect);
+				projector_update_needed = true;
 			}
 			static_obj = (StaticPhysClass *)StaticCullingSystem->Get_Next_Collected_Object(static_obj);
 		}
@@ -881,10 +883,11 @@ void PhysicsSceneClass::Apply_Projector_To_Objects
 		while (dyn_obj) {
 
 			/*
-			** for each dynamic object, if it also in our visible list and is not the
-			** object that generated this shadow, add this projector to it
+			** for each dynamic object, if it is also in our visible list, add this projector
+			** to it. Dynamic shadows need to reach the caster for self-shadowing as well as
+			** other dynamic units in the projection volume.
 			*/
-			if ((VisibleDynamicObjectList.Contains(dyn_obj)) && (dyn_obj != tex_proj->Get_Projection_Object_ID())) {
+			if (VisibleDynamicObjectList.Contains(dyn_obj)) {
 
 				dyn_obj->Add_Effect_To_Me(effect);
 				projector_update_needed = true;

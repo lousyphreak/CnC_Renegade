@@ -1057,10 +1057,14 @@ WW3DErrorType WW3D::End_Render(bool flip_frame)
 
 	{
 		WWPROFILE("BgfxRenderer::End_Frame");
-		BgfxRenderer::End_Frame();
+		if (flip_frame) {
+			BgfxRenderer::End_Frame();
+		}
 	}
 
-	FrameCount++;
+	if (flip_frame) {
+		FrameCount++;
+	}
 
 	{
 		WWPROFILE("End_Statistics");

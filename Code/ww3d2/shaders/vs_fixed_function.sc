@@ -134,12 +134,14 @@ void main()
 
     if (u_ffpLightingConfig.x > 0.5) {
         if (u_ffpLightingConfig.y <= 0.5) {
-            // Prelit meshes can request lighting while omitting normals. D3D fixed-function
-            // uses the vertex diffuse color directly in that case instead of material sources.
-            v_color0 = a_color0;
+            // D3D8 fixed-function: when vertex has no normal, only the emissive
+            // material term contributes to the lit color. Directional/point light
+            // diffuse and specular contributions require a normal for dot products.
+            vec4 emissive = ResolveColorSource(u_ffpMaterialSourceConfig.x, u_ffpMaterialEmissive, a_color0, a_color1);
+            v_color0 = vec4(clamp(emissive.rgb, vec3_splat(0.0), vec3_splat(1.0)), diffuse.a);
             v_texcoord0 = ResolveStageTexcoord(0, a_texcoord0, a_texcoord1, viewPosition, viewNormal);
             v_texcoord1 = ResolveStageTexcoord(1, a_texcoord0, a_texcoord1, viewPosition, viewNormal);
-            v_specular0 = a_color1;
+            v_specular0 = vec4_splat(0.0);
             return;
         }
 

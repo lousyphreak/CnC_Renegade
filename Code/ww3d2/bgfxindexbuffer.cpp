@@ -13,10 +13,27 @@ SortingIndexBufferClass *g_dynamic_sorting_index_buffer = nullptr;
 bool g_dynamic_sorting_index_buffer_in_use = false;
 unsigned short g_dynamic_sorting_index_buffer_size = 0;
 unsigned short g_dynamic_sorting_index_buffer_offset = 0;
+std::vector<SortingIndexBufferClass *> g_stale_dynamic_sorting_index_buffers;
 
 unsigned g_index_buffer_count = 0;
 unsigned g_index_buffer_total_indices = 0;
 unsigned g_index_buffer_total_size = 0;
+
+void Release_Stale_Dynamic_Sorting_Index_Buffers()
+{
+	auto it = g_stale_dynamic_sorting_index_buffers.begin();
+	while (it != g_stale_dynamic_sorting_index_buffers.end()) {
+		SortingIndexBufferClass *buffer = *it;
+		if ((buffer == nullptr) || (buffer->Engine_Refs() == 0)) {
+			if (buffer != nullptr) {
+				buffer->Release_Ref();
+			}
+			it = g_stale_dynamic_sorting_index_buffers.erase(it);
+		} else {
+			++it;
+		}
+	}
+}
 }
 
 IndexBufferClass::IndexBufferClass(unsigned type_, unsigned short index_count_)
@@ -248,6 +265,12 @@ DynamicIBAccessClass::~DynamicIBAccessClass()
 void DynamicIBAccessClass::_Deinit()
 {
 	REF_PTR_RELEASE(g_dynamic_sorting_index_buffer);
+	for (SortingIndexBufferClass *buffer : g_stale_dynamic_sorting_index_buffers) {
+		if (buffer != nullptr) {
+			buffer->Release_Ref();
+		}
+	}
+	g_stale_dynamic_sorting_index_buffers.clear();
 	g_dynamic_sorting_index_buffer_in_use = false;
 	g_dynamic_sorting_index_buffer_size = 0;
 	g_dynamic_sorting_index_buffer_offset = 0;
@@ -255,6 +278,7 @@ void DynamicIBAccessClass::_Deinit()
 
 void DynamicIBAccessClass::_Reset(bool)
 {
+	Release_Stale_Dynamic_Sorting_Index_Buffers();
 	g_dynamic_sorting_index_buffer_offset = 0;
 }
 
@@ -283,7 +307,14 @@ void DynamicIBAccessClass::Allocate_Sorting_Dynamic_Buffer()
 	const unsigned required_index_count = g_dynamic_sorting_index_buffer_offset + IndexCount;
 	WWASSERT(required_index_count < 65536);
 	if (required_index_count > g_dynamic_sorting_index_buffer_size) {
-		REF_PTR_RELEASE(g_dynamic_sorting_index_buffer);
+		if (g_dynamic_sorting_index_buffer != nullptr) {
+			if (g_dynamic_sorting_index_buffer->Engine_Refs() > 0) {
+				g_stale_dynamic_sorting_index_buffers.push_back(g_dynamic_sorting_index_buffer);
+			} else {
+				REF_PTR_RELEASE(g_dynamic_sorting_index_buffer);
+			}
+			g_dynamic_sorting_index_buffer = nullptr;
+		}
 		g_dynamic_sorting_index_buffer_size = std::max<unsigned short>(static_cast<unsigned short>(required_index_count), kDefaultDynamicIndexCount);
 	}
 

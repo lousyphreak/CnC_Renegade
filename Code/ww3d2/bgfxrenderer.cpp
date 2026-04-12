@@ -73,6 +73,8 @@ Matrix4 BgfxRenderer::CurrentProjectionMatrix(true);
 
 namespace
 {
+constexpr unsigned kUnsetRenderState = 0x12345678u;
+
 constexpr uint16_t InvalidFrameBufferIndex = UINT16_MAX;
 
 struct ViewTransformState
@@ -550,6 +552,38 @@ uint64_t Convert_Blend_Factor(ShaderClass::SrcBlendFuncType factor)
     }
 }
 
+uint64_t Convert_Blend_Factor(D3DBLEND factor)
+{
+    switch (factor) {
+    case D3DBLEND_ZERO:
+        return BGFX_STATE_BLEND_ZERO;
+    case D3DBLEND_ONE:
+        return BGFX_STATE_BLEND_ONE;
+    case D3DBLEND_SRCCOLOR:
+        return BGFX_STATE_BLEND_SRC_COLOR;
+    case D3DBLEND_INVSRCCOLOR:
+        return BGFX_STATE_BLEND_INV_SRC_COLOR;
+    case D3DBLEND_SRCALPHA:
+    case D3DBLEND_BOTHSRCALPHA:
+        return BGFX_STATE_BLEND_SRC_ALPHA;
+    case D3DBLEND_INVSRCALPHA:
+    case D3DBLEND_BOTHINVSRCALPHA:
+        return BGFX_STATE_BLEND_INV_SRC_ALPHA;
+    case D3DBLEND_DESTALPHA:
+        return BGFX_STATE_BLEND_DST_ALPHA;
+    case D3DBLEND_INVDESTALPHA:
+        return BGFX_STATE_BLEND_INV_DST_ALPHA;
+    case D3DBLEND_DESTCOLOR:
+        return BGFX_STATE_BLEND_DST_COLOR;
+    case D3DBLEND_INVDESTCOLOR:
+        return BGFX_STATE_BLEND_INV_DST_COLOR;
+    case D3DBLEND_SRCALPHASAT:
+        return BGFX_STATE_BLEND_SRC_ALPHA_SAT;
+    default:
+        return BGFX_STATE_BLEND_ONE;
+    }
+}
+
 uint64_t Convert_Blend_Factor(ShaderClass::DstBlendFuncType factor)
 {
     switch (factor) {
@@ -567,6 +601,23 @@ uint64_t Convert_Blend_Factor(ShaderClass::DstBlendFuncType factor)
         return BGFX_STATE_BLEND_INV_SRC_ALPHA;
     default:
         return BGFX_STATE_BLEND_ZERO;
+    }
+}
+
+uint64_t Convert_Blend_Equation(D3DBLENDOP operation)
+{
+    switch (operation) {
+    case D3DBLENDOP_SUBTRACT:
+        return BGFX_STATE_BLEND_EQUATION(BGFX_STATE_BLEND_EQUATION_SUB);
+    case D3DBLENDOP_REVSUBTRACT:
+        return BGFX_STATE_BLEND_EQUATION(BGFX_STATE_BLEND_EQUATION_REVSUB);
+    case D3DBLENDOP_MIN:
+        return BGFX_STATE_BLEND_EQUATION(BGFX_STATE_BLEND_EQUATION_MIN);
+    case D3DBLENDOP_MAX:
+        return BGFX_STATE_BLEND_EQUATION(BGFX_STATE_BLEND_EQUATION_MAX);
+    case D3DBLENDOP_ADD:
+    default:
+        return BGFX_STATE_BLEND_EQUATION(BGFX_STATE_BLEND_EQUATION_ADD);
     }
 }
 
@@ -592,6 +643,148 @@ uint64_t Convert_Depth_Test(ShaderClass::DepthCompareType compare)
     default:
         return BGFX_STATE_DEPTH_TEST_LEQUAL;
     }
+}
+
+uint64_t Convert_Depth_Test(D3DCMPFUNC compare)
+{
+    switch (compare) {
+    case D3DCMP_NEVER:
+        return BGFX_STATE_DEPTH_TEST_NEVER;
+    case D3DCMP_LESS:
+        return BGFX_STATE_DEPTH_TEST_LESS;
+    case D3DCMP_EQUAL:
+        return BGFX_STATE_DEPTH_TEST_EQUAL;
+    case D3DCMP_LESSEQUAL:
+        return BGFX_STATE_DEPTH_TEST_LEQUAL;
+    case D3DCMP_GREATER:
+        return BGFX_STATE_DEPTH_TEST_GREATER;
+    case D3DCMP_NOTEQUAL:
+        return BGFX_STATE_DEPTH_TEST_NOTEQUAL;
+    case D3DCMP_GREATEREQUAL:
+        return BGFX_STATE_DEPTH_TEST_GEQUAL;
+    case D3DCMP_ALWAYS:
+    default:
+        return BGFX_STATE_DEPTH_TEST_ALWAYS;
+    }
+}
+
+uint32_t Convert_Stencil_Test(D3DCMPFUNC compare)
+{
+    switch (compare) {
+    case D3DCMP_NEVER:
+        return BGFX_STENCIL_TEST_NEVER;
+    case D3DCMP_LESS:
+        return BGFX_STENCIL_TEST_LESS;
+    case D3DCMP_EQUAL:
+        return BGFX_STENCIL_TEST_EQUAL;
+    case D3DCMP_LESSEQUAL:
+        return BGFX_STENCIL_TEST_LEQUAL;
+    case D3DCMP_GREATER:
+        return BGFX_STENCIL_TEST_GREATER;
+    case D3DCMP_NOTEQUAL:
+        return BGFX_STENCIL_TEST_NOTEQUAL;
+    case D3DCMP_GREATEREQUAL:
+        return BGFX_STENCIL_TEST_GEQUAL;
+    case D3DCMP_ALWAYS:
+    default:
+        return BGFX_STENCIL_TEST_ALWAYS;
+    }
+}
+
+uint32_t Convert_Stencil_Fail_Operation(D3DSTENCILOP operation)
+{
+    switch (operation) {
+    case D3DSTENCILOP_ZERO:
+        return BGFX_STENCIL_OP_FAIL_S_ZERO;
+    case D3DSTENCILOP_REPLACE:
+        return BGFX_STENCIL_OP_FAIL_S_REPLACE;
+    case D3DSTENCILOP_INCRSAT:
+        return BGFX_STENCIL_OP_FAIL_S_INCRSAT;
+    case D3DSTENCILOP_DECRSAT:
+        return BGFX_STENCIL_OP_FAIL_S_DECRSAT;
+    case D3DSTENCILOP_INVERT:
+        return BGFX_STENCIL_OP_FAIL_S_INVERT;
+    case D3DSTENCILOP_INCR:
+        return BGFX_STENCIL_OP_FAIL_S_INCR;
+    case D3DSTENCILOP_DECR:
+        return BGFX_STENCIL_OP_FAIL_S_DECR;
+    case D3DSTENCILOP_KEEP:
+    default:
+        return BGFX_STENCIL_OP_FAIL_S_KEEP;
+    }
+}
+
+uint32_t Convert_Stencil_Depth_Fail_Operation(D3DSTENCILOP operation)
+{
+    switch (operation) {
+    case D3DSTENCILOP_ZERO:
+        return BGFX_STENCIL_OP_FAIL_Z_ZERO;
+    case D3DSTENCILOP_REPLACE:
+        return BGFX_STENCIL_OP_FAIL_Z_REPLACE;
+    case D3DSTENCILOP_INCRSAT:
+        return BGFX_STENCIL_OP_FAIL_Z_INCRSAT;
+    case D3DSTENCILOP_DECRSAT:
+        return BGFX_STENCIL_OP_FAIL_Z_DECRSAT;
+    case D3DSTENCILOP_INVERT:
+        return BGFX_STENCIL_OP_FAIL_Z_INVERT;
+    case D3DSTENCILOP_INCR:
+        return BGFX_STENCIL_OP_FAIL_Z_INCR;
+    case D3DSTENCILOP_DECR:
+        return BGFX_STENCIL_OP_FAIL_Z_DECR;
+    case D3DSTENCILOP_KEEP:
+    default:
+        return BGFX_STENCIL_OP_FAIL_Z_KEEP;
+    }
+}
+
+uint32_t Convert_Stencil_Pass_Operation(D3DSTENCILOP operation)
+{
+    switch (operation) {
+    case D3DSTENCILOP_ZERO:
+        return BGFX_STENCIL_OP_PASS_Z_ZERO;
+    case D3DSTENCILOP_REPLACE:
+        return BGFX_STENCIL_OP_PASS_Z_REPLACE;
+    case D3DSTENCILOP_INCRSAT:
+        return BGFX_STENCIL_OP_PASS_Z_INCRSAT;
+    case D3DSTENCILOP_DECRSAT:
+        return BGFX_STENCIL_OP_PASS_Z_DECRSAT;
+    case D3DSTENCILOP_INVERT:
+        return BGFX_STENCIL_OP_PASS_Z_INVERT;
+    case D3DSTENCILOP_INCR:
+        return BGFX_STENCIL_OP_PASS_Z_INCR;
+    case D3DSTENCILOP_DECR:
+        return BGFX_STENCIL_OP_PASS_Z_DECR;
+    case D3DSTENCILOP_KEEP:
+    default:
+        return BGFX_STENCIL_OP_PASS_Z_KEEP;
+    }
+}
+
+unsigned Resolve_Render_State(D3DRENDERSTATETYPE state, unsigned default_value)
+{
+    const unsigned value = DX8Wrapper::Get_DX8_Render_State(state);
+    return value != kUnsetRenderState ? value : default_value;
+}
+
+bool Resolve_Render_State_Bool(D3DRENDERSTATETYPE state, bool default_value)
+{
+    return Resolve_Render_State(state, default_value ? TRUE : FALSE) != FALSE;
+}
+
+uint32_t Build_Stencil_State()
+{
+    if (!Resolve_Render_State_Bool(D3DRS_STENCILENABLE, false)) {
+        return BGFX_STENCIL_NONE;
+    }
+
+    const unsigned reference = Resolve_Render_State(D3DRS_STENCILREF, 0u) & 0xffu;
+    const unsigned read_mask = Resolve_Render_State(D3DRS_STENCILMASK, 0xffu) & 0xffu;
+    return Convert_Stencil_Test(static_cast<D3DCMPFUNC>(Resolve_Render_State(D3DRS_STENCILFUNC, D3DCMP_ALWAYS)))
+        | BGFX_STENCIL_FUNC_REF(reference)
+        | BGFX_STENCIL_FUNC_RMASK(read_mask)
+        | Convert_Stencil_Fail_Operation(static_cast<D3DSTENCILOP>(Resolve_Render_State(D3DRS_STENCILFAIL, D3DSTENCILOP_KEEP)))
+        | Convert_Stencil_Depth_Fail_Operation(static_cast<D3DSTENCILOP>(Resolve_Render_State(D3DRS_STENCILZFAIL, D3DSTENCILOP_KEEP)))
+        | Convert_Stencil_Pass_Operation(static_cast<D3DSTENCILOP>(Resolve_Render_State(D3DRS_STENCILPASS, D3DSTENCILOP_KEEP)));
 }
 
 bool Query_Native_Window(SDL_Window *window, bgfx::PlatformData &platform_data)
@@ -1825,6 +2018,10 @@ uint64_t BgfxRenderer::Build_Render_State(const ShaderClass &shader, unsigned cu
 {
     uint64_t state = BGFX_STATE_MSAA;
 
+    // In the active bgfx build, ShaderClass is still the authoritative owner of
+    // color/depth/blend pipeline state. DX8Wrapper's cache does not yet populate
+    // the broader D3DRS override surface consistently enough to drive bgfx state
+    // directly without regressing core world/menu rendering.
     if (shader.Get_Color_Mask() == ShaderClass::COLOR_WRITE_ENABLE) {
         state |= BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A;
     }
@@ -1835,18 +2032,29 @@ uint64_t BgfxRenderer::Build_Render_State(const ShaderClass &shader, unsigned cu
 
     state |= Convert_Depth_Test(shader.Get_Depth_Compare());
 
-    if (shader.Get_Cull_Mode() == ShaderClass::CULL_MODE_ENABLE) {
-        state |= (cull_mode == D3DCULL_CCW) ? BGFX_STATE_CULL_CCW : BGFX_STATE_CULL_CW;
+    const unsigned resolved_cull_mode = shader.Get_Cull_Mode() == ShaderClass::CULL_MODE_ENABLE ? cull_mode : D3DCULL_NONE;
+    if (resolved_cull_mode == D3DCULL_CCW) {
+        state |= BGFX_STATE_CULL_CCW;
+    } else if (resolved_cull_mode == D3DCULL_CW) {
+        state |= BGFX_STATE_CULL_CW;
     }
 
     if (shader.Get_Src_Blend_Func() != ShaderClass::SRCBLEND_ONE
         || shader.Get_Dst_Blend_Func() != ShaderClass::DSTBLEND_ZERO) {
+        const uint64_t src_factor = Convert_Blend_Factor(shader.Get_Src_Blend_Func());
+        const uint64_t dst_factor = Convert_Blend_Factor(shader.Get_Dst_Blend_Func());
         state |= BGFX_STATE_BLEND_FUNC(
-            Convert_Blend_Factor(shader.Get_Src_Blend_Func()),
-            Convert_Blend_Factor(shader.Get_Dst_Blend_Func()));
+            src_factor,
+            dst_factor);
     }
 
     return state;
+}
+
+void BgfxRenderer::Apply_Render_State(const ShaderClass &shader, unsigned cull_mode, uint64_t extra_state)
+{
+    bgfx::setState(Build_Render_State(shader, cull_mode) | extra_state);
+    bgfx::setStencil(Build_Stencil_State());
 }
 
 void BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(
@@ -1861,11 +2069,11 @@ void BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(
     unsigned fog_mode_state = D3DFOG_NONE;
     bool range_fog_enabled = false;
     const bool specular_enabled =
-        specular_enable_state != 0x12345678u
+        specular_enable_state != kUnsetRenderState
             ? specular_enable_state != FALSE
             : shader.Get_Secondary_Gradient() == ShaderClass::SECONDARY_GRADIENT_ENABLE;
     const bool local_viewer_enabled =
-        local_viewer_state != 0x12345678u ? local_viewer_state != FALSE : true;
+        local_viewer_state != kUnsetRenderState ? local_viewer_state != FALSE : true;
     float alpha_test_function = -1.0f;
     float alpha_reference = static_cast<float>(alpha_reference_state & 0xffu) / 255.0f;
     if (shader.Get_Alpha_Test() == ShaderClass::ALPHATEST_ENABLE) {

@@ -287,6 +287,16 @@
 - `D3DRS_SPECULARENABLE` should be treated as the authoritative “add secondary/specular contribution” switch in the bgfx path:
   - `ShaderClass::SECONDARY_GRADIENT_*` usually drives that state in Renegade, but the live renderer contract still exposes/specifies the D3D render state itself
   - using the live render-state value keeps bgfx aligned with direct state changes and avoids baking another shader-only approximation into the port
+- A clean bgfx fixed-function submit path in this tree needs one renderer-owned state-application choke point, not scattered `setState(...)` calls:
+  - the submitter should still own both bgfx pipeline state binding and bgfx stencil binding together for every draw
+  - otherwise mesh draws, 2D draws, and other fixed-function callers drift apart and some paths silently ignore `D3DRS_STENCIL*`
+- The active bgfx runtime cannot yet treat the broad DX8Wrapper render-state cache as authoritative pipeline state:
+  - a direct attempt to consume `D3DRS_COLORWRITEENABLE`, `D3DRS_ZFUNC`, `D3DRS_ZWRITEENABLE`, `D3DRS_CULLMODE`, `D3DRS_ALPHABLENDENABLE`, `D3DRS_SRCBLEND`, `D3DRS_DESTBLEND`, and `D3DRS_BLENDOP` at submit time regressed most menu/world rendering immediately
+  - in this tree today, `ShaderClass` is still the stable owner for those bgfx pipeline bits, while only selected live DX8 states (for example `D3DRS_SPECULARENABLE` and stencil when explicitly driven) are trustworthy enough to consume directly
+  - before reintroducing broader state-cache-driven bgfx state, the renderer has to move ownership/population of those states fully into the active bgfx path instead of assuming the legacy cache is complete
+- bgfx's stencil model is close enough to the D3D8 state used here to preserve the live contract for single-sided stencil:
+  - `D3DRS_STENCILENABLE`, `STENCILFUNC`, `STENCILREF`, `STENCILMASK`, `STENCILFAIL`, `STENCILZFAIL`, and `STENCILPASS` map directly onto `bgfx::setStencil(...)`
+  - binding that state centrally is still useful, but it should stay behind the renderer-owned choke point so stencil support can grow without forcing the rest of the pipeline state back through the unreliable DX8 cache
 - Cached render buffers in the bgfx path can keep the old lock/copy API without staying “CPU-backed” in the draw path:
   - `RenderVertexBufferClass` / `RenderIndexBufferClass` can own a CPU shadow copy purely for mesh-building and lock/write compatibility while also owning the persistent bgfx dynamic buffer that the renderer actually binds
   - the practical rule is “dirty on lock/write, upload on first draw after mutation,” not “rebuild transient vertices/indices on every draw”

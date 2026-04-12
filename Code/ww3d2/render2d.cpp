@@ -693,7 +693,7 @@ void Render2DClass::Render(void)
 			shader_inputs.Stage1Alpha[0] = static_cast<float>(D3DTOP_DISABLE);
 		}
 		BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(Shader, shader_inputs, overlay_view);
-		bgfx::setState(BgfxRenderer::Build_Render_State(Shader));
+		BgfxRenderer::Apply_Render_State(Shader);
 		bgfx::submit(BgfxRenderer::Get_Overlay_View_Id(), program);
 
 		bgfx::destroy(index_buffer);
@@ -720,7 +720,7 @@ void Render2DClass::Render(void)
 		shader_inputs.Stage1Alpha[0] = static_cast<float>(D3DTOP_DISABLE);
 	}
 	BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(Shader, shader_inputs, overlay_view);
-	bgfx::setState(BgfxRenderer::Build_Render_State(Shader));
+	BgfxRenderer::Apply_Render_State(Shader);
 	bgfx::submit(BgfxRenderer::Get_Overlay_View_Id(), program);
 }
 

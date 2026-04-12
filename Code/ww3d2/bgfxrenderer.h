@@ -170,6 +170,7 @@ public:
     static bgfx::ProgramHandle Load_Program(const char *vertex_shader_name, const char *fragment_shader_name);
     static void Destroy_Program(bgfx::ProgramHandle &program);
     static uint64_t Build_Render_State(const ShaderClass &shader, unsigned cull_mode = D3DCULL_CW);
+    static void Apply_Render_State(const ShaderClass &shader, unsigned cull_mode = D3DCULL_CW, uint64_t extra_state = 0u);
     static void Apply_Fixed_Function_Shader_Inputs(
         const ShaderClass &shader,
         const FixedFunctionShaderInputs &inputs,

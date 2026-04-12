@@ -606,9 +606,10 @@ bool Submit_Cached_Fixed_Function_Draw(
     const unsigned cull_mode = DX8Wrapper::Get_DX8_Render_State(D3DRS_CULLMODE);
     uint16_t view_id = BgfxRenderer::Get_View_Id(view, projection);
 
-    bgfx::setState(
-        BgfxRenderer::Build_Render_State(shader, cull_mode != 0x12345678u ? cull_mode : D3DCULL_CW)
-            | Resolve_Primitive_State(fill_mode));
+    BgfxRenderer::Apply_Render_State(
+        shader,
+        cull_mode != 0x12345678u ? cull_mode : D3DCULL_CW,
+        Resolve_Primitive_State(fill_mode));
     bgfx::submit(view_id, BgfxRenderer::Get_Fixed_Function_Program());
     return true;
 }

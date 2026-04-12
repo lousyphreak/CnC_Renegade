@@ -1,5 +1,17 @@
 # Porting Progress
 
+## Menu/UI fixes
+
+- Fixed Linux/SDL menu child-dialog parsing so option/configuration submenus now inherit the same implied RC control styles that the Windows resource compiler supplies:
+  - `DialogParserClass` now preserves implicit `WS_VISIBLE` for parsed controls, which restores static labels and framing elements that were being created but never rendered on Linux.
+  - the parser now restores the default horizontal alignment for `LTEXT` / `RTEXT` / `CTEXT` controls and understands the style tokens used by the broken menu resources (`SS_BLACKFRAME`, `SS_ETCHEDHORZ`, `LVS_SINGLESEL`, `LVS_SHOWSELALWAYS`, `TBS_AUTOTICKS`, `CBS_DROPDOWN`, etc.).
+  - `NOT ...` style modifiers are now applied correctly instead of being ignored, so controls that are intentionally hidden or removed from groups keep their authored behavior.
+  - the parser now seeds built-in RC IDs (`IDC_STATIC`, `IDOK`, `IDCANCEL`, `IDYES`, `IDNO`, etc.) before reading the Commando resource headers, which restores the many static labels/frames and built-in dialog buttons that were being skipped because those IDs are not declared in the scanned headers.
+- Hardened `SliderCtrlClass` and `ScrollBarCtrlClass` against zero-range / invalid-track cases so menu widgets do not compute NaN/invalid thumb positions while child dialogs are initializing or reconfiguring.
+- Fixed a shutdown-time UBSAN issue uncovered during the required live executable validation:
+  - `INIClass::Save(...)` and `INIClass::Get_Entry(...)` now iterate INI section/entry lists with `First_Valid()` / `Next_Valid()` instead of sentinel-crossing typed casts.
+  - this removes an invalid downcast through `GenericNode` that was firing once the game shut down after reaching the main menu.
+
 ## BGFX renderer fresh start
 
 - Removed the active bgfx build's remaining DX8Wrapper render-target public seam for projector rendering:

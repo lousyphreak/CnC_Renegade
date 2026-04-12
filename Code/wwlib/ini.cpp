@@ -661,8 +661,8 @@ int INIClass::Save(Pipe & pipe) const
 		const char *EOL="\r\n";
 	#endif
 
-	INISection * secptr = SectionList->First();
-	while (secptr && secptr->Is_Valid()) {
+	INISection * secptr = SectionList->First_Valid();
+	while (secptr != NULL) {
 
 		/*
 		**	Output the section identifier.
@@ -675,14 +675,14 @@ int INIClass::Save(Pipe & pipe) const
 		/*
 		**	Output all the entries and values in this section.
 		*/
-		INIEntry * entryptr = secptr->EntryList.First();
-		while (entryptr && entryptr->Is_Valid()) {
+		INIEntry * entryptr = secptr->EntryList.First_Valid();
+		while (entryptr != NULL) {
 			total += pipe.Put(entryptr->Entry, strlen(entryptr->Entry));
 			total += pipe.Put("=", 1);
 			total += pipe.Put(entryptr->Value, strlen(entryptr->Value));
 			total += pipe.Put(EOL, strlen(EOL));
 
-			entryptr = entryptr->Next();
+			entryptr = entryptr->Next_Valid();
 		}
 
 		/*
@@ -691,7 +691,7 @@ int INIClass::Save(Pipe & pipe) const
 		*/
 		total += pipe.Put(EOL, strlen(EOL));
 
-		secptr = secptr->Next();
+		secptr = secptr->Next_Valid();
 	}
 	total += pipe.End();
 
@@ -831,12 +831,12 @@ char const * INIClass::Get_Entry(char const * section, int index) const
 	INISection * secptr = Find_Section(section);
 
 	if (secptr != NULL && index < secptr->EntryIndex.Count()) {
-		INIEntry * entryptr = secptr->EntryList.First();
+		INIEntry * entryptr = secptr->EntryList.First_Valid();
 
-		while (entryptr != NULL && entryptr->Is_Valid()) {
+		while (entryptr != NULL) {
 			if (index == 0) return(entryptr->Entry);
 			index--;
-			entryptr = entryptr->Next();
+			entryptr = entryptr->Next_Valid();
 		}
 	}
 	return(NULL);

@@ -1,5 +1,20 @@
 # Porting Knowledge
 
+## Menu/dialog parsing on Linux
+
+- The Linux dialog path does not read compiled Win32 dialog templates; it reconstructs dialogs from `Code/Commando/chat.rc`. That means the parser has to emulate the resource compiler's implied control styles rather than only preserving the explicit tokens written in the `.rc` source.
+- Missing those implicit defaults breaks menu UI in non-obvious ways:
+  - static controls can exist in the dialog tree but never render if the parser forgets the default `WS_VISIBLE`
+  - `RTEXT` / `CTEXT` lose their authored alignment if the parser does not restore the implicit `SS_RIGHT` / `SS_CENTER` bits
+  - frame/line helper statics in configuration screens depend on `SS_BLACKFRAME` / `SS_ETCHEDHORZ` surviving the parse
+- The Renegade menu resources rely on `NOT ...` modifiers (`NOT WS_VISIBLE`, `NOT WS_GROUP`) in several dialogs. A parser that only ORs style tokens will silently diverge from the authored resource behavior.
+- The parser also has to seed built-in RC IDs itself. `Code/Commando/resource.h` / `dialogresource.h` do not define Win32 built-ins like `IDC_STATIC`, `IDOK`, `IDCANCEL`, `IDYES`, or `IDNO`, but `chat.rc` uses them heavily. If those built-ins are not present in the parser's define table, the Linux path silently drops those controls entirely.
+
+## Typed list traversal safety
+
+- `List<T>` / `Node<T>` in `Code/wwlib/listnode.h` are sentinel-based wrappers over `GenericNode`. Calling `First()` / `Next()` on a typed list can still hand back the sentinel nodes after the wrapper cast has already happened.
+- For typed iteration that may reach the ends of the list, prefer `First_Valid()` / `Next_Valid()` (and the corresponding `Prev_Valid()` forms) instead of `First()` / `Next()` combined with `Is_Valid()`. The latter pattern can trip UBSAN on Linux/x64 because the invalid downcast happens before the validity test.
+
 ## Renderer architecture
 
 - `Code/ww3d2/ww3d.*` provides the top-level renderer lifecycle used by the game and tools.

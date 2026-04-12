@@ -507,6 +507,9 @@ ScrollBarCtrlClass::On_Mouse_Move (const Vector2 &mouse_pos)
 	//	Update the thumb position
 	//
 	if (IsDragging) {
+		if (TrackRect.Height () <= 0 || MaxPos <= MinPos) {
+			return ;
+		}
 
 		//
 		//	Calculate a new position from the change in mouse position
@@ -768,7 +771,15 @@ ScrollBarCtrlClass::Update_Thumb_Rect (void)
 	//
 	//	Recalculate the thumb position
 	//
-	float percent		= float(CurrPos - MinPos) / float(MaxPos - MinPos);
+	float percent = 0.0F;
+	if (MaxPos > MinPos) {
+		percent = float(CurrPos - MinPos) / float(MaxPos - MinPos);
+		if (percent < 0.0F) {
+			percent = 0.0F;
+		} else if (percent > 1.0F) {
+			percent = 1.0F;
+		}
+	}
 	
 	//
 	//	Build the rectangle from the thumb's position
@@ -782,7 +793,8 @@ ScrollBarCtrlClass::Update_Thumb_Rect (void)
 		ThumbRect.Left		= ThumbRect.Right - ThumbWidth;
 	}
 
-	ThumbRect.Top		= int(TopButtonRect.Bottom + (TrackRect.Height () * percent));
+	const float track_height = max (TrackRect.Height (), 0.0F);
+	ThumbRect.Top		= int(TopButtonRect.Bottom + (track_height * percent));
 	ThumbRect.Bottom	= int(ThumbRect.Top + ThumbHeight);
 	return ;
 }

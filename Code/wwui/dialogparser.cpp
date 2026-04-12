@@ -105,6 +105,18 @@ namespace {
 #define LVS_NOCOLUMNHEADER 0x4000L
 #endif
 
+#ifndef LVS_SINGLESEL
+#define LVS_SINGLESEL 0x0004L
+#endif
+
+#ifndef LVS_SHOWSELALWAYS
+#define LVS_SHOWSELALWAYS 0x0008L
+#endif
+
+#ifndef TBS_AUTOTICKS
+#define TBS_AUTOTICKS 0x0001L
+#endif
+
 #ifndef TBS_BOTH
 #define TBS_BOTH 0x0008L
 #endif
@@ -259,6 +271,17 @@ const std::unordered_map<std::string, int> &Get_Defines()
 	}
 
 	initialized = true;
+	defines["IDC_STATIC"] = -1;
+	defines["IDOK"] = 1;
+	defines["IDCANCEL"] = 2;
+	defines["IDABORT"] = 3;
+	defines["IDRETRY"] = 4;
+	defines["IDIGNORE"] = 5;
+	defines["IDYES"] = 6;
+	defines["IDNO"] = 7;
+	defines["IDCLOSE"] = 8;
+	defines["IDHELP"] = 9;
+
 	const std::filesystem::path resource_header = Find_Project_File("Code/Commando/resource.h");
 	const std::filesystem::path dialog_header = Find_Project_File("Code/Commando/dialogresource.h");
 	const std::filesystem::path headers[] = { resource_header, dialog_header };
@@ -295,11 +318,17 @@ const std::unordered_map<std::string, int> &Get_Defines()
 uint32_t Resolve_Style_Token(const std::string &token)
 {
 	const std::string upper = To_Upper_Copy(token);
+	if (upper == "WS_VISIBLE") return WS_VISIBLE;
 	if (upper == "WS_BORDER") return WS_BORDER;
 	if (upper == "WS_GROUP") return WS_GROUP;
 	if (upper == "WS_TABSTOP") return WS_TABSTOP;
 	if (upper == "WS_DISABLED") return WS_DISABLED;
 	if (upper == "WS_VSCROLL") return WS_VSCROLL;
+	if (upper == "SS_LEFT") return SS_LEFT;
+	if (upper == "SS_CENTER") return SS_CENTER;
+	if (upper == "SS_RIGHT") return SS_RIGHT;
+	if (upper == "SS_BLACKFRAME") return SS_BLACKFRAME;
+	if (upper == "SS_ETCHEDHORZ") return SS_ETCHEDHORZ;
 	if (upper == "BS_LEFT") return BS_LEFT;
 	if (upper == "BS_RIGHT") return BS_RIGHT;
 	if (upper == "BS_CENTER") return BS_CENTER;
@@ -314,16 +343,33 @@ uint32_t Resolve_Style_Token(const std::string &token)
 	if (upper == "ES_MULTILINE") return ES_MULTILINE;
 	if (upper == "ES_AUTOVSCROLL") return ES_AUTOVSCROLL;
 	if (upper == "ES_AUTOHSCROLL") return ES_AUTOHSCROLL;
+	if (upper == "CBS_DROPDOWN") return CBS_DROPDOWN;
 	if (upper == "CBS_DROPDOWNLIST") return CBS_DROPDOWNLIST;
 	if (upper == "CBS_SORT") return CBS_SORT;
 	if (upper == "LVS_REPORT") return LVS_REPORT;
 	if (upper == "LVS_NOCOLUMNHEADER") return LVS_NOCOLUMNHEADER;
+	if (upper == "LVS_SINGLESEL") return LVS_SINGLESEL;
+	if (upper == "LVS_SHOWSELALWAYS") return LVS_SHOWSELALWAYS;
+	if (upper == "TBS_AUTOTICKS") return TBS_AUTOTICKS;
 	if (upper == "TBS_BOTH") return TBS_BOTH;
 	if (upper == "TBS_NOTICKS") return TBS_NOTICKS;
 	return 0;
 }
 
-uint32_t Parse_Style_Expression(const std::string &expression)
+uint32_t Get_Default_Control_Style(const std::string &keyword)
+{
+	const std::string upper_keyword = To_Upper_Copy(keyword);
+	uint32_t style = WS_VISIBLE;
+	if (upper_keyword == "RTEXT") {
+		style |= SS_RIGHT;
+	} else if (upper_keyword == "CTEXT") {
+		style |= SS_CENTER;
+	}
+
+	return style;
+}
+
+uint32_t Parse_Style_Expression(const std::string &expression, uint32_t base_style)
 {
 	std::string normalized = expression;
 	std::replace(normalized.begin(), normalized.end(), '|', ' ');
@@ -331,9 +377,21 @@ uint32_t Parse_Style_Expression(const std::string &expression)
 
 	std::istringstream stream(normalized);
 	std::string token;
-	uint32_t value = 0;
+	uint32_t value = base_style;
+	bool negate_next = false;
 	while (stream >> token) {
-		value |= Resolve_Style_Token(token);
+		if (To_Upper_Copy(token) == "NOT") {
+			negate_next = true;
+			continue;
+		}
+
+		const uint32_t resolved = Resolve_Style_Token(token);
+		if (negate_next) {
+			value &= ~resolved;
+			negate_next = false;
+		} else {
+			value |= resolved;
+		}
 	}
 
 	return value;
@@ -535,7 +593,7 @@ bool Parse_Control_Statement(const std::string &statement, const std::unordered_
 		}
 	}
 
-	definition.style = Parse_Style_Expression(style_expression);
+	definition.style = Parse_Style_Expression(style_expression, Get_Default_Control_Style(keyword));
 	control_list->Add(definition);
 	return true;
 }

@@ -109,7 +109,15 @@ SliderCtrlClass::Create_Control_Renderer (void)
 	//
 	//	Calculate the thumb's position
 	//
-	float percent		= float(CurrPos - MinPos) / float(MaxPos - MinPos);
+	float percent = 0.0F;
+	if (MaxPos > MinPos) {
+		percent = float(CurrPos - MinPos) / float(MaxPos - MinPos);
+		if (percent < 0.0F) {
+			percent = 0.0F;
+		} else if (percent > 1.0F) {
+			percent = 1.0F;
+		}
+	}
 	int thumb_height	= ClientRect.Height () - 2;
 	int thumb_width	= thumb_height / 2;
 
@@ -374,6 +382,9 @@ SliderCtrlClass::Slider_Pos_From_Mouse_Pos (const Vector2 &mouse_pos)
 		//
 		retval = MaxPos;
 	} else {
+		if (ClientRect.Width () <= 0 || MaxPos <= MinPos) {
+			return MinPos;
+		}
 
 		int thumb_height	= ClientRect.Height () - 2;
 		int thumb_width	= thumb_height / 2;
@@ -438,4 +449,3 @@ SliderCtrlClass::Set_Pos (int pos, bool send_notification)
 
 	return ;
 }
-

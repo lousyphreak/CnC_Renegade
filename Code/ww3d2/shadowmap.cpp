@@ -345,9 +345,17 @@ void ShadowMapManager::Compute_Light_Matrices(const CameraClass &camera, const V
             min_z = std::min(min_z, lz);
             max_z = std::max(max_z, lz);
         }
-        // Extend near to catch shadow casters behind the frustum
-        float z_margin = (max_z - min_z) * 2.0f;
-        min_z -= z_margin;
+        const float receiver_depth_range = max_z - min_z;
+        const float far_side_padding = std::max(receiver_depth_range * 0.25f, texel_size * 4.0f);
+        const float sun_height = std::fabs(light_forward.Z);
+        const float light_side_padding = std::min(
+            ShadowDistance + receiver_depth_range,
+            std::max(receiver_depth_range * 2.0f, (4.0f * radius) / std::max(sun_height, 0.2f)));
+
+        // In this light view, casters toward the sun/light camera have larger Z (closer to 0).
+        // Expanding max_z keeps off-camera casters that still project onto visible receivers.
+        max_z += light_side_padding;
+        min_z -= far_side_padding;
 
         const float z_near = std::max(0.1f, -max_z);
         const float z_far = std::max(z_near + 0.1f, -min_z);

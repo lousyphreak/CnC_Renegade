@@ -19,7 +19,7 @@ class VertexMaterialClass;
 struct RenderStateStruct;
 
 // Stage color/alpha operation enum — replaces float-encoded D3DTOP opcodes.
-// Values must match the constants in fs_mesh.sc.
+// Values must match the constants in mesh_common.sh.
 enum StageColorOp : std::uint8_t
 {
     STAGE_DISABLE = 0,
@@ -31,6 +31,16 @@ enum StageColorOp : std::uint8_t
     STAGE_SUBTRACT = 6,
     STAGE_BLEND_TEX_ALPHA = 7,
     STAGE_BLEND_CUR_ALPHA = 8,
+};
+
+// Which mesh shader program to use for a draw call.
+enum class MeshShaderProgram : std::uint8_t
+{
+    Unlit,
+    Lit,
+    UnlitTexgen,
+    LitTexgen,
+    Count,
 };
 
 class BgfxRenderer
@@ -63,6 +73,7 @@ public:
     static bgfx::UniformHandle Get_Texture1_Uniform();
     static bgfx::ProgramHandle Get_Overlay_Program();
     static bgfx::ProgramHandle Get_Mesh_Program();
+    static bgfx::ProgramHandle Get_Mesh_Program(MeshShaderProgram program);
     static bool Supports_Texture_Format(WW3DFormat format);
     static bool Supports_Render_Target_Format(WW3DFormat format);
     static bool Submit_Cached_Fixed_Function_Triangles(
@@ -114,10 +125,17 @@ public:
     static uint64_t Build_Render_State(const ShaderClass &shader, unsigned cull_mode = D3DCULL_CW);
     static void Apply_Render_State(const ShaderClass &shader, unsigned cull_mode = D3DCULL_CW, uint64_t extra_state = 0u);
     static void Apply_Overlay_Config(bool has_texture);
+
+    // Program selection and per-program uniform upload.
+    static MeshShaderProgram Select_Mesh_Program(
+        const ShaderClass &shader,
+        const VertexBufferClass &vertex_buffer);
     static void Apply_Mesh_Shader_Inputs(
+        MeshShaderProgram program,
         const ShaderClass &shader,
         const VertexBufferClass &vertex_buffer,
         const VertexMaterialClass *material);
+
     static std::uint32_t Convert_Packed_Color(std::uint32_t argb_color);
     static void Request_Screen_Shot(const char *file_path);
     static bool Start_Movie_Capture(const char *file_path_base, float frame_rate);
@@ -139,6 +157,14 @@ private:
     static void Apply_Reset_State();
     static bgfx::ShaderHandle Load_Shader(const char *shader_name);
 
+    // Per-program uniform apply helpers
+    static void Apply_Fog_Uniforms(const ShaderClass &shader);
+    static void Apply_Frag_Uniforms(const ShaderClass &shader);
+    static void Apply_Lit_Uniforms(
+        const VertexBufferClass &vertex_buffer,
+        const VertexMaterialClass *material);
+    static void Apply_Texgen_Uniforms();
+
     static bool IsInitted;
     static uint32_t Width;
     static uint32_t Height;
@@ -157,26 +183,35 @@ private:
     // Overlay shader uniforms
     static bgfx::UniformHandle OverlayConfigUniform;
 
-    // Mesh shader uniforms
-    static bgfx::UniformHandle MeshConfigUniform;
-    static bgfx::UniformHandle MeshMaterialConfigUniform;
+    // Shared mesh uniforms (all programs use these)
+    static bgfx::UniformHandle MeshFogConfigUniform;
+    static bgfx::UniformHandle MeshFogColorUniform;
+    static bgfx::UniformHandle MeshFragConfigUniform;
+    static bgfx::UniformHandle MeshFragConfig2Uniform;
+
+    // Lit-only uniforms
+    static bgfx::UniformHandle MeshLitConfigUniform;
     static bgfx::UniformHandle MeshMaterialAmbientUniform;
     static bgfx::UniformHandle MeshMaterialDiffuseUniform;
     static bgfx::UniformHandle MeshMaterialEmissiveUniform;
     static bgfx::UniformHandle MeshSceneAmbientUniform;
-    static bgfx::UniformHandle MeshFogParamsUniform;
-    static bgfx::UniformHandle MeshFogColorUniform;
     static bgfx::UniformHandle MeshLightDirUniform;
     static bgfx::UniformHandle MeshLightColorUniform;
+
+    // Texgen-only uniforms
     static bgfx::UniformHandle MeshTexgenModeUniform;
     static bgfx::UniformHandle MeshTexTransformFlagsUniform;
     static bgfx::UniformHandle MeshTexTransform0Uniform;
     static bgfx::UniformHandle MeshTexTransform1Uniform;
-    static bgfx::UniformHandle MeshFragConfigUniform;
-    static bgfx::UniformHandle MeshFragConfig2Uniform;
 
+    // Shader programs
     static bgfx::ProgramHandle OverlayProgram;
     static bgfx::ProgramHandle MeshProgram;
+    static bgfx::ProgramHandle MeshUnlitProgram;
+    static bgfx::ProgramHandle MeshLitProgram;
+    static bgfx::ProgramHandle MeshUnlitTexgenProgram;
+    static bgfx::ProgramHandle MeshLitTexgenProgram;
+
     static Matrix4 CurrentViewMatrix;
     static Matrix4 CurrentProjectionMatrix;
 };

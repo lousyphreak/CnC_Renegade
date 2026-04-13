@@ -368,7 +368,9 @@ bool Submit_Cached_Fixed_Function_Draw(
 
     bgfx::setTexture(0, BgfxRenderer::Get_Texture0_Uniform(), Resolve_Texture_Handle(stage0_texture), Resolve_Sampler_Flags(stage0_texture, 0));
     bgfx::setTexture(1, BgfxRenderer::Get_Texture1_Uniform(), Resolve_Texture_Handle(stage1_texture), Resolve_Sampler_Flags(stage1_texture, 1));
-    BgfxRenderer::Apply_Mesh_Shader_Inputs(shader, vertex_buffer, material);
+
+    MeshShaderProgram selected_program = BgfxRenderer::Select_Mesh_Program(shader, vertex_buffer);
+    BgfxRenderer::Apply_Mesh_Shader_Inputs(selected_program, shader, vertex_buffer, material);
 
     const unsigned cull_mode = DX8Wrapper::Get_DX8_Render_State(D3DRS_CULLMODE);
     uint16_t view_id = BgfxRenderer::Get_View_Id(view, projection);
@@ -377,7 +379,7 @@ bool Submit_Cached_Fixed_Function_Draw(
         shader,
         cull_mode != 0x12345678u ? cull_mode : D3DCULL_CW,
         Resolve_Primitive_State(fill_mode));
-    bgfx::submit(view_id, BgfxRenderer::Get_Mesh_Program());
+    bgfx::submit(view_id, BgfxRenderer::Get_Mesh_Program(selected_program));
     return true;
 }
 

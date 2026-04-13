@@ -420,7 +420,36 @@ Replaced the D3D8 fixed-function pipeline emulation (single uber-shader with ~30
 
 ## Next work
 
+- Remove the legacy `vs_mesh`/`fs_mesh` uber-shader once multi-shader variants are validated in all edge cases.
 - Remove the remaining transient index-rewrite cases in the bgfx fixed-function submitter where feasible, especially cached strip/wireframe draws that still need CPU-side index expansion even after the persistent render-buffer upload work.
 - Continue de-DX8ing the live render pipeline above the renamed buffer layer, starting with the remaining `dx8renderer.*` / `dx8polygonrenderer.*` / `DX8Wrapper` state surfaces and the still-D3D-shaped format API that the bgfx build exposes.
 - Replace the remaining D3D-format conversion surface in `formconv.*` and texture loading with backend-neutral or bgfx-backed format handling.
 - Keep deleting or hiding DX8-only API from shared headers whenever the active bgfx build already excludes the corresponding backend `.cpp`.
+
+## Multi-shader renderer refactor
+
+Refactored the ww3d2 bgfx renderer from a monolithic uber-shader to a multi-shader architecture with 4 purpose-built mesh programs.
+
+### Feature audit
+- Audited all ww3d2 lib users to determine which D3D8 fixed-function features are actually used
+- Confirmed dead: bump env map, specular power, point/spot light shader calcs, COLOR2 material source, stencil, EXP/EXP2 fog
+- Confirmed used: directional lighting (pre-converted by LightEnvironmentClass), MATERIAL and COLOR1 sources, 4 texgen modes, linear fog, GREATEREQUAL alpha test
+
+### Shader changes
+- Created `mesh_common.sh` shared include with fragment ops (ApplyColorOp, ApplyAlphaOp, ApplyFog)
+- Created 4 new shader program pairs: `mesh_unlit`, `mesh_lit`, `mesh_unlit_texgen`, `mesh_lit_texgen`
+- Each pair has dedicated `vs_*.sc` and `fs_*.sc` files with only the uniforms they need
+- Created `varying_mesh_new.def.sc` — cleaned up varying file without legacy `v_specular0`
+- Updated `CMakeLists.txt` to compile all new shader variants alongside the legacy shader
+
+### C++ changes
+- `bgfxrenderer.h`: Added `MeshShaderProgram` enum, new program handles, per-program Apply helpers, `Select_Mesh_Program()`, `Get_Mesh_Program(MeshShaderProgram)`
+- `bgfxrenderer.cpp`: Replaced old monolithic `Apply_Mesh_Shader_Inputs` (26 vec4s every draw) with per-program `Apply_Fog_Uniforms`, `Apply_Frag_Uniforms`, `Apply_Lit_Uniforms`, `Apply_Texgen_Uniforms` — each called only for programs that need them
+- `bgfxrenderer.cpp`: Replaced `MeshConfigUniform`+`MeshMaterialConfigUniform`+`MeshFogParamsUniform` with `MeshFogConfigUniform`+`MeshLitConfigUniform` — cleaner semantic grouping
+- `bgfxfixedfunction.cpp`: Draw submission now calls `Select_Mesh_Program()` to pick the cheapest shader, then `Apply_Mesh_Shader_Inputs(program, ...)` for per-program uniform upload, then `bgfx::submit()` with the selected program
+
+### Uniform reduction
+- Unlit draws: 4 vec4s (was 26) — fog config + frag config only
+- Lit draws: ~14 vec4s — adds material, lights, scene ambient
+- Texgen draws: adds ~6 vec4s — texgen mode, tex transform flags, 2 tex transform matrices
+- Most common draw (unlit opaque mesh): 85% uniform reduction per draw call

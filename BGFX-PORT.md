@@ -6,7 +6,7 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
 
 ## Current shader architecture
 
-The renderer uses two shader programs:
+The renderer uses six shader programs:
 
 ### Overlay shader (`vs_overlay` / `fs_overlay`)
 - Used for 2D/UI rendering (`Render2DClass::Render`)
@@ -14,15 +14,62 @@ The renderer uses two shader programs:
 - Single uniform: `u_overlayConfig.x` (1.0 = has texture, 0.0 = vertex color only)
 - Compact vertex layout: pos(3f) + color0(4u8n) + uv0(2f) = 20 bytes
 
-### Mesh shader (`vs_mesh` / `fs_mesh`)
-- Used for all 3D rendering (rigid mesh, skinned mesh, particles, projectors, decals, etc.)
-- Vertex shader: MVP transform, optional directional lighting (ambient + 4 lights), linear vertex fog, texgen (4 modes), texture transforms
-- Fragment shader: enum-based stage0/stage1 color+alpha ops via `StageColorOp` enum (9 values), alpha test, fog application (3 modes), specular add
-- ~16 vec4 uniforms total for the most complex case
+### Mesh shader variants (multi-shader architecture)
+The old monolithic `vs_mesh`/`fs_mesh` uber-shader has been replaced by 4 purpose-built programs. Program selection happens at draw time based on lighting and texgen state.
+
+#### `mesh_unlit` (`vs_mesh_unlit` / `fs_mesh_unlit`)
+- Used for prelit meshes, particles, terrain, vertex-colored geometry
+- Vertex shader: MVP transform + linear vertex fog
+- Fragment shader: stage0/stage1 color+alpha ops, alpha test, fog
+- Uniforms: ~4 vec4s (u_meshFogConfig, u_meshFogColor, u_meshFragConfig, u_meshFragConfig2)
+
+#### `mesh_lit` (`vs_mesh_lit` / `fs_mesh_lit`)
+- Used for lit meshes with standard UV mapping
+- Vertex shader: MVP transform + directional lighting (4 lights) + material color resolution + linear vertex fog
+- Fragment shader: same as mesh_unlit
+- Uniforms: ~14 vec4s (fog + frag config + u_meshLitConfig + material colors + scene ambient + lights)
+
+#### `mesh_unlit_texgen` (`vs_mesh_unlit_texgen` / `fs_mesh_unlit_texgen`)
+- Used for unlit meshes with texgen (screen mappers, projectors)
+- Vertex shader: MVP transform + texgen (4 modes) + texture transforms + fog
+- Fragment shader: same as mesh_unlit
+- Uniforms: ~10 vec4s (fog + frag + texgen mode + tex transform flags + 2 tex transform matrices)
+
+#### `mesh_lit_texgen` (`vs_mesh_lit_texgen` / `fs_mesh_lit_texgen`)
+- Used for lit meshes with texgen (env maps, reflections)
+- Vertex shader: full feature set — lighting + texgen + fog
+- Fragment shader: same as mesh_unlit
+- Uniforms: ~20 vec4s (all uniform groups combined)
+
+### Legacy mesh shader (`vs_mesh` / `fs_mesh`)
+- Kept during transition, still compiled but no longer submitted
+- Will be removed once the new shaders are validated in all edge cases
+
+### Program selection logic
+At draw time, `BgfxRenderer::Select_Mesh_Program()` picks the cheapest program that covers the current state:
+1. Check `D3DRS_LIGHTING` → lit vs unlit
+2. Check texcoord index and tex transform flags → texgen vs not
+3. Return the appropriate `MeshShaderProgram` enum value
+
+### Shared fragment code (`mesh_common.sh`)
+All fragment shaders include `mesh_common.sh` which defines:
+- `ApplyColorOp()` / `ApplyAlphaOp()` — stage color/alpha blending operations
+- `ApplyFog()` — fragment fog application (3 modes: enable, scale_fragment, white)
+- Stage operation constants matching `StageColorOp` C++ enum
 
 ### StageColorOp enum
 Maps directly from `ShaderClass` gradient/detail enums, bypassing the DX8Wrapper D3D8 state cache. Values:
 - 0=DISABLE, 1=MODULATE, 2=SELECT_TEXTURE, 3=SELECT_CURRENT, 4=ADD, 5=ADDSMOOTH, 6=SUBTRACT, 7=BLEND_TEX_ALPHA, 8=BLEND_CUR_ALPHA
+
+### Dead D3D8 features confirmed unused
+The following features were audited and confirmed unused by any game code path:
+- BUMPENVMAP / BUMPENVMAPLUMINANCE / DOTPRODUCT3
+- EXP / EXP2 fog (only LINEAR used)
+- Point/spot light shader calculations (LightEnvironmentClass pre-converts)
+- D3DMCS_COLOR2 material source
+- D3DTA_TFACTOR / D3DTA_SPECULAR as texture stage arguments
+- Specular power lighting
+- Stencil operations
 
 ## Rules
 

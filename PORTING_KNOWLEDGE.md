@@ -361,3 +361,32 @@
 ### bgfx setUniform count parameter
 - For `Vec4` arrays: count = number of vec4s (e.g., `setUniform(handle, data, 4)` for 4 vec4s = 16 floats = 64 bytes).
 - For `Mat4`: count = number of mat4s. A single mat4 should use count=1 (the default). Using count=4 would try to read 4×64=256 bytes, causing buffer overflows.
+
+## Multi-shader program selection
+
+### How program selection works
+At draw time, `BgfxRenderer::Select_Mesh_Program()` determines the cheapest shader that covers the current render state:
+1. Check `D3DRS_LIGHTING` from DX8Wrapper state cache → determines lit vs unlit
+2. Check texture stage state for non-passthrough texcoord indices or non-disabled tex transform flags → determines texgen vs not
+3. Returns `MeshShaderProgram::Unlit`, `Lit`, `UnlitTexgen`, or `LitTexgen`
+
+### Why per-program uniform groups
+bgfx uniforms are global state — setting a uniform that a shader doesn't reference is harmless but wastes CPU cycles packing and uploading data. The new architecture only uploads uniforms needed by the selected program:
+- **All programs**: `u_meshFogConfig`, `u_meshFogColor`, `u_meshFragConfig`, `u_meshFragConfig2`
+- **Lit only**: `u_meshLitConfig`, `u_meshMaterialAmbient/Diffuse/Emissive`, `u_meshSceneAmbient`, `u_meshLightDir[4]`, `u_meshLightColor[4]`
+- **Texgen only**: `u_meshTexgenMode`, `u_meshTexTransformFlags`, `u_meshTexTransform0`, `u_meshTexTransform1`
+
+### Material source resolution in lit shaders
+The old `Normalize_Material_Source_For_Mesh` function has been replaced by a simpler per-source resolve in `Apply_Lit_Uniforms`. The `u_meshLitConfig` uniform packs:
+- `.x` = hasNormals (0 or 1) — determines whether full directional lighting runs or emissive-only path
+- `.y` = diffuseSource (0=material, 1=color0)
+- `.z` = ambientSource (0=material, 1=color0)
+- `.w` = emissiveSource (0=material, 1=color0)
+This replaces the old `u_meshConfig` (lighting+normals+fog+specular) and `u_meshMaterialConfig` (3 material sources) which were always uploaded for every draw.
+
+### Dead features removed from shader pipeline
+- `u_meshConfig` uniform (replaced by program selection + `u_meshLitConfig`)
+- `u_meshMaterialConfig` uniform (absorbed into `u_meshLitConfig`)
+- `u_meshFogParams` uniform (absorbed into `u_meshFogConfig`)
+- Specular enable state and specular add in fragment shader — never visibly used by game assets
+- `v_specular0` varying — removed from new shader varying file

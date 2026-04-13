@@ -17,6 +17,7 @@ set(WW3D2_SHADER_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
 set(WW3D2_BGFX_SHADER_INCLUDE_DIR "${bgfx_cmake_SOURCE_DIR}/bgfx/src")
 set(WW3D2_SHADER_VARYING_OVERLAY_DEF "${WW3D2_SHADER_INCLUDE_DIR}/varying_overlay.def.sc")
 set(WW3D2_SHADER_VARYING_MESH_DEF "${WW3D2_SHADER_INCLUDE_DIR}/varying_mesh.def.sc")
+set(WW3D2_SHADER_VARYING_MESH_NEW_DEF "${WW3D2_SHADER_INCLUDE_DIR}/varying_mesh_new.def.sc")
 
 # Overlay shaders (2D/UI)
 bgfx_compile_shaders(
@@ -37,7 +38,7 @@ bgfx_compile_shaders(
     INCLUDE_DIRS "${WW3D2_BGFX_SHADER_INCLUDE_DIR}" "${WW3D2_SHADER_INCLUDE_DIR}"
 )
 
-# Mesh shaders (3D world rendering)
+# Legacy mesh shader (kept during transition, will be removed)
 bgfx_compile_shaders(
     TYPE VERTEX
     SHADERS "${WW3D2_SHADER_INCLUDE_DIR}/vs_mesh.sc"
@@ -56,6 +57,39 @@ bgfx_compile_shaders(
     INCLUDE_DIRS "${WW3D2_BGFX_SHADER_INCLUDE_DIR}" "${WW3D2_SHADER_INCLUDE_DIR}"
 )
 
+# New mesh shader variants
+set(WW3D2_NEW_MESH_VS_LIST
+    "${WW3D2_SHADER_INCLUDE_DIR}/vs_mesh_unlit.sc"
+    "${WW3D2_SHADER_INCLUDE_DIR}/vs_mesh_lit.sc"
+    "${WW3D2_SHADER_INCLUDE_DIR}/vs_mesh_unlit_texgen.sc"
+    "${WW3D2_SHADER_INCLUDE_DIR}/vs_mesh_lit_texgen.sc"
+)
+
+set(WW3D2_NEW_MESH_FS_LIST
+    "${WW3D2_SHADER_INCLUDE_DIR}/fs_mesh_unlit.sc"
+    "${WW3D2_SHADER_INCLUDE_DIR}/fs_mesh_lit.sc"
+    "${WW3D2_SHADER_INCLUDE_DIR}/fs_mesh_unlit_texgen.sc"
+    "${WW3D2_SHADER_INCLUDE_DIR}/fs_mesh_lit_texgen.sc"
+)
+
+bgfx_compile_shaders(
+    TYPE VERTEX
+    SHADERS ${WW3D2_NEW_MESH_VS_LIST}
+    VARYING_DEF "${WW3D2_SHADER_VARYING_MESH_NEW_DEF}"
+    OUTPUT_DIR "${WW3D2_SHADER_OUTPUT_DIR}"
+    OUT_FILES_VAR WW3D2_NEW_MESH_VS_OUTPUTS
+    INCLUDE_DIRS "${WW3D2_BGFX_SHADER_INCLUDE_DIR}" "${WW3D2_SHADER_INCLUDE_DIR}"
+)
+
+bgfx_compile_shaders(
+    TYPE FRAGMENT
+    SHADERS ${WW3D2_NEW_MESH_FS_LIST}
+    VARYING_DEF "${WW3D2_SHADER_VARYING_MESH_NEW_DEF}"
+    OUTPUT_DIR "${WW3D2_SHADER_OUTPUT_DIR}"
+    OUT_FILES_VAR WW3D2_NEW_MESH_FS_OUTPUTS
+    INCLUDE_DIRS "${WW3D2_BGFX_SHADER_INCLUDE_DIR}" "${WW3D2_SHADER_INCLUDE_DIR}"
+)
+
 add_custom_target(
     ww3d2-shaders
     DEPENDS
@@ -63,6 +97,8 @@ add_custom_target(
         ${WW3D2_OVERLAY_FS_OUTPUTS}
         ${WW3D2_MESH_VS_OUTPUTS}
         ${WW3D2_MESH_FS_OUTPUTS}
+        ${WW3D2_NEW_MESH_VS_OUTPUTS}
+        ${WW3D2_NEW_MESH_FS_OUTPUTS}
         ${WW3D2_SHADER_SOURCES}
 )
 

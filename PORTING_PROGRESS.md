@@ -53,6 +53,10 @@
   - `dynamicshadowmanager.cpp`: permanently fixed `Enable_Affect_Dynamic_Objects(false)` — was incorrectly `true`, causing shadows to project onto the caster itself.
   - `mesh.cpp` CULL branch: restored the original APT-based code and added the `view_dir` parameter to `Generate_Rigid_APT()` for proper backface culling of shadow receiver polygons.
   - verified with a 220-second live run (ASAN+UBSAN) — no crashes, sanitizer errors, or regressions.
+- Fixed the remaining terrain shadow duplication after the CSM receiver path started working:
+  - **Root cause**: terrain now receives the new cascaded shadowmap term during its normal fixed-function draws, but `DynamicShadowManagerClass` was still creating the older sun-driven `DynTexProjectClass` shadow projector for real projected shadows. `PhysicsSceneClass::Apply_Projector_To_Objects()` applies that projector to static receivers, including terrain, so the same sunlight shadow could land twice.
+  - the duplicate was especially visible as a camera-dependent/swimming darkening on terrain because projector visibility still attenuates from the camera via `Compute_Projector_Attenuation(...)`, while the CSM path is camera-stable.
+  - `dynamicshadowmanager.cpp` now suppresses only that sunlight projector path when cascaded shadowmaps are active for non-blob projected shadows, while preserving blob modes and local-light projector shadows that the CSM system does not replace.
 - Reset the bgfx renderer effort to a clean-slate plan based on `BGFX-PORT.md`.
 - Identified the primary renderer migration boundary in `Code/ww3d2`:
   - `dx8wrapper.*` for device lifecycle and render state orchestration
@@ -490,6 +494,7 @@ Replaced the legacy per-object projected texture shadow system with Cascaded Sha
 - **View activation**: Added bgfx::touch() for shadow views to ensure clear processing
 - **Lightmapped receiver parity**: Multi-pass prelit/lightmapped level meshes now receive the shadow term on the composed/lightmap pass instead of leaving the final pass unshadowed
 - **Opaque-composition receiver parity**: Level geometry no longer uses raw blend-state heuristics to decide receiver eligibility; blended terrain layers and blended final lightmap passes still receive shadows when they are part of an opaque composed surface
+- **Legacy projector overlap removed**: when cascaded shadowmaps are active for real projected sunlight shadows, the old sun-driven dynamic projector path no longer re-projects the same shadow onto terrain/static receivers
 
 ## Renderer modernization (D3D8 fixed-function elimination)
 

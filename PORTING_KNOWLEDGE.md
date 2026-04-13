@@ -149,6 +149,11 @@
 - Terrain/world fixed-function composition passes need the same rule:
   - `RenegadeTerrainPatchClass` uses `PASS_BASE` plus alpha-blended overlay layers to build one opaque terrain surface
   - the alpha overlay layers should still receive the shadow term, because shadowing each contributing layer produces the correct final opaque result while leaving those layers unshadowed makes terrain diverge from units and other single-pass meshes
+- Once terrain is receiving cascaded shadowmaps correctly, the old sunlight dynamic-projector path becomes a second receiver path rather than a fallback:
+  - `DynamicShadowManagerClass::Update_Shadow()` can still build a sun-driven `DynTexProjectClass` for real projected shadows
+  - `PhysicsSceneClass::Apply_Projector_To_Objects()` applies that material pass to static receivers, including terrain
+  - projector visibility still attenuates from camera space (`Compute_Projector_Attenuation(...)`), so if this path overlaps the new CSM terrain receive path the extra shadow will swim/fade with camera motion even when the CSM result is stable
+  - the safe fix is to suppress only the sunlight projector when cascaded shadowmaps are active for non-blob projected shadows, while leaving blob modes and local-light projectors intact because CSM does not replace those cases
 - D3D8 fixed-function lighting with no-normal vertices: when a vertex has no normal but `D3DRS_LIGHTING` is enabled, D3D8 only uses the emissive material term in the lit color — diffuse and specular require a normal for N·L and N·H dot products. The bgfx vertex shader must replicate this by resolving emissive from `ResolveColorSource(emissiveSource, materialEmissive, a_color0, a_color1)` instead of using the vertex diffuse color directly. This matters for shadow projections on prelit terrain meshes (FVF with DIFFUSE but no NORMAL): shadow material uses emissive=(1−intensity) for darkening, and bypassing it makes shadow draws produce white output (texture + vertex_diffuse ≈ 1.0), making multiplicative blending invisible.
 - Projector code cannot assume `TextureClass::Get_Width()` is immediately valid for every projected texture in the bgfx port:
   - file-backed textures can still be lazily initialized when `TexProjectClass::Pre_Render_Update()` first needs the projector texel size

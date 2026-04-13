@@ -46,6 +46,7 @@
 #include "light.h"
 #include "texture.h"
 #include "physresourcemgr.h"
+#include "shadowmap.h"
 
 #include <cfloat>
 #include <cstdint>
@@ -193,8 +194,9 @@ void DynamicShadowManagerClass::Update_Shadow(void)
 	bool found_light = false;
 	Vector3 sunlight;
 	scene->Get_Sun_Light_Vector(&sunlight);
+	const bool use_shadowmaps_for_sunlight = ShadowMapManager::Is_Enabled() && !use_blob;
 	
-	if (Parent.Is_In_The_Sun()) {
+	if (Parent.Is_In_The_Sun() && !use_shadowmaps_for_sunlight) {
 
 		/*
 		** We can see the sunlight so set our projector up for it.
@@ -217,9 +219,9 @@ void DynamicShadowManagerClass::Update_Shadow(void)
 
 	} else {
 		/*
-		** We couldn't use the sunlight so now we look for the nearest
-		** local light source which casts shadows.  If we find one, initialize
-		** our shadow projector with it.
+		** Either sunlight is unavailable or cascaded shadow maps are already
+		** handling it, so look for the nearest local light source which casts
+		** shadows.  If we find one, initialize our shadow projector with it.
 		*/
 		LightClass * best_light = Find_Dominant_Local_Shadow_Light(*scene,position);
 		if (best_light != NULL) {

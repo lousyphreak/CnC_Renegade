@@ -86,6 +86,40 @@ static DynamicVectorClass<DX8FVFCategoryContainer *> &Get_FVF_Category_Container
 	return *delete_list;
 }
 
+static bool Shader_Composites_Into_Shadowed_Surface(const ShaderClass & shader)
+{
+	switch (shader.Get_Dst_Blend_Func()) {
+		case ShaderClass::DSTBLEND_ZERO:
+		case ShaderClass::DSTBLEND_SRC_ALPHA:
+		case ShaderClass::DSTBLEND_ONE_MINUS_SRC_ALPHA:
+			return true;
+		default:
+			return false;
+	}
+}
+
+static bool Mesh_Pass_Should_Receive_Shadows(
+	MeshClass & mesh,
+	unsigned pass,
+	const ShaderClass & shader,
+	bool shadows_suppressed)
+{
+	if (shadows_suppressed) {
+		return false;
+	}
+
+	const MeshModelClass * model = mesh.Peek_Model();
+	const bool prelit_multi_pass =
+		model->Get_Flag(MeshGeometryClass::PRELIT_MASK) ==
+		MeshGeometryClass::PRELIT_LIGHTMAP_MULTI_PASS;
+
+	if (prelit_multi_pass) {
+		return pass == static_cast<unsigned>(model->Get_Pass_Count() - 1);
+	}
+
+	return Shader_Composites_Into_Shadowed_Surface(shader);
+}
+
 
 // helper data structure
 class PolyRemover : public MultiListObjectClass
@@ -1804,34 +1838,28 @@ void DX8TextureCategoryClass::Render(VertexBufferClass *vertex_buffer, IndexBuff
 			/*
 			** Render mesh using either sorting or immediate pipeline
 			*/
+			const PhysClass * shadow_owner = static_cast<const PhysClass *>(mesh->Get_User_Data());
+			const bool shadows_suppressed =
+				shadow_owner != NULL &&
+				shadow_owner->Do_Any_Effects_Suppress_Shadows();
+			const bool owner_casts_shadows =
+				shadow_owner == NULL ||
+				shadow_owner->Is_Shadow_Generation_Enabled();
+			const bool receive_shadows =
+				Mesh_Pass_Should_Receive_Shadows(*mesh,pass,Get_Shader(),shadows_suppressed);
+			const bool cast_shadows =
+				pass == 0 &&
+				owner_casts_shadows &&
+				!shadows_suppressed;
 			if ((!!mesh->Peek_Model()->Get_Flag(MeshGeometryClass::SORT)) && WW3D::Is_Sorting_Enabled()) {
-				renderer->Render_Sorted(mesh->Get_Base_Vertex_Offset(),mesh->Get_Bounding_Sphere());
+				renderer->Render_Sorted(
+					mesh->Get_Base_Vertex_Offset(),
+					mesh->Get_Bounding_Sphere(),
+					receive_shadows,
+					cast_shadows);
 			} else {
 				DX8Wrapper::Apply_Render_State_Changes();
 				Matrix4 world_matrix(*world_transform);
-				const PhysClass * shadow_owner = static_cast<const PhysClass *>(mesh->Get_User_Data());
-				const bool shadows_suppressed =
-					shadow_owner != NULL &&
-					shadow_owner->Do_Any_Effects_Suppress_Shadows();
-				const bool owner_casts_shadows =
-					shadow_owner == NULL ||
-					shadow_owner->Is_Shadow_Generation_Enabled();
-				const bool prelit_multi_pass =
-					mesh->Peek_Model()->Get_Flag(MeshGeometryClass::PRELIT_MASK) ==
-					MeshGeometryClass::PRELIT_LIGHTMAP_MULTI_PASS;
-				const bool receive_shadow_pass =
-					prelit_multi_pass ?
-						(pass == mesh->Peek_Model()->Get_Pass_Count() - 1) :
-						(pass == 0);
-				const bool receive_shadows =
-					receive_shadow_pass &&
-					(prelit_multi_pass ||
-						Get_Shader().Get_Dst_Blend_Func() == ShaderClass::DSTBLEND_ZERO) &&
-					!shadows_suppressed;
-				const bool cast_shadows =
-					pass == 0 &&
-					owner_casts_shadows &&
-					!shadows_suppressed;
 				WWASSERT(active_vertex_buffer != NULL);
 				WWASSERT(active_index_buffer != NULL);
 				if (active_vertex_buffer != NULL && active_index_buffer != NULL) {

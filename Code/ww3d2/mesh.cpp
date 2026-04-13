@@ -968,6 +968,7 @@ void MeshClass::Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass *
 	Build_Material_Pass_Texture_Array(pass, pass_textures);
 	Matrix4 projection_transform(true);
 	DX8Wrapper::Get_Transform(D3DTS_PROJECTION, projection_transform);
+	const bool receive_shadows = pass->Peek_Shader().Get_Dst_Blend_Func() == ShaderClass::DSTBLEND_ZERO;
 
 	if (Model->Get_Flag(MeshModelClass::SKIN)) {
 
@@ -999,7 +1000,7 @@ void MeshClass::Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass *
 					pass_textures,
 					pass->Peek_Material(),
 					pass->Peek_Shader(),
-					false,
+					receive_shadows,
 					false,
 					active_state.world,
 					active_state.view,
@@ -1100,7 +1101,7 @@ void MeshClass::Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass *
 					pass_textures,
 					pass->Peek_Material(),
 					pass->Peek_Shader(),
-					false,
+					receive_shadows,
 					false,
 					active_state.world,
 					active_state.view,
@@ -1138,7 +1139,7 @@ void MeshClass::Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass *
 					pass_textures,
 					pass->Peek_Material(),
 					pass->Peek_Shader(),
-					false,
+					receive_shadows,
 					false,
 					active_state.world,
 					active_state.view,
@@ -1793,7 +1794,5 @@ void MeshClass::Load_User_Lighting (ChunkLoadClass & cload)
 
 	Set_Has_User_Lighting(true);
 }
-
-
 
 

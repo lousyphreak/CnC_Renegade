@@ -191,6 +191,9 @@ struct SortingNodeStruct : DLNodeClass<SortingNodeStruct>
 	unsigned short polygon_count;			// Polygon count to process (3 indices = one polygon)
 	unsigned short min_vertex_index;		// First index used in the vb
 	unsigned short vertex_count;			// Number of vertices used in vb
+	bool use_explicit_shadow_flags;
+	bool receive_shadows;
+	bool cast_shadows;
 };
 
 static DLListClass<SortingNodeStruct> sorted_list;
@@ -295,15 +298,32 @@ static ShortVectorIStruct* Get_Polygon_Index_Array(unsigned count)
 //
 // ----------------------------------------------------------------------------
 
-void SortingRendererClass::Insert_Triangles(
+void SortingRendererClass::Insert_Triangles_Internal(
 	const SphereClass& bounding_sphere,
 	unsigned short start_index, 
 	unsigned short polygon_count,
 	unsigned short min_vertex_index,
-	unsigned short vertex_count)
+	unsigned short vertex_count,
+	bool use_explicit_shadow_flags,
+	bool receive_shadows,
+	bool cast_shadows)
 {
 	if (!WW3D::Is_Sorting_Enabled()) {
-		BgfxRenderer::Submit_Current_Fixed_Function_Triangles(start_index,polygon_count,min_vertex_index,vertex_count);
+		if (use_explicit_shadow_flags) {
+			BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
+				start_index,
+				polygon_count,
+				min_vertex_index,
+				vertex_count,
+				receive_shadows,
+				cast_shadows);
+		} else {
+			BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
+				start_index,
+				polygon_count,
+				min_vertex_index,
+				vertex_count);
+		}
 		return;
 	}
 
@@ -322,6 +342,9 @@ void SortingRendererClass::Insert_Triangles(
 	state->polygon_count=polygon_count;
 	state->min_vertex_index=min_vertex_index;
 	state->vertex_count=vertex_count;
+	state->use_explicit_shadow_flags=use_explicit_shadow_flags;
+	state->receive_shadows=receive_shadows;
+	state->cast_shadows=cast_shadows;
 
 	SortingVertexBufferClass* vertex_buffer=static_cast<SortingVertexBufferClass*>(state->sorting_state.vertex_buffer);
 	WWASSERT(vertex_buffer);
@@ -367,6 +390,44 @@ void SortingRendererClass::Insert_Triangles(
 #endif
 }
 
+void SortingRendererClass::Insert_Triangles(
+	const SphereClass& bounding_sphere,
+	unsigned short start_index, 
+	unsigned short polygon_count,
+	unsigned short min_vertex_index,
+	unsigned short vertex_count)
+{
+	Insert_Triangles_Internal(
+		bounding_sphere,
+		start_index,
+		polygon_count,
+		min_vertex_index,
+		vertex_count,
+		false,
+		false,
+		false);
+}
+
+void SortingRendererClass::Insert_Triangles(
+	const SphereClass& bounding_sphere,
+	unsigned short start_index, 
+	unsigned short polygon_count,
+	unsigned short min_vertex_index,
+	unsigned short vertex_count,
+	bool receive_shadows,
+	bool cast_shadows)
+{
+	Insert_Triangles_Internal(
+		bounding_sphere,
+		start_index,
+		polygon_count,
+		min_vertex_index,
+		vertex_count,
+		true,
+		receive_shadows,
+		cast_shadows);
+}
+
 // ----------------------------------------------------------------------------
 //
 // Insert triangles to the sorting system, with no bounding information.
@@ -381,6 +442,25 @@ void SortingRendererClass::Insert_Triangles(
 {
 	SphereClass sphere(Vector3(0.0f,0.0f,0.0f),0.0f);
 	Insert_Triangles(sphere,start_index,polygon_count,min_vertex_index,vertex_count);
+}
+
+void SortingRendererClass::Insert_Triangles(
+	unsigned short start_index, 
+	unsigned short polygon_count,
+	unsigned short min_vertex_index,
+	unsigned short vertex_count,
+	bool receive_shadows,
+	bool cast_shadows)
+{
+	SphereClass sphere(Vector3(0.0f,0.0f,0.0f),0.0f);
+	Insert_Triangles(
+		sphere,
+		start_index,
+		polygon_count,
+		min_vertex_index,
+		vertex_count,
+		receive_shadows,
+		cast_shadows);
 }
 
 // ----------------------------------------------------------------------------
@@ -596,11 +676,21 @@ void SortingRendererClass::Flush_Sorting_Pool()
 			SortingNodeStruct* state=overlapping_nodes[node_id];
 			Apply_Render_State(state->sorting_state);
 
-			BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
-				start_index*3,
-				count_to_render,
-				state->min_vertex_index,
-				state->vertex_count);
+			if (state->use_explicit_shadow_flags) {
+				BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
+					start_index*3,
+					count_to_render,
+					state->min_vertex_index,
+					state->vertex_count,
+					state->receive_shadows,
+					state->cast_shadows);
+			} else {
+				BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
+					start_index*3,
+					count_to_render,
+					state->min_vertex_index,
+					state->vertex_count);
+			}
 
 			count_to_render=0;
 			start_index=i;
@@ -614,11 +704,21 @@ void SortingRendererClass::Flush_Sorting_Pool()
 		SortingNodeStruct* state=overlapping_nodes[node_id];
 		Apply_Render_State(state->sorting_state);
 
-		BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
-			start_index*3,
-			count_to_render,
-			state->min_vertex_index,
-			state->vertex_count);
+		if (state->use_explicit_shadow_flags) {
+			BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
+				start_index*3,
+				count_to_render,
+				state->min_vertex_index,
+				state->vertex_count,
+				state->receive_shadows,
+				state->cast_shadows);
+		} else {
+			BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
+				start_index*3,
+				count_to_render,
+				state->min_vertex_index,
+				state->vertex_count);
+		}
 	}
 
 	// Release all references and return nodes back to the clean list for the frame...
@@ -655,7 +755,21 @@ void SortingRendererClass::Flush()
 		}
 		else {
 			DX8Wrapper::Set_Render_State(state->sorting_state);
-			BgfxRenderer::Submit_Current_Fixed_Function_Triangles(state->start_index,state->polygon_count,state->min_vertex_index,state->vertex_count);
+			if (state->use_explicit_shadow_flags) {
+				BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
+					state->start_index,
+					state->polygon_count,
+					state->min_vertex_index,
+					state->vertex_count,
+					state->receive_shadows,
+					state->cast_shadows);
+			} else {
+				BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
+					state->start_index,
+					state->polygon_count,
+					state->min_vertex_index,
+					state->vertex_count);
+			}
 			DX8Wrapper::Release_Render_State();
 			Release_Refs(state);
 			clean_list.Add_Head(state);

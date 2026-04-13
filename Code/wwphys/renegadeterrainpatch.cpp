@@ -498,11 +498,15 @@ RenegadeTerrainPatchClass::Render_Procedural_Material_Pass(MaterialPassClass * m
 			int vert_count = vert_list.Count ();
 			int poly_count	= quad_count * 2;
 
-			//
-			//	Draw the mesh!
-			//
-			WW3D::Submit_Current_Triangles(0, poly_count, 0, vert_count);
-		}
+		//
+		//	Draw the mesh!
+		//
+		WW3D::Submit_Current_Triangles(
+			0,
+			poly_count,
+			0,
+			vert_count);
+	}
 //	}
 }
 

@@ -85,7 +85,7 @@ public:
 	~DX8PolygonRendererClass();
 
 	void								Render(/*const Matrix3D & tm,*/int base_vertex_offset);
-	void								Render_Sorted(/*const Matrix3D & tm,*/int base_vertex_offset,const SphereClass & bounding_sphere);
+	void								Render_Sorted(/*const Matrix3D & tm,*/int base_vertex_offset,const SphereClass & bounding_sphere,bool receive_shadows,bool cast_shadows);
 	void								Set_Vertex_Index_Range(unsigned min_vertex_index_,unsigned vertex_index_range_);
 	
 	unsigned							Get_Vertex_Offset(void)	{ return vertex_offset; }
@@ -144,7 +144,7 @@ inline void DX8PolygonRendererClass::Render(/*const Matrix3D & tm,*/int base_ver
 	}
 }
 
-inline void DX8PolygonRendererClass::Render_Sorted(/*const Matrix3D & tm,*/int base_vertex_offset,const SphereClass & bounding_sphere)
+inline void DX8PolygonRendererClass::Render_Sorted(/*const Matrix3D & tm,*/int base_vertex_offset,const SphereClass & bounding_sphere,bool receive_shadows,bool cast_shadows)
 {
 	WWASSERT(!strip);	// Strips can't be sorted for now
 //	DX8Wrapper::Set_Transform(D3DTS_WORLD,tm);
@@ -158,7 +158,9 @@ inline void DX8PolygonRendererClass::Render_Sorted(/*const Matrix3D & tm,*/int b
 		index_offset,
 		index_count/3,
 		min_vertex_index,
-		vertex_index_range);
+		vertex_index_range,
+		receive_shadows,
+		cast_shadows);
 
 }
 

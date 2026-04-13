@@ -177,28 +177,8 @@ bool Submit_Fixed_Function_Draw(
 	const Matrix4 & view,
 	const Matrix4 & projection)
 {
-	if (strip) {
-		return BgfxRenderer::Submit_Cached_Fixed_Function_Strip(
-			vertex_buffer,
-			vertex_buffer_offset,
-			index_buffer,
-			index_buffer_offset,
-			index_base_offset,
-			start_index,
-			polygon_count,
-			min_vertex_index,
-			vertex_count,
-			textures,
-			material,
-			shader,
-			receive_shadows,
-			cast_shadows,
-			world,
-			view,
-			projection);
-	}
-
-	return BgfxRenderer::Submit_Cached_Fixed_Function_Triangles(
+	MaterialClassification classification = BgfxRenderer::Classify_Material(shader, material);
+	return BgfxRenderer::Submit_Classified_Draw(
 		vertex_buffer,
 		vertex_buffer_offset,
 		index_buffer,
@@ -210,12 +190,13 @@ bool Submit_Fixed_Function_Draw(
 		vertex_count,
 		textures,
 		material,
-		shader,
+		classification,
 		receive_shadows,
 		cast_shadows,
 		world,
 		view,
-		projection);
+		projection,
+		strip);
 }
 
 bool Submit_Polygon_Renderer_Fixed_Function(

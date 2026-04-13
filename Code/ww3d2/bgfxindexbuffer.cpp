@@ -202,13 +202,20 @@ bool RenderIndexBufferClass::Ensure_Bgfx_Buffer() const
 	return Sync_Bgfx_Buffer();
 }
 
-bgfx::DynamicIndexBufferHandle RenderIndexBufferClass::Get_Bgfx_Index_Buffer() const
+bgfx::IndexBufferHandle RenderIndexBufferClass::Get_Bgfx_Index_Buffer() const
 {
 	return BgfxIndexBuffer;
 }
 
 void RenderIndexBufferClass::Mark_Bgfx_Buffer_Dirty()
 {
+	// Destroy the old immutable buffer so the next Sync recreates it
+	if (bgfx::isValid(BgfxIndexBuffer)) {
+		if (BgfxRenderer::Is_Initted()) {
+			bgfx::destroy(BgfxIndexBuffer);
+		}
+		BgfxIndexBuffer = BGFX_INVALID_HANDLE;
+	}
 	BgfxIndexBufferDirty = true;
 }
 
@@ -218,24 +225,22 @@ bool RenderIndexBufferClass::Sync_Bgfx_Buffer() const
 		return false;
 	}
 
-	if (!bgfx::isValid(BgfxIndexBuffer)) {
-		BgfxIndexBuffer = bgfx::createDynamicIndexBuffer(index_count);
-		if (!bgfx::isValid(BgfxIndexBuffer)) {
-			return false;
-		}
-		BgfxIndexBufferDirty = true;
+	if (bgfx::isValid(BgfxIndexBuffer) && !BgfxIndexBufferDirty) {
+		return true;
 	}
 
-	if (!BgfxIndexBufferDirty) {
-		return true;
+	// Destroy any existing buffer (immutable buffers can't be updated)
+	if (bgfx::isValid(BgfxIndexBuffer)) {
+		bgfx::destroy(BgfxIndexBuffer);
+		BgfxIndexBuffer = BGFX_INVALID_HANDLE;
 	}
 
 	const bgfx::Memory *index_memory = bgfx::copy(
 		IndexData.data(),
 		static_cast<uint32_t>(IndexData.size() * sizeof(unsigned short)));
-	bgfx::update(BgfxIndexBuffer, 0, index_memory);
+	BgfxIndexBuffer = bgfx::createIndexBuffer(index_memory);
 	BgfxIndexBufferDirty = false;
-	return true;
+	return bgfx::isValid(BgfxIndexBuffer);
 }
 #endif
 

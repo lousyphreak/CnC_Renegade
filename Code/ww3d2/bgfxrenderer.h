@@ -43,6 +43,15 @@ enum class MeshShaderProgram : std::uint8_t
     Count,
 };
 
+// Pre-computed material properties for direct draw submission.
+// The fixed-function program variant is still resolved from live DX8 state at
+// submit time so mapper/debug overrides keep D3D8-era behavior.
+struct MaterialClassification {
+    MeshShaderProgram program;
+    float frag_config[4];   // stage0ColorOp, stage1ColorOp, alphaTestRef, stage0AlphaOp
+    float frag_config2[4];  // stage1AlphaOp, fogMode, 0, 0
+};
+
 class BgfxRenderer
 {
 public:
@@ -72,28 +81,13 @@ public:
     static bgfx::UniformHandle Get_Texture0_Uniform();
     static bgfx::UniformHandle Get_Texture1_Uniform();
     static bgfx::ProgramHandle Get_Overlay_Program();
-    static bgfx::ProgramHandle Get_Mesh_Program();
     static bgfx::ProgramHandle Get_Mesh_Program(MeshShaderProgram program);
+    static bgfx::UniformHandle Get_Fog_Config_Uniform();
+    static bgfx::UniformHandle Get_Fog_Color_Uniform();
+    static bgfx::UniformHandle Get_Frag_Config_Uniform();
+    static bgfx::UniformHandle Get_Frag_Config2_Uniform();
     static bool Supports_Texture_Format(WW3DFormat format);
     static bool Supports_Render_Target_Format(WW3DFormat format);
-    static bool Submit_Cached_Fixed_Function_Triangles(
-        const VertexBufferClass &vertex_buffer,
-        unsigned vertex_buffer_offset,
-        const IndexBufferClass &index_buffer,
-        unsigned index_buffer_offset,
-        unsigned index_base_offset,
-        unsigned short start_index,
-        unsigned short polygon_count,
-        unsigned short min_vertex_index,
-        unsigned short vertex_count,
-        TextureClass *const *textures,
-        const VertexMaterialClass *material,
-        const ShaderClass &shader,
-        bool receive_shadows,
-        bool cast_shadows,
-        const Matrix4 &world,
-        const Matrix4 &view,
-        const Matrix4 &projection);
     static bool Submit_Current_Fixed_Function_Triangles(
         unsigned short start_index,
         unsigned short polygon_count,
@@ -106,24 +100,6 @@ public:
         unsigned short vertex_count,
         bool receive_shadows,
         bool cast_shadows);
-    static bool Submit_Cached_Fixed_Function_Strip(
-        const VertexBufferClass &vertex_buffer,
-        unsigned vertex_buffer_offset,
-        const IndexBufferClass &index_buffer,
-        unsigned index_buffer_offset,
-        unsigned index_base_offset,
-        unsigned short start_index,
-        unsigned short polygon_count,
-        unsigned short min_vertex_index,
-        unsigned short vertex_count,
-        TextureClass *const *textures,
-        const VertexMaterialClass *material,
-        const ShaderClass &shader,
-        bool receive_shadows,
-        bool cast_shadows,
-        const Matrix4 &world,
-        const Matrix4 &view,
-        const Matrix4 &projection);
     static bool Submit_Current_Fixed_Function_Strip(
         unsigned short start_index,
         unsigned short polygon_count,
@@ -144,15 +120,27 @@ public:
     static void Apply_Render_State(const ShaderClass &shader, unsigned cull_mode = D3DCULL_CW, uint64_t extra_state = 0u);
     static void Apply_Overlay_Config(bool has_texture);
 
-    // Program selection and per-program uniform upload.
-    static MeshShaderProgram Select_Mesh_Program(
-        const ShaderClass &shader,
-        const VertexBufferClass &vertex_buffer);
-    static void Apply_Mesh_Shader_Inputs(
-        MeshShaderProgram program,
-        const ShaderClass &shader,
+    // Material classification and direct draw submission
+    static MaterialClassification Classify_Material(const ShaderClass &shader, const VertexMaterialClass *material);
+    static bool Submit_Classified_Draw(
         const VertexBufferClass &vertex_buffer,
-        const VertexMaterialClass *material);
+        unsigned vertex_buffer_offset,
+        const IndexBufferClass &index_buffer,
+        unsigned index_buffer_offset,
+        unsigned index_base_offset,
+        unsigned short start_index,
+        unsigned short polygon_count,
+        unsigned short min_vertex_index,
+        unsigned short vertex_count,
+        TextureClass *const *textures,
+        const VertexMaterialClass *material,
+        const MaterialClassification &classification,
+        bool receive_shadows,
+        bool cast_shadows,
+        const Matrix4 &world,
+        const Matrix4 &view,
+        const Matrix4 &projection,
+        bool strip);
 
     static std::uint32_t Convert_Packed_Color(std::uint32_t argb_color);
     static void Request_Screen_Shot(const char *file_path);
@@ -166,6 +154,12 @@ public:
     static uint32_t Get_Width() { return Width; }
     static uint32_t Get_Height() { return Height; }
 
+    // Per-program uniform apply helpers (public for classified draw path)
+    static void Apply_Lit_Uniforms(
+        const VertexBufferClass &vertex_buffer,
+        const VertexMaterialClass *material);
+    static void Apply_Texgen_Uniforms();
+
 private:
     static bool Init_Render_Resources();
     static void Shutdown_Render_Resources();
@@ -174,14 +168,6 @@ private:
     static void Apply_Clear(bool clear_color, bool clear_depth, float red, float green, float blue);
     static void Apply_Reset_State();
     static bgfx::ShaderHandle Load_Shader(const char *shader_name);
-
-    // Per-program uniform apply helpers
-    static void Apply_Fog_Uniforms(const ShaderClass &shader);
-    static void Apply_Frag_Uniforms(const ShaderClass &shader);
-    static void Apply_Lit_Uniforms(
-        const VertexBufferClass &vertex_buffer,
-        const VertexMaterialClass *material);
-    static void Apply_Texgen_Uniforms();
 
     static bool IsInitted;
     static uint32_t Width;
@@ -224,7 +210,6 @@ private:
 
     // Shader programs
     static bgfx::ProgramHandle OverlayProgram;
-    static bgfx::ProgramHandle MeshProgram;
     static bgfx::ProgramHandle MeshUnlitProgram;
     static bgfx::ProgramHandle MeshLitProgram;
     static bgfx::ProgramHandle MeshUnlitTexgenProgram;

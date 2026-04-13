@@ -20,6 +20,7 @@
 #include <bgfx/platform.h>
 
 #include "dx8wrapper.h"
+#include "indexbuffer.h"
 #include "pot.h"
 #include "rawfile.h"
 #include "shadowmap.h"
@@ -61,7 +62,6 @@ bgfx::UniformHandle BgfxRenderer::MeshTexTransformFlagsUniform = BGFX_INVALID_HA
 bgfx::UniformHandle BgfxRenderer::MeshTexTransform0Uniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::MeshTexTransform1Uniform = BGFX_INVALID_HANDLE;
 bgfx::ProgramHandle BgfxRenderer::OverlayProgram = BGFX_INVALID_HANDLE;
-bgfx::ProgramHandle BgfxRenderer::MeshProgram = BGFX_INVALID_HANDLE;
 bgfx::ProgramHandle BgfxRenderer::MeshUnlitProgram = BGFX_INVALID_HANDLE;
 bgfx::ProgramHandle BgfxRenderer::MeshLitProgram = BGFX_INVALID_HANDLE;
 bgfx::ProgramHandle BgfxRenderer::MeshUnlitTexgenProgram = BGFX_INVALID_HANDLE;
@@ -1768,11 +1768,6 @@ bgfx::ProgramHandle BgfxRenderer::Get_Overlay_Program()
     return OverlayProgram;
 }
 
-bgfx::ProgramHandle BgfxRenderer::Get_Mesh_Program()
-{
-    return MeshProgram;
-}
-
 bgfx::ProgramHandle BgfxRenderer::Get_Mesh_Program(MeshShaderProgram program)
 {
     switch (program) {
@@ -1780,9 +1775,14 @@ bgfx::ProgramHandle BgfxRenderer::Get_Mesh_Program(MeshShaderProgram program)
     case MeshShaderProgram::Lit:          return MeshLitProgram;
     case MeshShaderProgram::UnlitTexgen:  return MeshUnlitTexgenProgram;
     case MeshShaderProgram::LitTexgen:    return MeshLitTexgenProgram;
-    default:                             return MeshProgram;
+    default:                             return MeshUnlitProgram;
     }
 }
+
+bgfx::UniformHandle BgfxRenderer::Get_Fog_Config_Uniform() { return MeshFogConfigUniform; }
+bgfx::UniformHandle BgfxRenderer::Get_Fog_Color_Uniform() { return MeshFogColorUniform; }
+bgfx::UniformHandle BgfxRenderer::Get_Frag_Config_Uniform() { return MeshFragConfigUniform; }
+bgfx::UniformHandle BgfxRenderer::Get_Frag_Config2_Uniform() { return MeshFragConfig2Uniform; }
 
 const bgfx::VertexLayout &BgfxRenderer::Get_Overlay_Layout()
 {
@@ -2138,99 +2138,77 @@ bool Has_Active_Texgen()
         || ttf0 != D3DTTFF_DISABLE
         || ttf1 != D3DTTFF_DISABLE;
 }
-}
 
-MeshShaderProgram BgfxRenderer::Select_Mesh_Program(
-    const ShaderClass &shader,
-    const VertexBufferClass &vertex_buffer)
+MeshShaderProgram Resolve_Current_Mesh_Program(const VertexMaterialClass *material)
 {
-    const bool lighting_enabled = DX8Wrapper::Get_DX8_Render_State(D3DRS_LIGHTING) != 0u;
+    const unsigned lighting_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_LIGHTING);
+    const bool lighting_enabled = lighting_state != kUnsetRenderState
+        ? lighting_state != FALSE
+        : (material != nullptr && material->Get_Lighting());
     const bool needs_texgen = Has_Active_Texgen();
-    const bool lit = lighting_enabled;
 
-    if (lit && needs_texgen)  return MeshShaderProgram::LitTexgen;
-    if (lit)                  return MeshShaderProgram::Lit;
-    if (needs_texgen)         return MeshShaderProgram::UnlitTexgen;
+    if (lighting_enabled && needs_texgen) return MeshShaderProgram::LitTexgen;
+    if (lighting_enabled) return MeshShaderProgram::Lit;
+    if (needs_texgen) return MeshShaderProgram::UnlitTexgen;
     return MeshShaderProgram::Unlit;
 }
 
-void BgfxRenderer::Apply_Fog_Uniforms(const ShaderClass &shader)
-{
-    bool fog_enabled = DX8Wrapper::Get_Fog_Enable();
-    bool range_fog = false;
-    if (fog_enabled) {
-        unsigned fog_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGTABLEMODE);
-        if (fog_state == D3DFOG_NONE) fog_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGVERTEXMODE);
-        if (fog_state == D3DFOG_NONE || fog_state > D3DFOG_LINEAR) fog_enabled = false;
-        range_fog = fog_enabled && DX8Wrapper::Get_DX8_Render_State(D3DRS_RANGEFOGENABLE) != FALSE;
-    }
-
-    float fog_config[4] = {
-        fog_enabled ? 1.0f : 0.0f,
-        Decode_Dword_Float(DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGSTART)),
-        Decode_Dword_Float(DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGEND)),
-        range_fog ? 1.0f : -1.0f};
-    bgfx::setUniform(MeshFogConfigUniform, fog_config);
-
-    // Fragment fog mode and color
-    float frag_fog_mode = 0.0f;
-    if (fog_enabled) {
-        switch (shader.Get_Fog_Func()) {
-        case ShaderClass::FOG_ENABLE:         frag_fog_mode = 1.0f; break;
-        case ShaderClass::FOG_SCALE_FRAGMENT: frag_fog_mode = 2.0f; break;
-        case ShaderClass::FOG_WHITE:          frag_fog_mode = 3.0f; break;
-        default: break;
-        }
-    }
-
-    uint32_t fog_color_packed = DX8Wrapper::Get_Fog_Color();
-    float fog_color[4] = {
-        static_cast<float>((fog_color_packed >> 16) & 0xffu) / 255.0f,
-        static_cast<float>((fog_color_packed >> 8) & 0xffu) / 255.0f,
-        static_cast<float>(fog_color_packed & 0xffu) / 255.0f,
-        frag_fog_mode};
-    bgfx::setUniform(MeshFogColorUniform, fog_color);
 }
 
-void BgfxRenderer::Apply_Frag_Uniforms(const ShaderClass &shader)
+MaterialClassification BgfxRenderer::Classify_Material(const ShaderClass &shader, const VertexMaterialClass *material)
 {
-    float alpha_test_ref = -1.0f;
-    if (shader.Get_Alpha_Test() == ShaderClass::ALPHATEST_ENABLE) {
-        const unsigned alpha_ref_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_ALPHAREF);
-        alpha_test_ref = (alpha_ref_state != kUnsetRenderState && alpha_ref_state != 0u)
-            ? static_cast<float>(alpha_ref_state & 0xffu) / 255.0f
-            : 0x60 / 255.0f;
-    }
+    MaterialClassification c{};
 
-    // Retrieve fragment fog mode from fog color uniform w component
-    // (already set by Apply_Fog_Uniforms, but we need it here too)
-    bool fog_enabled = DX8Wrapper::Get_Fog_Enable();
-    float frag_fog_mode = 0.0f;
-    if (fog_enabled) {
-        unsigned fog_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGTABLEMODE);
-        if (fog_state == D3DFOG_NONE) fog_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGVERTEXMODE);
-        if (fog_state == D3DFOG_NONE || fog_state > D3DFOG_LINEAR) fog_enabled = false;
-        if (fog_enabled) {
-            switch (shader.Get_Fog_Func()) {
-            case ShaderClass::FOG_ENABLE:         frag_fog_mode = 1.0f; break;
-            case ShaderClass::FOG_SCALE_FRAGMENT: frag_fog_mode = 2.0f; break;
-            case ShaderClass::FOG_WHITE:          frag_fog_mode = 3.0f; break;
-            default: break;
+    // Keep a material-derived default for bookkeeping/debugging.
+    // The actual program variant is resolved from live DX8 state at submit time.
+    bool uses_lighting = material != nullptr && material->Get_Lighting();
+    bool needs_texgen = false;
+    if (material != nullptr) {
+        VertexMaterialClass *mutable_material = const_cast<VertexMaterialClass *>(material);
+        for (int i = 0; i < 2; ++i) {
+            if (mutable_material->Peek_Mapper(i) != nullptr) {
+                needs_texgen = true;
+                break;
             }
         }
     }
 
-    float frag_config[4] = {
-        static_cast<float>(Map_Stage0_Color_Op(shader)),
-        static_cast<float>(Map_Stage1_Color_Op(shader)),
-        alpha_test_ref,
-        static_cast<float>(Map_Stage0_Alpha_Op(shader))};
-    float frag_config2[4] = {
-        static_cast<float>(Map_Stage1_Alpha_Op(shader)),
-        frag_fog_mode,
-        0.0f, 0.0f};
-    bgfx::setUniform(MeshFragConfigUniform, frag_config);
-    bgfx::setUniform(MeshFragConfig2Uniform, frag_config2);
+    if (uses_lighting && needs_texgen) c.program = MeshShaderProgram::LitTexgen;
+    else if (uses_lighting) c.program = MeshShaderProgram::Lit;
+    else if (needs_texgen) c.program = MeshShaderProgram::UnlitTexgen;
+    else c.program = MeshShaderProgram::Unlit;
+
+    // Pre-compute frag config (stage ops from shader)
+    c.frag_config[0] = static_cast<float>(Map_Stage0_Color_Op(shader));
+    c.frag_config[1] = static_cast<float>(Map_Stage1_Color_Op(shader));
+
+    // Alpha test ref
+    float alpha_test_ref = -1.0f;
+    if (shader.Get_Alpha_Test() == ShaderClass::ALPHATEST_ENABLE) {
+        unsigned char alphareference = 0x60;
+        if (shader.Get_Src_Blend_Func() == ShaderClass::SRCBLEND_ONE_MINUS_SRC_ALPHA) {
+            alphareference = 0xff - 0x60;
+        }
+        alpha_test_ref = static_cast<float>(alphareference) / 255.0f;
+    }
+    c.frag_config[2] = alpha_test_ref;
+    c.frag_config[3] = static_cast<float>(Map_Stage0_Alpha_Op(shader));
+
+    // Fog mode (from shader — will be overridden to 0 at draw time if fog is globally disabled)
+    float fog_mode = 0.0f;
+    switch (shader.Get_Fog_Func()) {
+    case ShaderClass::FOG_ENABLE:         fog_mode = 1.0f; break;
+    case ShaderClass::FOG_SCALE_FRAGMENT: fog_mode = 2.0f; break;
+    case ShaderClass::FOG_WHITE:          fog_mode = 3.0f; break;
+    default: break;
+    }
+
+    c.frag_config2[0] = static_cast<float>(Map_Stage1_Alpha_Op(shader));
+    c.frag_config2[1] = fog_mode;
+    c.frag_config2[2] = 0.0f;
+    c.frag_config2[3] = 0.0f;
+
+    return c;
 }
 
 void BgfxRenderer::Apply_Lit_Uniforms(
@@ -2348,39 +2326,530 @@ void BgfxRenderer::Apply_Texgen_Uniforms()
     bgfx::setUniform(MeshTexTransform1Uniform, tex_mat1);
 }
 
-void BgfxRenderer::Apply_Mesh_Shader_Inputs(
-    MeshShaderProgram program,
-    const ShaderClass &shader,
-    const VertexBufferClass &vertex_buffer,
-    const VertexMaterialClass *material)
-{
-    // Shared: fog + frag config (all programs need these)
-    Apply_Fog_Uniforms(shader);
-    Apply_Frag_Uniforms(shader);
-
-    // Lit programs: material colors + lights
-    if (program == MeshShaderProgram::Lit || program == MeshShaderProgram::LitTexgen) {
-        Apply_Lit_Uniforms(vertex_buffer, material);
-    }
-
-    // Texgen programs: texgen modes + texture transforms
-    if (program == MeshShaderProgram::UnlitTexgen || program == MeshShaderProgram::LitTexgen) {
-        Apply_Texgen_Uniforms();
-    }
-}
-
 std::uint32_t BgfxRenderer::Convert_Packed_Color(std::uint32_t argb_color)
 {
     return Convert_ARGB_To_ABGR(argb_color);
 }
 
+// ============================================================================
+// Draw submission (merged from bgfxfixedfunction.cpp)
+// ============================================================================
+
+namespace
+{
+bgfx::TextureHandle Resolve_Texture_Handle(TextureClass *texture)
+{
+    if (texture != nullptr) {
+        bgfx::TextureHandle handle = texture->Get_Bgfx_Texture();
+        if (bgfx::isValid(handle)) {
+            return handle;
+        }
+    }
+    return BgfxRenderer::Get_White_Texture();
+}
+
+uint32_t Resolve_Sampler_Flags(TextureClass *texture, unsigned stage)
+{
+    return texture != nullptr ? texture->Get_Bgfx_Sampler_Flags(stage) : 0u;
+}
+
+enum class FillMode { Solid, Wireframe, Points };
+
+FillMode Resolve_Fill_Mode()
+{
+    switch (DX8Wrapper::Get_DX8_Render_State(D3DRS_FILLMODE)) {
+    case D3DFILL_POINT:     return FillMode::Points;
+    case D3DFILL_WIREFRAME: return FillMode::Wireframe;
+    default:                return FillMode::Solid;
+    }
+}
+
+uint64_t Resolve_Primitive_State(FillMode fill_mode)
+{
+    switch (fill_mode) {
+    case FillMode::Wireframe: return BGFX_STATE_PT_LINES;
+    case FillMode::Points:    return BGFX_STATE_PT_POINTS | BGFX_STATE_POINT_SIZE(1);
+    default:                  return 0u;
+    }
+}
+
+uint32_t Resolve_Submitted_Index_Count(FillMode fill_mode, bool strip, unsigned short polygon_count)
+{
+    switch (fill_mode) {
+    case FillMode::Wireframe:
+        return static_cast<uint32_t>(polygon_count) * 6u;
+    case FillMode::Points:
+        return strip ? static_cast<uint32_t>(polygon_count) + 2u : static_cast<uint32_t>(polygon_count) * 3u;
+    default:
+        return static_cast<uint32_t>(polygon_count) * 3u;
+    }
+}
+
+void Write_Wireframe_Triangle(uint16_t *destination, unsigned short a, unsigned short b, unsigned short c, unsigned short min_vertex_index)
+{
+    destination[0] = static_cast<uint16_t>(a - min_vertex_index);
+    destination[1] = static_cast<uint16_t>(b - min_vertex_index);
+    destination[2] = static_cast<uint16_t>(b - min_vertex_index);
+    destination[3] = static_cast<uint16_t>(c - min_vertex_index);
+    destination[4] = static_cast<uint16_t>(c - min_vertex_index);
+    destination[5] = static_cast<uint16_t>(a - min_vertex_index);
+}
+
+// Convert source indices into submission indices, handling wireframe/points/strip
+// expansion and min_vertex_index subtraction.
+void Build_Submission_Indices(
+    uint16_t *dest,
+    const unsigned short *source,
+    unsigned short polygon_count,
+    uint32_t submitted_index_count,
+    unsigned short min_vertex_index,
+    FillMode fill_mode,
+    bool strip)
+{
+    if (fill_mode == FillMode::Wireframe) {
+        for (unsigned short tri = 0; tri < polygon_count; ++tri) {
+            unsigned short a, b, c;
+            if (strip) {
+                const bool odd = (tri & 1u) != 0u;
+                a = source[tri + (odd ? 1 : 0)];
+                b = source[tri + (odd ? 0 : 1)];
+                c = source[tri + 2];
+            } else {
+                a = source[tri * 3 + 0];
+                b = source[tri * 3 + 1];
+                c = source[tri * 3 + 2];
+            }
+            Write_Wireframe_Triangle(dest + tri * 6u, a, b, c, min_vertex_index);
+        }
+    } else if (strip && fill_mode == FillMode::Solid) {
+        for (unsigned short tri = 0; tri < polygon_count; ++tri) {
+            const bool odd = (tri & 1u) != 0u;
+            dest[tri * 3 + 0] = static_cast<uint16_t>(source[tri + (odd ? 1 : 0)] - min_vertex_index);
+            dest[tri * 3 + 1] = static_cast<uint16_t>(source[tri + (odd ? 0 : 1)] - min_vertex_index);
+            dest[tri * 3 + 2] = static_cast<uint16_t>(source[tri + 2] - min_vertex_index);
+        }
+    } else {
+        for (uint32_t i = 0; i < submitted_index_count; ++i) {
+            dest[i] = static_cast<uint16_t>(source[i] - min_vertex_index);
+        }
+    }
+}
+
+void Build_Transient_Vertices(
+    bgfx::TransientVertexBuffer &tvb,
+    const VertexBufferClass &vertex_buffer,
+    unsigned vertex_buffer_offset,
+    unsigned index_base_offset,
+    unsigned short min_vertex_index,
+    unsigned short vertex_count)
+{
+    const unsigned fvf = vertex_buffer.Vertex_Format_Info().Get_Vertex_Format();
+    const unsigned fvf_size = vertex_buffer.Vertex_Format_Info().Get_Vertex_Size();
+    const bool has_diffuse = (fvf & VERTEX_FORMAT_FLAG_DIFFUSE) != 0u;
+    const bool has_specular = (fvf & VERTEX_FORMAT_FLAG_SPECULAR) != 0u;
+
+    VertexBufferClass::AppendLockClass vertex_lock(
+        const_cast<VertexBufferClass *>(&vertex_buffer),
+        vertex_buffer_offset + index_base_offset + min_vertex_index,
+        vertex_count);
+    const unsigned char *source_vertices = reinterpret_cast<const unsigned char *>(vertex_lock.Get_Vertex_Array());
+
+    std::memcpy(tvb.data, source_vertices, static_cast<size_t>(vertex_count) * fvf_size);
+
+    if (has_diffuse) {
+        const unsigned diffuse_offset = vertex_buffer.Vertex_Format_Info().Get_Diffuse_Offset();
+        for (unsigned short v = 0; v < vertex_count; ++v) {
+            uint32_t *color_ptr = reinterpret_cast<uint32_t *>(
+                tvb.data + static_cast<size_t>(v) * fvf_size + diffuse_offset);
+            *color_ptr = BgfxRenderer::Convert_Packed_Color(*color_ptr);
+        }
+    }
+
+    if (has_specular) {
+        const unsigned specular_offset = vertex_buffer.Vertex_Format_Info().Get_Specular_Offset();
+        for (unsigned short v = 0; v < vertex_count; ++v) {
+            uint32_t *color_ptr = reinterpret_cast<uint32_t *>(
+                tvb.data + static_cast<size_t>(v) * fvf_size + specular_offset);
+            *color_ptr = BgfxRenderer::Convert_Packed_Color(*color_ptr);
+        }
+    }
+}
+
+const bgfx::VertexLayout &Get_Vertex_Layout_For_Buffer(const VertexBufferClass &vertex_buffer)
+{
+    if (vertex_buffer.Type() == BUFFER_TYPE_RENDER) {
+        return static_cast<const RenderVertexBufferClass &>(vertex_buffer).Get_Bgfx_Vertex_Layout();
+    }
+    return BgfxRenderer::Get_Fixed_Function_Layout();
+}
+
+float Decode_Dword_As_Float(unsigned value)
+{
+    float decoded = 0.0f;
+    std::memcpy(&decoded, &value, sizeof(decoded));
+    return decoded;
+}
+
+void Apply_Fog_Uniforms()
+{
+    bool fog_enabled = DX8Wrapper::Get_Fog_Enable();
+    bool range_fog = false;
+    if (fog_enabled) {
+        unsigned fog_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGTABLEMODE);
+        if (fog_state == D3DFOG_NONE) fog_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGVERTEXMODE);
+        if (fog_state == D3DFOG_NONE || fog_state > D3DFOG_LINEAR) fog_enabled = false;
+        range_fog = fog_enabled && DX8Wrapper::Get_DX8_Render_State(D3DRS_RANGEFOGENABLE) != FALSE;
+    }
+
+    float fog_config[4] = {
+        fog_enabled ? 1.0f : 0.0f,
+        Decode_Dword_As_Float(DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGSTART)),
+        Decode_Dword_As_Float(DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGEND)),
+        range_fog ? 1.0f : -1.0f};
+    bgfx::setUniform(BgfxRenderer::Get_Fog_Config_Uniform(), fog_config);
+
+    uint32_t fog_color_packed = DX8Wrapper::Get_Fog_Color();
+    float fog_color[4] = {
+        static_cast<float>((fog_color_packed >> 16) & 0xffu) / 255.0f,
+        static_cast<float>((fog_color_packed >> 8) & 0xffu) / 255.0f,
+        static_cast<float>(fog_color_packed & 0xffu) / 255.0f,
+        0.0f};
+    bgfx::setUniform(BgfxRenderer::Get_Fog_Color_Uniform(), fog_color);
+}
+
+bool Submit_Classified_Draw_Internal(
+    const VertexBufferClass &vertex_buffer,
+    unsigned vertex_buffer_offset,
+    const IndexBufferClass &index_buffer,
+    unsigned index_buffer_offset,
+    unsigned index_base_offset,
+    unsigned short start_index,
+    unsigned short polygon_count,
+    unsigned short min_vertex_index,
+    unsigned short vertex_count,
+    TextureClass *const *textures,
+    const VertexMaterialClass *material,
+    const MaterialClassification &classification,
+    bool receive_shadows,
+    bool cast_shadows,
+    const Matrix4 &world,
+    const Matrix4 &view,
+    const Matrix4 &projection,
+    bool strip)
+{
+    if (!BgfxRenderer::Is_Initted() || vertex_count == 0 || polygon_count == 0) {
+        return false;
+    }
+
+    const auto vertex_buffer_type = vertex_buffer.Type();
+    const auto index_buffer_type = index_buffer.Type();
+    const bool supported_vertex_buffer =
+        vertex_buffer_type == BUFFER_TYPE_RENDER ||
+        vertex_buffer_type == BUFFER_TYPE_SORTING ||
+        vertex_buffer_type == BUFFER_TYPE_DYNAMIC_RENDER ||
+        vertex_buffer_type == BUFFER_TYPE_DYNAMIC_SORTING;
+    const bool supported_index_buffer =
+        index_buffer_type == BUFFER_TYPE_RENDER ||
+        index_buffer_type == BUFFER_TYPE_SORTING ||
+        index_buffer_type == BUFFER_TYPE_DYNAMIC_RENDER ||
+        index_buffer_type == BUFFER_TYPE_DYNAMIC_SORTING;
+    if (!supported_vertex_buffer || !supported_index_buffer) {
+        return false;
+    }
+
+    const FillMode fill_mode = Resolve_Fill_Mode();
+    const uint32_t submitted_index_count = Resolve_Submitted_Index_Count(fill_mode, strip, polygon_count);
+    const unsigned short source_index_count = strip
+        ? static_cast<unsigned short>(polygon_count + 2)
+        : static_cast<unsigned short>(polygon_count * 3u);
+
+    const bgfx::VertexLayout &layout = Get_Vertex_Layout_For_Buffer(vertex_buffer);
+
+    bool use_direct_vertex_buffer = false;
+    if (vertex_buffer_type == BUFFER_TYPE_RENDER) {
+        if (!static_cast<const RenderVertexBufferClass &>(vertex_buffer).Ensure_Bgfx_Buffer()) {
+            return false;
+        }
+        use_direct_vertex_buffer = true;
+    }
+
+    bool use_direct_index_buffer = false;
+    if (use_direct_vertex_buffer &&
+        index_buffer_type == BUFFER_TYPE_RENDER &&
+        fill_mode != FillMode::Wireframe &&
+        (!strip || fill_mode == FillMode::Points)) {
+        if (!static_cast<const RenderIndexBufferClass &>(index_buffer).Ensure_Bgfx_Buffer()) {
+            return false;
+        }
+        use_direct_index_buffer = true;
+    }
+
+    if ((!use_direct_vertex_buffer && bgfx::getAvailTransientVertexBuffer(vertex_count, layout) < vertex_count) ||
+        (!use_direct_index_buffer && bgfx::getAvailTransientIndexBuffer(submitted_index_count) < submitted_index_count)) {
+        return false;
+    }
+
+    bgfx::TransientVertexBuffer transient_vertex_buffer;
+    bgfx::TransientIndexBuffer transient_index_buffer;
+    if (!use_direct_vertex_buffer) {
+        bgfx::allocTransientVertexBuffer(&transient_vertex_buffer, vertex_count, layout);
+        Build_Transient_Vertices(
+            transient_vertex_buffer, vertex_buffer,
+            vertex_buffer_offset, index_base_offset,
+            min_vertex_index, vertex_count);
+    }
+
+    if (!use_direct_index_buffer) {
+        bgfx::allocTransientIndexBuffer(&transient_index_buffer, submitted_index_count);
+        uint16_t *dest = reinterpret_cast<uint16_t *>(transient_index_buffer.data);
+
+        const unsigned short *source_indices = nullptr;
+        if (index_buffer_type == BUFFER_TYPE_RENDER) {
+            source_indices =
+                static_cast<const RenderIndexBufferClass &>(index_buffer).Get_Source_Index_Data()
+                + index_buffer_offset + start_index;
+        } else {
+            IndexBufferClass::AppendLockClass index_lock(
+                const_cast<IndexBufferClass *>(&index_buffer),
+                index_buffer_offset + start_index,
+                source_index_count);
+            source_indices = index_lock.Get_Index_Array();
+            Build_Submission_Indices(dest, source_indices, polygon_count,
+                submitted_index_count, min_vertex_index, fill_mode, strip);
+            source_indices = nullptr;
+        }
+
+        if (source_indices != nullptr) {
+            Build_Submission_Indices(dest, source_indices, polygon_count,
+                submitted_index_count, min_vertex_index, fill_mode, strip);
+        }
+    }
+
+    // Bind vertex buffer
+    const Matrix4 world_transform = world.Transpose();
+    bgfx::setTransform(&world_transform[0][0]);
+    if (use_direct_index_buffer) {
+        bgfx::setVertexBuffer(
+            0, static_cast<const RenderVertexBufferClass &>(vertex_buffer).Get_Bgfx_Vertex_Buffer());
+    } else if (use_direct_vertex_buffer) {
+        bgfx::setVertexBuffer(
+            0, static_cast<const RenderVertexBufferClass &>(vertex_buffer).Get_Bgfx_Vertex_Buffer(),
+            vertex_buffer_offset + index_base_offset + min_vertex_index, vertex_count);
+    } else {
+        bgfx::setVertexBuffer(0, &transient_vertex_buffer);
+    }
+
+    // Bind index buffer
+    if (use_direct_index_buffer) {
+        bgfx::setIndexBuffer(
+            static_cast<const RenderIndexBufferClass &>(index_buffer).Get_Bgfx_Index_Buffer(),
+            index_buffer_offset + start_index,
+            fill_mode == FillMode::Points && strip ? source_index_count : submitted_index_count);
+    } else {
+        bgfx::setIndexBuffer(&transient_index_buffer);
+    }
+
+    // Textures
+    TextureClass *stage0_texture = textures != nullptr ? textures[0] : nullptr;
+    TextureClass *stage1_texture = textures != nullptr ? textures[1] : nullptr;
+    bgfx::setTexture(0, BgfxRenderer::Get_Texture0_Uniform(),
+        Resolve_Texture_Handle(stage0_texture), Resolve_Sampler_Flags(stage0_texture, 0));
+    bgfx::setTexture(1, BgfxRenderer::Get_Texture1_Uniform(),
+        Resolve_Texture_Handle(stage1_texture), Resolve_Sampler_Flags(stage1_texture, 1));
+
+    // Material classification uniforms
+    bgfx::setUniform(BgfxRenderer::Get_Frag_Config_Uniform(), classification.frag_config);
+
+    float frag_config2_copy[4];
+    std::memcpy(frag_config2_copy, classification.frag_config2, sizeof(frag_config2_copy));
+    if (!DX8Wrapper::Get_Fog_Enable()) {
+        frag_config2_copy[1] = 0.0f;
+    }
+    bgfx::setUniform(BgfxRenderer::Get_Frag_Config2_Uniform(), frag_config2_copy);
+
+    Apply_Fog_Uniforms();
+
+    const MeshShaderProgram resolved_program = Resolve_Current_Mesh_Program(material);
+
+    if (resolved_program == MeshShaderProgram::Lit || resolved_program == MeshShaderProgram::LitTexgen) {
+        BgfxRenderer::Apply_Lit_Uniforms(vertex_buffer, material);
+    }
+    if (resolved_program == MeshShaderProgram::UnlitTexgen || resolved_program == MeshShaderProgram::LitTexgen) {
+        BgfxRenderer::Apply_Texgen_Uniforms();
+    }
+
+    ShadowMapManager::Bind_Shadow_Uniforms(receive_shadows);
+
+    const unsigned cull_mode = DX8Wrapper::Get_DX8_Render_State(D3DRS_CULLMODE);
+    RenderStateStruct rs;
+    DX8Wrapper::Get_Render_State(rs);
+    uint16_t view_id = BgfxRenderer::Get_View_Id(view, projection);
+
+    BgfxRenderer::Apply_Render_State(
+        rs.shader,
+        cull_mode != 0x12345678u ? cull_mode : D3DCULL_CW,
+        Resolve_Primitive_State(fill_mode));
+    bgfx::submit(view_id, BgfxRenderer::Get_Mesh_Program(resolved_program));
+
+    // Shadow cast pass
+    const bool alpha_test_enabled = classification.frag_config[2] >= 0.0f;
+    const bool blend_blocks_shadow_cast =
+        rs.shader.Get_Dst_Blend_Func() != ShaderClass::DSTBLEND_ZERO && !alpha_test_enabled;
+    if (cast_shadows && !blend_blocks_shadow_cast) {
+        const uint32_t shadow_ib_count = fill_mode == FillMode::Points && strip ? source_index_count : submitted_index_count;
+        ShadowMapManager::Submit_Shadow_Draws(
+            vertex_buffer, vertex_buffer_offset, index_base_offset,
+            min_vertex_index, vertex_count,
+            index_buffer, index_buffer_offset, start_index,
+            shadow_ib_count,
+            use_direct_vertex_buffer, use_direct_index_buffer,
+            &transient_vertex_buffer, &transient_index_buffer,
+            world,
+            Resolve_Texture_Handle(stage0_texture),
+            Resolve_Sampler_Flags(stage0_texture, 0),
+            Resolve_Texture_Handle(stage1_texture),
+            Resolve_Sampler_Flags(stage1_texture, 1),
+            alpha_test_enabled,
+            cull_mode != 0x12345678u ? cull_mode : D3DCULL_CW);
+    }
+
+    return true;
+}
+
+bool Submit_Current_Draw(
+    unsigned short start_index,
+    unsigned short polygon_count,
+    unsigned short min_vertex_index,
+    unsigned short vertex_count,
+    bool strip,
+    bool use_explicit_shadow_flags,
+    bool receive_shadows,
+    bool cast_shadows)
+{
+    if (!BgfxRenderer::Is_Initted() || !DX8Wrapper::_Is_Triangle_Draw_Enabled()) {
+        return false;
+    }
+
+    DX8Wrapper::Apply_Render_State_Changes();
+
+    RenderStateStruct render_state;
+    DX8Wrapper::Get_Render_State(render_state);
+    if (render_state.vertex_buffer == nullptr || render_state.index_buffer == nullptr) {
+        return false;
+    }
+
+    Matrix4 projection;
+    DX8Wrapper::Get_Transform(D3DTS_PROJECTION, projection);
+
+    const bool resolved_receive_shadows =
+        use_explicit_shadow_flags
+            ? receive_shadows
+            : render_state.shader.Get_Dst_Blend_Func() == ShaderClass::DSTBLEND_ZERO;
+    const bool resolved_cast_shadows = use_explicit_shadow_flags ? cast_shadows : false;
+
+    TextureClass *textures[2] = {render_state.Textures[0], render_state.Textures[1]};
+    MaterialClassification classification = BgfxRenderer::Classify_Material(render_state.shader, render_state.material);
+
+    return Submit_Classified_Draw_Internal(
+        *render_state.vertex_buffer,
+        render_state.vba_offset,
+        *render_state.index_buffer,
+        render_state.iba_offset,
+        render_state.index_base_offset,
+        start_index, polygon_count,
+        min_vertex_index, vertex_count,
+        textures,
+        render_state.material,
+        classification,
+        resolved_receive_shadows,
+        resolved_cast_shadows,
+        render_state.world, render_state.view, projection,
+        strip);
+}
+} // anonymous namespace
+
+bool BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
+    unsigned short start_index,
+    unsigned short polygon_count,
+    unsigned short min_vertex_index,
+    unsigned short vertex_count)
+{
+    return Submit_Current_Draw(start_index, polygon_count, min_vertex_index, vertex_count,
+        false, false, false, false);
+}
+
+bool BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
+    unsigned short start_index,
+    unsigned short polygon_count,
+    unsigned short min_vertex_index,
+    unsigned short vertex_count,
+    bool receive_shadows,
+    bool cast_shadows)
+{
+    return Submit_Current_Draw(start_index, polygon_count, min_vertex_index, vertex_count,
+        false, true, receive_shadows, cast_shadows);
+}
+
+bool BgfxRenderer::Submit_Current_Fixed_Function_Strip(
+    unsigned short start_index,
+    unsigned short polygon_count,
+    unsigned short min_vertex_index,
+    unsigned short vertex_count)
+{
+    return Submit_Current_Draw(start_index, polygon_count, min_vertex_index, vertex_count,
+        true, false, false, false);
+}
+
+bool BgfxRenderer::Submit_Current_Fixed_Function_Strip(
+    unsigned short start_index,
+    unsigned short polygon_count,
+    unsigned short min_vertex_index,
+    unsigned short vertex_count,
+    bool receive_shadows,
+    bool cast_shadows)
+{
+    return Submit_Current_Draw(start_index, polygon_count, min_vertex_index, vertex_count,
+        true, true, receive_shadows, cast_shadows);
+}
+
+bool BgfxRenderer::Submit_Classified_Draw(
+    const VertexBufferClass &vertex_buffer,
+    unsigned vertex_buffer_offset,
+    const IndexBufferClass &index_buffer,
+    unsigned index_buffer_offset,
+    unsigned index_base_offset,
+    unsigned short start_index,
+    unsigned short polygon_count,
+    unsigned short min_vertex_index,
+    unsigned short vertex_count,
+    TextureClass *const *textures,
+    const VertexMaterialClass *material,
+    const MaterialClassification &classification,
+    bool receive_shadows,
+    bool cast_shadows,
+    const Matrix4 &world,
+    const Matrix4 &view,
+    const Matrix4 &projection,
+    bool strip)
+{
+    return Submit_Classified_Draw_Internal(
+        vertex_buffer, vertex_buffer_offset,
+        index_buffer, index_buffer_offset, index_base_offset,
+        start_index, polygon_count,
+        min_vertex_index, vertex_count,
+        textures, material, classification,
+        receive_shadows, cast_shadows,
+        world, view, projection, strip);
+}
+
 bool BgfxRenderer::Init_Render_Resources()
 {
+    // This layout matches the dynamic_vertex_format (XYZNDUV2) used by
+    // sorting and dynamic buffers for the transient buffer fallback path.
     FixedFunctionLayout.begin()
         .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
         .add(bgfx::Attrib::Normal, 3, bgfx::AttribType::Float)
         .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
-        .add(bgfx::Attrib::Color1, 4, bgfx::AttribType::Uint8, true)
         .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
         .add(bgfx::Attrib::TexCoord1, 2, bgfx::AttribType::Float)
         .end();
@@ -2451,8 +2920,6 @@ bool BgfxRenderer::Init_Render_Resources()
 
     if (!bgfx::isValid(OverlayProgram))
         OverlayProgram = Load_Program("vs_overlay", "fs_overlay");
-    if (!bgfx::isValid(MeshProgram))
-        MeshProgram = Load_Program("vs_mesh", "fs_mesh");
 
     // New multi-shader programs
     if (!bgfx::isValid(MeshUnlitProgram))
@@ -2469,7 +2936,7 @@ bool BgfxRenderer::Init_Render_Resources()
         ShadowMapManager::Init();
     }
 
-    return bgfx::isValid(OverlayProgram) && bgfx::isValid(MeshProgram)
+    return bgfx::isValid(OverlayProgram)
         && bgfx::isValid(MeshUnlitProgram) && bgfx::isValid(MeshLitProgram)
         && bgfx::isValid(MeshUnlitTexgenProgram) && bgfx::isValid(MeshLitTexgenProgram);
 }
@@ -2483,7 +2950,6 @@ void BgfxRenderer::Shutdown_Render_Resources()
     Destroy_Program(MeshUnlitTexgenProgram);
     Destroy_Program(MeshLitProgram);
     Destroy_Program(MeshUnlitProgram);
-    Destroy_Program(MeshProgram);
     Destroy_Program(OverlayProgram);
 
     auto destroy_uniform = [](bgfx::UniformHandle &h) {

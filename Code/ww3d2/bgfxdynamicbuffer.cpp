@@ -35,22 +35,6 @@ namespace
 const unsigned kDefaultDynamicVertexCount = 5000;
 static const VertexFormatInfoClass kDynamicFVFInfo(dynamic_vertex_format);
 
-struct SubmissionVertex
-{
-	float x;
-	float y;
-	float z;
-	float nx;
-	float ny;
-	float nz;
-	uint32_t diffuse;
-	uint32_t specular;
-	float u0;
-	float v0;
-	float u1;
-	float v1;
-};
-
 SortingVertexBufferClass *g_dynamic_sorting_vertex_buffer = nullptr;
 bool g_dynamic_sorting_vertex_buffer_in_use = false;
 unsigned short g_dynamic_sorting_vertex_buffer_size = 0;
@@ -79,50 +63,6 @@ void Release_Stale_Dynamic_Sorting_Vertex_Buffers()
 		} else {
 			++it;
 		}
-	}
-}
-
-void Populate_Submission_Vertex(
-	SubmissionVertex &destination,
-	const unsigned char *source_vertex,
-	const VertexFormatInfoClass &format_info)
-{
-	const unsigned vertex_size = format_info.Get_Vertex_Size();
-	destination.x = reinterpret_cast<const float *>(source_vertex + format_info.Get_Location_Offset())[0];
-	destination.y = reinterpret_cast<const float *>(source_vertex + format_info.Get_Location_Offset())[1];
-	destination.z = reinterpret_cast<const float *>(source_vertex + format_info.Get_Location_Offset())[2];
-
-	if (format_info.Get_Normal_Offset() < vertex_size) {
-		destination.nx = reinterpret_cast<const float *>(source_vertex + format_info.Get_Normal_Offset())[0];
-		destination.ny = reinterpret_cast<const float *>(source_vertex + format_info.Get_Normal_Offset())[1];
-		destination.nz = reinterpret_cast<const float *>(source_vertex + format_info.Get_Normal_Offset())[2];
-	} else {
-		destination.nx = 0.0f;
-		destination.ny = 0.0f;
-		destination.nz = 1.0f;
-	}
-
-	destination.diffuse =
-		format_info.Get_Diffuse_Offset() < vertex_size
-			? BgfxRenderer::Convert_Packed_Color(*reinterpret_cast<const unsigned *>(source_vertex + format_info.Get_Diffuse_Offset()))
-			: 0xffffffffu;
-	destination.specular =
-		format_info.Get_Specular_Offset() < vertex_size
-			? BgfxRenderer::Convert_Packed_Color(*reinterpret_cast<const unsigned *>(source_vertex + format_info.Get_Specular_Offset()))
-			: 0u;
-
-	destination.u0 = 0.0f;
-	destination.v0 = 0.0f;
-	if (format_info.Get_Tex_Offset(0) < vertex_size) {
-		destination.u0 = reinterpret_cast<const float *>(source_vertex + format_info.Get_Tex_Offset(0))[0];
-		destination.v0 = reinterpret_cast<const float *>(source_vertex + format_info.Get_Tex_Offset(0))[1];
-	}
-
-	destination.u1 = 0.0f;
-	destination.v1 = 0.0f;
-	if (format_info.Get_Tex_Offset(1) < vertex_size) {
-		destination.u1 = reinterpret_cast<const float *>(source_vertex + format_info.Get_Tex_Offset(1))[0];
-		destination.v1 = reinterpret_cast<const float *>(source_vertex + format_info.Get_Tex_Offset(1))[1];
 	}
 }
 }
@@ -439,7 +379,8 @@ RenderVertexBufferClass::RenderVertexBufferClass(unsigned FVF, unsigned short ve
 	: VertexBufferClass(BUFFER_TYPE_RENDER, FVF, vertex_count_),
 	  BgfxVertexBuffer(BGFX_INVALID_HANDLE),
 	  BgfxVertexBufferDirty(true),
-	  VertexData(static_cast<size_t>(Vertex_Format_Info().Get_Vertex_Size()) * vertex_count_)
+	  VertexData(static_cast<size_t>(Vertex_Format_Info().Get_Vertex_Size()) * vertex_count_),
+	  BgfxLayoutInitialized(false)
 #endif
 {
 }
@@ -479,6 +420,39 @@ RenderVertexBufferClass::~RenderVertexBufferClass()
 	}
 #endif
 }
+
+#if RENEGADE_WITH_BGFX_RENDERER
+void RenderVertexBufferClass::Init_Bgfx_Layout() const
+{
+	if (BgfxLayoutInitialized) return;
+
+	const unsigned fvf = Vertex_Format_Info().Get_Vertex_Format();
+	const bool has_normal = (fvf & VERTEX_FORMAT_FLAG_NORMAL) != 0u;
+	const bool has_diffuse = (fvf & VERTEX_FORMAT_FLAG_DIFFUSE) != 0u;
+	const bool has_specular = (fvf & VERTEX_FORMAT_FLAG_SPECULAR) != 0u;
+	const unsigned texcoord_count = VERTEX_FORMAT_Get_Texcoord_Count(fvf);
+
+	BgfxLayout.begin();
+	BgfxLayout.add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float);
+	if (has_normal) {
+		BgfxLayout.add(bgfx::Attrib::Normal, 3, bgfx::AttribType::Float);
+	}
+	if (has_diffuse) {
+		BgfxLayout.add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true);
+	}
+	if (has_specular) {
+		BgfxLayout.add(bgfx::Attrib::Color1, 4, bgfx::AttribType::Uint8, true);
+	}
+	for (unsigned t = 0; t < texcoord_count; ++t) {
+		const bgfx::Attrib::Enum attrib = static_cast<bgfx::Attrib::Enum>(
+			static_cast<int>(bgfx::Attrib::TexCoord0) + t);
+		BgfxLayout.add(attrib, 2, bgfx::AttribType::Float);
+	}
+	BgfxLayout.end();
+
+	BgfxLayoutInitialized = true;
+}
+#endif
 
 void RenderVertexBufferClass::Create_Vertex_Buffer(UsageType)
 {
@@ -567,13 +541,26 @@ bool RenderVertexBufferClass::Ensure_Bgfx_Buffer() const
 	return Sync_Bgfx_Buffer();
 }
 
-bgfx::DynamicVertexBufferHandle RenderVertexBufferClass::Get_Bgfx_Vertex_Buffer() const
+bgfx::VertexBufferHandle RenderVertexBufferClass::Get_Bgfx_Vertex_Buffer() const
 {
 	return BgfxVertexBuffer;
 }
 
+const bgfx::VertexLayout &RenderVertexBufferClass::Get_Bgfx_Vertex_Layout() const
+{
+	Init_Bgfx_Layout();
+	return BgfxLayout;
+}
+
 void RenderVertexBufferClass::Mark_Bgfx_Buffer_Dirty()
 {
+	// Destroy the old immutable buffer so the next Sync recreates it
+	if (bgfx::isValid(BgfxVertexBuffer)) {
+		if (BgfxRenderer::Is_Initted()) {
+			bgfx::destroy(BgfxVertexBuffer);
+		}
+		BgfxVertexBuffer = BGFX_INVALID_HANDLE;
+	}
 	BgfxVertexBufferDirty = true;
 }
 
@@ -583,34 +570,51 @@ bool RenderVertexBufferClass::Sync_Bgfx_Buffer() const
 		return false;
 	}
 
-	if (!bgfx::isValid(BgfxVertexBuffer)) {
-		BgfxVertexBuffer = bgfx::createDynamicVertexBuffer(VertexCount, BgfxRenderer::Get_Fixed_Function_Layout());
-		if (!bgfx::isValid(BgfxVertexBuffer)) {
-			return false;
-		}
-		BgfxVertexBufferDirty = true;
-	}
-
-	if (!BgfxVertexBufferDirty) {
+	if (bgfx::isValid(BgfxVertexBuffer) && !BgfxVertexBufferDirty) {
 		return true;
 	}
 
-	std::vector<SubmissionVertex> upload_vertices(static_cast<size_t>(VertexCount));
-	const unsigned vertex_size = Vertex_Format_Info().Get_Vertex_Size();
-	const unsigned char *source_vertices = VertexData.data();
-	for (unsigned short vertex_index = 0; vertex_index < VertexCount; ++vertex_index) {
-		Populate_Submission_Vertex(
-			upload_vertices[static_cast<size_t>(vertex_index)],
-			source_vertices + static_cast<size_t>(vertex_index) * vertex_size,
-			Vertex_Format_Info());
+	// Destroy any existing buffer (immutable buffers can't be updated)
+	if (bgfx::isValid(BgfxVertexBuffer)) {
+		bgfx::destroy(BgfxVertexBuffer);
+		BgfxVertexBuffer = BGFX_INVALID_HANDLE;
 	}
 
-	const bgfx::Memory *vertex_memory = bgfx::copy(
-		upload_vertices.data(),
-		static_cast<uint32_t>(upload_vertices.size() * sizeof(SubmissionVertex)));
-	bgfx::update(BgfxVertexBuffer, 0, vertex_memory);
+	Init_Bgfx_Layout();
+
+	// Build upload data with colors swizzled from ARGB to ABGR (bgfx RGBA byte order)
+	const unsigned vertex_size = Vertex_Format_Info().Get_Vertex_Size();
+	const unsigned fvf = Vertex_Format_Info().Get_Vertex_Format();
+	const bool has_diffuse = (fvf & VERTEX_FORMAT_FLAG_DIFFUSE) != 0u;
+	const bool has_specular = (fvf & VERTEX_FORMAT_FLAG_SPECULAR) != 0u;
+	const uint32_t total_bytes = static_cast<uint32_t>(vertex_size) * VertexCount;
+
+	const bgfx::Memory *mem = bgfx::alloc(total_bytes);
+	std::memcpy(mem->data, VertexData.data(), total_bytes);
+
+	// Swizzle diffuse colors in-place: ARGB (D3D) -> ABGR (bgfx RGBA bytes)
+	if (has_diffuse) {
+		const unsigned diffuse_offset = Vertex_Format_Info().Get_Diffuse_Offset();
+		for (unsigned short v = 0; v < VertexCount; ++v) {
+			uint32_t *color_ptr = reinterpret_cast<uint32_t *>(
+				mem->data + static_cast<size_t>(v) * vertex_size + diffuse_offset);
+			*color_ptr = BgfxRenderer::Convert_Packed_Color(*color_ptr);
+		}
+	}
+
+	// Swizzle specular colors in-place: ARGB (D3D) -> ABGR (bgfx RGBA bytes)
+	if (has_specular) {
+		const unsigned specular_offset = Vertex_Format_Info().Get_Specular_Offset();
+		for (unsigned short v = 0; v < VertexCount; ++v) {
+			uint32_t *color_ptr = reinterpret_cast<uint32_t *>(
+				mem->data + static_cast<size_t>(v) * vertex_size + specular_offset);
+			*color_ptr = BgfxRenderer::Convert_Packed_Color(*color_ptr);
+		}
+	}
+
+	BgfxVertexBuffer = bgfx::createVertexBuffer(mem, BgfxLayout);
 	BgfxVertexBufferDirty = false;
-	return true;
+	return bgfx::isValid(BgfxVertexBuffer);
 }
 #endif
 

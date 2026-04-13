@@ -183,7 +183,7 @@ public:
 	unsigned short *Get_Source_Index_Data();
 	const unsigned short *Get_Source_Index_Data() const;
 	bool Ensure_Bgfx_Buffer() const;
-	bgfx::DynamicIndexBufferHandle Get_Bgfx_Index_Buffer() const;
+	bgfx::IndexBufferHandle Get_Bgfx_Index_Buffer() const;
 #endif
 
 #if !RENEGADE_WITH_BGFX_RENDERER
@@ -194,7 +194,7 @@ private:
 #if !RENEGADE_WITH_BGFX_RENDERER
 	IDirect3DIndexBuffer8*	index_buffer;		// actual dx8 index buffer
 #else
-	mutable bgfx::DynamicIndexBufferHandle BgfxIndexBuffer;
+	mutable bgfx::IndexBufferHandle BgfxIndexBuffer;
 	mutable bool BgfxIndexBufferDirty;
 	std::vector<unsigned short> IndexData;
 

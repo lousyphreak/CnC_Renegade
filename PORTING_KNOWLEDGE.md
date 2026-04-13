@@ -76,6 +76,10 @@
 - `ShaderClass` features do not map 1:1 into bgfx state:
   - depth compare, depth write, color write, cull, and blend map cleanly to bgfx state bits
   - fog, alpha test, gradient modes, and detail combiners are shader-program concerns and must be handled by shader variants or uniforms rather than by pretending bgfx has DX8 texture-stage state
+- The staged mesh direct-submit path can cache shader/material combiner data, but the final mesh shader variant still has to come from live DX8 render state at submission time:
+  - `D3DRS_LIGHTING` is the authoritative lit/unlit switch
+  - `D3DTSS_TEXCOORDINDEX` and `D3DTSS_TEXTURETRANSFORMFLAGS` are the authoritative texgen/textransform switches
+  - relying only on cached `VertexMaterialClass` data is too weak for compatibility, because legacy paths can finalize those states immediately before submission
 - `Render2D` is a good clean-port pattern for screen-space rendering:
   - keep the higher-level vertex/color/UV accumulation logic intact
   - use a renderer-owned overlay view in bgfx instead of mutating the main camera view state the way the DX8 path did
@@ -376,10 +380,38 @@
 ## Multi-shader program selection
 
 ### How program selection works
-At draw time, `BgfxRenderer::Select_Mesh_Program()` determines the cheapest shader that covers the current render state:
-1. Check `D3DRS_LIGHTING` from DX8Wrapper state cache → determines lit vs unlit
-2. Check texture stage state for non-passthrough texcoord indices or non-disabled tex transform flags → determines texgen vs not
-3. Returns `MeshShaderProgram::Unlit`, `Lit`, `UnlitTexgen`, or `LitTexgen`
+At mesh registration time, `BgfxRenderer::Classify_Material()` pre-computes a `MaterialClassification` with the cheapest shader program that covers the material's needs:
+1. Check `VertexMaterialClass::Get_Lighting()` → determines lit vs unlit
+2. Check texture mappers (stage 0 and 1) for texgen types → determines texgen vs not
+3. Pre-compute fragment config uniforms from `ShaderClass` (stage ops, alpha test, fog mode)
+4. Store as `MaterialClassification { program, frag_config[4], frag_config2[4] }`
+
+For dynamic/transient draws (particles, dazzle, sorting, etc.) that go through `DX8Wrapper` state, classification is computed on-the-fly from the current render state before each draw.
+
+### MaterialClassification struct
+```cpp
+struct MaterialClassification {
+    MeshShaderProgram program;     // Unlit, Lit, UnlitTexgen, LitTexgen
+    float frag_config[4];          // stage0ColorOp, stage1ColorOp, alphaTestRef, stage0AlphaOp
+    float frag_config2[4];         // stage1AlphaOp, fogMode, 0, 0
+};
+```
+- `frag_config[2]` (alphaTestRef): -1.0 if alpha test disabled, otherwise threshold/255 (inverted when using SRCBLEND_ONE_MINUS_SRC_ALPHA)
+- `frag_config2[1]` (fogMode): pre-computed from `ShaderClass::Get_Fog_Func()`, overridden to 0.0 at draw time if fog is globally disabled
+
+### Draw submission architecture
+All draws now go through `Submit_Classified_Draw_Internal` (anonymous namespace in bgfxrenderer.cpp):
+- **Pre-classified path**: `DX8TextureCategoryClass::Render()` → `Submit_Classified_Draw` with pre-computed classification
+- **On-the-fly path**: `Submit_Current_Fixed_Function_Triangles/Strip` → `Submit_Current_Draw` → computes classification → same internal function
+
+The old pipeline (`DX8Wrapper state cache → Apply_Render_State_Changes → Select_Mesh_Program → Apply_Mesh_Shader_Inputs → Submit_Cached_Fixed_Function_Draw`) has been fully removed. `bgfxfixedfunction.cpp` no longer exists; all submission code lives in `bgfxrenderer.cpp`.
+
+### Static buffer strategy
+- `BUFFER_TYPE_RENDER`: Immutable `bgfx::VertexBufferHandle`/`IndexBufferHandle`, created once with native vertex data
+- `BUFFER_TYPE_SORTING`/`BUFFER_TYPE_DYNAMIC_*`: Transient buffers rebuilt each frame
+- Each static buffer stores its own `bgfx::VertexLayout` built from FVF flags via `Init_Bgfx_Layout()`
+- Color swizzle (ARGB→ABGR) applied at buffer creation for static, in `Build_Transient_Vertices` for transient
+- `Mark_Bgfx_Buffer_Dirty`: Destroys handle, forces recreation on next `Ensure_Bgfx_Buffer`
 
 ### Why per-program uniform groups
 bgfx uniforms are global state — setting a uniform that a shader doesn't reference is harmless but wastes CPU cycles packing and uploading data. The new architecture only uploads uniforms needed by the selected program:

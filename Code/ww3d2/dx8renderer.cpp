@@ -195,103 +195,6 @@ inline static bool Equal_Material(const VertexMaterialClass* mat1,const VertexMa
 	return (crc0 == crc1);
 }
 
-static bool Submit_Fixed_Function_Draw(
-	const VertexBufferClass & vertex_buffer,
-	unsigned vertex_buffer_offset,
-	const IndexBufferClass & index_buffer,
-	unsigned index_buffer_offset,
-	unsigned index_base_offset,
-	unsigned short start_index,
-	unsigned short polygon_count,
-	unsigned short min_vertex_index,
-	unsigned short vertex_count,
-	bool strip,
-	TextureClass * const * textures,
-	const VertexMaterialClass * material,
-	const ShaderClass & shader,
-	bool receive_shadows,
-	bool cast_shadows,
-	const Matrix4 & world,
-	const Matrix4 & view,
-	const Matrix4 & projection)
-{
-	if (strip) {
-		return BgfxRenderer::Submit_Cached_Fixed_Function_Strip(
-			vertex_buffer,
-			vertex_buffer_offset,
-			index_buffer,
-			index_buffer_offset,
-			index_base_offset,
-			start_index,
-			polygon_count,
-			min_vertex_index,
-			vertex_count,
-			textures,
-			material,
-			shader,
-			receive_shadows,
-			cast_shadows,
-			world,
-			view,
-			projection);
-	}
-
-	return BgfxRenderer::Submit_Cached_Fixed_Function_Triangles(
-		vertex_buffer,
-		vertex_buffer_offset,
-		index_buffer,
-		index_buffer_offset,
-		index_base_offset,
-		start_index,
-		polygon_count,
-		min_vertex_index,
-		vertex_count,
-		textures,
-		material,
-		shader,
-		receive_shadows,
-		cast_shadows,
-		world,
-		view,
-		projection);
-}
-
-static bool Submit_Polygon_Renderer_Fixed_Function(
-	const DX8PolygonRendererClass & renderer,
-	unsigned index_base_offset,
-	const VertexBufferClass & vertex_buffer,
-	unsigned vertex_buffer_offset,
-	const IndexBufferClass & index_buffer,
-	unsigned index_buffer_offset,
-	TextureClass * const * textures,
-	const VertexMaterialClass * material,
-	const ShaderClass & shader,
-	bool receive_shadows,
-	bool cast_shadows,
-	const Matrix4 & world,
-	const Matrix4 & view,
-	const Matrix4 & projection)
-{
-	return Submit_Fixed_Function_Draw(
-		vertex_buffer,
-		vertex_buffer_offset,
-		index_buffer,
-		index_buffer_offset,
-		index_base_offset,
-		static_cast<unsigned short>(renderer.Get_Index_Offset()),
-		static_cast<unsigned short>(renderer.Is_Strip() ? renderer.Get_Index_Count() - 2 : renderer.Get_Index_Count() / 3),
-		static_cast<unsigned short>(renderer.Get_Min_Vertex_Index()),
-		static_cast<unsigned short>(renderer.Get_Vertex_Index_Range()),
-		renderer.Is_Strip(),
-		textures,
-		material,
-		shader,
-		receive_shadows,
-		cast_shadows,
-		world,
-		view,
-		projection);
-}
 
 
 DX8TextureCategoryClass::DX8TextureCategoryClass(
@@ -316,6 +219,8 @@ DX8TextureCategoryClass::DX8TextureCategoryClass(
 	}
 
 	if (material) material->Add_Ref();
+
+	classification = BgfxRenderer::Classify_Material(shader, material);
 }
 
 DX8TextureCategoryClass::~DX8TextureCategoryClass()
@@ -1930,21 +1835,25 @@ void DX8TextureCategoryClass::Render(VertexBufferClass *vertex_buffer, IndexBuff
 				WWASSERT(active_vertex_buffer != NULL);
 				WWASSERT(active_index_buffer != NULL);
 				if (active_vertex_buffer != NULL && active_index_buffer != NULL) {
-					const bool submitted = Submit_Polygon_Renderer_Fixed_Function(
-						*renderer,
-						mesh->Get_Base_Vertex_Offset(),
+					const bool submitted = BgfxRenderer::Submit_Classified_Draw(
 						*active_vertex_buffer,
 						active_vertex_buffer_offset,
 						*active_index_buffer,
 						active_index_buffer_offset,
+						mesh->Get_Base_Vertex_Offset(),
+						static_cast<unsigned short>(renderer->Get_Index_Offset()),
+						static_cast<unsigned short>(renderer->Is_Strip() ? renderer->Get_Index_Count() - 2 : renderer->Get_Index_Count() / 3),
+						static_cast<unsigned short>(renderer->Get_Min_Vertex_Index()),
+						static_cast<unsigned short>(renderer->Get_Vertex_Index_Range()),
 						applied_textures,
 						Peek_Material(),
-						Get_Shader(),
+						classification,
 						receive_shadows,
 						cast_shadows,
 						world_matrix,
 						view_transform,
-						projection_transform);
+						projection_transform,
+						renderer->Is_Strip());
 					WWASSERT(submitted);
 				}
 			}

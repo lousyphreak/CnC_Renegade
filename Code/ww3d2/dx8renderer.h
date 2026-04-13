@@ -53,6 +53,7 @@
 #include "shader.h"
 #include "dx8wrapper.h"
 #include "hashtemplate.h"
+#include "bgfxrenderer.h"
 
 class IndexBufferClass;
 class VertexBufferClass;
@@ -87,6 +88,8 @@ class DX8TextureCategoryClass : public MultiListObjectClass
 	VertexMaterialClass *						material;					
 	DX8PolygonRendererList						PolygonRendererList;
 	DX8FVFCategoryContainer*					container;	
+
+	MaterialClassification						classification;
 
 	PolyRenderTaskClass *						render_task_head;			// polygon renderers queued for rendering
 

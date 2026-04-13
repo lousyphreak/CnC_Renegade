@@ -239,16 +239,19 @@ public:
 	unsigned char *Get_Source_Vertex_Data();
 	const unsigned char *Get_Source_Vertex_Data() const;
 	bool Ensure_Bgfx_Buffer() const;
-	bgfx::DynamicVertexBufferHandle Get_Bgfx_Vertex_Buffer() const;
+	bgfx::VertexBufferHandle Get_Bgfx_Vertex_Buffer() const;
+	const bgfx::VertexLayout &Get_Bgfx_Vertex_Layout() const;
 #endif
 
 protected:
 #if !RENEGADE_WITH_BGFX_RENDERER
 	IDirect3DVertexBuffer8*		VertexBuffer;
 #else
-	mutable bgfx::DynamicVertexBufferHandle BgfxVertexBuffer;
+	mutable bgfx::VertexBufferHandle BgfxVertexBuffer;
 	mutable bool BgfxVertexBufferDirty;
 	std::vector<unsigned char> VertexData;
+	mutable bgfx::VertexLayout BgfxLayout;
+	mutable bool BgfxLayoutInitialized;
 #endif
 
 	void Create_Vertex_Buffer(UsageType usage);
@@ -256,6 +259,7 @@ protected:
 #if RENEGADE_WITH_BGFX_RENDERER
 	void Mark_Bgfx_Buffer_Dirty();
 	bool Sync_Bgfx_Buffer() const;
+	void Init_Bgfx_Layout() const;
 #endif
 };
 

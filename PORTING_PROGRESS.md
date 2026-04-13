@@ -39,6 +39,9 @@
   - `MeshClass::Render_Material_Pass()` no longer applies projector receiver backface culling when building the active polygon table; it now keeps all polygons intersecting the projector cull volume instead of losing valid floors/walls because of winding or two-sided receiver state.
   - `MeshClass::Render()` now continues to reject genuinely alpha-blended receiver meshes by default, but it no longer blocks shadow/projector passes on meshes that are only alpha-tested. This restores projected shadows on cutout/static receiver meshes without turning shadows on for true translucent surfaces.
   - the bgfx dynamic sorting vertex/index buffer pools now keep resized old buffers alive until renderer-held engine refs drain, which fixes the ASAN-detected use-after-free that the newly re-enabled projector receiver path exposed during live validation.
+- Tightened the staged mesh-direct-submit refactor after review:
+  - direct bgfx mesh submission now resolves the lit/texgen program from the live DX8 render state at draw time instead of trusting the cached material classification alone.
+  - this restores the old fixed-function behavior for paths that mutate texture-generation or lighting state immediately before draw submission, while still keeping the staged fragment-op classification reuse.
 - Fixed the next set of real projected-shadow path faults in the active bgfx runtime after tracing the full draw path end-to-end:
   - `WW3D::End_Render(false)` now stays inside the current bgfx frame instead of always forcing `BgfxRenderer::End_Frame()`. Dynamic shadow/render-target passes use `flip_frame=false`, so they must submit as offscreen work inside the main frame instead of prematurely ending it before the receiver scene is drawn.
   - `MatrixMapperClass::Apply()` now starts from an identity texture matrix before writing the projector/depth-gradient rows. The bgfx fixed-function shader uploads and consumes the full 4x4 texture matrix, so the old partially uninitialized rows could corrupt projected texcoord generation.
@@ -487,3 +490,21 @@ Replaced the legacy per-object projected texture shadow system with Cascaded Sha
 - **View activation**: Added bgfx::touch() for shadow views to ensure clear processing
 - **Lightmapped receiver parity**: Multi-pass prelit/lightmapped level meshes now receive the shadow term on the composed/lightmap pass instead of leaving the final pass unshadowed
 - **Opaque-composition receiver parity**: Level geometry no longer uses raw blend-state heuristics to decide receiver eligibility; blended terrain layers and blended final lightmap passes still receive shadows when they are part of an opaque composed surface
+
+## Renderer modernization (D3D8 fixed-function elimination)
+
+- Replaced the D3D8 fixed-function emulation pipeline with a modern classified material system:
+  - **Static immutable GPU buffers**: `RenderVertexBufferClass`/`RenderIndexBufferClass` now create immutable `bgfx::VertexBufferHandle`/`IndexBufferHandle` instead of dynamic buffers. Static level/mesh geometry is uploaded once and reused across frames.
+  - **Native vertex layouts**: Each static buffer stores a `bgfx::VertexLayout` matching its actual FVF format (XYZNDUV1, XYZNDUV2, XYZDUV1, XYZDUV2, XYZNUV1). No per-draw vertex format conversion.
+  - **Color swizzle at creation**: ARGB→ABGR color conversion happens once at buffer creation time instead of per-frame per-vertex.
+  - **Removed SubmissionVertex**: Eliminated the universal 48-byte intermediate vertex format. Transient buffers now copy native vertex data directly.
+  - **Material classification at registration**: `DX8TextureCategoryClass` pre-computes a `MaterialClassification` (shader program + fragment config) at mesh registration time, avoiding per-draw state inspection.
+  - **Classified draw submission**: All draw paths now use `Submit_Classified_Draw` with pre-computed or on-the-fly classification. The old `Select_Mesh_Program` / `Apply_Mesh_Shader_Inputs` / `Submit_Cached_Fixed_Function_Draw` pipeline has been removed.
+  - **Consolidated submission code**: Merged `bgfxfixedfunction.cpp` into `bgfxrenderer.cpp`. The separate file existed only because it was the fixed-function emulation layer; now that all submission goes through the classified system, the code belongs with the renderer.
+  - **Removed dead shader code**: Deleted legacy `vs_mesh.sc`/`fs_mesh.sc`/`varying_mesh.def.sc` shaders and the old monolithic `MeshProgram`. Removed unused `a_color1` (specular) from all vertex shaders.
+  - **Refactored index processing**: Extracted duplicated wireframe/strip/points index building into a shared `Build_Submission_Indices` helper.
+- Draw path architecture after modernization:
+  - **Pre-classified path** (rigid meshes via `DX8TextureCategoryClass::Render`): material+shader → `Classify_Material` at registration → `Submit_Classified_Draw` with pre-computed program+frag_config
+  - **On-the-fly path** (particles, dazzle, rings, terrain, dynamic meshes, sorting, etc.): reads DX8Wrapper state → computes `MaterialClassification` → same submission function
+  - Both paths share the same core submission function (`Submit_Classified_Draw_Internal`) which handles static/transient buffer binding, fog/lighting/texgen uniforms, shadow passes
+- Terrain rendering already benefits from static buffers and classified submission (uses `VERTEX_FORMAT_XYZNDUV1`, buffers rebuilt only on dirty)

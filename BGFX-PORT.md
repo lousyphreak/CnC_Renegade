@@ -42,14 +42,16 @@ The old monolithic `vs_mesh`/`fs_mesh` uber-shader has been replaced by 4 purpos
 - Uniforms: ~20 vec4s (all uniform groups combined)
 
 ### Legacy mesh shader (`vs_mesh` / `fs_mesh`)
-- Kept during transition, still compiled but no longer submitted
-- Will be removed once the new shaders are validated in all edge cases
+- Removed. The legacy monolithic uber-shader has been replaced by the 4 purpose-built programs above.
 
 ### Program selection logic
-At draw time, `BgfxRenderer::Select_Mesh_Program()` picks the cheapest program that covers the current state:
-1. Check `D3DRS_LIGHTING` → lit vs unlit
-2. Check texcoord index and tex transform flags → texgen vs not
-3. Return the appropriate `MeshShaderProgram` enum value
+At mesh registration time, `BgfxRenderer::Classify_Material()` pre-computes a `MaterialClassification` with the cheapest program that covers the material's needs:
+1. Check `VertexMaterialClass::Get_Lighting()` → lit vs unlit
+2. Check texture mappers for texgen (screen/linear offset/etc.) → texgen vs not
+3. Pre-compute fragment config uniforms (stage ops, alpha test, fog mode) from `ShaderClass`
+4. Store as `MaterialClassification { program, frag_config[4], frag_config2[4] }`
+
+For dynamic/transient draws that go through `DX8Wrapper` state, classification is computed on-the-fly from the current render state.
 
 ### Shadow shader (`vs_shadow` / `fs_shadow`)
 - Used for the shadow depth pass (rendering to shadow atlas)
@@ -104,7 +106,7 @@ Replaced the legacy per-object projected texture shadow system with scene-wide C
 
 ### Shadow pass integration
 - No separate render pass — shadow draws submitted alongside normal mesh draws
-- In `Submit_Cached_Fixed_Function_Draw` (bgfxfixedfunction.cpp), after normal `bgfx::submit()`, `ShadowMapManager::Submit_Shadow_Draws()` re-binds VB/IB and submits to all 3 cascade views
+- In `Submit_Classified_Draw_Internal` (bgfxrenderer.cpp), after normal `bgfx::submit()`, `ShadowMapManager::Submit_Shadow_Draws()` re-binds VB/IB and submits to all 3 cascade views
 - Alpha-blended geometry (DstBlend != ZERO) is excluded from shadow casting
 - Receiver selection cannot rely on that same cast rule: some blended passes are still part of the final opaque world surface
 - Current fixed-function draws therefore need explicit receiver flags for terrain/world composition passes instead of inferring “receiver” from `DstBlend == ZERO`

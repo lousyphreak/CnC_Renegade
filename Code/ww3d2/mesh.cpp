@@ -114,6 +114,7 @@
 #include "decalmsh.h"
 #include "decalsys.h"
 #include "bgfxrenderer.h"
+#include "shadowmap.h"
 #include "dx8polygonrenderer.h"
 #include "indexbuffer.h"
 #include "dx8renderer.h"
@@ -170,6 +171,8 @@ bool Submit_Fixed_Function_Draw(
 	TextureClass * const * textures,
 	const VertexMaterialClass * material,
 	const ShaderClass & shader,
+	bool receive_shadows,
+	bool cast_shadows,
 	const Matrix4 & world,
 	const Matrix4 & view,
 	const Matrix4 & projection)
@@ -188,6 +191,8 @@ bool Submit_Fixed_Function_Draw(
 			textures,
 			material,
 			shader,
+			receive_shadows,
+			cast_shadows,
 			world,
 			view,
 			projection);
@@ -206,6 +211,8 @@ bool Submit_Fixed_Function_Draw(
 		textures,
 		material,
 		shader,
+		receive_shadows,
+		cast_shadows,
 		world,
 		view,
 		projection);
@@ -221,6 +228,8 @@ bool Submit_Polygon_Renderer_Fixed_Function(
 	TextureClass * const * textures,
 	const VertexMaterialClass * material,
 	const ShaderClass & shader,
+	bool receive_shadows,
+	bool cast_shadows,
 	const Matrix4 & world,
 	const Matrix4 & view,
 	const Matrix4 & projection)
@@ -239,6 +248,8 @@ bool Submit_Polygon_Renderer_Fixed_Function(
 		textures,
 		material,
 		shader,
+		receive_shadows,
+		cast_shadows,
 		world,
 		view,
 		projection);
@@ -839,9 +850,15 @@ void MeshClass::Render(RenderInfoClass & rinfo)
 		}
 
 		const FrustumClass & frustum=rinfo.Camera.Get_Frustum();
+		const bool inside_main_frustum =
+			CollisionMath::Overlap_Test(frustum,Get_Bounding_Box()) != CollisionMath::OUTSIDE;
+		const bool needs_shadow_submission =
+			(Model->Get_Flag(MeshGeometryClass::SKIN) == 0) &&
+			ShadowMapManager::Intersects_Shadow_Cascades(Get_Bounding_Sphere());
 
 		if (	Model->Get_Flag(MeshGeometryClass::SKIN) ||
-				CollisionMath::Overlap_Test(frustum,Get_Bounding_Box())!=CollisionMath::OUTSIDE ) 
+				inside_main_frustum ||
+				needs_shadow_submission ) 
 		{
 			bool rendered_something = false;
 			
@@ -1001,6 +1018,8 @@ void MeshClass::Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass *
 					pass_textures,
 					pass->Peek_Material(),
 					pass->Peek_Shader(),
+					false,
+					false,
 					active_state.world,
 					active_state.view,
 					projection_transform);
@@ -1100,6 +1119,8 @@ void MeshClass::Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass *
 					pass_textures,
 					pass->Peek_Material(),
 					pass->Peek_Shader(),
+					false,
+					false,
 					active_state.world,
 					active_state.view,
 					projection_transform);
@@ -1136,6 +1157,8 @@ void MeshClass::Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass *
 					pass_textures,
 					pass->Peek_Material(),
 					pass->Peek_Shader(),
+					false,
+					false,
 					active_state.world,
 					active_state.view,
 					projection_transform);
@@ -1789,9 +1812,6 @@ void MeshClass::Load_User_Lighting (ChunkLoadClass & cload)
 
 	Set_Has_User_Lighting(true);
 }
-
-
-
 
 
 

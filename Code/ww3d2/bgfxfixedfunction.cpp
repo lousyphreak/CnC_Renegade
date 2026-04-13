@@ -1,4 +1,5 @@
 #include "bgfxrenderer.h"
+#include "shadowmap.h"
 
 #include <cmath>
 #include <cstddef>
@@ -117,6 +118,8 @@ bool Submit_Cached_Fixed_Function_Draw(
     TextureClass *const *textures,
     const VertexMaterialClass *material,
     const ShaderClass &shader,
+    bool receive_shadows,
+    bool cast_shadows,
     const Matrix4 &world,
     const Matrix4 &view,
     const Matrix4 &projection,
@@ -372,6 +375,8 @@ bool Submit_Cached_Fixed_Function_Draw(
     MeshShaderProgram selected_program = BgfxRenderer::Select_Mesh_Program(shader, vertex_buffer);
     BgfxRenderer::Apply_Mesh_Shader_Inputs(selected_program, shader, vertex_buffer, material);
 
+    ShadowMapManager::Bind_Shadow_Uniforms(receive_shadows);
+
     const unsigned cull_mode = DX8Wrapper::Get_DX8_Render_State(D3DRS_CULLMODE);
     uint16_t view_id = BgfxRenderer::Get_View_Id(view, projection);
 
@@ -380,6 +385,28 @@ bool Submit_Cached_Fixed_Function_Draw(
         cull_mode != 0x12345678u ? cull_mode : D3DCULL_CW,
         Resolve_Primitive_State(fill_mode));
     bgfx::submit(view_id, BgfxRenderer::Get_Mesh_Program(selected_program));
+
+    const bool alpha_test_enabled = shader.Get_Alpha_Test() == ShaderClass::ALPHATEST_ENABLE;
+    const bool blend_blocks_shadow_cast =
+        shader.Get_Dst_Blend_Func() != ShaderClass::DSTBLEND_ZERO && !alpha_test_enabled;
+    if (cast_shadows && !blend_blocks_shadow_cast) {
+        const uint32_t shadow_ib_count = fill_mode == FillMode::Points && strip ? source_index_count : submitted_index_count;
+        ShadowMapManager::Submit_Shadow_Draws(
+            vertex_buffer, vertex_buffer_offset, index_base_offset,
+            min_vertex_index, vertex_count,
+            index_buffer, index_buffer_offset, start_index,
+            shadow_ib_count,
+            use_direct_vertex_buffer, use_direct_index_buffer,
+            &transient_vertex_buffer, &transient_index_buffer,
+            world,
+            Resolve_Texture_Handle(stage0_texture),
+            Resolve_Sampler_Flags(stage0_texture, 0),
+            Resolve_Texture_Handle(stage1_texture),
+            Resolve_Sampler_Flags(stage1_texture, 1),
+            alpha_test_enabled,
+            cull_mode != 0x12345678u ? cull_mode : D3DCULL_CW);
+    }
+
     return true;
 }
 
@@ -388,7 +415,10 @@ bool Submit_Current_Fixed_Function_Draw(
     unsigned short polygon_count,
     unsigned short min_vertex_index,
     unsigned short vertex_count,
-    bool strip)
+    bool strip,
+    bool use_explicit_shadow_flags,
+    bool receive_shadows,
+    bool cast_shadows)
 {
     if (!BgfxRenderer::Is_Initted() || !DX8Wrapper::_Is_Triangle_Draw_Enabled()) {
         return false;
@@ -405,6 +435,12 @@ bool Submit_Current_Fixed_Function_Draw(
     Matrix4 projection;
     DX8Wrapper::Get_Transform(D3DTS_PROJECTION, projection);
 
+    const bool resolved_receive_shadows =
+        use_explicit_shadow_flags
+            ? receive_shadows
+            : render_state.shader.Get_Dst_Blend_Func() == ShaderClass::DSTBLEND_ZERO;
+    const bool resolved_cast_shadows = use_explicit_shadow_flags ? cast_shadows : false;
+
     TextureClass *textures[2] = {render_state.Textures[0], render_state.Textures[1]};
     if (strip) {
         return BgfxRenderer::Submit_Cached_Fixed_Function_Strip(
@@ -420,6 +456,8 @@ bool Submit_Current_Fixed_Function_Draw(
             textures,
             render_state.material,
             render_state.shader,
+            resolved_receive_shadows,
+            resolved_cast_shadows,
             render_state.world,
             render_state.view,
             projection);
@@ -438,6 +476,8 @@ bool Submit_Current_Fixed_Function_Draw(
         textures,
         render_state.material,
         render_state.shader,
+        resolved_receive_shadows,
+        resolved_cast_shadows,
         render_state.world,
         render_state.view,
         projection);
@@ -455,7 +495,29 @@ bool BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
         polygon_count,
         min_vertex_index,
         vertex_count,
+        false,
+        false,
+        false,
         false);
+}
+
+bool BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
+    unsigned short start_index,
+    unsigned short polygon_count,
+    unsigned short min_vertex_index,
+    unsigned short vertex_count,
+    bool receive_shadows,
+    bool cast_shadows)
+{
+    return Submit_Current_Fixed_Function_Draw(
+        start_index,
+        polygon_count,
+        min_vertex_index,
+        vertex_count,
+        false,
+        true,
+        receive_shadows,
+        cast_shadows);
 }
 
 bool BgfxRenderer::Submit_Cached_Fixed_Function_Triangles(
@@ -471,6 +533,8 @@ bool BgfxRenderer::Submit_Cached_Fixed_Function_Triangles(
     TextureClass *const *textures,
     const VertexMaterialClass *material,
     const ShaderClass &shader,
+    bool receive_shadows,
+    bool cast_shadows,
     const Matrix4 &world,
     const Matrix4 &view,
     const Matrix4 &projection)
@@ -488,6 +552,8 @@ bool BgfxRenderer::Submit_Cached_Fixed_Function_Triangles(
         textures,
         material,
         shader,
+        receive_shadows,
+        cast_shadows,
         world,
         view,
         projection,
@@ -505,7 +571,29 @@ bool BgfxRenderer::Submit_Current_Fixed_Function_Strip(
         polygon_count,
         min_vertex_index,
         vertex_count,
-        true);
+        true,
+        false,
+        false,
+        false);
+}
+
+bool BgfxRenderer::Submit_Current_Fixed_Function_Strip(
+    unsigned short start_index,
+    unsigned short polygon_count,
+    unsigned short min_vertex_index,
+    unsigned short vertex_count,
+    bool receive_shadows,
+    bool cast_shadows)
+{
+    return Submit_Current_Fixed_Function_Draw(
+        start_index,
+        polygon_count,
+        min_vertex_index,
+        vertex_count,
+        true,
+        true,
+        receive_shadows,
+        cast_shadows);
 }
 
 bool BgfxRenderer::Submit_Cached_Fixed_Function_Strip(
@@ -521,6 +609,8 @@ bool BgfxRenderer::Submit_Cached_Fixed_Function_Strip(
     TextureClass *const *textures,
     const VertexMaterialClass *material,
     const ShaderClass &shader,
+    bool receive_shadows,
+    bool cast_shadows,
     const Matrix4 &world,
     const Matrix4 &view,
     const Matrix4 &projection)
@@ -538,6 +628,8 @@ bool BgfxRenderer::Submit_Cached_Fixed_Function_Strip(
         textures,
         material,
         shader,
+        receive_shadows,
+        cast_shadows,
         world,
         view,
         projection,

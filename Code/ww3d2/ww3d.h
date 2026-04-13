@@ -250,6 +250,7 @@ public:
 	static void					Set_Polygon_Fill_Mode(PolygonFillModeEnum mode);
 	static void					Insert_Sorted_Triangles(unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count);
 	static bool					Submit_Current_Triangles(unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count);
+	static bool					Submit_Current_Triangles(unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count, bool receive_shadows, bool cast_shadows);
 	static TextureClass *	Create_Render_Target_Texture(unsigned width, unsigned height, WW3DFormat format);
 	static void					Reset_Render_Target(void);
 

@@ -22,6 +22,7 @@
 #include "dx8wrapper.h"
 #include "pot.h"
 #include "rawfile.h"
+#include "shadowmap.h"
 #include "surfaceclass.h"
 #include "texture.h"
 #include "vertmaterial.h"
@@ -96,7 +97,7 @@ struct CapturedMovieFrame
     uint64_t Sequence = 0;
 };
 
-constexpr uint16_t FirstDynamicViewId = 0;
+constexpr uint16_t FirstDynamicViewId = 3; // 0-2 reserved for shadow cascades
 constexpr uint16_t MaxDynamicViewId = 254;
 constexpr uint16_t OverlayViewId = 255;
 const float IdentityMatrix[16] = {
@@ -2463,6 +2464,11 @@ bool BgfxRenderer::Init_Render_Resources()
     if (!bgfx::isValid(MeshLitTexgenProgram))
         MeshLitTexgenProgram = Load_Program("vs_mesh_lit_texgen", "fs_mesh_lit_texgen");
 
+    // Initialize shadow map system
+    if (!ShadowMapManager::Is_Initted()) {
+        ShadowMapManager::Init();
+    }
+
     return bgfx::isValid(OverlayProgram) && bgfx::isValid(MeshProgram)
         && bgfx::isValid(MeshUnlitProgram) && bgfx::isValid(MeshLitProgram)
         && bgfx::isValid(MeshUnlitTexgenProgram) && bgfx::isValid(MeshLitTexgenProgram);
@@ -2470,6 +2476,9 @@ bool BgfxRenderer::Init_Render_Resources()
 
 void BgfxRenderer::Shutdown_Render_Resources()
 {
+    // Shut down shadow map system before destroying other resources
+    ShadowMapManager::Shutdown();
+
     Destroy_Program(MeshLitTexgenProgram);
     Destroy_Program(MeshUnlitTexgenProgram);
     Destroy_Program(MeshLitProgram);

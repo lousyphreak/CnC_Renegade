@@ -134,6 +134,17 @@
   - `SystemSettings::Registry_Load(...)` applies the stored values correctly, but `SystemSettings::Apply_All()` is also called during level load after fresh combat scenes are created
   - that method must push the stored values back into the new scene; if it only snapshots the scene state, the new scene's constructor defaults overwrite the loaded shadow settings and the game saves `Shadow_Mode=0` / `Dynamic_Projectors=0` again on shutdown
 - Existing Linux/bgfx preference stores may already contain that bad zero-shadow tuple from earlier builds, so the port needs a one-time migration path for shadow settings instead of only fixing fresh installs.
+- Cascaded shadow maps cannot let atlas population depend on the main render-camera visibility set:
+  - the current bgfx implementation submits shadow draws as a side effect of normal mesh submission
+  - that is fine only if `PhysicsSceneClass` also adds any cascade-intersecting shadow casters into the visible static/dynamic/world-space lists before LOD and projector work
+  - rigid mesh registration must also accept “intersects an active shadow cascade cull box” as a valid reason to stay in the draw lists, otherwise off-camera casters disappear from the atlas and shadows slide/pop as the camera rotates
+- `PRELIT_LIGHTMAP_MULTI_PASS` receiver meshes need different shadow-pass selection than ordinary opaque meshes:
+  - ordinary meshes can apply the shadow term on pass 0
+  - prelit/lightmapped multi-pass meshes finish their lit surface on the final pass, so shadowing pass 0 only leaves the composed/lightmap result visibly different from units/single-pass geometry
+  - that final pass may still use blending, so receiver selection cannot be keyed only off `DstBlend == ZERO`; “casts shadows” and “receives shadows” are different decisions
+- Terrain/world fixed-function composition passes need the same rule:
+  - `RenegadeTerrainPatchClass` uses `PASS_BASE` plus alpha-blended overlay layers to build one opaque terrain surface
+  - the alpha overlay layers should still receive the shadow term, because shadowing each contributing layer produces the correct final opaque result while leaving those layers unshadowed makes terrain diverge from units and other single-pass meshes
 - D3D8 fixed-function lighting with no-normal vertices: when a vertex has no normal but `D3DRS_LIGHTING` is enabled, D3D8 only uses the emissive material term in the lit color — diffuse and specular require a normal for N·L and N·H dot products. The bgfx vertex shader must replicate this by resolving emissive from `ResolveColorSource(emissiveSource, materialEmissive, a_color0, a_color1)` instead of using the vertex diffuse color directly. This matters for shadow projections on prelit terrain meshes (FVF with DIFFUSE but no NORMAL): shadow material uses emissive=(1−intensity) for darkening, and bypassing it makes shadow draws produce white output (texture + vertex_diffuse ≈ 1.0), making multiplicative blending invisible.
 - Projector code cannot assume `TextureClass::Get_Width()` is immediately valid for every projected texture in the bgfx port:
   - file-backed textures can still be lazily initialized when `TexProjectClass::Pre_Render_Update()` first needs the projector texel size

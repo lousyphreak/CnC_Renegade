@@ -113,6 +113,7 @@
 #include "meshmdl.h"
 #include "camerashakesystem.h"
 #include "lightenvironment.h"
+#include "shadowmap.h"
 #include "ww3d.h"
 #include "physresourcemgr.h"
 #include "phys3.h"
@@ -140,6 +141,22 @@ const float				MAX_DYNAMIC_OBJ_RADIUS = 5.0f;
 
 const int				DEFAULT_DYNAMIC_LOD_BUDGET = 4000;
 const int				DEFAULT_STATIC_LOD_BUDGET = 4000;
+
+namespace
+{
+bool Should_Collect_Shadow_Caster(PhysClass *obj)
+{
+	if (obj == NULL || obj->Peek_Model() == NULL || obj->Is_Rendering_Disabled()) {
+		return false;
+	}
+
+	if (!obj->Is_Shadow_Generation_Enabled() || obj->Do_Any_Effects_Suppress_Shadows()) {
+		return false;
+	}
+
+	return obj->Peek_Model()->Is_Not_Hidden_At_All();
+}
+}
 
 
 /******************************************************************************************
@@ -1138,6 +1155,16 @@ void PhysicsSceneClass::Pre_Render_Processing(CameraClass & camera)
 			DynamicCullingSystem->Collect_Visible_Objects(camera.Get_Frustum(),pvs,VisibleDynamicObjectList);
 		}
 
+		// Set up shadow map cascades for this frame
+		if (ShadowMapManager::Is_Enabled()) {
+			WWPROFILE("Shadow Setup");
+			Vector3 sun_dir;
+			Get_Sun_Light_Vector(&sun_dir);
+			ShadowMapManager::Update(camera, sun_dir);
+			ShadowMapManager::Setup_Shadow_Views();
+			Collect_Shadow_Caster_Objects();
+		}
+
 		// LOD processing 
 		Optimize_LODs(camera,&VisibleDynamicObjectList,&VisibleStaticObjectList,&VisibleWSMeshList);
 
@@ -1166,7 +1193,18 @@ void PhysicsSceneClass::Pre_Render_Processing(CameraClass & camera)
 			}
 		}
 
+		// Set up shadow map cascades for this frame (umbra path)
+		if (ShadowMapManager::Is_Enabled()) {
+			WWPROFILE("Shadow Setup");
+			Vector3 sun_dir;
+			Get_Sun_Light_Vector(&sun_dir);
+			ShadowMapManager::Update(camera, sun_dir);
+			ShadowMapManager::Setup_Shadow_Views();
+			Collect_Shadow_Caster_Objects();
+		}
+
 		Optimize_LODs(camera,&VisibleDynamicObjectList,&VisibleStaticObjectList,&VisibleWSMeshList);
+
 		Apply_Projectors(camera);
 #endif
 	}
@@ -1244,6 +1282,50 @@ void PhysicsSceneClass::Optimize_LODs
 		it.Peek_Obj()->Set_Last_Visible_Frame(CurrentFrameNumber);
 	}
 	PredictiveLODOptimizerClass::Optimize_LODs(StaticPolyBudget);
+}
+
+void PhysicsSceneClass::Collect_Shadow_Caster_Objects(void)
+{
+	if (!ShadowMapManager::Is_Enabled()) {
+		return;
+	}
+
+	for (int cascade = 0; cascade < ShadowMapManager::NUM_CASCADES; ++cascade) {
+		OBBoxClass cull_box;
+		if (!ShadowMapManager::Get_Cascade_Cull_Box(cascade, &cull_box)) {
+			continue;
+		}
+
+		StaticCullingSystem->Reset_Collection();
+		StaticCullingSystem->Collect_Objects(cull_box);
+		for (StaticPhysClass *obj = (StaticPhysClass *)StaticCullingSystem->Get_First_Collected_Object();
+			  obj != NULL;
+			  obj = (StaticPhysClass *)StaticCullingSystem->Get_Next_Collected_Object(obj))
+		{
+			if (!Should_Collect_Shadow_Caster(obj)) {
+				continue;
+			}
+
+			if (obj->Is_World_Space_Mesh()) {
+				if (!VisibleWSMeshList.Contains(obj)) {
+					VisibleWSMeshList.Add(obj);
+				}
+			} else if (!VisibleStaticObjectList.Contains(obj)) {
+				VisibleStaticObjectList.Add(obj);
+			}
+		}
+
+		DynamicCullingSystem->Reset_Collection();
+		DynamicCullingSystem->Collect_Objects(cull_box);
+		for (PhysClass *obj = DynamicCullingSystem->Get_First_Collected_Object();
+			  obj != NULL;
+			  obj = DynamicCullingSystem->Get_Next_Collected_Object(obj))
+		{
+			if (Should_Collect_Shadow_Caster(obj) && !VisibleDynamicObjectList.Contains(obj)) {
+				VisibleDynamicObjectList.Add(obj);
+			}
+		}
+	}
 }
 
 

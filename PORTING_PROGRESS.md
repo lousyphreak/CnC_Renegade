@@ -453,3 +453,37 @@ Refactored the ww3d2 bgfx renderer from a monolithic uber-shader to a multi-shad
 - Lit draws: ~14 vec4s — adds material, lights, scene ambient
 - Texgen draws: adds ~6 vec4s — texgen mode, tex transform flags, 2 tex transform matrices
 - Most common draw (unlit opaque mesh): 85% uniform reduction per draw call
+
+## Shadow mapping — CSM replacement
+
+Replaced the legacy per-object projected texture shadow system with Cascaded Shadow Maps (CSM) with PCF 3×3 filtering. This is a deliberate upgrade from the original D3D8 projected shadow approach.
+
+### New files
+- `Code/ww3d2/shadowmap.h` / `shadowmap.cpp` — ShadowMapManager class: cascade computation, shadow atlas lifecycle, shadow pass submission, uniform binding
+- `Code/ww3d2/shaders/vs_shadow.sc` / `fs_shadow.sc` / `varying_shadow.def.sc` — Shadow depth shaders
+- `Code/ww3d2/shaders/shadow_common.sh` — Shared PCF sampling code included by all mesh fragment shaders
+
+### Modified files
+- `Code/ww3d2/bgfxrenderer.cpp` — Reserve view IDs 0–2 for shadow cascades (FirstDynamicViewId=3), Init/Shutdown calls
+- `Code/ww3d2/bgfxfixedfunction.cpp` — Shadow uniform binding + shadow draw submission after each normal mesh draw, alpha-blend filtering
+- `Code/ww3d2/shaders/varying_mesh_new.def.sc` — Added v_worldPos (TEXCOORD3) and v_viewDepth (TEXCOORD4)
+- `Code/ww3d2/shaders/vs_mesh_*.sc` (4 files) — Output world position and view depth for shadow sampling
+- `Code/ww3d2/shaders/fs_mesh_*.sc` (4 files) — Include shadow_common.sh, call ComputeShadow(), apply shadow factor
+- `Code/ww3d2/CMakeLists.txt` — Shadow shader compilation
+- `Code/ww3d2/mesh.cpp` — Rigid meshes now stay render-registered when they intersect an active cascade cull box, so shadow caster submission is no longer tied to the main-camera frustum
+- `Code/ww3d2/bgfxrenderer.h`, `Code/ww3d2/bgfxfixedfunction.cpp`, `Code/ww3d2/ww3d.h`, `Code/ww3d2/ww3d.cpp` — Added explicit shadow receive/cast control for current fixed-function submissions so world-geometry composition passes no longer have to infer receiver eligibility from `DstBlend == ZERO`
+- `Code/ww3d2/dx8renderer.cpp` — `PRELIT_LIGHTMAP_MULTI_PASS` receivers now apply the shadow term on the final composed/lightmap pass even though that pass uses blending
+- `Code/wwphys/renegadeterrainpatch.cpp` — Terrain base and alpha material layers now explicitly receive shadows because both layers contribute to the final opaque terrain surface
+- `Code/wwphys/pscene.cpp` — Shadow setup now also expands the visible object lists with shadow-casting phys objects found inside each cascade cull volume before LOD/projector processing
+
+### Bug fixes applied
+- **View ordering**: Shadow views render BEFORE main scene (IDs 0–2 vs 3+)
+- **Sampler mismatch**: Removed BGFX_SAMPLER_COMPARE_LESS; use raw depth reads with manual comparison
+- **Sphere-based stabilization**: Use bounding sphere radius for ortho projection extents (rotation-invariant), fixing view-dependent shadow swimming
+- **Shadow-caster visibility decoupling**: Cascade cull boxes are now computed in world space and used to keep off-camera casters alive for shadow submission; the atlas no longer depends on the render camera seeing the caster directly
+- **Alpha-blend filtering**: Skip shadow casting for translucent geometry (DstBlend != ZERO)
+- **GLSL depth convention**: Added depth remapping for OpenGL clip-space (z * 0.5 + 0.5)
+- **Depth bias**: Increased from 0.0005 to 0.003 to reduce self-shadowing artifacts
+- **View activation**: Added bgfx::touch() for shadow views to ensure clear processing
+- **Lightmapped receiver parity**: Multi-pass prelit/lightmapped level meshes now receive the shadow term on the composed/lightmap pass instead of leaving the final pass unshadowed
+- **Opaque-composition receiver parity**: Level geometry no longer uses raw blend-state heuristics to decide receiver eligibility; blended terrain layers and blended final lightmap passes still receive shadows when they are part of an opaque composed surface

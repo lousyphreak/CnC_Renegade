@@ -51,6 +51,20 @@ At draw time, `BgfxRenderer::Select_Mesh_Program()` picks the cheapest program t
 2. Check texcoord index and tex transform flags → texgen vs not
 3. Return the appropriate `MeshShaderProgram` enum value
 
+### Shadow shader (`vs_shadow` / `fs_shadow`)
+- Used for the shadow depth pass (rendering to shadow atlas)
+- Vertex shader: MVP transform only (position output for depth)
+- Fragment shader: empty (depth written implicitly by rasterizer)
+- Uses `varying_shadow.def.sc` (position + texcoord0 for alpha-test if needed)
+
+### Shadow map sampling (`shadow_common.sh`)
+Included by all 4 mesh fragment shaders. Provides:
+- `SelectCascade(viewDepth)` — picks cascade 0–2 based on view-space depth
+- `WorldToShadowUV(worldPos, cascade)` — transforms world position to shadow atlas UV + depth
+- `SampleShadowPCF(shadowUV, bias)` — 3×3 PCF kernel with texel-sized offsets
+- `ComputeShadow(worldPos, viewDepth)` — full shadow factor computation (1.0 = lit, configurable darkening)
+- Uniforms: `u_shadowLightViewProj[3]` (mat4 per cascade), `u_shadowCascadeSplits` (vec4), `u_shadowConfig` (vec4), `s_shadowMap` (sampler slot 2)
+
 ### Shared fragment code (`mesh_common.sh`)
 All fragment shaders include `mesh_common.sh` which defines:
 - `ApplyColorOp()` / `ApplyAlphaOp()` — stage color/alpha blending operations
@@ -70,6 +84,41 @@ The following features were audited and confirmed unused by any game code path:
 - D3DTA_TFACTOR / D3DTA_SPECULAR as texture stage arguments
 - Specular power lighting
 - Stencil operations
+
+## Shadow mapping (CSM)
+
+Replaced the legacy per-object projected texture shadow system with scene-wide Cascaded Shadow Maps (CSM) with PCF filtering.
+
+### Architecture
+- **3 cascades** in a single depth atlas (6144×2048, each cascade 2048×2048 side-by-side)
+- **bgfx view IDs 0–2** reserved for shadow cascades (render BEFORE main scene which starts at ID 3)
+- Shadow depth rendered using `vs_shadow`/`fs_shadow` with `BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_CULL_CW`
+- Shadow sampling via `shadow_common.sh` included in all 4 mesh fragment shaders
+
+### Cascade computation (ShadowMapManager)
+- Practical split scheme: λ=0.75 blend of logarithmic and uniform splits
+- Sphere-based ortho bounds: frustum bounding sphere radius used for X/Y extents (rotation-invariant)
+- Texel grid snapping: sphere center projected to light-space XY, snapped to texel increments
+- Z bounds: tight AABB of frustum corners in light space, with 2× margin for behind-camera casters
+- Sun direction from `PhysicsSceneClass::Get_Sun_Light_Vector()` (light direction, points toward ground)
+
+### Shadow pass integration
+- No separate render pass — shadow draws submitted alongside normal mesh draws
+- In `Submit_Cached_Fixed_Function_Draw` (bgfxfixedfunction.cpp), after normal `bgfx::submit()`, `ShadowMapManager::Submit_Shadow_Draws()` re-binds VB/IB and submits to all 3 cascade views
+- Alpha-blended geometry (DstBlend != ZERO) is excluded from shadow casting
+- Receiver selection cannot rely on that same cast rule: some blended passes are still part of the final opaque world surface
+- Current fixed-function draws therefore need explicit receiver flags for terrain/world composition passes instead of inferring “receiver” from `DstBlend == ZERO`
+- `ShadowMapManager::Bind_Shadow_Uniforms()` binds the shadow atlas texture + uniforms before each mesh draw
+- Because the shadow path piggybacks on normal draw submission, `ShadowMapManager` must expose per-cascade world-space cull boxes and `PhysicsSceneClass` must inject any matching shadow casters into the visible static/dynamic/world-space lists before LOD/projector setup. Otherwise caster submission becomes main-camera dependent and shadows pop/swim as the camera rotates.
+- The rigid mesh render path also has to treat “intersects a cascade cull box” as a valid registration condition; camera-frustum overlap alone is not sufficient for shadow correctness.
+
+### Key design decisions
+- Raw depth sampling (SAMPLER2D) with manual comparison — no hardware comparison (BGFX_SAMPLER_COMPARE_LESS)
+- GLSL depth remapping: `depth = depth * 0.5 + 0.5` for OpenGL clip-space convention
+- Default shadow distance: 200 units, intensity: 0.6, depth bias: 0.003
+- Depth format: D16 preferred (sufficient precision, widely supported for sampling), falls back to D24/D32/D32F/D24S8
+- `PRELIT_LIGHTMAP_MULTI_PASS` level geometry should receive the shadow term on its final lightmap/composite pass, not always on pass 0, or it will visibly diverge from single-pass units/meshes
+- Terrain alpha layers should also receive the shadow term even though they blend over the base layer; those passes still contribute to one opaque terrain surface
 
 ## Rules
 

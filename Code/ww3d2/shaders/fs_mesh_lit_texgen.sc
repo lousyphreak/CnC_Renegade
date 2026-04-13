@@ -1,7 +1,8 @@
-$input v_color0, v_texcoord0, v_texcoord1, v_fogFactor
+$input v_color0, v_texcoord0, v_texcoord1, v_fogFactor, v_worldPos, v_viewDepth, v_worldNormal
 
 #include <bgfx_shader.sh>
 #include "mesh_common.sh"
+#include "shadow_common.sh"
 
 SAMPLER2D(s_texColor0, 0);
 SAMPLER2D(s_texColor1, 1);
@@ -23,6 +24,10 @@ void main()
     current = vec4(
         ApplyColorOp(u_meshFragConfig.y, current, tex1),
         ApplyAlphaOp(u_meshFragConfig2.x, current.a, tex1));
+
+    // Apply shadow
+    float shadow = ComputeShadow(v_worldPos, v_worldNormal, v_viewDepth);
+    current.rgb *= shadow;
 
     ApplyFog(current.rgb, u_meshFragConfig2.y, v_fogFactor, u_meshFogColor.rgb);
 

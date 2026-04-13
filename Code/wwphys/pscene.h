@@ -1014,6 +1014,7 @@ protected:
 														RefPhysListClass * dyn_obj_list,
 														RefPhysListClass * static_obj_list,
 														RefPhysListClass * static_ws_mesh_list	);
+	void							Collect_Shadow_Caster_Objects(void);
 	/*
 	** Internal Vis functions.  These are used to generate the VIS data.
 	*/

@@ -588,7 +588,10 @@ RenegadeTerrainPatchClass::Render_By_Texture (int texture_index, int pass_type)
 	//
 	//	Draw the mesh!
 	//
-	WW3D::Submit_Current_Triangles(0, poly_count, 0, vert_count);
+	// Terrain alpha layers are part of the final opaque terrain surface, so
+	// every composed terrain pass needs the shadow term instead of only the
+	// non-blended base layer.
+	WW3D::Submit_Current_Triangles(0, poly_count, 0, vert_count, true, false);
 	return ;
 }
 

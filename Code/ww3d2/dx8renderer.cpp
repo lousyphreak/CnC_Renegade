@@ -61,6 +61,7 @@
 #include "stripoptimizer.h"
 #include "meshgeometry.h"
 #include "hashtemplate.h"
+#include "../wwphys/phys.h"
 
 
 /*
@@ -208,6 +209,8 @@ static bool Submit_Fixed_Function_Draw(
 	TextureClass * const * textures,
 	const VertexMaterialClass * material,
 	const ShaderClass & shader,
+	bool receive_shadows,
+	bool cast_shadows,
 	const Matrix4 & world,
 	const Matrix4 & view,
 	const Matrix4 & projection)
@@ -226,6 +229,8 @@ static bool Submit_Fixed_Function_Draw(
 			textures,
 			material,
 			shader,
+			receive_shadows,
+			cast_shadows,
 			world,
 			view,
 			projection);
@@ -244,6 +249,8 @@ static bool Submit_Fixed_Function_Draw(
 		textures,
 		material,
 		shader,
+		receive_shadows,
+		cast_shadows,
 		world,
 		view,
 		projection);
@@ -259,6 +266,8 @@ static bool Submit_Polygon_Renderer_Fixed_Function(
 	TextureClass * const * textures,
 	const VertexMaterialClass * material,
 	const ShaderClass & shader,
+	bool receive_shadows,
+	bool cast_shadows,
 	const Matrix4 & world,
 	const Matrix4 & view,
 	const Matrix4 & projection)
@@ -277,6 +286,8 @@ static bool Submit_Polygon_Renderer_Fixed_Function(
 		textures,
 		material,
 		shader,
+		receive_shadows,
+		cast_shadows,
 		world,
 		view,
 		projection);
@@ -1893,6 +1904,29 @@ void DX8TextureCategoryClass::Render(VertexBufferClass *vertex_buffer, IndexBuff
 			} else {
 				DX8Wrapper::Apply_Render_State_Changes();
 				Matrix4 world_matrix(*world_transform);
+				const PhysClass * shadow_owner = static_cast<const PhysClass *>(mesh->Get_User_Data());
+				const bool shadows_suppressed =
+					shadow_owner != NULL &&
+					shadow_owner->Do_Any_Effects_Suppress_Shadows();
+				const bool owner_casts_shadows =
+					shadow_owner == NULL ||
+					shadow_owner->Is_Shadow_Generation_Enabled();
+				const bool prelit_multi_pass =
+					mesh->Peek_Model()->Get_Flag(MeshGeometryClass::PRELIT_MASK) ==
+					MeshGeometryClass::PRELIT_LIGHTMAP_MULTI_PASS;
+				const bool receive_shadow_pass =
+					prelit_multi_pass ?
+						(pass == mesh->Peek_Model()->Get_Pass_Count() - 1) :
+						(pass == 0);
+				const bool receive_shadows =
+					receive_shadow_pass &&
+					(prelit_multi_pass ||
+						Get_Shader().Get_Dst_Blend_Func() == ShaderClass::DSTBLEND_ZERO) &&
+					!shadows_suppressed;
+				const bool cast_shadows =
+					pass == 0 &&
+					owner_casts_shadows &&
+					!shadows_suppressed;
 				WWASSERT(active_vertex_buffer != NULL);
 				WWASSERT(active_index_buffer != NULL);
 				if (active_vertex_buffer != NULL && active_index_buffer != NULL) {
@@ -1906,6 +1940,8 @@ void DX8TextureCategoryClass::Render(VertexBufferClass *vertex_buffer, IndexBuff
 						applied_textures,
 						Peek_Material(),
 						Get_Shader(),
+						receive_shadows,
+						cast_shadows,
 						world_matrix,
 						view_transform,
 						projection_transform);

@@ -480,6 +480,28 @@ bool WW3D::Submit_Current_Triangles(unsigned short start_index, unsigned short p
 #endif
 }
 
+bool WW3D::Submit_Current_Triangles(
+	unsigned short start_index,
+	unsigned short polygon_count,
+	unsigned short min_vertex_index,
+	unsigned short vertex_count,
+	bool receive_shadows,
+	bool cast_shadows)
+{
+#if RENEGADE_WITH_BGFX_RENDERER
+	return BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
+		start_index,
+		polygon_count,
+		min_vertex_index,
+		vertex_count,
+		receive_shadows,
+		cast_shadows);
+#else
+	WWASSERT_PRINT(false, "WW3D::Submit_Current_Triangles requires the modern renderer backend");
+	return false;
+#endif
+}
+
 TextureClass *WW3D::Create_Render_Target_Texture(unsigned width, unsigned height, WW3DFormat format)
 {
 #if RENEGADE_WITH_BGFX_RENDERER

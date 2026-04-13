@@ -1,5 +1,5 @@
 $input a_position, a_normal, a_color0, a_color1, a_texcoord0, a_texcoord1
-$output v_color0, v_texcoord0, v_texcoord1, v_fogFactor
+$output v_color0, v_texcoord0, v_texcoord1, v_fogFactor, v_worldPos, v_viewDepth, v_worldNormal
 
 #include <bgfx_shader.sh>
 
@@ -100,6 +100,10 @@ void main()
 
     v_texcoord0 = ResolveTexcoord(0, a_texcoord0, a_texcoord1, viewPos, viewNormal);
     v_texcoord1 = ResolveTexcoord(1, a_texcoord0, a_texcoord1, viewPos, viewNormal);
+
+    v_worldPos = mul(u_model[0], vec4(a_position, 1.0)).xyz;
+    v_worldNormal = worldNormal;
+    v_viewDepth = -viewPos.z;
 
     // Fog
     v_fogFactor = 0.0;

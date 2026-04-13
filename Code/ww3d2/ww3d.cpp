@@ -167,14 +167,10 @@ unsigned int											WW3D::SyncTime = 0;
 unsigned int											WW3D::PreviousSyncTime = 0;
 bool														WW3D::IsSortingEnabled = true;
 
-float														WW3D::PixelCenterX = 0.0f;
-float														WW3D::PixelCenterY = 0.0f;
-
 
 bool														WW3D::IsInitted = false;
 bool														WW3D::IsRendering = false;
 bool														WW3D::IsCapturing = false;
-bool														WW3D::IsScreenUVBiased = false;
 
 bool														WW3D::AreDecalsEnabled = true;
 float														WW3D::DecalRejectionDistance = 1000000.0f;
@@ -187,9 +183,6 @@ bool														WW3D::PauseRecord;
 bool														WW3D::RecordNextFrame;
 
 int														WW3D::FrameCount = 0;
-long														WW3D::UserStat0 = 0;
-long														WW3D::UserStat1 = 0;
-long														WW3D::UserStat2 = 0;
 
 float														WW3D::DefaultNativeScreenSize = 1.0f;
 
@@ -210,8 +203,6 @@ bool														WW3D::SnapshotActivated=false;
 bool														WW3D::ThumbnailEnabled=true;
 
 WW3D::MeshDrawModeEnum								WW3D::MeshDrawMode = MESH_DRAW_MODE_OLD;
-WW3D::NPatchesGapFillingModeEnum					WW3D::NPatchesGapFillingMode = NPATCHES_GAP_FILLING_ENABLED;
-unsigned													WW3D::NPatchesLevel=1;
 bool														WW3D::IsTexturingEnabled=true;
 
 static HWND												_Hwnd = NULL;		// Not a member to hide windows from WW3D users
@@ -262,23 +253,6 @@ namespace
 	}
 }
 
-void WW3D::Set_NPatches_Gap_Filling_Mode(NPatchesGapFillingModeEnum mode)
-{
-	if (NPatchesGapFillingMode!=mode) {
-		NPatchesGapFillingMode=mode;
-		TheDX8MeshRenderer.Invalidate();
-	}
-}
-
-void WW3D::Set_NPatches_Level(unsigned level)
-{
-	if (level>8) level=8;
-	if (level<1) level=1;
-	if (NPatchesLevel==1 && level>1) TheDX8MeshRenderer.Invalidate();
-	if (NPatchesLevel>1 && level==1) TheDX8MeshRenderer.Invalidate();
-	NPatchesLevel = level;
-}
-
 bool WW3D::Get_Current_Adapter_Identifier(AdapterIdentifierStruct& identifier)
 {
 	identifier.VendorId = 0;
@@ -304,7 +278,6 @@ bool WW3D::Get_Current_Render_Capabilities(RenderCapabilitiesStruct& capabilitie
 	capabilities.MaxTextureHeight = 0;
 	capabilities.MaxTexturesPerPass = 0;
 	capabilities.SupportsGamma = false;
-	capabilities.SupportsNPatches = false;
 	capabilities.SupportsAnisotropicFiltering = false;
 	capabilities.CanDoMultiPass = false;
 
@@ -318,7 +291,6 @@ bool WW3D::Get_Current_Render_Capabilities(RenderCapabilitiesStruct& capabilitie
 	capabilities.MaxTextureHeight = dx8_caps.MaxTextureHeight;
 	capabilities.MaxTexturesPerPass = current_caps->Get_Max_Textures_Per_Pass();
 	capabilities.SupportsGamma = current_caps->Support_Gamma();
-	capabilities.SupportsNPatches = current_caps->Support_NPatches();
 	capabilities.SupportsAnisotropicFiltering = current_caps->Support_Anisotropic_Filtering();
 	capabilities.CanDoMultiPass = current_caps->Can_Do_Multi_Pass();
 	return true;
@@ -337,15 +309,9 @@ bool WW3D::Get_Render_Diagnostics(StringClass& diagnostics, bool compact)
 	return true;
 }
 
-bool WW3D::Supports_NPatches(void)
-{
-	DX8Caps* current_caps = DX8Wrapper::Get_Current_Caps();
-	return (current_caps != NULL) && current_caps->Support_NPatches();
-}
-
 void WW3D::Get_Backend_Statistics(BackendStatisticsStruct& statistics)
 {
-	statistics.DeviceCalls = DX8Wrapper::Get_Last_Frame_DX8_Calls();
+	statistics.DrawCalls = DX8Wrapper::Get_Last_Frame_DX8_Calls();
 	statistics.TextureChanges = DX8Wrapper::Get_Last_Frame_Texture_Changes();
 	statistics.MatrixChanges = DX8Wrapper::Get_Last_Frame_Matrix_Changes();
 	statistics.MaterialChanges = DX8Wrapper::Get_Last_Frame_Material_Changes();
@@ -354,89 +320,6 @@ void WW3D::Get_Backend_Statistics(BackendStatisticsStruct& statistics)
 	statistics.LightChanges = DX8Wrapper::Get_Last_Frame_Light_Changes();
 	statistics.RenderStateChanges = DX8Wrapper::Get_Last_Frame_Render_State_Changes();
 	statistics.TextureStageStateChanges = DX8Wrapper::Get_Last_Frame_Texture_Stage_State_Changes();
-}
-
-WW3D::RenderDeviceDriverStatusEnum WW3D::Get_Selected_Render_Device_Driver_Status(void)
-{
-#ifdef _WIN32
-	typedef IDirect3D8* (WINAPI *Direct3DCreate8Type)(uint32_t sdk_version);
-
-	RegistryClass render_registry(APPLICATION_SUB_KEY_NAME_RENDER);
-	if (!render_registry.Is_Valid()) {
-		return RENDER_DEVICE_DRIVER_STATUS_UNKNOWN;
-	}
-
-	Init_D3D_To_WW3_Conversion();
-
-	HMODULE d3d8_lib = LoadLibraryA("D3D8.DLL");
-	if (d3d8_lib == NULL) {
-		return RENDER_DEVICE_DRIVER_STATUS_UNKNOWN;
-	}
-
-	Direct3DCreate8Type direct3d_create8 = reinterpret_cast<Direct3DCreate8Type>(GetProcAddress(d3d8_lib, "Direct3DCreate8"));
-	if (direct3d_create8 == NULL) {
-		FreeLibrary(d3d8_lib);
-		return RENDER_DEVICE_DRIVER_STATUS_UNKNOWN;
-	}
-
-	IDirect3D8* d3d = direct3d_create8(D3D_SDK_VERSION);
-	if (d3d == NULL) {
-		FreeLibrary(d3d8_lib);
-		return RENDER_DEVICE_DRIVER_STATUS_UNKNOWN;
-	}
-
-	int current_adapter_index = D3DADAPTER_DEFAULT;
-	char device_name[256] = { 0 };
-	render_registry.Get_String(VALUE_NAME_RENDER_DEVICE_NAME, device_name, sizeof(device_name));
-
-	const int adapter_count = d3d->GetAdapterCount();
-	for (int adapter_index = 0; adapter_index < adapter_count; ++adapter_index) {
-		D3DADAPTER_IDENTIFIER8 id;
-		::ZeroMemory(&id, sizeof(D3DADAPTER_IDENTIFIER8));
-		if (d3d->GetAdapterIdentifier(adapter_index, D3DENUM_NO_WHQL_LEVEL, &id) == D3D_OK) {
-			StringClass name(id.Description, true);
-			if (name == device_name) {
-				current_adapter_index = adapter_index;
-				break;
-			}
-		}
-	}
-
-	D3DCAPS8 dx8_caps;
-	if (FAILED(d3d->GetDeviceCaps(current_adapter_index, D3DDEVTYPE_HAL, &dx8_caps))) {
-		d3d->Release();
-		FreeLibrary(d3d8_lib);
-		return RENDER_DEVICE_DRIVER_STATUS_UNKNOWN;
-	}
-
-	D3DADAPTER_IDENTIFIER8 adapter_id;
-	::ZeroMemory(&adapter_id, sizeof(D3DADAPTER_IDENTIFIER8));
-	if (FAILED(d3d->GetAdapterIdentifier(current_adapter_index, D3DENUM_NO_WHQL_LEVEL, &adapter_id))) {
-		d3d->Release();
-		FreeLibrary(d3d8_lib);
-		return RENDER_DEVICE_DRIVER_STATUS_UNKNOWN;
-	}
-
-	DX8Caps caps(d3d, dx8_caps, WW3D_FORMAT_UNKNOWN, adapter_id);
-	const DX8Caps::DriverVersionStatusType status = caps.Get_Driver_Version_Status();
-
-	d3d->Release();
-	FreeLibrary(d3d8_lib);
-
-	switch (status) {
-		case DX8Caps::DRIVER_STATUS_GOOD:
-			return RENDER_DEVICE_DRIVER_STATUS_GOOD;
-		case DX8Caps::DRIVER_STATUS_OK:
-			return RENDER_DEVICE_DRIVER_STATUS_OK;
-		case DX8Caps::DRIVER_STATUS_BAD:
-			return RENDER_DEVICE_DRIVER_STATUS_BAD;
-		case DX8Caps::DRIVER_STATUS_UNKNOWN:
-		default:
-			return RENDER_DEVICE_DRIVER_STATUS_UNKNOWN;
-	}
-#else
-	return RENDER_DEVICE_DRIVER_STATUS_UNKNOWN;
-#endif
 }
 
 void WW3D::Set_Output_Gamma(float gamma, float brightness, float contrast, bool calibrate, bool use_limit)
@@ -2028,85 +1911,6 @@ void WW3D::Release_Debug_Resources(void)
 #endif
 }
 
-
-WW3DErrorType WW3D::On_Deactivate_App(void)
-{
-#ifdef WW3D_DX8
-	assert(!IsRendering);
-
-	if ( Gerd == NULL )
-		return WW3D_ERROR_OK;
-
-	if ( IsWindowed )
-		return WW3D_ERROR_OK;
-
-	if ( !Gerd->isWindowOpen() )
-		return WW3D_ERROR_OK;
-
-	Gerd->closeWindow();
-#endif //WW3D_DX8
-	return WW3D_ERROR_OK;
-}
-
-
-WW3DErrorType WW3D::On_Activate_App(void)
-{
-#ifdef WW3D_DX8
-	if ( Gerd == NULL)
-		return WW3D_ERROR_OK;
-
-	if ( IsWindowed )
-		return WW3D_ERROR_OK;
-
-	assert( !Gerd->isWindowOpen() );
-
-	srGERD::DisplayMode disp_mode;
-	disp_mode = Gerd->getDisplayMode(ResolutionWidth,ResolutionHeight,BitDepth);
-	if (Gerd->openWindow(disp_mode) != srGERD::ERROR_NONE) {
-		return WW3D_ERROR_WINDOW_NOT_OPEN;
-	}
-
-#endif //WW3D_DX8
-	return WW3D_ERROR_OK;
-}
-
-
-void WW3D::Get_Pixel_Center(float &x, float &y)
-{
-	x = PixelCenterX; y = PixelCenterY;
-}
-
-
-void WW3D::Update_Pixel_Center(void)
-{
-#ifdef WW3D_DX8
-	const char *name = _RenderDeviceShortNameTable.getString(CurRenderDevice);
-	if ( strstr(name, "OpenGL") ) {
-		PixelCenterX = 0.0f; PixelCenterY = 0.0f;
-	} else if ( strstr(name, "Glide") ) {
-		PixelCenterX = 0.0f; PixelCenterY = 0.0f;
-	} else if ( strstr(name, "DirectX") ) {
-		PixelCenterX = 0.5f; PixelCenterY = 0.5f;
-	} else if ( strstr(name, "Software") ) {
-		PixelCenterX = 0.0f; PixelCenterY = 0.0f;
-	} else if ( strstr(name, "Null") ) {
-		PixelCenterX = 0.0f; PixelCenterY = 0.0f;
-	} else {
-		// unknown device
-		PixelCenterX = 0.0f; PixelCenterY = 0.0f;
-	}
-#endif //WW3D_DX8
-}
-
-void WW3D::Set_Texture_Bitdepth(int bitdepth)
-{
-	DX8Wrapper::Set_Texture_Bitdepth(bitdepth);
-}
-
-int WW3D::Get_Texture_Bitdepth()
-{
-	return DX8Wrapper::Get_Texture_Bitdepth();
-}
 
 void WW3D::Add_To_Static_Sort_List(RenderObjClass *robj, unsigned int sort_level)
 {

@@ -344,6 +344,55 @@
   - updated the live call sites in `ww3d2` plus `Tools/WWConfig` to use those renderer-neutral helpers, so the active bgfx tree stops advertising format conversion itself as a Direct3D-specific contract.
   - trimmed the stale `D3DFORMAT` wording in `ww3dformat.h` and deleted the old commented-out conversion table from `formconv.cpp`, preserving the original numeric format behavior while keeping the active renderer surface cleaner.
 
+## WW3D2 public interface refactoring
+
+- Refactored the WW3D and DX8Wrapper public interfaces to prepare for a modern high-speed renderer, without changing the renderer implementation:
+  - **WW3D dead code removal** (`ww3d.h`/`ww3d.cpp`):
+    - Removed `On_Activate_App`, `On_Deactivate_App` (dead behind `#ifdef WW3D_DX8`, never defined)
+    - Removed `Update_Pixel_Center`, `Get_Pixel_Center`, `PixelCenterX/Y` statics (D3D8 texel alignment hack)
+    - Removed `Get_Selected_Render_Device_Driver_Status` and `RenderDeviceDriverStatusEnum` (loaded D3D8.DLL to check driver status)
+    - Removed `Read_Gerd_Render_Device_Description` (dead internal helper)
+  - **WW3D legacy feature removal**:
+    - Removed NPatches entirely: `NPatchesGapFillingModeEnum`, `Supports_NPatches`, `Set_NPatches_Gap_Filling_Mode`, `Get_NPatches_Gap_Filling_Mode`, `Set_NPatches_Level`, `Get_NPatches_Level`, `NPatchesGapFillingMode`, `NPatchesLevel` statics, `RenderCapabilitiesStruct::SupportsNPatches`
+    - Removed Screen UV Bias: `Set_Screen_UV_Bias`, `Is_Screen_UV_Biased`, `IsScreenUVBiased` static
+    - Removed `Set_Texture_Bitdepth` / `Get_Texture_Bitdepth` from WW3D public API (kept on DX8Wrapper for internal use)
+    - Removed unused `UserStat0/1/2` statics
+    - Removed unused `RenderStatistics` forward declaration
+  - **WW3D naming cleanup**:
+    - `MESH_DRAW_MODE_DX8_ONLY` → `MESH_DRAW_MODE_NATIVE`
+    - `BackendStatisticsStruct::DeviceCalls` → `DrawCalls`
+  - **DX8Wrapper cleanup** (`dx8wrapper.h`):
+    - Removed `DX8CALL_HRES`, `DX8CALL`, `DX8CALL_D3D` macros (all branches including bgfx stubs)
+    - Removed `DX8_Assert`, `Log_DX8_ErrorCode`, `DX8_ErrorCode` declarations
+    - Removed `DX8_THREAD_ASSERT` macro
+    - Removed all `Get_DX8_*_Name` debug functions (~20 functions)
+    - Removed `_Get_D3D_Device8`, `_Get_D3D8` accessors
+    - Removed `_Create_DX8_Texture`, `_Create_DX8_Surface`, `_Get_DX8_Back_Buffer`, `_Copy_DX8_Rects`
+    - Removed `Create_Additional_Swap_Chain`
+    - Removed DX8 render target methods (`Create_Render_Target`, `Set_Render_Target` overloads, `Reset_Render_Target`, `Is_Render_To_Texture`)
+    - Removed D3D COM member variables from protected section: `D3DInterface`, `D3DDevice`, `CurrentRenderTarget`, `DefaultRenderTarget`, `DefaultDepthBuffer`, `IsRenderToTexture`, `Textures[]` (all behind dead `#if !RENEGADE_WITH_BGFX_RENDERER`)
+    - Removed internal D3D-specific functions: `Find_Color_And_Z_Mode`, `Find_Color_Mode`, `Find_Z_Mode`, `Test_Z_Mode`
+    - Removed dead `#if 0` code block with old `Convert_Color` assertions
+    - Removed `friend void DX8_Assert()` declaration
+  - **Caller updates** (~18 files across Commando and ww3d2):
+    - `shutdown.cpp`: removed UV bias and NPatches logging
+    - `systemsettings.cpp`: removed NPatches system setting entries
+    - `WINMAIN.CPP`: removed D3D8 driver status check, always proceeds
+    - `consolefunction.cpp`: removed UV bias console command
+    - `console.cpp`: removed UV bias registry load/save, NPatches blocks, `DeviceCalls`→`DrawCalls`
+    - `render2d.cpp`: removed UV bias offset calculations
+    - `textdraw.cpp`: removed UV bias pixel offset
+    - `ww3dformat.cpp`: switched from `WW3D::Get_Texture_Bitdepth()` to `DX8Wrapper::Get_Texture_Bitdepth()`
+    - `dx8renderer.cpp`: removed NPatches support checks
+    - `meshmdl.cpp`: simplified `Register_For_Rendering()` (NPatches gap filler removal)
+    - `meshmatdesc.cpp`: removed NPatches support check in `Do_Mappers_Need_Normals()`
+    - `statistics.cpp`: removed NPatches polygon multiplier
+    - `shader.cpp`: removed NPatches `D3DRS_PATCHSEGMENTS` render state
+    - `skeleton/skeleton.cpp`: removed NPatches key handlers and init call
+    - `commando_sdl_main.cpp`: removed `On_Activate_App()` call on focus gain
+    - `dlgconfigperformancetab.cpp`: always disable NPatches checkbox, skip saving NPatches
+- Verified with clean build (`cmake --build build -j20`) and 200+ second runtime (ASAN+UBSAN), no crashes or sanitizer errors.
+
 ## Next work
 
 - Remove the remaining transient index-rewrite cases in the bgfx fixed-function submitter where feasible, especially cached strip/wireframe draws that still need CPU-side index expansion even after the persistent render-buffer upload work.

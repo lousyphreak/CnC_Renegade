@@ -565,60 +565,8 @@ const char * SystemSettingEntryMeshDrawMode::names[] = { "Old", "New", "Debug Dr
 
 /***********************************************************************************************/
 
-class	SystemSettingEntryNPatchGapFillingMode : public SystemSettingEntryEnum {
-	static const char * names[3];
-public:
-	const char * Get_Name( void )	{ return "NPatches_Gap_Filling_Mode"; }
-	const char * Get_Help( void )	{ return "NPATCHES_GAP_FILLING_MODE <mode> - 0=disabled 1=enabled 2=force"; }
-	virtual	int Get_Enum( void ) { return WW3D::Get_NPatches_Gap_Filling_Mode(); }
-	virtual	void Set_Enum( int selection ) {
-		WW3D::Set_NPatches_Gap_Filling_Mode( (WW3D::NPatchesGapFillingModeEnum) selection );
-	}
-	virtual	int Get_Enum_Count( void ) { return sizeof(names)/sizeof(char*); }
-	virtual	const char * Get_Enum_Name( int selection ) {
-		WWASSERT(selection>=0 && selection<sizeof(names)/sizeof(char*));
-		return names[ selection ];
-	}
-};
-const char * SystemSettingEntryNPatchGapFillingMode::names[] = { "Disabled", "Enabled", "FORCE (Enabled even when not using n-patches)" };
 
-/***********************************************************************************************/
 
-class	SystemSettingEntryNPatches : public SystemSettingEntryEnum {
-	static const char * names[9];
-	StringClass Name;
-public:
-	SystemSettingEntryNPatches()
-	{
-		Name="NPatches";
-	}
-	virtual ~SystemSettingEntryNPatches(void){};
-	const char * Get_Name( void )	{ return Name; }
-	const char * Get_Help( void )	{ return "NPatches <level> - 1=default, 8=max"; }
-	virtual	int Get_Enum( void ) { return WW3D::Get_NPatches_Level(); }
-	virtual	void Set_Enum( int selection ) {
-		WW3D::Set_NPatches_Level( selection );
-		if (!WW3D::Supports_NPatches()) {
-			Name="NPatches (NOT SUPPORTED BY HARDWARE)";
-		}
-	}
-	virtual	int Get_Enum_Count( void ) { return sizeof(names)/sizeof(char*); }
-	virtual	const char * Get_Enum_Name( int selection ) {
-		WWASSERT(selection>=0 && selection<sizeof(names)/sizeof(char*));
-		return names[ selection ];
-	}
-};
-const char * SystemSettingEntryNPatches::names[] = {
-	"NPatches DISABLED",
-	"NPatches DISABLED",
-	"NPatches level 2",
-	"NPatches level 3",
-	"NPatches level 4",
-	"NPatches level 5",
-	"NPatches level 6",
-	"NPatches level 7",
-	"NPatches level 8"
-};
 
 /***********************************************************************************************/
 
@@ -686,8 +634,7 @@ void SystemSettings::Init( void )
 	Add_Setting( new SystemSettingEntryShadowMode );
 	Add_Setting( new SystemSettingEntryPrelitMode );
 	Add_Setting( new SystemSettingEntryMeshDrawMode );
-	Add_Setting( new SystemSettingEntryNPatches );
-	Add_Setting( new SystemSettingEntryNPatchGapFillingMode );
+
 //	Add_Setting( new SystemSettingEntryTextureCompressionMode );
 	Add_Setting( new SystemSettingEntryTextureFilterMode );
 //	Add_Setting( new SystemSettingEntryTextureThumbnailMode );

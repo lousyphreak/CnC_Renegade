@@ -247,16 +247,6 @@ void	  Render2DClass::Update_Bias( void )
 {
 
 	BiasedCoordinateOffset = CoordinateOffset;
-
-	if ( WW3D::Is_Screen_UV_Biased() ) {	// Global bais setting
-		Vector2 bais_add( -0.5f ,-0.5f );	// offset by -0.5,-0.5 in pixels
-
-		// Convert from pixels to (-1,1)-(1,-1) units
-		bais_add.X = bais_add.X / (Get_Screen_Resolution().Width() * 0.5f);
-		bais_add.Y = bais_add.Y / (Get_Screen_Resolution().Height() * -0.5f);
-
-		BiasedCoordinateOffset += bais_add;
-	}
 }
 
 #if 0
@@ -276,11 +266,7 @@ Vector2 Render2DClass::Convert_Vert( const Vector2 & v )
 	out.X = WWMath::Floor( out.X + 0.5f );
 	out.Y = WWMath::Floor( out.Y + 0.5f );
 
-	// Bias
-	if ( WW3D::Is_Screen_UV_Biased() ) {	// Global bais setting
-		out.X -= 0.5f;
-		out.Y -= 0.5f;
-	}
+	// Bias removed (Screen UV Bias no longer supported)
 
 
 	// Convert back to (-1,1)-(1,-1)
@@ -294,7 +280,7 @@ Vector2 Render2DClass::Convert_Vert( const Vector2 & v )
 ** Convert Vert must convert from the convention defined by Set_Coordinate_Range
 ** into the convention (-1,1)-(1,-1), which is needed by the renderer.
 // NOPE ** In addition, it rounds all coordinates off to the nearest pixel
-** Also, it offsets the coordinates as need for Screen_UV_Bias
+** Also, it offsets the coordinates as needed
 */
 void Render2DClass::Convert_Vert( Vector2 & vert_out, const Vector2 & vert_in )
 {

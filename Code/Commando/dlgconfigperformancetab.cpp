@@ -279,12 +279,10 @@ DlgConfigPerformanceTabClass::Setup_Controls (void)
 	Enable_Dlg_Item (IDC_TEXTURE_FILTER, false);
 
 	//
-	//	Disable the checkbox if NPatches aren't supported
+	//	NPatches not supported - always disable
 	//
-	if (!WW3D::Supports_NPatches()) {
-		Check_Dlg_Button (IDC_NPATCH_CHECK, false);
-		Enable_Dlg_Item (IDC_NPATCH_CHECK, false);
-	}
+	Check_Dlg_Button (IDC_NPATCH_CHECK, false);
+	Enable_Dlg_Item (IDC_NPATCH_CHECK, false);
 
 	return ;
 }
@@ -614,9 +612,7 @@ DlgConfigPerformanceTabClass::On_Apply (void)
 		registry.Set_Int (VALUE_NAME_TEXTURE_RES,		max (2 - texture_red, 0));
 		registry.Set_Int (VALUE_NAME_PARTICLE_DETAIL, particle_detail);
 
-		if (WW3D::Supports_NPatches()) {
-			registry.Set_Int (VALUE_NAME_NPATCHES,	npatches);
-		}
+		// NPatches not supported, skip saving
 
 		//
 		//	Pass the values onto the game

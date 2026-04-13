@@ -169,24 +169,9 @@ void MeshModelClass::Reset(int polycount,int vertcount,int passcount)
 void MeshModelClass::Register_For_Rendering()
 {
 	HasBeenInUse=true;
-//WW3D::Set_NPatches_Level(1);
-	if (WW3D::Get_NPatches_Level()>1) {
-		if (WW3D::Get_NPatches_Gap_Filling_Mode()!=WW3D::NPATCHES_GAP_FILLING_DISABLED) {
-			Init_For_NPatch_Rendering();
-		}
-		else if (GapFiller) {
-			delete GapFiller;
-			GapFiller=NULL;
-		}
-	}
-	else {
-		if (WW3D::Get_NPatches_Gap_Filling_Mode()==WW3D::NPATCHES_GAP_FILLING_FORCE) {
-			Init_For_NPatch_Rendering();
-		}
-		else if (GapFiller) {
-			delete GapFiller;
-			GapFiller=NULL;
-		}
+	if (GapFiller) {
+		delete GapFiller;
+		GapFiller=NULL;
 	}
 }
 

@@ -537,28 +537,28 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					rotate=!rotate;
 					break;
 				case '1':
-					WW3D::Set_NPatches_Level(1);
+					break;
 					break;
 				case '2':
-					WW3D::Set_NPatches_Level(2);
+					break;
 					break;
 				case '3':
-					WW3D::Set_NPatches_Level(3);
+					break;
 					break;
 				case '4':
-					WW3D::Set_NPatches_Level(4);
+					break;
 					break;
 				case '5':
-					WW3D::Set_NPatches_Level(5);
+					break;
 					break;
 				case '6':
-					WW3D::Set_NPatches_Level(6);
+					break;
 					break;
 				case '7':
-					WW3D::Set_NPatches_Level(7);
+					break;
 					break;
 				case '8':
-					WW3D::Set_NPatches_Level(8);
+					break;
 					break;
 				case 'q':
 					randmat=!randmat;
@@ -582,14 +582,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					break;
 
 				case 'g':
-					{
-						if (WW3D::Get_NPatches_Gap_Filling_Mode()==WW3D::NPATCHES_GAP_FILLING_DISABLED) {
-							WW3D::Set_NPatches_Gap_Filling_Mode(WW3D::NPATCHES_GAP_FILLING_ENABLED);
-						}
-						else {
-							WW3D::Set_NPatches_Gap_Filling_Mode(WW3D::NPATCHES_GAP_FILLING_DISABLED);
-						}
-					}
 					break;
 
 				case 'm':
@@ -1242,7 +1234,6 @@ void add_duplicate()
 void Init_3D_Scene()
 {
 	WW3D::Enable_Sorting(false);
-	WW3D::Set_NPatches_Level(1);
 
 	// build scene	
 	my_scene=NEW_REF(SkeletonSceneClass,());

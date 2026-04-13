@@ -858,12 +858,7 @@ void ShaderClass::Apply()
 	// CULLMODE
 	DX8Wrapper::Set_DX8_Render_State(D3DRS_CULLMODE,Get_Cull_Mode() ? _PolygonCullMode : D3DCULL_NONE);
 
-	// NPATCHES
-	if (diff&ShaderClass::MASK_NPATCHENABLE) {
-		float level=1.0f;
-		if (Get_NPatch_Enable()) level=float(WW3D::Get_NPatches_Level());
-		DX8Wrapper::Set_DX8_Render_State(D3DRS_PATCHSEGMENTS,*((DWORD*)&level));
-	}
+	// NPATCHES - no longer supported, skip
 
 	// Enable/disable alpha test
 	DX8Wrapper::Set_DX8_Render_State(D3DRS_ALPHATESTENABLE,BOOL(Get_Alpha_Test()));	

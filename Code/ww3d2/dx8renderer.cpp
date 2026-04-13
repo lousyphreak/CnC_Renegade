@@ -941,11 +941,6 @@ public:
 		allocated_polygon_array(false)
 	{
 		mmc = mesh_->Peek_Model();
-		if (DX8Wrapper::Get_Current_Caps()->Support_NPatches() && mmc->Needs_Vertex_Normals()) {
-			if (mmc->Get_Flag(MeshGeometryClass::ALLOW_NPATCHES)) {
-				npatch_enable=true;
-			}
-		}
 
 		const GapFillerClass* gap_filler=mmc->Get_Gap_Filler();
 		polygon_count=mmc->Get_Polygon_Count();
@@ -1104,7 +1099,7 @@ void DX8RigidFVFCategoryContainer::Add_Mesh(MeshClass* mesh_)
 			vertex_buffer=NEW_REF(RenderVertexBufferClass,(
 				FVF,
 				vb_size,
-				(DX8Wrapper::Get_Current_Caps()->Support_NPatches() && WW3D::Get_NPatches_Level()>1) ? RenderVertexBufferClass::USAGE_NPATCHES : RenderVertexBufferClass::USAGE_DEFAULT));
+				RenderVertexBufferClass::USAGE_DEFAULT));
 		}
 	}
 
@@ -1302,7 +1297,7 @@ void DX8FVFCategoryContainer::Generate_Texture_Categories(Vertex_Split_Table& sp
 		else {
 			index_buffer=NEW_REF(RenderIndexBufferClass,(
 				ib_size,
-				(DX8Wrapper::Get_Current_Caps()->Support_NPatches() && WW3D::Get_NPatches_Level()>1) ? RenderIndexBufferClass::USAGE_NPATCHES : RenderIndexBufferClass::USAGE_DEFAULT));
+				RenderIndexBufferClass::USAGE_DEFAULT));
 		}
 	}
 

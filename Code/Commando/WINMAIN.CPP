@@ -272,17 +272,8 @@ static bool Video_Card_Driver_Check()
 	int disabled=render_registry.Get_Int( "DriverVersionCheckDisabled" );
 	if (disabled>=87) return true;
 
-	switch (WW3D::Get_Selected_Render_Device_Driver_Status()) {
-	default:
-	case WW3D::RENDER_DEVICE_DRIVER_STATUS_GOOD:
-	case WW3D::RENDER_DEVICE_DRIVER_STATUS_OK:
-	case WW3D::RENDER_DEVICE_DRIVER_STATUS_UNKNOWN:
-		render_registry.Set_Int( "DriverVersionCheckDisabled",87 );
-		return true;
-		break;
-	case WW3D::RENDER_DEVICE_DRIVER_STATUS_BAD:
-		break;
-	}
+	render_registry.Set_Int( "DriverVersionCheckDisabled",87 );
+	return true;
 
 	StringClass options="wwconfig.exe -driverversion";
 	char* opts=options.Peek_Buffer();

@@ -3288,18 +3288,6 @@ public:
 
 #endif // WWDEBUG, development only commands
 
-class ScreenUVBiasConsoleFunctionClass : public ConsoleFunctionClass {
-public:
-	virtual	const char * Get_Name( void )	{ return "screen_uv_bias"; }
-	//virtual	const char * Get_Alias( void )	{ return "sub"; }
-	virtual	const char * Get_Help( void )	{ return "SCREEN_UV_BIAS - toggles the half pixel bias in screen text."; }
-	virtual	void Activate( const char * input ) {
-		WW3D::Set_Screen_UV_Bias( !WW3D::Is_Screen_UV_Biased() );
-      Print( "Screen UV Bias Switched\n" );
-	}
-};
-
-
 class SetBandwidthBudgetOutConsoleFunctionClass : public ConsoleFunctionClass {
 public:
    virtual	const char * Get_Name( void )		{ return "set_bw_budget_out"; }
@@ -5175,7 +5163,6 @@ void	ConsoleFunctionManager::Init( void )
 	FunctionList.Add( new QuitConsoleFunctionClass() );
 	FunctionList.Add( new QuitSlaveConsoleFunctionClass() );
 	FunctionList.Add( new RestartConsoleFunctionClass() );
-	FunctionList.Add( new ScreenUVBiasConsoleFunctionClass() );
 	FunctionList.Add( new SetBandwidthBudgetOutConsoleFunctionClass() );
 	FunctionList.Add( new ToggleSortingConsoleFunctionClass() );
 	FunctionList.Add( new ExtrasConsoleFunctionClass() );  /// CHEATS? MAY NEED TO BE DEV ONLY!!!!

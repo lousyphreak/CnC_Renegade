@@ -163,7 +163,6 @@ bool Is_Main_Window_Event(const SDL_Event &event)
 void Handle_Window_Focus_Gained()
 {
     GameInFocus = true;
-    WW3D::On_Activate_App();
     GameModeManager::Hide_Render_Frames(1);
 }
 

@@ -56,7 +56,6 @@ class		DX8Wrapper;
 class		Matrix3D;
 class		Matrix4;
 
-struct	RenderStatistics;
 class		VertexMaterialClass;
 class		ExtraMaterialPassClass;
 class		RenderInfoClass;
@@ -97,13 +96,7 @@ public:
 		MESH_DRAW_MODE_DEBUG_CLIP,
 		MESH_DRAW_MODE_DEBUG_BOX,
 		MESH_DRAW_MODE_NONE,
-		MESH_DRAW_MODE_DX8_ONLY
-	};
-
-	enum NPatchesGapFillingModeEnum {
-		NPATCHES_GAP_FILLING_DISABLED,
-		NPATCHES_GAP_FILLING_ENABLED,
-		NPATCHES_GAP_FILLING_FORCE
+		MESH_DRAW_MODE_NATIVE
 	};
 
 	enum RenderTransformType {
@@ -144,13 +137,12 @@ public:
 		unsigned int MaxTextureHeight;
 		unsigned int MaxTexturesPerPass;
 		bool SupportsGamma;
-		bool SupportsNPatches;
 		bool SupportsAnisotropicFiltering;
 		bool CanDoMultiPass;
 	};
 
 	struct BackendStatisticsStruct {
-		unsigned int DeviceCalls;
+		unsigned int DrawCalls;
 		unsigned int TextureChanges;
 		unsigned int MatrixChanges;
 		unsigned int MaterialChanges;
@@ -159,13 +151,6 @@ public:
 		unsigned int LightChanges;
 		unsigned int RenderStateChanges;
 		unsigned int TextureStageStateChanges;
-	};
-
-	enum RenderDeviceDriverStatusEnum {
-		RENDER_DEVICE_DRIVER_STATUS_GOOD,
-		RENDER_DEVICE_DRIVER_STATUS_OK,
-		RENDER_DEVICE_DRIVER_STATUS_UNKNOWN,
-		RENDER_DEVICE_DRIVER_STATUS_BAD
 	};
 
 
@@ -183,7 +168,6 @@ public:
 	static WW3DErrorType		Set_Next_Render_Device(void);
 	static WW3DErrorType		Set_Any_Render_Device( void );
 
-	static void					Get_Pixel_Center(float &x, float &y);
 	static void					Get_Render_Target_Resolution(int & set_w,int & set_h,int & get_bits,bool & get_windowed);
 	static void					Get_Device_Resolution(int & set_w,int & set_h,int & get_bits,bool & get_windowed);
 	static WW3DErrorType		Set_Device_Resolution(int w=-1,int h=-1,int bits=-1,int windowed=-1, bool resize_window=false );
@@ -192,9 +176,6 @@ public:
 	static WW3DErrorType		Toggle_Windowed ( void );
 	static void					Set_Window( void *hwnd );
 	static void *				Get_Window( void );
-
-	static WW3DErrorType		On_Activate_App( void );
-	static WW3DErrorType		On_Deactivate_App( void );
 
 	static WW3DErrorType		Registry_Save_Render_Device( const char * sub_key );
 	static WW3DErrorType		Registry_Save_Render_Device( const char * sub_key, int device, int width, int height, int depth, bool windowed, int texture_depth );
@@ -239,9 +220,7 @@ public:
 	static bool					Get_Current_Adapter_Identifier(AdapterIdentifierStruct& identifier);
 	static bool					Get_Current_Render_Capabilities(RenderCapabilitiesStruct& capabilities);
 	static bool					Get_Render_Diagnostics(StringClass& diagnostics, bool compact = false);
-	static bool					Supports_NPatches(void);
 	static void					Get_Backend_Statistics(BackendStatisticsStruct& statistics);
-	static RenderDeviceDriverStatusEnum Get_Selected_Render_Device_Driver_Status(void);
 	static void					Set_Output_Gamma(float gamma, float brightness, float contrast, bool calibrate = true, bool use_limit = true);
 	static bool					Is_Device_Ready(void);
 	static void					Set_Geometry_Draw_Mode(GeometryDrawModeEnum mode);
@@ -315,9 +294,6 @@ public:
 	static void					Enable_Sorting(bool onoff);
 	static bool					Is_Sorting_Enabled(void)					{ return IsSortingEnabled; }
 
-	static void					Set_Screen_UV_Bias( bool onoff )			{ IsScreenUVBiased = onoff; }
-	static bool					Is_Screen_UV_Biased( void )				{ return IsScreenUVBiased; }
-
 	static void					Set_Collision_Box_Display_Mask(int mask);
 	static int					Get_Collision_Box_Display_Mask(void);
 
@@ -337,17 +313,8 @@ public:
 	static void					Expose_Prelit (bool onoff)							{ ExposePrelit = onoff; }
 	static bool					Expose_Prelit ()										{ return (ExposePrelit); }
 
-	static void					Set_Texture_Bitdepth(int bitdepth);
-	static int					Get_Texture_Bitdepth();
-
 	static void					Set_Mesh_Draw_Mode (MeshDrawModeEnum mode)	{ MeshDrawMode = mode; }
 	static MeshDrawModeEnum Get_Mesh_Draw_Mode ()								{ return (MeshDrawMode); }
-
-	static void					Set_NPatches_Gap_Filling_Mode (NPatchesGapFillingModeEnum mode);
-	static NPatchesGapFillingModeEnum 	Get_NPatches_Gap_Filling_Mode () { return (NPatchesGapFillingMode); }
-
-	static void					Set_NPatches_Level(unsigned level);
-	static unsigned			Get_NPatches_Level() { return NPatchesLevel; }
 
 	static void					Enable_Texturing(bool b);
 	static bool					Is_Texturing_Enabled() { return IsTexturingEnabled; }
@@ -384,12 +351,6 @@ public:
 	static bool					Is_Snapshot_Activated()						{ return SnapshotActivated; }
 	static void					Activate_Snapshot(bool b)					{ SnapshotActivated=b; }
 
-	// These clock all the time under user control, and are used to update
-   // Stats.UserStat* when performance sampling is enabled.
-   static long             UserStat0;
-   static long             UserStat1;
-   static long             UserStat2;
-
 private:
 
 	enum
@@ -399,8 +360,6 @@ private:
 		DEFAULT_BIT_DEPTH =					16
 	};
 
-	static void					Read_Gerd_Render_Device_Description(RenderDeviceDescClass &desc);
-	static void					Update_Pixel_Center(void);
 	static void					Allocate_Debug_Resources(void);
 	static void					Release_Debug_Resources(void);
 
@@ -410,20 +369,12 @@ private:
    // etc. need to be considered.
 	static unsigned int				SyncTime;
 
-   // The previously set absolute sync time - this is used to get the interval between
-   // the most recently set sync time and the previous one. Assuming the
-   // application sets sync time at the start of every frame, this represents
-   // the frame interval.
    static unsigned int           PreviousSyncTime;
-
-	static float						PixelCenterX;
-	static float						PixelCenterY;
 
 	static bool							IsInitted;
 	static bool							IsRendering;
 	static bool							IsCapturing;
 	static bool							IsSortingEnabled;
-	static bool							IsScreenUVBiased;
 	static bool							IsBackfaceDebugEnabled;
 
 	static bool							AreDecalsEnabled;
@@ -451,8 +402,6 @@ private:
 	static bool							ThumbnailEnabled;
 
 	static MeshDrawModeEnum			MeshDrawMode;
-	static NPatchesGapFillingModeEnum NPatchesGapFillingMode;
-	static unsigned NPatchesLevel;
 	static bool							IsTexturingEnabled;
 
 	static bool							Lite;

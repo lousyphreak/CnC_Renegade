@@ -160,24 +160,6 @@ static void Get_Detail_String(StringClass& str)
 		default: str+="???\r\n"; break;
 		}
 
-		tmp.Format("Screen UV Bias: %s\r\n",WW3D::Is_Screen_UV_Biased() ? "Enabled" : "Disabled");
-		str+=tmp;
-
-		// NPatch level
-		str+="NPatch level: ";
-		if (WW3D::Supports_NPatches()) {
-			if (WW3D::Get_NPatches_Level()<=1) {
-				str+="Disabled\r\n";
-			}
-			else {
-				tmp.Format("%d\r\n",WW3D::Get_NPatches_Level());
-				str+=tmp;
-			}
-		}
-		else {
-			str+="Not supported\r\n";
-		}
-
 		int w;
 		int h;
 		int bits;

@@ -164,8 +164,6 @@ void ConsoleGameModeClass::Load_Registry_Keys(void)
 	WWASSERT( registry );
 	if ( registry->Is_Valid() ) {
 
-      WW3D::Set_Screen_UV_Bias( registry->Get_Int( "ScreenUVBias", 1 ) != 0 );
-
       Get_Console()->Set_FPS_Active( registry->Get_Int( "FPS", 1 ) != 0 );
 	}
 	delete registry;
@@ -177,13 +175,6 @@ void ConsoleGameModeClass::Save_Registry_Keys(void)
 	RegistryClass * registry = new RegistryClass( APPLICATION_SUB_KEY_NAME_OPTIONS );
 	WWASSERT( registry );
 	if ( registry->Is_Valid() ) {
-		registry->Set_Int( "ScreenUVBias", WW3D::Is_Screen_UV_Biased() );
-
-//      registry->Set_Int( "TextureReduction", WW3D::Get_Texture_Reduction() );
-//      registry->Set_Int( "TextureThumbnail", WW3D::Get_Texture_Thumbnail_Mode() );
-//      registry->Set_Int( "TextureCompression", WW3D::Get_Texture_Compression_Mode() );
-//      registry->Set_Int( "NPatchesLevel", WW3D::Get_NPatches_Level() );
-
       registry->Set_Int( "FPS", Get_Console()->Is_FPS_Active() );
 	}
 	delete registry;
@@ -441,17 +432,7 @@ WWPROFILE( "Input Active" );
 			working_string.Format("%2.0f fps\n",FPS);
 			message += working_string;
 
-#ifdef ATI_DEMO_HACK
-			if (WW3D::Get_NPatches_Level()>1) {
-				working_string.Format(
-					"\nNPATCH level: %d\n",
-					WW3D::Get_NPatches_Level());
-			}
-			else {
-				working_string.Format("\nNPATCH OFF\n");
-			}
-			message += working_string;
-#endif
+
 			working_string.Format(
 				"\npolys/frame: %7d\npolys/second %4dk\n",
 				WW3D::Get_Last_Frame_Poly_Count(),
@@ -628,7 +609,7 @@ WWPROFILE( "Input Active" );
 				"Light changes: %d\n\n"
 				"Sorted polys: %d\n"
 				"Sorted verts: %d\n",
-				backend_stats.DeviceCalls,
+				backend_stats.DrawCalls,
 				Debug_Statistics::Get_DX8_Polygons(),
 				Debug_Statistics::Get_DX8_Vertices(),
 				Debug_Statistics::Get_DX8_Skin_Renders(),
@@ -1287,32 +1268,7 @@ void	ConsoleGameModeClass::Update_Profile( void )
 {
 	WWPROFILE( "Update Profile" );
 
-#ifdef ATI_DEMO_HACK
-// HACK
-	if (Input::Get_State(INPUT_FUNCTION_PROFILE_ENTER_CHILD0)) WW3D::Set_NPatches_Level(0);
-	if (Input::Get_State(INPUT_FUNCTION_PROFILE_ENTER_CHILD1)) WW3D::Set_NPatches_Level(1);
-	if (Input::Get_State(INPUT_FUNCTION_PROFILE_ENTER_CHILD2)) WW3D::Set_NPatches_Level(2);
-	if (Input::Get_State(INPUT_FUNCTION_PROFILE_ENTER_CHILD3)) WW3D::Set_NPatches_Level(3);
-	if (Input::Get_State(INPUT_FUNCTION_PROFILE_ENTER_CHILD4)) WW3D::Set_NPatches_Level(4);
-	if (Input::Get_State(INPUT_FUNCTION_PROFILE_ENTER_CHILD5)) WW3D::Set_NPatches_Level(5);
-	if (Input::Get_State(INPUT_FUNCTION_PROFILE_ENTER_CHILD6)) WW3D::Set_NPatches_Level(6);
-	if (Input::Get_State(INPUT_FUNCTION_PROFILE_ENTER_CHILD7)) WW3D::Set_NPatches_Level(7);
-	if (Input::Get_State(INPUT_FUNCTION_PROFILE_ENTER_CHILD8)) WW3D::Set_NPatches_Level(8);
-	if (Input::Get_State(INPUT_FUNCTION_PROFILE_ENTER_PARENT)) {
-		if (COMBAT_SCENE->Get_Polygon_Mode()==SceneClass::LINE) {
-			COMBAT_SCENE->Set_Polygon_Mode(SceneClass::FILL);
-		}
-		else {
-			COMBAT_SCENE->Set_Polygon_Mode(SceneClass::LINE);
-		}
-	}
-	if (Input::Get_State(INPUT_FUNCTION_PROFILE_ENTER_CHILD9)) {
-		unsigned i=(unsigned)WW3D::Get_NPatches_Gap_Filling_Mode();
-		i&=1;
-		i^=1;
-		WW3D::Set_NPatches_Gap_Filling_Mode( (WW3D::NPatchesGapFillingModeEnum) i);
-	}
-#endif
+
 
 	if (!StatisticsDisplayManager::Is_Current_Display("profile")) return;
 

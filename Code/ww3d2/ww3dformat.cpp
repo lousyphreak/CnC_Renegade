@@ -321,7 +321,7 @@ WW3DFormat Get_Valid_Texture_Format(WW3DFormat format, bool is_compression_allow
 	}
 
 	WW3D::Get_Device_Resolution(w,h,bits,windowed);
-	if (WW3D::Get_Texture_Bitdepth()==16) bits=16;
+	if (DX8Wrapper::Get_Texture_Bitdepth()==16) bits=16;
 
 	// if the device bitdepth is 16, don't allow 32 bit textures
 	if (bits<=16) {

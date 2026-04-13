@@ -321,3 +321,17 @@
 - Current SDL desktop focus-loss handling for the main game should be treated as a platform-integration concern, not gameplay state.
 - `GameInFocus` gates a large amount of legacy behavior (`Input::Update()`, `GameModeManager::Render()`, and dialog reset behavior), so dropping it on SDL focus loss effectively pauses the game even though the main loop is still alive.
 - For the current port, the correct unfocused-window behavior is to ignore SDL deactivation/focus-loss transitions and keep `GameInFocus` true while the main window exists. That preserves normal simulation/render flow when the user tabs away without changing game logic.
+
+## WW3D2 interface layering
+
+- The WW3D2 rendering stack has three layers: **WW3D** (static facade for game code) → **DX8Wrapper** (state cache / render state management) → **BgfxRenderer** (GPU backend).
+- `renderer_types.h` defines engine-owned D3D8 type shims (`D3DLIGHT8`, `D3DMATERIAL8`, `D3DMATRIX`, etc.) — these are compatible struct definitions, NOT actual D3D headers. Internal code legitimately uses these types.
+- The `#ifdef WW3D_DX8` guard is **never defined** in any build configuration — all code behind it is dead.
+- `#if !RENEGADE_WITH_BGFX_RENDERER` is always false since bgfx is the only active renderer — all code behind it is dead.
+- `dx8wrapper.cpp` is NOT compiled in the bgfx build; `dx8wrapper.h` IS included everywhere. When cleaning the header, only the header matters for compilation; the `.cpp` is dormant.
+- `number_of_DX8_calls` extern is defined in `bgfxdynamicbuffer.cpp` and still used for draw call statistics tracking.
+- Render state pass-through methods (`Set_Transform`, `Set_Material`, `Set_Shader`, `Set_Texture`, etc.) stay on WW3D because they are used extensively by external callers in Combat, wwphys, Commando, and wwui — not just internal ww3d2 code.
+- `Set_Texture_Bitdepth` / `Get_Texture_Bitdepth` were removed from WW3D's public API but kept public on DX8Wrapper, since internal ww3d2 code (`ww3dformat.cpp`, `bgfxdynamicbuffer.cpp`) still needs them.
+- NPatches (D3D8 N-Patch tessellation) were completely removed — bgfx does not support this feature and no modern GPU driver does either.
+- Screen UV bias was a D3D8 texel-center alignment hack (half-pixel offset) not needed with modern APIs; removed entirely.
+- The `DX8CALL` macros in the bgfx build path were already assert-on-use stubs, so removing them is safe.

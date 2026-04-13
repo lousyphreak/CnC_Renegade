@@ -393,6 +393,31 @@
     - `dlgconfigperformancetab.cpp`: always disable NPatches checkbox, skip saving NPatches
 - Verified with clean build (`cmake --build build -j20`) and 200+ second runtime (ASAN+UBSAN), no crashes or sanitizer errors.
 
+## WW3D2 renderer refactor — modern GPU architecture
+
+Replaced the D3D8 fixed-function pipeline emulation (single uber-shader with ~30 uniforms encoding D3DTOP opcodes as floats) with a modern multi-shader architecture:
+
+### What changed
+
+- **New overlay shader** (`vs_overlay.sc` / `fs_overlay.sc`): Trivial 2D/UI shader — MVP passthrough, vertex color × optional texture. Uses compact `OverlayVertex` layout (20 bytes: pos3f + color0_u8n + uv0_2f) instead of the 48-byte `SubmissionVertex` that included unused normals, specular, and second UV set. Single vec4 uniform (`u_overlayConfig`) controls texture enable/disable.
+
+- **New mesh shader** (`vs_mesh.sc` / `fs_mesh.sc`): Full 3D rendering shader supporting lighting (ambient + 4 directional), linear vertex fog (3 modes), texgen (4 modes), texture transforms, enum-based stage color/alpha ops, alpha test, and specular add. Uses ~16 vec4 uniforms (down from 30+).
+
+- **StageColorOp enum**: Replaces the float-encoded D3DTOP opcode system. 9 values (DISABLE, MODULATE, SELECT_TEXTURE, SELECT_CURRENT, ADD, ADDSMOOTH, SUBTRACT, BLEND_TEX_ALPHA, BLEND_CUR_ALPHA) map directly from `ShaderClass` gradient/detail enums, bypassing the DX8Wrapper state cache round-trip entirely for stage configuration.
+
+- **Direct ShaderClass mapping**: `Map_Stage0_Color_Op()`, `Map_Stage0_Alpha_Op()`, `Map_Stage1_Color_Op()`, `Map_Stage1_Alpha_Op()` map directly from ShaderClass primary_gradient + texturing state and post_detail_color/alpha_func to StageColorOp, eliminating the old path through `DX8Wrapper::Set_DX8_Texture_Stage_State()` → read back → encode as float.
+
+- **Removed dead features**: BUMPENVMAP, BUMPENVMAPLUMINANCE, DOTPRODUCT3, EXP/EXP2 fog, point/spot light shader calculations, D3DMCS_COLOR2, D3DTA_TFACTOR/SPECULAR, specular power/local viewer calculations, texture factor uniform.
+
+### Files changed
+
+- `bgfxrenderer.h`: Removed `FixedFunctionShaderInputs` struct (~75 lines), removed 28 old uniform handles and `FixedFunctionProgram`. Added `StageColorOp` enum, `OverlayProgram`/`MeshProgram`, 16 new mesh uniforms + 1 overlay uniform + `OverlayVertexLayout`.
+- `bgfxrenderer.cpp`: Rewrote static member definitions, `Init_Render_Resources`, `Shutdown_Render_Resources`. Removed `Apply_Fixed_Function_Shader_Inputs` and `Extract_Viewer_State`. Added `Apply_Overlay_Config`, `Apply_Mesh_Shader_Inputs`, `Get_Overlay_Program`, `Get_Mesh_Program`, `Get_Overlay_Layout`, and StageColorOp mapping functions.
+- `bgfxfixedfunction.cpp`: Removed `Populate_Fixed_Function_Stage_Inputs`, `Populate_Fixed_Function_Texture_Inputs`, `Populate_Fixed_Function_Lighting_Inputs`, `Sanitize_Texture_Stage_State`, `Sanitize_Texcoord_Index`, `Sanitize_Texture_Transform_Flags`, and helper color copy functions. Rewrote draw submission to use `Apply_Mesh_Shader_Inputs` + `MeshProgram`.
+- `render2d.cpp`: Removed `Render2DVertex` (48 bytes), replaced with `OverlayVertex` (20 bytes). Removed `Sanitize_Render2D_Texture_Stage_State` and `Populate_Render2D_Fixed_Function_Inputs`. Rewrote `Render()` to use `OverlayProgram` + `Apply_Overlay_Config`.
+- `CMakeLists.txt`: Removed fixed-function shader compilation, kept only overlay + mesh shader pairs.
+- Deleted `vs_fixed_function.sc`, `fs_fixed_function.sc`, `varying.def.sc`.
+
 ## Next work
 
 - Remove the remaining transient index-rewrite cases in the bgfx fixed-function submitter where feasible, especially cached strip/wireframe draws that still need CPU-side index expansion even after the persistent render-buffer upload work.

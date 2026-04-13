@@ -52,72 +52,15 @@ RectClass							Render2DClass::ScreenResolution( 0,0,0,0 );
 
 namespace
 {
-struct Render2DVertex
+struct OverlayVertex
 {
 	float X;
 	float Y;
 	float Z;
-	float NX;
-	float NY;
-	float NZ;
 	uint32_t Diffuse;
-	uint32_t Specular;
 	float U0;
 	float V0;
-	float U1;
-	float V1;
 };
-
-unsigned Sanitize_Render2D_Texture_Stage_State(unsigned stage, D3DTEXTURESTAGESTATETYPE state)
-{
-	unsigned value = DX8Wrapper::Get_Texture_Stage_State(stage, state);
-	if (value != 0x12345678u) {
-		return value;
-	}
-
-	switch (state) {
-	case D3DTSS_COLOROP:
-		return stage == 0 ? D3DTOP_MODULATE : D3DTOP_DISABLE;
-	case D3DTSS_COLORARG0:
-		return D3DTA_CURRENT;
-	case D3DTSS_COLORARG1:
-		return D3DTA_TEXTURE;
-	case D3DTSS_COLORARG2:
-		return D3DTA_CURRENT;
-	case D3DTSS_ALPHAOP:
-		return stage == 0 ? D3DTOP_SELECTARG1 : D3DTOP_DISABLE;
-	case D3DTSS_ALPHAARG0:
-		return D3DTA_CURRENT;
-	case D3DTSS_ALPHAARG1:
-		return D3DTA_TEXTURE;
-	case D3DTSS_ALPHAARG2:
-		return D3DTA_CURRENT;
-	default:
-		return 0u;
-	}
-}
-
-void Populate_Render2D_Fixed_Function_Inputs(BgfxRenderer::FixedFunctionShaderInputs &shader_inputs)
-{
-	const unsigned texture_factor = DX8Wrapper::Get_DX8_Render_State(D3DRS_TEXTUREFACTOR);
-	shader_inputs.TextureFactor = texture_factor != 0x12345678u ? texture_factor : 0xffffffffu;
-	shader_inputs.Stage0Color[0] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(0, D3DTSS_COLOROP));
-	shader_inputs.Stage0Color[1] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(0, D3DTSS_COLORARG0));
-	shader_inputs.Stage0Color[2] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(0, D3DTSS_COLORARG1));
-	shader_inputs.Stage0Color[3] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(0, D3DTSS_COLORARG2));
-	shader_inputs.Stage0Alpha[0] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(0, D3DTSS_ALPHAOP));
-	shader_inputs.Stage0Alpha[1] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(0, D3DTSS_ALPHAARG0));
-	shader_inputs.Stage0Alpha[2] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(0, D3DTSS_ALPHAARG1));
-	shader_inputs.Stage0Alpha[3] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(0, D3DTSS_ALPHAARG2));
-	shader_inputs.Stage1Color[0] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(1, D3DTSS_COLOROP));
-	shader_inputs.Stage1Color[1] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(1, D3DTSS_COLORARG0));
-	shader_inputs.Stage1Color[2] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(1, D3DTSS_COLORARG1));
-	shader_inputs.Stage1Color[3] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(1, D3DTSS_COLORARG2));
-	shader_inputs.Stage1Alpha[0] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(1, D3DTSS_ALPHAOP));
-	shader_inputs.Stage1Alpha[1] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(1, D3DTSS_ALPHAARG0));
-	shader_inputs.Stage1Alpha[2] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(1, D3DTSS_ALPHAARG1));
-	shader_inputs.Stage1Alpha[3] = static_cast<float>(Sanitize_Render2D_Texture_Stage_State(1, D3DTSS_ALPHAARG2));
-}
 }
 
 
@@ -595,34 +538,17 @@ void Render2DClass::Render(void)
 		return;
 	}
 
-	bgfx::ProgramHandle program = BgfxRenderer::Get_Fixed_Function_Program();
+	bgfx::ProgramHandle program = BgfxRenderer::Get_Overlay_Program();
 	if (!bgfx::isValid(program)) {
 		return;
 	}
 
-	std::vector<Render2DVertex> submission_vertices(static_cast<size_t>(Vertices.Count()));
-	for (int index = 0; index < Vertices.Count(); ++index) {
-		Render2DVertex &vertex = submission_vertices[static_cast<size_t>(index)];
-		vertex.X = Vertices[index].X;
-		vertex.Y = Vertices[index].Y;
-		vertex.Z = ZValue;
-		vertex.NX = 0.0f;
-		vertex.NY = 0.0f;
-		vertex.NZ = 1.0f;
-		vertex.Diffuse = BgfxRenderer::Convert_Packed_Color(static_cast<uint32_t>(Colors[index]));
-		vertex.Specular = 0u;
-		vertex.U0 = UVCoordinates[index].X;
-		vertex.V0 = UVCoordinates[index].Y;
-		vertex.U1 = 0.0f;
-		vertex.V1 = 0.0f;
-	}
-
-	BgfxRenderer::Prepare_Overlay_View();
-	const Matrix4 overlay_view(true);
+	const bool has_texture =
+		Shader.Get_Texturing() != ShaderClass::TEXTURING_DISABLE && Texture != NULL;
 
 	bgfx::TextureHandle texture_handle = BgfxRenderer::Get_White_Texture();
 	uint32_t sampler_flags = BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT;
-	if (Shader.Get_Texturing() != ShaderClass::TEXTURING_DISABLE && Texture != NULL) {
+	if (has_texture) {
 		texture_handle = Texture->Get_Bgfx_Texture();
 		sampler_flags = Texture->Get_Bgfx_Sampler_Flags(0);
 		if (!bgfx::isValid(texture_handle)) {
@@ -630,9 +556,23 @@ void Render2DClass::Render(void)
 		}
 	}
 
-	const bgfx::VertexLayout &layout = BgfxRenderer::Get_Fixed_Function_Layout();
-	const uint32_t vertex_count = static_cast<uint32_t>(submission_vertices.size());
+	const bgfx::VertexLayout &layout = BgfxRenderer::Get_Overlay_Layout();
+	const uint32_t vertex_count = static_cast<uint32_t>(Vertices.Count());
 	const uint32_t index_count = static_cast<uint32_t>(Indices.Count());
+
+	std::vector<OverlayVertex> submission_vertices(static_cast<size_t>(vertex_count));
+	for (int index = 0; index < Vertices.Count(); ++index) {
+		OverlayVertex &vertex = submission_vertices[static_cast<size_t>(index)];
+		vertex.X = Vertices[index].X;
+		vertex.Y = Vertices[index].Y;
+		vertex.Z = ZValue;
+		vertex.Diffuse = BgfxRenderer::Convert_Packed_Color(static_cast<uint32_t>(Colors[index]));
+		vertex.U0 = UVCoordinates[index].X;
+		vertex.V0 = UVCoordinates[index].Y;
+	}
+
+	BgfxRenderer::Prepare_Overlay_View();
+
 	const bool can_use_transient =
 		bgfx::getAvailTransientVertexBuffer(vertex_count, layout) == vertex_count &&
 		bgfx::getAvailTransientIndexBuffer(index_count) == index_count;
@@ -643,7 +583,7 @@ void Render2DClass::Render(void)
 		bgfx::allocTransientVertexBuffer(&vertex_buffer, vertex_count, layout);
 		bgfx::allocTransientIndexBuffer(&index_buffer, index_count);
 
-		memcpy(vertex_buffer.data, submission_vertices.data(), submission_vertices.size() * sizeof(Render2DVertex));
+		memcpy(vertex_buffer.data, submission_vertices.data(), submission_vertices.size() * sizeof(OverlayVertex));
 		memcpy(index_buffer.data, &Indices[0], static_cast<size_t>(index_count) * sizeof(unsigned short));
 
 		bgfx::setVertexBuffer(0, &vertex_buffer);
@@ -651,7 +591,7 @@ void Render2DClass::Render(void)
 	} else {
 		const bgfx::Memory *vertex_memory = bgfx::copy(
 			submission_vertices.data(),
-			static_cast<uint32_t>(submission_vertices.size() * sizeof(Render2DVertex)));
+			static_cast<uint32_t>(submission_vertices.size() * sizeof(OverlayVertex)));
 		const bgfx::Memory *index_memory = bgfx::copy(
 			&Indices[0],
 			static_cast<uint32_t>(index_count * sizeof(unsigned short)));
@@ -660,25 +600,9 @@ void Render2DClass::Render(void)
 
 		bgfx::setVertexBuffer(0, vertex_buffer);
 		bgfx::setIndexBuffer(index_buffer);
+
 		bgfx::setTexture(0, BgfxRenderer::Get_Texture0_Uniform(), texture_handle, sampler_flags);
-		bgfx::setTexture(1, BgfxRenderer::Get_Texture1_Uniform(), BgfxRenderer::Get_White_Texture(), sampler_flags);
-		DX8Wrapper::Set_Shader(Shader);
-		DX8Wrapper::Apply_Render_State_Changes();
-		BgfxRenderer::FixedFunctionShaderInputs shader_inputs;
-		Populate_Render2D_Fixed_Function_Inputs(shader_inputs);
-		if (Shader.Get_Texturing() == ShaderClass::TEXTURING_DISABLE || Texture == NULL) {
-			shader_inputs.Stage0Color[0] = static_cast<float>(D3DTOP_SELECTARG1);
-			shader_inputs.Stage0Color[1] = static_cast<float>(D3DTA_CURRENT);
-			shader_inputs.Stage0Color[2] = static_cast<float>(D3DTA_CURRENT);
-			shader_inputs.Stage0Color[3] = static_cast<float>(D3DTA_CURRENT);
-			shader_inputs.Stage0Alpha[0] = static_cast<float>(D3DTOP_SELECTARG1);
-			shader_inputs.Stage0Alpha[1] = static_cast<float>(D3DTA_CURRENT);
-			shader_inputs.Stage0Alpha[2] = static_cast<float>(D3DTA_CURRENT);
-			shader_inputs.Stage0Alpha[3] = static_cast<float>(D3DTA_CURRENT);
-			shader_inputs.Stage1Color[0] = static_cast<float>(D3DTOP_DISABLE);
-			shader_inputs.Stage1Alpha[0] = static_cast<float>(D3DTOP_DISABLE);
-		}
-		BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(Shader, shader_inputs, overlay_view);
+		BgfxRenderer::Apply_Overlay_Config(has_texture);
 		BgfxRenderer::Apply_Render_State(Shader);
 		bgfx::submit(BgfxRenderer::Get_Overlay_View_Id(), program);
 
@@ -688,24 +612,7 @@ void Render2DClass::Render(void)
 	}
 
 	bgfx::setTexture(0, BgfxRenderer::Get_Texture0_Uniform(), texture_handle, sampler_flags);
-	bgfx::setTexture(1, BgfxRenderer::Get_Texture1_Uniform(), BgfxRenderer::Get_White_Texture(), sampler_flags);
-	DX8Wrapper::Set_Shader(Shader);
-	DX8Wrapper::Apply_Render_State_Changes();
-	BgfxRenderer::FixedFunctionShaderInputs shader_inputs;
-	Populate_Render2D_Fixed_Function_Inputs(shader_inputs);
-	if (Shader.Get_Texturing() == ShaderClass::TEXTURING_DISABLE || Texture == NULL) {
-		shader_inputs.Stage0Color[0] = static_cast<float>(D3DTOP_SELECTARG1);
-		shader_inputs.Stage0Color[1] = static_cast<float>(D3DTA_CURRENT);
-		shader_inputs.Stage0Color[2] = static_cast<float>(D3DTA_CURRENT);
-		shader_inputs.Stage0Color[3] = static_cast<float>(D3DTA_CURRENT);
-		shader_inputs.Stage0Alpha[0] = static_cast<float>(D3DTOP_SELECTARG1);
-		shader_inputs.Stage0Alpha[1] = static_cast<float>(D3DTA_CURRENT);
-		shader_inputs.Stage0Alpha[2] = static_cast<float>(D3DTA_CURRENT);
-		shader_inputs.Stage0Alpha[3] = static_cast<float>(D3DTA_CURRENT);
-		shader_inputs.Stage1Color[0] = static_cast<float>(D3DTOP_DISABLE);
-		shader_inputs.Stage1Alpha[0] = static_cast<float>(D3DTOP_DISABLE);
-	}
-	BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(Shader, shader_inputs, overlay_view);
+	BgfxRenderer::Apply_Overlay_Config(has_texture);
 	BgfxRenderer::Apply_Render_State(Shader);
 	bgfx::submit(BgfxRenderer::Get_Overlay_View_Id(), program);
 }

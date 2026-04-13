@@ -335,3 +335,29 @@
 - NPatches (D3D8 N-Patch tessellation) were completely removed — bgfx does not support this feature and no modern GPU driver does either.
 - Screen UV bias was a D3D8 texel-center alignment hack (half-pixel offset) not needed with modern APIs; removed entirely.
 - The `DX8CALL` macros in the bgfx build path were already assert-on-use stubs, so removing them is safe.
+
+## Shader Architecture (post-refactor)
+
+### StageColorOp mapping from ShaderClass
+- **Stage 0 Color**: Texturing enabled → GRADIENT_DISABLE=SELECT_TEXTURE, GRADIENT_MODULATE=MODULATE, GRADIENT_ADD=ADD. Texturing disabled → GRADIENT_DISABLE=DISABLE, others=SELECT_CURRENT.
+- **Stage 0 Alpha**: Same pattern but GRADIENT_ADD maps to MODULATE (not ADD) since alpha blending uses modulate.
+- **Stage 1 Color**: Maps from `post_detail_color_func` — DETAILCOLOR_SCALE=MODULATE, DETAILCOLOR_ADD=ADD, DETAILCOLOR_INVSCALE=ADDSMOOTH, DETAILCOLOR_BLEND=BLEND_TEX_ALPHA, DETAILCOLOR_DETAILBLEND=BLEND_CUR_ALPHA, etc.
+- **Stage 1 Alpha**: Maps from `post_detail_alpha_func` — DETAILALPHA_SCALE=MODULATE, DETAILALPHA_INVSCALE=ADDSMOOTH, DETAILALPHA_DETAIL=SELECT_TEXTURE.
+
+### Dead D3D8 features confirmed unused
+- BUMPENVMAP/BUMPENVMAPLUMINANCE/DOTPRODUCT3: commented out behind capability checks that never pass.
+- EXP/EXP2 fog: only D3DFOG_LINEAR is ever set.
+- Point/spot light calculations: `LightEnvironmentClass` pre-converts all lights to directional before shader submission.
+- D3DMCS_COLOR2 material source: never set by any game code.
+- D3DTA_TFACTOR, D3DTA_SPECULAR as texture stage arguments: never used.
+- Specular power lighting: no specular lighting calculation is needed because the original game effectively has no glossy surfaces.
+
+### Texgen/texture transform still read from DX8Wrapper
+- `VertexMaterialClass` mappers (Environment, ClassicEnvironment, Linear, Screen, etc.) configure texgen by setting `D3DTSS_TEXCOORDINDEX` and texture transform matrices via `DX8Wrapper::Set_Transform(D3DTS_TEXTUREn)`.
+- The mesh shader reads these from DX8Wrapper state cache because the mappers are the authoritative source — no bypass possible without refactoring the entire material system.
+- Texgen mode is extracted from the high bits of TEXCOORDINDEX: TCI_PASSTHRU=0, TCI_CAMERASPACENORMAL=1, TCI_CAMERASPACEPOSITION=2, TCI_CAMERASPACEREFLECTIONVECTOR=3.
+- UV source index is the low 16 bits of TEXCOORDINDEX.
+
+### bgfx setUniform count parameter
+- For `Vec4` arrays: count = number of vec4s (e.g., `setUniform(handle, data, 4)` for 4 vec4s = 16 floats = 64 bytes).
+- For `Mat4`: count = number of mat4s. A single mat4 should use count=1 (the default). Using count=4 would try to read 4×64=256 bytes, causing buffer overflows.

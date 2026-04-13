@@ -24,6 +24,9 @@
 #include "rawfile.h"
 #include "surfaceclass.h"
 #include "texture.h"
+#include "vertmaterial.h"
+#include "vertexbuffer.h"
+#include "vertexformat.h"
 #include "wwdebug.h"
 
 bool BgfxRenderer::IsInitted = false;
@@ -36,38 +39,29 @@ bool BgfxRenderer::Windowed = true;
 void *BgfxRenderer::WindowHandle = nullptr;
 bgfx::PlatformData BgfxRenderer::PlatformData = {};
 bgfx::VertexLayout BgfxRenderer::FixedFunctionLayout;
+bgfx::VertexLayout BgfxRenderer::OverlayVertexLayout;
 bgfx::TextureHandle BgfxRenderer::WhiteTexture = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::Texture0Uniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::Texture1Uniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionConfig1Uniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionFogColorUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionFogParamsUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionTextureFactorUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionStage0ColorUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionStage0AlphaUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionStage1ColorUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionStage1AlphaUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionTextureStageConfigUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionTextureTransformUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionBumpEnvMatrixUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionBumpEnvParamsUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionMaterialAmbientUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionMaterialDiffuseUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionMaterialSpecularUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionMaterialEmissiveUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionMaterialParamsUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionViewerUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionSceneAmbientUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionLightingConfigUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionMaterialSourceConfigUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionLightPositionsUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionLightDirectionsUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionLightAmbientUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionLightDiffuseUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionLightSpecularUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionLightAttenuationUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::FixedFunctionLightSpotParamsUniform = BGFX_INVALID_HANDLE;
-bgfx::ProgramHandle BgfxRenderer::FixedFunctionProgram = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::OverlayConfigUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MeshConfigUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MeshMaterialConfigUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MeshMaterialAmbientUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MeshMaterialDiffuseUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MeshMaterialEmissiveUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MeshSceneAmbientUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MeshFogParamsUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MeshFogColorUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MeshLightDirUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MeshLightColorUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MeshTexgenModeUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MeshTexTransformFlagsUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MeshTexTransform0Uniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MeshTexTransform1Uniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MeshFragConfigUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MeshFragConfig2Uniform = BGFX_INVALID_HANDLE;
+bgfx::ProgramHandle BgfxRenderer::OverlayProgram = BGFX_INVALID_HANDLE;
+bgfx::ProgramHandle BgfxRenderer::MeshProgram = BGFX_INVALID_HANDLE;
 Matrix4 BgfxRenderer::CurrentViewMatrix(true);
 Matrix4 BgfxRenderer::CurrentProjectionMatrix(true);
 
@@ -141,42 +135,6 @@ bool Matrices_Are_Equal(const Matrix4 &a, const Matrix4 &b)
         }
     }
     return true;
-}
-
-void Extract_Viewer_State(const Matrix4 &view_matrix, bool local_viewer, float *viewer_state)
-{
-    if (!local_viewer) {
-        viewer_state[0] = view_matrix[0][2];
-        viewer_state[1] = view_matrix[1][2];
-        viewer_state[2] = view_matrix[2][2];
-        viewer_state[3] = 0.0f;
-
-        const float length_squared =
-            viewer_state[0] * viewer_state[0]
-            + viewer_state[1] * viewer_state[1]
-            + viewer_state[2] * viewer_state[2];
-        if (length_squared > 1.0e-12f) {
-            const float inverse_length = 1.0f / std::sqrt(length_squared);
-            viewer_state[0] *= inverse_length;
-            viewer_state[1] *= inverse_length;
-            viewer_state[2] *= inverse_length;
-        } else {
-            viewer_state[0] = 0.0f;
-            viewer_state[1] = 0.0f;
-            viewer_state[2] = 1.0f;
-        }
-
-        return;
-    }
-
-    const float tx = view_matrix[0][3];
-    const float ty = view_matrix[1][3];
-    const float tz = view_matrix[2][3];
-
-    viewer_state[0] = -(view_matrix[0][0] * tx + view_matrix[1][0] * ty + view_matrix[2][0] * tz);
-    viewer_state[1] = -(view_matrix[0][1] * tx + view_matrix[1][1] * ty + view_matrix[2][1] * tz);
-    viewer_state[2] = -(view_matrix[0][2] * tx + view_matrix[1][2] * ty + view_matrix[2][2] * tz);
-    viewer_state[3] = 1.0f;
 }
 
 float Decode_Dword_Float(unsigned value)
@@ -1801,9 +1759,19 @@ bgfx::UniformHandle BgfxRenderer::Get_Texture1_Uniform()
     return Texture1Uniform;
 }
 
-bgfx::ProgramHandle BgfxRenderer::Get_Fixed_Function_Program()
+bgfx::ProgramHandle BgfxRenderer::Get_Overlay_Program()
 {
-    return FixedFunctionProgram;
+    return OverlayProgram;
+}
+
+bgfx::ProgramHandle BgfxRenderer::Get_Mesh_Program()
+{
+    return MeshProgram;
+}
+
+const bgfx::VertexLayout &BgfxRenderer::Get_Overlay_Layout()
+{
+    return OverlayVertexLayout;
 }
 
 bool BgfxRenderer::Supports_Texture_Format(WW3DFormat format)
@@ -2057,114 +2025,293 @@ void BgfxRenderer::Apply_Render_State(const ShaderClass &shader, unsigned cull_m
     bgfx::setStencil(Build_Stencil_State());
 }
 
-void BgfxRenderer::Apply_Fixed_Function_Shader_Inputs(
-    const ShaderClass &shader,
-    const FixedFunctionShaderInputs &inputs,
-    const Matrix4 &view_matrix)
+void BgfxRenderer::Apply_Overlay_Config(bool has_texture)
 {
-    const unsigned alpha_reference_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_ALPHAREF);
-    const unsigned alpha_function_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_ALPHAFUNC);
+    float overlay_config[4] = {has_texture ? 1.0f : 0.0f, 0.0f, 0.0f, 0.0f};
+    bgfx::setUniform(OverlayConfigUniform, overlay_config);
+}
+
+namespace
+{
+unsigned Normalize_Material_Source_For_Mesh(unsigned source, bool color_vertex_enabled)
+{
+    if (!color_vertex_enabled) return D3DMCS_MATERIAL;
+    return (source == D3DMCS_COLOR1) ? D3DMCS_COLOR1 : D3DMCS_MATERIAL;
+}
+
+StageColorOp Map_Stage0_Color_Op(const ShaderClass &shader)
+{
+    if (shader.Get_Texturing() == ShaderClass::TEXTURING_DISABLE) {
+        return shader.Get_Primary_Gradient() == ShaderClass::GRADIENT_DISABLE
+            ? STAGE_DISABLE : STAGE_SELECT_CURRENT;
+    }
+    switch (shader.Get_Primary_Gradient()) {
+    case ShaderClass::GRADIENT_DISABLE: return STAGE_SELECT_TEXTURE;
+    case ShaderClass::GRADIENT_ADD:     return STAGE_ADD;
+    default:                            return STAGE_MODULATE;
+    }
+}
+
+StageColorOp Map_Stage0_Alpha_Op(const ShaderClass &shader)
+{
+    if (shader.Get_Texturing() == ShaderClass::TEXTURING_DISABLE) {
+        return shader.Get_Primary_Gradient() == ShaderClass::GRADIENT_DISABLE
+            ? STAGE_DISABLE : STAGE_SELECT_CURRENT;
+    }
+    switch (shader.Get_Primary_Gradient()) {
+    case ShaderClass::GRADIENT_DISABLE: return STAGE_SELECT_TEXTURE;
+    default:                            return STAGE_MODULATE;
+    }
+}
+
+StageColorOp Map_Stage1_Color_Op(const ShaderClass &shader)
+{
+    if (shader.Get_Texturing() == ShaderClass::TEXTURING_DISABLE) return STAGE_DISABLE;
+    switch (shader.Get_Post_Detail_Color_Func()) {
+    case ShaderClass::DETAILCOLOR_DETAIL:      return STAGE_SELECT_TEXTURE;
+    case ShaderClass::DETAILCOLOR_SCALE:       return STAGE_MODULATE;
+    case ShaderClass::DETAILCOLOR_INVSCALE:    return STAGE_ADDSMOOTH;
+    case ShaderClass::DETAILCOLOR_ADD:         return STAGE_ADD;
+    case ShaderClass::DETAILCOLOR_SUB:         return STAGE_SUBTRACT;
+    case ShaderClass::DETAILCOLOR_BLEND:       return STAGE_BLEND_TEX_ALPHA;
+    case ShaderClass::DETAILCOLOR_DETAILBLEND: return STAGE_BLEND_CUR_ALPHA;
+    default:                                   return STAGE_DISABLE;
+    }
+}
+
+StageColorOp Map_Stage1_Alpha_Op(const ShaderClass &shader)
+{
+    if (shader.Get_Texturing() == ShaderClass::TEXTURING_DISABLE) return STAGE_DISABLE;
+    switch (shader.Get_Post_Detail_Alpha_Func()) {
+    case ShaderClass::DETAILALPHA_DETAIL:   return STAGE_SELECT_TEXTURE;
+    case ShaderClass::DETAILALPHA_SCALE:    return STAGE_MODULATE;
+    case ShaderClass::DETAILALPHA_INVSCALE: return STAGE_ADDSMOOTH;
+    default:                                return STAGE_DISABLE;
+    }
+}
+
+float Resolve_Texgen_Mode(unsigned tci_flags)
+{
+    const unsigned mode = tci_flags & 0xffff0000u;
+    if (mode == D3DTSS_TCI_CAMERASPACENORMAL) return 1.0f;
+    if (mode == D3DTSS_TCI_CAMERASPACEPOSITION) return 2.0f;
+    if (mode == D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR) return 3.0f;
+    return 0.0f;
+}
+
+float Resolve_Tex_Transform_Flags(unsigned flags)
+{
+    if (flags == D3DTTFF_DISABLE) return 0.0f;
+    if (flags == D3DTTFF_COUNT2) return 1.0f;
+    // D3DTTFF_COUNT3 | D3DTTFF_PROJECTED
+    return 2.0f;
+}
+
+unsigned Sanitize_Texcoord_Index_For_Mesh(unsigned stage)
+{
+    const unsigned value = DX8Wrapper::Get_Texture_Stage_State(stage, D3DTSS_TEXCOORDINDEX);
+    return value != 0x12345678u ? value : (D3DTSS_TCI_PASSTHRU | stage);
+}
+
+unsigned Sanitize_Tex_Transform_Flags_For_Mesh(unsigned stage)
+{
+    const unsigned value = DX8Wrapper::Get_Texture_Stage_State(stage, D3DTSS_TEXTURETRANSFORMFLAGS);
+    return value != 0x12345678u ? value : D3DTTFF_DISABLE;
+}
+}
+
+void BgfxRenderer::Apply_Mesh_Shader_Inputs(
+    const ShaderClass &shader,
+    const VertexBufferClass &vertex_buffer,
+    const VertexMaterialClass *material)
+{
+    RenderStateStruct render_state;
+    DX8Wrapper::Get_Render_State(render_state);
+
+    // Resolve material colors
+    Vector3 ambient(1.0f, 1.0f, 1.0f);
+    Vector3 diffuse(1.0f, 1.0f, 1.0f);
+    Vector3 emissive(0.0f, 0.0f, 0.0f);
+    float diffuse_alpha = 1.0f;
+
+    if (material != nullptr) {
+        material->Get_Ambient(&ambient);
+        material->Get_Diffuse(&diffuse);
+        material->Get_Emissive(&emissive);
+        diffuse_alpha = material->Get_Opacity();
+    } else {
+        ambient = Vector3(render_state.material_state.Ambient.r, render_state.material_state.Ambient.g, render_state.material_state.Ambient.b);
+        diffuse = Vector3(render_state.material_state.Diffuse.r, render_state.material_state.Diffuse.g, render_state.material_state.Diffuse.b);
+        emissive = Vector3(render_state.material_state.Emissive.r, render_state.material_state.Emissive.g, render_state.material_state.Emissive.b);
+        diffuse_alpha = render_state.material_state.Diffuse.a;
+    }
+
+    const unsigned fvf = vertex_buffer.Vertex_Format_Info().Get_Vertex_Format();
+    const bool has_normals = (fvf & VERTEX_FORMAT_FLAG_NORMAL) != 0u;
+    const bool lighting_enabled = DX8Wrapper::Get_DX8_Render_State(D3DRS_LIGHTING) != 0u;
+    const unsigned color_vertex_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_COLORVERTEX);
+    const bool color_vertex_enabled = color_vertex_state != 0x12345678u ? color_vertex_state != FALSE : true;
     const unsigned specular_enable_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_SPECULARENABLE);
-    const unsigned local_viewer_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_LOCALVIEWER);
-    unsigned fog_mode_state = D3DFOG_NONE;
-    bool range_fog_enabled = false;
     const bool specular_enabled =
-        specular_enable_state != kUnsetRenderState
+        specular_enable_state != 0x12345678u
             ? specular_enable_state != FALSE
             : shader.Get_Secondary_Gradient() == ShaderClass::SECONDARY_GRADIENT_ENABLE;
-    const bool local_viewer_enabled =
-        local_viewer_state != kUnsetRenderState ? local_viewer_state != FALSE : true;
-    float alpha_test_function = -1.0f;
-    float alpha_reference = static_cast<float>(alpha_reference_state & 0xffu) / 255.0f;
-    if (shader.Get_Alpha_Test() == ShaderClass::ALPHATEST_ENABLE) {
-        unsigned alpha_function = alpha_function_state;
-        if (alpha_function > D3DCMP_ALWAYS || (alpha_function == 0u && alpha_reference_state == 0u)) {
-            alpha_function = D3DCMP_GREATEREQUAL;
-            alpha_reference = 0x60 / 255.0f;
-        }
 
-        alpha_test_function = static_cast<float>(alpha_function);
+    // Fog
+    float fog_mode = 0.0f;
+    bool range_fog = false;
+    bool fog_enabled = DX8Wrapper::Get_Fog_Enable();
+    if (fog_enabled) {
+        unsigned fog_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGTABLEMODE);
+        if (fog_state == D3DFOG_NONE) fog_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGVERTEXMODE);
+        if (fog_state == D3DFOG_NONE || fog_state > D3DFOG_LINEAR) fog_enabled = false;
+        range_fog = fog_enabled && DX8Wrapper::Get_DX8_Render_State(D3DRS_RANGEFOGENABLE) != FALSE;
     }
 
-    if (inputs.FogEnabled) {
-        fog_mode_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGTABLEMODE);
-        if (fog_mode_state == D3DFOG_NONE) {
-            fog_mode_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGVERTEXMODE);
+    // Map ShaderClass fog mode to fragment shader fog mode
+    float frag_fog_mode = 0.0f;
+    if (fog_enabled) {
+        switch (shader.Get_Fog_Func()) {
+        case ShaderClass::FOG_ENABLE:         frag_fog_mode = 1.0f; break;
+        case ShaderClass::FOG_SCALE_FRAGMENT: frag_fog_mode = 2.0f; break;
+        case ShaderClass::FOG_WHITE:          frag_fog_mode = 3.0f; break;
+        default:                              frag_fog_mode = 0.0f; break;
         }
-
-        if (fog_mode_state > D3DFOG_LINEAR) {
-            fog_mode_state = D3DFOG_NONE;
-        }
-
-        range_fog_enabled = fog_mode_state != D3DFOG_NONE
-            && DX8Wrapper::Get_DX8_Render_State(D3DRS_RANGEFOGENABLE) != FALSE;
     }
 
-    float config1[4] = {
-        alpha_test_function,
-        alpha_reference,
-        inputs.FogEnabled ? static_cast<float>(shader.Get_Fog_Func()) : 0.0f,
+    float mesh_config[4] = {
+        lighting_enabled ? 1.0f : 0.0f,
+        has_normals ? 1.0f : 0.0f,
+        fog_enabled ? 1.0f : 0.0f,
         specular_enabled ? 1.0f : 0.0f};
 
-    float fog_color[4] = {
-        static_cast<float>((inputs.FogColor >> 16) & 0xffu) / 255.0f,
-        static_cast<float>((inputs.FogColor >> 8) & 0xffu) / 255.0f,
-        static_cast<float>(inputs.FogColor & 0xffu) / 255.0f,
-        static_cast<float>((inputs.FogColor >> 24) & 0xffu) / 255.0f};
-
-    float texture_factor[4] = {
-        static_cast<float>((inputs.TextureFactor >> 16) & 0xffu) / 255.0f,
-        static_cast<float>((inputs.TextureFactor >> 8) & 0xffu) / 255.0f,
-        static_cast<float>(inputs.TextureFactor & 0xffu) / 255.0f,
-        static_cast<float>((inputs.TextureFactor >> 24) & 0xffu) / 255.0f};
-
-    float bump_env_matrix[4] = {
-        inputs.BumpEnvMatrix[0],
-        inputs.BumpEnvMatrix[1],
-        inputs.BumpEnvMatrix[2],
-        inputs.BumpEnvMatrix[3]};
-
-    float bump_env_params[4] = {
-        inputs.BumpEnvLuminanceScale,
-        inputs.BumpEnvLuminanceOffset,
-        0.0f,
+    float material_config[4] = {
+        static_cast<float>(Normalize_Material_Source_For_Mesh(
+            DX8Wrapper::Get_DX8_Render_State(D3DRS_DIFFUSEMATERIALSOURCE), color_vertex_enabled)),
+        static_cast<float>(Normalize_Material_Source_For_Mesh(
+            DX8Wrapper::Get_DX8_Render_State(D3DRS_AMBIENTMATERIALSOURCE), color_vertex_enabled)),
+        static_cast<float>(Normalize_Material_Source_For_Mesh(
+            DX8Wrapper::Get_DX8_Render_State(D3DRS_EMISSIVEMATERIALSOURCE), color_vertex_enabled)),
         0.0f};
+
+    float mat_ambient[4] = {ambient.X, ambient.Y, ambient.Z, 1.0f};
+    float mat_diffuse[4] = {diffuse.X, diffuse.Y, diffuse.Z, diffuse_alpha};
+    float mat_emissive[4] = {emissive.X, emissive.Y, emissive.Z, 1.0f};
+
+    const unsigned ambient_color = DX8Wrapper::Get_DX8_Render_State(D3DRS_AMBIENT);
+    float scene_ambient[4];
+    if (ambient_color != 0x12345678u) {
+        scene_ambient[0] = static_cast<float>((ambient_color >> 16) & 0xffu) / 255.0f;
+        scene_ambient[1] = static_cast<float>((ambient_color >> 8) & 0xffu) / 255.0f;
+        scene_ambient[2] = static_cast<float>(ambient_color & 0xffu) / 255.0f;
+        scene_ambient[3] = 1.0f;
+    } else {
+        scene_ambient[0] = scene_ambient[1] = scene_ambient[2] = 0.0f;
+        scene_ambient[3] = 1.0f;
+    }
+
     float fog_params[4] = {
         Decode_Dword_Float(DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGSTART)),
         Decode_Dword_Float(DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGEND)),
-        Decode_Dword_Float(DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGDENSITY)),
-        range_fog_enabled ? -static_cast<float>(fog_mode_state) : static_cast<float>(fog_mode_state)};
-    float viewer_state[4];
-    Extract_Viewer_State(view_matrix, local_viewer_enabled, viewer_state);
+        range_fog ? 1.0f : -1.0f,
+        0.0f};
 
-    bgfx::setUniform(FixedFunctionConfig1Uniform, config1);
-    bgfx::setUniform(FixedFunctionFogColorUniform, fog_color);
-    bgfx::setUniform(FixedFunctionFogParamsUniform, fog_params);
-    bgfx::setUniform(FixedFunctionTextureFactorUniform, texture_factor);
-    bgfx::setUniform(FixedFunctionStage0ColorUniform, inputs.Stage0Color);
-    bgfx::setUniform(FixedFunctionStage0AlphaUniform, inputs.Stage0Alpha);
-    bgfx::setUniform(FixedFunctionStage1ColorUniform, inputs.Stage1Color);
-    bgfx::setUniform(FixedFunctionStage1AlphaUniform, inputs.Stage1Alpha);
-    bgfx::setUniform(FixedFunctionTextureStageConfigUniform, inputs.TextureStageConfig, 2);
-    bgfx::setUniform(FixedFunctionTextureTransformUniform, inputs.TextureTransformRows, 8);
-    bgfx::setUniform(FixedFunctionBumpEnvMatrixUniform, bump_env_matrix);
-    bgfx::setUniform(FixedFunctionBumpEnvParamsUniform, bump_env_params);
-    bgfx::setUniform(FixedFunctionMaterialAmbientUniform, inputs.MaterialAmbient);
-    bgfx::setUniform(FixedFunctionMaterialDiffuseUniform, inputs.MaterialDiffuse);
-    bgfx::setUniform(FixedFunctionMaterialSpecularUniform, inputs.MaterialSpecular);
-    bgfx::setUniform(FixedFunctionMaterialEmissiveUniform, inputs.MaterialEmissive);
-    bgfx::setUniform(FixedFunctionMaterialParamsUniform, inputs.MaterialParams);
-    bgfx::setUniform(FixedFunctionSceneAmbientUniform, inputs.SceneAmbient);
-    bgfx::setUniform(FixedFunctionLightingConfigUniform, inputs.LightingConfig);
-    bgfx::setUniform(FixedFunctionMaterialSourceConfigUniform, inputs.MaterialSourceConfig);
-    bgfx::setUniform(FixedFunctionLightPositionsUniform, inputs.LightPositions, 4);
-    bgfx::setUniform(FixedFunctionLightDirectionsUniform, inputs.LightDirections, 4);
-    bgfx::setUniform(FixedFunctionLightAmbientUniform, inputs.LightAmbient, 4);
-    bgfx::setUniform(FixedFunctionLightDiffuseUniform, inputs.LightDiffuse, 4);
-    bgfx::setUniform(FixedFunctionLightSpecularUniform, inputs.LightSpecular, 4);
-    bgfx::setUniform(FixedFunctionLightAttenuationUniform, inputs.LightAttenuation, 4);
-    bgfx::setUniform(FixedFunctionLightSpotParamsUniform, inputs.LightSpotParams, 4);
-    bgfx::setUniform(FixedFunctionViewerUniform, viewer_state);
+    uint32_t fog_color_packed = DX8Wrapper::Get_Fog_Color();
+    float fog_color[4] = {
+        static_cast<float>((fog_color_packed >> 16) & 0xffu) / 255.0f,
+        static_cast<float>((fog_color_packed >> 8) & 0xffu) / 255.0f,
+        static_cast<float>(fog_color_packed & 0xffu) / 255.0f,
+        1.0f};
+
+    // Lights (directional only — LightEnvironmentClass pre-converts point/spot)
+    float light_dir[16] = {};
+    float light_color[16] = {};
+    for (unsigned i = 0; i < 4u; ++i) {
+        const D3DLIGHT8 &light = DX8Wrapper::Peek_Light(i);
+        const size_t off = static_cast<size_t>(i) * 4u;
+        light_dir[off + 0] = light.Direction.x;
+        light_dir[off + 1] = light.Direction.y;
+        light_dir[off + 2] = light.Direction.z;
+        light_dir[off + 3] = DX8Wrapper::Is_Light_Enabled(i) ? 1.0f : 0.0f;
+        light_color[off + 0] = light.Diffuse.r;
+        light_color[off + 1] = light.Diffuse.g;
+        light_color[off + 2] = light.Diffuse.b;
+        light_color[off + 3] = 0.0f;
+    }
+
+    // Texgen
+    const unsigned tci0 = Sanitize_Texcoord_Index_For_Mesh(0);
+    const unsigned tci1 = Sanitize_Texcoord_Index_For_Mesh(1);
+    float texgen_mode[4] = {
+        Resolve_Texgen_Mode(tci0),
+        static_cast<float>(tci0 & 0xffffu),
+        Resolve_Texgen_Mode(tci1),
+        static_cast<float>(tci1 & 0xffffu)};
+
+    // Texture transforms
+    const unsigned ttf0 = Sanitize_Tex_Transform_Flags_For_Mesh(0);
+    const unsigned ttf1 = Sanitize_Tex_Transform_Flags_For_Mesh(1);
+    float tex_transform_flags[4] = {
+        Resolve_Tex_Transform_Flags(ttf0),
+        Resolve_Tex_Transform_Flags(ttf1),
+        0.0f, 0.0f};
+
+    Matrix4 tex_transform0(true);
+    Matrix4 tex_transform1(true);
+    if (ttf0 != D3DTTFF_DISABLE) {
+        DX8Wrapper::Get_Transform(D3DTS_TEXTURE0, tex_transform0);
+    }
+    if (ttf1 != D3DTTFF_DISABLE) {
+        DX8Wrapper::Get_Transform(D3DTS_TEXTURE1, tex_transform1);
+    }
+
+    // Stage ops from ShaderClass (bypassing DX8Wrapper float encoding)
+    float alpha_test_ref = -1.0f;
+    if (shader.Get_Alpha_Test() == ShaderClass::ALPHATEST_ENABLE) {
+        const unsigned alpha_ref_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_ALPHAREF);
+        alpha_test_ref = (alpha_ref_state != 0x12345678u && alpha_ref_state != 0u)
+            ? static_cast<float>(alpha_ref_state & 0xffu) / 255.0f
+            : 0x60 / 255.0f;
+    }
+
+    float frag_config[4] = {
+        static_cast<float>(Map_Stage0_Color_Op(shader)),
+        static_cast<float>(Map_Stage1_Color_Op(shader)),
+        alpha_test_ref,
+        static_cast<float>(Map_Stage0_Alpha_Op(shader))};
+
+    float frag_config2[4] = {
+        static_cast<float>(Map_Stage1_Alpha_Op(shader)),
+        frag_fog_mode,
+        specular_enabled ? 1.0f : 0.0f,
+        0.0f};
+
+    // Upload uniforms
+    bgfx::setUniform(MeshConfigUniform, mesh_config);
+    bgfx::setUniform(MeshMaterialConfigUniform, material_config);
+    bgfx::setUniform(MeshMaterialAmbientUniform, mat_ambient);
+    bgfx::setUniform(MeshMaterialDiffuseUniform, mat_diffuse);
+    bgfx::setUniform(MeshMaterialEmissiveUniform, mat_emissive);
+    bgfx::setUniform(MeshSceneAmbientUniform, scene_ambient);
+    bgfx::setUniform(MeshFogParamsUniform, fog_params);
+    bgfx::setUniform(MeshFogColorUniform, fog_color);
+    bgfx::setUniform(MeshLightDirUniform, light_dir, 4);
+    bgfx::setUniform(MeshLightColorUniform, light_color, 4);
+    bgfx::setUniform(MeshTexgenModeUniform, texgen_mode);
+    bgfx::setUniform(MeshTexTransformFlagsUniform, tex_transform_flags);
+
+    float tex_mat0[16];
+    float tex_mat1[16];
+    for (int r = 0; r < 4; ++r) {
+        for (int c = 0; c < 4; ++c) {
+            tex_mat0[r * 4 + c] = tex_transform0[r][c];
+            tex_mat1[r * 4 + c] = tex_transform1[r][c];
+        }
+    }
+    bgfx::setUniform(MeshTexTransform0Uniform, tex_mat0);
+    bgfx::setUniform(MeshTexTransform1Uniform, tex_mat1);
+    bgfx::setUniform(MeshFragConfigUniform, frag_config);
+    bgfx::setUniform(MeshFragConfig2Uniform, frag_config2);
 }
 
 std::uint32_t BgfxRenderer::Convert_Packed_Color(std::uint32_t argb_color)
@@ -2183,339 +2330,110 @@ bool BgfxRenderer::Init_Render_Resources()
         .add(bgfx::Attrib::TexCoord1, 2, bgfx::AttribType::Float)
         .end();
 
-    if (!bgfx::isValid(Texture0Uniform)) {
+    OverlayVertexLayout.begin()
+        .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
+        .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+        .end();
+
+    // Shared sampler uniforms
+    if (!bgfx::isValid(Texture0Uniform))
         Texture0Uniform = bgfx::createUniform("s_texColor0", bgfx::UniformType::Sampler);
-    }
-
-    if (!bgfx::isValid(Texture1Uniform)) {
+    if (!bgfx::isValid(Texture1Uniform))
         Texture1Uniform = bgfx::createUniform("s_texColor1", bgfx::UniformType::Sampler);
-    }
 
-    if (!bgfx::isValid(FixedFunctionConfig1Uniform)) {
-        FixedFunctionConfig1Uniform = bgfx::createUniform("u_ffpConfig1", bgfx::UniformType::Vec4);
-    }
+    // Overlay uniforms
+    if (!bgfx::isValid(OverlayConfigUniform))
+        OverlayConfigUniform = bgfx::createUniform("u_overlayConfig", bgfx::UniformType::Vec4);
 
-    if (!bgfx::isValid(FixedFunctionFogColorUniform)) {
-        FixedFunctionFogColorUniform = bgfx::createUniform("u_ffpFogColor", bgfx::UniformType::Vec4);
-    }
-
-    if (!bgfx::isValid(FixedFunctionFogParamsUniform)) {
-        FixedFunctionFogParamsUniform = bgfx::createUniform("u_ffpFogParams", bgfx::UniformType::Vec4);
-    }
-
-    if (!bgfx::isValid(FixedFunctionTextureFactorUniform)) {
-        FixedFunctionTextureFactorUniform = bgfx::createUniform("u_ffpTextureFactor", bgfx::UniformType::Vec4);
-    }
-
-    if (!bgfx::isValid(FixedFunctionStage0ColorUniform)) {
-        FixedFunctionStage0ColorUniform = bgfx::createUniform("u_ffpStage0Color", bgfx::UniformType::Vec4);
-    }
-
-    if (!bgfx::isValid(FixedFunctionStage0AlphaUniform)) {
-        FixedFunctionStage0AlphaUniform = bgfx::createUniform("u_ffpStage0Alpha", bgfx::UniformType::Vec4);
-    }
-
-    if (!bgfx::isValid(FixedFunctionStage1ColorUniform)) {
-        FixedFunctionStage1ColorUniform = bgfx::createUniform("u_ffpStage1Color", bgfx::UniformType::Vec4);
-    }
-
-    if (!bgfx::isValid(FixedFunctionStage1AlphaUniform)) {
-        FixedFunctionStage1AlphaUniform = bgfx::createUniform("u_ffpStage1Alpha", bgfx::UniformType::Vec4);
-    }
-
-    if (!bgfx::isValid(FixedFunctionTextureStageConfigUniform)) {
-        FixedFunctionTextureStageConfigUniform = bgfx::createUniform("u_ffpTexcoordConfig", bgfx::UniformType::Vec4, 2);
-    }
-
-    if (!bgfx::isValid(FixedFunctionTextureTransformUniform)) {
-        FixedFunctionTextureTransformUniform = bgfx::createUniform("u_ffpTextureMatrix", bgfx::UniformType::Vec4, 8);
-    }
-
-    if (!bgfx::isValid(FixedFunctionBumpEnvMatrixUniform)) {
-        FixedFunctionBumpEnvMatrixUniform = bgfx::createUniform("u_ffpBumpEnvMatrix", bgfx::UniformType::Vec4);
-    }
-
-    if (!bgfx::isValid(FixedFunctionBumpEnvParamsUniform)) {
-        FixedFunctionBumpEnvParamsUniform = bgfx::createUniform("u_ffpBumpEnvParams", bgfx::UniformType::Vec4);
-    }
-
-    if (!bgfx::isValid(FixedFunctionMaterialAmbientUniform)) {
-        FixedFunctionMaterialAmbientUniform = bgfx::createUniform("u_ffpMaterialAmbient", bgfx::UniformType::Vec4);
-    }
-
-    if (!bgfx::isValid(FixedFunctionMaterialDiffuseUniform)) {
-        FixedFunctionMaterialDiffuseUniform = bgfx::createUniform("u_ffpMaterialDiffuse", bgfx::UniformType::Vec4);
-    }
-
-    if (!bgfx::isValid(FixedFunctionMaterialSpecularUniform)) {
-        FixedFunctionMaterialSpecularUniform = bgfx::createUniform("u_ffpMaterialSpecular", bgfx::UniformType::Vec4);
-    }
-
-    if (!bgfx::isValid(FixedFunctionMaterialEmissiveUniform)) {
-        FixedFunctionMaterialEmissiveUniform = bgfx::createUniform("u_ffpMaterialEmissive", bgfx::UniformType::Vec4);
-    }
-
-    if (!bgfx::isValid(FixedFunctionMaterialParamsUniform)) {
-        FixedFunctionMaterialParamsUniform = bgfx::createUniform("u_ffpMaterialParams", bgfx::UniformType::Vec4);
-    }
-
-    if (!bgfx::isValid(FixedFunctionViewerUniform)) {
-        FixedFunctionViewerUniform = bgfx::createUniform("u_ffpViewer", bgfx::UniformType::Vec4);
-    }
-
-    if (!bgfx::isValid(FixedFunctionSceneAmbientUniform)) {
-        FixedFunctionSceneAmbientUniform = bgfx::createUniform("u_ffpSceneAmbient", bgfx::UniformType::Vec4);
-    }
-
-    if (!bgfx::isValid(FixedFunctionLightingConfigUniform)) {
-        FixedFunctionLightingConfigUniform = bgfx::createUniform("u_ffpLightingConfig", bgfx::UniformType::Vec4);
-    }
-
-    if (!bgfx::isValid(FixedFunctionMaterialSourceConfigUniform)) {
-        FixedFunctionMaterialSourceConfigUniform = bgfx::createUniform("u_ffpMaterialSourceConfig", bgfx::UniformType::Vec4);
-    }
-
-    if (!bgfx::isValid(FixedFunctionLightPositionsUniform)) {
-        FixedFunctionLightPositionsUniform = bgfx::createUniform("u_ffpLightPositions", bgfx::UniformType::Vec4, 4);
-    }
-
-    if (!bgfx::isValid(FixedFunctionLightDirectionsUniform)) {
-        FixedFunctionLightDirectionsUniform = bgfx::createUniform("u_ffpLightDirections", bgfx::UniformType::Vec4, 4);
-    }
-
-    if (!bgfx::isValid(FixedFunctionLightAmbientUniform)) {
-        FixedFunctionLightAmbientUniform = bgfx::createUniform("u_ffpLightAmbient", bgfx::UniformType::Vec4, 4);
-    }
-
-    if (!bgfx::isValid(FixedFunctionLightDiffuseUniform)) {
-        FixedFunctionLightDiffuseUniform = bgfx::createUniform("u_ffpLightDiffuse", bgfx::UniformType::Vec4, 4);
-    }
-
-    if (!bgfx::isValid(FixedFunctionLightSpecularUniform)) {
-        FixedFunctionLightSpecularUniform = bgfx::createUniform("u_ffpLightSpecular", bgfx::UniformType::Vec4, 4);
-    }
-
-    if (!bgfx::isValid(FixedFunctionLightAttenuationUniform)) {
-        FixedFunctionLightAttenuationUniform = bgfx::createUniform("u_ffpLightAttenuation", bgfx::UniformType::Vec4, 4);
-    }
-
-    if (!bgfx::isValid(FixedFunctionLightSpotParamsUniform)) {
-        FixedFunctionLightSpotParamsUniform = bgfx::createUniform("u_ffpLightSpotParams", bgfx::UniformType::Vec4, 4);
-    }
-
-    if (!bgfx::isValid(Texture0Uniform)
-        || !bgfx::isValid(Texture1Uniform)
-        || !bgfx::isValid(FixedFunctionConfig1Uniform)
-        || !bgfx::isValid(FixedFunctionFogColorUniform)
-        || !bgfx::isValid(FixedFunctionFogParamsUniform)
-        || !bgfx::isValid(FixedFunctionTextureFactorUniform)
-        || !bgfx::isValid(FixedFunctionStage0ColorUniform)
-        || !bgfx::isValid(FixedFunctionStage0AlphaUniform)
-        || !bgfx::isValid(FixedFunctionStage1ColorUniform)
-        || !bgfx::isValid(FixedFunctionStage1AlphaUniform)
-        || !bgfx::isValid(FixedFunctionBumpEnvMatrixUniform)
-        || !bgfx::isValid(FixedFunctionBumpEnvParamsUniform)
-        || !bgfx::isValid(FixedFunctionMaterialAmbientUniform)
-        || !bgfx::isValid(FixedFunctionMaterialDiffuseUniform)
-        || !bgfx::isValid(FixedFunctionMaterialSpecularUniform)
-        || !bgfx::isValid(FixedFunctionMaterialEmissiveUniform)
-        || !bgfx::isValid(FixedFunctionMaterialParamsUniform)
-        || !bgfx::isValid(FixedFunctionViewerUniform)
-        || !bgfx::isValid(FixedFunctionSceneAmbientUniform)
-        || !bgfx::isValid(FixedFunctionLightingConfigUniform)
-        || !bgfx::isValid(FixedFunctionMaterialSourceConfigUniform)
-        || !bgfx::isValid(FixedFunctionLightPositionsUniform)
-        || !bgfx::isValid(FixedFunctionLightDirectionsUniform)
-        || !bgfx::isValid(FixedFunctionLightAmbientUniform)
-        || !bgfx::isValid(FixedFunctionLightDiffuseUniform)
-        || !bgfx::isValid(FixedFunctionLightSpecularUniform)
-        || !bgfx::isValid(FixedFunctionLightAttenuationUniform)
-        || !bgfx::isValid(FixedFunctionLightSpotParamsUniform)) {
-        return false;
-    }
+    // Mesh uniforms
+    if (!bgfx::isValid(MeshConfigUniform))
+        MeshConfigUniform = bgfx::createUniform("u_meshConfig", bgfx::UniformType::Vec4);
+    if (!bgfx::isValid(MeshMaterialConfigUniform))
+        MeshMaterialConfigUniform = bgfx::createUniform("u_meshMaterialConfig", bgfx::UniformType::Vec4);
+    if (!bgfx::isValid(MeshMaterialAmbientUniform))
+        MeshMaterialAmbientUniform = bgfx::createUniform("u_meshMaterialAmbient", bgfx::UniformType::Vec4);
+    if (!bgfx::isValid(MeshMaterialDiffuseUniform))
+        MeshMaterialDiffuseUniform = bgfx::createUniform("u_meshMaterialDiffuse", bgfx::UniformType::Vec4);
+    if (!bgfx::isValid(MeshMaterialEmissiveUniform))
+        MeshMaterialEmissiveUniform = bgfx::createUniform("u_meshMaterialEmissive", bgfx::UniformType::Vec4);
+    if (!bgfx::isValid(MeshSceneAmbientUniform))
+        MeshSceneAmbientUniform = bgfx::createUniform("u_meshSceneAmbient", bgfx::UniformType::Vec4);
+    if (!bgfx::isValid(MeshFogParamsUniform))
+        MeshFogParamsUniform = bgfx::createUniform("u_meshFogParams", bgfx::UniformType::Vec4);
+    if (!bgfx::isValid(MeshFogColorUniform))
+        MeshFogColorUniform = bgfx::createUniform("u_meshFogColor", bgfx::UniformType::Vec4);
+    if (!bgfx::isValid(MeshLightDirUniform))
+        MeshLightDirUniform = bgfx::createUniform("u_meshLightDir", bgfx::UniformType::Vec4, 4);
+    if (!bgfx::isValid(MeshLightColorUniform))
+        MeshLightColorUniform = bgfx::createUniform("u_meshLightColor", bgfx::UniformType::Vec4, 4);
+    if (!bgfx::isValid(MeshTexgenModeUniform))
+        MeshTexgenModeUniform = bgfx::createUniform("u_meshTexgenMode", bgfx::UniformType::Vec4);
+    if (!bgfx::isValid(MeshTexTransformFlagsUniform))
+        MeshTexTransformFlagsUniform = bgfx::createUniform("u_meshTexTransformFlags", bgfx::UniformType::Vec4);
+    if (!bgfx::isValid(MeshTexTransform0Uniform))
+        MeshTexTransform0Uniform = bgfx::createUniform("u_meshTexTransform0", bgfx::UniformType::Mat4);
+    if (!bgfx::isValid(MeshTexTransform1Uniform))
+        MeshTexTransform1Uniform = bgfx::createUniform("u_meshTexTransform1", bgfx::UniformType::Mat4);
+    if (!bgfx::isValid(MeshFragConfigUniform))
+        MeshFragConfigUniform = bgfx::createUniform("u_meshFragConfig", bgfx::UniformType::Vec4);
+    if (!bgfx::isValid(MeshFragConfig2Uniform))
+        MeshFragConfig2Uniform = bgfx::createUniform("u_meshFragConfig2", bgfx::UniformType::Vec4);
 
     if (!bgfx::isValid(WhiteTexture)) {
         constexpr uint32_t white_pixel = 0xffffffffu;
         const bgfx::Memory *texture_memory = bgfx::copy(&white_pixel, sizeof(white_pixel));
         WhiteTexture = bgfx::createTexture2D(
-            1,
-            1,
-            false,
-            1,
-            bgfx::TextureFormat::BGRA8,
+            1, 1, false, 1, bgfx::TextureFormat::BGRA8,
             BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT,
             texture_memory);
     }
 
-    if (!bgfx::isValid(WhiteTexture)) {
+    if (!bgfx::isValid(WhiteTexture))
         return false;
-    }
 
-    if (!bgfx::isValid(FixedFunctionProgram)) {
-        FixedFunctionProgram = Load_Program("vs_fixed_function", "fs_fixed_function");
-    }
+    if (!bgfx::isValid(OverlayProgram))
+        OverlayProgram = Load_Program("vs_overlay", "fs_overlay");
+    if (!bgfx::isValid(MeshProgram))
+        MeshProgram = Load_Program("vs_mesh", "fs_mesh");
 
-    return bgfx::isValid(FixedFunctionProgram);
+    return bgfx::isValid(OverlayProgram) && bgfx::isValid(MeshProgram);
 }
 
 void BgfxRenderer::Shutdown_Render_Resources()
 {
-    Destroy_Program(FixedFunctionProgram);
+    Destroy_Program(MeshProgram);
+    Destroy_Program(OverlayProgram);
 
-    if (bgfx::isValid(FixedFunctionLightSpotParamsUniform)) {
-        bgfx::destroy(FixedFunctionLightSpotParamsUniform);
-        FixedFunctionLightSpotParamsUniform = BGFX_INVALID_HANDLE;
-    }
+    auto destroy_uniform = [](bgfx::UniformHandle &h) {
+        if (bgfx::isValid(h)) { bgfx::destroy(h); h = BGFX_INVALID_HANDLE; }
+    };
 
-    if (bgfx::isValid(FixedFunctionLightAttenuationUniform)) {
-        bgfx::destroy(FixedFunctionLightAttenuationUniform);
-        FixedFunctionLightAttenuationUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionLightSpecularUniform)) {
-        bgfx::destroy(FixedFunctionLightSpecularUniform);
-        FixedFunctionLightSpecularUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionLightDiffuseUniform)) {
-        bgfx::destroy(FixedFunctionLightDiffuseUniform);
-        FixedFunctionLightDiffuseUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionLightAmbientUniform)) {
-        bgfx::destroy(FixedFunctionLightAmbientUniform);
-        FixedFunctionLightAmbientUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionLightDirectionsUniform)) {
-        bgfx::destroy(FixedFunctionLightDirectionsUniform);
-        FixedFunctionLightDirectionsUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionLightPositionsUniform)) {
-        bgfx::destroy(FixedFunctionLightPositionsUniform);
-        FixedFunctionLightPositionsUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionMaterialSourceConfigUniform)) {
-        bgfx::destroy(FixedFunctionMaterialSourceConfigUniform);
-        FixedFunctionMaterialSourceConfigUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionLightingConfigUniform)) {
-        bgfx::destroy(FixedFunctionLightingConfigUniform);
-        FixedFunctionLightingConfigUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionSceneAmbientUniform)) {
-        bgfx::destroy(FixedFunctionSceneAmbientUniform);
-        FixedFunctionSceneAmbientUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionMaterialEmissiveUniform)) {
-        bgfx::destroy(FixedFunctionMaterialEmissiveUniform);
-        FixedFunctionMaterialEmissiveUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionMaterialParamsUniform)) {
-        bgfx::destroy(FixedFunctionMaterialParamsUniform);
-        FixedFunctionMaterialParamsUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionViewerUniform)) {
-        bgfx::destroy(FixedFunctionViewerUniform);
-        FixedFunctionViewerUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionMaterialSpecularUniform)) {
-        bgfx::destroy(FixedFunctionMaterialSpecularUniform);
-        FixedFunctionMaterialSpecularUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionMaterialDiffuseUniform)) {
-        bgfx::destroy(FixedFunctionMaterialDiffuseUniform);
-        FixedFunctionMaterialDiffuseUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionMaterialAmbientUniform)) {
-        bgfx::destroy(FixedFunctionMaterialAmbientUniform);
-        FixedFunctionMaterialAmbientUniform = BGFX_INVALID_HANDLE;
-    }
+    destroy_uniform(MeshFragConfig2Uniform);
+    destroy_uniform(MeshFragConfigUniform);
+    destroy_uniform(MeshTexTransform1Uniform);
+    destroy_uniform(MeshTexTransform0Uniform);
+    destroy_uniform(MeshTexTransformFlagsUniform);
+    destroy_uniform(MeshTexgenModeUniform);
+    destroy_uniform(MeshLightColorUniform);
+    destroy_uniform(MeshLightDirUniform);
+    destroy_uniform(MeshFogColorUniform);
+    destroy_uniform(MeshFogParamsUniform);
+    destroy_uniform(MeshSceneAmbientUniform);
+    destroy_uniform(MeshMaterialEmissiveUniform);
+    destroy_uniform(MeshMaterialDiffuseUniform);
+    destroy_uniform(MeshMaterialAmbientUniform);
+    destroy_uniform(MeshMaterialConfigUniform);
+    destroy_uniform(MeshConfigUniform);
+    destroy_uniform(OverlayConfigUniform);
 
     if (bgfx::isValid(WhiteTexture)) {
         bgfx::destroy(WhiteTexture);
         WhiteTexture = BGFX_INVALID_HANDLE;
     }
 
-    if (bgfx::isValid(FixedFunctionBumpEnvParamsUniform)) {
-        bgfx::destroy(FixedFunctionBumpEnvParamsUniform);
-        FixedFunctionBumpEnvParamsUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionBumpEnvMatrixUniform)) {
-        bgfx::destroy(FixedFunctionBumpEnvMatrixUniform);
-        FixedFunctionBumpEnvMatrixUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionFogColorUniform)) {
-        bgfx::destroy(FixedFunctionFogColorUniform);
-        FixedFunctionFogColorUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionFogParamsUniform)) {
-        bgfx::destroy(FixedFunctionFogParamsUniform);
-        FixedFunctionFogParamsUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionConfig1Uniform)) {
-        bgfx::destroy(FixedFunctionConfig1Uniform);
-        FixedFunctionConfig1Uniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionStage1AlphaUniform)) {
-        bgfx::destroy(FixedFunctionStage1AlphaUniform);
-        FixedFunctionStage1AlphaUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionTextureTransformUniform)) {
-        bgfx::destroy(FixedFunctionTextureTransformUniform);
-        FixedFunctionTextureTransformUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionTextureStageConfigUniform)) {
-        bgfx::destroy(FixedFunctionTextureStageConfigUniform);
-        FixedFunctionTextureStageConfigUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionStage1ColorUniform)) {
-        bgfx::destroy(FixedFunctionStage1ColorUniform);
-        FixedFunctionStage1ColorUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionStage0AlphaUniform)) {
-        bgfx::destroy(FixedFunctionStage0AlphaUniform);
-        FixedFunctionStage0AlphaUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionStage0ColorUniform)) {
-        bgfx::destroy(FixedFunctionStage0ColorUniform);
-        FixedFunctionStage0ColorUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(FixedFunctionTextureFactorUniform)) {
-        bgfx::destroy(FixedFunctionTextureFactorUniform);
-        FixedFunctionTextureFactorUniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(Texture1Uniform)) {
-        bgfx::destroy(Texture1Uniform);
-        Texture1Uniform = BGFX_INVALID_HANDLE;
-    }
-
-    if (bgfx::isValid(Texture0Uniform)) {
-        bgfx::destroy(Texture0Uniform);
-        Texture0Uniform = BGFX_INVALID_HANDLE;
-    }
+    destroy_uniform(Texture1Uniform);
+    destroy_uniform(Texture0Uniform);
 }
 
 bool BgfxRenderer::Update_Platform_Window(void *window_handle)

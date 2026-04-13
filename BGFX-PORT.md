@@ -4,6 +4,26 @@ We want to port from d3d to bgfx, to have a modern renderer that supports multip
 
 There are remnants or an earlier attempt, but you need to **IGNORE** that and start fresh.
 
+## Current shader architecture
+
+The renderer uses two shader programs:
+
+### Overlay shader (`vs_overlay` / `fs_overlay`)
+- Used for 2D/UI rendering (`Render2DClass::Render`)
+- Trivial: MVP passthrough + vertex color × optional texture
+- Single uniform: `u_overlayConfig.x` (1.0 = has texture, 0.0 = vertex color only)
+- Compact vertex layout: pos(3f) + color0(4u8n) + uv0(2f) = 20 bytes
+
+### Mesh shader (`vs_mesh` / `fs_mesh`)
+- Used for all 3D rendering (rigid mesh, skinned mesh, particles, projectors, decals, etc.)
+- Vertex shader: MVP transform, optional directional lighting (ambient + 4 lights), linear vertex fog, texgen (4 modes), texture transforms
+- Fragment shader: enum-based stage0/stage1 color+alpha ops via `StageColorOp` enum (9 values), alpha test, fog application (3 modes), specular add
+- ~16 vec4 uniforms total for the most complex case
+
+### StageColorOp enum
+Maps directly from `ShaderClass` gradient/detail enums, bypassing the DX8Wrapper D3D8 state cache. Values:
+- 0=DISABLE, 1=MODULATE, 2=SELECT_TEXTURE, 3=SELECT_CURRENT, 4=ADD, 5=ADDSMOOTH, 6=SUBTRACT, 7=BLEND_TEX_ALPHA, 8=BLEND_CUR_ALPHA
+
 ## Rules
 
 - stay as close to the d3d original as possible, we want to preserve the original rendering behavior and features as much as possible, while still using bgfx to achieve that.

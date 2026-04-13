@@ -97,7 +97,6 @@
 #include "registry.h"
 #include "bandwidthgraph.h"
 #include "buildnum.h"
-#include "dx8wrapper.h"
 #include "AutoStart.h"
 #include "Except.h"
 #include "wwmemlog.h"

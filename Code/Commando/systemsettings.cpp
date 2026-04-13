@@ -44,8 +44,6 @@
 #include "consolefunction.h"
 #include "ccamera.h"
 #include "phys.h"
-#include "dx8wrapper.h"
-#include "dx8caps.h"
 #include "surfaceeffects.h"
 #include "dlgconfigvideotab.h"
 #include	"wwstring.h"
@@ -600,7 +598,7 @@ public:
 	virtual	int Get_Enum( void ) { return WW3D::Get_NPatches_Level(); }
 	virtual	void Set_Enum( int selection ) {
 		WW3D::Set_NPatches_Level( selection );
-		if (DX8Wrapper::Get_Current_Caps() && !DX8Wrapper::Get_Current_Caps()->Support_NPatches()) {
+		if (!WW3D::Supports_NPatches()) {
 			Name="NPatches (NOT SUPPORTED BY HARDWARE)";
 		}
 	}

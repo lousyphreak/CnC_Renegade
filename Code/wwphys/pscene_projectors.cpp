@@ -51,11 +51,10 @@
 #include "vertmaterial.h"
 #include "wwprofile.h"
 #include "texture.h"
-#include "bgfxrenderer.h"
+#include "ww3d.h"
 #include "vertexformat.h"
 #include "vertexbuffer.h"
 #include "indexbuffer.h"
-#include "dx8wrapper.h"
 #include "pot.h"
 #include "materialeffect.h"
 #include "wwmemlog.h"
@@ -166,7 +165,7 @@ static TextureClass* Create_Projector_Render_Target(unsigned w,unsigned h)
 	};
 
 	for (unsigned int i = 0; i < sizeof(preferred_formats) / sizeof(preferred_formats[0]); ++i) {
-		TextureClass *texture = BgfxRenderer::Create_Render_Target_Texture(w, h, preferred_formats[i]);
+		TextureClass *texture = WW3D::Create_Render_Target_Texture(w, h, preferred_formats[i]);
 		if (texture != NULL) {
 			return texture;
 		}
@@ -842,7 +841,7 @@ void PhysicsSceneClass::Apply_Projectors
 		it.Next();
 	}
 
-	BgfxRenderer::Reset_Render_Target();
+	WW3D::Reset_Render_Target();
 }
 
 void PhysicsSceneClass::Apply_Projector_To_Objects
@@ -937,7 +936,7 @@ void PhysicsSceneClass::Generate_Static_Shadow_Projectors(void)
 	if (!StaticProjectorsDirty) return;
 
 	// Don't operate if the device is lost!
-	if (DX8Wrapper::Is_Device_Lost() || !DX8Wrapper::Is_Initted()) return;
+	if (!WW3D::Is_Device_Ready()) return;
 
 	/*
 	** Collect a list of all static objects who want to generate a shadow

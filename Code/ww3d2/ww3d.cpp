@@ -111,12 +111,16 @@
 #include <cstdio>
 #include "dx8wrapper.h"
 #include "sortingrenderer.h"
+#include "dx8rendererdebugger.h"
 #include "thread.h"
 #include "dx8texman.h"
 #include "formconv.h"
 #include "TARGA.H"
 #include "animatedsoundmgr.h"
 #include "definitionmgr.h"
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 
 const char* DAZZLE_INI_FILENAME="DAZZLE.INI";
@@ -225,6 +229,39 @@ bool														WW3D::Lite = false;
 **
 ***********************************************************************************/
 
+namespace
+{
+	D3DTRANSFORMSTATETYPE To_D3D_Transform(WW3D::RenderTransformType transform)
+	{
+		switch (transform) {
+			case WW3D::RENDER_TRANSFORM_WORLD:
+				return D3DTS_WORLD;
+			case WW3D::RENDER_TRANSFORM_VIEW:
+				return D3DTS_VIEW;
+			case WW3D::RENDER_TRANSFORM_PROJECTION:
+				return D3DTS_PROJECTION;
+		}
+
+		WWASSERT_PRINT(false, "Unexpected WW3D render transform");
+		return D3DTS_WORLD;
+	}
+
+	unsigned To_D3D_Fill_Mode(WW3D::PolygonFillModeEnum mode)
+	{
+		switch (mode) {
+			case WW3D::POLYGON_FILL_MODE_POINT:
+				return D3DFILL_POINT;
+			case WW3D::POLYGON_FILL_MODE_WIREFRAME:
+				return D3DFILL_WIREFRAME;
+			case WW3D::POLYGON_FILL_MODE_SOLID:
+				return D3DFILL_SOLID;
+		}
+
+		WWASSERT_PRINT(false, "Unexpected WW3D polygon fill mode");
+		return D3DFILL_SOLID;
+	}
+}
+
 void WW3D::Set_NPatches_Gap_Filling_Mode(NPatchesGapFillingModeEnum mode)
 {
 	if (NPatchesGapFillingMode!=mode) {
@@ -240,6 +277,342 @@ void WW3D::Set_NPatches_Level(unsigned level)
 	if (NPatchesLevel==1 && level>1) TheDX8MeshRenderer.Invalidate();
 	if (NPatchesLevel>1 && level==1) TheDX8MeshRenderer.Invalidate();
 	NPatchesLevel = level;
+}
+
+bool WW3D::Get_Current_Adapter_Identifier(AdapterIdentifierStruct& identifier)
+{
+	identifier.VendorId = 0;
+	identifier.DeviceId = 0;
+	identifier.SubsystemId = 0;
+	identifier.Revision = 0;
+
+	if (!DX8Wrapper::Is_Initted()) {
+		return false;
+	}
+
+	const D3DADAPTER_IDENTIFIER8& adapter = DX8Wrapper::Get_Current_Adapter_Identifier();
+	identifier.VendorId = adapter.VendorId;
+	identifier.DeviceId = adapter.DeviceId;
+	identifier.SubsystemId = adapter.SubSysId;
+	identifier.Revision = adapter.Revision;
+	return true;
+}
+
+bool WW3D::Get_Current_Render_Capabilities(RenderCapabilitiesStruct& capabilities)
+{
+	capabilities.MaxTextureWidth = 0;
+	capabilities.MaxTextureHeight = 0;
+	capabilities.MaxTexturesPerPass = 0;
+	capabilities.SupportsGamma = false;
+	capabilities.SupportsNPatches = false;
+	capabilities.SupportsAnisotropicFiltering = false;
+	capabilities.CanDoMultiPass = false;
+
+	DX8Caps* current_caps = DX8Wrapper::Get_Current_Caps();
+	if (current_caps == NULL) {
+		return false;
+	}
+
+	const D3DCAPS8& dx8_caps = current_caps->Get_DX8_Caps();
+	capabilities.MaxTextureWidth = dx8_caps.MaxTextureWidth;
+	capabilities.MaxTextureHeight = dx8_caps.MaxTextureHeight;
+	capabilities.MaxTexturesPerPass = current_caps->Get_Max_Textures_Per_Pass();
+	capabilities.SupportsGamma = current_caps->Support_Gamma();
+	capabilities.SupportsNPatches = current_caps->Support_NPatches();
+	capabilities.SupportsAnisotropicFiltering = current_caps->Support_Anisotropic_Filtering();
+	capabilities.CanDoMultiPass = current_caps->Can_Do_Multi_Pass();
+	return true;
+}
+
+bool WW3D::Get_Render_Diagnostics(StringClass& diagnostics, bool compact)
+{
+	diagnostics = "";
+
+	DX8Caps* current_caps = DX8Wrapper::Get_Current_Caps();
+	if (current_caps == NULL) {
+		return false;
+	}
+
+	diagnostics = compact ? current_caps->Get_Compact_Log() : current_caps->Get_Log();
+	return true;
+}
+
+bool WW3D::Supports_NPatches(void)
+{
+	DX8Caps* current_caps = DX8Wrapper::Get_Current_Caps();
+	return (current_caps != NULL) && current_caps->Support_NPatches();
+}
+
+void WW3D::Get_Backend_Statistics(BackendStatisticsStruct& statistics)
+{
+	statistics.DeviceCalls = DX8Wrapper::Get_Last_Frame_DX8_Calls();
+	statistics.TextureChanges = DX8Wrapper::Get_Last_Frame_Texture_Changes();
+	statistics.MatrixChanges = DX8Wrapper::Get_Last_Frame_Matrix_Changes();
+	statistics.MaterialChanges = DX8Wrapper::Get_Last_Frame_Material_Changes();
+	statistics.VertexBufferChanges = DX8Wrapper::Get_Last_Frame_Vertex_Buffer_Changes();
+	statistics.IndexBufferChanges = DX8Wrapper::Get_Last_Frame_Index_Buffer_Changes();
+	statistics.LightChanges = DX8Wrapper::Get_Last_Frame_Light_Changes();
+	statistics.RenderStateChanges = DX8Wrapper::Get_Last_Frame_Render_State_Changes();
+	statistics.TextureStageStateChanges = DX8Wrapper::Get_Last_Frame_Texture_Stage_State_Changes();
+}
+
+WW3D::RenderDeviceDriverStatusEnum WW3D::Get_Selected_Render_Device_Driver_Status(void)
+{
+#ifdef _WIN32
+	typedef IDirect3D8* (WINAPI *Direct3DCreate8Type)(uint32_t sdk_version);
+
+	RegistryClass render_registry(APPLICATION_SUB_KEY_NAME_RENDER);
+	if (!render_registry.Is_Valid()) {
+		return RENDER_DEVICE_DRIVER_STATUS_UNKNOWN;
+	}
+
+	Init_D3D_To_WW3_Conversion();
+
+	HMODULE d3d8_lib = LoadLibraryA("D3D8.DLL");
+	if (d3d8_lib == NULL) {
+		return RENDER_DEVICE_DRIVER_STATUS_UNKNOWN;
+	}
+
+	Direct3DCreate8Type direct3d_create8 = reinterpret_cast<Direct3DCreate8Type>(GetProcAddress(d3d8_lib, "Direct3DCreate8"));
+	if (direct3d_create8 == NULL) {
+		FreeLibrary(d3d8_lib);
+		return RENDER_DEVICE_DRIVER_STATUS_UNKNOWN;
+	}
+
+	IDirect3D8* d3d = direct3d_create8(D3D_SDK_VERSION);
+	if (d3d == NULL) {
+		FreeLibrary(d3d8_lib);
+		return RENDER_DEVICE_DRIVER_STATUS_UNKNOWN;
+	}
+
+	int current_adapter_index = D3DADAPTER_DEFAULT;
+	char device_name[256] = { 0 };
+	render_registry.Get_String(VALUE_NAME_RENDER_DEVICE_NAME, device_name, sizeof(device_name));
+
+	const int adapter_count = d3d->GetAdapterCount();
+	for (int adapter_index = 0; adapter_index < adapter_count; ++adapter_index) {
+		D3DADAPTER_IDENTIFIER8 id;
+		::ZeroMemory(&id, sizeof(D3DADAPTER_IDENTIFIER8));
+		if (d3d->GetAdapterIdentifier(adapter_index, D3DENUM_NO_WHQL_LEVEL, &id) == D3D_OK) {
+			StringClass name(id.Description, true);
+			if (name == device_name) {
+				current_adapter_index = adapter_index;
+				break;
+			}
+		}
+	}
+
+	D3DCAPS8 dx8_caps;
+	if (FAILED(d3d->GetDeviceCaps(current_adapter_index, D3DDEVTYPE_HAL, &dx8_caps))) {
+		d3d->Release();
+		FreeLibrary(d3d8_lib);
+		return RENDER_DEVICE_DRIVER_STATUS_UNKNOWN;
+	}
+
+	D3DADAPTER_IDENTIFIER8 adapter_id;
+	::ZeroMemory(&adapter_id, sizeof(D3DADAPTER_IDENTIFIER8));
+	if (FAILED(d3d->GetAdapterIdentifier(current_adapter_index, D3DENUM_NO_WHQL_LEVEL, &adapter_id))) {
+		d3d->Release();
+		FreeLibrary(d3d8_lib);
+		return RENDER_DEVICE_DRIVER_STATUS_UNKNOWN;
+	}
+
+	DX8Caps caps(d3d, dx8_caps, WW3D_FORMAT_UNKNOWN, adapter_id);
+	const DX8Caps::DriverVersionStatusType status = caps.Get_Driver_Version_Status();
+
+	d3d->Release();
+	FreeLibrary(d3d8_lib);
+
+	switch (status) {
+		case DX8Caps::DRIVER_STATUS_GOOD:
+			return RENDER_DEVICE_DRIVER_STATUS_GOOD;
+		case DX8Caps::DRIVER_STATUS_OK:
+			return RENDER_DEVICE_DRIVER_STATUS_OK;
+		case DX8Caps::DRIVER_STATUS_BAD:
+			return RENDER_DEVICE_DRIVER_STATUS_BAD;
+		case DX8Caps::DRIVER_STATUS_UNKNOWN:
+		default:
+			return RENDER_DEVICE_DRIVER_STATUS_UNKNOWN;
+	}
+#else
+	return RENDER_DEVICE_DRIVER_STATUS_UNKNOWN;
+#endif
+}
+
+void WW3D::Set_Output_Gamma(float gamma, float brightness, float contrast, bool calibrate, bool use_limit)
+{
+	DX8Wrapper::Set_Gamma(gamma, brightness, contrast, calibrate, use_limit);
+}
+
+bool WW3D::Is_Device_Ready(void)
+{
+	return DX8Wrapper::Is_Initted() && !DX8Wrapper::Is_Device_Lost();
+}
+
+void WW3D::Set_Geometry_Draw_Mode(GeometryDrawModeEnum mode)
+{
+	DX8Wrapper::_Enable_Triangle_Draw((mode & GEOMETRY_DRAW_REGULAR) != 0);
+	SortingRendererClass::_Enable_Triangle_Draw((mode & GEOMETRY_DRAW_SORTED) != 0);
+}
+
+WW3D::GeometryDrawModeEnum WW3D::Get_Geometry_Draw_Mode(void)
+{
+	unsigned mode = GEOMETRY_DRAW_NONE;
+	if (DX8Wrapper::_Is_Triangle_Draw_Enabled()) {
+		mode |= GEOMETRY_DRAW_REGULAR;
+	}
+	if (SortingRendererClass::_Is_Triangle_Draw_Enabled()) {
+		mode |= GEOMETRY_DRAW_SORTED;
+	}
+	return static_cast<GeometryDrawModeEnum>(mode);
+}
+
+void WW3D::Enable_Mesh_Debugger(bool enable)
+{
+	DX8RendererDebugger::Enable(enable);
+}
+
+void WW3D::Get_Mesh_Debugger_String(StringClass& output)
+{
+	DX8RendererDebugger::Get_String(output);
+}
+
+void WW3D::Update_Mesh_Debugger(void)
+{
+	DX8RendererDebugger::Update();
+}
+
+void WW3D::Enable_All_Mesh_Debugger_Meshes(void)
+{
+	DX8RendererDebugger::Enable_All();
+}
+
+void WW3D::Enable_Mesh_Debugger_Mesh(unsigned id)
+{
+	DX8RendererDebugger::Enable_Mesh(id);
+}
+
+void WW3D::Disable_All_Mesh_Debugger_Meshes(void)
+{
+	DX8RendererDebugger::Disable_All();
+}
+
+void WW3D::Disable_Mesh_Debugger_Mesh(unsigned id)
+{
+	DX8RendererDebugger::Disable_Mesh(id);
+}
+
+void WW3D::Request_Mesh_Statistics_Log(void)
+{
+	DX8MeshRendererClass::Request_Log_Statistics();
+}
+
+unsigned int WW3D::Convert_Color(const Vector3& color, float alpha)
+{
+	return DX8Wrapper::Convert_Color(color, alpha);
+}
+
+void WW3D::Set_Color_Alpha(float alpha, unsigned int& color)
+{
+	DX8Wrapper::Set_Alpha(alpha, color);
+}
+
+void WW3D::Set_Transform(RenderTransformType transform, const Matrix4& matrix)
+{
+	DX8Wrapper::Set_Transform(To_D3D_Transform(transform), matrix);
+}
+
+void WW3D::Set_Transform(RenderTransformType transform, const Matrix3D& matrix)
+{
+	DX8Wrapper::Set_Transform(To_D3D_Transform(transform), matrix);
+}
+
+void WW3D::Get_Transform(RenderTransformType transform, Matrix4& matrix)
+{
+	DX8Wrapper::Get_Transform(To_D3D_Transform(transform), matrix);
+}
+
+void WW3D::Set_Material(VertexMaterialClass* material)
+{
+	DX8Wrapper::Set_Material(material);
+}
+
+void WW3D::Set_Shader(const ShaderClass& shader)
+{
+	DX8Wrapper::Set_Shader(shader);
+}
+
+void WW3D::Set_Texture(int stage, TextureClass* texture)
+{
+	DX8Wrapper::Set_Texture(stage, texture);
+}
+
+void WW3D::Set_Light_Environment(LightEnvironmentClass* light_environment)
+{
+	DX8Wrapper::Set_Light_Environment(light_environment);
+}
+
+void WW3D::Set_Vertex_Buffer(const VertexBufferClass* vertex_buffer)
+{
+	DX8Wrapper::Set_Vertex_Buffer(vertex_buffer);
+}
+
+void WW3D::Set_Vertex_Buffer(const DynamicVBAccessClass& vertex_buffer)
+{
+	DX8Wrapper::Set_Vertex_Buffer(vertex_buffer);
+}
+
+void WW3D::Set_Index_Buffer(const IndexBufferClass* index_buffer, unsigned short index_base_offset)
+{
+	DX8Wrapper::Set_Index_Buffer(index_buffer, index_base_offset);
+}
+
+void WW3D::Set_Index_Buffer(const DynamicIBAccessClass& index_buffer, unsigned short index_base_offset)
+{
+	DX8Wrapper::Set_Index_Buffer(index_buffer, index_base_offset);
+}
+
+void WW3D::Set_Depth_Bias(unsigned int bias)
+{
+	DX8Wrapper::Set_DX8_Render_State(D3DRS_ZBIAS, bias);
+}
+
+void WW3D::Set_Polygon_Fill_Mode(PolygonFillModeEnum mode)
+{
+	DX8Wrapper::Set_DX8_Render_State(D3DRS_FILLMODE, To_D3D_Fill_Mode(mode));
+}
+
+void WW3D::Insert_Sorted_Triangles(unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count)
+{
+	SortingRendererClass::Insert_Triangles(start_index, polygon_count, min_vertex_index, vertex_count);
+}
+
+bool WW3D::Submit_Current_Triangles(unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count)
+{
+#if RENEGADE_WITH_BGFX_RENDERER
+	return BgfxRenderer::Submit_Current_Fixed_Function_Triangles(start_index, polygon_count, min_vertex_index, vertex_count);
+#else
+	WWASSERT_PRINT(false, "WW3D::Submit_Current_Triangles requires the modern renderer backend");
+	return false;
+#endif
+}
+
+TextureClass *WW3D::Create_Render_Target_Texture(unsigned width, unsigned height, WW3DFormat format)
+{
+#if RENEGADE_WITH_BGFX_RENDERER
+	return BgfxRenderer::Create_Render_Target_Texture(width, height, format);
+#else
+	return DX8Wrapper::Create_Render_Target(width, height, format);
+#endif
+}
+
+void WW3D::Reset_Render_Target(void)
+{
+#if RENEGADE_WITH_BGFX_RENDERER
+	BgfxRenderer::Reset_Render_Target();
+#else
+	DX8Wrapper::Reset_Render_Target();
+#endif
 }
 
 /***********************************************************************************************

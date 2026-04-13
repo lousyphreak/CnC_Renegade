@@ -44,11 +44,10 @@
 #include "combat.h"
 #include "gameobjmanager.h"
 #include "gametype.h"
-#include "bgfxrenderer.h"
 #include "light.h"
 #include "indexbuffer.h"
 #include "vertexbuffer.h"
-#include "dx8wrapper.h"
+#include "ww3d.h"
 
 #include "vertmaterial.h"
 
@@ -57,7 +56,6 @@
 #include "pscene.h"
 #include "rinfo.h"
 #include "scene.h"
-#include "sortingrenderer.h"
 #include "SoundEnvironment.h"
 #include "WWAudio.h"
 #include "wwmemlog.h"
@@ -1038,7 +1036,7 @@ void WeatherSystemClass::Render (RenderInfoClass &rinfo)
 
 		CameraPosition = rinfo.Camera.Get_Position();
 
-		dxcolor = DX8Wrapper::Convert_Color (Vector3 (1.0f, 1.0f, 1.0f), 0.0f);
+		dxcolor = WW3D::Convert_Color (Vector3 (1.0f, 1.0f, 1.0f), 0.0f);
 
 		// Precalculate alpha values.
 		maxalphaheight	  = EmitterHeight * 0.2f;
@@ -1046,17 +1044,17 @@ void WeatherSystemClass::Render (RenderInfoClass &rinfo)
 		deltaheight		  = rinfo.Camera.Get_Position().Z + (EmitterHeight - maxalphaheight);
 
 		// NOTE: All particle positions are already in world space.
-		DX8Wrapper::Set_Transform (D3DTS_WORLD, identitymatrix);
+		WW3D::Set_Transform (WW3D::RENDER_TRANSFORM_WORLD, identitymatrix);
 
-		DX8Wrapper::Set_Material (Material);
-		DX8Wrapper::Set_Shader (Shader);
-		DX8Wrapper::Set_Texture (0, Texture);
+		WW3D::Set_Material (Material);
+		WW3D::Set_Shader (Shader);
+		WW3D::Set_Texture (0, Texture);
 
-		DX8Wrapper::Set_Index_Buffer (IndexBuffer, 0);
+		WW3D::Set_Index_Buffer (IndexBuffer, 0);
 
 		#if WEATHER_PARTICLE_SORT
 		#else
-		DX8Wrapper::Set_DX8_Render_State (D3DRS_ZBIAS, 12);
+		WW3D::Set_Depth_Bias (12);
 		#endif
 
  		camerafocus = rinfo.Camera.Get_Transform().Get_Z_Vector();
@@ -1068,9 +1066,9 @@ void WeatherSystemClass::Render (RenderInfoClass &rinfo)
 			unsigned particlecount, submittedparticlecount;
 
 			#if WEATHER_PARTICLE_SORT
-			DynamicVBAccessClass dynamicvb (BUFFER_TYPE_DYNAMIC_SORTING, dynamic_vertex_format, bufferparticlecount * VERTICES_PER_TRIANGLE);
+			DynamicVBAccessClass dynamicvb (WW3D::BUFFER_TYPE_DYNAMIC_SORTING, dynamic_vertex_format, bufferparticlecount * VERTICES_PER_TRIANGLE);
 			#else
-			DynamicVBAccessClass dynamicvb (BUFFER_TYPE_DYNAMIC_RENDER, dynamic_vertex_format, bufferparticlecount * VERTICES_PER_TRIANGLE);
+			DynamicVBAccessClass dynamicvb (WW3D::BUFFER_TYPE_DYNAMIC_RENDER, dynamic_vertex_format, bufferparticlecount * VERTICES_PER_TRIANGLE);
 			#endif
 
 			// Copy the data into the sorting vertex buffer.
@@ -1167,7 +1165,7 @@ void WeatherSystemClass::Render (RenderInfoClass &rinfo)
 						} else {
 							alpha = 1.0f;
 						}
-						DX8Wrapper::Set_Alpha (alpha, dxcolor);
+						WW3D::Set_Color_Alpha (alpha, dxcolor);
 
 						// Vertex 0 of triangle.
 						vertex->x		 = position.X + offset [0].X;
@@ -1206,12 +1204,12 @@ void WeatherSystemClass::Render (RenderInfoClass &rinfo)
 
 			if (submittedparticlecount > 0) {
 
-				DX8Wrapper::Set_Vertex_Buffer (dynamicvb);
+				WW3D::Set_Vertex_Buffer (dynamicvb);
 
 				#if WEATHER_PARTICLE_SORT
-				SortingRendererClass::Insert_Triangles (0, submittedparticlecount, 0, submittedparticlecount * VERTICES_PER_TRIANGLE);
+				WW3D::Insert_Sorted_Triangles (0, submittedparticlecount, 0, submittedparticlecount * VERTICES_PER_TRIANGLE);
 				#else
-				BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
+				WW3D::Submit_Current_Triangles(
 					0,
 					submittedparticlecount,
 					0,
@@ -1226,7 +1224,7 @@ void WeatherSystemClass::Render (RenderInfoClass &rinfo)
 
 		#if WEATHER_PARTICLE_SORT
 		#else
-		DX8Wrapper::Set_DX8_Render_State (D3DRS_ZBIAS, 0);
+		WW3D::Set_Depth_Bias (0);
 		#endif
 	}
 }

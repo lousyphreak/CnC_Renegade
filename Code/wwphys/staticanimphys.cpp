@@ -55,8 +55,7 @@
 #include "vertexbuffer.h"
 #include "indexbuffer.h"
 #include "vertmaterial.h"
-#include "dx8wrapper.h"
-#include "bgfxrenderer.h"
+#include "ww3d.h"
 
 DECLARE_FORCE_LINK(staticanimphys);
 
@@ -188,22 +187,22 @@ void StaticAnimPhysClass::Debug_Display_Shadow(const Vector2 & v0,const Vector2 
 			ShaderClass shader = ShaderClass::_PresetOpaqueShader;
 			VertexMaterialClass * vmtl = VertexMaterialClass::Get_Preset(VertexMaterialClass::PRELIT_NODIFFUSE);
 			
-			DX8Wrapper::Set_Shader(shader);
-			DX8Wrapper::Set_Material(vmtl);
+			WW3D::Set_Shader(shader);
+			WW3D::Set_Material(vmtl);
 
 			Matrix4 view,proj;
 			Matrix4 identity(true);
 
-			DX8Wrapper::Get_Transform(D3DTS_VIEW,view);
-			DX8Wrapper::Get_Transform(D3DTS_PROJECTION,proj);
+			WW3D::Get_Transform(WW3D::RENDER_TRANSFORM_VIEW,view);
+			WW3D::Get_Transform(WW3D::RENDER_TRANSFORM_PROJECTION,proj);
 
-			DX8Wrapper::Set_Transform(D3DTS_WORLD,identity);
-			DX8Wrapper::Set_Transform(D3DTS_VIEW,identity);
-			DX8Wrapper::Set_Transform(D3DTS_PROJECTION,identity);
+			WW3D::Set_Transform(WW3D::RENDER_TRANSFORM_WORLD,identity);
+			WW3D::Set_Transform(WW3D::RENDER_TRANSFORM_VIEW,identity);
+			WW3D::Set_Transform(WW3D::RENDER_TRANSFORM_PROJECTION,identity);
 		
-			DX8Wrapper::Set_Texture(0,tex);
+			WW3D::Set_Texture(0,tex);
 
-			DynamicVBAccessClass vbaccess(BUFFER_TYPE_DYNAMIC_RENDER,dynamic_vertex_format,4);
+			DynamicVBAccessClass vbaccess(WW3D::BUFFER_TYPE_DYNAMIC_RENDER,dynamic_vertex_format,4);
 			{
 				DynamicVBAccessClass::WriteLockClass lock(&vbaccess);
 				VertexFormatXYZNDUV2 * verts = lock.Get_Formatted_Vertex_Array();
@@ -236,7 +235,7 @@ void StaticAnimPhysClass::Debug_Display_Shadow(const Vector2 & v0,const Vector2 
 				verts[3].diffuse = 0xFFFFFFFF;
 			}
 
-			DynamicIBAccessClass ibaccess(BUFFER_TYPE_DYNAMIC_RENDER,2*3);
+			DynamicIBAccessClass ibaccess(WW3D::BUFFER_TYPE_DYNAMIC_RENDER,2*3);
 			{
 				DynamicIBAccessClass::WriteLockClass lock(&ibaccess);
 				uint16_t * indices = lock.Get_Index_Array();
@@ -249,12 +248,12 @@ void StaticAnimPhysClass::Debug_Display_Shadow(const Vector2 & v0,const Vector2 
 				indices[5] = 3;
 			}
 
-			DX8Wrapper::Set_Vertex_Buffer(vbaccess);
-			DX8Wrapper::Set_Index_Buffer(ibaccess,0);
-			BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0,2,0,4);
+			WW3D::Set_Vertex_Buffer(vbaccess);
+			WW3D::Set_Index_Buffer(ibaccess,0);
+			WW3D::Submit_Current_Triangles(0,2,0,4);
 
-			DX8Wrapper::Set_Transform(D3DTS_VIEW,view);
-			DX8Wrapper::Set_Transform(D3DTS_PROJECTION,proj);
+			WW3D::Set_Transform(WW3D::RENDER_TRANSFORM_VIEW,view);
+			WW3D::Set_Transform(WW3D::RENDER_TRANSFORM_PROJECTION,proj);
 
 			REF_PTR_RELEASE(vmtl);
 		}

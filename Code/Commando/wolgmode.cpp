@@ -57,7 +57,7 @@
 #include "WOLLoginProfile.h"
 #include "DlgDownload.h"
 #include "AutoStart.h"
-#include "dx8wrapper.h"
+#include "ww3d.h"
 #include "systeminfolog.h"
 #include "registry.h"
 #include "init.h"
@@ -721,7 +721,9 @@ void WolGameModeClass::End_Game(void)
 				StringClass info(255, true);
 				info = "SYSINFO:";
 				info += "CPU\tUNAVAILABLE\t";
-				info += DX8Wrapper::Get_Current_Caps()->Get_Compact_Log();
+				StringClass render_info(255, true);
+				WW3D::Get_Render_Diagnostics(render_info, true);
+				info += render_info;
 
 				StringClass tmp(255,true);
 				Get_Compact_Detail_String(tmp);

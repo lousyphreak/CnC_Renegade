@@ -55,7 +55,6 @@
 #include "rendobj.h"
 #include "phys.h"
 #include "pscene.h"
-#include "dx8renderer.h"
 #include "gdsingleplayer.h"
 #include "gdskirmish.h"
 #include "playertype.h"
@@ -240,7 +239,7 @@ GameInitMgrClass::Start_Game (const char *map_name, int teamChoice, uint32_t cla
 	//	Reset some rendering data
 	//
 	PhysicsSceneClass::Get_Instance()->Release_Projector_Resources ();
-	TheDX8MeshRenderer.Invalidate ();
+	WW3D::_Invalidate_Mesh_Cache ();
 
 	//
 	// Prevent the first couple frames from rendering, so that all textures get cached.
@@ -1024,7 +1023,6 @@ void _reload_game_configuration_files(void)
 	ScriptManager::Shutdown();
 	ScriptManager::Init();
 }
-
 
 
 

@@ -52,7 +52,6 @@
 #include "rendobj.h"
 #include "phys.h"
 #include "staticphys.h"
-#include "dx8renderer.h"
 #include "simplevec.h"
 #include "vp.h"
 #include "lightphys.h"

@@ -57,13 +57,10 @@
 #include "phys.h"
 #include "ccamera.h"
 #include "diagnostics.h"
-#include "dx8wrapper.h"
-#include "sortingrenderer.h"
 #include "textureloader.h"
 #include "BINKMovie.h"
 //#include "helptext.h"
 #include "cnetwork.h"
-#include "dx8rendererdebugger.h"
 #include "ConsoleMode.h"
 
 
@@ -221,17 +218,15 @@ void	GameModeManager::Render( void )
 	if (!ConsoleBox.Is_Exclusive()) {
 
 		bool clear=true;
-		bool old_enable_draw=DX8Wrapper::_Is_Triangle_Draw_Enabled();
-		bool old_enable_sorting_draw=SortingRendererClass::_Is_Triangle_Draw_Enabled();
+		const WW3D::GeometryDrawModeEnum old_draw_mode = WW3D::Get_Geometry_Draw_Mode();
 		if (_HiddenFrameCount) {
-			DX8Wrapper::_Enable_Triangle_Draw(false);
-			SortingRendererClass::_Enable_Triangle_Draw(false);
+			WW3D::Set_Geometry_Draw_Mode(WW3D::GEOMETRY_DRAW_NONE);
 			clear=false;
 		}
 
 		// Update the mesh debugger. This doesn't do anything at all unless the debugger is
 		// enabled, so it is safe to always call it
-		DX8RendererDebugger::Update();
+		WW3D::Update_Mesh_Debugger();
 
 		GameModeClass *combat_mode = Find("Combat");
 		const bool combat_mode_active = (combat_mode != NULL) && combat_mode->Is_Active();
@@ -327,8 +322,7 @@ void	GameModeManager::Render( void )
 
 		if (_HiddenFrameCount) {
 			_HiddenFrameCount--;
-			DX8Wrapper::_Enable_Triangle_Draw(old_enable_draw);
-			SortingRendererClass::_Enable_Triangle_Draw(old_enable_sorting_draw);
+			WW3D::Set_Geometry_Draw_Mode(old_draw_mode);
 			TextureLoader::Flush_Pending_Load_Tasks();
 		}
 	}

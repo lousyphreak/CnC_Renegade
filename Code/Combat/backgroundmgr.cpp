@@ -39,11 +39,10 @@
 #include "apppackettypes.h"
 #include "assetmgr.h"
 #include "AudibleSound.h"
-#include "bgfxrenderer.h"
 #include "camera.h"
 #include "dazzle.h"
 #include "vertexbuffer.h"
-#include "dx8wrapper.h"
+#include "ww3d.h"
 #include "gameobjmanager.h"
 #include "gametype.h"
 #include "matrix3d.h"
@@ -290,8 +289,8 @@ void HazeClass::Configure (const Vector3 &blendcolor)
  *=============================================================================================*/
 void HazeClass::Configure()
 {
-	const unsigned	d3dblendcolor	 =	DX8Wrapper::Convert_Color (BlendColor, 1.0f);
-	const unsigned	d3dhorizoncolor = DX8Wrapper::Convert_Color (HorizonColor * Intensity, 1.0f);
+	const unsigned	d3dblendcolor	 =	WW3D::Convert_Color (BlendColor, 1.0f);
+	const unsigned	d3dhorizoncolor = WW3D::Convert_Color (HorizonColor * Intensity, 1.0f);
 
 	for (unsigned v = 0; v < VertexCount; v++) {
 
@@ -330,7 +329,7 @@ void HazeClass::Render()
 
 		// Copy the vertices into a dynamic vertex buffer.
 		// NOTE: Vertex normals and UV's are uninitialized.
-		DynamicVBAccessClass dynamicvb (BUFFER_TYPE_DYNAMIC_RENDER, dynamic_vertex_format, VertexCount);
+		DynamicVBAccessClass dynamicvb (WW3D::BUFFER_TYPE_DYNAMIC_RENDER, dynamic_vertex_format, VertexCount);
 		{
 			DynamicVBAccessClass::WriteLockClass lock (&dynamicvb);
 			VertexFormatXYZNDUV2 *vertex = lock.Get_Formatted_Vertex_Array();
@@ -344,11 +343,11 @@ void HazeClass::Render()
 			}
 		}
 
-		DX8Wrapper::Set_Material (Material);
-		DX8Wrapper::Set_Shader (Shader);
-		DX8Wrapper::Set_Index_Buffer (IndexBuffer, 0);
-		DX8Wrapper::Set_Vertex_Buffer (dynamicvb);
-		BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0, TriangleCount, 0, VertexCount);
+		WW3D::Set_Material (Material);
+		WW3D::Set_Shader (Shader);
+		WW3D::Set_Index_Buffer (IndexBuffer, 0);
+		WW3D::Set_Vertex_Buffer (dynamicvb);
+		WW3D::Submit_Current_Triangles(0, TriangleCount, 0, VertexCount);
 	}
 }
 
@@ -567,7 +566,7 @@ void StarfieldClass::Configure()
 				VertexArray [ActiveVertexCount + 2] = m1 * Vector3 (+r, -r, 0.0f);
 
 				color		= Color0 + (colordifference * intensity);
-				d3dcolor = DX8Wrapper::Convert_Color (color, Alpha);
+				d3dcolor = WW3D::Convert_Color (color, Alpha);
 
 				DiffuseArray [ActiveVertexCount + 0] = d3dcolor;
 				DiffuseArray [ActiveVertexCount + 1] = d3dcolor;
@@ -619,9 +618,9 @@ void StarfieldClass::Render()
 			for (i = 0; i < activeflickercount; i++) {
 				triangleindices [i] = _RandomNumber (0, ActiveTriangleCount - 1);
 				v = triangleindices [i] * VERTICES_PER_TRIANGLE;
-				DX8Wrapper::Set_Alpha (alpha, DiffuseArray [v + 0]);
-				DX8Wrapper::Set_Alpha (alpha, DiffuseArray [v + 1]);
-				DX8Wrapper::Set_Alpha (alpha, DiffuseArray [v + 2]);
+				WW3D::Set_Color_Alpha (alpha, DiffuseArray [v + 0]);
+				WW3D::Set_Color_Alpha (alpha, DiffuseArray [v + 1]);
+				WW3D::Set_Color_Alpha (alpha, DiffuseArray [v + 2]);
 			}
 
 		} else {
@@ -630,7 +629,7 @@ void StarfieldClass::Render()
 
 		// Copy the vertices into a dynamic vertex buffer.
 		// NOTE: Vertex normals and stage 1 UV's are uninitialized.
-		DynamicVBAccessClass dynamicvb (BUFFER_TYPE_DYNAMIC_RENDER, dynamic_vertex_format, ActiveVertexCount);
+		DynamicVBAccessClass dynamicvb (WW3D::BUFFER_TYPE_DYNAMIC_RENDER, dynamic_vertex_format, ActiveVertexCount);
 		{
 			const float	texcoordarray [VERTICES_PER_TRIANGLE][2] = {{0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 0.0f}};
 
@@ -653,19 +652,19 @@ void StarfieldClass::Render()
 			}
 		}
 
-		DX8Wrapper::Set_Texture (0, Texture);
-		DX8Wrapper::Set_Material (Material);
-		DX8Wrapper::Set_Shader (Shader);
-		DX8Wrapper::Set_Index_Buffer (IndexBuffer, 0);
-		DX8Wrapper::Set_Vertex_Buffer (dynamicvb);
-		BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0, ActiveTriangleCount, 0, ActiveVertexCount);
+		WW3D::Set_Texture (0, Texture);
+		WW3D::Set_Material (Material);
+		WW3D::Set_Shader (Shader);
+		WW3D::Set_Index_Buffer (IndexBuffer, 0);
+		WW3D::Set_Vertex_Buffer (dynamicvb);
+		WW3D::Submit_Current_Triangles(0, ActiveTriangleCount, 0, ActiveVertexCount);
 
 		// Restore alphas for those stars that were modified prior to rendering.
 		for (i = 0; i < activeflickercount; i++) {
 			v = triangleindices [i] * VERTICES_PER_TRIANGLE;
-			DX8Wrapper::Set_Alpha (Alpha, DiffuseArray [v + 0]);
-			DX8Wrapper::Set_Alpha (Alpha, DiffuseArray [v + 1]);
-			DX8Wrapper::Set_Alpha (Alpha, DiffuseArray [v + 2]);
+			WW3D::Set_Color_Alpha (Alpha, DiffuseArray [v + 0]);
+			WW3D::Set_Color_Alpha (Alpha, DiffuseArray [v + 1]);
+			WW3D::Set_Color_Alpha (Alpha, DiffuseArray [v + 2]);
 		}
 	}
 }
@@ -905,7 +904,7 @@ void SkyObjectClass::Configure()
 			}
 		}
 		visible |= (alpha > 0.0f);
-		DiffuseArray [v] = DX8Wrapper::Convert_Color (Color, alpha);
+		DiffuseArray [v] = WW3D::Convert_Color (Color, alpha);
 	}
 
 	// Optimization: If all vertex alphas are zero then the object is invisible.
@@ -950,7 +949,7 @@ void SkyObjectClass::Render()
 
 		// Copy the vertices into the dynamic vertex buffer.
 		// NOTE: Vertex normals and stage 1 UV's are uninitialized.
-		DynamicVBAccessClass dynamicvb (BUFFER_TYPE_DYNAMIC_RENDER, dynamic_vertex_format, VertexCount);
+		DynamicVBAccessClass dynamicvb (WW3D::BUFFER_TYPE_DYNAMIC_RENDER, dynamic_vertex_format, VertexCount);
 		{
 			DynamicVBAccessClass::WriteLockClass lock (&dynamicvb);
 			VertexFormatXYZNDUV2 *vertex = lock.Get_Formatted_Vertex_Array();
@@ -966,12 +965,12 @@ void SkyObjectClass::Render()
 			}
 		}
 
-		DX8Wrapper::Set_Texture (0, Texture);
-		DX8Wrapper::Set_Material (Material);
-		DX8Wrapper::Set_Shader (Shader);
-		DX8Wrapper::Set_Index_Buffer (IndexBuffer, 0);
-		DX8Wrapper::Set_Vertex_Buffer (dynamicvb);
-		BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0, TriangleCount, 0, VertexCount);
+		WW3D::Set_Texture (0, Texture);
+		WW3D::Set_Material (Material);
+		WW3D::Set_Shader (Shader);
+		WW3D::Set_Index_Buffer (IndexBuffer, 0);
+		WW3D::Set_Vertex_Buffer (dynamicvb);
+		WW3D::Submit_Current_Triangles(0, TriangleCount, 0, VertexCount);
 	}
 }
 
@@ -1250,7 +1249,7 @@ void CloudLayerClass::Configure()
 			Vector3::Lerp (coldhorizoncolor, warmhorizoncolor, interpolant, &color);
 			alpha = 0.0f;
 		}
-		DiffuseArray [v] = DX8Wrapper::Convert_Color (color, alpha);
+		DiffuseArray [v] = WW3D::Convert_Color (color, alpha);
 	}
 
 	// Optimization: If alpha is zero then cloud layer is invisible.
@@ -1304,7 +1303,7 @@ void CloudLayerClass::Render()
 
 		// Copy the vertices into the dynamic vertex buffer.
 		// NOTE: Vertex normals and stage 1 UV's are uninitialized.
-		DynamicVBAccessClass dynamicvb (BUFFER_TYPE_DYNAMIC_RENDER, dynamic_vertex_format, VertexCount);
+		DynamicVBAccessClass dynamicvb (WW3D::BUFFER_TYPE_DYNAMIC_RENDER, dynamic_vertex_format, VertexCount);
 		{
 			DynamicVBAccessClass::WriteLockClass lock (&dynamicvb);
 			VertexFormatXYZNDUV2 *vertex = lock.Get_Formatted_Vertex_Array();
@@ -1320,12 +1319,12 @@ void CloudLayerClass::Render()
 			}
 		}
 
-		DX8Wrapper::Set_Texture (0, Texture);
-		DX8Wrapper::Set_Material (Material);
-		DX8Wrapper::Set_Shader (Shader);
-		DX8Wrapper::Set_Index_Buffer (IndexBuffer, 0);
-		DX8Wrapper::Set_Vertex_Buffer (dynamicvb);
-		BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0, TriangleCount, 0, VertexCount);
+		WW3D::Set_Texture (0, Texture);
+		WW3D::Set_Material (Material);
+		WW3D::Set_Shader (Shader);
+		WW3D::Set_Index_Buffer (IndexBuffer, 0);
+		WW3D::Set_Vertex_Buffer (dynamicvb);
+		WW3D::Submit_Current_Triangles(0, TriangleCount, 0, VertexCount);
 	}
 }
 
@@ -1502,7 +1501,7 @@ void SkyGlowClass::Configure()
 			gradient = 1.0f - (z * oomaxz);
 		}
 
-		DiffuseArray [v] = DX8Wrapper::Convert_Color (HorizonColor * (dotproduct * gradient), 1.0f);
+		DiffuseArray [v] = WW3D::Convert_Color (HorizonColor * (dotproduct * gradient), 1.0f);
 	}
 
 	// Sky glow is always visible.
@@ -1528,7 +1527,7 @@ void SkyGlowClass::Render()
 
 		// Copy the vertices into a dynamic vertex buffer.
 		// NOTE: Vertex normals and UV's are uninitialized.
-		DynamicVBAccessClass dynamicvb (BUFFER_TYPE_DYNAMIC_RENDER, dynamic_vertex_format, VertexCount);
+		DynamicVBAccessClass dynamicvb (WW3D::BUFFER_TYPE_DYNAMIC_RENDER, dynamic_vertex_format, VertexCount);
 		{
 			DynamicVBAccessClass::WriteLockClass lock (&dynamicvb);
 			VertexFormatXYZNDUV2 *vertex = lock.Get_Formatted_Vertex_Array();
@@ -1542,11 +1541,11 @@ void SkyGlowClass::Render()
 			}
 		}
 
-		DX8Wrapper::Set_Material (Material);
-		DX8Wrapper::Set_Shader (Shader);
-		DX8Wrapper::Set_Index_Buffer (IndexBuffer, 0);
-		DX8Wrapper::Set_Vertex_Buffer (dynamicvb);
-		BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0, TriangleCount, 0, VertexCount);
+		WW3D::Set_Material (Material);
+		WW3D::Set_Shader (Shader);
+		WW3D::Set_Index_Buffer (IndexBuffer, 0);
+		WW3D::Set_Vertex_Buffer (dynamicvb);
+		WW3D::Submit_Current_Triangles(0, TriangleCount, 0, VertexCount);
 	}
 }
 
@@ -1781,9 +1780,9 @@ void LightningBoltClass::Render (RenderInfoClass &rinfo)
 
 			// NOTE: Copy and restore the object to world space transform because Render_Seg_Line()
 			// will modify it (because it is a render-object function).
-			DX8Wrapper::Get_Transform (D3DTS_WORLD, t);
+			WW3D::Get_Transform (WW3D::RENDER_TRANSFORM_WORLD, t);
 			SegmentedLineClass::Render_Seg_Line (rinfo);
-			DX8Wrapper::Set_Transform (D3DTS_WORLD, t);
+			WW3D::Set_Transform (WW3D::RENDER_TRANSFORM_WORLD, t);
 		}
 		for (int b = 0; b < BranchCount; b++) {
 			if (Branches [b].LightningBolt != NULL) {
@@ -2907,7 +2906,7 @@ void SkyClass::Update (SceneClass *mainscene, const Vector3 &cameraposition)
  *=============================================================================================*/
 void SkyClass::Render (RenderInfoClass &rinfo)
 {
-	DX8Wrapper::Set_Transform (D3DTS_WORLD, Transform);
+	WW3D::Set_Transform (WW3D::RENDER_TRANSFORM_WORLD, Transform);
 
 	// Render in predetermined order.
 	Haze->Render();

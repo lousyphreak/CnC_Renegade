@@ -38,7 +38,6 @@
 #include "resource.h"
 #include "ww3d.h"
 #include "sliderctrl.h"
-#include "dx8wrapper.h"
 #include "cardinalspline.h"
 #include "string_ids.h"
 
@@ -219,5 +218,4 @@ DlgConfigVideoTabClass::On_SliderCtrl_Pos_Changed
 
 	return ;
 }
-
 

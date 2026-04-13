@@ -39,7 +39,6 @@
 #include "camera.h"
 #include "wwprofile.h"
 #include "ww3d.h"
-#include "dx8renderer.h"
 #include "textwindow.h"
 #include "debug.h"
 #include "assets.h"
@@ -196,4 +195,3 @@ void 	Overlay3DGameModeClass::Think()
 		}
 	}
 }
-

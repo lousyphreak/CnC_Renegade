@@ -73,7 +73,6 @@
 #include "init.h"
 #include "_globals.h"
 #include "buildnum.h"
-#include "dx8wrapper.h"
 #include "formconv.h"
 #include "autostart.h"
 #include "consolemode.h"
@@ -265,10 +264,6 @@ static bool Graphics_Settings_Trouble_Shooting()
 	return true;
 }
 
-typedef IDirect3D8* (WINAPI *Direct3DCreate8Type) (uint32_t SDKVersion);
-static Direct3DCreate8Type	Direct3DCreate8Ptr = NULL;
-static HINSTANCE D3D8Lib = NULL;
-
 static bool Video_Card_Driver_Check()
 {
 	RegistryClass render_registry(APPLICATION_SUB_KEY_NAME_RENDER);
@@ -277,93 +272,15 @@ static bool Video_Card_Driver_Check()
 	int disabled=render_registry.Get_Int( "DriverVersionCheckDisabled" );
 	if (disabled>=87) return true;
 
-	IDirect3D8* d3d=NULL;
-	D3DCAPS8 tmp_caps;
-	const D3DCAPS8* d3dcaps=NULL;
-	D3DADAPTER_IDENTIFIER8 adapter_id;
-
-	// Init D3D
-	Init_D3D_To_WW3_Conversion();
-
-	D3D8Lib = LoadLibrary("D3D8.DLL");
-
-	if (D3D8Lib != NULL) {
-		Direct3DCreate8Ptr = (Direct3DCreate8Type) GetProcAddress(D3D8Lib, "Direct3DCreate8");
-		if (Direct3DCreate8Ptr) {
-			d3d=Direct3DCreate8Ptr(D3D_SDK_VERSION);		// TODO: handle failure cases...
-			if (!d3d) {
-				FreeLibrary(D3D8Lib);
-				return true;
-			}
-		} else {
-			FreeLibrary(D3D8Lib);
-			return(true);
-		}
-	} else {
-		return(true);
-	}
-
-	// Select device. If there is already a device selected in the registry, use it.
-
-	int current_adapter_index=D3DADAPTER_DEFAULT;
-
-	//
-	//	Load the render device settings from the registry
-	//
-	char device_name[256] = { 0 };
-	render_registry.Get_String( VALUE_NAME_RENDER_DEVICE_NAME, device_name, sizeof(device_name));
-
-	int adapter_count = d3d->GetAdapterCount();
-	for (int adapter_index=0; adapter_index<adapter_count; adapter_index++) {
-		D3DADAPTER_IDENTIFIER8 id;
-		::ZeroMemory(&id, sizeof(D3DADAPTER_IDENTIFIER8));
-		int32_t res = d3d->GetAdapterIdentifier(adapter_index,D3DENUM_NO_WHQL_LEVEL,&id);
-		// If device ok, check if it matches the currently set adapter name
-		if (res == D3D_OK) {
-			StringClass name(id.Description,true);
-			if (name==device_name) {
-				current_adapter_index=adapter_index;
-				break;
-			}
-		}
-	}
-
-	if (FAILED(d3d->GetDeviceCaps(
-		current_adapter_index,
-		D3DDEVTYPE_HAL,
-		&tmp_caps))) {
-		d3d->Release();
-		FreeLibrary(D3D8Lib);
-		return true;
-	}
-
-	::ZeroMemory(&adapter_id, sizeof(D3DADAPTER_IDENTIFIER8));
-	if (FAILED( d3d->GetAdapterIdentifier(
-		current_adapter_index,
-		D3DENUM_NO_WHQL_LEVEL,
-		&adapter_id))) {
-		d3d->Release();
-		FreeLibrary(D3D8Lib);
-		return true;
-	}
-
-	d3dcaps=&tmp_caps;
-	DX8Caps caps(d3d,*d3dcaps,WW3D_FORMAT_UNKNOWN,adapter_id);
-
-	DX8Caps::DriverVersionStatusType status=caps.Get_Driver_Version_Status();
-
-	d3d->Release();
-	FreeLibrary(D3D8Lib);
-
-	switch (status) {
+	switch (WW3D::Get_Selected_Render_Device_Driver_Status()) {
 	default:
-	case DX8Caps::DRIVER_STATUS_GOOD:
-	case DX8Caps::DRIVER_STATUS_OK:
-	case DX8Caps::DRIVER_STATUS_UNKNOWN:
+	case WW3D::RENDER_DEVICE_DRIVER_STATUS_GOOD:
+	case WW3D::RENDER_DEVICE_DRIVER_STATUS_OK:
+	case WW3D::RENDER_DEVICE_DRIVER_STATUS_UNKNOWN:
 		render_registry.Set_Int( "DriverVersionCheckDisabled",87 );
 		return true;
 		break;
-	case DX8Caps::DRIVER_STATUS_BAD:
+	case WW3D::RENDER_DEVICE_DRIVER_STATUS_BAD:
 		break;
 	}
 

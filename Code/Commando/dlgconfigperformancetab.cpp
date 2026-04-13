@@ -44,8 +44,6 @@
 #include "ww3d.h"
 #include "pscene.h"
 #include "combat.h"
-#include "dx8wrapper.h"
-#include "dx8caps.h"
 #include "surfaceeffects.h"
 #include "_globals.h"
 #include "translatedb.h"
@@ -283,7 +281,7 @@ DlgConfigPerformanceTabClass::Setup_Controls (void)
 	//
 	//	Disable the checkbox if NPatches aren't supported
 	//
-	if (DX8Wrapper::Get_Current_Caps() && DX8Wrapper::Get_Current_Caps()->Support_NPatches () == false) {
+	if (!WW3D::Supports_NPatches()) {
 		Check_Dlg_Button (IDC_NPATCH_CHECK, false);
 		Enable_Dlg_Item (IDC_NPATCH_CHECK, false);
 	}
@@ -616,7 +614,7 @@ DlgConfigPerformanceTabClass::On_Apply (void)
 		registry.Set_Int (VALUE_NAME_TEXTURE_RES,		max (2 - texture_red, 0));
 		registry.Set_Int (VALUE_NAME_PARTICLE_DETAIL, particle_detail);
 
-		if (DX8Wrapper::Get_Current_Caps() && DX8Wrapper::Get_Current_Caps()->Support_NPatches ()) {
+		if (WW3D::Supports_NPatches()) {
 			registry.Set_Int (VALUE_NAME_NPATCHES,	npatches);
 		}
 

@@ -74,8 +74,6 @@
 #include "WWAudio.h"
 #include "AudibleSound.h"
 #include "gametype.h"
-#include "dx8wrapper.h"
-#include "dx8renderer.h"
 #include "rect.h"
 #include "dialogmgr.h"
 #include "renegadedialogmgr.h"

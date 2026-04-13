@@ -71,10 +71,8 @@
 #include "skinpackagemgr.h"
 #include "modpackagemgr.h"
 
-#include "dx8wrapper.h"
 #include "pscene.h"
 #include "systeminfolog.h"
-#include "dx8caps.h"
 #include "registry.h"
 #include "specialbuilds.h"
 #include <windows.h>
@@ -167,7 +165,7 @@ static void Get_Detail_String(StringClass& str)
 
 		// NPatch level
 		str+="NPatch level: ";
-		if (DX8Wrapper::Get_Current_Caps() && DX8Wrapper::Get_Current_Caps()->Support_NPatches()) {
+		if (WW3D::Supports_NPatches()) {
 			if (WW3D::Get_NPatches_Level()<=1) {
 				str+="Disabled\r\n";
 			}
@@ -277,10 +275,11 @@ public:
 // For debug purposes, log system information to \\Mordane\marketin\transfer\users\Jani\SYSINFO
 static void Log_System_Information()
 {
-	if (!DX8Wrapper::Is_Initted()) {
+	if (!WW3D::Is_Initted()) {
 		return;
 	}
-	if (DX8Wrapper::Get_Current_Caps() == NULL) {
+	WW3D::RenderCapabilitiesStruct render_caps;
+	if (!WW3D::Get_Current_Render_Capabilities(render_caps)) {
 		return;
 	}
 
@@ -293,19 +292,18 @@ static void Log_System_Information()
 	::GetUserName(user, &userlen);
 
 	StringClass string; // This will be a long string so don't allocate locally!
+	StringClass tmp;	// This will be long so no local alloc needed
 	string.Format("Computer name: %s\r\nUser name: %s\r\n\r\n",name,user);
 	string+="CPU information: unavailable (legacy CPU detection removed)\r\n";
-	if (DX8Wrapper::Get_Current_Caps()) {
-		string+=DX8Wrapper::Get_Current_Caps()->Get_Log();
-	}
+	WW3D::Get_Render_Diagnostics(tmp, false);
+	string+=tmp;
 	string+="\r\n";
 	string+="Compact tab-delimited version:\r\n";
-	StringClass tmp;	// This will be long so no local alloc needed
+	tmp = "";
 
 	string+="CPU\tUNAVAILABLE\t";
-	if (DX8Wrapper::Get_Current_Caps()) {
-		string+=DX8Wrapper::Get_Current_Caps()->Get_Compact_Log();
-	}
+	WW3D::Get_Render_Diagnostics(tmp, true);
+	string+=tmp;
 	Get_Compact_Detail_String(tmp);
 	string+=tmp;
 	SystemInfoLog::Get_Compact_Log(tmp);
@@ -335,7 +333,9 @@ static void Log_System_Information()
 				StringClass filename(0,true);
 	//			filename="\\\\havoc\\rock\\projects\\renegade\\logs\\";
 				filename="\\\\tanya\\game\\Projects\\Renegade\\_sysinfo_logs\\";
-				tmp.Format("%d_%d_",DX8Wrapper::Get_Current_Caps()->Get_Vendor(),DX8Wrapper::Get_Current_Caps()->Get_Device());
+				WW3D::AdapterIdentifierStruct adapter = {};
+				WW3D::Get_Current_Adapter_Identifier(adapter);
+				tmp.Format("%d_%d_",adapter.VendorId,adapter.DeviceId);
 				filename+=tmp;
 				filename+=name;
 				filename+=".txt";

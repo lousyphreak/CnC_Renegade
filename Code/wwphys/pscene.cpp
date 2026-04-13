@@ -113,7 +113,7 @@
 #include "meshmdl.h"
 #include "camerashakesystem.h"
 #include "lightenvironment.h"
-#include "dx8wrapper.h"
+#include "ww3d.h"
 #include "physresourcemgr.h"
 #include "phys3.h"
 
@@ -1315,7 +1315,7 @@ void PhysicsSceneClass::Customized_Render(RenderInfoClass & rinfo)
 				
 				// flush all rendering, set wireframe render mode
 				WW3D::Flush(rinfo);
-				DX8Wrapper::Set_DX8_Render_State(D3DRS_FILLMODE,D3DFILL_WIREFRAME);
+				WW3D::Set_Polygon_Fill_Mode(WW3D::POLYGON_FILL_MODE_WIREFRAME);
 
 				// set wireframe mode and draw the vis sector
 				rinfo.Push_Material_Pass(matpass);
@@ -1346,13 +1346,13 @@ void PhysicsSceneClass::Customized_Render(RenderInfoClass & rinfo)
 				// restore previous render mode
 				switch(Get_Polygon_Mode()) {
 					case POINT:
-						DX8Wrapper::Set_DX8_Render_State(D3DRS_FILLMODE,D3DFILL_POINT);
+						WW3D::Set_Polygon_Fill_Mode(WW3D::POLYGON_FILL_MODE_POINT);
 						break;
 					case LINE:
-						DX8Wrapper::Set_DX8_Render_State(D3DRS_FILLMODE,D3DFILL_WIREFRAME);
+						WW3D::Set_Polygon_Fill_Mode(WW3D::POLYGON_FILL_MODE_WIREFRAME);
 						break;
 					case FILL:
-						DX8Wrapper::Set_DX8_Render_State(D3DRS_FILLMODE,D3DFILL_SOLID);
+						WW3D::Set_Polygon_Fill_Mode(WW3D::POLYGON_FILL_MODE_SOLID);
 						break;
 				}
 

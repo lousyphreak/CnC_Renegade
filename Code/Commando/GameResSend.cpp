@@ -44,7 +44,7 @@
 #include <WWLib\VerChk.h>
 #include <WWLib\global.h>
 #include <WWLib\md5.h>
-#include <WW3D2\DX8Wrapper.h>
+#include <WW3D2\WW3D.h>
 #include <windows.h>
 
 using namespace WWOnline;
@@ -126,10 +126,11 @@ void SendGameResults(uint32_t gameID, cGameData* theGame, SList<cPlayer>* player
 	if (ConsoleBox.Is_Exclusive()) {
 		strcpy((char*)&cardInfo[0], "ConsoleMode");
 	} else {
-		const D3DADAPTER_IDENTIFIER8& adapter = DX8Wrapper::Get_Current_Adapter_Identifier();
+		WW3D::AdapterIdentifierStruct adapter = {};
+		WW3D::Get_Current_Adapter_Identifier(adapter);
 		cardInfo[0] = adapter.VendorId;
 		cardInfo[1] = adapter.DeviceId;
-		cardInfo[2] = adapter.SubSysId;
+		cardInfo[2] = adapter.SubsystemId;
 		cardInfo[3] = adapter.Revision;
 	}
 	stats.Add_Field("SVID", (void*)cardInfo, sizeof(cardInfo));

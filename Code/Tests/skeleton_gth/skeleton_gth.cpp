@@ -32,7 +32,6 @@
 #include "part_ldr.h"
 #include "rendobj.h"
 #include "hanim.h"
-#include "dx8wrapper.h"
 #include "indexbuffer.h"
 #include "vertexbuffer.h"
 #include "vertexformat.h"
@@ -59,7 +58,6 @@
 #include "predlod.h"
 #include "segline.h"
 #include <stdio.h>
-#include "dx8renderer.h"
 #include "textureloader.h"
 
 #define MAX_LOADSTRING 100
@@ -979,23 +977,25 @@ void Log_Statistics()
 		status_text+=format;
 		format.Format("%d Verts/frame (%dk vps)\n",Debug_Statistics::Get_DX8_Vertices(),unsigned(Debug_Statistics::Get_DX8_Vertices()*float(current_fps))/1000);
 		status_text+=format;
-		format.Format("%d DX8 calls\n",DX8Wrapper::Get_Last_Frame_DX8_Calls());
+		WW3D::BackendStatisticsStruct backend_stats;
+		WW3D::Get_Backend_Statistics(backend_stats);
+		format.Format("%d DX8 calls\n",backend_stats.DeviceCalls);
 		status_text+=format;
-		format.Format("%d VB changes\n",DX8Wrapper::Get_Last_Frame_Vertex_Buffer_Changes());
+		format.Format("%d VB changes\n",backend_stats.VertexBufferChanges);
 		status_text+=format;
-		format.Format("%d IB changes\n",DX8Wrapper::Get_Last_Frame_Index_Buffer_Changes());
+		format.Format("%d IB changes\n",backend_stats.IndexBufferChanges);
 		status_text+=format;
-		format.Format("%d texture changes\n",DX8Wrapper::Get_Last_Frame_Texture_Changes());
+		format.Format("%d texture changes\n",backend_stats.TextureChanges);
 		status_text+=format;
-		format.Format("%d material changes\n",DX8Wrapper::Get_Last_Frame_Material_Changes());
+		format.Format("%d material changes\n",backend_stats.MaterialChanges);
 		status_text+=format;
-		format.Format("%d light changes\n",DX8Wrapper::Get_Last_Frame_Light_Changes());
+		format.Format("%d light changes\n",backend_stats.LightChanges);
 		status_text+=format;
-		format.Format("%d RS changes\n",DX8Wrapper::Get_Last_Frame_Render_State_Changes());
+		format.Format("%d RS changes\n",backend_stats.RenderStateChanges);
 		status_text+=format;
-		format.Format("%d TSS changes\n",DX8Wrapper::Get_Last_Frame_Texture_Stage_State_Changes());
+		format.Format("%d TSS changes\n",backend_stats.TextureStageStateChanges);
 		status_text+=format;
-		format.Format("%d Mtx changes\n",DX8Wrapper::Get_Last_Frame_Matrix_Changes());
+		format.Format("%d Mtx changes\n",backend_stats.MatrixChanges);
 		status_text+=format;
 		break;
 	}
@@ -1162,7 +1162,6 @@ void Init_3D_Scene()
 #endif
 
 }
-
 
 
 

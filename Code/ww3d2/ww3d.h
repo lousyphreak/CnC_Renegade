@@ -47,11 +47,14 @@
 #include "layer.h"
 #include "w3derr.h"
 #include "robjlist.h"
+#include "ww3dformat.h"
 
 class		SceneClass;
 class		CameraClass;
 class		ShaderClass;
 class		DX8Wrapper;
+class		Matrix3D;
+class		Matrix4;
 
 struct	RenderStatistics;
 class		VertexMaterialClass;
@@ -61,6 +64,11 @@ class		RenderDeviceDescClass;
 class		StringClass;
 class		LightEnvironmentClass;
 class		MaterialPassClass;
+class		TextureClass;
+class		VertexBufferClass;
+class		IndexBufferClass;
+class		DynamicVBAccessClass;
+class		DynamicIBAccessClass;
 
 #define MESH_RENDER_SNAPSHOT_ENABLED
 #define SNAPSHOT_SAY(x) if (WW3D::Is_Snapshot_Activated()) { WWDEBUG_SAY(x); }
@@ -96,6 +104,68 @@ public:
 		NPATCHES_GAP_FILLING_DISABLED,
 		NPATCHES_GAP_FILLING_ENABLED,
 		NPATCHES_GAP_FILLING_FORCE
+	};
+
+	enum RenderTransformType {
+		RENDER_TRANSFORM_WORLD,
+		RENDER_TRANSFORM_VIEW,
+		RENDER_TRANSFORM_PROJECTION
+	};
+
+	enum PolygonFillModeEnum {
+		POLYGON_FILL_MODE_POINT,
+		POLYGON_FILL_MODE_WIREFRAME,
+		POLYGON_FILL_MODE_SOLID
+	};
+
+	enum GeometryDrawModeEnum {
+		GEOMETRY_DRAW_NONE = 0,
+		GEOMETRY_DRAW_REGULAR = 1,
+		GEOMETRY_DRAW_SORTED = 2,
+		GEOMETRY_DRAW_ALL = GEOMETRY_DRAW_REGULAR | GEOMETRY_DRAW_SORTED
+	};
+
+	enum BufferTypeEnum {
+		BUFFER_TYPE_RENDER = 0,
+		BUFFER_TYPE_SORTING = 1,
+		BUFFER_TYPE_DYNAMIC_RENDER = 2,
+		BUFFER_TYPE_DYNAMIC_SORTING = 3
+	};
+
+	struct AdapterIdentifierStruct {
+		unsigned int VendorId;
+		unsigned int DeviceId;
+		unsigned int SubsystemId;
+		unsigned int Revision;
+	};
+
+	struct RenderCapabilitiesStruct {
+		unsigned int MaxTextureWidth;
+		unsigned int MaxTextureHeight;
+		unsigned int MaxTexturesPerPass;
+		bool SupportsGamma;
+		bool SupportsNPatches;
+		bool SupportsAnisotropicFiltering;
+		bool CanDoMultiPass;
+	};
+
+	struct BackendStatisticsStruct {
+		unsigned int DeviceCalls;
+		unsigned int TextureChanges;
+		unsigned int MatrixChanges;
+		unsigned int MaterialChanges;
+		unsigned int VertexBufferChanges;
+		unsigned int IndexBufferChanges;
+		unsigned int LightChanges;
+		unsigned int RenderStateChanges;
+		unsigned int TextureStageStateChanges;
+	};
+
+	enum RenderDeviceDriverStatusEnum {
+		RENDER_DEVICE_DRIVER_STATUS_GOOD,
+		RENDER_DEVICE_DRIVER_STATUS_OK,
+		RENDER_DEVICE_DRIVER_STATUS_UNKNOWN,
+		RENDER_DEVICE_DRIVER_STATUS_BAD
 	};
 
 
@@ -166,6 +236,43 @@ public:
    static unsigned int     Get_Frame_Count(void) { return FrameCount; }
 	static unsigned int		Get_Last_Frame_Poly_Count(void);
 	static unsigned int		Get_Last_Frame_Vertex_Count(void);
+	static bool					Get_Current_Adapter_Identifier(AdapterIdentifierStruct& identifier);
+	static bool					Get_Current_Render_Capabilities(RenderCapabilitiesStruct& capabilities);
+	static bool					Get_Render_Diagnostics(StringClass& diagnostics, bool compact = false);
+	static bool					Supports_NPatches(void);
+	static void					Get_Backend_Statistics(BackendStatisticsStruct& statistics);
+	static RenderDeviceDriverStatusEnum Get_Selected_Render_Device_Driver_Status(void);
+	static void					Set_Output_Gamma(float gamma, float brightness, float contrast, bool calibrate = true, bool use_limit = true);
+	static bool					Is_Device_Ready(void);
+	static void					Set_Geometry_Draw_Mode(GeometryDrawModeEnum mode);
+	static GeometryDrawModeEnum Get_Geometry_Draw_Mode(void);
+	static void					Enable_Mesh_Debugger(bool enable);
+	static void					Get_Mesh_Debugger_String(StringClass& output);
+	static void					Update_Mesh_Debugger(void);
+	static void					Enable_All_Mesh_Debugger_Meshes(void);
+	static void					Enable_Mesh_Debugger_Mesh(unsigned id);
+	static void					Disable_All_Mesh_Debugger_Meshes(void);
+	static void					Disable_Mesh_Debugger_Mesh(unsigned id);
+	static void					Request_Mesh_Statistics_Log(void);
+	static unsigned int		Convert_Color(const Vector3& color, float alpha = 1.0f);
+	static void					Set_Color_Alpha(float alpha, unsigned int& color);
+	static void					Set_Transform(RenderTransformType transform, const Matrix4& matrix);
+	static void					Set_Transform(RenderTransformType transform, const Matrix3D& matrix);
+	static void					Get_Transform(RenderTransformType transform, Matrix4& matrix);
+	static void					Set_Material(VertexMaterialClass* material);
+	static void					Set_Shader(const ShaderClass& shader);
+	static void					Set_Texture(int stage, TextureClass* texture);
+	static void					Set_Light_Environment(LightEnvironmentClass* light_environment);
+	static void					Set_Vertex_Buffer(const VertexBufferClass* vertex_buffer);
+	static void					Set_Vertex_Buffer(const DynamicVBAccessClass& vertex_buffer);
+	static void					Set_Index_Buffer(const IndexBufferClass* index_buffer, unsigned short index_base_offset);
+	static void					Set_Index_Buffer(const DynamicIBAccessClass& index_buffer, unsigned short index_base_offset);
+	static void					Set_Depth_Bias(unsigned int bias);
+	static void					Set_Polygon_Fill_Mode(PolygonFillModeEnum mode);
+	static void					Insert_Sorted_Triangles(unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count);
+	static bool					Submit_Current_Triangles(unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count);
+	static TextureClass *	Create_Render_Target_Texture(unsigned width, unsigned height, WW3DFormat format);
+	static void					Reset_Render_Target(void);
 
 	/*
 	** Screen/Movie capturing

@@ -38,9 +38,7 @@
 
 #include "vertexbuffer.h"
 #include "indexbuffer.h"
-#include "dx8wrapper.h"
-#include "bgfxrenderer.h"
-#include "sortingrenderer.h"
+#include "ww3d.h"
 #include "rinfo.h"
 #include "camera.h"
 #include "vertexformat.h"
@@ -334,10 +332,10 @@ RenegadeTerrainPatchClass::Render (RenderInfoClass &rinfo)
 	// transform between the time that the mesh is rendered and the time that the decal
 	// mesh is rendered...  It shouldn't happen though.
 	//
-	DX8Wrapper::Set_Transform (D3DTS_WORLD, Get_Transform ());
+	WW3D::Set_Transform (WW3D::RENDER_TRANSFORM_WORLD, Get_Transform ());
 
 	if (rinfo.light_environment != NULL) {
-		DX8Wrapper::Set_Light_Environment (rinfo.light_environment);
+		WW3D::Set_Light_Environment (rinfo.light_environment);
 	}
 
 	//
@@ -356,7 +354,7 @@ RenegadeTerrainPatchClass::Render (RenderInfoClass &rinfo)
 		//	Do a "z-bias" to offset the alpha polys by just a teeny bit.  This
 		// avoids any z-fighting issues with the different passes.
 		//
-		//DX8Wrapper::Set_Pseudo_ZBias (1);
+		// Legacy Z-bias hook was intentionally left disabled during the port.
 
 		//
 		//	Next render the alpha passes
@@ -378,12 +376,12 @@ RenegadeTerrainPatchClass::Render (RenderInfoClass &rinfo)
 	//
 	//	Reset the z-bias
 	//
-	//DX8Wrapper::Set_Pseudo_ZBias (0);
+	// Legacy Z-bias hook remains disabled.
 
 	//
 	//	Reset the z-bias
 	//
-	//DX8Wrapper::Set_DX8_ZBias (0);
+	// Legacy explicit DX8 Z-bias reset remains disabled.
 
 	return ;
 }
@@ -422,9 +420,9 @@ RenegadeTerrainPatchClass::Render_Procedural_Material_Pass(MaterialPassClass * m
 	
 		if (temp_apt.Count() > 0) {
 
-			int buftype = BUFFER_TYPE_DYNAMIC_RENDER;
+			int buftype = WW3D::BUFFER_TYPE_DYNAMIC_RENDER;
 			if (Model->Get_Flag(MeshGeometryClass::SORT) && WW3D::Is_Sorting_Enabled()) {
-				buftype = BUFFER_TYPE_DYNAMIC_SORTING;
+				buftype = WW3D::BUFFER_TYPE_DYNAMIC_SORTING;
 			}
 
 			/*
@@ -465,10 +463,10 @@ RenegadeTerrainPatchClass::Render_Procedural_Material_Pass(MaterialPassClass * m
 			int vertex_offset = PolygonRendererList.Peek_Head()->Get_Vertex_Offset();
 			pass->Install_Materials();
 			
-			DX8Wrapper::Set_Transform(D3DTS_WORLD,Get_Transform());
-			DX8Wrapper::Set_Index_Buffer(dynamic_ib,vertex_offset);
+			WW3D::Set_Transform(WW3D::RENDER_TRANSFORM_WORLD,Get_Transform());
+			WW3D::Set_Index_Buffer(dynamic_ib,vertex_offset);
 
-			BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
+			WW3D::Submit_Current_Triangles(
 				0,
 				temp_apt.Count(),
 				min_v,
@@ -503,7 +501,7 @@ RenegadeTerrainPatchClass::Render_Procedural_Material_Pass(MaterialPassClass * m
 			//
 			//	Draw the mesh!
 			//
-			BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0, poly_count, 0, vert_count);
+			WW3D::Submit_Current_Triangles(0, poly_count, 0, vert_count);
 		}
 //	}
 }
@@ -529,8 +527,8 @@ RenegadeTerrainPatchClass::Submit_Rendering_Buffers (int texture_index, int pass
 	//
 	// Set vertex and index buffers
 	//
-	DX8Wrapper::Set_Vertex_Buffer (MaterialPassList[texture_index]->VertexBuffers[pass_type]);
-	DX8Wrapper::Set_Index_Buffer (MaterialPassList[texture_index]->IndexBuffers[pass_type], 0);	
+	WW3D::Set_Vertex_Buffer (MaterialPassList[texture_index]->VertexBuffers[pass_type]);
+	WW3D::Set_Index_Buffer (MaterialPassList[texture_index]->IndexBuffers[pass_type], 0);	
 	return ;
 }
 
@@ -560,18 +558,18 @@ RenegadeTerrainPatchClass::Render_By_Texture (int texture_index, int pass_type)
 	//
 	//	Configure the texture
 	//
-	DX8Wrapper::Set_Texture (0, MaterialPassList[texture_index]->Material->Peek_Texture ());
-	DX8Wrapper::Set_Texture (1, NULL);
+	WW3D::Set_Texture (0, MaterialPassList[texture_index]->Material->Peek_Texture ());
+	WW3D::Set_Texture (1, NULL);
 
 	//
 	//	Configure the material and shader
 	//
 	if (pass_type == RenegadeTerrainMaterialPassClass::PASS_BASE) {
-		DX8Wrapper::Set_Material (BaseMaterial);
-		DX8Wrapper::Set_Shader (BaseShader);
+		WW3D::Set_Material (BaseMaterial);
+		WW3D::Set_Shader (BaseShader);
 	} else {
-		DX8Wrapper::Set_Material (LayerMaterial);
-		DX8Wrapper::Set_Shader (LayerShader);
+		WW3D::Set_Material (LayerMaterial);
+		WW3D::Set_Shader (LayerShader);
 	}
 
 	//
@@ -590,7 +588,7 @@ RenegadeTerrainPatchClass::Render_By_Texture (int texture_index, int pass_type)
 	//
 	//	Draw the mesh!
 	//
-	BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0, poly_count, 0, vert_count);
+	WW3D::Submit_Current_Triangles(0, poly_count, 0, vert_count);
 	return ;
 }
 
@@ -770,14 +768,14 @@ RenegadeTerrainPatchClass::Build_Rendering_Buffers (int texture_index, int pass_
 			//	Set the vertex color
 			//
 			if (pass_type == RenegadeTerrainMaterialPassClass::PASS_BASE) {
-				vertices[index].diffuse = DX8Wrapper::Convert_Color (VertexColors[vert_index], 1.0F);
+				vertices[index].diffuse = WW3D::Convert_Color (VertexColors[vert_index], 1.0F);
 			} else {
 
 				//
 				//	Compose a vertex color using the vertex alpha
 				//
 				float alpha					= material_pass->VertexAlpha[vert_index];
-				vertices[index].diffuse	= DX8Wrapper::Convert_Color (VertexColors[vert_index], alpha);
+				vertices[index].diffuse	= WW3D::Convert_Color (VertexColors[vert_index], alpha);
 			}
 		}
 	}

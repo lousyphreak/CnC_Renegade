@@ -17,13 +17,12 @@
 */
 
 #include "BINKMovie.h"
-#include "dx8wrapper.h"
+#include "ww3d.h"
 #include "ww3dformat.h"
 #include "render2d.h"
 #include "Bink.h"
 #include "rect.h"
 #include "subtitlemanager.h"
-#include "dx8caps.h"
 
 class BINKMovieClass
 {
@@ -138,7 +137,8 @@ BINKMovieClass::BINKMovieClass(const char* filename, const char* subtitlename, F
 
 	TempBuffer = new uint8_t[Bink->Width * Bink->Height*2];
 
-	const D3DCAPS8& dx8caps = DX8Wrapper::Get_Current_Caps()->Get_DX8_Caps();
+	WW3D::RenderCapabilitiesStruct capabilities;
+	WW3D::Get_Current_Render_Capabilities(capabilities);
 	unsigned poweroftwowidth = 1;
 
 	while (poweroftwowidth < Bink->Width) {
@@ -151,12 +151,12 @@ BINKMovieClass::BINKMovieClass(const char* filename, const char* subtitlename, F
 		poweroftwoheight <<= 1;
 	}
 
-	if (poweroftwowidth > dx8caps.MaxTextureWidth) {
-		poweroftwowidth = dx8caps.MaxTextureWidth;
+	if (capabilities.MaxTextureWidth != 0 && poweroftwowidth > capabilities.MaxTextureWidth) {
+		poweroftwowidth = capabilities.MaxTextureWidth;
 	}
 	
-	if (poweroftwoheight > dx8caps.MaxTextureHeight) {
-		poweroftwoheight = dx8caps.MaxTextureHeight;
+	if (capabilities.MaxTextureHeight != 0 && poweroftwoheight > capabilities.MaxTextureHeight) {
+		poweroftwoheight = capabilities.MaxTextureHeight;
 	}
 
 	TextureCount = 0;
@@ -346,4 +346,3 @@ bool BINKMovieClass::Is_Complete()
 	if (!Bink) return true;
 	return (Bink->FrameNum>=Bink->Frames);
 }
-

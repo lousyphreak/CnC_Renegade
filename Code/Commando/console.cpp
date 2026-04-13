@@ -79,16 +79,12 @@
 #include "colors.h"
 #include "chatshre.h"
 #include "indexbuffer.h"
-#include "dx8renderer.h"
 #include "vertexbuffer.h"
-#include "dx8wrapper.h"
 #include "umbrasupport.h"
 #include "render2d.h"
-#include "sortingrenderer.h"
 #include "sctextobj.h"
 #include "textdisplay.h"
 #include "trackedvehicle.h"
-#include "dx8rendererdebugger.h"
 #include "FastAllocator.h"
 #include "ConsoleMode.h"
 
@@ -602,6 +598,8 @@ WWPROFILE( "Input Active" );
 		if (StatisticsDisplayManager::Is_Current_Display("dx8")) {
 			StringClass working_string(true);
 			StringClass message(true);
+			WW3D::BackendStatisticsStruct backend_stats;
+			WW3D::Get_Backend_Statistics(backend_stats);
 			float	cur_time = TimeManager::Get_Seconds();
 
 			FPSTime += cur_time - FPSLastTime;
@@ -630,18 +628,18 @@ WWPROFILE( "Input Active" );
 				"Light changes: %d\n\n"
 				"Sorted polys: %d\n"
 				"Sorted verts: %d\n",
-				DX8Wrapper::Get_Last_Frame_DX8_Calls(),
+				backend_stats.DeviceCalls,
 				Debug_Statistics::Get_DX8_Polygons(),
 				Debug_Statistics::Get_DX8_Vertices(),
 				Debug_Statistics::Get_DX8_Skin_Renders(),
 				Debug_Statistics::Get_DX8_Skin_Polygons(),
 				Debug_Statistics::Get_DX8_Skin_Vertices(),
-				DX8Wrapper::Get_Last_Frame_Matrix_Changes(),
+				backend_stats.MatrixChanges,
 				Debug_Statistics::Get_Record_Texture_Count(),
-				DX8Wrapper::Get_Last_Frame_Material_Changes(),
-				DX8Wrapper::Get_Last_Frame_Vertex_Buffer_Changes(),
-				DX8Wrapper::Get_Last_Frame_Index_Buffer_Changes(),
-				DX8Wrapper::Get_Last_Frame_Light_Changes(),
+				backend_stats.MaterialChanges,
+				backend_stats.VertexBufferChanges,
+				backend_stats.IndexBufferChanges,
+				backend_stats.LightChanges,
 				Debug_Statistics::Get_Sorting_Polygons(),
 				Debug_Statistics::Get_Sorting_Vertices());
 			message+=working_string;
@@ -699,16 +697,7 @@ WWPROFILE( "Input Active" );
 	//			cont++;
 	//		}
 
-	/*		working_string.Format("Total add renders: %d\n",DX8MeshRendererClass::Get_Last_Frame_Render_Stats());
-			message+=working_string;
-			for (int ridx=0;ridx<DX8MeshRendererContainerClass::RENDER_CLASS_MAX;++ridx) {
-				working_string.Format("Class: %s\nObjects: %d\nPolys: %d\n\n",
-					DX8MeshRendererContainerClass::Get_Render_Class_Name(ridx),
-					DX8MeshRendererClass::Get_Last_Frame_Render_Stats(ridx).count,
-					DX8MeshRendererClass::Get_Last_Frame_Render_Stats(ridx).polys);
-				message+=working_string;
-			}
-	*/		StatisticsDisplayManager::Set_Stat( "dx8", message, 0xffffffff );
+			StatisticsDisplayManager::Set_Stat( "dx8", message, 0xffffffff );
 		}
 
 
@@ -807,8 +796,8 @@ WWPROFILE( "Input Active" );
 		****************************************************************************************/
 		if (StatisticsDisplayManager::Is_Current_Display("mesh")) {
 			StringClass message;
-			DX8RendererDebugger::Enable(true);	// The first frame will not have any information...
-			DX8RendererDebugger::Get_String(message);
+			WW3D::Enable_Mesh_Debugger(true);	// The first frame will not have any information...
+			WW3D::Get_Mesh_Debugger_String(message);
 
 			StatisticsDisplayManager::Set_Stat( "star", message );
 			Vector2 pos = Render2DClass::Get_Screen_Resolution().Upper_Left();
@@ -1767,10 +1756,6 @@ void	ConsoleGameModeClass::Update_Memory_Log( void )
 
 	StatisticsDisplayManager::Set_Stat( "memory", memory_string, 0xffffffff );
 }
-
-
-
-
 
 
 

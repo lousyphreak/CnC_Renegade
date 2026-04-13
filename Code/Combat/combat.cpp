@@ -83,7 +83,6 @@
 #include "definitionfactorymgr.h"
 #include "definitionfactory.h"
 #include "globalsettings.h"
-#include "dx8wrapper.h"
 #include "Except.h"
 #include "cheatmgr.h"
 #include "systeminfolog.h"
@@ -1367,7 +1366,6 @@ void	CombatManager::Register_Star_Killer( ArmedGameObj * killer )
 		StarKillerID = 0;
 	}
 }
-
 
 
 

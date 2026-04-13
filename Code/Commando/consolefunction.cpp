@@ -86,7 +86,6 @@
 #include "part_emt.h"
 #include "translatedb.h"
 #include "string_ids.h"
-#include "dx8renderer.h"
 #include "backgroundmgr.h"
 #include "dynamicphys.h"
 #include "humanphys.h"
@@ -107,8 +106,6 @@
 #include "combatchunkid.h"
 #include "dialogtests.h"
 #include "resource.h"
-#include "dx8wrapper.h"
-#include "sortingrenderer.h"
 #include "WeatherMgr.h"
 #include "mapmgr.h"
 #include "Path.h"
@@ -145,7 +142,6 @@
 #include "_globals.h"
 #include "registry.h"
 #include "vipmodeevent.h"
-#include "dx8rendererdebugger.h"
 #include "changeteamevent.h"
 #include "gamesideservercontrol.h"
 #include "AutoStart.h"
@@ -282,7 +278,7 @@ public:
 	virtual	void Activate( const char * input ) {
 		unsigned onoff;
 		if (sscanf(input, "%d", &onoff) == 1) {
-			DX8RendererDebugger::Enable(!!onoff);
+			WW3D::Enable_Mesh_Debugger(!!onoff);
 		}
 	}
 };
@@ -296,14 +292,14 @@ public:
 		char string[200];
 		sscanf(input, "%s", string);
 		if (!stricmp("*",string)) {
-			DX8RendererDebugger::Enable_All();
+			WW3D::Enable_All_Mesh_Debugger_Meshes();
 		}
 		else {
 			unsigned id[10];
 			unsigned count=sscanf(input, "%d %d %d %d %d %d %d %d %d %d",
 				&id[0], &id[1], &id[2], &id[3], &id[4], &id[5], &id[6], &id[7], &id[8], &id[9]);
 			for (unsigned i=0;i<count;++i) {
-				DX8RendererDebugger::Enable_Mesh(id[i]);
+				WW3D::Enable_Mesh_Debugger_Mesh(id[i]);
 			}
 		}
 	}
@@ -318,14 +314,14 @@ public:
 		char string[200];
 		sscanf(input, "%s", string);
 		if (!stricmp("*",string)) {
-			DX8RendererDebugger::Disable_All();
+			WW3D::Disable_All_Mesh_Debugger_Meshes();
 		}
 		else {
 			unsigned id[10];
 			unsigned count=sscanf(input, "%d %d %d %d %d %d %d %d %d %d",
 				&id[0], &id[1], &id[2], &id[3], &id[4], &id[5], &id[6], &id[7], &id[8], &id[9]);
 			for (unsigned i=0;i<count;++i) {
-				DX8RendererDebugger::Disable_Mesh(id[i]);
+				WW3D::Disable_Mesh_Debugger_Mesh(id[i]);
 			}
 		}
 	}
@@ -1451,23 +1447,19 @@ public:
 	virtual	const char * Get_Help( void )	{ return "ENABLE_TRIANGLE_RENDER [none|opaque|sorting|all] - enable/disable triangle rendering."; }
 	virtual	void Activate( const char * input ) {
 		if (stricmp(input,"none") == 0) {
-			DX8Wrapper::_Enable_Triangle_Draw(false);
-			SortingRendererClass::_Enable_Triangle_Draw(false);
+			WW3D::Set_Geometry_Draw_Mode(WW3D::GEOMETRY_DRAW_NONE);
 			Print("All polygon rendering disabled\n");
 		}
 		else if (stricmp(input,"opaque") == 0) {
-			DX8Wrapper::_Enable_Triangle_Draw(true);
-			SortingRendererClass::_Enable_Triangle_Draw(false);
+			WW3D::Set_Geometry_Draw_Mode(WW3D::GEOMETRY_DRAW_REGULAR);
 			Print("Only opaque polygons enabled\n");
 		}
 		else if (stricmp(input,"sorting") == 0) {
-			DX8Wrapper::_Enable_Triangle_Draw(false);
-			SortingRendererClass::_Enable_Triangle_Draw(true);
+			WW3D::Set_Geometry_Draw_Mode(WW3D::GEOMETRY_DRAW_SORTED);
 			Print("Only sorting polygons enabled\n");
 		}
 		else {
-			DX8Wrapper::_Enable_Triangle_Draw(true);
-			SortingRendererClass::_Enable_Triangle_Draw(true);
+			WW3D::Set_Geometry_Draw_Mode(WW3D::GEOMETRY_DRAW_ALL);
 			Print("All polygons enabled\n");
 		}
 	}
@@ -4340,7 +4332,7 @@ public:
 	virtual	const char * Get_Name( void )	{ return "log_mesh_stats"; }
 	virtual	const char * Get_Help( void )	{ return "LOG_MESH_STATS - log stats to debug window or file."; }
 	virtual	void Activate( const char * input ) {
-		TheDX8MeshRenderer.Request_Log_Statistics();
+		WW3D::Request_Mesh_Statistics_Log();
 	}
 };
 

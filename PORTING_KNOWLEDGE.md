@@ -7,3 +7,8 @@
 - Sorted buffered draws need the same explicit shadow-flag propagation as immediate draws because the later flush path otherwise reclassifies them with the default heuristic and can repaint already-shadowed terrain as lit.
 - bgfx shader custom commands in the current CMake setup do not track included `.sh` files as dependencies, so edits under `Code/ww3d2/shaders/*.sh` require touching the dependent `.sc` files or otherwise forcing a shader rebuild.
 - In the CSM light view used by `shadowmap.cpp`, casters that sit toward the sun/light-camera side of the receiver slice produce **larger** light-space Z values, so behind-camera caster coverage must expand `max_z` (reducing `z_near`) rather than only pushing `min_z` farther away. Extending the wrong side looks like a gradual receiver cutoff instead of a clean caster pop because the shadow gets clipped by the cascade near plane as the camera moves past the caster.
+
+## First-person weapon animation lookup
+
+- `StringClass` must be explicitly cast to `const char *` before being passed through `%s` varargs formatters like `StringClass::Format` or `Debug_Say`. C++ will apply implicit conversions for normal function parameters, but not for `...`, and the resulting corrupted strings can look like random asset names instead of valid HAnim identifiers.
+- `Code/Combat/weaponview.cpp` builds first-person weapon, hand, and bob animation names via formatted strings. If those `StringClass` values are passed to `%s` without casts, idle/default visuals may still appear while state-driven first-person animations such as reload/fire/enter/exit fail to resolve.

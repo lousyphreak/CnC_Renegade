@@ -117,6 +117,7 @@
 #include "shadowmap.h"
 #include "dx8polygonrenderer.h"
 #include "indexbuffer.h"
+#include "vertexbuffer.h"
 #include "dx8renderer.h"
 #include "visrasterizer.h"
 
@@ -177,7 +178,9 @@ bool Submit_Fixed_Function_Draw(
 	const Matrix4 & view,
 	const Matrix4 & projection)
 {
-	MaterialClassification classification = BgfxRenderer::Classify_Material(shader, material);
+	const unsigned fvf = vertex_buffer.Vertex_Format_Info().Get_Vertex_Format();
+	const bool has_normals = (fvf & VERTEX_FORMAT_FLAG_NORMAL) != 0u;
+	MaterialClassification classification = BgfxRenderer::Classify_Material(shader, material, has_normals);
 	return BgfxRenderer::Submit_Classified_Draw(
 		vertex_buffer,
 		vertex_buffer_offset,

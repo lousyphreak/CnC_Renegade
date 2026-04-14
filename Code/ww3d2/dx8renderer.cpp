@@ -254,7 +254,7 @@ DX8TextureCategoryClass::DX8TextureCategoryClass(
 
 	if (material) material->Add_Ref();
 
-	classification = BgfxRenderer::Classify_Material(shader, material);
+	classification = BgfxRenderer::Classify_Material(shader, material, (container->Get_Vertex_Format() & VERTEX_FORMAT_FLAG_NORMAL) != 0);
 }
 
 DX8TextureCategoryClass::~DX8TextureCategoryClass()

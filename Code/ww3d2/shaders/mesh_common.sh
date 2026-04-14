@@ -11,6 +11,9 @@
 #define STAGE_SUBTRACT       6.0
 #define STAGE_BLEND_TEX_ALPHA 7.0
 #define STAGE_BLEND_CUR_ALPHA 8.0
+#define STAGE_BUMPENVMAP      9.0
+#define STAGE_BUMPENVMAP_LUM  10.0
+#define STAGE_DOTPRODUCT3     11.0
 
 // Fog mode constants (fragment shader)
 #define FOG_NONE           0.0

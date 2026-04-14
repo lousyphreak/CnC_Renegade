@@ -57,15 +57,15 @@ bgfx::UniformHandle BgfxRenderer::MeshMaterialEmissiveUniform = BGFX_INVALID_HAN
 bgfx::UniformHandle BgfxRenderer::MeshSceneAmbientUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::MeshLightDirUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::MeshLightColorUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MeshBumpEnvMatUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MeshBumpEnvLumUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::MeshTexgenModeUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::MeshTexTransformFlagsUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::MeshTexTransform0Uniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::MeshTexTransform1Uniform = BGFX_INVALID_HANDLE;
 bgfx::ProgramHandle BgfxRenderer::OverlayProgram = BGFX_INVALID_HANDLE;
-bgfx::ProgramHandle BgfxRenderer::MeshUnlitProgram = BGFX_INVALID_HANDLE;
-bgfx::ProgramHandle BgfxRenderer::MeshLitProgram = BGFX_INVALID_HANDLE;
-bgfx::ProgramHandle BgfxRenderer::MeshUnlitTexgenProgram = BGFX_INVALID_HANDLE;
-bgfx::ProgramHandle BgfxRenderer::MeshLitTexgenProgram = BGFX_INVALID_HANDLE;
+bgfx::ProgramHandle BgfxRenderer::MeshProgram = BGFX_INVALID_HANDLE;
+bgfx::ProgramHandle BgfxRenderer::MeshTexgenProgram = BGFX_INVALID_HANDLE;
 Matrix4 BgfxRenderer::CurrentViewMatrix(true);
 Matrix4 BgfxRenderer::CurrentProjectionMatrix(true);
 
@@ -1071,9 +1071,12 @@ bool Convert_Surface_Copy_To_BGRA8(
             break;
         }
         case WW3D_FORMAT_U8V8: {
+            // U8V8 stores signed du/dv perturbation values.
+            // Bias from signed [-128,127] to unsigned [0,255] by flipping sign bit
+            // so shader can decode with val * 2.0 - 1.0.
             destination[0] = 0x00;
-            destination[1] = source[1];
-            destination[2] = source[0];
+            destination[1] = source[1] ^ 0x80;
+            destination[2] = source[0] ^ 0x80;
             destination[3] = 0xff;
             source_pixels += 2;
             break;
@@ -1081,16 +1084,16 @@ bool Convert_Surface_Copy_To_BGRA8(
         case WW3D_FORMAT_L6V5U5: {
             const uint16_t packed = static_cast<uint16_t>(source[0]) | (static_cast<uint16_t>(source[1]) << 8);
             destination[0] = 0x00;
-            destination[1] = Expand_5_To_8(static_cast<uint8_t>((packed >> 5) & 0x1f));
-            destination[2] = Expand_5_To_8(static_cast<uint8_t>(packed & 0x1f));
+            destination[1] = Expand_5_To_8(static_cast<uint8_t>((packed >> 5) & 0x1f)) ^ 0x80;
+            destination[2] = Expand_5_To_8(static_cast<uint8_t>(packed & 0x1f)) ^ 0x80;
             destination[3] = Expand_6_To_8(static_cast<uint8_t>((packed >> 10) & 0x3f));
             source_pixels += 2;
             break;
         }
         case WW3D_FORMAT_X8L8V8U8: {
             destination[0] = source[3];
-            destination[1] = source[1];
-            destination[2] = source[0];
+            destination[1] = source[1] ^ 0x80;
+            destination[2] = source[0] ^ 0x80;
             destination[3] = source[2];
             source_pixels += 4;
             break;
@@ -1771,11 +1774,9 @@ bgfx::ProgramHandle BgfxRenderer::Get_Overlay_Program()
 bgfx::ProgramHandle BgfxRenderer::Get_Mesh_Program(MeshShaderProgram program)
 {
     switch (program) {
-    case MeshShaderProgram::Unlit:        return MeshUnlitProgram;
-    case MeshShaderProgram::Lit:          return MeshLitProgram;
-    case MeshShaderProgram::UnlitTexgen:  return MeshUnlitTexgenProgram;
-    case MeshShaderProgram::LitTexgen:    return MeshLitTexgenProgram;
-    default:                             return MeshUnlitProgram;
+    case MeshShaderProgram::Mesh:        return MeshProgram;
+    case MeshShaderProgram::MeshTexgen:  return MeshTexgenProgram;
+    default:                             return MeshProgram;
     }
 }
 
@@ -2055,9 +2056,12 @@ StageColorOp Map_Stage0_Color_Op(const ShaderClass &shader)
             ? STAGE_DISABLE : STAGE_SELECT_CURRENT;
     }
     switch (shader.Get_Primary_Gradient()) {
-    case ShaderClass::GRADIENT_DISABLE: return STAGE_SELECT_TEXTURE;
-    case ShaderClass::GRADIENT_ADD:     return STAGE_ADD;
-    default:                            return STAGE_MODULATE;
+    case ShaderClass::GRADIENT_DISABLE:              return STAGE_SELECT_TEXTURE;
+    case ShaderClass::GRADIENT_ADD:                   return STAGE_ADD;
+    case ShaderClass::GRADIENT_BUMPENVMAP:            return STAGE_BUMPENVMAP;
+    case ShaderClass::GRADIENT_BUMPENVMAPLUMINANCE:   return STAGE_BUMPENVMAP_LUM;
+    case ShaderClass::GRADIENT_DOTPRODUCT3:           return STAGE_DOTPRODUCT3;
+    default:                                          return STAGE_MODULATE;
     }
 }
 
@@ -2069,6 +2073,9 @@ StageColorOp Map_Stage0_Alpha_Op(const ShaderClass &shader)
     }
     switch (shader.Get_Primary_Gradient()) {
     case ShaderClass::GRADIENT_DISABLE: return STAGE_SELECT_TEXTURE;
+    case ShaderClass::GRADIENT_BUMPENVMAP:
+    case ShaderClass::GRADIENT_BUMPENVMAPLUMINANCE:
+    case ShaderClass::GRADIENT_DOTPRODUCT3:     return STAGE_DISABLE;
     default:                            return STAGE_MODULATE;
     }
 }
@@ -2127,41 +2134,13 @@ unsigned Sanitize_Tex_Transform_Flags(unsigned stage)
     return value != kUnsetRenderState ? value : D3DTTFF_DISABLE;
 }
 
-bool Has_Active_Texgen()
-{
-    const unsigned tci0 = Sanitize_Texcoord_Index(0);
-    const unsigned tci1 = Sanitize_Texcoord_Index(1);
-    const unsigned ttf0 = Sanitize_Tex_Transform_Flags(0);
-    const unsigned ttf1 = Sanitize_Tex_Transform_Flags(1);
-    return (tci0 & 0xffff0000u) != D3DTSS_TCI_PASSTHRU
-        || (tci1 & 0xffff0000u) != D3DTSS_TCI_PASSTHRU
-        || ttf0 != D3DTTFF_DISABLE
-        || ttf1 != D3DTTFF_DISABLE;
 }
 
-MeshShaderProgram Resolve_Current_Mesh_Program(const VertexMaterialClass *material)
-{
-    const unsigned lighting_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_LIGHTING);
-    const bool lighting_enabled = lighting_state != kUnsetRenderState
-        ? lighting_state != FALSE
-        : (material != nullptr && material->Get_Lighting());
-    const bool needs_texgen = Has_Active_Texgen();
-
-    if (lighting_enabled && needs_texgen) return MeshShaderProgram::LitTexgen;
-    if (lighting_enabled) return MeshShaderProgram::Lit;
-    if (needs_texgen) return MeshShaderProgram::UnlitTexgen;
-    return MeshShaderProgram::Unlit;
-}
-
-}
-
-MaterialClassification BgfxRenderer::Classify_Material(const ShaderClass &shader, const VertexMaterialClass *material)
+MaterialClassification BgfxRenderer::Classify_Material(const ShaderClass &shader, const VertexMaterialClass *material, bool has_normals)
 {
     MaterialClassification c{};
 
-    // Keep a material-derived default for bookkeeping/debugging.
-    // The actual program variant is resolved from live DX8 state at submit time.
-    bool uses_lighting = material != nullptr && material->Get_Lighting();
+    // Determine program variant: Mesh or MeshTexgen
     bool needs_texgen = false;
     if (material != nullptr) {
         VertexMaterialClass *mutable_material = const_cast<VertexMaterialClass *>(material);
@@ -2172,17 +2151,12 @@ MaterialClassification BgfxRenderer::Classify_Material(const ShaderClass &shader
             }
         }
     }
+    c.program = needs_texgen ? MeshShaderProgram::MeshTexgen : MeshShaderProgram::Mesh;
 
-    if (uses_lighting && needs_texgen) c.program = MeshShaderProgram::LitTexgen;
-    else if (uses_lighting) c.program = MeshShaderProgram::Lit;
-    else if (needs_texgen) c.program = MeshShaderProgram::UnlitTexgen;
-    else c.program = MeshShaderProgram::Unlit;
-
-    // Pre-compute frag config (stage ops from shader)
+    // Pre-compute fragment config (stage ops from shader)
     c.frag_config[0] = static_cast<float>(Map_Stage0_Color_Op(shader));
     c.frag_config[1] = static_cast<float>(Map_Stage1_Color_Op(shader));
 
-    // Alpha test ref
     float alpha_test_ref = -1.0f;
     if (shader.Get_Alpha_Test() == ShaderClass::ALPHATEST_ENABLE) {
         unsigned char alphareference = 0x60;
@@ -2194,7 +2168,6 @@ MaterialClassification BgfxRenderer::Classify_Material(const ShaderClass &shader
     c.frag_config[2] = alpha_test_ref;
     c.frag_config[3] = static_cast<float>(Map_Stage0_Alpha_Op(shader));
 
-    // Fog mode (from shader — will be overridden to 0 at draw time if fog is globally disabled)
     float fog_mode = 0.0f;
     switch (shader.Get_Fog_Func()) {
     case ShaderClass::FOG_ENABLE:         fog_mode = 1.0f; break;
@@ -2208,86 +2181,128 @@ MaterialClassification BgfxRenderer::Classify_Material(const ShaderClass &shader
     c.frag_config2[2] = 0.0f;
     c.frag_config2[3] = 0.0f;
 
-    return c;
-}
+    // Pre-compute lighting config and material colors
+    bool uses_lighting = material != nullptr && material->Get_Lighting();
 
-void BgfxRenderer::Apply_Lit_Uniforms(
-    const VertexBufferClass &vertex_buffer,
-    const VertexMaterialClass *material)
-{
-    const unsigned fvf = vertex_buffer.Vertex_Format_Info().Get_Vertex_Format();
-    const bool has_normals = (fvf & VERTEX_FORMAT_FLAG_NORMAL) != 0u;
-    const unsigned color_vertex_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_COLORVERTEX);
-    const bool color_vertex_enabled = color_vertex_state != kUnsetRenderState ? color_vertex_state != FALSE : true;
+    if (uses_lighting) {
+        // Lighting mode: 1 = emissive only (no normals), 2 = full per-pixel lighting
+        c.lit_config[0] = has_normals ? 2.0f : 1.0f;
 
-    // Resolve material source selection: 0 = material, 1 = color0
-    auto resolve_source = [&](unsigned rs_type) -> float {
-        unsigned src = DX8Wrapper::Get_DX8_Render_State(rs_type);
-        if (!color_vertex_enabled) return 0.0f;
-        return (src == D3DMCS_COLOR1) ? 1.0f : 0.0f;
-    };
+        // Color sources from material (COLOR1 = vertex color, MATERIAL = material color)
+        auto resolve_source = [](unsigned src) -> float {
+            return (src == VertexMaterialClass::COLOR1) ? 1.0f : 0.0f;
+        };
+        c.lit_config[1] = resolve_source(material->Get_Diffuse_Color_Source());
+        c.lit_config[2] = resolve_source(material->Get_Ambient_Color_Source());
+        c.lit_config[3] = resolve_source(material->Get_Emissive_Color_Source());
 
-    float lit_config[4] = {
-        has_normals ? 1.0f : 0.0f,
-        resolve_source(D3DRS_DIFFUSEMATERIALSOURCE),
-        resolve_source(D3DRS_AMBIENTMATERIALSOURCE),
-        resolve_source(D3DRS_EMISSIVEMATERIALSOURCE)};
-    bgfx::setUniform(MeshLitConfigUniform, lit_config);
-
-    // Material colors
-    Vector3 ambient(1.0f, 1.0f, 1.0f);
-    Vector3 diffuse(1.0f, 1.0f, 1.0f);
-    Vector3 emissive(0.0f, 0.0f, 0.0f);
-    float diffuse_alpha = 1.0f;
-
-    if (material != nullptr) {
+        // Material colors
+        Vector3 ambient(1.0f, 1.0f, 1.0f);
+        Vector3 diffuse(1.0f, 1.0f, 1.0f);
+        Vector3 emissive(0.0f, 0.0f, 0.0f);
         material->Get_Ambient(&ambient);
         material->Get_Diffuse(&diffuse);
         material->Get_Emissive(&emissive);
-        diffuse_alpha = material->Get_Opacity();
+
+        c.material_ambient[0] = ambient.X;
+        c.material_ambient[1] = ambient.Y;
+        c.material_ambient[2] = ambient.Z;
+        c.material_ambient[3] = 1.0f;
+
+        c.material_diffuse[0] = diffuse.X;
+        c.material_diffuse[1] = diffuse.Y;
+        c.material_diffuse[2] = diffuse.Z;
+        c.material_diffuse[3] = material->Get_Opacity();
+
+        c.material_emissive[0] = emissive.X;
+        c.material_emissive[1] = emissive.Y;
+        c.material_emissive[2] = emissive.Z;
+        c.material_emissive[3] = 1.0f;
     } else {
-        RenderStateStruct rs;
-        DX8Wrapper::Get_Render_State(rs);
-        ambient = Vector3(rs.material_state.Ambient.r, rs.material_state.Ambient.g, rs.material_state.Ambient.b);
-        diffuse = Vector3(rs.material_state.Diffuse.r, rs.material_state.Diffuse.g, rs.material_state.Diffuse.b);
-        emissive = Vector3(rs.material_state.Emissive.r, rs.material_state.Emissive.g, rs.material_state.Emissive.b);
-        diffuse_alpha = rs.material_state.Diffuse.a;
+        // Unlit: mode 0, material colors don't matter (vertex color is used directly)
+        c.lit_config[0] = 0.0f;
+        c.lit_config[1] = 0.0f;
+        c.lit_config[2] = 0.0f;
+        c.lit_config[3] = 0.0f;
+
+        c.material_ambient[0] = 1.0f; c.material_ambient[1] = 1.0f;
+        c.material_ambient[2] = 1.0f; c.material_ambient[3] = 1.0f;
+        c.material_diffuse[0] = 1.0f; c.material_diffuse[1] = 1.0f;
+        c.material_diffuse[2] = 1.0f; c.material_diffuse[3] = 1.0f;
+        c.material_emissive[0] = 0.0f; c.material_emissive[1] = 0.0f;
+        c.material_emissive[2] = 0.0f; c.material_emissive[3] = 1.0f;
     }
 
-    float mat_ambient[4] = {ambient.X, ambient.Y, ambient.Z, 1.0f};
-    float mat_diffuse[4] = {diffuse.X, diffuse.Y, diffuse.Z, diffuse_alpha};
-    float mat_emissive[4] = {emissive.X, emissive.Y, emissive.Z, 1.0f};
-    bgfx::setUniform(MeshMaterialAmbientUniform, mat_ambient);
-    bgfx::setUniform(MeshMaterialDiffuseUniform, mat_diffuse);
-    bgfx::setUniform(MeshMaterialEmissiveUniform, mat_emissive);
+    return c;
+}
 
-    // Scene ambient
-    const unsigned ambient_color = DX8Wrapper::Get_DX8_Render_State(D3DRS_AMBIENT);
-    float scene_ambient[4] = {0.0f, 0.0f, 0.0f, 1.0f};
-    if (ambient_color != kUnsetRenderState) {
-        scene_ambient[0] = static_cast<float>((ambient_color >> 16) & 0xffu) / 255.0f;
-        scene_ambient[1] = static_cast<float>((ambient_color >> 8) & 0xffu) / 255.0f;
-        scene_ambient[2] = static_cast<float>(ambient_color & 0xffu) / 255.0f;
-    }
-    bgfx::setUniform(MeshSceneAmbientUniform, scene_ambient);
+void BgfxRenderer::Apply_Lighting_Uniforms(const MaterialClassification &classification)
+{
+    bgfx::setUniform(MeshLitConfigUniform, classification.lit_config);
+    const bool lighting_active = classification.lit_config[0] > 0.5f;
+    if (lighting_active) {
+        bgfx::setUniform(MeshMaterialAmbientUniform, classification.material_ambient);
+        bgfx::setUniform(MeshMaterialDiffuseUniform, classification.material_diffuse);
+        bgfx::setUniform(MeshMaterialEmissiveUniform, classification.material_emissive);
 
-    // Directional lights
-    float light_dir[16] = {};
-    float light_color[16] = {};
-    for (unsigned i = 0; i < 4u; ++i) {
-        const D3DLIGHT8 &light = DX8Wrapper::Peek_Light(i);
-        const size_t off = static_cast<size_t>(i) * 4u;
-        light_dir[off + 0] = light.Direction.x;
-        light_dir[off + 1] = light.Direction.y;
-        light_dir[off + 2] = light.Direction.z;
-        light_dir[off + 3] = DX8Wrapper::Is_Light_Enabled(i) ? 1.0f : 0.0f;
-        light_color[off + 0] = light.Diffuse.r;
-        light_color[off + 1] = light.Diffuse.g;
-        light_color[off + 2] = light.Diffuse.b;
-        light_color[off + 3] = 0.0f;
+        // Scene ambient (per-mesh, from DX8Wrapper)
+        const unsigned ambient_color = DX8Wrapper::Get_DX8_Render_State(D3DRS_AMBIENT);
+        float scene_ambient[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+        if (ambient_color != kUnsetRenderState) {
+            scene_ambient[0] = static_cast<float>((ambient_color >> 16) & 0xffu) / 255.0f;
+            scene_ambient[1] = static_cast<float>((ambient_color >> 8) & 0xffu) / 255.0f;
+            scene_ambient[2] = static_cast<float>(ambient_color & 0xffu) / 255.0f;
+        }
+        bgfx::setUniform(MeshSceneAmbientUniform, scene_ambient);
+
+        // Directional lights (per-mesh, from DX8Wrapper)
+        float light_dir[16] = {};
+        float light_color[16] = {};
+        for (unsigned i = 0; i < 4u; ++i) {
+            const D3DLIGHT8 &light = DX8Wrapper::Peek_Light(i);
+            const size_t off = static_cast<size_t>(i) * 4u;
+            light_dir[off + 0] = light.Direction.x;
+            light_dir[off + 1] = light.Direction.y;
+            light_dir[off + 2] = light.Direction.z;
+            light_dir[off + 3] = DX8Wrapper::Is_Light_Enabled(i) ? 1.0f : 0.0f;
+            light_color[off + 0] = light.Diffuse.r;
+            light_color[off + 1] = light.Diffuse.g;
+            light_color[off + 2] = light.Diffuse.b;
+            light_color[off + 3] = 0.0f;
+        }
+        bgfx::setUniform(MeshLightDirUniform, light_dir, 4);
+        bgfx::setUniform(MeshLightColorUniform, light_color, 4);
     }
-    bgfx::setUniform(MeshLightDirUniform, light_dir, 4);
-    bgfx::setUniform(MeshLightColorUniform, light_color, 4);
+}
+
+void BgfxRenderer::Apply_Bump_Env_Uniforms(const MaterialClassification &classification)
+{
+    float stage0_op = classification.frag_config[0];
+    bool is_bump = (stage0_op > 8.5f && stage0_op < 11.5f);
+    if (!is_bump) return;
+
+    // Read bump env matrix from DX8Wrapper texture stage state (set by BumpEnvTextureMapperClass::Apply)
+    auto dw2f = [](unsigned dw) -> float {
+        float f;
+        std::memcpy(&f, &dw, sizeof(f));
+        return f;
+    };
+    float bump_mat[4] = {
+        dw2f(DX8Wrapper::Get_Texture_Stage_State(0, D3DTSS_BUMPENVMAT00)),
+        dw2f(DX8Wrapper::Get_Texture_Stage_State(0, D3DTSS_BUMPENVMAT01)),
+        dw2f(DX8Wrapper::Get_Texture_Stage_State(0, D3DTSS_BUMPENVMAT10)),
+        dw2f(DX8Wrapper::Get_Texture_Stage_State(0, D3DTSS_BUMPENVMAT11)),
+    };
+    bgfx::setUniform(MeshBumpEnvMatUniform, bump_mat);
+
+    // Match the original DX8 wrapper state layout: luminance scale/offset live on stage 1,
+    // while the bump rotation matrix is stored on stage 0.
+    float bump_lum[4] = {
+        dw2f(DX8Wrapper::Get_Texture_Stage_State(1, D3DTSS_BUMPENVLSCALE)),
+        dw2f(DX8Wrapper::Get_Texture_Stage_State(1, D3DTSS_BUMPENVLOFFSET)),
+        0.0f, 0.0f
+    };
+    bgfx::setUniform(MeshBumpEnvLumUniform, bump_lum);
 }
 
 void BgfxRenderer::Apply_Texgen_Uniforms()
@@ -2669,12 +2684,13 @@ bool Submit_Classified_Draw_Internal(
 
     Apply_Fog_Uniforms();
 
-    const MeshShaderProgram resolved_program = Resolve_Current_Mesh_Program(material);
+    // Per-pixel lighting uniforms (from pre-computed classification + per-mesh scene state)
+    BgfxRenderer::Apply_Lighting_Uniforms(classification);
 
-    if (resolved_program == MeshShaderProgram::Lit || resolved_program == MeshShaderProgram::LitTexgen) {
-        BgfxRenderer::Apply_Lit_Uniforms(vertex_buffer, material);
-    }
-    if (resolved_program == MeshShaderProgram::UnlitTexgen || resolved_program == MeshShaderProgram::LitTexgen) {
+    // Bump env map matrix (dynamic, read from DX8Wrapper stage state)
+    BgfxRenderer::Apply_Bump_Env_Uniforms(classification);
+
+    if (classification.program == MeshShaderProgram::MeshTexgen) {
         BgfxRenderer::Apply_Texgen_Uniforms();
     }
 
@@ -2689,7 +2705,7 @@ bool Submit_Classified_Draw_Internal(
         rs.shader,
         cull_mode != 0x12345678u ? cull_mode : D3DCULL_CW,
         Resolve_Primitive_State(fill_mode));
-    bgfx::submit(view_id, BgfxRenderer::Get_Mesh_Program(resolved_program));
+    bgfx::submit(view_id, BgfxRenderer::Get_Mesh_Program(classification.program));
 
     // Shadow cast pass
     const bool alpha_test_enabled = classification.frag_config[2] >= 0.0f;
@@ -2748,7 +2764,9 @@ bool Submit_Current_Draw(
     const bool resolved_cast_shadows = use_explicit_shadow_flags ? cast_shadows : false;
 
     TextureClass *textures[2] = {render_state.Textures[0], render_state.Textures[1]};
-    MaterialClassification classification = BgfxRenderer::Classify_Material(render_state.shader, render_state.material);
+    const unsigned fvf = render_state.vertex_buffer->Vertex_Format_Info().Get_Vertex_Format();
+    const bool has_normals = (fvf & VERTEX_FORMAT_FLAG_NORMAL) != 0u;
+    MaterialClassification classification = BgfxRenderer::Classify_Material(render_state.shader, render_state.material, has_normals);
 
     return Submit_Classified_Draw_Internal(
         *render_state.vertex_buffer,
@@ -2896,6 +2914,12 @@ bool BgfxRenderer::Init_Render_Resources()
     if (!bgfx::isValid(MeshLightColorUniform))
         MeshLightColorUniform = bgfx::createUniform("u_meshLightColor", bgfx::UniformType::Vec4, 4);
 
+    // Bump env map uniforms
+    if (!bgfx::isValid(MeshBumpEnvMatUniform))
+        MeshBumpEnvMatUniform = bgfx::createUniform("u_meshBumpEnvMat", bgfx::UniformType::Vec4);
+    if (!bgfx::isValid(MeshBumpEnvLumUniform))
+        MeshBumpEnvLumUniform = bgfx::createUniform("u_meshBumpEnvLum", bgfx::UniformType::Vec4);
+
     // Texgen-only uniforms
     if (!bgfx::isValid(MeshTexgenModeUniform))
         MeshTexgenModeUniform = bgfx::createUniform("u_meshTexgenMode", bgfx::UniformType::Vec4);
@@ -2921,15 +2945,11 @@ bool BgfxRenderer::Init_Render_Resources()
     if (!bgfx::isValid(OverlayProgram))
         OverlayProgram = Load_Program("vs_overlay", "fs_overlay");
 
-    // New multi-shader programs
-    if (!bgfx::isValid(MeshUnlitProgram))
-        MeshUnlitProgram = Load_Program("vs_mesh_unlit", "fs_mesh_unlit");
-    if (!bgfx::isValid(MeshLitProgram))
-        MeshLitProgram = Load_Program("vs_mesh_lit", "fs_mesh_lit");
-    if (!bgfx::isValid(MeshUnlitTexgenProgram))
-        MeshUnlitTexgenProgram = Load_Program("vs_mesh_unlit_texgen", "fs_mesh_unlit_texgen");
-    if (!bgfx::isValid(MeshLitTexgenProgram))
-        MeshLitTexgenProgram = Load_Program("vs_mesh_lit_texgen", "fs_mesh_lit_texgen");
+    // Mesh programs (2 variants: mesh, mesh_texgen — both share fs_mesh)
+    if (!bgfx::isValid(MeshProgram))
+        MeshProgram = Load_Program("vs_mesh", "fs_mesh");
+    if (!bgfx::isValid(MeshTexgenProgram))
+        MeshTexgenProgram = Load_Program("vs_mesh_texgen", "fs_mesh");
 
     // Initialize shadow map system
     if (!ShadowMapManager::Is_Initted()) {
@@ -2937,8 +2957,7 @@ bool BgfxRenderer::Init_Render_Resources()
     }
 
     return bgfx::isValid(OverlayProgram)
-        && bgfx::isValid(MeshUnlitProgram) && bgfx::isValid(MeshLitProgram)
-        && bgfx::isValid(MeshUnlitTexgenProgram) && bgfx::isValid(MeshLitTexgenProgram);
+        && bgfx::isValid(MeshProgram) && bgfx::isValid(MeshTexgenProgram);
 }
 
 void BgfxRenderer::Shutdown_Render_Resources()
@@ -2946,10 +2965,8 @@ void BgfxRenderer::Shutdown_Render_Resources()
     // Shut down shadow map system before destroying other resources
     ShadowMapManager::Shutdown();
 
-    Destroy_Program(MeshLitTexgenProgram);
-    Destroy_Program(MeshUnlitTexgenProgram);
-    Destroy_Program(MeshLitProgram);
-    Destroy_Program(MeshUnlitProgram);
+    Destroy_Program(MeshTexgenProgram);
+    Destroy_Program(MeshProgram);
     Destroy_Program(OverlayProgram);
 
     auto destroy_uniform = [](bgfx::UniformHandle &h) {
@@ -2960,6 +2977,8 @@ void BgfxRenderer::Shutdown_Render_Resources()
     destroy_uniform(MeshTexTransform0Uniform);
     destroy_uniform(MeshTexTransformFlagsUniform);
     destroy_uniform(MeshTexgenModeUniform);
+    destroy_uniform(MeshBumpEnvLumUniform);
+    destroy_uniform(MeshBumpEnvMatUniform);
     destroy_uniform(MeshLightColorUniform);
     destroy_uniform(MeshLightDirUniform);
     destroy_uniform(MeshSceneAmbientUniform);

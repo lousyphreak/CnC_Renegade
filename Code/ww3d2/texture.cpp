@@ -161,6 +161,26 @@ static unsigned Clamp_Texture_Stage(unsigned stage)
 	return stage;
 }
 
+static WW3DFormat Choose_Bump_Texture_Format()
+{
+	if (DX8Wrapper::Is_Initted()) {
+		const DX8Caps *caps = DX8Wrapper::Get_Current_Caps();
+		if (caps == nullptr || !caps->Support_Bump_Envmap()) {
+			return WW3D_FORMAT_UNKNOWN;
+		}
+
+		if (caps->Support_Texture_Format(WW3D_FORMAT_U8V8)) return WW3D_FORMAT_U8V8;
+		if (caps->Support_Texture_Format(WW3D_FORMAT_X8L8V8U8)) return WW3D_FORMAT_X8L8V8U8;
+		if (caps->Support_Texture_Format(WW3D_FORMAT_L6V5U5)) return WW3D_FORMAT_L6V5U5;
+		return WW3D_FORMAT_UNKNOWN;
+	}
+
+	if (BgfxRenderer::Supports_Texture_Format(WW3D_FORMAT_U8V8)) return WW3D_FORMAT_U8V8;
+	if (BgfxRenderer::Supports_Texture_Format(WW3D_FORMAT_X8L8V8U8)) return WW3D_FORMAT_X8L8V8U8;
+	if (BgfxRenderer::Supports_Texture_Format(WW3D_FORMAT_L6V5U5)) return WW3D_FORMAT_L6V5U5;
+	return WW3D_FORMAT_UNKNOWN;
+}
+
 static uint32_t Resolve_Bgfx_Min_Filter_Flags(unsigned filter)
 {
 #if RENEGADE_WITH_BGFX_RENDERER
@@ -1184,13 +1204,11 @@ TextureClass *Load_Texture(ChunkLoadClass & cload)
 
 				case W3DTEXTURE_TYPE_BUMPMAP:
 				{
-					if (DX8Wrapper::Is_Initted() && DX8Wrapper::Get_Current_Caps()->Support_Bump_Envmap()) {
-						// No mipmaps to bumpmap for now
-						mipcount=TextureClass::MIP_LEVELS_1;
-
-						if (DX8Wrapper::Get_Current_Caps()->Support_Texture_Format(WW3D_FORMAT_U8V8)) format=WW3D_FORMAT_U8V8;
-						else if (DX8Wrapper::Get_Current_Caps()->Support_Texture_Format(WW3D_FORMAT_X8L8V8U8)) format=WW3D_FORMAT_X8L8V8U8;
-						else if (DX8Wrapper::Get_Current_Caps()->Support_Texture_Format(WW3D_FORMAT_L6V5U5)) format=WW3D_FORMAT_L6V5U5;
+					format = Choose_Bump_Texture_Format();
+					if (format != WW3D_FORMAT_UNKNOWN) {
+						// Original bump env users rely on the asset staying a bump texture even
+						// when it is loaded before renderer init. Keep the 1-level bump format intent.
+						mipcount = TextureClass::MIP_LEVELS_1;
 					}
 					break;
 				}

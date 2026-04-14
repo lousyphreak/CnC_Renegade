@@ -38,19 +38,14 @@ bgfx_compile_shaders(
     INCLUDE_DIRS "${WW3D2_BGFX_SHADER_INCLUDE_DIR}" "${WW3D2_SHADER_INCLUDE_DIR}"
 )
 
-# New mesh shader variants
+# Mesh shader variants (2 vertex + 1 fragment, unified per-pixel lighting)
 set(WW3D2_NEW_MESH_VS_LIST
-    "${WW3D2_SHADER_INCLUDE_DIR}/vs_mesh_unlit.sc"
-    "${WW3D2_SHADER_INCLUDE_DIR}/vs_mesh_lit.sc"
-    "${WW3D2_SHADER_INCLUDE_DIR}/vs_mesh_unlit_texgen.sc"
-    "${WW3D2_SHADER_INCLUDE_DIR}/vs_mesh_lit_texgen.sc"
+    "${WW3D2_SHADER_INCLUDE_DIR}/vs_mesh.sc"
+    "${WW3D2_SHADER_INCLUDE_DIR}/vs_mesh_texgen.sc"
 )
 
 set(WW3D2_NEW_MESH_FS_LIST
-    "${WW3D2_SHADER_INCLUDE_DIR}/fs_mesh_unlit.sc"
-    "${WW3D2_SHADER_INCLUDE_DIR}/fs_mesh_lit.sc"
-    "${WW3D2_SHADER_INCLUDE_DIR}/fs_mesh_unlit_texgen.sc"
-    "${WW3D2_SHADER_INCLUDE_DIR}/fs_mesh_lit_texgen.sc"
+    "${WW3D2_SHADER_INCLUDE_DIR}/fs_mesh.sc"
 )
 
 bgfx_compile_shaders(

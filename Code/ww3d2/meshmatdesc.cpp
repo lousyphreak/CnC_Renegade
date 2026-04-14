@@ -854,13 +854,13 @@ void MeshMatDescClass::Post_Load_Process(bool lighting_enabled,MeshModelClass * 
 		bool kill_pass = false;
 
 		if ( (Shader[pass].Get_Primary_Gradient() == ShaderClass::GRADIENT_BUMPENVMAP) &&
-			  (!DX8Wrapper::Is_Initted() || DX8Wrapper::Get_Current_Caps()->Support_Bump_Envmap() == false) )
+			  (DX8Wrapper::Is_Initted() && DX8Wrapper::Get_Current_Caps()->Support_Bump_Envmap() == false) )
 		{
 			kill_pass = true;
 		}
 
 		if ( (Shader[pass].Get_Primary_Gradient() == ShaderClass::GRADIENT_BUMPENVMAPLUMINANCE) &&
-			  (!DX8Wrapper::Is_Initted() || DX8Wrapper::Get_Current_Caps()->Support_Bump_Envmap_Luminance() == false) )
+			  (DX8Wrapper::Is_Initted() && DX8Wrapper::Get_Current_Caps()->Support_Bump_Envmap_Luminance() == false) )
 		{
 			kill_pass = true;
 		}

@@ -31,25 +31,30 @@ enum StageColorOp : std::uint8_t
     STAGE_SUBTRACT = 6,
     STAGE_BLEND_TEX_ALPHA = 7,
     STAGE_BLEND_CUR_ALPHA = 8,
+    STAGE_BUMPENVMAP = 9,
+    STAGE_BUMPENVMAP_LUM = 10,
+    STAGE_DOTPRODUCT3 = 11,
 };
 
 // Which mesh shader program to use for a draw call.
 enum class MeshShaderProgram : std::uint8_t
 {
-    Unlit,
-    Lit,
-    UnlitTexgen,
-    LitTexgen,
+    Mesh,
+    MeshTexgen,
     Count,
 };
 
 // Pre-computed material properties for direct draw submission.
-// The fixed-function program variant is still resolved from live DX8 state at
-// submit time so mapper/debug overrides keep D3D8-era behavior.
+// All material-level state is resolved at classification time; only per-mesh
+// scene/light data is read from DX8Wrapper at submit time.
 struct MaterialClassification {
     MeshShaderProgram program;
-    float frag_config[4];   // stage0ColorOp, stage1ColorOp, alphaTestRef, stage0AlphaOp
-    float frag_config2[4];  // stage1AlphaOp, fogMode, 0, 0
+    float frag_config[4];       // stage0ColorOp, stage1ColorOp, alphaTestRef, stage0AlphaOp
+    float frag_config2[4];      // stage1AlphaOp, fogMode, 0, 0
+    float lit_config[4];        // lightingMode(0/1/2), diffuseSource, ambientSource, emissiveSource
+    float material_ambient[4];
+    float material_diffuse[4];  // .a = opacity
+    float material_emissive[4];
 };
 
 class BgfxRenderer
@@ -121,7 +126,7 @@ public:
     static void Apply_Overlay_Config(bool has_texture);
 
     // Material classification and direct draw submission
-    static MaterialClassification Classify_Material(const ShaderClass &shader, const VertexMaterialClass *material);
+    static MaterialClassification Classify_Material(const ShaderClass &shader, const VertexMaterialClass *material, bool has_normals);
     static bool Submit_Classified_Draw(
         const VertexBufferClass &vertex_buffer,
         unsigned vertex_buffer_offset,
@@ -154,11 +159,10 @@ public:
     static uint32_t Get_Width() { return Width; }
     static uint32_t Get_Height() { return Height; }
 
-    // Per-program uniform apply helpers (public for classified draw path)
-    static void Apply_Lit_Uniforms(
-        const VertexBufferClass &vertex_buffer,
-        const VertexMaterialClass *material);
+    // Per-program uniform apply helper (public for classified draw path)
     static void Apply_Texgen_Uniforms();
+    static void Apply_Lighting_Uniforms(const MaterialClassification &classification);
+    static void Apply_Bump_Env_Uniforms(const MaterialClassification &classification);
 
 private:
     static bool Init_Render_Resources();
@@ -193,7 +197,7 @@ private:
     static bgfx::UniformHandle MeshFragConfigUniform;
     static bgfx::UniformHandle MeshFragConfig2Uniform;
 
-    // Lit-only uniforms
+    // Per-pixel lighting uniforms (used by fragment shader)
     static bgfx::UniformHandle MeshLitConfigUniform;
     static bgfx::UniformHandle MeshMaterialAmbientUniform;
     static bgfx::UniformHandle MeshMaterialDiffuseUniform;
@@ -201,6 +205,10 @@ private:
     static bgfx::UniformHandle MeshSceneAmbientUniform;
     static bgfx::UniformHandle MeshLightDirUniform;
     static bgfx::UniformHandle MeshLightColorUniform;
+
+    // Bump env map uniforms
+    static bgfx::UniformHandle MeshBumpEnvMatUniform;
+    static bgfx::UniformHandle MeshBumpEnvLumUniform;
 
     // Texgen-only uniforms
     static bgfx::UniformHandle MeshTexgenModeUniform;
@@ -210,10 +218,8 @@ private:
 
     // Shader programs
     static bgfx::ProgramHandle OverlayProgram;
-    static bgfx::ProgramHandle MeshUnlitProgram;
-    static bgfx::ProgramHandle MeshLitProgram;
-    static bgfx::ProgramHandle MeshUnlitTexgenProgram;
-    static bgfx::ProgramHandle MeshLitTexgenProgram;
+    static bgfx::ProgramHandle MeshProgram;
+    static bgfx::ProgramHandle MeshTexgenProgram;
 
     static Matrix4 CurrentViewMatrix;
     static Matrix4 CurrentProjectionMatrix;

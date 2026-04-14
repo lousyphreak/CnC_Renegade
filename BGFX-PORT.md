@@ -18,3 +18,67 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
 - bgfx shadow maps are the only supported runtime shadow path. Legacy `wwphys` blob/projected shadow systems must not be kept alive in parallel for units or static anim projectors.
 - Keep compatibility surfaces such as serialized `Shadow_Mode` values, but collapse any legacy non-zero mode to the shadow-map path instead of reviving projector-based shadows.
 - Generic projector features that are not shadows may remain, but shadow-specific projector generation should be removed rather than hidden behind settings.
+
+## Shader Architecture
+
+The mesh rendering pipeline uses **2 shader programs** (down from 4):
+
+| Program | Vertex Shader | Fragment Shader | Purpose |
+|---------|--------------|-----------------|---------|
+| `MeshProgram` | `vs_mesh.sc` | `fs_mesh.sc` | Standard meshes |
+| `MeshTexgenProgram` | `vs_mesh_texgen.sc` | `fs_mesh.sc` | Meshes with texture coordinate generation (environment maps, projectors) |
+
+Both programs share the same fragment shader (`fs_mesh.sc`), which handles:
+- Per-pixel lighting with a tri-state mode uniform (`u_meshLitConfig.x`):
+  - `0` = unlit (vertex color passthrough, e.g. prelit meshes, particles)
+  - `1` = emissive-only (no normals available, D3D8-compatible behavior)
+  - `2` = full per-pixel N·L lighting (4 directional lights + scene ambient)
+- Texture stage combining (2 stages, configurable color/alpha ops)
+- CSM shadow receiving
+- Fog (linear, range-based or planar)
+- Alpha test
+
+### Material Classification
+
+Material properties are **pre-computed at category creation time** in `Classify_Material()`, not queried from DX8Wrapper per draw call. The `MaterialClassification` struct stores:
+- Which shader program to use (Mesh vs MeshTexgen)
+- Fragment config (texture combine ops, alpha test, fog mode)
+- Lighting config (mode, color sources — diffuse/ambient/emissive from vertex vs material)
+- Material colors (ambient, diffuse, emissive, opacity)
+
+Only **per-mesh scene state** (scene ambient color, light directions/colors) is read from DX8Wrapper at submit time, since these change per mesh instance via `Set_Light_Environment()`.
+
+### Key Design Decisions
+
+- **No specular**: Confirmed unused by all consumers. Not implemented.
+- **Max 2 texture stages**: Confirmed across all material/shader usage.
+- **Color vertex always enabled**: `D3DRS_COLORVERTEX` is always TRUE; color sources resolved directly from `VertexMaterialClass::Get_*_Color_Source()`.
+- **CPU skinning retained**: Single bone per vertex, CPU deformation — matches original.
+
+### Bump Environment Mapping (EMBM)
+
+DX8 bump environment mapping is implemented in the fragment shader, replicating the original D3D8 fixed-function `D3DTOP_BUMPENVMAP` / `D3DTOP_BUMPENVMAPLUMINANCE` / `D3DTOP_DOTPRODUCT3` texture operations.
+
+**How it works:**
+- Stage 0 uses a bump texture (U8V8, L6V5U5, or X8L8V8U8 format) storing signed du/dv perturbation values
+- The du/dv values are transformed by a 2×2 rotation/scale matrix (`u_meshBumpEnvMat`), set per-draw by `BumpEnvTextureMapperClass::Apply` which animates the rotation angle
+- The transformed perturbation offsets the UV coordinates used for stage 1 sampling
+- For the LUMINANCE variant, the bump texture alpha channel modulates brightness via `luminance * scale + offset`
+- DOTPRODUCT3 computes a dot product between bias-decoded texture RGB and current color RGB
+
+**Texture format conversion:**
+- Signed U/V channels are biased from [-128,127] to [0,255] by XORing with 0x80
+- Shader decodes back to [-1,1] with `val * 2.0 - 1.0`
+- Luminance channel is unsigned, stored directly in alpha
+
+**Uniforms:**
+- `u_meshBumpEnvMat` (vec4): 2×2 bump matrix (mat00, mat01, mat10, mat11)
+- `u_meshBumpEnvLum` (vec4): luminance scale and offset (scale, offset, 0, 0)
+- Both read from `DX8Wrapper::TextureStageStates` at submit time (dynamic per-draw)
+- Match original stage layout: matrix terms come from stage 0, luminance scale/offset from stage 1
+
+**Original runtime users:**
+- Authored W3D mesh passes loaded through `meshmdlio.cpp`, not special-case gameplay code
+- `VertexMaterialClass::Load_W3D()` creates `BumpEnvTextureMapperClass` from vertex-mapper args
+- `Load_Texture()` must preserve `W3DTEXTURE_TYPE_BUMPMAP` even when textures load before renderer init
+- `MeshMatDescClass::Post_Load_Process()` must not strip bump passes merely because caps are not initialized yet

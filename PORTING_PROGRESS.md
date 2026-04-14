@@ -6,6 +6,7 @@
 - Removed the earlier material-pass/projector/decal shadow-receive experiments once the mesh/sorted submission fix proved to be the real cause.
 - Fixed CSM light-space depth padding so off-camera casters are kept on the light-facing side of each cascade instead of extending only the far side, which had been cutting tree/building shadows as those casters moved behind the player camera.
 - Removed the remaining legacy projected-shadow runtime from `wwphys` so moving units and static anim shadow projectors no longer inject old texture-projection shadows into the scene. `Shadow_Mode` now collapses legacy non-zero values to the bgfx shadow-map path instead of reviving blob/projected shadow behavior.
+- Fixed a second-level load crash in `Code/ww3d2/bitmaphandler.cpp` during bumpmap texture conversion. The port was sampling left/right neighbors with raw pointer arithmetic and could read past the start/end of 24-bit TGA rows on edge pixels; the loader now clamps bumpmap source coordinates to the valid image bounds before computing the height-field gradients.
 
 ## Combat / first-person presentation
 

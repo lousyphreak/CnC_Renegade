@@ -160,30 +160,31 @@ void BitmapHandlerClass::Copy_Image(
 		unsigned src_bpp=Get_Bytes_Per_Pixel(src_surface_format);
 
 		for( unsigned y=0; y<dest_surface_height; y++ ) {
-			unsigned char* dest_ptr=dest_surface;
-			dest_ptr+=y*dest_surface_pitch;
-			unsigned char* src_ptr_mid=src_surface;
-			src_ptr_mid+=y*src_surface_pitch;
-			unsigned char* src_ptr_next_line = ( src_ptr_mid + src_surface_pitch );
-			unsigned char* src_ptr_prev_line = ( src_ptr_mid - src_surface_pitch );
-
-			if( y == src_surface_height-1 )  // Don't go past the last line
-				src_ptr_next_line = src_ptr_mid;
-			if( y == 0 )               // Don't go before first line
-				src_ptr_prev_line = src_ptr_mid;
+			unsigned char* dest_ptr=dest_surface+y*dest_surface_pitch;
+			unsigned src_y=y*src_surface_height/dest_surface_height;
+			unsigned src_y_prev=(src_y > 0) ? (src_y - 1) : src_y;
+			unsigned src_y_next=(src_y + 1 < src_surface_height) ? (src_y + 1) : src_y;
+			const unsigned char* src_ptr_mid=src_surface+src_y*src_surface_pitch;
+			const unsigned char* src_ptr_prev_line=src_surface+src_y_prev*src_surface_pitch;
+			const unsigned char* src_ptr_next_line=src_surface+src_y_next*src_surface_pitch;
 
 			for( unsigned x=0; x<dest_surface_width; x++ ) {
+				unsigned src_x=x*src_surface_width/dest_surface_width;
+				unsigned src_x_prev=(src_x > 0) ? (src_x - 1) : src_x;
+				unsigned src_x_next=(src_x + 1 < src_surface_width) ? (src_x + 1) : src_x;
+				const unsigned char* src_ptr_mid_pixel=src_ptr_mid+(src_x*src_bpp);
+
 				unsigned pixel00;
 				unsigned pixel01;
 				unsigned pixelM1;
 				unsigned pixel10;
 				unsigned pixel1M;
 
-				Read_B8G8R8A8(pixel00,src_ptr_mid,src_surface_format,NULL,0);
-				Read_B8G8R8A8(pixel01,src_ptr_mid+src_bpp,src_surface_format,NULL,0);
-				Read_B8G8R8A8(pixelM1,src_ptr_mid-src_bpp,src_surface_format,NULL,0);
-				Read_B8G8R8A8(pixel10,src_ptr_prev_line,src_surface_format,NULL,0);
-				Read_B8G8R8A8(pixel1M,src_ptr_next_line,src_surface_format,NULL,0);
+				Read_B8G8R8A8(pixel00,src_ptr_mid_pixel,src_surface_format,NULL,0);
+				Read_B8G8R8A8(pixel01,src_ptr_mid+(src_x_next*src_bpp),src_surface_format,NULL,0);
+				Read_B8G8R8A8(pixelM1,src_ptr_mid+(src_x_prev*src_bpp),src_surface_format,NULL,0);
+				Read_B8G8R8A8(pixel10,src_ptr_prev_line+(src_x*src_bpp),src_surface_format,NULL,0);
+				Read_B8G8R8A8(pixel1M,src_ptr_next_line+(src_x*src_bpp),src_surface_format,NULL,0);
 
 				// Convert to luminance
 				unsigned char bv00;
@@ -235,10 +236,6 @@ void BitmapHandlerClass::Copy_Image(
 					break;
 				}
 
-				// Move one pixel to the left (src is 32-bpp)
-				src_ptr_mid+=src_bpp;
-				src_ptr_prev_line+=src_bpp;
-				src_ptr_next_line+=src_bpp;
 			}
 		}
 		return;

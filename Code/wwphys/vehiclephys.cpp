@@ -420,9 +420,6 @@ void VehiclePhysClass::Update_Cached_Model_Parameters(void)
 	Release_Dazzles();
 	Capture_Dazzles();
 
-	// Force the shadow manager to use a scaled version of our "blob box"
-	ShadowManager.Enable_Force_Use_Blob_Box(true);
-	ShadowManager.Set_Blob_Box_Projection_Scale(Vector3(1.5f,1.5f,1.5f));
 }
 
 void VehiclePhysClass::Release_Wheels(void)
@@ -876,4 +873,3 @@ bool VehiclePhysDefClass::Is_Type(const char * type_name)
 		return RigidBodyDefClass::Is_Type(type_name);
 	}
 }
-

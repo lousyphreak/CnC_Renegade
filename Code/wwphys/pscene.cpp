@@ -215,7 +215,7 @@ PhysicsSceneClass::PhysicsSceneClass(void) :
 	CurrentVisTable(NULL),
 	StaticProjectorsEnabled(false),
 	DynamicProjectorsEnabled(false), 
-	ShadowMode(SHADOW_MODE_NONE),
+	ShadowMode(SHADOW_MODE_HARDWARE),
 	ShadowAttenStart(25.0f),
 	ShadowAttenEnd(40.0f),
 	ShadowNormalIntensity(0.45f),
@@ -346,8 +346,6 @@ PhysicsSceneClass::~PhysicsSceneClass(void)
 void PhysicsSceneClass::Update(float dt,int frameid)
 {
 	WWPROFILE("PhysicsScene::Update");
-
-	Generate_Static_Shadow_Projectors();
 
 	FrameNum = frameid;
 

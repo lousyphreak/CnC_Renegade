@@ -52,13 +52,9 @@
 #include "movephys.h"
 #include "colmathaabox.h"
 #include "pscene.h"
-#include "dyntexproject.h"
 #include "chunkio.h"
 #include "saveload.h"
 #include "wwhack.h"
-#include "assetmgr.h"
-#include "physcoltest.h"
-#include "light.h"
 
 DECLARE_FORCE_LINK(movephys);
 
@@ -104,8 +100,7 @@ MoveablePhysClass::MoveablePhysClass(void) :
 	Elasticity(0.5f), 
 	Controller(NULL),
 	Carrier(NULL),
-	CarrierSubObject(NULL),
-	ShadowManager(*this)
+	CarrierSubObject(NULL)
 { 
 }
 
@@ -167,26 +162,6 @@ void MoveablePhysClass::Definition_Changed(void)
 	MassInv = 1.0f / Mass;
 	GravScale = def->GravScale;
 	Elasticity = def->Elasticity;
-}
-
-
-/***********************************************************************************************
- * MoveablePhysClass::Post_Timestep_Process -- perform post-timestep processing                *
- *                                                                                             *
- *    MoveablePhysClass's update their shadow objects in post-timestep if needed.              *
- *                                                                                             *
- * INPUT:                                                                                      *
- *                                                                                             *
- * OUTPUT:                                                                                     *
- *                                                                                             *
- * WARNINGS:                                                                                   *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *   1/4/00     gth : Created.                                                                 *
- *=============================================================================================*/
-void MoveablePhysClass::Post_Timestep_Process(void)
-{
-	ShadowManager.Update_Shadow();
 }
 
 

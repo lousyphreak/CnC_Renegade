@@ -49,7 +49,7 @@ public:
     static constexpr int NUM_CASCADES = 3;
     static constexpr int DEFAULT_CASCADE_SIZE = 2048;
     static constexpr float DEFAULT_SHADOW_DISTANCE = 200.0f;
-    static constexpr float DEFAULT_SHADOW_INTENSITY = 0.6f;
+    static constexpr float DEFAULT_SHADOW_INTENSITY = 0.3f;
     static constexpr float DEFAULT_DEPTH_BIAS = 0.0005f;
     static constexpr float DEFAULT_NORMAL_BIAS = 0.5f;
     static constexpr float CASCADE_SPLIT_LAMBDA = 0.75f;

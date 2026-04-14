@@ -43,15 +43,14 @@
 #include "dynamicaabtreecull.h"
 #include "physgridcull.h"
 #include "lightcull.h"
-#include "staticanimphys.h"
-#include "assetmgr.h"
+#include "staticphys.h"
 #include "refcount.h"
 #include "camera.h"
-#include "quat.h"
 #include "vertmaterial.h"
 #include "wwprofile.h"
 #include "texture.h"
 #include "ww3d.h"
+#include "shadowmap.h"
 #include "vertexformat.h"
 #include "vertexbuffer.h"
 #include "indexbuffer.h"
@@ -64,52 +63,9 @@
 #define DEBUG_SHADOW_RENDERING				0
 
 const int		SHADOW_CLIP_FAR							= 500;
-const int		STATIC_PROJECTOR_RESOLUTION			= 256; //128;
-const float		STATIC_SHADOW_INTENSITY					= 0.6f;
-const float		MIN_STATIC_SHADOW_COS_HALF_THETA		= cos(DEG_TO_RADF(10.0f)/2.0f);	// angle to allow shadow tex re-use
 
 const int		DEFAULT_MAX_DYNAMIC_SHADOWS			= 6;
 const int		DEFAULT_DYNAMIC_SHADOW_RESOLUTION	= 256;
-
-/**
-** StaticShadowTexMgrClass
-** This object simply manages the list of unique shadow textures being used by the
-** static shadow projectors.  For example, all instances of the same tree model
-** re-use the same shadow texture...
-*/
-class StaticShadowTexMgrClass
-{
-public:
-	StaticShadowTexMgrClass(void);
-	virtual ~StaticShadowTexMgrClass(void);
-	void						Reset(void);
-
-	TextureClass *			Peek_Shadow_Texture(uint32_t obj_type_id,const Quaternion & orientation);
-	void						Add_Shadow_Texture(uint32_t obj_type_id,const Quaternion & orientation,TextureClass * tex);
-	void						Remove_Shadow_Texture(TextureClass * tex);
-
-private:
-
-	class	 ShadowTexClass
-	{
-	public:
-		ShadowTexClass(void);
-		ShadowTexClass(uint32_t obj_type_id,const Quaternion & orientation,TextureClass * tex);
-		ShadowTexClass(const ShadowTexClass & that);
-		~ShadowTexClass(void);
-		const ShadowTexClass & operator = (const ShadowTexClass &);
-
-		bool					operator == (const ShadowTexClass &)						{ return false; }
-		bool					operator != (const ShadowTexClass & that)					{ return true; }
-		uint32_t				ObjectTypeID;			// use the Definition ID to uniquely identify object types
-		Quaternion			ObjectOrientation;	// orientation of the object when this shadow was generated
-		TextureClass *		Texture;					// texture
-
-	};
-
-	DynamicVectorClass<ShadowTexClass>	ShadowTextures;
-};
-
 
 /**
 ** DynamicShadowTexMgrClass
@@ -150,7 +106,6 @@ private:
 ** Instantiate the Shadow Texture Managers.
 **
 */
-static StaticShadowTexMgrClass		_StaticShadowTexMgr;
 static DynamicShadowTexMgrClass		_DynamicShadowTexMgr;
 
 
@@ -173,125 +128,6 @@ static TextureClass* Create_Projector_Render_Target(unsigned w,unsigned h)
 
 	return NULL;
 }
-
-static TextureClass *Create_Static_Shadow_Texture(void)
-{
-	TextureClass *texture = Create_Projector_Render_Target(STATIC_PROJECTOR_RESOLUTION,STATIC_PROJECTOR_RESOLUTION);
-	if (texture != NULL) {
-		texture->Set_U_Addr_Mode(TextureClass::TEXTURE_ADDRESS_CLAMP);
-		texture->Set_V_Addr_Mode(TextureClass::TEXTURE_ADDRESS_CLAMP);
-	}
-	return texture;
-}
-
-/************************************************************************************
-**
-** ShadowTexClass Implemenation
-**
-************************************************************************************/
-StaticShadowTexMgrClass::ShadowTexClass::ShadowTexClass(void) :
-	ObjectTypeID(0),
-	ObjectOrientation(1),
-	Texture(NULL)
-{
-}
-
-StaticShadowTexMgrClass::ShadowTexClass::ShadowTexClass
-(
-	uint32_t obj_type_id,
-	const Quaternion & orientation,
-	TextureClass * tex
-) :
-	ObjectTypeID(obj_type_id),
-	ObjectOrientation(orientation),
-	Texture(NULL)
-{
-	REF_PTR_SET(Texture,tex);
-}
-
-StaticShadowTexMgrClass::ShadowTexClass::ShadowTexClass(const ShadowTexClass & that) :
-	ObjectTypeID(0),
-	ObjectOrientation(1),
-	Texture(NULL)
-{
-	*this = that;
-}
-
-const StaticShadowTexMgrClass::ShadowTexClass &
-StaticShadowTexMgrClass::ShadowTexClass::operator = (const ShadowTexClass & that)
-{
-	ObjectTypeID = that.ObjectTypeID;
-	ObjectOrientation = that.ObjectOrientation;
-	REF_PTR_SET(Texture,that.Texture);
-	return *this;
-}
-
-StaticShadowTexMgrClass::ShadowTexClass::~ShadowTexClass(void)
-{
-	REF_PTR_RELEASE(Texture);
-}
-
-
-/************************************************************************************
-**
-** StaticShadowTexMgrClass Implemenation
-**
-************************************************************************************/
-StaticShadowTexMgrClass::StaticShadowTexMgrClass(void)
-{
-}
-
-StaticShadowTexMgrClass::~StaticShadowTexMgrClass(void)
-{
-}
-
-void StaticShadowTexMgrClass::Reset(void)
-{
-	ShadowTextures.Delete_All();
-}
-
-TextureClass * StaticShadowTexMgrClass::Peek_Shadow_Texture
-(
-	uint32_t					obj_type_id,
-	const Quaternion &	orientation
-)
-{
-	for (int i=0; i<ShadowTextures.Count(); i++) {
-		Quaternion deltaq = ShadowTextures[i].ObjectOrientation * Inverse(orientation);
-		if (	(ShadowTextures[i].ObjectTypeID == obj_type_id) &&
-				(deltaq.W > MIN_STATIC_SHADOW_COS_HALF_THETA))
-		{
-			return ShadowTextures[i].Texture;
-		}
-	}
-	return NULL;
-}
-
-void StaticShadowTexMgrClass::Add_Shadow_Texture
-(
-	uint32_t					obj_type_id,
-	const Quaternion &	orientation,
-	TextureClass *			tex
-)
-{
-	WWASSERT(Peek_Shadow_Texture(obj_type_id,orientation) == NULL);
-	ShadowTexClass record(obj_type_id,orientation,tex);
-	ShadowTextures.Add(record);
-}
-
-void StaticShadowTexMgrClass::Remove_Shadow_Texture
-(
-	TextureClass *			tex
-)
-{
-	for (int i=0; i<ShadowTextures.Count(); i++) {
-		if (ShadowTextures[i].Texture == tex) {
-			ShadowTextures.Delete(i);
-			return;
-		}
-	}
-}
-
 
 /************************************************************************************
 **
@@ -430,7 +266,6 @@ void PhysicsSceneClass::Release_Projector_Resources(void)
 	REF_PTR_RELEASE(ShadowMaterialPass);
 	REF_PTR_RELEASE(ShadowCamera);
 	REF_PTR_RELEASE(ShadowBlobTexture);
-	_StaticShadowTexMgr.Reset();
 //	_DynamicShadowTexMgr.Reset();
 }
 
@@ -530,23 +365,13 @@ bool PhysicsSceneClass::Are_Dynamic_Projectors_Enabled(void)
 void PhysicsSceneClass::Set_Shadow_Mode(ShadowEnum shadow_mode)
 {
 	if (((int)shadow_mode >= 0) && ((int)shadow_mode < SHADOW_MODE_COUNT)) {
-		if (ShadowMode!=shadow_mode) {
-			ShadowMode = shadow_mode;
-
-			switch (ShadowMode) {
-			default:
-			case SHADOW_MODE_NONE:			// no shadows at all
-			case SHADOW_MODE_BLOBS:			// projected blob shadows
-				Set_Max_Simultaneous_Shadows(0);
-				break;
-			case SHADOW_MODE_BLOBS_PLUS:	// projected blobs with main character having a rendered shadow
-				Set_Max_Simultaneous_Shadows(1);
-				break;
-			case SHADOW_MODE_HARDWARE:		// use render-to-texture hardware
-				Set_Max_Simultaneous_Shadows(4);
-				break;
-			}
+		ShadowEnum resolved_mode = (shadow_mode == SHADOW_MODE_NONE) ? SHADOW_MODE_NONE : SHADOW_MODE_HARDWARE;
+		if (ShadowMode != resolved_mode) {
+			ShadowMode = resolved_mode;
 		}
+
+		Set_Max_Simultaneous_Shadows(0);
+		ShadowMapManager::Set_Enabled(ShadowMode != SHADOW_MODE_NONE);
 	}
 }
 
@@ -901,174 +726,4 @@ void PhysicsSceneClass::Apply_Projector_To_Objects
 	}
 
 	REF_PTR_RELEASE(effect);
-}
-
-void PhysicsSceneClass::Invalidate_Static_Shadow_Projectors()
-{
-	/*
-	** Collect a list of all static objects who want to generate a shadow
-	** Tell each to destroy their shadow
-	*/
-	RefPhysListClass shadow_gen_list;
-	RefPhysListIterator static_anim_iterator(&StaticAnimList);
-	for (static_anim_iterator.First(); !static_anim_iterator.Is_Done(); static_anim_iterator.Next()) {
-		StaticAnimPhysClass * obj = (StaticAnimPhysClass *)static_anim_iterator.Peek_Obj();
-
-		if (obj != NULL) {
-			StaticAnimPhysDefClass * def = obj->Get_StaticAnimPhysDef();
-			if (def && def->Shadow_Dynamic_Objs()) {
-				obj->Set_Shadow(NULL);
-				shadow_gen_list.Add(obj);
-			}
-		}
-	}
-
-	StaticProjectorsDirty=true;
-
-	/*
-	** Release all of the textures we were using for static shadows
-	*/
-	_StaticShadowTexMgr.Reset();
-}
-
-void PhysicsSceneClass::Generate_Static_Shadow_Projectors(void)
-{
-	if (!StaticProjectorsDirty) return;
-
-	// Don't operate if the device is lost!
-	if (!WW3D::Is_Device_Ready()) return;
-
-	/*
-	** Collect a list of all static objects who want to generate a shadow
-	** Tell each to destroy their shadow
-	*/
-	RefPhysListClass shadow_gen_list;
-	RefPhysListIterator static_anim_iterator(&StaticAnimList);
-	for (static_anim_iterator.First(); !static_anim_iterator.Is_Done(); static_anim_iterator.Next()) {
-		StaticAnimPhysClass * obj = (StaticAnimPhysClass *)static_anim_iterator.Peek_Obj();
-
-		if (obj != NULL) {
-			StaticAnimPhysDefClass * def = obj->Get_StaticAnimPhysDef();
-			if (def && def->Shadow_Dynamic_Objs()) {
-				obj->Set_Shadow(NULL);
-				shadow_gen_list.Add(obj);
-			}
-		}
-	}
-
-	/*
-	** Release all of the textures we were using for static shadows
-	*/
-	_StaticShadowTexMgr.Reset();
-
-	/*
-	** Generate a new shadow for each one. Each shadow now renders directly into the
-	** cached bgfx texture instead of copying from a shared render target through SurfaceClass.
-	*/
-	RefPhysListIterator shadow_gen_iterator(&shadow_gen_list);
-	for (shadow_gen_iterator.First(); !shadow_gen_iterator.Is_Done(); shadow_gen_iterator.Next()) {
-
-		StaticAnimPhysClass * obj = (StaticAnimPhysClass *)shadow_gen_iterator.Peek_Obj();
-
-		/*
-		** Setup the shadow projector for this object
-		*/
-		Vector3 sunvector;
-		Get_Sun_Light_Vector(&sunvector);
-		Setup_Static_Directional_Shadow(*obj,sunvector);
-	}
-	StaticProjectorsDirty=false;
-}
-
-void PhysicsSceneClass::Setup_Static_Directional_Shadow
-(
-	StaticAnimPhysClass & obj,
-	const Vector3 & light_dir
-)
-{
-	/*
-	** Get the definition for this object
-	*/
-	StaticAnimPhysDefClass * def = obj.Get_StaticAnimPhysDef();
-	if (def == NULL) {
-		return;
-	}
-
-	int type_id = def->Get_ID();
-	Quaternion obj_orientation(1);
-
-	if (def->Shadow_Ignores_Z_Rotation() == false) {
-		obj_orientation = Build_Quaternion(obj.Get_Transform());
-	}
-
-	/*
-	** Create the projector
-	*/
-	PhysTexProjectClass * shadow_projector = NEW_REF(PhysTexProjectClass,());
-
-	shadow_projector->Set_Texture_Size(STATIC_PROJECTOR_RESOLUTION);
-	shadow_projector->Set_Intensity(def->Shadow_Intensity(),true);
-
-	if (def->Shadow_Is_Additive()) {
-		shadow_projector->Init_Additive();
-	} else {
-		shadow_projector->Init_Multiplicative();
-
-		/*
-		** (gth) override the static shadow intensity with the global setting.
-		*/
-		shadow_projector->Set_Intensity(Get_Shadow_Normal_Intensity(),true);
-	}
-
-	shadow_projector->Compute_Ortho_Projection(&obj,light_dir,def->Shadow_NearZ(),def->Shadow_FarZ());
-	shadow_projector->Enable_Attenuation(true);
-	shadow_projector->Enable_Depth_Gradient(false);
-	shadow_projector->Peek_Material_Pass()->Enable_On_Translucent_Meshes(false);
-
-	/*
-	** See if we already have a suitable texture.
-	*/
-	TextureClass * existing_texture = _StaticShadowTexMgr.Peek_Shadow_Texture(type_id,obj_orientation);
-	if (existing_texture != NULL) {
-		shadow_projector->Set_Texture(existing_texture);
-	}
-
-	/*
-	** If no texture was a available, we have to generate it.
-	** Then add it to the cache so others can use it
-	*/
-	if (existing_texture == NULL) {
-
-		TextureClass * shadow_texture = Create_Static_Shadow_Texture();
-		if (shadow_texture == NULL) {
-			WWDEBUG_SAY(("Failed to allocate static shadow texture for object type %d\n",type_id));
-			REF_PTR_RELEASE(shadow_projector);
-			return;
-		}
-
-		shadow_projector->Set_Render_Target(shadow_texture);
-		if (!shadow_projector->Compute_Texture(&obj,def->Shadow_Is_Additive())) {
-			WWDEBUG_SAY(("Failed to render static shadow texture for object type %d\n",type_id));
-			shadow_projector->Set_Render_Target(NULL);
-			REF_PTR_RELEASE(shadow_texture);
-			REF_PTR_RELEASE(shadow_projector);
-			return;
-		}
-
-		shadow_projector->Set_Render_Target(NULL);
-		shadow_projector->Set_Texture(shadow_texture);
-
-		_StaticShadowTexMgr.Add_Shadow_Texture(type_id,obj_orientation,shadow_projector->Peek_Texture());
-		REF_PTR_RELEASE(shadow_texture);
-	}
-
-	/*
-	** Give the projector to the object
-	*/
-	obj.Set_Shadow(shadow_projector);
-
-	/*
-	** Release resources
-	*/
-	REF_PTR_RELEASE(shadow_projector);
 }

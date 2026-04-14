@@ -50,9 +50,6 @@
 #include "animcollisionmanager.h"
 
 class StaticAnimPhysDefClass;
-class MeshClass;
-
-
 /**
 ** StaticAnimPhysClass
 ** This class is a static object which needs to perform additional processing 
@@ -105,14 +102,6 @@ public:
 	AnimCollisionManagerClass &			Get_Animation_Manager(void)								{ return AnimManager; }
 
 	/*
-	** Shadow control.  These are static texture projectors which affect 
-	** dynamic objects.  Examples are tree shadows and stained glass windows
-	*/
-	void											Set_Shadow(TexProjectClass * shadow);
-	virtual bool								Is_Casting_Shadow(void)										{ return (ShadowProjector != NULL); }
-	void											Debug_Display_Shadow(const Vector2 & v0,const Vector2 & v1);
-
-	/*
 	** Save-Load Support
 	*/
 	virtual const PersistFactoryClass &	Get_Factory(void) const;
@@ -136,11 +125,6 @@ protected:
 	** Animation, animated collision, and rider management
 	*/
 	AnimCollisionManagerClass				AnimManager;
-
-	/*
-	** Static shadow management
-	*/
-	TexProjectClass *							ShadowProjector;
 
 private:
 

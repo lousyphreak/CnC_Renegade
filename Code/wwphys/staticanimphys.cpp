@@ -45,17 +45,8 @@
 #include "simpledefinitionfactory.h"
 #include "movephys.h"
 #include "hanim.h"
-#include "mesh.h"
-#include "boxrobj.h"
 #include "wwhack.h"
 #include "wwprofile.h"
-#include "assetmgr.h"
-
-#include "vertexformat.h"
-#include "vertexbuffer.h"
-#include "indexbuffer.h"
-#include "vertmaterial.h"
-#include "ww3d.h"
 
 DECLARE_FORCE_LINK(staticanimphys);
 
@@ -88,19 +79,13 @@ enum
 
 
 StaticAnimPhysClass::StaticAnimPhysClass(void) :
-	AnimManager(*this),
-	ShadowProjector(NULL)
+	AnimManager(*this)
 {
 	Set_Collision_Group(0xF);	//Hardcoding this???
 }
 
 StaticAnimPhysClass::~StaticAnimPhysClass(void)
 {
-	if (ShadowProjector != NULL) {
-		PhysicsSceneClass::Get_Instance()->Remove_Static_Texture_Projector(ShadowProjector);
-		ShadowProjector->Release_Ref();
-		ShadowProjector = NULL;
-	}
 }
 
 void StaticAnimPhysClass::Init(const StaticAnimPhysDefClass & def)
@@ -159,108 +144,6 @@ void StaticAnimPhysClass::Update_Sun_Status(void)
 		Set_Flag(IS_IN_THE_SUN,true);
 	}
 }
-
-void StaticAnimPhysClass::Set_Shadow(TexProjectClass * shadow)
-{
-	if (ShadowProjector != NULL) {
-		PhysicsSceneClass::Get_Instance()->Remove_Static_Texture_Projector(ShadowProjector);
-		ShadowProjector->Release_Ref();
-		ShadowProjector = NULL;
-	}
-
-	ShadowProjector = shadow;
-
-	if (ShadowProjector != NULL) {
-		ShadowProjector->Add_Ref();
-		ShadowProjector->Enable_Affect_Static_Objects(false);
-		PhysicsSceneClass::Get_Instance()->Add_Static_Texture_Projector(ShadowProjector);
-	}
-}
-
-void StaticAnimPhysClass::Debug_Display_Shadow(const Vector2 & v0,const Vector2 & v1)
-{
-
-	if (ShadowProjector != NULL) {
-		TextureClass * tex = ShadowProjector->Peek_Texture();
-		if (tex != NULL) {
-
-			ShaderClass shader = ShaderClass::_PresetOpaqueShader;
-			VertexMaterialClass * vmtl = VertexMaterialClass::Get_Preset(VertexMaterialClass::PRELIT_NODIFFUSE);
-			
-			WW3D::Set_Shader(shader);
-			WW3D::Set_Material(vmtl);
-
-			Matrix4 view,proj;
-			Matrix4 identity(true);
-
-			WW3D::Get_Transform(WW3D::RENDER_TRANSFORM_VIEW,view);
-			WW3D::Get_Transform(WW3D::RENDER_TRANSFORM_PROJECTION,proj);
-
-			WW3D::Set_Transform(WW3D::RENDER_TRANSFORM_WORLD,identity);
-			WW3D::Set_Transform(WW3D::RENDER_TRANSFORM_VIEW,identity);
-			WW3D::Set_Transform(WW3D::RENDER_TRANSFORM_PROJECTION,identity);
-		
-			WW3D::Set_Texture(0,tex);
-
-			DynamicVBAccessClass vbaccess(WW3D::BUFFER_TYPE_DYNAMIC_RENDER,dynamic_vertex_format,4);
-			{
-				DynamicVBAccessClass::WriteLockClass lock(&vbaccess);
-				VertexFormatXYZNDUV2 * verts = lock.Get_Formatted_Vertex_Array();
-				verts[0].x = -1.0f;
-				verts[0].y = 0.8f;
-				verts[0].z = 0.0;
-				verts[0].u1 = 0.0f;
-				verts[0].v1 = 0.0f;
-				verts[0].diffuse = 0xFFFFFFFF;
-
-				verts[1].x = -1.0f;
-				verts[1].y = 0.3f;
-				verts[1].z = 0.0;
-				verts[1].u1 = 0.0f;
-				verts[1].v1 = 1.0f;
-				verts[1].diffuse = 0xFFFFFFFF;
-
-				verts[2].x = -0.5f;
-				verts[2].y = 0.3f;
-				verts[2].z = 0.0;
-				verts[2].u1 = 1.0f;
-				verts[2].v1 = 1.0f;
-				verts[2].diffuse = 0xFFFFFFFF;
-
-				verts[3].x = -0.5f;
-				verts[3].y = 0.8f;
-				verts[3].z = 0.0;
-				verts[3].u1 = 1.0f;
-				verts[3].v1 = 0.0f;
-				verts[3].diffuse = 0xFFFFFFFF;
-			}
-
-			DynamicIBAccessClass ibaccess(WW3D::BUFFER_TYPE_DYNAMIC_RENDER,2*3);
-			{
-				DynamicIBAccessClass::WriteLockClass lock(&ibaccess);
-				uint16_t * indices = lock.Get_Index_Array();
-
-				indices[0] = 0;
-				indices[1] = 1;
-				indices[2] = 2;
-				indices[3] = 0;
-				indices[4] = 2;
-				indices[5] = 3;
-			}
-
-			WW3D::Set_Vertex_Buffer(vbaccess);
-			WW3D::Set_Index_Buffer(ibaccess,0);
-			WW3D::Submit_Current_Triangles(0,2,0,4);
-
-			WW3D::Set_Transform(WW3D::RENDER_TRANSFORM_VIEW,view);
-			WW3D::Set_Transform(WW3D::RENDER_TRANSFORM_PROJECTION,proj);
-
-			REF_PTR_RELEASE(vmtl);
-		}
-	}
-
-}
-
 
 bool StaticAnimPhysClass::Needs_Timestep(void)
 { 

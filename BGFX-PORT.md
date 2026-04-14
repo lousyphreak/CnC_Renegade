@@ -12,3 +12,9 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
 - keep the original code structure and organization as much as possible, do not move files around or change the directory structure, just port the code in place, we want to preserve the original code structure and organization as much as possible, to make it easier to compare the original code with the ported code and to make it easier to track changes and progress.
 - keep a state document (e.g. `PORTING_PROGRESS.md`) to track the progress of the port, and update it regularly with detailed notes on what has been done, what is left to do, and any issues or challenges encountered along the way, we want to have a clear and detailed record of the porting process, to make it easier to track progress and to identify any issues or challenges that may arise during the porting process.
 - no shims, no stubs, no wrappers - we want to have a complete and functional port as soon as possible, even if it's not perfect or optimized, we want to have a working port as soon as possible, and then we can improve it later, but we don't want to have any shims or stubs that are not fully functional, because that can cause confusion and can make it harder to track progress and to identify any issues or challenges that may arise during the porting process.
+
+## Shadowing
+
+- bgfx shadow maps are the only supported runtime shadow path. Legacy `wwphys` blob/projected shadow systems must not be kept alive in parallel for units or static anim projectors.
+- Keep compatibility surfaces such as serialized `Shadow_Mode` values, but collapse any legacy non-zero mode to the shadow-map path instead of reviving projector-based shadows.
+- Generic projector features that are not shadows may remain, but shadow-specific projector generation should be removed rather than hidden behind settings.

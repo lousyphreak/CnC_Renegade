@@ -325,19 +325,6 @@ void PhysClass::Update_Sun_Status(void)
 	Inc_Ignore_Counter();
 	scene->Cast_Ray(sunraytest);
 
-	// if the ray hits a static object which is casting a projected shadow, ignore that object 
-	// and check again.
-	if (	(sunresult.Fraction < 1.0f) && 
-			(sunraytest.CollidedPhysObj != NULL) ) 
-	{ 
-		PhysClass * obj = sunraytest.CollidedPhysObj;
-		if (obj->Is_Casting_Shadow()) {
-			obj->Inc_Ignore_Counter();
-			sunresult.Reset();
-			scene->Cast_Ray(sunraytest);			
-			obj->Dec_Ignore_Counter();
-		}		
-	}	
 	Dec_Ignore_Counter();
 
 	Enable_Is_In_The_Sun(sunresult.Fraction == 1.0f);

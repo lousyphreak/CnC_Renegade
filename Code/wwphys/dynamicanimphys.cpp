@@ -72,8 +72,7 @@ enum
 
 
 DynamicAnimPhysClass::DynamicAnimPhysClass(void) :
-	AnimManager(*this),
-	ShadowManager(*this)
+	AnimManager(*this)
 {
 }
 
@@ -109,11 +108,11 @@ void DynamicAnimPhysClass::Update_Cached_Model_Parameters(void)
 	AnimManager.Update_Cached_Model_Parameters();
 
 	/*
-	** Set up our shadow manager
+	** Preserve the asset-authored shadow casting flag so shadow maps can
+	** still include this object even though the legacy projected-shadow path is gone.
 	*/
 	const DynamicAnimPhysDefClass * def = Get_DynamicAnimPhysDef();
 	Enable_Shadow_Generation(def->CastsShadows);
-	ShadowManager.Set_Shadow_Planes(def->ShadowNearZ,def->ShadowFarZ);
 }
 
 void DynamicAnimPhysClass::Reset_Mappers(RenderObjClass * model)
@@ -147,11 +146,6 @@ void DynamicAnimPhysClass::Timestep(float dt)
 		Update_Visibility_Status();
 		Update_Cull_Box();
 	}
-}
-
-void DynamicAnimPhysClass::Post_Timestep_Process(void)
-{
-	ShadowManager.Update_Shadow();
 }
 
 const PersistFactoryClass & DynamicAnimPhysClass::Get_Factory(void) const
@@ -343,4 +337,3 @@ bool DynamicAnimPhysDefClass::Load(ChunkLoadClass &cload)
 	}
 	return true;
 }
-

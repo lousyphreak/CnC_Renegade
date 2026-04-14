@@ -56,7 +56,7 @@ DynamicVectorClass<SystemSettingEntry *>	SystemSettings::SettingList;
 
 namespace
 {
-	const int BgfxShadowDefaultsVersion = 2;
+	const int BgfxShadowDefaultsVersion = 3;
 	const char * BgfxShadowDefaultsVersionName = "Bgfx_Shadow_Defaults_Version";
 
 	bool Registry_Has_Value(RegistryClass & registry,const char * name)
@@ -87,7 +87,7 @@ namespace
 		const bool has_static_projectors = Registry_Has_Value(registry,"Static_Projectors");
 
 		if (!has_shadow_mode) {
-			registry.Set_Int("Shadow_Mode",PhysicsSceneClass::SHADOW_MODE_BLOBS_PLUS);
+			registry.Set_Int("Shadow_Mode",PhysicsSceneClass::SHADOW_MODE_HARDWARE);
 		}
 		if (!has_dynamic_projectors) {
 			registry.Set_Bool("Dynamic_Projectors",true);
@@ -107,8 +107,12 @@ namespace
 		if ((shadow_mode == PhysicsSceneClass::SHADOW_MODE_NONE) &&
 			 (dynamic_projectors == false) &&
 			 (static_projectors == true)) {
-			registry.Set_Int("Shadow_Mode",PhysicsSceneClass::SHADOW_MODE_BLOBS_PLUS);
+			registry.Set_Int("Shadow_Mode",PhysicsSceneClass::SHADOW_MODE_HARDWARE);
 			registry.Set_Bool("Dynamic_Projectors",true);
+		}
+		if ((shadow_mode != PhysicsSceneClass::SHADOW_MODE_NONE) &&
+			 (shadow_mode != PhysicsSceneClass::SHADOW_MODE_HARDWARE)) {
+			registry.Set_Int("Shadow_Mode",PhysicsSceneClass::SHADOW_MODE_HARDWARE);
 		}
 
 		registry.Set_Int(BgfxShadowDefaultsVersionName,BgfxShadowDefaultsVersion);
@@ -519,12 +523,12 @@ public:
 class	SystemSettingEntryShadowMode : public SystemSettingEntryEnum {
 public:
 	const char * Get_Name( void )	{ return "Shadow_Mode"; }
-	const char * Get_Help( void )	{ return "SHADOW_MODE <mode> - 0=none 1=blobs 2=blobs+ 3=projected textures"; }
-	virtual	int Get_Enum( void ) { if (COMBAT_SCENE) return COMBAT_SCENE->Get_Shadow_Mode(); return Selection; }
-	virtual	void Set_Enum( int selection ) { if (COMBAT_SCENE) COMBAT_SCENE->Set_Shadow_Mode( (PhysicsSceneClass::ShadowEnum)selection ); }
+	const char * Get_Help( void )	{ return "SHADOW_MODE <mode> - 0=off, 1-3=shadow maps (legacy projected-shadow values are remapped)."; }
+	virtual	int Get_Enum( void ) { if (COMBAT_SCENE) return COMBAT_SCENE->Get_Shadow_Mode(); return (Selection == PhysicsSceneClass::SHADOW_MODE_NONE) ? PhysicsSceneClass::SHADOW_MODE_NONE : PhysicsSceneClass::SHADOW_MODE_HARDWARE; }
+	virtual	void Set_Enum( int selection ) { if (COMBAT_SCENE) COMBAT_SCENE->Set_Shadow_Mode((selection == PhysicsSceneClass::SHADOW_MODE_NONE) ? PhysicsSceneClass::SHADOW_MODE_NONE : PhysicsSceneClass::SHADOW_MODE_HARDWARE); }
 	virtual	int Get_Enum_Count( void ) { return 4; }
 	virtual	const char * Get_Enum_Name( int selection ) {
-		static const char * names[ 4 ] = { "None", "Blobs", "Blobs+", "Projections" };
+		static const char * names[ 4 ] = { "None", "Shadow Maps", "Shadow Maps", "Shadow Maps" };
 		return names[ selection ];
 	}
 };

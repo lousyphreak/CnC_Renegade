@@ -43,13 +43,9 @@
 #include "always.h"
 #include "dynamicphys.h"
 #include "matrix3.h"
-#include "dynamicshadowmanager.h"
 
 class	PhysControllerClass;
 class MoveablePhysDefClass;
-class DynTexProjectClass;
-
-
 /**
 ** MoveablePhysClass
 ** All objects that can be moved around in the world in some way will support this interface.
@@ -73,12 +69,7 @@ public:
 	*/
 	virtual void					Definition_Changed(void);
 
-	/*
-	** PhysClass interface.
-	** Post_Timestep_Process - moveable objects update their shadows in post-timestep...
-	*/
 	virtual bool					Needs_Timestep(void)											{ return true; }
-	virtual void					Post_Timestep_Process(void);
 
 	/*
 	** Physical properites
@@ -126,7 +117,6 @@ public:
 	** Get_Blob_Shadow_Bounding_Box - Should return a tight object-space aabox; used for shadow blobs
 	*/
 	virtual void					Get_Shadow_Blob_Box(AABoxClass * set_obj_space_box);
-	virtual bool					Is_Casting_Shadow(void)										{ return ShadowManager.Is_Casting_Shadow(); }
 
 	/*
 	** Rider support.  All moveable objects can be riders.
@@ -145,7 +135,6 @@ protected:
 	PhysControllerClass *		Controller;
 	PhysClass *						Carrier;
 	RenderObjClass *				CarrierSubObject;
-	DynamicShadowManagerClass	ShadowManager;
 
 	// Not Implemented:
 	MoveablePhysClass(const MoveablePhysClass &);

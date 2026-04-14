@@ -185,7 +185,7 @@ protected:
 	{
 		PERSPECTIVE				= 0x00000001,		// PERSPECTIVE or ORTHO
 		ADDITIVE					= 0x00000002,		// ADDITIVE or MULTIPLICATIVE
-		TEXTURE_DIRTY			= 0x00000004,		// used by derived DynTexProjectClass		
+		TEXTURE_DIRTY			= 0x00000004,		// used by render-to-texture projector paths
 		VOLATILE					= 0x00000008,		// this is a volatile texture.
 		ATTENUATE				= 0x00000010,		// this projector should be attenuated based on distance to viewer
 		AFFECT_DYNAMIC_OBJS	= 0x00000020,		// this projector affects dynamic objects
@@ -236,4 +236,3 @@ typedef RefMultiListIterator<TexProjectClass>	TexProjListIterator;
 
 
 #endif
-

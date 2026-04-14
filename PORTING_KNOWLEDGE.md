@@ -7,6 +7,8 @@
 - Sorted buffered draws need the same explicit shadow-flag propagation as immediate draws because the later flush path otherwise reclassifies them with the default heuristic and can repaint already-shadowed terrain as lit.
 - bgfx shader custom commands in the current CMake setup do not track included `.sh` files as dependencies, so edits under `Code/ww3d2/shaders/*.sh` require touching the dependent `.sc` files or otherwise forcing a shader rebuild.
 - In the CSM light view used by `shadowmap.cpp`, casters that sit toward the sun/light-camera side of the receiver slice produce **larger** light-space Z values, so behind-camera caster coverage must expand `max_z` (reducing `z_near`) rather than only pushing `min_z` farther away. Extending the wrong side looks like a gradual receiver cutoff instead of a clean caster pop because the shadow gets clipped by the cascade near plane as the camera moves past the caster.
+- The old projected-shadow runtime lived under `wwphys` as a separate system from bgfx shadow maps: `DynamicShadowManagerClass` generated per-object render-to-texture projectors, and static anim shadow projectors generated cached textures that projected onto dynamic units. Removing those paths requires clearing both the object-level managers and the `PhysicsSceneClass` static-shadow generation/config glue.
+- `Shadow_Mode` still exists for compatibility with saved settings and UI code, but the runtime should treat every non-zero legacy value as the modern shadow-map mode. This prevents old blob/projection settings from re-enabling deleted shadow projector code while keeping registry migration simple.
 
 ## First-person weapon animation lookup
 

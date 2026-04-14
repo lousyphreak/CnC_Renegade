@@ -395,7 +395,8 @@ PerformanceConfigDialogClass::Load_Values (void)
 
 		int prelit_mode		= registry.Get_Int (VALUE_NAME_PRELIT_MODE, WW3D::PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE);
 		int texture_filter	= registry.Get_Int (VALUE_NAME_TEXTURE_FILTER, TextureClass::TEXTURE_FILTER_BILINEAR);
-		int shadow_mode		= registry.Get_Int (VALUE_NAME_SHADOW_MODE, PhysicsSceneClass::SHADOW_MODE_BLOBS_PLUS);		
+		int shadow_mode		= registry.Get_Int (VALUE_NAME_SHADOW_MODE, PhysicsSceneClass::SHADOW_MODE_HARDWARE);		
+		shadow_mode = (shadow_mode == PhysicsSceneClass::SHADOW_MODE_NONE) ? PhysicsSceneClass::SHADOW_MODE_NONE : PhysicsSceneClass::SHADOW_MODE_HARDWARE;
 		int texture_red		= registry.Get_Int (VALUE_NAME_TEXTURE_RES, 0);
 		int surface_effect	= registry.Get_Int (VALUE_NAME_SURFACE_EFFECT, 1);
 		int particle_detail	= registry.Get_Int (VALUE_NAME_PARTICLE_DETAIL, 1);
@@ -649,6 +650,7 @@ PerformanceConfigDialogClass::Apply_Changes (void)
 		//
 		int geometry_detail	= 	m_GeometrySlider.GetPos ();
 		int shadow_mode		= 	m_CharShadowsSlider.GetPos ();
+		shadow_mode = (shadow_mode == PhysicsSceneClass::SHADOW_MODE_NONE) ? PhysicsSceneClass::SHADOW_MODE_NONE : PhysicsSceneClass::SHADOW_MODE_HARDWARE;
 		int texture_red		= 	m_TextureDetailSlider.GetPos ();
 		int surface_effect	= 	m_SurfaceEffectsSlider.GetPos ();
 		int particle_detail	= 	m_ParticleSlider.GetPos ();

@@ -706,13 +706,6 @@ void PhysicsSceneClass::Post_Load_Level_Dynamic_Data(void)
 	** - Rebuild the lists of vertex processors?  (tell each model that its been added?)
 	*/
 
-	/*
-	** Re-generate the static shadows
-	*/
-//	Generate_Static_Shadow_Projectors();
-	// We don't necessarily have active device at this point so we can't render the shadows yet.
-	// The shadows will be generated as soon as the device is available at the start of the game.
-	Invalidate_Static_Shadow_Projectors();
 }
 
 StaticPhysClass * PhysicsSceneClass::Get_Static_Object_By_ID(uint32_t id)

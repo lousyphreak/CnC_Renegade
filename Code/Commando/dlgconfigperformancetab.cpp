@@ -312,7 +312,8 @@ DlgConfigPerformanceTabClass::Load_Values (void)
 		//	Read the values from the registry
 		//
 		int static_shadows	= registry.Get_Int (VALUE_NAME_STATIC_SHADOWS, 1);
-		int shadow_mode		= registry.Get_Int (VALUE_NAME_SHADOW_MODE, PhysicsSceneClass::SHADOW_MODE_BLOBS_PLUS);
+		int shadow_mode		= registry.Get_Int (VALUE_NAME_SHADOW_MODE, PhysicsSceneClass::SHADOW_MODE_HARDWARE);
+		shadow_mode = (shadow_mode == PhysicsSceneClass::SHADOW_MODE_NONE) ? PhysicsSceneClass::SHADOW_MODE_NONE : PhysicsSceneClass::SHADOW_MODE_HARDWARE;
 		int texture_red		= registry.Get_Int (VALUE_NAME_TEXTURE_RES, 0);
 		int particle_detail	= registry.Get_Int (VALUE_NAME_PARTICLE_DETAIL, 1);
 		int npatches			= registry.Get_Int (VALUE_NAME_NPATCHES, 0);
@@ -581,6 +582,7 @@ DlgConfigPerformanceTabClass::On_Apply (void)
 		//
 		int geometry_detail	= geometry_slider->Get_Pos ();
 		int shadow_mode		= char_shadows_slider->Get_Pos ();
+		shadow_mode = (shadow_mode == PhysicsSceneClass::SHADOW_MODE_NONE) ? PhysicsSceneClass::SHADOW_MODE_NONE : PhysicsSceneClass::SHADOW_MODE_HARDWARE;
 		int texture_red		= texture_slider->Get_Pos ();
 		int surface_effect	= surface_effect_slider->Get_Pos ();
 		int particle_detail	= particle_slider->Get_Pos ();

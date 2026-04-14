@@ -44,7 +44,6 @@
 #include "always.h"
 #include "decophys.h"
 #include "animcollisionmanager.h"
-#include "dynamicshadowmanager.h"
 
 
 class ChunkLoadClass;
@@ -76,7 +75,6 @@ public:
 
 	virtual bool								Needs_Timestep(void)											{ return true; }
 	virtual void								Timestep(float dt);
-	virtual void								Post_Timestep_Process(void);
 
 	/*
 	** State Import/Export and Save/Load
@@ -102,7 +100,6 @@ protected:
 	void											Reset_Mappers(RenderObjClass * model);
 
 	AnimCollisionManagerClass				AnimManager;
-	DynamicShadowManagerClass				ShadowManager;
 	
 private:
 
@@ -164,4 +161,3 @@ inline const DynamicAnimPhysDefClass * DynamicAnimPhysClass::Get_DynamicAnimPhys
 
 
 #endif //DYNAMICANIMPHYS_H
-

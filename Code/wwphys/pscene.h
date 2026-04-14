@@ -868,13 +868,6 @@ public:
 	MaterialPassClass *		Get_Shadow_Material_Pass(void);
 
 	/*
-	** Generate (or re-generate) all static shadows. Invalidate must be called before calling Generate.
-	*/
-	void							Invalidate_Static_Shadow_Projectors(void);
-	void							Generate_Static_Shadow_Projectors(void);
-	void							Setup_Static_Directional_Shadow(StaticAnimPhysClass & obj,const Vector3 & light_dir);
-	
-	/*
 	** Decal system
 	** Project a decal onto the geometry in the vicinity of the given coordinate system
 	*/

@@ -70,6 +70,7 @@ DX8 bump environment mapping is implemented in the fragment shader, replicating 
 - Signed U/V channels are biased from [-128,127] to [0,255] by XORing with 0x80
 - Shader decodes back to [-1,1] with `val * 2.0 - 1.0`
 - Luminance channel is unsigned, stored directly in alpha
+- Legacy D3D packed-color alpha formats (`A1R5G5B5`, `X1R5G5B5`, `A4R4G4B4`, `X4R4G4B4`) must not be direct-copied into bgfx packed formats just because the bit widths look similar. Their channel layout does not match bgfx `BGR5A1` / `BGRA4`, so the safe upload path is to expand them through the CPU BGRA8 conversion used by `Convert_Surface_Copy_To_BGRA8`.
 
 **Uniforms:**
 - `u_meshBumpEnvMat` (vec4): 2×2 bump matrix (mat00, mat01, mat10, mat11)

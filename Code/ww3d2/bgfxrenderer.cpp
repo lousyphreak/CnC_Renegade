@@ -1198,17 +1198,19 @@ bool Get_Bgfx_Texture_Format(WW3DFormat format, bgfx::TextureFormat::Enum &bgfx_
         bgfx_format = bgfx::TextureFormat::R5G6B5;
         return true;
     case WW3D_FORMAT_A1R5G5B5:
-        bgfx_format = bgfx::TextureFormat::BGR5A1;
+        bgfx_format = bgfx::TextureFormat::BGRA8;
+        direct_copy = false;
         return true;
     case WW3D_FORMAT_X1R5G5B5:
-        bgfx_format = bgfx::TextureFormat::BGR5A1;
+        bgfx_format = bgfx::TextureFormat::BGRA8;
         direct_copy = false;
         return true;
     case WW3D_FORMAT_A4R4G4B4:
-        bgfx_format = bgfx::TextureFormat::BGRA4;
+        bgfx_format = bgfx::TextureFormat::BGRA8;
+        direct_copy = false;
         return true;
     case WW3D_FORMAT_X4R4G4B4:
-        bgfx_format = bgfx::TextureFormat::BGRA4;
+        bgfx_format = bgfx::TextureFormat::BGRA8;
         direct_copy = false;
         return true;
     case WW3D_FORMAT_DXT1:

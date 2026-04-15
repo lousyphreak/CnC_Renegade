@@ -17,11 +17,14 @@
 - The crash signature for this bug is an ASan heap-buffer-overflow in `BitmapHandlerClass::Read_B8G8R8A8` while loading an uncompressed mipmap from `TextureLoadTaskClass::Load_Uncompressed_Mipmap`, usually with the invalid address a few bytes before the `Targa::Load` allocation.
 - Mission map textures are a lazy-load edge case: `TextureClass::Get_Texture()` can return a texture whose `Get_Width()` / `Get_Height()` are still `0` until `Init()` runs if no thumbnail entry exists for that asset. `MapMgrClass::Set_Map_Texture` and `MapCtrlClass::Set_Map_Texture` both need real dimensions immediately; otherwise gameplay shroud reveal keeps early-returning on a `0x0` map and the EVA Data Link map shows up fully black.
 - EVA menu maps also rely on correct map-space scroll clamping. `MapCtrlClass::ScrollPos` is stored in texture/map texels, so the valid range is based on the zoomed visible window (`Rect / Zoom`) and half of the remaining map extents. Clamping against the full texture size lets the view center drift into padded DDS border pixels, which can make a valid map texture appear as a mostly black panel with only markers/icons still visible.
+- D3D's packed 16-bit alpha formats are **not** byte-compatible with bgfx's similarly named packed formats. In particular, direct-copying `A1R5G5B5` / `X1R5G5B5` into bgfx `BGR5A1`, or `A4R4G4B4` / `X4R4G4B4` into bgfx `BGRA4`, scrambles the authored channels. For bgfx texture uploads, these formats should go through the existing `Convert_Surface_Copy_To_BGRA8` path unless/until a proven bit-exact repack exists.
+- The M01 shoreline regression reported with `savegame04.sav` involved `trei.tga`, a `70x86` legacy TGA that hits the non-24/32-bit texture path. Once the varargs log corruption was fixed, the runtime log showed the real filename and confirmed this was a legacy-format upload problem rather than a missing-file lookup failure.
 
 ## First-person weapon animation lookup
 
 - `StringClass` must be explicitly cast to `const char *` before being passed through `%s` varargs formatters like `StringClass::Format` or `Debug_Say`. C++ will apply implicit conversions for normal function parameters, but not for `...`, and the resulting corrupted strings can look like random asset names instead of valid HAnim identifiers.
 - `Code/Combat/weaponview.cpp` builds first-person weapon, hand, and bob animation names via formatted strings. If those `StringClass` values are passed to `%s` without casts, idle/default visuals may still appear while state-driven first-person animations such as reload/fire/enter/exit fail to resolve.
+- The same varargs rule applies to renderer/debug logging. Passing `Texture->Get_Full_Path()` or savegame `MapFilename` directly to `%s` can produce garbage names in logs on 64-bit builds even when the underlying asset loads correctly. Use `Peek_Buffer()` (or an explicit `const char *` cast) at the call site.
 
 ## Menu/dialog behavior
 

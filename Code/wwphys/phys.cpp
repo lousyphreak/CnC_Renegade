@@ -281,16 +281,12 @@ LightEnvironmentClass * PhysClass::Get_Static_Lighting_Environment(void)
 		}
 
 		/*
-		** Next, update our sunlight status
-		*/
-		Update_Sun_Status();
-
-		/*
-		** Finally, ask the physics scene to re-compute our lighting cache
+		** Ask the physics scene to re-compute our lighting cache. Shadow maps
+		** now handle sun occlusion, so the legacy per-object "in the sun" test
+		** no longer gates whether the sun contributes to static lighting.
 		*/
 		PhysicsSceneClass::Get_Instance()->Compute_Static_Lighting(	StaticLightingCache,
 																						Model->Get_Bounding_Sphere().Center,
-																						Get_Flag(IS_IN_THE_SUN),
 																						Get_Vis_Object_ID() );
 										
 		Set_Flag(STATIC_LIGHTING_DIRTY,false);

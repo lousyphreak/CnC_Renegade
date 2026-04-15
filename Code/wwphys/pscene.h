@@ -633,7 +633,7 @@ public:
 	void							Get_Sun_Light_Orientation(float * set_rotation,float * set_elevation);
 	void							Get_Sun_Light_Vector(Vector3 * set_vector);
 	
-	void							Compute_Static_Lighting(LightEnvironmentClass * light_env,const Vector3 & obj_center,bool use_sun,int vis_object_id);
+	void							Compute_Static_Lighting(LightEnvironmentClass * light_env,const Vector3 & obj_center,int vis_object_id);
 	void							Invalidate_Lighting_Caches(const AABoxClass & bounds);
 
 	/*

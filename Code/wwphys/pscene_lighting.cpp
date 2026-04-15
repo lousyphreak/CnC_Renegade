@@ -262,7 +262,6 @@ void PhysicsSceneClass::Compute_Static_Lighting
 (
 	LightEnvironmentClass * light_env,
 	const Vector3 & obj_center,
-	bool use_sun,
 	int vis_object_id
 )
 {
@@ -272,7 +271,7 @@ void PhysicsSceneClass::Compute_Static_Lighting
 	/*
 	** Add in the sun
 	*/
-	if (use_sun) {
+	if (Is_Sun_Light_Enabled()) {
 		light_env->Add_Light(*SunLight);
 	}
 		

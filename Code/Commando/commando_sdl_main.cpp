@@ -110,6 +110,46 @@ void Ensure_Window_Visible(SDL_Window *window)
     SDL_PumpEvents();
 }
 
+bool Query_Window_Pixel_Size(SDL_Window *window, int &pixel_width, int &pixel_height)
+{
+    pixel_width = 0;
+    pixel_height = 0;
+
+    if (window == nullptr) {
+        return false;
+    }
+
+    if (!SDL_GetWindowSizeInPixels(window, &pixel_width, &pixel_height) || pixel_width <= 0 || pixel_height <= 0) {
+        if (!SDL_GetWindowSize(window, &pixel_width, &pixel_height) || pixel_width <= 0 || pixel_height <= 0) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void Sync_Window_Size_To_Renderer(SDL_Window *window)
+{
+    int pixel_width = 0;
+    int pixel_height = 0;
+    if (!Query_Window_Pixel_Size(window, pixel_width, pixel_height)) {
+        return;
+    }
+
+    if (WW3D::Is_Initted()) {
+        int current_width = 0;
+        int current_height = 0;
+        int current_bits = 0;
+        bool current_windowed = true;
+        WW3D::Get_Device_Resolution(current_width, current_height, current_bits, current_windowed);
+        if (current_width == pixel_width && current_height == pixel_height) {
+            return;
+        }
+    }
+
+    WW3D::Set_Device_Resolution(pixel_width, pixel_height, -1, -1, false);
+}
+
 bool Is_Main_Window_Event(const SDL_Event &event)
 {
     SDL_Window *window = Get_Main_Window();
@@ -266,6 +306,12 @@ bool Handle_Window_Event(const SDL_Event &event)
     }
 
     switch (event.type) {
+        case SDL_EVENT_WINDOW_RESIZED:
+        case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+        case SDL_EVENT_WINDOW_METAL_VIEW_RESIZED:
+            Sync_Window_Size_To_Renderer(window);
+            return true;
+
         case SDL_EVENT_WINDOW_FOCUS_GAINED:
             Handle_Window_Focus_Gained();
             return true;
@@ -391,6 +437,7 @@ int main(int argc, char **argv)
     ProgramInstance = nullptr;
     MainWindow = reinterpret_cast<HWND>(window);
     GameInFocus = true;
+    Sync_Window_Size_To_Renderer(window);
 
     if (smoke_test) {
         SDL_PumpEvents();

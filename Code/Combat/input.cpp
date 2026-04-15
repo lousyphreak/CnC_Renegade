@@ -773,6 +773,11 @@ void	Input::Flush( void )
 	}
 }
 
+bool Input::Is_Shooter_Mode_Enabled(void)
+{
+	return (MenuMode == false) && (ConsoleMode == false) && !CombatManager::Is_Loading_Level();
+}
+
 
 void	Input::Update_Sliders( void )
 {

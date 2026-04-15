@@ -38,6 +38,7 @@
 
 #include "debug.h"
 #include "dinput.h"
+#include "input.h"
 #include "timemgr.h"
 #include "win.h"
 
@@ -180,6 +181,7 @@ Vector3 PendingCursorPos(0.0f, 0.0f, 0.0f);
 int PendingLastKeyPressed = 0;
 SDL_Gamepad *ActiveGamepad = NULL;
 bool EventWatchInstalled = false;
+bool InputAcquiredState = false;
 bool CapturedState = false;
 
 constexpr char BUTTON_BIT_DOUBLE = 8;
@@ -331,6 +333,55 @@ void Set_Pending_Cursor_Position(float x, float y)
 	Convert_Window_Coordinates_To_Render(x, y, PendingCursorPos.X, PendingCursorPos.Y);
 }
 
+void Restore_Cursor_Position(SDL_Window *window)
+{
+	if (window == NULL) {
+		return;
+	}
+
+	Vector3 cursor_pos;
+	DirectInput::Get_Cursor_Pos(&cursor_pos);
+
+	float window_x = cursor_pos.X;
+	float window_y = cursor_pos.Y;
+	Convert_Render_Coordinates_To_Window(cursor_pos.X, cursor_pos.Y, window_x, window_y);
+	SDL_WarpMouseInWindow(window, window_x, window_y);
+}
+
+void Set_Relative_Mouse_Mode(SDL_Window *window, bool enabled)
+{
+	if (window == NULL) {
+		return;
+	}
+
+	if (SDL_GetWindowRelativeMouseMode(window) == enabled) {
+		return;
+	}
+
+	SDL_SetWindowRelativeMouseMode(window, enabled);
+	if (!enabled) {
+		Restore_Cursor_Position(window);
+	}
+}
+
+void Update_Capture_Mode(void)
+{
+	SDL_Window *window = Get_Input_Window();
+	const bool shooter_mode = Input::Is_Shooter_Mode_Enabled();
+	if (CapturedState == shooter_mode) {
+		Set_Relative_Mouse_Mode(window, shooter_mode);
+		return;
+	}
+
+	Vector3 cursor_pos;
+	DirectInput::Get_Cursor_Pos(&cursor_pos);
+	DirectInput::Flush();
+	DirectInput::Reset_Cursor_Pos(Vector2(cursor_pos.X, cursor_pos.Y));
+
+	CapturedState = shooter_mode;
+	Set_Relative_Mouse_Mode(window, shooter_mode);
+}
+
 bool SDLCALL DirectInput_Event_Watch(void *, SDL_Event *event)
 {
 	std::lock_guard<std::mutex> lock(InputMutex);
@@ -348,7 +399,7 @@ bool SDLCALL DirectInput_Event_Watch(void *, SDL_Event *event)
 			break;
 
 		case SDL_EVENT_KEY_DOWN:
-			if (!CapturedState || event->key.repeat) {
+			if (!InputAcquiredState || event->key.repeat) {
 				break;
 			}
 			if (const int dik = SDL_To_DIK(event->key.scancode); dik > 0 && dik < DirectInput::NUM_KEYBOARD_BUTTONS) {
@@ -361,7 +412,7 @@ bool SDLCALL DirectInput_Event_Watch(void *, SDL_Event *event)
 			break;
 
 		case SDL_EVENT_KEY_UP:
-			if (!CapturedState) {
+			if (!InputAcquiredState) {
 				break;
 			}
 			if (const int dik = SDL_To_DIK(event->key.scancode); dik > 0 && dik < DirectInput::NUM_KEYBOARD_BUTTONS) {
@@ -385,7 +436,7 @@ bool SDLCALL DirectInput_Event_Watch(void *, SDL_Event *event)
 			break;
 
 		case SDL_EVENT_MOUSE_BUTTON_DOWN:
-			if (!CapturedState) {
+			if (!InputAcquiredState) {
 				break;
 			}
 			if (const int index = SDL_Mouse_Button_To_Index(event->button.button); index >= 0) {
@@ -398,7 +449,7 @@ bool SDLCALL DirectInput_Event_Watch(void *, SDL_Event *event)
 			break;
 
 		case SDL_EVENT_MOUSE_BUTTON_UP:
-			if (!CapturedState) {
+			if (!InputAcquiredState) {
 				break;
 			}
 			if (const int index = SDL_Mouse_Button_To_Index(event->button.button); index >= 0) {
@@ -411,7 +462,7 @@ bool SDLCALL DirectInput_Event_Watch(void *, SDL_Event *event)
 			break;
 
 		case SDL_EVENT_MOUSE_WHEEL:
-			if (!CapturedState) {
+			if (!InputAcquiredState) {
 				break;
 			}
 			{
@@ -520,11 +571,10 @@ void DirectInput::Acquire(void)
 		PendingCursorPos = CursorPos;
 	}
 
-	if (SDL_Window *window = Get_Input_Window()) {
-		SDL_SetWindowRelativeMouseMode(window, true);
-	}
 	Captured = true;
-	CapturedState = true;
+	InputAcquiredState = true;
+	CapturedState = false;
+	Update_Capture_Mode();
 }
 
 void DirectInput::Unacquire(void)
@@ -534,17 +584,9 @@ void DirectInput::Unacquire(void)
 	}
 
 	Captured = false;
+	InputAcquiredState = false;
 	CapturedState = false;
-	if (SDL_Window *window = Get_Input_Window()) {
-		SDL_SetWindowRelativeMouseMode(window, false);
-	}
-
-	if (SDL_Window *window = Get_Input_Window()) {
-		float window_x = CursorPos.X;
-		float window_y = CursorPos.Y;
-		Convert_Render_Coordinates_To_Window(CursorPos.X, CursorPos.Y, window_x, window_y);
-		SDL_WarpMouseInWindow(window, window_x, window_y);
-	}
+	Set_Relative_Mouse_Mode(Get_Input_Window(), false);
 
 	Flush();
 }
@@ -633,6 +675,7 @@ void DirectInput::Read( void )
 		return;
 	}
 
+	Update_Capture_Mode();
 	ReadKeyboard();
 	ReadMouse();
 	ReadJoystick();

@@ -1073,9 +1073,6 @@ bool Convert_Surface_Copy_To_BGRA8(
             break;
         }
         case WW3D_FORMAT_U8V8: {
-            // U8V8 stores signed du/dv perturbation values.
-            // Bias from signed [-128,127] to unsigned [0,255] by flipping sign bit
-            // so shader can decode with val * 2.0 - 1.0.
             destination[0] = 0x00;
             destination[1] = source[1] ^ 0x80;
             destination[2] = source[0] ^ 0x80;
@@ -1197,7 +1194,8 @@ bool Get_Bgfx_Texture_Format(WW3DFormat format, bgfx::TextureFormat::Enum &bgfx_
         direct_copy = false;
         return true;
     case WW3D_FORMAT_R5G6B5:
-        bgfx_format = bgfx::TextureFormat::R5G6B5;
+        bgfx_format = bgfx::TextureFormat::BGRA8;
+        direct_copy = false;
         return true;
     case WW3D_FORMAT_A1R5G5B5:
         bgfx_format = bgfx::TextureFormat::BGRA8;
@@ -1333,6 +1331,13 @@ bool Is_Runtime_Texture_Format_Supported(WW3DFormat format)
     bool direct_copy = false;
     if (!Get_Bgfx_Texture_Format(format, bgfx_format, direct_copy)) {
         return false;
+    }
+
+    // Most legacy runtime texture formats are normalized into the preferred
+    // 32-bit upload format before they reach bgfx, so they do not require
+    // native support for the original packed source format.
+    if (!direct_copy && !Is_Compressed_Format(format)) {
+        return true;
     }
 
     return Is_Bgfx_Texture_Format_Supported(bgfx_format, BGFX_TEXTURE_NONE, BGFX_CAPS_FORMAT_TEXTURE_2D);

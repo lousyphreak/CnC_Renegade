@@ -285,6 +285,7 @@ public:
 	static	int	Console_Get_Key();
 	static	void	Console_Add_Key( int key );
 	static	bool	Is_Console_Enabled( void )	{ return ConsoleMode; }
+	static	bool	Is_Shooter_Mode_Enabled( void );
 	static	void	Flush_Queue()		{ QueueHead = QueueTail = QueueSize = 0; }
 
 	// Get States

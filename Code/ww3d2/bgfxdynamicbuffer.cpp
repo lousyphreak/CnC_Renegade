@@ -709,8 +709,8 @@ bool DX8Wrapper::Init(void *hwnd, bool lite)
 		return false;
 	}
 
-	Do_Onetime_Device_Dependent_Inits();
 	Get_Device_Resolution(ResolutionWidth, ResolutionHeight, BitDepth, IsWindowed);
+	Do_Onetime_Device_Dependent_Inits();
 	return true;
 }
 
@@ -1282,9 +1282,14 @@ bool DX8Wrapper::Set_Render_Device(int dev, int width, int height, int bits, int
     if (windowed >= 0) {
         IsWindowed = (windowed != 0);
     }
+    Render2DClass::Set_Screen_Resolution(RectClass(0, 0, ResolutionWidth, ResolutionHeight));
     CurrentCaps = Ensure_Caps();
     if (BgfxRenderer::Is_Initted()) {
         BgfxRenderer::Reset();
+        Invalidate_Cached_Render_States();
+        render_state.view = BgfxRenderer::Get_Current_View_Matrix();
+        ProjectionMatrix = BgfxRenderer::Get_Current_Projection_Matrix();
+        Set_Default_Global_Render_States();
     }
     return true;
 }

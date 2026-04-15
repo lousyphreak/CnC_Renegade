@@ -18881,7 +18881,7 @@ DECLARE_SCRIPT(M01_Base_GDI_Grenadier_JDG, "")//116383
 	float currentHealth;
 	bool invincible;
 	bool ducanRescued;
-	bool headingDownBackPath;
+	int headingDownBackPath;
 	bool still_in_GDI_Base;
 	bool damagedByNod;
 
@@ -18901,6 +18901,7 @@ DECLARE_SCRIPT(M01_Base_GDI_Grenadier_JDG, "")//116383
 		still_in_GDI_Base = true;
 		invincible = true;
 		ducanRescued = false;
+		headingDownBackPath = 0;
 		currentHealth = Commands->Get_Health ( obj );
 		Commands->Set_Innate_Is_Stationary ( obj, true );
 		Commands->Send_Custom_Event( obj, obj, 0, M01_MODIFY_YOUR_ACTION_JDG, 10 );//in 2 seconds run to a new position
@@ -19048,7 +19049,7 @@ DECLARE_SCRIPT(M01_Base_GDI_Grenadier_JDG, "")//116383
 			{
 				still_in_GDI_Base = false;
 				Commands->Action_Reset ( obj, 100 );
-				headingDownBackPath = true;
+				headingDownBackPath = 1;
 				Vector3 newGotoSpot (111.210f, 85.507f, 8.934f);
 				params.Set_Basic( this, 100, M01_WALKING_WAYPATH_06_JDG );
 				params.Set_Movement(newGotoSpot, RUN, 1);
@@ -19096,7 +19097,7 @@ DECLARE_SCRIPT(M01_Base_GDI_Grenadier_JDG, "")//116383
 
 	void Enemy_Seen( GameObject * obj, GameObject * enemy ) 
 	{
-		if (headingDownBackPath == true)
+		if (headingDownBackPath != 0)
 		{
 			ActionParamsStruct params;
 			params.Set_Basic( this, 100, M01_WALKING_WAYPATH_06_JDG );
@@ -21615,7 +21616,7 @@ DECLARE_SCRIPT(M01_Base_GDI_Minigunner_JDG, "")//116382
 	float currentHealth;
 	bool invincible;
 	bool ducanRescued;
-	bool headingDownBackPath;
+	int headingDownBackPath;
 	bool still_in_GDI_Base;
 	bool damagedByNod;
 
@@ -21642,7 +21643,7 @@ DECLARE_SCRIPT(M01_Base_GDI_Minigunner_JDG, "")//116382
 		invincible = true;
 		ducanRescued = false;
 		still_in_GDI_Base = true;
-		headingDownBackPath = false;
+		headingDownBackPath = 0;
 		currentHealth = Commands->Get_Health ( obj );
 		GameObject *controller1 = Commands->Create_Object("Invisible_Object", Vector3(0,0,0));
 		Commands->Attach_Script(controller1, "Test_Cinematic", "X1C_Intro.txt");
@@ -21795,7 +21796,7 @@ DECLARE_SCRIPT(M01_Base_GDI_Minigunner_JDG, "")//116382
 			{
 				Commands->Enable_Hibernation( obj, false );
 				ducanRescued = true;
-				headingDownBackPath = false;
+				headingDownBackPath = 0;
 				Commands->Action_Reset ( obj, 100 );
 				Vector3 myHomeSpot (56.0f, 28.2f, -0.2f);
 				Commands->Set_Innate_Soldier_Home_Location ( obj, myHomeSpot, 10 );
@@ -21820,7 +21821,7 @@ DECLARE_SCRIPT(M01_Base_GDI_Minigunner_JDG, "")//116382
 				}
 			}
 
-			else if (param == M01_MODIFY_YOUR_ACTION_05_JDG && headingDownBackPath == false)//POW conversation is over---wave at havoc
+			else if (param == M01_MODIFY_YOUR_ACTION_05_JDG && headingDownBackPath == 0)//POW conversation is over---wave at havoc
 			{
 				if (havocDownPath == false)
 				{
@@ -21842,7 +21843,7 @@ DECLARE_SCRIPT(M01_Base_GDI_Minigunner_JDG, "")//116382
 				{
 					still_in_GDI_Base = false;
 					Commands->Action_Reset ( obj, 100 );
-					headingDownBackPath = true;
+					headingDownBackPath = 1;
 					Vector3 newGotoSpot (95.229f, 101.136f, 8.934f);
 					params.Set_Basic( this, 100, M01_WALKING_WAYPATH_06_JDG );
 					params.Set_Movement(newGotoSpot, RUN, 1);
@@ -21902,7 +21903,7 @@ DECLARE_SCRIPT(M01_Base_GDI_Minigunner_JDG, "")//116382
 
 	void Enemy_Seen( GameObject * obj, GameObject * enemy ) 
 	{
-		if (headingDownBackPath == true)
+		if (headingDownBackPath != 0)
 		{
 			ActionParamsStruct params;
 			params.Set_Basic( this, 100, M01_WALKING_WAYPATH_06_JDG );
@@ -22055,5 +22056,3 @@ DECLARE_SCRIPT(M01_Base_GDI_Minigunner_JDG, "")//116382
 		}
 	}
 };
-
-

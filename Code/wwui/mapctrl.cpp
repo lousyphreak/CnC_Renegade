@@ -64,6 +64,16 @@ static const RectClass	EdgeRightUVRect	(34,	1,		62,	31);
 static const RectClass	EdgeLeftUVRect		(2,	31,	30,	63);
 static const RectClass	EdgeBottomUVRect	(31,	34,	63,	62);
 
+namespace
+{
+void Ensure_Texture_Has_Dimensions(TextureClass *texture)
+{
+	if (texture != NULL && (texture->Get_Width() <= 0 || texture->Get_Height() <= 0)) {
+		texture->Init();
+	}
+}
+}
+
 
 ////////////////////////////////////////////////////////////////
 //
@@ -660,6 +670,7 @@ MapCtrlClass::Set_Map_Texture (const char *filename)
 	//
 	TextureClass *texture = WW3DAssetManager::Get_Instance ()->Get_Texture (filename, TextureClass::MIP_LEVELS_1);
 	if (texture != NULL) {
+		Ensure_Texture_Has_Dimensions(texture);
 
 		//
 		//	Get the dimensions of the texture
@@ -827,6 +838,7 @@ MapCtrlClass::On_Frame_Update (void)
 			//
 			Zoom += (DialogMgrClass::Get_Frame_Time () / 1000.F) * ZOOM_RATE;
 			Zoom = WWMath::Clamp (Zoom, 0.5F, 1.5F);		
+			Clamp_Scroll_Pos ();
 			Set_Dirty ();
 
 		} else if (IsZoomingOut) {
@@ -836,6 +848,7 @@ MapCtrlClass::On_Frame_Update (void)
 			//
 			Zoom -= (DialogMgrClass::Get_Frame_Time () / 1000.0F) * ZOOM_RATE;
 			Zoom = WWMath::Clamp (Zoom, 0.5F, 1.5F);
+			Clamp_Scroll_Pos ();
 			Set_Dirty ();
 		}
 	}
@@ -1047,26 +1060,18 @@ MapCtrlClass::Marker_From_Pos (const Vector2 &mouse_pos)
 void
 MapCtrlClass::Clamp_Scroll_Pos (void)
 {
-	float width		= Rect.Width ();
-	float height	= Rect.Height ();
+	const float visible_width = Rect.Width () / Zoom;
+	const float visible_height = Rect.Height () / Zoom;
 
 	//
-	//	Determine what our scroll offset should be
-	// at this zoom factor
-	//	
-	float max_x_offset	= WWMath::Clamp (MapSize.X - width, 0, MapSize.X);
-	float max_y_offset	= WWMath::Clamp (MapSize.Y - height, 0, MapSize.Y);
-
-	float offset_x			= ScrollPos.X / Zoom;
-	float offset_y			= ScrollPos.Y / Zoom;
-	offset_x					= WWMath::Clamp (offset_x, -max_x_offset, max_x_offset);
-	offset_y					= WWMath::Clamp (offset_y, -max_y_offset, max_y_offset);
-
+	//	Clamp the view center so the visible rect stays inside the map.
+	// ScrollPos is stored in map-space texels, not screen-space pixels.
 	//
-	//	Re-adjust our scroll position so it doesn't go off the page
-	//
-	ScrollPos.X				= offset_x * Zoom;
-	ScrollPos.Y				= offset_y * Zoom;
+	const float max_x_offset = MAX ((MapSize.X - visible_width) * 0.5F, 0.0F);
+	const float max_y_offset = MAX ((MapSize.Y - visible_height) * 0.5F, 0.0F);
+
+	ScrollPos.X = WWMath::Clamp (ScrollPos.X, -max_x_offset, max_x_offset);
+	ScrollPos.Y = WWMath::Clamp (ScrollPos.Y, -max_y_offset, max_y_offset);
 	return ;
 }
 

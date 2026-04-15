@@ -15,6 +15,8 @@
 
 - `BitmapHandlerClass::Copy_Image` has a special bumpmap conversion path for `WW3D_FORMAT_U8V8`, `WW3D_FORMAT_L6V5U5`, and `WW3D_FORMAT_X8L8V8U8` that derives gradients from neighboring source texels. That path must clamp both horizontal and vertical neighbor lookups at the image edges; raw `src_ptr +/- src_bpp` arithmetic on the first or last column will underflow/overflow 24-bit TGA image buffers during level texture loads.
 - The crash signature for this bug is an ASan heap-buffer-overflow in `BitmapHandlerClass::Read_B8G8R8A8` while loading an uncompressed mipmap from `TextureLoadTaskClass::Load_Uncompressed_Mipmap`, usually with the invalid address a few bytes before the `Targa::Load` allocation.
+- Mission map textures are a lazy-load edge case: `TextureClass::Get_Texture()` can return a texture whose `Get_Width()` / `Get_Height()` are still `0` until `Init()` runs if no thumbnail entry exists for that asset. `MapMgrClass::Set_Map_Texture` and `MapCtrlClass::Set_Map_Texture` both need real dimensions immediately; otherwise gameplay shroud reveal keeps early-returning on a `0x0` map and the EVA Data Link map shows up fully black.
+- EVA menu maps also rely on correct map-space scroll clamping. `MapCtrlClass::ScrollPos` is stored in texture/map texels, so the valid range is based on the zoomed visible window (`Rect / Zoom`) and half of the remaining map extents. Clamping against the full texture size lets the view center drift into padded DDS border pixels, which can make a valid map texture appear as a mostly black panel with only markers/icons still visible.
 
 ## First-person weapon animation lookup
 

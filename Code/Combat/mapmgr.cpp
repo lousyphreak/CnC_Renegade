@@ -42,6 +42,15 @@
 
 //#define FORCE_DISABLE_VTOL  // remove this to allow VTOL's on maps that allow VTOLs
 
+namespace
+{
+void Ensure_Texture_Has_Dimensions(TextureClass *texture)
+{
+	if (texture != NULL && (texture->Get_Width() <= 0 || texture->Get_Height() <= 0)) {
+		texture->Init();
+	}
+}
+}
 
 ///////////////////////////////////////////////////////////////////////
 // Global singleton instance
@@ -124,6 +133,7 @@ MapMgrClass::Set_Map_Texture (const char *filename)
 	//
 	TextureClass *texture = WW3DAssetManager::Get_Instance ()->Get_Texture (filename_only, TextureClass::MIP_LEVELS_1);
 	if (texture != NULL) {
+		Ensure_Texture_Has_Dimensions(texture);
 
 		//
 		//	Get the dimensions of the texture

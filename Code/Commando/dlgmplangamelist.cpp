@@ -418,7 +418,7 @@ MPLanGameListMenuClass::Update_Game_List (void)
 			//
 			//	Associate the channel data inside with the entry
 			//
-			list_ctrl->Set_Entry_Data (item_index, 0, (uint32_t)channel);
+			list_ctrl->Set_Entry_Data (item_index, 0, reinterpret_cast<uintptr_t>(channel));
 			channel->Add_Ref ();
 
 			//

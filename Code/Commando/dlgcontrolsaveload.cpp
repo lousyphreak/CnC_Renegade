@@ -434,7 +434,7 @@ ControlSaveLoadMenuClass::Insert_Configuration (const InputConfigClass &config)
 		//	Make a copy of the config object and store it with the entry
 		//
 		InputConfigClass *local_copy = new InputConfigClass (config);
-		list_ctrl->Set_Entry_Data (item_index, 0, (uint32_t)local_copy);
+		list_ctrl->Set_Entry_Data (item_index, 0, reinterpret_cast<uintptr_t>(local_copy));
 
 		//
 		//	Change the color of this configuration if the user cannot edit it

@@ -1349,7 +1349,7 @@ MPJoinMenuClass::Update_Game_List (void)
 		if (item_index >= 0) {
 			list_ctrl->Set_Entry_Text (item_index, 1, wide_owner_name);
 			list_ctrl->Set_Entry_Text (item_index, 2, wide_players_string);
-			list_ctrl->Set_Entry_Data (item_index, 0, (uint32_t)p_channel);
+			list_ctrl->Set_Entry_Data (item_index, 0, reinterpret_cast<uintptr_t>(p_channel));
 		}
 
       //

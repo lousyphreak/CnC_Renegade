@@ -88,7 +88,7 @@ MovieOptionsMenuClass::On_Init_Dialog (void)
 			//
 			int item_index = list_ctrl->Insert_Entry (0xFF, TRANSLATE (IDS_INTRO_MOVIE));
 			if (item_index != -1) {
-				list_ctrl->Set_Entry_Data (item_index, 0, (uint32_t)new StringClass (INTRO_MOVIE));
+				list_ctrl->Set_Entry_Data (item_index, 0, reinterpret_cast<uintptr_t>(new StringClass (INTRO_MOVIE)));
 			}
 
 			//
@@ -110,7 +110,7 @@ MovieOptionsMenuClass::On_Init_Dialog (void)
 				const WCHAR *wide_desc = TRANSLATE_BY_DESC(string_id_des);
 				int item_index = list_ctrl->Insert_Entry (0xFF, wide_desc);
 				if (item_index != -1) {
-					list_ctrl->Set_Entry_Data (item_index, 0, (uint32_t)new StringClass (list[index]));
+					list_ctrl->Set_Entry_Data (item_index, 0, reinterpret_cast<uintptr_t>(new StringClass (list[index])));
 				}
 			}
 		}

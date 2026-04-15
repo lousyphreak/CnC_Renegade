@@ -447,7 +447,7 @@ DlgConfigAudioTabClass::Configure_Driver_List (void)
 			//
 			int item_index = list_ctrl->Insert_Entry (index, wide_driver_name);
 			if (item_index >= 0) {
-				list_ctrl->Set_Entry_Data (item_index, 0, (uint32_t)driver_info->driver);
+				list_ctrl->Set_Entry_Data (item_index, 0, reinterpret_cast<uintptr_t>(driver_info->driver));
 
 				//
 				//	Select this entry if its the default

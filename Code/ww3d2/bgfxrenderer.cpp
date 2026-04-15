@@ -26,6 +26,7 @@
 #include "shadowmap.h"
 #include "surfaceclass.h"
 #include "texture.h"
+#include "textureloader.h"
 #include "vertmaterial.h"
 #include "vertexbuffer.h"
 #include "vertexformat.h"
@@ -110,6 +111,7 @@ bool AutoScreenshotRequested = false;
 uint32_t AutoScreenshotDelayMs = 0;
 uint32_t AutoScreenshotStartTicks = 0;
 std::string AutoScreenshotPath;
+bgfx::TextureHandle BlackTexture = BGFX_INVALID_HANDLE;
 uint16_t CurrentMainViewId = FirstDynamicViewId;
 uint16_t NextDynamicViewId = FirstDynamicViewId;
 uint32_t PendingViewportX = 0;
@@ -2331,12 +2333,15 @@ void BgfxRenderer::Apply_Texgen_Uniforms()
     if (ttf0 != D3DTTFF_DISABLE) DX8Wrapper::Get_Transform(D3DTS_TEXTURE0, tex_transform0);
     if (ttf1 != D3DTTFF_DISABLE) DX8Wrapper::Get_Transform(D3DTS_TEXTURE1, tex_transform1);
 
+    const Matrix4 bgfx_tex_transform0 = tex_transform0.Transpose();
+    const Matrix4 bgfx_tex_transform1 = tex_transform1.Transpose();
+
     float tex_mat0[16];
     float tex_mat1[16];
     for (int r = 0; r < 4; ++r) {
         for (int c = 0; c < 4; ++c) {
-            tex_mat0[r * 4 + c] = tex_transform0[r][c];
-            tex_mat1[r * 4 + c] = tex_transform1[r][c];
+            tex_mat0[r * 4 + c] = bgfx_tex_transform0[r][c];
+            tex_mat1[r * 4 + c] = bgfx_tex_transform1[r][c];
         }
     }
     bgfx::setUniform(MeshTexTransform0Uniform, tex_mat0);
@@ -2356,11 +2361,17 @@ namespace
 {
 bgfx::TextureHandle Resolve_Texture_Handle(TextureClass *texture)
 {
-    if (texture != nullptr) {
-        bgfx::TextureHandle handle = texture->Get_Bgfx_Texture();
-        if (bgfx::isValid(handle)) {
-            return handle;
-        }
+    if (texture == nullptr) {
+        return bgfx::isValid(BlackTexture) ? BlackTexture : BgfxRenderer::Get_White_Texture();
+    }
+
+    bgfx::TextureHandle handle = texture->Get_Bgfx_Texture();
+    if (!bgfx::isValid(handle) && !texture->Is_Initialized()) {
+        TextureLoader::Request_Foreground_Loading(texture);
+        handle = texture->Get_Bgfx_Texture();
+    }
+    if (bgfx::isValid(handle)) {
+        return handle;
     }
     return BgfxRenderer::Get_White_Texture();
 }
@@ -2941,7 +2952,16 @@ bool BgfxRenderer::Init_Render_Resources()
             texture_memory);
     }
 
-    if (!bgfx::isValid(WhiteTexture))
+    if (!bgfx::isValid(BlackTexture)) {
+        constexpr uint32_t black_pixel = 0xff000000u;
+        const bgfx::Memory *texture_memory = bgfx::copy(&black_pixel, sizeof(black_pixel));
+        BlackTexture = bgfx::createTexture2D(
+            1, 1, false, 1, bgfx::TextureFormat::BGRA8,
+            BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT,
+            texture_memory);
+    }
+
+    if (!bgfx::isValid(WhiteTexture) || !bgfx::isValid(BlackTexture))
         return false;
 
     if (!bgfx::isValid(OverlayProgram))
@@ -2997,6 +3017,11 @@ void BgfxRenderer::Shutdown_Render_Resources()
     if (bgfx::isValid(WhiteTexture)) {
         bgfx::destroy(WhiteTexture);
         WhiteTexture = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(BlackTexture)) {
+        bgfx::destroy(BlackTexture);
+        BlackTexture = BGFX_INVALID_HANDLE;
     }
 
     destroy_uniform(Texture1Uniform);

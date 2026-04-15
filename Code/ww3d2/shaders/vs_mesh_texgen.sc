@@ -35,7 +35,9 @@ vec2 ResolveTexcoord(
 
     vec4 coordinate;
     if (texgenMode < 0.5) {
-        coordinate = uvSource > 0.5 ? vec4(texcoord1, 0.0, 1.0) : vec4(texcoord0, 0.0, 1.0);
+        // Renegade's legacy COUNT2 texture mappers write offsets into the matrix Z column
+        // (Matrix3D m[0].Z / m[1].Z), so passthrough UVs need an implicit third component of 1.
+        coordinate = uvSource > 0.5 ? vec4(texcoord1, 1.0, 1.0) : vec4(texcoord0, 1.0, 1.0);
     } else if (texgenMode < 1.5) {
         coordinate = vec4(viewNormal, 1.0);
     } else if (texgenMode < 2.5) {

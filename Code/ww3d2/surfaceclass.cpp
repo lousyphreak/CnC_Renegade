@@ -98,6 +98,8 @@ unsigned int SurfaceClass::PixelSize(const SurfaceClass::SurfaceDescription &sd)
 	case WW3D_FORMAT_X4R4G4B4:
 	case WW3D_FORMAT_A8P8:	
 	case WW3D_FORMAT_A8L8:
+	case WW3D_FORMAT_U8V8:
+	case WW3D_FORMAT_L6V5U5:
 		size=2;
 		break;
 	case WW3D_FORMAT_R3G3B2:
@@ -106,6 +108,9 @@ unsigned int SurfaceClass::PixelSize(const SurfaceClass::SurfaceDescription &sd)
 	case WW3D_FORMAT_L8:
 	case WW3D_FORMAT_A4L4:
 		size=1;
+		break;
+	case WW3D_FORMAT_X8L8V8U8:
+		size=4;
 		break;
 	}
 

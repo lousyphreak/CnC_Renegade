@@ -1359,6 +1359,7 @@ bool TextureLoadTaskClass::Begin_Uncompressed_Load(void)
 	unsigned ow = width;
 	unsigned oh = height;
 	TextureLoader::Validate_Texture_Size(width, height);
+	const bool requires_resample = (width != ow || height != oh);
 	if (width != ow || height != oh) {
 		WWDEBUG_SAY(("Invalid texture size, scaling required. Texture: %s, size: %d x %d -> %d x %d\n", Texture->Get_Full_Path().Peek_Buffer(), ow, oh, width, height));
 	}

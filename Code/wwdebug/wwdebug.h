@@ -48,6 +48,14 @@
 #endif
 
 #include <signal.h>
+
+#ifndef WW_PRINTF_FORMAT_ATTRIBUTE
+#if defined(__GNUC__) || defined(__clang__)
+#define WW_PRINTF_FORMAT_ATTRIBUTE(format_index, first_arg_index) __attribute__((format(printf, format_index, first_arg_index)))
+#else
+#define WW_PRINTF_FORMAT_ATTRIBUTE(format_index, first_arg_index)
+#endif
+#endif
 				
 // The macro MESSAGE allows user to put:
 // #pragma MESSAGE("Hello world")
@@ -87,9 +95,9 @@ ProfileFunc			WWDebug_Install_Profile_Stop_Handler(ProfileFunc func);
 /*
 ** Users should not call the following three functions directly!  Use the macros below instead...
 */
-void					WWDebug_Printf(const char * format,...);
-void					WWDebug_Printf_Warning(const char * format,...);
-void					WWDebug_Printf_Error(const char * format,...);
+void					WWDebug_Printf(const char * format,...) WW_PRINTF_FORMAT_ATTRIBUTE(1, 2);
+void					WWDebug_Printf_Warning(const char * format,...) WW_PRINTF_FORMAT_ATTRIBUTE(1, 2);
+void					WWDebug_Printf_Error(const char * format,...) WW_PRINTF_FORMAT_ATTRIBUTE(1, 2);
 #ifdef WWDEBUG
 void					WWDebug_Assert_Fail(const char * expr,const char * file, int line);
 void					WWDebug_Assert_Fail_Print(const char * expr,const char * file, int line,const char * string);

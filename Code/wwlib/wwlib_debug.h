@@ -12,6 +12,14 @@
 #include <cstdlib>
 #include <cstring>
 
+#ifndef WW_PRINTF_FORMAT_ATTRIBUTE
+#if defined(__GNUC__) || defined(__clang__)
+#define WW_PRINTF_FORMAT_ATTRIBUTE(format_index, first_arg_index) __attribute__((format(printf, format_index, first_arg_index)))
+#else
+#define WW_PRINTF_FORMAT_ATTRIBUTE(format_index, first_arg_index)
+#endif
+#endif
+
 #ifndef MESSAGE
 #define STRING_IT(a) #a
 #define TOKEN_IT(a) STRING_IT(a)
@@ -31,6 +39,10 @@ inline void WWLib_Debug_VPrintf(WWLibDebugType type, const char * format, std::v
 	std::vfprintf(stream, format, args);
 	std::fflush(stream);
 }
+
+inline void WWLib_Debug_Printf(const char * format, ...) WW_PRINTF_FORMAT_ATTRIBUTE(1, 2);
+inline void WWLib_Debug_Printf_Warning(const char * format, ...) WW_PRINTF_FORMAT_ATTRIBUTE(1, 2);
+inline void WWLib_Debug_Printf_Error(const char * format, ...) WW_PRINTF_FORMAT_ATTRIBUTE(1, 2);
 
 inline void WWLib_Debug_Printf(const char * format, ...)
 {

@@ -18,6 +18,7 @@
 
 - Fixed first-person weapon and hand animation lookup in `Code/Combat/weaponview.cpp`. The port was building HAnim names with `StringClass` objects passed directly through `%s` varargs formatting, which corrupted the generated names and prevented non-idle first-person weapon states such as reload/fire/enter/exit from resolving correctly. The fix casts the `StringClass` values to `const char *` before formatting the lookup strings and the related debug output.
 - Fixed related 64-bit debug/log string corruption in `Code/Combat/savegame.cpp`, `Code/ww3d2/textureloader.cpp`, and `Code/ww3d2/dx8wrapper.cpp` by passing `StringClass` values through `%s` as explicit C strings (`Peek_Buffer()`). This made the M01 investigation readable again and identified the affected legacy texture as `trei.tga`.
+- Fixed another cluster of the same 64-bit varargs bug in `Code/Commando/apppacketstats.cpp`, `Code/Commando/diagnostics.cpp`, and `Code/Combat/systeminfolog.cpp`. Packet stats headings/descriptions and the player history "Map name" line were still passing `StringClass` objects straight into `WWDEBUG_SAY`, `cDiagnostics::Add_Diagnostic`, and `StringClass::Format`, which produced garbled log/UI text like the packet-dump corruption report. Those callsites now pass `Peek_Buffer()` explicitly, and the shared debug / `StringClass::Format` declarations are annotated as printf-style so the compiler can flag future object-through-varargs regressions during builds.
 
 ## UI / menu flow
 

@@ -119,8 +119,15 @@ public:
 	bool			Is_Empty (void) const;
 
 	void			Erase (int start_index, int char_count);
-	int _cdecl  Format (const TCHAR *format, ...);
-	int _cdecl  Format_Args (const TCHAR *format, va_list arg_list );
+#ifndef WW_PRINTF_FORMAT_ATTRIBUTE
+#if defined(__GNUC__) || defined(__clang__)
+#define WW_PRINTF_FORMAT_ATTRIBUTE(format_index, first_arg_index) __attribute__((format(printf, format_index, first_arg_index)))
+#else
+#define WW_PRINTF_FORMAT_ATTRIBUTE(format_index, first_arg_index)
+#endif
+#endif
+	int _cdecl  Format (const TCHAR *format, ...) WW_PRINTF_FORMAT_ATTRIBUTE(2, 3);
+	int _cdecl  Format_Args (const TCHAR *format, va_list arg_list ) WW_PRINTF_FORMAT_ATTRIBUTE(2, 0);
 
 	// Trim leading and trailing whitespace characters (values <= 32)
 	void Trim(void);
@@ -779,4 +786,3 @@ StringClass::Store_Length (int length)
 }
 
 #endif //__WWSTRING_H
-

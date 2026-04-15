@@ -277,7 +277,7 @@ void PlayerInfoLog::Append_To_Log(PlayerDataClass* data)
 #ifdef WWDEBUG
 	StringClass tmp;
 	StringClass work(0,true);
-	ADD_HISTORY(("Map name: %s\r\n",CurrentMapName));
+	ADD_HISTORY(("Map name: %s\r\n",CurrentMapName.Peek_Buffer()));
 	ADD_HISTORY(("Game time: %2.2f\r\n",data->Get_Game_Time()));
 	ADD_HISTORY(("Session time: %2.2f\r\n",data->Get_Session_Time()));
 	ADD_HISTORY(("Enemies killed: %d\r\n",data->Get_Enemies_Killed()));

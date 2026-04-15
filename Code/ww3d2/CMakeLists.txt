@@ -31,7 +31,9 @@ bgfx_compile_shaders(
 
 bgfx_compile_shaders(
     TYPE FRAGMENT
-    SHADERS "${WW3D2_SHADER_INCLUDE_DIR}/fs_overlay.sc"
+    SHADERS
+        "${WW3D2_SHADER_INCLUDE_DIR}/fs_overlay.sc"
+        "${WW3D2_SHADER_INCLUDE_DIR}/fs_movie_yuv.sc"
     VARYING_DEF "${WW3D2_SHADER_VARYING_OVERLAY_DEF}"
     OUTPUT_DIR "${WW3D2_SHADER_OUTPUT_DIR}"
     OUT_FILES_VAR WW3D2_OVERLAY_FS_OUTPUTS

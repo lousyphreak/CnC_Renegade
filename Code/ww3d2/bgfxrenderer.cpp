@@ -47,6 +47,7 @@ bgfx::TextureHandle BgfxRenderer::WhiteTexture = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::Texture0Uniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::Texture1Uniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::OverlayConfigUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MovieYUVConfigUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::MeshFogConfigUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::MeshFogColorUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::MeshFragConfigUniform = BGFX_INVALID_HANDLE;
@@ -65,6 +66,7 @@ bgfx::UniformHandle BgfxRenderer::MeshTexTransformFlagsUniform = BGFX_INVALID_HA
 bgfx::UniformHandle BgfxRenderer::MeshTexTransform0Uniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::MeshTexTransform1Uniform = BGFX_INVALID_HANDLE;
 bgfx::ProgramHandle BgfxRenderer::OverlayProgram = BGFX_INVALID_HANDLE;
+bgfx::ProgramHandle BgfxRenderer::MovieYUVProgram = BGFX_INVALID_HANDLE;
 bgfx::ProgramHandle BgfxRenderer::MeshProgram = BGFX_INVALID_HANDLE;
 bgfx::ProgramHandle BgfxRenderer::MeshTexgenProgram = BGFX_INVALID_HANDLE;
 Matrix4 BgfxRenderer::CurrentViewMatrix(true);
@@ -1780,6 +1782,16 @@ bgfx::ProgramHandle BgfxRenderer::Get_Overlay_Program()
     return OverlayProgram;
 }
 
+bgfx::ProgramHandle BgfxRenderer::Get_Movie_YUV_Program()
+{
+    return MovieYUVProgram;
+}
+
+bgfx::UniformHandle BgfxRenderer::Get_Movie_YUV_Config_Uniform()
+{
+    return MovieYUVConfigUniform;
+}
+
 bgfx::ProgramHandle BgfxRenderer::Get_Mesh_Program(MeshShaderProgram program)
 {
     switch (program) {
@@ -2905,6 +2917,8 @@ bool BgfxRenderer::Init_Render_Resources()
     // Overlay uniforms
     if (!bgfx::isValid(OverlayConfigUniform))
         OverlayConfigUniform = bgfx::createUniform("u_overlayConfig", bgfx::UniformType::Vec4);
+    if (!bgfx::isValid(MovieYUVConfigUniform))
+        MovieYUVConfigUniform = bgfx::createUniform("u_movieYuvConfig", bgfx::UniformType::Vec4);
 
     // Mesh uniforms — shared by all mesh programs
     if (!bgfx::isValid(MeshFogConfigUniform))
@@ -2971,6 +2985,8 @@ bool BgfxRenderer::Init_Render_Resources()
 
     if (!bgfx::isValid(OverlayProgram))
         OverlayProgram = Load_Program("vs_overlay", "fs_overlay");
+    if (!bgfx::isValid(MovieYUVProgram))
+        MovieYUVProgram = Load_Program("vs_overlay", "fs_movie_yuv");
 
     // Mesh programs (2 variants: mesh, mesh_texgen — both share fs_mesh)
     if (!bgfx::isValid(MeshProgram))
@@ -2984,6 +3000,7 @@ bool BgfxRenderer::Init_Render_Resources()
     }
 
     return bgfx::isValid(OverlayProgram)
+        && bgfx::isValid(MovieYUVProgram)
         && bgfx::isValid(MeshProgram) && bgfx::isValid(MeshTexgenProgram);
 }
 
@@ -2994,6 +3011,7 @@ void BgfxRenderer::Shutdown_Render_Resources()
 
     Destroy_Program(MeshTexgenProgram);
     Destroy_Program(MeshProgram);
+    Destroy_Program(MovieYUVProgram);
     Destroy_Program(OverlayProgram);
 
     auto destroy_uniform = [](bgfx::UniformHandle &h) {
@@ -3017,6 +3035,7 @@ void BgfxRenderer::Shutdown_Render_Resources()
     destroy_uniform(MeshFragConfigUniform);
     destroy_uniform(MeshFogColorUniform);
     destroy_uniform(MeshFogConfigUniform);
+    destroy_uniform(MovieYUVConfigUniform);
     destroy_uniform(OverlayConfigUniform);
 
     if (bgfx::isValid(WhiteTexture)) {

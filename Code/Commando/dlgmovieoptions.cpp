@@ -35,6 +35,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "dlgmovieoptions.h"
+#include "ffactory.h"
+#include "wwfile.h"
 #include "listctrl.h"
 #include "BINKMovie.h"
 #include "registry.h"
@@ -226,7 +228,13 @@ MovieOptionsMenuClass::Begin_Play_Movie (void)
 		//
 		//	Play the movie (if it exists locally)
 		//
-		if (::GetFileAttributes (filename->Peek_Buffer ()) != 0xFFFFFFFF) {
+		FileClass *file = (_TheFileFactory != NULL) ? _TheFileFactory->Get_File(filename->Peek_Buffer()) : NULL;
+		const bool is_local_movie_available = (file != NULL) ? file->Is_Available() : false;
+		if (file != NULL) {
+			_TheFileFactory->Return_File(file);
+		}
+
+		if (is_local_movie_available) {
 			Play_Movie (filename->Peek_Buffer ());
 		} else {
 

@@ -314,7 +314,7 @@ void SubTitleManagerClass::Draw_Sub_Title(const SubTitleClass* subtitle)
 
 	Renderer.Reset();
 
-	uint16_t* string = (uint16_t*)subtitle->Get_Caption();
+	const WCHAR *string = reinterpret_cast<const WCHAR *>(subtitle->Get_Caption());
 
 	int w,h,bits;
 	bool windowed;

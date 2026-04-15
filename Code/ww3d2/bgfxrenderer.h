@@ -86,6 +86,8 @@ public:
     static bgfx::UniformHandle Get_Texture0_Uniform();
     static bgfx::UniformHandle Get_Texture1_Uniform();
     static bgfx::ProgramHandle Get_Overlay_Program();
+    static bgfx::ProgramHandle Get_Movie_YUV_Program();
+    static bgfx::UniformHandle Get_Movie_YUV_Config_Uniform();
     static bgfx::ProgramHandle Get_Mesh_Program(MeshShaderProgram program);
     static bgfx::UniformHandle Get_Fog_Config_Uniform();
     static bgfx::UniformHandle Get_Fog_Color_Uniform();
@@ -190,6 +192,7 @@ private:
 
     // Overlay shader uniforms
     static bgfx::UniformHandle OverlayConfigUniform;
+    static bgfx::UniformHandle MovieYUVConfigUniform;
 
     // Shared mesh uniforms (all programs use these)
     static bgfx::UniformHandle MeshFogConfigUniform;
@@ -218,6 +221,7 @@ private:
 
     // Shader programs
     static bgfx::ProgramHandle OverlayProgram;
+    static bgfx::ProgramHandle MovieYUVProgram;
     static bgfx::ProgramHandle MeshProgram;
     static bgfx::ProgramHandle MeshTexgenProgram;
 

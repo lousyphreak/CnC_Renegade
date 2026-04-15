@@ -19,10 +19,17 @@
 #include "BINKMovie.h"
 #include "ww3d.h"
 #include "ww3dformat.h"
+#include "texture.h"
+#include "surfaceclass.h"
 #include "render2d.h"
+#include "bgfxrenderer.h"
 #include "Bink.h"
 #include "rect.h"
 #include "subtitlemanager.h"
+
+#include <algorithm>
+#include <cstring>
+#include <vector>
 
 class BINKMovieClass
 {
@@ -30,9 +37,11 @@ class BINKMovieClass
 		StringClass Filename;
 		HBINK Bink;
 		bool FrameChanged;
-		unsigned TextureCount;
+		bool FullRangeVideo;
 		uint32_t TicksPerFrame;
 
+#if !RENEGADE_WITH_BGFX_RENDERER
+		unsigned TextureCount;
 		struct TextureInfoStruct {
 			TextureClass* Texture;
 			int TextureWidth;
@@ -46,6 +55,19 @@ class BINKMovieClass
 		TextureInfoStruct* TextureInfos;
 		uint8_t* TempBuffer;
 		Render2DClass Renderer;
+#else
+		struct MovieTextureState
+		{
+			bgfx::TextureHandle LumaTexture = BGFX_INVALID_HANDLE;
+			bgfx::TextureHandle ChromaTexture = BGFX_INVALID_HANDLE;
+			bgfx::TextureFormat::Enum LumaFormat = bgfx::TextureFormat::Count;
+			bgfx::TextureFormat::Enum ChromaFormat = bgfx::TextureFormat::Count;
+			std::vector<uint8_t> LumaUploadBuffer;
+			std::vector<uint8_t> ChromaUploadBuffer;
+		};
+
+		MovieTextureState MovieTextures;
+#endif
 		SubTitleManagerClass* SubTitleManager;
 
 	public:
@@ -56,6 +78,98 @@ class BINKMovieClass
 		void Render();
 		bool Is_Complete();
 };
+
+namespace
+{
+#if RENEGADE_WITH_BGFX_RENDERER
+	constexpr uint64_t kMovieSamplerFlags =
+		BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT;
+
+	struct MovieOverlayVertex
+	{
+		float X;
+		float Y;
+		float Z;
+		uint32_t Diffuse;
+		float U0;
+		float V0;
+	};
+
+	bool Is_Movie_Texture_Format_Supported(bgfx::TextureFormat::Enum format)
+	{
+		if (format == bgfx::TextureFormat::Count) {
+			return false;
+		}
+
+		const bgfx::Caps *caps = bgfx::getCaps();
+		if (caps == nullptr) {
+			return bgfx::isTextureValid(0, false, 1, format, kMovieSamplerFlags);
+		}
+
+		return (caps->formats[format] & BGFX_CAPS_FORMAT_TEXTURE_2D) != 0
+			&& bgfx::isTextureValid(0, false, 1, format, kMovieSamplerFlags);
+	}
+
+	void Pack_Luma_Upload(std::vector<uint8_t> &dest, const BINKFRAMEPLANES &planes, bgfx::TextureFormat::Enum format)
+	{
+		const size_t width = static_cast<size_t>(planes.LumaWidth);
+		const size_t height = static_cast<size_t>(planes.LumaHeight);
+		if (format == bgfx::TextureFormat::R8) {
+			dest.resize(width * height);
+			for (size_t y = 0; y < height; ++y) {
+				const uint8_t *src_row = planes.YPlane + y * static_cast<size_t>(planes.YStride);
+				std::memcpy(dest.data() + y * width, src_row, width);
+			}
+			return;
+		}
+
+		dest.resize(width * height * 4U);
+		for (size_t y = 0; y < height; ++y) {
+			const uint8_t *src_row = planes.YPlane + y * static_cast<size_t>(planes.YStride);
+			uint8_t *dst_row = dest.data() + y * width * 4U;
+			for (size_t x = 0; x < width; ++x) {
+				const uint8_t value = src_row[x];
+				dst_row[x * 4U + 0U] = value;
+				dst_row[x * 4U + 1U] = value;
+				dst_row[x * 4U + 2U] = value;
+				dst_row[x * 4U + 3U] = 255U;
+			}
+		}
+	}
+
+	void Pack_Chroma_Upload(std::vector<uint8_t> &dest, const BINKFRAMEPLANES &planes, bgfx::TextureFormat::Enum format)
+	{
+		const size_t width = static_cast<size_t>(planes.ChromaWidth);
+		const size_t height = static_cast<size_t>(planes.ChromaHeight);
+		if (format == bgfx::TextureFormat::RG8) {
+			dest.resize(width * height * 2U);
+			for (size_t y = 0; y < height; ++y) {
+				const uint8_t *u_row = planes.UPlane + y * static_cast<size_t>(planes.UStride);
+				const uint8_t *v_row = planes.VPlane + y * static_cast<size_t>(planes.VStride);
+				uint8_t *dst_row = dest.data() + y * width * 2U;
+				for (size_t x = 0; x < width; ++x) {
+					dst_row[x * 2U + 0U] = u_row[x];
+					dst_row[x * 2U + 1U] = v_row[x];
+				}
+			}
+			return;
+		}
+
+		dest.resize(width * height * 4U);
+		for (size_t y = 0; y < height; ++y) {
+			const uint8_t *u_row = planes.UPlane + y * static_cast<size_t>(planes.UStride);
+			const uint8_t *v_row = planes.VPlane + y * static_cast<size_t>(planes.VStride);
+			uint8_t *dst_row = dest.data() + y * width * 4U;
+			for (size_t x = 0; x < width; ++x) {
+				dst_row[x * 4U + 0U] = u_row[x];
+				dst_row[x * 4U + 1U] = v_row[x];
+				dst_row[x * 4U + 2U] = 0U;
+				dst_row[x * 4U + 3U] = 255U;
+			}
+		}
+	}
+#endif
+}
 
 
 static BINKMovieClass* CurrentMovie;
@@ -126,7 +240,13 @@ BINKMovieClass::BINKMovieClass(const char* filename, const char* subtitlename, F
 	Filename(filename),
 	Bink(0),
 	FrameChanged(true),
+	FullRangeVideo(false),
 	TicksPerFrame(0),
+#if !RENEGADE_WITH_BGFX_RENDERER
+	TextureCount(0),
+	TextureInfos(NULL),
+	TempBuffer(NULL),
+#endif
 	SubTitleManager(NULL)
 {
 	Bink = BinkOpen(Filename, 0);
@@ -135,6 +255,7 @@ BINKMovieClass::BINKMovieClass(const char* filename, const char* subtitlename, F
 		return;
 	}
 
+#if !RENEGADE_WITH_BGFX_RENDERER
 	TempBuffer = new uint8_t[Bink->Width * Bink->Height*2];
 
 	WW3D::RenderCapabilitiesStruct capabilities;
@@ -210,6 +331,32 @@ BINKMovieClass::BINKMovieClass(const char* filename, const char* subtitlename, F
 	}
 
 	Renderer.Reset();
+#else
+	MovieTextures.LumaFormat = Is_Movie_Texture_Format_Supported(bgfx::TextureFormat::R8)
+		? bgfx::TextureFormat::R8
+		: bgfx::TextureFormat::RGBA8;
+	MovieTextures.ChromaFormat = Is_Movie_Texture_Format_Supported(bgfx::TextureFormat::RG8)
+		? bgfx::TextureFormat::RG8
+		: bgfx::TextureFormat::RGBA8;
+
+	MovieTextures.LumaTexture = bgfx::createTexture2D(
+		static_cast<uint16_t>(Bink->Width),
+		static_cast<uint16_t>(Bink->Height),
+		false,
+		1,
+		MovieTextures.LumaFormat,
+		kMovieSamplerFlags);
+
+	const uint16_t chroma_width = static_cast<uint16_t>((Bink->Width + 1U) / 2U);
+	const uint16_t chroma_height = static_cast<uint16_t>((Bink->Height + 1U) / 2U);
+	MovieTextures.ChromaTexture = bgfx::createTexture2D(
+		chroma_width,
+		chroma_height,
+		false,
+		1,
+		MovieTextures.ChromaFormat,
+		kMovieSamplerFlags);
+#endif
 
 	// Calculate the time per frame of video
 	uint32_t rate = (Bink->FrameRate / Bink->FrameRateDiv);
@@ -231,6 +378,7 @@ BINKMovieClass::~BINKMovieClass()
 		BinkClose(Bink);
 	}
 
+#if !RENEGADE_WITH_BGFX_RENDERER
 	delete[] TempBuffer;
 
 	if (TextureInfos) {
@@ -240,6 +388,16 @@ BINKMovieClass::~BINKMovieClass()
 
 		delete[] TextureInfos;
 	}
+#else
+	auto destroy_texture = [](bgfx::TextureHandle &handle) {
+		if (bgfx::isValid(handle) && BgfxRenderer::Is_Initted()) {
+			bgfx::destroy(handle);
+		}
+		handle = BGFX_INVALID_HANDLE;
+	};
+	destroy_texture(MovieTextures.LumaTexture);
+	destroy_texture(MovieTextures.ChromaTexture);
+#endif
 
 	if (SubTitleManager) {
 		delete SubTitleManager;
@@ -257,21 +415,54 @@ void BINKMovieClass::Update()
 }
 
 
-static uint8_t* Get_Tex_Address(uint8_t* buffer, int x, int y, int w, int h)
+static void Upload_Texture_From_Buffer(
+	SurfaceClass *surface,
+	int texture_loc_x,
+	int texture_loc_y,
+	const uint8_t *source_buffer,
+	int source_width,
+	int source_height)
 {
-	if (x < 0) {
-		x = 0;
-	} else if (x >= w) {
-		x = w - 1;
+	if (surface == NULL || source_buffer == NULL || source_width <= 0 || source_height <= 0) {
+		return;
 	}
 
-	if (y < 0) {
-		y = 0;
-	} else if (y >= h) {
-		y = h - 1;
+	SurfaceClass::SurfaceDescription desc;
+	surface->Get_Description(desc);
+
+	int pitch = 0;
+	uint8_t *dest = static_cast<uint8_t *>(surface->Lock(&pitch));
+	if (dest == NULL) {
+		return;
 	}
 
-	return buffer + x * 2 + y * 2 * w;
+	const uint16_t *source_pixels = reinterpret_cast<const uint16_t *>(source_buffer);
+	for (unsigned y = 0; y < desc.Height; ++y) {
+		const int source_y = std::clamp(texture_loc_y + static_cast<int>(y) - 1, 0, source_height - 1);
+		const uint16_t *source_row = source_pixels + static_cast<size_t>(source_y) * static_cast<size_t>(source_width);
+		uint16_t *dest_row = reinterpret_cast<uint16_t *>(dest + static_cast<size_t>(y) * static_cast<size_t>(pitch));
+
+		const unsigned left_repeat = static_cast<unsigned>(std::max(0, 1 - texture_loc_x));
+		unsigned write_x = 0;
+		for (; write_x < left_repeat && write_x < desc.Width; ++write_x) {
+			dest_row[write_x] = source_row[0];
+		}
+
+		const int source_start_x = std::max(texture_loc_x - 1, 0);
+		const unsigned remaining_width = desc.Width - write_x;
+		const unsigned copy_width = static_cast<unsigned>(std::max(0, std::min<int>(remaining_width, source_width - source_start_x)));
+		if (copy_width > 0U) {
+			std::memcpy(dest_row + write_x, source_row + source_start_x, static_cast<size_t>(copy_width) * sizeof(uint16_t));
+			write_x += copy_width;
+		}
+
+		const uint16_t last_pixel = source_row[source_width - 1];
+		for (; write_x < desc.Width; ++write_x) {
+			dest_row[write_x] = last_pixel;
+		}
+	}
+
+	surface->Unlock();
 }
 
 
@@ -286,43 +477,105 @@ void BINKMovieClass::Render()
 		BinkDoFrame(Bink);
 		FrameChanged = false;
 
+#if RENEGADE_WITH_BGFX_RENDERER
+		BINKFRAMEPLANES planes{};
+		if (BinkGetFramePlanes(Bink, &planes) != 0
+			&& bgfx::isValid(MovieTextures.LumaTexture)
+			&& bgfx::isValid(MovieTextures.ChromaTexture)) {
+			FullRangeVideo = (planes.Flags & BINKFRAMEPLANES_FULL_RANGE) != 0U;
+			Pack_Luma_Upload(MovieTextures.LumaUploadBuffer, planes, MovieTextures.LumaFormat);
+			Pack_Chroma_Upload(MovieTextures.ChromaUploadBuffer, planes, MovieTextures.ChromaFormat);
+
+			bgfx::updateTexture2D(
+				MovieTextures.LumaTexture,
+				0,
+				0,
+				0,
+				0,
+				static_cast<uint16_t>(planes.LumaWidth),
+				static_cast<uint16_t>(planes.LumaHeight),
+				bgfx::copy(MovieTextures.LumaUploadBuffer.data(), static_cast<uint32_t>(MovieTextures.LumaUploadBuffer.size())));
+			bgfx::updateTexture2D(
+				MovieTextures.ChromaTexture,
+				0,
+				0,
+				0,
+				0,
+				static_cast<uint16_t>(planes.ChromaWidth),
+				static_cast<uint16_t>(planes.ChromaHeight),
+				bgfx::copy(MovieTextures.ChromaUploadBuffer.data(), static_cast<uint32_t>(MovieTextures.ChromaUploadBuffer.size())));
+		}
+#else
 		BinkCopyToBuffer(Bink, TempBuffer, Bink->Width * 2, Bink->Height, 0, 0, BINKSURFACE565|BINKCOPYNOSCALING);
 
 		for (unsigned t = 0; t < TextureCount; ++t) {
-			IDirect3DTexture8* d3d_texture = TextureInfos[t].Texture->Peek_DX8_Texture();
-
-			if (d3d_texture) {
-				uint8_t* cur_tex_ptr = Get_Tex_Address(TempBuffer, TextureInfos[t].TextureLocX,
-					TextureInfos[t].TextureLocY, Bink->Width, Bink->Height);
-
-				unsigned w = TextureInfos[t].TextureWidth;
-				unsigned h = TextureInfos[t].TextureHeight;
-
-				if (w > Bink->Width-TextureInfos[t].TextureLocX) {
-					w = Bink->Width-TextureInfos[t].TextureLocX;
-				}
-
-				if (h > Bink->Height-TextureInfos[t].TextureLocY) {
-					h = Bink->Height-TextureInfos[t].TextureLocY;
-				}
-
-				BgfxTexture *texture = Bgfx_To_Texture(d3d_texture);
-				if (texture != NULL) {
-					const size_t row_bytes = static_cast<size_t>(w) * Bgfx_Get_Pixel_Size(texture->format);
-					for (unsigned y = 0; y < h; ++y) {
-						uint8_t *dest = texture->bytes.data() + static_cast<size_t>(y) * static_cast<size_t>(texture->width) * Bgfx_Get_Pixel_Size(texture->format);
-						memcpy(dest, cur_tex_ptr, row_bytes);
-						cur_tex_ptr += Bink->Width * 2;
-					}
-					texture->dirty = true;
-				}
+			SurfaceClass *surface = TextureInfos[t].Texture->Get_Surface_Level(0);
+			if (surface != NULL) {
+				Upload_Texture_From_Buffer(
+					surface,
+					TextureInfos[t].TextureLocX,
+					TextureInfos[t].TextureLocY,
+					TempBuffer,
+					Bink->Width,
+					Bink->Height);
+				surface->Release_Ref();
 			}
 		}
+#endif
 
 		if (Bink->FrameNum < Bink->Frames) // goto the next if not on the last
 			BinkNextFrame(Bink);
 	}
 
+#if RENEGADE_WITH_BGFX_RENDERER
+	if (bgfx::isValid(MovieTextures.LumaTexture) && bgfx::isValid(MovieTextures.ChromaTexture)) {
+		const bgfx::ProgramHandle program = BgfxRenderer::Get_Movie_YUV_Program();
+		const bgfx::UniformHandle config_uniform = BgfxRenderer::Get_Movie_YUV_Config_Uniform();
+		if (bgfx::isValid(program) && bgfx::isValid(config_uniform)) {
+			static const MovieOverlayVertex vertices[4] = {
+				{-1.0f,  1.0f, 0.0f, 0xffffffffu, 0.0f, 0.0f},
+				{-1.0f, -1.0f, 0.0f, 0xffffffffu, 0.0f, 1.0f},
+				{ 1.0f,  1.0f, 0.0f, 0xffffffffu, 1.0f, 0.0f},
+				{ 1.0f, -1.0f, 0.0f, 0xffffffffu, 1.0f, 1.0f},
+			};
+			static const uint16_t indices[6] = {0, 1, 2, 2, 1, 3};
+
+			const bgfx::VertexLayout &layout = BgfxRenderer::Get_Overlay_Layout();
+			if (bgfx::getAvailTransientVertexBuffer(4, layout) == 4
+				&& bgfx::getAvailTransientIndexBuffer(6) == 6) {
+				bgfx::TransientVertexBuffer vertex_buffer;
+				bgfx::TransientIndexBuffer index_buffer;
+				bgfx::allocTransientVertexBuffer(&vertex_buffer, 4, layout);
+				bgfx::allocTransientIndexBuffer(&index_buffer, 6);
+				std::memcpy(vertex_buffer.data, vertices, sizeof(vertices));
+				std::memcpy(index_buffer.data, indices, sizeof(indices));
+
+				MovieOverlayVertex *submission_vertices = reinterpret_cast<MovieOverlayVertex *>(vertex_buffer.data);
+				for (unsigned i = 0; i < 4; ++i) {
+					submission_vertices[i].Diffuse = BgfxRenderer::Convert_Packed_Color(0xffffffffu);
+				}
+
+				BgfxRenderer::Prepare_Overlay_View();
+				bgfx::setVertexBuffer(0, &vertex_buffer);
+				bgfx::setIndexBuffer(&index_buffer);
+				bgfx::setTexture(0, BgfxRenderer::Get_Texture0_Uniform(), MovieTextures.LumaTexture, kMovieSamplerFlags);
+				bgfx::setTexture(1, BgfxRenderer::Get_Texture1_Uniform(), MovieTextures.ChromaTexture, kMovieSamplerFlags);
+
+				const float movie_config[4] = {
+					FullRangeVideo ? 1.0f : 0.0f,
+					0.0f,
+					0.0f,
+					0.0f
+				};
+				bgfx::setUniform(config_uniform, movie_config);
+
+				ShaderClass shader = Render2DClass::Get_Default_Shader();
+				BgfxRenderer::Apply_Render_State(shader);
+				bgfx::submit(BgfxRenderer::Get_Overlay_View_Id(), program);
+			}
+		}
+	}
+#else
 	for (unsigned t = 0; t < TextureCount; ++t) {
 		Renderer.Reset();
 		Renderer.Set_Texture(TextureInfos[t].Texture);
@@ -332,6 +585,7 @@ void BINKMovieClass::Render()
 		Renderer.Add_Quad(TextureInfos[t].Rect, TextureInfos[t].UV, 0xffffffff);
 		Renderer.Render();
 	}
+#endif
 
 	if (SubTitleManager) {
 		uint32_t movieTime = (Bink->FrameNum * TicksPerFrame);

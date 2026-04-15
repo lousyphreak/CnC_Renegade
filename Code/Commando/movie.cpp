@@ -48,74 +48,25 @@
 #include "specialbuilds.h"
 #include "stylemgr.h"
 #include "render2dsentence.h"
-
-#include <algorithm>
-#include <cctype>
-#include <filesystem>
+#include "ffactory.h"
+#include "wwfile.h"
 
 namespace {
 
-bool Strings_Match_Case_Insensitive(const std::string &lhs, const std::string &rhs)
+bool Is_Local_Movie_Available(const char *filename)
 {
-	if (lhs.size() != rhs.size()) {
+	if (filename == NULL || filename[0] == '\0' || _TheFileFactory == NULL) {
 		return false;
 	}
 
-	for (size_t index = 0; index < lhs.size(); ++index) {
-		if (std::tolower(static_cast<uint8_t>(lhs[index])) != std::tolower(static_cast<uint8_t>(rhs[index]))) {
-			return false;
-		}
+	FileClass *file = _TheFileFactory->Get_File(filename);
+	if (file == NULL) {
+		return false;
 	}
 
-	return true;
-}
-
-std::filesystem::path Resolve_Local_Movie_Path(const char *filename)
-{
-	if (filename == NULL || filename[0] == '\0') {
-		return {};
-	}
-
-	std::string normalized(filename);
-	std::replace(normalized.begin(), normalized.end(), '\\', '/');
-
-	std::error_code error;
-	std::filesystem::path direct_path(normalized);
-	if (std::filesystem::exists(direct_path, error) && std::filesystem::is_regular_file(direct_path, error)) {
-		return direct_path;
-	}
-
-	std::filesystem::path current = direct_path.is_absolute() ? direct_path.root_path() : std::filesystem::current_path(error);
-	if (error) {
-		return {};
-	}
-
-	for (const auto &part : direct_path.relative_path()) {
-		const std::filesystem::path exact_path = current / part;
-		if (std::filesystem::exists(exact_path, error)) {
-			current = exact_path;
-			continue;
-		}
-
-		if (!std::filesystem::exists(current, error) || !std::filesystem::is_directory(current, error)) {
-			return {};
-		}
-
-		bool found = false;
-		for (std::filesystem::directory_iterator iter(current, error), end; iter != end && !error; iter.increment(error)) {
-			if (Strings_Match_Case_Insensitive(iter->path().filename().string(), part.string())) {
-				current = iter->path();
-				found = true;
-				break;
-			}
-		}
-
-		if (error || !found) {
-			return {};
-		}
-	}
-
-	return std::filesystem::exists(current, error) ? current : std::filesystem::path();
+	const bool available = file->Is_Available();
+	_TheFileFactory->Return_File(file);
+	return available;
 }
 
 } // namespace
@@ -224,9 +175,8 @@ void	MovieGameModeClass::Start_Movie( const char * filename )
 	//
 	//	Play the movie (if it exists locally)
 	//
-	const std::filesystem::path local_movie_path = Resolve_Local_Movie_Path(filename);
-	if (!local_movie_path.empty()) {
-		Play_Movie ( local_movie_path.string().c_str() );
+	if (Is_Local_Movie_Available(filename)) {
+		Play_Movie ( filename );
 	} else {
 
 #if RENEGADE_WITH_BINK

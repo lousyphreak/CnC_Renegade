@@ -3,6 +3,7 @@ file(GLOB BINKMOVIE_HEADERS CONFIGURE_DEPENDS "*.h")
 if(RENEGADE_WITH_BINK)
     add_library(BinkMovie STATIC
         BINKMovie.cpp
+        binkdecoder.cpp
         subtitle.cpp
         subtitlemanager.cpp
         subtitleparser.cpp
@@ -32,7 +33,7 @@ target_include_directories(BinkMovie
         "${PROJECT_SOURCE_DIR}/Code/ww3d2"
 )
 
-target_link_libraries(BinkMovie PRIVATE wwlib wwdebug WWMath)
+target_link_libraries(BinkMovie PRIVATE wwlib wwdebug WWMath ww3d2 SDL3::SDL3)
 
 if(NOT WIN32)
     target_compile_definitions(BinkMovie PUBLIC _UNIX)

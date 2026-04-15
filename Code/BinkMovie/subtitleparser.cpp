@@ -185,7 +185,7 @@ DynamicVectorClass<SubTitleClass*>* SubTitleParserClass::Get_Sub_Titles(const ch
 					}
 
 					// Terminate if end movie token encountered.
-					if (wcsnicmp(string, ENDMOVIE_TOKEN, wcslen(ENDMOVIE_TOKEN)) == 0) {
+					if (_wcsnicmp(string, ENDMOVIE_TOKEN, wcslen(ENDMOVIE_TOKEN)) == 0) {
 						break;
 					}
 				}
@@ -235,7 +235,7 @@ bool SubTitleParserClass::Find_Movie_Entry(const char* moviename)
 		}
 
 		// Look for begin movie token
-		if (wcsnicmp(string, BEGINMOVIE_TOKEN, wcslen(BEGINMOVIE_TOKEN)) == 0) {
+		if (_wcsnicmp(string, BEGINMOVIE_TOKEN, wcslen(BEGINMOVIE_TOKEN)) == 0) {
 			// Get moviename following the token
 			wchar_t* ptr = wcschr(string, L' ');
 
@@ -421,7 +421,7 @@ wchar_t* SubTitleParserClass::Get_Next_Line(void)
 
 	while (eof == false) {
 		// Read in a line of text
-		Read_Line(mInput, mBuffer, LINE_MAX, eof);
+		Read_Line(mInput, mBuffer, LINE_BUFFER_MAX, eof);
 		mLineNumber++;
 
 		// Remove whitespace

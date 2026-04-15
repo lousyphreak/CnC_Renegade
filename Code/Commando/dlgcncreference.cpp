@@ -73,9 +73,10 @@ uint32_t							CnCReferenceMenuClass::LastChangeTeamTimeMs	= 0;
 //
 ////////////////////////////////////////////////////////////////
 CnCReferenceMenuClass::CnCReferenceMenuClass (void)	:
+	MenuDialogClass (IDD_MENU_CNC_REFERENCE),
 	OldBackdrop (NULL),
 	Timer (0.5F),
-	MenuDialogClass (IDD_MENU_CNC_REFERENCE)
+	PendingExitGame (false)
 {
 	_TheInstance = this;
 	return ;
@@ -404,6 +405,8 @@ CnCReferenceMenuClass::On_Frame_Update (void)
 void
 CnCReferenceMenuClass::Prompt_User (void)
 {
+	PendingExitGame = false;
+
 	//
 	//	Display the message box
 	//
@@ -425,8 +428,26 @@ CnCReferenceMenuClass::Prompt_User (void)
 void
 CnCReferenceMenuClass::HandleNotification (DlgMsgBoxEvent &event)
 {
-	if (event.Event () == DlgMsgBoxEvent::Yes) {
-		Exit_Game ();
+	switch (event.Event ())
+	{
+		case DlgMsgBoxEvent::Yes:
+			PendingExitGame = true;
+			break;
+
+		case DlgMsgBoxEvent::No:
+		case DlgMsgBoxEvent::Okay:
+			PendingExitGame = false;
+			break;
+
+		case DlgMsgBoxEvent::Quitting:
+			if (PendingExitGame) {
+				PendingExitGame = false;
+				Exit_Game ();
+			}
+			break;
+
+		default:
+			break;
 	}
 
 	return ;
@@ -513,4 +534,3 @@ CnCReferenceMenuClass::Exit_Game (void)
 				Stop_Main_Loop(EXIT_SUCCESS);
 			}
 			/**/
-

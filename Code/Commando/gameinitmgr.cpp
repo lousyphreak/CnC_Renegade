@@ -435,13 +435,10 @@ GameInitMgrClass::End_Game (void)
 void
 GameInitMgrClass::Continue_Game(void)
 {
-	uint32_t time;
-
-	// IML : First, allow a short period to process any outstanding sound effects that may have been started by the caller.
-	// NOTE: Multi-play does not need this fix because it does not sound page swap.
+	// The SDL audio path does not need the old 1.5s Miles page-swap delay here.
+	// One service tick is enough to submit the menu click before gameplay resumes.
 	if (IS_SOLOPLAY) {
-		time = TIMEGETTIME();
-		while (TIMEGETTIME() - time < PRE_SERVICE_TIME) {
+		if (WWAudioClass::Get_Instance () != NULL) {
 			WWAudioClass::Get_Instance ()->On_Frame_Update (0);
 		}
 	}
@@ -1023,7 +1020,6 @@ void _reload_game_configuration_files(void)
 	ScriptManager::Shutdown();
 	ScriptManager::Init();
 }
-
 
 
 

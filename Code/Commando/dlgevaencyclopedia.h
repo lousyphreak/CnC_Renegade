@@ -105,8 +105,8 @@ private:
 	////////////////////////////////////////////////////////////////	
 	static EVAEncyclopediaMenuClass *	_TheInstance;
 	static int									_NextTabIndex;
+	bool											PendingExitGame;
 };
 
 
 #endif //__DLGEVAENCYCLOPEDIA_H
-

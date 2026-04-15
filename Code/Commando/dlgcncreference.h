@@ -93,6 +93,7 @@ private:
 	static CnCReferenceMenuClass *	_TheInstance;
 	MenuBackDropClass *					OldBackdrop;
 	float										Timer;
+	bool										PendingExitGame;
 
 	enum				{ACTION_TIMEOUT_MS = 10000};
 	static uint32_t	LastSuicideTimeMs;

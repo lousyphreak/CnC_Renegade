@@ -16,3 +16,9 @@
 ## Combat / first-person presentation
 
 - Fixed first-person weapon and hand animation lookup in `Code/Combat/weaponview.cpp`. The port was building HAnim names with `StringClass` objects passed directly through `%s` varargs formatting, which corrupted the generated names and prevented non-idle first-person weapon states such as reload/fire/enter/exit from resolving correctly. The fix casts the `StringClass` values to `const char *` before formatting the lookup strings and the related debug output.
+
+## UI / menu flow
+
+- Re-enabled the main-menu single-player `Load Game` entry in the lightweight client menu subset. The SDL/Linux port had been disabling `IDC_MENU_LOAD_SP_GAME_BUTTON` unconditionally in `menu_dialog_subset.cpp`, which made the button permanently unavailable from the main menu even though the underlying `LoadSPGameMenuClass` still worked in-game.
+- Removed the legacy 1.5-second audio busy-wait from `GameInitMgrClass::Continue_Game`. The old Miles page-swap grace period made in-mission Resume feel stalled on the SDL audio backend; resuming now services audio once and returns to combat immediately.
+- Deferred in-mission quit processing until the quit confirmation popup has fully closed in both `EVAEncyclopediaMenuClass` and `CnCReferenceMenuClass`. Running `Exit_Game` from the popup's `Yes` notification was mutating the dialog stack while the confirmation box was still alive, so quit-to-menu now executes on the popup's `Quitting` notification instead.

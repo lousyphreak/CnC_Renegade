@@ -52,7 +52,6 @@ ClientStartSPGameDialogClass::ClientStartSPGameDialogClass() :
 
 void ClientStartSPGameDialogClass::On_Init_Dialog()
 {
-	Disable_If_Present(this, IDC_MENU_LOAD_SP_GAME_BUTTON);
 	MenuDialogClass::On_Init_Dialog();
 }
 

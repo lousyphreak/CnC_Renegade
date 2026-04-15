@@ -74,7 +74,8 @@ int								EVAEncyclopediaMenuClass::_NextTabIndex = -4;
 //
 ////////////////////////////////////////////////////////////////
 EVAEncyclopediaMenuClass::EVAEncyclopediaMenuClass (void)	:
-	MenuDialogClass (IDD_MENU_EVA_ENCYCLOPEDIA)
+	MenuDialogClass (IDD_MENU_EVA_ENCYCLOPEDIA),
+	PendingExitGame (false)
 {
 	_TheInstance = this;
 	return ;
@@ -271,6 +272,8 @@ EVAEncyclopediaMenuClass::Display (TAB_ID tab_id)
 void
 EVAEncyclopediaMenuClass::Prompt_User (void)
 {
+	PendingExitGame = false;
+
 	//
 	//	Display the message box
 	//
@@ -287,8 +290,26 @@ EVAEncyclopediaMenuClass::Prompt_User (void)
 void
 EVAEncyclopediaMenuClass::HandleNotification (DlgMsgBoxEvent &event)
 {
-	if (event.Event () == DlgMsgBoxEvent::Yes) {
-		Exit_Game ();
+	switch (event.Event ())
+	{
+		case DlgMsgBoxEvent::Yes:
+			PendingExitGame = true;
+			break;
+
+		case DlgMsgBoxEvent::No:
+		case DlgMsgBoxEvent::Okay:
+			PendingExitGame = false;
+			break;
+
+		case DlgMsgBoxEvent::Quitting:
+			if (PendingExitGame) {
+				PendingExitGame = false;
+				Exit_Game ();
+			}
+			break;
+
+		default:
+			break;
 	}
 
 	return ;

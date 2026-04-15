@@ -23,6 +23,12 @@
 - `StringClass` must be explicitly cast to `const char *` before being passed through `%s` varargs formatters like `StringClass::Format` or `Debug_Say`. C++ will apply implicit conversions for normal function parameters, but not for `...`, and the resulting corrupted strings can look like random asset names instead of valid HAnim identifiers.
 - `Code/Combat/weaponview.cpp` builds first-person weapon, hand, and bob animation names via formatted strings. If those `StringClass` values are passed to `%s` without casts, idle/default visuals may still appear while state-driven first-person animations such as reload/fire/enter/exit fail to resolve.
 
+## Menu/dialog behavior
+
+- The lightweight client menu replacements in `menu_dialog_subset.cpp` should only disable features that are truly unsupported. Disabling `IDC_MENU_LOAD_SP_GAME_BUTTON` there blocks the main-menu load path even though the standard `LoadSPGameMenuClass` flow still works.
+- `GameInitMgrClass::Continue_Game` sits on the hot path for closing the in-mission EVA/menu dialogs. The original `PRE_SERVICE_TIME` busy-wait was specific to the legacy sound-page swap behavior; on the SDL backend it translates directly into visible resume latency.
+- `DlgMsgBox` notifies observers with `Yes` / `No` **before** the popup actually closes, then sends `Quitting` from `End_Dialog()`. Menu flows that tear down other dialogs or change game modes should defer that work until `Quitting` to avoid mutating the dialog stack while the confirmation popup is still active.
+
 ## Mesh shader and material pipeline
 
 - **D3DRS_COLORVERTEX is always TRUE**: Set in `DX8Wrapper::Init` and `bgfxdynamicbuffer.cpp`, never set to FALSE anywhere in the codebase. This means color source resolution can query `VertexMaterialClass::Get_*_Color_Source()` directly instead of going through D3D render state.

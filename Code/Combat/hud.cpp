@@ -65,6 +65,8 @@
 #include "string_ids.h"
 #include "gametype.h"
 #include "stylemgr.h"
+#include "ddsfile.h"
+#include "ffactory.h"
 
 
 static void Generate_WChar_Text_From_Number(WCHAR* text,int digits,int min_digits,int value)
@@ -83,6 +85,61 @@ static void Generate_WChar_Text_From_Number(WCHAR* text,int digits,int min_digit
 			text[i++]=c;
 		}
 		text[i]=0;
+	}
+}
+
+static bool Is_HUD_Texture_Available(const char *texture_name)
+{
+	if (texture_name == NULL || texture_name[0] == 0) {
+		return false;
+	}
+
+	StringClass stripped_name(true);
+	Strip_Path_From_Filename(stripped_name, texture_name);
+	if (stripped_name.Is_Empty()) {
+		return false;
+	}
+
+	FileClass *file = _TheFileFactory->Get_File(stripped_name);
+	const bool file_available = (file != NULL && file->Is_Available());
+	if (file != NULL) {
+		_TheFileFactory->Return_File(file);
+	}
+	if (file_available) {
+		return true;
+	}
+
+	DDSFileClass dds_file(stripped_name, 0);
+	return dds_file.Is_Available();
+}
+
+static void Resolve_Weapon_Icon_Texture(
+	const WeaponDefinitionClass *def,
+	StringClass &filename,
+	RectClass &uv,
+	Vector2 &offset)
+{
+	if (!def->HUDIconTextureName.Is_Empty() && Is_HUD_Texture_Available(def->HUDIconTextureName)) {
+		Strip_Path_From_Filename(filename, def->HUDIconTextureName);
+		return;
+	}
+
+	if (!def->IconTextureName.Is_Empty() && Is_HUD_Texture_Available(def->IconTextureName)) {
+		Strip_Path_From_Filename(filename, def->IconTextureName);
+		uv = def->IconTextureUV;
+		offset = def->IconOffset;
+		return;
+	}
+
+	if (!def->HUDIconTextureName.Is_Empty()) {
+		Strip_Path_From_Filename(filename, def->HUDIconTextureName);
+		return;
+	}
+
+	if (!def->IconTextureName.Is_Empty()) {
+		Strip_Path_From_Filename(filename, def->IconTextureName);
+		uv = def->IconTextureUV;
+		offset = def->IconOffset;
 	}
 }
 
@@ -900,33 +957,25 @@ static	void	Weapon_Update( void )
 			Vector2		offset( -24, 38  );
 
 			const WeaponDefinitionClass * def = weapon->Get_Definition();
-			if ( !def->IconTextureName.Is_Empty() ) {
-				Strip_Path_From_Filename( filename, def->IconTextureName );
-				uv = def->IconTextureUV;
-				offset = def->IconOffset;
+			Resolve_Weapon_Icon_Texture(def, filename, uv, offset);
 
 #if 0		// Used to find offsets
-				static	Vector2	tweak_add(0,0);
-				Vector2 add(0,0);
-				add.X += Input::Get_Amount( INPUT_FUNCTION_MOVE_LEFT ) - Input::Get_Amount( INPUT_FUNCTION_MOVE_RIGHT );
-				add.Y += Input::Get_Amount( INPUT_FUNCTION_MOVE_FORWARD ) - Input::Get_Amount( INPUT_FUNCTION_MOVE_BACKWARD );
-				tweak_add -= add;
-				offset += tweak_add;
-				_LastHUDWeapon = NULL;
-				if ( add.Length() != 0 ) {
-					Debug_Say(( "%s offset %f %f\n", def->Get_Name(), offset.X, offset.Y ));
-				}
-#endif
+			static	Vector2	tweak_add(0,0);
+			Vector2 add(0,0);
+			add.X += Input::Get_Amount( INPUT_FUNCTION_MOVE_LEFT ) - Input::Get_Amount( INPUT_FUNCTION_MOVE_RIGHT );
+			add.Y += Input::Get_Amount( INPUT_FUNCTION_MOVE_FORWARD ) - Input::Get_Amount( INPUT_FUNCTION_MOVE_BACKWARD );
+			tweak_add -= add;
+			offset += tweak_add;
+			_LastHUDWeapon = NULL;
+			if ( add.Length() != 0 ) {
+				Debug_Say(( "%s offset %f %f\n", def->Get_Name(), offset.X, offset.Y ));
 			}
+#endif
 
 			RectClass icon_box = uv;
 			icon_box += WeaponBase + offset - icon_box.Upper_Left();
 
-			{
-				StringClass new_name(true);
-				Strip_Path_From_Filename( new_name, filename );
-				WeaponImageRenderer->Set_Texture( new_name );
-			}
+			WeaponImageRenderer->Set_Texture( filename );
 
 //			SurfaceClass::SurfaceDescription surface_desc;
 //			WeaponImageRenderer->Peek_Texture()->Get_Level_Description( surface_desc );
@@ -1053,11 +1102,7 @@ static	void	Build_Weapon_Chart_Icons( void )
 				Vector2		offset( -40, 40 );
 
 				const WeaponDefinitionClass * def = weapon->Get_Definition();
-				if ( !def->IconTextureName.Is_Empty() ) {
-					Strip_Path_From_Filename( filename, def->IconTextureName );
-					uv = def->IconTextureUV;
-					offset = def->IconOffset;
-				}
+				Resolve_Weapon_Icon_Texture(def, filename, uv, offset);
 
 				RectClass icon_box = uv;
 	//			icon_box += pos - icon_box.Upper_Left();
@@ -1070,9 +1115,7 @@ static	void	Build_Weapon_Chart_Icons( void )
 				Render2DClass * renderer = new Render2DClass();
 				WeaponChartIcons.Add( renderer );
 				renderer->Set_Coordinate_Range( Render2DClass::Get_Screen_Resolution() );
-				StringClass new_name(true);
-				Strip_Path_From_Filename( new_name, filename );
-				renderer->Set_Texture( new_name );
+				renderer->Set_Texture( filename );
 				if ( renderer->Peek_Texture() != NULL ) {
 //					SurfaceClass::SurfaceDescription surface_desc;
 //					renderer->Peek_Texture()->Get_Level_Description( surface_desc );

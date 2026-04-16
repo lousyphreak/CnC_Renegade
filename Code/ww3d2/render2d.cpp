@@ -39,6 +39,7 @@
 #include "font3d.h"
 #include "rect.h"
 #include "texture.h"
+#include "textureloader.h"
 #include "bgfxrenderer.h"
 #include "dx8wrapper.h"
 #include "wwprofile.h"
@@ -128,7 +129,19 @@ void	Render2DClass::Reset(void)
 
 void Render2DClass::Set_Texture(TextureClass* tex)
 {
-	REF_PTR_SET(Texture,tex);	
+	REF_PTR_SET(Texture,tex);
+
+	// Many HUD/menu quads normalize UVs from the texture dimensions immediately
+	// after Set_Texture. If a first-use 2D texture has no thumbnail entry, Width
+	// and Height are still zero until the lazy load runs, which leaves those UVs
+	// in pixel space and tiles the fallback texture. Promote those 2D first-use
+	// loads to the foreground when we are already on the render thread.
+	if (Texture != NULL &&
+		TextureLoader::Is_DX8_Thread() &&
+		!Texture->Is_Initialized() &&
+		(Texture->Get_Width() == 0 || Texture->Get_Height() == 0)) {
+		TextureLoader::Request_Foreground_Loading(Texture);
+	}
 }
 
 void Render2DClass::Set_Texture( const char * filename)

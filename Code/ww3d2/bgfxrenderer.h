@@ -61,6 +61,7 @@ class BgfxRenderer
 {
 public:
     static bool Init(void *window_handle, bool lite);
+    static bool Configure_Window(void *window_handle, int width, int height, int bits, bool windowed, bool resize_window);
     static void Shutdown();
     static bool Reset();
     static bool Begin_Frame(bool clear_color, bool clear_depth, float red, float green, float blue);

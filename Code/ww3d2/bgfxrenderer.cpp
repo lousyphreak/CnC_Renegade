@@ -133,6 +133,58 @@ uint64_t MovieCaptureSequence = 0;
 uint64_t MovieCaptureConsumedSequence = 0;
 CapturedMovieFrame LatestMovieFrame;
 
+bool Is_Window_Fullscreen(SDL_Window *window)
+{
+    return window != nullptr && (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) != 0;
+}
+
+int Convert_Pixel_Size_To_Window_Size(int pixel_size, int current_pixel_size, int current_window_size, float fallback_density)
+{
+    float density = fallback_density;
+    if (current_pixel_size > 0 && current_window_size > 0) {
+        density = static_cast<float>(current_pixel_size) / static_cast<float>(current_window_size);
+    }
+
+    if (!(density > 0.0f)) {
+        density = 1.0f;
+    }
+
+    return std::max(1, static_cast<int>(std::lround(static_cast<float>(pixel_size) / density)));
+}
+
+bool Resize_Window_For_Pixel_Size(SDL_Window *window, uint32_t pixel_width, uint32_t pixel_height)
+{
+    if (window == nullptr || pixel_width == 0 || pixel_height == 0) {
+        return false;
+    }
+
+    int current_window_width = 0;
+    int current_window_height = 0;
+    SDL_GetWindowSize(window, &current_window_width, &current_window_height);
+
+    int current_pixel_width = 0;
+    int current_pixel_height = 0;
+    SDL_GetWindowSizeInPixels(window, &current_pixel_width, &current_pixel_height);
+
+    float pixel_density = SDL_GetWindowPixelDensity(window);
+    if (!(pixel_density > 0.0f)) {
+        pixel_density = 1.0f;
+    }
+
+    const int requested_window_width = Convert_Pixel_Size_To_Window_Size(
+        static_cast<int>(pixel_width),
+        current_pixel_width,
+        current_window_width,
+        pixel_density);
+    const int requested_window_height = Convert_Pixel_Size_To_Window_Size(
+        static_cast<int>(pixel_height),
+        current_pixel_height,
+        current_window_height,
+        pixel_density);
+
+    return SDL_SetWindowSize(window, requested_window_width, requested_window_height);
+}
+
 bool Matrices_Are_Equal(const Matrix4 &a, const Matrix4 &b)
 {
     for (int row = 0; row < 4; ++row) {
@@ -1429,6 +1481,56 @@ bool BgfxRenderer::Init(void *window_handle, bool lite)
     return true;
 }
 
+bool BgfxRenderer::Configure_Window(void *window_handle, int width, int height, int, bool windowed, bool resize_window)
+{
+    SDL_Window *window = reinterpret_cast<SDL_Window *>(window_handle != nullptr ? window_handle : WindowHandle);
+    if (window == nullptr) {
+        return false;
+    }
+
+    bool sync_window = false;
+    const bool fullscreen = Is_Window_Fullscreen(window);
+
+    if (!windowed) {
+        SDL_DisplayMode fullscreen_mode = {};
+        const SDL_DisplayMode *requested_mode = nullptr;
+        if (width > 0 && height > 0) {
+            const SDL_DisplayID display_id = SDL_GetDisplayForWindow(window);
+            if (display_id != 0 &&
+                SDL_GetClosestFullscreenDisplayMode(display_id, width, height, 0.0f, true, &fullscreen_mode)) {
+                requested_mode = &fullscreen_mode;
+            }
+        }
+
+        if (!SDL_SetWindowFullscreenMode(window, requested_mode)) {
+            return false;
+        }
+
+        sync_window = true;
+        if (!fullscreen && !SDL_SetWindowFullscreen(window, true)) {
+            return false;
+        }
+    } else {
+        if (fullscreen && !SDL_SetWindowFullscreen(window, false)) {
+            return false;
+        }
+
+        sync_window = fullscreen;
+        if (resize_window && width > 0 && height > 0) {
+            if (!Resize_Window_For_Pixel_Size(window, static_cast<uint32_t>(width), static_cast<uint32_t>(height))) {
+                return false;
+            }
+            sync_window = true;
+        }
+    }
+
+    if (sync_window && !SDL_SyncWindow(window)) {
+        return false;
+    }
+
+    return Update_Platform_Window(window);
+}
+
 void BgfxRenderer::Shutdown()
 {
     if (!IsInitted) {
@@ -1725,7 +1827,10 @@ void BgfxRenderer::Get_Render_Target_Resolution(int &width, int &height, int &bi
 
 void BgfxRenderer::Get_Device_Resolution(int &width, int &height, int &bits, bool &windowed)
 {
-    Get_Render_Target_Resolution(width, height, bits, windowed);
+    width = static_cast<int>(Width);
+    height = static_cast<int>(Height);
+    bits = static_cast<int>(BitDepth);
+    windowed = Windowed;
 }
 
 const bgfx::VertexLayout &BgfxRenderer::Get_Fixed_Function_Layout()

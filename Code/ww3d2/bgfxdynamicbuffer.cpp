@@ -1267,21 +1267,40 @@ bool DX8Wrapper::Set_Render_Device(const char *, int width, int height, int bits
     return Set_Render_Device(0, width, height, bits, windowed, resize_window);
 }
 
-bool DX8Wrapper::Set_Render_Device(int dev, int width, int height, int bits, int windowed, bool)
+bool DX8Wrapper::Set_Render_Device(int dev, int width, int height, int bits, int windowed, bool resize_window)
 {
     CurRenderDevice = (dev < 0) ? 0 : dev;
+    int requested_width = ResolutionWidth;
+    int requested_height = ResolutionHeight;
+    int requested_bits = BitDepth;
+    bool requested_windowed = IsWindowed;
+
     if (width > 0) {
-        ResolutionWidth = width;
+        requested_width = width;
     }
     if (height > 0) {
-        ResolutionHeight = height;
+        requested_height = height;
     }
     if (bits > 0) {
-        BitDepth = bits;
+        requested_bits = bits;
     }
     if (windowed >= 0) {
-        IsWindowed = (windowed != 0);
+        requested_windowed = (windowed != 0);
     }
+
+    ResolutionWidth = requested_width;
+    ResolutionHeight = requested_height;
+    BitDepth = requested_bits;
+    IsWindowed = requested_windowed;
+
+    if (BgfxRenderer::Is_Initted()) {
+        if (!BgfxRenderer::Configure_Window(Hwnd, requested_width, requested_height, requested_bits, requested_windowed, resize_window)) {
+            return false;
+        }
+
+        BgfxRenderer::Get_Device_Resolution(ResolutionWidth, ResolutionHeight, BitDepth, IsWindowed);
+    }
+
     Render2DClass::Set_Screen_Resolution(RectClass(0, 0, ResolutionWidth, ResolutionHeight));
     CurrentCaps = Ensure_Caps();
     if (BgfxRenderer::Is_Initted()) {

@@ -136,18 +136,20 @@ void Sync_Window_Size_To_Renderer(SDL_Window *window)
         return;
     }
 
+    const bool windowed = (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) == 0;
+
     if (WW3D::Is_Initted()) {
         int current_width = 0;
         int current_height = 0;
         int current_bits = 0;
         bool current_windowed = true;
         WW3D::Get_Device_Resolution(current_width, current_height, current_bits, current_windowed);
-        if (current_width == pixel_width && current_height == pixel_height) {
+        if (current_width == pixel_width && current_height == pixel_height && current_windowed == windowed) {
             return;
         }
     }
 
-    WW3D::Set_Device_Resolution(pixel_width, pixel_height, -1, -1, false);
+    WW3D::Set_Device_Resolution(pixel_width, pixel_height, -1, windowed ? 1 : 0, false);
 }
 
 bool Is_Main_Window_Event(const SDL_Event &event)
@@ -306,9 +308,17 @@ bool Handle_Window_Event(const SDL_Event &event)
     }
 
     switch (event.type) {
+        case SDL_EVENT_WINDOW_MOVED:
         case SDL_EVENT_WINDOW_RESIZED:
         case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
         case SDL_EVENT_WINDOW_METAL_VIEW_RESIZED:
+        case SDL_EVENT_WINDOW_MAXIMIZED:
+        case SDL_EVENT_WINDOW_RESTORED:
+        case SDL_EVENT_WINDOW_DISPLAY_CHANGED:
+        case SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED:
+        case SDL_EVENT_WINDOW_SAFE_AREA_CHANGED:
+        case SDL_EVENT_WINDOW_ENTER_FULLSCREEN:
+        case SDL_EVENT_WINDOW_LEAVE_FULLSCREEN:
             Sync_Window_Size_To_Renderer(window);
             return true;
 

@@ -44,6 +44,8 @@ bgfx_compile_shaders(
 set(WW3D2_NEW_MESH_VS_LIST
     "${WW3D2_SHADER_INCLUDE_DIR}/vs_mesh.sc"
     "${WW3D2_SHADER_INCLUDE_DIR}/vs_mesh_texgen.sc"
+    "${WW3D2_SHADER_INCLUDE_DIR}/vs_mesh_skin.sc"
+    "${WW3D2_SHADER_INCLUDE_DIR}/vs_mesh_texgen_skin.sc"
 )
 
 set(WW3D2_NEW_MESH_FS_LIST
@@ -73,7 +75,9 @@ set(WW3D2_SHADER_VARYING_SHADOW_DEF "${WW3D2_SHADER_INCLUDE_DIR}/varying_shadow.
 
 bgfx_compile_shaders(
     TYPE VERTEX
-    SHADERS "${WW3D2_SHADER_INCLUDE_DIR}/vs_shadow.sc"
+    SHADERS
+        "${WW3D2_SHADER_INCLUDE_DIR}/vs_shadow.sc"
+        "${WW3D2_SHADER_INCLUDE_DIR}/vs_shadow_skin.sc"
     VARYING_DEF "${WW3D2_SHADER_VARYING_SHADOW_DEF}"
     OUTPUT_DIR "${WW3D2_SHADER_OUTPUT_DIR}"
     OUT_FILES_VAR WW3D2_SHADOW_VS_OUTPUTS

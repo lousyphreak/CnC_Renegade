@@ -20,7 +20,9 @@
 #include <bgfx/platform.h>
 
 #include "dx8wrapper.h"
+#include "htree.h"
 #include "indexbuffer.h"
+#include "mesh.h"
 #include "pot.h"
 #include "rawfile.h"
 #include "shadowmap.h"
@@ -67,16 +69,22 @@ bgfx::UniformHandle BgfxRenderer::MeshTexgenModeUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::MeshTexTransformFlagsUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::MeshTexTransform0Uniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::MeshTexTransform1Uniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MeshSkinPaletteUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MeshSkinPaletteInfoUniform = BGFX_INVALID_HANDLE;
 bgfx::ProgramHandle BgfxRenderer::OverlayProgram = BGFX_INVALID_HANDLE;
 bgfx::ProgramHandle BgfxRenderer::MovieYUVProgram = BGFX_INVALID_HANDLE;
 bgfx::ProgramHandle BgfxRenderer::MeshProgram = BGFX_INVALID_HANDLE;
 bgfx::ProgramHandle BgfxRenderer::MeshTexgenProgram = BGFX_INVALID_HANDLE;
+bgfx::ProgramHandle BgfxRenderer::MeshSkinProgram = BGFX_INVALID_HANDLE;
+bgfx::ProgramHandle BgfxRenderer::MeshSkinTexgenProgram = BGFX_INVALID_HANDLE;
 Matrix4 BgfxRenderer::CurrentViewMatrix(true);
 Matrix4 BgfxRenderer::CurrentProjectionMatrix(true);
 
 namespace
 {
 constexpr unsigned kUnsetRenderState = 0x12345678u;
+constexpr uint16_t SkinPaletteWidth = 1024;
+constexpr uint16_t SkinPaletteHeight = 512;
 
 constexpr uint16_t InvalidFrameBufferIndex = UINT16_MAX;
 
@@ -134,6 +142,16 @@ uint32_t MovieCaptureFrameIndex = 0;
 uint64_t MovieCaptureSequence = 0;
 uint64_t MovieCaptureConsumedSequence = 0;
 CapturedMovieFrame LatestMovieFrame;
+bgfx::TextureHandle SkinPaletteTexture = BGFX_INVALID_HANDLE;
+struct SkinPaletteEntry
+{
+    const MeshClass *Mesh = nullptr;
+    uint16_t Row = 0;
+};
+std::vector<SkinPaletteEntry> SkinPaletteEntries;
+uint16_t NextSkinPaletteRow = 0;
+float CurrentSkinPaletteInfo[4] = {};
+bool CurrentSkinPaletteValid = false;
 
 bool Is_Window_Fullscreen(SDL_Window *window)
 {
@@ -1599,6 +1617,7 @@ bool BgfxRenderer::Begin_Frame(bool clear_color, bool clear_depth, float red, fl
         return false;
     }
 
+    Reset_Skinning_Frame();
     Apply_Clear(clear_color, clear_depth, red, green, blue);
     return true;
 }
@@ -1929,12 +1948,12 @@ bgfx::UniformHandle BgfxRenderer::Get_Movie_YUV_Config_Uniform()
     return MovieYUVConfigUniform;
 }
 
-bgfx::ProgramHandle BgfxRenderer::Get_Mesh_Program(MeshShaderProgram program)
+bgfx::ProgramHandle BgfxRenderer::Get_Mesh_Program(MeshShaderProgram program, bool skinned)
 {
     switch (program) {
-    case MeshShaderProgram::Mesh:        return MeshProgram;
-    case MeshShaderProgram::MeshTexgen:  return MeshTexgenProgram;
-    default:                             return MeshProgram;
+    case MeshShaderProgram::Mesh:        return skinned ? MeshSkinProgram : MeshProgram;
+    case MeshShaderProgram::MeshTexgen:  return skinned ? MeshSkinTexgenProgram : MeshTexgenProgram;
+    default:                             return skinned ? MeshSkinProgram : MeshProgram;
     }
 }
 
@@ -1942,6 +1961,111 @@ bgfx::UniformHandle BgfxRenderer::Get_Fog_Config_Uniform() { return MeshFogConfi
 bgfx::UniformHandle BgfxRenderer::Get_Fog_Color_Uniform() { return MeshFogColorUniform; }
 bgfx::UniformHandle BgfxRenderer::Get_Frag_Config_Uniform() { return MeshFragConfigUniform; }
 bgfx::UniformHandle BgfxRenderer::Get_Frag_Config2_Uniform() { return MeshFragConfig2Uniform; }
+
+bool BgfxRenderer::Is_Skinned_Vertex_Format(unsigned fvf)
+{
+    return fvf == VERTEX_FORMAT_XYZNDUV2B1;
+}
+
+void BgfxRenderer::Reset_Skinning_Frame()
+{
+    SkinPaletteEntries.clear();
+    NextSkinPaletteRow = 0;
+    CurrentSkinPaletteValid = false;
+}
+
+bool BgfxRenderer::Bind_Skinning_Palette(const MeshClass &mesh)
+{
+    if (!bgfx::isValid(SkinPaletteTexture) ||
+        !bgfx::isValid(MeshSkinPaletteUniform) ||
+        !bgfx::isValid(MeshSkinPaletteInfoUniform)) {
+        return false;
+    }
+
+    const SkinPaletteEntry * entry = nullptr;
+    for (const SkinPaletteEntry & candidate : SkinPaletteEntries) {
+        if (candidate.Mesh == &mesh) {
+            entry = &candidate;
+            break;
+        }
+    }
+
+    if (entry == nullptr) {
+        const HTreeClass * htree = mesh.Peek_Skin_HTree();
+        if (htree == nullptr) {
+            return false;
+        }
+
+        const int bone_count = htree->Num_Pivots();
+        const uint16_t palette_width = static_cast<uint16_t>(bone_count * 3);
+        if (bone_count <= 0 || palette_width > SkinPaletteWidth || NextSkinPaletteRow >= SkinPaletteHeight) {
+            WWDEBUG_SAY(("BgfxRenderer::Bind_Skinning_Palette exceeded palette capacity for mesh %s (bones=%d)\n",
+                mesh.Get_Name(), bone_count));
+            return false;
+        }
+
+        std::vector<float> palette_data(static_cast<size_t>(palette_width) * 4u, 0.0f);
+        for (int bone_index = 0; bone_index < bone_count; ++bone_index) {
+            const Matrix3D & transform = htree->Get_Transform(bone_index);
+            float * rows = palette_data.data() + static_cast<size_t>(bone_index) * 12u;
+            rows[0] = transform[0][0];
+            rows[1] = transform[0][1];
+            rows[2] = transform[0][2];
+            rows[3] = transform[0][3];
+            rows[4] = transform[1][0];
+            rows[5] = transform[1][1];
+            rows[6] = transform[1][2];
+            rows[7] = transform[1][3];
+            rows[8] = transform[2][0];
+            rows[9] = transform[2][1];
+            rows[10] = transform[2][2];
+            rows[11] = transform[2][3];
+        }
+
+        const bgfx::Memory * memory = bgfx::copy(
+            palette_data.data(),
+            static_cast<uint32_t>(palette_data.size() * sizeof(float)));
+        bgfx::updateTexture2D(
+            SkinPaletteTexture,
+            0,
+            0,
+            0,
+            NextSkinPaletteRow,
+            palette_width,
+            1,
+            memory);
+
+        SkinPaletteEntries.push_back({&mesh, NextSkinPaletteRow});
+        entry = &SkinPaletteEntries.back();
+        ++NextSkinPaletteRow;
+    }
+
+    CurrentSkinPaletteInfo[0] = static_cast<float>(entry->Row);
+    CurrentSkinPaletteInfo[1] = 1.0f / static_cast<float>(SkinPaletteWidth);
+    CurrentSkinPaletteInfo[2] = 1.0f / static_cast<float>(SkinPaletteHeight);
+    CurrentSkinPaletteInfo[3] = 0.0f;
+    CurrentSkinPaletteValid = true;
+    return true;
+}
+
+bool BgfxRenderer::Apply_Current_Skinning_Binding()
+{
+    if (!CurrentSkinPaletteValid ||
+        !bgfx::isValid(SkinPaletteTexture) ||
+        !bgfx::isValid(MeshSkinPaletteUniform) ||
+        !bgfx::isValid(MeshSkinPaletteInfoUniform)) {
+        return false;
+    }
+
+    bgfx::setTexture(
+        3,
+        MeshSkinPaletteUniform,
+        SkinPaletteTexture,
+        BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP |
+            BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT);
+    bgfx::setUniform(MeshSkinPaletteInfoUniform, CurrentSkinPaletteInfo);
+    return true;
+}
 
 const bgfx::VertexLayout &BgfxRenderer::Get_Overlay_Layout()
 {
@@ -2815,6 +2939,7 @@ bool Submit_Classified_Draw_Internal(
     const bool has_lighting = classification.lit_config[0] > 0.5f;
     const bool has_fog = DX8Wrapper::Get_Fog_Enable() && classification.frag_config2[1] != 0.0f;
     const bool has_texgen = classification.program == MeshShaderProgram::MeshTexgen;
+    const bool skinned = BgfxRenderer::Is_Skinned_Vertex_Format(vertex_buffer.Vertex_Format_Info().Get_Vertex_Format());
     if (use_direct_vertex_buffer && use_direct_index_buffer && !has_lighting && !has_fog && !has_texgen) {
         WWPerfMonClass::Record_Fast_Submit();
     } else {
@@ -2853,6 +2978,9 @@ bool Submit_Classified_Draw_Internal(
         Resolve_Texture_Handle(stage0_texture), Resolve_Sampler_Flags(stage0_texture, 0));
     bgfx::setTexture(1, BgfxRenderer::Get_Texture1_Uniform(),
         Resolve_Texture_Handle(stage1_texture), Resolve_Sampler_Flags(stage1_texture, 1));
+    if (skinned && !BgfxRenderer::Apply_Current_Skinning_Binding()) {
+        return false;
+    }
 
     // Material classification uniforms
     bgfx::setUniform(BgfxRenderer::Get_Frag_Config_Uniform(), classification.frag_config);
@@ -2887,7 +3015,7 @@ bool Submit_Classified_Draw_Internal(
         rs.shader,
         cull_mode != 0x12345678u ? cull_mode : D3DCULL_CW,
         Resolve_Primitive_State(fill_mode));
-    bgfx::submit(view_id, BgfxRenderer::Get_Mesh_Program(classification.program));
+    bgfx::submit(view_id, BgfxRenderer::Get_Mesh_Program(classification.program, skinned));
 
     // Shadow cast pass
     const bool alpha_test_enabled = classification.frag_config[2] >= 0.0f;
@@ -3113,6 +3241,10 @@ bool BgfxRenderer::Init_Render_Resources()
         MeshTexTransform0Uniform = bgfx::createUniform("u_meshTexTransform0", bgfx::UniformType::Mat4);
     if (!bgfx::isValid(MeshTexTransform1Uniform))
         MeshTexTransform1Uniform = bgfx::createUniform("u_meshTexTransform1", bgfx::UniformType::Mat4);
+    if (!bgfx::isValid(MeshSkinPaletteUniform))
+        MeshSkinPaletteUniform = bgfx::createUniform("s_skinPalette", bgfx::UniformType::Sampler);
+    if (!bgfx::isValid(MeshSkinPaletteInfoUniform))
+        MeshSkinPaletteInfoUniform = bgfx::createUniform("u_skinPaletteInfo", bgfx::UniformType::Vec4);
 
     if (!bgfx::isValid(WhiteTexture)) {
         constexpr uint32_t white_pixel = 0xffffffffu;
@@ -3135,6 +3267,23 @@ bool BgfxRenderer::Init_Render_Resources()
     if (!bgfx::isValid(WhiteTexture) || !bgfx::isValid(BlackTexture))
         return false;
 
+    if (!bgfx::isValid(SkinPaletteTexture)) {
+        const bgfx::Caps * caps = bgfx::getCaps();
+        if (caps == nullptr || (caps->formats[bgfx::TextureFormat::RGBA32F] & BGFX_CAPS_FORMAT_TEXTURE_2D) == 0) {
+            WWDEBUG_SAY(("BgfxRenderer: RGBA32F skin palette textures are unavailable\n"));
+            return false;
+        }
+
+        SkinPaletteTexture = bgfx::createTexture2D(
+            SkinPaletteWidth,
+            SkinPaletteHeight,
+            false,
+            1,
+            bgfx::TextureFormat::RGBA32F,
+            BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP |
+                BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT);
+    }
+
     if (!bgfx::isValid(OverlayProgram))
         OverlayProgram = Load_Program("vs_overlay", "fs_overlay");
     if (!bgfx::isValid(MovieYUVProgram))
@@ -3145,6 +3294,10 @@ bool BgfxRenderer::Init_Render_Resources()
         MeshProgram = Load_Program("vs_mesh", "fs_mesh");
     if (!bgfx::isValid(MeshTexgenProgram))
         MeshTexgenProgram = Load_Program("vs_mesh_texgen", "fs_mesh");
+    if (!bgfx::isValid(MeshSkinProgram))
+        MeshSkinProgram = Load_Program("vs_mesh_skin", "fs_mesh");
+    if (!bgfx::isValid(MeshSkinTexgenProgram))
+        MeshSkinTexgenProgram = Load_Program("vs_mesh_texgen_skin", "fs_mesh");
 
     // Initialize shadow map system
     if (!ShadowMapManager::Is_Initted()) {
@@ -3153,7 +3306,9 @@ bool BgfxRenderer::Init_Render_Resources()
 
     return bgfx::isValid(OverlayProgram)
         && bgfx::isValid(MovieYUVProgram)
-        && bgfx::isValid(MeshProgram) && bgfx::isValid(MeshTexgenProgram);
+        && bgfx::isValid(MeshProgram) && bgfx::isValid(MeshTexgenProgram)
+        && bgfx::isValid(MeshSkinProgram) && bgfx::isValid(MeshSkinTexgenProgram)
+        && bgfx::isValid(SkinPaletteTexture);
 }
 
 void BgfxRenderer::Shutdown_Render_Resources()
@@ -3161,6 +3316,12 @@ void BgfxRenderer::Shutdown_Render_Resources()
     // Shut down shadow map system before destroying other resources
     ShadowMapManager::Shutdown();
 
+    CurrentSkinPaletteValid = false;
+    SkinPaletteEntries.clear();
+    NextSkinPaletteRow = 0;
+
+    Destroy_Program(MeshSkinTexgenProgram);
+    Destroy_Program(MeshSkinProgram);
     Destroy_Program(MeshTexgenProgram);
     Destroy_Program(MeshProgram);
     Destroy_Program(MovieYUVProgram);
@@ -3174,6 +3335,8 @@ void BgfxRenderer::Shutdown_Render_Resources()
     destroy_uniform(MeshTexTransform0Uniform);
     destroy_uniform(MeshTexTransformFlagsUniform);
     destroy_uniform(MeshTexgenModeUniform);
+    destroy_uniform(MeshSkinPaletteInfoUniform);
+    destroy_uniform(MeshSkinPaletteUniform);
     destroy_uniform(MeshBumpEnvLumUniform);
     destroy_uniform(MeshBumpEnvMatUniform);
     destroy_uniform(MeshLightColorUniform);
@@ -3198,6 +3361,11 @@ void BgfxRenderer::Shutdown_Render_Resources()
     if (bgfx::isValid(BlackTexture)) {
         bgfx::destroy(BlackTexture);
         BlackTexture = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(SkinPaletteTexture)) {
+        bgfx::destroy(SkinPaletteTexture);
+        SkinPaletteTexture = BGFX_INVALID_HANDLE;
     }
 
     destroy_uniform(Texture1Uniform);

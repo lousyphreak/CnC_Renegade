@@ -45,6 +45,7 @@
 #include "camera.h"
 #include "vertexformat.h"
 #include "dx8renderer.h"
+#include "vertexbuffer.h"
 #include "hashtemplate.h"
 
 
@@ -71,7 +72,8 @@ MeshModelClass::MeshModelClass(void) :
 	AlternateMatDesc(NULL),
 	CurMatDesc(NULL),
 	MatInfo(NULL),
-	GapFiller(NULL)
+	GapFiller(NULL),
+	SkinVertexBuffer(NULL)
 {
 	Set_Flag(DIRTY_BOUNDS,true);
 
@@ -90,6 +92,7 @@ MeshModelClass::MeshModelClass(const MeshModelClass & that) :
 	CurMatDesc(NULL),
 	MatInfo(NULL),
 	GapFiller(NULL),
+	SkinVertexBuffer(NULL),
 	HasBeenInUse(false)
 {
 	DefMatDesc = new MeshMatDescClass(*(that.DefMatDesc));
@@ -108,6 +111,7 @@ MeshModelClass::~MeshModelClass(void)
 
 	Reset(0,0,0);
 	REF_PTR_RELEASE(MatInfo);
+	REF_PTR_RELEASE(SkinVertexBuffer);
 
 	if (DefMatDesc != NULL) {
 		delete DefMatDesc;
@@ -143,6 +147,7 @@ MeshModelClass & MeshModelClass::operator = (const MeshModelClass & that)
 				GapFiller=NULL;
 		}
 		if (that.GapFiller) GapFiller=new GapFillerClass(*that.GapFiller);
+		REF_PTR_RELEASE(SkinVertexBuffer);
 	}
 	return * this;
 }
@@ -162,6 +167,7 @@ void MeshModelClass::Reset(int polycount,int vertcount,int passcount)
 
 	delete GapFiller;
 	GapFiller=NULL;
+	REF_PTR_RELEASE(SkinVertexBuffer);
 
 	return ;
 }
@@ -395,6 +401,7 @@ void MeshModelClass::get_deformed_screenspace_vertices(Vector4 *dst_vert,const R
 void MeshModelClass::Make_Geometry_Unique()
 {
 	WWASSERT(Vertex);
+	Invalidate_Skin_Vertex_Buffer();
 
 	ShareBufferClass<Vector3> * unique_verts = NEW_REF(ShareBufferClass<Vector3>,(*Vertex));
 	REF_PTR_SET(Vertex,unique_verts);
@@ -413,12 +420,68 @@ void MeshModelClass::Make_Geometry_Unique()
 
 void MeshModelClass::Make_UV_Array_Unique(int pass,int stage)
 {
+	Invalidate_Skin_Vertex_Buffer();
 	CurMatDesc->Make_UV_Array_Unique(pass,stage);
 }
 
 void MeshModelClass::Make_Color_Array_Unique(int array_index)
 {
+	Invalidate_Skin_Vertex_Buffer();
 	CurMatDesc->Make_Color_Array_Unique(array_index);
+}
+
+RenderVertexBufferClass * MeshModelClass::Get_Skin_Vertex_Buffer(void)
+{
+	if (!Get_Flag(MeshGeometryClass::SKIN)) {
+		return NULL;
+	}
+
+	if (SkinVertexBuffer != NULL) {
+		return SkinVertexBuffer;
+	}
+
+	const int vertex_count = Get_Vertex_Count();
+	RenderVertexBufferClass * skin_vertex_buffer =
+		NEW_REF(RenderVertexBufferClass, (VERTEX_FORMAT_XYZNDUV2B1, static_cast<unsigned short>(vertex_count)));
+
+	{
+		VertexBufferClass::WriteLockClass lock(skin_vertex_buffer);
+		VertexFormatXYZNDUV2B1 * vertices = reinterpret_cast<VertexFormatXYZNDUV2B1 *>(lock.Get_Vertex_Array());
+		const Vector3 * src_vertices = Get_Vertex_Array();
+		const Vector3 * src_normals = Get_Vertex_Normal_Array();
+		const Vector2 * uv0 = Get_UV_Array_By_Index(0);
+		const Vector2 * uv1 = Get_UV_Array_By_Index(1);
+		const unsigned * diffuse = Get_Color_Array(0, false);
+		const uint16 * bone_links = Get_Vertex_Bone_Links();
+
+		for (int index = 0; index < vertex_count; ++index) {
+			VertexFormatXYZNDUV2B1 & vertex = vertices[index];
+			const Vector3 & position = src_vertices[index];
+			const Vector3 & normal = src_normals[index];
+
+			vertex.x = position.X;
+			vertex.y = position.Y;
+			vertex.z = position.Z;
+			vertex.nx = normal.X;
+			vertex.ny = normal.Y;
+			vertex.nz = normal.Z;
+			vertex.diffuse = diffuse != NULL ? diffuse[index] : 0;
+			vertex.u1 = uv0 != NULL ? uv0[index].X : 0.0f;
+			vertex.v1 = uv0 != NULL ? uv0[index].Y : 0.0f;
+			vertex.u2 = uv1 != NULL ? uv1[index].X : 0.0f;
+			vertex.v2 = uv1 != NULL ? uv1[index].Y : 0.0f;
+			vertex.bone_index = bone_links != NULL ? static_cast<float>(bone_links[index]) : 0.0f;
+		}
+	}
+
+	REF_PTR_SET(SkinVertexBuffer, skin_vertex_buffer);
+	REF_PTR_RELEASE(skin_vertex_buffer);
+	return SkinVertexBuffer;
+}
+
+void MeshModelClass::Invalidate_Skin_Vertex_Buffer(void)
+{
+	REF_PTR_RELEASE(SkinVertexBuffer);
 }
 
 void MeshModelClass::Enable_Alternate_Material_Description(bool onoff)

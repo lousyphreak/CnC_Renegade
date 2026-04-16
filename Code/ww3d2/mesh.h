@@ -148,6 +148,7 @@ public:
 											const unsigned* diffuse);
 	void								Get_Deformed_Vertices(Vector3 *dst_vert, Vector3 *dst_norm);
 	void								Get_Deformed_Vertices(Vector3 *dst_vert);
+	const HTreeClass *				Peek_Skin_HTree(void) const;
 
 	void								Set_Lighting_Environment(LightEnvironmentClass * light_env) { LightEnvironment = light_env; }
 	LightEnvironmentClass *		Get_Lighting_Environment(void) { return LightEnvironment; }

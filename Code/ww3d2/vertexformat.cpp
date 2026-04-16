@@ -93,6 +93,7 @@ void VertexFormatInfoClass::Get_Vertex_Format_Name(StringClass& fvfname) const
 	case VERTEX_FORMAT_XYZNUV2: fvfname="VERTEX_FORMAT_XYZNUV2"; break;
 	case VERTEX_FORMAT_XYZNDUV1: fvfname="VERTEX_FORMAT_XYZNDUV1"; break;
 	case VERTEX_FORMAT_XYZNDUV2: fvfname="VERTEX_FORMAT_XYZNDUV2"; break;
+	case VERTEX_FORMAT_XYZNDUV2B1: fvfname="VERTEX_FORMAT_XYZNDUV2B1"; break;
 	case VERTEX_FORMAT_XYZDUV1: fvfname="VERTEX_FORMAT_XYZDUV1"; break;
 	case VERTEX_FORMAT_XYZDUV2: fvfname="VERTEX_FORMAT_XYZDUV2"; break;
 	case VERTEX_FORMAT_XYZUV1: fvfname="VERTEX_FORMAT_XYZUV1"; break;

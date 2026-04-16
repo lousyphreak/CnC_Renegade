@@ -83,8 +83,10 @@ class DX8MeshRendererClass;
 class DX8PolygonRendererAttachClass;
 class DX8SkinFVFCategoryContainer;
 class GapFillerClass;
+class RenderVertexBufferClass;
 
 struct VertexFormatXYZNDUV2;
+struct VertexFormatXYZNDUV2B1;
 
 /**
 ** MeshModelClass
@@ -213,6 +215,8 @@ public:
 
 	void							Init_For_NPatch_Rendering();
 	const GapFillerClass*	Get_Gap_Filler() const { return GapFiller; }
+	RenderVertexBufferClass *	Get_Skin_Vertex_Buffer(void);
+	void							Invalidate_Skin_Vertex_Buffer(void);
 
 protected:
 
@@ -300,6 +304,7 @@ protected:
 
 	// Jani: Adding this here temporarily... must fine better place
 	GapFillerClass *										GapFiller;
+	RenderVertexBufferClass *							SkinVertexBuffer;
 	bool														HasBeenInUse;	// For debugging purposes!
 
 	friend class MeshClass;
@@ -348,4 +353,3 @@ public:
 
 
 #endif
-

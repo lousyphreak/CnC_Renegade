@@ -446,7 +446,7 @@ void RenderVertexBufferClass::Init_Bgfx_Layout() const
 	for (unsigned t = 0; t < texcoord_count; ++t) {
 		const bgfx::Attrib::Enum attrib = static_cast<bgfx::Attrib::Enum>(
 			static_cast<int>(bgfx::Attrib::TexCoord0) + t);
-		BgfxLayout.add(attrib, 2, bgfx::AttribType::Float);
+		BgfxLayout.add(attrib, static_cast<uint8_t>(VERTEX_FORMAT_Get_Texcoord_Size(fvf, t)), bgfx::AttribType::Float);
 	}
 	BgfxLayout.end();
 

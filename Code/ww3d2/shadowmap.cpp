@@ -43,6 +43,7 @@ float ShadowMapManager::NormalBias = DEFAULT_NORMAL_BIAS;
 bgfx::TextureHandle ShadowMapManager::ShadowAtlasTexture = BGFX_INVALID_HANDLE;
 bgfx::FrameBufferHandle ShadowMapManager::ShadowAtlasFramebuffer = BGFX_INVALID_HANDLE;
 bgfx::ProgramHandle ShadowMapManager::ShadowProgram = BGFX_INVALID_HANDLE;
+bgfx::ProgramHandle ShadowMapManager::ShadowSkinProgram = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle ShadowMapManager::ShadowMapSampler = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle ShadowMapManager::ShadowLightViewProjUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle ShadowMapManager::ShadowCascadeSplitsUniform = BGFX_INVALID_HANDLE;
@@ -177,8 +178,14 @@ bool ShadowMapManager::Init(int cascade_size)
 
     // Load shadow depth shader
     ShadowProgram = BgfxRenderer::Load_Program("vs_shadow", "fs_shadow");
+    ShadowSkinProgram = BgfxRenderer::Load_Program("vs_shadow_skin", "fs_shadow");
     if (!bgfx::isValid(ShadowProgram)) {
         WWDEBUG_SAY(("ShadowMapManager: Failed to load shadow shader program\n"));
+        Shutdown();
+        return false;
+    }
+    if (!bgfx::isValid(ShadowSkinProgram)) {
+        WWDEBUG_SAY(("ShadowMapManager: Failed to load skinned shadow shader program\n"));
         Shutdown();
         return false;
     }
@@ -198,6 +205,10 @@ void ShadowMapManager::Shutdown()
     if (bgfx::isValid(ShadowProgram)) {
         bgfx::destroy(ShadowProgram);
         ShadowProgram = BGFX_INVALID_HANDLE;
+    }
+    if (bgfx::isValid(ShadowSkinProgram)) {
+        bgfx::destroy(ShadowSkinProgram);
+        ShadowSkinProgram = BGFX_INVALID_HANDLE;
     }
 
     destroy_uniform(ShadowConfigUniform);
@@ -559,6 +570,7 @@ void ShadowMapManager::Submit_Shadow_Draws(
 
     const Matrix4 world_transform = world.Transpose();
     uint64_t shadow_state = BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_MSAA;
+    const bool skinned = BgfxRenderer::Is_Skinned_Vertex_Format(vertex_buffer.Vertex_Format_Info().Get_Vertex_Format());
     if (cull_mode == D3DCULL_CW) {
         shadow_state |= BGFX_STATE_CULL_CW;
     } else if (cull_mode == D3DCULL_CCW) {
@@ -597,8 +609,11 @@ void ShadowMapManager::Submit_Shadow_Draws(
             bgfx::setTexture(0, BgfxRenderer::Get_Texture0_Uniform(), stage0_texture, stage0_flags);
             bgfx::setTexture(1, BgfxRenderer::Get_Texture1_Uniform(), stage1_texture, stage1_flags);
         }
+        if (skinned && !BgfxRenderer::Apply_Current_Skinning_Binding()) {
+            return;
+        }
 
         bgfx::setState(shadow_state);
-        bgfx::submit(ShadowViewIds[cascade], ShadowProgram);
+        bgfx::submit(ShadowViewIds[cascade], skinned ? ShadowSkinProgram : ShadowProgram);
     }
 }

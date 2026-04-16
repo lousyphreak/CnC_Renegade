@@ -164,6 +164,7 @@ private:
 
     // Shadow depth shader
     static bgfx::ProgramHandle ShadowProgram;
+    static bgfx::ProgramHandle ShadowSkinProgram;
 
     // Uniforms
     static bgfx::UniformHandle ShadowMapSampler;

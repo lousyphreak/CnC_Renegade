@@ -13,6 +13,7 @@
 
 class SurfaceClass;
 class IndexBufferClass;
+class MeshClass;
 class TextureClass;
 class VertexBufferClass;
 class VertexMaterialClass;
@@ -89,11 +90,15 @@ public:
     static bgfx::ProgramHandle Get_Overlay_Program();
     static bgfx::ProgramHandle Get_Movie_YUV_Program();
     static bgfx::UniformHandle Get_Movie_YUV_Config_Uniform();
-    static bgfx::ProgramHandle Get_Mesh_Program(MeshShaderProgram program);
+    static bgfx::ProgramHandle Get_Mesh_Program(MeshShaderProgram program, bool skinned = false);
     static bgfx::UniformHandle Get_Fog_Config_Uniform();
     static bgfx::UniformHandle Get_Fog_Color_Uniform();
     static bgfx::UniformHandle Get_Frag_Config_Uniform();
     static bgfx::UniformHandle Get_Frag_Config2_Uniform();
+    static bool Is_Skinned_Vertex_Format(unsigned fvf);
+    static void Reset_Skinning_Frame();
+    static bool Bind_Skinning_Palette(const MeshClass &mesh);
+    static bool Apply_Current_Skinning_Binding();
     static bool Supports_Texture_Format(WW3DFormat format);
     static bool Supports_Render_Target_Format(WW3DFormat format);
     static bool Submit_Current_Fixed_Function_Triangles(
@@ -219,12 +224,16 @@ private:
     static bgfx::UniformHandle MeshTexTransformFlagsUniform;
     static bgfx::UniformHandle MeshTexTransform0Uniform;
     static bgfx::UniformHandle MeshTexTransform1Uniform;
+    static bgfx::UniformHandle MeshSkinPaletteUniform;
+    static bgfx::UniformHandle MeshSkinPaletteInfoUniform;
 
     // Shader programs
     static bgfx::ProgramHandle OverlayProgram;
     static bgfx::ProgramHandle MovieYUVProgram;
     static bgfx::ProgramHandle MeshProgram;
     static bgfx::ProgramHandle MeshTexgenProgram;
+    static bgfx::ProgramHandle MeshSkinProgram;
+    static bgfx::ProgramHandle MeshSkinTexgenProgram;
 
     static Matrix4 CurrentViewMatrix;
     static Matrix4 CurrentProjectionMatrix;

@@ -101,6 +101,7 @@ public:
 	void									Add_Render_Task(DX8PolygonRendererClass * p_renderer,MeshClass * p_mesh);
 
 	void									Render(VertexBufferClass *vertex_buffer = NULL, IndexBufferClass *index_buffer = NULL);
+	bool									Render_Mesh(MeshClass * mesh, VertexBufferClass *vertex_buffer = NULL, IndexBufferClass *index_buffer = NULL);
 	bool									Anything_To_Render() { return (render_task_head != NULL); }
 	void									Clear_Render_List() { render_task_head = NULL; }
 
@@ -293,6 +294,7 @@ public:
 private:
 
 	void Reset();
+	void Render_Material_Passes_For_Mesh(MeshClass * mesh, VertexBufferClass * vertex_buffer);
 
 	unsigned int								VisibleVertexCount;
 	MeshClass *									VisibleSkinHead;

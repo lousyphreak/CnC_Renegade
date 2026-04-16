@@ -62,6 +62,7 @@
 #include "meshgeometry.h"
 #include "hashtemplate.h"
 #include "../wwphys/phys.h"
+#include <vector>
 
 
 /*
@@ -277,6 +278,44 @@ void DX8TextureCategoryClass::Add_Render_Task(DX8PolygonRendererClass * p_render
 	render_task_head = new_prt;
 
 	container->Add_Visible_Texture_Category(this,pass);
+}
+
+bool DX8TextureCategoryClass::Render_Mesh(MeshClass * mesh, VertexBufferClass *vertex_buffer, IndexBufferClass *index_buffer)
+{
+	if (mesh == NULL || render_task_head == NULL) {
+		return false;
+	}
+
+	PolyRenderTaskClass * matching_head = NULL;
+	PolyRenderTaskClass * matching_tail = NULL;
+	PolyRenderTaskClass * remaining_head = NULL;
+	PolyRenderTaskClass * remaining_tail = NULL;
+
+	while (render_task_head != NULL) {
+		PolyRenderTaskClass * task = render_task_head;
+		render_task_head = task->Get_Next_Visible();
+		task->Set_Next_Visible(NULL);
+
+		PolyRenderTaskClass *& target_head = task->Peek_Mesh() == mesh ? matching_head : remaining_head;
+		PolyRenderTaskClass *& target_tail = task->Peek_Mesh() == mesh ? matching_tail : remaining_tail;
+		if (target_tail != NULL) {
+			target_tail->Set_Next_Visible(task);
+		} else {
+			target_head = task;
+		}
+		target_tail = task;
+	}
+
+	render_task_head = remaining_head;
+	if (matching_head == NULL) {
+		return false;
+	}
+
+	PolyRenderTaskClass * saved_head = render_task_head;
+	render_task_head = matching_head;
+	Render(vertex_buffer, index_buffer);
+	render_task_head = saved_head;
+	return true;
 }
 
 void DX8TextureCategoryClass::Add_Polygon_Renderer(DX8PolygonRendererClass* p_renderer,DX8PolygonRendererClass* add_after_this)
@@ -1328,103 +1367,88 @@ void DX8SkinFVFCategoryContainer::Render(void)
 	}
 	AnythingToRender=false;
 
-	DX8Wrapper::Set_Vertex_Buffer(NULL);	// Free up the reference to the current vertex buffer
-														// (in case it is the dynamic, which may have to be resized)
+	std::vector<Vector3> deformed_vertices;
+	std::vector<Vector3> deformed_normals;
 
-	DynamicVBAccessClass vb(
-		sorting ? BUFFER_TYPE_DYNAMIC_SORTING : BUFFER_TYPE_DYNAMIC_RENDER,
-		dynamic_vertex_format,
-		VisibleVertexCount);
-	SNAPSHOT_SAY(("DynamicVBAccess - %s - %d vertices\n",sorting ? "sorting" : "non-sorting",VisibleVertexCount));
+	MeshClass * mesh = VisibleSkinHead;
+	while (mesh != NULL) {
+		MeshClass * next_visible = mesh->Peek_Next_Visible_Skin();
+		mesh->Set_Next_Visible_Skin(NULL);
 
-	unsigned vertex_offset=0;
+		MeshModelClass * model = mesh->Peek_Model();
+		DX8_RECORD_SKIN_RENDER(mesh->Get_Num_Polys(), model->Get_Vertex_Count());
+		if (sorting) {
+			const int vertex_count = model->Get_Vertex_Count();
+			deformed_vertices.resize(vertex_count);
+			deformed_normals.resize(vertex_count);
+			mesh->Get_Deformed_Vertices(deformed_vertices.data(), deformed_normals.data());
 
-	{
-		DynamicVBAccessClass::WriteLockClass l(&vb);
-		VertexFormatXYZNDUV2 * dest_verts = l.Get_Formatted_Vertex_Array();
+			DynamicVBAccessClass skin_vertex_buffer(BUFFER_TYPE_DYNAMIC_SORTING, dynamic_vertex_format, static_cast<unsigned short>(vertex_count));
+			{
+				DynamicVBAccessClass::WriteLockClass lock(&skin_vertex_buffer);
+				VertexFormatXYZNDUV2 * vertices = lock.Get_Formatted_Vertex_Array();
+				const Vector2 * uv0 = model->Get_UV_Array_By_Index(0);
+				const Vector2 * uv1 = model->Get_UV_Array_By_Index(1);
+				const unsigned * diffuse = model->Get_Color_Array(0, false);
 
-		MeshClass * mesh = VisibleSkinHead;
-		while (mesh != NULL) {
+				for (int index = 0; index < vertex_count; ++index) {
+					VertexFormatXYZNDUV2 & vertex = vertices[index];
+					const Vector3 & position = deformed_vertices[index];
+					const Vector3 & normal = deformed_normals[index];
 
-			MeshModelClass * mmc = mesh->Peek_Model();
-			int mesh_vertex_count=mmc->Get_Vertex_Count();
-
-			WWASSERT((vertex_offset+mesh_vertex_count)<=VisibleVertexCount);
-
-			DX8_RECORD_SKIN_RENDER(mesh->Get_Num_Polys(),mesh_vertex_count);
-
-			if (_TempVertexBuffer.Length() < mesh_vertex_count) _TempVertexBuffer.Resize(mesh_vertex_count); 
-			if (_TempNormalBuffer.Length() < mesh_vertex_count) _TempNormalBuffer.Resize(mesh_vertex_count);
-
-			Vector3* loc=&(_TempVertexBuffer[0]);
-			Vector3* norm=&(_TempNormalBuffer[0]);
-			const Vector2* uv0=mmc->Get_UV_Array_By_Index(0);
-			const Vector2* uv1=mmc->Get_UV_Array_By_Index(1);
-			const unsigned* diffuse=mmc->Get_Color_Array(0,false);
-
-			VertexFormatXYZNDUV2* verts=dest_verts+vertex_offset;
-
-//			mesh->Compose_Deformed_Vertex_Buffer(verts,uv0,uv1,diffuse);
-			mesh->Get_Deformed_Vertices(loc,norm);
-
-			for (int v=0;v<mesh_vertex_count;++v) {
-				verts[v].x=(*loc)[0];
-				verts[v].y=(*loc)[1];
-				verts[v].z=(*loc)[2];
-				verts[v].nx=(*norm)[0];
-				verts[v].ny=(*norm)[1];
-				verts[v].nz=(*norm)[2];
-				if (diffuse) {
-					verts[v].diffuse=*diffuse++;
+					vertex.x = position.X;
+					vertex.y = position.Y;
+					vertex.z = position.Z;
+					vertex.nx = normal.X;
+					vertex.ny = normal.Y;
+					vertex.nz = normal.Z;
+					vertex.diffuse = diffuse != NULL ? diffuse[index] : 0;
+					vertex.u1 = uv0 != NULL ? uv0[index].X : 0.0f;
+					vertex.v1 = uv0 != NULL ? uv0[index].Y : 0.0f;
+					vertex.u2 = uv1 != NULL ? uv1[index].X : 0.0f;
+					vertex.v2 = uv1 != NULL ? uv1[index].Y : 0.0f;
 				}
-				else {
-					verts[v].diffuse=0;
-				}
-				if (uv0) {
-					verts[v].u1=(*uv0)[0];
-					verts[v].v1=(*uv0)[1];
-					uv0++;
-				}
-				else {
-					verts[v].u1=0.0f;
-					verts[v].v1=0.0f;
-				}
-				if (uv1) {
-					verts[v].u2=(*uv1)[0];
-					verts[v].v2=(*uv1)[1];
-					uv1++;
-				}
-				else {
-					verts[v].u2=0.0f;
-					verts[v].v2=0.0f;
-				}
-
-				loc++;
-				norm++;
 			}
 
+			mesh->Set_Base_Vertex_Offset(0);
+			DX8Wrapper::Set_Vertex_Buffer(skin_vertex_buffer);
+			DX8Wrapper::Set_Index_Buffer(index_buffer,0);
 
-			mesh->Set_Base_Vertex_Offset(vertex_offset);
-			vertex_offset+=mesh_vertex_count;
-			
-			mesh = mesh->Peek_Next_Visible_Skin();
+			for (unsigned pass = 0; pass < passes; ++pass) {
+				TextureCategoryListIterator it(&visible_texture_category_list[pass]);
+				while (!it.Is_Done()) {
+					it.Peek_Obj()->Render_Mesh(mesh, NULL, index_buffer);
+					it.Next();
+				}
+			}
+
+			Render_Material_Passes_For_Mesh(mesh, NULL);
+		} else {
+			RenderVertexBufferClass * skin_vertex_buffer = model->Get_Skin_Vertex_Buffer();
+			if (skin_vertex_buffer != NULL && BgfxRenderer::Bind_Skinning_Palette(*mesh)) {
+				mesh->Set_Base_Vertex_Offset(0);
+				DX8Wrapper::Set_Vertex_Buffer(skin_vertex_buffer);
+				DX8Wrapper::Set_Index_Buffer(index_buffer,0);
+
+				for (unsigned pass = 0; pass < passes; ++pass) {
+					TextureCategoryListIterator it(&visible_texture_category_list[pass]);
+					while (!it.Is_Done()) {
+						it.Peek_Obj()->Render_Mesh(mesh, skin_vertex_buffer, index_buffer);
+						it.Next();
+					}
+				}
+
+				Render_Material_Passes_For_Mesh(mesh, skin_vertex_buffer);
+			}
 		}
+
+		mesh = next_visible;
 	}
-	WWASSERT(vertex_offset==VisibleVertexCount);
-
-	SNAPSHOT_SAY(("Set vb: %x ib: %x\n",vb,index_buffer));
-
-	DX8Wrapper::Set_Vertex_Buffer(vb);
-	DX8Wrapper::Set_Index_Buffer(index_buffer,0);
 
 	for (unsigned pass=0;pass<passes;++pass) {
-		SNAPSHOT_SAY(("Pass: %d\n",pass));
-		while (DX8TextureCategoryClass * tex = visible_texture_category_list[pass].Remove_Head()) {
-			tex->Render();
+		while (visible_texture_category_list[pass].Remove_Head() != NULL) {
 		}
 	}
-
-	Render_Procedural_Material_Passes();
 
 	VisibleSkinHead = NULL;
 	VisibleVertexCount = 0;
@@ -1476,6 +1500,50 @@ void DX8SkinFVFCategoryContainer::Add_Mesh(MeshClass* mesh)
 	Vertex_Split_Table split_table(mesh);
 
 	Generate_Texture_Categories(split_table,0);
+}
+
+void DX8SkinFVFCategoryContainer::Render_Material_Passes_For_Mesh(MeshClass * mesh, VertexBufferClass * vertex_buffer)
+{
+	if (mesh == NULL || visible_matpass_head == NULL) {
+		return;
+	}
+
+	MatPassTaskClass * matching_head = NULL;
+	MatPassTaskClass * matching_tail = NULL;
+	MatPassTaskClass * remaining_head = NULL;
+	MatPassTaskClass * remaining_tail = NULL;
+
+	while (visible_matpass_head != NULL) {
+		MatPassTaskClass * task = visible_matpass_head;
+		visible_matpass_head = task->Get_Next_Visible();
+		task->Set_Next_Visible(NULL);
+
+		MatPassTaskClass *& target_head = task->Peek_Mesh() == mesh ? matching_head : remaining_head;
+		MatPassTaskClass *& target_tail = task->Peek_Mesh() == mesh ? matching_tail : remaining_tail;
+		if (target_tail != NULL) {
+			target_tail->Set_Next_Visible(task);
+		} else {
+			target_head = task;
+		}
+		target_tail = task;
+	}
+
+	visible_matpass_head = remaining_head;
+	visible_matpass_tail = remaining_tail;
+	if (matching_head == NULL) {
+		return;
+	}
+
+	if (vertex_buffer != NULL) {
+		DX8Wrapper::Set_Vertex_Buffer(vertex_buffer);
+	}
+	DX8Wrapper::Set_Index_Buffer(index_buffer,0);
+	while (matching_head != NULL) {
+		matching_head->Peek_Mesh()->Render_Material_Pass(matching_head->Peek_Material_Pass(), index_buffer);
+		MatPassTaskClass * next_task = matching_head->Get_Next_Visible();
+		delete matching_head;
+		matching_head = next_task;
+	}
 }
 
 // ----------------------------------------------------------------------------

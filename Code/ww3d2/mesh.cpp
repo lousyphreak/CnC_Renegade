@@ -639,6 +639,11 @@ void	MeshClass::Get_Deformed_Vertices(Vector3 *dst_vert, Vector3 *dst_norm)
 	Model->get_deformed_vertices(dst_vert,dst_norm,Container->Get_HTree());
 }
 
+const HTreeClass * MeshClass::Peek_Skin_HTree(void) const
+{
+	return Container != NULL ? Container->Get_HTree() : NULL;
+}
+
 
 /***********************************************************************************************
  * MeshClass::Get_Deformed_Vertices -- Gets the deformed vertices for a skin                   *
@@ -1797,5 +1802,4 @@ void MeshClass::Load_User_Lighting (ChunkLoadClass & cload)
 
 	Set_Has_User_Lighting(true);
 }
-
 

@@ -2783,7 +2783,8 @@ void Build_Transient_Vertices(
 
 const bgfx::VertexLayout &Get_Vertex_Layout_For_Buffer(const VertexBufferClass &vertex_buffer)
 {
-    if (vertex_buffer.Type() == BUFFER_TYPE_RENDER) {
+    if (vertex_buffer.Type() == BUFFER_TYPE_RENDER ||
+        vertex_buffer.Type() == BUFFER_TYPE_DYNAMIC_RENDER) {
         return static_cast<const RenderVertexBufferClass &>(vertex_buffer).Get_Bgfx_Vertex_Layout();
     }
     return BgfxRenderer::Get_Fixed_Function_Layout();
@@ -2872,7 +2873,8 @@ bool Submit_Classified_Draw_Internal(
     const bgfx::VertexLayout &layout = Get_Vertex_Layout_For_Buffer(vertex_buffer);
 
     bool use_direct_vertex_buffer = false;
-    if (vertex_buffer_type == BUFFER_TYPE_RENDER) {
+    if (vertex_buffer_type == BUFFER_TYPE_RENDER ||
+        vertex_buffer_type == BUFFER_TYPE_DYNAMIC_RENDER) {
         if (!static_cast<const RenderVertexBufferClass &>(vertex_buffer).Ensure_Bgfx_Buffer()) {
             return false;
         }
@@ -2880,7 +2882,7 @@ bool Submit_Classified_Draw_Internal(
     }
 
     bool use_direct_index_buffer = false;
-    if (use_direct_vertex_buffer &&
+    if (vertex_buffer_type == BUFFER_TYPE_RENDER &&
         index_buffer_type == BUFFER_TYPE_RENDER &&
         fill_mode != FillMode::Wireframe &&
         (!strip || fill_mode == FillMode::Points)) {
@@ -2940,6 +2942,9 @@ bool Submit_Classified_Draw_Internal(
     const bool has_fog = DX8Wrapper::Get_Fog_Enable() && classification.frag_config2[1] != 0.0f;
     const bool has_texgen = classification.program == MeshShaderProgram::MeshTexgen;
     const bool skinned = BgfxRenderer::Is_Skinned_Vertex_Format(vertex_buffer.Vertex_Format_Info().Get_Vertex_Format());
+    const RenderVertexBufferClass *render_vertex_buffer = use_direct_vertex_buffer
+        ? &static_cast<const RenderVertexBufferClass &>(vertex_buffer)
+        : nullptr;
     if (use_direct_vertex_buffer && use_direct_index_buffer && !has_lighting && !has_fog && !has_texgen) {
         WWPerfMonClass::Record_Fast_Submit();
     } else {
@@ -2951,12 +2956,22 @@ bool Submit_Classified_Draw_Internal(
     const Matrix4 world_transform = world.Transpose();
     bgfx::setTransform(&world_transform[0][0]);
     if (use_direct_index_buffer) {
-        bgfx::setVertexBuffer(
-            0, static_cast<const RenderVertexBufferClass &>(vertex_buffer).Get_Bgfx_Vertex_Buffer());
+        if (render_vertex_buffer->Uses_Dynamic_Bgfx_Buffer()) {
+            bgfx::setVertexBuffer(0, render_vertex_buffer->Get_Bgfx_Dynamic_Vertex_Buffer());
+        } else {
+            bgfx::setVertexBuffer(0, render_vertex_buffer->Get_Bgfx_Vertex_Buffer());
+        }
     } else if (use_direct_vertex_buffer) {
-        bgfx::setVertexBuffer(
-            0, static_cast<const RenderVertexBufferClass &>(vertex_buffer).Get_Bgfx_Vertex_Buffer(),
-            vertex_buffer_offset + index_base_offset + min_vertex_index, vertex_count);
+        const uint32_t start_vertex = vertex_buffer_offset + index_base_offset + min_vertex_index;
+        if (render_vertex_buffer->Uses_Dynamic_Bgfx_Buffer()) {
+            bgfx::setVertexBuffer(
+                0, render_vertex_buffer->Get_Bgfx_Dynamic_Vertex_Buffer(),
+                start_vertex, vertex_count);
+        } else {
+            bgfx::setVertexBuffer(
+                0, render_vertex_buffer->Get_Bgfx_Vertex_Buffer(),
+                start_vertex, vertex_count);
+        }
     } else {
         bgfx::setVertexBuffer(0, &transient_vertex_buffer);
     }

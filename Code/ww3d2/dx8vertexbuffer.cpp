@@ -305,11 +305,12 @@ SortingVertexBufferClass::~SortingVertexBufferClass()
 
 //	bool dynamic=false,bool softwarevp=false);
 
-RenderVertexBufferClass::RenderVertexBufferClass(unsigned FVF, unsigned short vertex_count_, UsageType usage)
+RenderVertexBufferClass::RenderVertexBufferClass(unsigned FVF, unsigned short vertex_count_, UsageType usage, unsigned type)
 	:
-	VertexBufferClass(BUFFER_TYPE_RENDER, FVF, vertex_count_),
+	VertexBufferClass(type, FVF, vertex_count_),
 	VertexBuffer(NULL)
 {
+	WWASSERT(type == BUFFER_TYPE_RENDER);
 	Create_Vertex_Buffer(usage);
 }
 

@@ -178,6 +178,9 @@ public:
 	{
 		DynamicVBAccessClass* DynamicVBAccess;
 		VertexFormatXYZNDUV2 * Vertices;
+#if RENEGADE_WITH_BGFX_RENDERER
+		const bgfx::Memory *BgfxMemory;
+#endif
 	public:
 		WriteLockClass(DynamicVBAccessClass* vb_access);
 		~WriteLockClass();
@@ -218,7 +221,7 @@ public:
 		USAGE_NPATCHES=4
 	};
 
-	RenderVertexBufferClass(unsigned FVF, unsigned short VertexCount, UsageType usage=USAGE_DEFAULT);
+	RenderVertexBufferClass(unsigned FVF, unsigned short VertexCount, UsageType usage=USAGE_DEFAULT, unsigned type=0);
 	RenderVertexBufferClass(const Vector3* vertices, const Vector3* normals, const Vector2* tex_coords, unsigned short VertexCount,UsageType usage=USAGE_DEFAULT);
 	RenderVertexBufferClass(const Vector3* vertices, const Vector3* normals, const Vector4* diffuse, const Vector2* tex_coords, unsigned short VertexCount,UsageType usage=USAGE_DEFAULT);
 	RenderVertexBufferClass(const Vector3* vertices, const Vector4* diffuse, const Vector2* tex_coords, unsigned short VertexCount,UsageType usage=USAGE_DEFAULT);
@@ -240,7 +243,10 @@ public:
 	const unsigned char *Get_Source_Vertex_Data() const;
 	bool Ensure_Bgfx_Buffer() const;
 	bgfx::VertexBufferHandle Get_Bgfx_Vertex_Buffer() const;
+	bgfx::DynamicVertexBufferHandle Get_Bgfx_Dynamic_Vertex_Buffer() const;
 	const bgfx::VertexLayout &Get_Bgfx_Vertex_Layout() const;
+	bool Uses_Dynamic_Bgfx_Buffer() const;
+	bool Update_Bgfx_Dynamic_Buffer(unsigned start_vertex, const bgfx::Memory *memory) const;
 #endif
 
 protected:
@@ -248,6 +254,8 @@ protected:
 	IDirect3DVertexBuffer8*		VertexBuffer;
 #else
 	mutable bgfx::VertexBufferHandle BgfxVertexBuffer;
+	mutable bgfx::DynamicVertexBufferHandle BgfxDynamicVertexBuffer;
+	bool BgfxUsesDynamicBuffer;
 	mutable bool BgfxVertexBufferDirty;
 	std::vector<unsigned char> VertexData;
 	mutable bgfx::VertexLayout BgfxLayout;

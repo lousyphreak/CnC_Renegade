@@ -1,5 +1,9 @@
 # Porting Knowledge
 
+## Renderer submission
+
+- In the bgfx backend, `DynamicVBAccessClass` should preserve the original DX8 distinction between `BUFFER_TYPE_DYNAMIC_RENDER` and `BUFFER_TYPE_DYNAMIC_SORTING`. The sorted path still needs a CPU `SortingVertexBufferClass` because triangle sorting reads and reorders vertices on the CPU, but the non-sorted render path should use a reusable bgfx dynamic vertex buffer and upload directly from the write lock. Collapsing both paths onto the sorting buffer forces an avoidable CPU copy into that staging array and then another copy into bgfx transient vertices at submit time.
+
 ## Windowing and input
 
 - In the SDL/bgfx path, `BgfxRenderer::Init` already knows the real drawable size, but the bgfx-backed `DX8Wrapper` used to seed `Render2DClass::ScreenResolution` before copying that size back out of the renderer. The fix is to pull the device resolution immediately after renderer init and to refresh `Render2DClass::Set_Screen_Resolution` on every later `Set_Render_Device` / `Set_Device_Resolution` call.

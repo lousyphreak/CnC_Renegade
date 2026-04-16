@@ -53,6 +53,7 @@ Only **per-mesh scene state** (scene ambient color, light directions/colors) is 
 - **No specular**: Confirmed unused by all consumers. Not implemented.
 - **Max 2 texture stages**: Confirmed across all material/shader usage.
 - **Color vertex always enabled**: `D3DRS_COLORVERTEX` is always TRUE; color sources resolved directly from `VertexMaterialClass::Get_*_Color_Source()`.
+- **Keep dynamic render and sorting submissions separate**: `BUFFER_TYPE_DYNAMIC_SORTING` still needs CPU-resident sorting/index arrays because the legacy sorted path rewrites geometry on the CPU, but ordinary `BUFFER_TYPE_DYNAMIC_RENDER` submissions should use reusable bgfx dynamic buffers and upload directly from the write lock instead of bouncing through the sorting arrays and then through transient vertex uploads.
 - **GPU skinning for W3D skins**: Renegade skin meshes in this codebase are rigid single-bone-per-vertex skins, so the bgfx path should keep one immutable base vertex buffer per `MeshModelClass`, pass the bone index as vertex data, and fetch the current bone matrix from a per-frame palette texture in the vertex shader. The palette upload should be cached per visible `MeshClass` so repeated passes/shadow draws reuse the same uploaded transforms instead of re-uploading or re-deforming geometry. Sorted translucent skins are the one exception: the legacy triangle-sorting path still needs CPU-deformed vertices, so that path should stay on a CPU-generated sorting buffer.
 
 ### Bump Environment Mapping (EMBM)

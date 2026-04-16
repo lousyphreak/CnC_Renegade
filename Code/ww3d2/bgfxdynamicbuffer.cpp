@@ -35,6 +35,11 @@ namespace
 const unsigned kDefaultDynamicVertexCount = 5000;
 static const VertexFormatInfoClass kDynamicFVFInfo(dynamic_vertex_format);
 
+RenderVertexBufferClass *g_dynamic_render_vertex_buffer = nullptr;
+bool g_dynamic_render_vertex_buffer_in_use = false;
+unsigned short g_dynamic_render_vertex_buffer_size = kDefaultDynamicVertexCount;
+unsigned short g_dynamic_render_vertex_buffer_offset = 0;
+
 SortingVertexBufferClass *g_dynamic_sorting_vertex_buffer = nullptr;
 bool g_dynamic_sorting_vertex_buffer_in_use = false;
 unsigned short g_dynamic_sorting_vertex_buffer_size = 0;
@@ -62,6 +67,32 @@ void Release_Stale_Dynamic_Sorting_Vertex_Buffers()
 			it = g_stale_dynamic_sorting_vertex_buffers.erase(it);
 		} else {
 			++it;
+		}
+	}
+}
+
+void Swizzle_Vertex_Colors_In_Place(unsigned char *vertex_data, const VertexFormatInfoClass &fvf_info, unsigned short vertex_count)
+{
+	const unsigned fvf = fvf_info.Get_Vertex_Format();
+	const unsigned vertex_size = fvf_info.Get_Vertex_Size();
+	const bool has_diffuse = (fvf & VERTEX_FORMAT_FLAG_DIFFUSE) != 0u;
+	const bool has_specular = (fvf & VERTEX_FORMAT_FLAG_SPECULAR) != 0u;
+
+	if (has_diffuse) {
+		const unsigned diffuse_offset = fvf_info.Get_Diffuse_Offset();
+		for (unsigned short v = 0; v < vertex_count; ++v) {
+			uint32_t *color_ptr = reinterpret_cast<uint32_t *>(
+				vertex_data + static_cast<size_t>(v) * vertex_size + diffuse_offset);
+			*color_ptr = BgfxRenderer::Convert_Packed_Color(*color_ptr);
+		}
+	}
+
+	if (has_specular) {
+		const unsigned specular_offset = fvf_info.Get_Specular_Offset();
+		for (unsigned short v = 0; v < vertex_count; ++v) {
+			uint32_t *color_ptr = reinterpret_cast<uint32_t *>(
+				vertex_data + static_cast<size_t>(v) * vertex_size + specular_offset);
+			*color_ptr = BgfxRenderer::Convert_Packed_Color(*color_ptr);
 		}
 	}
 }
@@ -321,6 +352,7 @@ VertexBufferClass::WriteLockClass::WriteLockClass(VertexBufferClass *vertex_buff
 	vertex_buffer->Add_Ref();
 	switch (vertex_buffer->Type()) {
 	case BUFFER_TYPE_RENDER:
+	case BUFFER_TYPE_DYNAMIC_RENDER:
 		Vertices = static_cast<RenderVertexBufferClass *>(vertex_buffer)->Get_Source_Vertex_Data();
 		break;
 	case BUFFER_TYPE_SORTING:
@@ -345,6 +377,7 @@ VertexBufferClass::AppendLockClass::AppendLockClass(VertexBufferClass *vertex_bu
 	vertex_buffer->Add_Ref();
 	switch (vertex_buffer->Type()) {
 	case BUFFER_TYPE_RENDER:
+	case BUFFER_TYPE_DYNAMIC_RENDER:
 		Vertices = static_cast<RenderVertexBufferClass *>(vertex_buffer)->Get_Source_Vertex_Data() + start_index * vertex_buffer->Vertex_Format_Info().Get_Vertex_Size();
 		break;
 	case BUFFER_TYPE_SORTING:
@@ -372,17 +405,20 @@ SortingVertexBufferClass::~SortingVertexBufferClass()
 	delete[] VertexBuffer;
 }
 
-RenderVertexBufferClass::RenderVertexBufferClass(unsigned FVF, unsigned short vertex_count_, UsageType)
+RenderVertexBufferClass::RenderVertexBufferClass(unsigned FVF, unsigned short vertex_count_, UsageType, unsigned type)
 #if !RENEGADE_WITH_BGFX_RENDERER
-	: VertexBufferClass(BUFFER_TYPE_RENDER, FVF, vertex_count_), VertexBuffer(nullptr)
+	: VertexBufferClass(type, FVF, vertex_count_), VertexBuffer(nullptr)
 #else
-	: VertexBufferClass(BUFFER_TYPE_RENDER, FVF, vertex_count_),
+	: VertexBufferClass(type, FVF, vertex_count_),
 	  BgfxVertexBuffer(BGFX_INVALID_HANDLE),
+	  BgfxDynamicVertexBuffer(BGFX_INVALID_HANDLE),
+	  BgfxUsesDynamicBuffer(type == BUFFER_TYPE_DYNAMIC_RENDER),
 	  BgfxVertexBufferDirty(true),
 	  VertexData(static_cast<size_t>(Vertex_Format_Info().Get_Vertex_Size()) * vertex_count_),
 	  BgfxLayoutInitialized(false)
 #endif
 {
+	WWASSERT(type == BUFFER_TYPE_RENDER || type == BUFFER_TYPE_DYNAMIC_RENDER);
 }
 
 RenderVertexBufferClass::RenderVertexBufferClass(const Vector3 *vertices, const Vector3 *normals, const Vector2 *tex_coords, unsigned short vertex_count_, UsageType usage)
@@ -417,6 +453,12 @@ RenderVertexBufferClass::~RenderVertexBufferClass()
 			bgfx::destroy(BgfxVertexBuffer);
 		}
 		BgfxVertexBuffer = BGFX_INVALID_HANDLE;
+	}
+	if (bgfx::isValid(BgfxDynamicVertexBuffer)) {
+		if (BgfxRenderer::Is_Initted()) {
+			bgfx::destroy(BgfxDynamicVertexBuffer);
+		}
+		BgfxDynamicVertexBuffer = BGFX_INVALID_HANDLE;
 	}
 #endif
 }
@@ -546,20 +588,51 @@ bgfx::VertexBufferHandle RenderVertexBufferClass::Get_Bgfx_Vertex_Buffer() const
 	return BgfxVertexBuffer;
 }
 
+bgfx::DynamicVertexBufferHandle RenderVertexBufferClass::Get_Bgfx_Dynamic_Vertex_Buffer() const
+{
+	return BgfxDynamicVertexBuffer;
+}
+
 const bgfx::VertexLayout &RenderVertexBufferClass::Get_Bgfx_Vertex_Layout() const
 {
 	Init_Bgfx_Layout();
 	return BgfxLayout;
 }
 
+bool RenderVertexBufferClass::Uses_Dynamic_Bgfx_Buffer() const
+{
+	return BgfxUsesDynamicBuffer;
+}
+
+bool RenderVertexBufferClass::Update_Bgfx_Dynamic_Buffer(unsigned start_vertex, const bgfx::Memory *memory) const
+{
+	if (!BgfxUsesDynamicBuffer || !BgfxRenderer::Is_Initted()) {
+		return false;
+	}
+
+	Init_Bgfx_Layout();
+	if (!bgfx::isValid(BgfxDynamicVertexBuffer)) {
+		BgfxDynamicVertexBuffer = bgfx::createDynamicVertexBuffer(VertexCount, BgfxLayout);
+		if (!bgfx::isValid(BgfxDynamicVertexBuffer)) {
+			return false;
+		}
+	}
+
+	bgfx::update(BgfxDynamicVertexBuffer, static_cast<uint32_t>(start_vertex), memory);
+	BgfxVertexBufferDirty = false;
+	return true;
+}
+
 void RenderVertexBufferClass::Mark_Bgfx_Buffer_Dirty()
 {
-	// Destroy the old immutable buffer so the next Sync recreates it
-	if (bgfx::isValid(BgfxVertexBuffer)) {
-		if (BgfxRenderer::Is_Initted()) {
-			bgfx::destroy(BgfxVertexBuffer);
+	if (!BgfxUsesDynamicBuffer) {
+		// Destroy the old immutable buffer so the next Sync recreates it
+		if (bgfx::isValid(BgfxVertexBuffer)) {
+			if (BgfxRenderer::Is_Initted()) {
+				bgfx::destroy(BgfxVertexBuffer);
+			}
+			BgfxVertexBuffer = BGFX_INVALID_HANDLE;
 		}
-		BgfxVertexBuffer = BGFX_INVALID_HANDLE;
 	}
 	BgfxVertexBufferDirty = true;
 }
@@ -568,6 +641,28 @@ bool RenderVertexBufferClass::Sync_Bgfx_Buffer() const
 {
 	if (!BgfxRenderer::Is_Initted()) {
 		return false;
+	}
+
+	Init_Bgfx_Layout();
+
+	if (BgfxUsesDynamicBuffer) {
+		if (!bgfx::isValid(BgfxDynamicVertexBuffer)) {
+			BgfxDynamicVertexBuffer = bgfx::createDynamicVertexBuffer(VertexCount, BgfxLayout);
+			if (!bgfx::isValid(BgfxDynamicVertexBuffer)) {
+				return false;
+			}
+		}
+
+		if (!BgfxVertexBufferDirty) {
+			return true;
+		}
+
+		const unsigned total_bytes = Vertex_Format_Info().Get_Vertex_Size() * VertexCount;
+		const bgfx::Memory *mem = bgfx::copy(VertexData.data(), static_cast<uint32_t>(total_bytes));
+		Swizzle_Vertex_Colors_In_Place(mem->data, Vertex_Format_Info(), VertexCount);
+		bgfx::update(BgfxDynamicVertexBuffer, 0, mem);
+		BgfxVertexBufferDirty = false;
+		return true;
 	}
 
 	if (bgfx::isValid(BgfxVertexBuffer) && !BgfxVertexBufferDirty) {
@@ -580,37 +675,12 @@ bool RenderVertexBufferClass::Sync_Bgfx_Buffer() const
 		BgfxVertexBuffer = BGFX_INVALID_HANDLE;
 	}
 
-	Init_Bgfx_Layout();
-
-	// Build upload data with colors swizzled from ARGB to ABGR (bgfx RGBA byte order)
 	const unsigned vertex_size = Vertex_Format_Info().Get_Vertex_Size();
-	const unsigned fvf = Vertex_Format_Info().Get_Vertex_Format();
-	const bool has_diffuse = (fvf & VERTEX_FORMAT_FLAG_DIFFUSE) != 0u;
-	const bool has_specular = (fvf & VERTEX_FORMAT_FLAG_SPECULAR) != 0u;
 	const uint32_t total_bytes = static_cast<uint32_t>(vertex_size) * VertexCount;
 
 	const bgfx::Memory *mem = bgfx::alloc(total_bytes);
 	std::memcpy(mem->data, VertexData.data(), total_bytes);
-
-	// Swizzle diffuse colors in-place: ARGB (D3D) -> ABGR (bgfx RGBA bytes)
-	if (has_diffuse) {
-		const unsigned diffuse_offset = Vertex_Format_Info().Get_Diffuse_Offset();
-		for (unsigned short v = 0; v < VertexCount; ++v) {
-			uint32_t *color_ptr = reinterpret_cast<uint32_t *>(
-				mem->data + static_cast<size_t>(v) * vertex_size + diffuse_offset);
-			*color_ptr = BgfxRenderer::Convert_Packed_Color(*color_ptr);
-		}
-	}
-
-	// Swizzle specular colors in-place: ARGB (D3D) -> ABGR (bgfx RGBA bytes)
-	if (has_specular) {
-		const unsigned specular_offset = Vertex_Format_Info().Get_Specular_Offset();
-		for (unsigned short v = 0; v < VertexCount; ++v) {
-			uint32_t *color_ptr = reinterpret_cast<uint32_t *>(
-				mem->data + static_cast<size_t>(v) * vertex_size + specular_offset);
-			*color_ptr = BgfxRenderer::Convert_Packed_Color(*color_ptr);
-		}
-	}
+	Swizzle_Vertex_Colors_In_Place(mem->data, Vertex_Format_Info(), VertexCount);
 
 	BgfxVertexBuffer = bgfx::createVertexBuffer(mem, BgfxLayout);
 	BgfxVertexBufferDirty = false;
@@ -619,22 +689,37 @@ bool RenderVertexBufferClass::Sync_Bgfx_Buffer() const
 #endif
 
 DynamicVBAccessClass::DynamicVBAccessClass(unsigned type, unsigned fvf, unsigned short vertex_count)
-	: FVFInfo(kDynamicFVFInfo), Type(type == BUFFER_TYPE_DYNAMIC_RENDER ? BUFFER_TYPE_DYNAMIC_SORTING : type), VertexCount(vertex_count), VertexBufferOffset(0), VertexBuffer(nullptr)
+	: FVFInfo(kDynamicFVFInfo), Type(type), VertexCount(vertex_count), VertexBufferOffset(0), VertexBuffer(nullptr)
 {
 	WWASSERT(fvf == dynamic_vertex_format);
-	WWASSERT(Type == BUFFER_TYPE_DYNAMIC_SORTING);
-	Allocate_Sorting_Dynamic_Buffer();
+	WWASSERT(Type == BUFFER_TYPE_DYNAMIC_RENDER || Type == BUFFER_TYPE_DYNAMIC_SORTING);
+	if (Type == BUFFER_TYPE_DYNAMIC_RENDER) {
+		Allocate_Render_Dynamic_Buffer();
+	} else {
+		Allocate_Sorting_Dynamic_Buffer();
+	}
 }
 
 DynamicVBAccessClass::~DynamicVBAccessClass()
 {
+	if (Type == BUFFER_TYPE_DYNAMIC_RENDER) {
+		g_dynamic_render_vertex_buffer_in_use = false;
+		g_dynamic_render_vertex_buffer_offset += VertexCount;
+	} else {
+		g_dynamic_sorting_vertex_buffer_in_use = false;
+		g_dynamic_sorting_vertex_buffer_offset += VertexCount;
+	}
+
 	REF_PTR_RELEASE(VertexBuffer);
-	g_dynamic_sorting_vertex_buffer_in_use = false;
-	g_dynamic_sorting_vertex_buffer_offset += VertexCount;
 }
 
 void DynamicVBAccessClass::_Deinit()
 {
+	REF_PTR_RELEASE(g_dynamic_render_vertex_buffer);
+	g_dynamic_render_vertex_buffer_in_use = false;
+	g_dynamic_render_vertex_buffer_size = kDefaultDynamicVertexCount;
+	g_dynamic_render_vertex_buffer_offset = 0;
+
 	REF_PTR_RELEASE(g_dynamic_sorting_vertex_buffer);
 	for (SortingVertexBufferClass *buffer : g_stale_dynamic_sorting_vertex_buffers) {
 		if (buffer != nullptr) {
@@ -647,22 +732,58 @@ void DynamicVBAccessClass::_Deinit()
 	g_dynamic_sorting_vertex_buffer_offset = 0;
 }
 
-void DynamicVBAccessClass::_Reset(bool)
+void DynamicVBAccessClass::_Reset(bool frame_changed)
 {
 	Release_Stale_Dynamic_Sorting_Vertex_Buffers();
 	g_dynamic_sorting_vertex_buffer_offset = 0;
+	if (frame_changed) {
+		g_dynamic_render_vertex_buffer_offset = 0;
+	}
 }
 
 DynamicVBAccessClass::WriteLockClass::WriteLockClass(DynamicVBAccessClass *vb_access)
 	: DynamicVBAccess(vb_access), Vertices(nullptr)
+#if RENEGADE_WITH_BGFX_RENDERER
+	, BgfxMemory(nullptr)
+#endif
 {
 	WWASSERT(vb_access != nullptr);
 	DynamicVBAccess->VertexBuffer->Add_Ref();
-	Vertices = static_cast<SortingVertexBufferClass *>(DynamicVBAccess->VertexBuffer)->VertexBuffer + DynamicVBAccess->VertexBufferOffset;
+	switch (DynamicVBAccess->Get_Type()) {
+	case BUFFER_TYPE_DYNAMIC_RENDER:
+	{
+		const unsigned vertex_bytes =
+			static_cast<unsigned>(DynamicVBAccess->Get_Vertex_Count()) *
+			DynamicVBAccess->VertexBuffer->Vertex_Format_Info().Get_Vertex_Size();
+		BgfxMemory = bgfx::alloc(static_cast<uint32_t>(vertex_bytes));
+		Vertices = reinterpret_cast<VertexFormatXYZNDUV2 *>(BgfxMemory->data);
+		break;
+	}
+	case BUFFER_TYPE_DYNAMIC_SORTING:
+		Vertices = static_cast<SortingVertexBufferClass *>(DynamicVBAccess->VertexBuffer)->VertexBuffer + DynamicVBAccess->VertexBufferOffset;
+		break;
+	default:
+		WWASSERT(0);
+		break;
+	}
 }
 
 DynamicVBAccessClass::WriteLockClass::~WriteLockClass()
 {
+	switch (DynamicVBAccess->Get_Type()) {
+	case BUFFER_TYPE_DYNAMIC_RENDER:
+		WWASSERT(BgfxMemory != nullptr);
+		Swizzle_Vertex_Colors_In_Place(BgfxMemory->data, DynamicVBAccess->Vertex_Format_Info(), DynamicVBAccess->Get_Vertex_Count());
+		WWASSERT(static_cast<RenderVertexBufferClass *>(DynamicVBAccess->VertexBuffer)->Update_Bgfx_Dynamic_Buffer(
+			DynamicVBAccess->VertexBufferOffset,
+			BgfxMemory));
+		break;
+	case BUFFER_TYPE_DYNAMIC_SORTING:
+		break;
+	default:
+		WWASSERT(0);
+		break;
+	}
 	DynamicVBAccess->VertexBuffer->Release_Ref();
 }
 
@@ -696,7 +817,31 @@ void DynamicVBAccessClass::Allocate_Sorting_Dynamic_Buffer()
 
 void DynamicVBAccessClass::Allocate_Render_Dynamic_Buffer()
 {
-	Allocate_Sorting_Dynamic_Buffer();
+	WWASSERT(!g_dynamic_render_vertex_buffer_in_use);
+	g_dynamic_render_vertex_buffer_in_use = true;
+
+	if (VertexCount > g_dynamic_render_vertex_buffer_size) {
+		REF_PTR_RELEASE(g_dynamic_render_vertex_buffer);
+		g_dynamic_render_vertex_buffer_size = std::max<unsigned short>(
+			static_cast<unsigned short>(VertexCount),
+			static_cast<unsigned short>(kDefaultDynamicVertexCount));
+	}
+
+	if (g_dynamic_render_vertex_buffer == nullptr) {
+		g_dynamic_render_vertex_buffer = NEW_REF(RenderVertexBufferClass, (
+			dynamic_vertex_format,
+			g_dynamic_render_vertex_buffer_size,
+			RenderVertexBufferClass::USAGE_DYNAMIC,
+			BUFFER_TYPE_DYNAMIC_RENDER));
+		g_dynamic_render_vertex_buffer_offset = 0;
+	}
+
+	if (static_cast<unsigned>(VertexCount) + g_dynamic_render_vertex_buffer_offset > g_dynamic_render_vertex_buffer_size) {
+		g_dynamic_render_vertex_buffer_offset = 0;
+	}
+
+	REF_PTR_SET(VertexBuffer, g_dynamic_render_vertex_buffer);
+	VertexBufferOffset = g_dynamic_render_vertex_buffer_offset;
 }
 
 bool DX8Wrapper::Init(void *hwnd, bool lite)

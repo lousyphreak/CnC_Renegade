@@ -62,6 +62,14 @@ struct OverlayVertex
 	float U0;
 	float V0;
 };
+
+void Apply_Coordinate_Range(Vector2 &coordinate_scale, Vector2 &coordinate_offset, const RectClass &range)
+{
+	coordinate_scale.X = 2 / range.Width();
+	coordinate_scale.Y = -2 / range.Height();
+	coordinate_offset.X = -(coordinate_scale.X * range.Left) - 1;
+	coordinate_offset.Y = -(coordinate_scale.Y * range.Top) + 1;
+}
 }
 
 
@@ -69,11 +77,13 @@ struct OverlayVertex
 ** Render2DClass
 */
 Render2DClass::Render2DClass( TextureClass* tex ) :
+	CoordinateRange( 0, 0, 0, 0 ),
 	CoordinateScale( 1, 1 ),
 	CoordinateOffset( 0, 0 ),
 	Texture(0),
 	ZValue(0),
 	IsHidden( false ),
+	AutoScreenCoordinateRange( false ),
 	Indices(sizeof(PreAllocatedIndices)/sizeof(unsigned short),PreAllocatedIndices),
 	Vertices(sizeof(PreAllocatedVertices)/sizeof(Vector2),PreAllocatedVertices),
 	UVCoordinates(sizeof(PreAllocatedUVCoordinates)/sizeof(Vector2),PreAllocatedUVCoordinates),
@@ -119,6 +129,7 @@ Render2DClass::Get_Default_Shader( void )
 
 void	Render2DClass::Reset(void)
 {
+	Refresh_Coordinate_Range();
 	Vertices.Reset_Active();
 	UVCoordinates.Reset_Active();
 	Colors.Reset_Active();
@@ -190,12 +201,26 @@ void Render2DClass::Enable_Texturing(bool b)
 
 void	Render2DClass::Set_Coordinate_Range( const RectClass & range )
 {
-	// default range is (-1,1)-(1,-1)
-	CoordinateScale.X = 2 / range.Width();
-	CoordinateScale.Y = -2 / range.Height();
-	CoordinateOffset.X = -(CoordinateScale.X * range.Left) - 1;
-	CoordinateOffset.Y = -(CoordinateScale.Y * range.Top) + 1;
+	CoordinateRange = range;
+	AutoScreenCoordinateRange = (range == Get_Screen_Resolution());
+	Apply_Coordinate_Range(CoordinateScale, CoordinateOffset, CoordinateRange);
 
+	Update_Bias();
+}
+
+void Render2DClass::Refresh_Coordinate_Range( void )
+{
+	if (AutoScreenCoordinateRange == false) {
+		return;
+	}
+
+	const RectClass &screen_range = Get_Screen_Resolution();
+	if (CoordinateRange == screen_range) {
+		return;
+	}
+
+	CoordinateRange = screen_range;
+	Apply_Coordinate_Range(CoordinateScale, CoordinateOffset, CoordinateRange);
 	Update_Bias();
 }
 
@@ -240,6 +265,7 @@ Vector2 Render2DClass::Convert_Vert( const Vector2 & v )
 */
 void Render2DClass::Convert_Vert( Vector2 & vert_out, const Vector2 & vert_in )
 {
+	Refresh_Coordinate_Range();
 	// Convert to (-1,1)-(1,-1)
 	vert_out.X = vert_in.X * CoordinateScale.X + BiasedCoordinateOffset.X;
 	vert_out.Y = vert_in.Y * CoordinateScale.Y + BiasedCoordinateOffset.Y;
@@ -247,6 +273,7 @@ void Render2DClass::Convert_Vert( Vector2 & vert_out, const Vector2 & vert_in )
 
 void Render2DClass::Convert_Vert( Vector2 & vert_out, float x_in, float y_in )
 {
+	Refresh_Coordinate_Range();
 	// Convert to (-1,1)-(1,-1)
 	vert_out.X = x_in * CoordinateScale.X + BiasedCoordinateOffset.X;
 	vert_out.Y = y_in * CoordinateScale.Y + BiasedCoordinateOffset.Y;
@@ -256,6 +283,7 @@ void Render2DClass::Convert_Vert( Vector2 & vert_out, float x_in, float y_in )
 
 void	Render2DClass::Move( const Vector2 & move )	// Move all verts 
 {
+	Refresh_Coordinate_Range();
 	Vector2 scaled_move;
 	scaled_move.X = move.X * CoordinateScale.X;
 	scaled_move.Y = move.Y * CoordinateScale.Y;
@@ -364,6 +392,7 @@ void	Render2DClass::Internal_Add_Quad_HColors( unsigned long color1, unsigned lo
 
 void	Render2DClass::Internal_Add_Quad_Indicies( int start_vert_index, bool backfaced )
 {
+	Refresh_Coordinate_Range();
 	unsigned short * indices;
 	
 	if (backfaced ^ (CoordinateScale.X * CoordinateScale.Y > 0)) {

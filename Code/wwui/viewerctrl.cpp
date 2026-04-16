@@ -53,6 +53,22 @@
 #include "meshmdl.h"
 #include "light.h"
 
+namespace
+{
+constexpr float kReferenceAspect = 4.0f / 3.0f;
+constexpr float kReferenceHorizontalFov = DEG_TO_RADF(45.0f);
+
+float Convert_Horizontal_To_Vertical_Fov(float hfov, float aspect)
+{
+	return 2.0f * WWMath::Atan(tan(hfov * 0.5f) / aspect);
+}
+
+float Convert_Vertical_To_Horizontal_Fov(float vfov, float aspect)
+{
+	return 2.0f * WWMath::Atan(tan(vfov * 0.5f) * aspect);
+}
+}
+
 
 ////////////////////////////////////////////////////////////////
 //	Local constants
@@ -203,16 +219,15 @@ ViewerCtrlClass::Update_Client_Rect (void)
 	//	Calculate what the horizontal and vertical field of view
 	// should be for this window.
 	//
-	float hfov = 0;
-	float vfov = 0;
 	float cx = Rect.Width ();
 	float cy = Rect.Height ();
-	if (cy > cx) {
-		vfov = DEG_TO_RADF (45.0F);
-		hfov = (cx / cy) * vfov;
+	float aspect = (cy > 0.0f) ? (cx / cy) : kReferenceAspect;
+	float vfov = Convert_Horizontal_To_Vertical_Fov(kReferenceHorizontalFov, kReferenceAspect);
+	float hfov = kReferenceHorizontalFov;
+	if (aspect >= kReferenceAspect) {
+		hfov = Convert_Vertical_To_Horizontal_Fov(vfov, aspect);
 	} else {
-		hfov = DEG_TO_RADF (45.0F);
-		vfov = (cy / cx) * hfov;
+		vfov = Convert_Horizontal_To_Vertical_Fov(kReferenceHorizontalFov, aspect);
 	}
 
 	//

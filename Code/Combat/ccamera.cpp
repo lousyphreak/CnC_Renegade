@@ -63,7 +63,46 @@
 #include "wwphysids.h"
 #include "buildingaggregate.h"
 #include "persistfactory.h"
+#include "render2d.h"
 
+namespace
+{
+constexpr float kReferenceAspect = 4.0f / 3.0f;
+
+float Convert_Horizontal_To_Vertical_Fov(float hfov, float aspect)
+{
+	return 2.0f * WWMath::Atan(tan(hfov * 0.5f) / aspect);
+}
+
+float Convert_Vertical_To_Horizontal_Fov(float vfov, float aspect)
+{
+	return 2.0f * WWMath::Atan(tan(vfov * 0.5f) * aspect);
+}
+
+float Get_Screen_Aspect_Ratio(void)
+{
+	const RectClass &screen_rect = Render2DClass::Get_Screen_Resolution();
+	const float width = (screen_rect.Width() > 0.0f) ? screen_rect.Width() : 1.0f;
+	const float height = (screen_rect.Height() > 0.0f) ? screen_rect.Height() : 1.0f;
+	return width / height;
+}
+
+void Apply_Gameplay_Fov(CameraClass *camera, float reference_hfov)
+{
+	const float aspect = Get_Screen_Aspect_Ratio();
+	const float reference_vfov = Convert_Horizontal_To_Vertical_Fov(reference_hfov, kReferenceAspect);
+
+	float hfov = reference_hfov;
+	float vfov = reference_vfov;
+	if (aspect >= kReferenceAspect) {
+		hfov = Convert_Vertical_To_Horizontal_Fov(reference_vfov, aspect);
+	} else {
+		vfov = Convert_Horizontal_To_Vertical_Fov(reference_hfov, aspect);
+	}
+
+	camera->Set_View_Plane(hfov, vfov);
+}
+}
 
 #define MIN_FOV				0.02f
 #define MAX_FOV				2.6f
@@ -605,7 +644,7 @@ void	CCameraClass::Use_Host_Model( void )
 	if ( !CinematicSnipingEnabled ) {
 		CurrentProfile->FOV = DEG_TO_RADF( 75.0f );
 	}
-	Set_View_Plane( CurrentProfile->FOV );
+	Apply_Gameplay_Fov(this, CurrentProfile->FOV);
 
 #ifdef ATI_DEMO_HACK
 	static GameObjReference DemoFocusObject;
@@ -816,7 +855,7 @@ void CCameraClass::Update()
 		LastHeading	= Heading;
 	}
 
-	Set_View_Plane( profile.FOV );	// Apply Zoom
+	Apply_Gameplay_Fov(this, profile.FOV);	// Apply Zoom
 
 
 	// Calculate the Camera Transform
@@ -1713,4 +1752,3 @@ void	CCameraClass::Handle_Snap_Shot_Mode( void )
 
 	Set_Transform( tm );
 }
-

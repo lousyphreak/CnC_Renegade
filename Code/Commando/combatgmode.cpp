@@ -396,27 +396,19 @@ class LoadingScreenClass
 	float	LoadPercentageDrawn;
 	float	LoadPercentageClamp;
 	float	LoadPercentageRate;
+	RectClass CachedLayoutRect;
 
-public:
-	LoadingScreenClass()
+	void Rebuild_Layout(bool reset_status_count)
 	{
 		int color = 0xFFFFFFFF;
+		CachedLayoutRect = StyleMgrClass::Get_Layout_Rect();
+		StyleMgrClass::Refresh_Fonts();
+		backdropText.Set_Font( StyleMgrClass::Peek_Font( StyleMgrClass::FONT_INGAME_TXT ) );
+		backdropText2.Set_Font( StyleMgrClass::Peek_Font( StyleMgrClass::FONT_INGAME_BIG_TXT ) );
+		backdropText.Reset();
+		backdropText2.Reset();
 
-		WWMEMLOG(MEM_GAMEDATA);
-
-		backdropText.Set_Texture_Size_Hint( 256 );
-		backdropText2.Set_Texture_Size_Hint( 256 );
-
-		LoadTime = 0.001f;
-		LoadPercentage = 0;
-		LoadPercentageDrawn = 0;
-		LoadPercentageRate = 0;
-
-		FontCharsClass *font	= StyleMgrClass::Peek_Font( StyleMgrClass::FONT_INGAME_TXT );
-		backdropText.Set_Font( font );
-
-		font = StyleMgrClass::Peek_Font( StyleMgrClass::FONT_INGAME_BIG_TXT );
-		backdropText2.Set_Font( font );
+		const Vector2 layout_scale = StyleMgrClass::Get_Layout_Scale(640.0f, 480.0f);
 
 		// Parse Descriptions
 		int count = CampaignManager::Get_Backdrop_Description_Count();
@@ -439,10 +431,8 @@ public:
 					if ( str != NULL ) {
 						WideStringClass wide_str = TranslateDBClass::Get_String( str+1 );
 						backdropText2.Build_Sentence( wide_str );
-						// Scale
-						x *= Render2DClass::Get_Screen_Resolution().Right / 640.0f;
-						y *= Render2DClass::Get_Screen_Resolution().Bottom / 480.0f;
-						backdropText2.Set_Location( Vector2( (int)x, (int)y ) );
+						Vector2 location = StyleMgrClass::Project_Point_To_Layout( Vector2( x, y ), 640.0f, 480.0f );
+						backdropText2.Set_Location( Vector2( (int)location.X, (int)location.Y ) );
 						backdropText2.Draw_Sentence( color );
 						color=0xFFFFFFFF;
 						backdropText2.Set_Wrapping_Width( 0 );
@@ -462,10 +452,8 @@ public:
 					if ( str != NULL ) {
 						WideStringClass wide_str = TranslateDBClass::Get_String( str+1 );
 						backdropText.Build_Sentence( wide_str );
-						// Scale
-						x *= Render2DClass::Get_Screen_Resolution().Right / 640.0f;
-						y *= Render2DClass::Get_Screen_Resolution().Bottom / 480.0f;
-						backdropText.Set_Location( Vector2( (int)x, (int)y ) );
+						Vector2 location = StyleMgrClass::Project_Point_To_Layout( Vector2( x, y ), 640.0f, 480.0f );
+						backdropText.Set_Location( Vector2( (int)location.X, (int)location.Y ) );
 						backdropText.Draw_Sentence( color );
 						color=0xFFFFFFFF;
 						backdropText.Set_Wrapping_Width( 0 );
@@ -479,9 +467,7 @@ public:
 				while ( desc.Get_Length() && desc[0] <= ' ' ) desc.Erase( 0, 1 );
 				float w;
 				::sscanf( desc, "%f,", &w );
-				// Scale
-				w *= Render2DClass::Get_Screen_Resolution().Right / 640.0f;
-				backdropText2.Set_Wrapping_Width( w );
+				backdropText2.Set_Wrapping_Width( w * layout_scale.X );
 			}
 
 			// Set Wrapping Width
@@ -490,9 +476,7 @@ public:
 				while ( desc.Get_Length() && desc[0] <= ' ' ) desc.Erase( 0, 1 );
 				float w;
 				::sscanf( desc, "%f,", &w );
-				// Scale
-				w *= Render2DClass::Get_Screen_Resolution().Right / 640.0f;
-				backdropText.Set_Wrapping_Width( w );
+				backdropText.Set_Wrapping_Width( w * layout_scale.X );
 			}
 
 			// Parse test Text
@@ -508,10 +492,8 @@ public:
 						WideStringClass wide_str;
 						wide_str.Convert_From( str+1 );
 						backdropText.Build_Sentence( wide_str );
-						// Scale
-						x *= Render2DClass::Get_Screen_Resolution().Right / 640.0f;
-						y *= Render2DClass::Get_Screen_Resolution().Bottom / 480.0f;
-						backdropText.Set_Location( Vector2( (int)x, (int)y ) );
+						Vector2 location = StyleMgrClass::Project_Point_To_Layout( Vector2( x, y ), 640.0f, 480.0f );
+						backdropText.Set_Location( Vector2( (int)location.X, (int)location.Y ) );
 						backdropText.Draw_Sentence( color );
 						color=0xFFFFFFFF;
 						backdropText.Set_Wrapping_Width( 0 );
@@ -540,10 +522,33 @@ public:
 				Vector3 c( r/255.0f, g/255.0f, b/255.0f );
 				color = c.Convert_To_ARGB();
 			}
-
-
 		}
-		SaveLoadStatus::Reset_Status_Count();
+
+		if (reset_status_count) {
+			SaveLoadStatus::Reset_Status_Count();
+		}
+	}
+
+public:
+	LoadingScreenClass()
+	{
+		WWMEMLOG(MEM_GAMEDATA);
+
+		backdropText.Set_Texture_Size_Hint( 256 );
+		backdropText2.Set_Texture_Size_Hint( 256 );
+
+		LoadTime = 0.001f;
+		LoadPercentage = 0;
+		LoadPercentageDrawn = 0;
+		LoadPercentageRate = 0;
+
+		FontCharsClass *font	= StyleMgrClass::Peek_Font( StyleMgrClass::FONT_INGAME_TXT );
+		backdropText.Set_Font( font );
+
+		font = StyleMgrClass::Peek_Font( StyleMgrClass::FONT_INGAME_BIG_TXT );
+		backdropText2.Set_Font( font );
+
+		Rebuild_Layout(true);
 	}
 
 	~LoadingScreenClass()
@@ -571,6 +576,9 @@ public:
 	{
 		TimeManager::Update_Frame_Time();
 		LoadTime += TimeManager::Get_Frame_Seconds();
+		if (CachedLayoutRect != StyleMgrClass::Get_Layout_Rect()) {
+			Rebuild_Layout(false);
+		}
 
 	   WW3D::Begin_Render( true, true, Vector3(0.0f,0.0f,0.0f), update_network ? &cNetwork::Update : NULL);
 

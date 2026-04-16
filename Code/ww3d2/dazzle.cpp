@@ -1606,9 +1606,11 @@ void DazzleLayerClass::Clear_Visible_List(unsigned int type)
 
 	DazzleRenderObjClass* n = visible_lists[type];
 	while (n) {
-		n->Release_Ref();
+		DazzleRenderObjClass *next = n->Succ();
 		n->on_list = false;
-		n=n->Succ();
+		n->succ = NULL;
+		n->Release_Ref();
+		n = next;
 	}
 
 	visible_lists[type] = NULL;

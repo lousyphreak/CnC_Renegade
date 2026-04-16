@@ -42,6 +42,7 @@
 #include "ccamera.h"
 #include "debug.h"
 #include "globalsettings.h"
+#include "stylemgr.h"
 #include "timemgr.h"
 
 #include "input.h"
@@ -88,6 +89,7 @@ Vector2 ZOOM_OFFSET_BOTTOM( 177, 316 );
 */
 Render2DClass		*	_Sniper2DBaseRenderer;
 Render2DClass		*	_Sniper2DRenderer;
+static RectClass		_SniperLayoutRect( 0, 0, 0, 0 );
 
 #define	HUD_SNIPER_TEXTURE			"hud_sniper.tga"
 
@@ -147,9 +149,9 @@ void  SniperHUDClass::Build_Base( void )
 	uv.Set( SNIPER_VIEW_UV_UL, SNIPER_VIEW_UV_LR );
 	uv.Scale( SNIPER_UV_SCALE );
 
-	Vector2	screen_size = Render2DClass::Get_Screen_Resolution().Lower_Right();
-	Vector2	screen_center = screen_size * 0.5f;
-	Vector2	screen_scale = screen_size * 0.001f;
+	const RectClass layout_rect = StyleMgrClass::Get_Layout_Rect();
+	const Vector2 layout_scale = StyleMgrClass::Get_Layout_Scale( 1000.0f, 1000.0f );
+	const Vector2 screen_center = layout_rect.Center();
 
 	// Set tint color
 	int tint = 0xFF0000FF;	// Blue
@@ -157,83 +159,84 @@ void  SniperHUDClass::Build_Base( void )
 
 	// Draw the center view
 	draw.Set( SNIPER_VIEW_UL, SNIPER_VIEW_LR );
-	draw.Scale( screen_scale );
+	draw.Scale( layout_scale );
+	draw += layout_rect.Upper_Left();
 	_Sniper2DBaseRenderer->Add_Quad( draw, uv, tint );
 
 	// Draw the black sides
 	RectClass blackuv( BLACK_UV_UL, BLACK_UV_LR );
 	blackuv.Scale( SNIPER_UV_SCALE );
 	RectClass edge;
-	edge.Set( 0, 0, draw.Left, screen_size.Y );						// Left
+	edge.Set( layout_rect.Left, layout_rect.Top, draw.Left, layout_rect.Bottom );	// Left
 	_Sniper2DBaseRenderer->Add_Quad( edge, blackuv );
-	edge.Set( draw.Right, 0, screen_size.X, screen_size.Y );		// Right
+	edge.Set( draw.Right, layout_rect.Top, layout_rect.Right, layout_rect.Bottom );	// Right
 	_Sniper2DBaseRenderer->Add_Quad( edge, blackuv );
-	edge.Set( draw.Left, 0, draw.Right, draw.Top );					// Top
+	edge.Set( draw.Left, layout_rect.Top, draw.Right, draw.Top );	// Top
 	_Sniper2DBaseRenderer->Add_Quad( edge, blackuv );
-	edge.Set( draw.Left, draw.Bottom, draw.Right, screen_size.Y );	// Bottom
+	edge.Set( draw.Left, draw.Bottom, draw.Right, layout_rect.Bottom );	// Bottom
 	_Sniper2DBaseRenderer->Add_Quad( edge, blackuv );
 
 	// Draw the center box
 	Vector2	box_corner = BOX_SIZE;
-	box_corner.Scale( screen_scale );
+	box_corner.Scale( layout_scale );
 	RectClass	box( -box_corner, box_corner );
 	box += screen_center;		// Center it
 	_Sniper2DBaseRenderer->Add_Outline( box, 1, blackuv );
 
 	// Draw the top line
 	Vector2	top_line_1 = TOP_LINE_1;
-	top_line_1.Scale( screen_scale );
-	_Sniper2DBaseRenderer->Add_Line( Vector2(screen_center.X,0), Vector2(screen_center.X,top_line_1.Y), 1, blackuv );
+	top_line_1 = StyleMgrClass::Project_Point_To_Layout( top_line_1, 1000.0f, 1000.0f );
+	_Sniper2DBaseRenderer->Add_Line( Vector2(screen_center.X, layout_rect.Top), Vector2(screen_center.X,top_line_1.Y), 1, blackuv );
 
 	// Draw the top line 2
 	Vector2	top_line_2 = TOP_LINE_2;
-	top_line_2.Scale( screen_scale );
+	top_line_2 = StyleMgrClass::Project_Point_To_Layout( top_line_2, 1000.0f, 1000.0f );
 	_Sniper2DBaseRenderer->Add_Line( Vector2(screen_center.X,box.Top), Vector2(screen_center.X,top_line_2.Y), 1, blackuv );
 
 	// Draw the top line 3
 	Vector2	top_line_3 = TOP_LINE_3;
-	top_line_3.Scale( screen_scale );
+	top_line_3 = StyleMgrClass::Project_Point_To_Layout( top_line_3, 1000.0f, 1000.0f );
 	_Sniper2DBaseRenderer->Add_Line( Vector2(screen_center.X,box.Top), Vector2(screen_center.X,top_line_3.Y), 3, blackuv );
 
 	// Draw the bottom line
 	Vector2 bottom_line_1 = BOTTOM_LINE_1;
-	bottom_line_1.Scale( screen_scale.Y, screen_scale.Y ); 
+	bottom_line_1.Scale( layout_scale.Y, layout_scale.Y ); 
 	_Sniper2DBaseRenderer->Add_Line( Vector2(screen_center.X,bottom_line_1.X), Vector2(screen_center.X,bottom_line_1.Y), 1, blackuv );
 
 	// Draw the bottom line 2
 	Vector2 bottom_line_2 = BOTTOM_LINE_2;
-	bottom_line_2.Scale( screen_scale );
+	bottom_line_2.Scale( layout_scale );
 	_Sniper2DBaseRenderer->Add_Line( Vector2(screen_center.X - bottom_line_2.X,bottom_line_2.Y), Vector2(screen_center.X + bottom_line_2.X,bottom_line_2.Y), 1, blackuv );
 
 	// Draw the bottom line 3
 	float y;
 	float left = screen_center.X + 3;
-	float right = BOTTOM_LINE_3.X * screen_scale.X;
-	float step = BOTTOM_LINE_3.Y * screen_scale.Y;
+	float right = layout_rect.Left + (BOTTOM_LINE_3.X * layout_scale.X);
+	float step = BOTTOM_LINE_3.Y * layout_scale.Y;
 	for ( y = bottom_line_2.Y; y < bottom_line_1.Y; y += step ) {
 		_Sniper2DBaseRenderer->Add_Line( Vector2(left,y), Vector2(right,y), 1, blackuv );
 	}
 
 	// Draw the left lines
-	left = LEFT_LINE_UL.X * screen_scale.X;
-	right = LEFT_LINE_LR.X * screen_scale.X;
-	for ( y = screen_center.Y; y < LEFT_LINE_UL.Y * screen_scale.Y; y += LEFT_LINE_LR.Y * screen_scale.Y ) {
-		float flip = screen_size.Y - y;
+	left = layout_rect.Left + (LEFT_LINE_UL.X * layout_scale.X);
+	right = layout_rect.Left + (LEFT_LINE_LR.X * layout_scale.X);
+	for ( y = screen_center.Y; y < layout_rect.Top + (LEFT_LINE_UL.Y * layout_scale.Y); y += LEFT_LINE_LR.Y * layout_scale.Y ) {
+		float flip = layout_rect.Bottom - (y - layout_rect.Top);
 		_Sniper2DBaseRenderer->Add_Line(	Vector2( left, y ), Vector2( right,y ), 1, blackuv );
 		_Sniper2DBaseRenderer->Add_Line(	Vector2( left, flip ), Vector2( right, flip ), 1, blackuv );
 	}
 
 	// Draw the right line
-	_Sniper2DBaseRenderer->Add_Line( Vector2(box.Right,screen_center.Y), Vector2(screen_size.X,screen_center.Y), 1, blackuv );
+	_Sniper2DBaseRenderer->Add_Line( Vector2(box.Right,screen_center.Y), Vector2(layout_rect.Right,screen_center.Y), 1, blackuv );
 
 	// Draw the center line
-	Vector2 center_line( -screen_scale.X, screen_scale.X );
+	Vector2 center_line( -layout_scale.X, layout_scale.X );
 	center_line *= CENTER_LINE_1.X;
 	center_line += Vector2( screen_center.X, screen_center.X);
 	_Sniper2DBaseRenderer->Add_Line( Vector2(center_line.X,screen_center.Y), Vector2(center_line.Y,screen_center.Y), 1, blackuv );
 
 	// Draw the center line 2
-	center_line = Vector2( screen_scale.X, screen_scale.X );
+	center_line = Vector2( layout_scale.X, layout_scale.X );
 	center_line.Scale( CENTER_LINE_2 );
 	center_line += Vector2( screen_center.X, screen_center.X);
 	_Sniper2DBaseRenderer->Add_Line( Vector2(center_line.X,screen_center.Y), Vector2(center_line.Y,screen_center.Y), 3, blackuv );
@@ -243,7 +246,8 @@ void  SniperHUDClass::Build_Base( void )
 	_Sniper2DBaseRenderer->Add_Line( Vector2(center_line.X,screen_center.Y), Vector2(center_line.Y,screen_center.Y), 3, blackuv );
 
 	// Draw the left line
-	_Sniper2DBaseRenderer->Add_Line( Vector2(0, screen_center.Y), Vector2(LEFT_LINE_2.X*screen_scale.X,screen_center.Y), 1, blackuv );
+	_Sniper2DBaseRenderer->Add_Line( Vector2(layout_rect.Left, screen_center.Y), Vector2(layout_rect.Left + (LEFT_LINE_2.X * layout_scale.X),screen_center.Y), 1, blackuv );
+	_SniperLayoutRect = layout_rect;
 }
 
 
@@ -258,10 +262,11 @@ void 	SniperHUDClass::Update( void )
 		return;
 	}
 
-	_Sniper2DRenderer->Reset();
+	if (_SniperLayoutRect != StyleMgrClass::Get_Layout_Rect()) {
+		Build_Base();
+	}
 
-	Vector2	screen_size = Render2DClass::Get_Screen_Resolution().Lower_Right();
-	Vector2	screen_scale = screen_size * 0.001f;
+	_Sniper2DRenderer->Reset();
 
 	// Set tint color
 	int tint = 0xFF0000FF;	// Blue
@@ -275,7 +280,7 @@ void 	SniperHUDClass::Update( void )
 
 	float zoom_ratio = COMBAT_CAMERA->Get_Sniper_Zoom();
 	Vector2 pos = ((ZOOM_OFFSET_BOTTOM - ZOOM_OFFSET_TOP) * zoom_ratio) + ZOOM_OFFSET_TOP;
-	pos.Scale( screen_scale );
+	pos = StyleMgrClass::Project_Point_To_Layout( pos, 1000.0f, 1000.0f );
 	draw += pos - draw.Center();
 	_Sniper2DRenderer->Add_Quad( draw, uv, tint );
 

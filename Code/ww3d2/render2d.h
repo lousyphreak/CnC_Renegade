@@ -157,6 +157,7 @@ public:
 	static const RectClass & Get_Screen_Resolution( void )			{ return ScreenResolution; }
 
 protected:
+	RectClass									CoordinateRange;
 	Vector2										CoordinateScale;
 	Vector2										CoordinateOffset;
 	Vector2										BiasedCoordinateOffset;
@@ -171,6 +172,7 @@ protected:
 	DynamicVectorClass<unsigned long>		Colors;
 	unsigned long								PreAllocatedColors[60];
 	bool											IsHidden;
+	bool											AutoScreenCoordinateRange;
 	float											ZValue;
 
 	static RectClass							ScreenResolution;
@@ -178,6 +180,7 @@ protected:
 	Vector2 Convert_Vert( const Vector2 & v );
 	void	  Convert_Vert( Vector2 & vert_out, const Vector2 & vert_in );
 	void	  Convert_Vert( Vector2 & vert_out, float x_in, float y_in );
+	void	  Refresh_Coordinate_Range( void );
 	void	  Update_Bias( void );
 
 	void	Internal_Add_Quad_Vertices( const Vector2 & v0, const Vector2 & v1, const Vector2 & v2, const Vector2 & v3 );

@@ -31,6 +31,30 @@
 #include <cstring>
 #include <vector>
 
+namespace
+{
+constexpr float kMovieReferenceAspect = 4.0f / 3.0f;
+
+RectClass Get_Movie_Display_Rect()
+{
+	const RectClass &screen_rect = Render2DClass::Get_Screen_Resolution();
+	const float screen_width = (screen_rect.Width() > 0.0f) ? screen_rect.Width() : 1.0f;
+	const float screen_height = (screen_rect.Height() > 0.0f) ? screen_rect.Height() : 1.0f;
+
+	float movie_width = screen_width;
+	float movie_height = screen_height;
+	if ((screen_width / screen_height) > kMovieReferenceAspect) {
+		movie_width = screen_height * kMovieReferenceAspect;
+	} else {
+		movie_height = screen_width / kMovieReferenceAspect;
+	}
+
+	const float left = screen_rect.Left + ((screen_width - movie_width) * 0.5f);
+	const float top = screen_rect.Top + ((screen_height - movie_height) * 0.5f);
+	return RectClass(left, top, left + movie_width, top + movie_height);
+}
+}
+
 class BINKMovieClass
 {
 	private:
@@ -472,6 +496,9 @@ void BINKMovieClass::Render()
 		return;
 	}
 
+	const RectClass screen_rect = Render2DClass::Get_Screen_Resolution();
+	const RectClass movie_rect = Get_Movie_Display_Rect();
+
 	// decompress a frame
 	if (FrameChanged) {
 		BinkDoFrame(Bink);
@@ -532,11 +559,17 @@ void BINKMovieClass::Render()
 		const bgfx::ProgramHandle program = BgfxRenderer::Get_Movie_YUV_Program();
 		const bgfx::UniformHandle config_uniform = BgfxRenderer::Get_Movie_YUV_Config_Uniform();
 		if (bgfx::isValid(program) && bgfx::isValid(config_uniform)) {
-			static const MovieOverlayVertex vertices[4] = {
-				{-1.0f,  1.0f, 0.0f, 0xffffffffu, 0.0f, 0.0f},
-				{-1.0f, -1.0f, 0.0f, 0xffffffffu, 0.0f, 1.0f},
-				{ 1.0f,  1.0f, 0.0f, 0xffffffffu, 1.0f, 0.0f},
-				{ 1.0f, -1.0f, 0.0f, 0xffffffffu, 1.0f, 1.0f},
+			const float safe_screen_width = (screen_rect.Width() > 0.0f) ? screen_rect.Width() : 1.0f;
+			const float safe_screen_height = (screen_rect.Height() > 0.0f) ? screen_rect.Height() : 1.0f;
+			const float left = (((movie_rect.Left - screen_rect.Left) / safe_screen_width) * 2.0f) - 1.0f;
+			const float right = (((movie_rect.Right - screen_rect.Left) / safe_screen_width) * 2.0f) - 1.0f;
+			const float top = 1.0f - (((movie_rect.Top - screen_rect.Top) / safe_screen_height) * 2.0f);
+			const float bottom = 1.0f - (((movie_rect.Bottom - screen_rect.Top) / safe_screen_height) * 2.0f);
+			const MovieOverlayVertex vertices[4] = {
+				{left,  top,    0.0f, 0xffffffffu, 0.0f, 0.0f},
+				{left,  bottom, 0.0f, 0xffffffffu, 0.0f, 1.0f},
+				{right, top,    0.0f, 0xffffffffu, 1.0f, 0.0f},
+				{right, bottom, 0.0f, 0xffffffffu, 1.0f, 1.0f},
 			};
 			static const uint16_t indices[6] = {0, 1, 2, 2, 1, 3};
 
@@ -579,10 +612,14 @@ void BINKMovieClass::Render()
 	for (unsigned t = 0; t < TextureCount; ++t) {
 		Renderer.Reset();
 		Renderer.Set_Texture(TextureInfos[t].Texture);
-		Renderer.Set_Coordinate_Range(RectClass(0.0f, 0.0f, 1.0f, 1.0f));//Bink->Width,Bink->Height));
+		Renderer.Set_Coordinate_Range(screen_rect);
 
-		RectClass rect(TextureInfos[t].TextureLocX, TextureInfos[t].TextureLocY, TextureInfos[t].TextureWidth, TextureInfos[t].TextureHeight);
-		Renderer.Add_Quad(TextureInfos[t].Rect, TextureInfos[t].UV, 0xffffffff);
+		RectClass rect = TextureInfos[t].Rect;
+		rect.Left = movie_rect.Left + (rect.Left * movie_rect.Width());
+		rect.Top = movie_rect.Top + (rect.Top * movie_rect.Height());
+		rect.Right = movie_rect.Left + (rect.Right * movie_rect.Width());
+		rect.Bottom = movie_rect.Top + (rect.Bottom * movie_rect.Height());
+		Renderer.Add_Quad(rect, TextureInfos[t].UV, 0xffffffff);
 		Renderer.Render();
 	}
 #endif

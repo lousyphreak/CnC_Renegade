@@ -143,6 +143,54 @@ static void Resolve_Weapon_Icon_Texture(
 	}
 }
 
+static RectClass Get_HUD_Layout_Rect( void )
+{
+	return Render2DClass::Get_Screen_Resolution();
+}
+
+namespace
+{
+constexpr float kHUDReferenceWidth = 800.0f;
+constexpr float kHUDReferenceHeight = 600.0f;
+
+float Get_HUD_Scale(void)
+{
+	const RectClass screen_rect = Get_HUD_Layout_Rect();
+	const float scale_x = screen_rect.Width() / kHUDReferenceWidth;
+	const float scale_y = screen_rect.Height() / kHUDReferenceHeight;
+	return WWMath::Min(scale_x, scale_y);
+}
+
+float Scale_HUD_Value(float value)
+{
+	return value * Get_HUD_Scale();
+}
+
+Vector2 Scale_HUD_Vector(const Vector2 &value)
+{
+	return value * Get_HUD_Scale();
+}
+
+RectClass Scale_HUD_Rect(const RectClass &value)
+{
+	RectClass scaled = value;
+	scaled.Scale(Get_HUD_Scale());
+	return scaled;
+}
+
+void Update_HUD_Bitmap_Font_Scale(Render2DTextClass *renderer)
+{
+	if (renderer == NULL) {
+		return;
+	}
+
+	Font3DInstanceClass *font = renderer->Peek_Font();
+	if (font != NULL) {
+		font->Set_Scale(Get_HUD_Scale());
+	}
+}
+}
+
 /*
 **
 */
@@ -419,8 +467,8 @@ static	void	Powerup_Add( const WCHAR * name, int number, const char * texture_na
 	if ( size > 0 ) {
 		data->UV.Scale( Vector2( 1/size, 1/size ) );
 	}
-	data->IconBox = uv;
-	data->IconBox += offset + Vector2( 0, -40.0f ) - data->IconBox.Upper_Left();
+	data->IconBox = Scale_HUD_Rect(uv);
+	data->IconBox += Scale_HUD_Vector(offset + Vector2( 0.0f, -40.0f )) - data->IconBox.Upper_Left();
 	data->Name = name;
 	data->Number = number;
  	data->Timer = POWERUP_TIME;
@@ -490,10 +538,11 @@ static	void	Powerup_Update( void )
 		RightAnimateTimer = 0;
 	}
 
- 	RectClass box( POWERUP_BOX_UV_UL, POWERUP_BOX_UV_LR );
-	Vector2 start = Render2DClass::Get_Screen_Resolution().Lower_Right() - Vector2( POWERUP_BOX_BASE );
-	box += start - box.Lower_Left();
-	box -= Vector2( box.Left - 6, +75 );
+	const RectClass layout_rect = Get_HUD_Layout_Rect();
+	const float scaled_powerup_spacing = Scale_HUD_Value(POWERUP_BOX_SPACING);
+	RectClass box = Scale_HUD_Rect(RectClass( POWERUP_BOX_UV_UL, POWERUP_BOX_UV_LR ));
+	Vector2 left_box_upper_left( Scale_HUD_Value(6.0f), layout_rect.Bottom - Scale_HUD_Value(75.0f) - box.Height() );
+	box += left_box_upper_left - box.Upper_Left();
 
 	int i;
 	for ( i = 0; i < MAX_ICONS && i < LeftPowerupIconList.Count(); i++ ) {
@@ -519,7 +568,7 @@ static	void	Powerup_Update( void )
 
 		// Draw powerup name
 		PowerupTextRenderer->Build_Sentence( LeftPowerupIconList[i]->Name );
-		PowerupTextRenderer->Set_Location( Vector2( draw_box.Left + 1, draw_box.Top + POWERUP_BOX_HEIGHT - 15 ) );
+		PowerupTextRenderer->Set_Location( Vector2( draw_box.Left + Scale_HUD_Value(1.0f), draw_box.Top + Scale_HUD_Value(POWERUP_BOX_HEIGHT - 15.0f) ) );
 		PowerupTextRenderer->Draw_Sentence( white );
 
 #if 0
@@ -528,7 +577,7 @@ static	void	Powerup_Update( void )
 			WideStringClass num(0,true);
 			num.Format( L"%d", LeftPowerupIconList[i]->Number );
 			PowerupTextRenderer->Build_Sentence( num );
-			PowerupTextRenderer->Set_Location( Vector2( draw_box.Right - 12, draw_box.Top + 1 ) );
+			PowerupTextRenderer->Set_Location( Vector2( draw_box.Right - Scale_HUD_Value(12.0f), draw_box.Top + Scale_HUD_Value(1.0f) ) );
 			PowerupTextRenderer->Draw_Sentence( white );
 		}
 #endif
@@ -541,15 +590,15 @@ static	void	Powerup_Update( void )
 
 		// Drop the remaining icons down
 		if ( i == 0 && LeftAnimateTimer > ANIMATE_TIME * 0.5f ) {
-			box += Vector2( 0, ((2*LeftAnimateTimer/ANIMATE_TIME)-1) * POWERUP_BOX_SPACING );
+			box += Vector2( 0, ((2*LeftAnimateTimer/ANIMATE_TIME)-1) * scaled_powerup_spacing );
 		}
 
-		box -= Vector2( 0, POWERUP_BOX_SPACING );
+		box -= Vector2( 0, scaled_powerup_spacing );
 	}
 
 	// Setup box for right
- 	box = RectClass( POWERUP_BOX_UV_UL, POWERUP_BOX_UV_LR );
-	start = Render2DClass::Get_Screen_Resolution().Lower_Right() - Vector2( POWERUP_BOX_BASE );
+ 	box = Scale_HUD_Rect(RectClass( POWERUP_BOX_UV_UL, POWERUP_BOX_UV_LR ));
+	Vector2 start = layout_rect.Lower_Right() - Scale_HUD_Vector(Vector2( POWERUP_BOX_BASE ));
 	box += start - box.Lower_Left();
 
 	for ( i = 0; i < MAX_ICONS && i < RightPowerupIconList.Count(); i++ ) {
@@ -575,12 +624,12 @@ static	void	Powerup_Update( void )
 
 		// Draw powerup name
 		PowerupTextRenderer->Build_Sentence( RightPowerupIconList[i]->Name );
-		float left_edge = draw_box.Left + 1;
+		float left_edge = draw_box.Left + Scale_HUD_Value(1.0f);
 		Vector2 extents = PowerupTextRenderer->Get_Text_Extents( RightPowerupIconList[i]->Name );
-		if ( left_edge + extents.X + 1> Render2DClass::Get_Screen_Resolution().Right ) {
-			left_edge = Render2DClass::Get_Screen_Resolution().Right - extents.X - 1;
+		if ( left_edge + extents.X + Scale_HUD_Value(1.0f) > layout_rect.Right ) {
+			left_edge = layout_rect.Right - extents.X - Scale_HUD_Value(1.0f);
 		}
-		PowerupTextRenderer->Set_Location( Vector2( left_edge, draw_box.Top + POWERUP_BOX_HEIGHT - 15 ) );
+		PowerupTextRenderer->Set_Location( Vector2( left_edge, draw_box.Top + Scale_HUD_Value(POWERUP_BOX_HEIGHT - 15.0f) ) );
 		PowerupTextRenderer->Draw_Sentence( white );
 
 		// Draw powerup count
@@ -588,7 +637,7 @@ static	void	Powerup_Update( void )
 			WideStringClass num(0,true);
 			num.Format( L"%d", RightPowerupIconList[i]->Number );
 			PowerupTextRenderer->Build_Sentence( num );
-			PowerupTextRenderer->Set_Location( Vector2( draw_box.Right - 12, draw_box.Top + 1 ) );
+			PowerupTextRenderer->Set_Location( Vector2( draw_box.Right - Scale_HUD_Value(12.0f), draw_box.Top + Scale_HUD_Value(1.0f) ) );
 			PowerupTextRenderer->Draw_Sentence( white );
 		}
 
@@ -600,10 +649,10 @@ static	void	Powerup_Update( void )
 
 		// Drop the remaining icons down
 		if ( i == 0 && RightAnimateTimer > ANIMATE_TIME * 0.5f ) {
-			box += Vector2( 0, ((2*RightAnimateTimer/ANIMATE_TIME)-1) * POWERUP_BOX_SPACING );
+			box += Vector2( 0, ((2*RightAnimateTimer/ANIMATE_TIME)-1) * scaled_powerup_spacing );
 		}
 
-		box -= Vector2( 0, POWERUP_BOX_SPACING );
+		box -= Vector2( 0, scaled_powerup_spacing );
 	}
 
 }
@@ -753,17 +802,27 @@ static	void	HUD_Help_Text_Shutdown( void )
 	return ;
 }
 
+static void Build_Weapon_Base( void )
+{
+	if (WeaponBoxRenderer == NULL) {
+		return;
+	}
+
+	WeaponBoxRenderer->Reset();
+	RectClass box_uv( WEAPON_BOX_UV_UL, WEAPON_BOX_UV_LR );
+	RectClass draw_box = Scale_HUD_Rect(box_uv);
+	box_uv.Scale( Vector2( 1.0f/256.0f, 1.0f/256.0f ) );
+	draw_box += Get_HUD_Layout_Rect().Lower_Right() - Scale_HUD_Vector(Vector2( WEAPON_OFFSET )) - draw_box.Upper_Left();
+	WeaponBoxRenderer->Add_Quad( draw_box, box_uv );
+	WeaponBase = draw_box.Upper_Left();
+}
+
 static	void	Weapon_Init( void )
 {
 	WeaponBoxRenderer = new Render2DClass();
 	WeaponBoxRenderer->Set_Texture( HUD_MAIN_TEXTURE );
 	WeaponBoxRenderer->Set_Coordinate_Range( Render2DClass::Get_Screen_Resolution() );
-	RectClass box_uv( WEAPON_BOX_UV_UL, WEAPON_BOX_UV_LR );
-	RectClass draw_box = box_uv;
-	box_uv.Scale( Vector2( 1.0f/256.0f, 1.0f/256.0f ) );
-	draw_box += Render2DClass::Get_Screen_Resolution().Lower_Right() - Vector2( WEAPON_OFFSET ) - draw_box.Upper_Left();
-	WeaponBoxRenderer->Add_Quad( draw_box, box_uv );
-	WeaponBase = draw_box.Upper_Left();
+	Build_Weapon_Base();
 
 	WeaponImageRenderer = new Render2DClass();
 	WeaponImageRenderer->Set_Coordinate_Range( Render2DClass::Get_Screen_Resolution() );
@@ -778,12 +837,14 @@ static	void	Weapon_Init( void )
 	WeaponClipCountRenderer = new Render2DTextClass( font );
 	WeaponClipCountRenderer->Set_Coordinate_Range( Render2DClass::Get_Screen_Resolution() );
 	font->Release_Ref();
+	Update_HUD_Bitmap_Font_Scale(WeaponClipCountRenderer);
 
 	font = WW3DAssetManager::Get_Instance()->Get_Font3DInstance( SMALL_FONT );
 	SET_REF_OWNER( font );
 	WeaponTotalCountRenderer = new Render2DTextClass( font );
 	WeaponTotalCountRenderer->Set_Coordinate_Range( Render2DClass::Get_Screen_Resolution() );
 	font->Release_Ref();
+	Update_HUD_Bitmap_Font_Scale(WeaponTotalCountRenderer);
 
 	_LastHUDWeapon = NULL;
 	_LastVehicleSeat = -1;
@@ -864,7 +925,7 @@ static	void	Weapon_Update( void )
 			Generate_WChar_Text_From_Number(tmp_text,3,3,weapon->Get_Clip_Rounds());
 		}
 
-		WeaponClipCountRenderer->Set_Location( WeaponBase + Vector2( CLIP_ROUNDS_OFFSET ) );
+		WeaponClipCountRenderer->Set_Location( WeaponBase + Scale_HUD_Vector(Vector2( CLIP_ROUNDS_OFFSET )) );
 		WeaponClipCountRenderer->Draw_Text( tmp_text );
 
 		if ( LastClipCount != weapon->Get_Clip_Rounds() ) {
@@ -882,12 +943,12 @@ static	void	Weapon_Update( void )
 
 			RectClass uv;
 			uv.Set( BULLET_ICON_UV_UL, BULLET_ICON_UV_LR );
-			RectClass draw = uv;
+			RectClass draw = Scale_HUD_Rect(uv);
 			uv.Scale( INFO_UV_SCALE );
-			draw += center_clip_count_offset + BULLET_ICON_OFFSET - draw.Upper_Left();
+			draw += center_clip_count_offset + Scale_HUD_Vector(BULLET_ICON_OFFSET) - draw.Upper_Left();
 			InfoRenderer->Add_Quad( draw, uv, COLOR( fade ) );
 
-			WeaponClipCountRenderer->Set_Location( draw.Upper_Right() + Vector2( 4, 15 ) );
+			WeaponClipCountRenderer->Set_Location( draw.Upper_Right() + Scale_HUD_Vector(Vector2( 4.0f, 15.0f )) );
 			WeaponClipCountRenderer->Draw_Text( tmp_text, COLOR( fade ) );
 
 			CenterClipCountTimer -= TimeManager::Get_Frame_Seconds();
@@ -904,7 +965,7 @@ static	void	Weapon_Update( void )
 //			text.Format( "%03d", weapon->Get_Total_Rounds() - weapon->Get_Clip_Rounds() );
 			Generate_WChar_Text_From_Number(tmp_text,3,3,weapon->Get_Total_Rounds() - weapon->Get_Clip_Rounds());
 		}
-		WeaponTotalCountRenderer->Set_Location( WeaponBase + Vector2( TOTAL_ROUNDS_OFFSET ) );
+		WeaponTotalCountRenderer->Set_Location( WeaponBase + Scale_HUD_Vector(Vector2( TOTAL_ROUNDS_OFFSET )) );
 		WeaponTotalCountRenderer->Draw_Text( tmp_text );
 	}
 
@@ -927,8 +988,8 @@ static	void	Weapon_Update( void )
 			StringClass filename = _Seat_Textures[seat];
 			WeaponImageRenderer->Set_Texture( filename );
 			Vector2		offset( 16, 34 );
-			RectClass icon_box( 0,0,64,64 );
-			icon_box += WeaponBase + offset - icon_box.Upper_Left();
+			RectClass icon_box = Scale_HUD_Rect(RectClass( 0,0,64,64 ));
+			icon_box += WeaponBase + Scale_HUD_Vector(offset) - icon_box.Upper_Left();
 			WeaponImageRenderer->Add_Quad( icon_box );
 
 			// Draw Name Backdrop
@@ -936,7 +997,7 @@ static	void	Weapon_Update( void )
 			WideStringClass name(COMBAT_STAR->Get_Vehicle()->Get_Vehicle_Name(),true);
 			WeaponNameRenderer->Build_Sentence( name );
 			Vector2 text_size = WeaponNameRenderer->Get_Text_Extents( name );
-			WeaponNameRenderer->Set_Location( Render2DClass::Get_Screen_Resolution().Lower_Right() - text_size );
+			WeaponNameRenderer->Set_Location( Get_HUD_Layout_Rect().Lower_Right() - text_size );
 			WeaponNameRenderer->Draw_Sentence();
 
 		}
@@ -972,8 +1033,8 @@ static	void	Weapon_Update( void )
 			}
 #endif
 
-			RectClass icon_box = uv;
-			icon_box += WeaponBase + offset - icon_box.Upper_Left();
+			RectClass icon_box = Scale_HUD_Rect(uv);
+			icon_box += WeaponBase + Scale_HUD_Vector(offset) - icon_box.Upper_Left();
 
 			WeaponImageRenderer->Set_Texture( filename );
 
@@ -996,7 +1057,7 @@ static	void	Weapon_Update( void )
 			name = TranslateDBClass::Get_String( def->IconNameID );
 			WeaponNameRenderer->Build_Sentence( name );
 			Vector2 text_size = WeaponNameRenderer->Get_Text_Extents( name ) + Vector2( 1, 0 );
-			WeaponNameRenderer->Set_Location( Render2DClass::Get_Screen_Resolution().Lower_Right() - text_size );
+			WeaponNameRenderer->Set_Location( Get_HUD_Layout_Rect().Lower_Right() - text_size );
 			WeaponNameRenderer->Draw_Sentence();
 		}
 	}
@@ -1070,8 +1131,9 @@ static	void	Build_Weapon_Chart_Icons( void )
 
 	Clear_Weapon_Chart_Icons();
 
-	float screen_scale = Render2DClass::Get_Screen_Resolution().Width();
-	Vector2	pos = WeaponChartBase * screen_scale;
+	const RectClass layout_rect = Get_HUD_Layout_Rect();
+	float screen_scale = layout_rect.Width();
+	Vector2	pos = layout_rect.Upper_Left() + (WeaponChartBase * screen_scale);
 
 	// For each column...
 	for ( int column = 1; column <= 10; column++ ) {
@@ -1856,6 +1918,7 @@ static	void	Score_Init( void )
 	ScoreRenderer = new Render2DTextClass( font );
 	ScoreRenderer->Set_Coordinate_Range( Render2DClass::Get_Screen_Resolution() );
 	font->Release_Ref();
+	Update_HUD_Bitmap_Font_Scale(ScoreRenderer);
 }
 
 static	void	Score_Shutdown( void )
@@ -1904,6 +1967,7 @@ int	CurrentObjectiveIndex = 0;
 void * CurrentObjective = NULL;
 static int CachedObjectiveIndex=-1;
 int CachedRange=0;
+static bool ForceObjectiveRebuild = false;
 
 #define	OBJECTIVE_ARROW_TEXTURE		"HUD_obje_arrow.TGA"
 
@@ -1947,11 +2011,13 @@ static	void	Objective_Shutdown( void )
 
 static	void	Objective_Update( void )
 {
-	RectClass	pog_box( 0, 0, 64, 64 );
-	pog_box += Render2DClass::Get_Screen_Resolution().Upper_Right() - pog_box.Upper_Right();
-	pog_box += Vector2( -16, 8 );
+	RectClass	pog_box = Scale_HUD_Rect(RectClass( 0, 0, 64, 64 ));
+	const RectClass layout_rect = Get_HUD_Layout_Rect();
+	pog_box += layout_rect.Upper_Right() - pog_box.Upper_Right();
+	pog_box += Scale_HUD_Vector(Vector2( -16.0f, 8.0f ));
 
 #define	POG_SPACING		Vector2( 10, 0 )
+	const Vector2 scaled_pog_spacing = Scale_HUD_Vector(POG_SPACING);
 
 	bool rebuild = false;
 
@@ -1989,7 +2055,7 @@ static	void	Objective_Update( void )
 	}
 
 	// re-Create the Pogs, if needed
-	if ( rebuild || ObjectiveManager::Are_HUD_Objectives_Changed() )
+	if ( rebuild || ForceObjectiveRebuild || ObjectiveManager::Are_HUD_Objectives_Changed() )
 	{
 //		Debug_Say(( "Rebuild Hud Pogs\n" ));
 
@@ -2000,13 +2066,13 @@ static	void	Objective_Update( void )
 		CachedObjectiveIndex=-1;
 
 		int count = objective_count;
-		pog_box += POG_SPACING * (float)count;
+		pog_box += scaled_pog_spacing * (float)count;
 
 		bool dont_clear = false;
 
 		for ( int i = count - 1; i >= 0; i-- ) {
 			int index = (i + CurrentObjectiveIndex) % objective_count;
-			pog_box -= POG_SPACING;
+			pog_box -= scaled_pog_spacing;
 			// Add Pog
 			Render2DClass * renderer = new Render2DClass();
 			if ( renderer ) {
@@ -2014,7 +2080,7 @@ static	void	Objective_Update( void )
 				renderer->Set_Coordinate_Range( Render2DClass::Get_Screen_Resolution() );
 				float	age = ObjectiveManager::Get_HUD_Objectives_Age( index );
 				if ( age < POG_FLY_TIME ) {
-					Vector2 offset = Render2DClass::Get_Screen_Resolution().Center() - Render2DClass::Get_Screen_Resolution().Upper_Right();
+					Vector2 offset = layout_rect.Center() - layout_rect.Upper_Right();
 					offset.X *= 0.75f;
 					float fly = WWMath::Clamp( (2.0f-(2.0f*age/POG_FLY_TIME)), 0, 1 );
 					offset *= fly;
@@ -2029,14 +2095,14 @@ static	void	Objective_Update( void )
 						renderer->Set_Texture( "HUD_STAR.TGA" );
 						renderer->Set_Coordinate_Range( Render2DClass::Get_Screen_Resolution() );
 
-						RectClass	star_box( -32, -32, 32, 32 );
+						RectClass	star_box = Scale_HUD_Rect(RectClass( -32, -32, 32, 32 ));
 						star_box.Scale( fly );
 
-						Vector2	star_fly_start = Render2DClass::Get_Screen_Resolution().Center();
-						Vector2	star_fly_end = Render2DClass::Get_Screen_Resolution().Lower_Left();
+						Vector2	star_fly_start = layout_rect.Center();
+						Vector2	star_fly_end = layout_rect.Lower_Left();
 						star_fly_start.X *= 0.85f;
 						star_fly_start.Y *= 1.175f;
-						star_fly_end.X += 40.0f;
+						star_fly_end.X += Scale_HUD_Value(40.0f);
 						star_fly_end.Y *= 0.8f;
 
 						star_box += star_fly_end;
@@ -2062,6 +2128,7 @@ static	void	Objective_Update( void )
 		if ( !dont_clear ) {
 			ObjectiveManager::Clear_HUD_Objectives_Changed();
 		}
+		ForceObjectiveRebuild = false;
 	}
 
 	ObjectiveArrowRenderer->Reset();
@@ -2091,12 +2158,12 @@ static	void	Objective_Update( void )
 		Vector2 offset;
 		offset.Y = WWMath::Fast_Sin( -angle + DEG_TO_RAD( -90 ) );
 		offset.X = WWMath::Fast_Cos( -angle + DEG_TO_RAD( -90 ) );
-		offset *= 35;
+		offset *= Scale_HUD_Value(35.0f);
 		offset += pog_box.Center();
 
 		const float SIN_45=0.70710678118654752440084436210485f;
 		for ( int i = 0; i < 4; i++ ) {
-			verts[i] *= 0.5f * 16 / SIN_45;//::sin( DEG_TO_RAD( 45 ) );
+			verts[i] *= 0.5f * Scale_HUD_Value(16.0f) / SIN_45;//::sin( DEG_TO_RAD( 45 ) );
 			verts[i] += offset;
 		}
 		ObjectiveArrowRenderer->Add_Quad( verts[0], verts[1], verts[2], verts[3] );
@@ -2113,7 +2180,7 @@ static	void	Objective_Update( void )
 
 			// Draw message
 			Vector2 position = pog_box.Lower_Left();
-			position += Vector2( 0, -15 );
+			position += Scale_HUD_Vector(Vector2( 0.0f, -15.0f ));
 			WideStringClass str(ObjectiveManager::Get_HUD_Objectives_Message( CurrentObjectiveIndex ),true);
 			ObjectiveTextRenderer->Build_Sentence( str );
 			Vector2 text_size = ObjectiveTextRenderer->Get_Text_Extents( str );
@@ -2145,6 +2212,8 @@ static	void	Objective_Render( void )
 	ObjectiveArrowRenderer->Render();
 	ObjectiveTextRenderer->Render();
 }
+
+static RectClass CachedHUDLayoutRect( 0, 0, 0, 0 );
 
 /*
 ** Info Display
@@ -2365,14 +2434,16 @@ static	void	Info_Init( void )
 	InfoHealthCountRenderer = new Render2DTextClass( font );
 	InfoHealthCountRenderer->Set_Coordinate_Range( Render2DClass::Get_Screen_Resolution() );
 	font->Release_Ref();
+	Update_HUD_Bitmap_Font_Scale(InfoHealthCountRenderer);
 
 	font = WW3DAssetManager::Get_Instance()->Get_Font3DInstance( SMALL_FONT );
 	SET_REF_OWNER( font );
 	InfoShieldCountRenderer = new Render2DTextClass( font );
 	InfoShieldCountRenderer->Set_Coordinate_Range( Render2DClass::Get_Screen_Resolution() );
 	font->Release_Ref();
+	Update_HUD_Bitmap_Font_Scale(InfoShieldCountRenderer);
 
-	InfoBase = Render2DClass::Get_Screen_Resolution().Lower_Left() + Vector2( INFO_OFFSET );
+	InfoBase = Get_HUD_Layout_Rect().Lower_Left() + Scale_HUD_Vector(INFO_OFFSET);
 }
 
 static	void	Info_Shutdown( void )
@@ -2417,9 +2488,9 @@ static	void	Info_Update_Health_Shield( void )
 
 	// Draw Health Bar
 	uv.Set( HEALTH_UV_UL, HEALTH_UV_LR );
-	draw = uv;
+	draw = Scale_HUD_Rect(uv);
 	uv.Scale( INFO_UV_SCALE );
-	draw += InfoBase + HEALTH_OFFSET - draw.Upper_Left();
+	draw += InfoBase + Scale_HUD_Vector(HEALTH_OFFSET) - draw.Upper_Left();
 
 	// Scale bars
 	static float _last_health_percent = 0;
@@ -2435,7 +2506,7 @@ static	void	Info_Update_Health_Shield( void )
 
 	uv.Set( GRADIENT_BLACK_UV_UL, GRADIENT_BLACK_UV_LR );
 	uv.Scale( INFO_UV_SCALE );
-	draw.Set( HEALTH_TEXT_BACK_UL, HEALTH_TEXT_BACK_LR );
+	draw = Scale_HUD_Rect(RectClass( HEALTH_TEXT_BACK_UL, HEALTH_TEXT_BACK_LR ));
 	draw += InfoBase;
 	InfoRenderer->Add_Quad( draw, uv );
 
@@ -2456,9 +2527,9 @@ static	void	Info_Update_Health_Shield( void )
 	int health_color = Get_Health_Color( color_percent );
 
 	uv.Set( HEALTH_CROSS_1_UV_UL, HEALTH_CROSS_1_UV_LR );
-	draw = uv;
+	draw = Scale_HUD_Rect(uv);
 	uv.Scale( INFO_UV_SCALE );
-	draw += InfoBase + HEALTH_CROSS_1_OFFSET - draw.Upper_Left();
+	draw += InfoBase + Scale_HUD_Vector(HEALTH_CROSS_1_OFFSET) - draw.Upper_Left();
 	InfoRenderer->Add_Quad( draw, uv, COLOR( intensity, health_color ) );
 
 	RectClass	uv2;
@@ -2477,7 +2548,7 @@ static	void	Info_Update_Health_Shield( void )
 	WCHAR tmp_text[5];
 	Generate_WChar_Text_From_Number(tmp_text,4,3,lhealth);
 
-	InfoHealthCountRenderer->Set_Location( draw.Upper_Right() + Vector2( 4,4) );
+	InfoHealthCountRenderer->Set_Location( draw.Upper_Right() + Scale_HUD_Vector(Vector2( 4.0f, 4.0f )) );
 	InfoHealthCountRenderer->Draw_Text( tmp_text, health_color );
 
 	if ( health != LastHealth || health_percent <= 0.25f ) {
@@ -2492,24 +2563,24 @@ static	void	Info_Update_Health_Shield( void )
 		health_center_offset.X *= 0.5;
 		health_center_offset.Y -= draw.Height() / 2;
 
-		health_center_offset -= HEALTH_CROSS_1_OFFSET;
+		health_center_offset -= Scale_HUD_Vector(HEALTH_CROSS_1_OFFSET);
 
 		float fade = WWMath::Clamp( CenterHealthTimer, 0, 1 );
 
 	 	uv.Set( GRADIENT_BLACK_UV_UL, GRADIENT_BLACK_UV_LR );
 		uv.Scale( INFO_UV_SCALE );
-		draw.Set( HEALTH_TEXT_BACK_UL, HEALTH_TEXT_BACK_LR );
+		draw = Scale_HUD_Rect(RectClass( HEALTH_TEXT_BACK_UL, HEALTH_TEXT_BACK_LR ));
 		draw += health_center_offset;
 		InfoRenderer->Add_Quad( draw, uv, COLOR( fade ) );
 
 		uv.Set( HEALTH_CROSS_1_UV_UL, HEALTH_CROSS_1_UV_LR );
-		draw = uv;
+		draw = Scale_HUD_Rect(uv);
 		uv.Scale( INFO_UV_SCALE );
-		draw += health_center_offset + HEALTH_CROSS_1_OFFSET - draw.Upper_Left();
+		draw += health_center_offset + Scale_HUD_Vector(HEALTH_CROSS_1_OFFSET) - draw.Upper_Left();
 		InfoRenderer->Add_Quad( draw, uv, COLOR( fade * intensity, health_color ) );
 		InfoRenderer->Add_Quad( draw, uv2, COLOR( fade * (1-intensity), health_color ) );
 
-		InfoHealthCountRenderer->Set_Location( draw.Upper_Right() + Vector2( 4,4) );
+		InfoHealthCountRenderer->Set_Location( draw.Upper_Right() + Scale_HUD_Vector(Vector2( 4.0f, 4.0f )) );
 		InfoHealthCountRenderer->Draw_Text( tmp_text, COLOR( fade, health_color ) );
 		CenterHealthTimer -= TimeManager::Get_Frame_Seconds();
 	}
@@ -2527,18 +2598,18 @@ static	void	Info_Update_Health_Shield( void )
 		#define	TOTAL_SHIELD_MOVEMENT		80
 		for ( float percent = 0; percent < shield_percent; percent += 0.1f ) {
 			uv.Set( SHIELD_UV_UL, SHIELD_UV_LR );
-			draw = uv;
+			draw = Scale_HUD_Rect(uv);
 			uv.Scale( INFO_UV_SCALE );
-			draw += InfoBase + SHIELD_OFFSET - draw.Upper_Left();
-			draw += Vector2( (int)(-percent * TOTAL_SHIELD_MOVEMENT), 0 );
+			draw += InfoBase + Scale_HUD_Vector(SHIELD_OFFSET) - draw.Upper_Left();
+			draw += Vector2( (int)(-percent * Scale_HUD_Value(TOTAL_SHIELD_MOVEMENT)), 0 );
 			InfoRenderer->Add_Quad( draw, uv );
 		}
 
 		uv.Set( SHIELD_UV_UL, SHIELD_UV_LR );
-		draw = uv;
+		draw = Scale_HUD_Rect(uv);
 		uv.Scale( INFO_UV_SCALE );
-		draw += InfoBase + SHIELD_OFFSET - draw.Upper_Left();
-		draw += Vector2( (int)(-shield_percent * TOTAL_SHIELD_MOVEMENT), 0 );
+		draw += InfoBase + Scale_HUD_Vector(SHIELD_OFFSET) - draw.Upper_Left();
+		draw += Vector2( (int)(-shield_percent * Scale_HUD_Value(TOTAL_SHIELD_MOVEMENT)), 0 );
 		InfoRenderer->Add_Quad( draw, uv );
 
 		// Draw Shield Number
@@ -2548,7 +2619,7 @@ static	void	Info_Update_Health_Shield( void )
 		int32_t lshield=WWMath::Float_To_Long(shield);
 		WCHAR tmp_text[5];
 		Generate_WChar_Text_From_Number(tmp_text,4,3,lshield);
-		InfoShieldCountRenderer->Set_Location( draw.Upper_Left() + Vector2( 4,4) );
+		InfoShieldCountRenderer->Set_Location( draw.Upper_Left() + Scale_HUD_Vector(Vector2( 4.0f, 4.0f )) );
 		InfoShieldCountRenderer->Draw_Text( tmp_text );
 	} else {
 		InfoShieldCountRenderer->Reset();
@@ -2565,44 +2636,44 @@ static	void	Info_Update( void )
 	// Draw the Frame
 	RectClass uv;
 	uv.Set( FRAME_1_UV_UL, FRAME_1_UV_LR );
-	RectClass draw = uv;
+	RectClass draw = Scale_HUD_Rect(uv);
 	uv.Scale( INFO_UV_SCALE );
-	draw += InfoBase + FRAME_1_OFFSET - draw.Upper_Left();
+	draw += InfoBase + Scale_HUD_Vector(FRAME_1_OFFSET) - draw.Upper_Left();
 	InfoRenderer->Add_Quad( draw, uv );
 
 	uv.Set( FRAME_2_UV_UL, FRAME_2_UV_LR );
-	draw = uv;
+	draw = Scale_HUD_Rect(uv);
 	uv.Scale( INFO_UV_SCALE );
-	draw += InfoBase + FRAME_2_OFFSET - draw.Upper_Left();
+	draw += InfoBase + Scale_HUD_Vector(FRAME_2_OFFSET) - draw.Upper_Left();
 	InfoRenderer->Add_Quad( draw, uv );
 
 	uv.Set( FRAME_3_UV_UL, FRAME_3_UV_LR );
-	draw = uv;
+	draw = Scale_HUD_Rect(uv);
 	uv.Scale( INFO_UV_SCALE );
-	draw += InfoBase + FRAME_3_OFFSET - draw.Upper_Left();
+	draw += InfoBase + Scale_HUD_Vector(FRAME_3_OFFSET) - draw.Upper_Left();
 	InfoRenderer->Add_Quad( draw, uv );
 
 	uv.Set( FRAME_4_UV_UL, FRAME_4_UV_LR );
-	draw = uv;
+	draw = Scale_HUD_Rect(uv);
 	uv.Scale( INFO_UV_SCALE );
-	draw += InfoBase + FRAME_4_OFFSET - draw.Upper_Left();
+	draw += InfoBase + Scale_HUD_Vector(FRAME_4_OFFSET) - draw.Upper_Left();
 	InfoRenderer->Add_Quad( draw, uv );
 
 	uv.Set( FRAME_5_UV_UL, FRAME_5_UV_LR );
-	draw = uv;
+	draw = Scale_HUD_Rect(uv);
 	uv.Scale( INFO_UV_SCALE );
-	draw += InfoBase + FRAME_5_OFFSET - draw.Upper_Left();
+	draw += InfoBase + Scale_HUD_Vector(FRAME_5_OFFSET) - draw.Upper_Left();
 	InfoRenderer->Add_Quad( draw, uv );
 
 	uv.Set( FRAME_6_UV_UL, FRAME_6_UV_LR );
-	draw = uv;
+	draw = Scale_HUD_Rect(uv);
 	uv.Scale( INFO_UV_SCALE );
-	draw += InfoBase + FRAME_6_OFFSET - draw.Upper_Left();
+	draw += InfoBase + Scale_HUD_Vector(FRAME_6_OFFSET) - draw.Upper_Left();
 	InfoRenderer->Add_Quad( draw, uv );
 
 	uv.Set( HEALTH_BACK_UV_UL, HEALTH_BACK_UV_LR );
 	uv.Scale( INFO_UV_SCALE );
-	draw.Set( HEALTH_BACK_UL, HEALTH_BACK_LR );
+	draw = Scale_HUD_Rect(RectClass( HEALTH_BACK_UL, HEALTH_BACK_LR ));
 	draw += InfoBase;
 	InfoRenderer->Add_Quad( draw, uv );
 
@@ -2613,25 +2684,25 @@ static	void	Info_Update( void )
 
 		if ( COMBAT_STAR->Has_Key( 1 ) ) {
 			uv.Set( KEY_1_UV_UL, KEY_1_UV_LR );
-			draw = uv;
+			draw = Scale_HUD_Rect(uv);
 			uv.Scale( INFO_UV_SCALE );
-			draw += InfoBase + KEY_1_OFFSET - draw.Upper_Left();
+			draw += InfoBase + Scale_HUD_Vector(KEY_1_OFFSET) - draw.Upper_Left();
 			InfoRenderer->Add_Quad( draw, uv );
 		}
 
 		if ( COMBAT_STAR->Has_Key( 2 ) ) {
 			uv.Set( KEY_2_UV_UL, KEY_2_UV_LR );
-			draw = uv;
+			draw = Scale_HUD_Rect(uv);
 			uv.Scale( INFO_UV_SCALE );
-			draw += InfoBase + KEY_2_OFFSET - draw.Upper_Left();
+			draw += InfoBase + Scale_HUD_Vector(KEY_2_OFFSET) - draw.Upper_Left();
 			InfoRenderer->Add_Quad( draw, uv );
 		}
 
 		if ( COMBAT_STAR->Has_Key( 3 ) ) {
 			uv.Set( KEY_3_UV_UL, KEY_3_UV_LR );
-			draw = uv;
+			draw = Scale_HUD_Rect(uv);
 			uv.Scale( INFO_UV_SCALE );
-			draw += InfoBase + KEY_3_OFFSET - draw.Upper_Left();
+			draw += InfoBase + Scale_HUD_Vector(KEY_3_OFFSET) - draw.Upper_Left();
 			InfoRenderer->Add_Quad( draw, uv );
 		}
 	}
@@ -2788,6 +2859,47 @@ Render2DClass		*	RenderImages[ NUM_RENDER_IMAGES ];
 */
 static bool	Is_HUD_Displayed( void );
 
+static void HUD_On_Screen_Resolution_Changed( void )
+{
+	const RectClass layout_rect = Get_HUD_Layout_Rect();
+	if (layout_rect == CachedHUDLayoutRect) {
+		return;
+	}
+
+	CachedHUDLayoutRect = layout_rect;
+	StyleMgrClass::Refresh_Fonts();
+	FontCharsClass *ingame_font = StyleMgrClass::Peek_Font( StyleMgrClass::FONT_INGAME_TXT );
+	if (PowerupTextRenderer != NULL) {
+		PowerupTextRenderer->Set_Font( ingame_font );
+	}
+	if (WeaponNameRenderer != NULL) {
+		WeaponNameRenderer->Set_Font( ingame_font );
+	}
+	if (WeaponChartKeynameRenderer != NULL) {
+		WeaponChartKeynameRenderer->Set_Font( ingame_font );
+	}
+	if (ObjectiveTextRenderer != NULL) {
+		ObjectiveTextRenderer->Set_Font( ingame_font );
+	}
+	if (HUDHelpTextRenderer != NULL) {
+		HUDHelpTextRenderer->Set_Font( StyleMgrClass::Peek_Font( StyleMgrClass::FONT_INGAME_BIG_TXT ) );
+	}
+	Update_HUD_Bitmap_Font_Scale(WeaponClipCountRenderer);
+	Update_HUD_Bitmap_Font_Scale(WeaponTotalCountRenderer);
+	Update_HUD_Bitmap_Font_Scale(InfoHealthCountRenderer);
+	Update_HUD_Bitmap_Font_Scale(InfoShieldCountRenderer);
+
+	InfoBase = layout_rect.Lower_Left() + Scale_HUD_Vector(INFO_OFFSET);
+	Build_Weapon_Base();
+	Weapon_Reset();
+	Clear_Weapon_Chart_Icons();
+	ForceChartRebuild = true;
+	Objective_Release_Pogs();
+	ForceObjectiveRebuild = true;
+	CachedObjectiveIndex = -1;
+	CachedRange = 0;
+}
+
 /*
 **
 */
@@ -2841,6 +2953,7 @@ void 	HUDClass::Init(bool render_available)
 		HUD_Help_Text_Init();
 
 		_HUDInited = true;
+		HUD_On_Screen_Resolution_Changed();
 	}
 }
 
@@ -2930,6 +3043,7 @@ static bool	Is_HUD_Displayed( void )
 void 	HUDClass::Think()
 {
 	WWPROFILE( "HUD Think" );
+	HUD_On_Screen_Resolution_Changed();
 
 #ifndef ATI_DEMO_HACK
 	if ( COMBAT_CAMERA && COMBAT_CAMERA->Draw_Sniper() ) {
@@ -2949,12 +3063,12 @@ void 	HUDClass::Think()
 		//
 		//	Plot the rectangle
 		//
-		const RectClass &screen_rect = Render2DClass::Get_Screen_Resolution();
+		const RectClass screen_rect = Get_HUD_Layout_Rect();
 		RectClass status_bar_rect (0.4F, 0.95F, 0.6F, 0.98F);
-		status_bar_rect.Left		= int(status_bar_rect.Left * screen_rect.Width());
-		status_bar_rect.Right	= int(status_bar_rect.Right * screen_rect.Width());
-		status_bar_rect.Top		= int(status_bar_rect.Top * screen_rect.Height());
-		status_bar_rect.Bottom	= int(status_bar_rect.Bottom  * screen_rect.Height());
+		status_bar_rect.Left		= int(screen_rect.Left + (status_bar_rect.Left * screen_rect.Width()));
+		status_bar_rect.Right	= int(screen_rect.Left + (status_bar_rect.Right * screen_rect.Width()));
+		status_bar_rect.Top		= int(screen_rect.Top + (status_bar_rect.Top * screen_rect.Height()));
+		status_bar_rect.Bottom	= int(screen_rect.Top + (status_bar_rect.Bottom  * screen_rect.Height()));
 		RenderImages[ACTION_STATUSBAR_RENDERER]->Add_Line( status_bar_rect.Upper_Left (), status_bar_rect.Upper_Right (), 1, 0xFFFFFFFF );
 		RenderImages[ACTION_STATUSBAR_RENDERER]->Add_Line( status_bar_rect.Upper_Right (), status_bar_rect.Lower_Right (), 1, 0xFFFFFFFF );
 		RenderImages[ACTION_STATUSBAR_RENDERER]->Add_Line( status_bar_rect.Lower_Right (), status_bar_rect.Lower_Left (), 1, 0xFFFFFFFF );
@@ -3007,7 +3121,7 @@ void 	HUDClass::Think()
 		obj = HUDInfo::Get_Info_Object()->As_PhysicalGameObj();
 	}
 	RadarManager::Set_Bracket_Object( obj );
-	Vector2	radar_center = InfoBase + RADAR_CENTER_OFFSET;
+	Vector2	radar_center = InfoBase + Scale_HUD_Vector(RADAR_CENTER_OFFSET);
 	RadarManager::Update( tm, radar_center );
 
 	uint32_t reticle_color = HUDGlobalSettingsDef::Get_Instance()->Get_No_Relation_Color().Convert_To_ARGB();

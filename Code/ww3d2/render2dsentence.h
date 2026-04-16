@@ -83,6 +83,7 @@ private:
 	struct CharDataStruct {
 		WCHAR				Value;
 		short				Width;
+		short				Advance;
 		uint16 *			Buffer;
 	};
 
@@ -104,6 +105,8 @@ private:
 	StringClass							Name;
 	DynamicVectorClass<uint16 *>	BufferList;
 	uint16*								PreAllocatedBufferList[16];	// We'll use this with BufferList first
+	DynamicVectorClass<int>			BufferCapacityList;
+	int									PreAllocatedBufferCapacityList[16];
 	int									CurrPixelOffset;
 	int									CharHeight;
 	int									PointSize;

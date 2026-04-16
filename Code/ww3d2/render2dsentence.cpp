@@ -1585,7 +1585,8 @@ FontCharsClass::FontCharsClass (void) :
 	FirstUnicodeChar( 0xFFFF ),
 	LastUnicodeChar( 0 ),
 	IsBold (false),
-	BufferList(sizeof(PreAllocatedBufferList)/sizeof(uint16*),PreAllocatedBufferList)
+	BufferList(sizeof(PreAllocatedBufferList)/sizeof(uint16*),PreAllocatedBufferList),
+	BufferCapacityList(sizeof(PreAllocatedBufferCapacityList)/sizeof(int),PreAllocatedBufferCapacityList)
 {
 	::memset( ASCIICharArray, 0, sizeof (ASCIICharArray) );
 	return ;
@@ -1603,6 +1604,7 @@ FontCharsClass::~FontCharsClass (void)
 		delete [] BufferList[i];
 	}
 	BufferList.Reset_Active();
+	BufferCapacityList.Reset_Active();
 
 	Release_Font();
 	Free_Character_Arrays();
@@ -1649,7 +1651,7 @@ FontCharsClass::Get_Char_Width (WCHAR ch)
 {
 	const CharDataStruct	* data = Get_Char_Data( ch );
 	if ( data != NULL ) {
-		return data->Width;
+		return data->Advance;
 	}
 
 	return 0;
@@ -1666,8 +1668,8 @@ FontCharsClass::Get_Char_Spacing (WCHAR ch)
 {
 	const CharDataStruct	* data = Get_Char_Data( ch );
 	if ( data != NULL ) {
-		if ( data->Width != 0 ) {
-			return data->Width + 1;
+		if ( data->Advance != 0 ) {
+			return data->Advance + 1;
 		}
 	}
 
@@ -1698,7 +1700,10 @@ FontCharsClass::Blit_Char (WCHAR ch, uint16 *dest_ptr, int dest_stride, int x, i
 		//
 		for ( int row = 0; row < CharHeight; row ++ ) {
 			for ( int col = 0; col < data->Width; col ++ ) {
-				dest_ptr[col] = *src_ptr++;
+				const uint16 pixel = *src_ptr++;
+				if (pixel != 0) {
+					dest_ptr[col] = pixel;
+				}
 			}
 			dest_ptr	+= dest_inc;
 		}
@@ -1787,6 +1792,7 @@ FontCharsClass::Store_Glyph (WCHAR ch)
 	CharDataStruct *char_data	= new CharDataStruct;
 	char_data->Value				= ch;
 	char_data->Width				= static_cast<short>(char_width);
+	char_data->Advance			= static_cast<short>(std::max(advance_width, 0));
 	char_data->Buffer				= BufferList[BufferList.Count () - 1] + CurrPixelOffset;
 
 	//
@@ -1818,6 +1824,8 @@ FontCharsClass::Store_Glyph (WCHAR ch)
 void
 FontCharsClass::Update_Current_Buffer (int char_width)
 {
+	const int required_pixels = char_width * CharHeight;
+
 	//
 	//	Check to see if we need to allocate a new buffer
 	//
@@ -1827,7 +1835,8 @@ FontCharsClass::Update_Current_Buffer (int char_width)
 		//
 		//	Would we extend past this buffer?
 		//
-		if ( (CurrPixelOffset + (char_width * CharHeight)) > CHAR_BUFFER_LEN ) {
+		const int current_capacity = BufferCapacityList[BufferCapacityList.Count () - 1];
+		if ( (CurrPixelOffset + required_pixels) > current_capacity ) {
 			needs_new_buffer = true;
 		}
 	}
@@ -1836,8 +1845,10 @@ FontCharsClass::Update_Current_Buffer (int char_width)
 	//	Do we need to create a new surface?
 	//
 	if (needs_new_buffer) {
-		uint16 *new_buffer = new uint16[CHAR_BUFFER_LEN];
+		const int buffer_capacity = std::max(CHAR_BUFFER_LEN, required_pixels);
+		uint16 *new_buffer = new uint16[buffer_capacity];
 		BufferList.Add( new_buffer );
+		BufferCapacityList.Add( buffer_capacity );
 		CurrPixelOffset = 0;
 	}
 

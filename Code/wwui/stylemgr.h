@@ -144,6 +144,9 @@ public:
 	static RectClass		Get_Layout_Rect (void);
 	static float			Get_X_Scale (void);
 	static float			Get_Y_Scale (void);
+	static Vector2		Get_Layout_Scale (float reference_width, float reference_height);
+	static Vector2		Project_Point_To_Layout (const Vector2 &point, float reference_width, float reference_height);
+	static RectClass		Project_Rect_To_Layout (const RectClass &rect, float reference_width, float reference_height);
 
 	//
 	//	Color methods

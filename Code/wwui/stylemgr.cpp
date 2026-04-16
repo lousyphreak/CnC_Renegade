@@ -57,9 +57,23 @@ static const char *	DEFAULT_BACKDROP_NAME	= "GRADENT_TEST.TGA";
 
 namespace {
 
-constexpr float kUILayoutReferenceWidth = 800.0F;
-constexpr float kUILayoutReferenceHeight = 600.0F;
-constexpr float kUILayoutReferenceAspect = kUILayoutReferenceWidth / kUILayoutReferenceHeight;
+constexpr float kUILayoutReferenceAspect = 4.0F / 3.0F;
+constexpr float kWWUIReferenceWidth = 800.0F;
+constexpr float kWWUIReferenceHeight = 600.0F;
+constexpr float kUIFontReferenceHeight = 600.0F;
+constexpr float kIngameReferenceHeight = 600.0F;
+
+bool Is_Ingame_Font(StyleMgrClass::FONT_STYLE style)
+{
+	return (style >= StyleMgrClass::FONT_INGAME_TXT);
+}
+
+float Get_Font_Y_Scale(StyleMgrClass::FONT_STYLE style)
+{
+	const RectClass layout_rect = StyleMgrClass::Get_Layout_Rect();
+	const float reference_height = Is_Ingame_Font(style) ? kIngameReferenceHeight : kUIFontReferenceHeight;
+	return layout_rect.Height() / reference_height;
+}
 
 }
 
@@ -172,7 +186,7 @@ StyleMgrClass::Get_Layout_Rect (void)
 float
 StyleMgrClass::Get_X_Scale (void)
 {
-	return Get_Layout_Rect ().Width () / kUILayoutReferenceWidth;
+	return Get_Layout_Rect ().Width () / kWWUIReferenceWidth;
 }
 
 
@@ -184,7 +198,50 @@ StyleMgrClass::Get_X_Scale (void)
 float
 StyleMgrClass::Get_Y_Scale (void)
 {
-	return Get_Layout_Rect ().Height () / kUILayoutReferenceHeight;
+	return Get_Layout_Rect ().Height () / kWWUIReferenceHeight;
+}
+
+
+///////////////////////////////////////////////////////////////
+//
+//	Get_Layout_Scale
+//
+///////////////////////////////////////////////////////////////
+Vector2
+StyleMgrClass::Get_Layout_Scale (float reference_width, float reference_height)
+{
+	const RectClass layout_rect = Get_Layout_Rect ();
+	const float safe_reference_width = (reference_width > 0.0F) ? reference_width : 1.0F;
+	const float safe_reference_height = (reference_height > 0.0F) ? reference_height : 1.0F;
+	return Vector2 (layout_rect.Width () / safe_reference_width, layout_rect.Height () / safe_reference_height);
+}
+
+
+///////////////////////////////////////////////////////////////
+//
+//	Project_Point_To_Layout
+//
+///////////////////////////////////////////////////////////////
+Vector2
+StyleMgrClass::Project_Point_To_Layout (const Vector2 &point, float reference_width, float reference_height)
+{
+	const RectClass layout_rect = Get_Layout_Rect ();
+	const Vector2 layout_scale = Get_Layout_Scale (reference_width, reference_height);
+	return layout_rect.Upper_Left () + Vector2 (point.X * layout_scale.X, point.Y * layout_scale.Y);
+}
+
+
+///////////////////////////////////////////////////////////////
+//
+//	Project_Rect_To_Layout
+//
+///////////////////////////////////////////////////////////////
+RectClass
+StyleMgrClass::Project_Rect_To_Layout (const RectClass &rect, float reference_width, float reference_height)
+{
+	const Vector2 upper_left = Project_Point_To_Layout (rect.Upper_Left (), reference_width, reference_height);
+	const Vector2 lower_right = Project_Point_To_Layout (rect.Lower_Right (), reference_width, reference_height);
+	return RectClass (upper_left, lower_right);
 }
 
 
@@ -220,10 +277,12 @@ StyleMgrClass::Load_Fonts_From_Configuration (void)
 	for (int index = 0; index < FONT_MAX; index ++) {
 		REF_PTR_RELEASE (Fonts[index]);
 
+		const FONT_STYLE style = static_cast<FONT_STYLE>(index);
+		const float font_scale_y = Get_Font_Y_Scale(style);
 		bool is_bold = ConfiguredFontBoldFlags[index];
-		float point_size = ((float)ConfiguredFontPointSizes[index]) * ScaleY;
-		point_size = max (point_size, 8.0F);
-		if (point_size < 10.0F && ScaleY < 1.0F) {
+		const float point_size_float = ((float)ConfiguredFontPointSizes[index]) * font_scale_y;
+		const int point_size = max(static_cast<int>(point_size_float + 0.5F), 8);
+		if (point_size < 10 && font_scale_y < 1.0F) {
 			is_bold = false;
 		}
 

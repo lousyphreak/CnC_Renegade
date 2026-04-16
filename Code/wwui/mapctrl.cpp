@@ -72,6 +72,33 @@ void Ensure_Texture_Has_Dimensions(TextureClass *texture)
 		texture->Init();
 	}
 }
+
+Vector2 Get_Map_Resolution_Scale()
+{
+	const float scale_x = WWMath::Max(StyleMgrClass::Get_X_Scale(), 0.0001F);
+	const float scale_y = WWMath::Max(StyleMgrClass::Get_Y_Scale(), 0.0001F);
+	return Vector2(scale_x, scale_y);
+}
+
+Vector2 Get_Map_Screen_Zoom(float zoom)
+{
+	const Vector2 resolution_scale = Get_Map_Resolution_Scale();
+	return Vector2(zoom * resolution_scale.X, zoom * resolution_scale.Y);
+}
+
+RectClass Build_Map_View_Rect(const RectClass &screen_rect, const Vector2 &map_size, const Vector2 &scroll_pos, float zoom)
+{
+	const Vector2 center = (map_size / 2) + scroll_pos;
+	const Vector2 screen_zoom = Get_Map_Screen_Zoom(zoom);
+	const float visible_width = screen_rect.Width() / screen_zoom.X;
+	const float visible_height = screen_rect.Height() / screen_zoom.Y;
+
+	return RectClass(
+		center.X - (visible_width * 0.5F),
+		center.Y - (visible_height * 0.5F),
+		center.X + (visible_width * 0.5F),
+		center.Y + (visible_height * 0.5F));
+}
 }
 
 
@@ -200,22 +227,7 @@ MapCtrlClass::Create_Control_Renderers (void)
 	//	Calculate what the UV rectangle should be given the
 	// current scroll and zoom factors.
 	//
-	RectClass map_uv_rect (0, 0, 1, 1);
-
-	//
-	//	Calculate the center of the image
-	//
-	Vector2 center = (MapSize / 2) + ScrollPos;
-
-	//
-	//	Calculate the 'zoomed' rectangle (in pixels)
-	//
-	float width				= Rect.Width ();
-	float height			= Rect.Height ();
-	map_uv_rect.Left		= center.X - ((width / 2) / Zoom);
-	map_uv_rect.Top		= center.Y - ((height / 2) / Zoom);
-	map_uv_rect.Right		= center.X + ((width / 2) / Zoom);
-	map_uv_rect.Bottom	= center.Y + ((height / 2) / Zoom);
+	RectClass map_uv_rect = Build_Map_View_Rect(Rect, MapSize, ScrollPos, Zoom);
 
 	//
 	//	Render any markers that are in view
@@ -307,18 +319,19 @@ MapCtrlClass::Create_Control_Renderers (void)
 	//	Render the buttons
 	//
 	ButtonRenderer.Reset ();
+	const Vector2 resolution_scale = Get_Map_Resolution_Scale();
 
 	RectClass temp_rect1;
-	temp_rect1.Left		= int(ZoomInButtonRect.Center ().X - (ZoomInUVRect.Width () / 2));
-	temp_rect1.Top			= int(ZoomInButtonRect.Center ().Y - (ZoomInUVRect.Height () / 2));
-	temp_rect1.Right		= int(temp_rect1.Left + ZoomInUVRect.Width ());
-	temp_rect1.Bottom		= int(temp_rect1.Top + ZoomInUVRect.Height ());
+	temp_rect1.Left		= int(ZoomInButtonRect.Left + resolution_scale.X);
+	temp_rect1.Top			= int(ZoomInButtonRect.Top + resolution_scale.Y);
+	temp_rect1.Right		= int(ZoomInButtonRect.Right - resolution_scale.X);
+	temp_rect1.Bottom		= int(ZoomInButtonRect.Bottom - resolution_scale.Y);
 	
 	RectClass temp_rect2;
-	temp_rect2.Left		= int(ZoomOutButtonRect.Center ().X - (ZoomInUVRect.Width () / 2));
-	temp_rect2.Top			= int(ZoomOutButtonRect.Center ().Y - (ZoomInUVRect.Height () / 2));
-	temp_rect2.Right		= int(temp_rect2.Left + ZoomInUVRect.Width ());
-	temp_rect2.Bottom		= int(temp_rect2.Top + ZoomInUVRect.Height ());
+	temp_rect2.Left		= int(ZoomOutButtonRect.Left + resolution_scale.X);
+	temp_rect2.Top			= int(ZoomOutButtonRect.Top + resolution_scale.Y);
+	temp_rect2.Right		= int(ZoomOutButtonRect.Right - resolution_scale.X);
+	temp_rect2.Bottom		= int(ZoomOutButtonRect.Bottom - resolution_scale.Y);
 
 	RectClass temp_uv_rect1 = ZoomInUVRect;
 	RectClass temp_uv_rect2 = ZoomOutUVRect;
@@ -360,16 +373,15 @@ MapCtrlClass::Create_Cloud_Renderer (void)
 	//
 	//	Calculate the dimensions of the cloud at this zoom factor
 	//
-	float cloud_width		= (MapSize.X / CloudSize.I) * Zoom;
-	float cloud_height	= (MapSize.Y / CloudSize.J) * Zoom;
+	const Vector2 screen_zoom = Get_Map_Screen_Zoom(Zoom);
+	float cloud_width		= (MapSize.X / CloudSize.I) * screen_zoom.X;
+	float cloud_height	= (MapSize.Y / CloudSize.J) * screen_zoom.Y;
 
-	Vector2 center = (MapSize / 2) - ScrollPos;
+	float delta_x = ((MapSize.X * screen_zoom.X) - Rect.Width ()) / 2;
+	float delta_y = ((MapSize.Y * screen_zoom.Y) - Rect.Height ()) / 2;
 
-	float delta_x = ((MapSize.X * Zoom) - Rect.Width ()) / 2;
-	float delta_y = ((MapSize.Y * Zoom) - Rect.Height ()) / 2;
-
-	float cloud_x_pos = Rect.Left - (delta_x + (ScrollPos.X * Zoom));
-	float cloud_y_pos = Rect.Top  - (delta_y + (ScrollPos.Y * Zoom));
+	float cloud_x_pos = Rect.Left - (delta_x + (ScrollPos.X * screen_zoom.X));
+	float cloud_y_pos = Rect.Top  - (delta_y + (ScrollPos.Y * screen_zoom.Y));
 
 	//
 	//	Loop over all the cells
@@ -379,7 +391,7 @@ MapCtrlClass::Create_Cloud_Renderer (void)
 		//
 		//	Reset the x position
 		//
-		cloud_x_pos = Rect.Left - (delta_x + (ScrollPos.X * Zoom));
+		cloud_x_pos = Rect.Left - (delta_x + (ScrollPos.X * screen_zoom.X));
 
 		for (int cell_x = 0; cell_x < CloudSize.I; cell_x ++) {
 		
@@ -543,15 +555,21 @@ MapCtrlClass::Update_Client_Rect (void)
 	//
 	//	Build the zoom button rectangles
 	//
+	const Vector2 resolution_scale = Get_Map_Resolution_Scale();
+	const float button_spacing_x = 2.0F * resolution_scale.X;
+	const float button_spacing_y = 2.0F * resolution_scale.Y;
+	const float button_width = ZoomInUVRect.Width () * resolution_scale.X;
+	const float button_height = ZoomInUVRect.Height () * resolution_scale.Y;
+
 	ZoomOutButtonRect;	
-	ZoomOutButtonRect.Left		= int(Rect.Right	- (ZoomInUVRect.Width () + 2));
-	ZoomOutButtonRect.Top		= int(Rect.Bottom	- (ZoomInUVRect.Height () + 2));
+	ZoomOutButtonRect.Left		= int(Rect.Right	- (button_width + button_spacing_x));
+	ZoomOutButtonRect.Top		= int(Rect.Bottom	- (button_height + button_spacing_y));
 	ZoomOutButtonRect.Right		= int(Rect.Right);
 	ZoomOutButtonRect.Bottom	= int(Rect.Bottom);
 
 	ZoomInButtonRect				= ZoomOutButtonRect;	
-	ZoomInButtonRect.Left		= int(ZoomInButtonRect.Left - (ZoomInUVRect.Width () + 2));
-	ZoomInButtonRect.Right		= int(ZoomInButtonRect.Right - (ZoomInUVRect.Width () + 2));
+	ZoomInButtonRect.Left		= int(ZoomInButtonRect.Left - (button_width + button_spacing_x));
+	ZoomInButtonRect.Right		= int(ZoomInButtonRect.Right - (button_width + button_spacing_x));
 
 	Set_Dirty ();
 	return ;
@@ -798,8 +816,9 @@ MapCtrlClass::On_Mouse_Move (const Vector2 &mouse_pos)
 			//
 			//	Update the scroll position
 			//
-			ScrollPos.X = InitialScrollPos.X + (delta.X / Zoom);
-			ScrollPos.Y = InitialScrollPos.Y + (delta.Y / Zoom);
+			const Vector2 screen_zoom = Get_Map_Screen_Zoom(Zoom);
+			ScrollPos.X = InitialScrollPos.X + (delta.X / screen_zoom.X);
+			ScrollPos.Y = InitialScrollPos.Y + (delta.Y / screen_zoom.Y);
 			Clamp_Scroll_Pos ();
 
 			//
@@ -1009,6 +1028,7 @@ MapCtrlClass::Marker_From_Pos (const Vector2 &mouse_pos)
 	int retval = -1;
 
 	Vector2 center = (MapSize / 2) + ScrollPos;
+	const Vector2 screen_zoom = Get_Map_Screen_Zoom(Zoom);
 
 	//
 	//	Loop over all the markers in our list
@@ -1026,7 +1046,9 @@ MapCtrlClass::Marker_From_Pos (const Vector2 &mouse_pos)
 		//
 		//	Get the screen position of this objective
 		//
-		Vector2 screen_pos = Rect.Center () + ((map_pos - center) * Zoom);
+		Vector2 screen_pos = Rect.Center ();
+		screen_pos.X += (map_pos.X - center.X) * screen_zoom.X;
+		screen_pos.Y += (map_pos.Y - center.Y) * screen_zoom.Y;
 		if (Rect.Contains (screen_pos)) {
 			
 			//
@@ -1060,8 +1082,9 @@ MapCtrlClass::Marker_From_Pos (const Vector2 &mouse_pos)
 void
 MapCtrlClass::Clamp_Scroll_Pos (void)
 {
-	const float visible_width = Rect.Width () / Zoom;
-	const float visible_height = Rect.Height () / Zoom;
+	const Vector2 screen_zoom = Get_Map_Screen_Zoom(Zoom);
+	const float visible_width = Rect.Width () / screen_zoom.X;
+	const float visible_height = Rect.Height () / screen_zoom.Y;
 
 	//
 	//	Clamp the view center so the visible rect stays inside the map.
@@ -1175,18 +1198,7 @@ MapCtrlClass::Position_To_Coord (const Vector2 &mouse_pos)
 	//
 	//	Calculate the center of the image
 	//
-	RectClass map_uv_rect (0, 0, 1, 1);
-	Vector2 center = (MapSize / 2) + ScrollPos;
-
-	//
-	//	Calculate the 'zoomed' rectangle (in pixels)
-	//
-	float width				= Rect.Width ();
-	float height			= Rect.Height ();
-	map_uv_rect.Left		= center.X - ((width / 2) / Zoom);
-	map_uv_rect.Top		= center.Y - ((height / 2) / Zoom);
-	map_uv_rect.Right		= center.X + ((width / 2) / Zoom);
-	map_uv_rect.Bottom	= center.Y + ((height / 2) / Zoom);
+	const RectClass map_uv_rect = Build_Map_View_Rect(Rect, MapSize, ScrollPos, Zoom);
 
 	Vector2 map_pos;
 	map_pos.X = map_uv_rect.Left + (map_uv_rect.Width () * percent.X);

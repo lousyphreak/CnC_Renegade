@@ -74,6 +74,8 @@
 #include "physcoltest.h"
 #include "objlibrary.h"
 #include "hudinfo.h"
+#include "colmath.h"
+#include "colmathinlines.h"
 
 
 DECLARE_FORCE_LINK (MendozaBoss)

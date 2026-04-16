@@ -98,6 +98,8 @@
 #include "weaponview.h"
 #include "ffactory.h"
 #include "realcrc.h"
+#include "colmath.h"
+#include "colmathinlines.h"
 
 /*
 **
@@ -5305,4 +5307,3 @@ void	SoldierGameObj::Update_Locked_Facing( void )
 		CombatManager::Soldier_Dies(this);
 	}
 	*/
-

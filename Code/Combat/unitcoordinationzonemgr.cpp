@@ -42,6 +42,8 @@
 #include "pscene.h"
 #include "staticanimphys.h"
 #include "elevator.h"
+#include "colmath.h"
+#include "colmathinlines.h"
 
 
 //////////////////////////////////////////////////////////////////////
@@ -217,4 +219,3 @@ UnitCoordinationZoneMgr::Display_Debug_Boxes (void)
 
 	return ;
 }
-

@@ -25,7 +25,12 @@
 #include "texture.h"
 #include "matrix4.h"
 #include "statistics.h"
+#include "wwperfmon.h"
 #include <wwprofile.h>
+
+#include <SDL3/SDL_timer.h>
+#include <algorithm>
+#include <cmath>
 
 bool SortingRendererClass::_EnableTriangleDraw=true;
 
@@ -187,6 +192,7 @@ struct SortingNodeStruct : DLNodeClass<SortingNodeStruct>
 	SphereClass bounding_sphere;
 
 	Vector3 transformed_center;
+	float transformed_depth_radius;
 	unsigned short start_index;			// First index used in the ib
 	unsigned short polygon_count;			// Polygon count to process (3 indices = one polygon)
 	unsigned short min_vertex_index;		// First index used in the vb
@@ -230,6 +236,8 @@ static unsigned sorted_node_id_array_count;
 static unsigned polygon_index_array_count;
 TempIndexStruct* temp_index_array;
 unsigned temp_index_array_count;
+
+static float Compute_Depth_Radius(const SphereClass& bounding_sphere, const Matrix4& world_view, const Vector3& center);
 
 static TempIndexStruct* Get_Temp_Index_Array(unsigned count)
 {
@@ -356,6 +364,7 @@ void SortingRendererClass::Insert_Triangles_Internal(
 	Vector4 transformed_vec;
 	Matrix4::Transform_Vector(mtx, state->bounding_sphere.Center, &transformed_vec);
 	state->transformed_center=Vector3(transformed_vec[0],transformed_vec[1],transformed_vec[2]);
+	state->transformed_depth_radius = Compute_Depth_Radius(state->bounding_sphere, mtx, state->transformed_center);
 
 	SortingNodeStruct* node=sorted_list.Head();
 	while (node) {
@@ -484,6 +493,56 @@ static unsigned overlapping_polygon_count;
 static unsigned overlapping_vertex_count;
 const unsigned MAX_OVERLAPPING_NODES=4096;
 static SortingNodeStruct* overlapping_nodes[MAX_OVERLAPPING_NODES];
+static bool sorting_pool_depth_valid;
+static float sorting_pool_depth_min;
+static float sorting_pool_depth_max;
+
+// ----------------------------------------------------------------------------
+
+static double Perf_Ticks_To_Milliseconds(Uint64 ticks)
+{
+	const Uint64 frequency = SDL_GetPerformanceFrequency();
+	if (ticks == 0 || frequency == 0) {
+		return 0.0;
+	}
+
+	return static_cast<double>(ticks) * 1000.0 / static_cast<double>(frequency);
+}
+
+static float Compute_Depth_Radius(const SphereClass& bounding_sphere, const Matrix4& world_view, const Vector3& center)
+{
+	Vector4 transformed_point;
+	float depth_radius = 0.0f;
+	const float radius = bounding_sphere.Radius;
+
+	Matrix4::Transform_Vector(world_view, bounding_sphere.Center + Vector3(radius, 0.0f, 0.0f), &transformed_point);
+	depth_radius = std::max(depth_radius, static_cast<float>(std::fabs(transformed_point[2] - center.Z)));
+
+	Matrix4::Transform_Vector(world_view, bounding_sphere.Center + Vector3(0.0f, radius, 0.0f), &transformed_point);
+	depth_radius = std::max(depth_radius, static_cast<float>(std::fabs(transformed_point[2] - center.Z)));
+
+	Matrix4::Transform_Vector(world_view, bounding_sphere.Center + Vector3(0.0f, 0.0f, radius), &transformed_point);
+	depth_radius = std::max(depth_radius, static_cast<float>(std::fabs(transformed_point[2] - center.Z)));
+
+	return depth_radius;
+}
+
+static bool Uses_Sorting_Pool(const SortingNodeStruct* state)
+{
+	return
+		(state->sorting_state.index_buffer_type == BUFFER_TYPE_SORTING || state->sorting_state.index_buffer_type == BUFFER_TYPE_DYNAMIC_SORTING) &&
+		(state->sorting_state.vertex_buffer_type == BUFFER_TYPE_SORTING || state->sorting_state.vertex_buffer_type == BUFFER_TYPE_DYNAMIC_SORTING);
+}
+
+static bool Overlaps_Current_Sorting_Pool(const SortingNodeStruct* state)
+{
+	if (!sorting_pool_depth_valid || overlapping_node_count == 0) {
+		return false;
+	}
+
+	const float state_depth_max = state->transformed_center.Z + state->transformed_depth_radius;
+	return state_depth_max >= sorting_pool_depth_min;
+}
 
 // ----------------------------------------------------------------------------
 
@@ -499,6 +558,17 @@ void SortingRendererClass::Insert_To_Sorting_Pool(SortingNodeStruct* state)
 	overlapping_vertex_count+=state->vertex_count;
 	overlapping_polygon_count+=state->polygon_count;
 	overlapping_node_count++;
+
+	const float state_depth_min = state->transformed_center.Z - state->transformed_depth_radius;
+	const float state_depth_max = state->transformed_center.Z + state->transformed_depth_radius;
+	if (!sorting_pool_depth_valid) {
+		sorting_pool_depth_valid = true;
+		sorting_pool_depth_min = state_depth_min;
+		sorting_pool_depth_max = state_depth_max;
+	} else {
+		sorting_pool_depth_min = std::min(sorting_pool_depth_min, state_depth_min);
+		sorting_pool_depth_max = std::max(sorting_pool_depth_max, state_depth_max);
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -567,6 +637,10 @@ void SortingRendererClass::Flush_Sorting_Pool()
 
 	SNAPSHOT_SAY(("SortingSystem - Flush \n"));
 
+	const unsigned batch_node_count = overlapping_node_count;
+	const unsigned batch_polygon_count = overlapping_polygon_count;
+	const unsigned batch_vertex_count = overlapping_vertex_count;
+	const Uint64 vertex_copy_start = SDL_GetPerformanceCounter();
 	unsigned node_id;
 	// Fill dynamic index buffer with sorting index buffer vertices
 	unsigned * node_id_array=Get_Node_Id_Array(overlapping_polygon_count);
@@ -641,13 +715,17 @@ void SortingRendererClass::Flush_Sorting_Pool()
 
 		}
 	}
+	const double vertex_copy_ms = Perf_Ticks_To_Milliseconds(SDL_GetPerformanceCounter() - vertex_copy_start);
 
 	TempIndexStruct* tis=Get_Temp_Index_Array(overlapping_polygon_count);
 	for (unsigned a=0;a<overlapping_polygon_count;++a) {
 		tis[a]=TempIndexStruct(polygon_idx_array[a],node_id_array[a]);
 	}
+	const Uint64 sort_start = SDL_GetPerformanceCounter();
 	Sort<TempIndexStruct,float>(tis,polygon_z_array,overlapping_polygon_count);
+	const double sort_ms = Perf_Ticks_To_Milliseconds(SDL_GetPerformanceCounter() - sort_start);
 
+	const Uint64 index_copy_start = SDL_GetPerformanceCounter();
 	DynamicIBAccessClass dyn_ib_access(BUFFER_TYPE_DYNAMIC_RENDER,overlapping_polygon_count*3);
 	{
 		DynamicIBAccessClass::WriteLockClass lock(&dyn_ib_access);
@@ -657,6 +735,14 @@ void SortingRendererClass::Flush_Sorting_Pool()
 			sorted_polygon_index_array[a]=tis[a].tri;
 		}
 	}
+	const double index_copy_ms = Perf_Ticks_To_Milliseconds(SDL_GetPerformanceCounter() - index_copy_start);
+	WWPerfMonClass::Record_Sorting_Pool_Batch(
+		batch_node_count,
+		batch_polygon_count,
+		batch_vertex_count,
+		vertex_copy_ms,
+		index_copy_ms,
+		sort_ms);
 
 	// Set index buffer and render!
 
@@ -730,6 +816,9 @@ void SortingRendererClass::Flush_Sorting_Pool()
 	overlapping_node_count=0;
 	overlapping_polygon_count=0;
 	overlapping_vertex_count=0;
+	sorting_pool_depth_valid = false;
+	sorting_pool_depth_min = 0.0f;
+	sorting_pool_depth_max = 0.0f;
 
 	DX8Wrapper::_Enable_Triangle_Draw(enable_triangle_draw);
 	SNAPSHOT_SAY(("SortingSystem - Done flushing\n"));
@@ -749,11 +838,14 @@ void SortingRendererClass::Flush()
 	while (SortingNodeStruct* state=sorted_list.Head()) {
 		state->Remove();
 		
-		if ((state->sorting_state.index_buffer_type==BUFFER_TYPE_SORTING || state->sorting_state.index_buffer_type==BUFFER_TYPE_DYNAMIC_SORTING) &&
-			(state->sorting_state.vertex_buffer_type==BUFFER_TYPE_SORTING || state->sorting_state.vertex_buffer_type==BUFFER_TYPE_DYNAMIC_SORTING)) {
+		if (Uses_Sorting_Pool(state)) {
+			if (overlapping_node_count != 0 && !Overlaps_Current_Sorting_Pool(state)) {
+				Flush_Sorting_Pool();
+			}
 			Insert_To_Sorting_Pool(state);
 		}
 		else {
+			Flush_Sorting_Pool();
 			DX8Wrapper::Set_Render_State(state->sorting_state);
 			if (state->use_explicit_shadow_flags) {
 				BgfxRenderer::Submit_Current_Fixed_Function_Triangles(

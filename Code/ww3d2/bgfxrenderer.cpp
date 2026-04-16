@@ -30,7 +30,9 @@
 #include "vertmaterial.h"
 #include "vertexbuffer.h"
 #include "vertexformat.h"
+#include "ww3d.h"
 #include "wwdebug.h"
+#include "wwperfmon.h"
 
 bool BgfxRenderer::IsInitted = false;
 uint32_t BgfxRenderer::Width = 0;
@@ -206,6 +208,9 @@ float Decode_Dword_Float(unsigned value)
 
 void Reset_Frame_View_Allocation()
 {
+    if (!ConfiguredViews.empty()) {
+        WWPerfMonClass::Record_Scene_View_Flush();
+    }
     CurrentMainViewId = FirstDynamicViewId;
     NextDynamicViewId = FirstDynamicViewId;
     ConfiguredViews.clear();
@@ -213,6 +218,9 @@ void Reset_Frame_View_Allocation()
 
 void Invalidate_Configured_Views()
 {
+    if (!ConfiguredViews.empty()) {
+        WWPerfMonClass::Record_Scene_View_Flush();
+    }
     ConfiguredViews.clear();
 }
 
@@ -237,6 +245,7 @@ uint16_t Acquire_View()
     }
 
     const uint16_t view_id = NextDynamicViewId++;
+    WWPerfMonClass::Record_Scene_View_Allocation();
     bgfx::setViewMode(view_id, bgfx::ViewMode::Sequential);
     bgfx::setViewFrameBuffer(view_id, CurrentFrameBuffer);
     bgfx::setViewRect(
@@ -324,7 +333,14 @@ bool Write_BGRA_TGA(const char *file_path, uint32_t width, uint32_t height, uint
 uint32_t Get_Reset_Flags()
 {
     std::lock_guard<std::mutex> lock(MovieCaptureMutex);
-    return BGFX_RESET_VSYNC | (MovieCaptureActive ? BGFX_RESET_CAPTURE : 0u);
+    uint32_t flags = 0u;
+    if (WW3D::Get_Ext_Swap_Interval() != 0) {
+        flags |= BGFX_RESET_VSYNC;
+    }
+    if (MovieCaptureActive) {
+        flags |= BGFX_RESET_CAPTURE;
+    }
+    return flags;
 }
 
 bool Convert_Capture_Frame_To_BGRA8(
@@ -1439,7 +1455,7 @@ bool BgfxRenderer::Init(void *window_handle, bool lite)
     init.platformData = PlatformData;
     init.resolution.width = Width;
     init.resolution.height = Height;
-    init.resolution.reset = BGFX_RESET_VSYNC;
+    init.resolution.reset = Get_Reset_Flags();
 
     bool initialized = false;
     const bgfx::RendererType::Enum preferred_renderer = Choose_Preferred_Renderer();
@@ -1718,6 +1734,22 @@ void BgfxRenderer::End_Frame()
 
     Maybe_Request_Auto_Screenshot();
     bgfx::frame();
+    const bgfx::Stats *stats = bgfx::getStats();
+    if (stats != nullptr) {
+        const auto ticks_to_ms = [](int64_t ticks, int64_t frequency) -> double {
+            if (ticks <= 0 || frequency <= 0) {
+                return 0.0;
+            }
+            return static_cast<double>(ticks) * 1000.0 / static_cast<double>(frequency);
+        };
+
+        WWPerfMonClass::Record_Bgfx_Frame_Timing(
+            ticks_to_ms(stats->cpuTimeFrame, stats->cpuTimerFreq),
+            ticks_to_ms(stats->gpuTimeEnd - stats->gpuTimeBegin, stats->gpuTimerFreq),
+            ticks_to_ms(stats->waitRender, stats->cpuTimerFreq),
+            ticks_to_ms(stats->waitSubmit, stats->cpuTimerFreq),
+            stats->numDraw);
+    }
     Reset_Frame_View_Allocation();
 }
 
@@ -2739,6 +2771,11 @@ bool Submit_Classified_Draw_Internal(
         return false;
     }
 
+    WWPerfMonClass::Record_Draw_Call();
+    WWPerfMonClass::Record_Submitted_Vertex_Count(vertex_count);
+    WWPerfMonClass::Record_Submitted_Index_Count(submitted_index_count);
+    WWPerfMonClass::Record_Buffer_Submit(use_direct_vertex_buffer, use_direct_index_buffer);
+
     bgfx::TransientVertexBuffer transient_vertex_buffer;
     bgfx::TransientIndexBuffer transient_index_buffer;
     if (!use_direct_vertex_buffer) {
@@ -2773,6 +2810,16 @@ bool Submit_Classified_Draw_Internal(
             Build_Submission_Indices(dest, source_indices, polygon_count,
                 submitted_index_count, min_vertex_index, fill_mode, strip);
         }
+    }
+
+    const bool has_lighting = classification.lit_config[0] > 0.5f;
+    const bool has_fog = DX8Wrapper::Get_Fog_Enable() && classification.frag_config2[1] != 0.0f;
+    const bool has_texgen = classification.program == MeshShaderProgram::MeshTexgen;
+    if (use_direct_vertex_buffer && use_direct_index_buffer && !has_lighting && !has_fog && !has_texgen) {
+        WWPerfMonClass::Record_Fast_Submit();
+    } else {
+        WWPerfMonClass::Record_Slow_Submit();
+        WWPerfMonClass::Record_Slow_Submit_Reasons(has_lighting, has_fog, has_texgen);
     }
 
     // Bind vertex buffer

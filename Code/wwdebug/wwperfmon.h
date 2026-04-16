@@ -66,12 +66,20 @@ public:
 	static void Record_Draw_Call(unsigned count = 1);
 	static void Record_Submitted_Vertex_Count(unsigned count);
 	static void Record_Submitted_Index_Count(unsigned count);
+	static void Record_Buffer_Submit(bool direct_vertex_buffer, bool direct_index_buffer);
 	static void Record_Scene_View_Allocation(void);
 	static void Record_Scene_View_Flush(void);
 	static void Record_Render_Target_Readback(double milliseconds, unsigned frame_flushes);
 	static void Record_Fast_Submit(void);
 	static void Record_Slow_Submit(void);
 	static void Record_Slow_Submit_Reasons(bool lighting, bool fog, bool texgen);
+	static void Record_Sorting_Pool_Batch(
+		unsigned node_count,
+		unsigned polygon_count,
+		unsigned vertex_count,
+		double vertex_copy_ms,
+		double index_copy_ms,
+		double sort_ms);
 	static void Record_Bgfx_Frame_Timing(
 		double cpu_frame_ms,
 		double gpu_frame_ms,

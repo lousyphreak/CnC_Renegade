@@ -61,6 +61,10 @@ struct PerfFrameStats
 	unsigned draw_calls = 0;
 	unsigned submitted_vertices = 0;
 	unsigned submitted_indices = 0;
+	unsigned direct_vertex_submits = 0;
+	unsigned transient_vertex_submits = 0;
+	unsigned direct_index_submits = 0;
+	unsigned transient_index_submits = 0;
 	unsigned scene_views = 0;
 	unsigned scene_view_flushes = 0;
 	unsigned render_target_readbacks = 0;
@@ -71,6 +75,13 @@ struct PerfFrameStats
 	unsigned slow_submit_lighting = 0;
 	unsigned slow_submit_fog = 0;
 	unsigned slow_submit_texgen = 0;
+	unsigned sorting_pool_flushes = 0;
+	unsigned sorting_pool_nodes = 0;
+	unsigned sorting_pool_polygons = 0;
+	unsigned sorting_pool_vertices = 0;
+	double sorting_pool_vertex_copy_ms = 0.0;
+	double sorting_pool_index_copy_ms = 0.0;
+	double sorting_pool_sort_ms = 0.0;
 	double bgfx_cpu_frame_ms = 0.0;
 	double bgfx_gpu_frame_ms = 0.0;
 	double bgfx_wait_render_ms = 0.0;
@@ -89,6 +100,10 @@ struct PerfWindowStats
 	unsigned draw_calls = 0;
 	unsigned submitted_vertices = 0;
 	unsigned submitted_indices = 0;
+	unsigned direct_vertex_submits = 0;
+	unsigned transient_vertex_submits = 0;
+	unsigned direct_index_submits = 0;
+	unsigned transient_index_submits = 0;
 	unsigned scene_views = 0;
 	unsigned scene_view_flushes = 0;
 	unsigned render_target_readbacks = 0;
@@ -99,6 +114,13 @@ struct PerfWindowStats
 	unsigned slow_submit_lighting = 0;
 	unsigned slow_submit_fog = 0;
 	unsigned slow_submit_texgen = 0;
+	unsigned sorting_pool_flushes = 0;
+	unsigned sorting_pool_nodes = 0;
+	unsigned sorting_pool_polygons = 0;
+	unsigned sorting_pool_vertices = 0;
+	double sorting_pool_vertex_copy_ms = 0.0;
+	double sorting_pool_index_copy_ms = 0.0;
+	double sorting_pool_sort_ms = 0.0;
 	double bgfx_cpu_frame_ms = 0.0;
 	double bgfx_gpu_frame_ms = 0.0;
 	double bgfx_wait_render_ms = 0.0;
@@ -232,7 +254,7 @@ void Write_Window_Report()
 		: 0.0;
 
 	Write_Log_Line(
-		"PERF frames=%u fps=%.2f avg_ms=%.3f max_ms=%.3f over16=%u over33=%u draws=%.1f verts=%.1f idx=%.1f views=%.1f view_flush=%u readbacks=%u readback_ms=%.3f fast=%.1f slow=%.1f slow_lit=%.1f slow_fog=%.1f slow_tex=%.1f bgfx_cpu=%.3f bgfx_gpu=%.3f wait_r=%.3f wait_s=%.3f bgfx_draws=%.1f",
+		"PERF frames=%u fps=%.2f avg_ms=%.3f max_ms=%.3f over16=%u over33=%u draws=%.1f verts=%.1f idx=%.1f dir_vb=%.1f tr_vb=%.1f dir_ib=%.1f tr_ib=%.1f views=%.1f view_flush=%u readbacks=%u readback_ms=%.3f fast=%.1f slow=%.1f slow_lit=%.1f slow_fog=%.1f slow_tex=%.1f sort_flush=%.1f sort_nodes=%.1f sort_polys=%.1f sort_verts=%.1f sort_vb_ms=%.3f sort_ib_ms=%.3f sort_sort_ms=%.3f bgfx_cpu=%.3f bgfx_gpu=%.3f wait_r=%.3f wait_s=%.3f bgfx_draws=%.1f",
 		g_window_stats.frame_count,
 		fps,
 		average_frame_ms,
@@ -242,6 +264,10 @@ void Write_Window_Report()
 		static_cast<double>(g_window_stats.draw_calls) / frame_count,
 		static_cast<double>(g_window_stats.submitted_vertices) / frame_count,
 		static_cast<double>(g_window_stats.submitted_indices) / frame_count,
+		static_cast<double>(g_window_stats.direct_vertex_submits) / frame_count,
+		static_cast<double>(g_window_stats.transient_vertex_submits) / frame_count,
+		static_cast<double>(g_window_stats.direct_index_submits) / frame_count,
+		static_cast<double>(g_window_stats.transient_index_submits) / frame_count,
 		static_cast<double>(g_window_stats.scene_views) / frame_count,
 		g_window_stats.scene_view_flushes,
 		g_window_stats.render_target_readbacks,
@@ -251,6 +277,13 @@ void Write_Window_Report()
 		static_cast<double>(g_window_stats.slow_submit_lighting) / frame_count,
 		static_cast<double>(g_window_stats.slow_submit_fog) / frame_count,
 		static_cast<double>(g_window_stats.slow_submit_texgen) / frame_count,
+		static_cast<double>(g_window_stats.sorting_pool_flushes) / frame_count,
+		static_cast<double>(g_window_stats.sorting_pool_nodes) / frame_count,
+		static_cast<double>(g_window_stats.sorting_pool_polygons) / frame_count,
+		static_cast<double>(g_window_stats.sorting_pool_vertices) / frame_count,
+		g_window_stats.sorting_pool_vertex_copy_ms / frame_count,
+		g_window_stats.sorting_pool_index_copy_ms / frame_count,
+		g_window_stats.sorting_pool_sort_ms / frame_count,
 		g_window_stats.bgfx_cpu_frame_ms / frame_count,
 		g_window_stats.bgfx_gpu_frame_ms / frame_count,
 		g_window_stats.bgfx_wait_render_ms / frame_count,
@@ -279,6 +312,10 @@ void Accumulate_Frame_Into_Window()
 	g_window_stats.draw_calls += g_frame_stats.draw_calls;
 	g_window_stats.submitted_vertices += g_frame_stats.submitted_vertices;
 	g_window_stats.submitted_indices += g_frame_stats.submitted_indices;
+	g_window_stats.direct_vertex_submits += g_frame_stats.direct_vertex_submits;
+	g_window_stats.transient_vertex_submits += g_frame_stats.transient_vertex_submits;
+	g_window_stats.direct_index_submits += g_frame_stats.direct_index_submits;
+	g_window_stats.transient_index_submits += g_frame_stats.transient_index_submits;
 	g_window_stats.scene_views += g_frame_stats.scene_views;
 	g_window_stats.scene_view_flushes += g_frame_stats.scene_view_flushes;
 	g_window_stats.render_target_readbacks += g_frame_stats.render_target_readbacks;
@@ -289,6 +326,13 @@ void Accumulate_Frame_Into_Window()
 	g_window_stats.slow_submit_lighting += g_frame_stats.slow_submit_lighting;
 	g_window_stats.slow_submit_fog += g_frame_stats.slow_submit_fog;
 	g_window_stats.slow_submit_texgen += g_frame_stats.slow_submit_texgen;
+	g_window_stats.sorting_pool_flushes += g_frame_stats.sorting_pool_flushes;
+	g_window_stats.sorting_pool_nodes += g_frame_stats.sorting_pool_nodes;
+	g_window_stats.sorting_pool_polygons += g_frame_stats.sorting_pool_polygons;
+	g_window_stats.sorting_pool_vertices += g_frame_stats.sorting_pool_vertices;
+	g_window_stats.sorting_pool_vertex_copy_ms += g_frame_stats.sorting_pool_vertex_copy_ms;
+	g_window_stats.sorting_pool_index_copy_ms += g_frame_stats.sorting_pool_index_copy_ms;
+	g_window_stats.sorting_pool_sort_ms += g_frame_stats.sorting_pool_sort_ms;
 	g_window_stats.bgfx_cpu_frame_ms += g_frame_stats.bgfx_cpu_frame_ms;
 	g_window_stats.bgfx_gpu_frame_ms += g_frame_stats.bgfx_gpu_frame_ms;
 	g_window_stats.bgfx_wait_render_ms += g_frame_stats.bgfx_wait_render_ms;
@@ -509,6 +553,25 @@ void WWPerfMonClass::Record_Submitted_Index_Count(unsigned count)
 	g_frame_stats.submitted_indices += count;
 }
 
+void WWPerfMonClass::Record_Buffer_Submit(bool direct_vertex_buffer, bool direct_index_buffer)
+{
+	if (!g_metrics_enabled) {
+		return;
+	}
+
+	if (direct_vertex_buffer) {
+		g_frame_stats.direct_vertex_submits++;
+	} else {
+		g_frame_stats.transient_vertex_submits++;
+	}
+
+	if (direct_index_buffer) {
+		g_frame_stats.direct_index_submits++;
+	} else {
+		g_frame_stats.transient_index_submits++;
+	}
+}
+
 void WWPerfMonClass::Record_Scene_View_Allocation(void)
 {
 	if (!g_metrics_enabled) {
@@ -566,6 +629,27 @@ void WWPerfMonClass::Record_Slow_Submit_Reasons(bool lighting, bool fog, bool te
 	if (texgen) {
 		g_frame_stats.slow_submit_texgen++;
 	}
+}
+
+void WWPerfMonClass::Record_Sorting_Pool_Batch(
+	unsigned node_count,
+	unsigned polygon_count,
+	unsigned vertex_count,
+	double vertex_copy_ms,
+	double index_copy_ms,
+	double sort_ms)
+{
+	if (!g_metrics_enabled) {
+		return;
+	}
+
+	g_frame_stats.sorting_pool_flushes++;
+	g_frame_stats.sorting_pool_nodes += node_count;
+	g_frame_stats.sorting_pool_polygons += polygon_count;
+	g_frame_stats.sorting_pool_vertices += vertex_count;
+	g_frame_stats.sorting_pool_vertex_copy_ms += vertex_copy_ms;
+	g_frame_stats.sorting_pool_index_copy_ms += index_copy_ms;
+	g_frame_stats.sorting_pool_sort_ms += sort_ms;
 }
 
 void WWPerfMonClass::Record_Bgfx_Frame_Timing(

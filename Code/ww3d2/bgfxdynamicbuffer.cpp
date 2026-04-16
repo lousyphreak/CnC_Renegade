@@ -47,7 +47,7 @@ unsigned g_vertex_buffer_total_size = 0;
 
 RenderDeviceDescClass g_render_device_desc;
 DX8Caps *g_bgfx_caps = nullptr;
-int g_swap_interval = 0;
+int g_swap_interval = 1;
 constexpr HRESULT kD3DErrInvalidCall = -11;
 
 void Release_Stale_Dynamic_Sorting_Vertex_Buffers()

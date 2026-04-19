@@ -81,6 +81,11 @@
 - `GameInitMgrClass::Continue_Game` sits on the hot path for closing the in-mission EVA/menu dialogs. The original `PRE_SERVICE_TIME` busy-wait was specific to the legacy sound-page swap behavior; on the SDL backend it translates directly into visible resume latency.
 - `DlgMsgBox` notifies observers with `Yes` / `No` **before** the popup actually closes, then sends `Quitting` from `End_Dialog()`. Menu flows that tear down other dialogs or change game modes should defer that work until `Quitting` to avoid mutating the dialog stack while the confirmation popup is still active.
 
+## Static script linkage
+
+- The in-game script system can no longer rely on a statically archived `Scripts` library alone, because most script translation units only contribute self-registration globals (`REGISTER_SCRIPT(...)`) and those object files are otherwise unreferenced. To keep every script registered, compile `Code/Scripts` as an object library and add `$<TARGET_OBJECTS:Scripts>` directly to the final game executables so the linker cannot discard the registrant objects.
+- `Combat/scripts.cpp` only needs the historic script API surface (`Create_Script`, `Destroy_Script`, `Set_Request_Destroy_Func`, `Set_Script_Commands`). Once those functions are linked directly, the SDL shared-object loader, compatibility filename probing, and mod-package DLL extraction path can be deleted without changing the higher-level script manager behavior.
+
 ## Mesh shader and material pipeline
 
 - **D3DRS_COLORVERTEX is always TRUE**: Set in `DX8Wrapper::Init` and `bgfxdynamicbuffer.cpp`, never set to FALSE anywhere in the codebase. This means color source resolution can query `VertexMaterialClass::Get_*_Color_Source()` directly instead of going through D3D render state.

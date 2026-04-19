@@ -1204,21 +1204,21 @@ void DazzleRenderObjClass::Render_Dazzle(CameraClass* camera)
 		DX8Wrapper::Set_Index_Buffer(ib_access,dazzle_vertex_count);
 		DX8Wrapper::Set_Shader(default_halo_shader);
 		DX8Wrapper::Set_Texture(0,types[type]->Get_Halo_Texture());
-		BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0,halo_poly_count,0,vertex_count);
+		BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0,halo_poly_count,0,halo_vertex_count);
 	}
 
 	if (dazzle_poly_count) {
 		DX8Wrapper::Set_Index_Buffer(ib_access,0);
 		DX8Wrapper::Set_Shader(default_dazzle_shader);
 		DX8Wrapper::Set_Texture(0,types[type]->Get_Dazzle_Texture());
-		BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0,dazzle_poly_count,0,vertex_count);
+		BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0,dazzle_poly_count,0,dazzle_vertex_count);
 	}
 
 	if (lensflare_poly_count) {
 		DX8Wrapper::Set_Index_Buffer(ib_access,dazzle_vertex_count+halo_vertex_count);
 		DX8Wrapper::Set_Shader(default_dazzle_shader);
 		DX8Wrapper::Set_Texture(0,lensflare->Get_Texture());
-		BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0,lensflare_poly_count,0,vertex_count);
+		BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0,lensflare_poly_count,0,lensflare_vertex_count);
 	}
 
 	DX8Wrapper::Set_Transform(D3DTS_PROJECTION,old_projection_transform);

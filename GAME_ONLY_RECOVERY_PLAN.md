@@ -177,7 +177,7 @@ Suggested initial flags:
 | `RENEGADE_WITH_LEGACY_WOL` | `OFF` | Disable COM/browser/WOL service paths until late | `Commando/WebBrowser.cpp`, `WWOnline/*`, `wolapi/*`, `WOLBrowser/*` |
 | `RENEGADE_WITH_DX8_RENDERER` | `OFF` initially | Allow null renderer / compile-first strategy | `ww3d2/dx8wrapper.cpp`, `ww3d2/dx8renderer.cpp`, `Commando/WINMAIN.CPP` |
 | `RENEGADE_WITH_DIRECTINPUT` | `OFF` initially | Allow null input path until rendering exists | `Combat/directinput.cpp` |
-| `RENEGADE_WITH_SCRIPT_DLL` | `ON`, but allow stub implementation | Preserve runtime script loading contract while bootstrapping | `Combat/scripts.cpp` |
+| Static script linkage | Always on | Build the script system directly into the game executables instead of preserving a runtime DLL contract | `Combat/scripts.cpp`, `Scripts/CMakeLists.txt`, `Commando/CMakeLists.txt` |
 | `RENEGADE_WITH_BANDTEST` | `OFF` | Remove non-game audio test dependency from early builds | `commando.dsw` dependency list |
 | `RENEGADE_WITH_SCONTROL` | `OFF` | Remove remote server control from early game-only builds | `commando.dsw` dependency list |
 
@@ -577,11 +577,11 @@ Actions:
 
 - [x] `Combat` and `Scripts` now exist as real CMake targets in the active runtime graph.
 - [x] `Combat` excludes `directinput.cpp` when `RENEGADE_WITH_DIRECTINPUT=OFF` or on non-Windows bootstrap builds.
-- [x] `Scripts` is now built as a shared library target with the historical runtime-facing name `Scripts`.
-- [x] `Combat/scripts.cpp` preserves the legacy DLL-loading contract while adding non-Windows `.so` fallback candidates (`Scripts.so`, `libScripts.so`, etc.) so the bootstrap runtime can keep the old call sites.
-- [x] `RENEGADE_WITH_SCRIPT_DLL` now gates script-module loading cleanly instead of forcing unconditional runtime failure.
+- [x] `Scripts` is now built directly into the final game executables instead of as a runtime-loaded shared library.
+- [x] `Combat/scripts.cpp` now binds directly to the statically linked script entry points; the legacy DLL/`.so` probing and compatibility fallbacks are gone.
+- [x] Script self-registration is preserved by injecting the `Scripts` object files into the final executable link, so static linking does not silently drop unreferenced registrant translation units.
 - [x] `Combat` now compiles and links in the active Linux x64 bootstrap graph.
-- [x] `Scripts` now compiles and links as `Scripts.so` in the active Linux x64 bootstrap graph.
+- [x] `Scripts` now compiles and links as part of the active Linux x64 game executables.
 - [ ] The real script implementation path has not been validated end-to-end yet; only the target wiring and loader compatibility work are in place.
 
 ## Phase 6 — Bring up the renderer and input in two stages

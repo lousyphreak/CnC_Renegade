@@ -58,7 +58,7 @@ namespace
 *     Create_Script
 *
 * DESCRIPTION
-*     DLL entry to create a script instance.
+ *     Script module entry point to create a script instance.
 *
 * INPUTS
 *     const char* name
@@ -80,7 +80,7 @@ SCRIPT_DLL_FUNCT ScriptClass* Create_Script(const char* name)
 *     Destroy_Script
 *
 * DESCRIPTION
-*     DLL entry to destroy a script instance
+ *     Script module entry point to destroy a script instance
 *
 * INPUTS
 *     ScriptClass* script
@@ -103,7 +103,7 @@ SCRIPT_DLL_FUNCT void Destroy_Script(ScriptClass* script)
 *     Get_Script_Count
 *
 * DESCRIPTION
-*     DLL entry to count the number of registered scripts
+ *     Script module entry point to count the number of registered scripts
 *
 * INPUTS
 *     NONE
@@ -125,7 +125,7 @@ SCRIPT_DLL_FUNCT int Get_Script_Count(void)
 *     Get_Script_Name
 *
 * DESCRIPTION
-*     DLL entry to retrieve script name.
+ *     Script module entry point to retrieve script name.
 *
 * INPUTS
 *     int index
@@ -153,7 +153,7 @@ SCRIPT_DLL_FUNCT const char* Get_Script_Name(int index)
 *     Get_Script_Param_Description
 *
 * DESCRIPTION
-*     DLL entry to retrieve Script parameter description.
+ *     Script module entry point to retrieve Script parameter description.
 *
 * INPUTS
 *     int index
@@ -181,7 +181,7 @@ SCRIPT_DLL_FUNCT const char* Get_Script_Param_Description(int index)
 *     Set_Script_Commands
 *
 * DESCRIPTION
-*     DLL entry to initialize script commands hooks.
+ *     Script module entry point to initialize script commands hooks.
 *
 * INPUTS
 *     ScriptCommandsClass* commands

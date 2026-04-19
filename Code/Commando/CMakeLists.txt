@@ -268,7 +268,6 @@ target_link_libraries(CommandoLib
         BinkMovie
         Combat
         SControl
-        Scripts
         WWAudio
         WWMath
         ww3d2
@@ -312,7 +311,6 @@ target_link_libraries(CommandoDedicatedLib
         BinkMovie
         Combat
         SControl
-        Scripts
         WWAudio
         WWMath
         ww3d2
@@ -339,6 +337,8 @@ endif()
 add_executable(Commando ${COMMANDO_EXECUTABLE_SOURCES})
 renegade_configure_target(Commando)
 
+target_sources(Commando PRIVATE $<TARGET_OBJECTS:Scripts>)
+
 target_link_libraries(Commando
     PRIVATE
         CommandoLib
@@ -354,6 +354,8 @@ set_target_properties(Commando PROPERTIES
 add_executable(CommandoDedicated ${COMMANDO_DEDICATED_EXECUTABLE_SOURCES})
 renegade_configure_target(CommandoDedicated)
 
+target_sources(CommandoDedicated PRIVATE $<TARGET_OBJECTS:Scripts>)
+
 target_link_libraries(CommandoDedicated
     PRIVATE
         CommandoDedicatedLib
@@ -365,19 +367,3 @@ target_link_libraries(CommandoDedicated
 set_target_properties(CommandoDedicated PROPERTIES
     OUTPUT_NAME "renegade_dedicated"
 )
-
-if(TARGET SDL3::SDL3-shared)
-    add_custom_command(TARGET Commando POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "$<TARGET_FILE:SDL3::SDL3-shared>"
-            "$<TARGET_FILE_DIR:Commando>"
-        VERBATIM
-    )
-
-    add_custom_command(TARGET CommandoDedicated POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "$<TARGET_FILE:SDL3::SDL3-shared>"
-            "$<TARGET_FILE_DIR:CommandoDedicated>"
-        VERBATIM
-    )
-endif()

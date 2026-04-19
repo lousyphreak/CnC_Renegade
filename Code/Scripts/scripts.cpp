@@ -36,7 +36,7 @@
 #include "scripts.h"
 #include "ScriptFactory.h"
 #include "DPrint.h"
-#include "strtrim.h"
+#include "trim.h"
 #include <string.h>
 #include <stdio.h>
 

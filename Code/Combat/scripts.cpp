@@ -44,123 +44,10 @@
 #include "ffactorylist.h"
 #include "rawfile.h"
 #include "gametype.h"
-#include <SDL3/SDL_filesystem.h>
-#include <SDL3/SDL_loadso.h>
-#include <filesystem>
 #include <stdio.h>
-#include <string>
-#include <vector>
 #include <win.h>
 
 ScriptCommandsClass* EngineCommands = NULL;
-
-namespace {
-
-void Add_Script_Module_Candidate(std::vector<std::string> &candidates, const char *candidate)
-{
-	if (candidate == NULL || candidate[0] == '\0') {
-		return;
-	}
-
-	for (const std::string &existing : candidates) {
-		if (_stricmp(existing.c_str(), candidate) == 0) {
-			return;
-		}
-	}
-
-	candidates.emplace_back(candidate);
-}
-
-void Add_Script_Module_Path_Candidates(std::vector<std::string> &candidates, const std::filesystem::path &base_path, const char *candidate)
-{
-	if (candidate == NULL || candidate[0] == '\0' || base_path.empty()) {
-		return;
-	}
-
-	Add_Script_Module_Candidate(candidates, (base_path / candidate).string().c_str());
-}
-
-HINSTANCE Load_Script_Module(const char * module_name)
-{
-	std::vector<std::string> candidates;
-	char stem[_MAX_PATH] = { 0 };
-	char candidate_so[_MAX_PATH] = { 0 };
-	char candidate_lib_so[_MAX_PATH] = { 0 };
-	char candidate_dll[_MAX_PATH] = { 0 };
-	char candidate_dylib[_MAX_PATH] = { 0 };
-
-	if (module_name != NULL && module_name[0] != '\0') {
-		Add_Script_Module_Candidate(candidates, module_name);
-
-		::strncpy(stem, module_name, sizeof(stem) - 1);
-		char *dot = ::strrchr(stem, '.');
-		if (dot != NULL) {
-			(*dot) = '\0';
-		}
-
-		if (stem[0] != '\0') {
-			::snprintf(candidate_so, sizeof(candidate_so), "%s.so", stem);
-			::snprintf(candidate_lib_so, sizeof(candidate_lib_so), "lib%s.so", stem);
-			::snprintf(candidate_dll, sizeof(candidate_dll), "%s.dll", stem);
-			::snprintf(candidate_dylib, sizeof(candidate_dylib), "%s.dylib", stem);
-			Add_Script_Module_Candidate(candidates, candidate_so);
-			Add_Script_Module_Candidate(candidates, candidate_lib_so);
-			Add_Script_Module_Candidate(candidates, candidate_dll);
-			Add_Script_Module_Candidate(candidates, candidate_dylib);
-		}
-
-		if (_stricmp(stem, "SCRIPTS") == 0 || _stricmp(stem, "SCRIPTSD") == 0 || _stricmp(stem, "SCRIPTSP") == 0) {
-			Add_Script_Module_Candidate(candidates, "Scripts.so");
-			Add_Script_Module_Candidate(candidates, "libScripts.so");
-			Add_Script_Module_Candidate(candidates, "Scripts.dylib");
-			Add_Script_Module_Candidate(candidates, "libScripts.dylib");
-		}
-	}
-
-	const char *base_path_text = SDL_GetBasePath();
-	if (base_path_text != NULL && base_path_text[0] != '\0') {
-		const std::filesystem::path base_path(base_path_text);
-		const std::vector<std::string> base_names = candidates;
-
-		for (const std::string &candidate : base_names) {
-			Add_Script_Module_Path_Candidates(candidates, base_path, candidate.c_str());
-			Add_Script_Module_Path_Candidates(candidates, base_path / ".." / "lib", candidate.c_str());
-			Add_Script_Module_Path_Candidates(candidates, base_path / ".." / "Lib", candidate.c_str());
-		}
-	}
-
-	for (const std::string &candidate : candidates) {
-		void *handle = SDL_LoadObject(candidate.c_str());
-		if (handle != NULL) {
-			if (module_name != NULL && _stricmp(candidate.c_str(), module_name) != 0) {
-				Debug_Say(("Loaded script module %s via compatibility fallback %s\n", module_name, candidate.c_str()));
-			}
-			return (HINSTANCE)handle;
-		}
-	}
-
-	const char *error_text = SDL_GetError();
-	Debug_Say(("Could not load script module %s (%s)\n", module_name, error_text != NULL ? error_text : "unknown error"));
-	return NULL;
-}
-
-void Unload_Script_Module(HINSTANCE module)
-{
-	if (module != NULL) {
-		SDL_UnloadObject(reinterpret_cast<SDL_SharedObject *>(module));
-	}
-}
-
-SDL_FunctionPointer Resolve_Script_Symbol(HINSTANCE module, const char * symbol_name)
-{
-	if (module == NULL) {
-		return NULL;
-	}
-
-	return SDL_LoadFunction(reinterpret_cast<SDL_SharedObject *>(module), symbol_name);
-}
-
-}
 
 #if 1
 #define	SCRIPT_PROFILE_START( x )	WWProfileManager::Profile_Start( "Scripts" );
@@ -173,7 +60,6 @@ SDL_FunctionPointer Resolve_Script_Symbol(HINSTANCE module, const char * symbol_
 /*
 **
 */
-HINSTANCE hDLL = NULL;
 LPFN_CREATE_SCRIPT ScriptManager::ScriptCreateFunct = NULL;
 LPFN_DESTROY_SCRIPT ScriptManager::ScriptDestroyFunct = NULL;
 SimpleDynVecClass<ScriptClass *> ScriptManager::ActiveScriptList;
@@ -187,7 +73,8 @@ bool	ScriptManager::EnableScriptCreation = true;
 */
 void ScriptManager::Init(void)
 {
-	hDLL = NULL;
+	ScriptCreateFunct = NULL;
+	ScriptDestroyFunct = NULL;
 	EngineCommands = Get_Script_Commands();
 
 #ifdef	PARAM_EDITING_ON	// Editor build
@@ -226,10 +113,8 @@ void ScriptManager::Shutdown(void)
 		ActiveScriptList.Delete(0);
 	}
 
-	if (hDLL != NULL) {
-		Unload_Script_Module(hDLL);
-		hDLL = NULL;
-	}
+	ScriptCreateFunct = NULL;
+	ScriptDestroyFunct = NULL;
 }
 
 
@@ -259,15 +144,9 @@ void ScriptManager::Destroy_Pending(void)
 /*
 **
 */
-void ScriptManager::Load_Scripts(const char* dll_filename)
+void ScriptManager::Load_Scripts(const char* script_set_name)
 {
-	Debug_Say(("Script Manager Loading Script File %s\n", dll_filename));
-
-#if !RENEGADE_WITH_SCRIPT_DLL
-	Debug_Say(("Script DLL loading disabled in this build\n"));
-	return;
-#endif
-
+	Debug_Say(("Script Manager Initializing static script set %s\n", script_set_name));
 
 	// If we're in multiplay and not the server, just bail
    if (!IS_SOLOPLAY && CombatManager::I_Am_Only_Client())
@@ -275,99 +154,20 @@ void ScriptManager::Load_Scripts(const char* dll_filename)
 		return;
 	}
 
-#ifndef	PARAM_EDITING_ON	// Only do this in the *game*
-
-	// Check if we have a mod, if so, un-pack the scripts from the PKG (if present)
-	FileFactoryClass * mod_pkg = FileFactoryListClass::Get_Instance()->Peek_Temp_FileFactory();
-	if (mod_pkg != NULL) {
-		FileClass * scripts_dll = mod_pkg->Get_File( dll_filename );
-		if ((scripts_dll != NULL) && (scripts_dll->Is_Available())) {
-
-			const char * _TMP_SCRIPTS_DLL_FILENAME = "_MOD_SCRIPTS.DLL";
-
-			scripts_dll->Open(FileClass::READ);
-			RawFileClass unpacked_scripts(_TMP_SCRIPTS_DLL_FILENAME);
-
-			if (unpacked_scripts.Create()) {
-		
-				unpacked_scripts.Open(FileClass::WRITE);
-
-				// Copy the dll from the PKG (mix) file into our temporary _scripts directory
-				static char buffer[16000];
-				int scripts_size = scripts_dll->Size();
-				int cur_pos = 0;
-				while (cur_pos < scripts_size) {
-					int read_count = WWMath::Min(scripts_size - cur_pos,sizeof(buffer));
-					scripts_dll->Read(buffer,read_count);
-					unpacked_scripts.Write(buffer,read_count);
-					cur_pos += read_count;
-				}
-
-
-				// change 'dll_filename' so that we load the newly created dll
-				if (cur_pos == scripts_size) {
-					dll_filename = _TMP_SCRIPTS_DLL_FILENAME;
-				}
-
-				unpacked_scripts.Close();
-			}
-			scripts_dll->Close();
-			mod_pkg->Return_File(scripts_dll);
-		}
-	}
-#endif
-
-	hDLL = Load_Script_Module(dll_filename);
-
-	if (hDLL == NULL) {
-		Debug_Say(("Cound not load DLL file %s\n", dll_filename));
-		return;
-	}
-
-	// Get create script function
-	ScriptCreateFunct = (LPFN_CREATE_SCRIPT)Resolve_Script_Symbol(hDLL, LPSTR_CREATE_SCRIPT);
-	assert(ScriptCreateFunct != NULL);
-
-	if (!ScriptCreateFunct) {
-		Debug_Say(("Cound not find Create_Script\n"));
-	}
-
-	// Get destroy script function
-	ScriptDestroyFunct = (LPFN_DESTROY_SCRIPT)Resolve_Script_Symbol(hDLL, LPSTR_DESTROY_SCRIPT);
-	assert(ScriptDestroyFunct != NULL);
-
-	if (!ScriptDestroyFunct) {
-		Debug_Say(("Cound not find Destroy_Script\n"));
-	}
-
-	// Initialize request script destroy function
-	LPFN_SET_REQUEST_DESTROY_FUNC set_request_destroy_func = 
-		(LPFN_SET_REQUEST_DESTROY_FUNC)Resolve_Script_Symbol(hDLL, LPSTR_SET_REQUEST_DESTROY_FUNC);
-	assert(set_request_destroy_func != NULL);
-
-	if (set_request_destroy_func != NULL) {
-		set_request_destroy_func(Request_Destroy_Script);
-	} else {
-		Debug_Say(("Cound not find Set_Request_Destroy_Func\n"));
-	}
+	ScriptCreateFunct = ::Create_Script;
+	ScriptDestroyFunct = ::Destroy_Script;
+	Set_Request_Destroy_Func(Request_Destroy_Script);
 
 	// Initialize script commands if not being run from the editor
 	if (CombatManager::Are_Observers_Active()) {
-		LPFN_SET_SCRIPT_COMMANDS set_commands_func =
-			(LPFN_SET_SCRIPT_COMMANDS)Resolve_Script_Symbol(hDLL, LPSTR_SET_SCRIPT_COMMANDS);
-		assert(set_commands_func != NULL);
+		bool success = Set_Script_Commands(EngineCommands);
 
-		if (set_commands_func != NULL) {
-			bool success = set_commands_func(EngineCommands);
+		if (!success) {
+			Debug_Say(("Failed to set script commands!\n"));
 
-			if (!success) {
-				Debug_Say(("Failed to set script commands!\n"));
-
-				// This should keep us from going to scripts!
-				ScriptCreateFunct = NULL;
-			}
-		} else {
-			Debug_Say(("Cound not find Set_Script_Commands\n"));
+			// This should keep us from going to scripts!
+			ScriptCreateFunct = NULL;
+			ScriptDestroyFunct = NULL;
 		}
 	}
 }

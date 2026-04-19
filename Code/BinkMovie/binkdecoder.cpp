@@ -27,11 +27,11 @@
 #endif
 
 extern "C" {
-#include "../../external/ffmpeg-8.1/libavcodec/binkdata.h"
-#include "../../external/ffmpeg-8.1/libavcodec/binkdsp.h"
-#include "../../external/ffmpeg-8.1/libavcodec/wma_freqs.h"
-#include "../../external/ffmpeg-8.1/libavcodec/binkdsp.c"
-#include "../../external/ffmpeg-8.1/libavcodec/wma_freqs.c"
+#include "ffmpeg/libavcodec/binkdata.h"
+#include "ffmpeg/libavcodec/binkdsp.h"
+#include "ffmpeg/libavcodec/wma_freqs.h"
+#include "ffmpeg/libavcodec/binkdsp.c"
+#include "ffmpeg/libavcodec/wma_freqs.c"
 }
 
 #include <algorithm>

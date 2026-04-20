@@ -1,5 +1,16 @@
 # Porting Progress
 
+## SDL/bgfx render-resolution resync
+
+- Traced the SDL window-size path through `Code/Commando/commando_sdl_main.cpp` and the bgfx reset path in `Code/ww3d2/bgfxdynamicbuffer.cpp` / `Code/ww3d2/bgfxrenderer.cpp`.
+- The renderer already reset correctly when the exact resize/fullscreen events were seen, but it still depended too heavily on backend-specific event delivery timing.
+- Added a main-loop pre-poll reconciliation step that re-queries the current SDL drawable size every frame and reapplies `WW3D::Set_Device_Resolution` whenever the actual pixel size or windowed/fullscreen state diverges from the renderer state.
+- Expanded SDL event coverage to include display-mode/content-scale changes for the window's active display, so fullscreen and DPI-driven transitions resync immediately instead of waiting for a narrower subset of window events.
+- Hardened the bgfx drawable-size query to fall back to logical window dimensions when SDL cannot provide pixel dimensions during a transition, avoiding failed resets on platforms/backends that briefly report only window units.
+- Corrected the Alt+Enter path so fullscreen toggles without an explicit resize request now use desktop fullscreen instead of forcing an exclusive mode near the old window size; this prevents fullscreen from staying at a visibly upscaled window resolution.
+- A follow-up runtime exercise resized the live X11 window to `1024x768`, then `1366x768`, then entered and left fullscreen during execution without crashing.
+- A targeted Alt+Enter validation run on X11 captured a `3840x2160` bgfx screenshot after the toggle, replacing the previous `1280x720` fullscreen backbuffer and confirming the fullscreen render resolution now tracks the real fullscreen size.
+
 ## Load-time filesystem cache
 
 - Investigated slow data/level loading on Linux and traced the hot path to the shared SDL-backed case-correct disk access layer in `Code/wwlib/osdep.h`.

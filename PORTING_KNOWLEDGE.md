@@ -1,5 +1,19 @@
 # Porting Knowledge
 
+## SDL window size versus render resolution
+
+- `commando_sdl_main.cpp` is the practical choke point for runtime SDL window-change handling in the main client: window events arrive there, and `WW3D::Set_Device_Resolution` is the bridge into the renderer reset path.
+- For robust modern-platform behavior, do not rely only on individual SDL resize/fullscreen events. Some backends deliver size changes through different event combinations or with slightly different timing, especially around fullscreen, monitor changes, and content-scale transitions.
+- The reliable pattern is:
+  - query the current drawable size from SDL
+  - compare it against `WW3D::Get_Device_Resolution`
+  - call `WW3D::Set_Device_Resolution` only when the drawable size or windowed/fullscreen state actually changed
+- Running that reconciliation from the main loop's pre-poll hook keeps the renderer aligned even when the expected SDL event is delayed or skipped.
+- Display-level SDL events (`SDL_EVENT_DISPLAY_CURRENT_MODE_CHANGED`, `SDL_EVENT_DISPLAY_CONTENT_SCALE_CHANGED`, and related mode/bounds changes) are also relevant because fullscreen resolution changes may originate from the display rather than a classic window resize event.
+- On the bgfx side, `BgfxRenderer::Query_Drawable_Size` should prefer `SDL_GetWindowSizeInPixels`, but it needs a fallback to `SDL_GetWindowSize` for transition windows where SDL temporarily cannot report pixel dimensions yet.
+- For `BgfxRenderer::Configure_Window`, treat fullscreen requests without an explicit resize/mode change (`resize_window == false`) as desktop fullscreen (`SDL_SetWindowFullscreenMode(window, NULL)` semantics). That keeps Alt+Enter and similar toggles from locking the game into an exclusive mode chosen from the previous window size.
+- Reserve explicit exclusive fullscreen mode selection for calls that are actually requesting a specific render resolution (`resize_window == true` with a concrete width/height).
+
 ## Load-time path resolution
 
 - `renegade_osdep::Resolve_Existing_Path` sits directly in the runtime open path for `RawFileClass`, low-level compatibility wrappers, and directory pattern resolution.

@@ -152,6 +152,17 @@ void Sync_Window_Size_To_Renderer(SDL_Window *window)
     WW3D::Set_Device_Resolution(pixel_width, pixel_height, -1, windowed ? 1 : 0, false);
 }
 
+bool Is_Main_Window_Display_Event(const SDL_Event &event)
+{
+    SDL_Window *window = Get_Main_Window();
+    if (window == nullptr) {
+        return false;
+    }
+
+    const SDL_DisplayID main_display_id = SDL_GetDisplayForWindow(window);
+    return main_display_id != 0 && event.display.displayID == main_display_id;
+}
+
 bool Is_Main_Window_Event(const SDL_Event &event)
 {
     SDL_Window *window = Get_Main_Window();
@@ -238,6 +249,12 @@ void Sync_Text_Input_State()
         SDL_ClearComposition(window);
         SDL_StopTextInput(window);
     }
+}
+
+void Sync_Main_Window_State()
+{
+    Sync_Window_Size_To_Renderer(Get_Main_Window());
+    Sync_Text_Input_State();
 }
 
 int Map_Console_Key(const SDL_Event &event)
@@ -341,6 +358,27 @@ bool Handle_Window_Event(const SDL_Event &event)
     return false;
 }
 
+bool Handle_Display_Event(const SDL_Event &event)
+{
+    switch (event.type) {
+        case SDL_EVENT_DISPLAY_DESKTOP_MODE_CHANGED:
+        case SDL_EVENT_DISPLAY_CURRENT_MODE_CHANGED:
+        case SDL_EVENT_DISPLAY_CONTENT_SCALE_CHANGED:
+        case SDL_EVENT_DISPLAY_USABLE_BOUNDS_CHANGED:
+            break;
+
+        default:
+            return false;
+    }
+
+    if (!Is_Main_Window_Display_Event(event)) {
+        return false;
+    }
+
+    Sync_Window_Size_To_Renderer(Get_Main_Window());
+    return true;
+}
+
 bool Handle_System_Key_Event(const SDL_Event &event)
 {
     if (event.type != SDL_EVENT_KEY_DOWN || event.key.repeat) {
@@ -367,6 +405,10 @@ bool Handle_Main_Loop_Event(SDL_Event &event)
     }
 
     if (Handle_Window_Event(event)) {
+        return true;
+    }
+
+    if (Handle_Display_Event(event)) {
         return true;
     }
 
@@ -465,7 +507,7 @@ int main(int argc, char **argv)
     Register_Application_Version_Callback(&BuildInfoClass::Composite_Build_Info);
 
     Message_Intercept_Handler = Handle_Main_Loop_Event;
-    Message_Pre_Poll_Handler = Sync_Text_Input_State;
+    Message_Pre_Poll_Handler = Sync_Main_Window_State;
     const int exit_code = Game_Main_Loop();
     Message_Pre_Poll_Handler = nullptr;
     Message_Intercept_Handler = nullptr;

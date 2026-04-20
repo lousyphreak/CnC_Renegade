@@ -184,7 +184,12 @@ bool Resize_Window_For_Pixel_Size(SDL_Window *window, uint32_t pixel_width, uint
 
     int current_pixel_width = 0;
     int current_pixel_height = 0;
-    SDL_GetWindowSizeInPixels(window, &current_pixel_width, &current_pixel_height);
+    if (!SDL_GetWindowSizeInPixels(window, &current_pixel_width, &current_pixel_height) ||
+        current_pixel_width <= 0 ||
+        current_pixel_height <= 0) {
+        current_pixel_width = current_window_width;
+        current_pixel_height = current_window_height;
+    }
 
     float pixel_density = SDL_GetWindowPixelDensity(window);
     if (!(pixel_density > 0.0f)) {
@@ -1528,7 +1533,7 @@ bool BgfxRenderer::Configure_Window(void *window_handle, int width, int height, 
     if (!windowed) {
         SDL_DisplayMode fullscreen_mode = {};
         const SDL_DisplayMode *requested_mode = nullptr;
-        if (width > 0 && height > 0) {
+        if (resize_window && width > 0 && height > 0) {
             const SDL_DisplayID display_id = SDL_GetDisplayForWindow(window);
             if (display_id != 0 &&
                 SDL_GetClosestFullscreenDisplayMode(display_id, width, height, 0.0f, true, &fullscreen_mode)) {
@@ -3421,8 +3426,14 @@ bool BgfxRenderer::Query_Drawable_Size(void *window_handle, uint32_t &width, uin
     SDL_Window *window = reinterpret_cast<SDL_Window *>(window_handle);
     int pixel_width = 0;
     int pixel_height = 0;
-    if (window == nullptr || !SDL_GetWindowSizeInPixels(window, &pixel_width, &pixel_height)) {
+    if (window == nullptr) {
         return false;
+    }
+
+    if (!SDL_GetWindowSizeInPixels(window, &pixel_width, &pixel_height) || pixel_width <= 0 || pixel_height <= 0) {
+        if (!SDL_GetWindowSize(window, &pixel_width, &pixel_height)) {
+            return false;
+        }
     }
 
     if (pixel_width <= 0 || pixel_height <= 0) {

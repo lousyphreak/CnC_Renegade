@@ -210,6 +210,7 @@ public:
 	static void Set_DX8_ZBias(int zbias);
 	static void	Set_Pseudo_ZBias(int zbias);
 	static void Set_Projection_Transform_With_Z_Bias(const Matrix4& matrix,float znear, float zfar);	// pointer to 16 matrices
+	static void Get_Projection_Transform_Raw(Matrix4& matrix, float& znear, float& zfar);
 
 	static void Set_Transform(D3DTRANSFORMSTATETYPE transform,const Matrix4& m);
 	static void Set_Transform(D3DTRANSFORMSTATETYPE transform,const Matrix3D& m);

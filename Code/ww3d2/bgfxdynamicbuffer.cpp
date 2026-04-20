@@ -1077,6 +1077,13 @@ void DX8Wrapper::Set_Projection_Transform_With_Z_Bias(const Matrix4 &matrix, flo
 	ZFar = zfar;
 }
 
+void DX8Wrapper::Get_Projection_Transform_Raw(Matrix4 &matrix, float &znear, float &zfar)
+{
+	matrix = ProjectionMatrix;
+	znear = ZNear;
+	zfar = ZFar;
+}
+
 void DX8Wrapper::Set_DX8_ZBias(int zbias)
 {
 	Set_DX8_Render_State(D3DRS_ZBIAS, static_cast<unsigned>(zbias));

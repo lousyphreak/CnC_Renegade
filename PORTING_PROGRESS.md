@@ -1,5 +1,13 @@
 # Porting Progress
 
+## bgfx Z-bias restoration
+
+- Investigated decal flicker on the modern renderer and traced it past decal mesh generation into the bgfx DX8-wrapper projection bridge.
+- Root cause: `CameraClass::Apply` wrote the active projection with `DX8Wrapper::Set_Transform(D3DTS_PROJECTION, ...)`, which clears the wrapper's stored clip-plane range. The bgfx backend currently emulates `D3DRS_ZBIAS` by folding bias into the projection matrix during `Get_Transform`, so once the clip range was lost, all later Z-bias requests silently stopped affecting submitted draws.
+- Fixed the active camera path to use `Set_Projection_Transform_With_Z_Bias`, preserving the camera near/far planes for every world render pass.
+- Audited the remaining projection override sites and fixed `DazzleRenderObjClass::Render_Dazzle` to save and restore the raw projection plus clip range together, preventing temporary overlay projection changes from breaking or compounding later Z-biased draws.
+- This wider fix covers the current in-tree Z-bias users, including decals, multi-pass rigid mesh rendering, and extra-pass wireframe overlays.
+
 ## SDL_mixer 3D audio positioning
 
 - Audited the full 3D audio path from `WWAudioClass::On_Frame_Update` through `SoundScene`, `Sound3D`, `SoundPseudo3D`, and the SDL_mixer-backed Miles shim in `Code/WWAudio/sdlmixer_mss.cpp`.

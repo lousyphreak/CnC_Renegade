@@ -1008,9 +1008,11 @@ void DazzleRenderObjClass::Render_Dazzle(CameraClass* camera)
 	DX8Wrapper::Get_Transform(D3DTS_VIEW,view_transform);
 	DX8Wrapper::Get_Transform(D3DTS_WORLD,world_transform);
 	DX8Wrapper::Get_Transform(D3DTS_PROJECTION,projection_transform);
+	float old_projection_znear = 0.0f;
+	float old_projection_zfar = 0.0f;
+	DX8Wrapper::Get_Projection_Transform_Raw(old_projection_transform, old_projection_znear, old_projection_zfar);
 	old_view_transform=view_transform;
 	old_world_transform=world_transform;
-	old_projection_transform=projection_transform;
 	Vector3 camera_loc(camera->Get_Position());
 	Vector3 camera_dir(-view_transform[2][0],-view_transform[2][1],-view_transform[2][2]);
 
@@ -1221,7 +1223,11 @@ void DazzleRenderObjClass::Render_Dazzle(CameraClass* camera)
 		BgfxRenderer::Submit_Current_Fixed_Function_Triangles(0,lensflare_poly_count,0,lensflare_vertex_count);
 	}
 
-	DX8Wrapper::Set_Transform(D3DTS_PROJECTION,old_projection_transform);
+	if (old_projection_znear != old_projection_zfar) {
+		DX8Wrapper::Set_Projection_Transform_With_Z_Bias(old_projection_transform, old_projection_znear, old_projection_zfar);
+	} else {
+		DX8Wrapper::Set_Transform(D3DTS_PROJECTION,old_projection_transform);
+	}
 	DX8Wrapper::Set_Transform(D3DTS_VIEW,old_view_transform);
 	DX8Wrapper::Set_Transform(D3DTS_WORLD,old_world_transform);
 }

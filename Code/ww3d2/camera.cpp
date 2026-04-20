@@ -728,7 +728,7 @@ void CameraClass::Apply(void)
 	Get_D3D_Projection_Matrix(&d3dprojection);
 	BgfxRenderer::Set_Camera(CameraInvTransform, d3dprojection);
 	DX8Wrapper::Set_Transform(D3DTS_VIEW, CameraInvTransform);
-	DX8Wrapper::Set_Transform(D3DTS_PROJECTION, d3dprojection);
+	DX8Wrapper::Set_Projection_Transform_With_Z_Bias(d3dprojection, ZNear, ZFar);
 }
 
 void CameraClass::Set_Clip_Planes(float znear,float zfar)						

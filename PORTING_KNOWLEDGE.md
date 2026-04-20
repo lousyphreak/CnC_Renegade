@@ -1,5 +1,13 @@
 # Porting Knowledge
 
+## bgfx Z-bias contract
+
+- In the current bgfx renderer, `D3DRS_ZBIAS` is still implemented through the DX8 wrapper, not through native bgfx raster state.
+- The active projection matrix alone is **not** enough to preserve this behavior. The wrapper also needs the projection clip-plane range (`ZNear` / `ZFar`) so `DX8Wrapper::Get_Transform(D3DTS_PROJECTION, ...)` can fold the requested bias into the matrix before submission.
+- `CameraClass::Apply` therefore must use `DX8Wrapper::Set_Projection_Transform_With_Z_Bias(...)`, not the generic projection `Set_Transform(...)` path.
+- Any temporary projection override that restores the old matrix later (for example the dazzle overlay path) must preserve the raw stored projection matrix together with the clip-plane range. Saving the already bias-adjusted matrix from `Get_Transform(D3DTS_PROJECTION, ...)` can reapply the same bias twice on restore.
+- Current in-tree consumers of this contract include decal rendering, multi-pass rigid mesh rendering, and scene extra-pass wireframe overlays because they all rely on `D3DRS_ZBIAS`.
+
 ## SDL_mixer 3D audio contract
 
 - Renegade world-space distances are already metric. Evidence in-tree includes:

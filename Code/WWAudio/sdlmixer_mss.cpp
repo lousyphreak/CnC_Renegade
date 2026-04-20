@@ -211,6 +211,12 @@ float Clamp01(float value)
     return std::clamp(value, 0.0f, 1.0f);
 }
 
+float Engine_Units_To_SDL_Meters(float value)
+{
+    constexpr float kEngineMetersPerUnit = 1.0f;
+    return value * kEngineMetersPerUnit;
+}
+
 void Apply_Pan_To_Gains(int pan, MIX_StereoGains &gains)
 {
     const float normalized_pan = Clamp01(static_cast<float>(pan) / 127.0f);
@@ -218,31 +224,72 @@ void Apply_Pan_To_Gains(int pan, MIX_StereoGains &gains)
     gains.right = Clamp01(normalized_pan);
 }
 
-void Apply_3D_Gains(BackendSample *sample, MIX_StereoGains &gains, float &gain)
+float Compute_3D_Distance_Gain(const BackendSample *sample, float distance_meters)
 {
     if (sample == nullptr) {
-        return;
+        return 1.0f;
     }
 
-    const float x = sample->position[0];
-    const float y = sample->position[1];
-    const float z = sample->position[2];
-    const float distance = std::sqrt((x * x) + (y * y) + (z * z));
-
-    const float min_distance = std::max(sample->min_distance, 0.01f);
-    const float max_distance = std::max(sample->max_distance, min_distance + 0.01f);
+    const float min_distance = std::max(Engine_Units_To_SDL_Meters(sample->min_distance), 0.01f);
+    const float max_distance = std::max(Engine_Units_To_SDL_Meters(sample->max_distance), min_distance + 0.01f);
 
     float distance_gain = 1.0f;
-    if (distance > min_distance) {
-        distance_gain = 1.0f - ((distance - min_distance) / (max_distance - min_distance));
+    if (distance_meters > min_distance) {
+        distance_gain = 1.0f - ((distance_meters - min_distance) / (max_distance - min_distance));
         distance_gain = Clamp01(distance_gain);
     }
 
-    gain *= distance_gain;
+    return distance_gain;
+}
 
-    const float pan = std::clamp((x / std::max(distance, 1.0f)), -1.0f, 1.0f);
-    gains.left = Clamp01(1.0f - std::max(pan, 0.0f));
-    gains.right = Clamp01(1.0f + std::min(pan, 0.0f));
+MIX_Point3D Build_SDL_3D_Position(const BackendSample *sample, float *distance_gain_out)
+{
+    MIX_Point3D position{};
+    if (sample == nullptr) {
+        if (distance_gain_out != nullptr) {
+            *distance_gain_out = 1.0f;
+        }
+        return position;
+    }
+
+    /*
+    ** Sound3DClass already converts world-space emitters into listener-relative
+    ** Miles coordinates before they reach this shim.
+    **
+    ** Miles: +X right, +Y up, +Z forward
+    ** SDL_mixer: +X right, +Y up, +Z back
+    */
+    position.x = Engine_Units_To_SDL_Meters(sample->position[0]);
+    position.y = Engine_Units_To_SDL_Meters(sample->position[1]);
+    position.z = Engine_Units_To_SDL_Meters(-sample->position[2]);
+
+    const float distance_meters = std::sqrt((position.x * position.x) + (position.y * position.y) + (position.z * position.z));
+    const float distance_gain = Compute_3D_Distance_Gain(sample, distance_meters);
+    if (distance_gain_out != nullptr) {
+        *distance_gain_out = distance_gain;
+    }
+
+    if (distance_meters > 0.0f) {
+        /*
+        ** SDL_mixer uses a fixed inverse-distance attenuation model with a
+        ** 1-meter reference distance. Reproject the already-relative emitter
+        ** to an equivalent SDL distance so the final gain matches the original
+        ** WWAudio linear min/max radius attenuation.
+        */
+        constexpr float kSDLReferenceDistanceMeters = 1.0f;
+
+        float effective_distance_meters = std::min(distance_meters, kSDLReferenceDistanceMeters);
+        if ((distance_gain > 0.0f) && (distance_gain < 1.0f)) {
+            effective_distance_meters = std::max(kSDLReferenceDistanceMeters, 1.0f / distance_gain);
+        }
+
+        const float scale = effective_distance_meters / distance_meters;
+        position.x *= scale;
+        position.y *= scale;
+        position.z *= scale;
+    }
+
+    return position;
 }
 
 void Apply_Sample_State(BackendSample *sample)
@@ -252,15 +299,21 @@ void Apply_Sample_State(BackendSample *sample)
     }
 
     float gain = Clamp01(static_cast<float>(sample->volume) / 127.0f);
-    MIX_StereoGains stereo{};
-    Apply_Pan_To_Gains(sample->pan, stereo);
-
     if (sample->is_3d) {
-        Apply_3D_Gains(sample, stereo, gain);
-    }
+        float distance_gain = 1.0f;
+        const MIX_Point3D position = Build_SDL_3D_Position(sample, &distance_gain);
+        if (distance_gain <= 0.0f) {
+            gain = 0.0f;
+        }
 
-    MIX_SetTrackGain(sample->track, gain);
-    MIX_SetTrackStereo(sample->track, &stereo);
+        MIX_SetTrackGain(sample->track, gain);
+        MIX_SetTrack3DPosition(sample->track, &position);
+    } else {
+        MIX_StereoGains stereo{};
+        Apply_Pan_To_Gains(sample->pan, stereo);
+        MIX_SetTrackGain(sample->track, gain);
+        MIX_SetTrackStereo(sample->track, &stereo);
+    }
 
     if ((sample->original_rate > 0) && (sample->playback_rate > 0)) {
         MIX_SetTrackFrequencyRatio(sample->track, static_cast<float>(sample->playback_rate) / static_cast<float>(sample->original_rate));

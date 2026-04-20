@@ -263,7 +263,9 @@ Sound3DClass::Update_Edge_Volume (void)
 	//	Are we close to the edge of the dropoff radius?
 	//
 	float falloff_start = (m_DropOffRadius * FALLOFF_RANGE);
-	if (distance >= falloff_start && distance <= m_DropOffRadius) {
+	if (distance < falloff_start) {
+		Internal_Set_Volume (m_RealVolume);
+	} else if (distance <= m_DropOffRadius) {
 
 		//
 		//	Normalize our distance from the edge
@@ -275,6 +277,8 @@ Sound3DClass::Update_Edge_Volume (void)
 		//	Update the sound volume
 		//
 		Internal_Set_Volume (m_RealVolume * percent);
+	} else {
+		Internal_Set_Volume (0.0F);
 	}
 
 	return ;

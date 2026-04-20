@@ -1,5 +1,22 @@
 # Porting Progress
 
+## SDL_mixer 3D audio positioning
+
+- Audited the full 3D audio path from `WWAudioClass::On_Frame_Update` through `SoundScene`, `Sound3D`, `SoundPseudo3D`, and the SDL_mixer-backed Miles shim in `Code/WWAudio/sdlmixer_mss.cpp`.
+- Confirmed that Renegade world-space units are already meters, so the missing/loud sound issues were not caused by a hidden global distance scale mismatch.
+- Confirmed that `Sound3DClass` already converts emitters into listener-relative space before calling the backend, which means the SDL_mixer bridge must treat incoming 3D positions as relative-to-listener data rather than world-space data.
+- Reworked the SDL_mixer true-3D sample path to use SDL_mixer's positional API instead of the old custom stereo-only approximation:
+  - preserve the listener-relative contract
+  - convert the handedness difference between the Miles-style forward axis and SDL_mixer's OpenAL-style `+Z back`
+  - keep units explicit at the backend boundary
+  - map Renegade's authored linear min/max distance attenuation onto SDL_mixer's fixed inverse-distance model by converting to an equivalent SDL 3D distance per frame
+- Kept the 2D/manual pan path on `MIX_SetTrackStereo`, so only true 3D sounds use SDL_mixer's positional mode.
+- Fixed `Sound3DClass::Update_Edge_Volume` so sounds recover their full authored volume after moving back inside the inner range; previously the edge fade reduced volume near the dropoff radius but never restored it when the emitter moved closer again.
+- Fixed sniper-mode secondary-listener updates in `Code/Combat/ccamera.cpp`:
+  - the listener now refreshes every frame while sniper mode is active
+  - the listener now preserves camera orientation instead of replacing it with a translation-only matrix
+- Completed a 220-second Debug ASAN/UBSAN runtime soak with the updated audio code. The run timed out normally without a crash.
+
 ## SDL/bgfx render-resolution resync
 
 - Traced the SDL window-size path through `Code/Commando/commando_sdl_main.cpp` and the bgfx reset path in `Code/ww3d2/bgfxdynamicbuffer.cpp` / `Code/ww3d2/bgfxrenderer.cpp`.

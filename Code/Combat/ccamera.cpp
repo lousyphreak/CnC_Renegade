@@ -979,6 +979,9 @@ void CCameraClass::Update()
 	}
 
 	Set_Transform( tm );						// Set our new transform
+	if ( IsStarSniping ) {
+		Update_Sniper_Listener_Pos();
+	}
 
 //	Debug_Say(( "Camera at %1.2f, %1.2f, %1.2f\n", tm.Get_Translation().X, tm.Get_Translation().Y, tm.Get_Translation().Z ));
 
@@ -1685,9 +1688,10 @@ void CCameraClass::Update_Sniper_Listener_Pos( void )
 		Vector3 pos = tm.Get_Translation() - (tm.Get_Z_Vector() * dist);
 
 		//
-		//	Update the sniper's position
+		//	Update the sniper's position while preserving the current camera orientation
 		//
-		SniperListener->Set_Transform( Matrix3D( pos ) );
+		tm.Set_Translation( pos );
+		SniperListener->Set_Transform( tm );
 	}
 
 	return ;

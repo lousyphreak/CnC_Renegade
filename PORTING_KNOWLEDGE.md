@@ -1,5 +1,27 @@
 # Porting Knowledge
 
+## SDL_mixer 3D audio contract
+
+- Renegade world-space distances are already metric. Evidence in-tree includes:
+  - `Code/wwphys/phunits.h`, where the internal physics units are meters
+  - `Code/Combat/mapmgr.h`, which describes map scale as pixels per meter of world space
+  - multiple gameplay/physics definitions that label ranges and speeds in meters / m/s
+- `Sound3DClass` does **not** pass world-space coordinates to the audio backend. It first converts the emitter transform into listener space in `Code/WWAudio/Sound3D.cpp`, then calls the Miles shim with listener-relative coordinates.
+- The Miles-side listener is intentionally fixed at the origin; the backend should treat incoming 3D source positions as already relative to the listener.
+- Coordinate handedness differs at the backend boundary:
+  - WWAudio/Miles shim coordinates are effectively `+X right, +Y up, +Z forward`
+  - SDL_mixer `MIX_Point3D` uses `+X right, +Y up, +Z back`
+  - The SDL_mixer bridge therefore needs to negate the forward axis when converting 3D positions.
+- SDL_mixer's positional mixer uses a fixed inverse-distance attenuation model with a 1-meter reference distance. Renegade sound definitions, however, author linear attenuation with explicit max-volume and dropoff radii.
+- To preserve authored WWAudio behavior on SDL_mixer, the backend now converts listener-relative positions into an **equivalent SDL distance** that reproduces the original linear attenuation while keeping the correct relative direction for spatialization.
+- For 3D sounds, forced stereo panning and SDL_mixer 3D spatialization are mutually exclusive. The backend should use `MIX_SetTrack3DPosition` for true 3D sounds and reserve `MIX_SetTrackStereo` for 2D/manual pan paths only.
+
+## Sniper listener behavior
+
+- The secondary/sniper listener lives in `Code/Combat/ccamera.cpp`.
+- It must be updated every frame while sniper mode is active, not only when the zoom distance changes.
+- It also needs the current camera orientation preserved. Replacing the entire transform with `Matrix3D(pos)` makes the listener face the identity orientation and breaks positional audio in sniper mode.
+
 ## SDL window size versus render resolution
 
 - `commando_sdl_main.cpp` is the practical choke point for runtime SDL window-change handling in the main client: window events arrive there, and `WW3D::Set_Device_Resolution` is the bridge into the renderer reset path.

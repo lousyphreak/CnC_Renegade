@@ -50,6 +50,7 @@
 #include "render2dsentence.h"
 #include "ffactory.h"
 #include "wwfile.h"
+#include "dinput.h"
 
 namespace {
 
@@ -67,6 +68,13 @@ bool Is_Local_Movie_Available(const char *filename)
 	const bool available = file->Is_Available();
 	_TheFileFactory->Return_File(file);
 	return available;
+}
+
+bool Is_Movie_Stop_Key_Down()
+{
+	return Input::Get_State(INPUT_FUNCTION_MENU_TOGGLE)
+		|| Input::Is_Button_Down(DIK_RETURN)
+		|| Input::Is_Button_Down(DIK_NUMPADENTER);
 }
 
 } // namespace
@@ -123,7 +131,7 @@ void 	MovieGameModeClass::Think()
 			return;
 		}
 
-		bool	leave = Input::Get_State(INPUT_FUNCTION_MENU_TOGGLE);
+		bool	leave = Is_Movie_Stop_Key_Down();
 		static bool was_leave = true;
 		if ( leave && !was_leave ) {
 			was_leave = leave;		// Weird.  Double looping calls

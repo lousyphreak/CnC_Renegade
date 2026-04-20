@@ -353,7 +353,7 @@ MovieOptionsMenuClass::On_Key_Down (uint32_t key_id, uint32_t key_data)
 	//
 	//	Stop playing the movie on any keypress
 	//
-	if (IsPlaying && key_id == VK_ESCAPE) {
+	if (IsPlaying && (key_id == VK_ESCAPE || key_id == VK_RETURN)) {
 		WWAudioClass::Get_Instance ()->Temp_Disable_Audio (false);
 		BINKMovie::Stop ();
 		IsPlaying = false;

@@ -244,7 +244,7 @@ void cTeamManager::Log_Team_List(void)
 
 	StringClass results_filename;
 	results_filename.Format("results%d.txt", cUserOptions::ResultsLogNumber.Get());
-	FILE * file = ::fopen(results_filename, "wt");
+	SDL_IOStream * file = renegade_osdep::Open_C_File(results_filename, "wt");
 
    if (file != NULL) {
 
@@ -257,7 +257,7 @@ void cTeamManager::Log_Team_List(void)
 		wide_text.Convert_To(text);
 
 		::sprintf(line, "%s\n", text.Peek_Buffer());
-		::fwrite(line, 1, ::strlen(line), file);
+		renegade_osdep::Write_C_File(file, line, ::strlen(line));
 
 		for (int j = 0; j < MAX_TEAMS; j++) {
 			cTeam * p_team = Team_Array[j];
@@ -266,14 +266,14 @@ void cTeamManager::Log_Team_List(void)
 				p_team->Get_Team_String(j + 1, wide_text);
 				wide_text.Convert_To(text);
 				::sprintf(line, "%s\n", text.Peek_Buffer());
-				::fwrite(line, 1, ::strlen(line), file);
+				renegade_osdep::Write_C_File(file, line, ::strlen(line));
 			}
 		}
 
 		::sprintf(line, "\n");
-		::fwrite(line, 1, ::strlen(line), file);
+		renegade_osdep::Write_C_File(file, line, ::strlen(line));
 
-		::fclose(file);
+		renegade_osdep::Close_C_File(file);
 	}
 }
 
@@ -648,8 +648,6 @@ void cTeamManager::Render_Team_List(void)
    }
 
 }
-
-
 
 
 

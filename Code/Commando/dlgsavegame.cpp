@@ -48,7 +48,7 @@
 #include "string_ids.h"
 #include "editctrl.h"
 
-#include <filesystem>
+#include <SDL3/SDL_storage.h>
 
 
 ////////////////////////////////////////////////////////////////
@@ -741,9 +741,14 @@ SaveGameMenuClass::On_EditCtrl_Enter_Pressed (EditCtrlClass *edit_ctrl, int ctrl
 bool
 SaveGameMenuClass::Check_HD_Space (void)
 {
-	std::error_code error;
-	const std::filesystem::space_info space_info = std::filesystem::space(std::filesystem::current_path(), error);
-	if (error) {
+	char *current_directory = SDL_GetCurrentDirectory();
+	if (current_directory == NULL) {
+		return false;
+	}
+
+	SDL_Storage *storage = SDL_OpenFileStorage(current_directory);
+	SDL_free(current_directory);
+	if (storage == NULL) {
 		return false;
 	}
 	
@@ -751,7 +756,9 @@ SaveGameMenuClass::Check_HD_Space (void)
 	//	Is there at least 2 megs of disk space available?
 	//
 	const std::uintmax_t TWO_MEGS = 1024u * 1024u * 2u;
-	if (space_info.available < TWO_MEGS) {
+	const Uint64 available = SDL_GetStorageSpaceRemaining(storage);
+	SDL_CloseStorage(storage);
+	if (available < TWO_MEGS) {
 
 		//
 		//	Let the user know that they can't save because of lack of disk space

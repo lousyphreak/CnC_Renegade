@@ -37,15 +37,15 @@
 #include "skinpackagemgr.h"
 #include "registry.h"
 #include "_globals.h"
+#include "../wwlib/osdep.h"
 
 #include <cstring>
-#include <filesystem>
 
 namespace {
 
-bool Matches_Package_File(const std::filesystem::path &path)
+bool Matches_Package_File(const std::string &path)
 {
-	StringClass extension(path.extension().string().c_str(), true);
+	StringClass extension(renegade_osdep::Get_Path_Extension(path).c_str(), true);
 	return extension.Compare_No_Case(".pkg") == 0;
 }
 
@@ -119,27 +119,28 @@ SkinPackageMgrClass::Shutdown (void)
 void
 SkinPackageMgrClass::Build_List (void)
 {
-	std::error_code error;
-	const std::filesystem::path search_root = std::filesystem::current_path(error);
-	if (error) {
+	char search_root[MAX_PATH] = {};
+	if (::GetCurrentDirectory(sizeof(search_root), search_root) == 0) {
 		return;
 	}
 
-	for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(search_root, error)) {
-		if (error) {
-			break;
-		}
+	std::vector<std::string> entries;
+	if (!renegade_osdep::Collect_Directory_Entries(search_root, entries)) {
+		return;
+	}
 
-		if (!entry.is_regular_file()) {
+	for (const std::string &entry_name : entries) {
+		const std::string entry_path = renegade_osdep::Join_Path(search_root, entry_name);
+		if (!renegade_osdep::Path_Is_Regular_File(entry_path)) {
 			continue;
 		}
 
-		if (!Matches_Package_File(entry.path())) {
+		if (!Matches_Package_File(entry_name)) {
 			continue;
 		}
 
 		SkinPackageClass package;
-		package.Set_Package_Filename(entry.path().filename().string().c_str());
+		package.Set_Package_Filename(entry_name.c_str());
 		PackageList.Add(package);
 	}
 	

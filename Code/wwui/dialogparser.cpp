@@ -46,7 +46,7 @@
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
-#include <fstream>
+#include <cstdio>
 #include <regex>
 #include <sstream>
 #include <string>
@@ -238,25 +238,26 @@ bool Evaluate_Expression(const std::string &expression, const std::unordered_map
 	return true;
 }
 
-std::filesystem::path Find_Project_File(const std::filesystem::path &relative_path)
+std::string Find_Project_File(const char *relative_path)
 {
-	std::error_code error;
-	std::filesystem::path current = std::filesystem::current_path(error);
-	if (error) {
+	char current_path[MAX_PATH] = {};
+	if (::GetCurrentDirectory(sizeof(current_path), current_path) == 0) {
 		return {};
 	}
 
+	std::string current = current_path;
 	while (!current.empty()) {
-		const std::filesystem::path candidate = current / relative_path;
-		if (std::filesystem::exists(candidate, error) && std::filesystem::is_regular_file(candidate, error)) {
+		const std::string candidate = renegade_osdep::Join_Path(current, relative_path);
+		if (renegade_osdep::Path_Is_Regular_File(candidate)) {
 			return candidate;
 		}
 
-		if (current == current.root_path()) {
+		const std::string parent = renegade_osdep::Get_Parent_Path(current);
+		if (parent.empty() || parent == current) {
 			break;
 		}
 
-		current = current.parent_path();
+		current = parent;
 	}
 
 	return {};
@@ -282,18 +283,23 @@ const std::unordered_map<std::string, int> &Get_Defines()
 	defines["IDCLOSE"] = 8;
 	defines["IDHELP"] = 9;
 
-	const std::filesystem::path resource_header = Find_Project_File("Code/Commando/resource.h");
-	const std::filesystem::path dialog_header = Find_Project_File("Code/Commando/dialogresource.h");
-	const std::filesystem::path headers[] = { resource_header, dialog_header };
+	const std::string resource_header = Find_Project_File("Code/Commando/resource.h");
+	const std::string dialog_header = Find_Project_File("Code/Commando/dialogresource.h");
+	const std::string headers[] = { resource_header, dialog_header };
 
 	for (const auto &header_path : headers) {
 		if (header_path.empty()) {
 			continue;
 		}
 
-		std::ifstream file(header_path);
-		std::string line;
-		while (std::getline(file, line)) {
+		SDL_IOStream * file = renegade_osdep::Open_C_File(header_path, "rt");
+		if (file == NULL) {
+			continue;
+		}
+
+		char line_buffer[4096];
+		while (renegade_osdep::Get_C_File_Line(line_buffer, sizeof(line_buffer), file) != NULL) {
+			std::string line(line_buffer);
 			line = Trim_Copy(Strip_Line_Comment(line));
 			if (line.rfind("#define ", 0) != 0) {
 				continue;
@@ -310,6 +316,8 @@ const std::unordered_map<std::string, int> &Get_Defines()
 				defines[name] = value;
 			}
 		}
+
+		renegade_osdep::Close_C_File(file);
 	}
 
 	return defines;
@@ -600,18 +608,24 @@ bool Parse_Control_Statement(const std::string &statement, const std::unordered_
 
 bool Parse_Template_From_Rc_Source(int res_id, int *dlg_width, int *dlg_height, WideStringClass *dlg_title, DynamicVectorClass<ControlDefinitionStruct> *control_list)
 {
-	const std::filesystem::path rc_path = Find_Project_File("Code/Commando/chat.rc");
+	const std::string rc_path = Find_Project_File("Code/Commando/chat.rc");
 	if (rc_path.empty()) {
 		return false;
 	}
 
 	const std::unordered_map<std::string, int> &defines = Get_Defines();
-	std::ifstream file(rc_path);
+	SDL_IOStream * file = renegade_osdep::Open_C_File(rc_path, "rt");
+	if (file == NULL) {
+		return false;
+	}
+
+	char line_buffer[4096];
 	std::string line;
 	bool in_target_dialog = false;
 	bool in_dialog_body = false;
 
-	while (std::getline(file, line)) {
+	while (renegade_osdep::Get_C_File_Line(line_buffer, sizeof(line_buffer), file) != NULL) {
+		line = line_buffer;
 		line = Trim_Copy(Strip_Line_Comment(line));
 		if (line.empty()) {
 			continue;
@@ -650,17 +664,20 @@ bool Parse_Template_From_Rc_Source(int res_id, int *dlg_width, int *dlg_height, 
 		}
 
 		if (line == "END") {
+			renegade_osdep::Close_C_File(file);
 			return true;
 		}
 
 		std::string statement = line;
-		while (Statement_Needs_Continuation(statement) && std::getline(file, line)) {
+		while (Statement_Needs_Continuation(statement) && renegade_osdep::Get_C_File_Line(line_buffer, sizeof(line_buffer), file) != NULL) {
+			line = line_buffer;
 			statement += " " + Trim_Copy(Strip_Line_Comment(line));
 		}
 
 		Parse_Control_Statement(statement, defines, control_list);
 	}
 
+	renegade_osdep::Close_C_File(file);
 	return false;
 }
 

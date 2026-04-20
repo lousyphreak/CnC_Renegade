@@ -480,15 +480,15 @@ void CompressedVisTableClass::Load (void* hfile)
 
 	if (hfile != NULL) {
 
-		FILE * file = static_cast<FILE *>(hfile);
+		SDL_IOStream * file = static_cast<SDL_IOStream *>(hfile);
 
-		if (::fread(&BufferSize, sizeof(BufferSize), 1, file) != 1) {
+		if (renegade_osdep::Read_C_File(file, &BufferSize, sizeof(BufferSize)) != sizeof(BufferSize)) {
 			BufferSize = 0;
 			return;
 		}
 
 		Buffer = new uint8_t[BufferSize];
-		const size_t bytes_read = ::fread(Buffer, sizeof(uint8_t), BufferSize, file);
+		const size_t bytes_read = renegade_osdep::Read_C_File(file, Buffer, BufferSize);
 		WWASSERT(bytes_read == static_cast<size_t>(BufferSize));
 	}
 	
@@ -499,11 +499,11 @@ void CompressedVisTableClass::Save (void* hfile)
 {
 	if (hfile != NULL) {
 
-		FILE * file = static_cast<FILE *>(hfile);
-		const size_t size_written = ::fwrite(&BufferSize, sizeof(BufferSize), 1, file);
-		WWASSERT(size_written == 1);
+		SDL_IOStream * file = static_cast<SDL_IOStream *>(hfile);
+		const size_t size_written = renegade_osdep::Write_C_File(file, &BufferSize, sizeof(BufferSize));
+		WWASSERT(size_written == sizeof(BufferSize));
 
-		const size_t bytes_written = ::fwrite(Buffer, sizeof(uint8_t), BufferSize, file);
+		const size_t bytes_written = renegade_osdep::Write_C_File(file, Buffer, BufferSize);
 		WWASSERT(bytes_written == static_cast<size_t>(BufferSize));
 	}
 	

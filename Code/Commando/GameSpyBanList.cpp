@@ -116,14 +116,14 @@ void cGameSpyBanList::Ban_User(const char *nickname, const char *challenge_respo
 	}
  	BanList->Add_Tail(t);
 
-	outf = fopen("banlist.txt", "at");
+	outf = renegade_osdep::Open_C_File("banlist.txt", "at");
 
 	if (outf) {
-		fprintf(outf, "\"%s\" \"%s\" \"%s\" \"%s\" \"%s\"; \"%s\" console BAN\n", t->Get_Rule_Type() ? "Allow" : "Deny",
+		renegade_osdep::Printf_C_File(outf, "\"%s\" \"%s\" \"%s\" \"%s\" \"%s\"; \"%s\" console BAN\n", t->Get_Rule_Type() ? "Allow" : "Deny",
 			t->Get_Nick_Name(), t->Get_Hash_ID(), 
 			t->Get_Ip_Address() ? cNetUtil::Address_To_String(t->Get_Ip_Address()) : "", 
 			t->Get_Ip_Address() ? "255.255.255.255" : "", nickname ? nickname : "");
-		fclose(outf);
+		renegade_osdep::Close_C_File(outf);
 	}
 }
 
@@ -276,15 +276,15 @@ void cGameSpyBanList::Strip_Escapes(char *var) {
 void cGameSpyBanList::LoadBans(void) {
 
 	char buff[512];
-	FILE *outf = NULL;
+	SDL_IOStream *outf = NULL;
 
 	if (!BanList->Is_Empty()) BanList->Delete();
 
-	outf = fopen("banlist.txt", "rt");
+	outf = renegade_osdep::Open_C_File("banlist.txt", "rt");
 	if (!outf) return;
 	buff[sizeof(buff)-1] = 0;
 
-	while (fgets(buff, sizeof(buff)-1, outf)) {
+	while (renegade_osdep::Get_C_File_Line(buff, sizeof(buff)-1, outf)) {
 		// Format of each line "ruletype" "nickname" "hashid" "ip" "netmask"
 		char *nickname = NULL;
 		char *ruletype = NULL;
@@ -341,5 +341,5 @@ void cGameSpyBanList::LoadBans(void) {
 		BanEntry *t = new BanEntry(nickname, ip, hashid, ipmask, stricmp(ruletype, "Allow") == 0);
 		BanList->Add_Tail(t);
 	}
-	fclose(outf);
+	renegade_osdep::Close_C_File(outf);
 }

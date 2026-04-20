@@ -20,6 +20,7 @@
 
 #include "wwdebug.h"
 #include "wwprofile.h"
+#include "../wwlib/osdep.h"
 
 #include <SDL3/SDL_timer.h>
 
@@ -149,7 +150,7 @@ Uint64 g_last_log_ticks = 0;
 Uint64 g_frame_start_ticks = 0;
 PerfFrameStats g_frame_stats;
 PerfWindowStats g_window_stats;
-std::FILE *g_log_file = nullptr;
+SDL_IOStream *g_log_file = nullptr;
 std::string g_log_path;
 std::string g_profile_path;
 
@@ -204,12 +205,16 @@ double Ticks_To_Milliseconds(Uint64 tick_count)
 
 void Write_Log_Line(const char *format, ...)
 {
-	std::FILE *stream = g_log_file != nullptr ? g_log_file : stderr;
 	va_list arguments;
 	va_start(arguments, format);
-	std::vfprintf(stream, format, arguments);
+	if (g_log_file != nullptr) {
+		renegade_osdep::VPrintf_C_File(g_log_file, format, arguments);
+		renegade_osdep::Flush_C_File(g_log_file);
+	} else {
+		std::vfprintf(stderr, format, arguments);
+		std::fflush(stderr);
+	}
 	va_end(arguments);
-	std::fflush(stream);
 }
 
 void Finish_Profile_Collection()
@@ -379,7 +384,7 @@ void WWPerfMonClass::Configure_From_Environment(void)
 	g_last_log_ticks = SDL_GetPerformanceCounter();
 
 	if (g_metrics_enabled) {
-		g_log_file = std::fopen(g_log_path.c_str(), "wb");
+		g_log_file = renegade_osdep::Open_C_File(g_log_path.c_str(), "wb");
 		if (g_log_file == nullptr) {
 			WWDEBUG_WARNING(("Failed to open perf log '%s', falling back to stderr\n", g_log_path.c_str()));
 		}
@@ -421,7 +426,7 @@ void WWPerfMonClass::Shutdown(void)
 	Finish_Profile_Collection();
 
 	if (g_log_file != nullptr) {
-		std::fclose(g_log_file);
+		renegade_osdep::Close_C_File(g_log_file);
 		g_log_file = nullptr;
 	}
 }

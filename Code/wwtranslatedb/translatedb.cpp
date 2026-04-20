@@ -36,9 +36,10 @@
 
 
 #include "translatedb.h"
+#include "../wwlib/osdep.h"
 
 #include <algorithm>
-#include <fstream>
+#include <cstdio>
 #include <SDL3/SDL_stdinc.h>
 #include <string.h>
 
@@ -452,9 +453,9 @@ TranslateDBClass::Validate_Data (void)
 void
 TranslateDBClass::Export_Table (const char *filename)
 {
-	std::ofstream file(filename, std::ios::out | std::ios::trunc);
-	WWASSERT(file.is_open());
-	if (file.is_open()) {
+	SDL_IOStream * file = renegade_osdep::Open_C_File(filename, "wt");
+	WWASSERT(file != NULL);
+	if (file != NULL) {
 
 		//
 		//	Loop over all the translation objects and write a tab delimited
@@ -502,9 +503,11 @@ TranslateDBClass::Export_Table (const char *filename)
 				text_entry += english_string;
 				text_entry += "\t";
 				text_entry += sound_preset_name;
-				file << static_cast<const char *>(text_entry) << '\n';
+				renegade_osdep::Printf_C_File(file, "%s\n", static_cast<const char *>(text_entry));
 			}
 		}
+
+		renegade_osdep::Close_C_File(file);
 	}
 	
 	return ;
@@ -519,11 +522,11 @@ TranslateDBClass::Export_Table (const char *filename)
 void
 TranslateDBClass::Export_C_Header (const char *filename)
 {
-	std::ofstream file(filename, std::ios::out | std::ios::trunc);
-	WWASSERT(file.is_open());
-	if (file.is_open()) {
-		auto write_line = [&file](const char *text) {
-			file << text << '\n';
+	SDL_IOStream * file = renegade_osdep::Open_C_File(filename, "wt");
+	WWASSERT(file != NULL);
+	if (file != NULL) {
+		auto write_line = [file](const char *text) {
+			renegade_osdep::Printf_C_File(file, "%s\n", text);
 		};
 
 		//
@@ -535,7 +538,7 @@ TranslateDBClass::Export_C_Header (const char *filename)
 
 		StringClass version_line;
 		version_line.Format ("#define STRINGS_VER		%d", m_VersionNumber);
-		file << static_cast<const char *>(version_line) << '\n';
+		renegade_osdep::Printf_C_File(file, "%s\n", static_cast<const char *>(version_line));
 
 		write_line ("");
 		write_line ("// TRANSLATEDB: Begin ID Block");
@@ -553,13 +556,14 @@ TranslateDBClass::Export_C_Header (const char *filename)
 				//
 				StringClass id_entry;
 				id_entry.Format ("#define %s		%d", (const char *)object->Get_ID_Desc (), object->Get_ID ());				
-				file << static_cast<const char *>(id_entry) << '\n';
+				renegade_osdep::Printf_C_File(file, "%s\n", static_cast<const char *>(id_entry));
 			}
 		}
 
 		write_line ("// TRANSLATEDB: End ID Block");
 		write_line ("");
 		write_line ("#endif //__STRING_IDS_H");
+		renegade_osdep::Close_C_File(file);
 	}
 	
 	return ;
@@ -574,19 +578,23 @@ TranslateDBClass::Export_C_Header (const char *filename)
 void
 TranslateDBClass::Import_C_Header (const char *filename)
 {
-	std::ifstream file(filename);
-	WWASSERT(file.is_open());
-	if (file.is_open()) {
+	SDL_IOStream * file = renegade_osdep::Open_C_File(filename, "rt");
+	WWASSERT(file != NULL);
+	if (file != NULL) {
 
 		StringClass line;
 		bool found_id_block = false;
-		std::string line_buffer;
+		char line_buffer[4096];
 
 		//
 		//	Look for the start of the ID block
 		//
-		while (found_id_block == false && std::getline(file, line_buffer)) {
-			line = line_buffer.c_str();
+		while (found_id_block == false && renegade_osdep::Get_C_File_Line(line_buffer, sizeof(line_buffer), file) != NULL) {
+			std::size_t line_length = std::strlen(line_buffer);
+			while (line_length > 0 && (line_buffer[line_length - 1] == '\n' || line_buffer[line_length - 1] == '\r')) {
+				line_buffer[--line_length] = 0;
+			}
+			line = line_buffer;
 			found_id_block = (line.Compare_No_Case ("// TRANSLATEDB: Begin ID Block") == 0);
 		}
 
@@ -596,8 +604,12 @@ TranslateDBClass::Import_C_Header (const char *filename)
 			//	Read each ID define from the header file
 			//
 			bool found_end_block = false;
-			while (found_end_block == false && std::getline(file, line_buffer)) {
-				line = line_buffer.c_str();
+			while (found_end_block == false && renegade_osdep::Get_C_File_Line(line_buffer, sizeof(line_buffer), file) != NULL) {
+				std::size_t line_length = std::strlen(line_buffer);
+				while (line_length > 0 && (line_buffer[line_length - 1] == '\n' || line_buffer[line_length - 1] == '\r')) {
+					line_buffer[--line_length] = 0;
+				}
+				line = line_buffer;
 
 				if (SDL_strncasecmp (line, "#define ", 8) == 0) {
 					
@@ -666,8 +678,10 @@ TranslateDBClass::Import_C_Header (const char *filename)
 				}
 			}
 		}
+
+		renegade_osdep::Close_C_File(file);
 	}
-	
+
 	return ;
 }
 
@@ -1164,9 +1178,9 @@ Convert_Chars_To_Newline (StringClass &string)
 void
 TranslateDBClass::Import_Strings (const char *filename)
 {
-	std::ifstream file(filename);
-	WWASSERT(file.is_open());
-	if (file.is_open()) {
+	SDL_IOStream * file = renegade_osdep::Open_C_File(filename, "rt");
+	WWASSERT(file != NULL);
+	if (file != NULL) {
 
 		//
 		//	Keep reading data from the file until we've reached the end
@@ -1174,9 +1188,13 @@ TranslateDBClass::Import_Strings (const char *filename)
 		//
 		bool keep_going = true;
 		StringClass line;
-		std::string line_buffer;
-		while (keep_going && std::getline(file, line_buffer)) {
-			line = line_buffer.c_str();
+		char line_buffer[4096];
+		while (keep_going && renegade_osdep::Get_C_File_Line(line_buffer, sizeof(line_buffer), file) != NULL) {
+			std::size_t line_length = std::strlen(line_buffer);
+			while (line_length > 0 && (line_buffer[line_length - 1] == '\n' || line_buffer[line_length - 1] == '\r')) {
+				line_buffer[--line_length] = 0;
+			}
+			line = line_buffer;
 			
 			//
 			//	Convert the string to an array of values
@@ -1233,6 +1251,8 @@ TranslateDBClass::Import_Strings (const char *filename)
 				value_array = NULL;
 			}
 		}
+
+		renegade_osdep::Close_C_File(file);
 	}
 
 	return ;

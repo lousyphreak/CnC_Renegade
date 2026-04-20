@@ -1406,7 +1406,7 @@ void cPlayerManager::Log_Player_List(void)
 
 	StringClass results_filename;
 	results_filename.Format("results%d.txt", cUserOptions::ResultsLogNumber.Get());
-	FILE * file = ::fopen(results_filename, "at");
+	SDL_IOStream * file = renegade_osdep::Open_C_File(results_filename, "at");
 
    if (file != NULL) {
 
@@ -1419,7 +1419,7 @@ void cPlayerManager::Log_Player_List(void)
 		wide_text.Convert_To(text);
 
 		::sprintf(line, "%s\n", text.Peek_Buffer());
-		::fwrite(line, 1, ::strlen(line), file);
+		renegade_osdep::Write_C_File(file, line, ::strlen(line));
 
 		for (int j = 0; j < MAX_PLAYERS; j++) {
 			cPlayer * p_player = Player_Array[j];
@@ -1427,14 +1427,14 @@ void cPlayerManager::Log_Player_List(void)
 				p_player->Get_Player_String(j + 1, wide_text, true);
 				wide_text.Convert_To(text);
 				::sprintf(line, "%s\n", text.Peek_Buffer());
-				::fwrite(line, 1, ::strlen(line), file);
+				renegade_osdep::Write_C_File(file, line, ::strlen(line));
 			}
 		}
 
 		::sprintf(line, "\n");
-		::fwrite(line, 1, ::strlen(line), file);
+		renegade_osdep::Write_C_File(file, line, ::strlen(line));
 
-		::fclose(file);
+		renegade_osdep::Close_C_File(file);
 	}
 }
 
@@ -1520,6 +1520,4 @@ bool cPlayerManager::Load(ChunkLoadClass &cload)
 }
 
 //-----------------------------------------------------------------------------
-
-
 

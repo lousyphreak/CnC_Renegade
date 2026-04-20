@@ -246,14 +246,14 @@ bool ArgvClass::Load_File(const char *fname)
 {
 	file_auto_ptr fileap(_TheFileFactory, fname);
 
-	FILE *fp = fopen(fileap->File_Name(), "r");
+	SDL_IOStream *fp = renegade_osdep::Open_C_File(fileap->File_Name(), "r");
 
 	// [SKB: May 08 2001 @ 8:42pm] :
 	// If file factor fails to return a valid name (i.e. can't open the file),
 	// then see if user (namely me) specified a full path for the file and see
 	// if we can open just fname.
 	if (!fp) 
-		fp = fopen(fname, "r");
+		fp = renegade_osdep::Open_C_File(fname, "r");
 
 	if (fp)  {							
 		while (Argc < MAX_ARGC) {
@@ -261,7 +261,7 @@ bool ArgvClass::Load_File(const char *fname)
 			char string[maxstrlen + 1];
 
 			// Get next line in file.
-			if (!fgets(string, maxstrlen - 1, fp)) {
+			if (!renegade_osdep::Get_C_File_Line(string, maxstrlen - 1, fp)) {
 				break;
 			}
 
@@ -288,7 +288,7 @@ bool ArgvClass::Load_File(const char *fname)
 				}
 			}
 		}
-		fclose(fp);
+		renegade_osdep::Close_C_File(fp);
 		return(true);
 	}				  
 	return(false);
@@ -497,8 +497,6 @@ bool ArgvClass::Remove_Value(const char *attrib)
 	}
 	return(false);
 }
-
-
 
 
 

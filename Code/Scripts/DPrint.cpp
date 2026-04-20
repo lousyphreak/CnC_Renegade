@@ -39,11 +39,11 @@
 
 #include "DPrint.h"
 #include <SDL3/SDL_filesystem.h>
-#include <SDL3/SDL_iostream.h>
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_stdinc.h>
 
 #include <array>
+#include <cerrno>
 #include <cstdarg>
 #include <cstring>
 #include <string>
@@ -88,19 +88,19 @@ namespace
 	void Write_Log_File(const char * text)
 	{
 		const std::string filename = Build_Log_Filename();
-		SDL_IOStream * file = SDL_IOFromFile(filename.c_str(), "ab");
+		SDL_IOStream * file = renegade_osdep::Open_C_File(filename.c_str(), "ab");
 		if (file == nullptr) {
-			SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Failed to open script log '%s': %s", filename.c_str(), SDL_GetError());
+			SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Failed to open script log '%s': %s", filename.c_str(), std::strerror(errno));
 			return;
 		}
 
 		const std::string normalized = Normalize_Log_Text(text);
-		const std::size_t written = SDL_WriteIO(file, normalized.data(), normalized.size());
+		const std::size_t written = renegade_osdep::Write_C_File(file, normalized.data(), normalized.size());
 		if (written != normalized.size()) {
 			SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Short write while appending to script log '%s'", filename.c_str());
 		}
 
-		SDL_CloseIO(file);
+		renegade_osdep::Close_C_File(file);
 	}
 }
 

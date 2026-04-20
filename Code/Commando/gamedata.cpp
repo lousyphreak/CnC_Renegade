@@ -1028,8 +1028,10 @@ void cGameData::Load_From_Server_Config(LPCSTR config_file)
 
 	if (p_ini == NULL) {
 		full_filename.Format("data/%s", config_file);
-      FILE * file = fopen(full_filename, "w");
-	   fclose(file);
+      SDL_IOStream * file = renegade_osdep::Open_C_File(full_filename, "w");
+	   if (file != NULL) {
+		   renegade_osdep::Close_C_File(file);
+	   }
 
 		p_ini = Get_INI(config_file);
    }

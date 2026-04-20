@@ -5269,11 +5269,11 @@ void ConsoleFunctionManager::Verbose_Help_File(void)
 	//
 	// Log function list to a file
 	//
-   FILE * file = fopen("commands.txt", "w");
+   SDL_IOStream * file = renegade_osdep::Open_C_File("commands.txt", "w");
 	if ( file ) {
 		char buffer[500];
 		sprintf(buffer, "RENEGADE COMMANDS as at %s\n\n", cMiscUtil::Get_Text_Time());
-		fwrite(buffer, 1, strlen(buffer), file);
+		renegade_osdep::Write_C_File(file, buffer, strlen(buffer));
 		for (	int index = 0; index < FunctionList.Count(); index++) {
 			ConsoleFunctionClass * function = FunctionList[index];
 			WWASSERT(function != NULL);
@@ -5284,16 +5284,16 @@ void ConsoleFunctionManager::Verbose_Help_File(void)
 				strcat(buffer, alias_string);
 			}
 			strcat(buffer, "\n");
-			fwrite(buffer, 1, strlen(buffer), file);
+			renegade_osdep::Write_C_File(file, buffer, strlen(buffer));
 		}
 
 #ifdef WWDEBUG
 		char watch_help_buffer[5000];
       WatchConsoleFunctionClass::Get_Verbose_Help(watch_help_buffer, sizeof(watch_help_buffer));
-		fwrite(watch_help_buffer, 1, strlen(watch_help_buffer), file);
+		renegade_osdep::Write_C_File(file, watch_help_buffer, strlen(watch_help_buffer));
 #endif
 
-		fclose(file);
+		renegade_osdep::Close_C_File(file);
 	}
 }
 

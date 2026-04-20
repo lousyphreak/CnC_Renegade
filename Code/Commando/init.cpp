@@ -200,7 +200,7 @@ void Append_To_Assert_History(const char * message)
 		return;
 	}
 
-	FILE * file = ::fopen("_asserts.txt", "at");
+	SDL_IOStream * file = renegade_osdep::Open_C_File("_asserts.txt", "at");
    if (file == NULL) {
 		return;
 	}
@@ -211,13 +211,13 @@ void Append_To_Assert_History(const char * message)
 	// Blank lines plus timestamp
 	//
 	::sprintf(line, "\n\nWhen:       %s\n", cMiscUtil::Get_Text_Time());
-	::fwrite(line, 1, ::strlen(line), file);
+	renegade_osdep::Write_C_File(file, line, ::strlen(line));
 
 	//
 	// version #
 	//
 	::sprintf(line, "Version:    %d\n", DebugManager::Get_Version_Number());
-	::fwrite(line, 1, ::strlen(line), file);
+	renegade_osdep::Write_C_File(file, line, ::strlen(line));
 
 	//
 	// Full filename
@@ -225,7 +225,7 @@ void Append_To_Assert_History(const char * message)
 	char full_filename[MAX_PATH];
 	::GetModuleFileName(NULL, full_filename, sizeof(full_filename));
 	::sprintf(line, "Filename:   %s\n", full_filename);
-	::fwrite(line, 1, ::strlen(line), file);
+	renegade_osdep::Write_C_File(file, line, ::strlen(line));
 
 	//
 	// File size
@@ -236,16 +236,16 @@ void Append_To_Assert_History(const char * message)
 		uint32_t file_size = ::GetFileSize(hfile, NULL);
 		::CloseHandle(hfile);
 		::sprintf(line, "Filesize:   %d\n", file_size);
-		::fwrite(line, 1, ::strlen(line), file);
+		renegade_osdep::Write_C_File(file, line, ::strlen(line));
 	}
 
 	//
 	// The assert message itself
 	//
 	::sprintf(line, "Assert:     %s\n", message);
-	::fwrite(line, 1, ::strlen(line), file);
+	renegade_osdep::Write_C_File(file, line, ::strlen(line));
 
-	::fclose(file);
+	renegade_osdep::Close_C_File(file);
 }
 
 

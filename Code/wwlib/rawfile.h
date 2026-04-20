@@ -51,9 +51,8 @@
 #include "osdep.h"
 
 #if !defined(_WIN32)
-#include <stdio.h>
-  #define	NULL_HANDLE	 	NULL	
-  #define	HANDLE_TYPE		FILE*	
+  #define	NULL_HANDLE	 	NULL
+  #define	HANDLE_TYPE		SDL_IOStream *
 #else
   #define	NULL_HANDLE		INVALID_HANDLE_VALUE
   #define	HANDLE_TYPE		HANDLE
@@ -143,7 +142,7 @@ class RawFileClass : public FileClass
 		**	This is the low level DOS handle. A -1 indicates an empty condition.
 		*/
 		#ifdef _UNIX
-			FILE*  Handle;
+			SDL_IOStream * Handle;
 		#else
 			void * Handle;
 		#endif

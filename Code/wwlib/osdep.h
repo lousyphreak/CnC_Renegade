@@ -15,7 +15,6 @@
 #include <cwctype>
 #include <ctype.h>
 #include <errno.h>
-#include <filesystem>
 #include <limits.h>
 #include <mutex>
 #include <string>
@@ -63,7 +62,11 @@
 
 #else
 
+#include <SDL3/SDL_filesystem.h>
+#include <SDL3/SDL_iostream.h>
+#include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_thread.h>
+#include <SDL3/SDL_time.h>
 #include <SDL3/SDL_video.h>
 
 #include <alloca.h>
@@ -179,6 +182,12 @@ typedef struct _FILETIME {
 } FILETIME, *LPFILETIME;
 #endif
 
+typedef struct _BY_HANDLE_FILE_INFORMATION {
+	FILETIME ftCreationTime;
+	FILETIME ftLastAccessTime;
+	FILETIME ftLastWriteTime;
+} BY_HANDLE_FILE_INFORMATION, *LPBY_HANDLE_FILE_INFORMATION;
+
 struct WIN32_FIND_DATAA {
 	uint32_t dwFileAttributes;
 	FILETIME ftLastWriteTime;
@@ -265,6 +274,18 @@ extern bool GameInFocus;
 
 #ifndef OPEN_EXISTING
 #define OPEN_EXISTING 3u
+#endif
+
+#ifndef FILE_BEGIN
+#define FILE_BEGIN 0u
+#endif
+
+#ifndef FILE_CURRENT
+#define FILE_CURRENT 1u
+#endif
+
+#ifndef FILE_END
+#define FILE_END 2u
 #endif
 
 #ifndef ERROR_ALREADY_EXISTS
@@ -559,11 +580,12 @@ inline uint32_t GetLastError()
 namespace renegade_osdep {
 
 struct CompatFileHandle {
-    std::FILE *file;
+    SDL_IOStream *stream;
+    std::string path;
 };
 
 struct CompatFindHandle {
-    std::vector<std::filesystem::path> entries;
+    std::vector<std::string> entries;
     std::size_t index;
 };
 
@@ -583,17 +605,142 @@ inline bool Is_Path_Separator(char ch)
     return (ch == '/') || (ch == '\\');
 }
 
-inline bool Find_Case_Insensitive_Path_Component(const std::filesystem::path & directory, const std::string & component, std::string & matched_component)
+inline std::string Trim_Trailing_Path_Separators(const std::string & path)
 {
-    std::error_code error;
-    for (const auto & entry : std::filesystem::directory_iterator(directory, error)) {
-        if (error) {
-            break;
-        }
+    if (path.empty()) {
+        return path;
+    }
 
-        const std::string filename = entry.path().filename().string();
-        if (::strcasecmp(filename.c_str(), component.c_str()) == 0) {
-            matched_component = filename;
+    std::size_t end = path.size();
+    while (end > 1 && Is_Path_Separator(path[end - 1])) {
+        --end;
+    }
+    return path.substr(0, end);
+}
+
+inline std::string Join_Path(const std::string & parent, const std::string & child)
+{
+    if (parent.empty()) {
+        return child;
+    }
+    if (child.empty()) {
+        return parent;
+    }
+    if (parent.size() == 1 && Is_Path_Separator(parent[0])) {
+        return parent + child;
+    }
+    if (Is_Path_Separator(parent[parent.size() - 1])) {
+        return parent + child;
+    }
+    return parent + "/" + child;
+}
+
+inline std::string Get_Parent_Path(const std::string & path)
+{
+    const std::string normalized = Trim_Trailing_Path_Separators(Normalize_Path(path.c_str()));
+    if (normalized.empty()) {
+        return std::string();
+    }
+
+    const std::size_t separator = normalized.find_last_of('/');
+    if (separator == std::string::npos) {
+        return ".";
+    }
+    if (separator == 0) {
+        return "/";
+    }
+    return normalized.substr(0, separator);
+}
+
+inline std::string Get_Filename_Part(const std::string & path)
+{
+    const std::string normalized = Trim_Trailing_Path_Separators(Normalize_Path(path.c_str()));
+    const std::size_t separator = normalized.find_last_of('/');
+    if (separator == std::string::npos) {
+        return normalized;
+    }
+    if (separator + 1 >= normalized.size()) {
+        return std::string();
+    }
+    return normalized.substr(separator + 1);
+}
+
+inline std::string Get_Path_Extension(const std::string & path)
+{
+    const std::string filename = Get_Filename_Part(path);
+    const std::size_t dot = filename.find_last_of('.');
+    if (dot == std::string::npos) {
+        return std::string();
+    }
+    return filename.substr(dot);
+}
+
+inline std::string Get_Path_Stem(const std::string & path)
+{
+    const std::string filename = Get_Filename_Part(path);
+    const std::size_t dot = filename.find_last_of('.');
+    if (dot == std::string::npos) {
+        return filename;
+    }
+    return filename.substr(0, dot);
+}
+
+inline bool Get_Path_Info(const char * path, SDL_PathInfo * info)
+{
+    if (path == nullptr || path[0] == '\0') {
+        return false;
+    }
+
+    return SDL_GetPathInfo(path, info);
+}
+
+inline bool Path_Exists(const std::string & path)
+{
+    return Get_Path_Info(path.c_str(), nullptr);
+}
+
+inline bool Path_Is_Directory(const std::string & path)
+{
+    SDL_PathInfo info = {};
+    return Get_Path_Info(path.c_str(), &info) && info.type == SDL_PATHTYPE_DIRECTORY;
+}
+
+inline bool Path_Is_Regular_File(const std::string & path)
+{
+    SDL_PathInfo info = {};
+    return Get_Path_Info(path.c_str(), &info) && info.type == SDL_PATHTYPE_FILE;
+}
+
+inline bool Collect_Directory_Entries(const std::string & directory, std::vector<std::string> & entries)
+{
+    entries.clear();
+
+    int count = 0;
+    char ** matches = SDL_GlobDirectory(directory.c_str(), nullptr, static_cast<SDL_GlobFlags>(0), &count);
+    if (matches == nullptr) {
+        return false;
+    }
+
+    entries.reserve(static_cast<std::size_t>(count));
+    for (int index = 0; index < count; ++index) {
+        if (matches[index] != nullptr) {
+            entries.emplace_back(matches[index]);
+        }
+    }
+    SDL_free(matches);
+    return true;
+}
+
+inline bool Find_Case_Insensitive_Path_Component(const std::string & directory, const std::string & component, std::string & matched_component)
+{
+    std::vector<std::string> entries;
+    if (!Collect_Directory_Entries(directory, entries)) {
+        return false;
+    }
+
+    for (const std::string & entry : entries) {
+        if (::strcasecmp(entry.c_str(), component.c_str()) == 0) {
+            matched_component = entry;
             return true;
         }
     }
@@ -601,7 +748,7 @@ inline bool Find_Case_Insensitive_Path_Component(const std::filesystem::path & d
     return false;
 }
 
-inline bool Resolve_Path_Case(const std::string & normalized_path, bool allow_missing_leaf, std::filesystem::path & resolved_path)
+inline bool Resolve_Path_Case(const std::string & normalized_path, bool allow_missing_leaf, std::string & resolved_path)
 {
     if (normalized_path.empty()) {
         return false;
@@ -610,11 +757,11 @@ inline bool Resolve_Path_Case(const std::string & normalized_path, bool allow_mi
     const char * path = normalized_path.c_str();
     const int path_length = static_cast<int>(normalized_path.size());
 
-    std::filesystem::path current_path;
+    std::string current_path;
     int cursor = 0;
 
     if (Is_Path_Separator(path[0])) {
-        current_path = std::filesystem::path("/");
+        current_path = "/";
         while (cursor < path_length && Is_Path_Separator(path[cursor])) {
             ++cursor;
         }
@@ -638,11 +785,7 @@ inline bool Resolve_Path_Case(const std::string & normalized_path, bool allow_mi
             continue;
         }
         if (component == "..") {
-            if (current_path.empty()) {
-                current_path = std::filesystem::path("..");
-            } else {
-                current_path /= component;
-            }
+            current_path = current_path.empty() ? std::string("..") : Join_Path(current_path, component);
             continue;
         }
 
@@ -652,47 +795,43 @@ inline bool Resolve_Path_Case(const std::string & normalized_path, bool allow_mi
         }
         const bool is_last_component = (next_component >= path_length);
 
-        const std::filesystem::path search_directory = current_path.empty() ? std::filesystem::path(".") : current_path;
-        std::error_code status_error;
-        if (!std::filesystem::exists(search_directory, status_error) || !std::filesystem::is_directory(search_directory, status_error)) {
+        const std::string search_directory = current_path.empty() ? std::string(".") : current_path;
+        if (!Path_Is_Directory(search_directory)) {
             return false;
         }
 
         std::string matched_component;
         if (Find_Case_Insensitive_Path_Component(search_directory, component, matched_component)) {
-            current_path /= matched_component;
+            current_path = Join_Path(current_path, matched_component);
         } else {
             if (allow_missing_leaf && is_last_component) {
-                current_path /= component;
-                resolved_path = current_path;
+                resolved_path = Join_Path(current_path, component);
                 return true;
             }
             return false;
         }
     }
 
-    resolved_path = current_path.empty() ? std::filesystem::path(normalized_path) : current_path;
+    resolved_path = current_path.empty() ? normalized_path : current_path;
     return true;
 }
 
-inline bool Resolve_Existing_Path(const char * path, std::filesystem::path & resolved_path)
+inline bool Resolve_Existing_Path(const char * path, std::string & resolved_path)
 {
     const std::string normalized = Normalize_Path(path);
     if (normalized.empty()) {
         return false;
     }
 
-    std::error_code error;
-    const std::filesystem::path candidate(normalized);
-    if (std::filesystem::exists(candidate, error)) {
-        resolved_path = candidate;
+    if (Path_Exists(normalized)) {
+        resolved_path = normalized;
         return true;
     }
 
     return Resolve_Path_Case(normalized, false, resolved_path);
 }
 
-inline bool Resolve_Path_For_Access(const char * path, bool allow_missing_leaf, std::filesystem::path & resolved_path)
+inline bool Resolve_Path_For_Access(const char * path, bool allow_missing_leaf, std::string & resolved_path)
 {
     if (Resolve_Existing_Path(path, resolved_path)) {
         return true;
@@ -710,86 +849,388 @@ inline bool Resolve_Path_For_Access(const char * path, bool allow_missing_leaf, 
     return Resolve_Path_Case(normalized, true, resolved_path);
 }
 
-inline bool Resolve_Find_Pattern(const char * pattern, std::filesystem::path & directory, std::string & wildcard)
+inline bool Mode_Can_Create_File(const char * mode)
+{
+    if (mode == nullptr) {
+        return false;
+    }
+
+    return std::strchr(mode, 'w') != nullptr || std::strchr(mode, 'a') != nullptr;
+}
+
+inline bool Resolve_Path_For_Mode(const char * filename, const char * mode, std::string & resolved_path)
+{
+    if (filename == nullptr || mode == nullptr) {
+        errno = EINVAL;
+        return false;
+    }
+
+    if (Resolve_Existing_Path(filename, resolved_path)) {
+        return true;
+    }
+
+    if (!Mode_Can_Create_File(mode)) {
+        errno = ENOENT;
+        return false;
+    }
+
+    if (!Resolve_Path_For_Access(filename, true, resolved_path)) {
+        errno = ENOENT;
+        return false;
+    }
+
+    return true;
+}
+
+inline SDL_IOStream * Open_C_File(const char * filename, const char * mode)
+{
+    std::string resolved_path;
+    if (!Resolve_Path_For_Mode(filename, mode, resolved_path)) {
+        return nullptr;
+    }
+
+    return SDL_IOFromFile(resolved_path.c_str(), mode);
+}
+
+inline SDL_IOStream * Open_C_File(const std::string & filename, const char * mode)
+{
+    return Open_C_File(filename.c_str(), mode);
+}
+
+inline SDL_IOStream * Open_C_File_Read_Write(const char * filename)
+{
+    std::string resolved_path;
+    if (Resolve_Existing_Path(filename, resolved_path)) {
+        return SDL_IOFromFile(resolved_path.c_str(), "rb+");
+    }
+
+    if (!Resolve_Path_For_Access(filename, true, resolved_path)) {
+        errno = ENOENT;
+        return nullptr;
+    }
+
+    return SDL_IOFromFile(resolved_path.c_str(), "wb+");
+}
+
+inline std::size_t Read_C_File(SDL_IOStream * file, void * buffer, std::size_t byte_count)
+{
+    if (file == nullptr || (buffer == nullptr && byte_count != 0)) {
+        errno = EINVAL;
+        return 0;
+    }
+
+    return SDL_ReadIO(file, buffer, byte_count);
+}
+
+inline std::size_t Write_C_File(SDL_IOStream * file, const void * buffer, std::size_t byte_count)
+{
+    if (file == nullptr || (buffer == nullptr && byte_count != 0)) {
+        errno = EINVAL;
+        return 0;
+    }
+
+    return SDL_WriteIO(file, buffer, byte_count);
+}
+
+inline Sint64 Tell_C_File(SDL_IOStream * file)
+{
+    if (file == nullptr) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    return SDL_TellIO(file);
+}
+
+inline bool Seek_C_File(SDL_IOStream * file, Sint64 offset, int origin)
+{
+    if (file == nullptr) {
+        errno = EINVAL;
+        return false;
+    }
+
+    SDL_IOWhence whence = SDL_IO_SEEK_CUR;
+    switch (origin) {
+        case SEEK_SET:
+            whence = SDL_IO_SEEK_SET;
+            break;
+        case SEEK_END:
+            whence = SDL_IO_SEEK_END;
+            break;
+        case SEEK_CUR:
+        default:
+            whence = SDL_IO_SEEK_CUR;
+            break;
+    }
+
+    return SDL_SeekIO(file, offset, whence) >= 0;
+}
+
+inline Sint64 Get_C_File_Size(SDL_IOStream * file)
+{
+    if (file == nullptr) {
+        errno = EINVAL;
+        return -1;
+    }
+    return SDL_GetIOSize(file);
+}
+
+inline bool Flush_C_File(SDL_IOStream * file)
+{
+    if (file == nullptr) {
+        errno = EINVAL;
+        return false;
+    }
+
+    return SDL_FlushIO(file);
+}
+
+inline bool Is_C_File_EOF(SDL_IOStream * file)
+{
+    return file != nullptr && SDL_GetIOStatus(file) == SDL_IO_STATUS_EOF;
+}
+
+inline bool Has_C_File_Error(SDL_IOStream * file)
+{
+    if (file == nullptr) {
+        return true;
+    }
+
+    const SDL_IOStatus status = SDL_GetIOStatus(file);
+    return status == SDL_IO_STATUS_ERROR || status == SDL_IO_STATUS_NOT_READY || status == SDL_IO_STATUS_READONLY || status == SDL_IO_STATUS_WRITEONLY;
+}
+
+inline int Close_C_File(SDL_IOStream * file)
+{
+    if (file == nullptr) {
+        errno = EINVAL;
+        return EOF;
+    }
+
+    return SDL_CloseIO(file) ? 0 : EOF;
+}
+
+inline char * Get_C_File_Line(char * buffer, std::size_t buffer_size, SDL_IOStream * file)
+{
+    if (buffer == nullptr || buffer_size == 0 || file == nullptr) {
+        errno = EINVAL;
+        return nullptr;
+    }
+
+    std::size_t count = 0;
+    while (count + 1 < buffer_size) {
+        char ch = '\0';
+        const std::size_t bytes_read = Read_C_File(file, &ch, 1);
+        if (bytes_read == 0) {
+            break;
+        }
+
+        buffer[count++] = ch;
+        if (ch == '\n') {
+            break;
+        }
+    }
+
+    if (count == 0) {
+        return nullptr;
+    }
+
+    buffer[count] = '\0';
+    return buffer;
+}
+
+inline int VPrintf_C_File(SDL_IOStream * file, const char * format, va_list arguments)
+{
+    if (file == nullptr || format == nullptr) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    char * text = nullptr;
+    const int length = SDL_vasprintf(&text, format, arguments);
+    if (length < 0 || text == nullptr) {
+        return -1;
+    }
+
+    const std::size_t bytes_written = Write_C_File(file, text, static_cast<std::size_t>(length));
+    SDL_free(text);
+    return bytes_written == static_cast<std::size_t>(length) ? length : -1;
+}
+
+inline int Printf_C_File(SDL_IOStream * file, const char * format, ...)
+{
+    va_list arguments;
+    va_start(arguments, format);
+    const int result = VPrintf_C_File(file, format, arguments);
+    va_end(arguments);
+    return result;
+}
+
+inline int Put_C_File_Char(int ch, SDL_IOStream * file)
+{
+    const unsigned char value = static_cast<unsigned char>(ch);
+    return Write_C_File(file, &value, 1) == 1 ? ch : EOF;
+}
+
+inline bool Read_Entire_File(const char * filename, std::vector<uint8_t> & contents)
+{
+    contents.clear();
+
+    SDL_IOStream * file = Open_C_File(filename, "rb");
+    if (file == nullptr) {
+        return false;
+    }
+
+    size_t data_size = 0;
+    void * data = SDL_LoadFile_IO(file, &data_size, true);
+    if (data == nullptr) {
+        return false;
+    }
+
+    contents.resize(data_size);
+    if (data_size > 0) {
+        std::memcpy(contents.data(), data, data_size);
+    }
+    SDL_free(data);
+    return true;
+}
+
+inline bool Read_Entire_File(const std::string & filename, std::vector<uint8_t> & contents)
+{
+    return Read_Entire_File(filename.c_str(), contents);
+}
+
+inline bool Resolve_Find_Pattern(const char * pattern, std::string & directory, std::string & wildcard)
 {
     const std::string normalized = Normalize_Path(pattern);
     if (normalized.empty()) {
         return false;
     }
 
-    const std::filesystem::path path(normalized);
-    wildcard = path.filename().string();
-
-    std::filesystem::path raw_directory = path.has_parent_path() ? path.parent_path() : std::filesystem::path(".");
+    wildcard = Get_Filename_Part(normalized);
+    std::string raw_directory = Get_Parent_Path(normalized);
     if (raw_directory.empty()) {
-        raw_directory = std::filesystem::path(".");
+        raw_directory = ".";
     }
 
-    return Resolve_Existing_Path(raw_directory.string().c_str(), directory);
+    return Resolve_Existing_Path(raw_directory.c_str(), directory);
 }
 
-inline void Populate_Find_Data(const std::filesystem::path & entry_path, WIN32_FIND_DATA * find_data)
+inline void Populate_Find_Data(const std::string & entry_path, WIN32_FIND_DATA * find_data)
 {
     if (find_data == nullptr) {
         return;
     }
 
     std::memset(find_data, 0, sizeof(*find_data));
-    std::snprintf(find_data->cFileName, sizeof(find_data->cFileName), "%s", entry_path.filename().string().c_str());
+    std::snprintf(find_data->cFileName, sizeof(find_data->cFileName), "%s", Get_Filename_Part(entry_path).c_str());
 
-    std::error_code error;
-    const auto status = std::filesystem::status(entry_path, error);
-    if (!error && std::filesystem::is_directory(status)) {
+    SDL_PathInfo info = {};
+    if (!Get_Path_Info(entry_path.c_str(), &info)) {
+        return;
+    }
+
+    if (info.type == SDL_PATHTYPE_DIRECTORY) {
         find_data->dwFileAttributes |= FILE_ATTRIBUTE_DIRECTORY;
     }
 
-    const auto last_write = std::filesystem::last_write_time(entry_path, error);
-    if (!error) {
-        const auto system_now = std::chrono::system_clock::now();
-        const auto file_now = decltype(last_write)::clock::now();
-        const auto adjusted = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
-            last_write - file_now + system_now);
-        const auto unix_duration = adjusted.time_since_epoch();
-        const auto unix_seconds = std::chrono::duration_cast<std::chrono::seconds>(unix_duration);
-        const auto unix_100ns = std::chrono::duration_cast<std::chrono::nanoseconds>(unix_duration - unix_seconds).count() / 100;
-        constexpr std::uint64_t WINDOWS_TO_UNIX_EPOCH_100NS = 11644473600ull * 10000000ull;
-        const std::uint64_t ticks =
-            WINDOWS_TO_UNIX_EPOCH_100NS +
-            (static_cast<std::uint64_t>(unix_seconds.count()) * 10000000ull) +
-            static_cast<std::uint64_t>(unix_100ns);
-        find_data->ftLastWriteTime.dwLowDateTime = static_cast<uint32_t>(ticks & 0xFFFFFFFFull);
-        find_data->ftLastWriteTime.dwHighDateTime = static_cast<uint32_t>(ticks >> 32);
-    }
+    SDL_TimeToWindows(info.modify_time, &find_data->ftLastWriteTime.dwLowDateTime, &find_data->ftLastWriteTime.dwHighDateTime);
 }
 
-inline bool Wildcard_Match(const char * pattern, const char * text)
+inline bool Collect_Matching_Paths(const std::string & directory, const std::string & wildcard, std::vector<std::string> & paths)
 {
-    if (pattern == nullptr || text == nullptr) {
+    paths.clear();
+
+    int count = 0;
+    char ** matches = SDL_GlobDirectory(directory.c_str(), wildcard.c_str(), SDL_GLOB_CASEINSENSITIVE, &count);
+    if (matches == nullptr) {
         return false;
     }
 
-    if (*pattern == '\0') {
-        return *text == '\0';
-    }
-
-    if (*pattern == '*') {
-        for (const char * cursor = text; ; ++cursor) {
-            if (Wildcard_Match(pattern + 1, cursor)) {
-                return true;
-            }
-            if (*cursor == '\0') {
-                break;
-            }
+    paths.reserve(static_cast<std::size_t>(count));
+    for (int index = 0; index < count; ++index) {
+        if (matches[index] != nullptr) {
+            paths.push_back(Join_Path(directory, matches[index]));
         }
+    }
+    SDL_free(matches);
+    return true;
+}
+
+inline bool Collect_Regular_Files_Recursive(const std::string & directory, std::vector<std::string> & files)
+{
+    std::vector<std::string> entries;
+    if (!Collect_Directory_Entries(directory, entries)) {
         return false;
     }
 
-    if (*pattern == '?') {
-        return (*text != '\0') && Wildcard_Match(pattern + 1, text + 1);
+    for (const std::string & entry : entries) {
+        const std::string full_path = Join_Path(directory, entry);
+        SDL_PathInfo info = {};
+        if (!Get_Path_Info(full_path.c_str(), &info)) {
+            continue;
+        }
+
+        if (info.type == SDL_PATHTYPE_DIRECTORY) {
+            Collect_Regular_Files_Recursive(full_path, files);
+        } else if (info.type == SDL_PATHTYPE_FILE) {
+            files.push_back(full_path);
+        }
     }
 
-    return (std::tolower(static_cast<uint8_t>(*pattern)) == std::tolower(static_cast<uint8_t>(*text)))
-        && Wildcard_Match(pattern + 1, text + 1);
+    return true;
+}
+
+inline bool Create_Directory_Tree(const std::string & path)
+{
+    const std::string normalized = Trim_Trailing_Path_Separators(Normalize_Path(path.c_str()));
+    if (normalized.empty()) {
+        errno = EINVAL;
+        return false;
+    }
+
+    std::string current_path;
+    std::size_t cursor = 0;
+    if (Is_Path_Separator(normalized[0])) {
+        current_path = "/";
+        cursor = 1;
+    }
+
+    while (cursor < normalized.size()) {
+        while (cursor < normalized.size() && Is_Path_Separator(normalized[cursor])) {
+            ++cursor;
+        }
+        if (cursor >= normalized.size()) {
+            break;
+        }
+
+        const std::size_t component_start = cursor;
+        while (cursor < normalized.size() && !Is_Path_Separator(normalized[cursor])) {
+            ++cursor;
+        }
+
+        const std::string component = normalized.substr(component_start, cursor - component_start);
+        if (component == ".") {
+            continue;
+        }
+        if (component == "..") {
+            current_path = current_path.empty() ? std::string("..") : Join_Path(current_path, component);
+            continue;
+        }
+
+        current_path = Join_Path(current_path, component);
+        if (Path_Is_Directory(current_path)) {
+            continue;
+        }
+        if (Path_Exists(current_path)) {
+            return false;
+        }
+        if (!SDL_CreateDirectory(current_path.c_str())) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 inline CompatFileHandle * As_File_Handle(HANDLE handle)
@@ -901,13 +1342,12 @@ inline int32_t TryEnterCriticalSection(CRITICAL_SECTION * critical_section)
 
 inline int DeleteFile(const char * filename)
 {
-    std::filesystem::path resolved_path;
+    std::string resolved_path;
     if (!renegade_osdep::Resolve_Existing_Path(filename, resolved_path)) {
         return FALSE;
     }
 
-    std::error_code error;
-    return std::filesystem::remove(resolved_path, error) ? TRUE : FALSE;
+    return SDL_RemovePath(resolved_path.c_str()) ? TRUE : FALSE;
 }
 
 inline int MoveFile(const char * existing_filename, const char * new_filename)
@@ -917,21 +1357,19 @@ inline int MoveFile(const char * existing_filename, const char * new_filename)
         return FALSE;
     }
 
-    std::filesystem::path existing_path;
+    std::string existing_path;
     if (!renegade_osdep::Resolve_Existing_Path(existing_filename, existing_path)) {
         errno = ENOENT;
         return FALSE;
     }
 
-    std::filesystem::path new_path;
+    std::string new_path;
     if (!renegade_osdep::Resolve_Path_For_Access(new_filename, true, new_path)) {
         errno = ENOENT;
         return FALSE;
     }
 
-    std::error_code error;
-    std::filesystem::rename(existing_path, new_path, error);
-    return error ? FALSE : TRUE;
+    return SDL_RenamePath(existing_path.c_str(), new_path.c_str()) ? TRUE : FALSE;
 }
 
 inline uint32_t GetModuleFileName(HINSTANCE, char * buffer, uint32_t size)
@@ -940,9 +1378,23 @@ inline uint32_t GetModuleFileName(HINSTANCE, char * buffer, uint32_t size)
         return 0;
     }
 
-    std::error_code error;
-    const auto executable = std::filesystem::read_symlink("/proc/self/exe", error);
-    const std::string path = error ? std::filesystem::current_path(error).string() : executable.string();
+    char executable_path[PATH_MAX] = {0};
+    ssize_t length = readlink("/proc/self/exe", executable_path, sizeof(executable_path) - 1);
+    if (length < 0) {
+        char * cwd = SDL_GetCurrentDirectory();
+        if (cwd == nullptr) {
+            return 0;
+        }
+
+        const std::size_t count = std::min<std::size_t>(size - 1, std::strlen(cwd));
+        std::memcpy(buffer, cwd, count);
+        buffer[count] = '\0';
+        SDL_free(cwd);
+        return static_cast<uint32_t>(count);
+    }
+
+    executable_path[length] = '\0';
+    const std::string path(executable_path);
     const std::size_t count = std::min<std::size_t>(size - 1, path.size());
     std::memcpy(buffer, path.c_str(), count);
     buffer[count] = '\0';
@@ -956,21 +1408,19 @@ inline int32_t CreateDirectory(const char * path, void *)
         return FALSE;
     }
 
-    std::filesystem::path existing_directory;
+    std::string existing_directory;
     if (renegade_osdep::Resolve_Existing_Path(path, existing_directory)) {
         errno = EEXIST;
         return FALSE;
     }
 
-    std::filesystem::path directory;
+    std::string directory;
     if (!renegade_osdep::Resolve_Path_For_Access(path, true, directory)) {
         errno = ENOENT;
         return FALSE;
     }
 
-    std::error_code error;
-
-    return std::filesystem::create_directories(directory, error) ? TRUE : FALSE;
+    return renegade_osdep::Create_Directory_Tree(directory) ? TRUE : FALSE;
 }
 
 inline HANDLE CreateFile(const char * filename, uint32_t desired_access, uint32_t, void *, uint32_t creation_disposition, uint32_t, HANDLE)
@@ -982,7 +1432,7 @@ inline HANDLE CreateFile(const char * filename, uint32_t desired_access, uint32_
 
     const bool wants_write = (desired_access & GENERIC_WRITE) != 0 || creation_disposition == CREATE_ALWAYS || creation_disposition == CREATE_NEW;
 
-    std::filesystem::path path;
+    std::string path;
     const bool exists = renegade_osdep::Resolve_Existing_Path(filename, path);
 
     if (!exists) {
@@ -1007,44 +1457,37 @@ inline HANDLE CreateFile(const char * filename, uint32_t desired_access, uint32_
         mode = exists ? "rb+" : "wb+";
     }
 
-    std::FILE * file = std::fopen(path.string().c_str(), mode);
+    SDL_IOStream * file = renegade_osdep::Open_C_File(path, mode);
     if (file == nullptr) {
         return INVALID_HANDLE_VALUE;
     }
 
-    auto * handle = new renegade_osdep::CompatFileHandle{file};
+    auto * handle = new renegade_osdep::CompatFileHandle{file, path};
     return reinterpret_cast<HANDLE>(handle);
 }
 
 inline uint32_t GetFileSize(HANDLE handle, uint32_t *)
 {
     auto * file_handle = renegade_osdep::As_File_Handle(handle);
-    if (file_handle == nullptr || file_handle->file == nullptr) {
+    if (file_handle == nullptr || file_handle->stream == nullptr) {
         return 0xFFFFFFFFu;
     }
 
-    const int32_t current = static_cast<int32_t>(std::ftell(file_handle->file));
-    if (current < 0) {
+    const Sint64 size = renegade_osdep::Get_C_File_Size(file_handle->stream);
+    if (size < 0 || size > 0xFFFFFFFFll) {
         return 0xFFFFFFFFu;
     }
-
-    if (std::fseek(file_handle->file, 0, SEEK_END) != 0) {
-        return 0xFFFFFFFFu;
-    }
-
-    const int32_t end = static_cast<int32_t>(std::ftell(file_handle->file));
-    std::fseek(file_handle->file, current, SEEK_SET);
-    return end >= 0 ? static_cast<uint32_t>(end) : 0xFFFFFFFFu;
+    return static_cast<uint32_t>(size);
 }
 
 inline int32_t WriteFile(HANDLE handle, const void * buffer, uint32_t bytes_to_write, uint32_t * bytes_written, void *)
 {
     auto * file_handle = renegade_osdep::As_File_Handle(handle);
-    if (file_handle == nullptr || file_handle->file == nullptr) {
+    if (file_handle == nullptr || file_handle->stream == nullptr) {
         return FALSE;
     }
 
-    const std::size_t written = std::fwrite(buffer, 1, bytes_to_write, file_handle->file);
+    const std::size_t written = renegade_osdep::Write_C_File(file_handle->stream, buffer, bytes_to_write);
     if (bytes_written != nullptr) {
         *bytes_written = static_cast<uint32_t>(written);
     }
@@ -1055,11 +1498,11 @@ inline int32_t WriteFile(HANDLE handle, const void * buffer, uint32_t bytes_to_w
 inline int32_t ReadFile(HANDLE handle, void * buffer, uint32_t bytes_to_read, uint32_t * bytes_read, void *)
 {
     auto * file_handle = renegade_osdep::As_File_Handle(handle);
-    if (file_handle == nullptr || file_handle->file == nullptr) {
+    if (file_handle == nullptr || file_handle->stream == nullptr) {
         return FALSE;
     }
 
-    const std::size_t read = std::fread(buffer, 1, bytes_to_read, file_handle->file);
+    const std::size_t read = renegade_osdep::Read_C_File(file_handle->stream, buffer, bytes_to_read);
     if (bytes_read != nullptr) {
         *bytes_read = static_cast<uint32_t>(read);
     }
@@ -1074,7 +1517,7 @@ inline int32_t CloseHandle(HANDLE handle)
         return FALSE;
     }
 
-    const int result = (file_handle->file != nullptr) ? std::fclose(file_handle->file) : 0;
+    const int result = (file_handle->stream != nullptr) ? renegade_osdep::Close_C_File(file_handle->stream) : 0;
     delete file_handle;
     return result == 0 ? TRUE : FALSE;
 }
@@ -1085,7 +1528,7 @@ inline HANDLE FindFirstFile(const char * pattern, WIN32_FIND_DATA * find_data)
         return INVALID_HANDLE_VALUE;
     }
 
-    std::filesystem::path directory;
+    std::string directory;
     std::string wildcard;
     if (!renegade_osdep::Resolve_Find_Pattern(pattern, directory, wildcard)) {
         return INVALID_HANDLE_VALUE;
@@ -1094,17 +1537,7 @@ inline HANDLE FindFirstFile(const char * pattern, WIN32_FIND_DATA * find_data)
     auto * handle = new renegade_osdep::CompatFindHandle{};
     handle->index = 0;
 
-    std::error_code error;
-    for (const auto & entry : std::filesystem::directory_iterator(directory, error)) {
-        if (error) {
-            break;
-        }
-
-        const std::string filename = entry.path().filename().string();
-        if (renegade_osdep::Wildcard_Match(wildcard.c_str(), filename.c_str())) {
-            handle->entries.push_back(entry.path());
-        }
-    }
+    renegade_osdep::Collect_Matching_Paths(directory, wildcard, handle->entries);
 
     if (handle->entries.empty()) {
         delete handle;
@@ -1236,25 +1669,157 @@ inline void Add_Accelerator(HWND, HACCEL)
 
 inline uint32_t GetFileAttributes(const char * filename)
 {
-    std::filesystem::path resolved_path;
+    std::string resolved_path;
     if (!renegade_osdep::Resolve_Existing_Path(filename, resolved_path)) {
         return INVALID_FILE_ATTRIBUTES;
     }
 
-    std::error_code error;
-    const auto status = std::filesystem::status(resolved_path, error);
-    if (error || !std::filesystem::exists(status)) {
+    SDL_PathInfo info = {};
+    if (!renegade_osdep::Get_Path_Info(resolved_path.c_str(), &info)) {
         return INVALID_FILE_ATTRIBUTES;
     }
 
     uint32_t attributes = 0;
-    if (std::filesystem::is_directory(status)) {
+    if (info.type == SDL_PATHTYPE_DIRECTORY) {
         attributes |= FILE_ATTRIBUTE_DIRECTORY;
     }
-    if ((status.permissions() & std::filesystem::perms::owner_write) == std::filesystem::perms::none) {
-        attributes |= FILE_ATTRIBUTE_READONLY;
+
+    if (info.type == SDL_PATHTYPE_FILE) {
+        SDL_IOStream * stream = SDL_IOFromFile(resolved_path.c_str(), "rb+");
+        if (stream == nullptr) {
+            attributes |= FILE_ATTRIBUTE_READONLY;
+        } else {
+            SDL_CloseIO(stream);
+        }
     }
+
     return attributes;
+}
+
+inline uint32_t GetCurrentDirectory(uint32_t buffer_length, char * buffer)
+{
+    char * cwd = SDL_GetCurrentDirectory();
+    if (cwd == nullptr) {
+        return 0;
+    }
+
+    const std::string normalized = renegade_osdep::Trim_Trailing_Path_Separators(cwd);
+    SDL_free(cwd);
+
+    const std::string output = normalized.empty() ? std::string("/") : normalized;
+    if (buffer == nullptr || buffer_length == 0) {
+        return static_cast<uint32_t>(output.size());
+    }
+
+    std::snprintf(buffer, buffer_length, "%s", output.c_str());
+    return static_cast<uint32_t>(std::min<std::size_t>(output.size(), buffer_length > 0 ? buffer_length - 1 : 0));
+}
+
+inline bool FileTimeToDosDateTime(const FILETIME * file_time, uint16_t * dos_date, uint16_t * dos_time)
+{
+    if (file_time == nullptr || dos_date == nullptr || dos_time == nullptr) {
+        return false;
+    }
+
+    SDL_Time time_value = SDL_TimeFromWindows(file_time->dwLowDateTime, file_time->dwHighDateTime);
+    SDL_DateTime date_time = {};
+    if (!SDL_TimeToDateTime(time_value, &date_time, true)) {
+        return false;
+    }
+
+    const int year = std::clamp(date_time.year, 1980, 2107);
+    *dos_date =
+        static_cast<uint16_t>(((year - 1980) << 9) |
+        (std::clamp(date_time.month, 1, 12) << 5) |
+        std::clamp(date_time.day, 1, 31));
+    *dos_time =
+        static_cast<uint16_t>((std::clamp(date_time.hour, 0, 23) << 11) |
+        (std::clamp(date_time.minute, 0, 59) << 5) |
+        std::clamp(date_time.second / 2, 0, 29));
+    return true;
+}
+
+inline bool DosDateTimeToFileTime(uint16_t dos_date, uint16_t dos_time, FILETIME * file_time)
+{
+    if (file_time == nullptr) {
+        return false;
+    }
+
+    SDL_DateTime date_time = {};
+    date_time.year = 1980 + ((dos_date >> 9) & 0x7F);
+    date_time.month = (dos_date >> 5) & 0x0F;
+    date_time.day = dos_date & 0x1F;
+    date_time.hour = (dos_time >> 11) & 0x1F;
+    date_time.minute = (dos_time >> 5) & 0x3F;
+    date_time.second = (dos_time & 0x1F) * 2;
+
+    SDL_Time time_value = 0;
+    if (!SDL_DateTimeToTime(&date_time, &time_value)) {
+        return false;
+    }
+
+    SDL_TimeToWindows(time_value, &file_time->dwLowDateTime, &file_time->dwHighDateTime);
+    return true;
+}
+
+inline int32_t SetFileTime(HANDLE handle, const FILETIME *, const FILETIME *, const FILETIME *)
+{
+    auto * file_handle = renegade_osdep::As_File_Handle(handle);
+    if (file_handle == nullptr || file_handle->stream == nullptr) {
+        return FALSE;
+    }
+
+    return renegade_osdep::Flush_C_File(file_handle->stream) ? TRUE : FALSE;
+}
+
+inline int32_t GetFileInformationByHandle(HANDLE handle, BY_HANDLE_FILE_INFORMATION * info)
+{
+    auto * file_handle = renegade_osdep::As_File_Handle(handle);
+    if (file_handle == nullptr || file_handle->stream == nullptr || info == nullptr) {
+        return FALSE;
+    }
+
+    if (file_handle->path.empty()) {
+        return FALSE;
+    }
+
+    SDL_PathInfo path_info = {};
+    if (!renegade_osdep::Get_Path_Info(file_handle->path.c_str(), &path_info)) {
+        return FALSE;
+    }
+
+    std::memset(info, 0, sizeof(*info));
+    SDL_TimeToWindows(path_info.modify_time, &info->ftLastWriteTime.dwLowDateTime, &info->ftLastWriteTime.dwHighDateTime);
+    return TRUE;
+}
+
+inline uint32_t SetFilePointer(HANDLE handle, int32_t distance, int32_t *, uint32_t move_method)
+{
+    auto * file_handle = renegade_osdep::As_File_Handle(handle);
+    if (file_handle == nullptr || file_handle->stream == nullptr) {
+        return 0xFFFFFFFFu;
+    }
+
+    int origin = SEEK_SET;
+    switch (move_method) {
+        case FILE_BEGIN:
+            origin = SEEK_SET;
+            break;
+        case FILE_END:
+            origin = SEEK_END;
+            break;
+        case FILE_CURRENT:
+        default:
+            origin = SEEK_CUR;
+            break;
+    }
+
+    const bool success = renegade_osdep::Seek_C_File(file_handle->stream, distance, origin);
+    if (!success) {
+        return 0xFFFFFFFFu;
+    }
+    const Sint64 position = renegade_osdep::Tell_C_File(file_handle->stream);
+    return position >= 0 ? static_cast<uint32_t>(position) : 0xFFFFFFFFu;
 }
 
 inline int stricmp(const char * lhs, const char * rhs)
@@ -1299,16 +1864,6 @@ inline char * lstrcpyn(char * destination, const char * source, int count)
     }
     std::snprintf(destination, static_cast<std::size_t>(count), "%s", source != nullptr ? source : "");
     return destination;
-}
-
-inline uint32_t GetCurrentDirectory(uint32_t buffer_length, char * buffer)
-{
-    const std::string cwd = std::filesystem::current_path().string();
-    if (buffer == nullptr || buffer_length == 0) {
-        return static_cast<uint32_t>(cwd.size());
-    }
-    std::snprintf(buffer, buffer_length, "%s", cwd.c_str());
-    return static_cast<uint32_t>(std::min<std::size_t>(cwd.size(), buffer_length > 0 ? buffer_length - 1 : 0));
 }
 
 inline char * _strdup(const char * text)

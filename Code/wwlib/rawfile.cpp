@@ -59,46 +59,14 @@
 #endif
 //#include	<share.h>
 #include	<stddef.h>
-#include	<stdio.h>
 #include	<stdlib.h>
 #include	<string.h>
 #include "win.h"
 #include	<limits.h>
 #include	<errno.h>
 #ifdef _UNIX
-#include <filesystem>
-#include <string>
-#include <sys/types.h>
-#include <sys/stat.h>
+#include <SDL3/SDL_filesystem.h>
 #endif
-
-#ifdef _UNIX
-namespace
-{
-bool Build_Unix_Filename_For_Access(const char *filename, int rights, StringClass &platform_name)
-{
-	std::filesystem::path resolved_path;
-	if (!renegade_osdep::Resolve_Path_For_Access(filename, (rights & FileClass::WRITE) != 0, resolved_path)) {
-		return false;
-	}
-
-	platform_name = resolved_path.string().c_str();
-	return true;
-}
-
-bool Build_Unix_Filename_For_Existing_File(const char *filename, StringClass &platform_name)
-{
-	std::filesystem::path resolved_path;
-	if (!renegade_osdep::Resolve_Existing_Path(filename, resolved_path)) {
-		return false;
-	}
-
-	platform_name = resolved_path.string().c_str();
-	return true;
-}
-}
-#endif
-
 
 #if 0		//#ifdef NEVER    (gth) the MAX sdk must #define NEVER! yikes :-)
 	/*
@@ -420,13 +388,6 @@ int RawFileClass::Open(int rights)
 		Error(ENOENT, false);
 	}
 
-	#ifdef _UNIX
-		StringClass platform_name(true);
-		if (!Build_Unix_Filename_For_Access(Filename, rights, platform_name)) {
-			return(false);
-		}
-	#endif
-
 	/*
 	**	Record the access rights used for this open call. These rights will be used if the
 	**	file object is duplicated.
@@ -453,7 +414,7 @@ int RawFileClass::Open(int rights)
 
 			case READ:
 				#ifdef _UNIX
-					Handle = fopen(platform_name, "r");
+					Handle = renegade_osdep::Open_C_File(Filename, "rb");
 				#else
 					Handle = CreateFileA(Filename, GENERIC_READ, FILE_SHARE_READ,
 												NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -462,7 +423,7 @@ int RawFileClass::Open(int rights)
 
 			case WRITE:
 				#ifdef _UNIX
-					Handle = fopen(platform_name, "w");
+					Handle = renegade_osdep::Open_C_File(Filename, "wb");
 				#else
 					Handle = CreateFileA(Filename, GENERIC_WRITE, 0,
 												NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -471,7 +432,7 @@ int RawFileClass::Open(int rights)
 
 			case READ|WRITE:
 				#ifdef _UNIX
-					Handle = fopen(platform_name, "w");
+					Handle = renegade_osdep::Open_C_File_Read_Write(Filename);
 				#else
 					// SKB 5/13/99 use OPEN_ALWAYS instead of CREATE_ALWAYS so that files
 					//					does not get destroyed.
@@ -527,13 +488,6 @@ bool RawFileClass::Is_Available(int forced)
 {
 	if (Filename.Get_Length()==0) return(false);
 
-	#ifdef _UNIX
-		StringClass platform_name(true);
-		if (!Build_Unix_Filename_For_Existing_File(Filename, platform_name)) {
-			return(false);
-		}
-	#endif
-
 	/*
 	**	If the file is already open, then is must have already passed the availability check.
 	**	Return true in this case.
@@ -558,7 +512,7 @@ bool RawFileClass::Is_Available(int forced)
 	for (;;) {
 
 		#ifdef _UNIX
-			Handle=fopen(platform_name,"r");
+			Handle = renegade_osdep::Open_C_File(Filename, "rb");
 		#else
 			Handle = CreateFileA(Filename, GENERIC_READ, FILE_SHARE_READ,
 											NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -575,7 +529,7 @@ bool RawFileClass::Is_Available(int forced)
 	*/
 	int closeok;
 	#ifdef _UNIX
-		closeok=((fclose(Handle)==0)?TRUE:FALSE);
+		closeok = (renegade_osdep::Close_C_File(Handle) == 0) ? TRUE : FALSE;
 	#else
 		closeok=CloseHandle(Handle);
 	#endif
@@ -616,7 +570,7 @@ void RawFileClass::Close(void)
 		*/
 		int closeok;
 		#ifdef _UNIX
-			closeok=(fclose(Handle)==0)?TRUE:FALSE;	
+			closeok = (renegade_osdep::Close_C_File(Handle) == 0) ? TRUE : FALSE;
 		#else
 			closeok=CloseHandle(Handle);
 		#endif
@@ -692,9 +646,10 @@ int RawFileClass::Read(void * buffer, int size)
 
 		#ifdef _UNIX
 			readok=TRUE;
-			bytesread=fread(buffer,1,size,Handle);
-			if ((bytesread == 0)&&( ! feof(Handle)))
-				readok=ferror(Handle);
+			bytesread = static_cast<int32_t>(renegade_osdep::Read_C_File(Handle, buffer, static_cast<std::size_t>(size)));
+			if (bytesread == 0 && renegade_osdep::Has_C_File_Error(Handle)) {
+				readok = FALSE;
+			}
 		#else
 			readok=ReadFile(Handle, buffer, size, &(uint32_t&)bytesread, NULL);
 		#endif
@@ -758,7 +713,7 @@ int RawFileClass::Write(void const * buffer, int size)
 
    int writeok=TRUE;
    #ifdef _UNIX
-		byteswritten = fwrite(buffer, 1, size, Handle);
+		byteswritten = static_cast<int32_t>(renegade_osdep::Write_C_File(Handle, buffer, static_cast<std::size_t>(size)));
 		if (byteswritten != size)
 			writeok = FALSE;
 	#else
@@ -900,17 +855,13 @@ int RawFileClass::Size(void)
 	if (Is_Open()) {
 
       #ifdef _UNIX
-			int32_t curpos = static_cast<int32_t>(ftell(Handle));
+			int32_t curpos = static_cast<int32_t>(renegade_osdep::Tell_C_File(Handle));
 			if (curpos < 0) {
 				size = 0xFFFFFFFF;
 			} else {
-				if (fseek(Handle, 0, SEEK_END) != 0) {
-					size = 0xFFFFFFFF;
-				} else {
-					int32_t endpos = static_cast<int32_t>(ftell(Handle));
-					size = (endpos >= 0) ? static_cast<int>(endpos) : 0xFFFFFFFF;
-				}
-				fseek(Handle, curpos, SEEK_SET);
+				const Sint64 file_size = renegade_osdep::Get_C_File_Size(Handle);
+				size = (file_size >= 0 && file_size <= 0x7FFFFFFFll) ? static_cast<int>(file_size) : 0xFFFFFFFF;
+				renegade_osdep::Seek_C_File(Handle, curpos, SEEK_SET);
 			}
 		#else
 			size = GetFileSize(Handle, NULL);
@@ -1031,15 +982,7 @@ int RawFileClass::Delete(void)
 		}
 
 		int deleteok;
-		#ifdef _UNIX
-			StringClass platform_name(true);
-			if (!Build_Unix_Filename_For_Existing_File(Filename, platform_name)) {
-				return(false);
-			}
-			deleteok=(unlink(platform_name)==0)?TRUE:FALSE;
-		#else
-			deleteok=DeleteFile(Filename);
-		#endif
+		deleteok = DeleteFile(Filename);
 
 		if (! deleteok) {
 			Error(GetLastError(), false, Filename);
@@ -1074,14 +1017,16 @@ int RawFileClass::Delete(void)
 uint32_t RawFileClass::Get_Date_Time(void)
 {
 #ifdef _UNIX
-	StringClass platform_name(true);
-	if (!Build_Unix_Filename_For_Existing_File(Filename, platform_name)) {
+	std::string resolved_path;
+	if (!renegade_osdep::Resolve_Existing_Path(Filename, resolved_path)) {
 		return(0);
 	}
 
-	struct stat statbuf;
-	lstat(platform_name, &statbuf);
-	return(statbuf.st_mtime);
+	SDL_PathInfo path_info = {};
+	if (!SDL_GetPathInfo(resolved_path.c_str(), &path_info)) {
+		return(0);
+	}
+	return static_cast<uint32_t>(path_info.modify_time / 1000000000ll);
 #else
 	BY_HANDLE_FILE_INFORMATION info;
 
@@ -1206,11 +1151,11 @@ int RawFileClass::Raw_Seek(int pos, int dir)
 	}
 
    #ifdef _UNIX
-		if (fseek(Handle, pos, dir) != 0) {
+		if (!renegade_osdep::Seek_C_File(Handle, pos, dir)) {
 			pos = 0xFFFFFFFF;
 		} else {
-			int32_t newpos = static_cast<int32_t>(ftell(Handle));
-			pos = (newpos >= 0) ? static_cast<int>(newpos) : 0xFFFFFFFF;
+			const Sint64 newpos = renegade_osdep::Tell_C_File(Handle);
+			pos = (newpos >= 0 && newpos <= 0x7FFFFFFFll) ? static_cast<int>(newpos) : 0xFFFFFFFF;
 		}
    #else
 		switch (dir) {
@@ -1266,7 +1211,7 @@ void RawFileClass::Attach (void *handle, int rights)
 	Time = 0;
 
 	#ifdef _UNIX
-	  Handle = (FILE *)handle;
+	  Handle = static_cast<SDL_IOStream *>(handle);
 	#else
 	  Handle = handle;
 	#endif

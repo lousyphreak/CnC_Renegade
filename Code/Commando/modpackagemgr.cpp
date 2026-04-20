@@ -43,13 +43,13 @@
 #include "ffactory.h"
 #include "mixfile.h"
 #include "gametype.h"
+#include "../wwlib/osdep.h"
 
 #include <cstring>
-#include <filesystem>
 
 namespace {
 
-bool Matches_Search_Mask(const std::filesystem::path &path, const char *search_mask)
+bool Matches_Search_Mask(const std::string &path, const char *search_mask)
 {
 	if (search_mask == NULL) {
 		return false;
@@ -60,7 +60,7 @@ bool Matches_Search_Mask(const std::filesystem::path &path, const char *search_m
 		return false;
 	}
 
-	StringClass file_extension(path.extension().string().c_str(), true);
+	StringClass file_extension(renegade_osdep::Get_Path_Extension(path).c_str(), true);
 	return file_extension.Compare_No_Case(extension) == 0;
 }
 
@@ -136,27 +136,23 @@ ModPackageMgrClass::Shutdown (void)
 void
 ModPackageMgrClass::Build_List (void)
 {
-	std::error_code error;
-	const std::filesystem::path data_directory("data");
-	if (!std::filesystem::exists(data_directory, error)) {
+	std::vector<std::string> entries;
+	if (!renegade_osdep::Collect_Directory_Entries("data", entries)) {
 		return;
 	}
 
-	for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(data_directory, error)) {
-		if (error) {
-			break;
-		}
-
-		if (!entry.is_regular_file()) {
+	for (const std::string &entry_name : entries) {
+		const std::string entry_path = renegade_osdep::Join_Path("data", entry_name);
+		if (!renegade_osdep::Path_Is_Regular_File(entry_path)) {
 			continue;
 		}
 
-		if (!Matches_Search_Mask(entry.path(), "*.pkg")) {
+		if (!Matches_Search_Mask(entry_name, "*.pkg")) {
 			continue;
 		}
 
 		ModPackageClass package;
-		package.Set_Package_Filename(entry.path().filename().string().c_str());
+		package.Set_Package_Filename(entry_name.c_str());
 		PackageList.Add(package);
 	}
 	
@@ -364,28 +360,23 @@ ModPackageMgrClass::Find_Filename_From_CRC
 
 	(*filename) = "";
 
-	std::error_code error;
-	const std::filesystem::path data_directory("data");
-	if (!std::filesystem::exists(data_directory, error)) {
+	std::vector<std::string> entries;
+	if (!renegade_osdep::Collect_Directory_Entries("data", entries)) {
 		return false;
 	}
 
-	for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(data_directory, error)) {
-		if (error) {
-			break;
-		}
-
-		if (!entry.is_regular_file()) {
+	for (const std::string &entry_name : entries) {
+		const std::string entry_path = renegade_osdep::Join_Path("data", entry_name);
+		if (!renegade_osdep::Path_Is_Regular_File(entry_path)) {
 			continue;
 		}
 
-		if (!Matches_Search_Mask(entry.path(), search_mask)) {
+		if (!Matches_Search_Mask(entry_name, search_mask)) {
 			continue;
 		}
 
-		const std::string filename_string = entry.path().filename().string();
-		if (::CRC_Stringi(filename_string.c_str()) == filename_crc) {
-			(*filename) = filename_string.c_str();
+		if (::CRC_Stringi(entry_name.c_str()) == filename_crc) {
+			(*filename) = entry_name.c_str();
 			retval = true;
 			break;
 		}

@@ -1,11 +1,11 @@
 #include "verchk.h"
+#include "osdep.h"
 
 #include <algorithm>
 #include <chrono>
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
-#include <fstream>
 #include <vector>
 
 namespace
@@ -99,28 +99,7 @@ namespace
 			return false;
 		}
 
-		std::ifstream input(filename, std::ios::binary);
-		if (!input) {
-			return false;
-		}
-
-		input.seekg(0, std::ios::end);
-		const std::streamoff size = input.tellg();
-		if (size < 0) {
-			return false;
-		}
-
-		input.seekg(0, std::ios::beg);
-		file_data.resize(static_cast<std::size_t>(size));
-		if (!file_data.empty()) {
-			input.read(reinterpret_cast<char *>(file_data.data()), static_cast<std::streamsize>(size));
-			if (!input) {
-				file_data.clear();
-				return false;
-			}
-		}
-
-		return true;
+		return renegade_osdep::Read_Entire_File(filename, file_data);
 	}
 
 	bool Read_Uint16(const std::vector<std::uint8_t> & file_data, std::size_t offset, std::uint16_t & value)
@@ -402,20 +381,11 @@ namespace
 			return false;
 		}
 
-		std::error_code error;
-		auto write_time = std::filesystem::last_write_time(filename, error);
-		if (error) {
+		SDL_PathInfo path_info = {};
+		if (!renegade_osdep::Get_Path_Info(filename, &path_info)) {
 			return false;
 		}
-
-		auto system_time = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
-			write_time - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now());
-		const auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(system_time.time_since_epoch()).count();
-		constexpr std::uint64_t WINDOWS_TO_UNIX_EPOCH_100NS = 11644473600ull * 10000000ull;
-		const std::uint64_t ticks = WINDOWS_TO_UNIX_EPOCH_100NS + static_cast<std::uint64_t>(nanoseconds / 100);
-
-		create_time->dwLowDateTime = static_cast<uint32_t>(ticks & 0xFFFFFFFFull);
-		create_time->dwHighDateTime = static_cast<uint32_t>(ticks >> 32);
+		SDL_TimeToWindows(path_info.modify_time, &create_time->dwLowDateTime, &create_time->dwHighDateTime);
 		return true;
 	}
 }

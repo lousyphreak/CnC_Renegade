@@ -1,5 +1,6 @@
 #include "registry.h"
 
+#include "osdep.h"
 #include "wwlib_debug.h"
 
 #include <SDL3/SDL_filesystem.h>
@@ -8,7 +9,6 @@
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
-#include <fstream>
 #include <map>
 #include <mutex>
 #include <string>
@@ -139,14 +139,16 @@ namespace
 	RegistryDocument Load_Document()
 	{
 		RegistryDocument document;
-		std::ifstream input(Registry_Storage_File());
-		if (!input) {
+		const std::string storage_file = Registry_Storage_File();
+		SDL_IOStream * input = renegade_osdep::Open_C_File(storage_file.c_str(), "rt");
+		if (input == nullptr) {
 			return document;
 		}
 
 		std::string current_section;
-		std::string line;
-		while (std::getline(input, line)) {
+		char line_buffer[4096];
+		while (renegade_osdep::Get_C_File_Line(line_buffer, sizeof(line_buffer), input) != nullptr) {
+			std::string line(line_buffer);
 			line = Trim(line);
 			if (line.empty() || line[0] == ';' || line[0] == '#') {
 				continue;
@@ -168,19 +170,28 @@ namespace
 			document[current_section][key] = value;
 		}
 
+		renegade_osdep::Close_C_File(input);
 		return document;
 	}
 
 	void Save_Document(const RegistryDocument & document)
 	{
-		std::ofstream output(Registry_Storage_File(), std::ios::trunc);
-		for (const auto & section_pair : document) {
-			output << '[' << section_pair.first << "]\n";
-			for (const auto & value_pair : section_pair.second) {
-				output << value_pair.first << '=' << Escape(value_pair.second) << "\n";
-			}
-			output << "\n";
+		const std::string storage_file = Registry_Storage_File();
+		SDL_IOStream * output = renegade_osdep::Open_C_File(storage_file.c_str(), "wt");
+		if (output == nullptr) {
+			return;
 		}
+
+		for (const auto & section_pair : document) {
+			renegade_osdep::Printf_C_File(output, "[%s]\n", section_pair.first.c_str());
+			for (const auto & value_pair : section_pair.second) {
+				const std::string escaped_value = Escape(value_pair.second);
+				renegade_osdep::Printf_C_File(output, "%s=%s\n", value_pair.first.c_str(), escaped_value.c_str());
+			}
+			renegade_osdep::Put_C_File_Char('\n', output);
+		}
+
+		renegade_osdep::Close_C_File(output);
 	}
 
 	void Ensure_Key_Marker(RegistryDocument & document, const std::string & key_path)
@@ -675,17 +686,24 @@ void RegistryClass::Save_Registry(const char * filename, char * path)
 
 	std::lock_guard<std::mutex> lock(Registry_Mutex());
 	const RegistryDocument document = Load_Document();
-	std::ofstream output(filename, std::ios::trunc);
+	SDL_IOStream * output = renegade_osdep::Open_C_File(filename, "wt");
+	if (output == nullptr) {
+		return;
+	}
+
 	for (const auto & section_pair : document) {
 		if (!Section_Matches_Tree(section_pair.first, path)) {
 			continue;
 		}
-		output << '[' << section_pair.first << "]\n";
+		renegade_osdep::Printf_C_File(output, "[%s]\n", section_pair.first.c_str());
 		for (const auto & value_pair : section_pair.second) {
-			output << value_pair.first << '=' << Escape(value_pair.second) << "\n";
+			const std::string escaped_value = Escape(value_pair.second);
+			renegade_osdep::Printf_C_File(output, "%s=%s\n", value_pair.first.c_str(), escaped_value.c_str());
 		}
-		output << "\n";
+		renegade_osdep::Put_C_File_Char('\n', output);
 	}
+
+	renegade_osdep::Close_C_File(output);
 }
 
 void RegistryClass::Load_Registry(const char * filename, char * old_path, char * new_path)
@@ -695,14 +713,15 @@ void RegistryClass::Load_Registry(const char * filename, char * old_path, char *
 	}
 
 	RegistryDocument imported;
-	std::ifstream input(filename);
-	if (!input) {
+	SDL_IOStream * input = renegade_osdep::Open_C_File(filename, "rt");
+	if (input == nullptr) {
 		return;
 	}
 
 	std::string current_section;
-	std::string line;
-	while (std::getline(input, line)) {
+	char line_buffer[4096];
+	while (renegade_osdep::Get_C_File_Line(line_buffer, sizeof(line_buffer), input) != nullptr) {
+		std::string line(line_buffer);
 		line = Trim(line);
 		if (line.empty() || line[0] == ';' || line[0] == '#') {
 			continue;
@@ -718,6 +737,8 @@ void RegistryClass::Load_Registry(const char * filename, char * old_path, char *
 		}
 		imported[current_section][Trim(line.substr(0, divider))] = Unescape(line.substr(divider + 1));
 	}
+
+	renegade_osdep::Close_C_File(input);
 
 	std::lock_guard<std::mutex> lock(Registry_Mutex());
 	RegistryDocument document = Load_Document();

@@ -3485,28 +3485,27 @@ bgfx::ShaderHandle BgfxRenderer::Load_Shader(const char *shader_name)
         + "/";
 
     std::string shader_path = shader_directory + shader_name + ".bin";
-    std::FILE *shader_file = std::fopen(shader_path.c_str(), "rb");
+    SDL_IOStream *shader_file = renegade_osdep::Open_C_File(shader_path.c_str(), "rb");
     if (shader_file == nullptr) {
         shader_path = shader_directory + shader_name + ".sc.bin";
-        shader_file = std::fopen(shader_path.c_str(), "rb");
+        shader_file = renegade_osdep::Open_C_File(shader_path.c_str(), "rb");
     }
     if (shader_file == nullptr) {
         WWDEBUG_SAY(("BgfxRenderer::Load_Shader unable to open '%s'\n", shader_path.c_str()));
         return BGFX_INVALID_HANDLE;
     }
 
-    std::fseek(shader_file, 0, SEEK_END);
-    const long shader_size = std::ftell(shader_file);
-    std::fseek(shader_file, 0, SEEK_SET);
+    const Sint64 shader_size = renegade_osdep::Get_C_File_Size(shader_file);
+    renegade_osdep::Seek_C_File(shader_file, 0, SEEK_SET);
     if (shader_size <= 0) {
-        std::fclose(shader_file);
+        renegade_osdep::Close_C_File(shader_file);
         WWDEBUG_SAY(("BgfxRenderer::Load_Shader invalid shader size for '%s'\n", shader_path.c_str()));
         return BGFX_INVALID_HANDLE;
     }
 
     std::vector<uint8_t> shader_data(static_cast<size_t>(shader_size));
-    const size_t read_size = std::fread(shader_data.data(), 1, shader_data.size(), shader_file);
-    std::fclose(shader_file);
+    const size_t read_size = renegade_osdep::Read_C_File(shader_file, shader_data.data(), shader_data.size());
+    renegade_osdep::Close_C_File(shader_file);
     if (read_size != shader_data.size()) {
         WWDEBUG_SAY(("BgfxRenderer::Load_Shader short read for '%s'\n", shader_path.c_str()));
         return BGFX_INVALID_HANDLE;

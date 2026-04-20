@@ -297,10 +297,10 @@ void PlayerInfoLog::Append_To_Log(PlayerDataClass* data)
 
 	tmp+="\r\n";
 
-	FILE *file = fopen("history.txt", "at");
+	SDL_IOStream *file = renegade_osdep::Open_C_File("history.txt", "at");
 	if (file != NULL) {
-		fwrite(tmp.Peek_Buffer(), 1, strlen(tmp.Peek_Buffer()), file);
-		fclose(file);
+		renegade_osdep::Write_C_File(file, tmp.Peek_Buffer(), strlen(tmp.Peek_Buffer()));
+		renegade_osdep::Close_C_File(file);
 	}
 #endif // WWDEBUG
 }

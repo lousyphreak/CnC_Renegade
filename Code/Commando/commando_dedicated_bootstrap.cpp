@@ -12,6 +12,7 @@
 #include "singletoninstancekeeper.h"
 #include "slavemaster.h"
 #include "useroptions.h"
+#include "../wwlib/osdep.h"
 
 namespace {
 
@@ -51,7 +52,7 @@ bool StartsWithServerConfigPrefix(const std::string &argument)
         || argument.rfind("--server-config=", 0) == 0;
 }
 
-std::filesystem::path Detect_Server_Config_Path(int argc, char **argv)
+std::string Detect_Server_Config_Path(int argc, char **argv)
 {
     for (int i = 1; i < argc; ++i) {
         if (argv[i] == nullptr) {
@@ -122,20 +123,20 @@ int Renegade_Dedicated_Bootstrap(int argc, char **argv)
     }
 
     const bool smoke_test = HasArgument(argc, argv, "--headless-smoke");
-    const std::filesystem::path server_config = ServerSettingsClass::Is_Server_Settings_File_Set()
-        ? std::filesystem::path(ServerSettingsClass::Get_Settings_File_Name())
+    const std::string server_config = ServerSettingsClass::Is_Server_Settings_File_Set()
+        ? std::string(ServerSettingsClass::Get_Settings_File_Name())
         : Detect_Server_Config_Path(argc, argv);
 
-    if (!smoke_test && !std::filesystem::exists(server_config)) {
+    if (!smoke_test && !renegade_osdep::Path_Exists(server_config)) {
         std::cerr
-            << "Dedicated server configuration file not found: " << server_config.string() << '\n'
+            << "Dedicated server configuration file not found: " << server_config << '\n'
             << "Provide STARTSERVER=<file>, /STARTSERVER=<file>, --startserver=<file>, or --server-config <file>.\n";
         return 1;
     }
 
     std::cout << "Dedicated server mode enabled (FREEDEDICATEDSERVER).\n";
     std::cout << "  exclusive console mode: on\n";
-    std::cout << "  resolved server config: " << server_config.string() << '\n';
+    std::cout << "  resolved server config: " << server_config << '\n';
 
     if (smoke_test) {
         if (ServerSettingsClass::Is_Server_Settings_File_Set() && !ServerSettingsClass::Parse(false)) {

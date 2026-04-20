@@ -336,18 +336,18 @@ void DebugManager::Init_Logfile(void)
 		LOGFILE = LogfileNameBuffer;
 	}
 
-	FILE *file = fopen(LOGFILE, "wt");
+	SDL_IOStream *file = renegade_osdep::Open_C_File(LOGFILE, "wt");
 	if (file != NULL) {
-		fclose(file);
+		renegade_osdep::Close_C_File(file);
 	}
 }
 
 void DebugManager::Write_To_File(LPCSTR str)
 {
-	FILE *file = fopen(LOGFILE, "at");
+	SDL_IOStream *file = renegade_osdep::Open_C_File(LOGFILE, "at");
 	if (file != NULL) {
-		fwrite(str, 1, std::strlen(str), file);
-		fclose(file);
+		renegade_osdep::Write_C_File(file, str, std::strlen(str));
+		renegade_osdep::Close_C_File(file);
 	}
 }
 

@@ -51,14 +51,16 @@
 #include "wwprofile.h"
 #include "wwdebug.h"
 #include "wwmemlog.h"
+#include "../wwlib/osdep.h"
 
-#include <SDL3/SDL_iostream.h>
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_thread.h>
 #include <SDL3/SDL_timer.h>
 
+#include <cerrno>
 #include <cstdarg>
 #include <cstdio>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -105,7 +107,7 @@ bool WWProfile_Write_Text(SDL_IOStream * stream, const std::string & text)
 	if (stream == nullptr || text.empty()) {
 		return stream != nullptr;
 	}
-	return SDL_WriteIO(stream, text.data(), text.size()) == text.size();
+	return renegade_osdep::Write_C_File(stream, text.data(), text.size()) == text.size();
 }
 
 void WWProfile_Write_Node(SDL_IOStream * stream, const WWProfileHierachyNodeClass * node, int recursion)
@@ -552,7 +554,7 @@ void	WWProfileManager::Begin_Collecting()
 void	WWProfileManager::End_Collecting(const char* filename)
 {
 	if ((filename != nullptr) && !g_profile_collect_vector.empty()) {
-		SDL_IOStream * file = SDL_IOFromFile(filename, "wb");
+		SDL_IOStream * file = renegade_osdep::Open_C_File(filename, "wb");
 		if (file != nullptr) {
 			const float avg_frame_time = static_cast<float>(g_total_frame_times / static_cast<double>(g_profile_collect_vector.size()));
 			WWProfile_Write_Text(file, WWProfile_Format_String(
@@ -571,9 +573,9 @@ void	WWProfileManager::End_Collecting(const char* filename)
 				WWProfile_Write_Node(file, g_profile_collect_vector[index], 0);
 			}
 
-			SDL_CloseIO(file);
+			renegade_osdep::Close_C_File(file);
 		} else {
-			WWDEBUG_WARNING(("Failed to open profile output '%s': %s\n", filename, SDL_GetError()));
+			WWDEBUG_WARNING(("Failed to open profile output '%s': %s\n", filename, std::strerror(errno)));
 		}
 	}
 

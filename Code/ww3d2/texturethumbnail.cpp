@@ -29,7 +29,6 @@
 #include "mixfile.h"
 #include "wwdebug.h"
 #include <windows.h>
-#include <filesystem>
 #include <vector>
 
 DLListClass<ThumbnailManagerClass> ThumbnailManagerClass::ThumbnailManagerList;
@@ -699,15 +698,16 @@ void ThumbnailManagerClass::Pre_Init(bool display_message_box)
 	// Collect all mix file names
 	DynamicVectorClass<StringClass> mix_names;
 
-	const std::filesystem::path data_dir = std::filesystem::current_path() / "Data";
-	if (std::filesystem::exists(data_dir)) {
-		for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(data_dir)) {
-			if (!entry.is_regular_file()) {
+	std::vector<std::string> data_entries;
+	if (renegade_osdep::Collect_Directory_Entries("Data", data_entries)) {
+		for (const std::string &entry_name : data_entries) {
+			const std::string entry_path = renegade_osdep::Join_Path("Data", entry_name);
+			if (!renegade_osdep::Path_Is_Regular_File(entry_path)) {
 				continue;
 			}
 
-			if (entry.path().extension() == ".mix") {
-				mix_names.Add(entry.path().filename().string().c_str());
+			if (::strcasecmp(renegade_osdep::Get_Path_Extension(entry_name).c_str(), ".mix") == 0) {
+				mix_names.Add(entry_name.c_str());
 			}
 		}
 	}

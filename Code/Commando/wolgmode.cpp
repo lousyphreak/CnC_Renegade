@@ -1267,10 +1267,10 @@ void WolGameModeClass::Ban_Player(const wchar_t* name, uint32_t ip)
 			sprintf(ipstr, "%u.%u.%u.%u\n", (uint32_t)ip_ptr[0], (uint32_t)ip_ptr[1], (uint32_t)ip_ptr[2], (uint32_t)ip_ptr[3]);
 			pn += ipstr;
 
-	   	FILE *kick_list = fopen("wolbanlist.txt", "at");
+	   	SDL_IOStream *kick_list = renegade_osdep::Open_C_File("wolbanlist.txt", "at");
 	   	if (kick_list != NULL) {
-			   fwrite(pn.Peek_Buffer(), 1, pn.Get_Length(), kick_list);
-			   fclose(kick_list);
+			   renegade_osdep::Write_C_File(kick_list, pn.Peek_Buffer(), pn.Get_Length());
+			   renegade_osdep::Close_C_File(kick_list);
 	   	}
 			DynamicVectorClass<uint32_t> KickIPList;
 		}
@@ -1366,25 +1366,15 @@ bool WolGameModeClass::Is_Banned(const char *player_name, uint32_t ip)
  *=============================================================================================*/
 void WolGameModeClass::Read_Kick_List(void)
 {
-	FILE *kick_list = fopen("wolbanlist.txt", "rt");
+	SDL_IOStream *kick_list = renegade_osdep::Open_C_File("wolbanlist.txt", "rt");
 	if (kick_list) {
-
-		int i = 0;
-		bool eof = false;
 		char temp[256];
-
-		while (!eof) {
-			for (i=0 ; i<256 ; i++) {
-				if (fread(&temp[i], 1, 1, kick_list) == 0) {
-					eof = true;
-					break;
-				}
-				if (temp[i] == '\n') {
-					break;
-				}
+		while (renegade_osdep::Get_C_File_Line(temp, sizeof(temp), kick_list) != NULL) {
+			int i = static_cast<int>(strlen(temp));
+			while (i > 0 && (temp[i - 1] == '\n' || temp[i - 1] == '\r')) {
+				temp[--i] = 0;
 			}
 			if (i > 10) {
-				temp[i + 1] = 0;
 				char *colon_ptr = strchr(temp, ':');
 				if (colon_ptr) {
 					*colon_ptr = 0;
@@ -1394,7 +1384,7 @@ void WolGameModeClass::Read_Kick_List(void)
 				}
 			}
 		}
-		fclose(kick_list);
+		renegade_osdep::Close_C_File(kick_list);
 	}
 }
 

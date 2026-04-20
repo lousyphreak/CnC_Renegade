@@ -506,13 +506,13 @@ void ConsoleModeClass::Log_To_Disk(const char *string)
 {
 	if (ConsoleOutputHandle != INVALID_HANDLE_VALUE) {
 		if (ServerSettingsClass::Get_Disk_Log_Size() > 0) {
-   		FILE *log_file = fopen(Get_Log_File_Name(), "at");
+   		SDL_IOStream *log_file = renegade_osdep::Open_C_File(Get_Log_File_Name(), "at");
    		if (log_file != NULL) {
 				char timestr[256] = "?";
 				GetTimeFormat(LOCALE_SYSTEM_DEFAULT, TIME_FORCE24HOURFORMAT, NULL, "'['HH':'mm':'ss'] '", timestr, 255);
-			   fwrite(timestr, 1, strlen(timestr), log_file);
-			   fwrite(string, 1, strlen(string), log_file);
-			   fclose(log_file);
+			   renegade_osdep::Write_C_File(log_file, timestr, strlen(timestr));
+			   renegade_osdep::Write_C_File(log_file, string, strlen(string));
+			   renegade_osdep::Close_C_File(log_file);
    		}
 		}
 	}

@@ -40,6 +40,7 @@
 #include "wwprofile.h"
 #include "wwmemlog.h"
 #include "dx8wrapper.h"
+#include "../wwlib/osdep.h"
 #include "ffactory.h"
 #include "wwfile.h"
 
@@ -50,8 +51,6 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <filesystem>
-#include <fstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -83,14 +82,14 @@ constexpr const char *FontSearchRoots[] = {
 std::vector<std::string> RegisteredFontFiles;
 struct FontCandidateInfo
 {
-	std::filesystem::path Path;
+	std::string Path;
 	std::string Stem;
 	std::vector<std::string> Aliases;
 };
 std::vector<FontCandidateInfo> CachedSystemFontCandidates;
 bool CachedSystemFontCandidatesScanned = false;
 std::unordered_map<std::string, std::vector<std::string> > CachedRegisteredFontAliases;
-std::unordered_map<std::string, std::filesystem::path> CachedResolvedFontPaths;
+std::unordered_map<std::string, std::string> CachedResolvedFontPaths;
 
 std::string Normalize_Font_Family(const std::string &text)
 {
@@ -106,9 +105,9 @@ std::string Normalize_Font_Family(const std::string &text)
 	return normalized;
 }
 
-bool Font_File_Extension_Matches(const std::filesystem::path &path)
+bool Font_File_Extension_Matches(const std::string &path)
 {
-	std::string extension = path.extension().string();
+	std::string extension = renegade_osdep::Get_Path_Extension(path);
 	std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char ch) {
 		return static_cast<char>(std::tolower(ch));
 	});
@@ -198,25 +197,16 @@ int Score_Font_Aliases(const std::vector<std::string> &aliases, const std::vecto
 	return best_score;
 }
 
-bool Read_Binary_File(const std::filesystem::path &path, std::vector<unsigned char> &contents)
+bool Read_Binary_File(const std::string &path, std::vector<unsigned char> &contents)
 {
-	std::ifstream input(path, std::ios::binary | std::ios::ate);
-	if (!input) {
+	if (!renegade_osdep::Read_Entire_File(path, contents)) {
 		return false;
 	}
 
-	const std::ifstream::pos_type file_size = input.tellg();
-	if (file_size <= 0) {
-		return false;
-	}
-
-	contents.resize(static_cast<size_t>(file_size));
-	input.seekg(0, std::ios::beg);
-	input.read(reinterpret_cast<char *>(contents.data()), file_size);
-	return input.good();
+	return !contents.empty();
 }
 
-bool Resolve_Font_Path(const char *font_name, bool is_bold, std::filesystem::path &resolved_path);
+bool Resolve_Font_Path(const char *font_name, bool is_bold, std::string &resolved_path);
 
 bool Read_File_Data(FileClass &file, std::vector<unsigned char> &contents)
 {
@@ -404,36 +394,30 @@ void Cache_System_Font_Candidates(void)
 
 	CachedSystemFontCandidatesScanned = true;
 
-	std::vector<std::filesystem::path> search_roots(std::begin(FontSearchRoots), std::end(FontSearchRoots));
+	std::vector<std::string> search_roots(std::begin(FontSearchRoots), std::end(FontSearchRoots));
 	if (const char *home = std::getenv("HOME")) {
-		search_roots.emplace_back(std::filesystem::path(home) / ".fonts");
-		search_roots.emplace_back(std::filesystem::path(home) / ".local/share/fonts");
+		search_roots.emplace_back(renegade_osdep::Join_Path(home, ".fonts"));
+		search_roots.emplace_back(renegade_osdep::Join_Path(home, ".local/share/fonts"));
 	}
 
-	for (const std::filesystem::path &root : search_roots) {
-		if (!std::filesystem::exists(root)) {
+	for (const std::string &root : search_roots) {
+		if (!renegade_osdep::Path_Is_Directory(root)) {
 			continue;
 		}
 
-		std::error_code ec;
-		for (std::filesystem::recursive_directory_iterator it(root, std::filesystem::directory_options::skip_permission_denied, ec), end; it != end; it.increment(ec)) {
-			if (ec) {
-				ec.clear();
-				continue;
-			}
+		std::vector<std::string> files;
+		if (!renegade_osdep::Collect_Regular_Files_Recursive(root, files)) {
+			continue;
+		}
 
-			if (!it->is_regular_file()) {
-				continue;
-			}
-
-			const std::filesystem::path &path = it->path();
+		for (const std::string &path : files) {
 			if (!Font_File_Extension_Matches(path)) {
 				continue;
 			}
 
 			FontCandidateInfo candidate;
 			candidate.Path = path;
-			candidate.Stem = Normalize_Font_Family(path.stem().string());
+			candidate.Stem = Normalize_Font_Family(renegade_osdep::Get_Path_Stem(path));
 
 			std::vector<unsigned char> font_data;
 			if (Read_Binary_File(path, font_data)) {
@@ -467,8 +451,7 @@ bool Resolve_Registered_Font_File(const char *font_name, bool is_bold, std::stri
 
 	int best_score = -1;
 	for (const std::string &registered_file : RegisteredFontFiles) {
-		const std::filesystem::path path(registered_file);
-		const int score = Score_Font_Candidate(Normalize_Font_Family(path.stem().string()), requested_families, is_bold);
+		const int score = Score_Font_Candidate(Normalize_Font_Family(renegade_osdep::Get_Path_Stem(registered_file)), requested_families, is_bold);
 		if (score > best_score) {
 			best_score = score;
 			resolved_file = registered_file;
@@ -496,29 +479,29 @@ bool Read_Font_Data(const char *font_name, bool is_bold, std::vector<unsigned ch
 		return true;
 	}
 
-	std::filesystem::path font_path;
+	std::string font_path;
 	if (Resolve_Font_Path(font_name, is_bold, font_path) && Read_Binary_File(font_path, contents)) {
-		source_name = font_path.string();
+		source_name = font_path;
 		return true;
 	}
 
 	return false;
 }
 
-bool Resolve_Font_Path(const char *font_name, bool is_bold, std::filesystem::path &resolved_path)
+bool Resolve_Font_Path(const char *font_name, bool is_bold, std::string &resolved_path)
 {
 	if (font_name == nullptr || *font_name == '\0') {
 		return false;
 	}
 
-	std::filesystem::path direct_path(font_name);
-	if (std::filesystem::exists(direct_path) && std::filesystem::is_regular_file(direct_path)) {
+	std::string direct_path;
+	if (renegade_osdep::Resolve_Existing_Path(font_name, direct_path) && renegade_osdep::Path_Is_Regular_File(direct_path)) {
 		resolved_path = direct_path;
 		return true;
 	}
 
 	const std::string request_key = Build_Font_Request_Key(font_name, is_bold);
-	std::unordered_map<std::string, std::filesystem::path>::const_iterator cached_path =
+	std::unordered_map<std::string, std::string>::const_iterator cached_path =
 		CachedResolvedFontPaths.find(request_key);
 	if (cached_path != CachedResolvedFontPaths.end()) {
 		resolved_path = cached_path->second;
@@ -529,7 +512,7 @@ bool Resolve_Font_Path(const char *font_name, bool is_bold, std::filesystem::pat
 	Cache_System_Font_Candidates();
 
 	int best_score = -1;
-	std::filesystem::path first_font_path;
+	std::string first_font_path;
 	for (std::vector<FontCandidateInfo>::const_iterator it = CachedSystemFontCandidates.begin();
 		it != CachedSystemFontCandidates.end();
 		++it)

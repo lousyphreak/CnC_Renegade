@@ -75,7 +75,7 @@
 DECLARE_SCRIPT(M00_Debug_Text_File_RMV, "Description=Object:string, Filename=DebugLog.txt:string")
 {
 	const char *filename, *desc;
-	FILE *file;
+	SDL_IOStream *file;
 	time_t start_time, current_time;
 
 	char* Reason_Lookup(ActionCompleteReason reason)
@@ -96,21 +96,21 @@ DECLARE_SCRIPT(M00_Debug_Text_File_RMV, "Description=Object:string, Filename=Deb
 		current_time = time(NULL);
 		desc = Get_Parameter("Description");
 		filename = Get_Parameter("Filename");
-		file = fopen(filename, "wt");
+		file = renegade_osdep::Open_C_File(filename, "wt");
 		
-		fprintf(file, "%s [ID %d] created.\n", desc, Commands->Get_ID(obj));
+		renegade_osdep::Printf_C_File(file, "%s [ID %d] created.\n", desc, Commands->Get_ID(obj));
 	}
 
 	void Custom(GameObject * obj, int type, int param, GameObject * sender)
 	{
 		current_time = time(NULL);
-		fprintf(file, "%s [ID %d] received custom event of type %d and param %d.  Sender was object %d.   %3.1f sec.\n", desc, Commands->Get_ID(obj), type, param, Commands->Get_ID(sender), difftime(current_time, start_time));
+		renegade_osdep::Printf_C_File(file, "%s [ID %d] received custom event of type %d and param %d.  Sender was object %d.   %3.1f sec.\n", desc, Commands->Get_ID(obj), type, param, Commands->Get_ID(sender), difftime(current_time, start_time));
 	}
 
 	void Damaged(GameObject * obj, GameObject * damager, float amount)
 	{
 		current_time = time(NULL);
-		fprintf(file, "%s [ID %d] damaged by object %d.   %3.1f sec.\n", desc, Commands->Get_ID(obj), Commands->Get_ID(damager), difftime(current_time, start_time));
+		renegade_osdep::Printf_C_File(file, "%s [ID %d] damaged by object %d.   %3.1f sec.\n", desc, Commands->Get_ID(obj), Commands->Get_ID(damager), difftime(current_time, start_time));
 	}
 
 	void Sound_Heard( GameObject * obj, const CombatSound & sound )
@@ -121,24 +121,24 @@ DECLARE_SCRIPT(M00_Debug_Text_File_RMV, "Description=Object:string, Filename=Deb
 	void Enemy_Seen( GameObject * obj, GameObject * enemy)
 	{
 		current_time = time(NULL);
-		fprintf(file, "%s [ID %d] saw enemy: object %d.   %3.1f sec.\n", desc, Commands->Get_ID(obj), Commands->Get_ID(enemy), difftime(current_time, start_time));
+		renegade_osdep::Printf_C_File(file, "%s [ID %d] saw enemy: object %d.   %3.1f sec.\n", desc, Commands->Get_ID(obj), Commands->Get_ID(enemy), difftime(current_time, start_time));
 	}
 
 	void Action_Complete(GameObject * obj, int action_id, ActionCompleteReason reason)
 	{
 		current_time = time(NULL);
-		fprintf(file, "Action %d complete on %s [ID %d] -- Reason: %s.   %3.1f sec.\n", action_id, desc, Commands->Get_ID(obj), Reason_Lookup(reason), difftime(current_time, start_time));
+		renegade_osdep::Printf_C_File(file, "Action %d complete on %s [ID %d] -- Reason: %s.   %3.1f sec.\n", action_id, desc, Commands->Get_ID(obj), Reason_Lookup(reason), difftime(current_time, start_time));
 	}
 
 	void Killed(GameObject * obj, GameObject * killer)
 	{
 		current_time = time(NULL);
-		fprintf(file, "%s [ID %d] killed by object %d.   %3.1f sec.\n", desc, Commands->Get_ID(obj), Commands->Get_ID(killer), difftime(current_time, start_time));
+		renegade_osdep::Printf_C_File(file, "%s [ID %d] killed by object %d.   %3.1f sec.\n", desc, Commands->Get_ID(obj), Commands->Get_ID(killer), difftime(current_time, start_time));
 	}
 
 	void Destroyed(GameObject * obj)
 	{
-		fclose(file);
+		renegade_osdep::Close_C_File(file);
 	}
 };
 

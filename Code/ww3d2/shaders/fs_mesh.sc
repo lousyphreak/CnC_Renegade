@@ -29,8 +29,10 @@ uniform vec4 u_meshMaterialAmbient;
 uniform vec4 u_meshMaterialDiffuse;
 uniform vec4 u_meshMaterialEmissive;
 uniform vec4 u_meshSceneAmbient;
-uniform vec4 u_meshLightDir[4];
-uniform vec4 u_meshLightColor[4];
+uniform vec4 u_meshLightPosType[4];
+uniform vec4 u_meshLightDirSpot[4];
+uniform vec4 u_meshLightDiffuseRange[4];
+uniform vec4 u_meshLightAmbientAtten[4];
 
 // Bump env map uniforms
 // u_meshBumpEnvMat = (mat00, mat01, mat10, mat11)
@@ -41,6 +43,33 @@ uniform vec4 u_meshBumpEnvLum;
 vec4 ResolveColorSource(float source, vec4 materialColor, vec4 vertexColor)
 {
     return source > 0.5 ? vertexColor : materialColor;
+}
+
+float ComputeLightAttenuation(float lightType, float range, float attenStart, float distance)
+{
+    if (lightType < 1.5) {
+        return 1.0;
+    }
+
+    if (range <= 0.0 || distance > range) {
+        return 0.0;
+    }
+
+    if (attenStart + 1.0e-4 < range) {
+        return clamp(1.0 - (distance - attenStart) / max(range - attenStart, 1.0e-4), 0.0, 1.0);
+    }
+
+    return 1.0;
+}
+
+float ComputeSpotAttenuation(vec3 lightDirection, float spotCos, vec3 fragmentToLight)
+{
+    if (spotCos < -1.5) {
+        return 1.0;
+    }
+
+    float cone = (dot(normalize(lightDirection), -fragmentToLight) - spotCos) / max(1.0 - spotCos, 1.0e-5);
+    return clamp(cone, 0.0, 1.0);
 }
 
 void main()
@@ -65,9 +94,37 @@ void main()
             vec3 litColor = emissive.rgb + (u_meshSceneAmbient.rgb * ambient.rgb);
 
             for (int i = 0; i < 4; ++i) {
-                if (u_meshLightDir[i].w > 0.5) {
-                    float ndotl = max(dot(N, -normalize(u_meshLightDir[i].xyz)), 0.0);
-                    litColor += u_meshLightColor[i].rgb * diffuse.rgb * ndotl;
+                float lightType = u_meshLightPosType[i].w;
+                if (lightType > 0.5) {
+                    vec3 L = vec3_splat(0.0);
+                    float distanceToLight = 0.0;
+
+                    if (lightType < 1.5) {
+                        L = -normalize(u_meshLightDirSpot[i].xyz);
+                    } else {
+                        vec3 toLight = u_meshLightPosType[i].xyz - v_worldPos;
+                        distanceToLight = length(toLight);
+                        if (distanceToLight > 1.0e-6) {
+                            L = toLight / distanceToLight;
+                        }
+                    }
+
+                    float attenuation = ComputeLightAttenuation(
+                        lightType,
+                        u_meshLightDiffuseRange[i].w,
+                        u_meshLightAmbientAtten[i].w,
+                        distanceToLight);
+
+                    if (lightType > 2.5) {
+                        attenuation *= ComputeSpotAttenuation(u_meshLightDirSpot[i].xyz, u_meshLightDirSpot[i].w, L);
+                    }
+
+                    litColor += u_meshLightAmbientAtten[i].rgb * ambient.rgb * attenuation;
+
+                    if (lightType < 1.5 || distanceToLight > 1.0e-6) {
+                        float ndotl = max(dot(N, L), 0.0);
+                        litColor += u_meshLightDiffuseRange[i].rgb * diffuse.rgb * (attenuation * ndotl);
+                    }
                 }
             }
 

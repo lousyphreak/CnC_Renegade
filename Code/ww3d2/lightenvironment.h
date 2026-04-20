@@ -44,6 +44,7 @@
 #define LIGHTENVIRONMENT_H
 
 #include "always.h"
+#include "renderer_types.h"
 #include "vector3.h"
 
 
@@ -98,6 +99,7 @@ public:
 	int					Get_Light_Count(void) const					{ return LightCount; }
 	const Vector3 &	Get_Light_Direction(int i)	const				{ return InputLights[i].Direction; }
 	const Vector3 &	Get_Light_Diffuse(int i) const				{ return InputLights[i].Diffuse; }
+	const D3DLIGHT8 &	Get_Render_Light(int i) const				{ return InputLights[i].RenderLight; }
 
 	/*
 	** Lighting LOD.  This is a static setting that is used to convert weak diffuse lights
@@ -115,11 +117,13 @@ protected:
 		void				Init(const LightClass & light,const Vector3 & object_center);
 		void				Init_From_Point_Or_Spot_Light(const LightClass & light,const Vector3 & object_center);
 		void				Init_From_Directional_Light(const LightClass & light,const Vector3 & object_center);
-		float				Contribution(void);
+		float				Contribution(void) const;
 
 		Vector3			Direction;
 		Vector3			Ambient;
 		Vector3			Diffuse;
+		D3DLIGHT8		RenderLight;
+		float				ContributionValue;
 		bool				DiffuseRejected;
 	};
 	
@@ -145,4 +149,3 @@ protected:
 
 
 #endif //LIGHTENVIRONMENT_H
-

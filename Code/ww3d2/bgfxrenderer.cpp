@@ -61,8 +61,10 @@ bgfx::UniformHandle BgfxRenderer::MeshMaterialAmbientUniform = BGFX_INVALID_HAND
 bgfx::UniformHandle BgfxRenderer::MeshMaterialDiffuseUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::MeshMaterialEmissiveUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::MeshSceneAmbientUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::MeshLightDirUniform = BGFX_INVALID_HANDLE;
-bgfx::UniformHandle BgfxRenderer::MeshLightColorUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MeshLightPosTypeUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MeshLightDirSpotUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MeshLightDiffuseRangeUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle BgfxRenderer::MeshLightAmbientAttenUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::MeshBumpEnvMatUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::MeshBumpEnvLumUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle BgfxRenderer::MeshTexgenModeUniform = BGFX_INVALID_HANDLE;
@@ -2542,23 +2544,55 @@ void BgfxRenderer::Apply_Lighting_Uniforms(const MaterialClassification &classif
         }
         bgfx::setUniform(MeshSceneAmbientUniform, scene_ambient);
 
-        // Directional lights (per-mesh, from DX8Wrapper)
-        float light_dir[16] = {};
-        float light_color[16] = {};
+        float light_pos_type[16] = {};
+        float light_dir_spot[16] = {};
+        float light_diffuse_range[16] = {};
+        float light_ambient_atten[16] = {};
         for (unsigned i = 0; i < 4u; ++i) {
             const D3DLIGHT8 &light = DX8Wrapper::Peek_Light(i);
             const size_t off = static_cast<size_t>(i) * 4u;
-            light_dir[off + 0] = light.Direction.x;
-            light_dir[off + 1] = light.Direction.y;
-            light_dir[off + 2] = light.Direction.z;
-            light_dir[off + 3] = DX8Wrapper::Is_Light_Enabled(i) ? 1.0f : 0.0f;
-            light_color[off + 0] = light.Diffuse.r;
-            light_color[off + 1] = light.Diffuse.g;
-            light_color[off + 2] = light.Diffuse.b;
-            light_color[off + 3] = 0.0f;
+            if (!DX8Wrapper::Is_Light_Enabled(i)) {
+                continue;
+            }
+
+            float light_type = 0.0f;
+            switch (light.Type) {
+            case D3DLIGHT_DIRECTIONAL: light_type = 1.0f; break;
+            case D3DLIGHT_POINT:       light_type = 2.0f; break;
+            case D3DLIGHT_SPOT:        light_type = 3.0f; break;
+            default: break;
+            }
+            if (light_type < 0.5f) {
+                continue;
+            }
+
+            const float attenuation_start =
+                light.Attenuation1 > 1.0e-6f ? (1.0f / light.Attenuation1) : light.Range;
+
+            light_pos_type[off + 0] = light.Position.x;
+            light_pos_type[off + 1] = light.Position.y;
+            light_pos_type[off + 2] = light.Position.z;
+            light_pos_type[off + 3] = light_type;
+
+            light_dir_spot[off + 0] = light.Direction.x;
+            light_dir_spot[off + 1] = light.Direction.y;
+            light_dir_spot[off + 2] = light.Direction.z;
+            light_dir_spot[off + 3] = light.Type == D3DLIGHT_SPOT ? std::cos(light.Theta) : -2.0f;
+
+            light_diffuse_range[off + 0] = light.Diffuse.r;
+            light_diffuse_range[off + 1] = light.Diffuse.g;
+            light_diffuse_range[off + 2] = light.Diffuse.b;
+            light_diffuse_range[off + 3] = light.Range;
+
+            light_ambient_atten[off + 0] = light.Ambient.r;
+            light_ambient_atten[off + 1] = light.Ambient.g;
+            light_ambient_atten[off + 2] = light.Ambient.b;
+            light_ambient_atten[off + 3] = attenuation_start;
         }
-        bgfx::setUniform(MeshLightDirUniform, light_dir, 4);
-        bgfx::setUniform(MeshLightColorUniform, light_color, 4);
+        bgfx::setUniform(MeshLightPosTypeUniform, light_pos_type, 4);
+        bgfx::setUniform(MeshLightDirSpotUniform, light_dir_spot, 4);
+        bgfx::setUniform(MeshLightDiffuseRangeUniform, light_diffuse_range, 4);
+        bgfx::setUniform(MeshLightAmbientAttenUniform, light_ambient_atten, 4);
     }
 }
 
@@ -2943,18 +2977,17 @@ bool Submit_Classified_Draw_Internal(
         }
     }
 
-    const bool has_lighting = classification.lit_config[0] > 0.5f;
     const bool has_fog = DX8Wrapper::Get_Fog_Enable() && classification.frag_config2[1] != 0.0f;
     const bool has_texgen = classification.program == MeshShaderProgram::MeshTexgen;
     const bool skinned = BgfxRenderer::Is_Skinned_Vertex_Format(vertex_buffer.Vertex_Format_Info().Get_Vertex_Format());
     const RenderVertexBufferClass *render_vertex_buffer = use_direct_vertex_buffer
         ? &static_cast<const RenderVertexBufferClass &>(vertex_buffer)
         : nullptr;
-    if (use_direct_vertex_buffer && use_direct_index_buffer && !has_lighting && !has_fog && !has_texgen) {
+    if (use_direct_vertex_buffer && use_direct_index_buffer && !has_fog && !has_texgen) {
         WWPerfMonClass::Record_Fast_Submit();
     } else {
         WWPerfMonClass::Record_Slow_Submit();
-        WWPerfMonClass::Record_Slow_Submit_Reasons(has_lighting, has_fog, has_texgen);
+        WWPerfMonClass::Record_Slow_Submit_Reasons(false, has_fog, has_texgen);
     }
 
     // Bind vertex buffer
@@ -3241,10 +3274,14 @@ bool BgfxRenderer::Init_Render_Resources()
         MeshMaterialEmissiveUniform = bgfx::createUniform("u_meshMaterialEmissive", bgfx::UniformType::Vec4);
     if (!bgfx::isValid(MeshSceneAmbientUniform))
         MeshSceneAmbientUniform = bgfx::createUniform("u_meshSceneAmbient", bgfx::UniformType::Vec4);
-    if (!bgfx::isValid(MeshLightDirUniform))
-        MeshLightDirUniform = bgfx::createUniform("u_meshLightDir", bgfx::UniformType::Vec4, 4);
-    if (!bgfx::isValid(MeshLightColorUniform))
-        MeshLightColorUniform = bgfx::createUniform("u_meshLightColor", bgfx::UniformType::Vec4, 4);
+    if (!bgfx::isValid(MeshLightPosTypeUniform))
+        MeshLightPosTypeUniform = bgfx::createUniform("u_meshLightPosType", bgfx::UniformType::Vec4, 4);
+    if (!bgfx::isValid(MeshLightDirSpotUniform))
+        MeshLightDirSpotUniform = bgfx::createUniform("u_meshLightDirSpot", bgfx::UniformType::Vec4, 4);
+    if (!bgfx::isValid(MeshLightDiffuseRangeUniform))
+        MeshLightDiffuseRangeUniform = bgfx::createUniform("u_meshLightDiffuseRange", bgfx::UniformType::Vec4, 4);
+    if (!bgfx::isValid(MeshLightAmbientAttenUniform))
+        MeshLightAmbientAttenUniform = bgfx::createUniform("u_meshLightAmbientAtten", bgfx::UniformType::Vec4, 4);
 
     // Bump env map uniforms
     if (!bgfx::isValid(MeshBumpEnvMatUniform))
@@ -3359,8 +3396,10 @@ void BgfxRenderer::Shutdown_Render_Resources()
     destroy_uniform(MeshSkinPaletteUniform);
     destroy_uniform(MeshBumpEnvLumUniform);
     destroy_uniform(MeshBumpEnvMatUniform);
-    destroy_uniform(MeshLightColorUniform);
-    destroy_uniform(MeshLightDirUniform);
+    destroy_uniform(MeshLightAmbientAttenUniform);
+    destroy_uniform(MeshLightDiffuseRangeUniform);
+    destroy_uniform(MeshLightDirSpotUniform);
+    destroy_uniform(MeshLightPosTypeUniform);
     destroy_uniform(MeshSceneAmbientUniform);
     destroy_uniform(MeshMaterialEmissiveUniform);
     destroy_uniform(MeshMaterialDiffuseUniform);

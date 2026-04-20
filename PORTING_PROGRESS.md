@@ -1,5 +1,24 @@
 # Porting Progress
 
+## GPU mesh lighting and point-light support
+
+- Traced the modern mesh-lighting path through `LightEnvironmentClass`, `DX8Wrapper`, `BgfxRenderer`, and `fs_mesh.sc`.
+- Reworked the bgfx lighting contract so runtime lights stay as full light descriptors into the shader path instead of being reduced to four directional vectors on the CPU:
+  - `LightEnvironmentClass` now preserves shader-facing `D3DLIGHT8` data for selected active lights
+  - local-light selection still happens on the CPU, but the actual lighting evaluation now happens in the mesh fragment shader
+  - point, spot, and directional lights are all handled in the same GPU path
+- Fixed the DX8-wrapper light packing used by the modern renderer:
+  - directional and spot lights now derive their light direction from the light transform instead of the old placeholder spot-direction field
+  - far-attenuation-disabled point/spot lights no longer inherit a fake linear falloff from the default attenuation range
+- Expanded `fs_mesh.sc` to evaluate:
+  - scene ambient
+  - per-light ambient
+  - per-light diffuse
+  - point-light distance attenuation
+  - spotlight cone attenuation
+- Updated the bgfx submit path so lighting no longer forces lit draws off the direct vertex/index buffer path when the buffers are otherwise compatible.
+- Rebuilt the Debug ASAN/UBSAN build and completed a 220-second `Renegade` soak with the updated renderer path. The run timed out normally without a crash.
+
 ## bgfx Z-bias restoration
 
 - Investigated decal flicker on the modern renderer and traced it past decal mesh generation into the bgfx DX8-wrapper projection bridge.

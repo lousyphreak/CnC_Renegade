@@ -32,7 +32,7 @@ Both programs share the same fragment shader (`fs_mesh.sc`), which handles:
 - Per-pixel lighting with a tri-state mode uniform (`u_meshLitConfig.x`):
   - `0` = unlit (vertex color passthrough, e.g. prelit meshes, particles)
   - `1` = emissive-only (no normals available, D3D8-compatible behavior)
-  - `2` = full per-pixel N·L lighting (4 directional lights + scene ambient)
+  - `2` = full per-pixel lighting from up to 4 active runtime lights (directional, point, or spot) plus scene ambient
 - Texture stage combining (2 stages, configurable color/alpha ops)
 - CSM shadow receiving
 - Fog (linear, range-based or planar)
@@ -46,13 +46,14 @@ Material properties are **pre-computed at category creation time** in `Classify_
 - Lighting config (mode, color sources — diffuse/ambient/emissive from vertex vs material)
 - Material colors (ambient, diffuse, emissive, opacity)
 
-Only **per-mesh scene state** (scene ambient color, light directions/colors) is read from DX8Wrapper at submit time, since these change per mesh instance via `Set_Light_Environment()`.
+Only **per-mesh scene state** (scene ambient color and active light descriptors) is read from DX8Wrapper at submit time, since these change per mesh instance via `Set_Light_Environment()`.
 
 ### Key Design Decisions
 
 - **No specular**: Confirmed unused by all consumers. Not implemented.
 - **Max 2 texture stages**: Confirmed across all material/shader usage.
 - **Color vertex always enabled**: `D3DRS_COLORVERTEX` is always TRUE; color sources resolved directly from `VertexMaterialClass::Get_*_Color_Source()`.
+- **Lighting stays on the GPU**: the bgfx mesh path must consume full `D3DLIGHT8`-style descriptors in shader uniforms and evaluate point/spot/directional lighting per pixel instead of collapsing local lights into directional proxies at submit time.
 - **Keep dynamic render and sorting submissions separate**: `BUFFER_TYPE_DYNAMIC_SORTING` still needs CPU-resident sorting/index arrays because the legacy sorted path rewrites geometry on the CPU, but ordinary `BUFFER_TYPE_DYNAMIC_RENDER` submissions should use reusable bgfx dynamic buffers and upload directly from the write lock instead of bouncing through the sorting arrays and then through transient vertex uploads.
 - **GPU skinning for W3D skins**: Renegade skin meshes in this codebase are rigid single-bone-per-vertex skins, so the bgfx path should keep one immutable base vertex buffer per `MeshModelClass`, pass the bone index as vertex data, and fetch the current bone matrix from a per-frame palette texture in the vertex shader. The palette upload should be cached per visible `MeshClass` so repeated passes/shadow draws reuse the same uploaded transforms instead of re-uploading or re-deforming geometry. Sorted translucent skins are the one exception: the legacy triangle-sorting path still needs CPU-deformed vertices, so that path should stay on a CPU-generated sorting buffer.
 

@@ -2392,24 +2392,26 @@ void DX8Wrapper::Set_Light(unsigned index,const LightClass &light)
 	temp=light.Get_Position();
 	dlight.Position=*(D3DVECTOR*) &temp;
 
-	light.Get_Spot_Direction(temp);
-	dlight.Direction=*(D3DVECTOR*) &temp;
+	if (light.Get_Type() != LightClass::POINT) {
+		temp = -light.Get_Transform().Get_Z_Vector();
+		dlight.Direction=*(D3DVECTOR*) &temp;
+	}
 
-	dlight.Range=light.Get_Attenuation_Range();
+	dlight.Range=3.402823466e+38f;
 	dlight.Falloff=light.Get_Spot_Exponent();
 	dlight.Theta=light.Get_Spot_Angle();
 	dlight.Phi=light.Get_Spot_Angle();
 
-	// Inverse linear light 1/(1+D)
-	double a,b;
-	light.Get_Far_Attenuation_Range(a,b);
 	dlight.Attenuation0=1.0f;
-	if (fabs(a-b)<1e-5)
-		// if the attenuation range is too small assume uniform with cutoff
-		dlight.Attenuation1=0.0f;
-	else
-		// this will cause the light to drop to half intensity at the first far attenuation
-		dlight.Attenuation1=(float) 1.0/a;
+	dlight.Attenuation1=0.0f;
+	if (light.Get_Type() != LightClass::DIRECTIONAL && light.Get_Flag(LightClass::FAR_ATTENUATION)) {
+		double a,b;
+		light.Get_Far_Attenuation_Range(a,b);
+		dlight.Range = (float)b;
+		if (fabs(a-b) >= 1e-5 && a > 1.0e-5) {
+			dlight.Attenuation1 = (float)(1.0/a);
+		}
+	}
 	dlight.Attenuation2=0.0f;
 
 	Set_Light(index,&dlight);
@@ -2429,14 +2431,8 @@ void DX8Wrapper::Set_Light_Environment(LightEnvironmentClass* light_env)
 		int light_count = light_env->Get_Light_Count();
 		Set_DX8_Render_State(D3DRS_AMBIENT,Convert_Color(light_env->Get_Equivalent_Ambient(),0.0f));
 
-		D3DLIGHT8 light;
-		::ZeroMemory(&light, sizeof(D3DLIGHT8));
-		light.Type=D3DLIGHT_DIRECTIONAL;
-
 		for (int l=0;l<light_count;++l) {
-			(Vector3&)light.Diffuse=light_env->Get_Light_Diffuse(l);
-			Vector3 dir=-light_env->Get_Light_Direction(l);
-			light.Direction=(const D3DVECTOR&)(dir);
+			const D3DLIGHT8 & light = light_env->Get_Render_Light(l);
 			Set_Light(l,&light);
 		}
 

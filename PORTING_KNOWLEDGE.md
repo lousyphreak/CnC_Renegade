@@ -1,5 +1,29 @@
 # Porting Knowledge
 
+## bgfx mesh lighting contract
+
+- The bgfx mesh fragment shader should not treat runtime lighting as "4 directional colors" anymore.
+- The stable runtime contract is now:
+  - `u_meshSceneAmbient`: scene/global ambient
+  - `u_meshLightPosType[4]`: light position plus type (`directional`, `point`, `spot`)
+  - `u_meshLightDirSpot[4]`: light travel direction plus spotlight outer-cone cosine
+  - `u_meshLightDiffuseRange[4]`: diffuse color plus range
+  - `u_meshLightAmbientAtten[4]`: ambient color plus the linear-falloff start distance
+- Mesh lighting is evaluated in world space in `fs_mesh.sc` using `v_worldPos` and `v_worldNormal`, so the CPU-side bridge only needs to choose the active lights and upload descriptors.
+- Because lighting is shader-evaluated, lit draws no longer need a special transient-buffer submission path just because lighting is enabled. Fog and texgen still remain separate submission constraints.
+
+## LightEnvironment bridge
+
+- `LightEnvironmentClass` is still responsible for choosing the most important local lights for an object, but it should preserve full light descriptors for the selected lights instead of collapsing them to directional proxies.
+- Weak or overflow lights can still be folded into the global ambient term to preserve the legacy 4-light budget, but the selected active lights should reach the shader as real point/spot/directional lights.
+- For the active-light shader path, per-light ambient should stay with the light descriptor; otherwise it gets double-counted if also folded into `D3DRS_AMBIENT`.
+
+## DX8-wrapper light packing
+
+- The `D3DLIGHT8.Direction` field used by the modern renderer should come from the light transform (`-transform.Z`) for directional and spot lights.
+- Using `LightClass::SpotDirection` directly as the runtime render-state direction is not reliable for the current game/runtime path and breaks directional-light orientation on the bgfx side.
+- If `LightClass::FAR_ATTENUATION` is disabled, the bgfx-facing light descriptor should not synthesize a fake finite linear falloff from the default start/end attenuation values.
+
 ## bgfx Z-bias contract
 
 - In the current bgfx renderer, `D3DRS_ZBIAS` is still implemented through the DX8 wrapper, not through native bgfx raster state.

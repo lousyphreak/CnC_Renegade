@@ -1196,14 +1196,9 @@ void DX8Wrapper::Set_Light_Environment(LightEnvironmentClass *light_env)
 		const int light_count = light_env->Get_Light_Count();
 		Set_DX8_Render_State(D3DRS_AMBIENT, Convert_Color(light_env->Get_Equivalent_Ambient(), 0.0f));
 
-		D3DLIGHT8 light = {};
-		light.Type = D3DLIGHT_DIRECTIONAL;
-
 		int light_index = 0;
 		for (; light_index < light_count && light_index < 4; ++light_index) {
-			(Vector3 &)light.Diffuse = light_env->Get_Light_Diffuse(light_index);
-			const Vector3 direction = -light_env->Get_Light_Direction(light_index);
-			light.Direction = (const D3DVECTOR &)direction;
+			const D3DLIGHT8 &light = light_env->Get_Render_Light(light_index);
 			Set_Light(light_index, &light);
 		}
 
@@ -1426,23 +1421,26 @@ void DX8Wrapper::Set_Light(unsigned index, const LightClass &light)
 	const Vector3 position = light.Get_Position();
 	dx_light.Position = {position.X, position.Y, position.Z};
 
-	Vector3 direction;
-	light.Get_Spot_Direction(direction);
-	dx_light.Direction = {direction.X, direction.Y, direction.Z};
+	if (light.Get_Type() != LightClass::POINT) {
+		const Vector3 direction = -light.Get_Transform().Get_Z_Vector();
+		dx_light.Direction = {direction.X, direction.Y, direction.Z};
+	}
 
-	dx_light.Range = light.Get_Attenuation_Range();
+	dx_light.Range = 3.402823466e+38f;
 	dx_light.Falloff = light.Get_Spot_Exponent();
 	dx_light.Theta = light.Get_Spot_Angle();
 	dx_light.Phi = light.Get_Spot_Angle();
 
-	double atten_start = 0.0;
-	double atten_end = 0.0;
-	light.Get_Far_Attenuation_Range(atten_start, atten_end);
 	dx_light.Attenuation0 = 1.0f;
-	if (std::abs(atten_start - atten_end) < 1.0e-5) {
-		dx_light.Attenuation1 = 0.0f;
-	} else {
-		dx_light.Attenuation1 = static_cast<float>(1.0 / atten_start);
+	dx_light.Attenuation1 = 0.0f;
+	if (light.Get_Type() != LightClass::DIRECTIONAL && light.Get_Flag(LightClass::FAR_ATTENUATION)) {
+		double atten_start = 0.0;
+		double atten_end = 0.0;
+		light.Get_Far_Attenuation_Range(atten_start, atten_end);
+		dx_light.Range = static_cast<float>(atten_end);
+		if (std::abs(atten_start - atten_end) >= 1.0e-5 && atten_start > 1.0e-5) {
+			dx_light.Attenuation1 = static_cast<float>(1.0 / atten_start);
+		}
 	}
 	dx_light.Attenuation2 = 0.0f;
 

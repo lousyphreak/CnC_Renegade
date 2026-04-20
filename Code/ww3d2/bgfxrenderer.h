@@ -212,8 +212,10 @@ private:
     static bgfx::UniformHandle MeshMaterialDiffuseUniform;
     static bgfx::UniformHandle MeshMaterialEmissiveUniform;
     static bgfx::UniformHandle MeshSceneAmbientUniform;
-    static bgfx::UniformHandle MeshLightDirUniform;
-    static bgfx::UniformHandle MeshLightColorUniform;
+    static bgfx::UniformHandle MeshLightPosTypeUniform;
+    static bgfx::UniformHandle MeshLightDirSpotUniform;
+    static bgfx::UniformHandle MeshLightDiffuseRangeUniform;
+    static bgfx::UniformHandle MeshLightAmbientAttenUniform;
 
     // Bump env map uniforms
     static bgfx::UniformHandle MeshBumpEnvMatUniform;

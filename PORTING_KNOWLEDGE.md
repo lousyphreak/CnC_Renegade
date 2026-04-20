@@ -1,5 +1,23 @@
 # Porting Knowledge
 
+## Load-time path resolution
+
+- `renegade_osdep::Resolve_Existing_Path` sits directly in the runtime open path for `RawFileClass`, low-level compatibility wrappers, and directory pattern resolution.
+- On Linux, exact-case misses previously fell through to `Resolve_Path_Case`, which walked each path component by enumerating the containing directory with `SDL_GlobDirectory` and then linearly matching entries with `strcasecmp`.
+- That behavior is correct for case-sensitive filesystems, but it becomes a startup/load-time bottleneck when many requests use legacy Windows-style casing and the same directories are hit repeatedly.
+- The shared fix is to cache:
+  - normalized requested path -> resolved on-disk path
+  - directory -> directory entry list
+- Cache invalidation is required on successful create/move/delete/directory-create operations; otherwise case-correct resolution can become stale after runtime file mutations.
+- This cache is especially important because `SimpleFileFactoryClass::Get_File` may probe multiple search-path candidates before the real open, multiplying whatever cost exists in the low-level resolver.
+
+## Mission 02 respawn event validation
+
+- `M02_Respawn_Controller` can receive custom events whose `param` is treated as an area index.
+- During runtime validation, Mission 02 delivered event `101` with `param == 99`, which exceeded the 26-entry area tables and triggered UBSan.
+- The safe fix is to validate the area index at the controller boundary and log the bad event, rather than trusting every sender to stay in range.
+- `MissionDemo.cpp` carries the same respawn-controller pattern, so it was hardened the same way to avoid reintroducing the same out-of-bounds behavior in the demo mission scripts.
+
 ## Disk I/O choke point
 
 - The practical low-level choke point for on-disk file access is now `Code/wwlib/osdep.h`.

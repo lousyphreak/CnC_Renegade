@@ -19,6 +19,7 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 #include "bittype.h"
@@ -685,6 +686,83 @@ inline std::string Get_Path_Stem(const std::string & path)
     return filename.substr(0, dot);
 }
 
+inline std::mutex & Get_Path_Cache_Mutex()
+{
+    static std::mutex cache_mutex;
+    return cache_mutex;
+}
+
+inline std::unordered_map<std::string, std::string> & Get_Resolved_Path_Cache()
+{
+    static std::unordered_map<std::string, std::string> cache;
+    return cache;
+}
+
+inline std::unordered_map<std::string, std::vector<std::string>> & Get_Directory_Entry_Cache()
+{
+    static std::unordered_map<std::string, std::vector<std::string>> cache;
+    return cache;
+}
+
+inline std::string Normalize_Directory_Cache_Key(const std::string & directory)
+{
+    const std::string normalized = Trim_Trailing_Path_Separators(Normalize_Path(directory.c_str()));
+    return normalized.empty() ? std::string(".") : normalized;
+}
+
+inline void Cache_Resolved_Path(const std::string & normalized_path, const std::string & resolved_path)
+{
+    if (normalized_path.empty() || resolved_path.empty()) {
+        return;
+    }
+
+    std::lock_guard<std::mutex> lock(Get_Path_Cache_Mutex());
+    Get_Resolved_Path_Cache()[normalized_path] = resolved_path;
+}
+
+inline bool Try_Get_Cached_Resolved_Path(const std::string & normalized_path, std::string & resolved_path)
+{
+    std::lock_guard<std::mutex> lock(Get_Path_Cache_Mutex());
+    const auto & cache = Get_Resolved_Path_Cache();
+    const auto it = cache.find(normalized_path);
+    if (it == cache.end()) {
+        return false;
+    }
+
+    resolved_path = it->second;
+    return true;
+}
+
+inline bool Try_Get_Cached_Directory_Entries(const std::string & directory, std::vector<std::string> & entries)
+{
+    const std::string key = Normalize_Directory_Cache_Key(directory);
+
+    std::lock_guard<std::mutex> lock(Get_Path_Cache_Mutex());
+    const auto & cache = Get_Directory_Entry_Cache();
+    const auto it = cache.find(key);
+    if (it == cache.end()) {
+        return false;
+    }
+
+    entries = it->second;
+    return true;
+}
+
+inline void Cache_Directory_Entries(const std::string & directory, const std::vector<std::string> & entries)
+{
+    const std::string key = Normalize_Directory_Cache_Key(directory);
+
+    std::lock_guard<std::mutex> lock(Get_Path_Cache_Mutex());
+    Get_Directory_Entry_Cache()[key] = entries;
+}
+
+inline void Invalidate_Path_Caches()
+{
+    std::lock_guard<std::mutex> lock(Get_Path_Cache_Mutex());
+    Get_Resolved_Path_Cache().clear();
+    Get_Directory_Entry_Cache().clear();
+}
+
 inline bool Get_Path_Info(const char * path, SDL_PathInfo * info)
 {
     if (path == nullptr || path[0] == '\0') {
@@ -713,7 +791,9 @@ inline bool Path_Is_Regular_File(const std::string & path)
 
 inline bool Collect_Directory_Entries(const std::string & directory, std::vector<std::string> & entries)
 {
-    entries.clear();
+    if (Try_Get_Cached_Directory_Entries(directory, entries)) {
+        return true;
+    }
 
     int count = 0;
     char ** matches = SDL_GlobDirectory(directory.c_str(), nullptr, static_cast<SDL_GlobFlags>(0), &count);
@@ -728,6 +808,8 @@ inline bool Collect_Directory_Entries(const std::string & directory, std::vector
         }
     }
     SDL_free(matches);
+
+    Cache_Directory_Entries(directory, entries);
     return true;
 }
 
@@ -823,12 +905,22 @@ inline bool Resolve_Existing_Path(const char * path, std::string & resolved_path
         return false;
     }
 
-    if (Path_Exists(normalized)) {
-        resolved_path = normalized;
+    if (Try_Get_Cached_Resolved_Path(normalized, resolved_path)) {
         return true;
     }
 
-    return Resolve_Path_Case(normalized, false, resolved_path);
+    if (Path_Exists(normalized)) {
+        resolved_path = normalized;
+        Cache_Resolved_Path(normalized, resolved_path);
+        return true;
+    }
+
+    if (!Resolve_Path_Case(normalized, false, resolved_path)) {
+        return false;
+    }
+
+    Cache_Resolved_Path(normalized, resolved_path);
+    return true;
 }
 
 inline bool Resolve_Path_For_Access(const char * path, bool allow_missing_leaf, std::string & resolved_path)
@@ -889,7 +981,17 @@ inline SDL_IOStream * Open_C_File(const char * filename, const char * mode)
         return nullptr;
     }
 
-    return SDL_IOFromFile(resolved_path.c_str(), mode);
+    const bool existed_before_open = Path_Exists(resolved_path);
+    SDL_IOStream * file = SDL_IOFromFile(resolved_path.c_str(), mode);
+    if (file == nullptr) {
+        return nullptr;
+    }
+
+    if (Mode_Can_Create_File(mode) && !existed_before_open) {
+        Invalidate_Path_Caches();
+    }
+    Cache_Resolved_Path(Normalize_Path(filename), resolved_path);
+    return file;
 }
 
 inline SDL_IOStream * Open_C_File(const std::string & filename, const char * mode)
@@ -901,7 +1003,13 @@ inline SDL_IOStream * Open_C_File_Read_Write(const char * filename)
 {
     std::string resolved_path;
     if (Resolve_Existing_Path(filename, resolved_path)) {
-        return SDL_IOFromFile(resolved_path.c_str(), "rb+");
+        SDL_IOStream * file = SDL_IOFromFile(resolved_path.c_str(), "rb+");
+        if (file == nullptr) {
+            return nullptr;
+        }
+
+        Cache_Resolved_Path(Normalize_Path(filename), resolved_path);
+        return file;
     }
 
     if (!Resolve_Path_For_Access(filename, true, resolved_path)) {
@@ -909,7 +1017,14 @@ inline SDL_IOStream * Open_C_File_Read_Write(const char * filename)
         return nullptr;
     }
 
-    return SDL_IOFromFile(resolved_path.c_str(), "wb+");
+    SDL_IOStream * file = SDL_IOFromFile(resolved_path.c_str(), "wb+");
+    if (file == nullptr) {
+        return nullptr;
+    }
+
+    Invalidate_Path_Caches();
+    Cache_Resolved_Path(Normalize_Path(filename), resolved_path);
+    return file;
 }
 
 inline std::size_t Read_C_File(SDL_IOStream * file, void * buffer, std::size_t byte_count)
@@ -1347,7 +1462,12 @@ inline int DeleteFile(const char * filename)
         return FALSE;
     }
 
-    return SDL_RemovePath(resolved_path.c_str()) ? TRUE : FALSE;
+    if (!SDL_RemovePath(resolved_path.c_str())) {
+        return FALSE;
+    }
+
+    renegade_osdep::Invalidate_Path_Caches();
+    return TRUE;
 }
 
 inline int MoveFile(const char * existing_filename, const char * new_filename)
@@ -1369,7 +1489,12 @@ inline int MoveFile(const char * existing_filename, const char * new_filename)
         return FALSE;
     }
 
-    return SDL_RenamePath(existing_path.c_str(), new_path.c_str()) ? TRUE : FALSE;
+    if (!SDL_RenamePath(existing_path.c_str(), new_path.c_str())) {
+        return FALSE;
+    }
+
+    renegade_osdep::Invalidate_Path_Caches();
+    return TRUE;
 }
 
 inline uint32_t GetModuleFileName(HINSTANCE, char * buffer, uint32_t size)
@@ -1420,7 +1545,12 @@ inline int32_t CreateDirectory(const char * path, void *)
         return FALSE;
     }
 
-    return renegade_osdep::Create_Directory_Tree(directory) ? TRUE : FALSE;
+    if (!renegade_osdep::Create_Directory_Tree(directory)) {
+        return FALSE;
+    }
+
+    renegade_osdep::Invalidate_Path_Caches();
+    return TRUE;
 }
 
 inline HANDLE CreateFile(const char * filename, uint32_t desired_access, uint32_t, void *, uint32_t creation_disposition, uint32_t, HANDLE)

@@ -1,5 +1,21 @@
 # Porting Progress
 
+## Load-time filesystem cache
+
+- Investigated slow data/level loading on Linux and traced the hot path to the shared SDL-backed case-correct disk access layer in `Code/wwlib/osdep.h`.
+- The main slowdown came from repeated `Resolve_Existing_Path` fallbacks into `Resolve_Path_Case`, which enumerated directory contents with `SDL_GlobDirectory` for each path component whenever requested casing did not exactly match on-disk casing.
+- This cost was amplified by `SimpleFileFactoryClass::Get_File`, which probes semicolon-separated search paths by opening candidate files before the real open, causing the same case-resolution work to repeat during asset-heavy loads.
+- Added caching for:
+  - resolved existing paths
+  - directory entry lists used for case-insensitive component matching
+- Added cache invalidation for path-mutating operations so case-correct resolution stays accurate when files or directories are created, moved, or deleted.
+- This keeps the Linux case-sensitive compatibility behavior intact while removing the repeated directory-globbing work from steady-state asset loads.
+
+## Validation follow-up
+
+- A 200-second `Renegade` soak on the Debug ASAN/UBSAN build exposed an unrelated Mission 02 script bug: `M02_Respawn_Controller` trusted custom-event `param` as an area-table index and received `99` for a 26-entry table.
+- Hardened `M02_Respawn_Controller` and the matching demo controller to reject invalid area indices with a debug message instead of indexing past the end of the respawn tracking arrays.
+
 ## Centralized SDL disk I/O
 
 - Reworked `Code/wwlib/osdep.h` into the single runtime low-level disk/filesystem chokepoint.

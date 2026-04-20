@@ -483,8 +483,26 @@ Commands->Debug_Message (">>>>>>>>>>>>>>>> UNIT COUNT = %i, UNIT MAX = %i.\n",ar
 		}
 	}
 
+	bool Is_Valid_Area_Index(int type, int area_id)
+	{
+		if ((area_id >= 0) && (area_id < ARRAY_ELEMENT_COUNT(active_area))) {
+			return true;
+		}
+
+		Commands->Debug_Message("MDD_Respawn_Controller: ignoring invalid area index %d for event %d.\n", area_id, type);
+		return false;
+	}
+
 	void Custom (GameObject *obj, int type, int param, GameObject *sender)
 	{
+		if (((type >= 101) && (type <= 109)) || (type == 114))
+		{
+			if (!Is_Valid_Area_Index(type, param))
+			{
+				return;
+			}
+		}
+
 		if (type == 101)
 		{
 			// A unit has died, subtract him from his area (param).

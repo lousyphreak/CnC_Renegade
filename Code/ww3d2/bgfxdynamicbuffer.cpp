@@ -39,6 +39,7 @@ RenderVertexBufferClass *g_dynamic_render_vertex_buffer = nullptr;
 bool g_dynamic_render_vertex_buffer_in_use = false;
 unsigned short g_dynamic_render_vertex_buffer_size = kDefaultDynamicVertexCount;
 unsigned short g_dynamic_render_vertex_buffer_offset = 0;
+std::vector<RenderVertexBufferClass *> g_stale_dynamic_render_vertex_buffers;
 
 SortingVertexBufferClass *g_dynamic_sorting_vertex_buffer = nullptr;
 bool g_dynamic_sorting_vertex_buffer_in_use = false;
@@ -69,6 +70,36 @@ void Release_Stale_Dynamic_Sorting_Vertex_Buffers()
 			++it;
 		}
 	}
+}
+
+void Release_Stale_Dynamic_Render_Vertex_Buffers()
+{
+	auto it = g_stale_dynamic_render_vertex_buffers.begin();
+	while (it != g_stale_dynamic_render_vertex_buffers.end()) {
+		RenderVertexBufferClass *buffer = *it;
+		if ((buffer == nullptr) || (buffer->Engine_Refs() == 0)) {
+			if (buffer != nullptr) {
+				buffer->Release_Ref();
+			}
+			it = g_stale_dynamic_render_vertex_buffers.erase(it);
+		} else {
+			++it;
+		}
+	}
+}
+
+void Retire_Dynamic_Render_Vertex_Buffer()
+{
+	if (g_dynamic_render_vertex_buffer == nullptr) {
+		return;
+	}
+
+	if (g_dynamic_render_vertex_buffer->Engine_Refs() > 0) {
+		g_stale_dynamic_render_vertex_buffers.push_back(g_dynamic_render_vertex_buffer);
+	} else {
+		REF_PTR_RELEASE(g_dynamic_render_vertex_buffer);
+	}
+	g_dynamic_render_vertex_buffer = nullptr;
 }
 
 void Swizzle_Vertex_Colors_In_Place(unsigned char *vertex_data, const VertexFormatInfoClass &fvf_info, unsigned short vertex_count)
@@ -716,6 +747,12 @@ DynamicVBAccessClass::~DynamicVBAccessClass()
 void DynamicVBAccessClass::_Deinit()
 {
 	REF_PTR_RELEASE(g_dynamic_render_vertex_buffer);
+	for (RenderVertexBufferClass *buffer : g_stale_dynamic_render_vertex_buffers) {
+		if (buffer != nullptr) {
+			buffer->Release_Ref();
+		}
+	}
+	g_stale_dynamic_render_vertex_buffers.clear();
 	g_dynamic_render_vertex_buffer_in_use = false;
 	g_dynamic_render_vertex_buffer_size = kDefaultDynamicVertexCount;
 	g_dynamic_render_vertex_buffer_offset = 0;
@@ -734,6 +771,7 @@ void DynamicVBAccessClass::_Deinit()
 
 void DynamicVBAccessClass::_Reset(bool frame_changed)
 {
+	Release_Stale_Dynamic_Render_Vertex_Buffers();
 	Release_Stale_Dynamic_Sorting_Vertex_Buffers();
 	g_dynamic_sorting_vertex_buffer_offset = 0;
 	if (frame_changed) {
@@ -821,10 +859,19 @@ void DynamicVBAccessClass::Allocate_Render_Dynamic_Buffer()
 	g_dynamic_render_vertex_buffer_in_use = true;
 
 	if (VertexCount > g_dynamic_render_vertex_buffer_size) {
-		REF_PTR_RELEASE(g_dynamic_render_vertex_buffer);
+		Retire_Dynamic_Render_Vertex_Buffer();
 		g_dynamic_render_vertex_buffer_size = std::max<unsigned short>(
 			static_cast<unsigned short>(VertexCount),
 			static_cast<unsigned short>(kDefaultDynamicVertexCount));
+	}
+
+	const bool needs_discard =
+		(g_dynamic_render_vertex_buffer != nullptr) &&
+		(static_cast<unsigned>(VertexCount) + g_dynamic_render_vertex_buffer_offset > g_dynamic_render_vertex_buffer_size);
+	if (needs_discard) {
+		// Mirror the DX8 D3DLOCK_DISCARD path by switching to a fresh buffer instead of
+		// overwriting a buffer region that may still be referenced by already submitted draws.
+		Retire_Dynamic_Render_Vertex_Buffer();
 	}
 
 	if (g_dynamic_render_vertex_buffer == nullptr) {
@@ -833,10 +880,6 @@ void DynamicVBAccessClass::Allocate_Render_Dynamic_Buffer()
 			g_dynamic_render_vertex_buffer_size,
 			RenderVertexBufferClass::USAGE_DYNAMIC,
 			BUFFER_TYPE_DYNAMIC_RENDER));
-		g_dynamic_render_vertex_buffer_offset = 0;
-	}
-
-	if (static_cast<unsigned>(VertexCount) + g_dynamic_render_vertex_buffer_offset > g_dynamic_render_vertex_buffer_size) {
 		g_dynamic_render_vertex_buffer_offset = 0;
 	}
 

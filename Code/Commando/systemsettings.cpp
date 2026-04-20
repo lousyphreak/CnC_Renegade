@@ -257,6 +257,7 @@ void	SystemSettingEntrySlider::Registry_Save( RegistryClass & registry )
 
 void	SystemSettingEntrySlider::Registry_Load( RegistryClass & registry )
 {
+	Value = Get_Slider();
 	Set_Value( registry.Get_Int( Get_Name(), Get_Value() ) );
 }
 
@@ -310,6 +311,7 @@ void	SystemSettingEntryEnum::Registry_Save( RegistryClass & registry )
 
 void	SystemSettingEntryEnum::Registry_Load( RegistryClass & registry )
 {
+	Selection = Get_Enum();
 	Set_Selection( registry.Get_Int( Get_Name(), Get_Selection() ) );
 }
 

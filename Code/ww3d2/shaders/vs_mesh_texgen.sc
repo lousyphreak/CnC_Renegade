@@ -1,4 +1,4 @@
-$input a_position, a_normal, a_color0, a_texcoord0, a_texcoord1
+$input a_position, a_normal, a_color0, a_texcoord0, a_texcoord1, a_texcoord2, a_texcoord3, a_texcoord4, a_texcoord5, a_texcoord6, a_texcoord7
 $output v_color0, v_texcoord0, v_texcoord1, v_fogFactor, v_worldPos, v_viewDepth, v_worldNormal
 
 #include <bgfx_shader.sh>
@@ -10,9 +10,9 @@ $output v_color0, v_texcoord0, v_texcoord1, v_fogFactor, v_worldPos, v_viewDepth
 uniform vec4 u_meshFogConfig;
 
 // u_meshTexgenMode.x = texgen mode stage 0 (0=passthrough, 1=camera_normal, 2=camera_position, 3=reflection)
-// u_meshTexgenMode.y = texgen UV source stage 0
+// u_meshTexgenMode.y = texgen UV source stage 0 (0..7)
 // u_meshTexgenMode.z = texgen mode stage 1
-// u_meshTexgenMode.w = texgen UV source stage 1
+// u_meshTexgenMode.w = texgen UV source stage 1 (0..7)
 uniform vec4 u_meshTexgenMode;
 
 // u_meshTexTransformFlags.x = stage0 (0=disabled, 1=count2, 2=count3_projected)
@@ -22,10 +22,27 @@ uniform vec4 u_meshTexTransformFlags;
 uniform mat4 u_meshTexTransform0;
 uniform mat4 u_meshTexTransform1;
 
+vec2 SelectUVSource(float uvSource,
+    vec2 uv0, vec2 uv1, vec2 uv2, vec2 uv3,
+    vec2 uv4, vec2 uv5, vec2 uv6, vec2 uv7)
+{
+    // Discrete match on UV source index (0..7). Fixed-function D3D8 routes
+    // UV set N into the sampling stage when D3DTSS_TEXCOORDINDEX is set to N.
+    int idx = int(uvSource + 0.5);
+    if (idx <= 0) return uv0;
+    if (idx == 1) return uv1;
+    if (idx == 2) return uv2;
+    if (idx == 3) return uv3;
+    if (idx == 4) return uv4;
+    if (idx == 5) return uv5;
+    if (idx == 6) return uv6;
+    return uv7;
+}
+
 vec2 ResolveTexcoord(
     int stage,
-    vec2 texcoord0,
-    vec2 texcoord1,
+    vec2 uv0, vec2 uv1, vec2 uv2, vec2 uv3,
+    vec2 uv4, vec2 uv5, vec2 uv6, vec2 uv7,
     vec3 viewPosition,
     vec3 viewNormal)
 {
@@ -37,7 +54,8 @@ vec2 ResolveTexcoord(
     if (texgenMode < 0.5) {
         // Renegade's legacy COUNT2 texture mappers write offsets into the matrix Z column
         // (Matrix3D m[0].Z / m[1].Z), so passthrough UVs need an implicit third component of 1.
-        coordinate = uvSource > 0.5 ? vec4(texcoord1, 1.0, 1.0) : vec4(texcoord0, 1.0, 1.0);
+        vec2 selected = SelectUVSource(uvSource, uv0, uv1, uv2, uv3, uv4, uv5, uv6, uv7);
+        coordinate = vec4(selected, 1.0, 1.0);
     } else if (texgenMode < 1.5) {
         coordinate = vec4(viewNormal, 1.0);
     } else if (texgenMode < 2.5) {
@@ -70,8 +88,14 @@ void main()
     vec3 viewPos = mul(u_modelView, vec4(a_position, 1.0)).xyz;
     vec3 viewNormal = normalize(mul(u_modelView, vec4(a_normal, 0.0)).xyz);
 
-    v_texcoord0 = ResolveTexcoord(0, a_texcoord0, a_texcoord1, viewPos, viewNormal);
-    v_texcoord1 = ResolveTexcoord(1, a_texcoord0, a_texcoord1, viewPos, viewNormal);
+    v_texcoord0 = ResolveTexcoord(0,
+        a_texcoord0, a_texcoord1, a_texcoord2, a_texcoord3,
+        a_texcoord4, a_texcoord5, a_texcoord6, a_texcoord7,
+        viewPos, viewNormal);
+    v_texcoord1 = ResolveTexcoord(1,
+        a_texcoord0, a_texcoord1, a_texcoord2, a_texcoord3,
+        a_texcoord4, a_texcoord5, a_texcoord6, a_texcoord7,
+        viewPos, viewNormal);
 
     v_worldPos = mul(u_model[0], vec4(a_position, 1.0)).xyz;
     v_worldNormal = normalize(mul(u_model[0], vec4(a_normal, 0.0)).xyz);
@@ -84,3 +108,4 @@ void main()
         v_fogFactor = 1.0 - clamp(factor, 0.0, 1.0);
     }
 }
+

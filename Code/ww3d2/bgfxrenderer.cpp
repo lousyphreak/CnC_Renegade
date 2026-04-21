@@ -2444,11 +2444,27 @@ MaterialClassification BgfxRenderer::Classify_Material(const ShaderClass &shader
     MaterialClassification c{};
 
     // Determine program variant: Mesh or MeshTexgen
+    // We need the texgen vertex shader whenever:
+    //   - any stage has a TexMapper (texture coordinate generator), or
+    //   - any stage sources its UVs from a non-identity UV array index.
+    // In legacy D3D8 the fixed-function pipeline remapped stage N to UV set
+    // `UVSource[N]` via D3DTSS_TEXCOORDINDEX. Meshes authored for multi-pass
+    // lightmapping rely on this: different passes read different UV arrays
+    // through the same texture stage. The non-texgen vertex shader hardwires
+    // stage 0 -> a_texcoord0 and stage 1 -> a_texcoord1, so it would swap
+    // base/lightmap UVs in those passes. Route anything that needs UV-source
+    // remapping through the texgen shader, which already honours
+    // D3DTSS_TEXCOORDINDEX via Apply_Texgen_Uniforms.
     bool needs_texgen = false;
     if (material != nullptr) {
         VertexMaterialClass *mutable_material = const_cast<VertexMaterialClass *>(material);
         for (int i = 0; i < 2; ++i) {
             if (mutable_material->Peek_Mapper(i) != nullptr) {
+                needs_texgen = true;
+                break;
+            }
+            const int expected_source = i;
+            if (mutable_material->Get_UV_Source(i) != expected_source) {
                 needs_texgen = true;
                 break;
             }

@@ -1,5 +1,16 @@
 # Porting Knowledge
 
+## Mission replay unlock compatibility
+
+- The single-player load menu does **not** show built-in mission starts just because `data\\m*.mix` exists. `Code/Commando/dlgloadspgame.cpp` filters those entries through `Get_Game_Rank(...)`, which reads `Software\\Westwood\\Renegade\\Ranks`.
+- If that rank table is empty, the menu will still find the mission `.mix` files but will hide every built-in replay entry.
+- A compatibility-safe recovery path now lives in `LoadSPGameMenuClass::On_Init_Dialog`:
+  - only when the mission-rank key has no stored values
+  - scan `data\\save\\savegame*.sav`
+  - recover mission replay availability from saved single-player progress
+  - exclude the map currently stored in `autosave.sav`, because autosave represents the active in-progress campaign mission rather than a completed replay unlock
+- The recovery writes a minimal rank of `1`, which is enough to preserve the original menu contract (`rank > 0` means replayable) without inventing higher star ratings.
+
 ## SDL3 main callback contract for Commando
 
 - Both maintained Commando executables now follow SDL3's app-callback lifecycle instead of owning native perpetual loops in `main()`:

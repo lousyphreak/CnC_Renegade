@@ -54,6 +54,56 @@
 #include "_globals.h"
 #include "specialbuilds.h"
 
+namespace
+{
+
+bool Has_Mission_Rank_Data()
+{
+	RegistryClass registry(APPLICATION_SUB_KEY_NAME_MISSION_RANKS);
+	if (!registry.Is_Valid()) {
+		return true;
+	}
+
+	DynamicVectorClass<StringClass> values;
+	registry.Get_Value_List(values);
+	return values.Count() > 0;
+}
+
+void Recover_Mission_Ranks_From_Savegames()
+{
+	if (Has_Mission_Rank_Data()) {
+		return;
+	}
+
+	StringClass autosave_map_name(0, true);
+	const bool have_autosave_map = SaveGameManager::Peek_Map_Name("autosave.sav", autosave_map_name);
+
+	WIN32_FIND_DATA find_info = { 0 };
+	int32_t keep_going = TRUE;
+	HANDLE file_find = NULL;
+	for (file_find = ::FindFirstFile("data\\save\\savegame*.sav", &find_info);
+		 (file_find != INVALID_HANDLE_VALUE) && keep_going;
+		 keep_going = ::FindNextFile(file_find, &find_info))
+	{
+		StringClass map_name(0, true);
+		if (!SaveGameManager::Peek_Map_Name(find_info.cFileName, map_name)) {
+			continue;
+		}
+
+		if (have_autosave_map && ::lstrcmpi(map_name, autosave_map_name) == 0) {
+			continue;
+		}
+
+		LoadSPGameMenuClass::Set_Game_Rank(map_name, 1);
+	}
+
+	if (file_find != INVALID_HANDLE_VALUE) {
+		::FindClose(file_find);
+	}
+}
+
+}
+
 
 ////////////////////////////////////////////////////////////////
 //	Local constants
@@ -102,6 +152,8 @@ LoadSPGameMenuClass::On_Init_Dialog (void)
 		//
 		//	Build the lists
 		//
+		Recover_Mission_Ranks_From_Savegames();
+
 		int start_index = 0;
 		//start_index = Build_List ("data\\*.mix", start_index);
 		//start_index = Build_List ("data\\m??_*.mix", start_index);

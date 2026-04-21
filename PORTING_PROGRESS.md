@@ -1,5 +1,17 @@
 # Porting Progress
 
+## Single-player mission replay recovery
+
+- Investigated missing built-in entries in the single-player load menu and traced the regression to the replay-unlock gate in `Code/Commando/dlgloadspgame.cpp`.
+- The menu still enumerated `data\\m*.mix` correctly, but it only shows those mission starts when `Software\\Westwood\\Renegade\\Ranks` contains a non-zero rank for the mission.
+- On the affected Linux profile, the shipped save slots and autosave still preserved campaign progress (`M13`, `M01`, `M02`), while the `Ranks` registry section was empty, so every built-in mission replay entry was filtered out.
+- Added a compatibility recovery path:
+  - it runs only when the mission-rank registry key has no stored values
+  - it scans `data\\save\\savegame*.sav`
+  - it rebuilds minimal replay ranks from saved single-player progress
+  - it explicitly skips the mission currently represented by `autosave.sav`, so the active in-progress mission is not exposed as a replay unlock
+- This restores the replay rows for already-completed missions without changing the normal rank-driven behavior for profiles whose mission ranks are still intact.
+
 ## SDL3 main callback lifecycle
 
 - Reworked both Commando executables onto SDL3 app callbacks:

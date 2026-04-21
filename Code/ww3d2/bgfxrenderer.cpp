@@ -16,6 +16,10 @@
 #include <SDL3/SDL_properties.h>
 #include <SDL3/SDL_video.h>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten/html5.h>
+#endif
+
 #include <bgfx/bgfx.h>
 #include <bgfx/platform.h>
 
@@ -860,6 +864,41 @@ bool Query_Native_Window(SDL_Window *window, bgfx::PlatformData &platform_data)
     }
 
 #ifdef __EMSCRIPTEN__
+    auto ensure_webgl_context = [&](const char *canvas_id) -> bool {
+        EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context = emscripten_webgl_get_current_context();
+        if (context <= 0) {
+            EmscriptenWebGLContextAttributes attributes;
+            emscripten_webgl_init_context_attributes(&attributes);
+            attributes.enableExtensionsByDefault = true;
+            attributes.depth = true;
+            attributes.stencil = true;
+            attributes.antialias = false;
+
+            for (int major_version = 2; major_version >= 1 && context <= 0; --major_version) {
+                attributes.majorVersion = major_version;
+                context = emscripten_webgl_create_context(canvas_id, &attributes);
+            }
+
+            if (context <= 0) {
+                SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+                    "BgfxRenderer::Query_Native_Window failed to create an Emscripten WebGL context for %s",
+                    canvas_id);
+                return false;
+            }
+
+            if (emscripten_webgl_make_context_current(context) != EMSCRIPTEN_RESULT_SUCCESS) {
+                emscripten_webgl_destroy_context(context);
+                SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+                    "BgfxRenderer::Query_Native_Window failed to make the Emscripten WebGL context current for %s",
+                    canvas_id);
+                return false;
+            }
+        }
+
+        platform_data.context = reinterpret_cast<void *>(static_cast<uintptr_t>(context));
+        return true;
+    };
+
     const char *canvas_id = SDL_GetStringProperty(window_properties, SDL_PROP_WINDOW_EMSCRIPTEN_CANVAS_ID_STRING, "#canvas");
     if (canvas_id == nullptr || canvas_id[0] == '\0') {
         canvas_id = "#canvas";
@@ -867,7 +906,7 @@ bool Query_Native_Window(SDL_Window *window, bgfx::PlatformData &platform_data)
 
     platform_data.nwh = const_cast<char *>(canvas_id);
     platform_data.type = bgfx::NativeWindowHandleType::Default;
-    return true;
+    return ensure_webgl_context(canvas_id);
 #endif
 
     if (void *wayland_display = SDL_GetPointerProperty(window_properties, SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER, nullptr)) {

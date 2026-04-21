@@ -96,6 +96,8 @@ function(renegade_configure_emscripten_target target_name)
         message(FATAL_ERROR "renegade_configure_emscripten_target called for missing target: ${target_name}")
     endif()
 
+    set_target_properties("${target_name}" PROPERTIES SUFFIX ".html")
+
     math(EXPR _renegade_emscripten_initial_memory_bytes "${RENEGADE_EMSCRIPTEN_INITIAL_MEMORY_MB} * 1024 * 1024")
 
     target_link_options("${target_name}" PRIVATE

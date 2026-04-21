@@ -60,6 +60,17 @@
 - The vendored bgfx shader tool runs as `shaderc.js` during an Emscripten build, so it needs host-filesystem access (`-sNODERAWFS=1`) and a larger stack than the default for this codebase's shader preprocessing workload.
 - For the current Renegade web build, SDL pthread support should stay disabled. If SDL is configured with Emscripten pthreads enabled, the final link pulls in `--shared-memory`; that requires every linked object to be compiled with atomics/bulk-memory support and breaks the current single-threaded build.
 - The in-tree Bink decoder includes vendored FFmpeg C sources directly. Its target therefore needs the `Code/BinkMovie/ffmpeg` include root in addition to `Code/BinkMovie`, otherwise nested includes such as `libavutil/attributes.h` fail under normal out-of-tree builds.
+- The fetched `bgfx.cmake` tree currently includes `cmake/bimg/bimg_encode.cmake` unconditionally, even when `BGFX_BUILD_TOOLS_TEXTURE` is off. That is harmless on native builds, but it breaks the Emscripten build because `bimg_encode` pulls NVTT encode code that does not recognize the web target.
+- The stable local fix is to patch fetched `cmake/bimg/CMakeLists.txt` at configure time so `bimg_encode` is only included together with `texturec`. Renegade's web build only needs `shaderc`, so skipping `bimg_encode` preserves the required shader pipeline without carrying the non-portable encode library into the web toolchain.
+- `launche.sh` should not assume an already-valid `build-em` tree. Re-running `emcmake cmake -S . -B build-em ...` before `cmake --build` keeps the fetched dependency patches and Emscripten cache options in sync with source-controlled changes.
+- Reusing `build-em` across configuration changes can leave ABI-incompatible object files behind (for example, a previous web build produced with a different `CMAKE_BUILD_TYPE`). Cleaning the tree before rebuilding avoids class-layout/thunk mismatches at final wasm link.
+- For the browser entrypoint target, Emscripten only emits the launcher HTML page when the final output path ends in `.html`. If the target is left with the default executable suffix, the link step produces only `.js`/`.wasm`/`.data`, and `emrun` will end up serving a directory listing instead of the game page.
+- `MainMenuTransitionClass` must keep ref-counted ownership of the dialogs it animates. The dialog manager keeps the transition alive across active-dialog changes, and raw dialog pointers in the transition can turn into wasm `memory access out of bounds` traps once the old dialog unregisters or its controls are queried after teardown.
+- The safe transition contract for the web build is:
+  - require `Model`, `TransitionAnim`, `Camera`, and `Dialog` in `Is_Valid()`
+  - in `Update_Controls()`, stop the transition if the dialog is no longer running
+  - tolerate missing controls instead of assuming every menu resource variant carries the full animated control set
+- Browser validation for this port is only trustworthy when Chrome is started with WebGL-capable flags. `--disable-gpu` produces a misleading startup failure for the bgfx/WebGL path; the validated headless configuration here used `--use-gl=angle --use-angle=swiftshader --enable-webgl --ignore-gpu-blocklist`.
 
 ## bgfx mesh lighting contract
 

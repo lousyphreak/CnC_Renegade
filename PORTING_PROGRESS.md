@@ -73,6 +73,27 @@
   - increased stack size avoids the earlier shader preprocessing overflow
 - Disabled SDL's Emscripten pthread mode for this build so the final web link stays single-threaded and does not require wasm shared-memory / atomics across the whole project.
 - Rebuilt the full Emscripten `Commando` target successfully after the above changes.
+- Fixed the current `build-em` regression in the fetched bgfx dependency integration:
+  - source-controlled configure-time patching now stops `cmake/bimg/CMakeLists.txt` from building `bimg_encode` unless texture tools are enabled
+  - this keeps the web build from compiling NVTT encode sources that do not support the Emscripten target, while preserving the shader tool path the project actually uses
+- Fixed the current web-launch artifact regression:
+  - `renegade_configure_emscripten_target(...)` now gives browser targets the `.html` suffix Emscripten expects for the launcher page
+  - `Commando` therefore emits `Renegade.html` again alongside `Renegade.js`, `Renegade.wasm`, and `Renegade.data`
+- Updated `launche.sh` so the normal web flow now:
+  - verifies `emcmake` / `emrun` are available
+  - recreates `build-em` automatically if it is not an Emscripten Debug tree
+  - reconfigures `build-em` as a Debug Emscripten tree with packaged Renegade data
+  - cleans the configured tree before building so stale mixed-configuration objects cannot survive across web-port iterations
+  - builds with `cmake --build ... -j20`
+  - serves `build-em/bin/Renegade.html` through `emrun`
+- Fixed the browser-only startup crash that showed up after the web build finally reached the main menu:
+  - `MainMenuTransitionClass` now holds ref-counted ownership of the dialogs it animates between instead of storing raw pointers across the transition lifetime
+  - the transition validity check now requires the camera and dialog, not just the model and animation
+  - `Update_Controls()` now terminates the transition cleanly if the dialog is no longer running and skips any missing menu controls instead of blindly dereferencing them
+- Revalidated the full web path in a real browser engine:
+  - `Renegade.html` loads under headless Chrome with WebGL enabled
+  - the game reaches `MainLoop: Entering main loop`
+  - a 210-second browser soak completes without JavaScript exceptions or wasm out-of-bounds traps
 
 ## GPU mesh lighting and point-light support
 

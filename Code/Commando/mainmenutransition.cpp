@@ -85,6 +85,8 @@ MainMenuTransitionClass::MainMenuTransitionClass (void)	:
 ////////////////////////////////////////////////////////////////
 MainMenuTransitionClass::~MainMenuTransitionClass (void)
 {
+	REF_PTR_RELEASE (Dialog);
+	REF_PTR_RELEASE (OtherDlg);
 	REF_PTR_RELEASE (Model);
 	REF_PTR_RELEASE (TransitionAnim);
 	return ;
@@ -99,8 +101,8 @@ MainMenuTransitionClass::~MainMenuTransitionClass (void)
 void
 MainMenuTransitionClass::Set_Dialogs (DialogBaseClass *dialog, DialogBaseClass *other_dlg)
 {
-	Dialog	= dialog;
-	OtherDlg	= other_dlg;
+	REF_PTR_SET (Dialog, dialog);
+	REF_PTR_SET (OtherDlg, other_dlg);
 	return ;
 }
 
@@ -218,6 +220,11 @@ MainMenuTransitionClass::Update_Controls (void)
 		IDC_MENU_QUIT_BUTTON
 	};
 
+	if (Model == NULL || Camera == NULL || Dialog == NULL || Dialog->Is_Running () == false) {
+		CurrentFrame = TargetFrame;
+		return ;
+	}
+
 	//
 	//	Get the half dimensions of the screen
 	//
@@ -261,6 +268,10 @@ MainMenuTransitionClass::Update_Controls (void)
 		//	Move the dialog control
 		//
 		DialogControlClass *control	= Dialog->Get_Dlg_Item (ControlIDArray[index]);
+		if (control == NULL) {
+			continue;
+		}
+
 		const RectClass &control_rect	= control->Get_Window_Rect ();
 		new_pos.Y							-= (control_rect.Height () / 2);
 		control->Set_Window_Pos (Vector2 (new_pos.X, new_pos.Y));
@@ -284,7 +295,7 @@ MainMenuTransitionClass::Is_Valid (void) const
 	//
 	//	Check to see if the model and animation are valid
 	//
-	if (Model != NULL && TransitionAnim != NULL) {
+	if (Model != NULL && TransitionAnim != NULL && Camera != NULL && Dialog != NULL) {
 		retval = true;
 	}
 

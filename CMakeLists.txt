@@ -4,6 +4,10 @@ project(Renegade VERSION 0.1.0 LANGUAGES C CXX)
 
 include(FetchContent)
 
+if(POLICY CMP0169)
+    cmake_policy(SET CMP0169 OLD)
+endif()
+
 # temporary disable all warnings until the code is cleaned up
 add_definitions(-w)
 
@@ -128,7 +132,10 @@ FetchContent_Declare(
     GIT_PROGRESS TRUE
     GIT_SUBMODULES_RECURSE TRUE
 )
-FetchContent_MakeAvailable(bgfx_cmake)
+FetchContent_GetProperties(bgfx_cmake)
+if(NOT bgfx_cmake_POPULATED)
+    FetchContent_Populate(bgfx_cmake)
+endif()
 
 set(RENEGADE_BGFX_TOOL_UTILS "${bgfx_cmake_SOURCE_DIR}/cmake/bgfxToolUtils.cmake")
 file(READ "${RENEGADE_BGFX_TOOL_UTILS}" _renegade_bgfx_tool_utils)
@@ -136,6 +143,20 @@ string(REPLACE "$<IF:$<CONFIG:Debug>:0,3>" "$<IF:$<CONFIG:Debug>,0,3>" _renegade
 if(NOT _renegade_bgfx_tool_utils STREQUAL _renegade_bgfx_tool_utils_patched)
     file(WRITE "${RENEGADE_BGFX_TOOL_UTILS}" "${_renegade_bgfx_tool_utils_patched}")
 endif()
+
+set(RENEGADE_BGFX_BIMG_CMAKE "${bgfx_cmake_SOURCE_DIR}/cmake/bimg/CMakeLists.txt")
+file(READ "${RENEGADE_BGFX_BIMG_CMAKE}" _renegade_bgfx_bimg_cmake)
+string(REPLACE
+    "include(bimg_decode.cmake)\ninclude(bimg_encode.cmake)\n\nif(BGFX_BUILD_TOOLS_TEXTURE)\n\tinclude(texturec.cmake)\nendif()"
+    "include(bimg_decode.cmake)\n\nif(BGFX_BUILD_TOOLS_TEXTURE)\n\tinclude(bimg_encode.cmake)\n\tinclude(texturec.cmake)\nendif()"
+    _renegade_bgfx_bimg_cmake_patched
+    "${_renegade_bgfx_bimg_cmake}"
+)
+if(NOT _renegade_bgfx_bimg_cmake STREQUAL _renegade_bgfx_bimg_cmake_patched)
+    file(WRITE "${RENEGADE_BGFX_BIMG_CMAKE}" "${_renegade_bgfx_bimg_cmake_patched}")
+endif()
+
+add_subdirectory("${bgfx_cmake_SOURCE_DIR}" "${bgfx_cmake_BINARY_DIR}")
 
 if(TARGET glsl-optimizer)
     target_compile_definitions(glsl-optimizer PRIVATE _GNU_SOURCE)

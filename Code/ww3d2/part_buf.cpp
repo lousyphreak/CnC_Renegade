@@ -2540,7 +2540,7 @@ void ParticleBufferClass::Update_Visual_Particle_State(void)
 				RandomRotationEntries[part & NumRandomRotationEntriesMinus1] * (float)part_age +
 				RandomOrientationEntries[part & NumRandomOrientationEntriesMinus1];
 			
-			orientation[part] = (uint)(((int)(tmp_orient * 256.0f)) & 0xFF);
+			orientation[part] = static_cast<uint8>(((int)(tmp_orient * 256.0f)) & 0xFF);
 		}
 
 		// Ensure the current frame keyframe is correct, and calculate frame state
@@ -2555,7 +2555,7 @@ void ParticleBufferClass::Update_Visual_Particle_State(void)
 				FrameKeyFrameDeltas[fkey] * (float)(part_age - FrameKeyFrameTimes[fkey]) +
 				RandomFrameEntries[part & NumRandomFrameEntriesMinus1];
 			
-			frame[part] = (uint)(((int)(tmp_frame)) & 0xFF);
+			frame[part] = static_cast<uint8>(((int)(tmp_frame)) & 0xFF);
 		}
 
 		// Ensure the current frame keyframe is correct, and calculate frame state
@@ -2640,7 +2640,7 @@ void ParticleBufferClass::Update_Visual_Particle_State(void)
 				RandomRotationEntries[part & NumRandomRotationEntriesMinus1] * (float)part_age +
 				RandomOrientationEntries[part & NumRandomOrientationEntriesMinus1];
 			
-			orientation[part] = (uint)(((int)(tmp_orient * 256.0f)) & 0xFF);
+			orientation[part] = static_cast<uint8>(((int)(tmp_orient * 256.0f)) & 0xFF);
 		}
 
 		// Ensure the current frame keyframe is correct, and calculate frame state
@@ -2655,7 +2655,7 @@ void ParticleBufferClass::Update_Visual_Particle_State(void)
 				FrameKeyFrameDeltas[fkey] * (float)(part_age - FrameKeyFrameTimes[fkey]) +
 				RandomFrameEntries[part & NumRandomFrameEntriesMinus1];
 			
-			frame[part] = (uint)(((int)(tmp_frame)) & 0xFF);
+			frame[part] = static_cast<uint8>(((int)(tmp_frame)) & 0xFF);
 		}
 
 		// Ensure the current frame keyframe is correct, and calculate frame state

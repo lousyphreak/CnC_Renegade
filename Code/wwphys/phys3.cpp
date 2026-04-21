@@ -1743,9 +1743,9 @@ bool Phys3Class::Apply_Move
 
 					CollisionEventClass event;
 					event.OtherObj = test.CollidedPhysObj;
-					reaction |= Collision_Occurred(event);
+					reaction = static_cast<CollisionReactionType>(reaction | Collision_Occurred(event));
 					event.OtherObj = this;
-					reaction |= test.CollidedPhysObj->Collision_Occurred(event);
+					reaction = static_cast<CollisionReactionType>(reaction | test.CollidedPhysObj->Collision_Occurred(event));
 					
 					if (reaction & COLLISION_REACTION_NO_BOUNCE) {
 		

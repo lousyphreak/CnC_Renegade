@@ -114,7 +114,7 @@ cDonateEvent::Act(void)
 			TRANSLATE(IDS_MP_DONATION_RECEIVED),
 			Amount, 
 			TRANSLATE(IDS_MP_MONEY),
-			p_donor->Get_Name());
+			(const WCHAR *)p_donor->Get_Name());
 
 		cScTextObj * p_message = new cScTextObj;
 		p_message->Init(text, TEXT_MESSAGE_PRIVATE, false, HOST_TEXT_SENDER, 
@@ -159,7 +159,6 @@ cDonateEvent::Import_Creation(BitStreamClass & packet)
 
 	Act();
 }
-
 
 
 

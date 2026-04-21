@@ -109,12 +109,12 @@ cWinEvent::Act(void)
 	WideStringClass champ_text;
 	champ_text.Format(
 		L"%s %s",
-		The_Game()->Get_Team_Word(),
-		cTeamManager::Get_Team_Name(Winner));
+		(const WCHAR *)The_Game()->Get_Team_Word(),
+		(const WCHAR *)cTeamManager::Get_Team_Name(Winner));
 
 	win_text.Format(
 		L"%s %s",
-		champ_text,
+		(const WCHAR *)champ_text,
 		TRANSLATION(IDS_MP_WIN_FORMATTING));
 
 	/*

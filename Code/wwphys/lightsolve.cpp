@@ -38,6 +38,7 @@
 
 #include "lightsolve.h"
 #include "phys.h"
+#include "dx8wrapper.h"
 #include "staticphys.h"
 #include "rendobj.h"
 #include "mesh.h"
@@ -148,7 +149,7 @@ void VertexSolveClass::Light_Mesh(LightSolveContextClass & context,MeshClass * m
 		*/
 		VertexMaterialClass * vmtl = model->Peek_Material(vi,0);
 		if (use_array) {
-			MeshAmbient[vi] = WW3D::Convert_Color(dcg[vi]);
+			MeshAmbient[vi] = DX8Wrapper::Convert_Color(dcg[vi]);
 		} else if (vmtl != NULL) {
 			Vector3 ambient;
 			vmtl->Get_Ambient(&ambient);
@@ -161,7 +162,7 @@ void VertexSolveClass::Light_Mesh(LightSolveContextClass & context,MeshClass * m
 		** Set up the diffuse color for this vertex
 		*/
 		if (use_array) {
-			MeshDiffuse[vi] = WW3D::Convert_Color(dcg[vi]);
+			MeshDiffuse[vi] = DX8Wrapper::Convert_Color(dcg[vi]);
 		} else if (vmtl != NULL) {
 			Vector3 diffuse;
 			vmtl->Get_Diffuse(&diffuse);
@@ -601,5 +602,4 @@ bool LightSolveClass::Does_Model_Get_Static_Light_Solve(RenderObjClass * model)
 
 	return true;
 }
-
 

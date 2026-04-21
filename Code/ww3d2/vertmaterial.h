@@ -169,13 +169,13 @@ public:
 	** vertex material is ignored.
 	*/
 	void					Set_Ambient_Color_Source(ColorSourceType src);
-	ColorSourceType	Get_Ambient_Color_Source(void);
+	ColorSourceType	Get_Ambient_Color_Source(void) const;
 
 	void					Set_Emissive_Color_Source(ColorSourceType src);
-	ColorSourceType	Get_Emissive_Color_Source(void);
+	ColorSourceType	Get_Emissive_Color_Source(void) const;
 
 	void					Set_Diffuse_Color_Source(ColorSourceType src);
-	ColorSourceType	Get_Diffuse_Color_Source(void);
+	ColorSourceType	Get_Diffuse_Color_Source(void) const;
 
 	/*
 	** UV source control.  The DX8 FVF can support up to 8 uv-arrays.  The vertex
@@ -258,7 +258,7 @@ private:
 	** Apply the render states corresponding to a NULL vetex material to D3D
 	*/
 	static void			Apply_Null(void);
-	unsigned long		VertexMaterialClass::Compute_CRC(void) const;
+	unsigned long		Compute_CRC(void) const;
 
 	static VertexMaterialClass *Presets[PRESET_COUNT];
 };

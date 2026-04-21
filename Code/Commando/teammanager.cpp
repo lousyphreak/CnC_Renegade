@@ -462,9 +462,9 @@ void cTeamManager::Construct_Heading(WideStringClass & string)
 	//GAMESPY
 	//substring.Format(L"%-11s", The_Game()->Get_Team_Word());
 	if (cGameSpyAdmin::Is_Gamespy_Game()) {
-		substring.Format(L"%-36s", The_Game()->Get_Team_Word());
+		substring.Format(L"%-36s", (const WCHAR *)The_Game()->Get_Team_Word());
 	} else {
-		substring.Format(L"%-11s", The_Game()->Get_Team_Word());
+		substring.Format(L"%-11s", (const WCHAR *)The_Game()->Get_Team_Word());
 	}
 	string += substring;
 
@@ -648,7 +648,6 @@ void cTeamManager::Render_Team_List(void)
    }
 
 }
-
 
 
 

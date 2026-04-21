@@ -346,7 +346,7 @@ void	VertexMaterialClass::Set_Diffuse_Color_Source(ColorSourceType src)
 }
 
 VertexMaterialClass::ColorSourceType 
-VertexMaterialClass::Get_Ambient_Color_Source(void)
+VertexMaterialClass::Get_Ambient_Color_Source(void) const
 {
 	switch(AmbientColorSource) 
 	{
@@ -357,7 +357,7 @@ VertexMaterialClass::Get_Ambient_Color_Source(void)
 }	
 
 VertexMaterialClass::ColorSourceType 
-VertexMaterialClass::Get_Emissive_Color_Source(void)
+VertexMaterialClass::Get_Emissive_Color_Source(void) const
 {
 	switch(EmissiveColorSource) 
 	{
@@ -368,7 +368,7 @@ VertexMaterialClass::Get_Emissive_Color_Source(void)
 }	
 
 VertexMaterialClass::ColorSourceType	
-VertexMaterialClass::Get_Diffuse_Color_Source(void)
+VertexMaterialClass::Get_Diffuse_Color_Source(void) const
 {
 	switch(DiffuseColorSource) 
 	{

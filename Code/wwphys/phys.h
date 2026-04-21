@@ -426,7 +426,7 @@ public:
 	*/
 	void								Add_Effect_To_Me(MaterialEffectClass * effect);
 	void								Remove_Effect_From_Me(MaterialEffectClass * effect);
-	bool								Do_Any_Effects_Suppress_Shadows(void);
+	bool								Do_Any_Effects_Suppress_Shadows(void) const;
 
 	/*
 	** Set the Collision Group for this physics object.  The collision group is an integer

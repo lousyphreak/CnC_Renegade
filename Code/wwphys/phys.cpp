@@ -683,9 +683,9 @@ void PhysClass::Set_Facing(float new_facing)
 	Set_Transform(tm);
 }
 
-bool PhysClass::Do_Any_Effects_Suppress_Shadows(void)
+bool PhysClass::Do_Any_Effects_Suppress_Shadows(void) const
 {
-	RefMaterialEffectListIterator iterator(&MaterialEffectsOnMe);
+	RefMaterialEffectListIterator iterator(const_cast<RefMaterialEffectListClass *>(&MaterialEffectsOnMe));
 	for ( ; !iterator.Is_Done() ; iterator.Next()) {
 		if (iterator.Peek_Obj()->Are_Shadows_Suppressed()) {
 			return true;

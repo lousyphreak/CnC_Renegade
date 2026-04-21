@@ -89,7 +89,7 @@ public:
 	void								Set_Vertex_Index_Range(unsigned min_vertex_index_,unsigned vertex_index_range_);
 	
 	unsigned							Get_Vertex_Offset(void)	{ return vertex_offset; }
-	unsigned							Get_Index_Offset(void)	{ return index_offset; }
+	unsigned							Get_Index_Offset(void) const { return index_offset; }
 	unsigned							Get_Index_Count(void) const { return index_count; }
 	unsigned							Get_Min_Vertex_Index(void) const { return min_vertex_index; }
 	unsigned							Get_Vertex_Index_Range(void) const { return vertex_index_range; }

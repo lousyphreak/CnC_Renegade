@@ -57,7 +57,8 @@ cGameDataUpdateEvent::Init(int client_id)
 	WWASSERT(cNetwork::I_Am_Server());
 	//WWASSERT(client_id >= 0);
 
-	cGameDataUpdateEvent::cGameDataUpdateEvent();
+	Set_App_Packet_Type(APPPACKETTYPE_GAMEDATAUPDATEEVENT);
+	TimeRemainingSeconds = 0;
 
 	WWASSERT(The_Game() != NULL);
 	TimeRemainingSeconds = (int) The_Game()->Get_Time_Remaining_Seconds();
@@ -118,7 +119,6 @@ cGameDataUpdateEvent::Import_Creation(BitStreamClass & packet)
 
 	Set_Delete_Pending();
 }
-
 
 
 

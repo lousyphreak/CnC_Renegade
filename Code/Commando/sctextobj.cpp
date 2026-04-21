@@ -282,18 +282,18 @@ cScTextObj::Act(void)
 			WWASSERT(WWAudioClass::Get_Instance() != NULL);
 			WWAudioClass::Get_Instance()->Create_Instant_Sound(sound_name, Matrix3D(1));
 
-			WideStringClass formatted_text;
-			if (Type == TEXT_MESSAGE_PRIVATE)
-			{
-				formatted_text.Format(L"%s (%s %s): ",
-					sender_name,
+				WideStringClass formatted_text;
+				if (Type == TEXT_MESSAGE_PRIVATE)
+				{
+					formatted_text.Format(L"%s (%s %s): ",
+					(const WCHAR *)sender_name,
 					TRANSLATION(IDS_MP_TO),
-					recipient_name);
-			}
-			else
-			{
-				formatted_text.Format(L"%s: ", sender_name);
-			}
+					(const WCHAR *)recipient_name);
+				}
+				else
+				{
+					formatted_text.Format(L"%s: ", (const WCHAR *)sender_name);
+				}
 
 			//
 			//	Display the message...
@@ -323,7 +323,7 @@ cScTextObj::Act(void)
 				DlgMsgBox::DoDialog(TRANSLATE(IDS_MENU_ADMIN_MESSAGE), Text);
 			} else {
 				WideStringClass message;
-				message.Format(L"%s\n", Text);
+				message.Format(L"%s\n", (const WCHAR *)Text);
 				formatted_text += message;
 				if (CombatManager::Get_Message_Window() != NULL) {
 					CombatManager::Get_Message_Window()->Add_Message(formatted_text, text_color);

@@ -534,7 +534,7 @@ void WOLChatMgr::GetLobbyDisplayName(const RefPtr<ChannelData>& lobby, WideStrin
 				}
 			else
 				{
-				outName.Format(L"%s_%d", displayName, (subnum + 1));
+				outName.Format(L"%s_%d", (const WCHAR *)displayName, (subnum + 1));
 				}
 			}
 		else

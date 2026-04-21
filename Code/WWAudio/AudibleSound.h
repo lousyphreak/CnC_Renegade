@@ -91,6 +91,7 @@ typedef enum
 //
 /////////////////////////////////////////////////////////////////////////////////
 const MILES_HANDLE INVALID_MILES_HANDLE			= (MILES_HANDLE)-1;
+const HPROVIDER INVALID_MILES_PROVIDER			= NULL;
 const int INFINITE_LOOPS								= 0;
 
 

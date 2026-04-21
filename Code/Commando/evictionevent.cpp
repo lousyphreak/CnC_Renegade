@@ -99,7 +99,7 @@ cEvictionEvent::Act(void)
 	widestring.Format(
 		L"%s: %s", 
 		TRANSLATION(IDS_MP_YOU_ARE_EVICTED), 
-		code_string);
+		(const WCHAR *)code_string);
    WWASSERT(CombatManager::Get_Message_Window() != NULL);
 
 	//
@@ -135,7 +135,6 @@ cEvictionEvent::Import_Creation(BitStreamClass & packet)
 
 	Act();
 }
-
 
 
 

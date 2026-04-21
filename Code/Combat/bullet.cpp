@@ -897,7 +897,7 @@ void	Simulate_Instant_Bullet( BulletDataClass & data, float progress_time )
 				event.CollidedRenderObj = raytest.CollidedRenderObj;
 
 				event.OtherObj = raytest.CollidedPhysObj;
-				reaction |= data.Bullet_Collision_Occurred(event);
+				reaction = static_cast<CollisionReactionType>(reaction | data.Bullet_Collision_Occurred(event));
 
 				if ( reaction & COLLISION_REACTION_NO_BOUNCE ) {
 					// We were requested to fly through.  Mark the current blocker as ignore

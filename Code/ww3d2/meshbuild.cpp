@@ -184,7 +184,7 @@ public:
 		delete[] HashTable;
 	}
 
-	void VertexArrayClass::Set_Bounds(const Vector3 & minv,const Vector3 & maxv)
+	void Set_Bounds(const Vector3 & minv,const Vector3 & maxv)
 	{
 		Extent = (maxv - minv) / 2.0f;
 		Center = (maxv + minv) / 2.0f;
@@ -1824,4 +1824,3 @@ int vertex_compare(const void *elem1, const void *elem2)
 
 	return 0;
 }
-

@@ -153,7 +153,7 @@ class TextureClass : public RefCountClass
 		unsigned Get_ID() const { return texture_id; }	// Each textrure has a unique id
 
 		// The number of Mip levels in the texture
-		unsigned int Get_Mip_Level_Count(void);
+		unsigned int Get_Mip_Level_Count(void) const;
 
 		// Note! Width and Height may be zero and may change if texture uses mipmaps
 		int Get_Width() 

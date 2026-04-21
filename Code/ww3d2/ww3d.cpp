@@ -281,7 +281,7 @@ bool WW3D::Get_Current_Render_Capabilities(RenderCapabilitiesStruct& capabilitie
 	capabilities.SupportsAnisotropicFiltering = false;
 	capabilities.CanDoMultiPass = false;
 
-	DX8Caps* current_caps = DX8Wrapper::Get_Current_Caps();
+	const DX8Caps* current_caps = DX8Wrapper::Get_Current_Caps();
 	if (current_caps == NULL) {
 		return false;
 	}
@@ -300,7 +300,7 @@ bool WW3D::Get_Render_Diagnostics(StringClass& diagnostics, bool compact)
 {
 	diagnostics = "";
 
-	DX8Caps* current_caps = DX8Wrapper::Get_Current_Caps();
+	const DX8Caps* current_caps = DX8Wrapper::Get_Current_Caps();
 	if (current_caps == NULL) {
 		return false;
 	}

@@ -469,7 +469,7 @@ void CNCBattleInfoDialogClass::Build_Player_Display_Name(const cPlayer* player, 
 			RefPtr<WWOnline::SquadData> clan = user->GetSquad();
 
 			if (clan.IsValid()) {
-				outName.Format(L"%s [%S]", player->Get_Name(), clan->GetAbbr());
+				outName.Format(L"%s [%S]", (const WCHAR *)player->Get_Name(), clan->GetAbbr());
 				return;
 			}
 		}

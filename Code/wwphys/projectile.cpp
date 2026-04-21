@@ -312,10 +312,10 @@ void ProjectileClass::Timestep(float dt)
 					{
 						WWPROFILE("Callbacks");
 						event.OtherObj = raytest.CollidedPhysObj;
-						reaction |= Collision_Occurred(event);
+						reaction = static_cast<CollisionReactionType>(reaction | Collision_Occurred(event));
 
 						event.OtherObj = this;
-						reaction |= raytest.CollidedPhysObj->Collision_Occurred(event);
+						reaction = static_cast<CollisionReactionType>(reaction | raytest.CollidedPhysObj->Collision_Occurred(event));
 					}
 
 					if ( !(reaction & COLLISION_REACTION_NO_BOUNCE) ) {
@@ -644,4 +644,3 @@ bool ProjectileDefClass::Is_Type(const char * type_name)
 		return MoveablePhysDefClass::Is_Type(type_name);
 	}
 }
-

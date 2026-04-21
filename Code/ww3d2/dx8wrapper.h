@@ -400,13 +400,6 @@ protected:
 };
 
 
-void DX8Wrapper::_Set_DX8_Transform(D3DTRANSFORMSTATETYPE transform,const Matrix4& m);
-
-
-void DX8Wrapper::_Set_DX8_Transform(D3DTRANSFORMSTATETYPE transform,const Matrix3D& m);
-
-void DX8Wrapper::_Get_DX8_Transform(D3DTRANSFORMSTATETYPE transform, Matrix4& m);
-
 // ----------------------------------------------------------------------------
 //
 // Set the index offset for the current index buffer
@@ -450,14 +443,6 @@ WWINLINE void DX8Wrapper::Set_Fog(bool enable, const Vector3 &color, float start
 // NULL just will release the vertex buffer.
 //
 // ----------------------------------------------------------------------------
-
-void DX8Wrapper::Set_DX8_Material(const D3DMATERIAL8* mat);
-
-void DX8Wrapper::Set_DX8_Light(int index, D3DLIGHT8* light);
-
-void DX8Wrapper::Set_DX8_Render_State(D3DRENDERSTATETYPE state, unsigned value);
-
-void DX8Wrapper::Set_DX8_Texture_Stage_State(unsigned stage, D3DTEXTURESTAGESTATETYPE state, unsigned value);
 
 WWINLINE Vector4 DX8Wrapper::Convert_Color(unsigned color)
 {
@@ -570,16 +555,6 @@ WWINLINE void DX8Wrapper::Set_Shader(const ShaderClass& shader)
 	render_state_changed|=SHADER_CHANGED;
 }
 
-void DX8Wrapper::Set_Projection_Transform_With_Z_Bias(const Matrix4& matrix, float znear, float zfar);
-
-void DX8Wrapper::Set_Pseudo_ZBias(int zbias);
-
-void DX8Wrapper::Set_DX8_ZBias(int zbias);
-
-void DX8Wrapper::Set_Transform(D3DTRANSFORMSTATETYPE transform,const Matrix4& m);
-
-void DX8Wrapper::Set_Transform(D3DTRANSFORMSTATETYPE transform,const Matrix3D& m);
-
 WWINLINE void DX8Wrapper::Set_World_Identity()
 {
 	if (render_state_changed&(unsigned)WORLD_IDENTITY) return;
@@ -603,8 +578,6 @@ WWINLINE bool DX8Wrapper::Is_View_Identity()
 {
 	return !!(render_state_changed&(unsigned)VIEW_IDENTITY);
 }
-
-void DX8Wrapper::Get_Transform(D3DTRANSFORMSTATETYPE transform, Matrix4& m);
 
 WWINLINE void DX8Wrapper::Set_Light(unsigned index, const D3DLIGHT8* light)
 {

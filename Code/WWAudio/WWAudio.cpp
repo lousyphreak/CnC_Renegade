@@ -140,7 +140,7 @@ WWAudioClass::WWAudioClass (bool lite)
 	  m_PlaybackBits (16),
 	  m_PlaybackStereo (true),
 	  m_SpeakerType (0),
-	  m_ReverbFilter (INVALID_MILES_HANDLE),
+	  m_ReverbFilter (INVALID_MILES_PROVIDER),
 	  m_UpdateTimer (-1),
 	  m_Driver3DPseudo (NULL),
 	  m_MusicVolume (DEF_MUSIC_VOL),
@@ -2427,7 +2427,7 @@ WWAudioClass::Initialize (const char *registry_subkey_name)
 		HPROENUM next = HPROENUM_FIRST;
 		char *name = NULL;
 		if (::AIL_enumerate_filters (&next, &m_ReverbFilter, &name) == 0) {
-			m_ReverbFilter = INVALID_MILES_HANDLE;
+			m_ReverbFilter = INVALID_MILES_PROVIDER;
 		}
 
 		m_RealMusicVolume = m_MusicVolume;
@@ -2469,7 +2469,7 @@ WWAudioClass::Initialize
 		HPROENUM next = HPROENUM_FIRST;
 		char *name = NULL;
 		if (::AIL_enumerate_filters (&next, &m_ReverbFilter, &name) == 0) {
-			m_ReverbFilter = INVALID_MILES_HANDLE;
+			m_ReverbFilter = INVALID_MILES_PROVIDER;
 		}
 	}
 

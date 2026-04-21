@@ -205,7 +205,7 @@ ThumbnailClass::ThumbnailClass(ThumbnailManagerClass* manager, const StringClass
 		unsigned src_height=targa.Header.Height;
 
 		// NOTE: We load the palette but we do not yet support paletted textures!
-		char palette[256*4];
+		uint8 palette[256*4];
 		targa.SetPalette(palette);
 		if (TARGA_ERROR_HANDLER(targa.Load(filename, TGAF_IMAGE, false),filename)) return;
 

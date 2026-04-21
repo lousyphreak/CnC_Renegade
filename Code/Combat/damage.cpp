@@ -184,7 +184,7 @@ void	ArmorWarheadManager::Init( void )
 		Multipliers = new safe_float[ Get_Num_Armor_Types() * Get_Num_Warhead_Types() ];
 		for ( armor_num = 0; armor_num < ArmorNames.Count(); armor_num++ ) {
 			char section_name[80];
-			sprintf( section_name, SECTION_SCALE, ArmorNames[armor_num] );
+			sprintf( section_name, SECTION_SCALE, ArmorNames[armor_num].Peek_Buffer() );
 			for ( int warhead_num = 0; warhead_num < WarheadNames.Count(); warhead_num++ ) {
 				Multipliers[ armor_num * Get_Num_Warhead_Types() + warhead_num ]  =
 					armorINI->Get_Float( section_name, WarheadNames[warhead_num], 1.0f );
@@ -195,7 +195,7 @@ void	ArmorWarheadManager::Init( void )
 		Absorbsion = new safe_float[ Get_Num_Armor_Types() * Get_Num_Warhead_Types() ];
 		for ( armor_num = 0; armor_num < ArmorNames.Count(); armor_num++ ) {
 			char section_name[80];
-			sprintf( section_name, SECTION_SHIELD, ArmorNames[armor_num] );
+			sprintf( section_name, SECTION_SHIELD, ArmorNames[armor_num].Peek_Buffer() );
 			for ( int warhead_num = 0; warhead_num < WarheadNames.Count(); warhead_num++ ) {
 				Absorbsion[ armor_num * Get_Num_Warhead_Types() + warhead_num ]  =
 					armorINI->Get_Float( section_name, WarheadNames[warhead_num], 0.0f );
@@ -959,7 +959,7 @@ float	DefenseObjectClass::Do_Damage( const OffenseObjectClass & offense, float s
 		}
 		float points = damage;
 		float armor = Get_Shield_Strength();
-	   DIAG_LOG(( "DRCV", "%s; %d; %1.2f; %1.2f; %1.2f; %1.2f; %1.2f; %1.2f", weapon_name, hitter_id, points, armor, Health, pos.X, pos.Y, pos.Z ));
+	   DIAG_LOG(( "DRCV", "%s; %d; %1.2f; %1.2f; %1.2f; %1.2f; %1.2f; %1.2f", weapon_name, hitter_id, points, armor, (float)Health, pos.X, pos.Y, pos.Z ));
 	}
 
 	if (( smart == COMBAT_STAR ) && ( smart != NULL )) {
@@ -981,7 +981,7 @@ float	DefenseObjectClass::Do_Damage( const OffenseObjectClass & offense, float s
 		}
 		float points = damage;
 		float armor = Get_Shield_Strength();
-	   DIAG_LOG(( "DEFC", "%1.2f; %1.2f; %1.2f; %s; %d; %d; %1.2f; %1.2f; %1.2f; %1.2f; %1.2f; %1.2f; %s ", pos.X, pos.Y, pos.Z, weapon_name, ammo, hittee_id, points, armor, Health, victim_pos.X, victim_pos.Y, victim_pos.Z, team_name ));
+	   DIAG_LOG(( "DEFC", "%1.2f; %1.2f; %1.2f; %s; %d; %d; %1.2f; %1.2f; %1.2f; %1.2f; %1.2f; %1.2f; %s ", pos.X, pos.Y, pos.Z, weapon_name, ammo, hittee_id, points, armor, (float)Health, victim_pos.X, victim_pos.Y, victim_pos.Z, team_name ));
 	}
 
 	// Clamp Health to Max
@@ -1409,4 +1409,3 @@ void	DefenseObjectClass::Set_Shield_Type( ArmorType type )
 				smart->Get_Player_Data()->On_Kill(victim_id, victim_team);
 			}
 			*/
-

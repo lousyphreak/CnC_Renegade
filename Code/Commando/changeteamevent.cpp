@@ -166,7 +166,7 @@ cChangeTeamEvent::Act(void)
 		//
 		WideStringClass text;
 		//text.Format(L"_%s_changed_teams!_", p_player->Get_Name());
-		text.Format(L"%s %s", p_player->Get_Name(), TRANSLATE(IDS_MP_CHANGED_TEAMS));
+		text.Format(L"%s %s", (const WCHAR *)p_player->Get_Name(), TRANSLATE(IDS_MP_CHANGED_TEAMS));
 
 		cScTextObj * p_message = new cScTextObj;
 		p_message->Init(text, TEXT_MESSAGE_PUBLIC, false, HOST_TEXT_SENDER, -1);
@@ -217,7 +217,6 @@ cChangeTeamEvent::Is_Change_Team_Possible(void)
 		//The_Game()->Is_Team_Game() && 
 		The_Game()->IsTeamChangingAllowed.Is_True();
 }
-
 
 
 

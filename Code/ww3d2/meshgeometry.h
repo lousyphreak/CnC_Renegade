@@ -126,7 +126,7 @@ public:
 	void							Set_User_Text(char * usertext);
 
 	void							Set_Flag(FlagsType flag,bool onoff)						{ if (onoff) {	Flags |= flag;	} else {	Flags &= ~flag; } }
-	int							Get_Flag(FlagsType flag)									{ return Flags & flag; }
+	int							Get_Flag(FlagsType flag) const							{ return Flags & flag; }
 
 	void							Set_Sort_Level(int level)									{ SortLevel = level; }
 	int							Get_Sort_Level(void) const									{ return SortLevel; }
@@ -285,4 +285,3 @@ inline uint8 MeshGeometryClass::Get_Poly_Surface_Type(int poly_index) const
 }
 
 #endif //MESHGEOMETRY_H
-

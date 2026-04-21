@@ -671,7 +671,7 @@ void TextureClass::Set_Texture_Name(const char * name)
 
 // ----------------------------------------------------------------------------
 
-unsigned int TextureClass::Get_Mip_Level_Count(void)
+unsigned int TextureClass::Get_Mip_Level_Count(void) const
 {
 	if (IsRenderTargetTexture) {
 		return 1;

@@ -1,5 +1,12 @@
 # Porting Progress
 
+## Audio multilist duplicate-pruning crash
+
+- Investigated an ASAN/UBSan crash during C4 detonation mode changes and traced it to `Code/WWAudio/SoundScene.cpp` inside `SoundSceneClass::On_Frame_Update`.
+- Root cause: the duplicate-audible pruning pass deleted `AudibleInfoClass` objects before removing them from their `MultiListClass` containers, then continued iterating from nodes that could already have been unlinked.
+- Reworked that pass to use `MultiListIterator::Remove_Current_Object()` before `delete` and switched the affected loops to manual iterator advancement so removed current nodes are never advanced again.
+- This preserves the original behavior of keeping the closer of the duplicate primary/auxiliary sounds while avoiding the stale-object/stale-node path that crashed in `GenericMultiListClass::Internal_Remove`.
+
 ## Single-player mission replay recovery
 
 - Investigated missing built-in entries in the single-player load menu and traced the regression to the replay-unlock gate in `Code/Commando/dlgloadspgame.cpp`.

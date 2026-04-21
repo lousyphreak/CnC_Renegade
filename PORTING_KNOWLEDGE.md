@@ -1,5 +1,14 @@
 # Porting Knowledge
 
+## SoundScene multilist removal contract
+
+- `SoundSceneClass::On_Frame_Update` builds temporary `MultiListClass<AudibleInfoClass>` collections for primary and auxiliary audible sounds, then prunes duplicates before handing the surviving `sound_obj` entries to the active audible list.
+- `AudibleInfoClass` derives from `MultiListObjectClass`, whose destructor already removes the object from every multilist it is still in.
+- That means list users must never do `delete obj; list.Remove(obj);` on these records. The safe order is:
+  - remove through the active iterator/list first
+  - then `delete` the object
+- When pruning duplicates from the current iterator position, the loop must also avoid the `for (...; ...; iterator.Next())` pattern unless it compensates for the iterator helper already advancing past the removed node.
+
 ## Mission replay unlock compatibility
 
 - The single-player load menu does **not** show built-in mission starts just because `data\\m*.mix` exists. `Code/Commando/dlgloadspgame.cpp` filters those entries through `Get_Game_Rank(...)`, which reads `Software\\Westwood\\Renegade\\Ranks`.

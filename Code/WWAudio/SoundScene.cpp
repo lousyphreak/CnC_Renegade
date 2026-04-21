@@ -372,31 +372,37 @@ SoundSceneClass::On_Frame_Update (uint32_t milliseconds)
 	MultiListIterator<AudibleInfoClass> pri_iterator (&primary_sounds);
 	AUDIBLE_SOUND_LIST audible_sounds;
 
-	for (aux_iterator.First (); !aux_iterator.Is_Done (); aux_iterator.Next ()) {
+	for (aux_iterator.First (); !aux_iterator.Is_Done (); ) {
 		AudibleInfoClass *aux_info = aux_iterator.Peek_Obj ();
+		bool advance_aux = true;
 
 		//
 		//	Loop through all the primary sounds and remove any
 		// that are 'overpowered' by the same sound in the
 		// other listener.
 		//
-		bool found = false;
-		for (pri_iterator.First (); !pri_iterator.Is_Done () && !found; pri_iterator.Next ()) {
+		for (pri_iterator.First (); !pri_iterator.Is_Done (); ) {
 			AudibleInfoClass *pri_info = pri_iterator.Peek_Obj ();
 
 			//
 			//	Is this sound in both lists?
 			//
-			found = (aux_info->sound_obj == pri_info->sound_obj);
-			if (found) {
+			if (aux_info->sound_obj == pri_info->sound_obj) {
 				if (aux_info->distance2 < pri_info->distance2) {
+					pri_iterator.Remove_Current_Object ();
 					delete pri_info;
-					primary_sounds.Remove (pri_info);
 				} else {
+					aux_iterator.Remove_Current_Object ();
 					delete aux_info;
-					auxiliary_sounds.Remove (aux_info);
+					advance_aux = false;
 				}
+				break;
 			}
+			pri_iterator.Next ();
+		}
+
+		if (advance_aux) {
+			aux_iterator.Next ();
 		}
 	}
 

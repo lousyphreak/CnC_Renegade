@@ -1,5 +1,23 @@
 # Porting Knowledge
 
+## SDL3 main callback contract for Commando
+
+- Both maintained Commando executables now follow SDL3's app-callback lifecycle instead of owning native perpetual loops in `main()`:
+  - `SDL_AppInit` performs bootstrap and one-time game-loop initialization
+  - `SDL_AppIterate` performs one frame of engine work
+  - `SDL_AppEvent` is the normal SDL event path
+  - `SDL_AppQuit` performs teardown
+- `Code/Commando/mainloop.cpp` is now split into reusable phases:
+  - `Game_Main_Loop_Initialize()`
+  - `Game_Main_Loop_Iterate()`
+  - `Game_Main_Loop_Shutdown()`
+- Do not reintroduce a wrapper that loops over these helpers. The SDL callback layer is the only outer driver for the client and dedicated executables.
+- `Windows_Message_Handler()` still matters for long, blocking legacy operations on the main thread (for example, load-time loops that already call it), but the steady-state SDL client frame loop should rely on `SDL_AppEvent` + `SDL_AppIterate` instead of polling SDL events internally each frame.
+- The dedicated executable initializes only the SDL events subsystem before entering `Game_Main_Loop_Initialize()`. That is enough to keep legacy `Windows_Message_Handler()` calls valid during dedicated startup/load loops without reintroducing a dedicated-owned outer event loop.
+- Exit handling at the SDL callback boundary is effectively success vs failure. The currently used in-tree client restart path already exits with `RESTART_EXITCODE == 1`, so mapping non-zero loop exits to `SDL_APP_FAILURE` preserves the active behavior.
+- Shutdown-time worker objects that may still be active during error/abort exits must not rely on normal static destruction ordering. The log-copy worker in `init.cpp` is intentionally kept as a never-destroyed singleton so dedicated callback exits do not race its base/derived thread teardown under ASAN/UBSAN.
+- Dedicated config filenames are still routed through the legacy `STARTSERVER=...` parser, which uppercases the argument in place. On case-sensitive filesystems, validation configs therefore need matching on-disk casing until that parser is cleaned up separately.
+
 ## Emscripten runtime data layout
 
 - The current Renegade startup path does **not** need `always.dat`, `always.dbs`, or `Always2.dat` at the virtual filesystem root for the main game path.

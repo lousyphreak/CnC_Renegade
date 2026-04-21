@@ -41,7 +41,11 @@
 #define UPDATE_EXITCODE 123456789
 #define RESTART_EXITCODE 1
 
-int	Game_Main_Loop(void);
+bool	Game_Main_Loop_Initialize(void);
+void	Game_Main_Loop_Iterate(void);
+bool	Is_Main_Loop_Running(void);
+int	Get_Main_Loop_Exit_Code(void);
+int	Game_Main_Loop_Shutdown(void);
 void	Stop_Main_Loop(int exitCode);
 
-#endif 
+#endif

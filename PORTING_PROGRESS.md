@@ -1,5 +1,29 @@
 # Porting Progress
 
+## SDL3 main callback lifecycle
+
+- Reworked both Commando executables onto SDL3 app callbacks:
+  - `Code/Commando/commando_sdl_main.cpp` now uses `SDL_AppInit`, `SDL_AppIterate`, `SDL_AppEvent`, and `SDL_AppQuit` for the client
+  - `Code/Commando/commando_dedicated_sdl_main.cpp` now uses the same callback lifecycle for the dedicated server
+- `Code/Commando/mainloop.cpp` now exposes only explicit initialize / iterate / shutdown helpers for the shared game-loop body:
+  - `Game_Main_Loop_Initialize()`
+  - `Game_Main_Loop_Iterate()`
+  - `Game_Main_Loop_Shutdown()`
+- Removed the old outer `Game_Main_Loop()` wrapper entirely, so no executable still owns an internal `while (RunMainLoop)` loop around the main game loop.
+- Preserved the existing bootstrap ordering around:
+  - command-line parsing
+  - singleton-instance verification
+  - dedicated default configuration
+  - SDL setup appropriate to each executable (`video/audio/gamepad` for the client, `events` only for dedicated)
+  - client exception/version callback registration
+  - teardown under `SDL_AppQuit`
+- Preserved the existing hidden `--headless-smoke` paths while moving them under `SDL_AppInit` / `SDL_AppQuit`.
+- Removed the leftover Launcher `WinMain` shim so the maintained launcher code no longer carries a custom WinMain entrypoint wrapper.
+- Fixed dedicated shutdown stability after the callback migration by moving the `Copy_Logs` worker thread object onto a never-destroyed singleton; this avoids static-destruction races on ASAN/UBSAN exit paths.
+- Rebuilt the Debug ASAN/UBSAN targets and revalidated the cleaned-up startup flow:
+  - `Renegade` completed another 220-second soak and timed out normally
+  - `renegade_dedicated` reached the steady-state main loop for 60 seconds under the SDL callback entrypoint using the dedicated validation config
+
 ## Emscripten build bring-up and data packaging
 
 - Added a source-controlled Emscripten packaging path for `Commando`:
@@ -128,4 +152,4 @@
 - Unified Unix `READ|WRITE` raw-file opens with the intended Windows behavior by opening existing files read/write when present and creating them otherwise, instead of truncating through `"w"`.
 - Case-correct path resolution for runtime disk opens now comes from one place instead of being split between `RawFileClass`, ad hoc `fopen`, `std::ifstream`, `std::ofstream`, and direct `SDL_IOFromFile` call sites.
 - Runtime directory listing and path metadata queries that feed package scans, font lookup, dialog parsing, thumbnail generation, and savegame space checks now use the same SDL-backed helper layer instead of `std::filesystem`.
-- The only notable remaining `std::filesystem` usage in the main runtime tree is bootstrap working-directory setup in `commando_sdl_main.cpp` and `commando_dedicated_bootstrap.cpp`; that is process setup rather than file I/O, and SDL3 does not currently expose a working-directory setter.
+- The only notable remaining `std::filesystem` usage in the main runtime tree is bootstrap working-directory setup in `commando_sdl_main.cpp` and `commando_dedicated_sdl_main.cpp`; that is process setup rather than file I/O, and SDL3 does not currently expose a working-directory setter.

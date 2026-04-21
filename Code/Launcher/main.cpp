@@ -73,6 +73,8 @@
 
 #include "..\combat\specialbuilds.h"
 
+HINSTANCE Global_instance = NULL;
+
 /*
 #ifdef FREEDEDICATEDSERVER
 
@@ -216,9 +218,6 @@ void RunLauncher(char *thePath, Process &proc)
 	Create_Process(proc);
 }
 
-//
-// Called by WinMain
-//
 int main(int argc, char *argv[])
 {
 	char patchFile[MAX_PATH];
@@ -227,6 +226,7 @@ int main(int argc, char *argv[])
 	_getcwd(cwd, MAX_PATH);
 
 	InitCommonControls();
+	Global_instance = GetModuleHandle(NULL);
 
 	// Goto the folder where launcher is installed
 	myChdir(argv[0]);

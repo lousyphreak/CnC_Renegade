@@ -688,20 +688,20 @@ inline std::string Get_Path_Stem(const std::string & path)
 
 inline std::mutex & Get_Path_Cache_Mutex()
 {
-    static std::mutex cache_mutex;
-    return cache_mutex;
+    static std::mutex *cache_mutex = new std::mutex();
+    return *cache_mutex;
 }
 
 inline std::unordered_map<std::string, std::string> & Get_Resolved_Path_Cache()
 {
-    static std::unordered_map<std::string, std::string> cache;
-    return cache;
+    static std::unordered_map<std::string, std::string> *cache = new std::unordered_map<std::string, std::string>();
+    return *cache;
 }
 
 inline std::unordered_map<std::string, std::vector<std::string>> & Get_Directory_Entry_Cache()
 {
-    static std::unordered_map<std::string, std::vector<std::string>> cache;
-    return cache;
+    static std::unordered_map<std::string, std::vector<std::string>> *cache = new std::unordered_map<std::string, std::vector<std::string>>();
+    return *cache;
 }
 
 inline std::string Normalize_Directory_Cache_Key(const std::string & directory)

@@ -564,7 +564,7 @@ static void Copy_Log(const StringClass& folder,const char* filename,bool use_num
 	}
 }
 
-static class CopyThreadClass : public ThreadClass
+class CopyThreadClass : public ThreadClass
 {
 public:
 	unsigned Version;
@@ -599,7 +599,13 @@ public:
 		Copy_Log(folder_name,"_except.txt",true);
 		Copy_Log(folder_name,"sysinfo.txt",false);
 	}
-} CopyThread;
+};
+
+static CopyThreadClass & Get_Copy_Thread()
+{
+	static CopyThreadClass *copy_thread = new CopyThreadClass();
+	return *copy_thread;
+}
 
 void Copy_Logs(unsigned version)
 {
@@ -608,13 +614,14 @@ void Copy_Logs(unsigned version)
 		if (registry.Get_Int( VALUE_NAME_DISABLE_LOG_COPYING,0 )) return;
 	}
 
-	if (CopyThread.Is_Running()) return;
-	CopyThread.Version=version;
-	CopyThread.Execute();
+	CopyThreadClass &copy_thread = Get_Copy_Thread();
+	if (copy_thread.Is_Running()) return;
+	copy_thread.Version=version;
+	copy_thread.Execute();
 
 	int time=TIMEGETTIME();
 	while (TIMEGETTIME()-time<5000) {
-		if (!CopyThread.Is_Running()) {
+		if (!copy_thread.Is_Running()) {
 			break;
 		}
 		Sleep(100);
@@ -866,7 +873,9 @@ bool Game_Init(void)
 	if (ConsoleBox.Is_Exclusive()) {
 		WW3D::Enable_Decals(false);
 		PhysicsSceneClass * scene = PhysicsSceneClass::Get_Instance();
-		scene->Set_Max_Simultaneous_Shadows(0);
+		if (scene != NULL) {
+			scene->Set_Max_Simultaneous_Shadows(0);
+		}
 		DazzleRenderObjClass::Enable_Dazzle_Rendering(false);
 	} else {
 		if ( WW3D::Registry_Load_Render_Device( APPLICATION_SUB_KEY_NAME_RENDER, true ) != WW3D_ERROR_OK ) {

@@ -1,4 +1,6 @@
+#define SDL_MAIN_USE_CALLBACKS 1
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_main.h>
 
 #include <cstdlib>
 #include <filesystem>
@@ -32,6 +34,17 @@ extern "C"
 const char* __asan_default_options() { return "detect_leaks=0"; }
 
 namespace {
+
+struct CommandoAppState {
+    bool smoke_test = false;
+    bool perfmon_configured = false;
+    bool thread_registered = false;
+    bool handlers_installed = false;
+    bool game_loop_initialized = false;
+    int exit_code = EXIT_SUCCESS;
+    SDL_Window *window = nullptr;
+    SingletonInstanceKeeperClass instance_keeper;
+};
 
 bool HasArgument(int argc, char **argv, std::string_view needle)
 {
@@ -421,11 +434,19 @@ bool Handle_Main_Loop_Event(SDL_Event &event)
     return true;
 }
 
+SDL_AppResult Get_App_Result_From_Exit_Code(int exit_code)
+{
+    return exit_code == EXIT_SUCCESS ? SDL_APP_SUCCESS : SDL_APP_FAILURE;
+}
+
 } // namespace
 
-int main(int argc, char **argv)
+SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
 {
-    const bool smoke_test = HasArgument(argc, argv, "--headless-smoke");
+    CommandoAppState *app = new CommandoAppState();
+    *appstate = app;
+
+    app->smoke_test = HasArgument(argc, argv, "--headless-smoke");
 
     PrintCommandoBanner();
 
@@ -438,47 +459,49 @@ int main(int argc, char **argv)
 
     const std::string command_line = Build_Command_Line(argc, argv);
     if (!cUserOptions::Parse_Command_Line(command_line.c_str())) {
-        return EXIT_FAILURE;
+        app->exit_code = EXIT_FAILURE;
+        return Get_App_Result_From_Exit_Code(app->exit_code);
     }
 
-    SingletonInstanceKeeperClass instance_keeper;
-    if (!instance_keeper.Verify_Safe_To_Execute()) {
-        return EXIT_SUCCESS;
+    if (!app->instance_keeper.Verify_Safe_To_Execute()) {
+        app->exit_code = EXIT_SUCCESS;
+        return Get_App_Result_From_Exit_Code(app->exit_code);
     }
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD)) {
         std::cerr << "SDL_Init failed: " << SDL_GetError() << '\n';
-        return EXIT_FAILURE;
+        app->exit_code = EXIT_FAILURE;
+        return Get_App_Result_From_Exit_Code(app->exit_code);
     }
 
     WWPerfMonClass::Configure_From_Environment();
+    app->perfmon_configured = true;
 
     SDL_PropertiesID window_props = SDL_CreateProperties();
     if (window_props == 0) {
         std::cerr << "SDL_CreateProperties failed: " << SDL_GetError() << '\n';
-        SDL_Quit();
-        return EXIT_FAILURE;
+        app->exit_code = EXIT_FAILURE;
+        return Get_App_Result_From_Exit_Code(app->exit_code);
     }
 
     SDL_SetStringProperty(window_props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, "Renegade");
     SDL_SetNumberProperty(window_props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, 1280);
     SDL_SetNumberProperty(window_props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, 720);
     SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_HIGH_PIXEL_DENSITY_BOOLEAN, true);
-    SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_HIDDEN_BOOLEAN, smoke_test);
-    SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, !smoke_test);
+    SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_HIDDEN_BOOLEAN, app->smoke_test);
+    SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, !app->smoke_test);
     SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_EXTERNAL_GRAPHICS_CONTEXT_BOOLEAN, true);
 
-    SDL_Window *window = SDL_CreateWindowWithProperties(window_props);
+    app->window = SDL_CreateWindowWithProperties(window_props);
     SDL_DestroyProperties(window_props);
-    if (window == nullptr) {
+    if (app->window == nullptr) {
         std::cerr << "SDL_CreateWindow failed: " << SDL_GetError() << '\n';
-        WWPerfMonClass::Shutdown();
-        SDL_Quit();
-        return EXIT_FAILURE;
+        app->exit_code = EXIT_FAILURE;
+        return Get_App_Result_From_Exit_Code(app->exit_code);
     }
 
-    if (!smoke_test) {
-        Ensure_Window_Visible(window);
+    if (!app->smoke_test) {
+        Ensure_Window_Visible(app->window);
     }
 
     std::cout << "  SDL runtime platform: " << SDL_GetPlatform() << '\n';
@@ -487,36 +510,115 @@ int main(int argc, char **argv)
     }
 
     ProgramInstance = nullptr;
-    MainWindow = reinterpret_cast<HWND>(window);
+    MainWindow = reinterpret_cast<HWND>(app->window);
     GameInFocus = true;
-    Sync_Window_Size_To_Renderer(window);
+    Sync_Window_Size_To_Renderer(app->window);
 
-    if (smoke_test) {
+    if (app->smoke_test) {
         SDL_PumpEvents();
         SDL_Delay(16);
-        MainWindow = nullptr;
-        GameInFocus = false;
-        WWPerfMonClass::Shutdown();
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return EXIT_SUCCESS;
+        app->exit_code = EXIT_SUCCESS;
+        return Get_App_Result_From_Exit_Code(app->exit_code);
     }
 
     Register_Thread_ID(GetCurrentThreadId(), "Main Thread", true);
+    app->thread_registered = true;
     Register_Application_Exception_Callback(&Application_Exception_Callback);
     Register_Application_Version_Callback(&BuildInfoClass::Composite_Build_Info);
 
     Message_Intercept_Handler = Handle_Main_Loop_Event;
     Message_Pre_Poll_Handler = Sync_Main_Window_State;
-    const int exit_code = Game_Main_Loop();
-    Message_Pre_Poll_Handler = nullptr;
-    Message_Intercept_Handler = nullptr;
-    Unregister_Thread_ID(GetCurrentThreadId(), "Main Thread");
+    app->handlers_installed = true;
 
+    if (!Game_Main_Loop_Initialize()) {
+        app->exit_code = Get_Main_Loop_Exit_Code();
+        return Get_App_Result_From_Exit_Code(app->exit_code);
+    }
+
+    app->game_loop_initialized = true;
+    return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult SDL_AppIterate(void *appstate)
+{
+    CommandoAppState *app = static_cast<CommandoAppState *>(appstate);
+    if (app == nullptr) {
+        return SDL_APP_FAILURE;
+    }
+
+    if (!app->game_loop_initialized) {
+        return Get_App_Result_From_Exit_Code(app->exit_code);
+    }
+
+    Sync_Main_Window_State();
+    Game_Main_Loop_Iterate();
+
+    if (!Is_Main_Loop_Running()) {
+        app->exit_code = Get_Main_Loop_Exit_Code();
+        return Get_App_Result_From_Exit_Code(app->exit_code);
+    }
+
+    return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
+{
+    CommandoAppState *app = static_cast<CommandoAppState *>(appstate);
+    if (app == nullptr || event == nullptr) {
+        return SDL_APP_FAILURE;
+    }
+
+    if (!app->game_loop_initialized) {
+        return Get_App_Result_From_Exit_Code(app->exit_code);
+    }
+
+    Handle_Main_Loop_Event(*event);
+    if (Is_Main_Loop_Running()) {
+        return SDL_APP_CONTINUE;
+    }
+
+    app->exit_code = Get_Main_Loop_Exit_Code();
+    return Get_App_Result_From_Exit_Code(app->exit_code);
+}
+
+void SDL_AppQuit(void *appstate, SDL_AppResult result)
+{
+    (void)result;
+
+    CommandoAppState *app = static_cast<CommandoAppState *>(appstate);
+    if (app == nullptr) {
+        return;
+    }
+
+    if (app->game_loop_initialized) {
+        app->exit_code = Game_Main_Loop_Shutdown();
+        app->game_loop_initialized = false;
+    }
+
+    if (app->handlers_installed) {
+        Message_Pre_Poll_Handler = nullptr;
+        Message_Intercept_Handler = nullptr;
+        app->handlers_installed = false;
+    }
+
+    if (app->thread_registered) {
+        Unregister_Thread_ID(GetCurrentThreadId(), "Main Thread");
+        app->thread_registered = false;
+    }
+
+    ProgramInstance = nullptr;
     MainWindow = nullptr;
     GameInFocus = false;
-    WWPerfMonClass::Shutdown();
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-    return exit_code;
+
+    if (app->perfmon_configured) {
+        WWPerfMonClass::Shutdown();
+        app->perfmon_configured = false;
+    }
+
+    if (app->window != nullptr) {
+        SDL_DestroyWindow(app->window);
+        app->window = nullptr;
+    }
+
+    delete app;
 }

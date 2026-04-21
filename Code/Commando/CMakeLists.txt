@@ -222,7 +222,6 @@ if(WIN32)
 endif()
 
 set(COMMANDO_DEDICATED_EXECUTABLE_SOURCES
-    commando_dedicated_bootstrap.cpp
     commando_dedicated_sdl_main.cpp
 )
 

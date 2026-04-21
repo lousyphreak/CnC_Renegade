@@ -75,6 +75,7 @@
 */
 bool	RunMainLoop = true;
 int		ExitCode = EXIT_SUCCESS;
+bool	GameMainLoopInitialized = false;
 
 void Stop_Main_Loop(int exitCode)
 {
@@ -87,12 +88,6 @@ void _Game_Main_Loop_Loop(void)
 {
 	WWPROFILE( "Main Loop" );
 	WWPerfMonClass::Begin_Frame();
-
-	{
-		const Uint64 start_ticks = WWPerfMonClass::Begin_Scope();
-		Windows_Message_Handler();
-		WWPerfMonClass::End_Scope(WWPERF_SECTION_EVENT_PUMP, start_ticks);
-	}
 
 	uint32_t time1 = TIMEGETTIME();
 
@@ -237,39 +232,63 @@ void _Game_Main_Loop_Loop(void)
 	WWPerfMonClass::End_Frame();
 }
 
-/*
-** MAIN GAME LOOP
-*/
-int Game_Main_Loop(void)
+bool Game_Main_Loop_Initialize(void)
 {
-	const uint32_t servicetime = 1000; // Time in milliseconds.
+	RunMainLoop = true;
+	ExitCode = EXIT_SUCCESS;
+	GameMainLoopInitialized = false;
 
-	uint32_t time;
 	WWLib_Debug_Printf("MainLoop: Starting Game_Init()\n");
 
 	// Only run main loop if the init is succesful!
-	if (Game_Init()) {
-		if (WWPerfMonClass::Has_Forced_Swap_Interval()) {
-			WW3D::Set_Ext_Swap_Interval(WWPerfMonClass::Get_Forced_Swap_Interval());
-			WWLib_Debug_Printf("MainLoop: Forced swap interval=%d\n", WWPerfMonClass::Get_Forced_Swap_Interval());
-		}
-		WWPerfMonClass::Notify_Game_Initialized();
-		WWLib_Debug_Printf("MainLoop: Entering main loop\n");
-
-		while ( RunMainLoop ) {
-			_Game_Main_Loop_Loop();
-		}
-
-		WWLib_Debug_Printf("MainLoop: Exiting main loop\n");
-
-		// IML: Allow a short period to process any outstanding sound effects before shutdown.
-		time = TIMEGETTIME();
-		while (TIMEGETTIME() - time < servicetime) {
-			WWAudioClass::Get_Instance ()->On_Frame_Update (0);
-		}
-
-		Game_Shutdown();
+	if (!Game_Init()) {
+		return false;
 	}
 
+	if (WWPerfMonClass::Has_Forced_Swap_Interval()) {
+		WW3D::Set_Ext_Swap_Interval(WWPerfMonClass::Get_Forced_Swap_Interval());
+		WWLib_Debug_Printf("MainLoop: Forced swap interval=%d\n", WWPerfMonClass::Get_Forced_Swap_Interval());
+	}
+
+	WWPerfMonClass::Notify_Game_Initialized();
+	WWLib_Debug_Printf("MainLoop: Entering main loop\n");
+	GameMainLoopInitialized = true;
+	return true;
+}
+
+void Game_Main_Loop_Iterate(void)
+{
+	_Game_Main_Loop_Loop();
+}
+
+bool Is_Main_Loop_Running(void)
+{
+	return RunMainLoop;
+}
+
+int Get_Main_Loop_Exit_Code(void)
+{
+	return ExitCode;
+}
+
+int Game_Main_Loop_Shutdown(void)
+{
+	const uint32_t servicetime = 1000; // Time in milliseconds.
+	uint32_t time;
+
+	if (!GameMainLoopInitialized) {
+		return ExitCode;
+	}
+
+	GameMainLoopInitialized = false;
+	WWLib_Debug_Printf("MainLoop: Exiting main loop\n");
+
+	// IML: Allow a short period to process any outstanding sound effects before shutdown.
+	time = TIMEGETTIME();
+	while (TIMEGETTIME() - time < servicetime) {
+		WWAudioClass::Get_Instance ()->On_Frame_Update (0);
+	}
+
+	Game_Shutdown();
 	return ExitCode;
 }

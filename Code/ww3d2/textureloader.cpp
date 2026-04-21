@@ -198,6 +198,11 @@ static FastCriticalSectionClass					_BackgroundCriticalSection;
 
 static SynchronizedTextureLoadTaskListClass	_ForegroundQueue;
 static SynchronizedTextureLoadTaskListClass	_BackgroundQueue;
+#ifdef __EMSCRIPTEN__
+static constexpr bool kTextureLoaderUsesBackgroundThread = false;
+#else
+static constexpr bool kTextureLoaderUsesBackgroundThread = true;
+#endif
 static TextureLoadTaskListClass					_FreeList;
 
 
@@ -275,8 +280,10 @@ static unsigned Get_Full_Mip_Count(unsigned width, unsigned height, bool compres
 void TextureLoader::Init()
 {
 	WWASSERT(!_TextureLoadThread.Is_Running());
-	_TextureLoadThread.Execute();
-	_TextureLoadThread.Set_Priority(-4);
+	if (kTextureLoaderUsesBackgroundThread) {
+		_TextureLoadThread.Execute();
+		_TextureLoadThread.Set_Priority(-4);
+	}
 }
 
 
@@ -732,6 +739,17 @@ void TextureLoader::Update(void (*network_callback)(void))
 	FastCriticalSectionClass::LockClass lock(_ForegroundCriticalSection);
 
 	unsigned long time = timeGetTime();
+
+	if (!kTextureLoaderUsesBackgroundThread) {
+		FastCriticalSectionClass::LockClass background_lock(_BackgroundCriticalSection);
+		while (TextureLoadTaskClass *task = _BackgroundQueue.Pop_Front()) {
+			UPDATE_NETWORK;
+			WWASSERT(task->Get_Type() == TextureLoadTaskClass::TASK_LOAD);
+			WWASSERT(task->Get_State() == TextureLoadTaskClass::STATE_LOAD_BEGUN);
+			task->Load();
+			_ForegroundQueue.Push_Back(task);
+		}
+	}
 
 	// while we have tasks on the foreground queue
 	while (TextureLoadTaskClass *task = _ForegroundQueue.Pop_Front()) {

@@ -86,3 +86,75 @@ function(renegade_configure_target target_name)
     target_link_libraries("${target_name}" PRIVATE renegade::project_options)
     set_target_properties("${target_name}" PROPERTIES FOLDER "Renegade")
 endfunction()
+
+function(renegade_configure_emscripten_target target_name)
+    if(NOT EMSCRIPTEN)
+        return()
+    endif()
+
+    if(NOT TARGET "${target_name}")
+        message(FATAL_ERROR "renegade_configure_emscripten_target called for missing target: ${target_name}")
+    endif()
+
+    math(EXPR _renegade_emscripten_initial_memory_bytes "${RENEGADE_EMSCRIPTEN_INITIAL_MEMORY_MB} * 1024 * 1024")
+
+    target_link_options("${target_name}" PRIVATE
+        "SHELL:-sFORCE_FILESYSTEM=1"
+        "SHELL:-sINITIAL_MEMORY=${_renegade_emscripten_initial_memory_bytes}"
+    )
+
+    if(RENEGADE_EMSCRIPTEN_ALLOW_MEMORY_GROWTH)
+        target_link_options("${target_name}" PRIVATE "SHELL:-sALLOW_MEMORY_GROWTH=1")
+    endif()
+
+    set(_renegade_emscripten_ww3d2_shader_dir "${PROJECT_BINARY_DIR}/Code/ww3d2/generated/bgfx-shaders")
+    target_link_options("${target_name}" PRIVATE
+        "SHELL:--preload-file ${_renegade_emscripten_ww3d2_shader_dir}@/generated/bgfx-shaders"
+    )
+
+    if(NOT RENEGADE_EMSCRIPTEN_PACKAGE_GAME_DATA)
+        return()
+    endif()
+
+    if(NOT IS_DIRECTORY "${RENEGADE_EMSCRIPTEN_DATA_ROOT}")
+        message(FATAL_ERROR
+            "RENEGADE_EMSCRIPTEN_DATA_ROOT='${RENEGADE_EMSCRIPTEN_DATA_ROOT}' does not exist. "
+            "Point it at a shipped Renegade data tree before configuring an Emscripten build.")
+    endif()
+
+    if(NOT IS_DIRECTORY "${RENEGADE_EMSCRIPTEN_DATA_ROOT}/Data")
+        message(FATAL_ERROR
+            "RENEGADE_EMSCRIPTEN_DATA_ROOT='${RENEGADE_EMSCRIPTEN_DATA_ROOT}' is missing the Data directory expected by the runtime.")
+    endif()
+
+    target_link_options("${target_name}" PRIVATE
+        "SHELL:--preload-file ${RENEGADE_EMSCRIPTEN_DATA_ROOT}/Data@/Data"
+    )
+
+    foreach(_renegade_emscripten_optional_dir IN ITEMS HTML Internet)
+        if(IS_DIRECTORY "${RENEGADE_EMSCRIPTEN_DATA_ROOT}/${_renegade_emscripten_optional_dir}")
+            target_link_options("${target_name}" PRIVATE
+                "SHELL:--preload-file ${RENEGADE_EMSCRIPTEN_DATA_ROOT}/${_renegade_emscripten_optional_dir}@/${_renegade_emscripten_optional_dir}"
+            )
+        endif()
+    endforeach()
+
+    file(GLOB _renegade_emscripten_root_files
+        LIST_DIRECTORIES false
+        RELATIVE "${RENEGADE_EMSCRIPTEN_DATA_ROOT}"
+        "${RENEGADE_EMSCRIPTEN_DATA_ROOT}/*"
+    )
+
+    foreach(_renegade_emscripten_root_file IN LISTS _renegade_emscripten_root_files)
+        get_filename_component(_renegade_emscripten_root_ext "${_renegade_emscripten_root_file}" EXT)
+        string(TOLOWER "${_renegade_emscripten_root_ext}" _renegade_emscripten_root_ext_lower)
+
+        if(_renegade_emscripten_root_ext_lower MATCHES "^\\.(exe|dll|asi|m3d|bmp|ico|doc|xml|vdf)$")
+            continue()
+        endif()
+
+        target_link_options("${target_name}" PRIVATE
+            "SHELL:--preload-file ${RENEGADE_EMSCRIPTEN_DATA_ROOT}/${_renegade_emscripten_root_file}@/${_renegade_emscripten_root_file}"
+        )
+    endforeach()
+endfunction()

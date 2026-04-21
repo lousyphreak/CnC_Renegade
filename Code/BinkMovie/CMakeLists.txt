@@ -27,6 +27,7 @@ target_include_directories(BinkMovie
     PUBLIC
         ${BINKMOVIE_COMPAT_INCLUDE_DIRS}
         "${CMAKE_CURRENT_SOURCE_DIR}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/ffmpeg"
         "${PROJECT_SOURCE_DIR}/Code/wwlib"
         "${PROJECT_SOURCE_DIR}/Code/wwdebug"
         "${PROJECT_SOURCE_DIR}/Code/WWMath"

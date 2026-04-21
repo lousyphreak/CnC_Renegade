@@ -1,5 +1,36 @@
 # Porting Progress
 
+## Emscripten build bring-up and data packaging
+
+- Added a source-controlled Emscripten packaging path for `Commando`:
+  - new CMake options `RENEGADE_EMSCRIPTEN_PACKAGE_GAME_DATA` and `RENEGADE_EMSCRIPTEN_DATA_ROOT`
+  - a shared `renegade_configure_emscripten_target(...)` helper in `cmake/RenegadeTargets.cmake`
+  - `Code/Commando/CMakeLists.txt` now opts the web target into that helper
+- The generated web build now emits the expected runtime artifacts under `build-em/bin`:
+  - `Renegade.html`
+  - `Renegade.js`
+  - `Renegade.wasm`
+  - `Renegade.data`
+- The Emscripten data bundle is now laid out to match the runtime's existing factory setup:
+  - the shipped `Renegade/Data` tree is preloaded as `/Data`
+  - optional `HTML` and `Internet` trees are preloaded at `/HTML` and `/Internet`
+  - top-level regular files from the shipped tree are also preloaded at `/`
+- Confirmed from the generated preload manifest that the web build contains the key runtime paths the game expects, including `/Data/Always2.dat`, `/Data/always.dat`, `/Data/always.dbs`, `/Data/config/...`, `/Data/save/...`, `/HTML/...`, and `/Internet/...`.
+- Fixed shared build plumbing so SDL usage requirements propagate to the full codebase by linking `SDL3::SDL3` through `renegade_project_options`.
+- Fixed a large batch of Clang/Emscripten compatibility issues that blocked the web build:
+  - header declarations with extra qualification that old MSVC accepted
+  - old `register` usage rejected by C++17
+  - non-trivial `StringClass` / `WideStringClass` objects passed through variadic formatting calls
+  - old const-correctness mismatches now enforced by Clang
+  - legacy typed-enum bitwise accumulation sites
+  - several outdated raw string/pointer assumptions in audio, rendering, combat, and networking code
+- Fixed the in-tree Bink decoder Emscripten build by adding the vendored FFmpeg root include directory so `binkdsp.c` can resolve `libavutil/attributes.h`.
+- Fixed Emscripten shader-tool execution:
+  - `shaderc.js` now runs with `-sNODERAWFS=1`
+  - increased stack size avoids the earlier shader preprocessing overflow
+- Disabled SDL's Emscripten pthread mode for this build so the final web link stays single-threaded and does not require wasm shared-memory / atomics across the whole project.
+- Rebuilt the full Emscripten `Commando` target successfully after the above changes.
+
 ## GPU mesh lighting and point-light support
 
 - Traced the modern mesh-lighting path through `LightEnvironmentClass`, `DX8Wrapper`, `BgfxRenderer`, and `fs_mesh.sc`.

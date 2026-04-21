@@ -859,6 +859,17 @@ bool Query_Native_Window(SDL_Window *window, bgfx::PlatformData &platform_data)
         return false;
     }
 
+#ifdef __EMSCRIPTEN__
+    const char *canvas_id = SDL_GetStringProperty(window_properties, SDL_PROP_WINDOW_EMSCRIPTEN_CANVAS_ID_STRING, "#canvas");
+    if (canvas_id == nullptr || canvas_id[0] == '\0') {
+        canvas_id = "#canvas";
+    }
+
+    platform_data.nwh = const_cast<char *>(canvas_id);
+    platform_data.type = bgfx::NativeWindowHandleType::Default;
+    return true;
+#endif
+
     if (void *wayland_display = SDL_GetPointerProperty(window_properties, SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER, nullptr)) {
         void *wayland_surface = SDL_GetPointerProperty(window_properties, SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER, nullptr);
         if (wayland_surface == nullptr) {
@@ -1468,6 +1479,7 @@ bool BgfxRenderer::Init(void *window_handle, bool lite)
 
     if (!Update_Platform_Window(window_handle)) {
         WWDEBUG_SAY(("BgfxRenderer::Init failed to query native window data\n"));
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "BgfxRenderer::Init failed to query native window data");
         return false;
     }
 
@@ -1503,11 +1515,13 @@ bool BgfxRenderer::Init(void *window_handle, bool lite)
 
     if (!initialized) {
         WWDEBUG_SAY(("BgfxRenderer::Init bgfx::init failed\n"));
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "BgfxRenderer::Init bgfx::init failed");
         return false;
     }
 
     if (!Init_Render_Resources()) {
         WWDEBUG_SAY(("BgfxRenderer::Init failed to initialize renderer resources\n"));
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "BgfxRenderer::Init failed to initialize renderer resources");
         bgfx::shutdown();
         return false;
     }
@@ -3322,12 +3336,16 @@ bool BgfxRenderer::Init_Render_Resources()
     }
 
     if (!bgfx::isValid(WhiteTexture) || !bgfx::isValid(BlackTexture))
+    {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "BgfxRenderer::Init_Render_Resources failed to create fallback textures");
         return false;
+    }
 
     if (!bgfx::isValid(SkinPaletteTexture)) {
         const bgfx::Caps * caps = bgfx::getCaps();
         if (caps == nullptr || (caps->formats[bgfx::TextureFormat::RGBA32F] & BGFX_CAPS_FORMAT_TEXTURE_2D) == 0) {
             WWDEBUG_SAY(("BgfxRenderer: RGBA32F skin palette textures are unavailable\n"));
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "BgfxRenderer::Init_Render_Resources missing RGBA32F texture support for skin palette");
             return false;
         }
 
@@ -3361,11 +3379,24 @@ bool BgfxRenderer::Init_Render_Resources()
         ShadowMapManager::Init();
     }
 
-    return bgfx::isValid(OverlayProgram)
+    const bool resources_ready = bgfx::isValid(OverlayProgram)
         && bgfx::isValid(MovieYUVProgram)
         && bgfx::isValid(MeshProgram) && bgfx::isValid(MeshTexgenProgram)
         && bgfx::isValid(MeshSkinProgram) && bgfx::isValid(MeshSkinTexgenProgram)
         && bgfx::isValid(SkinPaletteTexture);
+    if (!resources_ready) {
+        SDL_LogError(
+            SDL_LOG_CATEGORY_APPLICATION,
+            "BgfxRenderer::Init_Render_Resources invalid handles overlay=%d movie=%d mesh=%d texgen=%d skin=%d skinTexgen=%d palette=%d",
+            bgfx::isValid(OverlayProgram) ? 1 : 0,
+            bgfx::isValid(MovieYUVProgram) ? 1 : 0,
+            bgfx::isValid(MeshProgram) ? 1 : 0,
+            bgfx::isValid(MeshTexgenProgram) ? 1 : 0,
+            bgfx::isValid(MeshSkinProgram) ? 1 : 0,
+            bgfx::isValid(MeshSkinTexgenProgram) ? 1 : 0,
+            bgfx::isValid(SkinPaletteTexture) ? 1 : 0);
+    }
+    return resources_ready;
 }
 
 void BgfxRenderer::Shutdown_Render_Resources()

@@ -1,5 +1,28 @@
 # Porting Knowledge
 
+## Emscripten runtime data layout
+
+- The current Renegade startup path does **not** need `always.dat`, `always.dbs`, or `Always2.dat` at the virtual filesystem root for the main game path.
+- `Code/Commando/init.cpp` wires those mix files through `RenegadeBaseFileFactory`, whose subdirectory is `DATA`, so packaging them at `/Data/Always2.dat`, `/Data/always.dat`, and `/Data/always.dbs` matches the runtime's actual lookup contract.
+- The important web preload layout is therefore:
+  - shipped `Renegade/Data/...` -> `/Data/...`
+  - shipped optional `Renegade/HTML/...` -> `/HTML/...`
+  - shipped optional `Renegade/Internet/...` -> `/Internet/...`
+  - selected shipped top-level files -> `/...`
+- The generated `Renegade.js` preload manifest is the easiest place to verify that a packaged web build matches the expected virtual paths.
+
+## Emscripten build notes
+
+- The project-wide SDL include fix belongs in the shared interface target, not in individual libraries. Linking `SDL3::SDL3` through `renegade_project_options` lets the low-level headers include SDL without each legacy target having to remember SDL explicitly.
+- Emscripten/Clang is much stricter than the original MSVC toolchain about:
+  - extra qualification inside class declarations
+  - passing non-trivial wrapper/string objects through `printf`-style varargs
+  - old enum bitwise code that relies on implicit integer conversions
+  - const-correctness on legacy APIs
+- The vendored bgfx shader tool runs as `shaderc.js` during an Emscripten build, so it needs host-filesystem access (`-sNODERAWFS=1`) and a larger stack than the default for this codebase's shader preprocessing workload.
+- For the current Renegade web build, SDL pthread support should stay disabled. If SDL is configured with Emscripten pthreads enabled, the final link pulls in `--shared-memory`; that requires every linked object to be compiled with atomics/bulk-memory support and breaks the current single-threaded build.
+- The in-tree Bink decoder includes vendored FFmpeg C sources directly. Its target therefore needs the `Code/BinkMovie/ffmpeg` include root in addition to `Code/BinkMovie`, otherwise nested includes such as `libavutil/attributes.h` fail under normal out-of-tree builds.
+
 ## bgfx mesh lighting contract
 
 - The bgfx mesh fragment shader should not treat runtime lighting as "4 directional colors" anymore.

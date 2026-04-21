@@ -76,7 +76,13 @@ foreach(_renegade_sdl_dep_option IN ITEMS
     set(${_renegade_sdl_dep_option} OFF CACHE BOOL "" FORCE)
 endforeach()
 
+if(EMSCRIPTEN)
+    set(SDL_PTHREADS OFF CACHE BOOL "" FORCE)
+    set(SDL_PTHREADS_SEM OFF CACHE BOOL "" FORCE)
+endif()
+
 add_subdirectory("${RENEGADE_SDL3_SUBMODULE_PATH}" external/SDL EXCLUDE_FROM_ALL)
+target_link_libraries(renegade_project_options INTERFACE SDL3::SDL3)
 
 if(RENEGADE_AUDIO_BACKEND STREQUAL "SDL_MIXER")
     set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
@@ -136,6 +142,12 @@ if(TARGET glsl-optimizer)
 endif()
 if(TARGET fcpp)
     target_compile_definitions(fcpp PRIVATE _GNU_SOURCE)
+endif()
+if(EMSCRIPTEN AND TARGET shaderc)
+    target_link_options(shaderc PRIVATE
+        "SHELL:-sNODERAWFS=1"
+        "SHELL:-sSTACK_SIZE=1048576"
+    )
 endif()
 
 include("${bgfx_cmake_SOURCE_DIR}/cmake/bgfxToolUtils.cmake")

@@ -138,7 +138,13 @@ target_link_libraries(ww3d2
         wwtranslatedb
 )
 
+if(EMSCRIPTEN)
+    set(WW3D2_RUNTIME_SHADER_DIR "/generated/bgfx-shaders")
+else()
+    set(WW3D2_RUNTIME_SHADER_DIR "${WW3D2_SHADER_OUTPUT_DIR}")
+endif()
+
 target_compile_definitions(ww3d2
     PRIVATE
-        RENEGADE_WW3D2_SHADER_DIR="${WW3D2_SHADER_OUTPUT_DIR}"
+        RENEGADE_WW3D2_SHADER_DIR="${WW3D2_RUNTIME_SHADER_DIR}"
 )

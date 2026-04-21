@@ -350,6 +350,7 @@ target_link_libraries(Commando
 set_target_properties(Commando PROPERTIES
     OUTPUT_NAME "Renegade"
 )
+renegade_configure_emscripten_target(Commando)
 
 add_executable(CommandoDedicated ${COMMANDO_DEDICATED_EXECUTABLE_SOURCES})
 renegade_configure_target(CommandoDedicated)

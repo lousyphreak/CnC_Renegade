@@ -59,6 +59,9 @@
 static void Make_String_Lower_Case (char *text);
 static StringClass Build_Object_Hash_Key (const char *id_desc);
 static int Build_List_From_String (const char *buffer, const char *delimiter, StringClass **string_list);
+PersistFactoryClass *Get_TranslateObj_Persist_Factory_Link_Anchor(void);
+PersistFactoryClass *Get_StringTwiddler_Persist_Factory_Link_Anchor(void);
+PersistFactoryClass *Get_TDBCategory_Persist_Factory_Link_Anchor(void);
 
 
 ///////////////////////////////////////////////////////////////////////
@@ -151,6 +154,11 @@ TranslateDBClass::Chunk_ID (void) const
 void
 TranslateDBClass::Initialize (void)
 {
+	// Force-link the persist factories so archive linking on Emscripten doesn't
+	// discard the translation object loaders needed by STRINGS.TDB.
+	(void)Get_TranslateObj_Persist_Factory_Link_Anchor();
+	(void)Get_StringTwiddler_Persist_Factory_Link_Anchor();
+	(void)Get_TDBCategory_Persist_Factory_Link_Anchor();
 	m_ObjectList.Set_Growth_Step (1000);
 	return ;
 }
@@ -380,7 +388,6 @@ TranslateDBClass::Load_Objects (ChunkLoadClass &cload)
 	bool retval = true;
 
 	while (cload.Open_Chunk ()) {
-
 		//
 		//	Load this object from the chunk (if possible)
 		//

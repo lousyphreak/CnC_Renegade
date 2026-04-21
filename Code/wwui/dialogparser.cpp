@@ -285,7 +285,14 @@ const std::unordered_map<std::string, int> &Get_Defines()
 
 	const std::string resource_header = Find_Project_File("Code/Commando/resource.h");
 	const std::string dialog_header = Find_Project_File("Code/Commando/dialogresource.h");
-	const std::string headers[] = { resource_header, dialog_header };
+	std::string string_ids_header = Find_Project_File("Code/Combat/string_ids.h");
+	if (string_ids_header.empty()) {
+		string_ids_header = Find_Project_File("Code/Scripts/string_ids.h");
+	}
+	if (string_ids_header.empty()) {
+		string_ids_header = Find_Project_File("Code/Installer/string_ids.h");
+	}
+	const std::string headers[] = { resource_header, dialog_header, string_ids_header };
 
 	for (const auto &header_path : headers) {
 		if (header_path.empty()) {
@@ -446,7 +453,7 @@ WideStringClass Make_Wide_Text(const std::string &text)
 	return wide;
 }
 
-void Resolve_Translation(WideStringClass *text)
+void Resolve_Dialog_Translation_Impl(WideStringClass *text)
 {
 	if (text == NULL) {
 		return;
@@ -462,10 +469,21 @@ void Resolve_Translation(WideStringClass *text)
 	StringClass ascii_string_id;
 	wide_string_id.Convert_To(ascii_string_id);
 	WideStringClass translation;
-	if (TDBObjClass *object = TranslateDBClass::Find_Object(ascii_string_id)) {
-		translation = object->Get_English_String().Peek_Buffer();
-	} else {
-		translation = ascii_string_id.Peek_Buffer();
+	const std::unordered_map<std::string, int> &defines = Get_Defines();
+	std::unordered_map<std::string, int>::const_iterator string_define = defines.find(ascii_string_id.Peek_Buffer());
+	if (string_define != defines.end()) {
+		const WCHAR *translated_text = TranslateDBClass::Get_String(static_cast<uint32_t>(string_define->second));
+		if (translated_text != NULL && ::wcscmp(translated_text, STRING_NOT_FOUND) != 0) {
+			translation = translated_text;
+		}
+	}
+
+	if (translation.Is_Empty()) {
+		if (TDBObjClass *object = TranslateDBClass::Find_Object(ascii_string_id)) {
+			translation = object->Get_English_String().Peek_Buffer();
+		} else {
+			translation = ascii_string_id.Peek_Buffer();
+		}
 	}
 	value = value.substr(0, position) + std::wstring(translation.Peek_Buffer());
 	*text = value.c_str();
@@ -542,7 +560,7 @@ bool Parse_Control_Statement(const std::string &statement, const std::unordered_
 		}
 
 		definition.title = Make_Wide_Text(parts[0]);
-		Resolve_Translation(&definition.title);
+		Resolve_Dialog_Translation_Impl(&definition.title);
 		if (!Resolve_Id(parts[1], defines, &definition.id)) {
 			return false;
 		}
@@ -588,7 +606,7 @@ bool Parse_Control_Statement(const std::string &statement, const std::unordered_
 		}
 
 		definition.title = Make_Wide_Text(parts[0]);
-		Resolve_Translation(&definition.title);
+		Resolve_Dialog_Translation_Impl(&definition.title);
 		if (!Resolve_Id(parts[1], defines, &definition.id)) {
 			return false;
 		}
@@ -656,7 +674,7 @@ bool Parse_Template_From_Rc_Source(int res_id, int *dlg_width, int *dlg_height, 
 		if (!in_dialog_body) {
 			if (line.rfind("CAPTION ", 0) == 0) {
 				*dlg_title = Make_Wide_Text(line.substr(8));
-				Resolve_Translation(dlg_title);
+				Resolve_Dialog_Translation_Impl(dlg_title);
 			} else if (line == "BEGIN") {
 				in_dialog_body = true;
 			}
@@ -682,6 +700,7 @@ bool Parse_Template_From_Rc_Source(int res_id, int *dlg_width, int *dlg_height, 
 }
 
 } // namespace
+
 #endif
 
 

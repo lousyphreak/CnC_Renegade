@@ -858,59 +858,52 @@ bool Query_Native_Window(SDL_Window *window, bgfx::PlatformData &platform_data)
 
     platform_data.type = bgfx::NativeWindowHandleType::Default;
 
-    const SDL_PropertiesID window_properties = SDL_GetWindowProperties(window);
-    if (window_properties == 0) {
-        return false;
-    }
-
 #ifdef __EMSCRIPTEN__
-    auto ensure_webgl_context = [&](const char *canvas_id) -> bool {
-        EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context = emscripten_webgl_get_current_context();
-        if (context <= 0) {
-            EmscriptenWebGLContextAttributes attributes;
-            emscripten_webgl_init_context_attributes(&attributes);
-            attributes.enableExtensionsByDefault = true;
-            attributes.depth = true;
-            attributes.stencil = true;
-            attributes.antialias = false;
-
-            for (int major_version = 2; major_version >= 1 && context <= 0; --major_version) {
-                attributes.majorVersion = major_version;
-                context = emscripten_webgl_create_context(canvas_id, &attributes);
-            }
-
-            if (context <= 0) {
-                SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
-                    "BgfxRenderer::Query_Native_Window failed to create an Emscripten WebGL context for %s",
-                    canvas_id);
-                return false;
-            }
-
-            if (emscripten_webgl_make_context_current(context) != EMSCRIPTEN_RESULT_SUCCESS) {
-                emscripten_webgl_destroy_context(context);
-                SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
-                    "BgfxRenderer::Query_Native_Window failed to make the Emscripten WebGL context current for %s",
-                    canvas_id);
-                return false;
-            }
-        }
-
-        platform_data.context = reinterpret_cast<void *>(static_cast<uintptr_t>(context));
-        return true;
-    };
-
-    const char *canvas_id = SDL_GetStringProperty(window_properties, SDL_PROP_WINDOW_EMSCRIPTEN_CANVAS_ID_STRING, "#canvas");
+    const SDL_PropertiesID window_properties = SDL_GetWindowProperties(window);
+    const char *canvas_id = "#canvas";
+    if (window_properties != 0) {
+        canvas_id = SDL_GetStringProperty(window_properties, SDL_PROP_WINDOW_EMSCRIPTEN_CANVAS_ID_STRING, "#canvas");
+    }
     if (canvas_id == nullptr || canvas_id[0] == '\0') {
         canvas_id = "#canvas";
     }
 
     platform_data.nwh = const_cast<char *>(canvas_id);
     platform_data.type = bgfx::NativeWindowHandleType::Default;
-    return ensure_webgl_context(canvas_id);
+
+    const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context = emscripten_webgl_get_current_context();
+    if (context <= 0) {
+        return true;
+    }
+
+    EmscriptenWebGLContextAttributes attributes;
+    emscripten_webgl_init_context_attributes(&attributes);
+    if (emscripten_webgl_get_context_attributes(context, &attributes) != EMSCRIPTEN_RESULT_SUCCESS) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+            "BgfxRenderer::Query_Native_Window failed to query the current Emscripten WebGL context for %s",
+            canvas_id);
+        return false;
+    }
+
+    if (attributes.majorVersion < 2) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+            "BgfxRenderer::Query_Native_Window requires a WebGL 2 context for %s but the current context is WebGL %d",
+            canvas_id,
+            attributes.majorVersion);
+        return false;
+    }
+
+    platform_data.context = reinterpret_cast<void *>(static_cast<uintptr_t>(context));
+    return true;
 #endif
 
-    if (void *wayland_display = SDL_GetPointerProperty(window_properties, SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER, nullptr)) {
-        void *wayland_surface = SDL_GetPointerProperty(window_properties, SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER, nullptr);
+    const SDL_PropertiesID native_window_properties = SDL_GetWindowProperties(window);
+    if (native_window_properties == 0) {
+        return false;
+    }
+
+    if (void *wayland_display = SDL_GetPointerProperty(native_window_properties, SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER, nullptr)) {
+        void *wayland_surface = SDL_GetPointerProperty(native_window_properties, SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER, nullptr);
         if (wayland_surface == nullptr) {
             return false;
         }
@@ -921,8 +914,8 @@ bool Query_Native_Window(SDL_Window *window, bgfx::PlatformData &platform_data)
         return true;
     }
 
-    if (void *x11_display = SDL_GetPointerProperty(window_properties, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr)) {
-        const uintptr_t x11_window = static_cast<uintptr_t>(SDL_GetNumberProperty(window_properties, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0));
+    if (void *x11_display = SDL_GetPointerProperty(native_window_properties, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr)) {
+        const uintptr_t x11_window = static_cast<uintptr_t>(SDL_GetNumberProperty(native_window_properties, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0));
         if (x11_window == 0) {
             return false;
         }
@@ -933,12 +926,12 @@ bool Query_Native_Window(SDL_Window *window, bgfx::PlatformData &platform_data)
         return true;
     }
 
-    if (void *win32_window = SDL_GetPointerProperty(window_properties, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr)) {
+    if (void *win32_window = SDL_GetPointerProperty(native_window_properties, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr)) {
         platform_data.nwh = win32_window;
         return true;
     }
 
-    if (void *cocoa_window = SDL_GetPointerProperty(window_properties, SDL_PROP_WINDOW_COCOA_WINDOW_POINTER, nullptr)) {
+    if (void *cocoa_window = SDL_GetPointerProperty(native_window_properties, SDL_PROP_WINDOW_COCOA_WINDOW_POINTER, nullptr)) {
         platform_data.nwh = cocoa_window;
         return true;
     }
@@ -1502,6 +1495,9 @@ bool Is_Render_Target_Format_Supported(WW3DFormat format)
 
 bgfx::RendererType::Enum Choose_Preferred_Renderer(void)
 {
+#ifdef __EMSCRIPTEN__
+    return bgfx::RendererType::OpenGLES;
+#endif
     return bgfx::RendererType::Count;
 }
 }
@@ -3541,6 +3537,12 @@ bool BgfxRenderer::Update_Platform_Window(void *window_handle)
         BitDepth = 32;
     }
     Windowed = (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) == 0;
+
+    if (IsInitted) {
+        platform_data.ndt = PlatformData.ndt;
+        platform_data.context = PlatformData.context;
+    }
+
     PlatformData = platform_data;
     bgfx::setPlatformData(platform_data);
     return true;
@@ -3560,6 +3562,51 @@ bool BgfxRenderer::Query_Drawable_Size(void *window_handle, uint32_t &width, uin
             return false;
         }
     }
+
+#ifdef __EMSCRIPTEN__
+    if (pixel_width <= 0 || pixel_height <= 0) {
+        const SDL_PropertiesID window_properties = SDL_GetWindowProperties(window);
+        const char *canvas_id = "#canvas";
+        if (window_properties != 0) {
+            canvas_id = SDL_GetStringProperty(window_properties, SDL_PROP_WINDOW_EMSCRIPTEN_CANVAS_ID_STRING, "#canvas");
+        }
+        if (canvas_id == nullptr || canvas_id[0] == '\0') {
+            canvas_id = "#canvas";
+        }
+
+        int canvas_width = 0;
+        int canvas_height = 0;
+        if (emscripten_get_canvas_element_size(canvas_id, &canvas_width, &canvas_height) == EMSCRIPTEN_RESULT_SUCCESS &&
+            canvas_width > 0 && canvas_height > 0) {
+            pixel_width = canvas_width;
+            pixel_height = canvas_height;
+        }
+    }
+
+    if (pixel_width <= 0 || pixel_height <= 0) {
+        const SDL_PropertiesID window_properties = SDL_GetWindowProperties(window);
+        const char *canvas_id = "#canvas";
+        if (window_properties != 0) {
+            canvas_id = SDL_GetStringProperty(window_properties, SDL_PROP_WINDOW_EMSCRIPTEN_CANVAS_ID_STRING, "#canvas");
+        }
+        if (canvas_id == nullptr || canvas_id[0] == '\0') {
+            canvas_id = "#canvas";
+        }
+
+        double css_width = 0.0;
+        double css_height = 0.0;
+        if (emscripten_get_element_css_size(canvas_id, &css_width, &css_height) == EMSCRIPTEN_RESULT_SUCCESS &&
+            css_width > 0.0 && css_height > 0.0) {
+            pixel_width = static_cast<int>(std::lround(css_width));
+            pixel_height = static_cast<int>(std::lround(css_height));
+        }
+    }
+
+    if (pixel_width <= 0 || pixel_height <= 0) {
+        pixel_width = 1280;
+        pixel_height = 720;
+    }
+#endif
 
     if (pixel_width <= 0 || pixel_height <= 0) {
         return false;

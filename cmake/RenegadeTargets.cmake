@@ -103,6 +103,9 @@ function(renegade_configure_emscripten_target target_name)
     target_link_options("${target_name}" PRIVATE
         "SHELL:-sFORCE_FILESYSTEM=1"
         "SHELL:-sINITIAL_MEMORY=${_renegade_emscripten_initial_memory_bytes}"
+        "SHELL:-sMIN_WEBGL_VERSION=2"
+        "SHELL:-sMAX_WEBGL_VERSION=2"
+        "SHELL:-sFULL_ES3=1"
     )
 
     if(RENEGADE_EMSCRIPTEN_ALLOW_MEMORY_GROWTH)
@@ -157,6 +160,22 @@ function(renegade_configure_emscripten_target target_name)
 
         target_link_options("${target_name}" PRIVATE
             "SHELL:--preload-file ${RENEGADE_EMSCRIPTEN_DATA_ROOT}/${_renegade_emscripten_root_file}@/${_renegade_emscripten_root_file}"
+        )
+    endforeach()
+
+    foreach(_renegade_emscripten_runtime_dialog_source IN ITEMS
+        "Code/Commando/chat.rc"
+        "Code/Commando/resource.h"
+        "Code/Commando/dialogresource.h"
+        "Code/Combat/string_ids.h")
+        if(NOT EXISTS "${PROJECT_SOURCE_DIR}/${_renegade_emscripten_runtime_dialog_source}")
+            message(FATAL_ERROR
+                "Missing runtime dialog source dependency for Emscripten: "
+                "${PROJECT_SOURCE_DIR}/${_renegade_emscripten_runtime_dialog_source}")
+        endif()
+
+        target_link_options("${target_name}" PRIVATE
+            "SHELL:--preload-file ${PROJECT_SOURCE_DIR}/${_renegade_emscripten_runtime_dialog_source}@/${_renegade_emscripten_runtime_dialog_source}"
         )
     endforeach()
 endfunction()

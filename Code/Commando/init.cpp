@@ -451,6 +451,84 @@ static void Add_Mix_File_Factories(FileFactoryListClass &factory_list, FileFacto
 	}
 }
 
+static bool Load_Save_Load_Subsystem_From_File(FileClass *file)
+{
+	if (file == NULL) {
+		return false;
+	}
+
+	bool loaded = false;
+	if (file->Open(FileClass::READ) && file->Is_Available()) {
+		ChunkLoadClass cload(file);
+		loaded = SaveLoadSystemClass::Load(cload);
+	}
+	file->Close();
+	return loaded;
+}
+
+static bool Load_Save_Load_Subsystem_From_Factory(FileFactoryClass *factory, const char *filename)
+{
+	if (factory == NULL || filename == NULL) {
+		return false;
+	}
+
+	FileClass *file = factory->Get_File(filename);
+	if (file == NULL) {
+		return false;
+	}
+
+	const bool loaded = Load_Save_Load_Subsystem_From_File(file);
+	factory->Return_File(file);
+	return loaded;
+}
+
+static bool Load_Save_Load_Subsystem_From_Mix(FileFactoryClass *base_factory, const char *mix_filename, const char *filename)
+{
+	if (base_factory == NULL || mix_filename == NULL || filename == NULL) {
+		return false;
+	}
+
+	MixFileFactoryClass mix_factory(mix_filename, base_factory);
+	if (!mix_factory.Is_Valid()) {
+		return false;
+	}
+
+	FileClass *file = mix_factory.Get_File(filename);
+	if (file == NULL) {
+		return false;
+	}
+
+	const bool loaded = Load_Save_Load_Subsystem_From_File(file);
+	mix_factory.Return_File(file);
+	return loaded;
+}
+
+bool Load_Renegade_Strings_Database(void)
+{
+	TranslateDBClass::Shutdown();
+	TranslateDBClass::Initialize();
+	if (Load_Save_Load_Subsystem_From_Factory(_TheFileFactory, STRINGS_FILENAME) &&
+		TranslateDBClass::Is_Loaded() &&
+		TranslateDBClass::Get_Version_Number() == STRINGS_VER) {
+		return true;
+	}
+
+	TranslateDBClass::Shutdown();
+	TranslateDBClass::Initialize();
+	return Load_Save_Load_Subsystem_From_Mix(&RenegadeBaseFileFactory, "always.dbs", STRINGS_FILENAME) &&
+		TranslateDBClass::Is_Loaded() &&
+		TranslateDBClass::Get_Version_Number() == STRINGS_VER;
+}
+
+bool Load_Renegade_Conversation_Database(void)
+{
+	if (Load_Save_Load_Subsystem_From_Factory(_TheFileFactory, CONV_DB_FILENAME)) {
+		return true;
+	}
+
+	return Load_Save_Load_Subsystem_From_Mix(&RenegadeBaseFileFactory, "always.dbs", CONV_DB_FILENAME);
+}
+
 /*
 **
 */
@@ -924,17 +1002,7 @@ bool Game_Init(void)
 	//
 	//	Load the strings table
 	//
-	TranslateDBClass::Initialize();
-	FileClass *file	= _TheFileFactory->Get_File( STRINGS_FILENAME );
-	if (file != NULL) {
-		file->Open (FileClass::READ);				//	Open or the file
-		if ( file->Is_Available() ) {
-			ChunkLoadClass cload (file);				// Load the database
-			SaveLoadSystemClass::Load(cload);
-		}
-		file->Close ();								// Close the file
-		_TheFileFactory->Return_File (file);
-	}
+	Load_Renegade_Strings_Database();
 	//TranslateDBClass::Set_Current_Language (TranslateDBClass::LANGID_CHINESE);
 
 	//
@@ -958,16 +1026,7 @@ bool Game_Init(void)
 	//
 	//	Load the conversation database
 	//
-	file	= _TheFileFactory->Get_File( CONV_DB_FILENAME );
-	if (file != NULL) {
-		file->Open (FileClass::READ);				//	Open or the file
-		if ( file->Is_Available() ) {
-			ChunkLoadClass cload (file);				// Load the database
-			SaveLoadSystemClass::Load(cload);
-		}
-		file->Close ();								// Close the file
-		_TheFileFactory->Return_File (file);
-	}
+	Load_Renegade_Conversation_Database();
 
 	//
 	//	Check to make sure the code version matches the strings

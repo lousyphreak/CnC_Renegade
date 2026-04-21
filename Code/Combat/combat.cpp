@@ -351,10 +351,26 @@ void	CombatManager::Pre_Load_Level( bool render_available )
 bool	_preload_assets;
 StringClass	_load_map_name;
 
+#ifdef __EMSCRIPTEN__
+static constexpr bool kCombatUsesBackgroundLoadThread = false;
+#else
+static constexpr bool kCombatUsesBackgroundLoadThread = true;
+#endif
+
 static class LoadThreadClass : public ThreadClass
 {
 public:
 	LoadThreadClass(const char *thread_name = "Game loader thread") : ThreadClass(thread_name, &Exception_Handler) {}
+
+	void Execute_Inline()
+	{
+		WWASSERT(!Is_Running());
+		running = true;
+		ThreadID = ThreadClass::_Get_Current_Thread_ID();
+		Thread_Function();
+		ThreadID = 0;
+		running = false;
+	}
 
 	void Thread_Function() {
 
@@ -440,7 +456,11 @@ void	CombatManager::Load_Level_Threaded( const char * map_name, bool preload_ass
 	_load_map_name = map_name;
 
 	WWASSERT(!thread.Is_Running());
-	thread.Execute();
+	if (kCombatUsesBackgroundLoadThread) {
+		thread.Execute();
+	} else {
+		thread.Execute_Inline();
+	}
 }
 
 bool	CombatManager::Is_Load_Level_Complete( void )
@@ -1366,6 +1386,5 @@ void	CombatManager::Register_Star_Killer( ArmedGameObj * killer )
 		StarKillerID = 0;
 	}
 }
-
 
 

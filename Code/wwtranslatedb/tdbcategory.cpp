@@ -47,6 +47,11 @@
 //////////////////////////////////////////////////////////////////////////////
 SimplePersistFactoryClass<TDBCategoryClass, CHUNKID_TDBCATEGORY> _TDBCategoryPersistFactory;
 
+PersistFactoryClass *Get_TDBCategory_Persist_Factory_Link_Anchor(void)
+{
+	return &_TDBCategoryPersistFactory;
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 //	Constants

@@ -48,8 +48,30 @@
   - shipped optional `Renegade/Internet/...` -> `/Internet/...`
   - selected shipped top-level files -> `/...`
 - The generated `Renegade.js` preload manifest is the easiest place to verify that a packaged web build matches the expected virtual paths.
+- The non-Windows dialog path used by Emscripten does **not** read compiled Win32 resources. It parses `Code/Commando/chat.rc` at runtime and also needs `Code/Commando/resource.h`, `Code/Commando/dialogresource.h`, and `Code/Combat/string_ids.h` available in the virtual filesystem.
+- The shipped top-level files `00000409.256` and `00000409.016` are BMP assets, not the string/conversation databases. Mapping them to `/STRINGS.TDB` or `/CONV10.CDB` produces version/translation failures.
+- The real `STRINGS.TDB` and `CONV10.CDB` used by Renegade live inside `Renegade/Data/always.dbs`.
+- A successful Emscripten `STRINGS.TDB` load must populate the translation objects themselves, not just the DB header/version fields. If the browser build reports the correct version but still returns `TDBERR` for menu IDs, check whether the wwtranslatedb persist factories were linked in.
+- For this codebase, Emscripten/wasm archive linking can drop the wwtranslatedb factory object files when only the translation database subsystem is referenced. Forcing references to the persist-factory statics in `TranslateDBClass::Initialize()` keeps `translateobj.cpp`, `stringtwiddler.cpp`, and `tdbcategory.cpp` linked so `SaveLoadSystemClass::Find_Persist_Factory(CHUNKID_TRANSLATE_OBJ)` succeeds at runtime.
 
 ## Emscripten build notes
+
+- For the current browser renderer path, SDL should create the window/canvas with `SDL_PROP_WINDOW_CREATE_EXTERNAL_GRAPHICS_CONTEXT_BOOLEAN` and let bgfx own WebGL context creation, just like the desktop path already lets bgfx own the native renderer/device.
+- Do not mix SDL window creation with a second manual `emscripten_webgl_create_context(...)` call for the same canvas. Firefox may tolerate the split ownership, but Chrome can end up with a mismatched current context and fail inside `BgfxRenderer::Init()`.
+- `Code/ww3d2/bgfxrenderer.cpp::Query_Native_Window` should only do two things on Emscripten:
+  - provide the canvas id through `bgfx::PlatformData.nwh`
+  - if some higher layer has already made a context current, validate that it is WebGL 2 before passing it to bgfx through `platformData.context`
+- `Code/ww3d2/bgfxrenderer.cpp::Update_Platform_Window` must preserve the immutable bgfx platform-data fields after `bgfx::init()`:
+  - `context`
+  - `ndt`
+  bgfx allows later `setPlatformData()` calls to update the native window/backbuffer side, but changing `context` or `ndt` after initialization aborts the renderer.
+- The current Renegade bgfx renderer should treat WebGL 2 as required, not optional:
+  - `SkinPaletteTexture` currently requires `RGBA32F` support during `Init_Render_Resources()`
+  - a WebGL 1 fallback only converts the real failure into the misleading legacy DirectX startup dialog
+- The stable Emscripten link contract for this renderer is:
+  - `-sMIN_WEBGL_VERSION=2`
+  - `-sMAX_WEBGL_VERSION=2`
+  - `-sFULL_ES3=1`
 
 - The project-wide SDL include fix belongs in the shared interface target, not in individual libraries. Linking `SDL3::SDL3` through `renegade_project_options` lets the low-level headers include SDL without each legacy target having to remember SDL explicitly.
 - Emscripten/Clang is much stricter than the original MSVC toolchain about:

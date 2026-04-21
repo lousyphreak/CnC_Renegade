@@ -48,6 +48,8 @@
 
 void	Get_Version_Number(uint32_t *major, uint32_t *minor);
 bool	Game_Init(void);
+bool	Load_Renegade_Strings_Database(void);
+bool	Load_Renegade_Conversation_Database(void);
 void	Install_Fonts (bool onoff);
 void	Application_Exception_Callback(void);
 void	Copy_Logs(unsigned version);

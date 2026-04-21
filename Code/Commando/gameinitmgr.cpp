@@ -77,6 +77,7 @@
 #include "GameSpy_QnR.h"
 #include "specialbuilds.h"
 #include "modpackagemgr.h"
+#include "init.h"
 
 #include "translatedb.h"
 #include "damage.h"
@@ -1003,24 +1004,13 @@ void _reload_game_configuration_files(void)
 	}
 
 	//	Reload the strings table
-	TranslateDBClass::Initialize();
-	FileClass *file	= _TheFileFactory->Get_File( "STRINGS.TDB" );
-	if (file != NULL) {
-		file->Open (FileClass::READ);				//	Open or the file
-		if ( file->Is_Available() ) {
-			ChunkLoadClass cload (file);				// Load the database
-			SaveLoadSystemClass::Load(cload);
-		}
-		file->Close ();								// Close the file
-		_TheFileFactory->Return_File (file);
-	}
+	Load_Renegade_Strings_Database();
 
 	// Reload scripts.dll
 	ScriptManager::Destroy_Pending();
 	ScriptManager::Shutdown();
 	ScriptManager::Init();
 }
-
 
 
 

@@ -13,6 +13,14 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
 - keep a state document (e.g. `PORTING_PROGRESS.md`) to track the progress of the port, and update it regularly with detailed notes on what has been done, what is left to do, and any issues or challenges encountered along the way, we want to have a clear and detailed record of the porting process, to make it easier to track progress and to identify any issues or challenges that may arise during the porting process.
 - no shims, no stubs, no wrappers - we want to have a complete and functional port as soon as possible, even if it's not perfect or optimized, we want to have a working port as soon as possible, and then we can improve it later, but we don't want to have any shims or stubs that are not fully functional, because that can cause confusion and can make it harder to track progress and to identify any issues or challenges that may arise during the porting process.
 
+## Platform initialization
+
+- bgfx must be the single owner of renderer/context creation unless the platform layer is deliberately supplying an already-current native context. Do not let SDL and raw platform code both try to create graphics contexts for the same window/canvas.
+- SDL windows used by bgfx should therefore be created with an external graphics context contract.
+- On Emscripten, pass the canvas selector through `bgfx::PlatformData.nwh` and require WebGL 2 / OpenGLES. If a current context is supplied to bgfx, it must already be WebGL 2; otherwise let bgfx create the WebGL context itself.
+- Do not keep a WebGL 1 fallback alive for the current Renegade bgfx renderer. The runtime already depends on WebGL2-class capabilities such as float skin-palette textures.
+- After `bgfx::init()`, do not feed a new `platformData.context` or `platformData.ndt` back through `bgfx::setPlatformData()`. Only the native window/backbuffer side may change during later resize/window reconfiguration.
+
 ## Shadowing
 
 - bgfx shadow maps are the only supported runtime shadow path. Legacy `wwphys` blob/projected shadow systems must not be kept alive in parallel for units or static anim projectors.

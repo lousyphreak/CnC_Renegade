@@ -45,6 +45,17 @@
 
 ## Emscripten build bring-up and data packaging
 
+- Fixed a Chrome-only graphics startup regression in the current Emscripten bgfx path:
+  - `Code/Commando/commando_sdl_main.cpp` now creates the browser SDL window with the same externally managed graphics-context contract used by the desktop bgfx path instead of marking it as an SDL OpenGL-owned window
+  - `Code/ww3d2/bgfxrenderer.cpp` no longer creates a second raw Emscripten WebGL context behind SDL's back; it now either passes through an already-current WebGL 2 context or lets bgfx create the canvas context itself
+  - the Emscripten target now links with an explicit WebGL 2 contract (`MIN_WEBGL_VERSION=2`, `MAX_WEBGL_VERSION=2`, `FULL_ES3=1`)
+  - the bgfx init path now explicitly prefers `OpenGLES` on Emscripten, matching bgfx's browser backend
+- Fixed the follow-on browser abort uncovered during validation:
+  - post-init `Configure_Window()` / `Update_Platform_Window()` calls were re-querying SDL/Emscripten and changing `platformData.context` after `bgfx::init()`
+  - bgfx explicitly forbids changing `context` / `ndt` after initialization, so Chromium aborted inside `bgfx::setPlatformData()`
+  - the runtime now preserves the original immutable bgfx platform-data fields after initialization while still updating drawable size, window mode, and the native window handle path
+- This removes the browser-sensitive split ownership that let Firefox start while Chrome fell back to the legacy `DirectX 8.0 or later is required` outer error after bgfx initialization failed.
+
 - Added a source-controlled Emscripten packaging path for `Commando`:
   - new CMake options `RENEGADE_EMSCRIPTEN_PACKAGE_GAME_DATA` and `RENEGADE_EMSCRIPTEN_DATA_ROOT`
   - a shared `renegade_configure_emscripten_target(...)` helper in `cmake/RenegadeTargets.cmake`
@@ -94,6 +105,12 @@
   - `Renegade.html` loads under headless Chrome with WebGL enabled
   - the game reaches `MainLoop: Entering main loop`
   - a 210-second browser soak completes without JavaScript exceptions or wasm out-of-bounds traps
+- Fixed the remaining Emscripten-only main-menu initialization regression:
+  - packaged the runtime RC/parser inputs the non-Windows dialog path actually needs: `Code/Commando/chat.rc`, `resource.h`, `dialogresource.h`, and `Code/Combat/string_ids.h`
+  - confirmed the real string/conversation databases come from `Renegade/Data/always.dbs`, not the shipped root `00000409.256` / `00000409.016` files
+  - kept the string/conversation DB fallback in `Code/Commando/init.cpp` so startup can load `STRINGS.TDB` / `CONV10.CDB` from `always.dbs` when direct lookup misses
+  - fixed the web-only translation failure by forcing the wwtranslatedb persist-factory object files (`translateobj`, `stringtwiddler`, `tdbcategory`) to stay linked, so `STRINGS.TDB` no longer loads with version metadata but zero string objects under Emscripten
+  - revalidated in headless Chrome with a captured screenshot showing the main menu rendering proper labels (`Single Player`, `Multiplay Internet`, `Options`, `Quit`, etc.) instead of raw `IDS_MENU_TEXT...` tokens
 
 ## GPU mesh lighting and point-light support
 

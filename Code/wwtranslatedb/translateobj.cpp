@@ -48,6 +48,11 @@
 //////////////////////////////////////////////////////////////////////////////
 SimplePersistFactoryClass<TDBObjClass, CHUNKID_TRANSLATE_OBJ> _TranslateObjPersistFactory;
 
+PersistFactoryClass *Get_TranslateObj_Persist_Factory_Link_Anchor(void)
+{
+	return &_TranslateObjPersistFactory;
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 //	Constants

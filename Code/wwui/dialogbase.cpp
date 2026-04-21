@@ -67,6 +67,7 @@
 #include "healthbarctrl.h"
 #include "systimer.h"
 #include "stylemgr.h"
+#include "wwdebug.h"
 
 
 ////////////////////////////////////////////////////////////////

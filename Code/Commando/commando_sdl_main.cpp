@@ -490,11 +490,9 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_HIGH_PIXEL_DENSITY_BOOLEAN, true);
     SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_HIDDEN_BOOLEAN, app->smoke_test);
     SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, !app->smoke_test);
-#ifdef __EMSCRIPTEN__
-    SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
-    SDL_SetStringProperty(window_props, SDL_PROP_WINDOW_CREATE_EMSCRIPTEN_CANVAS_ID_STRING, "#canvas");
-#else
     SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_EXTERNAL_GRAPHICS_CONTEXT_BOOLEAN, true);
+#ifdef __EMSCRIPTEN__
+    SDL_SetStringProperty(window_props, SDL_PROP_WINDOW_CREATE_EMSCRIPTEN_CANVAS_ID_STRING, "#canvas");
 #endif
 
     app->window = SDL_CreateWindowWithProperties(window_props);

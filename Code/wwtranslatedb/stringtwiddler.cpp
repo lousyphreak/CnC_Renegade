@@ -47,6 +47,11 @@
 //////////////////////////////////////////////////////////////////////////////
 SimplePersistFactoryClass<StringTwiddlerClass, CHUNKID_STRING_TWIDDLER> _StringTwiddlerPersistFactory;
 
+PersistFactoryClass *Get_StringTwiddler_Persist_Factory_Link_Anchor(void)
+{
+	return &_StringTwiddlerPersistFactory;
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 //	Constants

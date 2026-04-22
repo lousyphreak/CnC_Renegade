@@ -86,7 +86,6 @@ enum {
 };
 
 int MovieStartupMode = STARTUP_MOVIE_OFF;
-bool	IntroMovieSkipAllowed = false;
 bool	SkipAllIntroMovies = false;
 
 void	MovieGameModeClass::Init()
@@ -98,7 +97,6 @@ void	MovieGameModeClass::Init()
 
 	RegistryClass registry( APPLICATION_SUB_KEY_NAME_OPTIONS );
 	if ( registry.Is_Valid() ) {
-		IntroMovieSkipAllowed = registry.Get_Bool( "IntroMovieSkipAllowed", false );
 		SkipAllIntroMovies = registry.Get_Bool( "SkipAllIntroMovies", false );
 		registry.Set_Bool( "SkipAllIntroMovies", SkipAllIntroMovies );
 	}
@@ -123,11 +121,6 @@ void 	MovieGameModeClass::Think()
 
 		if ( IsPending == false && BINKMovie::Is_Complete() ) {
 			Movie_Done();
-			return;
-		}
-
-		if (( MovieStartupMode == STARTUP_MOVIE_INTRO ) && 
-			( IntroMovieSkipAllowed == false )) {
 			return;
 		}
 
@@ -309,13 +302,6 @@ void	MovieGameModeClass::Movie_Done( void )
 #else
 		RenegadeDialogMgrClass::Goto_Location (RenegadeDialogMgrClass::LOC_MAIN_MENU);
 #endif //MULTIPLAYERDEMO
-
-		IntroMovieSkipAllowed = true;
-
-		RegistryClass registry( APPLICATION_SUB_KEY_NAME_OPTIONS );
-		if ( registry.Is_Valid() ) {
-			registry.Set_Bool( "IntroMovieSkipAllowed", true );
-		}
 
 		Deactivate();
 	} else {

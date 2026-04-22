@@ -54,6 +54,7 @@ public:
 	static PhysicalGameObj	*Create_Object( const char *name );
 };
 
-#endif  // OBJLIBRARY_H
+void Force_Link_Combat( void );
 
+#endif  // OBJLIBRARY_H
 

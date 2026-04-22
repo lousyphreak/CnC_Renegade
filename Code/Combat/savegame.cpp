@@ -58,6 +58,7 @@
 #include "texturethumbnail.h"
 #include "systeminfolog.h"
 #include "wwprofile.h"
+#include "wwhack.h"
 #include <stdlib.h>
 #include "specialbuilds.h"
 
@@ -492,6 +493,11 @@ void	SaveGameManager::Save_Level( void )
 
 void	SaveGameManager::Load_Level( void )
 {
+	// Keep the static physics save systems linked into the browser build.
+	// Level loading relies on their static registration side effects, but the
+	// Emscripten link can dead-strip the save-only references otherwise.
+	FORCE_LINK(physstaticsavesystem);
+
 	Debug_Say(( "Load Level %s\n", MapFilename.Peek_Buffer() ));
 	Load_Save_Load_System( MapFilename, false );	// false = no automatic post load processing (needs to be called explicitly)
 }

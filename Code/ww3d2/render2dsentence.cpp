@@ -604,7 +604,12 @@ Render2DSentenceClass::Render2DSentenceClass (void) :
 	WrapWidth (0),
 	TabStop (5.0),
 	DrawExtents (0, 0, 0, 0),
-	Renderers(sizeof(PreAllocatedRenderers)/sizeof(RendererDataStruct),PreAllocatedRenderers)
+	Renderers(sizeof(PreAllocatedRenderers)/sizeof(RendererDataStruct),PreAllocatedRenderers),
+	CachedWrapWidth (0.0F),
+	CachedTabStop (0.0F),
+	CachedTextureSizeHint (0),
+	CachedFont (NULL),
+	HasCachedSentence (false)
 {
 	Shader = Render2DClass::Get_Default_Shader ();
 	return ;
@@ -632,6 +637,10 @@ Render2DSentenceClass::~Render2DSentenceClass (void)
 void
 Render2DSentenceClass::Set_Font (FontCharsClass *font)
 {
+	if (Font == font) {
+		return;
+	}
+
 	Reset ();
 	REF_PTR_SET (Font, font);
 	return ;
@@ -662,32 +671,14 @@ Render2DSentenceClass::Reset_Polys (void)
 void
 Render2DSentenceClass::Reset (void)
 {
-	//
-	//	Make sure we unlock the current surface (if necessary)
-	//
-	if (LockedPtr != NULL) {
-		CurSurface->Unlock ();
-		LockedPtr = NULL;
-	}
-
-	//
-	//	Release our hold on the current surface
-	//
-	REF_PTR_RELEASE (CurSurface);
-
-	//
-	//	Free each renderer
-	//
-	for (int i=0;i<Renderers.Count();++i) {
-		delete Renderers[i].Renderer;
-	}
-	Renderers.Reset_Active();
-
-	Cursor.Set (0, 0);
+	Clear_Built_Sentence ();
 	MonoSpaced = false;
-
-	Release_Pending_Surfaces ();
-	Reset_Sentence_Data ();
+	CachedSentenceText = L"";
+	CachedWrapWidth = 0.0F;
+	CachedTabStop = 0.0F;
+	CachedTextureSizeHint = 0;
+	CachedFont = NULL;
+	HasCachedSentence = false;
 	return ;
 }
 
@@ -1005,6 +996,45 @@ Render2DSentenceClass::Reset_Sentence_Data (void)
 
 	SentenceData.Reset_Active();
 	return ;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////
+//
+//	Clear_Built_Sentence
+//
+////////////////////////////////////////////////////////////////////////////////////
+void
+Render2DSentenceClass::Clear_Built_Sentence (void)
+{
+	//
+	//	Make sure we unlock the current surface (if necessary)
+	//
+	if (LockedPtr != NULL) {
+		CurSurface->Unlock ();
+		LockedPtr = NULL;
+	}
+
+	//
+	//	Release our hold on the current surface
+	//
+	REF_PTR_RELEASE (CurSurface);
+
+	//
+	//	Free each renderer
+	//
+	for (int index = 0; index < Renderers.Count (); index ++) {
+		delete Renderers[index].Renderer;
+	}
+	Renderers.Reset_Active ();
+
+	Cursor.Set (0, 0);
+	TextureOffset.Set (0, 0);
+	TextureStartX = 0;
+	CurrTextureSize = 0;
+
+	Release_Pending_Surfaces ();
+	Reset_Sentence_Data ();
 }
 
 
@@ -1409,6 +1439,20 @@ Render2DSentenceClass::Build_Sentence (const WCHAR *text)
 		return;
 	}
 
+	if (Font == NULL) {
+		return;
+	}
+
+	if (HasCachedSentence &&
+		CachedFont == Font &&
+		CachedWrapWidth == WrapWidth &&
+		CachedTabStop == TabStop &&
+		CachedTextureSizeHint == TextureSizeHint &&
+		CachedSentenceText == text)
+	{
+		return;
+	}
+
 	//
 	//	Start fresh
 	//
@@ -1427,6 +1471,7 @@ Render2DSentenceClass::Build_Sentence (const WCHAR *text)
 	//
 	//	Loop over all the characters in the string
 	//
+	const WCHAR *original_text = text;
 	while (text != NULL) {
 		WCHAR ch = *text++;
 
@@ -1532,6 +1577,13 @@ Render2DSentenceClass::Build_Sentence (const WCHAR *text)
 			TextureOffset.I += char_spacing;
 		}
 	}
+
+	CachedSentenceText = original_text;
+	CachedWrapWidth = WrapWidth;
+	CachedTabStop = TabStop;
+	CachedTextureSizeHint = TextureSizeHint;
+	CachedFont = Font;
+	HasCachedSentence = true;
 
 	return ;
 }

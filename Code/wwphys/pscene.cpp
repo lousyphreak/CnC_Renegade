@@ -118,6 +118,8 @@
 #include "physresourcemgr.h"
 #include "phys3.h"
 
+static void Force_Link_Modules(void);
+
 #include "umbrasupport.h"
 
 
@@ -232,6 +234,8 @@ PhysicsSceneClass::PhysicsSceneClass(void) :
 	UpdateOnlyVisibleObjects(false),
 	CurrentFrameNumber(0)
 {
+	Force_Link_Modules();
+
 	WWASSERT_PRINT(TheScene == NULL,"Only one instance of the PhysicsSceneClass is allowed.\r\n");
 	WWMEMLOG(MEM_PHYSICSDATA);
 	TheScene = this;
@@ -2235,7 +2239,7 @@ void PhysicsSceneClass::StatsStruct::Reset(void)
 /*
 ** Force-Link relevant modules from WWPhys
 */
-void Force_Link_Modules(void) 
+static void Force_Link_Modules(void) 
 {
 	FORCE_LINK(decophys);
 	FORCE_LINK(humanphys);

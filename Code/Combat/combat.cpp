@@ -91,6 +91,7 @@
 #include "unitcoordinationzonemgr.h"
 #include "FastAllocator.h"
 #include "screenfademanager.h"
+#include "objlibrary.h"
 #include "animatedsoundmgr.h"
 #include "render2dsentence.h"
 #include "stylemgr.h"
@@ -156,6 +157,8 @@ static	PhysicsSceneClass	*	GameScene	= NULL;
 void	CombatManager::Init( bool render_available )
 {
 //	Debug_Say(("CombatManager::Init\n"));
+
+	Force_Link_Combat();
 
 	IsGameplayPermitted=false;
 
@@ -1386,5 +1389,3 @@ void	CombatManager::Register_Star_Killer( ArmedGameObj * killer )
 		StarKillerID = 0;
 	}
 }
-
-

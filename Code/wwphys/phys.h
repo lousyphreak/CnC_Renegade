@@ -806,8 +806,8 @@ public:
 	virtual bool					Is_Valid_Config (StringClass &message);
 
 	// accessors
-	const StringClass &			Get_Model_Name()					{ return ModelName; }
-	bool								Get_Is_Pre_Lit()					{ return IsPreLit; }
+	const StringClass &			Get_Model_Name() const			{ return ModelName; }
+	bool								Get_Is_Pre_Lit() const			{ return IsPreLit; }
 	
 	//	Editable interface requirements
 	DECLARE_EDITABLE(PhysDefClass,DefinitionClass);

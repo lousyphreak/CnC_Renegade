@@ -44,6 +44,9 @@
 #include "saveload.h"
 #include "rendobj.h"
 #include "phys.h"
+#include "wwhack.h"
+
+DECLARE_FORCE_LINK(physstaticsavesystem);
 
 /*
 ** Instantiate the Physics Static-Data-Save-Systems

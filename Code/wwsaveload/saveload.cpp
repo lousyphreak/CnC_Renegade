@@ -74,7 +74,7 @@ bool SaveLoadSystemClass::Save (ChunkSaveClass &csave,SaveLoadSubSystemClass & s
 	return ok;
 }
 
-bool SaveLoadSystemClass::Load (ChunkLoadClass &cload,bool auto_post_load)
+	bool SaveLoadSystemClass::Load (ChunkLoadClass &cload,bool auto_post_load)
 {
 	WWLOG_PREPARE_TIME_AND_MEMORY("SaveLoadSystemClass::Load");
 	PointerRemapper.Reset();

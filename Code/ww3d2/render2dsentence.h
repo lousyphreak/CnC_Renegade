@@ -46,6 +46,7 @@
 #include "vector.h"
 #include "vector2i.h"
 #include "wwstring.h"
+#include "widestring.h"
 #include "win.h"
 
 #include <vector>
@@ -225,6 +226,7 @@ private:
 	//	Private methods
 	//
 	void	Reset_Sentence_Data (void);
+	void	Clear_Built_Sentence (void);
 	void	Build_Textures (void);
 	void	Record_Sentence_Chunk (void);
 	void	Allocate_New_Surface (const WCHAR *text);
@@ -257,6 +259,12 @@ private:
 	int												LockedStride;
 	TextureClass *									CurTexture;
 	ShaderClass										Shader;
+	WideStringClass								CachedSentenceText;
+	float												CachedWrapWidth;
+	float												CachedTabStop;
+	int												CachedTextureSizeHint;
+	const FontCharsClass *						CachedFont;
+	bool												HasCachedSentence;
 };
 
 #endif	// RENDER2DSENTENCE_H

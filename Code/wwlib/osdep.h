@@ -789,28 +789,86 @@ inline bool Path_Is_Regular_File(const std::string & path)
     return Get_Path_Info(path.c_str(), &info) && info.type == SDL_PATHTYPE_FILE;
 }
 
+struct DirectoryEnumerationContext {
+    std::vector<std::string> *entries;
+};
+
+inline SDL_EnumerationResult SDLCALL Collect_Directory_Entry(void *userdata, const char *, const char *fname)
+{
+    DirectoryEnumerationContext *context = static_cast<DirectoryEnumerationContext *>(userdata);
+    if (context == nullptr || context->entries == nullptr || fname == nullptr || fname[0] == '\0') {
+        return SDL_ENUM_FAILURE;
+    }
+
+    context->entries->emplace_back(fname);
+    return SDL_ENUM_CONTINUE;
+}
+
 inline bool Collect_Directory_Entries(const std::string & directory, std::vector<std::string> & entries)
 {
     if (Try_Get_Cached_Directory_Entries(directory, entries)) {
         return true;
     }
 
-    int count = 0;
-    char ** matches = SDL_GlobDirectory(directory.c_str(), nullptr, static_cast<SDL_GlobFlags>(0), &count);
-    if (matches == nullptr) {
+    entries.clear();
+    DirectoryEnumerationContext context = { &entries };
+    if (!SDL_EnumerateDirectory(directory.c_str(), Collect_Directory_Entry, &context)) {
+        entries.clear();
         return false;
     }
 
-    entries.reserve(static_cast<std::size_t>(count));
-    for (int index = 0; index < count; ++index) {
-        if (matches[index] != nullptr) {
-            entries.emplace_back(matches[index]);
-        }
-    }
-    SDL_free(matches);
-
     Cache_Directory_Entries(directory, entries);
     return true;
+}
+
+inline char Fold_Wildcard_Char(char ch)
+{
+    return static_cast<char>(::tolower(static_cast<unsigned char>(ch)));
+}
+
+inline bool Wildcard_Matches_Case_Insensitive(const char * pattern, const char * text)
+{
+    if (pattern == nullptr || text == nullptr) {
+        return false;
+    }
+
+    const char * star_pattern = nullptr;
+    const char * star_text = nullptr;
+    while (*text != '\0') {
+        if (*pattern == '*') {
+            do {
+                ++pattern;
+            } while (*pattern == '*');
+
+            if (*pattern == '\0') {
+                return true;
+            }
+
+            star_pattern = pattern;
+            star_text = text;
+            continue;
+        }
+
+        if (*pattern == '?' || Fold_Wildcard_Char(*pattern) == Fold_Wildcard_Char(*text)) {
+            ++pattern;
+            ++text;
+            continue;
+        }
+
+        if (star_pattern != nullptr) {
+            pattern = star_pattern;
+            text = ++star_text;
+            continue;
+        }
+
+        return false;
+    }
+
+    while (*pattern == '*') {
+        ++pattern;
+    }
+
+    return *pattern == '\0';
 }
 
 inline bool Find_Case_Insensitive_Path_Component(const std::string & directory, const std::string & component, std::string & matched_component)
@@ -1256,19 +1314,23 @@ inline bool Collect_Matching_Paths(const std::string & directory, const std::str
 {
     paths.clear();
 
-    int count = 0;
-    char ** matches = SDL_GlobDirectory(directory.c_str(), wildcard.c_str(), SDL_GLOB_CASEINSENSITIVE, &count);
-    if (matches == nullptr) {
+    std::vector<std::string> entries;
+    if (!Collect_Directory_Entries(directory, entries)) {
         return false;
     }
 
-    paths.reserve(static_cast<std::size_t>(count));
-    for (int index = 0; index < count; ++index) {
-        if (matches[index] != nullptr) {
-            paths.push_back(Join_Path(directory, matches[index]));
+    const char * effective_wildcard = wildcard.c_str();
+    if (::strcasecmp(effective_wildcard, "*.*") == 0) {
+        effective_wildcard = "*";
+    }
+
+    paths.reserve(entries.size());
+    for (const std::string & entry : entries) {
+        if (effective_wildcard[0] == '\0' || Wildcard_Matches_Case_Insensitive(effective_wildcard, entry.c_str())) {
+            paths.push_back(Join_Path(directory, entry));
         }
     }
-    SDL_free(matches);
+
     return true;
 }
 

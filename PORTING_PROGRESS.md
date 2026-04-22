@@ -1,5 +1,15 @@
 # Porting Progress
 
+## Emscripten WebGL heap ceiling
+
+- Investigated the Firefox browser exception from `WebGL2RenderingContext.texSubImage2D` during bgfx texture uploads.
+- Root cause: the generated Emscripten WebGL glue uses the fast `texSubImage2D(..., heap, srcOffset)` path, and Firefox rejects that path once the wasm heap backing store reaches the 2 GiB boundary.
+- Added a source-controlled Emscripten heap ceiling for Renegade:
+  - new `RENEGADE_EMSCRIPTEN_MAXIMUM_MEMORY_MB` cache setting
+  - default cap set to `2047` MiB when runtime heap growth is enabled
+  - configure-time validation now rejects `INITIAL_MEMORY >= MAXIMUM_MEMORY`
+- This keeps runtime memory growth available for the web port while preventing the browser heap from reaching the WebGL upload failure threshold.
+
 ## Audio multilist duplicate-pruning crash
 
 - Investigated an ASAN/UBSan crash during C4 detonation mode changes and traced it to `Code/WWAudio/SoundScene.cpp` inside `SoundSceneClass::On_Frame_Update`.
@@ -111,6 +121,15 @@
   - kept the string/conversation DB fallback in `Code/Commando/init.cpp` so startup can load `STRINGS.TDB` / `CONV10.CDB` from `always.dbs` when direct lookup misses
   - fixed the web-only translation failure by forcing the wwtranslatedb persist-factory object files (`translateobj`, `stringtwiddler`, `tdbcategory`) to stay linked, so `STRINGS.TDB` no longer loads with version metadata but zero string objects under Emscripten
   - revalidated in headless Chrome with a captured screenshot showing the main menu rendering proper labels (`Single Player`, `Multiplay Internet`, `Options`, `Quit`, etc.) instead of raw `IDS_MENU_TEXT...` tokens
+- Fixed the remaining Emscripten/WebGL lazy texture initialization warnings:
+  - `SkinPaletteTexture` was being created without backing data and then updated via partial `bgfx::updateTexture2D(...)` row uploads, which made Chrome warn that `texSubImage` had to clear uninitialized texture storage first
+  - normal bgfx textures with mipmapping were also created as full mip chains, but the renderer only uploaded the source mip count; WebGL then lazily initialized the missing tail levels during draw calls
+  - `Code/ww3d2/bgfxrenderer.cpp` now initializes the skin palette with one full zero upload immediately after creating the mutable texture, and eagerly defines any missing mip tail levels before a texture is first sampled
+  - revalidated in headless Chrome: the web build reaches `MainLoop: Entering main loop`, a 216-second soak completes, and the browser log no longer reports `texSubImage`, `lazy initialization`, or `drawElementsInstanced` texture warnings
+- Fixed the follow-on regression in skinned meshes:
+  - bgfx treats textures created with initial upload memory as immutable, so the first skin-palette fix accidentally blocked the later per-row `bgfx::updateTexture2D(...)` bone-matrix uploads
+  - the renderer now keeps `SkinPaletteTexture` mutable by creating it empty and then issuing one full zero upload before the regular row updates begin
+  - rebuilt the Emscripten target and revalidated with another 215-second headless Chrome soak; the game still reaches `MainLoop: Entering main loop` and the WebGL lazy-initialization warnings remain gone
 
 ## GPU mesh lighting and point-light support
 

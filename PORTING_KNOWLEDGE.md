@@ -56,6 +56,8 @@
 
 ## Emscripten build notes
 
+- Firefox's WebGL 2 `texSubImage2D(..., srcData, srcOffset)` upload path rejects a wasm heap-backed typed array once the underlying heap reaches the 2 GiB boundary. In practice, leaving Emscripten's growth ceiling at `2147483648` bytes is enough to trigger the browser exception even though the upload itself is much smaller.
+- For this codebase's browser renderer, keep `-sMAXIMUM_MEMORY` below 2 GiB when `-sALLOW_MEMORY_GROWTH=1` is enabled. The current source-controlled default is `2047` MiB via `RENEGADE_EMSCRIPTEN_MAXIMUM_MEMORY_MB`, which stays compatible with the fast WebGL upload path without disabling runtime growth outright.
 - For the current browser renderer path, SDL should create the window/canvas with `SDL_PROP_WINDOW_CREATE_EXTERNAL_GRAPHICS_CONTEXT_BOOLEAN` and let bgfx own WebGL context creation, just like the desktop path already lets bgfx own the native renderer/device.
 - Do not mix SDL window creation with a second manual `emscripten_webgl_create_context(...)` call for the same canvas. Firefox may tolerate the split ownership, but Chrome can end up with a mismatched current context and fail inside `BgfxRenderer::Init()`.
 - `Code/ww3d2/bgfxrenderer.cpp::Query_Native_Window` should only do two things on Emscripten:
@@ -72,6 +74,10 @@
   - `-sMIN_WEBGL_VERSION=2`
   - `-sMAX_WEBGL_VERSION=2`
   - `-sFULL_ES3=1`
+- For bgfx textures on the WebGL path, `createTexture2D(..., hasMips=true, ...)` still implies a full mip chain even if the legacy asset/runtime only provides a shorter mip list.
+- If the renderer only uploads the provided mip levels, Chromium reports lazy initialization on the untouched tail levels during later draw calls; eagerly defining the remaining levels in `Code/ww3d2/bgfxrenderer.cpp` avoids the warning and keeps first-use sampling deterministic.
+- The skinned-mesh palette texture on Emscripten still needs real storage defined up front, but it also has to remain mutable for the later per-row bone-palette updates.
+- In practice, that means `Code/ww3d2/bgfxrenderer.cpp` should create `SkinPaletteTexture` without initial memory and then immediately issue one full-surface zero `bgfx::updateTexture2D(...)` upload. Passing the zero data to `createTexture2D(...)` directly makes the texture immutable and breaks skinned meshes.
 
 - The project-wide SDL include fix belongs in the shared interface target, not in individual libraries. Linking `SDL3::SDL3` through `renegade_project_options` lets the low-level headers include SDL without each legacy target having to remember SDL explicitly.
 - Emscripten/Clang is much stricter than the original MSVC toolchain about:

@@ -109,7 +109,18 @@ function(renegade_configure_emscripten_target target_name)
     )
 
     if(RENEGADE_EMSCRIPTEN_ALLOW_MEMORY_GROWTH)
-        target_link_options("${target_name}" PRIVATE "SHELL:-sALLOW_MEMORY_GROWTH=1")
+        math(EXPR _renegade_emscripten_maximum_memory_bytes "${RENEGADE_EMSCRIPTEN_MAXIMUM_MEMORY_MB} * 1024 * 1024")
+
+        if(_renegade_emscripten_initial_memory_bytes GREATER_EQUAL _renegade_emscripten_maximum_memory_bytes)
+            message(FATAL_ERROR
+                "RENEGADE_EMSCRIPTEN_INITIAL_MEMORY_MB (${RENEGADE_EMSCRIPTEN_INITIAL_MEMORY_MB}) must be smaller than "
+                "RENEGADE_EMSCRIPTEN_MAXIMUM_MEMORY_MB (${RENEGADE_EMSCRIPTEN_MAXIMUM_MEMORY_MB}) when memory growth is enabled.")
+        endif()
+
+        target_link_options("${target_name}" PRIVATE
+            "SHELL:-sALLOW_MEMORY_GROWTH=1"
+            "SHELL:-sMAXIMUM_MEMORY=${_renegade_emscripten_maximum_memory_bytes}"
+        )
     endif()
 
     set(_renegade_emscripten_ww3d2_shader_dir "${PROJECT_BINARY_DIR}/Code/ww3d2/generated/bgfx-shaders")

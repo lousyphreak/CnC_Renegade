@@ -1318,6 +1318,147 @@ uint32_t Get_Compressed_Level_Size(WW3DFormat format, uint32_t width, uint32_t h
     }
 }
 
+uint16_t Get_Min_Mip_Dimension(bool compressed)
+{
+    return compressed ? 4u : 1u;
+}
+
+uint16_t Get_Next_Mip_Dimension(uint16_t dimension, bool compressed)
+{
+    const uint16_t min_dimension = Get_Min_Mip_Dimension(compressed);
+    const uint16_t halved = static_cast<uint16_t>(std::max<uint32_t>(dimension >> 1, min_dimension));
+    return halved;
+}
+
+uint8_t Get_Full_Mip_Count(uint16_t width, uint16_t height, bool compressed)
+{
+    const uint16_t min_dimension = Get_Min_Mip_Dimension(compressed);
+    uint8_t mip_count = 1;
+    while (width > min_dimension || height > min_dimension) {
+        width = Get_Next_Mip_Dimension(width, compressed);
+        height = Get_Next_Mip_Dimension(height, compressed);
+        ++mip_count;
+    }
+    return mip_count;
+}
+
+std::vector<uint8_t> Downsample_BGRA8_Level(
+    const std::vector<uint8_t> &source_pixels,
+    uint16_t source_width,
+    uint16_t source_height,
+    uint16_t destination_width,
+    uint16_t destination_height)
+{
+    std::vector<uint8_t> destination_pixels(
+        static_cast<size_t>(destination_width) * static_cast<size_t>(destination_height) * 4u,
+        0u);
+    if (source_pixels.empty() || source_width == 0 || source_height == 0 || destination_width == 0 || destination_height == 0) {
+        return destination_pixels;
+    }
+
+    for (uint16_t y = 0; y < destination_height; ++y) {
+        const uint32_t source_y0 = (static_cast<uint32_t>(y) * source_height) / destination_height;
+        uint32_t source_y1 = (static_cast<uint32_t>(y + 1u) * source_height) / destination_height;
+        if (source_y1 <= source_y0) {
+            source_y1 = std::min<uint32_t>(source_y0 + 1u, source_height);
+        }
+
+        for (uint16_t x = 0; x < destination_width; ++x) {
+            const uint32_t source_x0 = (static_cast<uint32_t>(x) * source_width) / destination_width;
+            uint32_t source_x1 = (static_cast<uint32_t>(x + 1u) * source_width) / destination_width;
+            if (source_x1 <= source_x0) {
+                source_x1 = std::min<uint32_t>(source_x0 + 1u, source_width);
+            }
+
+            uint32_t accum[4] = {};
+            uint32_t sample_count = 0u;
+            for (uint32_t source_y = source_y0; source_y < source_y1; ++source_y) {
+                for (uint32_t source_x = source_x0; source_x < source_x1; ++source_x) {
+                    const size_t source_offset =
+                        (static_cast<size_t>(source_y) * static_cast<size_t>(source_width) + source_x) * 4u;
+                    accum[0] += source_pixels[source_offset + 0u];
+                    accum[1] += source_pixels[source_offset + 1u];
+                    accum[2] += source_pixels[source_offset + 2u];
+                    accum[3] += source_pixels[source_offset + 3u];
+                    ++sample_count;
+                }
+            }
+
+            if (sample_count == 0u) {
+                continue;
+            }
+
+            const size_t destination_offset =
+                (static_cast<size_t>(y) * static_cast<size_t>(destination_width) + x) * 4u;
+            destination_pixels[destination_offset + 0u] = static_cast<uint8_t>(accum[0] / sample_count);
+            destination_pixels[destination_offset + 1u] = static_cast<uint8_t>(accum[1] / sample_count);
+            destination_pixels[destination_offset + 2u] = static_cast<uint8_t>(accum[2] / sample_count);
+            destination_pixels[destination_offset + 3u] = static_cast<uint8_t>(accum[3] / sample_count);
+        }
+    }
+
+    return destination_pixels;
+}
+
+void Initialize_Missing_Texture_Mips(
+    bgfx::TextureHandle handle,
+    WW3DFormat source_format,
+    bgfx::TextureFormat::Enum bgfx_format,
+    uint16_t base_width,
+    uint16_t base_height,
+    unsigned existing_mip_count,
+    const std::vector<uint8_t> &last_uploaded_bgra8_level,
+    uint16_t last_uploaded_width,
+    uint16_t last_uploaded_height)
+{
+    if (!bgfx::isValid(handle) || existing_mip_count == 0u) {
+        return;
+    }
+
+    const bool compressed = Is_Compressed_Format(source_format);
+    const uint8_t full_mip_count = Get_Full_Mip_Count(base_width, base_height, compressed);
+    if (existing_mip_count >= full_mip_count) {
+        return;
+    }
+
+    const bool can_downsample_bgra8 = !compressed &&
+        bgfx_format == bgfx::TextureFormat::BGRA8 &&
+        !last_uploaded_bgra8_level.empty() &&
+        last_uploaded_width != 0 &&
+        last_uploaded_height != 0;
+
+    std::vector<uint8_t> source_level_pixels = last_uploaded_bgra8_level;
+    uint16_t source_level_width = last_uploaded_width;
+    uint16_t source_level_height = last_uploaded_height;
+
+    for (uint8_t level = static_cast<uint8_t>(existing_mip_count); level < full_mip_count; ++level) {
+        const uint16_t mip_width = Get_Next_Mip_Dimension(source_level_width, compressed);
+        const uint16_t mip_height = Get_Next_Mip_Dimension(source_level_height, compressed);
+
+        std::vector<uint8_t> upload_pixels;
+        if (can_downsample_bgra8) {
+            upload_pixels = Downsample_BGRA8_Level(
+                source_level_pixels,
+                source_level_width,
+                source_level_height,
+                mip_width,
+                mip_height);
+            source_level_pixels = upload_pixels;
+        } else {
+            const uint32_t data_size = compressed
+                ? Get_Compressed_Level_Size(source_format, mip_width, mip_height)
+                : static_cast<uint32_t>(mip_width) * static_cast<uint32_t>(mip_height) * 4u;
+            upload_pixels.assign(data_size, 0u);
+        }
+
+        const bgfx::Memory *memory = bgfx::copy(upload_pixels.data(), static_cast<uint32_t>(upload_pixels.size()));
+        bgfx::updateTexture2D(handle, 0, level, 0, 0, mip_width, mip_height, memory);
+
+        source_level_width = mip_width;
+        source_level_height = mip_height;
+    }
+}
+
 bool Get_Bgfx_Texture_Format(WW3DFormat format, bgfx::TextureFormat::Enum &bgfx_format, bool &direct_copy)
 {
     direct_copy = true;
@@ -2246,6 +2387,7 @@ bgfx::TextureHandle BgfxRenderer::Create_Texture(TextureClass &texture)
 
     const unsigned mip_level_count = texture.Get_Mip_Level_Count();
     const bool has_mips = mip_level_count > 1;
+    const bool source_is_compressed = Is_Compressed_Format(base_description.Format);
     bgfx::TextureHandle handle = bgfx::createTexture2D(
         static_cast<uint16_t>(base_description.Width),
         static_cast<uint16_t>(base_description.Height),
@@ -2258,6 +2400,16 @@ bgfx::TextureHandle BgfxRenderer::Create_Texture(TextureClass &texture)
     if (!bgfx::isValid(handle)) {
         return handle;
     }
+
+    std::vector<uint8_t> last_uploaded_bgra8_level;
+    uint16_t last_uploaded_width = 0u;
+    uint16_t last_uploaded_height = 0u;
+    const bool needs_mip_tail_init =
+        has_mips &&
+        mip_level_count < Get_Full_Mip_Count(
+            static_cast<uint16_t>(base_description.Width),
+            static_cast<uint16_t>(base_description.Height),
+            source_is_compressed);
 
     for (unsigned level = 0; level < mip_level_count; ++level) {
         SurfaceClass *surface = texture.Get_Surface_Level(level);
@@ -2288,6 +2440,11 @@ bgfx::TextureHandle BgfxRenderer::Create_Texture(TextureClass &texture)
                 ? Get_Compressed_Level_Size(description.Format, static_cast<uint32_t>(width), static_cast<uint32_t>(height))
                 : static_cast<uint32_t>(width) * static_cast<uint32_t>(height) * static_cast<uint32_t>(source_pixel_size);
             memory = bgfx::copy(source_pixels, data_size);
+            if (needs_mip_tail_init && texture_format == bgfx::TextureFormat::BGRA8 && !source_is_compressed) {
+                last_uploaded_bgra8_level.assign(source_pixels, source_pixels + data_size);
+                last_uploaded_width = static_cast<uint16_t>(width);
+                last_uploaded_height = static_cast<uint16_t>(height);
+            }
         } else {
             if (!Convert_Surface_Copy_To_BGRA8(description, source_pixels, converted_pixels)) {
                 delete[] source_pixels;
@@ -2295,6 +2452,11 @@ bgfx::TextureHandle BgfxRenderer::Create_Texture(TextureClass &texture)
                 return BGFX_INVALID_HANDLE;
             }
             memory = bgfx::copy(converted_pixels.data(), static_cast<uint32_t>(converted_pixels.size()));
+            if (needs_mip_tail_init && texture_format == bgfx::TextureFormat::BGRA8 && !source_is_compressed) {
+                last_uploaded_bgra8_level = converted_pixels;
+                last_uploaded_width = static_cast<uint16_t>(width);
+                last_uploaded_height = static_cast<uint16_t>(height);
+            }
         }
 
         delete[] source_pixels;
@@ -2307,6 +2469,19 @@ bgfx::TextureHandle BgfxRenderer::Create_Texture(TextureClass &texture)
             static_cast<uint16_t>(width),
             static_cast<uint16_t>(height),
             memory);
+    }
+
+    if (needs_mip_tail_init) {
+        Initialize_Missing_Texture_Mips(
+            handle,
+            base_description.Format,
+            texture_format,
+            static_cast<uint16_t>(base_description.Width),
+            static_cast<uint16_t>(base_description.Height),
+            mip_level_count,
+            last_uploaded_bgra8_level,
+            last_uploaded_width,
+            last_uploaded_height);
     }
 
     return handle;
@@ -3408,6 +3583,23 @@ bool BgfxRenderer::Init_Render_Resources()
             bgfx::TextureFormat::RGBA32F,
             BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP |
                 BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT);
+        if (bgfx::isValid(SkinPaletteTexture)) {
+            std::vector<float> initial_skin_palette(
+                static_cast<size_t>(SkinPaletteWidth) * static_cast<size_t>(SkinPaletteHeight) * 4u,
+                0.0f);
+            const bgfx::Memory *initial_skin_palette_memory = bgfx::copy(
+                initial_skin_palette.data(),
+                static_cast<uint32_t>(initial_skin_palette.size() * sizeof(float)));
+            bgfx::updateTexture2D(
+                SkinPaletteTexture,
+                0,
+                0,
+                0,
+                0,
+                SkinPaletteWidth,
+                SkinPaletteHeight,
+                initial_skin_palette_memory);
+        }
     }
 
     if (!bgfx::isValid(OverlayProgram))

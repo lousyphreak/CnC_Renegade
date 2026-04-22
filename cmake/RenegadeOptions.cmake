@@ -28,6 +28,7 @@ option(RENEGADE_EMSCRIPTEN_PACKAGE_GAME_DATA "Preload shipped game data into the
 set(RENEGADE_EMSCRIPTEN_DATA_ROOT "${PROJECT_SOURCE_DIR}/Renegade" CACHE PATH "Shipped game data root used for Emscripten packaging")
 option(RENEGADE_EMSCRIPTEN_ALLOW_MEMORY_GROWTH "Allow the Emscripten heap to grow at runtime" ${EMSCRIPTEN})
 set(RENEGADE_EMSCRIPTEN_INITIAL_MEMORY_MB "256" CACHE STRING "Initial Emscripten heap size in MiB")
+set(RENEGADE_EMSCRIPTEN_MAXIMUM_MEMORY_MB "2047" CACHE STRING "Maximum Emscripten heap size in MiB when runtime growth is enabled")
 option(RENEGADE_ENABLE_ASAN "Instrument Renegade targets with AddressSanitizer" OFF)
 option(RENEGADE_ENABLE_UBSAN "Instrument Renegade targets with UndefinedBehaviorSanitizer" OFF)
 option(RENEGADE_ENABLE_TSAN "Instrument Renegade targets with ThreadSanitizer" OFF)

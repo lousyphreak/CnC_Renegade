@@ -2557,7 +2557,11 @@ DX8Wrapper::Set_Render_Target (TextureClass * texture)
 {
 	WWASSERT(texture != NULL);
 	if (BgfxRenderer::Is_Initted()) {
-		WWASSERT(BgfxRenderer::Set_Render_Target(*texture));
+		const bool render_target_set = BgfxRenderer::Set_Render_Target(*texture);
+		WWASSERT(render_target_set);
+		if (!render_target_set) {
+			return;
+		}
 		IsRenderToTexture = true;
 		return;
 	}

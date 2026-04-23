@@ -810,12 +810,15 @@ DynamicVBAccessClass::WriteLockClass::~WriteLockClass()
 {
 	switch (DynamicVBAccess->Get_Type()) {
 	case BUFFER_TYPE_DYNAMIC_RENDER:
+	{
 		WWASSERT(BgfxMemory != nullptr);
 		Swizzle_Vertex_Colors_In_Place(BgfxMemory->data, DynamicVBAccess->Vertex_Format_Info(), DynamicVBAccess->Get_Vertex_Count());
-		WWASSERT(static_cast<RenderVertexBufferClass *>(DynamicVBAccess->VertexBuffer)->Update_Bgfx_Dynamic_Buffer(
+		const bool buffer_updated = static_cast<RenderVertexBufferClass *>(DynamicVBAccess->VertexBuffer)->Update_Bgfx_Dynamic_Buffer(
 			DynamicVBAccess->VertexBufferOffset,
-			BgfxMemory));
+			BgfxMemory);
+		WWASSERT(buffer_updated);
 		break;
+	}
 	case BUFFER_TYPE_DYNAMIC_SORTING:
 		break;
 	default:

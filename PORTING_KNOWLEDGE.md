@@ -1,5 +1,25 @@
 # Porting Knowledge
 
+## Assertion macro contract
+
+- In this tree, the main runtime assertion families that disappear in non-debug builds are:
+  - `Code/wwdebug/wwdebug.h`: `WWASSERT`, `WWASSERT_PRINT`
+  - `Code/wwlib/wwlib_debug.h`: `WWASSERT`, `WWASSERT_PRINT`
+  - wrappers such as `fw_assert`, `pm_assert`, and `ds_assert` when they map to those debug-only assertions
+- Keep assertion expressions side-effect free. Required work must happen before the assertion, not inside it.
+- Safe pattern:
+  - compute or mutate state first
+  - store the result if needed
+  - assert only the final predicate
+- Example:
+  - `bool ok = DoRequiredWork();`
+  - `WWASSERT(ok);`
+- Concrete examples fixed in-tree:
+  - `WWASSERT(BgfxRenderer::Set_Render_Target(*texture));` was unsafe because the render-target switch disappeared in release
+  - `WWASSERT(vertex_buffer->Update_Bgfx_Dynamic_Buffer(...));` was unsafe because the upload disappeared in release
+  - `assert(_getcwd(...))` / `assert(_chdir(...))` / `assert(_fullpath(...))` were unsafe because path resolution work disappeared in release
+- Future changes should preserve this contract by keeping assertions as validation only.
+
 ## SoundScene multilist removal contract
 
 - `SoundSceneClass::On_Frame_Update` builds temporary `MultiListClass<AudibleInfoClass>` collections for primary and auxiliary audible sounds, then prunes duplicates before handing the surviving `sound_obj` entries to the active audible list.

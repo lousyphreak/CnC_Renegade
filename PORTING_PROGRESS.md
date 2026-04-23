@@ -1,5 +1,24 @@
 # Porting Progress
 
+## Assertion macro audit
+
+- Audited the in-tree runtime assertion families that can compile out in release builds, including:
+  - `WWASSERT` / `WWASSERT_PRINT`
+  - `fw_assert`
+  - `pm_assert`
+  - `ds_assert`
+  - project `assert` / `ASSERT` / `VERIFY` usage under `Code/`
+- Double-checked the full `Code/` tree for required logic hidden inside assertion expressions, with extra passes for multiline invocations and hard side-effect patterns such as:
+  - assignment / compound assignment
+  - `++` / `--`
+  - `new` / `delete`
+  - state-changing calls hidden inside assertion predicates
+- Fixed the live release-sensitive sites found by the stricter pass:
+  - `Code/ww3d2/dx8wrapper.cpp`: `BgfxRenderer::Set_Render_Target(*texture)` now runs unconditionally, with `WWASSERT` validating the result instead of owning the call
+  - `Code/ww3d2/bgfxdynamicbuffer.cpp`: dynamic bgfx vertex-buffer upload now runs outside the assertion in `DynamicVBAccessClass::WriteLockClass::~WriteLockClass()`
+  - `Code/Tools/max2w3d/w3dexp.cpp`: hierarchy-path resolution no longer depends on `assert(_getcwd/_chdir/_fullpath)` side effects and now reports real failures explicitly
+- The stricter tree-wide parser no longer reports live in-tree assertion predicates with required side effects.
+
 ## Emscripten WebGL heap ceiling
 
 - Investigated the Firefox browser exception from `WebGL2RenderingContext.texSubImage2D` during bgfx texture uploads.

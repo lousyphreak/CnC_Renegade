@@ -1062,19 +1062,51 @@ bool W3dExportClass::get_export_options(int32_t suppress_prompts)
 			// figure out the absolute directory where the hierarchy file
 			// is stored.
 			char curdir[_MAX_DRIVE + _MAX_DIR + 1];
-			assert(_getcwd(curdir, sizeof(curdir)));
-			assert(_chdir(CurrentScenePath) != -1);
-			assert(_fullpath(HierarchyFilename, options->RelativeHierarchyFilename,
-				sizeof(HierarchyFilename)));
-			assert(_chdir(curdir) != -1);
+			char message[512];
+
+			if (_getcwd(curdir, sizeof(curdir)) == NULL) {
+				MessageBox(MaxInterface->GetMAXHWnd(),
+					"Unable to resolve the hierarchy file because the current working directory could not be read.",
+					"Error",
+					MB_OK | MB_SETFOREGROUND);
+				retval = false;
+				HierarchyFilename[0] = '\0';
+			} else {
+				const int scene_dir_changed = _chdir(CurrentScenePath);
+				WWASSERT(scene_dir_changed != -1);
+				if (scene_dir_changed == -1) {
+					sprintf(message, "Unable to switch to the scene directory while resolving the hierarchy file:\n%s", CurrentScenePath);
+					MessageBox(MaxInterface->GetMAXHWnd(), message, "Error", MB_OK | MB_SETFOREGROUND);
+					retval = false;
+					HierarchyFilename[0] = '\0';
+				} else {
+					char *resolved_path = _fullpath(HierarchyFilename, options->RelativeHierarchyFilename, sizeof(HierarchyFilename));
+					const int restored_dir = _chdir(curdir);
+					WWASSERT(resolved_path != NULL);
+					WWASSERT(restored_dir != -1);
+					if (resolved_path == NULL) {
+						sprintf(message, "Unable to resolve the hierarchy file path:\n%s", options->RelativeHierarchyFilename);
+						MessageBox(MaxInterface->GetMAXHWnd(), message, "Error", MB_OK | MB_SETFOREGROUND);
+						retval = false;
+						HierarchyFilename[0] = '\0';
+					} else if (restored_dir == -1) {
+						sprintf(message, "Unable to restore the working directory after resolving the hierarchy file:\n%s", curdir);
+						MessageBox(MaxInterface->GetMAXHWnd(), message, "Error", MB_OK | MB_SETFOREGROUND);
+						retval = false;
+						HierarchyFilename[0] = '\0';
+					}
+				}
+			}
 		}
 		else
 			strcpy(HierarchyFilename,options->HierarchyFilename);
 
-		if (ExportOptions.TranslationOnly) {
-			FixupType = HierarchySaveClass::MATRIX_FIXUP_TRANS;
-		} else {
-			FixupType = HierarchySaveClass::MATRIX_FIXUP_TRANS_ROT;
+		if (retval) {
+			if (ExportOptions.TranslationOnly) {
+				FixupType = HierarchySaveClass::MATRIX_FIXUP_TRANS;
+			} else {
+				FixupType = HierarchySaveClass::MATRIX_FIXUP_TRANS_ROT;
+			}
 		}
 	}
 
@@ -1232,4 +1264,3 @@ static HierarchySaveClass * load_hierarchy_file(char * filename)
 
 	return hier;
 }
-

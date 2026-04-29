@@ -1,6 +1,6 @@
 # Renderer Modernization Plan
 
-Last updated: 2026-04-29
+Last updated: 2026-04-30
 
 This document turns the findings from `10-static-mesh-and-terrain-batching-audit.md` and `BGFX-PORT.md` into a concrete refactor plan for the runtime renderer. The plan is deliberately aimed at a **modern, high-throughput renderer** rather than a compatibility bridge.
 
@@ -169,7 +169,7 @@ The sequence below is the recommended order because later batching work will not
 - `DX8TextureCategoryClass::Render`, `MeshClass::Render_Material_Pass`, `RenegadeTerrainPatchClass`, and `SortingRendererClass` now submit explicit draw packets with world/view/projection, shadow flags, lighting packets, and fixed-function state
 - `VertexMaterialClass`, `TextureMapperClass`, and the projector-oriented `MatrixMapperClass` now synthesize texcoord-index, texture-transform, and bump-environment submission state directly for the active bgfx path instead of relying on wrapper-side `Apply_Render_State_Changes()` side effects
 - overlay and movie submission were already on the explicit submission side and now align with the same renderer-owned packet model
-- this phase is **not** globally finished for every legacy/editor/debug path because `WW3D::Set_*`, `DX8Wrapper`, and fixed-function-era state objects still exist outside the maintained runtime path
+- this phase is **not** globally finished for every legacy/debug path because `WW3D::Set_*`, `DX8Wrapper`, and fixed-function-era state objects still exist outside the maintained runtime path
 
 ### Phase 2: replace the lighting and shadow contract
 
@@ -268,7 +268,7 @@ The sequence below is the recommended order because later batching work will not
 - keep authored material meaning, but stop treating texture-category visible lists as the runtime owner for rigid opaque draws
 - pre-classify rigid opaque materials into renderer-facing pipeline keys and cached classification records
 - keep registration persistent across mesh instances keyed by model plus user-lighting identity
-- keep skins, sorted/translucent meshes, aligned/oriented billboard cases, terrain, and editor-only rendering on compatibility paths until their dedicated phases land
+- keep skins, sorted/translucent meshes, aligned/oriented billboard cases, and terrain on compatibility paths until their dedicated phases land
 
 **Exit condition**
 
@@ -311,31 +311,58 @@ The sequence below is the recommended order because later batching work will not
 
 - visible terrain renders through scene-managed batches rather than patch-local pass loops
 
-### Phase 6: remove projector-era main-path ownership and replace it with explicit systems
+**Status**
+
+- implemented for runtime terrain submission
+- `TerrainRenderBatchManagerClass` now owns terrain batch pages keyed by `RenegadeTerrainPatchClass *`, with one combined render vertex/index buffer per terrain page and explicit per-material/pass draw ranges
+- `PhysicsSceneClass::Pre_Render_Processing()` prepares visible terrain pages before rendering, and `PhysicsSceneClass::Render_Object()` routes terrain base and material-effect passes through the scene-owned terrain batch manager
+- `RenegadeTerrainMaterialPassClass` no longer owns render vertex/index buffers; it now only carries terrain source material/layer data used to build scene pages
+- `RenegadeTerrainPatchClass::Render()` remains as a compatibility fallback, but it builds a temporary terrain batch page instead of restoring patch-local buffer ownership
+- terrain draw ranges explicitly keep shadow receiving enabled for both base and alpha terrain layers, and terrain material/projector pass replay covers the same terrain layer ranges as the old patch-local loops
+- collision, culling, surface lookup, lighting solve data, UV generation, and terrain patch identity remain on `RenegadeTerrainPatchClass`
+
+### Phase 6: delete projector-era runtime ownership and reintroduce only explicit systems
 
 **Objective**
 
-- delete receiver-side projector replay and keep only explicit projected-effect systems that still justify their cost
+- delete projector-driven receiver replay as a renderer architecture, and keep only explicit projected-effect systems that still justify their cost
 
 **Primary code areas**
 
 - `Code/ww3d2/texproject*`
+- `Code/ww3d2/matrixmapper*`
+- `Code/ww3d2/mesh.cpp`
+- `Code/ww3d2/rinfo*`
 - `Code/ww3d2/projector*`
 - `Code/wwphys/pscene_projectors.cpp`
 - `Code/wwphys/projectormanager*`
 - `Code/wwphys/phystexproject.cpp`
 - `Code/wwphys/physdecalsys*`
+- `Code/Commando/systemsettings.cpp`
+- `Code/Commando/dlgconfigperformancetab.cpp`
+- `Code/Commando/consolefunction.cpp`
 
 **Work**
 
 - finish collapsing legacy shadow/projector modes onto the shadow-map path
-- split surviving effects into clear buckets: shadow maps, decals, bounded projected effects, or removal
-- if a projected effect survives for runtime content, keep it as renderer-owned data and precompute static associations where practical
-- never reintroduce receiver-side extra-pass replay as the default effect mechanism
+- split surviving effects into clear buckets: shadow maps, decals, bounded projected effects, or removal; do not keep a generic runtime projector bucket
+- replace camera-space texgen and receiver-side `MaterialPassClass` replay with explicit world-space effect data owned by the renderer
+- if a projected effect survives for runtime content, keep it as renderer-owned data and precompute static projector-to-static-world associations where practical
+- remap or remove runtime settings, console hooks, and debug toggles that only advertise dead projector-era behavior
+- never reintroduce receiver-side extra-pass replay, transient receiver effect attachment, or per-projector receiver re-render as the default effect mechanism
+- do not carry editor-only projector/debug behavior forward as part of this refactor
 
 **Exit condition**
 
-- projectors are no longer a structural reason that static meshes or terrain re-render per receiver
+- projectors are no longer a structural reason that static meshes or terrain re-render per receiver, and no maintained runtime path depends on camera-space projector state or receiver-side pass replay
+
+**Status**
+
+- implemented for the maintained runtime path
+- `PhysicsSceneClass::Render_Objects()` no longer injects projector replay before world rendering, and the old receiver-side `Apply_Projectors(...)` / `Apply_Projector_To_Objects(...)` path has been removed
+- the maintained runtime world path no longer depends on transient receiver effect attachment or `RenderInfoClass` additional-pass replay to express projected effects
+- `StaticAnimPhysClass` no longer instantiates legacy object-owned texture projectors; `ProjectorManagerDefClass` is asset-compatibility input only and is no longer a renderer feature boundary
+- remaining projector-era runtime settings and debug/config surfaces are cleanup targets or migration shims, not architectural commitments for the modern renderer
 
 ### Phase 7: converge dynamic, sorted, skinned, overlay, and video paths under the same renderer ownership
 
@@ -421,11 +448,6 @@ The interface break is only complete if the major consumers move with it.
 
 - clean up `Shadow_Mode`, projector toggles, and related debug/config surfaces
 - expose only settings that still map to the new renderer architecture
-
-### Tools and editor code
-
-- LevelEdit and similar tools are not a design constraint for this plan
-- if they share headers, isolate or adapt them after the runtime contract is stable; do not let them keep the runtime renderer DX8-shaped
 
 ## Areas where the plan must stay conservative
 

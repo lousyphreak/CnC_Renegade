@@ -55,9 +55,7 @@ class StaticAnimPhysDefClass;
 ** This class is a static object which needs to perform additional processing 
 ** each frame.  Here are some of the features planned for this class:
 ** - animation which causes collisions in the world (like doors, elevators and more)
-** - animation which updates a texture projector for effects like spot-lights, animated shadows
 ** - It can cause collisions due to its model animating (e.g. doors, lifts)
-** and it can manage a texture projector. 
 ** - Possibly support multiple models and switch between the models for damage
 */
 class StaticAnimPhysClass : public StaticPhysClass
@@ -115,12 +113,6 @@ protected:
 	virtual void								Update_Sun_Status(void);
 
 protected:
-
-	/*
-	** Attached Projector Management
-	*/
-	ProjectorManagerClass					ProjectorManager;
-
 	/*
 	** Animation, animated collision, and rider management
 	*/
@@ -177,7 +169,7 @@ protected:
 	// Animation and animated collision support
 	AnimCollisionManagerDefClass			AnimManagerDef;
 
-	// Animated projector support
+	// Legacy serialized projector data retained for asset compatibility.
 	ProjectorManagerDefClass				ProjectorManagerDef;
 
 	// Static shadow support 

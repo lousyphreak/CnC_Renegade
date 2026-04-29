@@ -37,6 +37,7 @@
 #include "render2dsentence.h"
 #include "surfaceclass.h"
 #include "texture.h"
+#include "ww3d.h"
 #include "wwprofile.h"
 #include "wwmemlog.h"
 #include "dx8wrapper.h"
@@ -731,7 +732,7 @@ Render2DSentenceClass::Set_Shader (ShaderClass shader)
 void
 Render2DSentenceClass::Render (void)
 {
-	if (DX8Wrapper::Is_Device_Lost() || !DX8Wrapper::Is_Initted()) return;
+	if (!WW3D::Is_Device_Ready()) return;
 	//
 	//	Build any textures that are pending
 	//

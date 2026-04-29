@@ -620,8 +620,6 @@ DlgConfigPerformanceTabClass::On_Apply (void)
 		//	Pass the values onto the game
 		//
 		COMBAT_SCENE->Set_Polygon_Budgets (lod_budget, lod_budget);
-		COMBAT_SCENE->Enable_Dynamic_Projectors ((shadow_mode != PhysicsSceneClass::SHADOW_MODE_NONE));
-		COMBAT_SCENE->Enable_Static_Projectors ((static_shadows != 0));
 		// Note! It is important to invalidate all textures when
 		// changing the amount of render targets, as render target
 		// creation may have problems if the card is running low on

@@ -352,9 +352,9 @@ void	SystemSettingEntryEnum::Set_Selection( const char * name )
 class	SystemSettingEntryStaticProjectors : public SystemSettingEntryBool {
 public:
 	const char * Get_Name( void )	{ return "Static_Projectors"; }
-	const char * Get_Help( void )	{ return "STATIC_PROJECTORS - toggles static projectors."; }
-	virtual bool Get_Bool( void )			{ if ( COMBAT_SCENE ) return COMBAT_SCENE->Are_Static_Projectors_Enabled(); return State; }
-	virtual void Set_Bool( bool state )	{ if ( COMBAT_SCENE ) COMBAT_SCENE->Enable_Static_Projectors( state ); }
+	const char * Get_Help( void )	{ return "STATIC_PROJECTORS - legacy compatibility setting retained for old configs; it no longer drives the runtime renderer."; }
+	virtual bool Get_Bool( void )			{ return State; }
+	virtual void Set_Bool( bool state )	{ State = state; }
 };
 
 /***********************************************************************************************/
@@ -362,9 +362,9 @@ public:
 class	SystemSettingEntryDynamicProjectors : public SystemSettingEntryBool {
 public:
 	const char * Get_Name( void )	{ return "Dynamic_Projectors"; }
-	const char * Get_Help( void )	{ return "DYNAMIC_PROJECTORS - toggles dynamic projectors."; }
-	virtual bool Get_Bool( void )			{ if ( COMBAT_SCENE ) return COMBAT_SCENE->Are_Dynamic_Projectors_Enabled(); return State; }
-	virtual void Set_Bool( bool state )	{ if ( COMBAT_SCENE ) COMBAT_SCENE->Enable_Dynamic_Projectors( state ); }
+	const char * Get_Help( void )	{ return "DYNAMIC_PROJECTORS - legacy compatibility setting retained for old configs; it no longer drives the runtime renderer."; }
+	virtual bool Get_Bool( void )			{ return State; }
+	virtual void Set_Bool( bool state )	{ State = state; }
 };
 
 /***********************************************************************************************/

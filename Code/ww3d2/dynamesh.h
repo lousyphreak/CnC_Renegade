@@ -49,6 +49,7 @@
 class	ShaderClass;
 class	IntersectionClass;
 class	IntersectionResultClass;
+class Matrix3D;
 
 /*
 ** DynamicMeshModel: used for low-level rendering of DynamicMeshClass.
@@ -74,7 +75,7 @@ public:
 	void	Reset(void);
 
 	// Render mesh
-	void	Render(RenderInfoClass & rinfo);
+	void	Render(RenderInfoClass & rinfo, const Matrix3D &world);
 
 	// Set current polygon and vertex counts
 	void	Set_Counts(int pnum, int vnum)	{ DynamicMeshPNum = pnum;	DynamicMeshVNum = vnum;	}

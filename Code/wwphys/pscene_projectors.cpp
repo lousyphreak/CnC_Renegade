@@ -55,12 +55,8 @@
 #include "vertexbuffer.h"
 #include "indexbuffer.h"
 #include "pot.h"
-#include "materialeffect.h"
 #include "wwmemlog.h"
 #include "vertmaterial.h"
-
-
-#define DEBUG_SHADOW_RENDERING				0
 
 const int		SHADOW_CLIP_FAR							= 500;
 
@@ -426,17 +422,13 @@ void PhysicsSceneClass::Add_Static_Texture_Projector(TexProjectClass * newprojec
 	WWASSERT(!StaticProjectorList.Is_In_List(newprojector));
 
 	StaticProjectorList.Add(newprojector);
-	StaticProjectorCullingSystem->Add_Object(newprojector);
 }
 
 void PhysicsSceneClass::Remove_Static_Texture_Projector(TexProjectClass * projector)
 {
 	WWASSERT(projector);
-
-	if (projector->Get_Culling_System() == StaticProjectorCullingSystem) {
-		WWASSERT(StaticProjectorList.Is_In_List(projector));
+	if (StaticProjectorList.Is_In_List(projector)) {
 		StaticProjectorList.Remove(projector);
-		StaticProjectorCullingSystem->Remove_Object(projector);
 	}
 }
 
@@ -446,17 +438,13 @@ void PhysicsSceneClass::Add_Dynamic_Texture_Projector(TexProjectClass * newproje
 	WWASSERT(!DynamicProjectorList.Is_In_List(newprojector));
 
 	DynamicProjectorList.Add(newprojector);
-	DynamicProjectorCullingSystem->Add_Object(newprojector);
 }
 
 void PhysicsSceneClass::Remove_Dynamic_Texture_Projector(TexProjectClass * projector)
 {
 	WWASSERT(projector);
-
-	if (projector->Get_Culling_System() == DynamicProjectorCullingSystem) {
-		WWASSERT(DynamicProjectorList.Is_In_List(projector));
+	if (DynamicProjectorList.Is_In_List(projector)) {
 		DynamicProjectorList.Remove(projector);
-		DynamicProjectorCullingSystem->Remove_Object(projector);
 	}
 }
 
@@ -465,10 +453,8 @@ void PhysicsSceneClass::Remove_Texture_Projector(TexProjectClass * projector)
 	WWASSERT(projector);
 
 	if (DynamicProjectorList.Is_In_List(projector)) {
-		DynamicProjectorCullingSystem->Remove_Object(projector);
 		DynamicProjectorList.Remove(projector);
 	} else if (StaticProjectorList.Is_In_List(projector)) {
-		StaticProjectorCullingSystem->Remove_Object(projector);
 		StaticProjectorList.Remove(projector);
 	}
 }
@@ -476,254 +462,4 @@ void PhysicsSceneClass::Remove_Texture_Projector(TexProjectClass * projector)
 bool PhysicsSceneClass::Contains(TexProjectClass * projector)
 {
 	return (DynamicProjectorList.Is_In_List(projector) || StaticProjectorList.Is_In_List(projector));
-}
-
-float PhysicsSceneClass::Compute_Projector_Attenuation(TexProjectClass * dynamic_projector,const Vector3 & view_pos,const Vector3 & view_dir)
-{
-	Vector3 r;
-	Vector3::Subtract(dynamic_projector->Get_Bounding_Volume().Center,view_pos,&r);
-	float dist = Vector3::Dot_Product(r,view_dir);
-	if (dist > ShadowAttenEnd) {
-		return 0.0f;
-	}
-	if (dist < ShadowAttenStart) {
-		return 1.0f;
-	}
-	return 1.0f - (dist - ShadowAttenStart) / (ShadowAttenEnd - ShadowAttenStart);
-}
-
-
-void PhysicsSceneClass::Apply_Projectors
-(
-	const CameraClass &	camera
-)
-{
-	WWPROFILE("pscene::Apply_Projectors");
-
-	static int _dbg_frame = 0;
-	_dbg_frame++;
-	if (_dbg_frame == 10) {
-		int vis_total = 0, vis_ws = 0;
-		RefPhysListIterator vis_it(&VisibleStaticObjectList);
-		for (vis_it.First(); !vis_it.Is_Done(); vis_it.Next()) vis_total++;
-		RefPhysListIterator ws_it(&VisibleWSMeshList);
-		for (ws_it.First(); !ws_it.Is_Done(); ws_it.Next()) vis_ws++;
-		fprintf(stderr, "SHADOW F10: VisStatic=%d VisWS=%d\n", vis_total, vis_ws);
-	}
-
-	Vector3 view_pos;
-	Vector3 view_dir;
-	camera.Get_Transform().Get_Translation(&view_pos);
-	camera.Get_Transform().Get_Z_Vector(&view_dir);
-	view_dir = -view_dir;
-
-	if (StaticProjectorsEnabled) {
-
-		/*
-		** collect the visible static projectors
-		*/
-		StaticProjectorCullingSystem->Reset_Collection();
-		StaticProjectorCullingSystem->Collect_Objects(camera.Get_Frustum());
-
-		TexProjectClass * static_projector = StaticProjectorCullingSystem->Get_First_Collected_Object();
-		while (static_projector != NULL) {
-
-			/*
-			** only keep considering this projector if its intensity is above ZERO
-			*/
-			if (!static_projector->Is_Intensity_Zero()) {
-
-				/*
-				** attenuate the projector with distance from the camera (if needed)
-				*/
-				float attenuation = 1.0f;
-				if (static_projector->Is_Attenuation_Enabled()) {
-					attenuation = Compute_Projector_Attenuation(static_projector,view_pos,view_dir);
-					static_projector->Set_Attenuation(attenuation);
-				}
-
-				/*
-				** if the projector is completely attenuated, don't process it
-				*/
-				if (attenuation > 0.0f) {
-
-					if (ProjectorDebugDisplayEnabled) {
-						DEBUG_RENDER_OBBOX(static_projector->Get_Bounding_Volume(),Vector3(0,1,0),0.25f);
-					}
-
-					Apply_Projector_To_Objects(static_projector,camera);
-				}
-			}
-			static_projector = StaticProjectorCullingSystem->Get_Next_Collected_Object(static_projector);
-		}
-	}
-
-	/*
-	** Build a list of the dynamic shadow textures that need to be rendered
-	*/
-	TexProjListClass rt_projector_list;
-	uint32_t count = 0;
-
-	if (DynamicProjectorsEnabled) {
-
-		/*
-		** Collect the visible dynamic projectors
-		*/
-		DynamicProjectorCullingSystem->Reset_Collection();
-		DynamicProjectorCullingSystem->Collect_Objects(camera.Get_Frustum());
-
-		TexProjectClass * dynamic_projector = DynamicProjectorCullingSystem->Get_First_Collected_Object();
-		while (dynamic_projector != NULL) {
-
-			/*
-			** only keep considering this projector if its intensity is above ZERO
-			*/
-			if (!dynamic_projector->Is_Intensity_Zero()) {
-
-				/*
-				** attenuate the projector with distance from the camera (if needed)
-				*/
-				float attenuation = 1.0f;
-				if (dynamic_projector->Is_Attenuation_Enabled()) {
-					attenuation = Compute_Projector_Attenuation(dynamic_projector,view_pos,view_dir);
-					dynamic_projector->Set_Attenuation(attenuation);
-				}
-
-				/*
-				** if the projector is completely attenuated, don't process it
-				*/
-				if (attenuation > 0.0f) {
-
-					if (ProjectorDebugDisplayEnabled) {
-						DEBUG_RENDER_OBBOX(dynamic_projector->Get_Bounding_Volume(),Vector3(1,0,0),0.25f);
-					}
-
-					/*
-					** If this projector needs to recompute its texture, add it to the list,
-					** otherwise set it up now.
-					*/
-					if (dynamic_projector->Needs_Render_Target()) {
-						rt_projector_list.Add(dynamic_projector);
-						count++;
-					} else {
-						Apply_Projector_To_Objects(dynamic_projector,camera);
-					}
-				}
-			}
-			dynamic_projector = DynamicProjectorCullingSystem->Get_Next_Collected_Object(dynamic_projector);
-		}
-	}
-
-	/*
-	** Reject texture projectors until we are below the maximum allowed simultaneous shadows
-	*/
-	Vector3 cam_pos;
-	camera.Get_Transform().Get_Translation(&cam_pos);
-
-	TexProjListIterator it(&rt_projector_list);
-	while (count > _DynamicShadowTexMgr.Get_Max_Simultaneous_Shadows()) {
-
-		/*
-		** Find the projector farthest from the camera
-		*/
-		it.First();
-		TexProjectClass * farthest_shadow = it.Peek_Obj();
-		float farthest_dist = (farthest_shadow->Get_Bounding_Volume().Center - cam_pos).Length2();
-		it.Next();
-
-		while (!it.Is_Done()) {
-			float dist = (it.Peek_Obj()->Get_Bounding_Volume().Center - cam_pos).Length2();
-			if (dist > farthest_dist) {
-				farthest_dist = dist;
-				farthest_shadow = it.Peek_Obj();
-			}
-			it.Next();
-		}
-
-		/*
-		** Remove it from the list and disable it.
-		*/
-		rt_projector_list.Remove(farthest_shadow);
-		farthest_shadow->Set_Render_Target(NULL);
-		count--;
-	}
-
-	/*
-	** Process the most "important" active dynamic shadows
-	*/
-	_DynamicShadowTexMgr.Per_Frame_Reset();
-	it.First();
-
-	while (!it.Is_Done()) {
-
-		TexProjectClass * projector = it.Peek_Obj();
-		_DynamicShadowTexMgr.Assign_Render_Target_Texture(projector);
-
-		if (projector->Peek_Render_Target() != NULL) {
-			Apply_Projector_To_Objects(projector,camera);
-		}
-
-		it.Next();
-	}
-
-	WW3D::Reset_Render_Target();
-}
-
-void PhysicsSceneClass::Apply_Projector_To_Objects
-(
-	TexProjectClass * tex_proj,
-	const CameraClass &	camera
-)
-{
-	bool projector_update_needed = false;	// Needed if just one mesh uses it
-	SimpleEffectClass * effect = NEW_REF(SimpleEffectClass,(tex_proj->Peek_Material_Pass()));
-	effect->Enable_Auto_Remove(true);
-
-	/*
-	** collect the static objects intersecting the projector's volume
-	*/
-	if (tex_proj->Is_Affect_Static_Objects_Enabled()) {
-		StaticCullingSystem->Reset_Collection();
-		StaticCullingSystem->Collect_Objects(tex_proj->Get_Bounding_Volume());
-
-		StaticPhysClass * static_obj = (StaticPhysClass *)StaticCullingSystem->Get_First_Collected_Object();
-		while (static_obj) {
-			if (VisibleStaticObjectList.Contains(static_obj) || VisibleWSMeshList.Is_In_List(static_obj)) {
-				static_obj->Add_Effect_To_Me(effect);
-				projector_update_needed = true;
-			}
-			static_obj = (StaticPhysClass *)StaticCullingSystem->Get_Next_Collected_Object(static_obj);
-		}
-	}
-
-	/*
-	** collect the dynamic objects intersecting the projector's volume
-	*/
-	if (tex_proj->Is_Affect_Dynamic_Objects_Enabled()) {
-		DynamicCullingSystem->Reset_Collection();
-		DynamicCullingSystem->Collect_Objects(tex_proj->Get_Bounding_Volume());
-
-		PhysClass * dyn_obj = DynamicCullingSystem->Get_First_Collected_Object();
-		while (dyn_obj) {
-
-			/*
-			** for each dynamic object, if it is also in our visible list, add this projector
-			** to it. Dynamic shadows need to reach the caster for self-shadowing as well as
-			** other dynamic units in the projection volume.
-			*/
-			if (VisibleDynamicObjectList.Contains(dyn_obj)) {
-
-				dyn_obj->Add_Effect_To_Me(effect);
-				projector_update_needed = true;
-			}
-			dyn_obj = DynamicCullingSystem->Get_Next_Collected_Object(dyn_obj);
-		}
-	}
-
-	// if this projector is needed, update it
-	if (projector_update_needed) {
-		tex_proj->Pre_Render_Update(camera.Get_Transform());
-	}
-
-	REF_PTR_RELEASE(effect);
 }

@@ -91,7 +91,6 @@ StaticAnimPhysClass::~StaticAnimPhysClass(void)
 void StaticAnimPhysClass::Init(const StaticAnimPhysDefClass & def)
 {
 	StaticPhysClass::Init(def);
-	ProjectorManager.Init(def.ProjectorManagerDef,Model);
 	AnimManager.Init(def.AnimManagerDef);
 }
 
@@ -160,10 +159,6 @@ void StaticAnimPhysClass::Timestep(float dt)
 	*/
 	AnimManager.Timestep(dt);
 
-	/*
-	** update projectors
-	*/
-	ProjectorManager.Update_From_Model(Model);
 }
 
 
@@ -277,14 +272,6 @@ void StaticAnimPhysClass::On_Post_Load(void)
 	*/
 	Update_Cached_Model_Parameters();
 
-	/*
-	** Re-Initialize our projector.
-	*/
-	StaticAnimPhysDefClass * definition = Get_StaticAnimPhysDef();
-	if (definition != NULL) {
-		ProjectorManager.Init(definition->ProjectorManagerDef,Model);
-	}
-
 }
 
 
@@ -347,9 +334,6 @@ StaticAnimPhysDefClass::StaticAnimPhysDefClass(void) :
 
 	// Make the animation manager variables editable
 	ANIMCOLLISIONMANAGERDEF_EDITABLE_PARAMS( StaticAnimPhysDefClass , AnimManagerDef );
-
-	// Make the projector manager variables editable
-	PROJECTORMANAGERDEF_EDITABLE_PARAMS( StaticAnimPhysDefClass , ProjectorManagerDef );
 
 	// make the shadow parameters editable
   	PARAM_SEPARATOR(StaticAnimPhysDefClass, "Shadow Settings");

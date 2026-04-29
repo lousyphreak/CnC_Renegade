@@ -818,15 +818,9 @@ class ProjectorDebugConsoleFunctionClass : public ConsoleFunctionClass
 {
 public:
 	virtual	const char * Get_Name( void )	{ return "projector_debug"; }
-	virtual	const char * Get_Help( void )	{ return "PROJECTOR_DEBUG - toggles projector debugging display."; }
+	virtual	const char * Get_Help( void )	{ return "PROJECTOR_DEBUG - legacy compatibility command; receiver-side projector replay was removed from the runtime path."; }
 	virtual	void Activate( const char * input ) {
-
-		COMBAT_SCENE->Enable_Projector_Debug_Display(!COMBAT_SCENE->Is_Projector_Debug_Display_Enabled());
-		if (COMBAT_SCENE->Is_Projector_Debug_Display_Enabled()) {
-			Print("projector debug display enabled!\n");
-		} else {
-			Print("projector debug display disabled :-(\n");
-		}
+		Print("Projector debug display was removed with the runtime projector replay path.\n");
 	}
 };
 
@@ -1484,13 +1478,6 @@ public:
       ConsoleFunctionManager::Parse_Input("Prelit_Mode 0");
 
       //ConsoleFunctionManager::Parse_Input("Mesh_Draw_Mode 0");
-
-		if (COMBAT_SCENE != NULL) {
-			COMBAT_SCENE->Enable_Dynamic_Projectors(false);
-			Print("Dynamic Projectors disabled.\n");
-			COMBAT_SCENE->Enable_Static_Projectors(false);
-			Print("Static Projectors disabled.\n");
-		}
 
 		WW3D::Set_Texture_Reduction(1);
 		Print("Texture Resolution set to 1.\n");

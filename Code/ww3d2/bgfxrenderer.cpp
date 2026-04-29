@@ -117,6 +117,29 @@ struct CapturedMovieFrame
     uint64_t Sequence = 0;
 };
 
+struct QueuedOverlaySubmission
+{
+    enum class Type
+    {
+        Overlay,
+        YuvOverlay,
+    };
+
+    Type SubmissionType = Type::Overlay;
+    std::vector<WW3D::OverlaySubmitVertex> Vertices;
+    std::vector<std::uint16_t> Indices;
+    TextureClass *Texture = nullptr;
+    ShaderClass Shader;
+    bool HasTexture = false;
+    bgfx::TextureHandle LumaTexture = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle ChromaTexture = BGFX_INVALID_HANDLE;
+    std::uint32_t SamplerFlags = 0;
+    bool FullRangeVideo = false;
+    bgfx::FrameBufferHandle FrameBuffer = BGFX_INVALID_HANDLE;
+    std::uint32_t TargetWidth = 0;
+    std::uint32_t TargetHeight = 0;
+};
+
 constexpr uint16_t FirstDynamicViewId = 3; // 0-2 reserved for shadow cascades
 constexpr uint16_t MaxDynamicViewId = 254;
 constexpr uint16_t OverlayViewId = 255;
@@ -159,6 +182,11 @@ std::vector<SkinPaletteEntry> SkinPaletteEntries;
 uint16_t NextSkinPaletteRow = 0;
 float CurrentSkinPaletteInfo[4] = {};
 bool CurrentSkinPaletteValid = false;
+std::vector<QueuedOverlaySubmission> OverlaySubmissionQueue;
+
+void Clear_Overlay_Submission_Queue();
+void Flush_Overlay_Submission_Queue();
+void Prepare_Overlay_View_For_Target(bgfx::FrameBufferHandle frame_buffer, std::uint32_t width, std::uint32_t height);
 
 bool Is_Window_Fullscreen(SDL_Window *window)
 {
@@ -1769,6 +1797,7 @@ void BgfxRenderer::Shutdown()
         return;
     }
 
+    Clear_Overlay_Submission_Queue();
     Shutdown_Render_Resources();
     bgfx::shutdown();
     Width = 0;
@@ -1801,6 +1830,7 @@ bool BgfxRenderer::Reset()
 
 void BgfxRenderer::Apply_Reset_State()
 {
+    Clear_Overlay_Submission_Queue();
     bgfx::reset(Width, Height, Get_Reset_Flags());
     ActiveWidth = Width;
     ActiveHeight = Height;
@@ -1815,6 +1845,7 @@ bool BgfxRenderer::Begin_Frame(bool clear_color, bool clear_depth, float red, fl
         return false;
     }
 
+    Clear_Overlay_Submission_Queue();
     Reset_Skinning_Frame();
     Apply_Clear(clear_color, clear_depth, red, green, blue);
     return true;
@@ -1936,11 +1967,7 @@ void BgfxRenderer::Prepare_Overlay_View()
         return;
     }
 
-    bgfx::setViewMode(OverlayViewId, bgfx::ViewMode::Sequential);
-    bgfx::setViewFrameBuffer(OverlayViewId, CurrentFrameBuffer);
-    bgfx::setViewRect(OverlayViewId, 0, 0, static_cast<uint16_t>(ActiveWidth), static_cast<uint16_t>(ActiveHeight));
-    bgfx::setViewTransform(OverlayViewId, IdentityMatrix, IdentityMatrix);
-    bgfx::setViewClear(OverlayViewId, 0, 0, 1.0f, 0);
+    Prepare_Overlay_View_For_Target(CurrentFrameBuffer, ActiveWidth, ActiveHeight);
 }
 
 void BgfxRenderer::End_Frame()
@@ -1949,8 +1976,10 @@ void BgfxRenderer::End_Frame()
         return;
     }
 
+    Flush_Overlay_Submission_Queue();
     Maybe_Request_Auto_Screenshot();
     bgfx::frame();
+    Clear_Overlay_Submission_Queue();
     const bgfx::Stats *stats = bgfx::getStats();
     if (stats != nullptr) {
         const auto ticks_to_ms = [](int64_t ticks, int64_t frequency) -> double {
@@ -2519,10 +2548,10 @@ uint64_t BgfxRenderer::Build_Render_State(const ShaderClass &shader, unsigned cu
     // In the active bgfx build, ShaderClass is still the authoritative owner of
     // color/depth/blend pipeline state. DX8Wrapper's cache does not yet populate
     // the broader D3DRS override surface consistently enough to drive bgfx state
-    // directly without regressing core world/menu rendering.
-    if (shader.Get_Color_Mask() == ShaderClass::COLOR_WRITE_ENABLE) {
-        state |= BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A;
-    }
+	// directly without regressing core world/menu rendering.
+	if (shader.Get_Color_Mask() == ShaderClass::COLOR_WRITE_ENABLE) {
+		state |= BGFX_STATE_WRITE_RGB;
+	}
 
     if (shader.Get_Depth_Mask() == ShaderClass::DEPTH_WRITE_ENABLE) {
         state |= BGFX_STATE_WRITE_Z;
@@ -2664,6 +2693,112 @@ bool Prepare_Overlay_Geometry(
     bgfx::setIndexBuffer(binding.IndexBuffer);
     return true;
 }
+
+void Prepare_Overlay_View_For_Target(bgfx::FrameBufferHandle frame_buffer, std::uint32_t width, std::uint32_t height)
+{
+    bgfx::setViewMode(OverlayViewId, bgfx::ViewMode::Sequential);
+    bgfx::setViewFrameBuffer(OverlayViewId, frame_buffer);
+    bgfx::setViewRect(OverlayViewId, 0, 0, static_cast<uint16_t>(width), static_cast<uint16_t>(height));
+    bgfx::setViewTransform(OverlayViewId, IdentityMatrix, IdentityMatrix);
+    bgfx::setViewClear(OverlayViewId, 0, 0, 1.0f, 0);
+}
+
+void Clear_Overlay_Submission_Queue()
+{
+    for (std::vector<QueuedOverlaySubmission>::iterator it = OverlaySubmissionQueue.begin();
+         it != OverlaySubmissionQueue.end();
+         ++it) {
+        if (it->Texture != nullptr) {
+            it->Texture->Release_Ref();
+            it->Texture = nullptr;
+        }
+    }
+    OverlaySubmissionQueue.clear();
+}
+
+void Flush_Overlay_Submission_Queue()
+{
+    if (OverlaySubmissionQueue.empty()) {
+        return;
+    }
+
+    const bgfx::ProgramHandle overlay_program = BgfxRenderer::Get_Overlay_Program();
+    const bgfx::ProgramHandle movie_program = BgfxRenderer::Get_Movie_YUV_Program();
+    const bgfx::UniformHandle movie_config_uniform = BgfxRenderer::Get_Movie_YUV_Config_Uniform();
+
+    for (std::vector<QueuedOverlaySubmission>::iterator it = OverlaySubmissionQueue.begin();
+         it != OverlaySubmissionQueue.end();
+         ++it) {
+        QueuedOverlaySubmission &queued = *it;
+        if (queued.Vertices.empty() || queued.Indices.empty()) {
+            continue;
+        }
+
+        const bool is_yuv = queued.SubmissionType == QueuedOverlaySubmission::Type::YuvOverlay;
+        if (is_yuv) {
+            if (!bgfx::isValid(queued.LumaTexture)
+                || !bgfx::isValid(queued.ChromaTexture)
+                || !bgfx::isValid(movie_program)
+                || !bgfx::isValid(movie_config_uniform)) {
+                continue;
+            }
+        } else if (!bgfx::isValid(overlay_program)) {
+            continue;
+        }
+
+        std::vector<BgfxOverlayVertex> converted_vertices;
+        Convert_Overlay_Vertices(
+            queued.Vertices.data(),
+            static_cast<std::uint32_t>(queued.Vertices.size()),
+            converted_vertices);
+
+        OverlayGeometryBinding binding;
+        if (!Prepare_Overlay_Geometry(
+                converted_vertices.data(),
+                static_cast<std::uint32_t>(converted_vertices.size()),
+                queued.Indices.data(),
+                static_cast<std::uint32_t>(queued.Indices.size()),
+                BgfxRenderer::Get_Overlay_Layout(),
+                binding)) {
+            continue;
+        }
+
+        Prepare_Overlay_View_For_Target(queued.FrameBuffer, queued.TargetWidth, queued.TargetHeight);
+        if (is_yuv) {
+            bgfx::setTexture(0, BgfxRenderer::Get_Texture0_Uniform(), queued.LumaTexture, queued.SamplerFlags);
+            bgfx::setTexture(1, BgfxRenderer::Get_Texture1_Uniform(), queued.ChromaTexture, queued.SamplerFlags);
+
+            const float movie_config[4] = {
+                queued.FullRangeVideo ? 1.0f : 0.0f,
+                0.0f,
+                0.0f,
+                0.0f
+            };
+            bgfx::setUniform(movie_config_uniform, movie_config);
+            BgfxRenderer::Apply_Render_State(Build_Default_Overlay_Shader());
+            bgfx::submit(OverlayViewId, movie_program);
+        } else {
+            bgfx::TextureHandle texture = BgfxRenderer::Get_White_Texture();
+            std::uint32_t sampler_flags =
+                BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT;
+            if (queued.HasTexture && queued.Texture != NULL) {
+                texture = queued.Texture->Get_Bgfx_Texture();
+                sampler_flags = queued.Texture->Get_Bgfx_Sampler_Flags(0);
+                if (!bgfx::isValid(texture)) {
+                    texture = BgfxRenderer::Get_White_Texture();
+                }
+            }
+
+            bgfx::setTexture(0, BgfxRenderer::Get_Texture0_Uniform(), texture, sampler_flags);
+            BgfxRenderer::Apply_Overlay_Config(queued.HasTexture);
+            BgfxRenderer::Apply_Render_State(queued.Shader);
+            bgfx::submit(OverlayViewId, overlay_program);
+        }
+
+        binding.Destroy();
+    }
+
+}
 }
 
 void BgfxRenderer::Apply_Overlay_Config(bool has_texture)
@@ -2678,44 +2813,26 @@ bool BgfxRenderer::Submit_Overlay(const WW3D::OverlaySubmitDesc &submission)
         return false;
     }
 
-    const bgfx::ProgramHandle program = Get_Overlay_Program();
-    if (!bgfx::isValid(program)) {
+    if (submission.Vertices == nullptr || submission.Indices == nullptr
+        || submission.VertexCount == 0 || submission.IndexCount == 0
+        || !bgfx::isValid(Get_Overlay_Program())) {
         return false;
     }
 
-    std::vector<BgfxOverlayVertex> converted_vertices;
-    Convert_Overlay_Vertices(submission.Vertices, submission.VertexCount, converted_vertices);
-
-    OverlayGeometryBinding binding;
-    if (!Prepare_Overlay_Geometry(
-            converted_vertices.data(),
-            submission.VertexCount,
-            submission.Indices,
-            submission.IndexCount,
-            Get_Overlay_Layout(),
-            binding)) {
-        return false;
+    QueuedOverlaySubmission queued;
+    queued.SubmissionType = QueuedOverlaySubmission::Type::Overlay;
+    queued.Vertices.assign(submission.Vertices, submission.Vertices + submission.VertexCount);
+    queued.Indices.assign(submission.Indices, submission.Indices + submission.IndexCount);
+    queued.Texture = submission.Texture;
+    if (queued.Texture != nullptr) {
+        queued.Texture->Add_Ref();
     }
-
-    Prepare_Overlay_View();
-
-    bgfx::TextureHandle texture = Get_White_Texture();
-    std::uint32_t sampler_flags =
-        BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT;
-    if (submission.HasTexture && submission.Texture != NULL) {
-        texture = submission.Texture->Get_Bgfx_Texture();
-        sampler_flags = submission.Texture->Get_Bgfx_Sampler_Flags(0);
-        if (!bgfx::isValid(texture)) {
-            texture = Get_White_Texture();
-        }
-    }
-
-    bgfx::setTexture(0, Get_Texture0_Uniform(), texture, sampler_flags);
-    Apply_Overlay_Config(submission.HasTexture);
-    Apply_Render_State(submission.Shader);
-    bgfx::submit(Get_Overlay_View_Id(), program);
-
-    binding.Destroy();
+    queued.Shader = submission.Shader;
+    queued.HasTexture = submission.HasTexture;
+    queued.FrameBuffer = CurrentFrameBuffer;
+    queued.TargetWidth = ActiveWidth;
+    queued.TargetHeight = ActiveHeight;
+    OverlaySubmissionQueue.push_back(queued);
     return true;
 }
 
@@ -2723,45 +2840,28 @@ bool BgfxRenderer::Submit_YUV_Overlay(const OverlayYUVSubmitDesc &submission)
 {
     if (!IsInitted
         || !bgfx::isValid(submission.LumaTexture)
-        || !bgfx::isValid(submission.ChromaTexture)) {
+        || !bgfx::isValid(submission.ChromaTexture)
+        || submission.Vertices == nullptr
+        || submission.Indices == nullptr
+        || submission.VertexCount == 0
+        || submission.IndexCount == 0
+        || !bgfx::isValid(Get_Movie_YUV_Program())
+        || !bgfx::isValid(Get_Movie_YUV_Config_Uniform())) {
         return false;
     }
 
-    const bgfx::ProgramHandle program = Get_Movie_YUV_Program();
-    const bgfx::UniformHandle config_uniform = Get_Movie_YUV_Config_Uniform();
-    if (!bgfx::isValid(program) || !bgfx::isValid(config_uniform)) {
-        return false;
-    }
-
-    std::vector<BgfxOverlayVertex> converted_vertices;
-    Convert_Overlay_Vertices(submission.Vertices, submission.VertexCount, converted_vertices);
-
-    OverlayGeometryBinding binding;
-    if (!Prepare_Overlay_Geometry(
-            converted_vertices.data(),
-            submission.VertexCount,
-            submission.Indices,
-            submission.IndexCount,
-            Get_Overlay_Layout(),
-            binding)) {
-        return false;
-    }
-
-    Prepare_Overlay_View();
-    bgfx::setTexture(0, Get_Texture0_Uniform(), submission.LumaTexture, submission.SamplerFlags);
-    bgfx::setTexture(1, Get_Texture1_Uniform(), submission.ChromaTexture, submission.SamplerFlags);
-
-    const float movie_config[4] = {
-        submission.FullRangeVideo ? 1.0f : 0.0f,
-        0.0f,
-        0.0f,
-        0.0f
-    };
-    bgfx::setUniform(config_uniform, movie_config);
-    Apply_Render_State(Build_Default_Overlay_Shader());
-    bgfx::submit(Get_Overlay_View_Id(), program);
-
-    binding.Destroy();
+    QueuedOverlaySubmission queued;
+    queued.SubmissionType = QueuedOverlaySubmission::Type::YuvOverlay;
+    queued.Vertices.assign(submission.Vertices, submission.Vertices + submission.VertexCount);
+    queued.Indices.assign(submission.Indices, submission.Indices + submission.IndexCount);
+    queued.LumaTexture = submission.LumaTexture;
+    queued.ChromaTexture = submission.ChromaTexture;
+    queued.SamplerFlags = submission.SamplerFlags;
+    queued.FullRangeVideo = submission.FullRangeVideo;
+    queued.FrameBuffer = CurrentFrameBuffer;
+    queued.TargetWidth = ActiveWidth;
+    queued.TargetHeight = ActiveHeight;
+    OverlaySubmissionQueue.push_back(queued);
     return true;
 }
 
@@ -3482,7 +3582,7 @@ bool Submit_Classified_Draw_Internal(
         uint16_t *dest = reinterpret_cast<uint16_t *>(transient_index_buffer.data);
 
         const unsigned short *source_indices = nullptr;
-        if (index_buffer_type == BUFFER_TYPE_RENDER) {
+        if (index_buffer_type == BUFFER_TYPE_RENDER || index_buffer_type == BUFFER_TYPE_DYNAMIC_RENDER) {
             source_indices =
                 static_cast<const RenderIndexBufferClass &>(index_buffer).Get_Source_Index_Data()
                 + index_buffer_offset + start_index;
@@ -3543,10 +3643,18 @@ bool Submit_Classified_Draw_Internal(
 
     // Bind index buffer
     if (use_direct_index_buffer) {
-        bgfx::setIndexBuffer(
-            static_cast<const RenderIndexBufferClass &>(index_buffer).Get_Bgfx_Index_Buffer(),
-            index_buffer_offset + start_index,
-            fill_mode == FillMode::Points && strip ? source_index_count : submitted_index_count);
+        const RenderIndexBufferClass &render_index_buffer = static_cast<const RenderIndexBufferClass &>(index_buffer);
+        if (render_index_buffer.Uses_Dynamic_Bgfx_Buffer()) {
+            bgfx::setIndexBuffer(
+                render_index_buffer.Get_Bgfx_Dynamic_Index_Buffer(),
+                index_buffer_offset + start_index,
+                fill_mode == FillMode::Points && strip ? source_index_count : submitted_index_count);
+        } else {
+            bgfx::setIndexBuffer(
+                render_index_buffer.Get_Bgfx_Index_Buffer(),
+                index_buffer_offset + start_index,
+                fill_mode == FillMode::Points && strip ? source_index_count : submitted_index_count);
+        }
     } else {
         bgfx::setIndexBuffer(&transient_index_buffer);
     }

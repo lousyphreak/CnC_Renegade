@@ -149,6 +149,9 @@ public:
 	{
 		DynamicIBAccessClass* DynamicIBAccess;
 		unsigned short* Indices;		
+#if RENEGADE_WITH_BGFX_RENDERER
+		const bgfx::Memory *BgfxMemory;
+#endif
 	public:
 		WriteLockClass(DynamicIBAccessClass* ib_access);
 		~WriteLockClass();
@@ -175,7 +178,7 @@ public:
 		USAGE_NPATCHES=4
 	};
 
-	RenderIndexBufferClass(unsigned short index_count,UsageType usage=USAGE_DEFAULT);
+	RenderIndexBufferClass(unsigned short index_count,UsageType usage=USAGE_DEFAULT, unsigned type=0);
 	~RenderIndexBufferClass();
 
 	void Copy(unsigned int* indices,unsigned start_index,unsigned index_count);
@@ -186,6 +189,9 @@ public:
 	const unsigned short *Get_Source_Index_Data() const;
 	bool Ensure_Bgfx_Buffer() const;
 	bgfx::IndexBufferHandle Get_Bgfx_Index_Buffer() const;
+	bgfx::DynamicIndexBufferHandle Get_Bgfx_Dynamic_Index_Buffer() const;
+	bool Uses_Dynamic_Bgfx_Buffer() const;
+	bool Update_Bgfx_Dynamic_Buffer(unsigned start_index, const bgfx::Memory *memory) const;
 #endif
 
 #if !RENEGADE_WITH_BGFX_RENDERER
@@ -197,6 +203,8 @@ private:
 	IDirect3DIndexBuffer8*	index_buffer;		// actual dx8 index buffer
 #else
 	mutable bgfx::IndexBufferHandle BgfxIndexBuffer;
+	mutable bgfx::DynamicIndexBufferHandle BgfxDynamicIndexBuffer;
+	bool BgfxUsesDynamicBuffer;
 	mutable bool BgfxIndexBufferDirty;
 	std::vector<unsigned short> IndexData;
 

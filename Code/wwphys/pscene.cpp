@@ -117,6 +117,8 @@
 #include "ww3d.h"
 #include "physresourcemgr.h"
 #include "phys3.h"
+#include "renegadeterrainpatch.h"
+#include "terrainrenderbatch.h"
 #include <cfloat>
 
 static void Force_Link_Modules(void);
@@ -227,6 +229,20 @@ bool Should_Collect_Shadow_Caster(PhysClass *obj)
 
 	return obj->Peek_Model()->Is_Not_Hidden_At_All();
 }
+
+RenegadeTerrainPatchClass *Peek_Terrain_Patch(PhysClass *obj)
+{
+	if (obj == NULL || obj->Peek_Model() == NULL) {
+		return NULL;
+	}
+
+	RenderObjClass *model = obj->Peek_Model();
+	if (model->Class_ID() != RenderObjClass::CLASSID_RENEGADE_TERRAIN) {
+		return NULL;
+	}
+
+	return static_cast<RenegadeTerrainPatchClass *>(model);
+}
 }
 
 
@@ -256,14 +272,11 @@ PhysicsSceneClass::PhysicsSceneClass(void) :
 	LastCameraPosition(0,0,0),
 	LastValidVisId(-1),
 	DebugDisplayEnabled(false),
-	ProjectorDebugDisplayEnabled(false),
 	DirtyCullDebugDisplayEnabled(false),
 	LightingDebugDisplayEnabled(false),
 	StaticCullingSystem(NULL),
 	DynamicCullingSystem(NULL),
 	StaticLightingSystem(NULL),
-	StaticProjectorCullingSystem(NULL),
-	DynamicProjectorCullingSystem(NULL),
 	DynamicPolyBudget(DEFAULT_DYNAMIC_LOD_BUDGET),
 	StaticPolyBudget(DEFAULT_STATIC_LOD_BUDGET),
 	LightingMode(LIGHTING_MODE_CHEAP),
@@ -301,6 +314,7 @@ PhysicsSceneClass::PhysicsSceneClass(void) :
 	CameraShakeSystem(NULL),
 	HighlightMaterialPass(NULL),
 	UpdateOnlyVisibleObjects(false),
+	TerrainBatchManager(NULL),
 	CurrentFrameNumber(0)
 {
 	Force_Link_Modules();
@@ -328,8 +342,7 @@ PhysicsSceneClass::PhysicsSceneClass(void) :
 	DynamicCullingSystem = new PhysGridCullClass(this);
 	DynamicObjVisSystem = new DynamicAABTreeCullClass(this);
 	StaticLightingSystem = new StaticLightCullClass;
-	StaticProjectorCullingSystem = new TypedAABTreeCullSystemClass<TexProjectClass>;
-	DynamicProjectorCullingSystem = new TypedGridCullSystemClass<TexProjectClass>;
+	TerrainBatchManager = new TerrainRenderBatchManagerClass;
 
 	/*
 	** Allocate pathfind object
@@ -380,8 +393,7 @@ PhysicsSceneClass::~PhysicsSceneClass(void)
 	delete DynamicCullingSystem;
 	delete DynamicObjVisSystem;
 	delete StaticLightingSystem;	
-	delete StaticProjectorCullingSystem;
-	delete DynamicProjectorCullingSystem;
+	delete TerrainBatchManager;
 	delete Pathfinder;
 	delete CameraShakeSystem;
 
@@ -736,6 +748,9 @@ void PhysicsSceneClass::Remove_Object(PhysClass * obj)
 	WWASSERT(obj->Peek_Model() != NULL);
 
 	// Notify the model that it is being removed from the scene
+	if (TerrainBatchManager != NULL) {
+		TerrainBatchManager->Unregister_Patch(Peek_Terrain_Patch(obj));
+	}
 	SceneClass::Remove_Render_Object(obj->Peek_Model());
 
 	// Notify the observer (if it has one)
@@ -1238,9 +1253,7 @@ void PhysicsSceneClass::Pre_Render_Processing(CameraClass & camera)
 
 		// LOD processing 
 		Optimize_LODs(camera,&VisibleDynamicObjectList,&VisibleStaticObjectList,&VisibleWSMeshList);
-
-		// Texture projectors
-		Apply_Projectors(camera);
+		Prepare_Terrain_Batch_Pages(&VisibleWSMeshList,&VisibleStaticObjectList);
 
 	} else {
 #if (UMBRASUPPORT)
@@ -1275,8 +1288,7 @@ void PhysicsSceneClass::Pre_Render_Processing(CameraClass & camera)
 		}
 
 		Optimize_LODs(camera,&VisibleDynamicObjectList,&VisibleStaticObjectList,&VisibleWSMeshList);
-
-		Apply_Projectors(camera);
+		Prepare_Terrain_Batch_Pages(&VisibleWSMeshList,&VisibleStaticObjectList);
 #endif
 	}
 
@@ -1353,6 +1365,32 @@ void PhysicsSceneClass::Optimize_LODs
 		it.Peek_Obj()->Set_Last_Visible_Frame(CurrentFrameNumber);
 	}
 	PredictiveLODOptimizerClass::Optimize_LODs(StaticPolyBudget);
+}
+
+void PhysicsSceneClass::Prepare_Terrain_Batch_Pages(RefPhysListClass * static_ws_list,RefPhysListClass * static_list)
+{
+	WWPROFILE("Prepare Terrain Batches");
+
+	if (TerrainBatchManager == NULL) {
+		return;
+	}
+
+	RefPhysListClass *lists[2] = { static_ws_list, static_list };
+	for (int list_index = 0; list_index < 2; ++list_index) {
+		RefPhysListClass *list = lists[list_index];
+		if (list == NULL) {
+			continue;
+		}
+
+		RefPhysListIterator it(list);
+		for (it.First(); !it.Is_Done(); it.Next()) {
+			RenegadeTerrainPatchClass *terrain_patch = Peek_Terrain_Patch(it.Peek_Obj());
+			if (terrain_patch != NULL) {
+				const bool prepared = TerrainBatchManager->Prepare_Patch(terrain_patch);
+				WWASSERT(prepared);
+			}
+		}
+	}
 }
 
 void PhysicsSceneClass::Collect_Shadow_Caster_Objects(void)
@@ -1726,6 +1764,7 @@ void PhysicsSceneClass::Render_Object(RenderInfoClass & context,PhysClass * obj)
 	RenderEffectCollection effect_context(context.Camera);
 	obj->Collect_Render_Effects(effect_context);
 	const bool render_base_pass = effect_context.Should_Render_Base_Pass();
+	RenegadeTerrainPatchClass *terrain_patch = Peek_Terrain_Patch(obj);
 
 	LightEnvironmentClass * saved_light_environment = context.light_environment;
 	const WW3D::LightingSubmitDesc * saved_lighting_submission = context.lighting_submission;
@@ -1776,7 +1815,12 @@ void PhysicsSceneClass::Render_Object(RenderInfoClass & context,PhysClass * obj)
 	*/
 	if (render_base_pass) {
 		WWPROFILE("render");
-		obj->Render(context);
+		if (terrain_patch != NULL && TerrainBatchManager != NULL) {
+			const bool rendered = TerrainBatchManager->Render_Patch(terrain_patch, context);
+			WWASSERT(rendered);
+		} else {
+			obj->Render(context);
+		}
 	}
 
 	if (effect_context.Get_Pass_Count() > 0) {
@@ -1837,7 +1881,17 @@ void PhysicsSceneClass::Render_Object_Effect_Phases(RenderInfoClass & context)
 
 		{
 			WWPROFILE("render effect phase");
-			obj->Render_Material_Passes(context,entry.Passes,entry.PassCount);
+			RenegadeTerrainPatchClass *terrain_patch = Peek_Terrain_Patch(obj);
+			if (terrain_patch != NULL && TerrainBatchManager != NULL) {
+				const bool rendered = TerrainBatchManager->Render_Patch_Material_Passes(
+					terrain_patch,
+					context,
+					entry.Passes,
+					entry.PassCount);
+				WWASSERT(rendered);
+			} else {
+				obj->Render_Material_Passes(context,entry.Passes,entry.PassCount);
+			}
 		}
 
 		context.light_environment = saved_light_environment;
@@ -2060,7 +2114,6 @@ void PhysicsSceneClass::Re_Partition_Dynamic_Culling_System(DynamicVectorClass<A
  *=============================================================================================*/
 void PhysicsSceneClass::Re_Partition_Static_Projectors(void)
 {
-	StaticProjectorCullingSystem->Re_Partition();
 }
 
 

@@ -47,8 +47,6 @@
 //////////////////////////////////////////////////////////////////////
 class Vector2;
 class TerrainMaterialClass;
-class RenderIndexBufferClass;
-class RenderVertexBufferClass;
 class ChunkSaveClass;
 class ChunkLoadClass;
 
@@ -102,9 +100,6 @@ public:
 	DynamicVectorClass<int>		QuadList[PASS_COUNT];
 	DynamicVectorClass<int>		VertexRenderList[PASS_COUNT];
 	int *								VertexIndexMap[PASS_COUNT];
-
-	RenderIndexBufferClass *		IndexBuffers[PASS_COUNT];
-	RenderVertexBufferClass *		VertexBuffers[PASS_COUNT];
 };
 
 

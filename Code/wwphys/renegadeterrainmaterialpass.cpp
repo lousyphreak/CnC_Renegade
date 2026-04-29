@@ -37,8 +37,6 @@
 #include "renegadeterrainmaterialpass.h"
 #include "terrainmaterial.h"
 #include "vector2.h"
-#include "vertexbuffer.h"
-#include "indexbuffer.h"
 #include "chunkio.h"
 
 
@@ -74,8 +72,6 @@ RenegadeTerrainMaterialPassClass::RenegadeTerrainMaterialPassClass (void)	:
 	VertexCount (0)
 {
 	::memset (VertexIndexMap, 0, sizeof (VertexIndexMap));
-	::memset (IndexBuffers, 0, sizeof (IndexBuffers));
-	::memset (VertexBuffers, 0, sizeof (VertexBuffers));
 	
 	//
 	//	Prep the lists
@@ -123,11 +119,6 @@ RenegadeTerrainMaterialPassClass::~RenegadeTerrainMaterialPassClass (void)
 			VertexIndexMap[index] = NULL;
 		}
 		
-		//
-		//	Release our hold on the index and vertex buffers for this pass
-		//
-		REF_PTR_RELEASE (IndexBuffers[index]);
-		REF_PTR_RELEASE (VertexBuffers[index]);
 	}
 
 	return ;

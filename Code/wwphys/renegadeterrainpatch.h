@@ -58,6 +58,7 @@
 //////////////////////////////////////////////////////////////////////
 class VertexMaterialClass;
 class MaterialPassClass;
+class TerrainRenderBatchPageClass;
 
 
 //////////////////////////////////////////////////////////////////////
@@ -161,9 +162,11 @@ public:
 	//	Lighting support
 	//
 	bool					Is_Prelit (void) const										{ return IsPreLit; }
-	void					Set_Is_Prelit (bool onoff)									{ IsPreLit = onoff; }
+	void					Set_Is_Prelit (bool onoff)									{ IsPreLit = onoff; AreBuffersDirty = true; }
 	void					Set_Vertex_Color (int index, const Vector3 &color)	{ VertexColors[index] = color; AreBuffersDirty = true; }
 	const Vector3 &	Get_Vertex_Color (int index)								{ return VertexColors[index]; }
+	bool					Are_Terrain_Batch_Buffers_Dirty (void) const		{ return AreBuffersDirty; }
+	bool					Build_Terrain_Batch_Page (TerrainRenderBatchPageClass &page);
 
 protected:
 	
@@ -200,11 +203,6 @@ protected:
 	//
 	//	Rendering
 	//
-	void						Render_By_Texture (int texture_index, int pass_type, const WW3D::LightingSubmitDesc * lighting, const WW3D::FixedFunctionStateDesc * render_state);
-	void						Update_Rendering_Buffers (void);
-	void						Free_Rendering_Buffers (void);
-	void						Build_Rendering_Buffers (int texture_index, int pass_type);
-	void						Render_Procedural_Material_Pass(MaterialPassClass * matpass, const WW3D::LightingSubmitDesc * lighting, const WW3D::FixedFunctionStateDesc * render_state);
 
 	//
 	//	Ray casting

@@ -80,6 +80,7 @@ class VisOptProgressClass;
 class CameraShakeSystemClass;
 class StaticAnimPhysClass;
 class StringClass;
+class TerrainRenderBatchManagerClass;
 
 // forward referencing the collision detection queries
 class	PhysRayCollisionTestClass;
@@ -827,7 +828,9 @@ public:
 
 
 	/*
-	** Texture Projection System.
+	** Legacy texture-projector registration.
+	** Projectors are no longer replayed through the main world path, but the
+	** scene still keeps registration/bookkeeping surfaces for compatibility.
 	*/
 	void							Enable_Static_Projectors(bool onoff);
 	bool							Are_Static_Projectors_Enabled(void);
@@ -968,8 +971,6 @@ public:
 	*/
 	void							Enable_Debug_Display(bool onoff)					{ DebugDisplayEnabled = onoff; }
 	bool							Is_Debug_Display_Enabled(void)					{ return DebugDisplayEnabled; }
-	void							Enable_Projector_Debug_Display(bool onoff)	{ ProjectorDebugDisplayEnabled = onoff; }
-	bool							Is_Projector_Debug_Display_Enabled(void)		{ return ProjectorDebugDisplayEnabled; }
 	void							Enable_Dirty_Cull_Debug_Display(bool onoff)	{ DirtyCullDebugDisplayEnabled = onoff; }
 	bool							Is_Dirty_Cull_Debug_Display_Enabled(void)		{ return DirtyCullDebugDisplayEnabled; }
 	void							Enable_Lighting_Debug_Display(bool onoff)		{ LightingDebugDisplayEnabled = onoff; }
@@ -1007,6 +1008,7 @@ protected:
 	void							Render_Object_Effect_Phases(RenderInfoClass & context);
 	void							Render_Backface_Occluders(RenderInfoClass & context,RefPhysListClass *  static_ws_list,RefPhysListClass * static_list);
 	void							Prepare_Frame_Lighting(const CameraClass & camera,RefPhysListClass * static_ws_list,RefPhysListClass * static_list,RefPhysListClass * dyn_list);
+	void							Prepare_Terrain_Batch_Pages(RefPhysListClass * static_ws_list,RefPhysListClass * static_list);
 
 	void							Optimize_LODs(	CameraClass & camera,
 														RefPhysListClass * dyn_obj_list,
@@ -1024,14 +1026,10 @@ protected:
 	void							Merge_Vis_Object_IDs(uint32_t id0,uint32_t id1);
 
 	/*
-	** Internal texture-projection functions
+	** Legacy texture-projector functions
 	*/
 public:
 	void							Release_Projector_Resources(void);
-protected:
-	void							Apply_Projectors(const CameraClass & camera);
-	void							Apply_Projector_To_Objects(TexProjectClass * tex_proj,const CameraClass & camera);
-	float							Compute_Projector_Attenuation(TexProjectClass * dynamic_projector,const Vector3 & view_pos,const Vector3 & view_dir);
 
 	/*
 	** Internal decal functions
@@ -1083,7 +1081,6 @@ protected:
 	RefPhysListClass			VisibleStaticObjectList;
 	RefPhysListClass			VisibleWSMeshList;
 	RefPhysListClass			VisibleDynamicObjectList;
-	TexProjListClass			ActiveTextureProjectors;
 	SimpleDynVecClass<WW3D::SubmitLightDesc> FrameLightingArray;
 	struct RenderEffectPhaseEntry
 	{
@@ -1104,12 +1101,10 @@ protected:
 	Vector3						LastCameraPosition;
 	int							LastValidVisId;			// id of the last valid vis sector
 	bool							DebugDisplayEnabled;
-	bool							ProjectorDebugDisplayEnabled;
 	bool							DirtyCullDebugDisplayEnabled;
 	bool							LightingDebugDisplayEnabled;
 	StatsStruct					LastValidStats;			// last complete statistics sample
 	StatsStruct					CurrentStats;				// currently accumulating statistics sample
-	bool							StaticProjectorsDirty;
 
 	/*
 	** Visibility system variables
@@ -1202,9 +1197,6 @@ protected:
 	StaticLightCullClass *											StaticLightingSystem;
 	PhysGridCullClass *												DynamicCullingSystem;
 	DynamicAABTreeCullClass *										DynamicObjVisSystem;
-
-	TypedAABTreeCullSystemClass<TexProjectClass> *			StaticProjectorCullingSystem;
-	TypedGridCullSystemClass<TexProjectClass> *				DynamicProjectorCullingSystem;
 	
 	/*
 	** Visibility Tables
@@ -1262,6 +1254,7 @@ protected:
 	NonRefPhysListClass		CollisionRegionList;	// cached list of objects in the current collision region
 
 	bool							UpdateOnlyVisibleObjects;
+	TerrainRenderBatchManagerClass *TerrainBatchManager;
 	unsigned						CurrentFrameNumber;
 
 private:

@@ -612,10 +612,19 @@ void ShadowMapManager::Submit_Shadow_Draws(
 
         // Re-bind index buffer
         if (use_direct_index_buffer) {
-            bgfx::setIndexBuffer(
-                static_cast<const RenderIndexBufferClass &>(index_buffer).Get_Bgfx_Index_Buffer(),
-                index_buffer_offset + start_index,
-                submitted_index_count);
+            const RenderIndexBufferClass &render_index_buffer =
+                static_cast<const RenderIndexBufferClass &>(index_buffer);
+            if (render_index_buffer.Uses_Dynamic_Bgfx_Buffer()) {
+                bgfx::setIndexBuffer(
+                    render_index_buffer.Get_Bgfx_Dynamic_Index_Buffer(),
+                    index_buffer_offset + start_index,
+                    submitted_index_count);
+            } else {
+                bgfx::setIndexBuffer(
+                    render_index_buffer.Get_Bgfx_Index_Buffer(),
+                    index_buffer_offset + start_index,
+                    submitted_index_count);
+            }
         } else {
             bgfx::setIndexBuffer(transient_ib);
         }

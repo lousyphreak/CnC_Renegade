@@ -9,6 +9,12 @@ namespace
 {
 const unsigned short kDefaultDynamicIndexCount = 5000;
 
+RenderIndexBufferClass *g_dynamic_render_index_buffer = nullptr;
+bool g_dynamic_render_index_buffer_in_use = false;
+unsigned short g_dynamic_render_index_buffer_size = kDefaultDynamicIndexCount;
+unsigned short g_dynamic_render_index_buffer_offset = 0;
+std::vector<RenderIndexBufferClass *> g_stale_dynamic_render_index_buffers;
+
 SortingIndexBufferClass *g_dynamic_sorting_index_buffer = nullptr;
 bool g_dynamic_sorting_index_buffer_in_use = false;
 unsigned short g_dynamic_sorting_index_buffer_size = 0;
@@ -18,6 +24,22 @@ std::vector<SortingIndexBufferClass *> g_stale_dynamic_sorting_index_buffers;
 unsigned g_index_buffer_count = 0;
 unsigned g_index_buffer_total_indices = 0;
 unsigned g_index_buffer_total_size = 0;
+
+void Release_Stale_Dynamic_Render_Index_Buffers()
+{
+	auto it = g_stale_dynamic_render_index_buffers.begin();
+	while (it != g_stale_dynamic_render_index_buffers.end()) {
+		RenderIndexBufferClass *buffer = *it;
+		if ((buffer == nullptr) || (buffer->Engine_Refs() == 0)) {
+			if (buffer != nullptr) {
+				buffer->Release_Ref();
+			}
+			it = g_stale_dynamic_render_index_buffers.erase(it);
+		} else {
+			++it;
+		}
+	}
+}
 
 void Release_Stale_Dynamic_Sorting_Index_Buffers()
 {
@@ -83,6 +105,7 @@ IndexBufferClass::WriteLockClass::WriteLockClass(IndexBufferClass *index_buffer_
 	index_buffer->Add_Ref();
 	switch (index_buffer->Type()) {
 	case BUFFER_TYPE_RENDER:
+	case BUFFER_TYPE_DYNAMIC_RENDER:
 		indices = static_cast<RenderIndexBufferClass *>(index_buffer)->Get_Source_Index_Data();
 		break;
 	case BUFFER_TYPE_SORTING:
@@ -105,6 +128,7 @@ IndexBufferClass::AppendLockClass::AppendLockClass(IndexBufferClass *index_buffe
 	index_buffer->Add_Ref();
 	switch (index_buffer->Type()) {
 	case BUFFER_TYPE_RENDER:
+	case BUFFER_TYPE_DYNAMIC_RENDER:
 		indices = static_cast<RenderIndexBufferClass *>(index_buffer)->Get_Source_Index_Data() + start_index;
 		break;
 	case BUFFER_TYPE_SORTING:
@@ -151,21 +175,30 @@ void IndexBufferClass::Copy(unsigned short *indices_, unsigned first_index, unsi
 	std::copy(indices_, indices_ + count, lock.Get_Index_Array());
 }
 
-RenderIndexBufferClass::RenderIndexBufferClass(unsigned short index_count_, UsageType)
+RenderIndexBufferClass::RenderIndexBufferClass(unsigned short index_count_, UsageType, unsigned type)
 #if !RENEGADE_WITH_BGFX_RENDERER
-	: IndexBufferClass(BUFFER_TYPE_RENDER, index_count_), index_buffer(nullptr)
+	: IndexBufferClass(type, index_count_), index_buffer(nullptr)
 #else
-	: IndexBufferClass(BUFFER_TYPE_RENDER, index_count_),
+	: IndexBufferClass(type, index_count_),
 	  BgfxIndexBuffer(BGFX_INVALID_HANDLE),
+	  BgfxDynamicIndexBuffer(BGFX_INVALID_HANDLE),
+	  BgfxUsesDynamicBuffer(type == BUFFER_TYPE_DYNAMIC_RENDER),
 	  BgfxIndexBufferDirty(true),
 	  IndexData(index_count_)
 #endif
 {
+	WWASSERT(type == BUFFER_TYPE_RENDER || type == BUFFER_TYPE_DYNAMIC_RENDER);
 }
 
 RenderIndexBufferClass::~RenderIndexBufferClass()
 {
 #if RENEGADE_WITH_BGFX_RENDERER
+	if (bgfx::isValid(BgfxDynamicIndexBuffer)) {
+		if (BgfxRenderer::Is_Initted()) {
+			bgfx::destroy(BgfxDynamicIndexBuffer);
+		}
+		BgfxDynamicIndexBuffer = BGFX_INVALID_HANDLE;
+	}
 	if (bgfx::isValid(BgfxIndexBuffer)) {
 		if (BgfxRenderer::Is_Initted()) {
 			bgfx::destroy(BgfxIndexBuffer);
@@ -207,22 +240,72 @@ bgfx::IndexBufferHandle RenderIndexBufferClass::Get_Bgfx_Index_Buffer() const
 	return BgfxIndexBuffer;
 }
 
+bgfx::DynamicIndexBufferHandle RenderIndexBufferClass::Get_Bgfx_Dynamic_Index_Buffer() const
+{
+	return BgfxDynamicIndexBuffer;
+}
+
+bool RenderIndexBufferClass::Uses_Dynamic_Bgfx_Buffer() const
+{
+	return BgfxUsesDynamicBuffer;
+}
+
 void RenderIndexBufferClass::Mark_Bgfx_Buffer_Dirty()
 {
-	// Destroy the old immutable buffer so the next Sync recreates it
-	if (bgfx::isValid(BgfxIndexBuffer)) {
-		if (BgfxRenderer::Is_Initted()) {
-			bgfx::destroy(BgfxIndexBuffer);
+	if (!BgfxUsesDynamicBuffer) {
+		// Destroy the old immutable buffer so the next Sync recreates it
+		if (bgfx::isValid(BgfxIndexBuffer)) {
+			if (BgfxRenderer::Is_Initted()) {
+				bgfx::destroy(BgfxIndexBuffer);
+			}
+			BgfxIndexBuffer = BGFX_INVALID_HANDLE;
 		}
-		BgfxIndexBuffer = BGFX_INVALID_HANDLE;
 	}
 	BgfxIndexBufferDirty = true;
+}
+
+bool RenderIndexBufferClass::Update_Bgfx_Dynamic_Buffer(unsigned start_index, const bgfx::Memory *memory) const
+{
+	if (!BgfxUsesDynamicBuffer || !BgfxRenderer::Is_Initted()) {
+		return false;
+	}
+
+	if (!bgfx::isValid(BgfxDynamicIndexBuffer)) {
+		BgfxDynamicIndexBuffer = bgfx::createDynamicIndexBuffer(index_count);
+		if (!bgfx::isValid(BgfxDynamicIndexBuffer)) {
+			return false;
+		}
+	}
+
+	bgfx::update(BgfxDynamicIndexBuffer, static_cast<uint32_t>(start_index), memory);
+	BgfxIndexBufferDirty = false;
+	return true;
 }
 
 bool RenderIndexBufferClass::Sync_Bgfx_Buffer() const
 {
 	if (!BgfxRenderer::Is_Initted()) {
 		return false;
+	}
+
+	if (BgfxUsesDynamicBuffer) {
+		if (!bgfx::isValid(BgfxDynamicIndexBuffer)) {
+			BgfxDynamicIndexBuffer = bgfx::createDynamicIndexBuffer(index_count);
+			if (!bgfx::isValid(BgfxDynamicIndexBuffer)) {
+				return false;
+			}
+		}
+
+		if (!BgfxIndexBufferDirty) {
+			return true;
+		}
+
+		const bgfx::Memory *index_memory = bgfx::copy(
+			IndexData.data(),
+			static_cast<uint32_t>(IndexData.size() * sizeof(unsigned short)));
+		bgfx::update(BgfxDynamicIndexBuffer, 0, index_memory);
+		BgfxIndexBufferDirty = false;
+		return true;
 	}
 
 	if (bgfx::isValid(BgfxIndexBuffer) && !BgfxIndexBufferDirty) {
@@ -254,21 +337,41 @@ SortingIndexBufferClass::~SortingIndexBufferClass()
 }
 
 DynamicIBAccessClass::DynamicIBAccessClass(unsigned short type_, unsigned short index_count_)
-	: Type(type_ == BUFFER_TYPE_DYNAMIC_RENDER ? BUFFER_TYPE_DYNAMIC_SORTING : type_), IndexCount(index_count_), IndexBufferOffset(0), IndexBuffer(nullptr)
+	: Type(type_), IndexCount(index_count_), IndexBufferOffset(0), IndexBuffer(nullptr)
 {
-	WWASSERT(Type == BUFFER_TYPE_DYNAMIC_SORTING);
-	Allocate_Sorting_Dynamic_Buffer();
+	WWASSERT(Type == BUFFER_TYPE_DYNAMIC_RENDER || Type == BUFFER_TYPE_DYNAMIC_SORTING);
+	if (Type == BUFFER_TYPE_DYNAMIC_RENDER) {
+		Allocate_Render_Dynamic_Buffer();
+	} else {
+		Allocate_Sorting_Dynamic_Buffer();
+	}
 }
 
 DynamicIBAccessClass::~DynamicIBAccessClass()
 {
 	REF_PTR_RELEASE(IndexBuffer);
-	g_dynamic_sorting_index_buffer_in_use = false;
-	g_dynamic_sorting_index_buffer_offset += IndexCount;
+	if (Type == BUFFER_TYPE_DYNAMIC_RENDER) {
+		g_dynamic_render_index_buffer_in_use = false;
+		g_dynamic_render_index_buffer_offset += IndexCount;
+	} else {
+		g_dynamic_sorting_index_buffer_in_use = false;
+		g_dynamic_sorting_index_buffer_offset += IndexCount;
+	}
 }
 
 void DynamicIBAccessClass::_Deinit()
 {
+	REF_PTR_RELEASE(g_dynamic_render_index_buffer);
+	for (RenderIndexBufferClass *buffer : g_stale_dynamic_render_index_buffers) {
+		if (buffer != nullptr) {
+			buffer->Release_Ref();
+		}
+	}
+	g_stale_dynamic_render_index_buffers.clear();
+	g_dynamic_render_index_buffer_in_use = false;
+	g_dynamic_render_index_buffer_size = kDefaultDynamicIndexCount;
+	g_dynamic_render_index_buffer_offset = 0;
+
 	REF_PTR_RELEASE(g_dynamic_sorting_index_buffer);
 	for (SortingIndexBufferClass *buffer : g_stale_dynamic_sorting_index_buffers) {
 		if (buffer != nullptr) {
@@ -281,27 +384,94 @@ void DynamicIBAccessClass::_Deinit()
 	g_dynamic_sorting_index_buffer_offset = 0;
 }
 
-void DynamicIBAccessClass::_Reset(bool)
+void DynamicIBAccessClass::_Reset(bool frame_changed)
 {
+	Release_Stale_Dynamic_Render_Index_Buffers();
 	Release_Stale_Dynamic_Sorting_Index_Buffers();
 	g_dynamic_sorting_index_buffer_offset = 0;
+	if (frame_changed) {
+		g_dynamic_render_index_buffer_offset = 0;
+	}
 }
 
-DynamicIBAccessClass::WriteLockClass::WriteLockClass(DynamicIBAccessClass *ib_access) : DynamicIBAccess(ib_access), Indices(nullptr)
+DynamicIBAccessClass::WriteLockClass::WriteLockClass(DynamicIBAccessClass *ib_access)
+	: DynamicIBAccess(ib_access), Indices(nullptr)
+#if RENEGADE_WITH_BGFX_RENDERER
+	, BgfxMemory(nullptr)
+#endif
 {
 	WWASSERT(ib_access != nullptr);
 	DynamicIBAccess->IndexBuffer->Add_Ref();
-	Indices = static_cast<SortingIndexBufferClass *>(DynamicIBAccess->IndexBuffer)->index_buffer + DynamicIBAccess->IndexBufferOffset;
+	switch (DynamicIBAccess->Get_Type()) {
+	case BUFFER_TYPE_DYNAMIC_RENDER:
+		Indices =
+			static_cast<RenderIndexBufferClass *>(DynamicIBAccess->IndexBuffer)->Get_Source_Index_Data()
+			+ DynamicIBAccess->IndexBufferOffset;
+		break;
+	case BUFFER_TYPE_DYNAMIC_SORTING:
+		Indices = static_cast<SortingIndexBufferClass *>(DynamicIBAccess->IndexBuffer)->index_buffer + DynamicIBAccess->IndexBufferOffset;
+		break;
+	default:
+		WWASSERT(0);
+		break;
+	}
 }
 
 DynamicIBAccessClass::WriteLockClass::~WriteLockClass()
 {
+	switch (DynamicIBAccess->Get_Type()) {
+	case BUFFER_TYPE_DYNAMIC_RENDER:
+	{
+		const unsigned short *source_indices =
+			static_cast<RenderIndexBufferClass *>(DynamicIBAccess->IndexBuffer)->Get_Source_Index_Data()
+			+ DynamicIBAccess->IndexBufferOffset;
+		const unsigned index_bytes = static_cast<unsigned>(DynamicIBAccess->Get_Index_Count()) * sizeof(unsigned short);
+		BgfxMemory = bgfx::copy(source_indices, static_cast<uint32_t>(index_bytes));
+		const bool buffer_updated = static_cast<RenderIndexBufferClass *>(DynamicIBAccess->IndexBuffer)->Update_Bgfx_Dynamic_Buffer(
+			DynamicIBAccess->IndexBufferOffset,
+			BgfxMemory);
+		WWASSERT(buffer_updated);
+		break;
+	}
+	case BUFFER_TYPE_DYNAMIC_SORTING:
+		break;
+	default:
+		WWASSERT(0);
+		break;
+	}
 	DynamicIBAccess->IndexBuffer->Release_Ref();
 }
 
 void DynamicIBAccessClass::Allocate_Render_Dynamic_Buffer()
 {
-	Allocate_Sorting_Dynamic_Buffer();
+	WWASSERT(!g_dynamic_render_index_buffer_in_use);
+	g_dynamic_render_index_buffer_in_use = true;
+
+	const unsigned required_index_count = g_dynamic_render_index_buffer_offset + IndexCount;
+	WWASSERT(required_index_count < 65536);
+	if (required_index_count > g_dynamic_render_index_buffer_size) {
+		if (g_dynamic_render_index_buffer != nullptr) {
+			if (g_dynamic_render_index_buffer->Engine_Refs() > 0) {
+				g_stale_dynamic_render_index_buffers.push_back(g_dynamic_render_index_buffer);
+			} else {
+				REF_PTR_RELEASE(g_dynamic_render_index_buffer);
+			}
+			g_dynamic_render_index_buffer = nullptr;
+		}
+		g_dynamic_render_index_buffer_size = std::max<unsigned short>(
+			static_cast<unsigned short>(required_index_count),
+			kDefaultDynamicIndexCount);
+	}
+
+	if (g_dynamic_render_index_buffer == nullptr) {
+		g_dynamic_render_index_buffer = NEW_REF(
+			RenderIndexBufferClass,
+			(g_dynamic_render_index_buffer_size, RenderIndexBufferClass::USAGE_DYNAMIC, BUFFER_TYPE_DYNAMIC_RENDER));
+		g_dynamic_render_index_buffer_offset = 0;
+	}
+
+	REF_PTR_SET(IndexBuffer, g_dynamic_render_index_buffer);
+	IndexBufferOffset = g_dynamic_render_index_buffer_offset;
 }
 
 void DynamicIBAccessClass::Allocate_Sorting_Dynamic_Buffer()

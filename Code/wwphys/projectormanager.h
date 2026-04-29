@@ -57,35 +57,17 @@ class ProjectorManagerDefClass;
 
 /**
 ** ProjectorManagerClass
-** This class is meant to be embedded in a phyisics object and simply manages the 
-** chore of updating the transforms for texture projectors which are attached
-** to bones in a model
+** Legacy compatibility shim for serialized projector definitions. The maintained
+** runtime no longer instantiates receiver-side texture projectors from object defs.
 */
 class ProjectorManagerClass
 {
 public:
 	ProjectorManagerClass(void);
 	~ProjectorManagerClass(void);
-	
-	enum 
-	{
-		IS_ANIMATED = 0x00000001,
-	};
 
 	void											Init(const ProjectorManagerDefClass & def,RenderObjClass * model);
 	void											Update_From_Model(RenderObjClass * model);
-
-	void											Set_Flag(int flag,bool onoff)		{ (onoff ? Flags |= flag : Flags &= ~flag); }
-	bool											Get_Flag(int flag)					{ return ((Flags & flag) == flag); }
-
-protected:
-	
-	void											Free(void);
-
-	uint16_t										Flags;
-	uint16_t										ProjectorBoneIndex;
-	TexProjectClass *							Projector;
-
 };
 
 
@@ -149,4 +131,3 @@ public:
 
 
 #endif
-

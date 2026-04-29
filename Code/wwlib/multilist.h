@@ -135,6 +135,7 @@ protected:
 	bool							Internal_Remove(MultiListObjectClass *obj);
 
 	MultiListObjectClass	*	Internal_Get_List_Head(void);
+	const MultiListObjectClass * Internal_Get_List_Head(void) const;
 	MultiListObjectClass	*	Internal_Remove_List_Head(void);
 
 private:
@@ -155,6 +156,16 @@ inline bool GenericMultiListClass::Is_Empty(void)
 }
 
 inline MultiListObjectClass * GenericMultiListClass::Internal_Get_List_Head(void)
+{
+	if (Head.Next == &Head) {
+		return 0;					// no more objects
+	} else {
+		assert(Head.Next->Object != 0);
+		return Head.Next->Object;
+	}
+}
+
+inline const MultiListObjectClass * GenericMultiListClass::Internal_Get_List_Head(void) const
 {
 	if (Head.Next == &Head) {
 		return 0;					// no more objects
@@ -254,6 +265,11 @@ public:
 	ObjectType *	Peek_Head()
 	{
 		return ((ObjectType*)Internal_Get_List_Head());
+	}
+
+	const ObjectType * Peek_Head() const
+	{
+		return ((const ObjectType*)Internal_Get_List_Head());
 	}
 
 	ObjectType *	Remove_Head()
@@ -413,6 +429,12 @@ public:
 		return ((ObjectType*)Internal_Get_List_Head());
 	}
 
+	const ObjectType * Peek_Head() const
+	{
+		// no need to add-ref since the caller is 'peek'ing
+		return ((const ObjectType*)Internal_Get_List_Head());
+	}
+
 	ObjectType *	Remove_Head()
 	{
 		// our reference is transferred to the caller of this function
@@ -517,4 +539,3 @@ protected:
 
 
 #endif //LIST_CLASS_H
-

@@ -514,7 +514,7 @@ void SphereRenderObjClass::render_sphere()
  * HISTORY:                                                                                    *
  *   1/19/00    gth : Created.                                                                 *
  *=============================================================================================*/
-void SphereRenderObjClass::vis_render_sphere(SpecialRenderInfoClass & rinfo,const Vector3 & center,const Vector3 & extent)
+void SphereRenderObjClass::vis_render_sphere(VisRenderInfoClass & rinfo,const Vector3 & center,const Vector3 & extent)
 {
 }	// vis_render_sphere
 
@@ -685,15 +685,22 @@ void SphereRenderObjClass::Render(RenderInfoClass & rinfo)
  * HISTORY:                                                                                    *
  *   1/19/00    gth : Created.                                                                 *
  *=============================================================================================*/
-void SphereRenderObjClass::Special_Render(SpecialRenderInfoClass & rinfo)
+void SphereRenderObjClass::Render_Visibility(VisRenderInfoClass & rinfo)
 {
 	Matrix3D temp(1);
 	temp.Translate(Transform.Get_Translation());
-	
+
+	WWASSERT(rinfo.VisRasterizer != NULL);
+	rinfo.VisRasterizer->Set_Model_Transform(temp);
+	vis_render_sphere(rinfo,ObjSpaceCenter,ObjSpaceExtent);
+}
+
+void SphereRenderObjClass::Special_Render(SpecialRenderInfoClass & rinfo)
+{
 	if (rinfo.RenderType == SpecialRenderInfoClass::RENDER_VIS) {
-		WWASSERT(rinfo.VisRasterizer != NULL);
-		rinfo.VisRasterizer->Set_Model_Transform(temp);
-		vis_render_sphere(rinfo,ObjSpaceCenter,ObjSpaceExtent);
+		VisRenderInfoClass vis_rinfo(rinfo.Camera);
+		vis_rinfo.VisRasterizer = rinfo.VisRasterizer;
+		Render_Visibility(vis_rinfo);
 	}
 }
 

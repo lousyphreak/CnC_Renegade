@@ -109,16 +109,6 @@ namespace
 	constexpr uint64_t kMovieSamplerFlags =
 		BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT;
 
-	struct MovieOverlayVertex
-	{
-		float X;
-		float Y;
-		float Z;
-		uint32_t Diffuse;
-		float U0;
-		float V0;
-	};
-
 	bool Is_Movie_Texture_Format_Supported(bgfx::TextureFormat::Enum format)
 	{
 		if (format == bgfx::TextureFormat::Count) {
@@ -556,57 +546,31 @@ void BINKMovieClass::Render()
 
 #if RENEGADE_WITH_BGFX_RENDERER
 	if (bgfx::isValid(MovieTextures.LumaTexture) && bgfx::isValid(MovieTextures.ChromaTexture)) {
-		const bgfx::ProgramHandle program = BgfxRenderer::Get_Movie_YUV_Program();
-		const bgfx::UniformHandle config_uniform = BgfxRenderer::Get_Movie_YUV_Config_Uniform();
-		if (bgfx::isValid(program) && bgfx::isValid(config_uniform)) {
-			const float safe_screen_width = (screen_rect.Width() > 0.0f) ? screen_rect.Width() : 1.0f;
-			const float safe_screen_height = (screen_rect.Height() > 0.0f) ? screen_rect.Height() : 1.0f;
-			const float left = (((movie_rect.Left - screen_rect.Left) / safe_screen_width) * 2.0f) - 1.0f;
-			const float right = (((movie_rect.Right - screen_rect.Left) / safe_screen_width) * 2.0f) - 1.0f;
-			const float top = 1.0f - (((movie_rect.Top - screen_rect.Top) / safe_screen_height) * 2.0f);
-			const float bottom = 1.0f - (((movie_rect.Bottom - screen_rect.Top) / safe_screen_height) * 2.0f);
-			const MovieOverlayVertex vertices[4] = {
-				{left,  top,    0.0f, 0xffffffffu, 0.0f, 0.0f},
-				{left,  bottom, 0.0f, 0xffffffffu, 0.0f, 1.0f},
-				{right, top,    0.0f, 0xffffffffu, 1.0f, 0.0f},
-				{right, bottom, 0.0f, 0xffffffffu, 1.0f, 1.0f},
-			};
-			static const uint16_t indices[6] = {0, 1, 2, 2, 1, 3};
+		const float safe_screen_width = (screen_rect.Width() > 0.0f) ? screen_rect.Width() : 1.0f;
+		const float safe_screen_height = (screen_rect.Height() > 0.0f) ? screen_rect.Height() : 1.0f;
+		const float left = (((movie_rect.Left - screen_rect.Left) / safe_screen_width) * 2.0f) - 1.0f;
+		const float right = (((movie_rect.Right - screen_rect.Left) / safe_screen_width) * 2.0f) - 1.0f;
+		const float top = 1.0f - (((movie_rect.Top - screen_rect.Top) / safe_screen_height) * 2.0f);
+		const float bottom = 1.0f - (((movie_rect.Bottom - screen_rect.Top) / safe_screen_height) * 2.0f);
+		const uint32_t diffuse = 0xffffffffu;
+		const WW3D::OverlaySubmitVertex vertices[4] = {
+			{left,  top,    0.0f, diffuse, 0.0f, 0.0f},
+			{left,  bottom, 0.0f, diffuse, 0.0f, 1.0f},
+			{right, top,    0.0f, diffuse, 1.0f, 0.0f},
+			{right, bottom, 0.0f, diffuse, 1.0f, 1.0f},
+		};
+		static const uint16_t indices[6] = {0, 1, 2, 2, 1, 3};
 
-			const bgfx::VertexLayout &layout = BgfxRenderer::Get_Overlay_Layout();
-			if (bgfx::getAvailTransientVertexBuffer(4, layout) == 4
-				&& bgfx::getAvailTransientIndexBuffer(6) == 6) {
-				bgfx::TransientVertexBuffer vertex_buffer;
-				bgfx::TransientIndexBuffer index_buffer;
-				bgfx::allocTransientVertexBuffer(&vertex_buffer, 4, layout);
-				bgfx::allocTransientIndexBuffer(&index_buffer, 6);
-				std::memcpy(vertex_buffer.data, vertices, sizeof(vertices));
-				std::memcpy(index_buffer.data, indices, sizeof(indices));
-
-				MovieOverlayVertex *submission_vertices = reinterpret_cast<MovieOverlayVertex *>(vertex_buffer.data);
-				for (unsigned i = 0; i < 4; ++i) {
-					submission_vertices[i].Diffuse = BgfxRenderer::Convert_Packed_Color(0xffffffffu);
-				}
-
-				BgfxRenderer::Prepare_Overlay_View();
-				bgfx::setVertexBuffer(0, &vertex_buffer);
-				bgfx::setIndexBuffer(&index_buffer);
-				bgfx::setTexture(0, BgfxRenderer::Get_Texture0_Uniform(), MovieTextures.LumaTexture, kMovieSamplerFlags);
-				bgfx::setTexture(1, BgfxRenderer::Get_Texture1_Uniform(), MovieTextures.ChromaTexture, kMovieSamplerFlags);
-
-				const float movie_config[4] = {
-					FullRangeVideo ? 1.0f : 0.0f,
-					0.0f,
-					0.0f,
-					0.0f
-				};
-				bgfx::setUniform(config_uniform, movie_config);
-
-				ShaderClass shader = Render2DClass::Get_Default_Shader();
-				BgfxRenderer::Apply_Render_State(shader);
-				bgfx::submit(BgfxRenderer::Get_Overlay_View_Id(), program);
-			}
-		}
+		OverlayYUVSubmitDesc submission;
+		submission.Vertices = vertices;
+		submission.VertexCount = 4;
+		submission.Indices = indices;
+		submission.IndexCount = 6;
+		submission.LumaTexture = MovieTextures.LumaTexture;
+		submission.ChromaTexture = MovieTextures.ChromaTexture;
+		submission.SamplerFlags = kMovieSamplerFlags;
+		submission.FullRangeVideo = FullRangeVideo;
+		WW3D::Submit_YUV_Overlay(submission);
 	}
 #else
 	for (unsigned t = 0; t < TextureCount; ++t) {

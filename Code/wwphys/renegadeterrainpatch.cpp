@@ -36,6 +36,8 @@
 
 #include "renegadeterrainpatch.h"
 
+#include "bgfxrenderer.h"
+#include "dx8wrapper.h"
 #include "vertexbuffer.h"
 #include "indexbuffer.h"
 #include "ww3d.h"
@@ -85,6 +87,46 @@ enum
 	VARID_MAX_TEXTURE_PASSES,
 	VARID_IS_PRELIT,
 };
+
+namespace
+{
+bool Submit_Terrain_Classified_Draw(
+	const VertexBufferClass &vertex_buffer,
+	const IndexBufferClass &index_buffer,
+	unsigned short polygon_count,
+	unsigned short vertex_count,
+	TextureClass * const *textures,
+	const VertexMaterialClass *material,
+	const ShaderClass &shader,
+	bool receive_shadows,
+	bool cast_shadows,
+	const Matrix3D &world_transform,
+	const WW3D::LightingSubmitDesc *lighting,
+	const WW3D::FixedFunctionStateDesc *render_state)
+{
+	if (polygon_count == 0 || vertex_count == 0) {
+		return true;
+	}
+
+	WW3D::FixedFunctionSubmitDesc submission;
+	submission.VertexBuffer = &vertex_buffer;
+	submission.IndexBuffer = &index_buffer;
+	submission.PolygonCount = polygon_count;
+	submission.VertexCount = vertex_count;
+	submission.Textures[0] = textures != NULL ? textures[0] : NULL;
+	submission.Textures[1] = textures != NULL ? textures[1] : NULL;
+	submission.Material = const_cast<VertexMaterialClass *>(material);
+	submission.Shader = shader;
+	submission.WorldTransform = Matrix4(world_transform);
+	WW3D::Get_Transform(WW3D::RENDER_TRANSFORM_VIEW, submission.ViewTransform);
+	WW3D::Get_Transform(WW3D::RENDER_TRANSFORM_PROJECTION, submission.ProjectionTransform);
+	submission.Lighting = lighting;
+	submission.RenderState = render_state;
+	submission.ReceiveShadows = receive_shadows;
+	submission.CastShadows = cast_shadows;
+	return WW3D::Submit_Fixed_Function_Draw(submission);
+}
+}
 
 
 //////////////////////////////////////////////////////////////////////
@@ -326,17 +368,7 @@ RenegadeTerrainPatchClass::Render (RenderInfoClass &rinfo)
 		BaseMaterial->Set_Ambient_Color_Source (VertexMaterialClass::COLOR1);
 		BaseMaterial->Set_Diffuse_Color_Source (VertexMaterialClass::COLOR1);
 	}
-
-	//
-	// Install the mesh'es transform.  NOTE, this could go wrong if someone changes the
-	// transform between the time that the mesh is rendered and the time that the decal
-	// mesh is rendered...  It shouldn't happen though.
-	//
-	WW3D::Set_Transform (WW3D::RENDER_TRANSFORM_WORLD, Get_Transform ());
-
-	if (rinfo.light_environment != NULL) {
-		WW3D::Set_Light_Environment (rinfo.light_environment);
-	}
+	const WW3D::LightingSubmitDesc * lighting = rinfo.lighting_submission;
 
 	//
 	// If the object's inherent materials are not disabled, render the terrain
@@ -347,7 +379,7 @@ RenegadeTerrainPatchClass::Render (RenderInfoClass &rinfo)
 		//	Render the base passes first
 		//
 		for (int index = 0; index < MaterialPassList.Count (); index ++) {
-			Render_By_Texture (index, RenegadeTerrainMaterialPassClass::PASS_BASE);
+			Render_By_Texture (index, RenegadeTerrainMaterialPassClass::PASS_BASE, lighting, NULL);
 		}
 
 		//
@@ -360,7 +392,7 @@ RenegadeTerrainPatchClass::Render (RenderInfoClass &rinfo)
 		//	Next render the alpha passes
 		//
 		for (int index = 0; index < MaterialPassList.Count (); index ++) {
-			Render_By_Texture (index, RenegadeTerrainMaterialPassClass::PASS_ALPHA);
+			Render_By_Texture (index, RenegadeTerrainMaterialPassClass::PASS_ALPHA, lighting, NULL);
 		}
 	}
 
@@ -370,7 +402,7 @@ RenegadeTerrainPatchClass::Render (RenderInfoClass &rinfo)
 	for (int i=0; i<rinfo.Additional_Pass_Count(); i++) {
 		
 		MaterialPassClass * matpass = rinfo.Peek_Additional_Pass(i);
-		Render_Procedural_Material_Pass(matpass);
+		Render_Procedural_Material_Pass(matpass, lighting, NULL);
 	}
 
 	//
@@ -386,13 +418,30 @@ RenegadeTerrainPatchClass::Render (RenderInfoClass &rinfo)
 	return ;
 }
 
+void
+RenegadeTerrainPatchClass::Render_Material_Passes(RenderInfoClass &rinfo,MaterialPassClass * const * passes,int pass_count)
+{
+	if (AreBuffersDirty) {
+		Update_Rendering_Buffers ();
+		AreBuffersDirty = false;
+	}
+
+	const WW3D::LightingSubmitDesc * lighting = rinfo.lighting_submission;
+	for (int pass_index = 0; pass_index < pass_count; ++pass_index) {
+		MaterialPassClass * matpass = passes[pass_index];
+		if (matpass != NULL) {
+			Render_Procedural_Material_Pass(matpass, lighting, NULL);
+		}
+	}
+}
+
 //////////////////////////////////////////////////////////////////////
 //
 //	Render_Procedural_Material_Pass
 //
 //////////////////////////////////////////////////////////////////////
 void
-RenegadeTerrainPatchClass::Render_Procedural_Material_Pass(MaterialPassClass * matpass)
+RenegadeTerrainPatchClass::Render_Procedural_Material_Pass(MaterialPassClass * matpass, const WW3D::LightingSubmitDesc * lighting, const WW3D::FixedFunctionStateDesc * render_state)
 {
 #if 0
 	if ((pass->Get_Cull_Volume() != NULL) && (MaterialPassClass::Is_Per_Polygon_Culling_Enabled())) {
@@ -477,19 +526,33 @@ RenegadeTerrainPatchClass::Render_Procedural_Material_Pass(MaterialPassClass * m
 		/*
 		** Normal mesh case, render polys with this mesh's transform
 		*/
-		matpass->Install_Materials();		
+	TextureClass *textures[MAX_TEXTURE_STAGES] = {
+		matpass->Peek_Texture (0),
+		matpass->Peek_Texture (1)
+	};
+	const bool receive_shadows = matpass->Peek_Shader ().Get_Dst_Blend_Func () == ShaderClass::DSTBLEND_ZERO;
+	WW3D::FixedFunctionStateDesc explicit_state;
+	if (render_state == NULL) {
+		WW3D::Capture_Current_Fixed_Function_State(explicit_state, matpass->Peek_Material());
+		render_state = &explicit_state;
+	}
 
 		//
 		//	Render the base passes first
 		//
 		for (int index = 0; index < MaterialPassList.Count (); index ++) {
-			Submit_Rendering_Buffers (index, RenegadeTerrainMaterialPassClass::PASS_BASE);
+			RenegadeTerrainMaterialPassClass *material_pass = MaterialPassList[index];
+			RenderVertexBufferClass *vertex_buffer = material_pass->VertexBuffers[RenegadeTerrainMaterialPassClass::PASS_BASE];
+			RenderIndexBufferClass *index_buffer = material_pass->IndexBuffers[RenegadeTerrainMaterialPassClass::PASS_BASE];
+			if (vertex_buffer == NULL || index_buffer == NULL) {
+				continue;
+			}
 
 			//
 			//	Alias some data
 			//
-			DynamicVectorClass<int> &vert_list  = MaterialPassList[index]->VertexRenderList[RenegadeTerrainMaterialPassClass::PASS_BASE];
-			DynamicVectorClass<int> &quad_list	= MaterialPassList[index]->QuadList[RenegadeTerrainMaterialPassClass::PASS_BASE];
+			DynamicVectorClass<int> &vert_list  = material_pass->VertexRenderList[RenegadeTerrainMaterialPassClass::PASS_BASE];
+			DynamicVectorClass<int> &quad_list	= material_pass->QuadList[RenegadeTerrainMaterialPassClass::PASS_BASE];
 
 			//
 			//	Determine how many polygons and verts to render
@@ -498,42 +561,22 @@ RenegadeTerrainPatchClass::Render_Procedural_Material_Pass(MaterialPassClass * m
 			int vert_count = vert_list.Count ();
 			int poly_count	= quad_count * 2;
 
-		//
-		//	Draw the mesh!
-		//
-		WW3D::Submit_Current_Triangles(
-			0,
-			poly_count,
-			0,
-			vert_count);
-	}
+			const bool submitted = Submit_Terrain_Classified_Draw(
+				*vertex_buffer,
+				*index_buffer,
+				static_cast<unsigned short>(poly_count),
+				static_cast<unsigned short>(vert_count),
+				textures,
+				matpass->Peek_Material (),
+				matpass->Peek_Shader (),
+				receive_shadows,
+				false,
+				Get_Transform (),
+				lighting,
+				render_state);
+			WWASSERT(submitted);
+		}
 //	}
-}
-
-
-//////////////////////////////////////////////////////////////////////
-//
-//	Submit_Rendering_Buffers
-//
-//////////////////////////////////////////////////////////////////////
-void
-RenegadeTerrainPatchClass::Submit_Rendering_Buffers (int texture_index, int pass_type)
-{
-	//
-	//	Don't render this layer if there isn't anything to render!
-	//
-	if (	MaterialPassList[texture_index]->VertexBuffers[pass_type] == NULL ||
-			MaterialPassList[texture_index]->IndexBuffers[pass_type] == NULL)
-	{
-		return ;
-	}
-
-	//
-	// Set vertex and index buffers
-	//
-	WW3D::Set_Vertex_Buffer (MaterialPassList[texture_index]->VertexBuffers[pass_type]);
-	WW3D::Set_Index_Buffer (MaterialPassList[texture_index]->IndexBuffers[pass_type], 0);	
-	return ;
 }
 
 
@@ -543,7 +586,7 @@ RenegadeTerrainPatchClass::Submit_Rendering_Buffers (int texture_index, int pass
 //
 //////////////////////////////////////////////////////////////////////
 void
-RenegadeTerrainPatchClass::Render_By_Texture (int texture_index, int pass_type)
+RenegadeTerrainPatchClass::Render_By_Texture (int texture_index, int pass_type, const WW3D::LightingSubmitDesc * lighting, const WW3D::FixedFunctionStateDesc * render_state)
 {
 	//
 	//	Don't render this layer if there isn't anything to render!
@@ -554,33 +597,31 @@ RenegadeTerrainPatchClass::Render_By_Texture (int texture_index, int pass_type)
 		return ;
 	}
 
-	//
-	//	Pass the vertex and index buffers onto DX8
-	//
-	Submit_Rendering_Buffers (texture_index, pass_type);
+	RenegadeTerrainMaterialPassClass *material_pass = MaterialPassList[texture_index];
+	RenderVertexBufferClass *vertex_buffer = material_pass->VertexBuffers[pass_type];
+	RenderIndexBufferClass *index_buffer = material_pass->IndexBuffers[pass_type];
+	TextureClass *textures[MAX_TEXTURE_STAGES] = { material_pass->Material->Peek_Texture (), NULL };
+	VertexMaterialClass *material = NULL;
+	ShaderClass shader = 0;
 
-	//
-	//	Configure the texture
-	//
-	WW3D::Set_Texture (0, MaterialPassList[texture_index]->Material->Peek_Texture ());
-	WW3D::Set_Texture (1, NULL);
-
-	//
-	//	Configure the material and shader
-	//
 	if (pass_type == RenegadeTerrainMaterialPassClass::PASS_BASE) {
-		WW3D::Set_Material (BaseMaterial);
-		WW3D::Set_Shader (BaseShader);
+		material = BaseMaterial;
+		shader = BaseShader;
 	} else {
-		WW3D::Set_Material (LayerMaterial);
-		WW3D::Set_Shader (LayerShader);
+		material = LayerMaterial;
+		shader = LayerShader;
+	}
+	WW3D::FixedFunctionStateDesc explicit_state;
+	if (render_state == NULL) {
+		WW3D::Capture_Current_Fixed_Function_State(explicit_state, material);
+		render_state = &explicit_state;
 	}
 
 	//
 	//	Alias some data
 	//
-	DynamicVectorClass<int> &vert_list  = MaterialPassList[texture_index]->VertexRenderList[pass_type];
-	DynamicVectorClass<int> &quad_list	= MaterialPassList[texture_index]->QuadList[pass_type];
+	DynamicVectorClass<int> &vert_list  = material_pass->VertexRenderList[pass_type];
+	DynamicVectorClass<int> &quad_list	= material_pass->QuadList[pass_type];
 
 	//
 	//	Determine how many polygons and verts to render
@@ -595,7 +636,20 @@ RenegadeTerrainPatchClass::Render_By_Texture (int texture_index, int pass_type)
 	// Terrain alpha layers are part of the final opaque terrain surface, so
 	// every composed terrain pass needs the shadow term instead of only the
 	// non-blended base layer.
-	WW3D::Submit_Current_Triangles(0, poly_count, 0, vert_count, true, false);
+	const bool submitted = Submit_Terrain_Classified_Draw(
+		*vertex_buffer,
+		*index_buffer,
+		static_cast<unsigned short>(poly_count),
+		static_cast<unsigned short>(vert_count),
+		textures,
+		material,
+		shader,
+		true,
+		false,
+		Get_Transform (),
+		lighting,
+		render_state);
+	WWASSERT(submitted);
 	return ;
 }
 

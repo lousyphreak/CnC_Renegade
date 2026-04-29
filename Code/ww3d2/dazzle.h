@@ -256,7 +256,7 @@ class DazzleRenderObjClass : public RenderObjClass
 	static bool	_dazzle_rendering_enabled;
 
 //	static void Draw_Debug_Dazzle(int idx);
-	void vis_render_dazzle(SpecialRenderInfoClass & rinfo);
+	void vis_render_dazzle(VisRenderInfoClass & rinfo);
 
 	void Render_Dazzle(CameraClass* camera);
 
@@ -277,6 +277,7 @@ public:
 	virtual int						Class_ID(void)	const { return CLASSID_DAZZLE; }
 	
 	virtual void					Render(RenderInfoClass & rinfo);
+	virtual void					Render_Visibility(VisRenderInfoClass & rinfo);
 	virtual void Special_Render(SpecialRenderInfoClass & rinfo);
 	virtual void 					Set_Transform(const Matrix3D &m); 
    virtual void					Get_Obj_Space_Bounding_Sphere(SphereClass & sphere) const;

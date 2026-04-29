@@ -70,7 +70,7 @@ public:
 
 	void											Init(const StaticAnimPhysDefClass & def);
 	virtual void								Set_Model(RenderObjClass * model);
-	virtual void								Vis_Render(SpecialRenderInfoClass & rinfo);
+	virtual void								Vis_Render(VisRenderInfoClass & rinfo);
 	
 	/*
 	** Static properties

@@ -51,6 +51,7 @@ RenderInfoClass::RenderInfoClass(CameraClass & cam) :
 	fog_end(0.0f),
 	fog_scale(0.0f),
 	light_environment(0),
+	lighting_submission(0),
 	AdditionalMaterialPassCount(0),
 	RejectedMaterialPasses(0),
 	OverrideFlagLevel(0)
@@ -129,6 +130,26 @@ RenderInfoClass::RINFO_OVERRIDE_FLAGS & RenderInfoClass::Current_Override_Flags(
 **
 ***********************************************************************************************/
 
+VisRenderInfoClass::VisRenderInfoClass(CameraClass & cam) :
+	RenderInfoClass(cam),
+	VisRasterizer(NULL)
+{
+}
+
+VisRenderInfoClass::~VisRenderInfoClass(void)
+{
+}
+
+ShadowRenderInfoClass::ShadowRenderInfoClass(CameraClass & cam) :
+	RenderInfoClass(cam),
+	BWRenderer(NULL)
+{
+}
+
+ShadowRenderInfoClass::~ShadowRenderInfoClass(void)
+{
+}
+
 SpecialRenderInfoClass::SpecialRenderInfoClass(CameraClass & cam,int render_type) :
 	RenderInfoClass(cam),
 	RenderType(render_type),
@@ -140,4 +161,3 @@ SpecialRenderInfoClass::SpecialRenderInfoClass(CameraClass & cam,int render_type
 SpecialRenderInfoClass::~SpecialRenderInfoClass(void)
 {
 }
-

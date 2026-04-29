@@ -71,11 +71,14 @@ class SphereClass;
 class AABoxClass;
 class RenderInfoClass;
 class SpecialRenderInfoClass;
+class VisRenderInfoClass;
+class ShadowRenderInfoClass;
 class	IntersectionClass;
 class	IntersectionResultClass;
 class DecalGeneratorClass;
 class RenderObjProxyClass;
 class StringClass;
+class MaterialPassClass;
 template<class T> class DynamicVectorClass;
 
 // "unreferenced formal parameter" 
@@ -212,6 +215,9 @@ public:
 	//           should reset their "emitted particle counts" so they can be re-used.)
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	virtual void					Render(RenderInfoClass & rinfo)											= 0;
+	virtual void					Render_Material_Passes(RenderInfoClass & rinfo,MaterialPassClass * const * passes,int pass_count)	{ }
+	virtual void					Render_Visibility(VisRenderInfoClass & rinfo)						{ }
+	virtual void					Render_Shadow(ShadowRenderInfoClass & rinfo)						{ }
 	virtual void					Special_Render(SpecialRenderInfoClass & rinfo)						{ }
 	virtual void					On_Frame_Update(void) 														{ }
 	virtual void					Restart(void)																	{ }	

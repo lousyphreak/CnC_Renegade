@@ -43,11 +43,16 @@
 #define WW3D_H
 
 #include "always.h"
+#include "matrix4.h"
 #include "vector3.h"
 #include "layer.h"
+#include "renderer_types.h"
+#include "shader.h"
 #include "w3derr.h"
 #include "robjlist.h"
 #include "ww3dformat.h"
+
+#include <cstdint>
 
 class		SceneClass;
 class		CameraClass;
@@ -68,6 +73,7 @@ class		VertexBufferClass;
 class		IndexBufferClass;
 class		DynamicVBAccessClass;
 class		DynamicIBAccessClass;
+struct OverlayYUVSubmitDesc;
 
 #define MESH_RENDER_SNAPSHOT_ENABLED
 #define SNAPSHOT_SAY(x) if (WW3D::Is_Snapshot_Activated()) { WWDEBUG_SAY(x); }
@@ -151,6 +157,99 @@ public:
 		unsigned int LightChanges;
 		unsigned int RenderStateChanges;
 		unsigned int TextureStageStateChanges;
+	};
+
+	struct OverlaySubmitVertex {
+		float X;
+		float Y;
+		float Z;
+		std::uint32_t Diffuse;
+		float U0;
+		float V0;
+	};
+
+	struct OverlaySubmitDesc {
+		const OverlaySubmitVertex *Vertices = NULL;
+		std::uint32_t VertexCount = 0;
+		const std::uint16_t *Indices = NULL;
+		std::uint32_t IndexCount = 0;
+		TextureClass *Texture = NULL;
+		ShaderClass Shader;
+		bool HasTexture = false;
+	};
+
+	static constexpr std::uint32_t MAX_SUBMIT_LIGHTS = 16;
+
+	enum SubmitLightTypeEnum {
+		SUBMIT_LIGHT_TYPE_NONE = 0,
+		SUBMIT_LIGHT_TYPE_DIRECTIONAL = 1,
+		SUBMIT_LIGHT_TYPE_POINT = 2,
+		SUBMIT_LIGHT_TYPE_SPOT = 3
+	};
+
+	struct SubmitLightDesc {
+		SubmitLightTypeEnum Type = SUBMIT_LIGHT_TYPE_NONE;
+		Vector3 Position = Vector3(0, 0, 0);
+		Vector3 Direction = Vector3(0, 0, 0);
+		Vector3 Diffuse = Vector3(0, 0, 0);
+		Vector3 Ambient = Vector3(0, 0, 0);
+		float Range = 0.0f;
+		float AttenuationStart = 0.0f;
+		float SpotInnerCos = -2.0f;
+	};
+
+	struct LightingSubmitDesc {
+		Vector3 SceneAmbient = Vector3(0, 0, 0);
+		const SubmitLightDesc *Lights = NULL;
+		std::uint32_t LightCount = 0;
+	};
+
+	struct FixedFunctionStateDesc {
+		unsigned CullMode = D3DCULL_CW;
+		unsigned FillMode = D3DFILL_SOLID;
+		bool FogEnabled = false;
+		Vector3 FogColor = Vector3(0, 0, 0);
+		float FogStart = 0.0f;
+		float FogEnd = 1.0f;
+		bool RangeFog = false;
+		unsigned TexcoordIndex[2] = {
+			D3DTSS_TCI_PASSTHRU | 0u,
+			D3DTSS_TCI_PASSTHRU | 1u
+		};
+		unsigned TextureTransformFlags[2] = {
+			D3DTTFF_DISABLE,
+			D3DTTFF_DISABLE
+		};
+		Matrix4 TextureTransforms[2] = {
+			Matrix4(true),
+			Matrix4(true)
+		};
+		float BumpEnvMatrix[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
+		float BumpEnvLuminanceScale = 1.0f;
+		float BumpEnvLuminanceOffset = 0.0f;
+	};
+
+	struct FixedFunctionSubmitDesc {
+		const VertexBufferClass *VertexBuffer = NULL;
+		unsigned short VertexBufferOffset = 0;
+		const IndexBufferClass *IndexBuffer = NULL;
+		unsigned short IndexBufferOffset = 0;
+		unsigned short IndexBaseOffset = 0;
+		unsigned short StartIndex = 0;
+		unsigned short PolygonCount = 0;
+		unsigned short MinVertexIndex = 0;
+		unsigned short VertexCount = 0;
+		TextureClass *Textures[2] = { NULL, NULL };
+		VertexMaterialClass *Material = NULL;
+		ShaderClass Shader;
+		Matrix4 WorldTransform = Matrix4(true);
+		Matrix4 ViewTransform = Matrix4(true);
+		Matrix4 ProjectionTransform = Matrix4(true);
+		const LightingSubmitDesc *Lighting = NULL;
+		const FixedFunctionStateDesc *RenderState = NULL;
+		bool Strip = false;
+		bool ReceiveShadows = false;
+		bool CastShadows = false;
 	};
 
 
@@ -249,8 +348,13 @@ public:
 	static void					Set_Depth_Bias(unsigned int bias);
 	static void					Set_Polygon_Fill_Mode(PolygonFillModeEnum mode);
 	static void					Insert_Sorted_Triangles(unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count);
+	static void					Capture_Current_Lighting_Submission(LightingSubmitDesc &lighting, SubmitLightDesc *lights, std::uint32_t max_lights = MAX_SUBMIT_LIGHTS);
+	static void					Capture_Current_Fixed_Function_State(FixedFunctionStateDesc &state, const VertexMaterialClass *material = NULL);
+	static bool					Submit_Fixed_Function_Draw(const FixedFunctionSubmitDesc &submission);
 	static bool					Submit_Current_Triangles(unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count);
 	static bool					Submit_Current_Triangles(unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count, bool receive_shadows, bool cast_shadows);
+	static bool					Submit_Overlay(const OverlaySubmitDesc &submission);
+	static bool					Submit_YUV_Overlay(const OverlayYUVSubmitDesc &submission);
 	static TextureClass *	Create_Render_Target_Texture(unsigned width, unsigned height, WW3DFormat format);
 	static void					Reset_Render_Target(void);
 

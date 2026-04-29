@@ -100,7 +100,7 @@ GridEffectClass::~GridEffectClass(void)
 	REF_PTR_RELEASE(MaterialPass);
 }
 	
-void GridEffectClass::Render_Push(RenderInfoClass & rinfo,PhysClass * obj)
+void GridEffectClass::Gather_Render_Effect(RenderEffectCollection & context,PhysClass * obj)
 {
 	if (CurrentParameter == TargetParameter) {
 		if (CurrentParameter < 0.5f) {
@@ -139,7 +139,7 @@ void GridEffectClass::Render_Push(RenderInfoClass & rinfo,PhysClass * obj)
 
 	GridTransform = obj->Get_Transform();
 
-	Matrix3D camera_tm = rinfo.Camera.Get_Transform();
+	Matrix3D camera_tm = context.Camera.Get_Transform();
 
 	Matrix3D xgridtm;
 	GridTransform.Get_Inverse(xgridtm);
@@ -162,19 +162,11 @@ void GridEffectClass::Render_Push(RenderInfoClass & rinfo,PhysClass * obj)
 	/*
 	** Push this pass if it is visible, decide whether or not to render the base passes
 	*/
-	rinfo.Push_Material_Pass(MaterialPass);
+	context.Add_Pass(MaterialPass);
 	
 	if (RenderBaseMaterial == false) {
-		rinfo.Push_Override_Flags(RenderInfoClass::RINFO_OVERRIDE_ADDITIONAL_PASSES_ONLY);
+		context.Suppress_Base_Pass();
 	}
-}
-
-void GridEffectClass::Render_Pop(RenderInfoClass & rinfo)
-{
-	if (RenderBaseMaterial == false) {
-		rinfo.Pop_Override_Flags();
-	}
-	rinfo.Pop_Material_Pass();
 }
 
 void GridEffectClass::Set_Grid_Transform(const Matrix3D & tm)
@@ -196,4 +188,3 @@ TextureClass * GridEffectClass::Peek_Texture(void)
 {
 	return MaterialPass->Peek_Texture();
 }
-

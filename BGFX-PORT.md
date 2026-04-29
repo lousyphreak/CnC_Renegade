@@ -27,6 +27,46 @@ There are remnants or an earlier attempt, but you need to **IGNORE** that and st
 - Keep compatibility surfaces such as serialized `Shadow_Mode` values, but collapse any legacy non-zero mode to the shadow-map path instead of reviving projector-based shadows.
 - Generic projector features that are not shadows may remain, but shadow-specific projector generation should be removed rather than hidden behind settings.
 
+## Architecture cleanup targets
+
+The bgfx port should not stop at "make the old D3D8 pipeline run through bgfx". The target is a **bgfx-native, shader-driven renderer** that preserves game behavior while deleting D3D8-era intermediate layers.
+
+### Eliminate DX8-style renderer state as the main internal contract
+
+- `DX8Wrapper` render states, texture-stage states, fake `D3DLIGHT8` slots, and `Apply_Render_State_Changes()` are migration scaffolding, not end-state architecture.
+- Fog, lighting, material, texture, and transform inputs should move to explicit renderer-owned scene/view/draw data instead of being reconstructed from fake device state.
+- bgfx submission should not need to read back `D3DRS_*` / `D3DTSS_*` values to understand what to draw.
+
+### Collapse shader/material/pass layers into explicit draw descriptors
+
+- `ShaderClass`, `VertexMaterialClass`, and `MaterialPassClass` still encode fixed-function semantics and global-state mutation.
+- The long-term target is a material/pipeline descriptor that directly maps to shader program, uniforms, textures, blend/depth/cull state, and special render-phase flags.
+- Preserve authored behavior; do not preserve D3D8-shaped implementation layering.
+
+### Remove mapper round-trips through texture-stage state
+
+- Texgen, projective mapping, and bump-env mapping should become direct shader parameters or material variants.
+- Do not keep `MatrixMapperClass`, `BumpEnvTextureMapperClass`, or related mappers alive as "write fake texture-stage state, then read it back in bgfx" infrastructure longer than necessary.
+
+### Do not keep old hardware limits as renderer design goals
+
+- Two texture stages, four hardware lights, FVF categories, and pass-array ownership are legacy constraints, not future architecture.
+- If authored content still fits inside some of those limits, that is fine, but the renderer should no longer be organized around them.
+
+### Move sorting and delayed paths under renderer ownership
+
+- Static sort lists, delayed material passes, and object-local scheduling are legacy batching mechanisms.
+- The renderer should own:
+  - draw-key sorting
+  - opaque/translucent/special pass phases
+  - shadow/depth pass scheduling
+- Keep only the explicit special handling still required for correct alpha ordering or CPU-sorted legacy content.
+
+### Prefer bgfx-native dynamic/streaming buffer ownership
+
+- Preserve a distinct path only where CPU-sorted or CPU-generated geometry still truly requires it.
+- Ordinary dynamic rendering should not preserve D3D lock/discard-era abstractions once equivalent bgfx dynamic/transient paths exist.
+
 ## Shader Architecture
 
 The mesh rendering pipeline uses **2 shader programs** (down from 4):
@@ -64,6 +104,7 @@ Only **per-mesh scene state** (scene ambient color and active light descriptors)
 - **Lighting stays on the GPU**: the bgfx mesh path must consume full `D3DLIGHT8`-style descriptors in shader uniforms and evaluate point/spot/directional lighting per pixel instead of collapsing local lights into directional proxies at submit time.
 - **Keep dynamic render and sorting submissions separate**: `BUFFER_TYPE_DYNAMIC_SORTING` still needs CPU-resident sorting/index arrays because the legacy sorted path rewrites geometry on the CPU, but ordinary `BUFFER_TYPE_DYNAMIC_RENDER` submissions should use reusable bgfx dynamic buffers and upload directly from the write lock instead of bouncing through the sorting arrays and then through transient vertex uploads.
 - **GPU skinning for W3D skins**: Renegade skin meshes in this codebase are rigid single-bone-per-vertex skins, so the bgfx path should keep one immutable base vertex buffer per `MeshModelClass`, pass the bone index as vertex data, and fetch the current bone matrix from a per-frame palette texture in the vertex shader. The palette upload should be cached per visible `MeshClass` so repeated passes/shadow draws reuse the same uploaded transforms instead of re-uploading or re-deforming geometry. Sorted translucent skins are the one exception: the legacy triangle-sorting path still needs CPU-deformed vertices, so that path should stay on a CPU-generated sorting buffer.
+- **No DX8 state round-trips as an end state**: if a bgfx path currently works only by reading fake wrapper state such as `D3DRS_AMBIENT`, `D3DTSS_TEXCOORDINDEX`, or bump-env stage matrices, treat that as transitional debt to remove, not a stable architecture.
 
 ### Bump Environment Mapping (EMBM)
 

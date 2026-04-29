@@ -44,6 +44,7 @@
 
 #include "always.h"
 #include "scene.h"
+#include "rinfo.h"
 #include "widgetuser.h"
 #include "physlist.h"
 #include "aabtreecull.h"
@@ -55,6 +56,8 @@
 #include "phystexproject.h"
 #include "simplevec.h"
 #include "vissectorstats.h"
+#include "ww3d.h"
+#include "lightenvironment.h"
 
 class	Matrix3D;
 class ChunkLoadClass;
@@ -65,6 +68,7 @@ class LightClass;
 class StaticPhysClass;
 class RenderInfoClass;
 class SpecialRenderInfoClass;
+class ShadowRenderInfoClass;
 class VisRenderContextClass;
 class VisOptimizationContextClass;
 class AABoxClass;
@@ -74,7 +78,6 @@ class PhysDecalSysClass;
 class MeshClass;
 class VisOptProgressClass;
 class CameraShakeSystemClass;
-class LightEnvironmentClass;
 class StaticAnimPhysClass;
 class StringClass;
 
@@ -864,7 +867,7 @@ public:
 	uint32_t				Get_Max_Simultaneous_Shadows(void);
 
 	CameraClass *				Get_Shadow_Camera(void);
-	SpecialRenderInfoClass *Get_Shadow_Render_Context(int width,int height);
+	ShadowRenderInfoClass *Get_Shadow_Render_Context(int width,int height);
 	MaterialPassClass *		Get_Shadow_Material_Pass(void);
 
 	/*
@@ -1001,7 +1004,9 @@ protected:
 	virtual void				Customized_Render(RenderInfoClass & rinfo);
 	void							Render_Objects(RenderInfoClass& rinfo,RefPhysListClass * static_ws_list,RefPhysListClass * static_list,RefPhysListClass * dyn_list);
 	void							Render_Object(RenderInfoClass & context,PhysClass * obj);
+	void							Render_Object_Effect_Phases(RenderInfoClass & context);
 	void							Render_Backface_Occluders(RenderInfoClass & context,RefPhysListClass *  static_ws_list,RefPhysListClass * static_list);
+	void							Prepare_Frame_Lighting(const CameraClass & camera,RefPhysListClass * static_ws_list,RefPhysListClass * static_list,RefPhysListClass * dyn_list);
 
 	void							Optimize_LODs(	CameraClass & camera,
 														RefPhysListClass * dyn_obj_list,
@@ -1079,6 +1084,18 @@ protected:
 	RefPhysListClass			VisibleWSMeshList;
 	RefPhysListClass			VisibleDynamicObjectList;
 	TexProjListClass			ActiveTextureProjectors;
+	SimpleDynVecClass<WW3D::SubmitLightDesc> FrameLightingArray;
+	struct RenderEffectPhaseEntry
+	{
+		PhysClass * Object;
+		int PassCount;
+		MaterialPassClass * Passes[MAX_ADDITIONAL_MATERIAL_PASSES];
+	};
+	SimpleDynVecClass<RenderEffectPhaseEntry> RenderEffectPhaseQueue;
+	WW3D::LightingSubmitDesc FrameLightingSubmission;
+	WW3D::LightingSubmitDesc PrelitLightingSubmission;
+	LightEnvironmentClass	FrameLightingEnvironment;
+	LightEnvironmentClass	PrelitLightingEnvironment;
 
 	/*
 	** Current frame number, last camera position, etc
@@ -1131,7 +1148,7 @@ protected:
 	float							ShadowNormalIntensity;		// "normal" non attenuated shadow intensity
 	TextureClass *				ShadowBlobTexture;			// texture to use for fake "blob" shadows
 
-	SpecialRenderInfoClass *ShadowRenderContext;			// render context for shadows																	
+	ShadowRenderInfoClass *ShadowRenderContext;			// render context for shadows																	
 	CameraClass *				ShadowCamera;					// camera for rendering shadow textures
 	MaterialPassClass *		ShadowMaterialPass;			// material pass for shadows
 	int							ShadowResWidth;

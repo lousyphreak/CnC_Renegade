@@ -40,8 +40,6 @@
 #include "rect.h"
 #include "texture.h"
 #include "textureloader.h"
-#include "bgfxrenderer.h"
-#include "dx8wrapper.h"
 #include "wwprofile.h"
 #include "wwmemlog.h"
 #include "assetmgr.h"
@@ -53,16 +51,6 @@ RectClass							Render2DClass::ScreenResolution( 0,0,0,0 );
 
 namespace
 {
-struct OverlayVertex
-{
-	float X;
-	float Y;
-	float Z;
-	uint32_t Diffuse;
-	float U0;
-	float V0;
-};
-
 void Apply_Coordinate_Range(Vector2 &coordinate_scale, Vector2 &coordinate_offset, const RectClass &range)
 {
 	coordinate_scale.X = 2 / range.Width();
@@ -576,87 +564,36 @@ void	Render2DClass::Add_Outline( const RectClass & rect, float width, const Rect
 
 void Render2DClass::Render(void)
 {
-	if ( !Indices.Count() || IsHidden || !BgfxRenderer::Is_Initted()) {
-		return;
-	}
-
-	bgfx::ProgramHandle program = BgfxRenderer::Get_Overlay_Program();
-	if (!bgfx::isValid(program)) {
+	if ( !Indices.Count() || IsHidden || !WW3D::Is_Device_Ready()) {
 		return;
 	}
 
 	const bool has_texture =
 		Shader.Get_Texturing() != ShaderClass::TEXTURING_DISABLE && Texture != NULL;
 
-	bgfx::TextureHandle texture_handle = BgfxRenderer::Get_White_Texture();
-	uint32_t sampler_flags = BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT;
-	if (has_texture) {
-		texture_handle = Texture->Get_Bgfx_Texture();
-		sampler_flags = Texture->Get_Bgfx_Sampler_Flags(0);
-		if (!bgfx::isValid(texture_handle)) {
-			texture_handle = BgfxRenderer::Get_White_Texture();
-		}
-	}
-
-	const bgfx::VertexLayout &layout = BgfxRenderer::Get_Overlay_Layout();
 	const uint32_t vertex_count = static_cast<uint32_t>(Vertices.Count());
 	const uint32_t index_count = static_cast<uint32_t>(Indices.Count());
 
-	std::vector<OverlayVertex> submission_vertices(static_cast<size_t>(vertex_count));
+	std::vector<WW3D::OverlaySubmitVertex> submission_vertices(static_cast<size_t>(vertex_count));
 	for (int index = 0; index < Vertices.Count(); ++index) {
-		OverlayVertex &vertex = submission_vertices[static_cast<size_t>(index)];
+		WW3D::OverlaySubmitVertex &vertex = submission_vertices[static_cast<size_t>(index)];
 		vertex.X = Vertices[index].X;
 		vertex.Y = Vertices[index].Y;
 		vertex.Z = ZValue;
-		vertex.Diffuse = BgfxRenderer::Convert_Packed_Color(static_cast<uint32_t>(Colors[index]));
+		vertex.Diffuse = static_cast<uint32_t>(Colors[index]);
 		vertex.U0 = UVCoordinates[index].X;
 		vertex.V0 = UVCoordinates[index].Y;
 	}
 
-	BgfxRenderer::Prepare_Overlay_View();
-
-	const bool can_use_transient =
-		bgfx::getAvailTransientVertexBuffer(vertex_count, layout) == vertex_count &&
-		bgfx::getAvailTransientIndexBuffer(index_count) == index_count;
-
-	if (can_use_transient) {
-		bgfx::TransientVertexBuffer vertex_buffer;
-		bgfx::TransientIndexBuffer index_buffer;
-		bgfx::allocTransientVertexBuffer(&vertex_buffer, vertex_count, layout);
-		bgfx::allocTransientIndexBuffer(&index_buffer, index_count);
-
-		memcpy(vertex_buffer.data, submission_vertices.data(), submission_vertices.size() * sizeof(OverlayVertex));
-		memcpy(index_buffer.data, &Indices[0], static_cast<size_t>(index_count) * sizeof(unsigned short));
-
-		bgfx::setVertexBuffer(0, &vertex_buffer);
-		bgfx::setIndexBuffer(&index_buffer);
-	} else {
-		const bgfx::Memory *vertex_memory = bgfx::copy(
-			submission_vertices.data(),
-			static_cast<uint32_t>(submission_vertices.size() * sizeof(OverlayVertex)));
-		const bgfx::Memory *index_memory = bgfx::copy(
-			&Indices[0],
-			static_cast<uint32_t>(index_count * sizeof(unsigned short)));
-		bgfx::VertexBufferHandle vertex_buffer = bgfx::createVertexBuffer(vertex_memory, layout);
-		bgfx::IndexBufferHandle index_buffer = bgfx::createIndexBuffer(index_memory);
-
-		bgfx::setVertexBuffer(0, vertex_buffer);
-		bgfx::setIndexBuffer(index_buffer);
-
-		bgfx::setTexture(0, BgfxRenderer::Get_Texture0_Uniform(), texture_handle, sampler_flags);
-		BgfxRenderer::Apply_Overlay_Config(has_texture);
-		BgfxRenderer::Apply_Render_State(Shader);
-		bgfx::submit(BgfxRenderer::Get_Overlay_View_Id(), program);
-
-		bgfx::destroy(index_buffer);
-		bgfx::destroy(vertex_buffer);
-		return;
-	}
-
-	bgfx::setTexture(0, BgfxRenderer::Get_Texture0_Uniform(), texture_handle, sampler_flags);
-	BgfxRenderer::Apply_Overlay_Config(has_texture);
-	BgfxRenderer::Apply_Render_State(Shader);
-	bgfx::submit(BgfxRenderer::Get_Overlay_View_Id(), program);
+	WW3D::OverlaySubmitDesc submission;
+	submission.Vertices = submission_vertices.data();
+	submission.VertexCount = vertex_count;
+	submission.Indices = &Indices[0];
+	submission.IndexCount = index_count;
+	submission.Texture = has_texture ? Texture : NULL;
+	submission.Shader = Shader;
+	submission.HasTexture = has_texture;
+	WW3D::Submit_Overlay(submission);
 }
 
 

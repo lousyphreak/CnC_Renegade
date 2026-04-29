@@ -44,19 +44,39 @@
 #include "always.h"
 #include "multilist.h"
 #include "refcount.h"
+#include "rinfo.h"
 
 
 class PhysClass;
-class RenderInfoClass;
 class	MaterialPassClass;
+
+struct RenderEffectCollection
+{
+	RenderEffectCollection(CameraClass & camera);
+	~RenderEffectCollection();
+
+	void					Add_Pass(MaterialPassClass * pass);
+	MaterialPassClass *	Peek_Pass(unsigned index) const;
+	void					Suppress_Base_Pass(void)				{ RenderBasePass = false; }
+	bool					Should_Render_Base_Pass(void) const	{ return RenderBasePass; }
+	unsigned				Get_Pass_Count(void) const			{ return PassCount; }
+	void					Reset(void);
+
+	CameraClass &			Camera;
+
+private:
+	bool					RenderBasePass;
+	unsigned				PassCount;
+	MaterialPassClass *	Passes[MAX_ADDITIONAL_MATERIAL_PASSES];
+};
 
 
 
 /**
 ** MaterialEffectClass
-** This class is an abstract base class for any kind of "extra pass" material effect.  Phys objects
-** support a list of these effects being added to them and will push and pop the effects during
-** rendering.  For "transient" effects like shadows, the auto-remove flag can be enabled which
+** This class is an abstract base class for any kind of "extra pass" material effect. Phys objects
+** support a list of these effects and gather them into explicit renderer-owned effect packets during
+** scene extraction. For "transient" effects like shadows, the auto-remove flag can be enabled which
 ** will cause the physics object to un-link the effect after rendering is complete.
 **
 **  NOTES:
@@ -94,8 +114,7 @@ public:
 
 	virtual void		Timestep(float dt)							{ }
 
-	virtual void		Render_Push(RenderInfoClass & rinfo,PhysClass * obj)		= 0;
-	virtual void		Render_Pop(RenderInfoClass & rinfo)								= 0;
+	virtual void		Gather_Render_Effect(RenderEffectCollection & context,PhysClass * obj) = 0;
 
 	static void			Timestep_All_Effects(float dt);
 
@@ -122,8 +141,7 @@ public:
 	SimpleEffectClass(MaterialPassClass * matpass);
 	~SimpleEffectClass(void);
 
-	virtual void		Render_Push(RenderInfoClass & rinfo,PhysClass * obj);
-	virtual void		Render_Pop(RenderInfoClass & rinfo);
+	virtual void		Gather_Render_Effect(RenderEffectCollection & context,PhysClass * obj);
 
 private:
 
@@ -135,4 +153,3 @@ private:
 
 
 #endif //MATERIALEFFECT_H
-

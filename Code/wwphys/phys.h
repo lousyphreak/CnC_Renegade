@@ -71,6 +71,7 @@ class srScene;
 class srGERD;
 class RenderInfoClass;
 class SpecialRenderInfoClass;
+class VisRenderInfoClass;
 class PhysClass;
 class PhysRayCollisionTestClass;
 class PhysAABoxCollisionTestClass;
@@ -82,6 +83,7 @@ class AABTreeNodeClass;
 class CullLinkClass;
 class BitStreamClass;
 class LightEnvironmentClass;
+class MaterialPassClass;
 
 class DynamicPhysClass;
 class MoveablePhysClass;
@@ -386,7 +388,10 @@ public:
 	** This is just a shortcut to rendering the phys object's render object if it has one
 	*/
 	virtual void					Render(RenderInfoClass & rinfo);
-	virtual void					Vis_Render(SpecialRenderInfoClass & rinfo);
+	virtual void					Render_Material_Passes(RenderInfoClass & rinfo,MaterialPassClass * const * passes,int pass_count);
+	virtual void					Vis_Render(VisRenderInfoClass & rinfo);
+	void								Collect_Render_Effects(RenderEffectCollection & context);
+	void								Finalize_Render_Effects(void);
 	
 	/*
 	** Lighting system.  Each physics object caches its static lighting environment.  This cache must be
@@ -419,10 +424,10 @@ public:
 	/*
 	** Material Effect Support.
 	** As the scene is rendered, the textures being projected onto each object will be
-	** linked in through the following interface.  Then when this object is rendered,
-	** it should push those material passes into the render pipeline.  As this is done,
-	** the list will be reset.  Other user-created material effects can also be
-	** linked to the object through this interface.
+	** linked in through the following interface. During scene extraction, the active
+	** effects are gathered into explicit renderer-owned pass packets and then transient
+	** effects are released once that frame's work has been queued. Other user-created
+	** material effects can also be linked to the object through this interface.
 	*/
 	void								Add_Effect_To_Me(MaterialEffectClass * effect);
 	void								Remove_Effect_From_Me(MaterialEffectClass * effect);
@@ -627,8 +632,8 @@ protected:
 	bool									Get_Flag(uint32_t flag) const 					{ return ((Flags & flag) == flag); }
 	void									Set_Flag(uint32_t flag,bool onoff)			 	{ (onoff ? Flags |= flag : Flags &= ~flag); }
 	
-	void									Push_Effects(RenderInfoClass & rinfo);
-	void									Pop_Effects(RenderInfoClass & rinfo);
+	void									Gather_Effects(RenderEffectCollection & context);
+	void									Release_Auto_Removed_Effects(void);
 
 	virtual void						Update_Sun_Status(void);
 

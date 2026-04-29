@@ -160,7 +160,7 @@ void TransitionEffectClass::Timestep(float dt)
 	RenderTransitionMaterial = (IntensityScale > 0.0f);
 }
 
-void TransitionEffectClass::Render_Push(RenderInfoClass & rinfo,PhysClass * obj)
+void TransitionEffectClass::Gather_Render_Effect(RenderEffectCollection & context,PhysClass * obj)
 {
 	if (RenderTransitionMaterial) {
 		
@@ -177,21 +177,11 @@ void TransitionEffectClass::Render_Push(RenderInfoClass & rinfo,PhysClass * obj)
 		/*
 		** Add the material pass!
 		*/
-		rinfo.Push_Material_Pass(MaterialPass);
+		context.Add_Pass(MaterialPass);
 	}
 	
 	if (RenderBaseMaterial == false) {
-		rinfo.Push_Override_Flags(RenderInfoClass::RINFO_OVERRIDE_ADDITIONAL_PASSES_ONLY);
-	}
-}
-
-void TransitionEffectClass::Render_Pop(RenderInfoClass & rinfo)
-{
-	if (RenderBaseMaterial == false) {
-		rinfo.Pop_Override_Flags();
-	}
-	if (RenderTransitionMaterial) {
-		rinfo.Pop_Material_Pass();
+		context.Suppress_Base_Pass();
 	}
 }
 
@@ -289,4 +279,3 @@ bool TransitionEffectClass::Load(ChunkLoadClass & cload)
 	}
 	return true;
 }
-

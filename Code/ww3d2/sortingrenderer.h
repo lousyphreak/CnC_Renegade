@@ -24,6 +24,7 @@
 #define SORTING_RENDERER_H
 
 #include "always.h"
+#include "ww3d.h"
 
 struct SortingNodeStruct;
 class SphereClass;
@@ -74,6 +75,10 @@ public:
 		unsigned short vertex_count,
 		bool receive_shadows,
 		bool cast_shadows);
+
+	static void Insert_Fixed_Function_Draw(
+		const SphereClass& bounding_sphere,
+		const WW3D::FixedFunctionSubmitDesc &submission);
 
 	static void Flush();
 	static void Deinit();

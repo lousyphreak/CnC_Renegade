@@ -97,6 +97,7 @@ public:
 	TextureMapperClass*	Clone(void) const { 	WWASSERT(0);	return NULL; }
 
 	virtual void			Apply(int uv_array_index);
+	virtual void			Apply_Fixed_Function_State(int uv_array_index, WW3D::FixedFunctionStateDesc &state);
 
 protected:
 	

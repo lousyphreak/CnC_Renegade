@@ -531,6 +531,26 @@ void DistLODClass::Render(RenderInfoClass & rinfo)
 	Lods[CurLod].Model->Render(rinfo);
 }
 
+void DistLODClass::Render_Material_Passes(RenderInfoClass & rinfo,MaterialPassClass * const * passes,int pass_count)
+{
+	if (Is_Not_Hidden_At_All() == false) {
+		return;
+	}
+
+	Update_Lod(rinfo.Camera);
+	Lods[CurLod].Model->Render_Material_Passes(rinfo,passes,pass_count);
+}
+
+void DistLODClass::Render_Visibility(VisRenderInfoClass & rinfo)
+{
+	if (Is_Not_Hidden_At_All() == false) {
+		return;
+	}
+
+	Update_Lod(rinfo.Camera);
+	Lods[CurLod].Model->Render_Visibility(rinfo);
+}
+
 
 /***********************************************************************************************
  * DistLODClass::Special_Render -- custom render function                                      *
@@ -546,6 +566,13 @@ void DistLODClass::Render(RenderInfoClass & rinfo)
  *=============================================================================================*/
 void DistLODClass::Special_Render(SpecialRenderInfoClass & rinfo)
 {
+	if (rinfo.RenderType == SpecialRenderInfoClass::RENDER_VIS) {
+		VisRenderInfoClass vis_rinfo(rinfo.Camera);
+		vis_rinfo.VisRasterizer = rinfo.VisRasterizer;
+		Render_Visibility(vis_rinfo);
+		return;
+	}
+
 	Update_Lod(rinfo.Camera);
 	Lods[CurLod].Model->Special_Render(rinfo);
 }
@@ -1161,4 +1188,3 @@ void DistLODClass::Decrement_Lod(void)
 		}
 	}
 }
-

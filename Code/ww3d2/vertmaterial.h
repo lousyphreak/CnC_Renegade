@@ -184,6 +184,7 @@ public:
 	*/
 	void					Set_UV_Source(int stage,int array_index);
 	int					Get_UV_Source(int stage);
+	void					Apply_Fixed_Function_State(WW3D::FixedFunctionStateDesc &state) const;
 
 	/*
 	** Mapper control.  

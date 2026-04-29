@@ -538,7 +538,7 @@ void BoxRenderObjClass::render_box(RenderInfoClass & rinfo,const Vector3 & cente
  * HISTORY:                                                                                    *
  *   1/19/00    gth : Created.                                                                 *
  *=============================================================================================*/
-void BoxRenderObjClass::vis_render_box(SpecialRenderInfoClass & rinfo,const Vector3 & center,const Vector3 & extent)
+void BoxRenderObjClass::vis_render_box(VisRenderInfoClass & rinfo,const Vector3 & center,const Vector3 & extent)
 {
 	if (!IsInitted) return;
 	
@@ -726,14 +726,21 @@ void AABoxRenderObjClass::Render(RenderInfoClass & rinfo)
  * HISTORY:                                                                                    *
  *   1/19/00    gth : Created.                                                                 *
  *=============================================================================================*/
+void AABoxRenderObjClass::Render_Visibility(VisRenderInfoClass & rinfo)
+{
+	WWASSERT(rinfo.VisRasterizer != NULL);
+	Matrix3D temp(1);
+	temp.Translate(Transform.Get_Translation());
+	rinfo.VisRasterizer->Set_Model_Transform(temp);
+	vis_render_box(rinfo,ObjSpaceCenter,ObjSpaceExtent);
+}
+
 void AABoxRenderObjClass::Special_Render(SpecialRenderInfoClass & rinfo)
 {
 	if (rinfo.RenderType == SpecialRenderInfoClass::RENDER_VIS) {
-		WWASSERT(rinfo.VisRasterizer != NULL);
-		Matrix3D temp(1);
-		temp.Translate(Transform.Get_Translation());
-		rinfo.VisRasterizer->Set_Model_Transform(temp);
-		vis_render_box(rinfo,ObjSpaceCenter,ObjSpaceExtent);
+		VisRenderInfoClass vis_rinfo(rinfo.Camera);
+		vis_rinfo.VisRasterizer = rinfo.VisRasterizer;
+		Render_Visibility(vis_rinfo);
 	}
 }
 
@@ -1110,12 +1117,19 @@ void OBBoxRenderObjClass::Render(RenderInfoClass & rinfo)
  * HISTORY:                                                                                    *
  *   1/19/00    gth : Created.                                                                 *
  *=============================================================================================*/
+void OBBoxRenderObjClass::Render_Visibility(VisRenderInfoClass & rinfo)
+{
+	WWASSERT(rinfo.VisRasterizer != NULL);
+	rinfo.VisRasterizer->Set_Model_Transform(Transform);
+	vis_render_box(rinfo,ObjSpaceCenter,ObjSpaceExtent);
+}
+
 void OBBoxRenderObjClass::Special_Render(SpecialRenderInfoClass & rinfo)
 {
 	if (rinfo.RenderType == SpecialRenderInfoClass::RENDER_VIS) {
-		WWASSERT(rinfo.VisRasterizer != NULL);
-		rinfo.VisRasterizer->Set_Model_Transform(Transform);
-		vis_render_box(rinfo,ObjSpaceCenter,ObjSpaceExtent);
+		VisRenderInfoClass vis_rinfo(rinfo.Camera);
+		vis_rinfo.VisRasterizer = rinfo.VisRasterizer;
+		Render_Visibility(vis_rinfo);
 	}
 }
 
@@ -1392,4 +1406,3 @@ RenderObjClass * BoxPrototypeClass::Create(void)
 ** Global instance of the box loader
 */
 BoxLoaderClass _BoxLoader;
-

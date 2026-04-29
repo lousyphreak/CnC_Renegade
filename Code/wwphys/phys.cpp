@@ -236,21 +236,34 @@ void PhysClass::Get_Shadow_Blob_Box(AABoxClass * set_obj_space_box)
 }
 
 void PhysClass::Render(RenderInfoClass & rinfo)
-{ 
-	Push_Effects(rinfo);
-
+{
 	if (Model) { 
 		Model->Render(rinfo); 
 	} 
-
-	Pop_Effects(rinfo);
 }
 
-void PhysClass::Vis_Render(SpecialRenderInfoClass & rinfo)
+void PhysClass::Render_Material_Passes(RenderInfoClass & rinfo,MaterialPassClass * const * passes,int pass_count)
 {
 	if (Model) {
-		Model->Special_Render(rinfo);
+		Model->Render_Material_Passes(rinfo,passes,pass_count);
 	}
+}
+
+void PhysClass::Vis_Render(VisRenderInfoClass & rinfo)
+{
+	if (Model) {
+		Model->Render_Visibility(rinfo);
+	}
+}
+
+void PhysClass::Collect_Render_Effects(RenderEffectCollection & context)
+{
+	Gather_Effects(context);
+}
+
+void PhysClass::Finalize_Render_Effects(void)
+{
+	Release_Auto_Removed_Effects();
 }
 
 void PhysClass::Invalidate_Static_Lighting_Cache(void)
@@ -326,12 +339,12 @@ void PhysClass::Update_Sun_Status(void)
 	Enable_Is_In_The_Sun(sunresult.Fraction == 1.0f);
 }
 
-void PhysClass::Push_Effects(RenderInfoClass & rinfo)
+void PhysClass::Gather_Effects(RenderEffectCollection & context)
 {
 	if (!MaterialEffectsOnMe.Is_Empty()) {
 		RefMaterialEffectListIterator iterator(&MaterialEffectsOnMe);
 		for ( ; !iterator.Is_Done() ; iterator.Next()) {
-			iterator.Peek_Obj()->Render_Push(rinfo,this);
+			iterator.Peek_Obj()->Gather_Render_Effect(context,this);
 		}
 	}
 
@@ -422,7 +435,7 @@ void PhysClass::Push_Effects(RenderInfoClass & rinfo)
 
 }
 
-void PhysClass::Pop_Effects(RenderInfoClass & rinfo)
+void PhysClass::Release_Auto_Removed_Effects(void)
 {
 	if (!MaterialEffectsOnMe.Is_Empty()) {
 		RefMaterialEffectListIterator iterator(&MaterialEffectsOnMe);
@@ -430,8 +443,6 @@ void PhysClass::Pop_Effects(RenderInfoClass & rinfo)
 		while (!iterator.Is_Done()) {
 
 			MaterialEffectClass * effect = iterator.Peek_Obj();
-			effect->Render_Pop(rinfo);
-
 			if (effect->Is_Auto_Remove_Enabled()) {
 				iterator.Remove_Current_Object();
 			} else {

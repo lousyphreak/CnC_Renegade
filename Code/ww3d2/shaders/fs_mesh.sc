@@ -29,10 +29,11 @@ uniform vec4 u_meshMaterialAmbient;
 uniform vec4 u_meshMaterialDiffuse;
 uniform vec4 u_meshMaterialEmissive;
 uniform vec4 u_meshSceneAmbient;
-uniform vec4 u_meshLightPosType[4];
-uniform vec4 u_meshLightDirSpot[4];
-uniform vec4 u_meshLightDiffuseRange[4];
-uniform vec4 u_meshLightAmbientAtten[4];
+#define MAX_SUBMIT_LIGHTS 16
+uniform vec4 u_meshLightPosType[MAX_SUBMIT_LIGHTS];
+uniform vec4 u_meshLightDirSpot[MAX_SUBMIT_LIGHTS];
+uniform vec4 u_meshLightDiffuseRange[MAX_SUBMIT_LIGHTS];
+uniform vec4 u_meshLightAmbientAtten[MAX_SUBMIT_LIGHTS];
 
 // Bump env map uniforms
 // u_meshBumpEnvMat = (mat00, mat01, mat10, mat11)
@@ -93,7 +94,7 @@ void main()
             vec4 ambient = ResolveColorSource(u_meshLitConfig.z, u_meshMaterialAmbient, v_color0);
             vec3 litColor = emissive.rgb + (u_meshSceneAmbient.rgb * ambient.rgb);
 
-            for (int i = 0; i < 4; ++i) {
+            for (int i = 0; i < MAX_SUBMIT_LIGHTS; ++i) {
                 float lightType = u_meshLightPosType[i].w;
                 if (lightType > 0.5) {
                     vec3 L = vec3_splat(0.0);

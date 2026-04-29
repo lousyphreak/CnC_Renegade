@@ -50,6 +50,7 @@
 #include "tri.h"
 #include "renegadeterrainmaterialpass.h"
 #include "terrainmaterial.h"
+#include "ww3d.h"
 
 
 //////////////////////////////////////////////////////////////////////
@@ -127,6 +128,7 @@ public:
 	RenderObjClass *	Clone (void) const							{ return new RenegadeTerrainPatchClass (*this); }
 	int					Class_ID (void) const						{ return CLASSID_RENEGADE_TERRAIN; }
 	void					Render (RenderInfoClass &rinfo);
+	void					Render_Material_Passes(RenderInfoClass & rinfo,MaterialPassClass * const * passes,int pass_count);
 	void		 			Get_Obj_Space_Bounding_Sphere (SphereClass &sphere) const;
 	void					Get_Obj_Space_Bounding_Box (AABoxClass &box) const;
 	
@@ -198,12 +200,11 @@ protected:
 	//
 	//	Rendering
 	//
-	void						Render_By_Texture (int texture_index, int pass_type);
-	void						Submit_Rendering_Buffers (int texture_index, int pass_type);
+	void						Render_By_Texture (int texture_index, int pass_type, const WW3D::LightingSubmitDesc * lighting, const WW3D::FixedFunctionStateDesc * render_state);
 	void						Update_Rendering_Buffers (void);
 	void						Free_Rendering_Buffers (void);
 	void						Build_Rendering_Buffers (int texture_index, int pass_type);
-	void						Render_Procedural_Material_Pass(MaterialPassClass * matpass);
+	void						Render_Procedural_Material_Pass(MaterialPassClass * matpass, const WW3D::LightingSubmitDesc * lighting, const WW3D::FixedFunctionStateDesc * render_state);
 
 	//
 	//	Ray casting

@@ -60,7 +60,7 @@ const int BACKFACE_VIS_ID	= 0x00FFFBAC;						// Vis id for backface pixels
 ** an object (and flush it) and then call the scan function to update the visibility 
 ** table.
 */
-class VisRenderContextClass : public SpecialRenderInfoClass
+class VisRenderContextClass : public VisRenderInfoClass
 {
 public:
 

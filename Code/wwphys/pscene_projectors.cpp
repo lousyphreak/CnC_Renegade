@@ -291,7 +291,7 @@ uint32_t PhysicsSceneClass::Get_Max_Simultaneous_Shadows(void)
 }
 
 
-SpecialRenderInfoClass *
+ShadowRenderInfoClass *
 PhysicsSceneClass::Get_Shadow_Render_Context(int width,int height)
 {
 	if (ShadowRenderContext == NULL) {
@@ -308,7 +308,7 @@ PhysicsSceneClass::Get_Shadow_Render_Context(int width,int height)
 		/*
 		** Create the render context
 		*/
-		ShadowRenderContext = new SpecialRenderInfoClass(*ShadowCamera,SpecialRenderInfoClass::RENDER_SHADOW);
+		ShadowRenderContext = new ShadowRenderInfoClass(*ShadowCamera);
 	}
 
 	return ShadowRenderContext;

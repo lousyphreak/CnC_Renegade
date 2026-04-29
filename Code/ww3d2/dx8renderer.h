@@ -54,6 +54,7 @@
 #include "dx8wrapper.h"
 #include "hashtemplate.h"
 #include "bgfxrenderer.h"
+#include <vector>
 
 class IndexBufferClass;
 class VertexBufferClass;
@@ -106,8 +107,11 @@ public:
 	void									Clear_Render_List() { render_task_head = NULL; }
 
 	TextureClass *						Peek_Texture(int stage)	{ return textures[stage]; }
-	const VertexMaterialClass *	Peek_Material() { return material; }	
+	const TextureClass *			Peek_Texture(int stage) const { return textures[stage]; }
+	VertexMaterialClass *			Peek_Material() { return material; }
+	const VertexMaterialClass *	Peek_Material() const { return material; }	
 	ShaderClass							Get_Shader() { return shader; }
+	ShaderClass							Get_Shader() const { return shader; }
 
 	DX8PolygonRendererList&			Get_Polygon_Renderer_List() { return PolygonRendererList; }
 
@@ -124,6 +128,7 @@ public:
 	
 
 	DX8FVFCategoryContainer * Get_Container(void) { return container; }
+	const DX8FVFCategoryContainer * Get_Container(void) const { return container; }
 };
 
 // ----------------------------------------------------------------------------
@@ -169,17 +174,6 @@ protected:
 
 	void Render_Procedural_Material_Passes(void);
 
-	DX8TextureCategoryClass* Find_Matching_Texture_Category(
-		TextureClass* texture,
-		unsigned pass,
-		unsigned stage,
-		DX8TextureCategoryClass* ref_category);
-
-	DX8TextureCategoryClass* Find_Matching_Texture_Category(
-		VertexMaterialClass* vmat,
-		unsigned pass,		
-		DX8TextureCategoryClass* ref_category);
-
 public:
 	
 	DX8FVFCategoryContainer(unsigned FVF,bool sorting);
@@ -187,19 +181,6 @@ public:
 
 	static unsigned Define_FVF(MeshModelClass* mmc,unsigned int * user_lighting,bool enable_lighting);
 	bool Is_Sorting() const { return sorting; }
-
-	void Change_Polygon_Renderer_Texture(
-		DX8PolygonRendererList& polygon_renderer_list,
-		TextureClass* texture,
-		TextureClass* new_texture,
-		unsigned pass,
-		unsigned stage);
-
-	void Change_Polygon_Renderer_Material(
-		DX8PolygonRendererList& polygon_renderer_list,
-		VertexMaterialClass* vmat,
-		VertexMaterialClass* new_vmat,
-		unsigned pass);
 
 	void Remove_Texture_Category(DX8TextureCategoryClass* tex_category);
 
@@ -209,6 +190,7 @@ public:
 	virtual bool Check_If_Mesh_Fits(MeshModelClass* mmc)=0;
 
 	inline unsigned Get_Vertex_Format() const { return FVF; }
+	IndexBufferClass * Get_Index_Buffer(void) const { return index_buffer; }
 	
 	inline void Add_Visible_Texture_Category(DX8TextureCategoryClass * tex_category,int pass) 
 	{
@@ -229,6 +211,7 @@ public:
 	void Add_Visible_Material_Pass(MaterialPassClass * pass,MeshClass * mesh);
 	virtual void Add_Delayed_Visible_Material_Pass(MaterialPassClass * pass, MeshClass * mesh) = 0;
 	virtual void Render_Delayed_Procedural_Material_Passes(void) = 0;
+	virtual void Render_Material_Passes_For_Mesh(MeshClass * mesh,MaterialPassClass * const * passes,int pass_count) = 0;
 };
 
 
@@ -254,6 +237,7 @@ public:
 	*/
 	virtual void Add_Delayed_Visible_Material_Pass(MaterialPassClass * pass, MeshClass * mesh);
 	virtual void Render_Delayed_Procedural_Material_Passes(void);
+	virtual void Render_Material_Passes_For_Mesh(MeshClass * mesh,MaterialPassClass * const * passes,int pass_count);
 
 protected:
 
@@ -294,7 +278,10 @@ public:
 private:
 
 	void Reset();
-	void Render_Material_Passes_For_Mesh(MeshClass * mesh, VertexBufferClass * vertex_buffer);
+	void Render_Queued_Material_Passes_For_Mesh(MeshClass * mesh, VertexBufferClass * vertex_buffer);
+
+public:
+	virtual void Render_Material_Passes_For_Mesh(MeshClass * mesh,MaterialPassClass * const * passes,int pass_count);
 
 	unsigned int								VisibleVertexCount;
 	MeshClass *									VisibleSkinHead;
@@ -313,7 +300,7 @@ struct MeshRegKeyStruct
 {
 	MeshRegKeyStruct(void) : Model(NULL), UserLighting(NULL) {}
 	MeshRegKeyStruct(MeshModelClass * mdl,unsigned int * lighting) : Model(mdl), UserLighting(lighting) {}
-	bool operator == (const MeshRegKeyStruct & that) { return ((Model == that.Model) && (UserLighting == that.UserLighting)); }
+	bool operator == (const MeshRegKeyStruct & that) const { return ((Model == that.Model) && (UserLighting == that.UserLighting)); }
 
 	MeshModelClass *	Model;
 	unsigned int *		UserLighting;
@@ -327,6 +314,60 @@ inline uint32_t HashTemplateKeyClass<MeshRegKeyStruct>::Get_Hash_Value(const Mes
 	hval = hval + (hval>>5) + (hval>>10) + (hval >> 20);
 	return static_cast<uint32_t>(hval);
 }
+
+struct RegisteredRigidMeshDraw
+{
+	RegisteredRigidMeshDraw();
+
+	TextureClass *						Textures[MAX_TEXTURE_STAGES];
+	ShaderClass							Shader;
+	VertexMaterialClass *			Material;
+	MaterialClassification			Classification;
+	std::uint64_t						PipelineKey;
+	uintptr_t							TextureKey;
+	uintptr_t							MaterialKey;
+	unsigned short						StartIndex;
+	unsigned short						PolygonCount;
+	unsigned short						MinVertexIndex;
+	unsigned short						VertexCount;
+	bool									Strip;
+	unsigned								Pass;
+};
+
+class RegisteredRigidMeshClass
+{
+public:
+	RegisteredRigidMeshClass(const MeshRegKeyStruct & key,unsigned vertex_format);
+	~RegisteredRigidMeshClass();
+
+	void									Add_Ref();
+	int									Release_Ref();
+
+	const MeshRegKeyStruct &		Get_Key(void) const					{ return key; }
+	unsigned							Get_Vertex_Format(void) const		{ return vertex_format; }
+	VertexBufferClass *			Get_Vertex_Buffer(void) const		{ return vertex_buffer; }
+	IndexBufferClass *				Get_Index_Buffer(void) const		{ return index_buffer; }
+	const std::vector<RegisteredRigidMeshDraw> &
+											Get_Draws(void) const				{ return draws; }
+
+	void									Set_Buffers(VertexBufferClass * vb, IndexBufferClass * ib);
+	void									Add_Draw(const RegisteredRigidMeshDraw & draw);
+
+private:
+	int									ref_count;
+	MeshRegKeyStruct					key;
+	unsigned							vertex_format;
+	VertexBufferClass *			vertex_buffer;
+	IndexBufferClass *				index_buffer;
+	std::vector<RegisteredRigidMeshDraw> draws;
+};
+
+struct RegisteredRigidVisibleDrawTask
+{
+	MeshClass *								Mesh;
+	RegisteredRigidMeshClass *			Registration;
+	const RegisteredRigidMeshDraw *	Draw;
+};
 
 
 
@@ -355,6 +396,13 @@ public:
 
 	void						Register_Mesh_Type(MeshClass* mesh);
 	void						Unregister_Mesh_Type(MeshClass* mesh);
+	bool						Is_Mesh_Registered(const MeshClass * mesh) const;
+	bool						Queue_Base_Passes(MeshClass * mesh);
+	bool						Queue_Material_Pass(MaterialPassClass * pass,MeshClass * mesh,bool delayed);
+	bool						Render_Material_Passes(MeshClass * mesh,MaterialPassClass * const * passes,int pass_count);
+	bool						Queue_Skin(MeshClass * mesh);
+	bool						Queue_Registered_Opaque_Mesh(MeshClass * mesh);
+	bool						Render_Registered_Material_Passes(MeshClass * mesh,MaterialPassClass * const * passes,int pass_count);
 	
 	void						Set_Camera(CameraClass* cam) { camera=cam; }
 	CameraClass *			Peek_Camera(void)	{ return camera; }
@@ -369,6 +417,11 @@ public:
 protected:
 
 	void Render_Decal_Meshes(void);
+	DX8FVFCategoryContainer * Find_Legacy_FVF_Category_Container(const MeshClass * mesh) const;
+	bool Is_Modern_Rigid_Opaque_Eligible(const MeshClass * mesh) const;
+	RegisteredRigidMeshClass * Find_Registered_Opaque_Mesh(const MeshClass * mesh) const;
+	RegisteredRigidMeshClass * Build_Registered_Opaque_Mesh(MeshClass * mesh);
+	void Render_Registered_Opaque_Meshes(void);
 
 	bool													enable_lighting;
 	CameraClass *										camera;
@@ -378,7 +431,10 @@ protected:
 
 	DecalMeshClass *									visible_decal_meshes;
 
-	HashTemplateClass<MeshRegKeyStruct,MeshClass*> _RegisteredMeshTable;
+	HashTemplateClass<MeshRegKeyStruct,MeshClass*> _LegacyRegisteredMeshTable;
+	HashTemplateClass<MeshRegKeyStruct,RegisteredRigidMeshClass*> _RegisteredOpaqueMeshTable;
+	HashTemplateClass<MeshClass*,RegisteredRigidMeshClass*> _RegisteredOpaqueMeshInstances;
+	std::vector<RegisteredRigidVisibleDrawTask> visible_registered_opaque_draws;
 
 };
 

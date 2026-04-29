@@ -100,6 +100,7 @@ public:
 	float								fog_end;
 
 	LightEnvironmentClass*		light_environment;
+	const WW3D::LightingSubmitDesc * lighting_submission;
 
 protected:
 	MaterialPassClass*			AdditionalMaterialPassArray[MAX_ADDITIONAL_MATERIAL_PASSES];
@@ -110,7 +111,41 @@ protected:
 
 };
 
-	
+
+/**
+** VisRenderInfoClass
+** Explicit visibility rendering context used by renderer-owned visibility phases.
+*/
+class VisRenderInfoClass : public RenderInfoClass
+{
+public:
+	VisRenderInfoClass(CameraClass & cam);
+	~VisRenderInfoClass(void);
+
+	VisRasterizerClass *			VisRasterizer;
+
+private:
+	VisRenderInfoClass(const RenderInfoClass &);
+	VisRenderInfoClass & operator = (const RenderInfoClass &);
+};
+
+/**
+** ShadowRenderInfoClass
+** Explicit shadow/effect rendering context used by renderer-owned shadow phases.
+*/
+class ShadowRenderInfoClass : public RenderInfoClass
+{
+public:
+	ShadowRenderInfoClass(CameraClass & cam);
+	~ShadowRenderInfoClass(void);
+
+	BWRenderClass *				BWRenderer;
+
+private:
+	ShadowRenderInfoClass(const RenderInfoClass &);
+	ShadowRenderInfoClass & operator = (const RenderInfoClass &);
+};
+
 /**
 ** SpecialRenderInfoClass
 ** This structure also contains a "grab-bag" of junk for use by the Special_Render

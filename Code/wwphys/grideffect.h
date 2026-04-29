@@ -63,8 +63,7 @@ public:
 	GridEffectClass(void);	
 	~GridEffectClass(void);
 	
-	virtual void		Render_Push(RenderInfoClass & rinfo,PhysClass * obj);
-	virtual void		Render_Pop(RenderInfoClass & rinfo);
+	virtual void		Gather_Render_Effect(RenderEffectCollection & context,PhysClass * obj);
 
 	/*
 	** The "parameter" changes from 0 to 1 at the specified rate, it controls

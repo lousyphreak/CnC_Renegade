@@ -492,7 +492,7 @@ void DynamicAABTreeCullClass::evaluate_non_occluder_visibility_recursive
 
 			AABoxRenderObjClass * rbox = get_render_box();		
 			rbox->Set_Local_Center_Extent(nodebox.Center,nodebox.Extent);
-			rbox->Special_Render(context);							// render the bounding volume
+			rbox->Render_Visibility(context);						// render the bounding volume
 			REF_PTR_RELEASE(rbox);
 
 			if (context.VisRasterizer->Get_Pixel_Counter() > 0) {
@@ -955,4 +955,3 @@ void DynamicAABTreeCullClass::Merge_Vis_Object_IDs(uint32_t id0,uint32_t id1)
 		}
 	}
 }
-

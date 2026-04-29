@@ -63,8 +63,7 @@ public:
 	~TransitionEffectClass(void);
 	
 	virtual void		Timestep(float dt);
-	virtual void		Render_Push(RenderInfoClass & rinfo,PhysClass * obj);
-	virtual void		Render_Pop(RenderInfoClass & rinfo);
+	virtual void		Gather_Render_Effect(RenderEffectCollection & context,PhysClass * obj);
 
 	/*
 	** Initialization
@@ -123,4 +122,3 @@ protected:
 };
 
 #endif //TRANSITIONEFFECT_H
-

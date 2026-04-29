@@ -74,7 +74,7 @@ VisRenderContextClass::VisRenderContextClass
 	CameraClass & cam,
 	VisTableClass & vtab
 ) :
-	SpecialRenderInfoClass(cam,RENDER_VIS),
+	VisRenderInfoClass(cam),
 	VisTable(vtab)
 {
 	VisRasterizer = &_VisRasterizer;

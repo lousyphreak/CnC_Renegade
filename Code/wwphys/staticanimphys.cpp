@@ -102,7 +102,7 @@ void StaticAnimPhysClass::Set_Model(RenderObjClass * model)
 	Update_Cached_Model_Parameters();
 }
 
-void StaticAnimPhysClass::Vis_Render(SpecialRenderInfoClass & rinfo)
+void StaticAnimPhysClass::Vis_Render(VisRenderInfoClass & rinfo)
 {
 	if (Model != NULL) {
 		// static anim objects need to render their bounding box so temporarily make it visible:

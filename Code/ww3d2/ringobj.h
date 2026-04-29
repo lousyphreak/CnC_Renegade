@@ -120,6 +120,7 @@ public:
 	virtual RenderObjClass *	Clone(void) const;
 	virtual int						Class_ID(void) const;
 	virtual void					Render(RenderInfoClass & rinfo);
+	virtual void					Render_Visibility(VisRenderInfoClass & rinfo);
 	virtual void					Special_Render(SpecialRenderInfoClass & rinfo);
 	virtual void 					Set_Transform(const Matrix3D &m); 
 	virtual void 					Set_Position(const Vector3 &v);
@@ -225,7 +226,7 @@ protected:
 
 	void						 		update_mesh_data(const Vector3 & center,const Vector3 & extent);
 	void						 		render_ring(RenderInfoClass & rinfo,const Vector3 & center,const Vector3 & extent);
-	void						 		vis_render_ring(SpecialRenderInfoClass & rinfo,const Vector3 & center,const Vector3 & extent);
+	void						 		vis_render_ring(VisRenderInfoClass & rinfo,const Vector3 & center,const Vector3 & extent);
 
 	char						 		Name[2*W3D_NAME_LEN];
 	Vector3					 		ObjSpaceCenter;
@@ -337,5 +338,3 @@ extern RingLoaderClass			_RingLoader;
 #endif // RINGOBJ_H
 
 // EOF - ringobj,h
-
-

@@ -260,3 +260,39 @@ void MatrixMapperClass::Apply(int uv_array_index)
 
 
 }
+
+void MatrixMapperClass::Apply_Fixed_Function_State(int uv_array_index, WW3D::FixedFunctionStateDesc &state)
+{
+	Matrix4 m(true);
+
+	switch (Type)
+	{
+	case ORTHO_PROJECTION:
+		state.TextureTransforms[Stage] = ViewToPixel;
+		state.TexcoordIndex[Stage] = D3DTSS_TCI_CAMERASPACEPOSITION;
+		state.TextureTransformFlags[Stage] = D3DTTFF_COUNT2;
+		break;
+	case PERSPECTIVE_PROJECTION:
+		m[0]=ViewToPixel[0];
+		m[1]=ViewToPixel[1];
+		m[2]=ViewToPixel[3];
+		state.TextureTransforms[Stage] = m;
+		state.TexcoordIndex[Stage] = D3DTSS_TCI_CAMERASPACEPOSITION;
+		state.TextureTransformFlags[Stage] = D3DTTFF_PROJECTED|D3DTTFF_COUNT3;
+		break;
+	case DEPTH_GRADIENT:
+		m[0].Set(0,0,0,GradientUCoord);
+		m[1]=ViewToPixel[2];
+		state.TextureTransforms[Stage] = m;
+		state.TexcoordIndex[Stage] = D3DTSS_TCI_CAMERASPACEPOSITION;
+		state.TextureTransformFlags[Stage] = D3DTTFF_COUNT2;
+		break;
+	case NORMAL_GRADIENT:
+		m[0].Set(0,0,0,GradientUCoord);
+		m[1].Set(ViewSpaceProjectionNormal.X,ViewSpaceProjectionNormal.Y,ViewSpaceProjectionNormal.Z, 0);
+		state.TextureTransforms[Stage] = m;
+		state.TexcoordIndex[Stage] = D3DTSS_TCI_CAMERASPACENORMAL;
+		state.TextureTransformFlags[Stage] = D3DTTFF_COUNT2;
+		break;
+	}
+}

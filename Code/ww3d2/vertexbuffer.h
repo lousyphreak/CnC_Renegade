@@ -166,6 +166,8 @@ public:
 	const VertexFormatInfoClass& Vertex_Format_Info() const { return FVFInfo; }
 	unsigned Get_Type() const { return Type; }
 	unsigned short Get_Vertex_Count() const { return VertexCount; }
+	const VertexBufferClass *Peek_Vertex_Buffer() const { return VertexBuffer; }
+	unsigned short Get_Vertex_Buffer_Offset() const { return VertexBufferOffset; }
 
 	// Call at the end of the execution, or at whatever time you wish to release
 	// the recycled dynamic vertex buffer.

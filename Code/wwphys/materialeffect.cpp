@@ -38,12 +38,57 @@
 
 #include "materialeffect.h"
 #include "materialeffectlist.h"
-#include "rinfo.h"
 #include "matpass.h"
 
 
 
 static NonRefMaterialEffectListClass _AllocatedEffects;
+
+RenderEffectCollection::RenderEffectCollection(CameraClass & camera)
+	:
+	Camera(camera),
+	RenderBasePass(true),
+	PassCount(0)
+{
+	Reset();
+}
+
+RenderEffectCollection::~RenderEffectCollection()
+{
+	Reset();
+}
+
+void RenderEffectCollection::Add_Pass(MaterialPassClass * pass)
+{
+	if (pass == NULL || PassCount >= MAX_ADDITIONAL_MATERIAL_PASSES) {
+		return;
+	}
+
+	pass->Add_Ref();
+	Passes[PassCount++] = pass;
+}
+
+MaterialPassClass * RenderEffectCollection::Peek_Pass(unsigned index) const
+{
+	if (index >= PassCount) {
+		return NULL;
+	}
+
+	return Passes[index];
+}
+
+void RenderEffectCollection::Reset(void)
+{
+	for (unsigned index = 0; index < PassCount; ++index) {
+		REF_PTR_RELEASE(Passes[index]);
+	}
+
+	RenderBasePass = true;
+	PassCount = 0;
+	for (unsigned index = 0; index < MAX_ADDITIONAL_MATERIAL_PASSES; ++index) {
+		Passes[index] = NULL;
+	}
+}
 
 
 
@@ -93,16 +138,9 @@ SimpleEffectClass::~SimpleEffectClass(void)
 	REF_PTR_RELEASE(MatPass); 
 }
 
-void SimpleEffectClass::Render_Push(RenderInfoClass & rinfo,PhysClass *)	
+void SimpleEffectClass::Gather_Render_Effect(RenderEffectCollection & context,PhysClass *)
 {
-	rinfo.Push_Material_Pass(MatPass); 
+	context.Add_Pass(MatPass);
 }
-
-void SimpleEffectClass::Render_Pop(RenderInfoClass & rinfo)		
-{ 
-	rinfo.Pop_Material_Pass(); 
-}
-
-
 
 

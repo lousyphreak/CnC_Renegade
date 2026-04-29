@@ -62,6 +62,33 @@
 // Singletons.
 BackgroundMgrClass _TheBackgroundMgr;
 
+namespace
+{
+bool Submit_Background_Draw(
+	const DynamicVBAccessClass &vertex_buffer,
+	const IndexBufferClass &index_buffer,
+	unsigned short triangle_count,
+	unsigned short vertex_count,
+	VertexMaterialClass *material,
+	const ShaderClass &shader,
+	TextureClass *texture = NULL)
+{
+	WW3D::FixedFunctionSubmitDesc submission;
+	submission.VertexBuffer = vertex_buffer.Peek_Vertex_Buffer();
+	submission.VertexBufferOffset = vertex_buffer.Get_Vertex_Buffer_Offset();
+	submission.IndexBuffer = &index_buffer;
+	submission.PolygonCount = triangle_count;
+	submission.VertexCount = vertex_count;
+	submission.Material = material;
+	submission.Shader = shader;
+	submission.Textures[0] = texture;
+	WW3D::Get_Transform(WW3D::RENDER_TRANSFORM_WORLD, submission.WorldTransform);
+	WW3D::Get_Transform(WW3D::RENDER_TRANSFORM_VIEW, submission.ViewTransform);
+	WW3D::Get_Transform(WW3D::RENDER_TRANSFORM_PROJECTION, submission.ProjectionTransform);
+	return WW3D::Submit_Fixed_Function_Draw(submission);
+}
+}
+
 
 // Static data.
 unsigned											  BackgroundMgrClass::_Hours;
@@ -343,11 +370,8 @@ void HazeClass::Render()
 			}
 		}
 
-		WW3D::Set_Material (Material);
-		WW3D::Set_Shader (Shader);
-		WW3D::Set_Index_Buffer (IndexBuffer, 0);
-		WW3D::Set_Vertex_Buffer (dynamicvb);
-		WW3D::Submit_Current_Triangles(0, TriangleCount, 0, VertexCount);
+		const bool submitted = Submit_Background_Draw(dynamicvb, *IndexBuffer, TriangleCount, VertexCount, Material, Shader);
+		WWASSERT(submitted);
 	}
 }
 
@@ -652,12 +676,15 @@ void StarfieldClass::Render()
 			}
 		}
 
-		WW3D::Set_Texture (0, Texture);
-		WW3D::Set_Material (Material);
-		WW3D::Set_Shader (Shader);
-		WW3D::Set_Index_Buffer (IndexBuffer, 0);
-		WW3D::Set_Vertex_Buffer (dynamicvb);
-		WW3D::Submit_Current_Triangles(0, ActiveTriangleCount, 0, ActiveVertexCount);
+		const bool submitted = Submit_Background_Draw(
+			dynamicvb,
+			*IndexBuffer,
+			ActiveTriangleCount,
+			ActiveVertexCount,
+			Material,
+			Shader,
+			Texture);
+		WWASSERT(submitted);
 
 		// Restore alphas for those stars that were modified prior to rendering.
 		for (i = 0; i < activeflickercount; i++) {
@@ -965,12 +992,8 @@ void SkyObjectClass::Render()
 			}
 		}
 
-		WW3D::Set_Texture (0, Texture);
-		WW3D::Set_Material (Material);
-		WW3D::Set_Shader (Shader);
-		WW3D::Set_Index_Buffer (IndexBuffer, 0);
-		WW3D::Set_Vertex_Buffer (dynamicvb);
-		WW3D::Submit_Current_Triangles(0, TriangleCount, 0, VertexCount);
+		const bool submitted = Submit_Background_Draw(dynamicvb, *IndexBuffer, TriangleCount, VertexCount, Material, Shader, Texture);
+		WWASSERT(submitted);
 	}
 }
 
@@ -1319,12 +1342,8 @@ void CloudLayerClass::Render()
 			}
 		}
 
-		WW3D::Set_Texture (0, Texture);
-		WW3D::Set_Material (Material);
-		WW3D::Set_Shader (Shader);
-		WW3D::Set_Index_Buffer (IndexBuffer, 0);
-		WW3D::Set_Vertex_Buffer (dynamicvb);
-		WW3D::Submit_Current_Triangles(0, TriangleCount, 0, VertexCount);
+		const bool submitted = Submit_Background_Draw(dynamicvb, *IndexBuffer, TriangleCount, VertexCount, Material, Shader, Texture);
+		WWASSERT(submitted);
 	}
 }
 
@@ -1541,11 +1560,8 @@ void SkyGlowClass::Render()
 			}
 		}
 
-		WW3D::Set_Material (Material);
-		WW3D::Set_Shader (Shader);
-		WW3D::Set_Index_Buffer (IndexBuffer, 0);
-		WW3D::Set_Vertex_Buffer (dynamicvb);
-		WW3D::Submit_Current_Triangles(0, TriangleCount, 0, VertexCount);
+		const bool submitted = Submit_Background_Draw(dynamicvb, *IndexBuffer, TriangleCount, VertexCount, Material, Shader);
+		WWASSERT(submitted);
 	}
 }
 

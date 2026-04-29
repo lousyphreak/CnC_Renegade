@@ -48,6 +48,7 @@
 #include "bittype.h"
 #include "w3derr.h"
 #include "dx8list.h"
+#include "ww3d.h"
 
 class MeshBuilderClass;
 class HModelClass;
@@ -68,7 +69,6 @@ struct W3dTexCoordStruct;
 class TextureClass;
 class VertexMaterialClass;
 struct VertexFormatXYZNDUV2;
-class DX8FVFCategoryContainer;
 
 /**
 ** MeshClass -- Render3DObject for rendering meshes.
@@ -93,6 +93,8 @@ public:
 	virtual void					Set_Name(const char * name);
 	virtual int						Get_Num_Polys(void) const;
 	virtual void					Render(RenderInfoClass & rinfo);
+	virtual void					Render_Material_Passes(RenderInfoClass & rinfo,MaterialPassClass * const * passes,int pass_count);
+	virtual void					Render_Visibility(VisRenderInfoClass & rinfo);
 	void								Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass * ib);
 	virtual void					Special_Render(SpecialRenderInfoClass & rinfo);
 
@@ -136,6 +138,7 @@ public:
 	void								Generate_Culling_Tree(void);
 	MeshModelClass *				Get_Model(void);
 	MeshModelClass *				Peek_Model(void);
+	const MeshModelClass *		Peek_Model(void) const;
 	uint32							Get_W3D_Flags(void);
 	const char *					Get_User_Text(void) const;
 
@@ -152,6 +155,8 @@ public:
 
 	void								Set_Lighting_Environment(LightEnvironmentClass * light_env) { LightEnvironment = light_env; }
 	LightEnvironmentClass *		Get_Lighting_Environment(void) { return LightEnvironment; }
+	void								Set_Lighting_Submission(const WW3D::LightingSubmitDesc * lighting) { LightingSubmission = lighting; }
+	const WW3D::LightingSubmitDesc * Get_Lighting_Submission(void) const { return LightingSubmission; }
 
 	void								Set_Next_Visible_Skin(MeshClass * next_visible) { NextVisibleSkin = next_visible; }
 	MeshClass *						Peek_Next_Visible_Skin(void) { return NextVisibleSkin; }
@@ -176,6 +181,10 @@ public:
 	*/
 	void								Install_User_Lighting_Array(Vector4 * lighting);
 	unsigned int *					Get_User_Lighting_Array(bool alloc = false);
+	bool								Has_Render_Registration(void) const;
+	bool								Uses_Legacy_Render_Path(void) const;
+	bool								Uses_Registered_Opaque_Render_Path(void) const;
+	void								Invalidate_Render_Registration(void);
 
 	virtual void					Save_User_Lighting (ChunkSaveClass & csave);
 	virtual void					Load_User_Lighting (ChunkLoadClass & cload);
@@ -183,20 +192,28 @@ public:
 protected:
 
 	void								Free(void);
+	void								Ensure_Render_Registration(void);
 
 	virtual void					Add_Dependencies_To_List (DynamicVectorClass<StringClass> &file_list, bool textures_only = false);
 	virtual void					Update_Cached_Bounding_Volumes(void) const;
-	DX8FVFCategoryContainer*	Peek_FVF_Category_Container(void);
 
 	void								install_materials(MeshLoadInfoClass * loadinfo);
 	void								clone_materials(const MeshClass & srcmesh);
 	void								setup_materials_for_user_lighting(void);
 	void								setup_material_for_user_lighting(VertexMaterialClass * mtl);
 
+	enum RenderRegistrationType
+	{
+		RENDER_REGISTRATION_NONE,
+		RENDER_REGISTRATION_LEGACY,
+		RENDER_REGISTRATION_REGISTERED_OPAQUE
+	};
+
 	MeshModelClass *				Model;
 	DecalMeshClass *				DecalMesh;
 
 	LightEnvironmentClass *		LightEnvironment;		// cached pointer to the light environment for this mesh
+	const WW3D::LightingSubmitDesc * LightingSubmission;	// shared per-frame lighting packet for bgfx submission
 	int								BaseVertexOffset;		// offset to our first vertex in whatever vb this mesh is in.
 	MeshClass *						NextVisibleSkin;		// linked list of visible skins
 
@@ -204,6 +221,7 @@ protected:
 	bool								IsDisabledByDebugger;
 
 	unsigned int *					UserLighting;			// optional array of user lighting values
+	RenderRegistrationType		RenderRegistration;
 
 	// DX8 Mesh rendering system data
 	DX8PolygonRendererList		PolygonRendererList;
@@ -214,6 +232,11 @@ protected:
 };
 
 inline MeshModelClass * MeshClass::Peek_Model(void)
+{
+	return Model;
+}
+
+inline const MeshModelClass * MeshClass::Peek_Model(void) const
 {
 	return Model;
 }

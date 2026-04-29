@@ -176,7 +176,9 @@ bool Submit_Fixed_Function_Draw(
 	bool cast_shadows,
 	const Matrix4 & world,
 	const Matrix4 & view,
-	const Matrix4 & projection)
+	const Matrix4 & projection,
+	const WW3D::LightingSubmitDesc * lighting,
+	const WW3D::FixedFunctionStateDesc * render_state)
 {
 	const unsigned fvf = vertex_buffer.Vertex_Format_Info().Get_Vertex_Format();
 	const bool has_normals = (fvf & VERTEX_FORMAT_FLAG_NORMAL) != 0u;
@@ -192,6 +194,7 @@ bool Submit_Fixed_Function_Draw(
 		min_vertex_index,
 		vertex_count,
 		textures,
+		shader,
 		material,
 		classification,
 		receive_shadows,
@@ -199,7 +202,9 @@ bool Submit_Fixed_Function_Draw(
 		world,
 		view,
 		projection,
-		strip);
+		strip,
+		lighting,
+		render_state);
 }
 
 bool Submit_Polygon_Renderer_Fixed_Function(
@@ -216,7 +221,9 @@ bool Submit_Polygon_Renderer_Fixed_Function(
 	bool cast_shadows,
 	const Matrix4 & world,
 	const Matrix4 & view,
-	const Matrix4 & projection)
+	const Matrix4 & projection,
+	const WW3D::LightingSubmitDesc * lighting,
+	const WW3D::FixedFunctionStateDesc * render_state)
 {
 	return Submit_Fixed_Function_Draw(
 		vertex_buffer,
@@ -236,7 +243,9 @@ bool Submit_Polygon_Renderer_Fixed_Function(
 		cast_shadows,
 		world,
 		view,
-		projection);
+		projection,
+		lighting,
+		render_state);
 }
 
 void Build_Material_Pass_Texture_Array(const MaterialPassClass * pass, TextureClass * textures[MAX_TEXTURE_STAGES])
@@ -290,11 +299,13 @@ MeshClass::MeshClass(void) :
 	Model(NULL),
 	DecalMesh(NULL),
 	LightEnvironment(NULL),
+	LightingSubmission(NULL),
 	BaseVertexOffset(0),
 	NextVisibleSkin(NULL),
 	IsDisabledByDebugger(false),
 	MeshDebugId(MeshDebugIdCount++),
-	UserLighting(NULL)
+	UserLighting(NULL),
+	RenderRegistration(RENDER_REGISTRATION_NONE)
 {
 }
 
@@ -317,11 +328,13 @@ MeshClass::MeshClass(const MeshClass & that) :
 	Model(NULL),
 	DecalMesh(NULL),
 	LightEnvironment(NULL),
+	LightingSubmission(NULL),
 	BaseVertexOffset(that.BaseVertexOffset),
 	NextVisibleSkin(NULL),
 	IsDisabledByDebugger(false),
 	MeshDebugId(MeshDebugIdCount++),
-	UserLighting(NULL)
+	UserLighting(NULL),
+	RenderRegistration(RENDER_REGISTRATION_NONE)
 {
 	REF_PTR_SET(Model,that.Model);					// mesh instances share models by default
 }
@@ -349,10 +362,12 @@ MeshClass & MeshClass::operator = (const MeshClass & that)
 
 		REF_PTR_SET(Model,that.Model);				// mesh instances share models by default
 		BaseVertexOffset = that.BaseVertexOffset;
+		RenderRegistration = RENDER_REGISTRATION_NONE;
 
 		// just dont copy the decals or light environment
 		REF_PTR_RELEASE(DecalMesh);
 		LightEnvironment = NULL;
+		LightingSubmission = NULL;
 
 		if (UserLighting != NULL) {
 			delete[] UserLighting;
@@ -360,6 +375,38 @@ MeshClass & MeshClass::operator = (const MeshClass & that)
 		}
 	}
 	return * this;
+}
+
+void MeshClass::Ensure_Render_Registration(void)
+{
+	if (Has_Render_Registration()) {
+		return;
+	}
+
+	Model->Register_For_Rendering();
+	TheDX8MeshRenderer.Register_Mesh_Type(this);
+}
+
+bool MeshClass::Has_Render_Registration(void) const
+{
+	return RenderRegistration != RENDER_REGISTRATION_NONE;
+}
+
+bool MeshClass::Uses_Legacy_Render_Path(void) const
+{
+	return RenderRegistration == RENDER_REGISTRATION_LEGACY;
+}
+
+bool MeshClass::Uses_Registered_Opaque_Render_Path(void) const
+{
+	return RenderRegistration == RENDER_REGISTRATION_REGISTERED_OPAQUE;
+}
+
+void MeshClass::Invalidate_Render_Registration(void)
+{
+	if (Has_Render_Registration()) {
+		TheDX8MeshRenderer.Unregister_Mesh_Type(this);
+	}
 }
 
 
@@ -827,6 +874,7 @@ void MeshClass::Render(RenderInfoClass & rinfo)
 		** Plug in lighting so that when this mesh gets rendered later
 		*/
 		Set_Lighting_Environment(rinfo.light_environment);
+		Set_Lighting_Submission(rinfo.lighting_submission);
 
 	} else {
 
@@ -836,6 +884,7 @@ void MeshClass::Render(RenderInfoClass & rinfo)
 		*/
 		if (WW3D::Are_Static_Sort_Lists_Enabled()) {
 			Set_Lighting_Environment(rinfo.light_environment);
+			Set_Lighting_Submission(rinfo.lighting_submission);
 		}
 
 		const FrustumClass & frustum=rinfo.Camera.Get_Frustum();
@@ -854,20 +903,12 @@ void MeshClass::Render(RenderInfoClass & rinfo)
 			/*
 			** If this mesh model has never been rendered, we need to generate the DX8 datastructures
 			*/
-			if (PolygonRendererList.Is_Empty()) {
-				Model->Register_For_Rendering();
-				TheDX8MeshRenderer.Register_Mesh_Type(this);
-			}
+			Ensure_Render_Registration();
 
 			/*
 			** Process texture reductions:
 			*/
 //			Model->Process_Texture_Reduction();
-
-			/*
-			** Look up the FVF container that this mesh is in
-			*/
-			DX8FVFCategoryContainer * fvf_container = PolygonRendererList.Peek_Head()->Get_Texture_Category()->Get_Container();
 			
 			/*
 			** Check if we should render the base passes.  One special case here: if
@@ -887,19 +928,7 @@ void MeshClass::Render(RenderInfoClass & rinfo)
 			}
 			
 			if (render_base_passes) {
-
-				/*
-				** Link each polygon renderer for this mesh into the visible list
-				*/
-				DX8PolygonRendererListIterator it(&(PolygonRendererList));
-				while (!it.Is_Done()) {
-					DX8PolygonRendererClass* polygon_renderer=it.Peek_Obj();
-					polygon_renderer->Get_Texture_Category()->Add_Render_Task(polygon_renderer,this);
-					it.Next();
-				}
-
-				rendered_something = true;
-
+				rendered_something = TheDX8MeshRenderer.Queue_Base_Passes(this);
 			}
 
 			/*
@@ -911,17 +940,11 @@ void MeshClass::Render(RenderInfoClass & rinfo)
 				MaterialPassClass * matpass = rinfo.Peek_Additional_Pass(i);
 
 				if ((!is_alpha_blended) || (matpass->Is_Enabled_On_Translucent_Meshes())) {
-					
-					/*
-					** If the base pass for this mesh has been disabled, we have to make sure
-					** the procedural material pass is rendered after everything else has rendered
-					*/
-					if (rinfo.Current_Override_Flags() & RenderInfoClass::RINFO_OVERRIDE_ADDITIONAL_PASSES_ONLY) {
-						fvf_container->Add_Delayed_Visible_Material_Pass(matpass, this);
-					} else {
-						fvf_container->Add_Visible_Material_Pass(matpass,this);
-					}
-					rendered_something = true;
+					const bool delay_pass =
+						(rinfo.Current_Override_Flags() & RenderInfoClass::RINFO_OVERRIDE_ADDITIONAL_PASSES_ONLY) != 0;
+					rendered_something =
+						TheDX8MeshRenderer.Queue_Material_Pass(matpass,this,delay_pass) ||
+						rendered_something;
 				}
 			}
 
@@ -930,8 +953,7 @@ void MeshClass::Render(RenderInfoClass & rinfo)
 			** to tell the mesh rendering system to process this skin
 			*/
 			if (rendered_something && Model->Get_Flag(MeshGeometryClass::SKIN)) {
-				//WWASSERT(dynamic_cast<DX8SkinFVFCategoryContainer *>(fvf_container) != NULL);
-				static_cast<DX8SkinFVFCategoryContainer*>(fvf_container)->Add_Visible_Skin(this);
+				TheDX8MeshRenderer.Queue_Skin(this);
 			}
 
 			/*
@@ -953,6 +975,16 @@ void MeshClass::Render(RenderInfoClass & rinfo)
 	}
 }
 
+void MeshClass::Render_Material_Passes(RenderInfoClass &,MaterialPassClass * const * passes,int pass_count)
+{
+	if (Is_Not_Hidden_At_All() == false || pass_count <= 0) {
+		return;
+	}
+
+	Ensure_Render_Registration();
+	TheDX8MeshRenderer.Render_Material_Passes(this,passes,pass_count);
+}
+
 
 /***********************************************************************************************
  * MeshClass::Render_Material_Pass -- Render a procedural material pass for this mesh          *
@@ -968,10 +1000,6 @@ void MeshClass::Render(RenderInfoClass & rinfo)
  *=============================================================================================*/
 void MeshClass::Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass * ib)
 {
-	if (LightEnvironment != NULL) {
-		DX8Wrapper::Set_Light_Environment(LightEnvironment);
-	}
-
 	TextureClass * pass_textures[MAX_TEXTURE_STAGES] = {};
 	Build_Material_Pass_Texture_Array(pass, pass_textures);
 	Matrix4 projection_transform(true);
@@ -983,15 +1011,15 @@ void MeshClass::Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass *
 		/*
 		** In the case of skin meshes, we need to render our polys with the identity transform
 		*/
-		pass->Install_Materials();
 		DX8Wrapper::Set_Index_Buffer(ib,0);
 
 		SNAPSHOT_SAY(("Set_World_Identity\n"));
 		DX8Wrapper::Set_World_Identity();
-		DX8Wrapper::Apply_Render_State_Changes();
 
 		RenderStateStruct active_state;
 		DX8Wrapper::Get_Render_State(active_state);
+		WW3D::FixedFunctionStateDesc fixed_function_state;
+		WW3D::Capture_Current_Fixed_Function_State(fixed_function_state, pass->Peek_Material());
 		WWASSERT(active_state.vertex_buffer != NULL);
 		WWASSERT(active_state.index_buffer != NULL);
 
@@ -1012,7 +1040,9 @@ void MeshClass::Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass *
 					false,
 					active_state.world,
 					active_state.view,
-					projection_transform);
+					projection_transform,
+					LightingSubmission,
+					&fixed_function_state);
 				WWASSERT(submitted);
 			}
 			it.Next();
@@ -1084,14 +1114,13 @@ void MeshClass::Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass *
 			** Render
 			*/
 			int vertex_offset = PolygonRendererList.Peek_Head()->Get_Vertex_Offset();
-			pass->Install_Materials();
-			
 			DX8Wrapper::Set_Transform(D3DTS_WORLD,Get_Transform());
 			DX8Wrapper::Set_Index_Buffer(dynamic_ib,vertex_offset);
-			DX8Wrapper::Apply_Render_State_Changes();
 
 			RenderStateStruct active_state;
 			DX8Wrapper::Get_Render_State(active_state);
+			WW3D::FixedFunctionStateDesc fixed_function_state;
+			WW3D::Capture_Current_Fixed_Function_State(fixed_function_state, pass->Peek_Material());
 			WWASSERT(active_state.vertex_buffer != NULL);
 			WWASSERT(active_state.index_buffer != NULL);
 			if (active_state.vertex_buffer != NULL && active_state.index_buffer != NULL) {
@@ -1113,7 +1142,9 @@ void MeshClass::Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass *
 					false,
 					active_state.world,
 					active_state.view,
-					projection_transform);
+					projection_transform,
+					LightingSubmission,
+					&fixed_function_state);
 				WWASSERT(submitted);
 			}
 		}
@@ -1122,15 +1153,15 @@ void MeshClass::Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass *
 		/*
 		** Normal mesh case, render polys with this mesh's transform
 		*/
-		pass->Install_Materials();
 		DX8Wrapper::Set_Index_Buffer(ib,0);
 
 		SNAPSHOT_SAY(("Set_World_Transform\n"));
 		DX8Wrapper::Set_Transform(D3DTS_WORLD,Transform);
-		DX8Wrapper::Apply_Render_State_Changes();
 
 		RenderStateStruct active_state;
 		DX8Wrapper::Get_Render_State(active_state);
+		WW3D::FixedFunctionStateDesc fixed_function_state;
+		WW3D::Capture_Current_Fixed_Function_State(fixed_function_state, pass->Peek_Material());
 		WWASSERT(active_state.vertex_buffer != NULL);
 		WWASSERT(active_state.index_buffer != NULL);
 
@@ -1151,7 +1182,9 @@ void MeshClass::Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass *
 					false,
 					active_state.world,
 					active_state.view,
-					projection_transform);
+					projection_transform,
+					LightingSubmission,
+					&fixed_function_state);
 				WWASSERT(submitted);
 			}
 			it.Next();
@@ -1172,40 +1205,51 @@ void MeshClass::Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass *
  * HISTORY:                                                                                    *
  *   12/10/98   GTH : Created.                                                                 *
  *=============================================================================================*/
+void MeshClass::Render_Visibility(VisRenderInfoClass & rinfo)
+{
+	if (Is_Not_Hidden_At_All() == false) {
+		return;
+	}
+
+	WWASSERT(rinfo.VisRasterizer != NULL);
+	rinfo.VisRasterizer->Enable_Two_Sided_Rendering(!!Model->Get_Flag(MeshGeometryClass::TWO_SIDED));
+
+	if (Model->Get_Flag(MeshModelClass::SKIN) == 0) {
+
+		rinfo.VisRasterizer->Set_Model_Transform(Transform);
+		rinfo.VisRasterizer->Render_Triangles(	Model->Get_Vertex_Array(),
+															Model->Get_Vertex_Count(),
+															Model->Get_Polygon_Array(),
+															Model->Get_Polygon_Count(),
+															Get_Bounding_Box() );
+	} else {
+
+		int vertex_count = Model->Get_Vertex_Count();
+		if (_TempVertexBuffer.Count() < vertex_count) _TempVertexBuffer.Resize(vertex_count);
+		Vector3 *dst_vert = &(_TempVertexBuffer[0]);
+		Get_Deformed_Vertices(dst_vert);
+
+		rinfo.VisRasterizer->Set_Model_Transform(Matrix3D::Identity);
+		rinfo.VisRasterizer->Render_Triangles(	dst_vert,
+															Model->Get_Vertex_Count(),
+															Model->Get_Polygon_Array(),
+															Model->Get_Polygon_Count(),
+															Get_Bounding_Box() );
+	}
+	rinfo.VisRasterizer->Enable_Two_Sided_Rendering(false);
+}
+
 void MeshClass::Special_Render(SpecialRenderInfoClass & rinfo)
 {
 	if ((Is_Not_Hidden_At_All() == false) && (rinfo.RenderType != SpecialRenderInfoClass::RENDER_SHADOW)) {
 		return;
 	}
-	
+
 	if (rinfo.RenderType == SpecialRenderInfoClass::RENDER_VIS) {
-	
-		WWASSERT(rinfo.VisRasterizer != NULL);
-		rinfo.VisRasterizer->Enable_Two_Sided_Rendering(!!Model->Get_Flag(MeshGeometryClass::TWO_SIDED));
-
-		if (Model->Get_Flag(MeshModelClass::SKIN) == 0) {
-
-			rinfo.VisRasterizer->Set_Model_Transform(Transform);
-			rinfo.VisRasterizer->Render_Triangles(	Model->Get_Vertex_Array(),
-																Model->Get_Vertex_Count(),
-																Model->Get_Polygon_Array(),
-																Model->Get_Polygon_Count(),
-																Get_Bounding_Box() );
-		} else {
-
-			int vertex_count = Model->Get_Vertex_Count();
-			if (_TempVertexBuffer.Count() < vertex_count) _TempVertexBuffer.Resize(vertex_count);
-			Vector3 *dst_vert = &(_TempVertexBuffer[0]);
-			Get_Deformed_Vertices(dst_vert);
-
-			rinfo.VisRasterizer->Set_Model_Transform(Matrix3D::Identity);
-			rinfo.VisRasterizer->Render_Triangles(	dst_vert,
-																Model->Get_Vertex_Count(),
-																Model->Get_Polygon_Array(),
-																Model->Get_Polygon_Count(),
-																Get_Bounding_Box() );
-		}
-		rinfo.VisRasterizer->Enable_Two_Sided_Rendering(false);
+		VisRenderInfoClass vis_rinfo(rinfo.Camera);
+		vis_rinfo.VisRasterizer = rinfo.VisRasterizer;
+		Render_Visibility(vis_rinfo);
+		return;
 	}
 
 	if (rinfo.RenderType == SpecialRenderInfoClass::RENDER_SHADOW) {
@@ -1711,20 +1755,9 @@ unsigned int * MeshClass::Get_User_Lighting_Array(bool alloc)
 	return UserLighting;
 }
 
-DX8FVFCategoryContainer* MeshClass::Peek_FVF_Category_Container()
-{
-	if (PolygonRendererList.Is_Empty()) return NULL;
-	DX8PolygonRendererClass* polygon_renderer=PolygonRendererList.Get_Head();
-	WWASSERT(polygon_renderer);
-	DX8TextureCategoryClass* texture_category=polygon_renderer->Get_Texture_Category();
-	WWASSERT(texture_category);
-	DX8FVFCategoryContainer* fvf_category=texture_category->Get_Container();
-	WWASSERT(fvf_category);
-	return fvf_category;
-}
-
 void MeshClass::Install_User_Lighting_Array(Vector4 * lighting)
 {
+	Invalidate_Render_Registration();
 	Get_User_Lighting_Array(true);
 	
 	for (int vi=0; vi<Model->Get_Vertex_Count(); vi++) {
@@ -1793,6 +1826,7 @@ void MeshClass::Load_User_Lighting (ChunkLoadClass & cload)
 		if (	(cload.Cur_Chunk_ID() == CHUNKID_USER_LIGHTING_ARRAY) && 
 				(cload.Cur_Chunk_Length() == (unsigned)(Model->Get_Vertex_Count() * 4)) ) 
 		{
+			Invalidate_Render_Registration();
 			unsigned int * lighting = Get_User_Lighting_Array(true);
 			cload.Read(lighting,Model->Get_Vertex_Count() * 4);
 			setup_materials_for_user_lighting();
@@ -1802,4 +1836,3 @@ void MeshClass::Load_User_Lighting (ChunkLoadClass & cload)
 
 	Set_Has_User_Lighting(true);
 }
-

@@ -108,6 +108,8 @@
 #include "rddesc.h"
 #include "vector3i.h"
 #include "bgfxrenderer.h"
+#include <cstring>
+#include <cmath>
 #include <cstdio>
 #include "dx8wrapper.h"
 #include "sortingrenderer.h"
@@ -455,6 +457,95 @@ void WW3D::Set_Index_Buffer(const DynamicIBAccessClass& index_buffer, unsigned s
 	DX8Wrapper::Set_Index_Buffer(index_buffer, index_base_offset);
 }
 
+void WW3D::Capture_Current_Lighting_Submission(LightingSubmitDesc &lighting, SubmitLightDesc *lights, std::uint32_t max_lights)
+{
+	const unsigned ambient_color = DX8Wrapper::Get_DX8_Render_State(D3DRS_AMBIENT);
+	lighting.SceneAmbient.Set(
+		static_cast<float>((ambient_color >> 16) & 0xffu) / 255.0f,
+		static_cast<float>((ambient_color >> 8) & 0xffu) / 255.0f,
+		static_cast<float>(ambient_color & 0xffu) / 255.0f);
+	lighting.Lights = lights;
+	lighting.LightCount = 0;
+
+	if (lights == NULL || max_lights == 0) {
+		return;
+	}
+
+	for (unsigned index = 0; index < 4u && lighting.LightCount < max_lights; ++index) {
+		if (!DX8Wrapper::Is_Light_Enabled(index)) {
+			continue;
+		}
+
+		const D3DLIGHT8 &light = DX8Wrapper::Peek_Light(index);
+		SubmitLightDesc &submit_light = lights[lighting.LightCount];
+		switch (light.Type) {
+			case D3DLIGHT_DIRECTIONAL: submit_light.Type = SUBMIT_LIGHT_TYPE_DIRECTIONAL; break;
+			case D3DLIGHT_POINT:       submit_light.Type = SUBMIT_LIGHT_TYPE_POINT; break;
+			case D3DLIGHT_SPOT:        submit_light.Type = SUBMIT_LIGHT_TYPE_SPOT; break;
+			default:                   submit_light.Type = SUBMIT_LIGHT_TYPE_NONE; break;
+		}
+
+		if (submit_light.Type == SUBMIT_LIGHT_TYPE_NONE) {
+			continue;
+		}
+
+		submit_light.Position.Set(light.Position.x, light.Position.y, light.Position.z);
+		submit_light.Direction.Set(light.Direction.x, light.Direction.y, light.Direction.z);
+		submit_light.Diffuse.Set(light.Diffuse.r, light.Diffuse.g, light.Diffuse.b);
+		submit_light.Ambient.Set(light.Ambient.r, light.Ambient.g, light.Ambient.b);
+		submit_light.Range = light.Range;
+		submit_light.AttenuationStart =
+			light.Attenuation1 > 1.0e-6f ? (1.0f / light.Attenuation1) : light.Range;
+		submit_light.SpotInnerCos =
+			light.Type == D3DLIGHT_SPOT ? std::cos(light.Theta) : -2.0f;
+		++lighting.LightCount;
+	}
+}
+
+void WW3D::Capture_Current_Fixed_Function_State(FixedFunctionStateDesc &state, const VertexMaterialClass *material)
+{
+	auto decode_dword_as_float = [](unsigned value) -> float {
+		float decoded = 0.0f;
+		std::memcpy(&decoded, &value, sizeof(decoded));
+		return decoded;
+	};
+
+	state.CullMode = DX8Wrapper::Get_DX8_Render_State(D3DRS_CULLMODE);
+	state.FillMode = DX8Wrapper::Get_DX8_Render_State(D3DRS_FILLMODE);
+	state.FogEnabled = DX8Wrapper::Get_Fog_Enable();
+	const unsigned fog_color = DX8Wrapper::Get_Fog_Color();
+	state.FogColor.Set(
+		static_cast<float>((fog_color >> 16) & 0xffu) / 255.0f,
+		static_cast<float>((fog_color >> 8) & 0xffu) / 255.0f,
+		static_cast<float>(fog_color & 0xffu) / 255.0f);
+	state.FogStart = decode_dword_as_float(DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGSTART));
+	state.FogEnd = decode_dword_as_float(DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGEND));
+	state.RangeFog = DX8Wrapper::Get_DX8_Render_State(D3DRS_RANGEFOGENABLE) != FALSE;
+
+	if (material != NULL) {
+		material->Apply_Fixed_Function_State(state);
+		return;
+	}
+
+	for (unsigned stage = 0; stage < 2u; ++stage) {
+		state.TexcoordIndex[stage] = DX8Wrapper::Get_Texture_Stage_State(stage, D3DTSS_TEXCOORDINDEX);
+		state.TextureTransformFlags[stage] = DX8Wrapper::Get_Texture_Stage_State(stage, D3DTSS_TEXTURETRANSFORMFLAGS);
+		state.TextureTransforms[stage] = Matrix4(true);
+		if (state.TextureTransformFlags[stage] != D3DTTFF_DISABLE) {
+			DX8Wrapper::Get_Transform(
+				static_cast<D3DTRANSFORMSTATETYPE>(D3DTS_TEXTURE0 + stage),
+				state.TextureTransforms[stage]);
+		}
+	}
+
+	state.BumpEnvMatrix[0] = decode_dword_as_float(DX8Wrapper::Get_Texture_Stage_State(0, D3DTSS_BUMPENVMAT00));
+	state.BumpEnvMatrix[1] = decode_dword_as_float(DX8Wrapper::Get_Texture_Stage_State(0, D3DTSS_BUMPENVMAT01));
+	state.BumpEnvMatrix[2] = decode_dword_as_float(DX8Wrapper::Get_Texture_Stage_State(0, D3DTSS_BUMPENVMAT10));
+	state.BumpEnvMatrix[3] = decode_dword_as_float(DX8Wrapper::Get_Texture_Stage_State(0, D3DTSS_BUMPENVMAT11));
+	state.BumpEnvLuminanceScale = decode_dword_as_float(DX8Wrapper::Get_Texture_Stage_State(1, D3DTSS_BUMPENVLSCALE));
+	state.BumpEnvLuminanceOffset = decode_dword_as_float(DX8Wrapper::Get_Texture_Stage_State(1, D3DTSS_BUMPENVLOFFSET));
+}
+
 void WW3D::Set_Depth_Bias(unsigned int bias)
 {
 	DX8Wrapper::Set_DX8_Render_State(D3DRS_ZBIAS, bias);
@@ -468,6 +559,63 @@ void WW3D::Set_Polygon_Fill_Mode(PolygonFillModeEnum mode)
 void WW3D::Insert_Sorted_Triangles(unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count)
 {
 	SortingRendererClass::Insert_Triangles(start_index, polygon_count, min_vertex_index, vertex_count);
+}
+
+bool WW3D::Submit_Fixed_Function_Draw(const FixedFunctionSubmitDesc &submission)
+{
+#if RENEGADE_WITH_BGFX_RENDERER
+	if (submission.VertexBuffer == NULL || submission.IndexBuffer == NULL) {
+		return false;
+	}
+
+	SubmitLightDesc fallback_lights[MAX_SUBMIT_LIGHTS];
+	LightingSubmitDesc fallback_lighting;
+	const LightingSubmitDesc *lighting = submission.Lighting;
+	if (lighting == NULL) {
+		Capture_Current_Lighting_Submission(fallback_lighting, fallback_lights, MAX_SUBMIT_LIGHTS);
+		lighting = &fallback_lighting;
+	}
+
+	FixedFunctionStateDesc fallback_state;
+	const FixedFunctionStateDesc *render_state = submission.RenderState;
+	if (render_state == NULL) {
+		Capture_Current_Fixed_Function_State(fallback_state, submission.Material);
+		render_state = &fallback_state;
+	}
+
+	const unsigned fvf = submission.VertexBuffer->Vertex_Format_Info().Get_Vertex_Format();
+	const bool has_normals = (fvf & VERTEX_FORMAT_FLAG_NORMAL) != 0u;
+	const MaterialClassification classification = BgfxRenderer::Classify_Material(
+		submission.Shader,
+		submission.Material,
+		has_normals);
+
+	return BgfxRenderer::Submit_Classified_Draw(
+		*submission.VertexBuffer,
+		submission.VertexBufferOffset,
+		*submission.IndexBuffer,
+		submission.IndexBufferOffset,
+		submission.IndexBaseOffset,
+		submission.StartIndex,
+		submission.PolygonCount,
+		submission.MinVertexIndex,
+		submission.VertexCount,
+		submission.Textures,
+		submission.Shader,
+		submission.Material,
+		classification,
+		submission.ReceiveShadows,
+		submission.CastShadows,
+		submission.WorldTransform,
+		submission.ViewTransform,
+		submission.ProjectionTransform,
+		submission.Strip,
+		lighting,
+		render_state);
+#else
+	WWASSERT_PRINT(false, "WW3D::Submit_Fixed_Function_Draw requires the modern renderer backend");
+	return false;
+#endif
 }
 
 bool WW3D::Submit_Current_Triangles(unsigned short start_index, unsigned short polygon_count, unsigned short min_vertex_index, unsigned short vertex_count)
@@ -498,6 +646,26 @@ bool WW3D::Submit_Current_Triangles(
 		cast_shadows);
 #else
 	WWASSERT_PRINT(false, "WW3D::Submit_Current_Triangles requires the modern renderer backend");
+	return false;
+#endif
+}
+
+bool WW3D::Submit_Overlay(const WW3D::OverlaySubmitDesc &submission)
+{
+#if RENEGADE_WITH_BGFX_RENDERER
+	return BgfxRenderer::Submit_Overlay(submission);
+#else
+	WWASSERT_PRINT(false, "WW3D::Submit_Overlay requires the modern renderer backend");
+	return false;
+#endif
+}
+
+bool WW3D::Submit_YUV_Overlay(const OverlayYUVSubmitDesc &submission)
+{
+#if RENEGADE_WITH_BGFX_RENDERER
+	return BgfxRenderer::Submit_YUV_Overlay(submission);
+#else
+	WWASSERT_PRINT(false, "WW3D::Submit_YUV_Overlay requires the modern renderer backend");
 	return false;
 #endif
 }
@@ -1259,7 +1427,7 @@ WW3DErrorType WW3D::Render(
 	DX8Wrapper::Set_DX8_Render_State(D3DRS_FILLMODE,D3DFILL_SOLID);
 
 	// Install the lighting environment if one is supplied
-	if (rinfo.light_environment != NULL) {
+	if (rinfo.light_environment != NULL && rinfo.lighting_submission == NULL) {
 		DX8Wrapper::Set_Light_Environment(rinfo.light_environment);
 	}
 

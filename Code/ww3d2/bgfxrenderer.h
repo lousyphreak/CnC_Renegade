@@ -5,6 +5,7 @@
 #include "matrix4.h"
 #include "renderer_types.h"
 #include "shader.h"
+#include "ww3d.h"
 #include "vector3.h"
 #include "ww3dformat.h"
 
@@ -56,6 +57,18 @@ struct MaterialClassification {
     float material_ambient[4];
     float material_diffuse[4];  // .a = opacity
     float material_emissive[4];
+};
+
+struct OverlayYUVSubmitDesc
+{
+    const WW3D::OverlaySubmitVertex *Vertices = nullptr;
+    std::uint32_t VertexCount = 0;
+    const std::uint16_t *Indices = nullptr;
+    std::uint32_t IndexCount = 0;
+    bgfx::TextureHandle LumaTexture = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle ChromaTexture = BGFX_INVALID_HANDLE;
+    std::uint32_t SamplerFlags = 0;
+    bool FullRangeVideo = false;
 };
 
 class BgfxRenderer
@@ -132,6 +145,8 @@ public:
     static uint64_t Build_Render_State(const ShaderClass &shader, unsigned cull_mode = D3DCULL_CW);
     static void Apply_Render_State(const ShaderClass &shader, unsigned cull_mode = D3DCULL_CW, uint64_t extra_state = 0u);
     static void Apply_Overlay_Config(bool has_texture);
+    static bool Submit_Overlay(const WW3D::OverlaySubmitDesc &submission);
+    static bool Submit_YUV_Overlay(const OverlayYUVSubmitDesc &submission);
 
     // Material classification and direct draw submission
     static MaterialClassification Classify_Material(const ShaderClass &shader, const VertexMaterialClass *material, bool has_normals);
@@ -146,6 +161,7 @@ public:
         unsigned short min_vertex_index,
         unsigned short vertex_count,
         TextureClass *const *textures,
+        const ShaderClass &shader,
         const VertexMaterialClass *material,
         const MaterialClassification &classification,
         bool receive_shadows,
@@ -153,7 +169,9 @@ public:
         const Matrix4 &world,
         const Matrix4 &view,
         const Matrix4 &projection,
-        bool strip);
+        bool strip,
+        const WW3D::LightingSubmitDesc *lighting = nullptr,
+        const WW3D::FixedFunctionStateDesc *render_state = nullptr);
 
     static std::uint32_t Convert_Packed_Color(std::uint32_t argb_color);
     static void Request_Screen_Shot(const char *file_path);
@@ -168,9 +186,14 @@ public:
     static uint32_t Get_Height() { return Height; }
 
     // Per-program uniform apply helper (public for classified draw path)
-    static void Apply_Texgen_Uniforms();
-    static void Apply_Lighting_Uniforms(const MaterialClassification &classification);
-    static void Apply_Bump_Env_Uniforms(const MaterialClassification &classification);
+    static void Apply_Texgen_Uniforms(const WW3D::FixedFunctionStateDesc *render_state = nullptr);
+    static void Apply_Lighting_Uniforms(
+        const MaterialClassification &classification,
+        const WW3D::LightingSubmitDesc *lighting = nullptr,
+        const WW3D::FixedFunctionStateDesc *render_state = nullptr);
+    static void Apply_Bump_Env_Uniforms(
+        const MaterialClassification &classification,
+        const WW3D::FixedFunctionStateDesc *render_state = nullptr);
 
 private:
     static bool Init_Render_Resources();

@@ -64,6 +64,33 @@
 // Singletons.
 WeatherMgrClass _TheWeatherMgr;
 
+namespace
+{
+bool Submit_Weather_Draw(
+	const DynamicVBAccessClass &vertex_buffer,
+	const IndexBufferClass &index_buffer,
+	unsigned short triangle_count,
+	unsigned short vertex_count,
+	VertexMaterialClass *material,
+	const ShaderClass &shader,
+	TextureClass *texture)
+{
+	WW3D::FixedFunctionSubmitDesc submission;
+	submission.VertexBuffer = vertex_buffer.Peek_Vertex_Buffer();
+	submission.VertexBufferOffset = vertex_buffer.Get_Vertex_Buffer_Offset();
+	submission.IndexBuffer = &index_buffer;
+	submission.PolygonCount = triangle_count;
+	submission.VertexCount = vertex_count;
+	submission.Material = material;
+	submission.Shader = shader;
+	submission.Textures[0] = texture;
+	WW3D::Get_Transform(WW3D::RENDER_TRANSFORM_WORLD, submission.WorldTransform);
+	WW3D::Get_Transform(WW3D::RENDER_TRANSFORM_VIEW, submission.ViewTransform);
+	WW3D::Get_Transform(WW3D::RENDER_TRANSFORM_PROJECTION, submission.ProjectionTransform);
+	return WW3D::Submit_Fixed_Function_Draw(submission);
+}
+}
+
 
 // Static data.
 DEFINE_AUTO_POOL(WeatherSystemClass::RayStruct, WeatherSystemClass::GROWTH_STEP);
@@ -1046,12 +1073,6 @@ void WeatherSystemClass::Render (RenderInfoClass &rinfo)
 		// NOTE: All particle positions are already in world space.
 		WW3D::Set_Transform (WW3D::RENDER_TRANSFORM_WORLD, identitymatrix);
 
-		WW3D::Set_Material (Material);
-		WW3D::Set_Shader (Shader);
-		WW3D::Set_Texture (0, Texture);
-
-		WW3D::Set_Index_Buffer (IndexBuffer, 0);
-
 		#if WEATHER_PARTICLE_SORT
 		#else
 		WW3D::Set_Depth_Bias (12);
@@ -1203,17 +1224,18 @@ void WeatherSystemClass::Render (RenderInfoClass &rinfo)
 			}
 
 			if (submittedparticlecount > 0) {
-
-				WW3D::Set_Vertex_Buffer (dynamicvb);
-
 				#if WEATHER_PARTICLE_SORT
 				WW3D::Insert_Sorted_Triangles (0, submittedparticlecount, 0, submittedparticlecount * VERTICES_PER_TRIANGLE);
 				#else
-				WW3D::Submit_Current_Triangles(
-					0,
-					submittedparticlecount,
-					0,
-					submittedparticlecount * VERTICES_PER_TRIANGLE);
+				const bool submitted = Submit_Weather_Draw(
+					dynamicvb,
+					*IndexBuffer,
+					static_cast<unsigned short>(submittedparticlecount),
+					static_cast<unsigned short>(submittedparticlecount * VERTICES_PER_TRIANGLE),
+					Material,
+					Shader,
+					Texture);
+				WWASSERT(submitted);
 				#endif
 			}
 

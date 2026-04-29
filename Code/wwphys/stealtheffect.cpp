@@ -192,7 +192,7 @@ void StealthEffectClass::Timestep(float dt)
 	Enable_Suppress_Shadows(CurrentFraction > 0.5f);		
 }
 
-void StealthEffectClass::Render_Push(RenderInfoClass & rinfo,PhysClass * obj)
+void StealthEffectClass::Gather_Render_Effect(RenderEffectCollection & context,PhysClass * obj)
 {
 	/*
 	** If we are in the (0.5,1.0) range of the fraction (object is hidden) then
@@ -200,7 +200,7 @@ void StealthEffectClass::Render_Push(RenderInfoClass & rinfo,PhysClass * obj)
 	*/
 	Vector3 obj_pos;
 	obj->Get_Position(&obj_pos);
-	float xydist = (rinfo.Camera.Get_Position() - obj_pos).Quick_Length();
+	float xydist = (context.Camera.Get_Position() - obj_pos).Quick_Length();
 	if (xydist <= FadeDistance) {
 		float intensity_delta = STEALTH_ZNEAR_AMOUNT * (FadeDistance - xydist) / FadeDistance;
 		float intensity = WWMath::Min(IntensityScale + intensity_delta, 1.0f);
@@ -227,21 +227,11 @@ void StealthEffectClass::Render_Push(RenderInfoClass & rinfo,PhysClass * obj)
 		/*
 		** Add the material pass!
 		*/
-		rinfo.Push_Material_Pass(MaterialPass);
+		context.Add_Pass(MaterialPass);
 	}
 	
 	if (RenderBaseMaterial == false) {
-		rinfo.Push_Override_Flags(RenderInfoClass::RINFO_OVERRIDE_ADDITIONAL_PASSES_ONLY);
-	}
-}
-
-void StealthEffectClass::Render_Pop(RenderInfoClass & rinfo)
-{
-	if (RenderBaseMaterial == false) {
-		rinfo.Pop_Override_Flags();
-	}
-	if (RenderStealthMaterial) {
-		rinfo.Pop_Material_Pass();
+		context.Suppress_Base_Pass();
 	}
 }
 

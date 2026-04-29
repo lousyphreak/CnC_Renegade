@@ -99,6 +99,7 @@ public:
 //	MeshModelClass*				Get_Mesh_Model_Class() { return mesh->Peek_Model(); }
 	
 	DX8TextureCategoryClass*	Get_Texture_Category() { return texture_category; }
+	const DX8TextureCategoryClass* Get_Texture_Category() const { return texture_category; }
 	void								Set_Texture_Category(DX8TextureCategoryClass* tc) { texture_category=tc; }
 
 	void Log();

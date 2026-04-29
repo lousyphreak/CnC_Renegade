@@ -593,7 +593,7 @@ void RingRenderObjClass::render_ring(RenderInfoClass & rinfo,const Vector3 & cen
  * HISTORY:                                                                                    *
  *   1/19/00    gth : Created.                                                                 *
  *=============================================================================================*/
-void RingRenderObjClass::vis_render_ring(SpecialRenderInfoClass & rinfo,const Vector3 & center,const Vector3 & extent)
+void RingRenderObjClass::vis_render_ring(VisRenderInfoClass & rinfo,const Vector3 & center,const Vector3 & extent)
 {
 	WWASSERT(0);
 }	// vis_render_ring
@@ -860,15 +860,22 @@ Vector2 RingRenderObjClass::Get_Default_Outer_Scale(void) const
  * HISTORY:                                                                                    *
  *   1/19/00    gth : Created.                                                                 *
  *=============================================================================================*/
-void RingRenderObjClass::Special_Render(SpecialRenderInfoClass & rinfo)
+void RingRenderObjClass::Render_Visibility(VisRenderInfoClass & rinfo)
 {
 	Matrix3D temp(1);
 	temp.Translate(Transform.Get_Translation());
-	
+
+	WWASSERT(rinfo.VisRasterizer != NULL);
+	rinfo.VisRasterizer->Set_Model_Transform(temp);
+	vis_render_ring(rinfo,ObjSpaceCenter,ObjSpaceExtent);
+}
+
+void RingRenderObjClass::Special_Render(SpecialRenderInfoClass & rinfo)
+{
 	if (rinfo.RenderType == SpecialRenderInfoClass::RENDER_VIS) {
-		WWASSERT(rinfo.VisRasterizer != NULL);
-		rinfo.VisRasterizer->Set_Model_Transform(temp);
-		vis_render_ring(rinfo,ObjSpaceCenter,ObjSpaceExtent);
+		VisRenderInfoClass vis_rinfo(rinfo.Camera);
+		vis_rinfo.VisRasterizer = rinfo.VisRasterizer;
+		Render_Visibility(vis_rinfo);
 	}
 }
 

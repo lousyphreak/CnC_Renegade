@@ -2163,6 +2163,43 @@ void HLodClass::Render(RenderInfoClass & rinfo)
 	}
 }
 
+void HLodClass::Render_Material_Passes(RenderInfoClass & rinfo,MaterialPassClass * const * passes,int pass_count)
+{
+	int i;
+
+	if (Is_Not_Hidden_At_All() == false) {
+		return;
+	}
+
+	Animatable3DObjClass::Render(rinfo);
+
+	for (i = 0; i < Lod[CurLod].Count(); i++) {
+		Lod[CurLod][i].Model->Render_Material_Passes(rinfo,passes,pass_count);
+	}
+
+	for (i = 0; i < AdditionalModels.Count(); i++) {
+		AdditionalModels[i].Model->Render_Material_Passes(rinfo,passes,pass_count);
+	}
+}
+
+void HLodClass::Render_Visibility(VisRenderInfoClass & rinfo)
+{
+	int i;
+	if (Is_Not_Hidden_At_All() == false) {
+		return;
+	}
+
+	Animatable3DObjClass::Render_Visibility(rinfo);
+
+	for (i = 0; i < Lod[CurLod].Count(); i++) {
+		Lod[CurLod][i].Model->Render_Visibility(rinfo);
+	}
+
+	for (i = 0; i < AdditionalModels.Count(); i++) {
+		AdditionalModels[i].Model->Render_Visibility(rinfo);
+	}
+}
+
 
 /***********************************************************************************************
  * HLodClass::Special_Render -- Special_Render for HLod                                        *
@@ -2180,6 +2217,13 @@ void HLodClass::Special_Render(SpecialRenderInfoClass & rinfo)
 {
 	int i;
 	if (Is_Not_Hidden_At_All() == false) {
+		return;
+	}
+
+	if (rinfo.RenderType == SpecialRenderInfoClass::RENDER_VIS) {
+		VisRenderInfoClass vis_rinfo(rinfo.Camera);
+		vis_rinfo.VisRasterizer = rinfo.VisRasterizer;
+		Render_Visibility(vis_rinfo);
 		return;
 	}
 
@@ -3631,4 +3675,3 @@ void HLodClass::Set_Hidden(int onoff)
 	Animatable3DObjClass::Set_Hidden(onoff);
 	return ;
 }
-

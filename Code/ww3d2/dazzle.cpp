@@ -1325,7 +1325,7 @@ LensflareTypeClass* DazzleRenderObjClass::Get_Lensflare_Class(unsigned id) // Re
 //
 // ----------------------------------------------------------------------------
 
-void DazzleRenderObjClass::vis_render_dazzle(SpecialRenderInfoClass & rinfo)
+void DazzleRenderObjClass::vis_render_dazzle(VisRenderInfoClass & rinfo)
 {
 
 	WWASSERT(rinfo.VisRasterizer != NULL);
@@ -1385,10 +1385,17 @@ void DazzleRenderObjClass::vis_render_dazzle(SpecialRenderInfoClass & rinfo)
 	rinfo.VisRasterizer->Enable_Two_Sided_Rendering(false);
 }
 
+void DazzleRenderObjClass::Render_Visibility(VisRenderInfoClass & rinfo)
+{
+	vis_render_dazzle(rinfo);
+}
+
 void DazzleRenderObjClass::Special_Render(SpecialRenderInfoClass & rinfo)
 {
 	if (rinfo.RenderType == SpecialRenderInfoClass::RENDER_VIS) {
-		vis_render_dazzle(rinfo);
+		VisRenderInfoClass vis_rinfo(rinfo.Camera);
+		vis_rinfo.VisRasterizer = rinfo.VisRasterizer;
+		Render_Visibility(vis_rinfo);
 	}
 }
 

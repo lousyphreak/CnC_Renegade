@@ -62,6 +62,7 @@
 #include "meshgeometry.h"
 #include "hashtemplate.h"
 #include "../wwphys/phys.h"
+#include <algorithm>
 #include <vector>
 
 
@@ -120,20 +121,6 @@ static bool Mesh_Pass_Should_Receive_Shadows(
 
 	return Shader_Composites_Into_Shadowed_Surface(shader);
 }
-
-
-// helper data structure
-class PolyRemover : public MultiListObjectClass
-{
-public:
-	DX8TextureCategoryClass *	src;
-	DX8TextureCategoryClass *	dest;
-	DX8PolygonRendererClass *  pr;
-};
-
-typedef MultiListClass<PolyRemover>			PolyRemoverList;
-typedef MultiListIterator<PolyRemover>		PolyRemoverListIterator;
-
 
 /**
 ** PolyRenderTaskClass
@@ -218,6 +205,257 @@ private:
 };
 
 DEFINE_AUTO_POOL(MatPassTaskClass, 256);
+
+static bool Mesh_Uses_Alpha_Blending(const MeshModelClass & model)
+{
+	if (model.Has_Shader_Array(0)) {
+		for (int poly_index = 0; poly_index < model.Get_Polygon_Count(); ++poly_index) {
+			ShaderClass shader = model.Get_Shader(poly_index,0);
+			if (shader.Get_Dst_Blend_Func() != ShaderClass::DSTBLEND_ZERO &&
+				shader.Get_Alpha_Test() == ShaderClass::ALPHATEST_DISABLE)
+			{
+				return true;
+			}
+		}
+	} else {
+		ShaderClass shader = model.Get_Single_Shader(0);
+		if (shader.Get_Dst_Blend_Func() != ShaderClass::DSTBLEND_ZERO &&
+			shader.Get_Alpha_Test() == ShaderClass::ALPHATEST_DISABLE)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static void Build_Material_Pass_Texture_Array(const MaterialPassClass * pass, TextureClass * textures[MAX_TEXTURE_STAGES])
+{
+	for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
+		textures[stage] = pass->Peek_Texture(stage);
+	}
+}
+
+static uintptr_t Build_Registered_Draw_Texture_Key(TextureClass * const * textures)
+{
+	uintptr_t key = 0;
+	for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
+		const uintptr_t pointer_value = reinterpret_cast<uintptr_t>(textures[stage]);
+		key ^= pointer_value + 0x9e3779b9u + (key << 6) + (key >> 2);
+	}
+	return key;
+}
+
+static std::uint64_t Build_Registered_Draw_Pipeline_Key(
+	unsigned pass,
+	unsigned vertex_format,
+	const ShaderClass & shader,
+	const MaterialClassification & classification)
+{
+	std::uint64_t key = 1469598103934665603ull;
+	auto mix = [&key](std::uint64_t value) {
+		key ^= value + 0x9e3779b97f4a7c15ull + (key << 6) + (key >> 2);
+	};
+
+	mix(pass);
+	mix(vertex_format);
+	mix(shader.Get_Bits());
+	mix(static_cast<std::uint64_t>(classification.program));
+	return key;
+}
+
+static void Resolve_Registered_Draw_Textures(
+	const RegisteredRigidMeshDraw & draw,
+	const MeshClass & mesh,
+	TextureClass * applied_textures[MAX_TEXTURE_STAGES])
+{
+#ifdef WWDEBUG
+	if (WW3D::Expose_Prelit()) {
+		switch (mesh.Peek_Model()->Get_Flag(MeshGeometryClass::PRELIT_MASK)) {
+			case MeshGeometryClass::PRELIT_VERTEX:
+				for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
+					applied_textures[stage] = NULL;
+				}
+				return;
+
+			case MeshGeometryClass::PRELIT_LIGHTMAP_MULTI_PASS:
+				if (draw.Pass == static_cast<unsigned>(mesh.Peek_Model()->Get_Pass_Count() - 1)) {
+					for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
+						applied_textures[stage] = draw.Textures[stage];
+					}
+				} else {
+					for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
+						applied_textures[stage] = NULL;
+					}
+				}
+				return;
+
+			case MeshGeometryClass::PRELIT_LIGHTMAP_MULTI_TEXTURE:
+				applied_textures[0] = draw.Textures[0];
+				for (unsigned stage = 1; stage < MAX_TEXTURE_STAGES; ++stage) {
+					applied_textures[stage] = NULL;
+				}
+				return;
+
+			default:
+				break;
+		}
+	}
+#endif
+
+	for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
+		applied_textures[stage] = draw.Textures[stage];
+	}
+}
+
+static const Matrix3D * Get_Registered_Draw_World_Transform(
+	const MeshClass & mesh,
+	const CameraClass & camera,
+	Matrix3D & tmp_world)
+{
+	if (mesh.Peek_Model()->Get_Flag(MeshModelClass::ALIGNED)) {
+		Vector3 mesh_position;
+		Vector3 camera_z_vector;
+		camera.Get_Transform().Get_Z_Vector(&camera_z_vector);
+		mesh.Get_Transform().Get_Translation(&mesh_position);
+		tmp_world.Obj_Look_At(mesh_position,mesh_position + camera_z_vector,0.0f);
+		return &tmp_world;
+	}
+
+	if (mesh.Peek_Model()->Get_Flag(MeshModelClass::ORIENTED)) {
+		Vector3 mesh_position;
+		Vector3 camera_position;
+		camera.Get_Transform().Get_Translation(&camera_position);
+		mesh.Get_Transform().Get_Translation(&mesh_position);
+		tmp_world.Obj_Look_At(mesh_position,camera_position,0.0f);
+		return &tmp_world;
+	}
+
+	if (mesh.Peek_Model()->Get_Flag(MeshModelClass::SKIN)) {
+		tmp_world.Make_Identity();
+		return &tmp_world;
+	}
+
+	return &mesh.Get_Transform();
+}
+
+static bool Submit_Registered_Fixed_Function_Draw(
+	const VertexBufferClass & vertex_buffer,
+	unsigned vertex_buffer_offset,
+	const IndexBufferClass & index_buffer,
+	unsigned index_buffer_offset,
+	unsigned index_base_offset,
+	unsigned short start_index,
+	unsigned short polygon_count,
+	unsigned short min_vertex_index,
+	unsigned short vertex_count,
+	bool strip,
+	TextureClass * const * textures,
+	const VertexMaterialClass * material,
+	const ShaderClass & shader,
+	const MaterialClassification & classification,
+	bool receive_shadows,
+	bool cast_shadows,
+	const Matrix4 & world,
+	const Matrix4 & view,
+	const Matrix4 & projection,
+	const WW3D::LightingSubmitDesc * lighting,
+	const WW3D::FixedFunctionStateDesc * render_state)
+{
+	return BgfxRenderer::Submit_Classified_Draw(
+		vertex_buffer,
+		vertex_buffer_offset,
+		index_buffer,
+		index_buffer_offset,
+		index_base_offset,
+		start_index,
+		polygon_count,
+		min_vertex_index,
+		vertex_count,
+		textures,
+		shader,
+		material,
+		classification,
+		receive_shadows,
+		cast_shadows,
+		world,
+		view,
+		projection,
+		strip,
+		lighting,
+		render_state);
+}
+
+RegisteredRigidMeshDraw::RegisteredRigidMeshDraw()
+	:
+	Material(NULL),
+	PipelineKey(0),
+	TextureKey(0),
+	MaterialKey(0),
+	StartIndex(0),
+	PolygonCount(0),
+	MinVertexIndex(0),
+	VertexCount(0),
+	Strip(false),
+	Pass(0)
+{
+	for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
+		Textures[stage] = NULL;
+	}
+}
+
+RegisteredRigidMeshClass::RegisteredRigidMeshClass(const MeshRegKeyStruct & key_,unsigned vertex_format_)
+	:
+	ref_count(1),
+	key(key_),
+	vertex_format(vertex_format_),
+	vertex_buffer(NULL),
+	index_buffer(NULL)
+{
+}
+
+RegisteredRigidMeshClass::~RegisteredRigidMeshClass()
+{
+	for (std::vector<RegisteredRigidMeshDraw>::iterator it = draws.begin(); it != draws.end(); ++it) {
+		for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
+			REF_PTR_RELEASE(it->Textures[stage]);
+		}
+		REF_PTR_RELEASE(it->Material);
+	}
+
+	REF_PTR_RELEASE(vertex_buffer);
+	REF_PTR_RELEASE(index_buffer);
+}
+
+void RegisteredRigidMeshClass::Add_Ref()
+{
+	++ref_count;
+}
+
+int RegisteredRigidMeshClass::Release_Ref()
+{
+	return --ref_count;
+}
+
+void RegisteredRigidMeshClass::Set_Buffers(VertexBufferClass * vb, IndexBufferClass * ib)
+{
+	REF_PTR_SET(vertex_buffer,vb);
+	REF_PTR_SET(index_buffer,ib);
+}
+
+void RegisteredRigidMeshClass::Add_Draw(const RegisteredRigidMeshDraw & draw)
+{
+	draws.push_back(draw);
+	RegisteredRigidMeshDraw & stored_draw = draws.back();
+	for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
+		if (stored_draw.Textures[stage] != NULL) {
+			stored_draw.Textures[stage]->Add_Ref();
+		}
+	}
+	if (stored_draw.Material != NULL) {
+		stored_draw.Material->Add_Ref();
+	}
+}
 
 
 // ----------------------------------------------------------------------------
@@ -427,6 +665,23 @@ void DX8RigidFVFCategoryContainer::Render_Delayed_Procedural_Material_Passes(voi
 	delayed_matpass_head = delayed_matpass_tail = NULL;
 }
 
+void DX8RigidFVFCategoryContainer::Render_Material_Passes_For_Mesh(MeshClass * mesh,MaterialPassClass * const * passes,int pass_count)
+{
+	if (mesh == NULL || passes == NULL || pass_count <= 0 || vertex_buffer == NULL || index_buffer == NULL) {
+		return;
+	}
+
+	DX8Wrapper::Set_Vertex_Buffer(vertex_buffer);
+	DX8Wrapper::Set_Index_Buffer(index_buffer,0);
+
+	for (int pass_index = 0; pass_index < pass_count; ++pass_index) {
+		MaterialPassClass * pass = passes[pass_index];
+		if (pass != NULL) {
+			mesh->Render_Material_Pass(pass,index_buffer);
+		}
+	}
+}
+
 
 void DX8TextureCategoryClass::Log(bool only_visible)
 {
@@ -516,249 +771,6 @@ DX8FVFCategoryContainer::~DX8FVFCategoryContainer()
 		}
 	}
 }
-
-// ----------------------------------------------------------------------------
-
-DX8TextureCategoryClass* DX8FVFCategoryContainer::Find_Matching_Texture_Category(
-	TextureClass* texture,
-	unsigned pass,
-	unsigned stage,
-	DX8TextureCategoryClass* ref_category)
-{
-	// Find texture category which matches ref_category's properties but has 'texture' on given pass and stage.
-	DX8TextureCategoryClass* dest_tex_category=NULL;
-	TextureCategoryListIterator dest_it(&texture_category_list[pass]);
-	while (!dest_it.Is_Done()) {
-		if (dest_it.Peek_Obj()->Peek_Texture(stage)==texture) {
-			// Compare all stage's textures
-			dest_tex_category=dest_it.Peek_Obj();
-			bool all_textures_same = true;
-			for (unsigned int s = 0; s < MeshMatDescClass::MAX_TEX_STAGES; s++) {
-				if (stage!=s) {
-					all_textures_same = all_textures_same && (dest_tex_category->Peek_Texture(s) == ref_category->Peek_Texture(s));
-				}
-			}
-			if (all_textures_same &&
-				Equal_Material(dest_tex_category->Peek_Material(),ref_category->Peek_Material()) &&
-				dest_tex_category->Get_Shader()==ref_category->Get_Shader()) {
-				return dest_tex_category;
-			}
-		}
-		dest_it.Next();
-	}
-	return NULL;
-}
-
-DX8TextureCategoryClass* DX8FVFCategoryContainer::Find_Matching_Texture_Category(
-		VertexMaterialClass* vmat,
-		unsigned pass,		
-		DX8TextureCategoryClass* ref_category)
-{
-	// Find texture category which matches ref_category's properties but has 'vmat' on given pass
-	DX8TextureCategoryClass* dest_tex_category=NULL;
-	TextureCategoryListIterator dest_it(&texture_category_list[pass]);
-	while (!dest_it.Is_Done()) {
-		if (Equal_Material(dest_it.Peek_Obj()->Peek_Material(),vmat)) {
-			// Compare all stage's textures
-			dest_tex_category=dest_it.Peek_Obj();
-			bool all_textures_same = true;
-			for (unsigned int s = 0; s < MeshMatDescClass::MAX_TEX_STAGES; s++)
-				all_textures_same = all_textures_same && (dest_tex_category->Peek_Texture(s) == ref_category->Peek_Texture(s));			
-			if (all_textures_same &&				
-				dest_tex_category->Get_Shader()==ref_category->Get_Shader()) {
-				return dest_tex_category;
-			}
-		}
-		dest_it.Next();
-	}
-	return NULL;
-}
-
-void DX8FVFCategoryContainer::Change_Polygon_Renderer_Texture(
-	DX8PolygonRendererList& polygon_renderer_list,
-	TextureClass* texture,
-	TextureClass* new_texture,
-	unsigned pass,
-	unsigned stage)
-{
-	WWASSERT(pass<passes);
-
-	PolyRemoverList prl;
-
-	bool foundtexture=false;
-
-	if (texture==new_texture) return;
-
-	// Find source texture category, then find all polygon renderers who belong to that category
-	// and move them to destination category.
-	TextureCategoryListIterator src_it(&texture_category_list[pass]);
-	while (!src_it.Is_Done()) {
-		DX8TextureCategoryClass* src_tex_category=src_it.Peek_Obj();		
-		if (src_tex_category->Peek_Texture(stage)==texture) {
-			foundtexture=true;
-			DX8PolygonRendererListIterator poly_it(&polygon_renderer_list);
-			while (!poly_it.Is_Done()) {
-				// If source texture category contains polygon renderer, move to destination category
-				DX8PolygonRendererClass* polygon_renderer=poly_it.Peek_Obj();
-				DX8TextureCategoryClass *prc=polygon_renderer->Get_Texture_Category();
-
-				if (prc==src_tex_category) {					
-					DX8TextureCategoryClass* dest_tex_category=Find_Matching_Texture_Category(new_texture,pass,stage,src_tex_category);
-
-					if (!dest_tex_category) {
-						TextureClass * tmp_textures[MeshMatDescClass::MAX_TEX_STAGES];
-						for (int s=0;s<MeshMatDescClass::MAX_TEX_STAGES;++s) {
-							tmp_textures[s]=src_tex_category->Peek_Texture(s);
-						}
-						tmp_textures[stage]=new_texture;
-
-						DX8TextureCategoryClass * new_tex_category=new DX8TextureCategoryClass(
-							this,
-							tmp_textures,
-							src_tex_category->Get_Shader(),
-							const_cast<VertexMaterialClass*>(src_tex_category->Peek_Material()),
-							pass);
-		
-						/*
-						** Add the texture category object into the list, immediately after any existing
-						** texture category object which uses the same texture.  This will result in
-						** the list always having matching texture categories next to each other.
-						*/
-						bool found_similar_category = false;
-						TextureCategoryListIterator tex_it(&texture_category_list[pass]);
-						while (!tex_it.Is_Done()) {
-							// Categorize according to first stage's texture for now
-							if (tex_it.Peek_Obj()->Peek_Texture(0) == tmp_textures[0]) {
-								texture_category_list[pass].Add_After(new_tex_category,tex_it.Peek_Obj());
-								found_similar_category = true;
-								break;
-							}
-							tex_it.Next();
-						}
-
-						if (!found_similar_category) {
-							texture_category_list[pass].Add_Tail(new_tex_category);
-						}
-						dest_tex_category=new_tex_category;
-					}
-					PolyRemover *rem=new PolyRemover;
-					rem->src=src_tex_category;
-					rem->dest=dest_tex_category;
-					rem->pr=polygon_renderer;
-					prl.Add(rem);					
-				}
-				poly_it.Next();
-			} // while			
-		} //if src_texture==texture
-		else
-			// quit loop if we've got a texture change
-			if (foundtexture) break;
-		src_it.Next();
-	} // while
-
-	PolyRemoverListIterator prli(&prl);
-
-	while (!prli.Is_Done())
-	{
-		PolyRemover *rem=prli.Peek_Obj();
-		rem->src->Remove_Polygon_Renderer(rem->pr);
-		rem->dest->Add_Polygon_Renderer(rem->pr);		
-		prli.Remove_Current_Object();
-		delete rem;
-	}
-}
-
-void DX8FVFCategoryContainer::Change_Polygon_Renderer_Material(
-		DX8PolygonRendererList& polygon_renderer_list,
-		VertexMaterialClass* vmat,
-		VertexMaterialClass* new_vmat,
-		unsigned pass)
-{
-	WWASSERT(pass<passes);
-
-	PolyRemoverList prl;
-
-	bool foundtexture=false;
-
-	if (vmat==new_vmat) return;
-
-	// Find source texture category, then find all polygon renderers who belong to that category
-	// and move them to destination category.
-	TextureCategoryListIterator src_it(&texture_category_list[pass]);
-	while (!src_it.Is_Done()) {
-		DX8TextureCategoryClass* src_tex_category=src_it.Peek_Obj();
-		if (src_tex_category->Peek_Material()==vmat) {			
-			DX8PolygonRendererListIterator poly_it(&polygon_renderer_list);
-			while (!poly_it.Is_Done()) {
-				// If source texture category contains polygon renderer, move to destination category
-				DX8PolygonRendererClass* polygon_renderer=poly_it.Peek_Obj();
-				DX8TextureCategoryClass *prc=polygon_renderer->Get_Texture_Category();
-				if (prc==src_tex_category) {
-					foundtexture=true;
-					DX8TextureCategoryClass* dest_tex_category=Find_Matching_Texture_Category(new_vmat,pass,src_tex_category);
-
-					if (!dest_tex_category) {
-						TextureClass * tmp_textures[MeshMatDescClass::MAX_TEX_STAGES];
-						for (int s=0;s<MeshMatDescClass::MAX_TEX_STAGES;++s) {
-							tmp_textures[s]=src_tex_category->Peek_Texture(s);
-						}						
-
-						DX8TextureCategoryClass * new_tex_category=new DX8TextureCategoryClass(
-							this,
-							tmp_textures,
-							src_tex_category->Get_Shader(),
-							const_cast<VertexMaterialClass*>(new_vmat),
-							pass);
-		
-						/*
-						** Add the texture category object into the list, immediately after any existing
-						** texture category object which uses the same texture.  This will result in
-						** the list always having matching texture categories next to each other.
-						*/
-						bool found_similar_category = false;
-						TextureCategoryListIterator tex_it(&texture_category_list[pass]);
-						while (!tex_it.Is_Done()) {
-							// Categorize according to first stage's texture for now
-							if (tex_it.Peek_Obj()->Peek_Texture(0) == tmp_textures[0]) {
-								texture_category_list[pass].Add_After(new_tex_category,tex_it.Peek_Obj());
-								found_similar_category = true;
-								break;
-							}
-							tex_it.Next();
-						}
-
-						if (!found_similar_category) {
-							texture_category_list[pass].Add_Tail(new_tex_category);
-						}
-						dest_tex_category=new_tex_category;
-					}
-					PolyRemover *rem=new PolyRemover;
-					rem->src=src_tex_category;
-					rem->dest=dest_tex_category;
-					rem->pr=polygon_renderer;
-					prl.Add(rem);
-				}
-				poly_it.Next();
-			} // while			
-		} // if 
-		else
-			if (foundtexture) break;
-		src_it.Next();
-	} // while
-
-	PolyRemoverListIterator prli(&prl);
-
-	while (!prli.Is_Done())
-	{
-		PolyRemover *rem=prli.Peek_Obj();
-		rem->src->Remove_Polygon_Renderer(rem->pr);
-		rem->dest->Add_Polygon_Renderer(rem->pr);		
-		prli.Remove_Current_Object();
-		delete rem;
-	}
-}
-
-// ----------------------------------------------------------------------------
 
 unsigned DX8FVFCategoryContainer::Define_FVF(MeshModelClass* mmc,unsigned int * user_lighting,bool enable_lighting)
 {
@@ -1062,6 +1074,154 @@ public:
 		return (unsigned short*)polygon_array;
 	}
 };
+
+// ----------------------------------------------------------------------------
+
+static unsigned Add_Registered_Rigid_Draw(
+	RegisteredRigidMeshClass & registration,
+	Vertex_Split_Table & split_table,
+	TextureClass ** textures,
+	VertexMaterialClass * material,
+	ShaderClass shader,
+	unsigned pass,
+	unsigned index_offset)
+{
+	const int poly_count = split_table.Get_Polygon_Count();
+	unsigned polygons = 0;
+	for (int i = 0; i < poly_count; ++i) {
+		bool all_textures_same = true;
+		for (unsigned stage = 0; stage < MeshMatDescClass::MAX_TEX_STAGES; ++stage) {
+			all_textures_same = all_textures_same && (split_table.Peek_Texture(i,pass,stage) == textures[stage]);
+		}
+
+		VertexMaterialClass * poly_material = split_table.Peek_Material(i,pass);
+		ShaderClass poly_shader = split_table.Peek_Shader(i,pass);
+		if (all_textures_same && Equal_Material(poly_material,material) && poly_shader == shader) {
+			++polygons;
+		}
+	}
+
+	if (polygons == 0) {
+		return 0;
+	}
+
+	IndexBufferClass * index_buffer = registration.Get_Index_Buffer();
+	WWASSERT(index_buffer != NULL);
+	if (index_buffer == NULL) {
+		return 0;
+	}
+
+	unsigned index_count = polygons * 3;
+#ifndef ENABLE_STRIPING
+	bool stripify = false;
+#else
+	bool stripify = true;
+	if (index_buffer->Type() == BUFFER_TYPE_SORTING || index_buffer->Type() == BUFFER_TYPE_DYNAMIC_SORTING) {
+		stripify = false;
+	}
+#endif
+	const TriIndex * src_indices = reinterpret_cast<const TriIndex *>(split_table.Get_Polygon_Array(pass));
+
+	RegisteredRigidMeshDraw draw;
+	draw.Shader = shader;
+	draw.Material = material;
+	draw.Pass = pass;
+
+	for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
+		draw.Textures[stage] = textures[stage];
+	}
+
+	unsigned short vmin = 0xffff;
+	unsigned short vmax = 0;
+	if (stripify) {
+		int * triangles = new int[index_count];
+		int triangle_index_count = 0;
+		for (int i = 0; i < poly_count; ++i) {
+			bool all_textures_same = true;
+			for (unsigned stage = 0; stage < MeshMatDescClass::MAX_TEX_STAGES; ++stage) {
+				all_textures_same = all_textures_same && (split_table.Peek_Texture(i,pass,stage) == textures[stage]);
+			}
+
+			VertexMaterialClass * poly_material = split_table.Peek_Material(i,pass);
+			ShaderClass poly_shader = split_table.Peek_Shader(i,pass);
+			if (all_textures_same && Equal_Material(poly_material,material) && poly_shader == shader) {
+				triangles[triangle_index_count++] = src_indices[i][0];
+				triangles[triangle_index_count++] = src_indices[i][1];
+				triangles[triangle_index_count++] = src_indices[i][2];
+			}
+		}
+
+		int * strips = StripOptimizerClass::Stripify(triangles,triangle_index_count / 3);
+		delete[] triangles;
+		int * strip = StripOptimizerClass::Combine_Strips(strips + 1,strips[0]);
+		delete[] strips;
+
+		if (index_count < static_cast<unsigned>(strip[0])) {
+			stripify = false;
+		} else {
+			index_count = strip[0];
+			IndexBufferClass::AppendLockClass lock(index_buffer,index_offset,index_count);
+			unsigned short * dst_indices = lock.Get_Index_Array();
+			for (unsigned i = 0; i < index_count; ++i) {
+				const unsigned short idx = static_cast<unsigned short>(strip[i + 1]);
+				vmin = MIN(vmin,idx);
+				vmax = MAX(vmax,idx);
+				*dst_indices++ = idx;
+			}
+		}
+
+		delete[] strip;
+	}
+
+	if (!stripify) {
+		index_count = polygons * 3;
+		IndexBufferClass::AppendLockClass lock(index_buffer,index_offset,index_count);
+		unsigned short * dst_indices = lock.Get_Index_Array();
+
+		for (int i = 0; i < poly_count; ++i) {
+			bool all_textures_same = true;
+			for (unsigned stage = 0; stage < MeshMatDescClass::MAX_TEX_STAGES; ++stage) {
+				all_textures_same = all_textures_same && (split_table.Peek_Texture(i,pass,stage) == textures[stage]);
+			}
+
+			VertexMaterialClass * poly_material = split_table.Peek_Material(i,pass);
+			ShaderClass poly_shader = split_table.Peek_Shader(i,pass);
+			if (all_textures_same && Equal_Material(poly_material,material) && poly_shader == shader) {
+				unsigned short idx = static_cast<unsigned short>(src_indices[i][0]);
+				vmin = MIN(vmin,idx);
+				vmax = MAX(vmax,idx);
+				*dst_indices++ = idx;
+
+				idx = static_cast<unsigned short>(src_indices[i][1]);
+				vmin = MIN(vmin,idx);
+				vmax = MAX(vmax,idx);
+				*dst_indices++ = idx;
+
+				idx = static_cast<unsigned short>(src_indices[i][2]);
+				vmin = MIN(vmin,idx);
+				vmax = MAX(vmax,idx);
+				*dst_indices++ = idx;
+			}
+		}
+	}
+
+	draw.Strip = stripify;
+	draw.StartIndex = static_cast<unsigned short>(index_offset);
+	draw.PolygonCount = static_cast<unsigned short>(stripify ? index_count - 2 : index_count / 3);
+	draw.MinVertexIndex = vmin;
+	draw.VertexCount = static_cast<unsigned short>(vmax - vmin + 1);
+	draw.Classification = BgfxRenderer::Classify_Material(
+		shader,
+		material,
+		(registration.Get_Vertex_Format() & VERTEX_FORMAT_FLAG_NORMAL) != 0);
+	draw.PipelineKey = Build_Registered_Draw_Pipeline_Key(pass,registration.Get_Vertex_Format(),shader,draw.Classification);
+	draw.TextureKey = Build_Registered_Draw_Texture_Key(textures);
+	draw.MaterialKey = material != NULL
+		? (reinterpret_cast<uintptr_t>(material) ^ static_cast<uintptr_t>(material->Get_CRC()))
+		: 0;
+	registration.Add_Draw(draw);
+	return index_count;
+}
 
 // ----------------------------------------------------------------------------
 
@@ -1422,7 +1582,7 @@ void DX8SkinFVFCategoryContainer::Render(void)
 				}
 			}
 
-			Render_Material_Passes_For_Mesh(mesh, NULL);
+			Render_Queued_Material_Passes_For_Mesh(mesh, NULL);
 		} else {
 			RenderVertexBufferClass * skin_vertex_buffer = model->Get_Skin_Vertex_Buffer();
 			if (skin_vertex_buffer != NULL && BgfxRenderer::Bind_Skinning_Palette(*mesh)) {
@@ -1438,7 +1598,7 @@ void DX8SkinFVFCategoryContainer::Render(void)
 					}
 				}
 
-				Render_Material_Passes_For_Mesh(mesh, skin_vertex_buffer);
+				Render_Queued_Material_Passes_For_Mesh(mesh, skin_vertex_buffer);
 			}
 		}
 
@@ -1502,7 +1662,7 @@ void DX8SkinFVFCategoryContainer::Add_Mesh(MeshClass* mesh)
 	Generate_Texture_Categories(split_table,0);
 }
 
-void DX8SkinFVFCategoryContainer::Render_Material_Passes_For_Mesh(MeshClass * mesh, VertexBufferClass * vertex_buffer)
+void DX8SkinFVFCategoryContainer::Render_Queued_Material_Passes_For_Mesh(MeshClass * mesh, VertexBufferClass * vertex_buffer)
 {
 	if (mesh == NULL || visible_matpass_head == NULL) {
 		return;
@@ -1543,6 +1703,78 @@ void DX8SkinFVFCategoryContainer::Render_Material_Passes_For_Mesh(MeshClass * me
 		MatPassTaskClass * next_task = matching_head->Get_Next_Visible();
 		delete matching_head;
 		matching_head = next_task;
+	}
+}
+
+void DX8SkinFVFCategoryContainer::Render_Material_Passes_For_Mesh(MeshClass * mesh,MaterialPassClass * const * passes,int pass_count)
+{
+	if (mesh == NULL || passes == NULL || pass_count <= 0 || index_buffer == NULL) {
+		return;
+	}
+
+	MeshModelClass * model = mesh->Peek_Model();
+	if (model == NULL) {
+		return;
+	}
+
+	if (sorting) {
+		const int vertex_count = model->Get_Vertex_Count();
+		std::vector<Vector3> deformed_vertices(vertex_count);
+		std::vector<Vector3> deformed_normals(vertex_count);
+		mesh->Get_Deformed_Vertices(deformed_vertices.data(), deformed_normals.data());
+
+		DynamicVBAccessClass skin_vertex_buffer(BUFFER_TYPE_DYNAMIC_SORTING, dynamic_vertex_format, static_cast<unsigned short>(vertex_count));
+		{
+			DynamicVBAccessClass::WriteLockClass lock(&skin_vertex_buffer);
+			VertexFormatXYZNDUV2 * vertices = lock.Get_Formatted_Vertex_Array();
+			const Vector2 * uv0 = model->Get_UV_Array_By_Index(0);
+			const Vector2 * uv1 = model->Get_UV_Array_By_Index(1);
+			const unsigned * diffuse = model->Get_Color_Array(0, false);
+
+			for (int index = 0; index < vertex_count; ++index) {
+				VertexFormatXYZNDUV2 & vertex = vertices[index];
+				const Vector3 & position = deformed_vertices[index];
+				const Vector3 & normal = deformed_normals[index];
+
+				vertex.x = position.X;
+				vertex.y = position.Y;
+				vertex.z = position.Z;
+				vertex.nx = normal.X;
+				vertex.ny = normal.Y;
+				vertex.nz = normal.Z;
+				vertex.diffuse = diffuse != NULL ? diffuse[index] : 0;
+				vertex.u1 = uv0 != NULL ? uv0[index].X : 0.0f;
+				vertex.v1 = uv0 != NULL ? uv0[index].Y : 0.0f;
+				vertex.u2 = uv1 != NULL ? uv1[index].X : 0.0f;
+				vertex.v2 = uv1 != NULL ? uv1[index].Y : 0.0f;
+			}
+		}
+
+		mesh->Set_Base_Vertex_Offset(0);
+		DX8Wrapper::Set_Vertex_Buffer(skin_vertex_buffer);
+		DX8Wrapper::Set_Index_Buffer(index_buffer,0);
+		for (int pass_index = 0; pass_index < pass_count; ++pass_index) {
+			MaterialPassClass * pass = passes[pass_index];
+			if (pass != NULL) {
+				mesh->Render_Material_Pass(pass,index_buffer);
+			}
+		}
+		return;
+	}
+
+	RenderVertexBufferClass * skin_vertex_buffer = model->Get_Skin_Vertex_Buffer();
+	if (skin_vertex_buffer == NULL || !BgfxRenderer::Bind_Skinning_Palette(*mesh)) {
+		return;
+	}
+
+	mesh->Set_Base_Vertex_Offset(0);
+	DX8Wrapper::Set_Vertex_Buffer(skin_vertex_buffer);
+	DX8Wrapper::Set_Index_Buffer(index_buffer,0);
+	for (int pass_index = 0; pass_index < pass_count; ++pass_index) {
+		MaterialPassClass * pass = passes[pass_index];
+		if (pass != NULL) {
+			mesh->Render_Material_Pass(pass,index_buffer);
+		}
 	}
 }
 
@@ -1727,25 +1959,6 @@ unsigned DX8TextureCategoryClass::Add_Mesh(
 
 void DX8TextureCategoryClass::Render(VertexBufferClass *vertex_buffer, IndexBufferClass *index_buffer)
 {
-	#ifdef WWDEBUG
-	if (!WW3D::Expose_Prelit()) {
-	#endif
-
-		for (unsigned i=0;i<MAX_TEXTURE_STAGES;++i) {
-			SNAPSHOT_SAY(("Set_Texture(%d,%s)\n",i,Peek_Texture(i) ? Peek_Texture(i)->Get_Texture_Name() : "NULL"));
-			DX8Wrapper::Set_Texture(i,Peek_Texture(i));
-		}
-
-	#ifdef WWDEBUG
-	}
-	#endif
-
-	SNAPSHOT_SAY(("Set_Material(%s)\n",Peek_Material() ? Peek_Material()->Get_Name() : "NULL"));
-	DX8Wrapper::Set_Material(Peek_Material());
-
-	SNAPSHOT_SAY(("Set_Shader(0x%x)\n",Get_Shader()));
-	DX8Wrapper::Set_Shader(Get_Shader());
-
 	RenderStateStruct active_state;
 	VertexBufferClass * active_vertex_buffer = vertex_buffer;
 	IndexBufferClass * active_index_buffer = index_buffer;
@@ -1767,6 +1980,8 @@ void DX8TextureCategoryClass::Render(VertexBufferClass *vertex_buffer, IndexBuff
 	Matrix4 projection_transform(true);
 	DX8Wrapper::Get_Transform(D3DTS_VIEW, view_transform);
 	DX8Wrapper::Get_Transform(D3DTS_PROJECTION, projection_transform);
+	WW3D::FixedFunctionStateDesc fixed_function_state;
+	WW3D::Capture_Current_Fixed_Function_State(fixed_function_state, Peek_Material());
 	
 	PolyRenderTaskClass * prt = render_task_head;
 	while (prt) {
@@ -1840,23 +2055,9 @@ void DX8TextureCategoryClass::Render(VertexBufferClass *vertex_buffer, IndexBuff
 		}
 
 		/*
-		** If the user is not installing LightEnvironmentClasses, we leave the lighting render
-		** states untouched.  This way they can set a couple global lights that affect the entire scene.
-		*/
-		LightEnvironmentClass * lenv = mesh->Get_Lighting_Environment();
-		if (lenv != NULL) {
-			SNAPSHOT_SAY(("LightEnvironment, lights: %d\n",lenv->Get_Light_Count()));
-			DX8Wrapper::Set_Light_Environment(lenv);
-		}
-		else {
-			SNAPSHOT_SAY(("No light environment\n"));
-		}
-
-		/*
 		** Support for ALIGNED and ORIENTED camera modes
 		*/
 		const Matrix3D* world_transform = &mesh->Get_Transform();
-		bool identity=mesh->Is_Transform_Identity();
 		Matrix3D tmp_world;
 
 		if (mesh->Peek_Model()->Get_Flag(MeshModelClass::ALIGNED)) {
@@ -1888,18 +2089,8 @@ void DX8TextureCategoryClass::Render(VertexBufferClass *vertex_buffer, IndexBuff
 			
 			tmp_world.Make_Identity();
 			world_transform = &tmp_world;
-			identity=true;
 		}
-
-
-		if (identity) {
-			SNAPSHOT_SAY(("Set_World_Identity\n"));
-			DX8Wrapper::Set_World_Identity();
-		}
-		else {
-			SNAPSHOT_SAY(("Set_World_Transform\n"));
-			DX8Wrapper::Set_Transform(D3DTS_WORLD,*world_transform);
-		}
+		Matrix4 world_matrix(*world_transform);
 
 		// The mesh renderer debugger can disable mesh rendering
 		if (!DX8RendererDebugger::Is_Enabled() || !mesh->Is_Disabled_By_Debugger()) {
@@ -1920,14 +2111,31 @@ void DX8TextureCategoryClass::Render(VertexBufferClass *vertex_buffer, IndexBuff
 				owner_casts_shadows &&
 				!shadows_suppressed;
 			if ((!!mesh->Peek_Model()->Get_Flag(MeshGeometryClass::SORT)) && WW3D::Is_Sorting_Enabled()) {
-				renderer->Render_Sorted(
-					mesh->Get_Base_Vertex_Offset(),
+				WW3D::FixedFunctionSubmitDesc submission;
+				submission.VertexBuffer = active_vertex_buffer;
+				submission.VertexBufferOffset = static_cast<unsigned short>(active_vertex_buffer_offset);
+				submission.IndexBuffer = active_index_buffer;
+				submission.IndexBufferOffset = static_cast<unsigned short>(active_index_buffer_offset);
+				submission.IndexBaseOffset = static_cast<unsigned short>(mesh->Get_Base_Vertex_Offset());
+				submission.StartIndex = static_cast<unsigned short>(renderer->Get_Index_Offset());
+				submission.PolygonCount = static_cast<unsigned short>(renderer->Get_Index_Count() / 3);
+				submission.MinVertexIndex = static_cast<unsigned short>(renderer->Get_Min_Vertex_Index());
+				submission.VertexCount = static_cast<unsigned short>(renderer->Get_Vertex_Index_Range());
+				submission.Textures[0] = applied_textures[0];
+				submission.Textures[1] = applied_textures[1];
+				submission.Material = Peek_Material();
+				submission.Shader = Get_Shader();
+				submission.WorldTransform = world_matrix;
+				submission.ViewTransform = view_transform;
+				submission.ProjectionTransform = projection_transform;
+				submission.Lighting = mesh->Get_Lighting_Submission();
+				submission.RenderState = &fixed_function_state;
+				submission.ReceiveShadows = receive_shadows;
+				submission.CastShadows = cast_shadows;
+				SortingRendererClass::Insert_Fixed_Function_Draw(
 					mesh->Get_Bounding_Sphere(),
-					receive_shadows,
-					cast_shadows);
+					submission);
 			} else {
-				DX8Wrapper::Apply_Render_State_Changes();
-				Matrix4 world_matrix(*world_transform);
 				WWASSERT(active_vertex_buffer != NULL);
 				WWASSERT(active_index_buffer != NULL);
 				if (active_vertex_buffer != NULL && active_index_buffer != NULL) {
@@ -1942,6 +2150,7 @@ void DX8TextureCategoryClass::Render(VertexBufferClass *vertex_buffer, IndexBuff
 						static_cast<unsigned short>(renderer->Get_Min_Vertex_Index()),
 						static_cast<unsigned short>(renderer->Get_Vertex_Index_Range()),
 						applied_textures,
+						Get_Shader(),
 						Peek_Material(),
 						classification,
 						receive_shadows,
@@ -1949,7 +2158,9 @@ void DX8TextureCategoryClass::Render(VertexBufferClass *vertex_buffer, IndexBuff
 						world_matrix,
 						view_transform,
 						projection_transform,
-						renderer->Is_Strip());
+						renderer->Is_Strip(),
+						mesh->Get_Lighting_Submission(),
+						&fixed_function_state);
 					WWASSERT(submitted);
 				}
 			}
@@ -2036,12 +2247,329 @@ static void Add_Rigid_Mesh_To_Container(FVFCategoryList* container_list,unsigned
 
 // ----------------------------------------------------------------------------
 
+bool DX8MeshRendererClass::Is_Modern_Rigid_Opaque_Eligible(const MeshClass * mesh) const
+{
+	if (mesh == NULL) {
+		return false;
+	}
+
+	const MeshModelClass * model = mesh->Peek_Model();
+	if (model == NULL) {
+		return false;
+	}
+
+	if (model->Get_Flag(MeshGeometryClass::SKIN) ||
+		model->Get_Flag(MeshGeometryClass::SORT) ||
+		model->Get_Flag(MeshGeometryClass::ALIGNED) ||
+		model->Get_Flag(MeshGeometryClass::ORIENTED) ||
+		(model->Get_Sort_Level() != SORT_LEVEL_NONE))
+	{
+		return false;
+	}
+
+	return !Mesh_Uses_Alpha_Blending(*model);
+}
+
+RegisteredRigidMeshClass * DX8MeshRendererClass::Find_Registered_Opaque_Mesh(const MeshClass * mesh) const
+{
+	if (mesh == NULL) {
+		return NULL;
+	}
+
+	return _RegisteredOpaqueMeshInstances.Get(const_cast<MeshClass *>(mesh));
+}
+
+RegisteredRigidMeshClass * DX8MeshRendererClass::Build_Registered_Opaque_Mesh(MeshClass * mesh)
+{
+	if (!Is_Modern_Rigid_Opaque_Eligible(mesh)) {
+		return NULL;
+	}
+
+	RegisteredRigidMeshClass * registration = Find_Registered_Opaque_Mesh(mesh);
+	if (registration != NULL) {
+		return registration;
+	}
+
+	MeshModelClass * model = mesh->Peek_Model();
+	unsigned int * user_lighting = mesh->Get_User_Lighting_Array();
+	const MeshRegKeyStruct key(model,user_lighting);
+	registration = _RegisteredOpaqueMeshTable.Get(key);
+	if (registration == NULL) {
+		const unsigned fvf = DX8FVFCategoryContainer::Define_FVF(model,user_lighting,enable_lighting);
+		Vertex_Split_Table split_table(mesh);
+		const int needed_vertices = static_cast<int>(split_table.Get_Vertex_Count());
+		const int index_capacity = WWMath::Max(1,split_table.Get_Polygon_Count() * 3 * split_table.Get_Pass_Count());
+
+		registration = new RegisteredRigidMeshClass(key,fvf);
+		RenderVertexBufferClass * vertex_buffer = NEW_REF(RenderVertexBufferClass,(
+			fvf,
+			WWMath::Max(1,needed_vertices),
+			RenderVertexBufferClass::USAGE_DEFAULT));
+		RenderIndexBufferClass * index_buffer = NEW_REF(RenderIndexBufferClass,(
+			index_capacity,
+			RenderIndexBufferClass::USAGE_DEFAULT));
+		registration->Set_Buffers(vertex_buffer,index_buffer);
+		REF_PTR_RELEASE(vertex_buffer);
+		REF_PTR_RELEASE(index_buffer);
+
+		VertexBufferClass::AppendLockClass vertex_lock(registration->Get_Vertex_Buffer(),0,split_table.Get_Vertex_Count());
+		const VertexFormatInfoClass fi = registration->Get_Vertex_Buffer()->Vertex_Format_Info();
+		unsigned char * vb = reinterpret_cast<unsigned char *>(vertex_lock.Get_Vertex_Array());
+		const Vector3 * locs = split_table.Get_Vertex_Array();
+		const Vector3 * norms = split_table.Get_Vertex_Normal_Array();
+		const unsigned * diffuse = split_table.Get_Color_Array(0);
+		const unsigned * specular = split_table.Get_Color_Array(1);
+		for (unsigned i = 0; i < split_table.Get_Vertex_Count(); ++i) {
+			*reinterpret_cast<Vector3 *>(vb + fi.Get_Location_Offset()) = locs[i];
+
+			if ((fvf & D3DFVF_NORMAL) == D3DFVF_NORMAL && norms != NULL) {
+				*reinterpret_cast<Vector3 *>(vb + fi.Get_Normal_Offset()) = norms[i];
+			}
+
+			if ((fvf & D3DFVF_DIFFUSE) == D3DFVF_DIFFUSE) {
+				*reinterpret_cast<unsigned int *>(vb + fi.Get_Diffuse_Offset()) =
+					diffuse != NULL ? diffuse[i] : 0xFFFFFFFF;
+			}
+
+			if ((fvf & D3DFVF_SPECULAR) == D3DFVF_SPECULAR) {
+				*reinterpret_cast<unsigned int *>(vb + fi.Get_Specular_Offset()) =
+					specular != NULL ? specular[i] : 0xFFFFFFFF;
+			}
+
+			vb += fi.Get_Vertex_Size();
+		}
+
+		int uvcount = 0;
+		if ((fvf & D3DFVF_TEX1) == D3DFVF_TEX1) uvcount = 1;
+		if ((fvf & D3DFVF_TEX2) == D3DFVF_TEX2) uvcount = 2;
+		if ((fvf & D3DFVF_TEX3) == D3DFVF_TEX3) uvcount = 3;
+		if ((fvf & D3DFVF_TEX4) == D3DFVF_TEX4) uvcount = 4;
+		if ((fvf & D3DFVF_TEX5) == D3DFVF_TEX5) uvcount = 5;
+		if ((fvf & D3DFVF_TEX6) == D3DFVF_TEX6) uvcount = 6;
+		if ((fvf & D3DFVF_TEX7) == D3DFVF_TEX7) uvcount = 7;
+		if ((fvf & D3DFVF_TEX8) == D3DFVF_TEX8) uvcount = 8;
+
+		for (int uv_index = 0; uv_index < uvcount; ++uv_index) {
+			const Vector2 * uvs = split_table.Get_UV_Array(uv_index);
+			if (uvs == NULL) {
+				continue;
+			}
+
+			unsigned char * uv_vertices = reinterpret_cast<unsigned char *>(vertex_lock.Get_Vertex_Array());
+			for (unsigned vertex_index = 0; vertex_index < split_table.Get_Vertex_Count(); ++vertex_index) {
+				*reinterpret_cast<Vector2 *>(uv_vertices + fi.Get_Tex_Offset(uv_index)) = uvs[vertex_index];
+				uv_vertices += fi.Get_Vertex_Size();
+			}
+		}
+
+		unsigned used_indices = 0;
+		for (unsigned pass = 0; pass < split_table.Get_Pass_Count(); ++pass) {
+			Textures_Material_And_Shader_Booking_Struct booking;
+			for (int poly_index = 0; poly_index < split_table.Get_Polygon_Count(); ++poly_index) {
+				TextureClass * textures[MeshMatDescClass::MAX_TEX_STAGES];
+				for (unsigned stage = 0; stage < MeshMatDescClass::MAX_TEX_STAGES; ++stage) {
+					textures[stage] = split_table.Peek_Texture(poly_index,pass,stage);
+				}
+
+				VertexMaterialClass * material = split_table.Peek_Material(poly_index,pass);
+				ShaderClass shader = split_table.Peek_Shader(poly_index,pass);
+				if (!booking.Add_Textures_Material_And_Shader(textures,material,shader)) {
+					continue;
+				}
+
+				used_indices += Add_Registered_Rigid_Draw(
+					*registration,
+					split_table,
+					textures,
+					material,
+					shader,
+					pass,
+					used_indices);
+			}
+		}
+
+		if (registration->Get_Draws().empty()) {
+			delete registration;
+			return NULL;
+		}
+
+		_RegisteredOpaqueMeshTable.Insert(key,registration);
+	}
+
+	registration->Add_Ref();
+	_RegisteredOpaqueMeshInstances.Insert(mesh,registration);
+	mesh->RenderRegistration = MeshClass::RENDER_REGISTRATION_REGISTERED_OPAQUE;
+	return registration;
+}
+
+bool DX8MeshRendererClass::Is_Mesh_Registered(const MeshClass * mesh) const
+{
+	return mesh != NULL && mesh->Has_Render_Registration();
+}
+
+DX8FVFCategoryContainer * DX8MeshRendererClass::Find_Legacy_FVF_Category_Container(const MeshClass * mesh) const
+{
+	if (mesh == NULL || !mesh->Uses_Legacy_Render_Path()) {
+		return NULL;
+	}
+
+	const DX8PolygonRendererClass * polygon_renderer = mesh->PolygonRendererList.Peek_Head();
+	if (polygon_renderer == NULL) {
+		return NULL;
+	}
+
+	const DX8TextureCategoryClass * texture_category = polygon_renderer->Get_Texture_Category();
+	if (texture_category == NULL) {
+		return NULL;
+	}
+
+	return const_cast<DX8FVFCategoryContainer *>(texture_category->Get_Container());
+}
+
+bool DX8MeshRendererClass::Queue_Base_Passes(MeshClass * mesh)
+{
+	if (mesh == NULL) {
+		return false;
+	}
+
+	if (mesh->Uses_Registered_Opaque_Render_Path() || Is_Modern_Rigid_Opaque_Eligible(mesh)) {
+		if (Queue_Registered_Opaque_Mesh(mesh)) {
+			return true;
+		}
+	}
+
+	bool queued = false;
+	DX8PolygonRendererListIterator it(&(mesh->PolygonRendererList));
+	while (!it.Is_Done()) {
+		DX8PolygonRendererClass * polygon_renderer = it.Peek_Obj();
+		if (polygon_renderer != NULL && polygon_renderer->Get_Texture_Category() != NULL) {
+			polygon_renderer->Get_Texture_Category()->Add_Render_Task(polygon_renderer,mesh);
+			queued = true;
+		}
+		it.Next();
+	}
+
+	return queued;
+}
+
+bool DX8MeshRendererClass::Queue_Material_Pass(MaterialPassClass * pass,MeshClass * mesh,bool delayed)
+{
+	if (mesh == NULL || pass == NULL) {
+		return false;
+	}
+
+	if (mesh->Uses_Registered_Opaque_Render_Path() || Is_Modern_Rigid_Opaque_Eligible(mesh)) {
+		MaterialPassClass * single_pass = pass;
+		return Render_Registered_Material_Passes(mesh,&single_pass,1);
+	}
+
+	DX8FVFCategoryContainer * container = Find_Legacy_FVF_Category_Container(mesh);
+	if (container == NULL) {
+		return false;
+	}
+
+	if (delayed) {
+		container->Add_Delayed_Visible_Material_Pass(pass,mesh);
+	} else {
+		container->Add_Visible_Material_Pass(pass,mesh);
+	}
+
+	return true;
+}
+
+bool DX8MeshRendererClass::Render_Material_Passes(
+	MeshClass * mesh,
+	MaterialPassClass * const * passes,
+	int pass_count)
+{
+	if (mesh == NULL || passes == NULL || pass_count <= 0) {
+		return false;
+	}
+
+	if (mesh->Uses_Registered_Opaque_Render_Path() || Is_Modern_Rigid_Opaque_Eligible(mesh)) {
+		return Render_Registered_Material_Passes(mesh,passes,pass_count);
+	}
+
+	DX8FVFCategoryContainer * container = Find_Legacy_FVF_Category_Container(mesh);
+	if (container == NULL) {
+		return false;
+	}
+
+	container->Render_Material_Passes_For_Mesh(mesh,passes,pass_count);
+	return true;
+}
+
+bool DX8MeshRendererClass::Queue_Skin(MeshClass * mesh)
+{
+	if (mesh == NULL || !mesh->Peek_Model()->Get_Flag(MeshGeometryClass::SKIN)) {
+		return false;
+	}
+
+	DX8FVFCategoryContainer * container = Find_Legacy_FVF_Category_Container(mesh);
+	if (container == NULL) {
+		return false;
+	}
+
+	DX8SkinFVFCategoryContainer * skin_container = static_cast<DX8SkinFVFCategoryContainer *>(container);
+	skin_container->Add_Visible_Skin(mesh);
+	return true;
+}
+
+bool DX8MeshRendererClass::Queue_Registered_Opaque_Mesh(MeshClass * mesh)
+{
+	RegisteredRigidMeshClass * registration = Find_Registered_Opaque_Mesh(mesh);
+	if (registration == NULL) {
+		registration = Build_Registered_Opaque_Mesh(mesh);
+	}
+	if (registration == NULL) {
+		return false;
+	}
+
+	const std::vector<RegisteredRigidMeshDraw> & draws = registration->Get_Draws();
+	if (draws.empty()) {
+		return false;
+	}
+
+	visible_registered_opaque_draws.reserve(visible_registered_opaque_draws.size() + draws.size());
+	for (std::vector<RegisteredRigidMeshDraw>::const_iterator it = draws.begin(); it != draws.end(); ++it) {
+		mesh->Add_Ref();
+		RegisteredRigidVisibleDrawTask task;
+		task.Mesh = mesh;
+		task.Registration = registration;
+		task.Draw = &(*it);
+		visible_registered_opaque_draws.push_back(task);
+	}
+
+	return true;
+}
+
+// ----------------------------------------------------------------------------
+
 void DX8MeshRendererClass::Unregister_Mesh_Type(MeshClass* mesh)
 {
+	RegisteredRigidMeshClass * registered_mesh = Find_Registered_Opaque_Mesh(mesh);
+	if (registered_mesh != NULL) {
+		_RegisteredOpaqueMeshInstances.Remove(mesh,registered_mesh);
+		if (registered_mesh->Release_Ref() == 0) {
+			delete registered_mesh;
+		}
+
+		for (std::vector<RegisteredRigidVisibleDrawTask>::iterator it = visible_registered_opaque_draws.begin();
+			it != visible_registered_opaque_draws.end();) {
+			if (it->Mesh == mesh) {
+				it->Mesh->Release_Ref();
+				it = visible_registered_opaque_draws.erase(it);
+			} else {
+				++it;
+			}
+		}
+	}
+
 	while (DX8PolygonRendererClass* n=mesh->PolygonRendererList.Remove_Head()) {
 		delete n;
 	}
-	_RegisteredMeshTable.Remove(MeshRegKeyStruct(mesh->Peek_Model(),mesh->Get_User_Lighting_Array()),mesh);
+	_LegacyRegisteredMeshTable.Remove(MeshRegKeyStruct(mesh->Peek_Model(),mesh->Get_User_Lighting_Array()),mesh);
+	mesh->RenderRegistration = MeshClass::RENDER_REGISTRATION_NONE;
 
 	// Also remove the gap filler!
 	MeshModelClass * mmc = mesh->Peek_Model();
@@ -2075,6 +2603,7 @@ void DX8MeshRendererClass::Register_Mesh_Type(MeshClass* mesh)
 			DX8FVFCategoryContainer * container = it.Peek_Obj();
 			if (sorting==container->Is_Sorting() && container->Check_If_Mesh_Fits(mmc)) {
 				container->Add_Mesh(mesh);
+				mesh->RenderRegistration = MeshClass::RENDER_REGISTRATION_LEGACY;
 				return;
 			}
 			it.Next();
@@ -2083,11 +2612,17 @@ void DX8MeshRendererClass::Register_Mesh_Type(MeshClass* mesh)
 		DX8FVFCategoryContainer * new_container=new DX8SkinFVFCategoryContainer(sorting);
 		texture_category_container_list_skin->Add_Tail(new_container);
 		new_container->Add_Mesh(mesh);
+		mesh->RenderRegistration = MeshClass::RENDER_REGISTRATION_LEGACY;
 	
 	} else {
+		if (Is_Modern_Rigid_Opaque_Eligible(mesh)) {
+			if (Build_Registered_Opaque_Mesh(mesh) != NULL) {
+				return;
+			}
+		}
 
 		unsigned int * user_lighting = mesh->Get_User_Lighting_Array();
-		MeshClass * existing_mesh = _RegisteredMeshTable.Get(MeshRegKeyStruct(mmc,user_lighting));
+		MeshClass * existing_mesh = _LegacyRegisteredMeshTable.Get(MeshRegKeyStruct(mmc,user_lighting));
 		if (existing_mesh != NULL) {
 
 			// We found another instance of this mesh model so we can simply clone the poly renderers
@@ -2098,6 +2633,7 @@ void DX8MeshRendererClass::Register_Mesh_Type(MeshClass* mesh)
 				src_renderer->Get_Texture_Category()->Add_Polygon_Renderer(new_renderer);
 				it.Next();
 			}
+			mesh->RenderRegistration = MeshClass::RENDER_REGISTRATION_LEGACY;
 
 		} else {
 
@@ -2135,14 +2671,307 @@ void DX8MeshRendererClass::Register_Mesh_Type(MeshClass* mesh)
 			** Done processing the mesh, add its polygon renderers to the global registered mesh list
 			*/
 			if (mesh->PolygonRendererList.Is_Empty() == false) {
-				_RegisteredMeshTable.Insert(MeshRegKeyStruct(mmc,user_lighting),mesh);
+				_LegacyRegisteredMeshTable.Insert(MeshRegKeyStruct(mmc,user_lighting),mesh);
+				mesh->RenderRegistration = MeshClass::RENDER_REGISTRATION_LEGACY;
 			}
 			else {
+				mesh->RenderRegistration = MeshClass::RENDER_REGISTRATION_NONE;
 				WWDEBUG_SAY(("Error: Register_Mesh_Type failed! file: %s line: %d\r\n",__FILE__,__LINE__));
 			}
 		}
 	}
 	return;
+}
+
+static bool Sort_Registered_Visible_Draw_Task(
+	const RegisteredRigidVisibleDrawTask & lhs,
+	const RegisteredRigidVisibleDrawTask & rhs)
+{
+	if (lhs.Draw->Pass != rhs.Draw->Pass) {
+		return lhs.Draw->Pass < rhs.Draw->Pass;
+	}
+	if (lhs.Draw->PipelineKey != rhs.Draw->PipelineKey) {
+		return lhs.Draw->PipelineKey < rhs.Draw->PipelineKey;
+	}
+	if (lhs.Draw->TextureKey != rhs.Draw->TextureKey) {
+		return lhs.Draw->TextureKey < rhs.Draw->TextureKey;
+	}
+	if (lhs.Draw->MaterialKey != rhs.Draw->MaterialKey) {
+		return lhs.Draw->MaterialKey < rhs.Draw->MaterialKey;
+	}
+	if (lhs.Registration != rhs.Registration) {
+		return lhs.Registration < rhs.Registration;
+	}
+	return lhs.Draw->StartIndex < rhs.Draw->StartIndex;
+}
+
+bool DX8MeshRendererClass::Render_Registered_Material_Passes(
+	MeshClass * mesh,
+	MaterialPassClass * const * passes,
+	int pass_count)
+{
+	if (mesh == NULL || passes == NULL || pass_count <= 0) {
+		return false;
+	}
+
+	RegisteredRigidMeshClass * registration = Find_Registered_Opaque_Mesh(mesh);
+	if (registration == NULL) {
+		registration = Build_Registered_Opaque_Mesh(mesh);
+	}
+	if (registration == NULL) {
+		return false;
+	}
+
+	VertexBufferClass * vertex_buffer = registration->Get_Vertex_Buffer();
+	IndexBufferClass * index_buffer = registration->Get_Index_Buffer();
+	if (vertex_buffer == NULL || index_buffer == NULL) {
+		return false;
+	}
+
+	const bool has_normals = (registration->Get_Vertex_Format() & VERTEX_FORMAT_FLAG_NORMAL) != 0;
+	Matrix4 view_transform(true);
+	Matrix4 projection_transform(true);
+	DX8Wrapper::Get_Transform(D3DTS_VIEW, view_transform);
+	DX8Wrapper::Get_Transform(D3DTS_PROJECTION, projection_transform);
+	DX8Wrapper::Set_Vertex_Buffer(vertex_buffer);
+	mesh->Set_Base_Vertex_Offset(0);
+
+	for (int pass_index = 0; pass_index < pass_count; ++pass_index) {
+		MaterialPassClass * pass = passes[pass_index];
+		if (pass == NULL) {
+			continue;
+		}
+
+		TextureClass * pass_textures[MAX_TEXTURE_STAGES] = {};
+		Build_Material_Pass_Texture_Array(pass,pass_textures);
+		const ShaderClass pass_shader = pass->Peek_Shader();
+		const VertexMaterialClass * pass_material = pass->Peek_Material();
+		const MaterialClassification classification =
+			BgfxRenderer::Classify_Material(pass_shader,pass_material,has_normals);
+		const bool receive_shadows = pass_shader.Get_Dst_Blend_Func() == ShaderClass::DSTBLEND_ZERO;
+		Matrix4 world_matrix(mesh->Get_Transform());
+		WW3D::FixedFunctionStateDesc fixed_function_state;
+		WW3D::Capture_Current_Fixed_Function_State(fixed_function_state,pass_material);
+
+		if ((pass->Get_Cull_Volume() != NULL) && MaterialPassClass::Is_Per_Polygon_Culling_Enabled()) {
+			SimpleDynVecClass<uint32> clipped_polygons;
+			Matrix3D modeltminv;
+			mesh->Get_Transform().Get_Orthogonal_Inverse(modeltminv);
+
+			OBBoxClass localbox;
+			OBBoxClass::Transform(modeltminv,*(pass->Get_Cull_Volume()),&localbox);
+
+			Vector3 view_dir;
+			localbox.Basis.Get_Z_Vector(&view_dir);
+			view_dir = -view_dir;
+
+			MeshModelClass * model = mesh->Peek_Model();
+			if (model->Has_Cull_Tree()) {
+				model->Generate_Rigid_APT(localbox,view_dir,clipped_polygons);
+			} else {
+				model->Generate_Rigid_APT(view_dir,clipped_polygons);
+			}
+
+			if (clipped_polygons.Count() > 0) {
+				int min_v = model->Get_Vertex_Count();
+				int max_v = 0;
+				DynamicIBAccessClass dynamic_ib(BUFFER_TYPE_DYNAMIC_RENDER,clipped_polygons.Count() * 3);
+				{
+					DynamicIBAccessClass::WriteLockClass lock(&dynamic_ib);
+					unsigned short * indices = lock.Get_Index_Array();
+					const TriIndex * polys = model->Get_Polygon_Array();
+					for (int poly = 0; poly < clipped_polygons.Count(); ++poly) {
+						unsigned v0 = polys[clipped_polygons[poly]].I;
+						unsigned v1 = polys[clipped_polygons[poly]].J;
+						unsigned v2 = polys[clipped_polygons[poly]].K;
+
+					indices[poly * 3 + 0] = static_cast<unsigned short>(v0);
+					indices[poly * 3 + 1] = static_cast<unsigned short>(v1);
+					indices[poly * 3 + 2] = static_cast<unsigned short>(v2);
+
+					min_v = WWMath::Min(static_cast<int>(v0),min_v);
+					min_v = WWMath::Min(static_cast<int>(v1),min_v);
+					min_v = WWMath::Min(static_cast<int>(v2),min_v);
+					max_v = WWMath::Max(static_cast<int>(v0),max_v);
+					max_v = WWMath::Max(static_cast<int>(v1),max_v);
+					max_v = WWMath::Max(static_cast<int>(v2),max_v);
+				}
+			}
+
+			DX8Wrapper::Set_Index_Buffer(dynamic_ib,0);
+			RenderStateStruct active_state;
+			DX8Wrapper::Get_Render_State(active_state);
+
+			if (active_state.index_buffer != NULL) {
+				const bool submitted = Submit_Registered_Fixed_Function_Draw(
+					*vertex_buffer,
+					0,
+					*active_state.index_buffer,
+					active_state.iba_offset,
+					active_state.index_base_offset,
+					0,
+					static_cast<unsigned short>(clipped_polygons.Count()),
+					static_cast<unsigned short>(min_v),
+					static_cast<unsigned short>(max_v - min_v + 1),
+					false,
+					pass_textures,
+					pass_material,
+					pass_shader,
+					classification,
+					receive_shadows,
+					false,
+					world_matrix,
+					view_transform,
+					projection_transform,
+					mesh->Get_Lighting_Submission(),
+					&fixed_function_state);
+				WWASSERT(submitted);
+			}
+			}
+
+			continue;
+		}
+
+		DX8Wrapper::Set_Index_Buffer(index_buffer,0);
+		for (std::vector<RegisteredRigidMeshDraw>::const_iterator it = registration->Get_Draws().begin();
+			it != registration->Get_Draws().end();
+			++it) {
+			const bool submitted = Submit_Registered_Fixed_Function_Draw(
+				*vertex_buffer,
+				0,
+				*index_buffer,
+				0,
+				0,
+				it->StartIndex,
+				it->PolygonCount,
+				it->MinVertexIndex,
+				it->VertexCount,
+				it->Strip,
+				pass_textures,
+				pass_material,
+				pass_shader,
+				classification,
+				receive_shadows,
+				false,
+				world_matrix,
+				view_transform,
+				projection_transform,
+				mesh->Get_Lighting_Submission(),
+				&fixed_function_state);
+			WWASSERT(submitted);
+		}
+	}
+
+	return true;
+}
+
+void DX8MeshRendererClass::Render_Registered_Opaque_Meshes(void)
+{
+	if (visible_registered_opaque_draws.empty()) {
+		return;
+	}
+
+	std::sort(
+		visible_registered_opaque_draws.begin(),
+		visible_registered_opaque_draws.end(),
+		Sort_Registered_Visible_Draw_Task);
+
+	Matrix4 view_transform(true);
+	Matrix4 projection_transform(true);
+	DX8Wrapper::Get_Transform(D3DTS_VIEW, view_transform);
+	DX8Wrapper::Get_Transform(D3DTS_PROJECTION, projection_transform);
+
+	RegisteredRigidMeshClass * active_registration = NULL;
+	unsigned current_pass = static_cast<unsigned>(-1);
+	DX8Wrapper::Set_DX8_ZBias(0);
+	for (std::vector<RegisteredRigidVisibleDrawTask>::const_iterator it = visible_registered_opaque_draws.begin();
+		it != visible_registered_opaque_draws.end();
+		++it) {
+		MeshClass * mesh = it->Mesh;
+		RegisteredRigidMeshClass * registration = it->Registration;
+		const RegisteredRigidMeshDraw & draw = *it->Draw;
+		if (mesh == NULL || registration == NULL) {
+			continue;
+		}
+
+		if (DX8RendererDebugger::Is_Enabled() && mesh->Is_Disabled_By_Debugger()) {
+			continue;
+		}
+
+		VertexBufferClass * vertex_buffer = registration->Get_Vertex_Buffer();
+		IndexBufferClass * index_buffer = registration->Get_Index_Buffer();
+		if (vertex_buffer == NULL || index_buffer == NULL) {
+			continue;
+		}
+
+		if (active_registration != registration) {
+			DX8Wrapper::Set_Vertex_Buffer(vertex_buffer);
+			DX8Wrapper::Set_Index_Buffer(index_buffer,0);
+			active_registration = registration;
+		}
+
+		if (draw.Pass != current_pass) {
+			current_pass = draw.Pass;
+			DX8Wrapper::Set_DX8_ZBias(current_pass > 15u ? 15 : static_cast<int>(current_pass));
+		}
+
+		TextureClass * applied_textures[MAX_TEXTURE_STAGES] = {};
+		Resolve_Registered_Draw_Textures(draw,*mesh,applied_textures);
+
+		Matrix3D tmp_world;
+		const Matrix3D * world_transform = Get_Registered_Draw_World_Transform(*mesh,*Peek_Camera(),tmp_world);
+		Matrix4 world_matrix(*world_transform);
+
+		const PhysClass * shadow_owner = static_cast<const PhysClass *>(mesh->Get_User_Data());
+		const bool shadows_suppressed =
+			shadow_owner != NULL &&
+			shadow_owner->Do_Any_Effects_Suppress_Shadows();
+		const bool owner_casts_shadows =
+			shadow_owner == NULL ||
+			shadow_owner->Is_Shadow_Generation_Enabled();
+		const bool receive_shadows =
+			Mesh_Pass_Should_Receive_Shadows(*mesh,draw.Pass,draw.Shader,shadows_suppressed);
+		const bool cast_shadows =
+			draw.Pass == 0 &&
+			owner_casts_shadows &&
+			!shadows_suppressed;
+
+		WW3D::FixedFunctionStateDesc fixed_function_state;
+		WW3D::Capture_Current_Fixed_Function_State(fixed_function_state,draw.Material);
+		const bool submitted = Submit_Registered_Fixed_Function_Draw(
+			*vertex_buffer,
+			0,
+			*index_buffer,
+			0,
+			0,
+			draw.StartIndex,
+			draw.PolygonCount,
+			draw.MinVertexIndex,
+			draw.VertexCount,
+			draw.Strip,
+			applied_textures,
+			draw.Material,
+			draw.Shader,
+			draw.Classification,
+			receive_shadows,
+			cast_shadows,
+			world_matrix,
+			view_transform,
+			projection_transform,
+			mesh->Get_Lighting_Submission(),
+			&fixed_function_state);
+		WWASSERT(submitted);
+	}
+
+	for (std::vector<RegisteredRigidVisibleDrawTask>::iterator it = visible_registered_opaque_draws.begin();
+		it != visible_registered_opaque_draws.end();
+		++it) {
+		if (it->Mesh != NULL) {
+			it->Mesh->Release_Ref();
+		}
+	}
+	visible_registered_opaque_draws.clear();
+	DX8Wrapper::Set_DX8_ZBias(0);
 }
 
 static unsigned statistics_requested=0;
@@ -2182,7 +3011,17 @@ void DX8MeshRendererClass::Flush(void)
 	int i;
 
 	WWPROFILE("DX8MeshRenderer::Flush");
-	if (!camera) return;
+	if (!camera) {
+		for (std::vector<RegisteredRigidVisibleDrawTask>::iterator it = visible_registered_opaque_draws.begin();
+			it != visible_registered_opaque_draws.end();
+			++it) {
+			if (it->Mesh != NULL) {
+				it->Mesh->Release_Ref();
+			}
+		}
+		visible_registered_opaque_draws.clear();
+		return;
+	}
 	Log_Statistics_String(true);	
 
 	/*
@@ -2194,6 +3033,8 @@ void DX8MeshRendererClass::Flush(void)
 	** bulk of the meshes have already been drawn (there would be extra overhead involved
 	** in solving this for skins)
 	*/
+	Render_Registered_Opaque_Meshes();
+
 	for (i=0;i<texture_category_container_lists_rigid.Count();++i) {
 		Render_FVF_Category_Container_List(*texture_category_container_lists_rigid[i]);
 	}
@@ -2268,7 +3109,27 @@ static void Invalidate_FVF_Category_Container_List(FVFCategoryList& list)
 void DX8MeshRendererClass::Invalidate()
 {
 	WWMEMLOG(MEM_RENDERER);
-	_RegisteredMeshTable.Remove_All();
+	for (std::vector<RegisteredRigidVisibleDrawTask>::iterator it = visible_registered_opaque_draws.begin();
+		it != visible_registered_opaque_draws.end();
+		++it) {
+		if (it->Mesh != NULL) {
+			it->Mesh->Release_Ref();
+		}
+	}
+	visible_registered_opaque_draws.clear();
+
+	HashTemplateIterator<MeshRegKeyStruct,RegisteredRigidMeshClass*> registered_meshes(_RegisteredOpaqueMeshTable);
+	while (!registered_meshes.Is_Done()) {
+		RegisteredRigidMeshClass * registration = registered_meshes.Peek_Value();
+		if (registration != NULL) {
+			delete registration;
+		}
+		registered_meshes.Next();
+	}
+
+	_RegisteredOpaqueMeshInstances.Remove_All();
+	_RegisteredOpaqueMeshTable.Remove_All();
+	_LegacyRegisteredMeshTable.Remove_All();
 
 	for (int i=0;i<texture_category_container_lists_rigid.Count();++i) {
 		Invalidate_FVF_Category_Container_List(*texture_category_container_lists_rigid[i]);

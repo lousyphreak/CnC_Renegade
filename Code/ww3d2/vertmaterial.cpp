@@ -886,6 +886,28 @@ void VertexMaterialClass::Apply(void) const
 	}
 }
 
+void VertexMaterialClass::Apply_Fixed_Function_State(WW3D::FixedFunctionStateDesc &state) const
+{
+	for (int i = 0; i < MeshBuilderClass::MAX_STAGES; ++i) {
+		state.TexcoordIndex[i] = D3DTSS_TCI_PASSTHRU | UVSource[i];
+		state.TextureTransformFlags[i] = D3DTTFF_DISABLE;
+		state.TextureTransforms[i] = Matrix4(true);
+	}
+
+	state.BumpEnvMatrix[0] = 1.0f;
+	state.BumpEnvMatrix[1] = 0.0f;
+	state.BumpEnvMatrix[2] = 0.0f;
+	state.BumpEnvMatrix[3] = 1.0f;
+	state.BumpEnvLuminanceScale = 1.0f;
+	state.BumpEnvLuminanceOffset = 0.0f;
+
+	for (int i = 0; i < MeshBuilderClass::MAX_STAGES; ++i) {
+		if (Mapper[i] != NULL) {
+			Mapper[i]->Apply_Fixed_Function_State(UVSource[i], state);
+		}
+	}
+}
+
 void VertexMaterialClass::Apply_Null(void)
 {
 	int i;

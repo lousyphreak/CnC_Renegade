@@ -104,7 +104,7 @@ protected:
 	
 	virtual void						update_cached_box(void) = 0;
 	void									render_box(RenderInfoClass & rinfo,const Vector3 & center,const Vector3 & extent);
-	void									vis_render_box(SpecialRenderInfoClass & rinfo,const Vector3 & center,const Vector3 & extent);
+	void									vis_render_box(VisRenderInfoClass & rinfo,const Vector3 & center,const Vector3 & extent);
 
 	char									Name[2*W3D_NAME_LEN];
 	Vector3								Color;
@@ -150,6 +150,7 @@ public:
 	virtual RenderObjClass *	Clone(void) const;
 	virtual int						Class_ID(void) const;
 	virtual void					Render(RenderInfoClass & rinfo);
+	virtual void					Render_Visibility(VisRenderInfoClass & rinfo);
 	virtual void					Special_Render(SpecialRenderInfoClass & rinfo);
 	virtual void 					Set_Transform(const Matrix3D &m); 
 	virtual void 					Set_Position(const Vector3 &v);
@@ -200,6 +201,7 @@ public:
 	virtual RenderObjClass *	Clone(void) const;
 	virtual int						Class_ID(void) const;
 	virtual void					Render(RenderInfoClass & rinfo);
+	virtual void					Render_Visibility(VisRenderInfoClass & rinfo);
 	virtual void					Special_Render(SpecialRenderInfoClass & rinfo);
 	virtual void 					Set_Transform(const Matrix3D &m); 
 	virtual void 					Set_Position(const Vector3 &v);
@@ -258,4 +260,3 @@ extern BoxLoaderClass			_BoxLoader;
 
 
 #endif
-

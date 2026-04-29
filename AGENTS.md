@@ -23,15 +23,12 @@ The build should alway be Debug mode with ASAN and UBSAN enabled, to catch any m
 - use asan and ubsan to catch memory errors and undefined behavior during development
 - do not stub any functionality, if you port a part of the codebase, make sure the port is **COMPLETE** and fully functional, even if it's not perfect or optimized. we want to have a working port as soon as possible, and then we can improve it later.
 - keep the original code structure and organization as much as possible, do not move files around or change the directory structure, just port the code in place.
-- keep a state document (e.g. `PORTING_PROGRESS.md`) to track the progress of the port, and update it regularly with detailed notes on what has been done, what is left to do, and any issues or challenges encountered along the way.
-- keep a knowledge document (e.g. `PORTING_KNOWLEDGE.md`) to document any important information, insights, or discoveries made during the porting process, such as how certain systems work, any quirks or edge cases discovered, and any useful resources or references found.
 - if there is any decision to be made about how to implement something, or if there are any questions or uncertainties about how to proceed, use the `askQuestions` tool.
 - do not modify game code, only the updates to modern integration (like sound, render, input). we want to preserve functionality as much as possible, and not introduce new bugs or changes to the original game logic.
 - the original pre-port code can be accessed with the git tag `original`, so if you need to check how something worked before, you can check out that tag and see the original code.
 
 
 - **DO NOT TOUCH GIT** - the user will do that
-- **DO NOT CHANGE THE ORIGINAL GAME CODE** - unless needed to port to new functionality, like changing the file system to use SDL3, or changing the input handling to use SDL3, but do not change the original game logic or behavior unless absolutely necessary. if you need to change something in the original code, make sure to document it in the `PORTING_PROGRESS.md` and `PORTING_KNOWLEDGE.md` files, and explain why the change was needed and how it was implemented.
 
 ## Renderer porting
 
@@ -53,3 +50,5 @@ the following **MUST** be changed:
 - checking for _WIN32 or similar is a code smell, we want to remove all of those and replace them with more generic cross platform code, for example using SDL3 for input and file system instead of win32 API.
 
 **ANYTHING ELSE IS NOT ACCEPTABLE** - we want to avoid changing behaviour of the original game as much as possible, and we want to preserve the original game logic and functionality as much as possible.
+
+The original released code can be found at the git tag `original`, so if you need to check how something worked before, you can check out that tag and see the original code.

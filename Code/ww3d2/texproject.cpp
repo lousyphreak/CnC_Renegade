@@ -1105,7 +1105,7 @@ bool TexProjectClass::Compute_Ortho_Projection
  * HISTORY:                                                                                    *
  *   1/11/00    gth : Created.                                                                 *
  *=============================================================================================*/
-bool TexProjectClass::Compute_Texture(RenderObjClass * model,SpecialRenderInfoClass * context)
+bool TexProjectClass::Compute_Texture(RenderObjClass * model,ShadowRenderInfoClass * context)
 {
 	if ((model == NULL) || (context == NULL)) {
 		return false;

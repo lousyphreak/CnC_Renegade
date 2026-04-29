@@ -187,7 +187,10 @@ void Sort (
 
 struct SortingNodeStruct : DLNodeClass<SortingNodeStruct>
 {
-	RenderStateStruct sorting_state;
+	WW3D::FixedFunctionSubmitDesc Submission;
+	WW3D::FixedFunctionStateDesc FixedFunctionState;
+	WW3D::LightingSubmitDesc CapturedLighting;
+	WW3D::SubmitLightDesc CapturedLights[WW3D::MAX_SUBMIT_LIGHTS];
 
 	SphereClass bounding_sphere;
 
@@ -197,9 +200,6 @@ struct SortingNodeStruct : DLNodeClass<SortingNodeStruct>
 	unsigned short polygon_count;			// Polygon count to process (3 indices = one polygon)
 	unsigned short min_vertex_index;		// First index used in the vb
 	unsigned short vertex_count;			// Number of vertices used in vb
-	bool use_explicit_shadow_flags;
-	bool receive_shadows;
-	bool cast_shadows;
 };
 
 static DLListClass<SortingNodeStruct> sorted_list;
@@ -216,6 +216,42 @@ static SortingNodeStruct* Get_Sorting_Struct()
 	}
 	state=new SortingNodeStruct();
 	return state;
+}
+
+static void Add_Submission_Refs(const WW3D::FixedFunctionSubmitDesc &submission)
+{
+	if (submission.VertexBuffer != NULL) {
+		submission.VertexBuffer->Add_Engine_Ref();
+	}
+	if (submission.IndexBuffer != NULL) {
+		submission.IndexBuffer->Add_Engine_Ref();
+	}
+	if (submission.Material != NULL) {
+		submission.Material->Add_Ref();
+	}
+	for (unsigned i = 0; i < MAX_TEXTURE_STAGES; ++i) {
+		if (submission.Textures[i] != NULL) {
+			submission.Textures[i]->Add_Ref();
+		}
+	}
+}
+
+static void Release_Submission_Refs(const WW3D::FixedFunctionSubmitDesc &submission)
+{
+	if (submission.VertexBuffer != NULL) {
+		submission.VertexBuffer->Release_Engine_Ref();
+	}
+	if (submission.IndexBuffer != NULL) {
+		submission.IndexBuffer->Release_Engine_Ref();
+	}
+	if (submission.Material != NULL) {
+		submission.Material->Release_Ref();
+	}
+	for (unsigned i = 0; i < MAX_TEXTURE_STAGES; ++i) {
+		if (submission.Textures[i] != NULL) {
+			submission.Textures[i]->Release_Ref();
+		}
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -337,66 +373,39 @@ void SortingRendererClass::Insert_Triangles_Internal(
 
 	DX8_RECORD_SORTING_RENDER(polygon_count,vertex_count);
 
-	SortingNodeStruct* state=Get_Sorting_Struct();
-
-	DX8Wrapper::Get_Render_State(state->sorting_state);
-
- 	WWASSERT(
-		((state->sorting_state.index_buffer_type==BUFFER_TYPE_SORTING || state->sorting_state.index_buffer_type==BUFFER_TYPE_DYNAMIC_SORTING) &&
-		(state->sorting_state.vertex_buffer_type==BUFFER_TYPE_SORTING || state->sorting_state.vertex_buffer_type==BUFFER_TYPE_DYNAMIC_SORTING)));
-
-	state->bounding_sphere=bounding_sphere;
-	state->start_index=start_index;
-	state->polygon_count=polygon_count;
-	state->min_vertex_index=min_vertex_index;
-	state->vertex_count=vertex_count;
-	state->use_explicit_shadow_flags=use_explicit_shadow_flags;
-	state->receive_shadows=receive_shadows;
-	state->cast_shadows=cast_shadows;
-
-	SortingVertexBufferClass* vertex_buffer=static_cast<SortingVertexBufferClass*>(state->sorting_state.vertex_buffer);
-	WWASSERT(vertex_buffer);
-	WWASSERT(state->vertex_count<=vertex_buffer->Get_Vertex_Count());
-
-	// Transform the center point to view space for sorting
-
-	Matrix4 mtx = state->sorting_state.world * state->sorting_state.view;
-	Vector4 transformed_vec;
-	Matrix4::Transform_Vector(mtx, state->bounding_sphere.Center, &transformed_vec);
-	state->transformed_center=Vector3(transformed_vec[0],transformed_vec[1],transformed_vec[2]);
-	state->transformed_depth_radius = Compute_Depth_Radius(state->bounding_sphere, mtx, state->transformed_center);
-
-	SortingNodeStruct* node=sorted_list.Head();
-	while (node) {
-		if (state->transformed_center.Z>node->transformed_center.Z) {
-			if (sorted_list.Head()==sorted_list.Tail())
-				sorted_list.Add_Head(state);
-			else
-				state->Insert_Before(node);
-			break;
-		}
-		node=node->Succ();
+	RenderStateStruct render_state;
+	DX8Wrapper::Get_Render_State(render_state);
+	if (render_state.vertex_buffer == NULL || render_state.index_buffer == NULL) {
+		return;
 	}
-	if (!node) sorted_list.Add_Tail(state);
 
-#ifdef WWDEBUG
-	unsigned short* indices=NULL;
-	SortingIndexBufferClass* index_buffer=static_cast<SortingIndexBufferClass*>(state->sorting_state.index_buffer);
-	WWASSERT(index_buffer);
-	indices=index_buffer->index_buffer;
-	WWASSERT(indices);
-	indices+=state->start_index;
-	indices+=state->sorting_state.iba_offset;
+	Matrix4 projection(true);
+	DX8Wrapper::Get_Transform(D3DTS_PROJECTION, projection);
 
-	for (int i=0;i<state->polygon_count;++i) {
-		unsigned short idx1=indices[i*3]-state->min_vertex_index;
-		unsigned short idx2=indices[i*3+1]-state->min_vertex_index;
-		unsigned short idx3=indices[i*3+2]-state->min_vertex_index;
-		WWASSERT(idx1<state->vertex_count);
-		WWASSERT(idx2<state->vertex_count);
-		WWASSERT(idx3<state->vertex_count);
-	}
-#endif
+	WW3D::FixedFunctionSubmitDesc submission;
+	submission.VertexBuffer = render_state.vertex_buffer;
+	submission.VertexBufferOffset = render_state.vba_offset;
+	submission.IndexBuffer = render_state.index_buffer;
+	submission.IndexBufferOffset = render_state.iba_offset;
+	submission.IndexBaseOffset = render_state.index_base_offset;
+	submission.StartIndex = start_index;
+	submission.PolygonCount = polygon_count;
+	submission.MinVertexIndex = min_vertex_index;
+	submission.VertexCount = vertex_count;
+	submission.Textures[0] = render_state.Textures[0];
+	submission.Textures[1] = render_state.Textures[1];
+	submission.Material = render_state.material;
+	submission.Shader = render_state.shader;
+	submission.WorldTransform = render_state.world;
+	submission.ViewTransform = render_state.view;
+	submission.ProjectionTransform = projection;
+	submission.ReceiveShadows =
+		use_explicit_shadow_flags
+			? receive_shadows
+			: render_state.shader.Get_Dst_Blend_Func() == ShaderClass::DSTBLEND_ZERO;
+	submission.CastShadows = use_explicit_shadow_flags ? cast_shadows : false;
+	submission.Strip = false;
+	Insert_Fixed_Function_Draw(bounding_sphere, submission);
 }
 
 void SortingRendererClass::Insert_Triangles(
@@ -472,6 +481,69 @@ void SortingRendererClass::Insert_Triangles(
 		cast_shadows);
 }
 
+void SortingRendererClass::Insert_Fixed_Function_Draw(
+	const SphereClass& bounding_sphere,
+	const WW3D::FixedFunctionSubmitDesc &submission)
+{
+	if (submission.VertexBuffer == NULL || submission.IndexBuffer == NULL) {
+		return;
+	}
+
+	SortingNodeStruct *state = Get_Sorting_Struct();
+	state->Submission = submission;
+	state->FixedFunctionState =
+		submission.RenderState != NULL
+			? *submission.RenderState
+			: WW3D::FixedFunctionStateDesc();
+	if (submission.RenderState == NULL) {
+		WW3D::Capture_Current_Fixed_Function_State(state->FixedFunctionState, submission.Material);
+	}
+	state->Submission.RenderState = &state->FixedFunctionState;
+
+	if (submission.Lighting != NULL) {
+		state->Submission.Lighting = submission.Lighting;
+	} else {
+		WW3D::Capture_Current_Lighting_Submission(
+			state->CapturedLighting,
+			state->CapturedLights,
+			WW3D::MAX_SUBMIT_LIGHTS);
+		state->Submission.Lighting = &state->CapturedLighting;
+	}
+
+	Add_Submission_Refs(state->Submission);
+
+	state->bounding_sphere = bounding_sphere;
+	state->start_index = state->Submission.StartIndex;
+	state->polygon_count = state->Submission.PolygonCount;
+	state->min_vertex_index = state->Submission.MinVertexIndex;
+	state->vertex_count = state->Submission.VertexCount;
+
+	const VertexBufferClass *vertex_buffer = state->Submission.VertexBuffer;
+	WWASSERT(vertex_buffer != NULL);
+	WWASSERT(state->vertex_count <= vertex_buffer->Get_Vertex_Count());
+
+	Matrix4 mtx = state->Submission.WorldTransform * state->Submission.ViewTransform;
+	Vector4 transformed_vec;
+	Matrix4::Transform_Vector(mtx, state->bounding_sphere.Center, &transformed_vec);
+	state->transformed_center = Vector3(transformed_vec[0], transformed_vec[1], transformed_vec[2]);
+	state->transformed_depth_radius = Compute_Depth_Radius(state->bounding_sphere, mtx, state->transformed_center);
+
+	SortingNodeStruct* node = sorted_list.Head();
+	while (node) {
+		if (state->transformed_center.Z > node->transformed_center.Z) {
+			if (sorted_list.Head() == sorted_list.Tail())
+				sorted_list.Add_Head(state);
+			else
+				state->Insert_Before(node);
+			break;
+		}
+		node = node->Succ();
+	}
+	if (!node) {
+		sorted_list.Add_Tail(state);
+	}
+}
+
 // ----------------------------------------------------------------------------
 //
 // Flush all sorting polygons.
@@ -480,12 +552,7 @@ void SortingRendererClass::Insert_Triangles(
 
 void Release_Refs(SortingNodeStruct* state)
 {
-	REF_PTR_RELEASE(state->sorting_state.vertex_buffer);
-	REF_PTR_RELEASE(state->sorting_state.index_buffer);
-	REF_PTR_RELEASE(state->sorting_state.material);
-	for (unsigned i=0;i<MAX_TEXTURE_STAGES;++i) {
-		REF_PTR_RELEASE(state->sorting_state.Textures[i]);
-	}
+	Release_Submission_Refs(state->Submission);
 }
 
 static unsigned overlapping_node_count;
@@ -530,8 +597,10 @@ static float Compute_Depth_Radius(const SphereClass& bounding_sphere, const Matr
 static bool Uses_Sorting_Pool(const SortingNodeStruct* state)
 {
 	return
-		(state->sorting_state.index_buffer_type == BUFFER_TYPE_SORTING || state->sorting_state.index_buffer_type == BUFFER_TYPE_DYNAMIC_SORTING) &&
-		(state->sorting_state.vertex_buffer_type == BUFFER_TYPE_SORTING || state->sorting_state.vertex_buffer_type == BUFFER_TYPE_DYNAMIC_SORTING);
+		(state->Submission.IndexBuffer != NULL) &&
+		(state->Submission.VertexBuffer != NULL) &&
+		(state->Submission.IndexBuffer->Type() == BUFFER_TYPE_SORTING || state->Submission.IndexBuffer->Type() == BUFFER_TYPE_DYNAMIC_SORTING) &&
+		(state->Submission.VertexBuffer->Type() == BUFFER_TYPE_SORTING || state->Submission.VertexBuffer->Type() == BUFFER_TYPE_DYNAMIC_SORTING);
 }
 
 static bool Overlaps_Current_Sorting_Pool(const SortingNodeStruct* state)
@@ -571,66 +640,6 @@ void SortingRendererClass::Insert_To_Sorting_Pool(SortingNodeStruct* state)
 	}
 }
 
-// ----------------------------------------------------------------------------
-
-static void Apply_Render_State(RenderStateStruct& render_state)
-{
-/*	state->sorting_state.shader.Apply();
-*/
-	DX8Wrapper::Set_Shader(render_state.shader);
-
-/*	if (render_state.material) render_state.material->Apply();
-*/
-	DX8Wrapper::Set_Material(render_state.material);
-
-/*	if (render_state.Textures[2]) render_state.Textures[2]->Apply();
-	if (render_state.Textures[3]) render_state.Textures[3]->Apply();
-	if (render_state.Textures[4]) render_state.Textures[4]->Apply();
-	if (render_state.Textures[5]) render_state.Textures[5]->Apply();
-	if (render_state.Textures[6]) render_state.Textures[6]->Apply();
-	if (render_state.Textures[7]) render_state.Textures[7]->Apply();
-*/
-	for (unsigned i=0;i<MAX_TEXTURE_STAGES;++i) {
-		DX8Wrapper::Set_Texture(i,render_state.Textures[i]);
-	}
-
-	if (render_state.LightEnable[0]) {
-		DX8Wrapper::Set_DX8_Light(0,&render_state.Lights[0]);
-		if (render_state.LightEnable[1]) {
-			DX8Wrapper::Set_DX8_Light(1,&render_state.Lights[1]);
-			if (render_state.LightEnable[2]) {
-				DX8Wrapper::Set_DX8_Light(2,&render_state.Lights[2]);
-				if (render_state.LightEnable[3]) {
-					DX8Wrapper::Set_DX8_Light(3,&render_state.Lights[3]);
-				}
-				else {
-					DX8Wrapper::Set_DX8_Light(3,NULL);
-				}
-			}
-			else {
-				DX8Wrapper::Set_DX8_Light(2,NULL);
-			}
-		}
-		else {
-			DX8Wrapper::Set_DX8_Light(1,NULL);
-		}
-	}
-	else {
-		DX8Wrapper::Set_DX8_Light(0,NULL);
-	}
-
-//	Matrix4 mtx;
-//	mtx=render_state.world.Transpose();
-//	DX8Wrapper::Set_Transform(D3DTS_WORLD,mtx);
-//	mtx=render_state.view.Transpose();
-//	DX8Wrapper::Set_Transform(D3DTS_VIEW,mtx);
-
-	DX8Wrapper::_Set_DX8_Transform(D3DTS_WORLD,render_state.world);
-	DX8Wrapper::_Set_DX8_Transform(D3DTS_VIEW,render_state.view);
-}
-
-// ----------------------------------------------------------------------------
-
 void SortingRendererClass::Flush_Sorting_Pool()
 {
 	if (!overlapping_node_count) return;
@@ -659,15 +668,15 @@ void SortingRendererClass::Flush_Sorting_Pool()
 			float* vertex_z_array=Get_Vertex_Z_Array(state->vertex_count);
 
 			VertexFormatXYZNDUV2* src_verts=NULL;
-			SortingVertexBufferClass* vertex_buffer=static_cast<SortingVertexBufferClass*>(state->sorting_state.vertex_buffer);
+			SortingVertexBufferClass* vertex_buffer=static_cast<SortingVertexBufferClass*>(const_cast<VertexBufferClass*>(state->Submission.VertexBuffer));
 			WWASSERT(vertex_buffer);
 			src_verts=vertex_buffer->VertexBuffer;
 			WWASSERT(src_verts);
-			src_verts+=state->sorting_state.vba_offset;
-			src_verts+=state->sorting_state.index_base_offset;
+			src_verts+=state->Submission.VertexBufferOffset;
+			src_verts+=state->Submission.IndexBaseOffset;
 			src_verts+=state->min_vertex_index;
 
-			const Matrix4 mtx = (state->sorting_state.world * state->sorting_state.view).Transpose();
+			const Matrix4 mtx = (state->Submission.WorldTransform * state->Submission.ViewTransform).Transpose();
 			for (unsigned i=0;i<state->vertex_count;++i,++src_verts) {
 				vertex_z_array[i] = (mtx[2][0] * src_verts->x + mtx[2][1] * src_verts->y + mtx[2][2] * src_verts->z + mtx[2][3]);
 
@@ -680,12 +689,12 @@ void SortingRendererClass::Flush_Sorting_Pool()
 			}
 
 			unsigned short* indices=NULL;
-			SortingIndexBufferClass* index_buffer=static_cast<SortingIndexBufferClass*>(state->sorting_state.index_buffer);
+			SortingIndexBufferClass* index_buffer=static_cast<SortingIndexBufferClass*>(const_cast<IndexBufferClass*>(state->Submission.IndexBuffer));
 			WWASSERT(index_buffer);
 			indices=index_buffer->index_buffer;
 			WWASSERT(indices);
 			indices+=state->start_index;
-			indices+=state->sorting_state.iba_offset;
+			indices+=state->Submission.IndexBufferOffset;
 
 			for (unsigned i = 0; i < state->polygon_count; ++i) {
 				unsigned short idx1=indices[i*3]-state->min_vertex_index;
@@ -709,6 +718,7 @@ void SortingRendererClass::Flush_Sorting_Pool()
 			}
 
 			state->min_vertex_index=vertex_array_offset;
+			state->Submission.MinVertexIndex=static_cast<unsigned short>(vertex_array_offset);
 
 			polygon_array_offset+=state->polygon_count;
 			vertex_array_offset+=state->vertex_count;
@@ -744,39 +754,23 @@ void SortingRendererClass::Flush_Sorting_Pool()
 		index_copy_ms,
 		sort_ms);
 
-	// Set index buffer and render!
-
-	DX8Wrapper::Set_Index_Buffer(dyn_ib_access,0); // Override with this buffer (do something to prevent need for this!)
-	DX8Wrapper::Set_Vertex_Buffer(dyn_vb_access); // Override with this buffer (do something to prevent need for this!)
-
-	DX8Wrapper::Apply_Render_State_Changes();
-
-	bool enable_triangle_draw=DX8Wrapper::_Is_Triangle_Draw_Enabled();
-	DX8Wrapper::_Enable_Triangle_Draw(_Is_Triangle_Draw_Enabled());
-
 	unsigned count_to_render=1;
 	unsigned start_index=0;
 	node_id=tis[0].idx;
 	for (unsigned i=1;i<overlapping_polygon_count;++i) {
 		if (node_id!=tis[i].idx) {
 			SortingNodeStruct* state=overlapping_nodes[node_id];
-			Apply_Render_State(state->sorting_state);
-
-			if (state->use_explicit_shadow_flags) {
-				BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
-					start_index*3,
-					count_to_render,
-					state->min_vertex_index,
-					state->vertex_count,
-					state->receive_shadows,
-					state->cast_shadows);
-			} else {
-				BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
-					start_index*3,
-					count_to_render,
-					state->min_vertex_index,
-					state->vertex_count);
-			}
+			WW3D::FixedFunctionSubmitDesc submission = state->Submission;
+			submission.VertexBuffer = dyn_vb_access.Peek_Vertex_Buffer();
+			submission.VertexBufferOffset = dyn_vb_access.Get_Vertex_Buffer_Offset();
+			submission.IndexBuffer = dyn_ib_access.Peek_Index_Buffer();
+			submission.IndexBufferOffset = dyn_ib_access.Get_Index_Buffer_Offset();
+			submission.IndexBaseOffset = 0;
+			submission.StartIndex = static_cast<unsigned short>(start_index * 3);
+			submission.PolygonCount = static_cast<unsigned short>(count_to_render);
+			submission.MinVertexIndex = state->min_vertex_index;
+			submission.VertexCount = state->vertex_count;
+			WW3D::Submit_Fixed_Function_Draw(submission);
 
 			count_to_render=0;
 			start_index=i;
@@ -788,23 +782,17 @@ void SortingRendererClass::Flush_Sorting_Pool()
 	// Render any remaining polygons...
 	if (count_to_render) {
 		SortingNodeStruct* state=overlapping_nodes[node_id];
-		Apply_Render_State(state->sorting_state);
-
-		if (state->use_explicit_shadow_flags) {
-			BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
-				start_index*3,
-				count_to_render,
-				state->min_vertex_index,
-				state->vertex_count,
-				state->receive_shadows,
-				state->cast_shadows);
-		} else {
-			BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
-				start_index*3,
-				count_to_render,
-				state->min_vertex_index,
-				state->vertex_count);
-		}
+		WW3D::FixedFunctionSubmitDesc submission = state->Submission;
+		submission.VertexBuffer = dyn_vb_access.Peek_Vertex_Buffer();
+		submission.VertexBufferOffset = dyn_vb_access.Get_Vertex_Buffer_Offset();
+		submission.IndexBuffer = dyn_ib_access.Peek_Index_Buffer();
+		submission.IndexBufferOffset = dyn_ib_access.Get_Index_Buffer_Offset();
+		submission.IndexBaseOffset = 0;
+		submission.StartIndex = static_cast<unsigned short>(start_index * 3);
+		submission.PolygonCount = static_cast<unsigned short>(count_to_render);
+		submission.MinVertexIndex = state->min_vertex_index;
+		submission.VertexCount = state->vertex_count;
+		WW3D::Submit_Fixed_Function_Draw(submission);
 	}
 
 	// Release all references and return nodes back to the clean list for the frame...
@@ -819,8 +807,6 @@ void SortingRendererClass::Flush_Sorting_Pool()
 	sorting_pool_depth_valid = false;
 	sorting_pool_depth_min = 0.0f;
 	sorting_pool_depth_max = 0.0f;
-
-	DX8Wrapper::_Enable_Triangle_Draw(enable_triangle_draw);
 	SNAPSHOT_SAY(("SortingSystem - Done flushing\n"));
 
 }
@@ -830,10 +816,6 @@ void SortingRendererClass::Flush_Sorting_Pool()
 void SortingRendererClass::Flush()
 {
 	WWPROFILE("SortingRenderer::Flush");
-	Matrix4 old_view;
-	Matrix4 old_world;
-	DX8Wrapper::Get_Transform(D3DTS_VIEW,old_view);
-	DX8Wrapper::Get_Transform(D3DTS_WORLD,old_world);
 
 	while (SortingNodeStruct* state=sorted_list.Head()) {
 		state->Remove();
@@ -846,23 +828,7 @@ void SortingRendererClass::Flush()
 		}
 		else {
 			Flush_Sorting_Pool();
-			DX8Wrapper::Set_Render_State(state->sorting_state);
-			if (state->use_explicit_shadow_flags) {
-				BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
-					state->start_index,
-					state->polygon_count,
-					state->min_vertex_index,
-					state->vertex_count,
-					state->receive_shadows,
-					state->cast_shadows);
-			} else {
-				BgfxRenderer::Submit_Current_Fixed_Function_Triangles(
-					state->start_index,
-					state->polygon_count,
-					state->min_vertex_index,
-					state->vertex_count);
-			}
-			DX8Wrapper::Release_Render_State();
+			WW3D::Submit_Fixed_Function_Draw(state->Submission);
 			Release_Refs(state);
 			clean_list.Add_Head(state);
 		}
@@ -876,11 +842,6 @@ void SortingRendererClass::Flush()
 
 	DynamicIBAccessClass::_Reset(false);
 	DynamicVBAccessClass::_Reset(false);
-
-
-	DX8Wrapper::Set_Transform(D3DTS_VIEW,old_view);
-	DX8Wrapper::Set_Transform(D3DTS_WORLD,old_world);
-
 }
 
 // ----------------------------------------------------------------------------

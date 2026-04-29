@@ -173,7 +173,7 @@ bool PhysTexProjectClass::Compute_Texture(PhysClass * obj,bool additive_projecti
 	}
 
 	int tex_size = Get_Texture_Size();
-	SpecialRenderInfoClass * context = PhysicsSceneClass::Get_Instance()->Get_Shadow_Render_Context(tex_size,tex_size);
+	ShadowRenderInfoClass * context = PhysicsSceneClass::Get_Instance()->Get_Shadow_Render_Context(tex_size,tex_size);
 	if (context == NULL) {
 		return false;
 	}

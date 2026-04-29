@@ -89,6 +89,7 @@ Matrix4 BgfxRenderer::CurrentProjectionMatrix(true);
 namespace
 {
 constexpr unsigned kUnsetRenderState = 0x12345678u;
+constexpr std::uint32_t MaxSubmitLights = WW3D::MAX_SUBMIT_LIGHTS;
 constexpr uint16_t SkinPaletteWidth = 1024;
 constexpr uint16_t SkinPaletteHeight = 512;
 
@@ -2554,10 +2555,214 @@ void BgfxRenderer::Apply_Render_State(const ShaderClass &shader, unsigned cull_m
     bgfx::setStencil(Build_Stencil_State());
 }
 
+namespace
+{
+ShaderClass Build_Default_Overlay_Shader()
+{
+    ShaderClass shader;
+    shader.Set_Depth_Mask(ShaderClass::DEPTH_WRITE_DISABLE);
+    shader.Set_Depth_Compare(ShaderClass::PASS_ALWAYS);
+    shader.Set_Dst_Blend_Func(ShaderClass::DSTBLEND_ONE_MINUS_SRC_ALPHA);
+    shader.Set_Src_Blend_Func(ShaderClass::SRCBLEND_SRC_ALPHA);
+    shader.Set_Fog_Func(ShaderClass::FOG_DISABLE);
+    shader.Set_Primary_Gradient(ShaderClass::GRADIENT_MODULATE);
+    shader.Set_Texturing(ShaderClass::TEXTURING_ENABLE);
+    return shader;
+}
+
+struct OverlayGeometryBinding
+{
+    bgfx::TransientVertexBuffer TransientVertexBuffer = {};
+    bgfx::TransientIndexBuffer TransientIndexBuffer = {};
+    bgfx::VertexBufferHandle VertexBuffer = BGFX_INVALID_HANDLE;
+    bgfx::IndexBufferHandle IndexBuffer = BGFX_INVALID_HANDLE;
+
+    void Destroy()
+    {
+        if (bgfx::isValid(IndexBuffer)) {
+            bgfx::destroy(IndexBuffer);
+            IndexBuffer = BGFX_INVALID_HANDLE;
+        }
+        if (bgfx::isValid(VertexBuffer)) {
+            bgfx::destroy(VertexBuffer);
+            VertexBuffer = BGFX_INVALID_HANDLE;
+        }
+    }
+};
+
+struct BgfxOverlayVertex
+{
+    float X;
+    float Y;
+    float Z;
+    std::uint32_t Diffuse;
+    float U0;
+    float V0;
+};
+
+void Convert_Overlay_Vertices(
+    const WW3D::OverlaySubmitVertex *source_vertices,
+    std::uint32_t vertex_count,
+    std::vector<BgfxOverlayVertex> &converted_vertices)
+{
+    converted_vertices.resize(static_cast<size_t>(vertex_count));
+    for (std::uint32_t index = 0; index < vertex_count; ++index) {
+        const WW3D::OverlaySubmitVertex &source = source_vertices[index];
+        BgfxOverlayVertex &destination = converted_vertices[static_cast<size_t>(index)];
+        destination.X = source.X;
+        destination.Y = source.Y;
+        destination.Z = source.Z;
+        destination.Diffuse = BgfxRenderer::Convert_Packed_Color(source.Diffuse);
+        destination.U0 = source.U0;
+        destination.V0 = source.V0;
+    }
+}
+
+bool Prepare_Overlay_Geometry(
+    const BgfxOverlayVertex *vertices,
+    std::uint32_t vertex_count,
+    const std::uint16_t *indices,
+    std::uint32_t index_count,
+    const bgfx::VertexLayout &layout,
+    OverlayGeometryBinding &binding)
+{
+    if (vertices == nullptr || indices == nullptr || vertex_count == 0 || index_count == 0) {
+        return false;
+    }
+
+    if (bgfx::getAvailTransientVertexBuffer(vertex_count, layout) == vertex_count
+        && bgfx::getAvailTransientIndexBuffer(index_count) == index_count) {
+        bgfx::allocTransientVertexBuffer(&binding.TransientVertexBuffer, vertex_count, layout);
+        bgfx::allocTransientIndexBuffer(&binding.TransientIndexBuffer, index_count);
+        std::memcpy(
+            binding.TransientVertexBuffer.data,
+            vertices,
+            static_cast<size_t>(vertex_count) * sizeof(BgfxOverlayVertex));
+        std::memcpy(
+            binding.TransientIndexBuffer.data,
+            indices,
+            static_cast<size_t>(index_count) * sizeof(std::uint16_t));
+        bgfx::setVertexBuffer(0, &binding.TransientVertexBuffer);
+        bgfx::setIndexBuffer(&binding.TransientIndexBuffer);
+        return true;
+    }
+
+    const bgfx::Memory *vertex_memory = bgfx::copy(
+        vertices,
+        static_cast<std::uint32_t>(static_cast<size_t>(vertex_count) * sizeof(BgfxOverlayVertex)));
+    const bgfx::Memory *index_memory = bgfx::copy(
+        indices,
+        static_cast<std::uint32_t>(static_cast<size_t>(index_count) * sizeof(std::uint16_t)));
+    binding.VertexBuffer = bgfx::createVertexBuffer(vertex_memory, layout);
+    binding.IndexBuffer = bgfx::createIndexBuffer(index_memory);
+    if (!bgfx::isValid(binding.VertexBuffer) || !bgfx::isValid(binding.IndexBuffer)) {
+        binding.Destroy();
+        return false;
+    }
+
+    bgfx::setVertexBuffer(0, binding.VertexBuffer);
+    bgfx::setIndexBuffer(binding.IndexBuffer);
+    return true;
+}
+}
+
 void BgfxRenderer::Apply_Overlay_Config(bool has_texture)
 {
     float overlay_config[4] = {has_texture ? 1.0f : 0.0f, 0.0f, 0.0f, 0.0f};
     bgfx::setUniform(OverlayConfigUniform, overlay_config);
+}
+
+bool BgfxRenderer::Submit_Overlay(const WW3D::OverlaySubmitDesc &submission)
+{
+    if (!IsInitted) {
+        return false;
+    }
+
+    const bgfx::ProgramHandle program = Get_Overlay_Program();
+    if (!bgfx::isValid(program)) {
+        return false;
+    }
+
+    std::vector<BgfxOverlayVertex> converted_vertices;
+    Convert_Overlay_Vertices(submission.Vertices, submission.VertexCount, converted_vertices);
+
+    OverlayGeometryBinding binding;
+    if (!Prepare_Overlay_Geometry(
+            converted_vertices.data(),
+            submission.VertexCount,
+            submission.Indices,
+            submission.IndexCount,
+            Get_Overlay_Layout(),
+            binding)) {
+        return false;
+    }
+
+    Prepare_Overlay_View();
+
+    bgfx::TextureHandle texture = Get_White_Texture();
+    std::uint32_t sampler_flags =
+        BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT;
+    if (submission.HasTexture && submission.Texture != NULL) {
+        texture = submission.Texture->Get_Bgfx_Texture();
+        sampler_flags = submission.Texture->Get_Bgfx_Sampler_Flags(0);
+        if (!bgfx::isValid(texture)) {
+            texture = Get_White_Texture();
+        }
+    }
+
+    bgfx::setTexture(0, Get_Texture0_Uniform(), texture, sampler_flags);
+    Apply_Overlay_Config(submission.HasTexture);
+    Apply_Render_State(submission.Shader);
+    bgfx::submit(Get_Overlay_View_Id(), program);
+
+    binding.Destroy();
+    return true;
+}
+
+bool BgfxRenderer::Submit_YUV_Overlay(const OverlayYUVSubmitDesc &submission)
+{
+    if (!IsInitted
+        || !bgfx::isValid(submission.LumaTexture)
+        || !bgfx::isValid(submission.ChromaTexture)) {
+        return false;
+    }
+
+    const bgfx::ProgramHandle program = Get_Movie_YUV_Program();
+    const bgfx::UniformHandle config_uniform = Get_Movie_YUV_Config_Uniform();
+    if (!bgfx::isValid(program) || !bgfx::isValid(config_uniform)) {
+        return false;
+    }
+
+    std::vector<BgfxOverlayVertex> converted_vertices;
+    Convert_Overlay_Vertices(submission.Vertices, submission.VertexCount, converted_vertices);
+
+    OverlayGeometryBinding binding;
+    if (!Prepare_Overlay_Geometry(
+            converted_vertices.data(),
+            submission.VertexCount,
+            submission.Indices,
+            submission.IndexCount,
+            Get_Overlay_Layout(),
+            binding)) {
+        return false;
+    }
+
+    Prepare_Overlay_View();
+    bgfx::setTexture(0, Get_Texture0_Uniform(), submission.LumaTexture, submission.SamplerFlags);
+    bgfx::setTexture(1, Get_Texture1_Uniform(), submission.ChromaTexture, submission.SamplerFlags);
+
+    const float movie_config[4] = {
+        submission.FullRangeVideo ? 1.0f : 0.0f,
+        0.0f,
+        0.0f,
+        0.0f
+    };
+    bgfx::setUniform(config_uniform, movie_config);
+    Apply_Render_State(Build_Default_Overlay_Shader());
+    bgfx::submit(Get_Overlay_View_Id(), program);
+
+    binding.Destroy();
+    return true;
 }
 
 namespace
@@ -2765,8 +2970,12 @@ MaterialClassification BgfxRenderer::Classify_Material(const ShaderClass &shader
     return c;
 }
 
-void BgfxRenderer::Apply_Lighting_Uniforms(const MaterialClassification &classification)
+void BgfxRenderer::Apply_Lighting_Uniforms(
+    const MaterialClassification &classification,
+    const WW3D::LightingSubmitDesc *lighting,
+    const WW3D::FixedFunctionStateDesc *render_state)
 {
+    (void)render_state;
     bgfx::setUniform(MeshLitConfigUniform, classification.lit_config);
     const bool lighting_active = classification.lit_config[0] > 0.5f;
     if (lighting_active) {
@@ -2774,102 +2983,149 @@ void BgfxRenderer::Apply_Lighting_Uniforms(const MaterialClassification &classif
         bgfx::setUniform(MeshMaterialDiffuseUniform, classification.material_diffuse);
         bgfx::setUniform(MeshMaterialEmissiveUniform, classification.material_emissive);
 
-        // Scene ambient (per-mesh, from DX8Wrapper)
-        const unsigned ambient_color = DX8Wrapper::Get_DX8_Render_State(D3DRS_AMBIENT);
         float scene_ambient[4] = {0.0f, 0.0f, 0.0f, 1.0f};
-        if (ambient_color != kUnsetRenderState) {
-            scene_ambient[0] = static_cast<float>((ambient_color >> 16) & 0xffu) / 255.0f;
-            scene_ambient[1] = static_cast<float>((ambient_color >> 8) & 0xffu) / 255.0f;
-            scene_ambient[2] = static_cast<float>(ambient_color & 0xffu) / 255.0f;
+        if (lighting != nullptr) {
+            scene_ambient[0] = lighting->SceneAmbient.X;
+            scene_ambient[1] = lighting->SceneAmbient.Y;
+            scene_ambient[2] = lighting->SceneAmbient.Z;
+        } else {
+            const unsigned ambient_color = DX8Wrapper::Get_DX8_Render_State(D3DRS_AMBIENT);
+            if (ambient_color != kUnsetRenderState) {
+                scene_ambient[0] = static_cast<float>((ambient_color >> 16) & 0xffu) / 255.0f;
+                scene_ambient[1] = static_cast<float>((ambient_color >> 8) & 0xffu) / 255.0f;
+                scene_ambient[2] = static_cast<float>(ambient_color & 0xffu) / 255.0f;
+            }
         }
         bgfx::setUniform(MeshSceneAmbientUniform, scene_ambient);
 
-        float light_pos_type[16] = {};
-        float light_dir_spot[16] = {};
-        float light_diffuse_range[16] = {};
-        float light_ambient_atten[16] = {};
-        for (unsigned i = 0; i < 4u; ++i) {
-            const D3DLIGHT8 &light = DX8Wrapper::Peek_Light(i);
-            const size_t off = static_cast<size_t>(i) * 4u;
-            if (!DX8Wrapper::Is_Light_Enabled(i)) {
-                continue;
+        float light_pos_type[MaxSubmitLights * 4u] = {};
+        float light_dir_spot[MaxSubmitLights * 4u] = {};
+        float light_diffuse_range[MaxSubmitLights * 4u] = {};
+        float light_ambient_atten[MaxSubmitLights * 4u] = {};
+        if (lighting != nullptr) {
+            const std::uint32_t light_count = std::min<std::uint32_t>(lighting->LightCount, MaxSubmitLights);
+            for (std::uint32_t i = 0; i < light_count; ++i) {
+                const WW3D::SubmitLightDesc &light = lighting->Lights[i];
+                const size_t off = static_cast<size_t>(i) * 4u;
+
+                light_pos_type[off + 0] = light.Position.X;
+                light_pos_type[off + 1] = light.Position.Y;
+                light_pos_type[off + 2] = light.Position.Z;
+                light_pos_type[off + 3] = static_cast<float>(light.Type);
+
+                light_dir_spot[off + 0] = light.Direction.X;
+                light_dir_spot[off + 1] = light.Direction.Y;
+                light_dir_spot[off + 2] = light.Direction.Z;
+                light_dir_spot[off + 3] = light.SpotInnerCos;
+
+                light_diffuse_range[off + 0] = light.Diffuse.X;
+                light_diffuse_range[off + 1] = light.Diffuse.Y;
+                light_diffuse_range[off + 2] = light.Diffuse.Z;
+                light_diffuse_range[off + 3] = light.Range;
+
+                light_ambient_atten[off + 0] = light.Ambient.X;
+                light_ambient_atten[off + 1] = light.Ambient.Y;
+                light_ambient_atten[off + 2] = light.Ambient.Z;
+                light_ambient_atten[off + 3] = light.AttenuationStart;
             }
+        } else {
+            for (unsigned i = 0; i < 4u; ++i) {
+                const D3DLIGHT8 &light = DX8Wrapper::Peek_Light(i);
+                const size_t off = static_cast<size_t>(i) * 4u;
+                if (!DX8Wrapper::Is_Light_Enabled(i)) {
+                    continue;
+                }
 
-            float light_type = 0.0f;
-            switch (light.Type) {
-            case D3DLIGHT_DIRECTIONAL: light_type = 1.0f; break;
-            case D3DLIGHT_POINT:       light_type = 2.0f; break;
-            case D3DLIGHT_SPOT:        light_type = 3.0f; break;
-            default: break;
+                float light_type = 0.0f;
+                switch (light.Type) {
+                case D3DLIGHT_DIRECTIONAL: light_type = 1.0f; break;
+                case D3DLIGHT_POINT:       light_type = 2.0f; break;
+                case D3DLIGHT_SPOT:        light_type = 3.0f; break;
+                default: break;
+                }
+                if (light_type < 0.5f) {
+                    continue;
+                }
+
+                const float attenuation_start =
+                    light.Attenuation1 > 1.0e-6f ? (1.0f / light.Attenuation1) : light.Range;
+
+                light_pos_type[off + 0] = light.Position.x;
+                light_pos_type[off + 1] = light.Position.y;
+                light_pos_type[off + 2] = light.Position.z;
+                light_pos_type[off + 3] = light_type;
+
+                light_dir_spot[off + 0] = light.Direction.x;
+                light_dir_spot[off + 1] = light.Direction.y;
+                light_dir_spot[off + 2] = light.Direction.z;
+                light_dir_spot[off + 3] = light.Type == D3DLIGHT_SPOT ? std::cos(light.Theta) : -2.0f;
+
+                light_diffuse_range[off + 0] = light.Diffuse.r;
+                light_diffuse_range[off + 1] = light.Diffuse.g;
+                light_diffuse_range[off + 2] = light.Diffuse.b;
+                light_diffuse_range[off + 3] = light.Range;
+
+                light_ambient_atten[off + 0] = light.Ambient.r;
+                light_ambient_atten[off + 1] = light.Ambient.g;
+                light_ambient_atten[off + 2] = light.Ambient.b;
+                light_ambient_atten[off + 3] = attenuation_start;
             }
-            if (light_type < 0.5f) {
-                continue;
-            }
-
-            const float attenuation_start =
-                light.Attenuation1 > 1.0e-6f ? (1.0f / light.Attenuation1) : light.Range;
-
-            light_pos_type[off + 0] = light.Position.x;
-            light_pos_type[off + 1] = light.Position.y;
-            light_pos_type[off + 2] = light.Position.z;
-            light_pos_type[off + 3] = light_type;
-
-            light_dir_spot[off + 0] = light.Direction.x;
-            light_dir_spot[off + 1] = light.Direction.y;
-            light_dir_spot[off + 2] = light.Direction.z;
-            light_dir_spot[off + 3] = light.Type == D3DLIGHT_SPOT ? std::cos(light.Theta) : -2.0f;
-
-            light_diffuse_range[off + 0] = light.Diffuse.r;
-            light_diffuse_range[off + 1] = light.Diffuse.g;
-            light_diffuse_range[off + 2] = light.Diffuse.b;
-            light_diffuse_range[off + 3] = light.Range;
-
-            light_ambient_atten[off + 0] = light.Ambient.r;
-            light_ambient_atten[off + 1] = light.Ambient.g;
-            light_ambient_atten[off + 2] = light.Ambient.b;
-            light_ambient_atten[off + 3] = attenuation_start;
         }
-        bgfx::setUniform(MeshLightPosTypeUniform, light_pos_type, 4);
-        bgfx::setUniform(MeshLightDirSpotUniform, light_dir_spot, 4);
-        bgfx::setUniform(MeshLightDiffuseRangeUniform, light_diffuse_range, 4);
-        bgfx::setUniform(MeshLightAmbientAttenUniform, light_ambient_atten, 4);
+        bgfx::setUniform(MeshLightPosTypeUniform, light_pos_type, MaxSubmitLights);
+        bgfx::setUniform(MeshLightDirSpotUniform, light_dir_spot, MaxSubmitLights);
+        bgfx::setUniform(MeshLightDiffuseRangeUniform, light_diffuse_range, MaxSubmitLights);
+        bgfx::setUniform(MeshLightAmbientAttenUniform, light_ambient_atten, MaxSubmitLights);
     }
 }
 
-void BgfxRenderer::Apply_Bump_Env_Uniforms(const MaterialClassification &classification)
+void BgfxRenderer::Apply_Bump_Env_Uniforms(
+    const MaterialClassification &classification,
+    const WW3D::FixedFunctionStateDesc *render_state)
 {
     float stage0_op = classification.frag_config[0];
     bool is_bump = (stage0_op > 8.5f && stage0_op < 11.5f);
     if (!is_bump) return;
 
-    // Read bump env matrix from DX8Wrapper texture stage state (set by BumpEnvTextureMapperClass::Apply)
-    auto dw2f = [](unsigned dw) -> float {
-        float f;
-        std::memcpy(&f, &dw, sizeof(f));
-        return f;
-    };
-    float bump_mat[4] = {
-        dw2f(DX8Wrapper::Get_Texture_Stage_State(0, D3DTSS_BUMPENVMAT00)),
-        dw2f(DX8Wrapper::Get_Texture_Stage_State(0, D3DTSS_BUMPENVMAT01)),
-        dw2f(DX8Wrapper::Get_Texture_Stage_State(0, D3DTSS_BUMPENVMAT10)),
-        dw2f(DX8Wrapper::Get_Texture_Stage_State(0, D3DTSS_BUMPENVMAT11)),
-    };
+    float bump_mat[4];
+    if (render_state != nullptr) {
+        std::memcpy(bump_mat, render_state->BumpEnvMatrix, sizeof(bump_mat));
+    } else {
+        auto dw2f = [](unsigned dw) -> float {
+            float f;
+            std::memcpy(&f, &dw, sizeof(f));
+            return f;
+        };
+        bump_mat[0] = dw2f(DX8Wrapper::Get_Texture_Stage_State(0, D3DTSS_BUMPENVMAT00));
+        bump_mat[1] = dw2f(DX8Wrapper::Get_Texture_Stage_State(0, D3DTSS_BUMPENVMAT01));
+        bump_mat[2] = dw2f(DX8Wrapper::Get_Texture_Stage_State(0, D3DTSS_BUMPENVMAT10));
+        bump_mat[3] = dw2f(DX8Wrapper::Get_Texture_Stage_State(0, D3DTSS_BUMPENVMAT11));
+    }
     bgfx::setUniform(MeshBumpEnvMatUniform, bump_mat);
 
-    // Match the original DX8 wrapper state layout: luminance scale/offset live on stage 1,
-    // while the bump rotation matrix is stored on stage 0.
-    float bump_lum[4] = {
-        dw2f(DX8Wrapper::Get_Texture_Stage_State(1, D3DTSS_BUMPENVLSCALE)),
-        dw2f(DX8Wrapper::Get_Texture_Stage_State(1, D3DTSS_BUMPENVLOFFSET)),
-        0.0f, 0.0f
-    };
+    float bump_lum[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    if (render_state != nullptr) {
+        bump_lum[0] = render_state->BumpEnvLuminanceScale;
+        bump_lum[1] = render_state->BumpEnvLuminanceOffset;
+    } else {
+        auto dw2f = [](unsigned dw) -> float {
+            float f;
+            std::memcpy(&f, &dw, sizeof(f));
+            return f;
+        };
+        bump_lum[0] = dw2f(DX8Wrapper::Get_Texture_Stage_State(1, D3DTSS_BUMPENVLSCALE));
+        bump_lum[1] = dw2f(DX8Wrapper::Get_Texture_Stage_State(1, D3DTSS_BUMPENVLOFFSET));
+    }
     bgfx::setUniform(MeshBumpEnvLumUniform, bump_lum);
 }
 
-void BgfxRenderer::Apply_Texgen_Uniforms()
+void BgfxRenderer::Apply_Texgen_Uniforms(const WW3D::FixedFunctionStateDesc *render_state)
 {
-    const unsigned tci0 = Sanitize_Texcoord_Index(0);
-    const unsigned tci1 = Sanitize_Texcoord_Index(1);
+    const unsigned tci0 = render_state != nullptr
+        ? render_state->TexcoordIndex[0]
+        : Sanitize_Texcoord_Index(0);
+    const unsigned tci1 = render_state != nullptr
+        ? render_state->TexcoordIndex[1]
+        : Sanitize_Texcoord_Index(1);
     float texgen_mode[4] = {
         Resolve_Texgen_Mode(tci0),
         static_cast<float>(tci0 & 0xffffu),
@@ -2877,8 +3133,12 @@ void BgfxRenderer::Apply_Texgen_Uniforms()
         static_cast<float>(tci1 & 0xffffu)};
     bgfx::setUniform(MeshTexgenModeUniform, texgen_mode);
 
-    const unsigned ttf0 = Sanitize_Tex_Transform_Flags(0);
-    const unsigned ttf1 = Sanitize_Tex_Transform_Flags(1);
+    const unsigned ttf0 = render_state != nullptr
+        ? render_state->TextureTransformFlags[0]
+        : Sanitize_Tex_Transform_Flags(0);
+    const unsigned ttf1 = render_state != nullptr
+        ? render_state->TextureTransformFlags[1]
+        : Sanitize_Tex_Transform_Flags(1);
     float tex_transform_flags[4] = {
         Resolve_Tex_Transform_Flags(ttf0),
         Resolve_Tex_Transform_Flags(ttf1),
@@ -2887,8 +3147,13 @@ void BgfxRenderer::Apply_Texgen_Uniforms()
 
     Matrix4 tex_transform0(true);
     Matrix4 tex_transform1(true);
-    if (ttf0 != D3DTTFF_DISABLE) DX8Wrapper::Get_Transform(D3DTS_TEXTURE0, tex_transform0);
-    if (ttf1 != D3DTTFF_DISABLE) DX8Wrapper::Get_Transform(D3DTS_TEXTURE1, tex_transform1);
+    if (render_state != nullptr) {
+        tex_transform0 = render_state->TextureTransforms[0];
+        tex_transform1 = render_state->TextureTransforms[1];
+    } else {
+        if (ttf0 != D3DTTFF_DISABLE) DX8Wrapper::Get_Transform(D3DTS_TEXTURE0, tex_transform0);
+        if (ttf1 != D3DTTFF_DISABLE) DX8Wrapper::Get_Transform(D3DTS_TEXTURE1, tex_transform1);
+    }
 
     const Matrix4 bgfx_tex_transform0 = tex_transform0.Transpose();
     const Matrix4 bgfx_tex_transform1 = tex_transform1.Transpose();
@@ -2940,9 +3205,12 @@ uint32_t Resolve_Sampler_Flags(TextureClass *texture, unsigned stage)
 
 enum class FillMode { Solid, Wireframe, Points };
 
-FillMode Resolve_Fill_Mode()
+FillMode Resolve_Fill_Mode(const WW3D::FixedFunctionStateDesc *render_state)
 {
-    switch (DX8Wrapper::Get_DX8_Render_State(D3DRS_FILLMODE)) {
+    const unsigned fill_mode = render_state != nullptr
+        ? render_state->FillMode
+        : DX8Wrapper::Get_DX8_Render_State(D3DRS_FILLMODE);
+    switch (fill_mode) {
     case D3DFILL_POINT:     return FillMode::Points;
     case D3DFILL_WIREFRAME: return FillMode::Wireframe;
     default:                return FillMode::Solid;
@@ -3076,29 +3344,44 @@ float Decode_Dword_As_Float(unsigned value)
     return decoded;
 }
 
-void Apply_Fog_Uniforms()
+void Apply_Fog_Uniforms(const WW3D::FixedFunctionStateDesc *render_state)
 {
-    bool fog_enabled = DX8Wrapper::Get_Fog_Enable();
-    bool range_fog = false;
-    if (fog_enabled) {
-        unsigned fog_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGTABLEMODE);
-        if (fog_state == D3DFOG_NONE) fog_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGVERTEXMODE);
-        if (fog_state == D3DFOG_NONE || fog_state > D3DFOG_LINEAR) fog_enabled = false;
-        range_fog = fog_enabled && DX8Wrapper::Get_DX8_Render_State(D3DRS_RANGEFOGENABLE) != FALSE;
+    bool fog_enabled = render_state != nullptr ? render_state->FogEnabled : DX8Wrapper::Get_Fog_Enable();
+    bool range_fog = render_state != nullptr ? render_state->RangeFog : false;
+    float fog_start = 0.0f;
+    float fog_end = 0.0f;
+    Vector3 fog_color_rgb(0.0f, 0.0f, 0.0f);
+    if (render_state != nullptr) {
+        fog_start = render_state->FogStart;
+        fog_end = render_state->FogEnd;
+        fog_color_rgb = render_state->FogColor;
+    } else {
+        if (fog_enabled) {
+            unsigned fog_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGTABLEMODE);
+            if (fog_state == D3DFOG_NONE) fog_state = DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGVERTEXMODE);
+            if (fog_state == D3DFOG_NONE || fog_state > D3DFOG_LINEAR) fog_enabled = false;
+            range_fog = fog_enabled && DX8Wrapper::Get_DX8_Render_State(D3DRS_RANGEFOGENABLE) != FALSE;
+        }
+        fog_start = Decode_Dword_As_Float(DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGSTART));
+        fog_end = Decode_Dword_As_Float(DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGEND));
+        const uint32_t fog_color_packed = DX8Wrapper::Get_Fog_Color();
+        fog_color_rgb.Set(
+            static_cast<float>((fog_color_packed >> 16) & 0xffu) / 255.0f,
+            static_cast<float>((fog_color_packed >> 8) & 0xffu) / 255.0f,
+            static_cast<float>(fog_color_packed & 0xffu) / 255.0f);
     }
 
     float fog_config[4] = {
         fog_enabled ? 1.0f : 0.0f,
-        Decode_Dword_As_Float(DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGSTART)),
-        Decode_Dword_As_Float(DX8Wrapper::Get_DX8_Render_State(D3DRS_FOGEND)),
+        fog_start,
+        fog_end,
         range_fog ? 1.0f : -1.0f};
     bgfx::setUniform(BgfxRenderer::Get_Fog_Config_Uniform(), fog_config);
 
-    uint32_t fog_color_packed = DX8Wrapper::Get_Fog_Color();
     float fog_color[4] = {
-        static_cast<float>((fog_color_packed >> 16) & 0xffu) / 255.0f,
-        static_cast<float>((fog_color_packed >> 8) & 0xffu) / 255.0f,
-        static_cast<float>(fog_color_packed & 0xffu) / 255.0f,
+        fog_color_rgb.X,
+        fog_color_rgb.Y,
+        fog_color_rgb.Z,
         0.0f};
     bgfx::setUniform(BgfxRenderer::Get_Fog_Color_Uniform(), fog_color);
 }
@@ -3114,6 +3397,7 @@ bool Submit_Classified_Draw_Internal(
     unsigned short min_vertex_index,
     unsigned short vertex_count,
     TextureClass *const *textures,
+    const ShaderClass &shader,
     const VertexMaterialClass *material,
     const MaterialClassification &classification,
     bool receive_shadows,
@@ -3121,7 +3405,9 @@ bool Submit_Classified_Draw_Internal(
     const Matrix4 &world,
     const Matrix4 &view,
     const Matrix4 &projection,
-    bool strip)
+    bool strip,
+    const WW3D::LightingSubmitDesc *lighting,
+    const WW3D::FixedFunctionStateDesc *render_state)
 {
     if (!BgfxRenderer::Is_Initted() || vertex_count == 0 || polygon_count == 0) {
         return false;
@@ -3143,7 +3429,7 @@ bool Submit_Classified_Draw_Internal(
         return false;
     }
 
-    const FillMode fill_mode = Resolve_Fill_Mode();
+    const FillMode fill_mode = Resolve_Fill_Mode(render_state);
     const uint32_t submitted_index_count = Resolve_Submitted_Index_Count(fill_mode, strip, polygon_count);
     const unsigned short source_index_count = strip
         ? static_cast<unsigned short>(polygon_count + 2)
@@ -3217,7 +3503,8 @@ bool Submit_Classified_Draw_Internal(
         }
     }
 
-    const bool has_fog = DX8Wrapper::Get_Fog_Enable() && classification.frag_config2[1] != 0.0f;
+    const bool fog_enabled = render_state != nullptr ? render_state->FogEnabled : DX8Wrapper::Get_Fog_Enable();
+    const bool has_fog = fog_enabled && classification.frag_config2[1] != 0.0f;
     const bool has_texgen = classification.program == MeshShaderProgram::MeshTexgen;
     const bool skinned = BgfxRenderer::Is_Skinned_Vertex_Format(vertex_buffer.Vertex_Format_Info().Get_Vertex_Format());
     const RenderVertexBufferClass *render_vertex_buffer = use_direct_vertex_buffer
@@ -3280,32 +3567,32 @@ bool Submit_Classified_Draw_Internal(
 
     float frag_config2_copy[4];
     std::memcpy(frag_config2_copy, classification.frag_config2, sizeof(frag_config2_copy));
-    if (!DX8Wrapper::Get_Fog_Enable()) {
+    if (!fog_enabled) {
         frag_config2_copy[1] = 0.0f;
     }
     bgfx::setUniform(BgfxRenderer::Get_Frag_Config2_Uniform(), frag_config2_copy);
 
-    Apply_Fog_Uniforms();
+    Apply_Fog_Uniforms(render_state);
 
     // Per-pixel lighting uniforms (from pre-computed classification + per-mesh scene state)
-    BgfxRenderer::Apply_Lighting_Uniforms(classification);
+    BgfxRenderer::Apply_Lighting_Uniforms(classification, lighting, render_state);
 
     // Bump env map matrix (dynamic, read from DX8Wrapper stage state)
-    BgfxRenderer::Apply_Bump_Env_Uniforms(classification);
+    BgfxRenderer::Apply_Bump_Env_Uniforms(classification, render_state);
 
     if (classification.program == MeshShaderProgram::MeshTexgen) {
-        BgfxRenderer::Apply_Texgen_Uniforms();
+        BgfxRenderer::Apply_Texgen_Uniforms(render_state);
     }
 
     ShadowMapManager::Bind_Shadow_Uniforms(receive_shadows);
 
-    const unsigned cull_mode = DX8Wrapper::Get_DX8_Render_State(D3DRS_CULLMODE);
-    RenderStateStruct rs;
-    DX8Wrapper::Get_Render_State(rs);
+    const unsigned cull_mode = render_state != nullptr
+        ? render_state->CullMode
+        : DX8Wrapper::Get_DX8_Render_State(D3DRS_CULLMODE);
     uint16_t view_id = BgfxRenderer::Get_View_Id(view, projection);
 
     BgfxRenderer::Apply_Render_State(
-        rs.shader,
+        shader,
         cull_mode != 0x12345678u ? cull_mode : D3DCULL_CW,
         Resolve_Primitive_State(fill_mode));
     bgfx::submit(view_id, BgfxRenderer::Get_Mesh_Program(classification.program, skinned));
@@ -3313,7 +3600,7 @@ bool Submit_Classified_Draw_Internal(
     // Shadow cast pass
     const bool alpha_test_enabled = classification.frag_config[2] >= 0.0f;
     const bool blend_blocks_shadow_cast =
-        rs.shader.Get_Dst_Blend_Func() != ShaderClass::DSTBLEND_ZERO && !alpha_test_enabled;
+        shader.Get_Dst_Blend_Func() != ShaderClass::DSTBLEND_ZERO && !alpha_test_enabled;
     if (cast_shadows && !blend_blocks_shadow_cast) {
         const uint32_t shadow_ib_count = fill_mode == FillMode::Points && strip ? source_index_count : submitted_index_count;
         ShadowMapManager::Submit_Shadow_Draws(
@@ -3370,6 +3657,11 @@ bool Submit_Current_Draw(
     const unsigned fvf = render_state.vertex_buffer->Vertex_Format_Info().Get_Vertex_Format();
     const bool has_normals = (fvf & VERTEX_FORMAT_FLAG_NORMAL) != 0u;
     MaterialClassification classification = BgfxRenderer::Classify_Material(render_state.shader, render_state.material, has_normals);
+    WW3D::FixedFunctionStateDesc fixed_function_state;
+    WW3D::Capture_Current_Fixed_Function_State(fixed_function_state, render_state.material);
+    WW3D::SubmitLightDesc captured_lights[WW3D::MAX_SUBMIT_LIGHTS];
+    WW3D::LightingSubmitDesc captured_lighting;
+    WW3D::Capture_Current_Lighting_Submission(captured_lighting, captured_lights, WW3D::MAX_SUBMIT_LIGHTS);
 
     return Submit_Classified_Draw_Internal(
         *render_state.vertex_buffer,
@@ -3380,12 +3672,15 @@ bool Submit_Current_Draw(
         start_index, polygon_count,
         min_vertex_index, vertex_count,
         textures,
+        render_state.shader,
         render_state.material,
         classification,
         resolved_receive_shadows,
         resolved_cast_shadows,
         render_state.world, render_state.view, projection,
-        strip);
+        strip,
+        &captured_lighting,
+        &fixed_function_state);
 }
 } // anonymous namespace
 
@@ -3444,6 +3739,7 @@ bool BgfxRenderer::Submit_Classified_Draw(
     unsigned short min_vertex_index,
     unsigned short vertex_count,
     TextureClass *const *textures,
+    const ShaderClass &shader,
     const VertexMaterialClass *material,
     const MaterialClassification &classification,
     bool receive_shadows,
@@ -3451,16 +3747,18 @@ bool BgfxRenderer::Submit_Classified_Draw(
     const Matrix4 &world,
     const Matrix4 &view,
     const Matrix4 &projection,
-    bool strip)
+    bool strip,
+    const WW3D::LightingSubmitDesc *lighting,
+    const WW3D::FixedFunctionStateDesc *render_state)
 {
     return Submit_Classified_Draw_Internal(
         vertex_buffer, vertex_buffer_offset,
         index_buffer, index_buffer_offset, index_base_offset,
         start_index, polygon_count,
         min_vertex_index, vertex_count,
-        textures, material, classification,
+        textures, shader, material, classification,
         receive_shadows, cast_shadows,
-        world, view, projection, strip);
+        world, view, projection, strip, lighting, render_state);
 }
 
 bool BgfxRenderer::Init_Render_Resources()
@@ -3515,13 +3813,13 @@ bool BgfxRenderer::Init_Render_Resources()
     if (!bgfx::isValid(MeshSceneAmbientUniform))
         MeshSceneAmbientUniform = bgfx::createUniform("u_meshSceneAmbient", bgfx::UniformType::Vec4);
     if (!bgfx::isValid(MeshLightPosTypeUniform))
-        MeshLightPosTypeUniform = bgfx::createUniform("u_meshLightPosType", bgfx::UniformType::Vec4, 4);
+        MeshLightPosTypeUniform = bgfx::createUniform("u_meshLightPosType", bgfx::UniformType::Vec4, MaxSubmitLights);
     if (!bgfx::isValid(MeshLightDirSpotUniform))
-        MeshLightDirSpotUniform = bgfx::createUniform("u_meshLightDirSpot", bgfx::UniformType::Vec4, 4);
+        MeshLightDirSpotUniform = bgfx::createUniform("u_meshLightDirSpot", bgfx::UniformType::Vec4, MaxSubmitLights);
     if (!bgfx::isValid(MeshLightDiffuseRangeUniform))
-        MeshLightDiffuseRangeUniform = bgfx::createUniform("u_meshLightDiffuseRange", bgfx::UniformType::Vec4, 4);
+        MeshLightDiffuseRangeUniform = bgfx::createUniform("u_meshLightDiffuseRange", bgfx::UniformType::Vec4, MaxSubmitLights);
     if (!bgfx::isValid(MeshLightAmbientAttenUniform))
-        MeshLightAmbientAttenUniform = bgfx::createUniform("u_meshLightAmbientAtten", bgfx::UniformType::Vec4, 4);
+        MeshLightAmbientAttenUniform = bgfx::createUniform("u_meshLightAmbientAtten", bgfx::UniformType::Vec4, MaxSubmitLights);
 
     // Bump env map uniforms
     if (!bgfx::isValid(MeshBumpEnvMatUniform))

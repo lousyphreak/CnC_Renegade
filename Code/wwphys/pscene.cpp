@@ -117,6 +117,7 @@
 #include "ww3d.h"
 #include "physresourcemgr.h"
 #include "phys3.h"
+#include <cfloat>
 
 static void Force_Link_Modules(void);
 
@@ -146,6 +147,74 @@ const int				DEFAULT_STATIC_LOD_BUDGET = 4000;
 
 namespace
 {
+bool Is_Light_Visible_To_Any_Object(
+	LightPhysClass &light,
+	RefPhysListClass *static_ws_list,
+	RefPhysListClass *static_list,
+	RefPhysListClass *dyn_list)
+{
+	bool found_object = false;
+	RefPhysListClass * lists[3] = { static_ws_list, static_list, dyn_list };
+	for (int list_index = 0; list_index < 3; ++list_index) {
+		if (lists[list_index] == NULL) {
+			continue;
+		}
+
+		RefPhysListIterator iterator(lists[list_index]);
+		for (iterator.First(); !iterator.Is_Done(); iterator.Next()) {
+			PhysClass *obj = iterator.Peek_Obj();
+			if (obj == NULL || obj->Peek_Model() == NULL || obj->Is_Rendering_Disabled()) {
+				continue;
+			}
+
+			found_object = true;
+			if (light.Is_Vis_Object_Visible(obj->Get_Vis_Object_ID())) {
+				return true;
+			}
+		}
+	}
+
+	return !found_object;
+}
+
+WW3D::SubmitLightTypeEnum Resolve_Submit_Light_Type(LightClass::LightType type)
+{
+	switch (type) {
+		case LightClass::DIRECTIONAL: return WW3D::SUBMIT_LIGHT_TYPE_DIRECTIONAL;
+		case LightClass::POINT:       return WW3D::SUBMIT_LIGHT_TYPE_POINT;
+		case LightClass::SPOT:        return WW3D::SUBMIT_LIGHT_TYPE_SPOT;
+		default:                      return WW3D::SUBMIT_LIGHT_TYPE_NONE;
+	}
+}
+
+WW3D::SubmitLightDesc Build_Submit_Light(const LightClass &light)
+{
+	WW3D::SubmitLightDesc submit_light;
+	submit_light.Type = Resolve_Submit_Light_Type(light.Get_Type());
+	submit_light.Position = light.Get_Position();
+	submit_light.Direction = light.Get_Type() == LightClass::POINT
+		? Vector3(0, 0, 0)
+		: -light.Get_Transform().Get_Z_Vector();
+
+	Vector3 color(0, 0, 0);
+	light.Get_Diffuse(&color);
+	submit_light.Diffuse = color * light.Get_Intensity();
+	light.Get_Ambient(&color);
+	submit_light.Ambient = color * light.Get_Intensity();
+
+	double atten_start = 0.0;
+	double atten_end = 0.0;
+	light.Get_Far_Attenuation_Range(atten_start, atten_end);
+	submit_light.Range = light.Get_Type() == LightClass::DIRECTIONAL ? FLT_MAX : static_cast<float>(atten_end);
+	submit_light.AttenuationStart =
+		(light.Get_Type() != LightClass::DIRECTIONAL && light.Get_Flag(LightClass::FAR_ATTENUATION))
+			? static_cast<float>(atten_start)
+			: submit_light.Range;
+	submit_light.SpotInnerCos =
+		light.Get_Type() == LightClass::SPOT ? light.Get_Spot_Angle_Cos() : -2.0f;
+	return submit_light;
+}
+
 bool Should_Collect_Shadow_Caster(PhysClass *obj)
 {
 	if (obj == NULL || obj->Peek_Model() == NULL || obj->Is_Rendering_Disabled()) {
@@ -1348,10 +1417,18 @@ void PhysicsSceneClass::Customized_Render(RenderInfoClass & rinfo)
 {
 	WWPROFILE("PhysicsSceneClass::Render");
 
+	Prepare_Frame_Lighting(rinfo.Camera,&VisibleWSMeshList,&VisibleStaticObjectList,&VisibleDynamicObjectList);
+	LightEnvironmentClass * saved_light_environment = rinfo.light_environment;
+	const WW3D::LightingSubmitDesc * saved_lighting_submission = rinfo.lighting_submission;
+	rinfo.light_environment = NULL;
+	rinfo.lighting_submission = &FrameLightingSubmission;
+
 	/*
 	** Render the normal models
 	*/
 	Render_Objects(rinfo,&VisibleWSMeshList,&VisibleStaticObjectList,&VisibleDynamicObjectList);
+	rinfo.light_environment = saved_light_environment;
+	rinfo.lighting_submission = saved_lighting_submission;
 
 	/*
 	** Backface Debug rendering
@@ -1476,6 +1553,58 @@ void PhysicsSceneClass::Customized_Render(RenderInfoClass & rinfo)
 	}
 }
 
+void PhysicsSceneClass::Prepare_Frame_Lighting(
+	const CameraClass & camera,
+	RefPhysListClass * static_ws_list,
+	RefPhysListClass * static_list,
+	RefPhysListClass * dyn_list)
+{
+	const FrustumClass & frustum = camera.Get_Frustum();
+	AABoxClass lighting_bounds;
+	lighting_bounds.Init_Min_Max(frustum.Get_Bound_Min(),frustum.Get_Bound_Max());
+
+	FrameLightingArray.Delete_All(false);
+	FrameLightingSubmission.SceneAmbient = Get_Ambient_Light();
+	FrameLightingSubmission.Lights = NULL;
+	FrameLightingSubmission.LightCount = 0;
+	FrameLightingEnvironment.Reset(lighting_bounds.Center,Get_Ambient_Light());
+
+	if (Is_Sun_Light_Enabled() && SunLight != NULL) {
+		FrameLightingArray.Add(Build_Submit_Light(*SunLight));
+		FrameLightingEnvironment.Add_Light(*SunLight);
+	}
+
+	NonRefPhysListClass light_list;
+	Collect_Lights(lighting_bounds,true,false,&light_list);
+	NonRefPhysListIterator light_iterator(&light_list);
+	for (light_iterator.First(); !light_iterator.Is_Done(); light_iterator.Next()) {
+		LightPhysClass * light = light_iterator.Peek_Obj() != NULL ? light_iterator.Peek_Obj()->As_LightPhysClass() : NULL;
+		if (light == NULL || light->Is_Disabled() || !Is_Light_Visible_To_Any_Object(*light,static_ws_list,static_list,dyn_list)) {
+			continue;
+		}
+
+		LightClass * light_obj = static_cast<LightClass *>(light->Peek_Model());
+		if (light_obj == NULL) {
+			continue;
+		}
+
+		FrameLightingArray.Add(Build_Submit_Light(*light_obj));
+		FrameLightingEnvironment.Add_Light(*light_obj);
+	}
+
+	FrameLightingEnvironment.Pre_Render_Update(camera.Get_Transform());
+	if (FrameLightingArray.Count() > 0) {
+		FrameLightingSubmission.Lights = &FrameLightingArray[0];
+		FrameLightingSubmission.LightCount = static_cast<std::uint32_t>(FrameLightingArray.Count());
+	}
+
+	PrelitLightingSubmission.SceneAmbient = Vector3(1.0f,1.0f,1.0f);
+	PrelitLightingSubmission.Lights = NULL;
+	PrelitLightingSubmission.LightCount = 0;
+	PrelitLightingEnvironment.Reset(lighting_bounds.Center,Vector3(1.0f,1.0f,1.0f));
+	PrelitLightingEnvironment.Pre_Render_Update(camera.Get_Transform());
+}
+
 
 /***********************************************************************************************
  * PhysicsSceneClass::Render_Objects -- Render the visible objects                             *
@@ -1498,6 +1627,16 @@ void PhysicsSceneClass::Render_Objects(
 	WWPROFILE("Render_Meshes");
 
 	RefPhysListIterator it(static_ws_list);
+
+	for (int entry_index = 0; entry_index < RenderEffectPhaseQueue.Count(); ++entry_index) {
+		RenderEffectPhaseEntry & entry = RenderEffectPhaseQueue[entry_index];
+		for (int pass_index = 0; pass_index < entry.PassCount; ++pass_index) {
+			REF_PTR_RELEASE(entry.Passes[pass_index]);
+		}
+		entry.PassCount = 0;
+		REF_PTR_RELEASE(entry.Object);
+	}
+	RenderEffectPhaseQueue.Delete_All();
 
 	
 	if (WW3D::Get_Mesh_Draw_Mode()!=WW3D::MESH_DRAW_MODE_NONE) {
@@ -1555,6 +1694,12 @@ void PhysicsSceneClass::Render_Objects(
 			Render_Object(rinfo,it.Peek_Obj());
 		}
 	}
+
+	if (RenderEffectPhaseQueue.Count() > 0) {
+		WW3D::Flush(rinfo);
+		Render_Object_Effect_Phases(rinfo);
+		WW3D::Flush(rinfo);
+	}
 }
 
 
@@ -1578,56 +1723,136 @@ void PhysicsSceneClass::Render_Object(RenderInfoClass & context,PhysClass * obj)
 		return;
 	}
 
-	/*
-	** Set up the lighting environment for this object
-	*/
-	bool do_lighting = (	(obj->Is_Pre_Lit() == false) && 
-								(obj->Peek_Model()->Is_Not_Hidden_At_All())	);
-	
-	if (do_lighting) {
+	RenderEffectCollection effect_context(context.Camera);
+	obj->Collect_Render_Effects(effect_context);
+	const bool render_base_pass = effect_context.Should_Render_Base_Pass();
 
-		WWPROFILE("setup lights");
-
-		LightEnvironmentClass & light_env = *(obj->Get_Static_Lighting_Environment());
-		light_env.Pre_Render_Update(context.Camera.Get_Transform());
-
-		/*
-		** If lighting debugging is enabled, display a vector to each light source
-		*/
-#if WWDEBUG
-		Vector3 pos = obj->Peek_Model()->Get_Bounding_Box().Center;
-		if (LightingDebugDisplayEnabled) {
-			if ((pos - context.Camera.Get_Position()).Length2() < 30.0f * 30.0f) {
-				for (int i=0; i<light_env.Get_Light_Count(); i++) {
-					DEBUG_RENDER_VECTOR(pos,light_env.Get_Light_Direction(i),light_env.Get_Light_Diffuse(i));
-				}
+	LightEnvironmentClass * saved_light_environment = context.light_environment;
+	const WW3D::LightingSubmitDesc * saved_lighting_submission = context.lighting_submission;
+	LightEnvironmentClass * light_env = NULL;
+	if (render_base_pass) {
+		if (context.lighting_submission != NULL) {
+			WWPROFILE("setup lights");
+			if (obj->Is_Pre_Lit()) {
+				light_env = &PrelitLightingEnvironment;
+				context.lighting_submission = &PrelitLightingSubmission;
+			} else {
+				light_env = &FrameLightingEnvironment;
+				context.lighting_submission = &FrameLightingSubmission;
+			}
+		} else {
+			bool do_lighting = (	(obj->Is_Pre_Lit() == false) && 
+										(obj->Peek_Model()->Is_Not_Hidden_At_All())	);
+			if (do_lighting) {
+				WWPROFILE("setup lights");
+				light_env = obj->Get_Static_Lighting_Environment();
+				light_env->Pre_Render_Update(context.Camera.Get_Transform());
+				context.light_environment = light_env;
+			} else {
+				static LightEnvironmentClass _emptylightenvironment;
+				_emptylightenvironment.Reset(Vector3(0,0,0),Vector3(1,1,1));
+				context.light_environment = &_emptylightenvironment;
+				light_env = &_emptylightenvironment;
 			}
 		}
-#endif
-		context.light_environment = &light_env;
-	
-	} else {
-
-		static LightEnvironmentClass _emptylightenvironment;
-		_emptylightenvironment.Reset(Vector3(0,0,0),Vector3(1,1,1));
-		context.light_environment = &_emptylightenvironment;
-
 	}
+
+	/*
+	** If lighting debugging is enabled, display a vector to each light source
+	*/
+#if WWDEBUG
+	Vector3 pos = obj->Peek_Model()->Get_Bounding_Box().Center;
+	if (LightingDebugDisplayEnabled && light_env != NULL) {
+		if ((pos - context.Camera.Get_Position()).Length2() < 30.0f * 30.0f) {
+			for (int i=0; i<light_env->Get_Light_Count(); i++) {
+				DEBUG_RENDER_VECTOR(pos,light_env->Get_Light_Direction(i),light_env->Get_Light_Diffuse(i));
+			}
+		}
+	}
+#endif
 
 	/*
 	** Render the object
 	*/
-	{
+	if (render_base_pass) {
 		WWPROFILE("render");
 		obj->Render(context);
 	}
 
+	if (effect_context.Get_Pass_Count() > 0) {
+		RenderEffectPhaseEntry entry = {};
+		entry.Object = obj;
+		entry.Object->Add_Ref();
+		entry.PassCount = static_cast<int>(effect_context.Get_Pass_Count());
+		for (int pass_index = 0; pass_index < entry.PassCount; ++pass_index) {
+			entry.Passes[pass_index] = effect_context.Peek_Pass(pass_index);
+			if (entry.Passes[pass_index] != NULL) {
+				entry.Passes[pass_index]->Add_Ref();
+			}
+		}
+		RenderEffectPhaseQueue.Add(entry);
+	}
+
+	obj->Finalize_Render_Effects();
+
 	/*
 	** Remove the lighting environment
 	*/
-	if (do_lighting) {
-		context.light_environment = NULL;
+	context.light_environment = saved_light_environment;
+	context.lighting_submission = saved_lighting_submission;
+}
+
+void PhysicsSceneClass::Render_Object_Effect_Phases(RenderInfoClass & context)
+{
+	for (int entry_index = 0; entry_index < RenderEffectPhaseQueue.Count(); ++entry_index) {
+		RenderEffectPhaseEntry & entry = RenderEffectPhaseQueue[entry_index];
+		PhysClass * obj = entry.Object;
+		if (obj == NULL || obj->Peek_Model() == NULL || obj->Is_Rendering_Disabled()) {
+			continue;
+		}
+
+		LightEnvironmentClass * saved_light_environment = context.light_environment;
+		const WW3D::LightingSubmitDesc * saved_lighting_submission = context.lighting_submission;
+		if (context.lighting_submission != NULL) {
+			WWPROFILE("setup effect lights");
+			if (obj->Is_Pre_Lit()) {
+				context.lighting_submission = &PrelitLightingSubmission;
+			} else {
+				context.lighting_submission = &FrameLightingSubmission;
+			}
+		} else {
+			bool do_lighting = (	(obj->Is_Pre_Lit() == false) &&
+										(obj->Peek_Model()->Is_Not_Hidden_At_All())	);
+			if (do_lighting) {
+				WWPROFILE("setup effect lights");
+				LightEnvironmentClass * light_env = obj->Get_Static_Lighting_Environment();
+				light_env->Pre_Render_Update(context.Camera.Get_Transform());
+				context.light_environment = light_env;
+			} else {
+				static LightEnvironmentClass _emptylightenvironment;
+				_emptylightenvironment.Reset(Vector3(0,0,0),Vector3(1,1,1));
+				context.light_environment = &_emptylightenvironment;
+			}
+		}
+
+		{
+			WWPROFILE("render effect phase");
+			obj->Render_Material_Passes(context,entry.Passes,entry.PassCount);
+		}
+
+		context.light_environment = saved_light_environment;
+		context.lighting_submission = saved_lighting_submission;
 	}
+
+	for (int entry_index = 0; entry_index < RenderEffectPhaseQueue.Count(); ++entry_index) {
+		RenderEffectPhaseEntry & entry = RenderEffectPhaseQueue[entry_index];
+		for (int pass_index = 0; pass_index < entry.PassCount; ++pass_index) {
+			REF_PTR_RELEASE(entry.Passes[pass_index]);
+		}
+		entry.PassCount = 0;
+		REF_PTR_RELEASE(entry.Object);
+	}
+	RenderEffectPhaseQueue.Delete_All();
 }
 
 

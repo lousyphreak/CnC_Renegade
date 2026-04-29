@@ -74,6 +74,7 @@
 #include "collect.h"
 #include "chunkio.h"
 #include "camera.h"
+#include "rinfo.h"
 #include "wwdebug.h"
 #include "snappts.h"
 #include "assetmgr.h"
@@ -379,6 +380,36 @@ void CollectionClass::Render(RenderInfoClass & rinfo)
 	}
 }
 
+void CollectionClass::Render_Material_Passes(RenderInfoClass & rinfo,MaterialPassClass * const * passes,int pass_count)
+{
+	if (Is_Not_Hidden_At_All() == false) {
+		return;
+	}
+
+	if (Are_Sub_Object_Transforms_Dirty()) {
+		Update_Sub_Object_Transforms();
+	}
+
+	for (int i=0; i<SubObjects.Count(); i++) {
+		SubObjects[i]->Render_Material_Passes(rinfo,passes,pass_count);
+	}
+}
+
+void CollectionClass::Render_Visibility(VisRenderInfoClass & rinfo)
+{
+	if (Is_Not_Hidden_At_All() == false) {
+		return;
+	}
+
+	if (Are_Sub_Object_Transforms_Dirty()) {
+		Update_Sub_Object_Transforms();
+	}
+
+	for (int i=0; i<SubObjects.Count(); i++) {
+		SubObjects[i]->Render_Visibility(rinfo);
+	}
+}
+
 
 /***********************************************************************************************
  * CollectionClass::Special_Render -- passes the special render call to all sub-objects        *
@@ -395,6 +426,13 @@ void CollectionClass::Render(RenderInfoClass & rinfo)
 void CollectionClass::Special_Render(SpecialRenderInfoClass & rinfo)
 {
 	if (Is_Not_Hidden_At_All() == false) {
+		return;
+	}
+
+	if (rinfo.RenderType == SpecialRenderInfoClass::RENDER_VIS) {
+		VisRenderInfoClass vis_rinfo(rinfo.Camera);
+		vis_rinfo.VisRasterizer = rinfo.VisRasterizer;
+		Render_Visibility(vis_rinfo);
 		return;
 	}
 
@@ -1099,6 +1137,4 @@ PrototypeClass * CollectionLoaderClass::Load_W3D(ChunkLoadClass & cload)
 	
 	}
 }
-
-
 

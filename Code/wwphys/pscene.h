@@ -841,23 +841,11 @@ public:
 	enum ShadowEnum
 	{
 		SHADOW_MODE_NONE = 0,			// no shadows at all
-		SHADOW_MODE_BLOBS,				// projected blob shadows
-		SHADOW_MODE_BLOBS_PLUS,			// projected blobs with main character having a rendered shadow
-		SHADOW_MODE_HARDWARE,			// use render-to-texture hardware
-		SHADOW_MODE_COUNT,
+		SHADOW_MODE_HARDWARE = 1,		// use renderer-owned shadow maps
 	};
 
 	void							Set_Shadow_Mode(ShadowEnum shadow_mode);
 	ShadowEnum					Get_Shadow_Mode(void);
-	void							Set_Shadow_Attenuation(float znear,float zfar);
-	void							Get_Shadow_Attenuation(float * set_znear,float * set_zfar);
-	void							Set_Shadow_Normal_Intensity(float normal_intensity);
-	float							Get_Shadow_Normal_Intensity(void);
-
-	void							Set_Shadow_Resolution(uint32_t res);
-	uint32_t				Get_Shadow_Resolution(void);
-	void							Set_Max_Simultaneous_Shadows(uint32_t count);
-	uint32_t				Get_Max_Simultaneous_Shadows(void);
 
 	CameraClass *				Get_Shadow_Camera(void);
 	ShadowRenderInfoClass *Get_Shadow_Render_Context(int width,int height);
@@ -1126,16 +1114,10 @@ public:
 	** Shadow system variables
 	*/
 	ShadowEnum					ShadowMode;						// current shadow mode
-	float							ShadowAttenStart;				// distance to start of shadow attenuation							
-	float							ShadowAttenEnd;				// distance to end of shadow attenuation
-	float							ShadowNormalIntensity;		// "normal" non attenuated shadow intensity
-	TextureClass *				ShadowBlobTexture;			// texture to use for fake "blob" shadows
 
 	ShadowRenderInfoClass *ShadowRenderContext;			// render context for shadows																	
 	CameraClass *				ShadowCamera;					// camera for rendering shadow textures
 	MaterialPassClass *		ShadowMaterialPass;			// material pass for shadows
-	int							ShadowResWidth;
-	int							ShadowResHeight;
 
 	/*
 	** Decal System

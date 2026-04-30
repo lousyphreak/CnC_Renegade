@@ -950,10 +950,6 @@ bool Game_Init(void)
 
 	if (ConsoleBox.Is_Exclusive()) {
 		WW3D::Enable_Decals(false);
-		PhysicsSceneClass * scene = PhysicsSceneClass::Get_Instance();
-		if (scene != NULL) {
-			scene->Set_Max_Simultaneous_Shadows(0);
-		}
 		DazzleRenderObjClass::Enable_Dazzle_Rendering(false);
 	} else {
 		if ( WW3D::Registry_Load_Render_Device( APPLICATION_SUB_KEY_NAME_RENDER, true ) != WW3D_ERROR_OK ) {

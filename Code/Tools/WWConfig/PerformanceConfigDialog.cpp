@@ -84,7 +84,7 @@ PERFORMANCE_SETTING _PerformanceLevels[MAX_PERFORMANCE_LEVELS][MAX_EXPERT_OPTION
 	},
 
 	{
-		{IDC_CHAR_SHADOWS_SLIDER, 2},
+		{IDC_CHAR_SHADOWS_SLIDER, 1},
 		{IDC_TEXTURE_DETAIL_SLIDER, 2},
 		{IDC_PARTICLE_DETAIL_SLIDER, 1},
 		{IDC_SURFACE_DETAIL_SLIDER, 1},
@@ -96,7 +96,7 @@ PERFORMANCE_SETTING _PerformanceLevels[MAX_PERFORMANCE_LEVELS][MAX_EXPERT_OPTION
 	//	High detail
 	//
 	{
-		{IDC_CHAR_SHADOWS_SLIDER, 3},
+		{IDC_CHAR_SHADOWS_SLIDER, 1},
 		{IDC_TEXTURE_DETAIL_SLIDER, 2},
 		{IDC_PARTICLE_DETAIL_SLIDER, 2},
 		{IDC_SURFACE_DETAIL_SLIDER, 2},
@@ -351,7 +351,7 @@ PerformanceConfigDialogClass::Setup_Controls (void)
 	//
 	//	Configure the individual detail-setting sliders
 	//
-	m_CharShadowsSlider.SetRange (0, 3);
+	m_CharShadowsSlider.SetRange (0, 1);
 	m_GeometrySlider.SetRange (0, 2);
 	m_TextureDetailSlider.SetRange (0, 2);
 	m_SurfaceEffectsSlider.SetRange (0, 2);
@@ -391,7 +391,7 @@ PerformanceConfigDialogClass::Load_Values (void)
 		//
 		//	Set the slider's positions to reflect the loaded values
 		//
-		m_CharShadowsSlider.SetPos (min (shadow_mode, 3));
+		m_CharShadowsSlider.SetPos ((shadow_mode == PhysicsSceneClass::SHADOW_MODE_NONE) ? 0 : 1);
 		m_TextureDetailSlider.SetPos (max (2 - texture_red, 0));		
 		m_SurfaceEffectsSlider.SetPos (surface_effect);
 		m_ParticleSlider.SetPos (particle_detail);
@@ -615,8 +615,7 @@ PerformanceConfigDialogClass::Apply_Changes (void)
 		//	Get the current settings from the dialog
 		//
 		int geometry_detail	= 	m_GeometrySlider.GetPos ();
-		int shadow_mode		= 	m_CharShadowsSlider.GetPos ();
-		shadow_mode = (shadow_mode == PhysicsSceneClass::SHADOW_MODE_NONE) ? PhysicsSceneClass::SHADOW_MODE_NONE : PhysicsSceneClass::SHADOW_MODE_HARDWARE;
+		int shadow_mode		= 	(m_CharShadowsSlider.GetPos () == 0) ? PhysicsSceneClass::SHADOW_MODE_NONE : PhysicsSceneClass::SHADOW_MODE_HARDWARE;
 		int texture_red		= 	m_TextureDetailSlider.GetPos ();
 		int surface_effect	= 	m_SurfaceEffectsSlider.GetPos ();
 		int particle_detail	= 	m_ParticleSlider.GetPos ();

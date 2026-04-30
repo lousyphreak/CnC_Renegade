@@ -89,7 +89,7 @@ PERFORMANCE_SETTING _PerformanceLevels[MAX_PERFORMANCE_LEVELS][MAX_EXPERT_OPTION
 	},
 
 	{
-		{IDC_CHAR_SHADOWS_SLIDER, 2},
+		{IDC_CHAR_SHADOWS_SLIDER, 1},
 		{IDC_TEXTURE_DETAIL_SLIDER, 2},
 		{IDC_PARTICLE_DETAIL_SLIDER, 1},
 		{IDC_SURFACE_DETAIL_SLIDER, 1},
@@ -100,7 +100,7 @@ PERFORMANCE_SETTING _PerformanceLevels[MAX_PERFORMANCE_LEVELS][MAX_EXPERT_OPTION
 	//	High detail
 	//
 	{
-		{IDC_CHAR_SHADOWS_SLIDER, 3},
+		{IDC_CHAR_SHADOWS_SLIDER, 1},
 		{IDC_TEXTURE_DETAIL_SLIDER, 2},
 		{IDC_PARTICLE_DETAIL_SLIDER, 2},
 		{IDC_SURFACE_DETAIL_SLIDER, 2},
@@ -243,19 +243,12 @@ DlgConfigPerformanceTabClass::Setup_Controls (void)
 	//	Configure the individual detail-setting sliders
 	//
 	((SliderCtrlClass *)Get_Dlg_Item (IDC_GEOMETRY_DETAIL_SLIDER))->Set_Range (0, 2);
-	((SliderCtrlClass *)Get_Dlg_Item (IDC_CHAR_SHADOWS_SLIDER))->Set_Range (0, 3);
+	((SliderCtrlClass *)Get_Dlg_Item (IDC_CHAR_SHADOWS_SLIDER))->Set_Range (0, 1);
 	((SliderCtrlClass *)Get_Dlg_Item (IDC_TEXTURE_DETAIL_SLIDER))->Set_Range (0, 2);
 	((SliderCtrlClass *)Get_Dlg_Item (IDC_SURFACE_DETAIL_SLIDER))->Set_Range (0, 2);
 	((SliderCtrlClass *)Get_Dlg_Item (IDC_PARTICLE_DETAIL_SLIDER))->Set_Range (0, 2);
 
-	const WCHAR *PRELIT_MODE_NAMES[] =
-	{
-		TRANSLATE (IDS_MENU_VERTEX),
-		TRANSLATE (IDS_MENU_MP_LIGHTMAPS),
-		TRANSLATE (IDS_MENU_MT_LIGHTMAPS)
-	};
-	
-	Set_Dlg_Item_Text (IDC_LIGHTING_MODE, PRELIT_MODE_NAMES [WW3D::Get_Prelit_Mode()]);
+	Set_Dlg_Item_Text (IDC_LIGHTING_MODE, TRANSLATE (IDS_MENU_MT_LIGHTMAPS));
 	Enable_Dlg_Item (IDC_LIGHTING_MODE,	false);
 
 	const WCHAR *TEXTURE_FILTER_NAMES[] =
@@ -323,7 +316,7 @@ DlgConfigPerformanceTabClass::Load_Values (void)
 		//
 		//	Set the slider's positions to reflect the loaded values
 		//
-		char_shadows_slider->Set_Pos (min (shadow_mode, 3));
+		char_shadows_slider->Set_Pos ((shadow_mode == PhysicsSceneClass::SHADOW_MODE_NONE) ? 0 : 1);
 		texture_slider->Set_Pos (max (2 - texture_red, 0));
 		surface_effect_slider->Set_Pos (surface_effect);
 		particle_slider->Set_Pos (particle_detail);
@@ -571,8 +564,7 @@ DlgConfigPerformanceTabClass::On_Apply (void)
 		//	Get the current settings from the dialog
 		//
 		int geometry_detail	= geometry_slider->Get_Pos ();
-		int shadow_mode		= char_shadows_slider->Get_Pos ();
-		shadow_mode = (shadow_mode == PhysicsSceneClass::SHADOW_MODE_NONE) ? PhysicsSceneClass::SHADOW_MODE_NONE : PhysicsSceneClass::SHADOW_MODE_HARDWARE;
+		int shadow_mode		= (char_shadows_slider->Get_Pos () == 0) ? PhysicsSceneClass::SHADOW_MODE_NONE : PhysicsSceneClass::SHADOW_MODE_HARDWARE;
 		int texture_red		= texture_slider->Get_Pos ();
 		int surface_effect	= surface_effect_slider->Get_Pos ();
 		int particle_detail	= particle_slider->Get_Pos ();

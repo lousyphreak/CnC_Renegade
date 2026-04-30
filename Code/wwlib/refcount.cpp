@@ -42,11 +42,21 @@
 #include "refcount.h"
 
 #include <SDL3/SDL_assert.h>
+#include <mutex>
 
 
 #ifndef NDEBUG
 
 // #define PARANOID_REFCOUNTS
+
+namespace
+{
+	std::recursive_mutex & RefCount_Debug_Mutex()
+	{
+		static std::recursive_mutex mutex;
+		return mutex;
+	}
+}
 
 /*
 ** Static variables for the reference counting system
@@ -70,6 +80,7 @@ RefCountListClass			RefCountClass::ActiveRefList;
  *=============================================================================================*/
 RefCountClass *	RefCountClass::Add_Active_Ref(RefCountClass *obj) 
 { 
+	std::lock_guard<std::recursive_mutex> lock(RefCount_Debug_Mutex());
 	ActiveRefList.Add_Head(&(obj->ActiveRefNode)); 
 	obj->ActiveRefInfo.File = NULL;	// default to no debug information added.
 	obj->ActiveRefInfo.Line = 0;
@@ -90,6 +101,7 @@ RefCountClass *	RefCountClass::Add_Active_Ref(RefCountClass *obj)
  *=============================================================================================*/
 RefCountClass *	RefCountClass::Set_Ref_Owner(RefCountClass *obj,const char * file,int line) 
 { 
+	std::lock_guard<std::recursive_mutex> lock(RefCount_Debug_Mutex());
 //	static RefCountClass *hunt = (RefCountClass *)0x06558890;
 	static RefCountClass *hunt = (RefCountClass *)0x0;
 	if (obj == hunt) {
@@ -115,6 +127,7 @@ RefCountClass *	RefCountClass::Set_Ref_Owner(RefCountClass *obj,const char * fil
  *=============================================================================================*/
 void RefCountClass::Remove_Active_Ref(RefCountClass * obj) 
 { 
+	std::lock_guard<std::recursive_mutex> lock(RefCount_Debug_Mutex());
 #ifdef PARANOID_REFCOUNTS
 	assert(Validate_Active_Ref(obj));
 #endif
@@ -135,6 +148,7 @@ void RefCountClass::Remove_Active_Ref(RefCountClass * obj)
  *=============================================================================================*/
 bool RefCountClass::Validate_Active_Ref(RefCountClass * obj)
 {
+	std::lock_guard<std::recursive_mutex> lock(RefCount_Debug_Mutex());
 	RefCountNodeClass *node = ActiveRefList.First_Valid();
 	while (node) {
 		if (node->Get() == obj) return true;
@@ -157,6 +171,7 @@ bool RefCountClass::Validate_Active_Ref(RefCountClass * obj)
  *=============================================================================================*/
 void	RefCountClass::Inc_Total_Refs(RefCountClass * obj)
 {
+	std::lock_guard<std::recursive_mutex> lock(RefCount_Debug_Mutex());
 #ifdef PARANOID_REFCOUNTS
 	assert(Validate_Active_Ref(obj));
 #endif
@@ -195,6 +210,7 @@ void RefCountClass::Add_Ref(void)
  *=============================================================================================*/
 void	RefCountClass::Dec_Total_Refs(RefCountClass * obj)
 {
+	std::lock_guard<std::recursive_mutex> lock(RefCount_Debug_Mutex());
 #ifdef PARANOID_REFCOUNTS
 	assert(Validate_Active_Ref(obj));
 #endif
@@ -209,4 +225,3 @@ void	RefCountClass::Dec_Total_Refs(RefCountClass * obj)
 
 
 #endif
-

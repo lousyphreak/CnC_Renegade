@@ -154,8 +154,9 @@ The same pattern exists in lighting:
 This audit does **not** treat the following as architectural constraints:
 
 1. `Tools/LevelEdit/*` behavior or data flow
-2. `Tools/max2w3d/*` exporter compatibility
-3. code-level compatibility wrappers for old projector-era APIs, UI toggles, or helper paths
+2. `Tools/W3DView/*` behavior or data flow
+3. `Tools/max2w3d/*` exporter compatibility
+4. code-level compatibility wrappers for old projector-era APIs, UI toggles, or helper paths
 
 If editor/exporter/runtime wrappers need follow-up later, they should adapt to the new runtime renderer rather than shaping it.
 
@@ -1228,17 +1229,22 @@ For planning purposes, the minimum complete refactor surface is:
    - `ww3d2/shaders/vs_mesh.sc`
    - `ww3d2/shaders/shadow_common.sh`
 3. **Renderer-state and material simplification core**
+   - `ww3d2/ww3d.h`
+   - `ww3d2/ww3d.cpp`
    - `ww3d2/dx8wrapper*`
    - `ww3d2/shader*`
    - `ww3d2/vertmaterial*`
    - `ww3d2/matpass*`
    - `ww3d2/mapper*`
    - `ww3d2/matrixmapper*`
+   - `ww3d2/rendobj.h`
+   - `ww3d2/rinfo*`
    - `ww3d2/bgfxdynamicbuffer.cpp`
    - `ww3d2/scene.cpp`
    - `ww3d2/sortingrenderer*`
 4. **Static mesh batch path**
    - `ww3d2/mesh.cpp`
+   - `ww3d2/dx8renderer.h`
    - `ww3d2/dx8renderer.cpp`
    - `ww3d2/bgfxrenderer.cpp`
    - `ww3d2/rinfo.h`
@@ -1258,6 +1264,8 @@ For planning purposes, the minimum complete refactor surface is:
    - `wwphys/physdecalsys.h`
    - shadow-map integration points already living in `ww3d2`
 9. **Runtime settings cleanup**
+   - `wwphys/pscene.h`
+   - `wwphys/pscene_projectors.cpp`
    - `Commando/systemsettings.cpp`
    - `Commando/dlgconfigperformancetab.cpp`
    - `Tools/WWConfig/PerformanceConfigDialog.cpp`
@@ -1266,6 +1274,8 @@ For planning purposes, the minimum complete refactor surface is:
    - `ww3d2/meshmdlio.cpp`
    - `ww3d2/meshmatdesc.h`
    - `ww3d2/w3d_file.h`
+
+`Tools/WWConfig/*` is included here only as a runtime-settings migration surface. `Tools/LevelEdit/*` and `Tools/W3DView/*` are intentionally excluded from the minimum refactor surface.
 
 ## Areas that need special care
 

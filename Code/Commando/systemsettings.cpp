@@ -516,12 +516,12 @@ public:
 class	SystemSettingEntryShadowMode : public SystemSettingEntryEnum {
 public:
 	const char * Get_Name( void )	{ return "Shadow_Mode"; }
-	const char * Get_Help( void )	{ return "SHADOW_MODE <mode> - 0=off, 1-3=shadow maps (legacy projected-shadow values are remapped)."; }
+	const char * Get_Help( void )	{ return "SHADOW_MODE <mode> - 0=off, 1=shadow maps."; }
 	virtual	int Get_Enum( void ) { if (COMBAT_SCENE) return COMBAT_SCENE->Get_Shadow_Mode(); return (Selection == PhysicsSceneClass::SHADOW_MODE_NONE) ? PhysicsSceneClass::SHADOW_MODE_NONE : PhysicsSceneClass::SHADOW_MODE_HARDWARE; }
 	virtual	void Set_Enum( int selection ) { if (COMBAT_SCENE) COMBAT_SCENE->Set_Shadow_Mode((selection == PhysicsSceneClass::SHADOW_MODE_NONE) ? PhysicsSceneClass::SHADOW_MODE_NONE : PhysicsSceneClass::SHADOW_MODE_HARDWARE); }
-	virtual	int Get_Enum_Count( void ) { return 4; }
+	virtual	int Get_Enum_Count( void ) { return 2; }
 	virtual	const char * Get_Enum_Name( int selection ) {
-		static const char * names[ 4 ] = { "None", "Shadow Maps", "Shadow Maps", "Shadow Maps" };
+		static const char * names[ 2 ] = { "None", "Shadow Maps" };
 		return names[ selection ];
 	}
 };

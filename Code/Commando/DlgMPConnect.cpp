@@ -256,7 +256,9 @@ void DlgMPConnect::On_Periodic(void)
 			}
 		else
 			{
-			WWDEBUG_SAY(("ERROR: %s\n", (const WCHAR*)outMsg));
+			StringClass debugMessage;
+			outMsg.Convert_To(debugMessage);
+			WWDEBUG_SAY(("ERROR: %s\n", (const char *)debugMessage));
 			}
 
 		// Release the keep alive reference (this will delete this object)

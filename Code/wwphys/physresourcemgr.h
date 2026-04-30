@@ -60,9 +60,6 @@ public:
 	static void Init(void);
 	static void Shutdown(void);
 
-	static bool								Set_Shadow_Blob_Texture(const char * texname);	
-	static TextureClass *				Get_Shadow_Blob_Texture(void);						
-
 	static MaterialPassClass *			Get_Highlight_Material_Pass(void);
 
 	static TextureClass *				Get_Stealth_Texture(void);
@@ -76,4 +73,3 @@ public:
 
 
 #endif
-

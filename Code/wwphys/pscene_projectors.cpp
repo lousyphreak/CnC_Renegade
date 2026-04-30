@@ -78,11 +78,6 @@ public:
 										// free texture memory causes problems on at least TNT2.
 
 	void					Set_Max_Simultaneous_Shadows(uint32_t max);
-	uint32_t		Get_Max_Simultaneous_Shadows(void);
-
-	void					Set_Shadow_Resolution(uint32_t size);
-	uint32_t		Get_Shadow_Resolution(void);
-
 	void					Per_Frame_Reset(void);
 	void					Assign_Render_Target_Texture(TexProjectClass * tex_proj);
 
@@ -180,41 +175,6 @@ void DynamicShadowTexMgrClass::Set_Max_Simultaneous_Shadows(uint32_t max)
 	}
 }
 
-uint32_t DynamicShadowTexMgrClass::Get_Max_Simultaneous_Shadows(void)
-{
-	return ShadowTextures.Length();
-}
-
-void DynamicShadowTexMgrClass::Set_Shadow_Resolution(uint32_t res)
-{
-	uint32_t oksize = ::Find_POT(res);
-	if (oksize > 256) {
-		oksize = 256;
-	}
-	if (oksize < 16) {
-		oksize = 16;
-	}
-
-	if (oksize != TextureResolution) {
-
-		int i;
-		for (i=0; i<ShadowTextures.Length(); i++) {
-			REF_PTR_RELEASE(ShadowTextures[i]);
-		}
-
-		TextureResolution = oksize;
-
-		for (i=0; i<ShadowTextures.Length(); i++) {
-			ShadowTextures[i] = Allocate_Render_Target_Texture();
-		}
-	}
-}
-
-uint32_t DynamicShadowTexMgrClass::Get_Shadow_Resolution(void)
-{
-	return TextureResolution;
-}
-
 void DynamicShadowTexMgrClass::Per_Frame_Reset(void)
 {
 	CurShadow = 0;
@@ -261,29 +221,7 @@ void PhysicsSceneClass::Release_Projector_Resources(void)
 
 	REF_PTR_RELEASE(ShadowMaterialPass);
 	REF_PTR_RELEASE(ShadowCamera);
-	REF_PTR_RELEASE(ShadowBlobTexture);
 //	_DynamicShadowTexMgr.Reset();
-}
-
-
-void PhysicsSceneClass::Set_Shadow_Resolution(uint32_t res)
-{
-	_DynamicShadowTexMgr.Set_Shadow_Resolution(res);
-}
-
-uint32_t PhysicsSceneClass::Get_Shadow_Resolution(void)
-{
-	return _DynamicShadowTexMgr.Get_Shadow_Resolution();
-}
-
-void PhysicsSceneClass::Set_Max_Simultaneous_Shadows(uint32_t count)
-{
-	_DynamicShadowTexMgr.Set_Max_Simultaneous_Shadows(count);
-}
-
-uint32_t PhysicsSceneClass::Get_Max_Simultaneous_Shadows(void)
-{
-	return _DynamicShadowTexMgr.Get_Max_Simultaneous_Shadows();
 }
 
 
@@ -340,60 +278,18 @@ MaterialPassClass * PhysicsSceneClass::Get_Shadow_Material_Pass(void)
 
 void PhysicsSceneClass::Set_Shadow_Mode(ShadowEnum shadow_mode)
 {
-	if (((int)shadow_mode >= 0) && ((int)shadow_mode < SHADOW_MODE_COUNT)) {
-		ShadowEnum resolved_mode = (shadow_mode == SHADOW_MODE_NONE) ? SHADOW_MODE_NONE : SHADOW_MODE_HARDWARE;
-		if (ShadowMode != resolved_mode) {
-			ShadowMode = resolved_mode;
-		}
-
-		Set_Max_Simultaneous_Shadows(0);
-		ShadowMapManager::Set_Enabled(ShadowMode != SHADOW_MODE_NONE);
+	ShadowEnum resolved_mode = (shadow_mode == SHADOW_MODE_NONE) ? SHADOW_MODE_NONE : SHADOW_MODE_HARDWARE;
+	if (ShadowMode != resolved_mode) {
+		ShadowMode = resolved_mode;
 	}
+
+	_DynamicShadowTexMgr.Set_Max_Simultaneous_Shadows(0);
+	ShadowMapManager::Set_Enabled(ShadowMode != SHADOW_MODE_NONE);
 }
 
-PhysicsSceneClass::ShadowEnum
-PhysicsSceneClass::Get_Shadow_Mode(void)
+PhysicsSceneClass::ShadowEnum PhysicsSceneClass::Get_Shadow_Mode(void)
 {
 	return ShadowMode;
-}
-
-void PhysicsSceneClass::Set_Shadow_Attenuation(float atten_start_distance,float atten_end_distance)
-{
-	if (atten_start_distance < 0.0f) {
-		atten_start_distance = 0.0f;
-	}
-	if (atten_end_distance < atten_start_distance) {
-		atten_end_distance = atten_start_distance;
-	}
-	ShadowAttenStart = atten_start_distance;
-	ShadowAttenEnd = atten_end_distance;
-}
-
-void PhysicsSceneClass::Get_Shadow_Attenuation(float * set_atten_start,float * set_atten_end)
-{
-	if (set_atten_start != NULL) {
-		*set_atten_start = ShadowAttenStart;
-	}
-
-	if (set_atten_end != NULL) {
-		*set_atten_end = ShadowAttenEnd;
-	}
-}
-
-void PhysicsSceneClass::Set_Shadow_Normal_Intensity(float normal_intensity)
-{
-	if (normal_intensity < 0.0f) {
-		normal_intensity = 0.0f;
-	}
-	if (normal_intensity > 1.0f) {
-		normal_intensity = 1.0f;
-	}
-	ShadowNormalIntensity = normal_intensity;
-}
-
-float PhysicsSceneClass::Get_Shadow_Normal_Intensity(void)
-{
-	return ShadowNormalIntensity;
 }
 
 void PhysicsSceneClass::Add_Static_Texture_Projector(TexProjectClass * newprojector)

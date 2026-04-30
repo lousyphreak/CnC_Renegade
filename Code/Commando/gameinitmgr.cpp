@@ -184,7 +184,9 @@ GameInitMgrClass::Start_Game (const char *map_name, int teamChoice, uint32_t cla
 	WideStringClass outMsg;
 	
 	if (!The_Game()->Is_Valid_Settings(outMsg)) {
-		WWDEBUG_SAY(("ERROR: %S\n", (const WCHAR*)outMsg));
+		StringClass debugMessage;
+		outMsg.Convert_To(debugMessage);
+		WWDEBUG_SAY(("ERROR: %s\n", (const char *)debugMessage));
 		WWASSERT("The_Game()->Is_Valid_Settings()");
 	}
 	#endif
@@ -1011,7 +1013,6 @@ void _reload_game_configuration_files(void)
 	ScriptManager::Shutdown();
 	ScriptManager::Init();
 }
-
 
 
 

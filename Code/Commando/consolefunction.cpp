@@ -663,34 +663,6 @@ public:
 };
 
 
-class ShadowAttenuationConsoleFunctionClass : public ConsoleFunctionClass
-{
-	virtual	const char * Get_Name( void )	{ return "shadow_attenuation"; }
-	virtual	const char * Get_Help( void )	{ return "SHADOW_ATTENUATION <near> <far> - set the attenuation ranges for shadows."; }
-	virtual	void Activate( const char * input ) {
-		PhysicsSceneClass * scene = PhysicsSceneClass::Get_Instance();
-		float znear,zfar;
-		if (sscanf(input, "%f %f",&znear,&zfar) == 2) {
-			scene->Set_Shadow_Attenuation(znear,zfar);
-			scene->Get_Shadow_Attenuation(&znear,&zfar);
-			Print("shadow attenuation set to %f %f\n",znear,zfar);
-		}
-	}
-};
-
-class ShadowBlobTextureConsoleFunctionClass : public ConsoleFunctionClass
-{
-	virtual	const char * Get_Name( void )	{ return "shadow_blob_texture"; }
-	virtual	const char * Get_Help( void )	{ return "SHADOW_BLOB_TEXTURE <texture filename> - sets the texture to use for blob shadows."; }
-	virtual	void Activate( const char * input ) {
-		if (strlen(input) > 0) {
-			if (PhysResourceMgrClass::Set_Shadow_Blob_Texture(input)) {
-				Print("shadow blob texture set to: %s\n",input);
-			}
-		}
-	}
-};
-
 class ShadowElevationConsoleFunctionClass : public ConsoleFunctionClass
 {
 	virtual	const char * Get_Name( void )	{ return "shadow_elevation"; }
@@ -712,18 +684,6 @@ class ShadowElevationConsoleFunctionClass : public ConsoleFunctionClass
 };
 
 
-class ShadowIntensityConsoleFunctionClass : public ConsoleFunctionClass
-{
-	virtual	const char * Get_Name( void )	{ return "shadow_intensity"; }
-	virtual	const char * Get_Help( void )	{ return "SHADOW_INTENSITY <intensity> - sets the darkness of dynamic shadows (0 - 1)."; }
-	virtual	void Activate( const char * input )
-	{
-		PhysicsSceneClass * scene = PhysicsSceneClass::Get_Instance();
-		scene->Set_Shadow_Normal_Intensity(atof(input));
-		Print("shadow intensity set to: %f\n",scene->Get_Shadow_Normal_Intensity());
-	}
-};
-
 class ShadowPerPolyCullingConsoleFunctionClass : public ConsoleFunctionClass
 {
 	virtual	const char * Get_Name( void )	{ return "shadow_per_poly_culling"; }
@@ -738,31 +698,6 @@ class ShadowPerPolyCullingConsoleFunctionClass : public ConsoleFunctionClass
 		}
 	}
 };
-
-class ShadowResolutionConsoleFunctionClass : public ConsoleFunctionClass
-{
-	virtual	const char * Get_Name( void )	{ return "shadow_resolution"; }
-	virtual	const char * Get_Help( void )	{ return "SHADOW_RESOLUTION <res> - sets the resolution of dynamic shadows (use a power of 2!)"; }
-	virtual	void Activate( const char * input )
-	{
-		PhysicsSceneClass * scene = PhysicsSceneClass::Get_Instance();
-		scene->Set_Shadow_Resolution(atof(input));
-		Print("shadow resolution set to: %f\n",scene->Get_Shadow_Resolution());
-	}
-};
-
-class ShadowCountConsoleFunctionClass : public ConsoleFunctionClass
-{
-	virtual	const char * Get_Name( void )	{ return "shadow_count"; }
-	virtual	const char * Get_Help( void )	{ return "SHADOW_COUNT <count> - sets the maximum simultaneous shadows"; }
-	virtual	void Activate( const char * input )
-	{
-		PhysicsSceneClass * scene = PhysicsSceneClass::Get_Instance();
-		scene->Set_Max_Simultaneous_Shadows(atof(input));
-		Print("simultaneous shadow count set to: %f\n",scene->Get_Max_Simultaneous_Shadows());
-	}
-};
-
 
 class PhysicsDebugConsoleFunctionClass : public ConsoleFunctionClass
 {
@@ -5053,13 +4988,8 @@ void	ConsoleFunctionManager::Init( void )
 	FunctionList.Add( new SetStarShieldStrengthConsoleFunctionClass() );
 	FunctionList.Add( new SetStarShieldTypeConsoleFunctionClass() );
 	FunctionList.Add( new SetTheStarConsoleFunctionClass() );
-	FunctionList.Add( new ShadowAttenuationConsoleFunctionClass() );
-	FunctionList.Add( new ShadowBlobTextureConsoleFunctionClass() );
-	FunctionList.Add( new ShadowCountConsoleFunctionClass() );
 	FunctionList.Add( new ShadowElevationConsoleFunctionClass() );
-	FunctionList.Add( new ShadowIntensityConsoleFunctionClass() );
 	FunctionList.Add( new ShadowPerPolyCullingConsoleFunctionClass() );
-	FunctionList.Add( new ShadowResolutionConsoleFunctionClass() );
 	FunctionList.Add( new ShellCommandConsoleFunctionClass() );
 	FunctionList.Add( new SkeletonSliderDemoConsoleFunctionClass() );
 	FunctionList.Add( new SkeletonStandersConsoleFunctionClass() );

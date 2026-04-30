@@ -120,8 +120,6 @@ static void Get_Detail_String(StringClass& str)
 		str+="Shadow Mode: ";
 		switch (shadow_mode) {
 		case PhysicsSceneClass::SHADOW_MODE_NONE: str+="None\r\n"; break;
-		case PhysicsSceneClass::SHADOW_MODE_BLOBS:
-		case PhysicsSceneClass::SHADOW_MODE_BLOBS_PLUS:
 		case PhysicsSceneClass::SHADOW_MODE_HARDWARE: str+="Shadow Maps\r\n"; break;
 		default: str+="???\r\n"; break;
 		}
@@ -391,11 +389,6 @@ void Game_Shutdown(void)
 
 	cDiagnostics::Close();
 	//cHelpText::Close();
-
-	PhysicsSceneClass * scene = PhysicsSceneClass::Get_Instance();
-	if (scene != NULL) {
-		scene->Set_Max_Simultaneous_Shadows(0);
-	}
 
 	PathMgrClass::Shutdown();
 	WWMath::Shutdown();

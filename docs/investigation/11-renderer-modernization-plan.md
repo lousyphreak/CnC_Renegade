@@ -16,7 +16,7 @@ This document turns the findings from `10-static-mesh-and-terrain-batching-audit
 
 - preserving renderer compatibility layers as a long-lived architecture
 - preserving 100% exact historical submission granularity or culling behavior
-- keeping editor and tool rendering requirements as a design constraint
+- keeping editor-only rendering requirements as a design constraint; `Tools/LevelEdit/*` and `Tools/W3DView/*` are explicitly outside this refactor boundary
 - preserving projector-era runtime settings, debug toggles, or pass plumbing for their own sake
 
 ## Decisions resolved while preparing this plan
@@ -46,6 +46,17 @@ The current runtime already contains useful modern pieces, but they are trapped 
 - 2D/UI/video paths still use legacy shader/state objects instead of a shared explicit overlay contract
 
 The rest of this plan assumes those findings are correct and uses them as the starting point.
+
+## Code review findings that widen the cleanup surface
+
+A fresh code review against the maintained runtime tree shows that the modernization plan needs to stay aggressive all the way through the final cleanup pass:
+
+- `Code/ww3d2/ww3d.h` still exposes `FixedFunctionStateDesc`, `FixedFunctionSubmitDesc`, `PrelitModeEnum`, and buffer-type enums that preserve D3D8-era renderer language in the public runtime frontend.
+- `Code/ww3d2/dx8wrapper.h` still defines `RenderStateStruct`, `D3DMATERIAL8`, `D3DLIGHT8[4]`, `Set_DX8_*`, `Set_Light_Environment(...)`, and `Apply_Render_State_Changes()` as live renderer-facing concepts.
+- `Code/ww3d2/vertmaterial*`, `Code/ww3d2/mapper*`, and `Code/ww3d2/matrixmapper*` still carry fixed-function material, texgen, texture-transform, and bump-env semantics in runtime types instead of renderer-owned packet data.
+- `Code/ww3d2/rinfo.h`, `Code/ww3d2/rendobj.h`, `Code/ww3d2/dx8renderer.h`, `Code/ww3d2/sortingrenderer*`, and `Code/wwphys/renegadeterrainpatch.h` still expose object-owned scheduling, pass replay, FVF/category ownership, and special-render compatibility paths.
+- `Code/wwphys/pscene.h`, `Code/wwphys/pscene_projectors.cpp`, `Code/Commando/systemsettings.cpp`, `Code/Commando/dlgconfigperformancetab.cpp`, `Code/Commando/consolefunction.cpp`, and `Code/Tools/WWConfig/PerformanceConfigDialog.cpp` still expose projector/shadow-era settings, registry keys, and debug/config controls as live runtime surfaces.
+- This means the refactor is only complete if phase 8 is treated as a **large deletion phase**, not as a small follow-up cleanup.
 
 ## Required end-state architecture
 
@@ -406,20 +417,30 @@ The sequence below is the recommended order because later batching work will not
 
 - make the modernization irreversible by removing the old contracts instead of keeping dead compatibility layers around
 
-**Implemented runtime-facing cleanup**
+**Code review snapshot**
 
-- mapper and matrix-mapper runtime contracts no longer expose per-mapper `Apply(int uv_array_index)` DX8 mutation entry points; mapper state is now described through `WW3D::FixedFunctionStateDesc`, and `VertexMaterialClass::Apply()` is the only remaining legacy DX8 emission boundary for that material packet
-- dead outward-facing runtime settings and compatibility keys for `Dynamic_Projectors`, `Static_Projectors`, `Mesh_Draw_Mode`, `Prelit_Mode`, and `NPatches` were removed or aggressively cleaned from `Commando` and `WWConfig` config/console surfaces
-- the maintained runtime no longer carries the old mesh draw mode toggle or physics-scene projector enable toggles as live renderer controls
-- runtime config UI now treats shadowing as the unified maintained setting and stops persisting the projector-era/lighting-era compatibility knobs
-- maintained runtime rendering no longer branches through the deleted mesh-draw compatibility path, and the phase-8 cleanup was revalidated with a full build and a 210-second Renegade soak
+- `Code/ww3d2/ww3d.h`, `Code/ww3d2/dx8wrapper.h`, `Code/ww3d2/vertmaterial*`, `Code/ww3d2/mapper*`, `Code/ww3d2/matrixmapper*`, and `Code/ww3d2/dx8renderer.h` still expose live D3D8-era renderer state, FVF/category ownership, and fixed-function material/mapping contracts.
+- `Code/ww3d2/rendobj.h`, `Code/ww3d2/rinfo.h`, `Code/ww3d2/sortingrenderer*`, and `Code/wwphys/renegadeterrainpatch.h` still keep object-owned scheduling, special-render entry points, and pass replay compatibility alive in the runtime interfaces.
+- `Code/wwphys/pscene.h` and `Code/wwphys/pscene_projectors.cpp` still expose shadow/projector-era tuning knobs such as `Set_Shadow_Mode(...)`, shadow count/resolution, attenuation, and normal-intensity controls as first-class runtime APIs.
+- `Code/Commando/systemsettings.cpp`, `Code/Commando/dlgconfigperformancetab.cpp`, `Code/Commando/consolefunction.cpp`, and `Code/Tools/WWConfig/PerformanceConfigDialog.cpp` still retain legacy registry names, UI strings, and config/debug surfaces for `Dynamic_Projectors`, `Static_Projectors`, `Prelit_Mode`, `Mesh_Draw_Mode`, `NPatches`, and shadow-era tuning.
+- The plan should therefore treat phase 8 as the point where these runtime-facing symbols and settings are deleted, renamed, or collapsed behind the new renderer model instead of being preserved as migration furniture.
 
 **Primary code areas**
 
+- `Code/ww3d2/ww3d.h`
+- `Code/ww3d2/ww3d.cpp`
 - `Code/ww3d2/dx8wrapper*`
 - `Code/ww3d2/dx8renderer*`
+- `Code/ww3d2/shader*`
+- `Code/ww3d2/vertmaterial*`
+- `Code/ww3d2/matpass*`
 - `Code/ww3d2/mapper*`
 - `Code/ww3d2/matrixmapper*`
+- `Code/ww3d2/rinfo*`
+- `Code/ww3d2/rendobj.h`
+- `Code/ww3d2/sortingrenderer*`
+- `Code/wwphys/pscene.h`
+- `Code/wwphys/pscene_projectors.cpp`
 - `Code/Commando/systemsettings.cpp`
 - `Code/Commando/dlgconfigperformancetab.cpp`
 - `Code/Tools/WWConfig/PerformanceConfigDialog.cpp`
@@ -428,7 +449,11 @@ The sequence below is the recommended order because later batching work will not
 **Work**
 
 - delete renderer-facing D3D8 state arrays, texture-stage emulation, FVF/category ownership, and pass replay infrastructure
+- delete or rename public runtime APIs and settings that still expose projector-era or shadow-era tuning when those concepts are no longer renderer feature boundaries
+- remove object-owned scheduling hooks and special-render compatibility surfaces once the maintained runtime path has fully moved to renderer-owned extraction and phase queues
 - rename, remove, or remap runtime settings that still expose projector-era or DX8-era concepts
+- keep `Tools/WWConfig/*` only as a migration surface for runtime settings names; do not let it preserve renderer internals or old feature boundaries
+- do not preserve `Tools/LevelEdit/*` or `Tools/W3DView/*` requirements as part of phase 8 cleanup
 - verify the runtime render path no longer depends on D3D8-era symbols except where legacy asset interpretation still needs them as source data during loading
 
 **Exit condition**
@@ -464,7 +489,15 @@ The interface break is only complete if the major consumers move with it.
 ### Runtime settings and diagnostics
 
 - clean up `Shadow_Mode`, projector toggles, and related debug/config surfaces
+- remove shadow count/resolution/intensity/attenuation controls that no longer map cleanly to the maintained runtime renderer
 - expose only settings that still map to the new renderer architecture
+
+### Explicitly excluded editor/tool consumers
+
+- `Code/Tools/LevelEdit/*`
+- `Code/Tools/W3DView/*`
+- `Code/Tools/max2w3d/*`
+- these follow the runtime renderer later if needed; they are not allowed to preserve D3D8-era runtime contracts during this refactor
 
 ## Areas where the plan must stay conservative
 

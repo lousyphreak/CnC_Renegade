@@ -46,7 +46,6 @@
 /**
 ** Resources that the physics resource manager can allocate-on-demand
 */
-static TextureClass *			_ShadowBlobTexture = NULL;		
 static MaterialPassClass *		_HighlightMaterialPass = NULL;
 static TextureClass *			_StealthTexture = NULL;		
 static TextureClass *			_GridTexture = NULL;
@@ -59,36 +58,8 @@ void PhysResourceMgrClass::Init(void)
 
 void PhysResourceMgrClass::Shutdown(void)
 {
-	REF_PTR_RELEASE(_ShadowBlobTexture);
 	REF_PTR_RELEASE(_HighlightMaterialPass);
 	REF_PTR_RELEASE(_StealthTexture);
-}
-
-bool PhysResourceMgrClass::Set_Shadow_Blob_Texture(const char * texname)
-{
-	if (texname == NULL) return false;
-	
-	TextureClass * tex = WW3DAssetManager::Get_Instance()->Get_Texture(texname);
-	if (tex == NULL) return false;
-
-	REF_PTR_SET(_ShadowBlobTexture,tex);
-	tex->Release_Ref();
-
-	_ShadowBlobTexture->Set_U_Addr_Mode(TextureClass::TEXTURE_ADDRESS_CLAMP);
-	_ShadowBlobTexture->Set_V_Addr_Mode(TextureClass::TEXTURE_ADDRESS_CLAMP);
-	return true;
-}
-
-TextureClass *	PhysResourceMgrClass::Get_Shadow_Blob_Texture(void)
-{
-	if (_ShadowBlobTexture == NULL) {
-		_ShadowBlobTexture = WW3DAssetManager::Get_Instance()->Get_Texture("shadowblob.tga");
-		_ShadowBlobTexture->Set_U_Addr_Mode(TextureClass::TEXTURE_ADDRESS_CLAMP);
-		_ShadowBlobTexture->Set_V_Addr_Mode(TextureClass::TEXTURE_ADDRESS_CLAMP);
-	}
-	WWASSERT(_ShadowBlobTexture != NULL);
-	_ShadowBlobTexture->Add_Ref();
-	return _ShadowBlobTexture;
 }
 
 MaterialPassClass * PhysResourceMgrClass::Get_Highlight_Material_Pass(void)
@@ -170,4 +141,3 @@ TextureClass * PhysResourceMgrClass::Peek_Grid_Texture(void)
 	}
 	return _GridTexture;
 }
-

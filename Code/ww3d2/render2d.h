@@ -48,6 +48,7 @@
 #include "vector2.h"
 
 #include "shader.h"
+#include "ww3d.h"
 #include "widestring.h"
 #include "rect.h"
 #include "bittype.h"
@@ -112,9 +113,15 @@ public:
 	void	Set_Texture( const char * filename );
 	void	Enable_Additive(bool b);
 	void	Enable_Alpha(bool b);
+	void	Set_Depth_Compare(ShaderClass::DepthCompareType compare);
+	void	Set_Depth_Write(bool enable);
+	void	Set_Color_Write(bool enable);
 	void  Enable_Texturing(bool b);
-	
-	ShaderClass *			Get_Shader( void ) { return &Shader; }
+
+	void	Set_Overlay_State(const WW3D::OverlayStateDesc &state)	{ OverlayState = state; }
+	const WW3D::OverlayStateDesc &Get_Overlay_State(void) const	{ return OverlayState; }
+	static WW3D::OverlayStateDesc Overlay_State_From_Shader(const ShaderClass &shader);
+	static WW3D::OverlayStateDesc Get_Default_Overlay_State(void);
 	static ShaderClass	Get_Default_Shader( void );
 
 	// Add Quad
@@ -162,7 +169,7 @@ protected:
 	Vector2										CoordinateOffset;
 	Vector2										BiasedCoordinateOffset;
 	TextureClass *								Texture;
-	ShaderClass									Shader;
+	WW3D::OverlayStateDesc						OverlayState;
 	DynamicVectorClass<unsigned short>	Indices;
 	unsigned short								PreAllocatedIndices[60];
 	DynamicVectorClass<Vector2>				Vertices;

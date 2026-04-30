@@ -78,7 +78,7 @@ Render2DClass::Render2DClass( TextureClass* tex ) :
 	Colors(sizeof(PreAllocatedColors)/sizeof(unsigned long),PreAllocatedColors)
 {
 	Set_Texture( tex );	
-   Shader = Get_Default_Shader();
+	OverlayState = Get_Default_Overlay_State();
 	return ;
 }
 
@@ -99,6 +99,12 @@ void	Render2DClass::Set_Screen_Resolution( const RectClass & screen )
 #endif
 }
 
+WW3D::OverlayStateDesc
+Render2DClass::Get_Default_Overlay_State(void)
+{
+	return WW3D::OverlayStateDesc();
+}
+
 ShaderClass
 Render2DClass::Get_Default_Shader( void )
 {
@@ -113,6 +119,19 @@ Render2DClass::Get_Default_Shader( void )
 	shader.Set_Texturing( ShaderClass::TEXTURING_ENABLE );
 
 	return shader;
+}
+
+WW3D::OverlayStateDesc
+Render2DClass::Overlay_State_From_Shader(const ShaderClass &shader)
+{
+	WW3D::OverlayStateDesc state = Get_Default_Overlay_State();
+	state.Texturing = shader.Get_Texturing() != ShaderClass::TEXTURING_DISABLE;
+	state.ColorWrite = shader.Get_Color_Mask() == ShaderClass::COLOR_WRITE_ENABLE;
+	state.DepthWrite = shader.Get_Depth_Mask() == ShaderClass::DEPTH_WRITE_ENABLE;
+	state.DepthCompare = shader.Get_Depth_Compare();
+	state.SrcBlend = shader.Get_Src_Blend_Func();
+	state.DstBlend = shader.Get_Dst_Blend_Func();
+	return state;
 }
 
 void	Render2DClass::Reset(void)
@@ -156,35 +175,45 @@ void Render2DClass::Set_Texture( const char * filename)
 void Render2DClass::Enable_Alpha(bool b)
 {
 	if (b) {
-		Shader.Set_Dst_Blend_Func( ShaderClass::DSTBLEND_ONE_MINUS_SRC_ALPHA );
-		Shader.Set_Src_Blend_Func( ShaderClass::SRCBLEND_SRC_ALPHA );
+		OverlayState.DstBlend = ShaderClass::DSTBLEND_ONE_MINUS_SRC_ALPHA;
+		OverlayState.SrcBlend = ShaderClass::SRCBLEND_SRC_ALPHA;
 	}
 	else {
-		Shader.Set_Src_Blend_Func( ShaderClass::SRCBLEND_ONE);
-		Shader.Set_Dst_Blend_Func( ShaderClass::DSTBLEND_ZERO );
+		OverlayState.SrcBlend = ShaderClass::SRCBLEND_ONE;
+		OverlayState.DstBlend = ShaderClass::DSTBLEND_ZERO;
 	}
 }
 
 void Render2DClass::Enable_Additive(bool b)
 {
 	if (b) {
-		Shader.Set_Dst_Blend_Func( ShaderClass::DSTBLEND_ONE );
-		Shader.Set_Src_Blend_Func( ShaderClass::SRCBLEND_ONE );
+		OverlayState.DstBlend = ShaderClass::DSTBLEND_ONE;
+		OverlayState.SrcBlend = ShaderClass::SRCBLEND_ONE;
 	}
 	else {
-		Shader.Set_Src_Blend_Func( ShaderClass::SRCBLEND_ONE);
-		Shader.Set_Dst_Blend_Func( ShaderClass::DSTBLEND_ZERO );
+		OverlayState.SrcBlend = ShaderClass::SRCBLEND_ONE;
+		OverlayState.DstBlend = ShaderClass::DSTBLEND_ZERO;
 	}
+}
+
+void Render2DClass::Set_Depth_Compare(ShaderClass::DepthCompareType compare)
+{
+	OverlayState.DepthCompare = compare;
+}
+
+void Render2DClass::Set_Depth_Write(bool enable)
+{
+	OverlayState.DepthWrite = enable;
+}
+
+void Render2DClass::Set_Color_Write(bool enable)
+{
+	OverlayState.ColorWrite = enable;
 }
 
 void Render2DClass::Enable_Texturing(bool b)
 {
-	if (b) {
-		Shader.Set_Texturing( ShaderClass::TEXTURING_ENABLE );
-	}
-	else {
-		Shader.Set_Texturing( ShaderClass::TEXTURING_DISABLE );
-	}
+	OverlayState.Texturing = b;
 }
 
 void	Render2DClass::Set_Coordinate_Range( const RectClass & range )
@@ -569,7 +598,7 @@ void Render2DClass::Render(void)
 	}
 
 	const bool has_texture =
-		Shader.Get_Texturing() != ShaderClass::TEXTURING_DISABLE && Texture != NULL;
+		OverlayState.Texturing && Texture != NULL;
 
 	const uint32_t vertex_count = static_cast<uint32_t>(Vertices.Count());
 	const uint32_t index_count = static_cast<uint32_t>(Indices.Count());
@@ -591,7 +620,7 @@ void Render2DClass::Render(void)
 	submission.Indices = &Indices[0];
 	submission.IndexCount = index_count;
 	submission.Texture = has_texture ? Texture : NULL;
-	submission.Shader = Shader;
+	submission.State = OverlayState;
 	submission.HasTexture = has_texture;
 	WW3D::Submit_Overlay(submission);
 }

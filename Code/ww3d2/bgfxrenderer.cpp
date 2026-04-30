@@ -117,6 +117,16 @@ struct CapturedMovieFrame
     uint64_t Sequence = 0;
 };
 
+struct BgfxOverlayVertex
+{
+    float X;
+    float Y;
+    float Z;
+    std::uint32_t Diffuse;
+    float U0;
+    float V0;
+};
+
 struct QueuedOverlaySubmission
 {
     enum class Type
@@ -126,12 +136,14 @@ struct QueuedOverlaySubmission
     };
 
     Type SubmissionType = Type::Overlay;
-    std::vector<WW3D::OverlaySubmitVertex> Vertices;
-    std::vector<std::uint16_t> Indices;
-    TextureClass *Texture = nullptr;
-    ShaderClass Shader;
-    bool HasTexture = false;
-    bgfx::TextureHandle LumaTexture = BGFX_INVALID_HANDLE;
+	std::uint32_t VertexOffset = 0;
+	std::uint32_t VertexCount = 0;
+	std::uint32_t IndexOffset = 0;
+	std::uint32_t IndexCount = 0;
+	TextureClass *Texture = nullptr;
+	WW3D::OverlayStateDesc State;
+	bool HasTexture = false;
+	bgfx::TextureHandle LumaTexture = BGFX_INVALID_HANDLE;
     bgfx::TextureHandle ChromaTexture = BGFX_INVALID_HANDLE;
     std::uint32_t SamplerFlags = 0;
     bool FullRangeVideo = false;
@@ -183,6 +195,8 @@ uint16_t NextSkinPaletteRow = 0;
 float CurrentSkinPaletteInfo[4] = {};
 bool CurrentSkinPaletteValid = false;
 std::vector<QueuedOverlaySubmission> OverlaySubmissionQueue;
+std::vector<BgfxOverlayVertex> OverlaySubmissionVertices;
+std::vector<std::uint16_t> OverlaySubmissionIndices;
 
 void Clear_Overlay_Submission_Queue();
 void Flush_Overlay_Submission_Queue();
@@ -2586,17 +2600,9 @@ void BgfxRenderer::Apply_Render_State(const ShaderClass &shader, unsigned cull_m
 
 namespace
 {
-ShaderClass Build_Default_Overlay_Shader()
+WW3D::OverlayStateDesc Build_Default_Overlay_State()
 {
-    ShaderClass shader;
-    shader.Set_Depth_Mask(ShaderClass::DEPTH_WRITE_DISABLE);
-    shader.Set_Depth_Compare(ShaderClass::PASS_ALWAYS);
-    shader.Set_Dst_Blend_Func(ShaderClass::DSTBLEND_ONE_MINUS_SRC_ALPHA);
-    shader.Set_Src_Blend_Func(ShaderClass::SRCBLEND_SRC_ALPHA);
-    shader.Set_Fog_Func(ShaderClass::FOG_DISABLE);
-    shader.Set_Primary_Gradient(ShaderClass::GRADIENT_MODULATE);
-    shader.Set_Texturing(ShaderClass::TEXTURING_ENABLE);
-    return shader;
+    return WW3D::OverlayStateDesc();
 }
 
 struct OverlayGeometryBinding
@@ -2619,25 +2625,16 @@ struct OverlayGeometryBinding
     }
 };
 
-struct BgfxOverlayVertex
-{
-    float X;
-    float Y;
-    float Z;
-    std::uint32_t Diffuse;
-    float U0;
-    float V0;
-};
-
-void Convert_Overlay_Vertices(
+std::uint32_t Append_Overlay_Vertices(
     const WW3D::OverlaySubmitVertex *source_vertices,
     std::uint32_t vertex_count,
     std::vector<BgfxOverlayVertex> &converted_vertices)
 {
-    converted_vertices.resize(static_cast<size_t>(vertex_count));
+    const std::uint32_t vertex_offset = static_cast<std::uint32_t>(converted_vertices.size());
+    converted_vertices.resize(static_cast<size_t>(vertex_offset + vertex_count));
     for (std::uint32_t index = 0; index < vertex_count; ++index) {
         const WW3D::OverlaySubmitVertex &source = source_vertices[index];
-        BgfxOverlayVertex &destination = converted_vertices[static_cast<size_t>(index)];
+        BgfxOverlayVertex &destination = converted_vertices[static_cast<size_t>(vertex_offset + index)];
         destination.X = source.X;
         destination.Y = source.Y;
         destination.Z = source.Z;
@@ -2645,6 +2642,43 @@ void Convert_Overlay_Vertices(
         destination.U0 = source.U0;
         destination.V0 = source.V0;
     }
+    return vertex_offset;
+}
+
+std::uint32_t Append_Overlay_Indices(
+    const std::uint16_t *source_indices,
+    std::uint32_t index_count,
+    std::vector<std::uint16_t> &dest_indices)
+{
+    const std::uint32_t index_offset = static_cast<std::uint32_t>(dest_indices.size());
+    dest_indices.insert(
+        dest_indices.end(),
+        source_indices,
+        source_indices + index_count);
+    return index_offset;
+}
+
+uint64_t Build_Overlay_Render_State(const WW3D::OverlayStateDesc &state)
+{
+    uint64_t render_state = BGFX_STATE_MSAA;
+
+    if (state.ColorWrite) {
+        render_state |= BGFX_STATE_WRITE_RGB;
+    }
+
+    if (state.DepthWrite) {
+        render_state |= BGFX_STATE_WRITE_Z;
+    }
+
+    render_state |= Convert_Depth_Test(state.DepthCompare);
+
+    if (state.SrcBlend != ShaderClass::SRCBLEND_ONE || state.DstBlend != ShaderClass::DSTBLEND_ZERO) {
+        render_state |= BGFX_STATE_BLEND_FUNC(
+            Convert_Blend_Factor(state.SrcBlend),
+            Convert_Blend_Factor(state.DstBlend));
+    }
+
+    return render_state;
 }
 
 bool Prepare_Overlay_Geometry(
@@ -2714,6 +2748,8 @@ void Clear_Overlay_Submission_Queue()
         }
     }
     OverlaySubmissionQueue.clear();
+    OverlaySubmissionVertices.clear();
+    OverlaySubmissionIndices.clear();
 }
 
 void Flush_Overlay_Submission_Queue()
@@ -2730,7 +2766,7 @@ void Flush_Overlay_Submission_Queue()
          it != OverlaySubmissionQueue.end();
          ++it) {
         QueuedOverlaySubmission &queued = *it;
-        if (queued.Vertices.empty() || queued.Indices.empty()) {
+        if (queued.VertexCount == 0 || queued.IndexCount == 0) {
             continue;
         }
 
@@ -2746,18 +2782,17 @@ void Flush_Overlay_Submission_Queue()
             continue;
         }
 
-        std::vector<BgfxOverlayVertex> converted_vertices;
-        Convert_Overlay_Vertices(
-            queued.Vertices.data(),
-            static_cast<std::uint32_t>(queued.Vertices.size()),
-            converted_vertices);
+        const BgfxOverlayVertex *queued_vertices =
+            OverlaySubmissionVertices.data() + queued.VertexOffset;
+        const std::uint16_t *queued_indices =
+            OverlaySubmissionIndices.data() + queued.IndexOffset;
 
         OverlayGeometryBinding binding;
         if (!Prepare_Overlay_Geometry(
-                converted_vertices.data(),
-                static_cast<std::uint32_t>(converted_vertices.size()),
-                queued.Indices.data(),
-                static_cast<std::uint32_t>(queued.Indices.size()),
+                queued_vertices,
+                queued.VertexCount,
+                queued_indices,
+                queued.IndexCount,
                 BgfxRenderer::Get_Overlay_Layout(),
                 binding)) {
             continue;
@@ -2775,7 +2810,8 @@ void Flush_Overlay_Submission_Queue()
                 0.0f
             };
             bgfx::setUniform(movie_config_uniform, movie_config);
-            BgfxRenderer::Apply_Render_State(Build_Default_Overlay_Shader());
+            bgfx::setState(Build_Overlay_Render_State(Build_Default_Overlay_State()));
+            bgfx::setStencil(Build_Stencil_State());
             bgfx::submit(OverlayViewId, movie_program);
         } else {
             bgfx::TextureHandle texture = BgfxRenderer::Get_White_Texture();
@@ -2791,7 +2827,8 @@ void Flush_Overlay_Submission_Queue()
 
             bgfx::setTexture(0, BgfxRenderer::Get_Texture0_Uniform(), texture, sampler_flags);
             BgfxRenderer::Apply_Overlay_Config(queued.HasTexture);
-            BgfxRenderer::Apply_Render_State(queued.Shader);
+            bgfx::setState(Build_Overlay_Render_State(queued.State));
+            bgfx::setStencil(Build_Stencil_State());
             bgfx::submit(OverlayViewId, overlay_program);
         }
 
@@ -2821,13 +2858,21 @@ bool BgfxRenderer::Submit_Overlay(const WW3D::OverlaySubmitDesc &submission)
 
     QueuedOverlaySubmission queued;
     queued.SubmissionType = QueuedOverlaySubmission::Type::Overlay;
-    queued.Vertices.assign(submission.Vertices, submission.Vertices + submission.VertexCount);
-    queued.Indices.assign(submission.Indices, submission.Indices + submission.IndexCount);
+    queued.VertexOffset = Append_Overlay_Vertices(
+        submission.Vertices,
+        submission.VertexCount,
+        OverlaySubmissionVertices);
+    queued.VertexCount = submission.VertexCount;
+    queued.IndexOffset = Append_Overlay_Indices(
+        submission.Indices,
+        submission.IndexCount,
+        OverlaySubmissionIndices);
+    queued.IndexCount = submission.IndexCount;
     queued.Texture = submission.Texture;
     if (queued.Texture != nullptr) {
         queued.Texture->Add_Ref();
     }
-    queued.Shader = submission.Shader;
+    queued.State = submission.State;
     queued.HasTexture = submission.HasTexture;
     queued.FrameBuffer = CurrentFrameBuffer;
     queued.TargetWidth = ActiveWidth;
@@ -2852,8 +2897,16 @@ bool BgfxRenderer::Submit_YUV_Overlay(const OverlayYUVSubmitDesc &submission)
 
     QueuedOverlaySubmission queued;
     queued.SubmissionType = QueuedOverlaySubmission::Type::YuvOverlay;
-    queued.Vertices.assign(submission.Vertices, submission.Vertices + submission.VertexCount);
-    queued.Indices.assign(submission.Indices, submission.Indices + submission.IndexCount);
+    queued.VertexOffset = Append_Overlay_Vertices(
+        submission.Vertices,
+        submission.VertexCount,
+        OverlaySubmissionVertices);
+    queued.VertexCount = submission.VertexCount;
+    queued.IndexOffset = Append_Overlay_Indices(
+        submission.Indices,
+        submission.IndexCount,
+        OverlaySubmissionIndices);
+    queued.IndexCount = submission.IndexCount;
     queued.LumaTexture = submission.LumaTexture;
     queued.ChromaTexture = submission.ChromaTexture;
     queued.SamplerFlags = submission.SamplerFlags;
@@ -3538,8 +3591,7 @@ bool Submit_Classified_Draw_Internal(
     const bgfx::VertexLayout &layout = Get_Vertex_Layout_For_Buffer(vertex_buffer);
 
     bool use_direct_vertex_buffer = false;
-    if (vertex_buffer_type == BUFFER_TYPE_RENDER ||
-        vertex_buffer_type == BUFFER_TYPE_DYNAMIC_RENDER) {
+    if (vertex_buffer_type == BUFFER_TYPE_RENDER) {
         if (!static_cast<const RenderVertexBufferClass &>(vertex_buffer).Ensure_Bgfx_Buffer()) {
             return false;
         }
@@ -3621,22 +3673,12 @@ bool Submit_Classified_Draw_Internal(
     const Matrix4 world_transform = world.Transpose();
     bgfx::setTransform(&world_transform[0][0]);
     if (use_direct_index_buffer) {
-        if (render_vertex_buffer->Uses_Dynamic_Bgfx_Buffer()) {
-            bgfx::setVertexBuffer(0, render_vertex_buffer->Get_Bgfx_Dynamic_Vertex_Buffer());
-        } else {
-            bgfx::setVertexBuffer(0, render_vertex_buffer->Get_Bgfx_Vertex_Buffer());
-        }
+        bgfx::setVertexBuffer(0, render_vertex_buffer->Get_Bgfx_Vertex_Buffer());
     } else if (use_direct_vertex_buffer) {
         const uint32_t start_vertex = vertex_buffer_offset + index_base_offset + min_vertex_index;
-        if (render_vertex_buffer->Uses_Dynamic_Bgfx_Buffer()) {
-            bgfx::setVertexBuffer(
-                0, render_vertex_buffer->Get_Bgfx_Dynamic_Vertex_Buffer(),
-                start_vertex, vertex_count);
-        } else {
-            bgfx::setVertexBuffer(
-                0, render_vertex_buffer->Get_Bgfx_Vertex_Buffer(),
-                start_vertex, vertex_count);
-        }
+        bgfx::setVertexBuffer(
+            0, render_vertex_buffer->Get_Bgfx_Vertex_Buffer(),
+            start_vertex, vertex_count);
     } else {
         bgfx::setVertexBuffer(0, &transient_vertex_buffer);
     }
@@ -3644,17 +3686,10 @@ bool Submit_Classified_Draw_Internal(
     // Bind index buffer
     if (use_direct_index_buffer) {
         const RenderIndexBufferClass &render_index_buffer = static_cast<const RenderIndexBufferClass &>(index_buffer);
-        if (render_index_buffer.Uses_Dynamic_Bgfx_Buffer()) {
-            bgfx::setIndexBuffer(
-                render_index_buffer.Get_Bgfx_Dynamic_Index_Buffer(),
-                index_buffer_offset + start_index,
-                fill_mode == FillMode::Points && strip ? source_index_count : submitted_index_count);
-        } else {
-            bgfx::setIndexBuffer(
-                render_index_buffer.Get_Bgfx_Index_Buffer(),
-                index_buffer_offset + start_index,
-                fill_mode == FillMode::Points && strip ? source_index_count : submitted_index_count);
-        }
+        bgfx::setIndexBuffer(
+            render_index_buffer.Get_Bgfx_Index_Buffer(),
+            index_buffer_offset + start_index,
+            fill_mode == FillMode::Points && strip ? source_index_count : submitted_index_count);
     } else {
         bgfx::setIndexBuffer(&transient_index_buffer);
     }

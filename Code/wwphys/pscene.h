@@ -827,16 +827,6 @@ public:
 	void							Optimize_Visibility_Data(VisOptProgressClass & progress_status);
 
 
-	/*
-	** Legacy texture-projector registration.
-	** Projectors are no longer replayed through the main world path, but the
-	** scene still keeps registration/bookkeeping surfaces for compatibility.
-	*/
-	void							Enable_Static_Projectors(bool onoff);
-	bool							Are_Static_Projectors_Enabled(void);
-	void							Enable_Dynamic_Projectors(bool onoff);
-	bool							Are_Dynamic_Projectors_Enabled(void);
-
 	void							Add_Static_Texture_Projector(TexProjectClass * newprojector);
 	void							Remove_Static_Texture_Projector(TexProjectClass * projector);
 	void							Add_Dynamic_Texture_Projector(TexProjectClass * newprojector);
@@ -1135,8 +1125,6 @@ public:
 	/*
 	** Shadow system variables
 	*/
-	bool							StaticProjectorsEnabled;	// toggle static shadows (shadows cast by static objs onto dynamic objs)
-	bool							DynamicProjectorsEnabled;	// toggle dynamic shadows (shadows cast by dynamic objs onto everything)
 	ShadowEnum					ShadowMode;						// current shadow mode
 	float							ShadowAttenStart;				// distance to start of shadow attenuation							
 	float							ShadowAttenEnd;				// distance to end of shadow attenuation

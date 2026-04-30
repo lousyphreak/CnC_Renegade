@@ -54,6 +54,32 @@ static unsigned int unique=1;
 
 VertexMaterialClass* VertexMaterialClass::Presets[VertexMaterialClass::PRESET_COUNT];
 
+namespace
+{
+DWORD Float_To_Dword(float value)
+{
+	DWORD bits = 0;
+	memcpy(&bits, &value, sizeof(bits));
+	return bits;
+}
+
+void Apply_DX8_Texture_State(const WW3D::FixedFunctionStateDesc &state)
+{
+	for (int i = 0; i < 2; ++i) {
+		DX8Wrapper::Set_Transform((D3DTRANSFORMSTATETYPE)(D3DTS_TEXTURE0 + i), state.TextureTransforms[i]);
+		DX8Wrapper::Set_DX8_Texture_Stage_State(i, D3DTSS_TEXCOORDINDEX, state.TexcoordIndex[i]);
+		DX8Wrapper::Set_DX8_Texture_Stage_State(i, D3DTSS_TEXTURETRANSFORMFLAGS, state.TextureTransformFlags[i]);
+	}
+
+	DX8Wrapper::Set_DX8_Texture_Stage_State(0, D3DTSS_BUMPENVMAT00, Float_To_Dword(state.BumpEnvMatrix[0]));
+	DX8Wrapper::Set_DX8_Texture_Stage_State(0, D3DTSS_BUMPENVMAT01, Float_To_Dword(state.BumpEnvMatrix[1]));
+	DX8Wrapper::Set_DX8_Texture_Stage_State(0, D3DTSS_BUMPENVMAT10, Float_To_Dword(state.BumpEnvMatrix[2]));
+	DX8Wrapper::Set_DX8_Texture_Stage_State(0, D3DTSS_BUMPENVMAT11, Float_To_Dword(state.BumpEnvMatrix[3]));
+	DX8Wrapper::Set_DX8_Texture_Stage_State(1, D3DTSS_BUMPENVLSCALE, Float_To_Dword(state.BumpEnvLuminanceScale));
+	DX8Wrapper::Set_DX8_Texture_Stage_State(1, D3DTSS_BUMPENVLOFFSET, Float_To_Dword(state.BumpEnvLuminanceOffset));
+}
+}
+
 /*
 ** VertexMaterialClass Implementation
 */
@@ -866,8 +892,6 @@ WW3DErrorType VertexMaterialClass::Save_W3D(ChunkSaveClass & csave)
 
 void VertexMaterialClass::Apply(void) const
 {
-	int i;
-
 	DX8Wrapper::Set_DX8_Material(Material);
 
 	DX8Wrapper::Set_DX8_Render_State(D3DRS_LIGHTING,UseLighting);
@@ -875,15 +899,9 @@ void VertexMaterialClass::Apply(void) const
 	DX8Wrapper::Set_DX8_Render_State(D3DRS_DIFFUSEMATERIALSOURCE,DiffuseColorSource);
 	DX8Wrapper::Set_DX8_Render_State(D3DRS_EMISSIVEMATERIALSOURCE,EmissiveColorSource);
 
-	// set to default values if no mappers
-	for (i=0; i<MeshBuilderClass::MAX_STAGES; i++) {
-		if (Mapper[i]) {
-			Mapper[i]->Apply(UVSource[i]);
-		} else {
-			DX8Wrapper::Set_DX8_Texture_Stage_State(i,D3DTSS_TEXCOORDINDEX,D3DTSS_TCI_PASSTHRU | UVSource[i]);	
-			DX8Wrapper::Set_DX8_Texture_Stage_State(i,D3DTSS_TEXTURETRANSFORMFLAGS,D3DTTFF_DISABLE);		
-		}
-	}
+	WW3D::FixedFunctionStateDesc fixed_function_state;
+	Apply_Fixed_Function_State(fixed_function_state);
+	Apply_DX8_Texture_State(fixed_function_state);
 }
 
 void VertexMaterialClass::Apply_Fixed_Function_State(WW3D::FixedFunctionStateDesc &state) const

@@ -297,8 +297,6 @@ PhysicsSceneClass::PhysicsSceneClass(void) :
 	LockedVisSamplePoint(0,0,0),
 	VisCamera(NULL),
 	CurrentVisTable(NULL),
-	StaticProjectorsEnabled(false),
-	DynamicProjectorsEnabled(false), 
 	ShadowMode(SHADOW_MODE_HARDWARE),
 	ShadowAttenStart(25.0f),
 	ShadowAttenEnd(40.0f),
@@ -1676,50 +1674,47 @@ void PhysicsSceneClass::Render_Objects(
 	}
 	RenderEffectPhaseQueue.Delete_All();
 
+	if (Is_Backface_Occluder_Debug_Enabled()) {
+
+		// render the static world-space meshes
+		{
+			WWPROFILE("world-space meshes");
+
+			for (it.First(static_ws_list); !it.Is_Done(); it.Next()) {
+				// Only render occluders when backface debug is on
+				if (it.Peek_Obj()->As_StaticPhysClass()->Is_Occluder() != 0) {
+					Render_Object(rinfo,it.Peek_Obj());
+				}
+			}
+		}
+
+		// render the other static objects
+		{
+			WWPROFILE("static objects");
+			for (it.First(static_list); !it.Is_Done(); it.Next()) {
+				// Only render occluders when backface debug is on
+				if (it.Peek_Obj()->As_StaticPhysClass()->Is_Occluder() != 0) {
+					Render_Object(rinfo,it.Peek_Obj());
+				}
+			}
+		}
 	
-	if (WW3D::Get_Mesh_Draw_Mode()!=WW3D::MESH_DRAW_MODE_NONE) {
-		if (Is_Backface_Occluder_Debug_Enabled()) {
+	} else {
 
-			// render the static world-space meshes
-			{
-				WWPROFILE("world-space meshes");
+		// render the static world-space meshes
+		{
+			WWPROFILE("world-space meshes");
 
-				for (it.First(static_ws_list); !it.Is_Done(); it.Next()) {
-					// Only render occluders when backface debug is on
-					if (it.Peek_Obj()->As_StaticPhysClass()->Is_Occluder() != 0) {
-						Render_Object(rinfo,it.Peek_Obj());
-					}
-				}
+			for (it.First(static_ws_list); !it.Is_Done(); it.Next()) {
+				Render_Object(rinfo,it.Peek_Obj());
 			}
+		}
 
-			// render the other static objects
-			{
-				WWPROFILE("static objects");
-				for (it.First(static_list); !it.Is_Done(); it.Next()) {
-					// Only render occluders when backface debug is on
-					if (it.Peek_Obj()->As_StaticPhysClass()->Is_Occluder() != 0) {
-						Render_Object(rinfo,it.Peek_Obj());
-					}
-				}
-			}
-		
-		} else {
-
-			// render the static world-space meshes
-			{
-				WWPROFILE("world-space meshes");
-
-				for (it.First(static_ws_list); !it.Is_Done(); it.Next()) {
-					Render_Object(rinfo,it.Peek_Obj());
-				}
-			}
-
-			// render the other static objects
-			{
-				WWPROFILE("static objects");
-				for (it.First(static_list); !it.Is_Done(); it.Next()) {
-					Render_Object(rinfo,it.Peek_Obj());
-				}
+		// render the other static objects
+		{
+			WWPROFILE("static objects");
+			for (it.First(static_list); !it.Is_Done(); it.Next()) {
+				Render_Object(rinfo,it.Peek_Obj());
 			}
 		}
 	}

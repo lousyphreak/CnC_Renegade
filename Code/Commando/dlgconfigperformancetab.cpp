@@ -65,7 +65,7 @@ typedef struct _PERFORMANCE_SETTING
 /////////////////////////////////////////////////////////////////////////////
 
 const int MAX_PERFORMANCE_LEVELS	= 4;
-const int MAX_EXPERT_OPTIONS		= 7;
+const int MAX_EXPERT_OPTIONS		= 5;
 
 PERFORMANCE_SETTING _PerformanceLevels[MAX_PERFORMANCE_LEVELS][MAX_EXPERT_OPTIONS] = 
 {
@@ -77,9 +77,7 @@ PERFORMANCE_SETTING _PerformanceLevels[MAX_PERFORMANCE_LEVELS][MAX_EXPERT_OPTION
 		{IDC_TEXTURE_DETAIL_SLIDER, 0},
 		{IDC_PARTICLE_DETAIL_SLIDER, 0},
 		{IDC_SURFACE_DETAIL_SLIDER, 0},
-		{IDC_GEOMETRY_DETAIL_SLIDER, 0},
-		{IDC_TERRAIN_SHADOW_CHECK, 0},
-		{IDC_NPATCH_CHECK, 0}
+		{IDC_GEOMETRY_DETAIL_SLIDER, 0}
 	},
 
 	{
@@ -87,9 +85,7 @@ PERFORMANCE_SETTING _PerformanceLevels[MAX_PERFORMANCE_LEVELS][MAX_EXPERT_OPTION
 		{IDC_TEXTURE_DETAIL_SLIDER, 1},
 		{IDC_PARTICLE_DETAIL_SLIDER, 0},
 		{IDC_SURFACE_DETAIL_SLIDER, 0},
-		{IDC_GEOMETRY_DETAIL_SLIDER, 0},
-		{IDC_TERRAIN_SHADOW_CHECK, 0},
-		{IDC_NPATCH_CHECK, 0}
+		{IDC_GEOMETRY_DETAIL_SLIDER, 0}
 	},
 
 	{
@@ -97,9 +93,7 @@ PERFORMANCE_SETTING _PerformanceLevels[MAX_PERFORMANCE_LEVELS][MAX_EXPERT_OPTION
 		{IDC_TEXTURE_DETAIL_SLIDER, 2},
 		{IDC_PARTICLE_DETAIL_SLIDER, 1},
 		{IDC_SURFACE_DETAIL_SLIDER, 1},
-		{IDC_GEOMETRY_DETAIL_SLIDER, 1},
-		{IDC_TERRAIN_SHADOW_CHECK, 1},
-		{IDC_NPATCH_CHECK, 0}
+		{IDC_GEOMETRY_DETAIL_SLIDER, 1}
 	},
 
 	//
@@ -110,17 +104,13 @@ PERFORMANCE_SETTING _PerformanceLevels[MAX_PERFORMANCE_LEVELS][MAX_EXPERT_OPTION
 		{IDC_TEXTURE_DETAIL_SLIDER, 2},
 		{IDC_PARTICLE_DETAIL_SLIDER, 2},
 		{IDC_SURFACE_DETAIL_SLIDER, 2},
-		{IDC_GEOMETRY_DETAIL_SLIDER, 2},
-		{IDC_TERRAIN_SHADOW_CHECK, 1},
-		{IDC_NPATCH_CHECK, 0}
+		{IDC_GEOMETRY_DETAIL_SLIDER, 2}
 	},
 };
 
 const char *VALUE_NAME_DYN_LOD			= "Dynamic_LOD_Budget";
 const char *VALUE_NAME_STATIC_LOD		= "Static_LOD_Budget";
-const char *VALUE_NAME_DYN_SHADOWS		= "Dynamic_Projectors";
 const char *VALUE_NAME_SHADOW_MODE		= "Shadow_Mode";
-const char *VALUE_NAME_STATIC_SHADOWS	= "Static_Projectors";
 const char *VALUE_NAME_TEXTURE_RES		= "Texture_Resolution";
 const char *VALUE_NAME_PARTICLE_DETAIL	= "Particle_Detail";
 const char *VALUE_NAME_NPATCHES			= "NPatches";
@@ -283,6 +273,8 @@ DlgConfigPerformanceTabClass::Setup_Controls (void)
 	//
 	Check_Dlg_Button (IDC_NPATCH_CHECK, false);
 	Enable_Dlg_Item (IDC_NPATCH_CHECK, false);
+	Check_Dlg_Button (IDC_TERRAIN_SHADOW_CHECK, false);
+	Enable_Dlg_Item (IDC_TERRAIN_SHADOW_CHECK, false);
 
 	return ;
 }
@@ -311,12 +303,10 @@ DlgConfigPerformanceTabClass::Load_Values (void)
 		//
 		//	Read the values from the registry
 		//
-		int static_shadows	= registry.Get_Int (VALUE_NAME_STATIC_SHADOWS, 1);
 		int shadow_mode		= registry.Get_Int (VALUE_NAME_SHADOW_MODE, PhysicsSceneClass::SHADOW_MODE_HARDWARE);
 		shadow_mode = (shadow_mode == PhysicsSceneClass::SHADOW_MODE_NONE) ? PhysicsSceneClass::SHADOW_MODE_NONE : PhysicsSceneClass::SHADOW_MODE_HARDWARE;
 		int texture_red		= registry.Get_Int (VALUE_NAME_TEXTURE_RES, 0);
 		int particle_detail	= registry.Get_Int (VALUE_NAME_PARTICLE_DETAIL, 1);
-		int npatches			= registry.Get_Int (VALUE_NAME_NPATCHES, 0);
 
 		//
 		//	Get the surface effect mode
@@ -353,8 +343,8 @@ DlgConfigPerformanceTabClass::Load_Values (void)
 		//
 		//	Check the checkbox controls (if necessary)
 		//
-		Check_Dlg_Button (IDC_TERRAIN_SHADOW_CHECK, bool(static_shadows != 0));
-		Check_Dlg_Button (IDC_NPATCH_CHECK, bool(npatches != 0));
+		Check_Dlg_Button (IDC_TERRAIN_SHADOW_CHECK, false);
+		Check_Dlg_Button (IDC_NPATCH_CHECK, false);
 	}
 
 	return ;
@@ -586,9 +576,6 @@ DlgConfigPerformanceTabClass::On_Apply (void)
 		int texture_red		= texture_slider->Get_Pos ();
 		int surface_effect	= surface_effect_slider->Get_Pos ();
 		int particle_detail	= particle_slider->Get_Pos ();
-		int static_shadows	= Is_Dlg_Button_Checked (IDC_TERRAIN_SHADOW_CHECK);
-		int npatches			= Is_Dlg_Button_Checked (IDC_NPATCH_CHECK);
-
 		//
 		//	Determine a good LOD budget to use
 		//
@@ -606,13 +593,12 @@ DlgConfigPerformanceTabClass::On_Apply (void)
 		//
 		registry.Set_Int (VALUE_NAME_DYN_LOD, lod_budget);
 		registry.Set_Int (VALUE_NAME_STATIC_LOD, lod_budget);
-
-		registry.Set_Int (VALUE_NAME_DYN_SHADOWS, (shadow_mode != PhysicsSceneClass::SHADOW_MODE_NONE));
-		registry.Set_Int (VALUE_NAME_STATIC_SHADOWS, static_shadows);
-
 		registry.Set_Int (VALUE_NAME_SHADOW_MODE,		shadow_mode);
 		registry.Set_Int (VALUE_NAME_TEXTURE_RES,		max (2 - texture_red, 0));
 		registry.Set_Int (VALUE_NAME_PARTICLE_DETAIL, particle_detail);
+		registry.Delete_Value("Dynamic_Projectors");
+		registry.Delete_Value("Static_Projectors");
+		registry.Delete_Value(VALUE_NAME_NPATCHES);
 
 		// NPatches not supported, skip saving
 

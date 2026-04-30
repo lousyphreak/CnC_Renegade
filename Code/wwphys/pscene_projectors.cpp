@@ -338,26 +338,6 @@ MaterialPassClass * PhysicsSceneClass::Get_Shadow_Material_Pass(void)
 	return ShadowMaterialPass;
 }
 
-void PhysicsSceneClass::Enable_Static_Projectors(bool onoff)
-{
-	StaticProjectorsEnabled = onoff;
-}
-
-bool PhysicsSceneClass::Are_Static_Projectors_Enabled(void)
-{
-	return StaticProjectorsEnabled;
-}
-
-void PhysicsSceneClass::Enable_Dynamic_Projectors(bool onoff)
-{
-	DynamicProjectorsEnabled = onoff;
-}
-
-bool PhysicsSceneClass::Are_Dynamic_Projectors_Enabled(void)
-{
-	return DynamicProjectorsEnabled;
-}
-
 void PhysicsSceneClass::Set_Shadow_Mode(ShadowEnum shadow_mode)
 {
 	if (((int)shadow_mode >= 0) && ((int)shadow_mode < SHADOW_MODE_COUNT)) {

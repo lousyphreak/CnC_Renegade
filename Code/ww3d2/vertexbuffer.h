@@ -128,16 +128,13 @@ protected:
 
 
 /**
-** Dynamic vertex buffer access is a wrapper to a single cycled dynamic vertex
-** buffer.
-** DynamicVBAccess gains an access to the dynamic vertex buffer and only
-** only of these are allowed at any one time.
+** Dynamic vertex buffer access stages ordinary dynamic submissions in CPU memory
+** until the renderer copies them into bgfx transient buffers at submit time.
+** Sorted translucent paths keep their dedicated CPU-resident sorting buffers.
 **
-** The dynamic fvf buffers are always of the same type.
+** NOTE: Dynamic vertex buffer accessors should only be used locally!
 **
-** NOTE: Dynamic vertex buffers accessors should only be used locally!
-**
-*/
+ */
 
 class DynamicVBAccessClass
 {
@@ -180,9 +177,6 @@ public:
 	{
 		DynamicVBAccessClass* DynamicVBAccess;
 		VertexFormatXYZNDUV2 * Vertices;
-#if RENEGADE_WITH_BGFX_RENDERER
-		const bgfx::Memory *BgfxMemory;
-#endif
 	public:
 		WriteLockClass(DynamicVBAccessClass* vb_access);
 		~WriteLockClass();
@@ -245,10 +239,7 @@ public:
 	const unsigned char *Get_Source_Vertex_Data() const;
 	bool Ensure_Bgfx_Buffer() const;
 	bgfx::VertexBufferHandle Get_Bgfx_Vertex_Buffer() const;
-	bgfx::DynamicVertexBufferHandle Get_Bgfx_Dynamic_Vertex_Buffer() const;
 	const bgfx::VertexLayout &Get_Bgfx_Vertex_Layout() const;
-	bool Uses_Dynamic_Bgfx_Buffer() const;
-	bool Update_Bgfx_Dynamic_Buffer(unsigned start_vertex, const bgfx::Memory *memory) const;
 #endif
 
 protected:
@@ -256,8 +247,6 @@ protected:
 	IDirect3DVertexBuffer8*		VertexBuffer;
 #else
 	mutable bgfx::VertexBufferHandle BgfxVertexBuffer;
-	mutable bgfx::DynamicVertexBufferHandle BgfxDynamicVertexBuffer;
-	bool BgfxUsesDynamicBuffer;
 	mutable bool BgfxVertexBufferDirty;
 	std::vector<unsigned char> VertexData;
 	mutable bgfx::VertexLayout BgfxLayout;

@@ -734,7 +734,7 @@ MPIngameChatPopupClass::MPIngameChatPopupClass (void)	:
 	//	Configure the background renderer
 	//
 	StyleMgrClass::Configure_Renderer (&WindowBackgroundRenderer);
-	WindowBackgroundRenderer.Get_Shader ()->Set_Depth_Compare (ShaderClass::PASS_ALWAYS);
+	WindowBackgroundRenderer.Set_Depth_Compare (ShaderClass::PASS_ALWAYS);
 	return ;
 }
 

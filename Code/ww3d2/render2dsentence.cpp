@@ -711,13 +711,13 @@ void
 Render2DSentenceClass::Set_Shader (ShaderClass shader)
 {
 	Shader = shader;
+	const WW3D::OverlayStateDesc overlay_state = Render2DClass::Overlay_State_From_Shader(Shader);
 
 	//
 	//	Change each renderer's shader
 	//
 	for (int i = 0; i < Renderers.Count (); i ++) {
-		ShaderClass *curr_shader = Renderers[i].Renderer->Get_Shader ();
-		(*curr_shader) = Shader;
+		Renderers[i].Renderer->Set_Overlay_State(overlay_state);
 	}
 
 	return ;
@@ -1183,8 +1183,7 @@ Render2DSentenceClass::Draw_Sentence (uint32 color)
 				//
 				curr_renderer = new Render2DClass;
 				curr_renderer->Set_Coordinate_Range (Render2DClass::Get_Screen_Resolution ());
-				ShaderClass *curr_shader = curr_renderer->Get_Shader ();
-				(*curr_shader) = Shader;
+				curr_renderer->Set_Overlay_State(Render2DClass::Overlay_State_From_Shader(Shader));
 
 				//
 				//	Add it to our list

@@ -43,8 +43,6 @@
 static char THIS_FILE[] = __FILE__;
 #endif
 
-static bool CanDoMultiPass=true;
-
 /////////////////////////////////////////////////////////////////////////////
 // Structures and typedefs
 /////////////////////////////////////////////////////////////////////////////
@@ -60,7 +58,7 @@ typedef struct _PERFORMANCE_SETTING
 /////////////////////////////////////////////////////////////////////////////
 
 const int MAX_PERFORMANCE_LEVELS	= 4;
-const int MAX_EXPERT_OPTIONS		= 8;
+const int MAX_EXPERT_OPTIONS		= 6;
 
 PERFORMANCE_SETTING _PerformanceLevels[MAX_PERFORMANCE_LEVELS][MAX_EXPERT_OPTIONS] = 
 {
@@ -73,9 +71,7 @@ PERFORMANCE_SETTING _PerformanceLevels[MAX_PERFORMANCE_LEVELS][MAX_EXPERT_OPTION
 		{IDC_PARTICLE_DETAIL_SLIDER, 0},
 		{IDC_SURFACE_DETAIL_SLIDER, 0},
 		{IDC_GEOMETRY_DETAIL_SLIDER, 0},
-		{IDC_TEXTURE_FILTER_COMBO, TextureClass::TEXTURE_FILTER_BILINEAR},
-		{IDC_LIGHTING_MODE_COMBO, WW3D::PRELIT_MODE_VERTEX},
-		{IDC_TERRAIN_SHADOW_CHECK, 0}
+		{IDC_TEXTURE_FILTER_COMBO, TextureClass::TEXTURE_FILTER_BILINEAR}
 	},
 
 	{
@@ -84,9 +80,7 @@ PERFORMANCE_SETTING _PerformanceLevels[MAX_PERFORMANCE_LEVELS][MAX_EXPERT_OPTION
 		{IDC_PARTICLE_DETAIL_SLIDER, 0},
 		{IDC_SURFACE_DETAIL_SLIDER, 0},
 		{IDC_GEOMETRY_DETAIL_SLIDER, 0},
-		{IDC_TEXTURE_FILTER_COMBO, TextureClass::TEXTURE_FILTER_BILINEAR},
-		{IDC_LIGHTING_MODE_COMBO, WW3D::PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE},
-		{IDC_TERRAIN_SHADOW_CHECK, 0}
+		{IDC_TEXTURE_FILTER_COMBO, TextureClass::TEXTURE_FILTER_BILINEAR}
 	},
 
 	{
@@ -95,9 +89,7 @@ PERFORMANCE_SETTING _PerformanceLevels[MAX_PERFORMANCE_LEVELS][MAX_EXPERT_OPTION
 		{IDC_PARTICLE_DETAIL_SLIDER, 1},
 		{IDC_SURFACE_DETAIL_SLIDER, 1},
 		{IDC_GEOMETRY_DETAIL_SLIDER, 1},
-		{IDC_TEXTURE_FILTER_COMBO, TextureClass::TEXTURE_FILTER_TRILINEAR},
-		{IDC_LIGHTING_MODE_COMBO, WW3D::PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE},
-		{IDC_TERRAIN_SHADOW_CHECK, 1}
+		{IDC_TEXTURE_FILTER_COMBO, TextureClass::TEXTURE_FILTER_TRILINEAR}
 	},
 
 	//
@@ -109,9 +101,7 @@ PERFORMANCE_SETTING _PerformanceLevels[MAX_PERFORMANCE_LEVELS][MAX_EXPERT_OPTION
 		{IDC_PARTICLE_DETAIL_SLIDER, 2},
 		{IDC_SURFACE_DETAIL_SLIDER, 2},
 		{IDC_GEOMETRY_DETAIL_SLIDER, 2},
-		{IDC_TEXTURE_FILTER_COMBO, TextureClass::TEXTURE_FILTER_TRILINEAR},
-		{IDC_LIGHTING_MODE_COMBO, WW3D::PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE},
-		{IDC_TERRAIN_SHADOW_CHECK, 1}
+		{IDC_TEXTURE_FILTER_COMBO, TextureClass::TEXTURE_FILTER_TRILINEAR}
 	},
 };
 
@@ -147,11 +137,8 @@ const char *KEY_NAME_OPTIONS				= "Software\\Westwood\\Renegade\\Options";
 
 const char *VALUE_NAME_DYN_LOD			= "Dynamic_LOD_Budget";
 const char *VALUE_NAME_STATIC_LOD		= "Static_LOD_Budget";
-const char *VALUE_NAME_DYN_SHADOWS		= "Dynamic_Projectors";
 const char *VALUE_NAME_TEXTURE_FILTER	= "Texture_Filter_Mode";
-const char *VALUE_NAME_PRELIT_MODE		= "Prelit_Mode";
 const char *VALUE_NAME_SHADOW_MODE		= "Shadow_Mode";
-const char *VALUE_NAME_STATIC_SHADOWS	= "Static_Projectors";
 const char *VALUE_NAME_TEXTURE_RES		= "Texture_Resolution";
 const char *VALUE_NAME_SURFACE_EFFECT	= "Surface_Effect_Detail";
 const char *VALUE_NAME_PARTICLE_DETAIL	= "Particle_Detail";
@@ -254,6 +241,10 @@ PerformanceConfigDialogClass::OnInitDialog (void)
 	SetDlgItemText( IDC_TEXTURE_FILTER,	Locale_GetString( IDS_TEXTURE_FILTER, string ));
 
 	SetDlgItemText( IDC_TERRAIN_SHADOW_CHECK,	Locale_GetString( IDS_TERRAIN_SHADOWS, string ));
+	::EnableWindow(::GetDlgItem(m_hWnd, IDC_LIGHTING_MODE), FALSE);
+	::EnableWindow(::GetDlgItem(m_hWnd, IDC_LIGHTING_MODE_COMBO), FALSE);
+	::EnableWindow(::GetDlgItem(m_hWnd, IDC_TERRAIN_SHADOW_CHECK), FALSE);
+	SendDlgItemMessage(IDC_TERRAIN_SHADOW_CHECK, BM_SETCHECK, 0);
 
 	//
 	//	Configure the dialog controls
@@ -390,10 +381,6 @@ PerformanceConfigDialogClass::Load_Values (void)
 		int dynamic_lod		= registry.Get_Int (VALUE_NAME_DYN_LOD, 3000);
 		int static_lod			= registry.Get_Int (VALUE_NAME_STATIC_LOD, 3000);
 
-		int dynamic_shadows	= registry.Get_Int (VALUE_NAME_DYN_SHADOWS, 1);
-		int static_shadows	= registry.Get_Int (VALUE_NAME_STATIC_SHADOWS, 1);
-
-		int prelit_mode		= registry.Get_Int (VALUE_NAME_PRELIT_MODE, WW3D::PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE);
 		int texture_filter	= registry.Get_Int (VALUE_NAME_TEXTURE_FILTER, TextureClass::TEXTURE_FILTER_BILINEAR);
 		int shadow_mode		= registry.Get_Int (VALUE_NAME_SHADOW_MODE, PhysicsSceneClass::SHADOW_MODE_HARDWARE);		
 		shadow_mode = (shadow_mode == PhysicsSceneClass::SHADOW_MODE_NONE) ? PhysicsSceneClass::SHADOW_MODE_NONE : PhysicsSceneClass::SHADOW_MODE_HARDWARE;
@@ -424,12 +411,7 @@ PerformanceConfigDialogClass::Load_Values (void)
 		//
 		//	Check the checkbox controls (if necessary)
 		//
-		SendDlgItemMessage (IDC_TERRAIN_SHADOW_CHECK, BM_SETCHECK, (uintptr_t)(static_shadows != 0));
-		
-		//
-		//	Select the correct setting from the lighting mode combo box
-		//
-		SendDlgItemMessage (IDC_LIGHTING_MODE_COMBO, CB_SETCURSEL, prelit_mode);		
+		SendDlgItemMessage (IDC_TERRAIN_SHADOW_CHECK, BM_SETCHECK, 0);
 
 		//
 		//	Select the correct setting from the texture filtering mode combo box
@@ -490,7 +472,7 @@ PerformanceConfigDialogClass::Determine_Performance_Setting (void)
 	//
 	//	Set the slider's position
 	//
-	m_PerformanceSlider.SetPos (min (int(level_rating + 0.5F), MAX_EXPERT_OPTIONS - 1));
+	m_PerformanceSlider.SetPos (min (int(level_rating + 0.5F), MAX_PERFORMANCE_LEVELS - 1));
 	return ;
 }
 
@@ -529,14 +511,6 @@ PerformanceConfigDialogClass::Get_Settings (DynamicVectorClass<int> &settings)
 			//
 			//	Read the values from the checkbox
 			//
-			case IDC_TERRAIN_SHADOW_CHECK:
-				curr_value = SendDlgItemMessage (ctrl_id, BM_GETCHECK);
-				break;
-
-			//
-			//	Read a value from a combo box.
-			//
-			case IDC_LIGHTING_MODE_COMBO:
 			case IDC_TEXTURE_FILTER_COMBO:
 				curr_value = SendDlgItemMessage (ctrl_id, CB_GETCURSEL);
 				break;
@@ -583,14 +557,6 @@ PerformanceConfigDialogClass::Update_Expert_Controls (int level)
 			//
 			//	Update any of the check boxes via the same mechanism
 			//
-			case IDC_TERRAIN_SHADOW_CHECK:
-				SendDlgItemMessage (ctrl_id, BM_SETCHECK, _PerformanceLevels[level][index].value);
-				break;
-
-			//
-			//	Update any of the combo boxes.
-			//
-			case IDC_LIGHTING_MODE_COMBO:
 			case IDC_TEXTURE_FILTER_COMBO:
 				SendDlgItemMessage (ctrl_id, CB_SETCURSEL, _PerformanceLevels[level][index].value);
 				break;
@@ -654,13 +620,6 @@ PerformanceConfigDialogClass::Apply_Changes (void)
 		int texture_red		= 	m_TextureDetailSlider.GetPos ();
 		int surface_effect	= 	m_SurfaceEffectsSlider.GetPos ();
 		int particle_detail	= 	m_ParticleSlider.GetPos ();
-		int static_shadows	= SendDlgItemMessage (IDC_TERRAIN_SHADOW_CHECK, BM_GETCHECK);		
-		int prelit_mode		= SendDlgItemMessage (IDC_LIGHTING_MODE_COMBO, CB_GETCURSEL);
-		// If card can't do multi-pass, value 1 means multi-texture (multi-pass selection is missing from the combo box)
-		if (!CanDoMultiPass) {
-			if (prelit_mode==1) prelit_mode=WW3D::PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE;
-		}
-
 		int texture_filter	= SendDlgItemMessage (IDC_TEXTURE_FILTER_COMBO, CB_GETCURSEL);
 
 		//
@@ -680,16 +639,14 @@ PerformanceConfigDialogClass::Apply_Changes (void)
 		//
 		registry.Set_Int (VALUE_NAME_DYN_LOD, lod_budget);
 		registry.Set_Int (VALUE_NAME_STATIC_LOD, lod_budget);
-
-		registry.Set_Int (VALUE_NAME_DYN_SHADOWS, (shadow_mode != PhysicsSceneClass::SHADOW_MODE_NONE));
-		registry.Set_Int (VALUE_NAME_STATIC_SHADOWS, static_shadows);
-
-		registry.Set_Int (VALUE_NAME_PRELIT_MODE, prelit_mode);
 		registry.Set_Int (VALUE_NAME_TEXTURE_FILTER, texture_filter);
 		registry.Set_Int (VALUE_NAME_SHADOW_MODE, shadow_mode);
 		registry.Set_Int (VALUE_NAME_TEXTURE_RES, max (2 - texture_red, 0));
 		registry.Set_Int (VALUE_NAME_SURFACE_EFFECT, surface_effect);
 		registry.Set_Int (VALUE_NAME_PARTICLE_DETAIL, particle_detail);
+		registry.Delete_Value("Dynamic_Projectors");
+		registry.Delete_Value("Static_Projectors");
+		registry.Delete_Value("Prelit_Mode");
 	}
 
 	return ;
@@ -900,8 +857,6 @@ void AutoConfigSettings()
 	}
 
 	DX8Caps caps(d3d,*d3dcaps,Renderer_Format_To_WW3DFormat(display_format),adapter_id);
-	CanDoMultiPass=caps.Can_Do_Multi_Pass();
-
 	bool high_end_processor = true;
 
 
@@ -938,16 +893,12 @@ void AutoConfigSettings()
 	if (caps.Support_Render_To_Texture_Format(Renderer_Format_To_WW3DFormat(display_format))) {
 		if (caps.Support_TnL()) {
 			registry.Set_Int (VALUE_NAME_SHADOW_MODE, 3);
-			registry.Set_Int (VALUE_NAME_STATIC_SHADOWS, 1);
 		}
 		else {
 			registry.Set_Int (VALUE_NAME_SHADOW_MODE, 2);
-			registry.Set_Int (VALUE_NAME_STATIC_SHADOWS, 0);
 		}
 	}
 	else {
-		registry.Set_Int (VALUE_NAME_STATIC_SHADOWS, 0);
-
 		// Set to medium if high end cpu detected.
 		// TODO: Set to medium if Athlon detected.
 		if (high_end_processor) {
@@ -986,22 +937,9 @@ void AutoConfigSettings()
 	}
 
 
-	// If the system has less than 100 Megs (64 or 96 most likely) of RAM, select vertex solve to
-	// save memory.
-	// If card can't do multi pass (which is the case if we've seen z-fighting problems when multi-passing)
-	// select vertex solve.
-	if (!caps.Can_Do_Multi_Pass()) {
-		registry.Set_Int (VALUE_NAME_PRELIT_MODE, 0);
-	}
-	// Otherwise select multitexturing if card can do it, or multipass...
-	else {
-		if (caps.Get_Max_Textures_Per_Pass()>=2) {
-			registry.Set_Int (VALUE_NAME_PRELIT_MODE, 2);
-		}
-		else {
-			registry.Set_Int (VALUE_NAME_PRELIT_MODE, 1);
-		}
-	}
+	registry.Delete_Value("Dynamic_Projectors");
+	registry.Delete_Value("Static_Projectors");
+	registry.Delete_Value("Prelit_Mode");
 
 	RegistryClass registry_options (KEY_NAME_OPTIONS);
 	if (!registry_options.Is_Valid()) return;
@@ -1121,49 +1059,15 @@ PerformanceConfigDialogClass::OnShowWindow(int32_t bShow, uint32_t nStatus)
 			}
 
 			DX8Caps caps(d3d,video->Get_Current_Caps(),Renderer_Format_To_WW3DFormat(display_format),adapter_id);
-			CanDoMultiPass=caps.Can_Do_Multi_Pass();
-
-			//
-			//	Populate the lighting combobox
-			//
-
-			// Get the current selection
-			char cur_sel_string[256];
-			unsigned sel=SendDlgItemMessage (IDC_LIGHTING_MODE_COMBO, CB_GETCURSEL, 0, 0);
-			if (sel!=CB_ERR) {
-				SendDlgItemMessage (IDC_LIGHTING_MODE_COMBO, CB_GETLBTEXT, sel, (intptr_t)cur_sel_string);
-			}
-			else {
-				cur_sel_string[0]=0;
-				sel=registry.Get_Int (VALUE_NAME_PRELIT_MODE, WW3D::PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE);
-			}
-
-			// Reset content and add available modes
-			SendDlgItemMessage (IDC_LIGHTING_MODE_COMBO, CB_RESETCONTENT, 0, 0);
-			SendDlgItemMessage (IDC_LIGHTING_MODE_COMBO, CB_ADDSTRING, 0, (intptr_t)Locale_GetString( IDS_VERTEX, string ));
-			if (caps.Can_Do_Multi_Pass()) {
-				SendDlgItemMessage (IDC_LIGHTING_MODE_COMBO, CB_ADDSTRING, 0, (intptr_t)Locale_GetString( IDS_MULTI_PASS, string ));
-			}
-			if (caps.Get_Max_Textures_Per_Pass()>1) {
-				SendDlgItemMessage (IDC_LIGHTING_MODE_COMBO, CB_ADDSTRING, 0, (intptr_t)Locale_GetString( IDS_MULTI_TEXTURE, string ));	
-			}
-
-			// Try to set the previous selection
-			unsigned res=SendDlgItemMessage (IDC_LIGHTING_MODE_COMBO, CB_FINDSTRINGEXACT, -1, (intptr_t)cur_sel_string);
-			if (res==CB_ERR) {
-				if (sel==0) res=0;
-				else {
-					res=SendDlgItemMessage (IDC_LIGHTING_MODE_COMBO, CB_GETCOUNT, 0, 0)-1;
-					if (sel<res) res=sel;
-				}
-			}
-			SendDlgItemMessage (IDC_LIGHTING_MODE_COMBO, CB_SETCURSEL, res, 0);
 
 			//
 			//	Populate the texture filtering combobox
 			//
 
 			// Get the current selection
+			char cur_sel_string[256];
+			unsigned sel;
+			unsigned res;
 			sel=SendDlgItemMessage (IDC_TEXTURE_FILTER_COMBO, CB_GETCURSEL, 0, 0);
 			if (sel!=CB_ERR) {
 				SendDlgItemMessage (IDC_TEXTURE_FILTER_COMBO, CB_GETLBTEXT, sel, (intptr_t)cur_sel_string);

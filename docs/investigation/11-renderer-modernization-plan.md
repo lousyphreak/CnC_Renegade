@@ -391,11 +391,28 @@ The sequence below is the recommended order because later batching work will not
 
 - every maintained runtime rendering path is owned by one renderer architecture, not by a mix of scene-local and legacy DX8-era helpers
 
+**Status**
+
+- implemented for the maintained runtime path
+- ordinary dynamic runtime submissions no longer depend on DX8-era lock/discard ring ownership; bgfx consumes them as submission-local staging data and uploads them through transient submission at draw time
+- sorted translucent geometry remains the explicit CPU-resident exception path, and non-sorted skins continue to default to GPU skinning
+- overlay/UI/Bink movie submission now routes through one renderer-owned overlay queue with shared per-frame packet storage instead of per-caller submission vectors
+- the maintained runtime overlay contract no longer passes mutable `ShaderClass` state through `Render2D`; `WW3D::OverlaySubmitDesc` now carries explicit overlay blend/depth/color/texturing state, and the active WWUI/Commando callers were migrated off `Render2DClass::Get_Shader()`
+- editor-only consumers are not part of this renderer ownership boundary; phase 7 only commits the maintained runtime path
+
 ### Phase 8: delete the legacy surfaces and clean the outward-facing runtime settings
 
 **Objective**
 
 - make the modernization irreversible by removing the old contracts instead of keeping dead compatibility layers around
+
+**Implemented runtime-facing cleanup**
+
+- mapper and matrix-mapper runtime contracts no longer expose per-mapper `Apply(int uv_array_index)` DX8 mutation entry points; mapper state is now described through `WW3D::FixedFunctionStateDesc`, and `VertexMaterialClass::Apply()` is the only remaining legacy DX8 emission boundary for that material packet
+- dead outward-facing runtime settings and compatibility keys for `Dynamic_Projectors`, `Static_Projectors`, `Mesh_Draw_Mode`, `Prelit_Mode`, and `NPatches` were removed or aggressively cleaned from `Commando` and `WWConfig` config/console surfaces
+- the maintained runtime no longer carries the old mesh draw mode toggle or physics-scene projector enable toggles as live renderer controls
+- runtime config UI now treats shadowing as the unified maintained setting and stops persisting the projector-era/lighting-era compatibility knobs
+- maintained runtime rendering no longer branches through the deleted mesh-draw compatibility path, and the phase-8 cleanup was revalidated with a full build and a 210-second Renegade soak
 
 **Primary code areas**
 

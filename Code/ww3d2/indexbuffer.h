@@ -114,8 +114,9 @@ protected:
 };
 
 
-// HY 2/14/01
-// Created
+// Ordinary dynamic index data is staged in CPU memory until the renderer copies
+// it into bgfx transient buffers at submit time. Sorted translucent paths keep
+// their dedicated CPU-resident sorting buffers.
 class DynamicIBAccessClass
 {
 	friend DX8Wrapper;
@@ -149,9 +150,6 @@ public:
 	{
 		DynamicIBAccessClass* DynamicIBAccess;
 		unsigned short* Indices;		
-#if RENEGADE_WITH_BGFX_RENDERER
-		const bgfx::Memory *BgfxMemory;
-#endif
 	public:
 		WriteLockClass(DynamicIBAccessClass* ib_access);
 		~WriteLockClass();
@@ -189,9 +187,6 @@ public:
 	const unsigned short *Get_Source_Index_Data() const;
 	bool Ensure_Bgfx_Buffer() const;
 	bgfx::IndexBufferHandle Get_Bgfx_Index_Buffer() const;
-	bgfx::DynamicIndexBufferHandle Get_Bgfx_Dynamic_Index_Buffer() const;
-	bool Uses_Dynamic_Bgfx_Buffer() const;
-	bool Update_Bgfx_Dynamic_Buffer(unsigned start_index, const bgfx::Memory *memory) const;
 #endif
 
 #if !RENEGADE_WITH_BGFX_RENDERER
@@ -203,8 +198,6 @@ private:
 	IDirect3DIndexBuffer8*	index_buffer;		// actual dx8 index buffer
 #else
 	mutable bgfx::IndexBufferHandle BgfxIndexBuffer;
-	mutable bgfx::DynamicIndexBufferHandle BgfxDynamicIndexBuffer;
-	bool BgfxUsesDynamicBuffer;
 	mutable bool BgfxIndexBufferDirty;
 	std::vector<unsigned short> IndexData;
 

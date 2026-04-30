@@ -584,28 +584,16 @@ void ShadowMapManager::Submit_Shadow_Draws(
         if (use_direct_index_buffer) {
             const RenderVertexBufferClass &render_vertex_buffer =
                 static_cast<const RenderVertexBufferClass &>(vertex_buffer);
-            if (render_vertex_buffer.Uses_Dynamic_Bgfx_Buffer()) {
-                bgfx::setVertexBuffer(0, render_vertex_buffer.Get_Bgfx_Dynamic_Vertex_Buffer());
-            } else {
-                bgfx::setVertexBuffer(0, render_vertex_buffer.Get_Bgfx_Vertex_Buffer());
-            }
+            bgfx::setVertexBuffer(0, render_vertex_buffer.Get_Bgfx_Vertex_Buffer());
         } else if (use_direct_vertex_buffer) {
             const RenderVertexBufferClass &render_vertex_buffer =
                 static_cast<const RenderVertexBufferClass &>(vertex_buffer);
             const uint32_t start_vertex = vertex_buffer_offset + index_base_offset + min_vertex_index;
-            if (render_vertex_buffer.Uses_Dynamic_Bgfx_Buffer()) {
-                bgfx::setVertexBuffer(
-                    0,
-                    render_vertex_buffer.Get_Bgfx_Dynamic_Vertex_Buffer(),
-                    start_vertex,
-                    vertex_count);
-            } else {
-                bgfx::setVertexBuffer(
-                    0,
-                    render_vertex_buffer.Get_Bgfx_Vertex_Buffer(),
-                    start_vertex,
-                    vertex_count);
-            }
+            bgfx::setVertexBuffer(
+                0,
+                render_vertex_buffer.Get_Bgfx_Vertex_Buffer(),
+                start_vertex,
+                vertex_count);
         } else {
             bgfx::setVertexBuffer(0, transient_vb);
         }
@@ -614,17 +602,10 @@ void ShadowMapManager::Submit_Shadow_Draws(
         if (use_direct_index_buffer) {
             const RenderIndexBufferClass &render_index_buffer =
                 static_cast<const RenderIndexBufferClass &>(index_buffer);
-            if (render_index_buffer.Uses_Dynamic_Bgfx_Buffer()) {
-                bgfx::setIndexBuffer(
-                    render_index_buffer.Get_Bgfx_Dynamic_Index_Buffer(),
-                    index_buffer_offset + start_index,
-                    submitted_index_count);
-            } else {
-                bgfx::setIndexBuffer(
-                    render_index_buffer.Get_Bgfx_Index_Buffer(),
-                    index_buffer_offset + start_index,
-                    submitted_index_count);
-            }
+            bgfx::setIndexBuffer(
+                render_index_buffer.Get_Bgfx_Index_Buffer(),
+                index_buffer_offset + start_index,
+                submitted_index_count);
         } else {
             bgfx::setIndexBuffer(transient_ib);
         }

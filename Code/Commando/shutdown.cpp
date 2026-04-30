@@ -85,10 +85,8 @@ extern SimpleFileFactoryClass RenegadeBaseFileFactory;
 //extern const char *KEY_NAME_SETTINGS;
 extern const char *VALUE_NAME_DYN_LOD;
 extern const char *VALUE_NAME_STATIC_LOD;
-extern const char *VALUE_NAME_DYN_SHADOWS;
 const char *VALUE_NAME_PRELIT_MODE		= "Prelit_Mode";
 extern const char *VALUE_NAME_SHADOW_MODE;
-extern const char *VALUE_NAME_STATIC_SHADOWS;
 extern const char *VALUE_NAME_TEXTURE_RES;
 const char *VALUE_NAME_SURFACE_EFFECT	= "Surface_Effect_Detail";
 extern const char *VALUE_NAME_PARTICLE_DETAIL;
@@ -106,11 +104,8 @@ static void Get_Detail_String(StringClass& str)
 		int dynamic_lod		= registry.Get_Int (VALUE_NAME_DYN_LOD, 3000);
 		int static_lod			= registry.Get_Int (VALUE_NAME_STATIC_LOD, 3000);
 
-		int dynamic_shadows	= registry.Get_Int (VALUE_NAME_DYN_SHADOWS, 1);
-		int static_shadows	= registry.Get_Int (VALUE_NAME_STATIC_SHADOWS, 1);
-
 		int texture_filter	= registry.Get_Int (VALUE_NAME_TEXTURE_FILTER_MODE, TextureClass::TEXTURE_FILTER_BILINEAR);
-		int prelit_mode		= registry.Get_Int (VALUE_NAME_PRELIT_MODE, WW3D::PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE);
+		int prelit_mode		= WW3D::PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE;
 		int shadow_mode		= registry.Get_Int (VALUE_NAME_SHADOW_MODE, PhysicsSceneClass::SHADOW_MODE_HARDWARE);
 		int texture_red		= registry.Get_Int (VALUE_NAME_TEXTURE_RES, 0);
 		int surface_effect	= registry.Get_Int (VALUE_NAME_SURFACE_EFFECT, 1);
@@ -131,18 +126,7 @@ static void Get_Detail_String(StringClass& str)
 		default: str+="???\r\n"; break;
 		}
 
-		tmp.Format("Dynamic Shadows: %s\r\n",dynamic_shadows ? "On" : "Off");
-		str+=tmp;
-		tmp.Format("Static Shadows: %s\r\n",static_shadows ? "On" : "Off");
-		str+=tmp;
-
-		str+="Prelit Mode: ";
-		switch (prelit_mode) {
-		case WW3D::PRELIT_MODE_VERTEX: str+="Vertex\r\n"; break;
-		case WW3D::PRELIT_MODE_LIGHTMAP_MULTI_PASS: str+="Multipass\r\n"; break;
-		case WW3D::PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE: str+="Multitexture\r\n"; break;
-		default: str+="???\r\n"; break;
-		}
+		str+="Lightmap Path: Multitexture\r\n";
 		tmp.Format("Texture Resolution: %d\r\n",texture_red);
 		str+=tmp;
 
@@ -205,18 +189,15 @@ void Get_Compact_Detail_String(StringClass& str)
 		int dynamic_lod		= registry.Get_Int (VALUE_NAME_DYN_LOD, 3000);
 		int static_lod			= registry.Get_Int (VALUE_NAME_STATIC_LOD, 3000);
 
-		int dynamic_shadows	= registry.Get_Int (VALUE_NAME_DYN_SHADOWS, 1);
-		int static_shadows	= registry.Get_Int (VALUE_NAME_STATIC_SHADOWS, 1);
-
 		int texture_filter	= registry.Get_Int (VALUE_NAME_TEXTURE_FILTER_MODE, TextureClass::TEXTURE_FILTER_BILINEAR);
-		int prelit_mode		= registry.Get_Int (VALUE_NAME_PRELIT_MODE, WW3D::PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE);
+		int prelit_mode		= WW3D::PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE;
 		int shadow_mode		= registry.Get_Int (VALUE_NAME_SHADOW_MODE, PhysicsSceneClass::SHADOW_MODE_HARDWARE);
 		int texture_red		= registry.Get_Int (VALUE_NAME_TEXTURE_RES, 0);
 		int surface_effect	= registry.Get_Int (VALUE_NAME_SURFACE_EFFECT, 1);
 		int particle_detail	= registry.Get_Int (VALUE_NAME_PARTICLE_DETAIL, 1);
 
 		StringClass tmp;
-		tmp.Format("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t",dynamic_lod,static_lod,shadow_mode,dynamic_shadows,static_shadows,prelit_mode,texture_red,surface_effect,particle_detail,texture_filter);
+		tmp.Format("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t",dynamic_lod,static_lod,shadow_mode,(shadow_mode != PhysicsSceneClass::SHADOW_MODE_NONE),0,prelit_mode,texture_red,surface_effect,particle_detail,texture_filter);
 		str+=tmp;
 
 		tmp.Format("%d\t",1);//WW3D::Get_Texture_Compression_Mode());

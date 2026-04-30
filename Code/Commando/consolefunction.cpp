@@ -814,16 +814,6 @@ public:
 	}
 };
 
-class ProjectorDebugConsoleFunctionClass : public ConsoleFunctionClass
-{
-public:
-	virtual	const char * Get_Name( void )	{ return "projector_debug"; }
-	virtual	const char * Get_Help( void )	{ return "PROJECTOR_DEBUG - legacy compatibility command; receiver-side projector replay was removed from the runtime path."; }
-	virtual	void Activate( const char * input ) {
-		Print("Projector debug display was removed with the runtime projector replay path.\n");
-	}
-};
-
 class DirtyCullDebugConsoleFunctionClass : public ConsoleFunctionClass
 {
 public:
@@ -1475,7 +1465,7 @@ public:
 
       ConsoleFunctionManager::Parse_Input("Shadow_Mode 0");
 
-      ConsoleFunctionManager::Parse_Input("Prelit_Mode 0");
+      WW3D::Set_Prelit_Mode(WW3D::PRELIT_MODE_VERTEX);
 
       //ConsoleFunctionManager::Parse_Input("Mesh_Draw_Mode 0");
 
@@ -5025,7 +5015,6 @@ void	ConsoleFunctionManager::Init( void )
 	FunctionList.Add( new PlayerPositionConsoleFunctionClass() );
 	FunctionList.Add( new ProfileCollectBeginConsoleFunctionClass() );
 	FunctionList.Add( new ProfileCollectEndConsoleFunctionClass() );
-	FunctionList.Add( new ProjectorDebugConsoleFunctionClass() );
 	//FunctionList.Add( new RadarMaxConsoleFunctionClass() );
 	FunctionList.Add( new RadarToggleConsoleFunctionClass() );
 	//FunctionList.Add( new RadarZoomConsoleFunctionClass() );

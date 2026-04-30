@@ -68,7 +68,7 @@ PopupDialogClass::PopupDialogClass (int res_id)	:
 	//
 	//	Force this renderer to always render
 	//
-	BlackoutRenderer.Get_Shader ()->Set_Depth_Compare (ShaderClass::PASS_ALWAYS);
+	BlackoutRenderer.Set_Depth_Compare (ShaderClass::PASS_ALWAYS);
 
 	//
 	// By default, popup backgrounds are dark

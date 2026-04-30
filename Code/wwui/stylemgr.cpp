@@ -1116,9 +1116,7 @@ StyleMgrClass::Configure_Hilighter (Render2DClass *renderer)
 	//
 	//	Setup an additive shader
 	//
-	ShaderClass *shader = renderer->Get_Shader ();
-	shader->Set_Dst_Blend_Func (ShaderClass::DSTBLEND_ONE);
-	shader->Set_Src_Blend_Func (ShaderClass::SRCBLEND_ONE);	
+	renderer->Enable_Additive (true);
 	//shader->Set_Primary_Gradient (ShaderClass::GRADIENT_ADD);
 	//shader->Set_Secondary_Gradient (ShaderClass::SECONDARY_GRADIENT_DISABLE);
 	return ;
@@ -1254,8 +1252,7 @@ StyleMgrClass::Configure_Renderer (Render2DClass *renderer)
 	//
 	//	Turn depth-buffer reading on for this renderer
 	//
-	//ShaderClass *shader = renderer->Get_Shader ();
-	//shader->Set_Depth_Compare (ShaderClass::PASS_LEQUAL);
+	// renderer->Set_Depth_Compare (ShaderClass::PASS_LEQUAL);
 	return ;
 }
 

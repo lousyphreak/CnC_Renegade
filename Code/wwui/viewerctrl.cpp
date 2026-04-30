@@ -160,12 +160,10 @@ ViewerCtrlClass::Create_Control_Renderer (void)
 	//
 	renderer.Reset ();
 	renderer.Enable_Texturing (false);
-
-	ShaderClass *shader = renderer.Get_Shader ();
 	renderer.Set_Z_Value (1.0F);
-	shader->Set_Depth_Compare (ShaderClass::PASS_ALWAYS);
-	shader->Set_Depth_Mask (ShaderClass::DEPTH_WRITE_ENABLE);
-	shader->Set_Color_Mask (ShaderClass::COLOR_WRITE_ENABLE);
+	renderer.Set_Depth_Compare (ShaderClass::PASS_ALWAYS);
+	renderer.Set_Depth_Write (true);
+	renderer.Set_Color_Write (true);
 
 
 	//

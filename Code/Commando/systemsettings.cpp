@@ -56,8 +56,13 @@ DynamicVectorClass<SystemSettingEntry *>	SystemSettings::SettingList;
 
 namespace
 {
-	const int BgfxShadowDefaultsVersion = 3;
-	const char * BgfxShadowDefaultsVersionName = "Bgfx_Shadow_Defaults_Version";
+	const int RendererDefaultsVersion = 4;
+	const char * RendererDefaultsVersionName = "Bgfx_Shadow_Defaults_Version";
+	const char * LegacyDynamicProjectorsName = "Dynamic_Projectors";
+	const char * LegacyStaticProjectorsName = "Static_Projectors";
+	const char * LegacyPrelitModeName = "Prelit_Mode";
+	const char * LegacyMeshDrawModeName = "Mesh_Draw_Mode";
+	const char * LegacyNPatchesName = "NPatches";
 
 	bool Registry_Has_Value(RegistryClass & registry,const char * name)
 	{
@@ -71,29 +76,29 @@ namespace
 		return false;
 	}
 
-	void Upgrade_Bgfx_Shadow_Defaults(const char * sub_key)
+	void Upgrade_Renderer_Defaults(const char * sub_key)
 	{
 		RegistryClass registry(sub_key);
 		if (!registry.Is_Valid()) {
 			return;
 		}
 
-		if (registry.Get_Int(BgfxShadowDefaultsVersionName,0) >= BgfxShadowDefaultsVersion) {
+		if (registry.Get_Int(RendererDefaultsVersionName,0) >= RendererDefaultsVersion) {
 			return;
 		}
 
 		const bool has_shadow_mode = Registry_Has_Value(registry,"Shadow_Mode");
-		const bool has_dynamic_projectors = Registry_Has_Value(registry,"Dynamic_Projectors");
-		const bool has_static_projectors = Registry_Has_Value(registry,"Static_Projectors");
+		const bool has_dynamic_projectors = Registry_Has_Value(registry,LegacyDynamicProjectorsName);
+		const bool has_static_projectors = Registry_Has_Value(registry,LegacyStaticProjectorsName);
 
 		if (!has_shadow_mode) {
 			registry.Set_Int("Shadow_Mode",PhysicsSceneClass::SHADOW_MODE_HARDWARE);
 		}
 		if (!has_dynamic_projectors) {
-			registry.Set_Bool("Dynamic_Projectors",true);
+			registry.Set_Bool(LegacyDynamicProjectorsName,true);
 		}
 		if (!has_static_projectors) {
-			registry.Set_Bool("Static_Projectors",true);
+			registry.Set_Bool(LegacyStaticProjectorsName,true);
 		}
 
 		/*
@@ -102,20 +107,26 @@ namespace
 		** ever had a chance to run. Migrate that legacy startup tuple once.
 		*/
 		const int shadow_mode = registry.Get_Int("Shadow_Mode",PhysicsSceneClass::SHADOW_MODE_NONE);
-		const bool dynamic_projectors = registry.Get_Bool("Dynamic_Projectors",false);
-		const bool static_projectors = registry.Get_Bool("Static_Projectors",false);
+		const bool dynamic_projectors = registry.Get_Bool(LegacyDynamicProjectorsName,false);
+		const bool static_projectors = registry.Get_Bool(LegacyStaticProjectorsName,false);
 		if ((shadow_mode == PhysicsSceneClass::SHADOW_MODE_NONE) &&
 			 (dynamic_projectors == false) &&
 			 (static_projectors == true)) {
 			registry.Set_Int("Shadow_Mode",PhysicsSceneClass::SHADOW_MODE_HARDWARE);
-			registry.Set_Bool("Dynamic_Projectors",true);
+			registry.Set_Bool(LegacyDynamicProjectorsName,true);
 		}
 		if ((shadow_mode != PhysicsSceneClass::SHADOW_MODE_NONE) &&
 			 (shadow_mode != PhysicsSceneClass::SHADOW_MODE_HARDWARE)) {
 			registry.Set_Int("Shadow_Mode",PhysicsSceneClass::SHADOW_MODE_HARDWARE);
 		}
 
-		registry.Set_Int(BgfxShadowDefaultsVersionName,BgfxShadowDefaultsVersion);
+		registry.Delete_Value(LegacyDynamicProjectorsName);
+		registry.Delete_Value(LegacyStaticProjectorsName);
+		registry.Delete_Value(LegacyPrelitModeName);
+		registry.Delete_Value(LegacyMeshDrawModeName);
+		registry.Delete_Value(LegacyNPatchesName);
+
+		registry.Set_Int(RendererDefaultsVersionName,RendererDefaultsVersion);
 	}
 }
 
@@ -349,26 +360,6 @@ void	SystemSettingEntryEnum::Set_Selection( const char * name )
 
 /***********************************************************************************************/
 
-class	SystemSettingEntryStaticProjectors : public SystemSettingEntryBool {
-public:
-	const char * Get_Name( void )	{ return "Static_Projectors"; }
-	const char * Get_Help( void )	{ return "STATIC_PROJECTORS - legacy compatibility setting retained for old configs; it no longer drives the runtime renderer."; }
-	virtual bool Get_Bool( void )			{ return State; }
-	virtual void Set_Bool( bool state )	{ State = state; }
-};
-
-/***********************************************************************************************/
-
-class	SystemSettingEntryDynamicProjectors : public SystemSettingEntryBool {
-public:
-	const char * Get_Name( void )	{ return "Dynamic_Projectors"; }
-	const char * Get_Help( void )	{ return "DYNAMIC_PROJECTORS - legacy compatibility setting retained for old configs; it no longer drives the runtime renderer."; }
-	virtual bool Get_Bool( void )			{ return State; }
-	virtual void Set_Bool( bool state )	{ State = state; }
-};
-
-/***********************************************************************************************/
-
 class	SystemSettingEntryWeaponHelp : public SystemSettingEntryBool {
 public:
 	const char * Get_Name( void )	{ return "Enable_Weapon_Help"; }
@@ -550,51 +541,6 @@ public:
 	}
 };
 
-/***********************************************************************************************/
-
-class	SystemSettingEntryMeshDrawMode : public SystemSettingEntryEnum {
-	static const char * names[7];
-public:
-	const char * Get_Name( void )	{ return "Mesh_Draw_Mode"; }
-	const char * Get_Help( void )	{ return "MESH_DRAW_MODE <mode> - 0=old 1=new 2=debug 3=debug clip 4=box 5=none 6=dx8 only"; }
-	virtual	int Get_Enum( void ) { return WW3D::Get_Mesh_Draw_Mode(); }
-	virtual	void Set_Enum( int selection ) {
-		WW3D::Set_Mesh_Draw_Mode( (WW3D::MeshDrawModeEnum) selection );
-	}
-	virtual	int Get_Enum_Count( void ) { return sizeof(names)/sizeof(char*); }
-	virtual	const char * Get_Enum_Name( int selection ) {
-		WWASSERT(selection>=0 && selection<sizeof(names)/sizeof(char*));
-		return names[ selection ];
-	}
-};
-const char * SystemSettingEntryMeshDrawMode::names[] = { "Old", "New", "Debug Draw", "Debug Clip", "Box", "None", "DX8 only" };
-
-/***********************************************************************************************/
-
-
-
-
-/***********************************************************************************************/
-
-class	SystemSettingEntryPrelitMode : public SystemSettingEntryEnum {
-public:
-	const char * Get_Name( void )	{ return "Prelit_Mode"; }
-	const char * Get_Help( void )	{ return "PRELIT_MODE <mode> - 0=vertex 1=multi-pass 2=multi-texture."; }
-	virtual	int Get_Enum( void ) { return WW3D::Get_Prelit_Mode(); }
-	virtual	void Set_Enum( int selection ) {
-		if ( WW3D::Supports_Prelit_Mode( (WW3D::PrelitModeEnum) selection ) ) {
-			WW3D::Set_Prelit_Mode( (WW3D::PrelitModeEnum) selection );
-		}
-	}
-	virtual	int Get_Enum_Count( void ) { return 3; }
-	virtual	const char * Get_Enum_Name( int selection ) {
-		static const char * names[ 3 ] = { "Vertex", "Multi-pass", "Multi-texture" };
-		return names[ selection ];
-	}
-};
-
-/***********************************************************************************************/
-
 class	SystemSettingEntryTextureFilterMode : public SystemSettingEntryEnum {
 public:
 	const char * Get_Name( void )	{ return "Texture_Filter_Mode"; }
@@ -630,16 +576,12 @@ public:
 
 void SystemSettings::Init( void )
 {
-	Upgrade_Bgfx_Shadow_Defaults(APPLICATION_SUB_KEY_NAME_SYSTEM_SETTINGS);
+	Upgrade_Renderer_Defaults(APPLICATION_SUB_KEY_NAME_SYSTEM_SETTINGS);
 
-	Add_Setting( new SystemSettingEntryStaticProjectors );
-	Add_Setting( new SystemSettingEntryDynamicProjectors );
 	Add_Setting( new SystemSettingEntryTextureResolution );
 	Add_Setting( new SystemSettingEntryDynamicLODBudget );
 	Add_Setting( new SystemSettingEntryStaticLODBudget );
 	Add_Setting( new SystemSettingEntryShadowMode );
-	Add_Setting( new SystemSettingEntryPrelitMode );
-	Add_Setting( new SystemSettingEntryMeshDrawMode );
 
 //	Add_Setting( new SystemSettingEntryTextureCompressionMode );
 	Add_Setting( new SystemSettingEntryTextureFilterMode );

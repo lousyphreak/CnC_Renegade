@@ -92,7 +92,6 @@ class TextureMapperClass : public RefCountClass
 		virtual int								Mapper_ID(void) const { return MAPPER_ID_UNKNOWN;}
 
 		virtual bool Is_Time_Variant(void) { return false; }
-		virtual void							Apply(int uv_array_index)=0;
 		virtual void							Apply_Fixed_Function_State(int uv_array_index, WW3D::FixedFunctionStateDesc &state)=0;
 		virtual bool							Needs_Normals(void) { return false; }
 		void										Set_Stage(int stage) { Stage = stage; }
@@ -118,7 +117,6 @@ public:
 
 	virtual TextureMapperClass *Clone(void) const { return NEW_REF( ScaleTextureMapperClass, (*this)); }
 
-	virtual void Apply(int uv_array_index);
 	virtual void Apply_Fixed_Function_State(int uv_array_index, WW3D::FixedFunctionStateDesc &state);
 
 protected:
@@ -140,7 +138,6 @@ public:
 
 	virtual TextureMapperClass *Clone(void) const { return NEW_REF( LinearOffsetTextureMapperClass, (*this)); }
 
-	virtual void Apply(int uv_array_index);
 	virtual void Apply_Fixed_Function_State(int uv_array_index, WW3D::FixedFunctionStateDesc &state);
 	virtual void Reset(void) { Set_Current_UV_Offset(Vector2(0.0f, 0.0f)); LastUsedSyncTime = WW3D::Get_Sync_Time(); }
 
@@ -175,7 +172,6 @@ public:
 
 	virtual TextureMapperClass *Clone(void) const { return NEW_REF( GridTextureMapperClass, (*this)); }
 
-	virtual void Apply(int uv_array_index);
 	virtual void Apply_Fixed_Function_State(int uv_array_index, WW3D::FixedFunctionStateDesc &state);
 
 	virtual void Reset(void);
@@ -220,7 +216,6 @@ public:
 
 	virtual TextureMapperClass *Clone(void) const { return NEW_REF( RotateTextureMapperClass, (*this)); }
 
-	virtual void Apply(int uv_array_index);
 	virtual void Apply_Fixed_Function_State(int uv_array_index, WW3D::FixedFunctionStateDesc &state);
 	
 	virtual void Reset(void) { CurrentAngle = 0.0f; LastUsedSyncTime = WW3D::Get_Sync_Time(); }
@@ -249,7 +244,6 @@ public:
 
 	virtual TextureMapperClass *Clone(void) const { return NEW_REF( SineLinearOffsetTextureMapperClass, (*this)); }
 
-	virtual void Apply(int uv_array_index);	
 	virtual void Apply_Fixed_Function_State(int uv_array_index, WW3D::FixedFunctionStateDesc &state);
 	
 	virtual void Reset(void) { CurrentAngle = 0.0f; LastUsedSyncTime = WW3D::Get_Sync_Time(); }
@@ -278,7 +272,6 @@ public:
 
 	virtual TextureMapperClass *Clone(void) const { return NEW_REF( StepLinearOffsetTextureMapperClass, (*this)); }
 
-	virtual void Apply(int uv_array_index);	
 	virtual void Apply_Fixed_Function_State(int uv_array_index, WW3D::FixedFunctionStateDesc &state);
 	
 	virtual void Reset(void);
@@ -308,7 +301,6 @@ public:
 
 	virtual TextureMapperClass *Clone(void) const { return NEW_REF( ZigZagLinearOffsetTextureMapperClass, (*this)); }
 
-	virtual void Apply(int uv_array_index);	
 	virtual void Apply_Fixed_Function_State(int uv_array_index, WW3D::FixedFunctionStateDesc &state);
 	
 	virtual void Reset(void);
@@ -337,7 +329,6 @@ public:
 	ClassicEnvironmentMapperClass(const ClassicEnvironmentMapperClass & src) : TextureMapperClass(src) { }
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_CLASSIC_ENVIRONMENT;}
 	virtual TextureMapperClass* Clone() const { return NEW_REF( ClassicEnvironmentMapperClass, (*this)); }
-	virtual void Apply(int uv_array_index);
 	virtual void Apply_Fixed_Function_State(int uv_array_index, WW3D::FixedFunctionStateDesc &state);
 	virtual bool Needs_Normals(void) { return true; }
 };
@@ -349,7 +340,6 @@ public:
 	EnvironmentMapperClass(const EnvironmentMapperClass & src) : TextureMapperClass(src) { }
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_ENVIRONMENT;}
 	virtual TextureMapperClass* Clone() const { return NEW_REF( EnvironmentMapperClass, (*this)); }
-	virtual void Apply(int uv_array_index);
 	virtual void Apply_Fixed_Function_State(int uv_array_index, WW3D::FixedFunctionStateDesc &state);
 	virtual bool Needs_Normals(void) { return true; }
 };
@@ -362,7 +352,6 @@ public:
 	EdgeMapperClass(const EdgeMapperClass & src);
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_EDGE;}
 	virtual TextureMapperClass* Clone() const { return NEW_REF( EdgeMapperClass, (*this)); }
-	virtual void Apply(int uv_array_index);
 	virtual void Apply_Fixed_Function_State(int uv_array_index, WW3D::FixedFunctionStateDesc &state);
 	virtual void Reset(void);
 	virtual bool Is_Time_Variant(void) { return true; }
@@ -381,7 +370,6 @@ public:
 	WSClassicEnvironmentMapperClass(const WSClassicEnvironmentMapperClass & src) : TextureMapperClass(src) { }
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_WS_CLASSIC_ENVIRONMENT;}
 	virtual TextureMapperClass* Clone() const { return NEW_REF( WSClassicEnvironmentMapperClass, (*this)); }
-	virtual void Apply(int uv_array_index);
 	virtual void Apply_Fixed_Function_State(int uv_array_index, WW3D::FixedFunctionStateDesc &state);
 	virtual bool Needs_Normals(void) { return true; }
 };
@@ -393,7 +381,6 @@ public:
 	WSEnvironmentMapperClass(const WSEnvironmentMapperClass & src) : TextureMapperClass(src) { }
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_WS_ENVIRONMENT;}
 	virtual TextureMapperClass* Clone() const { return NEW_REF( WSEnvironmentMapperClass, (*this)); }
-	virtual void Apply(int uv_array_index);
 	virtual void Apply_Fixed_Function_State(int uv_array_index, WW3D::FixedFunctionStateDesc &state);
 	virtual bool Needs_Normals(void) { return true; }
 };
@@ -406,7 +393,6 @@ public:
 	GridClassicEnvironmentMapperClass(const GridTextureMapperClass & src) : GridTextureMapperClass(src) { }
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_GRID_CLASSIC_ENVIRONMENT;}
 	virtual TextureMapperClass* Clone() const { return NEW_REF( GridClassicEnvironmentMapperClass, (*this)); }
-	virtual void Apply(int uv_array_index);
 	virtual void Apply_Fixed_Function_State(int uv_array_index, WW3D::FixedFunctionStateDesc &state);
 	virtual bool Needs_Normals(void) { return true; }
 };
@@ -419,7 +405,6 @@ public:
 	GridEnvironmentMapperClass(const GridTextureMapperClass & src) : GridTextureMapperClass(src) { }
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_GRID_ENVIRONMENT;}
 	virtual TextureMapperClass* Clone() const { return NEW_REF( GridEnvironmentMapperClass, (*this)); }
-	virtual void Apply(int uv_array_index);
 	virtual void Apply_Fixed_Function_State(int uv_array_index, WW3D::FixedFunctionStateDesc &state);
 	virtual bool Needs_Normals(void) { return true; }
 };
@@ -438,7 +423,6 @@ public:
 	ScreenMapperClass(const LinearOffsetTextureMapperClass & src):LinearOffsetTextureMapperClass(src) { }
 	virtual int	Mapper_ID(void) const { return MAPPER_ID_SCREEN;}
 	virtual TextureMapperClass* Clone() const { return NEW_REF( ScreenMapperClass, (*this)); }
-	virtual void Apply(int uv_array_index);
 	virtual void Apply_Fixed_Function_State(int uv_array_index, WW3D::FixedFunctionStateDesc &state);
 
 };
@@ -458,7 +442,6 @@ public:
 
 	virtual TextureMapperClass *Clone(void) const { return NEW_REF( RandomTextureMapperClass, (*this)); }
 
-	virtual void Apply(int uv_array_index);
 	virtual void Apply_Fixed_Function_State(int uv_array_index, WW3D::FixedFunctionStateDesc &state);
 	virtual void Reset(void);
 	virtual bool Is_Time_Variant(void) { return true; }
@@ -490,7 +473,6 @@ public:
 
 	virtual TextureMapperClass *Clone(void) const { return NEW_REF( BumpEnvTextureMapperClass, (*this)); }
 
-	virtual void Apply(int uv_array_index);
 	virtual void Apply_Fixed_Function_State(int uv_array_index, WW3D::FixedFunctionStateDesc &state);
 
 protected:

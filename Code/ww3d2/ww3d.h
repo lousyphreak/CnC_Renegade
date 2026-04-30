@@ -95,16 +95,6 @@ public:
 		PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE
 	};
 
-	enum MeshDrawModeEnum {
-		MESH_DRAW_MODE_OLD,
-		MESH_DRAW_MODE_NEW,
-		MESH_DRAW_MODE_DEBUG_DRAW,
-		MESH_DRAW_MODE_DEBUG_CLIP,
-		MESH_DRAW_MODE_DEBUG_BOX,
-		MESH_DRAW_MODE_NONE,
-		MESH_DRAW_MODE_NATIVE
-	};
-
 	enum RenderTransformType {
 		RENDER_TRANSFORM_WORLD,
 		RENDER_TRANSFORM_VIEW,
@@ -168,13 +158,22 @@ public:
 		float V0;
 	};
 
+	struct OverlayStateDesc {
+		bool Texturing = true;
+		bool ColorWrite = true;
+		bool DepthWrite = false;
+		ShaderClass::DepthCompareType DepthCompare = ShaderClass::PASS_ALWAYS;
+		ShaderClass::SrcBlendFuncType SrcBlend = ShaderClass::SRCBLEND_SRC_ALPHA;
+		ShaderClass::DstBlendFuncType DstBlend = ShaderClass::DSTBLEND_ONE_MINUS_SRC_ALPHA;
+	};
+
 	struct OverlaySubmitDesc {
 		const OverlaySubmitVertex *Vertices = NULL;
 		std::uint32_t VertexCount = 0;
 		const std::uint16_t *Indices = NULL;
 		std::uint32_t IndexCount = 0;
 		TextureClass *Texture = NULL;
-		ShaderClass Shader;
+		OverlayStateDesc State;
 		bool HasTexture = false;
 	};
 
@@ -418,9 +417,6 @@ public:
 	static void					Expose_Prelit (bool onoff)							{ ExposePrelit = onoff; }
 	static bool					Expose_Prelit ()										{ return (ExposePrelit); }
 
-	static void					Set_Mesh_Draw_Mode (MeshDrawModeEnum mode)	{ MeshDrawMode = mode; }
-	static MeshDrawModeEnum Get_Mesh_Draw_Mode ()								{ return (MeshDrawMode); }
-
 	static void					Enable_Texturing(bool b);
 	static bool					Is_Texturing_Enabled() { return IsTexturingEnabled; }
 
@@ -505,8 +501,6 @@ private:
 
 	static bool							SnapshotActivated;
 	static bool							ThumbnailEnabled;
-
-	static MeshDrawModeEnum			MeshDrawMode;
 	static bool							IsTexturingEnabled;
 
 	static bool							Lite;

@@ -285,13 +285,8 @@ ButtonCtrlClass::Create_Bitmap_Button (void)
 	uv_rect2.Inverse_Scale (Vector2 (256.0F, 256.0F));
 	ButtonRenderers[1].Add_Quad (Rect, uv_rect2);
 
-	ShaderClass *shader = ButtonRenderers[0].Get_Shader ();
-	shader->Set_Dst_Blend_Func (ShaderClass::DSTBLEND_ONE);
-	shader->Set_Src_Blend_Func (ShaderClass::SRCBLEND_ONE);	
-
-	shader = ButtonRenderers[1].Get_Shader ();
-	shader->Set_Dst_Blend_Func (ShaderClass::DSTBLEND_ONE);
-	shader->Set_Src_Blend_Func (ShaderClass::SRCBLEND_ONE);	*/
+	ButtonRenderers[0].Enable_Additive (true);
+	ButtonRenderers[1].Enable_Additive (true);	*/
 
 	
 	return ;
@@ -470,13 +465,8 @@ ButtonCtrlClass::Create_Component_Button (void)
 		y_pos += 8;
 	}*/
 
-	ShaderClass *shader = ButtonRenderers[0].Get_Shader ();
-	shader->Set_Dst_Blend_Func (ShaderClass::DSTBLEND_ONE);
-	shader->Set_Src_Blend_Func (ShaderClass::SRCBLEND_ONE);	
-
-	shader = ButtonRenderers[1].Get_Shader ();
-	shader->Set_Dst_Blend_Func (ShaderClass::DSTBLEND_ONE);
-	shader->Set_Src_Blend_Func (ShaderClass::SRCBLEND_ONE);
+	ButtonRenderers[0].Enable_Additive (true);
+	ButtonRenderers[1].Enable_Additive (true);
 	return ;
 }
 

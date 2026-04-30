@@ -93,7 +93,7 @@ CNCWinScreenMenuClass::CNCWinScreenMenuClass (void)	:
 	//	Configure the blackout renderer
 	//
 	StyleMgrClass::Configure_Renderer (&BlackoutRenderer);
-	BlackoutRenderer.Get_Shader ()->Set_Depth_Compare (ShaderClass::PASS_ALWAYS);
+	BlackoutRenderer.Set_Depth_Compare (ShaderClass::PASS_ALWAYS);
 	BlackoutRenderer.Add_Quad (Render2DClass::Get_Screen_Resolution (), RGBA_TO_INT32 (0, 0, 0, 200));
 	WinScreenBackdrop.Clear_Screen (false);
 

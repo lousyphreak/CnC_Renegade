@@ -60,6 +60,7 @@
 #include "camera.h"
 #include "stripoptimizer.h"
 #include "meshgeometry.h"
+#include "sortingrenderer.h"
 #include "hashtemplate.h"
 #include "../wwphys/phys.h"
 #include <algorithm>
@@ -2173,10 +2174,7 @@ bool DX8MeshRendererClass::Is_Modern_Rigid_Opaque_Eligible(const MeshClass * mes
 	}
 
 	if (model->Get_Flag(MeshGeometryClass::SKIN) ||
-		model->Get_Flag(MeshGeometryClass::SORT) ||
-		model->Get_Flag(MeshGeometryClass::ALIGNED) ||
-		model->Get_Flag(MeshGeometryClass::ORIENTED) ||
-		(model->Get_Sort_Level() != SORT_LEVEL_NONE))
+		model->Get_Flag(MeshGeometryClass::SORT))
 	{
 		return false;
 	}

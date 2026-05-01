@@ -76,6 +76,17 @@ private:
 class TerrainRenderBatchManagerClass
 {
 public:
+	struct QueuedDrawTask
+	{
+		const TerrainRenderBatchPageClass *Page = NULL;
+		const TerrainRenderBatchPageClass::DrawRange *Range = NULL;
+		const WW3D::LightingSubmitDesc *Lighting = NULL;
+		WW3D::FixedFunctionStateDesc RenderState;
+		Matrix4 WorldTransform;
+		Matrix4 ViewTransform;
+		Matrix4 ProjectionTransform;
+	};
+
 	TerrainRenderBatchManagerClass();
 	~TerrainRenderBatchManagerClass();
 
@@ -84,6 +95,8 @@ public:
 	void Reset();
 
 	bool Render_Patch(RenegadeTerrainPatchClass *patch, RenderInfoClass &rinfo);
+	bool Queue_Patch(RenegadeTerrainPatchClass *patch, RenderInfoClass &rinfo);
+	bool Flush_Queued_Patches();
 	bool Render_Patch_Material_Passes(
 		RenegadeTerrainPatchClass *patch,
 		RenderInfoClass &rinfo,
@@ -108,6 +121,8 @@ private:
 		VertexMaterialClass *override_material,
 		const ShaderClass *override_shader,
 		bool receive_shadows);
+	bool Submit_Draw_Task(const QueuedDrawTask &task);
 
 	std::unordered_map<RenegadeTerrainPatchClass *, TerrainRenderBatchPageClass *> Pages;
+	std::vector<QueuedDrawTask> QueuedDraws;
 };

@@ -1652,6 +1652,11 @@ void PhysicsSceneClass::Render_Objects(
 		}
 	}
 
+	if (TerrainBatchManager != NULL) {
+		const bool rendered = TerrainBatchManager->Flush_Queued_Patches();
+		WWASSERT(rendered);
+	}
+
 	// render the dynamic objects
 	// render dynamic objects even if the render type is "NONE"
 	{
@@ -1744,8 +1749,8 @@ void PhysicsSceneClass::Render_Object(RenderInfoClass & context,PhysClass * obj)
 	if (render_base_pass) {
 		WWPROFILE("render");
 		if (terrain_patch != NULL && TerrainBatchManager != NULL) {
-			const bool rendered = TerrainBatchManager->Render_Patch(terrain_patch, context);
-			WWASSERT(rendered);
+			const bool queued = TerrainBatchManager->Queue_Patch(terrain_patch, context);
+			WWASSERT(queued);
 		} else {
 			obj->Render(context);
 		}

@@ -28,6 +28,53 @@
 #include "vertmaterial.h"
 #include "wwdebug.h"
 
+#include <algorithm>
+#include <cstdint>
+
+namespace
+{
+uintptr_t Build_Terrain_Texture_Key(TextureClass * const *textures)
+{
+	uintptr_t key = 0;
+	for (unsigned stage = 0; stage < 2; ++stage) {
+		const uintptr_t pointer_value = reinterpret_cast<uintptr_t>(textures[stage]);
+		key ^= pointer_value + 0x9e3779b9u + (key << 6) + (key >> 2);
+	}
+	return key;
+}
+
+bool Sort_Queued_Terrain_Draw_Task(
+	const TerrainRenderBatchManagerClass::QueuedDrawTask &lhs,
+	const TerrainRenderBatchManagerClass::QueuedDrawTask &rhs)
+{
+	const TerrainRenderBatchPageClass::DrawRange *lhs_range = lhs.Range;
+	const TerrainRenderBatchPageClass::DrawRange *rhs_range = rhs.Range;
+	if (lhs_range == NULL || rhs_range == NULL) {
+		return lhs_range < rhs_range;
+	}
+
+	if (lhs_range->PassType != rhs_range->PassType) {
+		return lhs_range->PassType < rhs_range->PassType;
+	}
+	if (lhs_range->Shader.Get_Bits() != rhs_range->Shader.Get_Bits()) {
+		return lhs_range->Shader.Get_Bits() < rhs_range->Shader.Get_Bits();
+	}
+
+	const uintptr_t lhs_texture_key = Build_Terrain_Texture_Key(lhs_range->Textures);
+	const uintptr_t rhs_texture_key = Build_Terrain_Texture_Key(rhs_range->Textures);
+	if (lhs_texture_key != rhs_texture_key) {
+		return lhs_texture_key < rhs_texture_key;
+	}
+	if (lhs_range->Material != rhs_range->Material) {
+		return lhs_range->Material < rhs_range->Material;
+	}
+	if (lhs.Page != rhs.Page) {
+		return lhs.Page < rhs.Page;
+	}
+	return lhs_range->StartIndex < rhs_range->StartIndex;
+}
+}
+
 TerrainRenderBatchPageClass::TerrainRenderBatchPageClass() :
 	Patch(NULL),
 	VertexBuffer(NULL),
@@ -110,6 +157,43 @@ void TerrainRenderBatchManagerClass::Reset()
 		delete it->second;
 	}
 	Pages.clear();
+	QueuedDraws.clear();
+}
+
+bool TerrainRenderBatchManagerClass::Submit_Draw_Task(const QueuedDrawTask &task)
+{
+	if (task.Page == NULL || task.Range == NULL) {
+		return false;
+	}
+
+	const TerrainRenderBatchPageClass &page = *task.Page;
+	const TerrainRenderBatchPageClass::DrawRange &range = *task.Range;
+	if (!page.Is_Valid() || page.VertexBuffer == NULL || page.IndexBuffer == NULL || range.PolygonCount == 0 || range.VertexCount == 0) {
+		return true;
+	}
+
+	WW3D::FixedFunctionSubmitDesc submission;
+	submission.VertexBuffer = page.VertexBuffer;
+	submission.IndexBuffer = page.IndexBuffer;
+	submission.StartIndex = range.StartIndex;
+	submission.PolygonCount = range.PolygonCount;
+	submission.MinVertexIndex = range.MinVertexIndex;
+	submission.VertexCount = range.VertexCount;
+	submission.Textures[0] = range.Textures[0];
+	submission.Textures[1] = range.Textures[1];
+	submission.Material = range.Material;
+	submission.Shader = range.Shader;
+	submission.WorldTransform = task.WorldTransform;
+	submission.ViewTransform = task.ViewTransform;
+	submission.ProjectionTransform = task.ProjectionTransform;
+	submission.Lighting = task.Lighting;
+	submission.RenderState = &task.RenderState;
+	submission.ReceiveShadows = range.ReceiveShadows;
+	submission.CastShadows = range.CastShadows;
+
+	const bool submitted = WW3D::Submit_Fixed_Function_Draw(submission);
+	WWASSERT(submitted);
+	return submitted;
 }
 
 bool TerrainRenderBatchManagerClass::Submit_Draw(
@@ -157,6 +241,73 @@ bool TerrainRenderBatchManagerClass::Submit_Draw(
 	const bool submitted = WW3D::Submit_Fixed_Function_Draw(submission);
 	WWASSERT(submitted);
 	return submitted;
+}
+
+bool TerrainRenderBatchManagerClass::Queue_Patch(RenegadeTerrainPatchClass *patch, RenderInfoClass &rinfo)
+{
+	if (patch == NULL) {
+		return false;
+	}
+
+	TerrainRenderBatchPageClass *page = Find_Page(patch);
+	if (page == NULL || !page->Is_Valid() || patch->Are_Terrain_Batch_Buffers_Dirty()) {
+		if (!Prepare_Patch(patch)) {
+			return false;
+		}
+		page = Find_Page(patch);
+	}
+
+	if (page == NULL) {
+		return false;
+	}
+
+	const Matrix4 world_transform(page->Patch->Get_Transform());
+	Matrix4 view_transform(true);
+	Matrix4 projection_transform(true);
+	WW3D::Get_Transform(WW3D::RENDER_TRANSFORM_VIEW, view_transform);
+	WW3D::Get_Transform(WW3D::RENDER_TRANSFORM_PROJECTION, projection_transform);
+
+	QueuedDraws.reserve(QueuedDraws.size() + page->DrawRanges.size());
+	for (std::vector<TerrainRenderBatchPageClass::DrawRange>::const_iterator it = page->DrawRanges.begin();
+		  it != page->DrawRanges.end();
+		  ++it)
+	{
+		if (it->PolygonCount == 0 || it->VertexCount == 0) {
+			continue;
+		}
+
+		QueuedDrawTask task;
+		task.Page = page;
+		task.Range = &(*it);
+		task.Lighting = rinfo.lighting_submission;
+		task.WorldTransform = world_transform;
+		task.ViewTransform = view_transform;
+		task.ProjectionTransform = projection_transform;
+		WW3D::Capture_Current_Fixed_Function_State(task.RenderState, it->Material);
+		QueuedDraws.push_back(task);
+	}
+
+	return true;
+}
+
+bool TerrainRenderBatchManagerClass::Flush_Queued_Patches()
+{
+	if (QueuedDraws.empty()) {
+		return true;
+	}
+
+	std::sort(QueuedDraws.begin(), QueuedDraws.end(), Sort_Queued_Terrain_Draw_Task);
+
+	bool ok = true;
+	for (std::vector<QueuedDrawTask>::const_iterator it = QueuedDraws.begin();
+		  it != QueuedDraws.end();
+		  ++it)
+	{
+		ok = Submit_Draw_Task(*it) && ok;
+	}
+
+	QueuedDraws.clear();
+	return ok;
 }
 
 bool TerrainRenderBatchManagerClass::Render_Patch(RenegadeTerrainPatchClass *patch, RenderInfoClass &rinfo)

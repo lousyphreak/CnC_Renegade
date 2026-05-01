@@ -89,12 +89,6 @@ class WW3D
 {
 public:
 
-	enum PrelitModeEnum {
-		PRELIT_MODE_VERTEX,
-		PRELIT_MODE_LIGHTMAP_MULTI_PASS,
-		PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE
-	};
-
 	enum RenderTransformType {
 		RENDER_TRANSFORM_WORLD,
 		RENDER_TRANSFORM_VIEW,
@@ -411,12 +405,6 @@ public:
 	static ShaderClass		Peek_Backface_Debug_Shader(void);
 	static ShaderClass		Peek_Lightmap_Debug_Shader(void);
 
-	static void					Set_Prelit_Mode (PrelitModeEnum mode)			{ PrelitMode = mode; }
-	static PrelitModeEnum 	Get_Prelit_Mode ()									{ return (PrelitMode); }
-	static bool					Supports_Prelit_Mode (PrelitModeEnum mode)	{ return (true); }
-	static void					Expose_Prelit (bool onoff)							{ ExposePrelit = onoff; }
-	static bool					Expose_Prelit ()										{ return (ExposePrelit); }
-
 	static void					Enable_Texturing(bool b);
 	static bool					Is_Texturing_Enabled() { return IsTexturingEnabled; }
 
@@ -493,9 +481,6 @@ private:
 	static VertexMaterialClass *	BackfaceDebugMaterial;
 	static ShaderClass				DefaultDebugShader;
 	static ShaderClass				LightmapDebugShader;
-
-	static PrelitModeEnum			PrelitMode;
-	static bool							ExposePrelit;
 
 	static int							TextureFilter;
 

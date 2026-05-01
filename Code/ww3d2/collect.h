@@ -83,7 +83,6 @@ public:
 	virtual void					Render(RenderInfoClass & rinfo);
 	virtual void					Render_Material_Passes(RenderInfoClass & rinfo,MaterialPassClass * const * passes,int pass_count);
 	virtual void					Render_Visibility(VisRenderInfoClass & rinfo);
-	virtual void					Special_Render(SpecialRenderInfoClass & rinfo);
 
 	/////////////////////////////////////////////////////////////////////////////
 	// Render Object Interface - "Scene Graph"

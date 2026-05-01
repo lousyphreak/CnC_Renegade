@@ -870,16 +870,6 @@ void RingRenderObjClass::Render_Visibility(VisRenderInfoClass & rinfo)
 	vis_render_ring(rinfo,ObjSpaceCenter,ObjSpaceExtent);
 }
 
-void RingRenderObjClass::Special_Render(SpecialRenderInfoClass & rinfo)
-{
-	if (rinfo.RenderType == SpecialRenderInfoClass::RENDER_VIS) {
-		VisRenderInfoClass vis_rinfo(rinfo.Camera);
-		vis_rinfo.VisRasterizer = rinfo.VisRasterizer;
-		Render_Visibility(vis_rinfo);
-	}
-}
-
-
 /***********************************************************************************************
  * RingRenderObjClass::Set_Transform -- set the transform for this box                        *
  *                                                                                             *

@@ -198,9 +198,6 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	WW3D::Init(hWnd);	
 	WW3D::Set_Texture_Thumbnail_Mode(WW3D::TEXTURE_THUMBNAIL_MODE_ON);
 
-//	WW3D::Set_Prelit_Mode(WW3D::PRELIT_MODE_VERTEX);
-	WW3D::Set_Prelit_Mode(WW3D::PRELIT_MODE_LIGHTMAP_MULTI_PASS);
-//	WW3D::Set_Prelit_Mode(WW3D::PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE);
 	WW3D::Set_Collision_Box_Display_Mask(0xFF);
 	
 	if (WW3D::Set_Render_Device(0,800,600,32,1,true)!=WW3D_ERROR_OK) {

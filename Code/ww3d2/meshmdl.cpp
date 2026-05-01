@@ -242,23 +242,6 @@ void MeshModelClass::Replace_VertexMaterial(VertexMaterialClass* vmat,VertexMate
 #endif
 }
 
-void MeshModelClass::Shadow_Render(SpecialRenderInfoClass & rinfo,const Matrix3D & tm,const HTreeClass * htree)
-{
-	if (rinfo.BWRenderer != NULL) {
-		if (_TempTransformedVertexBuffer.Length() < VertexCount) _TempTransformedVertexBuffer.Resize(VertexCount);
-		Vector4* transf_ptr=&(_TempTransformedVertexBuffer[0]);
-		get_deformed_screenspace_vertices(transf_ptr,rinfo,tm,htree);
-
-		Vector2* tptr = reinterpret_cast<Vector2 *>(transf_ptr);
-		Vector4* optr = transf_ptr;
-		for (int a=0;a<VertexCount;++a,++optr) *tptr++=Vector2((*optr)[0],-(*optr)[1]);
-
-		rinfo.BWRenderer->Set_Vertex_Locations(reinterpret_cast<Vector2*>(transf_ptr),VertexCount);
-		rinfo.BWRenderer->Render_Triangles(reinterpret_cast<const unsigned long*>(Poly->Get_Array()),PolyCount*3);
-		return;
-	}
-}
-
 // Destination pointers MUST point to arrays large enough to hold all vertices
 void MeshModelClass::get_deformed_vertices(Vector3 *dst_vert,const HTreeClass * htree)
 {

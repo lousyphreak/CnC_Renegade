@@ -207,135 +207,17 @@ TextureClass * DynamicShadowTexMgrClass::Allocate_Render_Target_Texture(void)
 
 
 
-/************************************************************************************
-**
-** PhysicsSceneClass Texture Projection Code
-**
-************************************************************************************/
-void PhysicsSceneClass::Release_Projector_Resources(void)
+void PhysicsSceneClass::Set_Shadows_Enabled(bool enabled)
 {
-	if (ShadowRenderContext != NULL) {
-		delete ShadowRenderContext;
-		ShadowRenderContext=NULL;
-	}
-
-	REF_PTR_RELEASE(ShadowMaterialPass);
-	REF_PTR_RELEASE(ShadowCamera);
-//	_DynamicShadowTexMgr.Reset();
-}
-
-
-ShadowRenderInfoClass *
-PhysicsSceneClass::Get_Shadow_Render_Context(int width,int height)
-{
-	if (ShadowRenderContext == NULL) {
-		/*
-		** Create a camera for shadow rendering to use
-		*/
-		if (ShadowCamera == NULL) {
-			ShadowCamera = NEW_REF(CameraClass,());
-			ShadowCamera->Set_Clip_Planes(0.2f,SHADOW_CLIP_FAR);
-			ShadowCamera->Set_View_Plane(DEG_TO_RAD(90.0f),DEG_TO_RAD(90.0f));
-			ShadowCamera->Set_Viewport(Vector2(0,0),Vector2(1,1));
-		}
-
-		/*
-		** Create the render context
-		*/
-		ShadowRenderContext = new ShadowRenderInfoClass(*ShadowCamera);
-	}
-
-	return ShadowRenderContext;
-}
-
-MaterialPassClass * PhysicsSceneClass::Get_Shadow_Material_Pass(void)
-{
-	if (ShadowMaterialPass == NULL) {
-
-		VertexMaterialClass * vmtl = NEW_REF(VertexMaterialClass,());
-		vmtl->Set_Ambient(0,0,0);
-		vmtl->Set_Diffuse(0,0,0);
-		vmtl->Set_Specular(0,0,0);
-		vmtl->Set_Emissive(0,0,0);
-		vmtl->Set_Lighting(true);
-
-		ShaderClass shader = ShaderClass::_PresetOpaqueShader;
-		shader.Set_Depth_Compare(ShaderClass::PASS_ALWAYS);
-		shader.Set_Depth_Mask(ShaderClass::DEPTH_WRITE_DISABLE);
-		shader.Set_Texturing(ShaderClass::TEXTURING_DISABLE);
-
-		ShadowMaterialPass = NEW_REF(MaterialPassClass,());
-		ShadowMaterialPass->Set_Material(vmtl);
-		ShadowMaterialPass->Set_Shader(shader);
-		ShadowMaterialPass->Enable_On_Translucent_Meshes(false);
-
-		REF_PTR_RELEASE(vmtl);
-	}
-
-	ShadowMaterialPass->Add_Ref();
-	return ShadowMaterialPass;
-}
-
-void PhysicsSceneClass::Set_Shadow_Mode(ShadowEnum shadow_mode)
-{
-	ShadowEnum resolved_mode = (shadow_mode == SHADOW_MODE_NONE) ? SHADOW_MODE_NONE : SHADOW_MODE_HARDWARE;
-	if (ShadowMode != resolved_mode) {
-		ShadowMode = resolved_mode;
+	if (ShadowsEnabled != enabled) {
+		ShadowsEnabled = enabled;
 	}
 
 	_DynamicShadowTexMgr.Set_Max_Simultaneous_Shadows(0);
-	ShadowMapManager::Set_Enabled(ShadowMode != SHADOW_MODE_NONE);
+	ShadowMapManager::Set_Enabled(ShadowsEnabled);
 }
 
-PhysicsSceneClass::ShadowEnum PhysicsSceneClass::Get_Shadow_Mode(void)
+bool PhysicsSceneClass::Are_Shadows_Enabled(void) const
 {
-	return ShadowMode;
-}
-
-void PhysicsSceneClass::Add_Static_Texture_Projector(TexProjectClass * newprojector)
-{
-	WWASSERT(newprojector);
-	WWASSERT(!StaticProjectorList.Is_In_List(newprojector));
-
-	StaticProjectorList.Add(newprojector);
-}
-
-void PhysicsSceneClass::Remove_Static_Texture_Projector(TexProjectClass * projector)
-{
-	WWASSERT(projector);
-	if (StaticProjectorList.Is_In_List(projector)) {
-		StaticProjectorList.Remove(projector);
-	}
-}
-
-void PhysicsSceneClass::Add_Dynamic_Texture_Projector(TexProjectClass * newprojector)
-{
-	WWASSERT(newprojector);
-	WWASSERT(!DynamicProjectorList.Is_In_List(newprojector));
-
-	DynamicProjectorList.Add(newprojector);
-}
-
-void PhysicsSceneClass::Remove_Dynamic_Texture_Projector(TexProjectClass * projector)
-{
-	WWASSERT(projector);
-	if (DynamicProjectorList.Is_In_List(projector)) {
-		DynamicProjectorList.Remove(projector);
-	}
-}
-
-void PhysicsSceneClass::Remove_Texture_Projector(TexProjectClass * projector)
-{
-	WWASSERT(projector);
-
-	if (DynamicProjectorList.Is_In_List(projector)) {
-		DynamicProjectorList.Remove(projector);
-	} else if (StaticProjectorList.Is_In_List(projector)) {
-		StaticProjectorList.Remove(projector);
-	}
-}
-
-bool PhysicsSceneClass::Contains(TexProjectClass * projector)
-{
-	return (DynamicProjectorList.Is_In_List(projector) || StaticProjectorList.Is_In_List(projector));
+	return ShadowsEnabled;
 }

@@ -50,8 +50,6 @@
  *   PhysicsSceneClass::Get_Static_Object_Iterator -- return an iterator for the static objs   *
  *   PhysicsSceneClass::Get_Static_Anim_Object_Iterator -- returns an iterator for static anim *
  *   PhysicsSceneClass::Get_Static_Light_Iterator -- returns an iterator for static lights     *
- *   PhysicsSceneClass::Get_Static_Projector_Iterator -- returns an iterator for static projec *
- *   PhysicsSceneClass::Get_Dynamic_Projector_Iterator -- returns an iterator for dynamic proj *
  *   PhysicsSceneClass::Add_To_Dirty_Cull_List -- adds something to the "dirty cull" list      *
  *   PhysicsSceneClass::Remove_From_Dirty_Cull_List -- removes an object from the dirty cull l *
  *   PhysicsSceneClass::Is_In_Dirty_Cull_List -- tests whether an object is in the dirty cull  *
@@ -67,11 +65,6 @@
  *   PhysicsSceneClass::Render_Objects -- Render the visible objects                           *
  *   PhysicsSceneClass::Render_Object -- Render an individual object                           *
  *   PhysicsSceneClass::Render_Backface_Occluders -- Render backfaces of all occluders         *
- *   PhysicsSceneClass::Re_Partition_Static_Objects -- partition the static objects            *
- *   PhysicsSceneClass::Re_Partition_Static_Lights -- partition the static lights              *
- *   PhysicsSceneClass::Re_Partition_Dynamic_Culling_System -- partition the dynamic culling s *
- *   PhysicsSceneClass::Re_Partition_Static_Projectors -- partition the static projectors      *
- *   PhysicsSceneClass::Update_Culling_System_Bounding_Boxes -- updates the cull systems       *
  *   PhysicsSceneClass::Get_Level_Extents -- returns the bounds of the level                   *
  *   PhysicsSceneClass::Set_Polygon_Budgets -- set the budgets for the LOD system              *
  *   PhysicsSceneClass::Get_Polygon_Budgets -- returns the budgets for the LOD system          *
@@ -297,10 +290,7 @@ PhysicsSceneClass::PhysicsSceneClass(void) :
 	LockedVisSamplePoint(0,0,0),
 	VisCamera(NULL),
 	CurrentVisTable(NULL),
-	ShadowMode(SHADOW_MODE_HARDWARE),
-	ShadowCamera(NULL),
-	ShadowRenderContext(NULL),
-	ShadowMaterialPass(NULL),
+	ShadowsEnabled(true),
 	DecalSystem(NULL),
 	Pathfinder(NULL),
 	CameraShakeSystem(NULL),
@@ -392,7 +382,6 @@ PhysicsSceneClass::~PhysicsSceneClass(void)
 	REF_PTR_RELEASE(SunLight);
 
 	Release_Vis_Resources();
-	Release_Projector_Resources();
 	Release_Decal_Resources();
 	WidgetSystem::Release_Debug_Widgets();
 
@@ -815,18 +804,6 @@ void PhysicsSceneClass::Remove_All(void)
 		light = (LightPhysClass *)StaticLightList.Peek_Head();
 	}
 
-	TexProjectClass * static_proj = StaticProjectorList.Peek_Head();
-	while(static_proj) {
-		Remove_Static_Texture_Projector(static_proj);
-		static_proj = StaticProjectorList.Peek_Head();
-	}
-
-	TexProjectClass * dynamic_proj = DynamicProjectorList.Peek_Head();
-	while(dynamic_proj) {
-		Remove_Dynamic_Texture_Projector(dynamic_proj);
-		dynamic_proj = DynamicProjectorList.Peek_Head();
-	}
-
 	Pathfinder->Reset_Sectors ();
 }
 
@@ -921,42 +898,6 @@ RefPhysListIterator PhysicsSceneClass::Get_Static_Anim_Object_Iterator(void)
 RefPhysListIterator PhysicsSceneClass::Get_Static_Light_Iterator(void)			
 { 
 	return RefPhysListIterator(&StaticLightList); 
-}
-
-
-/***********************************************************************************************
- * PhysicsSceneClass::Get_Static_Projector_Iterator -- returns an iterator for static projecto *
- *                                                                                             *
- * INPUT:                                                                                      *
- *                                                                                             *
- * OUTPUT:                                                                                     *
- *                                                                                             *
- * WARNINGS:                                                                                   *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *   11/29/2000 gth : Created.                                                                 *
- *=============================================================================================*/
-TexProjListIterator PhysicsSceneClass::Get_Static_Projector_Iterator(void)		
-{ 
-	return TexProjListIterator(&StaticProjectorList); 
-}
-
-
-/***********************************************************************************************
- * PhysicsSceneClass::Get_Dynamic_Projector_Iterator -- returns an iterator for dynamic projec *
- *                                                                                             *
- * INPUT:                                                                                      *
- *                                                                                             *
- * OUTPUT:                                                                                     *
- *                                                                                             *
- * WARNINGS:                                                                                   *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *   11/29/2000 gth : Created.                                                                 *
- *=============================================================================================*/
-TexProjListIterator PhysicsSceneClass::Get_Dynamic_Projector_Iterator(void)	
-{ 
-	return TexProjListIterator(&DynamicProjectorList); 
 }
 
 
@@ -1508,15 +1449,14 @@ void PhysicsSceneClass::Customized_Render(RenderInfoClass & rinfo)
 				WW3D::Flush(rinfo);
 				WW3D::Set_Polygon_Fill_Mode(WW3D::POLYGON_FILL_MODE_WIREFRAME);
 
-				// set wireframe mode and draw the vis sector
-				rinfo.Push_Material_Pass(matpass);
+				MaterialPassClass * const passes[] = { matpass };
 				rinfo.Push_Override_Flags(RenderInfoClass::RINFO_OVERRIDE_ADDITIONAL_PASSES_ONLY);
 
 				if (VisSectorHistoryEnabled) {
 					// render the previous vis sectors
 					for (int i=0; i<3; i++) {
 						if (old_vis_sectors[i] != NULL) {
-							old_vis_sectors[i]->Render_Vis_Meshes(rinfo);
+							old_vis_sectors[i]->Render_Vis_Mesh_Material_Passes(rinfo,passes,1);
 						}
 					}
 					// add this one to the history if it is new
@@ -1527,11 +1467,10 @@ void PhysicsSceneClass::Customized_Render(RenderInfoClass & rinfo)
 					}
 				} else {
 					// Just draw the current vis sector
-					vis_sector->Render_Vis_Meshes(rinfo);
+					vis_sector->Render_Vis_Mesh_Material_Passes(rinfo,passes,1);
 				}
 
 				WW3D::Flush(rinfo);
-				rinfo.Pop_Material_Pass();
 				rinfo.Pop_Override_Flags();
 
 				// restore previous render mode
@@ -1938,7 +1877,7 @@ void PhysicsSceneClass::Render_Backface_Occluders
 			shader.Set_Depth_Compare(ShaderClass::PASS_LESS);
 			matpass->Set_Shader(shader);
 
-			context.Push_Material_Pass(matpass);
+			MaterialPassClass * const passes[] = { matpass };
 			context.Push_Override_Flags(RenderInfoClass::RINFO_OVERRIDE_ADDITIONAL_PASSES_ONLY);
 
 			lenv.Reset(Vector3(0,0,0),Vector3(1,1,1));
@@ -1951,7 +1890,7 @@ void PhysicsSceneClass::Render_Backface_Occluders
 			while (!it.Is_Done()) {
 				StaticPhysClass * sphys = it.Peek_Obj()->As_StaticPhysClass();
 				if (sphys && sphys->Is_Occluder()) {
-					sphys->Render(context);				
+					sphys->Render_Material_Passes(context,passes,1);				
 				}
 				it.Next();
 			}
@@ -1963,7 +1902,7 @@ void PhysicsSceneClass::Render_Backface_Occluders
 			while (!it.Is_Done()) {
 				StaticPhysClass * sphys = it.Peek_Obj()->As_StaticPhysClass();
 				if (sphys && sphys->Is_Occluder()) {
-					sphys->Render(context);				
+					sphys->Render_Material_Passes(context,passes,1);				
 				}
 				it.Next();
 			}
@@ -1973,7 +1912,6 @@ void PhysicsSceneClass::Render_Backface_Occluders
 			*/
 			WW3D::Flush(context);
 			ShaderClass::Invert_Backface_Culling(false);
-			context.Pop_Material_Pass();
 			context.Pop_Override_Flags();
 
 			REF_PTR_RELEASE(matpass);
@@ -1981,153 +1919,6 @@ void PhysicsSceneClass::Render_Backface_Occluders
 	}
 }
 
-
-
-/***********************************************************************************************
- * PhysicsSceneClass::Re_Partition_Static_Objects -- partition the static objects              *
- *                                                                                             *
- * INPUT:                                                                                      *
- *                                                                                             *
- * OUTPUT:                                                                                     *
- *                                                                                             *
- * WARNINGS:                                                                                   *
- * This should be done in the editor.  VIS data is invalidated when you do this...             *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *   7/7/2000   gth : Created.                                                                 *
- *=============================================================================================*/
-void PhysicsSceneClass::Re_Partition_Static_Objects(void)
-{
-	StaticCullingSystem->Re_Partition();
-}
-
-
-/***********************************************************************************************
- * PhysicsSceneClass::Re_Partition_Static_Lights -- partition the static lights                *
- *                                                                                             *
- * INPUT:                                                                                      *
- *                                                                                             *
- * OUTPUT:                                                                                     *
- *                                                                                             *
- * WARNINGS:                                                                                   *
- * This should be done in the editor.  VIS data is invalidated when you do this...             *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *   7/7/2000   gth : Created.                                                                 *
- *=============================================================================================*/
-void PhysicsSceneClass::Re_Partition_Static_Lights(void)
-{
-	StaticLightingSystem->Re_Partition();
-}
-
-
-/***********************************************************************************************
- * PhysicsSceneClass::Re_Partition_Dynamic_Culling_System -- partition the dynamic culling sys *
- *                                                                                             *
- * INPUT:                                                                                      *
- *                                                                                             *
- * OUTPUT:                                                                                     *
- *                                                                                             *
- * WARNINGS:                                                                                   *
- * This should be done in the editor.  VIS data is invalidated when you do this...             *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *   7/7/2000   gth : Created.                                                                 *
- *=============================================================================================*/
-void PhysicsSceneClass::Re_Partition_Dynamic_Culling_System(void)
-{
-	Vector3 wmin,wmax;
-	Get_Level_Extents(wmin,wmax);
-
-	DynamicCullingSystem->Re_Partition(	wmin,wmax,
-													MAX_DYNAMIC_OBJ_RADIUS	);
-
-	DynamicObjVisSystem->Re_Partition(	NULL,
-													wmin,wmax,
-													MIN_GRID_CELL_SIZE,
-													MAX_GRID_CELL_COUNT,
-													MAX_DYNAMIC_OBJ_RADIUS	);
-
-	Reset_Vis();
-}
-
-
-/***********************************************************************************************
- * PhysicsSceneClass::Re_Partition_Dynamic_Culling_System -- partition the dynamic culling sys *
- *                                                                                             *
- * INPUT:                                                                                      *
- *                                                                                             *
- * OUTPUT:                                                                                     *
- *                                                                                             *
- * WARNINGS:                                                                                   *
- * This should be done in the editor.  VIS data is invalidated when you do this...             *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *   7/7/2000   gth : Created.                                                                 *
- *=============================================================================================*/
-void PhysicsSceneClass::Re_Partition_Dynamic_Culling_System(DynamicVectorClass<AABoxClass> & virtual_occludees)
-{
-	Vector3 wmin,wmax;
-	Get_Level_Extents(wmin,wmax);
-
-	DynamicCullingSystem->Re_Partition(	wmin,wmax,
-													MAX_DYNAMIC_OBJ_RADIUS	);
-
-	AABoxClass bounds(virtual_occludees[0]);
-	for (int i=0; i<virtual_occludees.Count(); i++) {
-		bounds.Add_Box(virtual_occludees[i]);
-	}
-	
-	DynamicObjVisSystem->Re_Partition(	&virtual_occludees,
-													bounds.Center - bounds.Extent,
-													bounds.Center + bounds.Extent,
-													MIN_GRID_CELL_SIZE,
-													MAX_GRID_CELL_COUNT,
-													MAX_DYNAMIC_OBJ_RADIUS	);
-
-	Reset_Vis();
-}
-
-
-/***********************************************************************************************
- * PhysicsSceneClass::Re_Partition_Static_Projectors -- partition the static projectors        *
- *                                                                                             *
- * INPUT:                                                                                      *
- *                                                                                             *
- * OUTPUT:                                                                                     *
- *                                                                                             *
- * WARNINGS:                                                                                   *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *   7/7/2000   gth : Created.                                                                 *
- *=============================================================================================*/
-void PhysicsSceneClass::Re_Partition_Static_Projectors(void)
-{
-}
-
-
-/***********************************************************************************************
- * PhysicsSceneClass::Update_Culling_System_Bounding_Boxes -- updates the cull systems         *
- *                                                                                             *
- * This should be performed by the level editor when geometry may have changed but we do not   *
- * want to do a re-partition due to the loss of hierarchical VIS data.  Basically, the editor  *
- * will call this every time it loads an LVL in case the user has changed the geometry.  It    *
- * causes all bounding boxes in the static culling systems to be validated.                    *
- *                                                                                             *
- * INPUT:                                                                                      *
- *                                                                                             *
- * OUTPUT:                                                                                     *
- *                                                                                             *
- * WARNINGS:                                                                                   *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *   9/3/2000   gth : Created.                                                                 *
- *=============================================================================================*/
-void PhysicsSceneClass::Update_Culling_System_Bounding_Boxes(void)
-{
-	StaticCullingSystem->Update_Bounding_Boxes();
-	StaticLightingSystem->Update_Bounding_Boxes();
-}
 
 
 /***********************************************************************************************

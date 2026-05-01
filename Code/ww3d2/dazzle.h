@@ -278,7 +278,6 @@ public:
 	
 	virtual void					Render(RenderInfoClass & rinfo);
 	virtual void					Render_Visibility(VisRenderInfoClass & rinfo);
-	virtual void Special_Render(SpecialRenderInfoClass & rinfo);
 	virtual void 					Set_Transform(const Matrix3D &m); 
    virtual void					Get_Obj_Space_Bounding_Sphere(SphereClass & sphere) const;
    virtual void					Get_Obj_Space_Bounding_Box(AABoxClass & box) const;

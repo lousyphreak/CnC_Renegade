@@ -54,27 +54,12 @@
 */
 DynamicVectorClass<SystemSettingEntry *>	SystemSettings::SettingList;
 
+const char *VALUE_NAME_SHADOWS_ENABLED = "Shadows_Enabled";
+
 namespace
 {
-	const int RendererDefaultsVersion = 4;
+	const int RendererDefaultsVersion = 6;
 	const char * RendererDefaultsVersionName = "Bgfx_Shadow_Defaults_Version";
-	const char * LegacyDynamicProjectorsName = "Dynamic_Projectors";
-	const char * LegacyStaticProjectorsName = "Static_Projectors";
-	const char * LegacyPrelitModeName = "Prelit_Mode";
-	const char * LegacyMeshDrawModeName = "Mesh_Draw_Mode";
-	const char * LegacyNPatchesName = "NPatches";
-
-	bool Registry_Has_Value(RegistryClass & registry,const char * name)
-	{
-		DynamicVectorClass<StringClass> value_list;
-		registry.Get_Value_List(value_list);
-		for (int index = 0; index < value_list.Count(); ++index) {
-			if (stricmp(value_list[index],name) == 0) {
-				return true;
-			}
-		}
-		return false;
-	}
 
 	void Upgrade_Renderer_Defaults(const char * sub_key)
 	{
@@ -87,44 +72,9 @@ namespace
 			return;
 		}
 
-		const bool has_shadow_mode = Registry_Has_Value(registry,"Shadow_Mode");
-		const bool has_dynamic_projectors = Registry_Has_Value(registry,LegacyDynamicProjectorsName);
-		const bool has_static_projectors = Registry_Has_Value(registry,LegacyStaticProjectorsName);
+		const bool shadows_enabled = registry.Get_Bool(VALUE_NAME_SHADOWS_ENABLED,true);
 
-		if (!has_shadow_mode) {
-			registry.Set_Int("Shadow_Mode",PhysicsSceneClass::SHADOW_MODE_HARDWARE);
-		}
-		if (!has_dynamic_projectors) {
-			registry.Set_Bool(LegacyDynamicProjectorsName,true);
-		}
-		if (!has_static_projectors) {
-			registry.Set_Bool(LegacyStaticProjectorsName,true);
-		}
-
-		/*
-		** Earlier bgfx builds saved the shadow defaults straight from the zero-initialized
-		** system-setting entries, which disabled dynamic shadows before the renderer path
-		** ever had a chance to run. Migrate that legacy startup tuple once.
-		*/
-		const int shadow_mode = registry.Get_Int("Shadow_Mode",PhysicsSceneClass::SHADOW_MODE_NONE);
-		const bool dynamic_projectors = registry.Get_Bool(LegacyDynamicProjectorsName,false);
-		const bool static_projectors = registry.Get_Bool(LegacyStaticProjectorsName,false);
-		if ((shadow_mode == PhysicsSceneClass::SHADOW_MODE_NONE) &&
-			 (dynamic_projectors == false) &&
-			 (static_projectors == true)) {
-			registry.Set_Int("Shadow_Mode",PhysicsSceneClass::SHADOW_MODE_HARDWARE);
-			registry.Set_Bool(LegacyDynamicProjectorsName,true);
-		}
-		if ((shadow_mode != PhysicsSceneClass::SHADOW_MODE_NONE) &&
-			 (shadow_mode != PhysicsSceneClass::SHADOW_MODE_HARDWARE)) {
-			registry.Set_Int("Shadow_Mode",PhysicsSceneClass::SHADOW_MODE_HARDWARE);
-		}
-
-		registry.Delete_Value(LegacyDynamicProjectorsName);
-		registry.Delete_Value(LegacyStaticProjectorsName);
-		registry.Delete_Value(LegacyPrelitModeName);
-		registry.Delete_Value(LegacyMeshDrawModeName);
-		registry.Delete_Value(LegacyNPatchesName);
+		registry.Set_Bool(VALUE_NAME_SHADOWS_ENABLED,shadows_enabled);
 
 		registry.Set_Int(RendererDefaultsVersionName,RendererDefaultsVersion);
 	}
@@ -513,17 +463,12 @@ public:
 
 /***********************************************************************************************/
 
-class	SystemSettingEntryShadowMode : public SystemSettingEntryEnum {
+class	SystemSettingEntryShadowsEnabled : public SystemSettingEntryBool {
 public:
-	const char * Get_Name( void )	{ return "Shadow_Mode"; }
-	const char * Get_Help( void )	{ return "SHADOW_MODE <mode> - 0=off, 1=shadow maps."; }
-	virtual	int Get_Enum( void ) { if (COMBAT_SCENE) return COMBAT_SCENE->Get_Shadow_Mode(); return (Selection == PhysicsSceneClass::SHADOW_MODE_NONE) ? PhysicsSceneClass::SHADOW_MODE_NONE : PhysicsSceneClass::SHADOW_MODE_HARDWARE; }
-	virtual	void Set_Enum( int selection ) { if (COMBAT_SCENE) COMBAT_SCENE->Set_Shadow_Mode((selection == PhysicsSceneClass::SHADOW_MODE_NONE) ? PhysicsSceneClass::SHADOW_MODE_NONE : PhysicsSceneClass::SHADOW_MODE_HARDWARE); }
-	virtual	int Get_Enum_Count( void ) { return 2; }
-	virtual	const char * Get_Enum_Name( int selection ) {
-		static const char * names[ 2 ] = { "None", "Shadow Maps" };
-		return names[ selection ];
-	}
+	const char * Get_Name( void )	{ return VALUE_NAME_SHADOWS_ENABLED; }
+	const char * Get_Help( void )	{ return "SHADOWS_ENABLED - toggles renderer-owned shadows."; }
+	virtual bool Get_Bool( void )	{ if (COMBAT_SCENE) return COMBAT_SCENE->Are_Shadows_Enabled(); return State; }
+	virtual void Set_Bool( bool state ) { if (COMBAT_SCENE) COMBAT_SCENE->Set_Shadows_Enabled(state); }
 };
 
 /***********************************************************************************************/
@@ -581,7 +526,7 @@ void SystemSettings::Init( void )
 	Add_Setting( new SystemSettingEntryTextureResolution );
 	Add_Setting( new SystemSettingEntryDynamicLODBudget );
 	Add_Setting( new SystemSettingEntryStaticLODBudget );
-	Add_Setting( new SystemSettingEntryShadowMode );
+	Add_Setting( new SystemSettingEntryShadowsEnabled );
 
 //	Add_Setting( new SystemSettingEntryTextureCompressionMode );
 	Add_Setting( new SystemSettingEntryTextureFilterMode );

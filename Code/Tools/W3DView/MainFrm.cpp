@@ -2862,13 +2862,11 @@ CMainFrame::OnIncAmbientLight (void)
 
 void CMainFrame::OnLightingExpose() 
 {
-	// Toggle.
-	WW3D::Expose_Prelit (!WW3D::Expose_Prelit());
 }
 
 void CMainFrame::OnUpdateLightingExpose (CCmdUI *pcmdui) 
 {
-	pcmdui->SetCheck (WW3D::Expose_Prelit());
+	pcmdui->SetCheck (false);
 }
 
 
@@ -3697,21 +3695,6 @@ void CMainFrame::OnKillSceneLight()
 void
 CMainFrame::OnPrelitMultipass (void)
 {
-	if (WW3D::Get_Prelit_Mode () != WW3D::PRELIT_MODE_LIGHTMAP_MULTI_PASS) {
-		
-		//
-		//	Change the loading mode
-		//
-		WW3D::Set_Prelit_Mode (WW3D::PRELIT_MODE_LIGHTMAP_MULTI_PASS);
-		
-		//
-		//	Reload the lightmap models
-		//
-		CDataTreeView *data_tree = (CDataTreeView *)m_wndSplitter.GetPane (0, 0);		
-		data_tree->Reload_Lightmap_Models ();
-		::GetCurrentDocument ()->Reload_Displayed_Object ();
-	}
-
 	return ;
 }
 
@@ -3724,8 +3707,7 @@ CMainFrame::OnPrelitMultipass (void)
 void
 CMainFrame::OnUpdatePrelitMultipass (CCmdUI *pCmdUI) 
 {
-	bool enable = (WW3D::Get_Prelit_Mode () == WW3D::PRELIT_MODE_LIGHTMAP_MULTI_PASS);
-	pCmdUI->SetRadio (enable);
+	pCmdUI->SetRadio (false);
 	return ;
 }
 
@@ -3738,21 +3720,6 @@ CMainFrame::OnUpdatePrelitMultipass (CCmdUI *pCmdUI)
 void
 CMainFrame::OnPrelitMultitex (void) 
 {
-	if (WW3D::Get_Prelit_Mode () != WW3D::PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE) {
-
-		//
-		//	Change the loading mode
-		//
-		WW3D::Set_Prelit_Mode (WW3D::PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE);
-
-		//
-		//	Reload the lightmap models
-		//
-		CDataTreeView *data_tree = (CDataTreeView *)m_wndSplitter.GetPane (0, 0);		
-		data_tree->Reload_Lightmap_Models ();
-		::GetCurrentDocument ()->Reload_Displayed_Object ();
-	}
-
 	return ;
 }
 
@@ -3765,8 +3732,7 @@ CMainFrame::OnPrelitMultitex (void)
 void
 CMainFrame::OnUpdatePrelitMultitex (CCmdUI *pCmdUI) 
 {
-	bool enable = (WW3D::Get_Prelit_Mode () == WW3D::PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE);
-	pCmdUI->SetRadio (enable);
+	pCmdUI->SetRadio (true);
 	return ;
 }
 
@@ -3779,22 +3745,6 @@ CMainFrame::OnUpdatePrelitMultitex (CCmdUI *pCmdUI)
 void
 CMainFrame::OnPrelitVertex (void)
 {
-	if (WW3D::Get_Prelit_Mode () != WW3D::PRELIT_MODE_VERTEX) {
-
-		//
-		//	Change the loading mode
-		//
-		WW3D::Set_Prelit_Mode (WW3D::PRELIT_MODE_VERTEX);
-
-
-		//
-		//	Reload the lightmap models
-		//
-		CDataTreeView *data_tree = (CDataTreeView *)m_wndSplitter.GetPane (0, 0);		
-		data_tree->Reload_Lightmap_Models ();
-		::GetCurrentDocument ()->Reload_Displayed_Object ();
-	}
-
 	return ;
 }
 
@@ -3807,8 +3757,7 @@ CMainFrame::OnPrelitVertex (void)
 void
 CMainFrame::OnUpdatePrelitVertex (CCmdUI *pCmdUI) 
 {
-	bool enable = (WW3D::Get_Prelit_Mode () == WW3D::PRELIT_MODE_VERTEX);
-	pCmdUI->SetRadio (enable);
+	pCmdUI->SetRadio (false);
 	return ;
 }
 

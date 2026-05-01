@@ -53,7 +53,6 @@
 #include "shader.h"
 #include "vissample.h"
 #include "vistablemgr.h"
-#include "phystexproject.h"
 #include "simplevec.h"
 #include "vissectorstats.h"
 #include "ww3d.h"
@@ -67,8 +66,6 @@ class LightPhysClass;
 class LightClass;
 class StaticPhysClass;
 class RenderInfoClass;
-class SpecialRenderInfoClass;
-class ShadowRenderInfoClass;
 class VisRenderContextClass;
 class VisOptimizationContextClass;
 class AABoxClass;
@@ -573,9 +570,6 @@ public:
 	RefPhysListIterator	Get_Static_Anim_Object_Iterator(void);
 	RefPhysListIterator	Get_Static_Light_Iterator(void);
 
-	TexProjListIterator	Get_Static_Projector_Iterator(void);
-	TexProjListIterator	Get_Dynamic_Projector_Iterator(void);
-
 	StaticPhysClass *		Get_Static_Object_By_ID(uint32_t id);
 
 	/*
@@ -708,17 +702,6 @@ public:
 	void							Disable_All_Collision_Detections(int group);
 	bool							Do_Groups_Collide(int group0,int group1);
 
-	/*
-	** Cause the culling systems to re-partition themselves. (Typically only done in the EDITOR!)
-	** The Update_Culling_System_Bounding_Boxes can be used by the EDITOR to refresh the
-	** boxes in the culling systems without re-partitioning (and losing vis data...)
-	*/
-	void							Re_Partition_Static_Objects(void);
-	void							Re_Partition_Static_Lights(void);
-	void							Re_Partition_Static_Projectors(void);
-	void							Re_Partition_Dynamic_Culling_System(void);
-	void							Re_Partition_Dynamic_Culling_System(DynamicVectorClass<AABoxClass> & virtual_occludees);
-	void							Update_Culling_System_Bounding_Boxes(void);
 	bool							Verify_Culling_Systems(StringClass & set_error_report);
 
 	/*
@@ -826,30 +809,13 @@ public:
 
 	void							Optimize_Visibility_Data(VisOptProgressClass & progress_status);
 
-
-	void							Add_Static_Texture_Projector(TexProjectClass * newprojector);
-	void							Remove_Static_Texture_Projector(TexProjectClass * projector);
-	void							Add_Dynamic_Texture_Projector(TexProjectClass * newprojector);
-	void							Remove_Dynamic_Texture_Projector(TexProjectClass * projector);
-	
-	void							Remove_Texture_Projector(TexProjectClass * projector);
-	bool							Contains(TexProjectClass * projector);
-	
 	/*
-	** Shadow system, built on top of the Texture Projection system.
+	** Renderer-owned runtime shadow control.
 	*/
-	enum ShadowEnum
-	{
-		SHADOW_MODE_NONE = 0,			// no shadows at all
-		SHADOW_MODE_HARDWARE = 1,		// use renderer-owned shadow maps
-	};
-
-	void							Set_Shadow_Mode(ShadowEnum shadow_mode);
-	ShadowEnum					Get_Shadow_Mode(void);
+	void							Set_Shadows_Enabled(bool enabled);
+	bool							Are_Shadows_Enabled(void) const;
 
 	CameraClass *				Get_Shadow_Camera(void);
-	ShadowRenderInfoClass *Get_Shadow_Render_Context(int width,int height);
-	MaterialPassClass *		Get_Shadow_Material_Pass(void);
 
 	/*
 	** Decal system
@@ -1004,12 +970,6 @@ protected:
 	void							Merge_Vis_Object_IDs(uint32_t id0,uint32_t id1);
 
 	/*
-	** Legacy texture-projector functions
-	*/
-public:
-	void							Release_Projector_Resources(void);
-
-	/*
 	** Internal decal functions
 	*/
 	void							Allocate_Decal_Resources(void);
@@ -1113,11 +1073,7 @@ public:
 	/*
 	** Shadow system variables
 	*/
-	ShadowEnum					ShadowMode;						// current shadow mode
-
-	ShadowRenderInfoClass *ShadowRenderContext;			// render context for shadows																	
-	CameraClass *				ShadowCamera;					// camera for rendering shadow textures
-	MaterialPassClass *		ShadowMaterialPass;			// material pass for shadows
+	bool							ShadowsEnabled;				// runtime shadow maps enabled
 
 	/*
 	** Decal System
@@ -1210,8 +1166,6 @@ public:
 	RefPhysListClass			ObjList;
 	RefPhysListClass			StaticObjList;
 	RefPhysListClass			StaticLightList;
-	TexProjListClass			StaticProjectorList;
-	TexProjListClass			DynamicProjectorList;
 
 	/*
 	** Auxiliary lists.  These lists are used to perform certain special

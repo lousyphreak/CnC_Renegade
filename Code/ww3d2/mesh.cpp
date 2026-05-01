@@ -932,23 +932,6 @@ void MeshClass::Render(RenderInfoClass & rinfo)
 			}
 
 			/*
-			** If the rendering context specifies procedural material passes, register them
-			** for rendering
-			*/
-			for (int i=0; i<rinfo.Additional_Pass_Count(); i++) {
-				
-				MaterialPassClass * matpass = rinfo.Peek_Additional_Pass(i);
-
-				if ((!is_alpha_blended) || (matpass->Is_Enabled_On_Translucent_Meshes())) {
-					const bool delay_pass =
-						(rinfo.Current_Override_Flags() & RenderInfoClass::RINFO_OVERRIDE_ADDITIONAL_PASSES_ONLY) != 0;
-					rendered_something =
-						TheDX8MeshRenderer.Queue_Material_Pass(matpass,this,delay_pass) ||
-						rendered_something;
-				}
-			}
-
-			/*
 			** If we rendered any base or procedural passes and this is a skin, we need
 			** to tell the mesh rendering system to process this skin
 			*/
@@ -1237,28 +1220,6 @@ void MeshClass::Render_Visibility(VisRenderInfoClass & rinfo)
 															Get_Bounding_Box() );
 	}
 	rinfo.VisRasterizer->Enable_Two_Sided_Rendering(false);
-}
-
-void MeshClass::Special_Render(SpecialRenderInfoClass & rinfo)
-{
-	if ((Is_Not_Hidden_At_All() == false) && (rinfo.RenderType != SpecialRenderInfoClass::RENDER_SHADOW)) {
-		return;
-	}
-
-	if (rinfo.RenderType == SpecialRenderInfoClass::RENDER_VIS) {
-		VisRenderInfoClass vis_rinfo(rinfo.Camera);
-		vis_rinfo.VisRasterizer = rinfo.VisRasterizer;
-		Render_Visibility(vis_rinfo);
-		return;
-	}
-
-	if (rinfo.RenderType == SpecialRenderInfoClass::RENDER_SHADOW) {
-		const HTreeClass * htree = NULL;
-		if (Container!=NULL) {
-			htree = Container->Get_HTree();
-		}
-		Model->Shadow_Render(rinfo,Transform,htree);
-	}
 }
 
 void MeshClass::Replace_Texture(TextureClass* texture,TextureClass* new_texture)

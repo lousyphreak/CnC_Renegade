@@ -151,7 +151,6 @@ public:
 	virtual int						Class_ID(void) const;
 	virtual void					Render(RenderInfoClass & rinfo);
 	virtual void					Render_Visibility(VisRenderInfoClass & rinfo);
-	virtual void					Special_Render(SpecialRenderInfoClass & rinfo);
 	virtual void 					Set_Transform(const Matrix3D &m); 
 	virtual void 					Set_Position(const Vector3 &v);
 	virtual bool					Cast_Ray(RayCollisionTestClass & raytest);
@@ -202,7 +201,6 @@ public:
 	virtual int						Class_ID(void) const;
 	virtual void					Render(RenderInfoClass & rinfo);
 	virtual void					Render_Visibility(VisRenderInfoClass & rinfo);
-	virtual void					Special_Render(SpecialRenderInfoClass & rinfo);
 	virtual void 					Set_Transform(const Matrix3D &m); 
 	virtual void 					Set_Position(const Vector3 &v);
 	virtual bool					Cast_Ray(RayCollisionTestClass & raytest);

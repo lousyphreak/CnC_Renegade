@@ -54,8 +54,8 @@ A fresh code review against the maintained runtime tree shows that the moderniza
 - `Code/ww3d2/ww3d.h` still exposes `FixedFunctionStateDesc`, `FixedFunctionSubmitDesc`, `PrelitModeEnum`, and buffer-type enums that preserve D3D8-era renderer language in the public runtime frontend.
 - `Code/ww3d2/dx8wrapper.h` still defines `RenderStateStruct`, `D3DMATERIAL8`, `D3DLIGHT8[4]`, `Set_DX8_*`, `Set_Light_Environment(...)`, and `Apply_Render_State_Changes()` as live renderer-facing concepts.
 - `Code/ww3d2/vertmaterial*`, `Code/ww3d2/mapper*`, and `Code/ww3d2/matrixmapper*` still carry fixed-function material, texgen, texture-transform, and bump-env semantics in runtime types instead of renderer-owned packet data.
-- `Code/ww3d2/rinfo.h`, `Code/ww3d2/rendobj.h`, `Code/ww3d2/dx8renderer.h`, `Code/ww3d2/sortingrenderer*`, and `Code/wwphys/renegadeterrainpatch.h` still expose object-owned scheduling, pass replay, FVF/category ownership, and special-render compatibility paths.
-- `Code/wwphys/pscene.h`, `Code/wwphys/pscene_projectors.cpp`, `Code/Commando/systemsettings.cpp`, `Code/Commando/dlgconfigperformancetab.cpp`, `Code/Commando/consolefunction.cpp`, and `Code/Tools/WWConfig/PerformanceConfigDialog.cpp` still expose projector/shadow-era settings, registry keys, and debug/config controls as live runtime surfaces.
+- `Code/ww3d2/dx8renderer.h`, `Code/ww3d2/sortingrenderer*`, and the remaining fixed-function submission compatibility in `Code/ww3d2/ww3d.h` / `Code/ww3d2/dx8wrapper.h` still expose FVF/category ownership, sorting-era ownership, and D3D-shaped draw descriptors.
+- `Code/ww3d2/rinfo.h`, `Code/ww3d2/rendobj.h`, `Code/wwphys/pscene.h`, `Code/wwphys/pscene_projectors.cpp`, `Code/Commando/systemsettings.cpp`, `Code/Commando/dlgconfigperformancetab.cpp`, `Code/Commando/shutdown.cpp`, `Code/Commando/consolefunction.cpp`, and `Code/Tools/WWConfig/PerformanceConfigDialog.cpp` no longer carry the runtime `Special_Render` multiplexor, `RenderInfoClass` additional-pass stack, old shadow render context/material-pass helpers, runtime prelit toggles, or legacy projector/shadow setting migration names. Remaining pass submission now enters through explicit material-pass providers and scene effect queues rather than hidden `RenderInfoClass` mutation.
 - This means the refactor is only complete if phase 8 is treated as a **large deletion phase**, not as a small follow-up cleanup.
 
 ## Required end-state architecture
@@ -421,8 +421,8 @@ The sequence below is the recommended order because later batching work will not
 
 - `Code/ww3d2/ww3d.h`, `Code/ww3d2/dx8wrapper.h`, `Code/ww3d2/vertmaterial*`, `Code/ww3d2/mapper*`, `Code/ww3d2/matrixmapper*`, and `Code/ww3d2/dx8renderer.h` still expose live D3D8-era renderer state, FVF/category ownership, and fixed-function material/mapping contracts.
 - `Code/ww3d2/rendobj.h`, `Code/ww3d2/rinfo.h`, `Code/ww3d2/sortingrenderer*`, and `Code/wwphys/renegadeterrainpatch.h` still keep object-owned scheduling, special-render entry points, and pass replay compatibility alive in the runtime interfaces.
-- `Code/wwphys/pscene.h` and `Code/wwphys/pscene_projectors.cpp` still expose shadow/projector-era tuning knobs such as `Set_Shadow_Mode(...)`, shadow count/resolution, attenuation, and normal-intensity controls as first-class runtime APIs.
-- `Code/Commando/systemsettings.cpp`, `Code/Commando/dlgconfigperformancetab.cpp`, `Code/Commando/consolefunction.cpp`, and `Code/Tools/WWConfig/PerformanceConfigDialog.cpp` still retain legacy registry names, UI strings, and config/debug surfaces for `Dynamic_Projectors`, `Static_Projectors`, `Prelit_Mode`, `Mesh_Draw_Mode`, `NPatches`, and shadow-era tuning.
+- `Code/wwphys/pscene.h` and `Code/wwphys/pscene_projectors.cpp` no longer carry the old multi-mode public shadow contract, dead projector iterators, public texture-projector list management, or editor-only repartition hooks on the maintained runtime surface; the remaining debt is the deeper compatibility plumbing still exercised through legacy pass-replay and shadow-material helper paths.
+- `Code/Commando/systemsettings.cpp`, `Code/Commando/dlgconfigperformancetab.cpp`, `Code/Commando/consolefunction.cpp`, and `Code/Tools/WWConfig/PerformanceConfigDialog.cpp` should converge on a single runtime `Shadows_Enabled` surface; legacy names such as `Shadow_Mode`, `Dynamic_Projectors`, `Static_Projectors`, `Prelit_Mode`, `Mesh_Draw_Mode`, and `NPatches` should survive only as one-way migration inputs until they can be deleted entirely.
 - The plan should therefore treat phase 8 as the point where these runtime-facing symbols and settings are deleted, renamed, or collapsed behind the new renderer model instead of being preserved as migration furniture.
 
 **Primary code areas**
@@ -455,6 +455,15 @@ The sequence below is the recommended order because later batching work will not
 - keep `Tools/WWConfig/*` only as a migration surface for runtime settings names; do not let it preserve renderer internals or old feature boundaries
 - do not preserve `Tools/LevelEdit/*` or `Tools/W3DView/*` requirements as part of phase 8 cleanup
 - verify the runtime render path no longer depends on D3D8-era symbols except where legacy asset interpretation still needs them as source data during loading
+
+**Status**
+
+- substantially implemented for the runtime-facing cleanup seams identified after phases 1-7
+- `RenderObjClass::Special_Render`, `SpecialRenderInfoClass`, `ShadowRenderInfoClass`, the obsolete black-and-white/projector shadow render context, and `PhysicsSceneClass::Release_Projector_Resources()` / `Get_Shadow_Render_Context()` / `Get_Shadow_Material_Pass()` have been deleted
+- `RenderInfoClass` no longer owns additional material passes; debug/effect code now uses explicit material-pass provider entry points and the scene-owned effect phase queue
+- runtime prelit selection/debug toggles were removed from `WW3D`, mesh loading now selects the best authored prelit chunk directly, and the `expose_prelit` console hook is gone
+- runtime config/shutdown/performance surfaces now read and write `Shadows_Enabled` directly instead of preserving `Shadow_Mode`, projector toggles, `Prelit_Mode`, `Mesh_Draw_Mode`, or `NPatches` as live migration furniture
+- still open: delete or rename the remaining `WW3D::FixedFunction*` descriptor names, reduce `DX8Wrapper` state arrays and D3D material/light/state APIs, and collapse the remaining FVF/category/sorting compatibility ownership in `dx8renderer*`
 
 **Exit condition**
 

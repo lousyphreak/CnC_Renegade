@@ -138,7 +138,7 @@ const char *KEY_NAME_OPTIONS				= "Software\\Westwood\\Renegade\\Options";
 const char *VALUE_NAME_DYN_LOD			= "Dynamic_LOD_Budget";
 const char *VALUE_NAME_STATIC_LOD		= "Static_LOD_Budget";
 const char *VALUE_NAME_TEXTURE_FILTER	= "Texture_Filter_Mode";
-const char *VALUE_NAME_SHADOW_MODE		= "Shadow_Mode";
+const char *VALUE_NAME_SHADOWS_ENABLED	= "Shadows_Enabled";
 const char *VALUE_NAME_TEXTURE_RES		= "Texture_Resolution";
 const char *VALUE_NAME_SURFACE_EFFECT	= "Surface_Effect_Detail";
 const char *VALUE_NAME_PARTICLE_DETAIL	= "Particle_Detail";
@@ -382,8 +382,7 @@ PerformanceConfigDialogClass::Load_Values (void)
 		int static_lod			= registry.Get_Int (VALUE_NAME_STATIC_LOD, 3000);
 
 		int texture_filter	= registry.Get_Int (VALUE_NAME_TEXTURE_FILTER, TextureClass::TEXTURE_FILTER_BILINEAR);
-		int shadow_mode		= registry.Get_Int (VALUE_NAME_SHADOW_MODE, PhysicsSceneClass::SHADOW_MODE_HARDWARE);		
-		shadow_mode = (shadow_mode == PhysicsSceneClass::SHADOW_MODE_NONE) ? PhysicsSceneClass::SHADOW_MODE_NONE : PhysicsSceneClass::SHADOW_MODE_HARDWARE;
+		const bool shadows_enabled = registry.Get_Bool(VALUE_NAME_SHADOWS_ENABLED,true);
 		int texture_red		= registry.Get_Int (VALUE_NAME_TEXTURE_RES, 0);
 		int surface_effect	= registry.Get_Int (VALUE_NAME_SURFACE_EFFECT, 1);
 		int particle_detail	= registry.Get_Int (VALUE_NAME_PARTICLE_DETAIL, 1);
@@ -391,7 +390,7 @@ PerformanceConfigDialogClass::Load_Values (void)
 		//
 		//	Set the slider's positions to reflect the loaded values
 		//
-		m_CharShadowsSlider.SetPos ((shadow_mode == PhysicsSceneClass::SHADOW_MODE_NONE) ? 0 : 1);
+		m_CharShadowsSlider.SetPos (shadows_enabled ? 1 : 0);
 		m_TextureDetailSlider.SetPos (max (2 - texture_red, 0));		
 		m_SurfaceEffectsSlider.SetPos (surface_effect);
 		m_ParticleSlider.SetPos (particle_detail);
@@ -615,7 +614,7 @@ PerformanceConfigDialogClass::Apply_Changes (void)
 		//	Get the current settings from the dialog
 		//
 		int geometry_detail	= 	m_GeometrySlider.GetPos ();
-		int shadow_mode		= 	(m_CharShadowsSlider.GetPos () == 0) ? PhysicsSceneClass::SHADOW_MODE_NONE : PhysicsSceneClass::SHADOW_MODE_HARDWARE;
+		const bool shadows_enabled = (m_CharShadowsSlider.GetPos () != 0);
 		int texture_red		= 	m_TextureDetailSlider.GetPos ();
 		int surface_effect	= 	m_SurfaceEffectsSlider.GetPos ();
 		int particle_detail	= 	m_ParticleSlider.GetPos ();
@@ -639,13 +638,10 @@ PerformanceConfigDialogClass::Apply_Changes (void)
 		registry.Set_Int (VALUE_NAME_DYN_LOD, lod_budget);
 		registry.Set_Int (VALUE_NAME_STATIC_LOD, lod_budget);
 		registry.Set_Int (VALUE_NAME_TEXTURE_FILTER, texture_filter);
-		registry.Set_Int (VALUE_NAME_SHADOW_MODE, shadow_mode);
+		registry.Set_Bool(VALUE_NAME_SHADOWS_ENABLED, shadows_enabled);
 		registry.Set_Int (VALUE_NAME_TEXTURE_RES, max (2 - texture_red, 0));
 		registry.Set_Int (VALUE_NAME_SURFACE_EFFECT, surface_effect);
 		registry.Set_Int (VALUE_NAME_PARTICLE_DETAIL, particle_detail);
-		registry.Delete_Value("Dynamic_Projectors");
-		registry.Delete_Value("Static_Projectors");
-		registry.Delete_Value("Prelit_Mode");
 	}
 
 	return ;
@@ -693,19 +689,6 @@ void PerformanceConfigDialogClass::OnGraphicsAutoSetup()
 //	Apply_Changes();
 };
 
-/*
-		registry.Set_Int (VALUE_NAME_DYN_LOD, lod_budget);
-		registry.Set_Int (VALUE_NAME_STATIC_LOD, lod_budget);
-
-		registry.Set_Int (VALUE_NAME_DYN_SHADOWS, (shadow_mode != PhysicsSceneClass::SHADOW_MODE_NONE));
-		registry.Set_Int (VALUE_NAME_STATIC_SHADOWS, static_shadows);
-
-		registry.Set_Int (VALUE_NAME_PRELIT_MODE, prelit_mode);
-		registry.Set_Int (VALUE_NAME_SHADOW_MODE, shadow_mode);
-		registry.Set_Int (VALUE_NAME_TEXTURE_RES, max (2 - texture_red, 0));
-		registry.Set_Int (VALUE_NAME_SURFACE_EFFECT, surface_effect);
-		registry.Set_Int (VALUE_NAME_PARTICLE_DETAIL, particle_detail);
-*/
 void AutoConfigSettings() 
 {
 	//
@@ -886,27 +869,10 @@ void AutoConfigSettings()
 		}
 	}
 
-// Set high shadow detail if render to texture is supported AND HWTL available
-// Set medium shadow detail if render to texture is supported but no HWTL
-// Set low shadow detail if no render to texture is available
-	if (caps.Support_Render_To_Texture_Format(Renderer_Format_To_WW3DFormat(display_format))) {
-		if (caps.Support_TnL()) {
-			registry.Set_Int (VALUE_NAME_SHADOW_MODE, 3);
-		}
-		else {
-			registry.Set_Int (VALUE_NAME_SHADOW_MODE, 2);
-		}
-	}
-	else {
-		// Set to medium if high end cpu detected.
-		// TODO: Set to medium if Athlon detected.
-		if (high_end_processor) {
-			registry.Set_Int (VALUE_NAME_SHADOW_MODE, 1);
-		}
-		else {
-			registry.Set_Int (VALUE_NAME_SHADOW_MODE, 0);
-		}
-	}
+// The maintained runtime only exposes renderer-owned shadow maps as an on/off feature.
+	registry.Set_Bool(
+		VALUE_NAME_SHADOWS_ENABLED,
+		caps.Support_Render_To_Texture_Format(Renderer_Format_To_WW3DFormat(display_format)));
 
 // If a low end system turn surface effects off
 	if (caps.Support_TnL()) {
@@ -934,11 +900,6 @@ void AutoConfigSettings()
 	else {
 		registry.Set_Int (VALUE_NAME_PARTICLE_DETAIL, 0);
 	}
-
-
-	registry.Delete_Value("Dynamic_Projectors");
-	registry.Delete_Value("Static_Projectors");
-	registry.Delete_Value("Prelit_Mode");
 
 	RegistryClass registry_options (KEY_NAME_OPTIONS);
 	if (!registry_options.Is_Valid()) return;

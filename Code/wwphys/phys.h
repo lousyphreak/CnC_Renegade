@@ -70,7 +70,6 @@ class CameraClass;
 class srScene;
 class srGERD;
 class RenderInfoClass;
-class SpecialRenderInfoClass;
 class VisRenderInfoClass;
 class PhysClass;
 class PhysRayCollisionTestClass;

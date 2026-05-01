@@ -330,41 +330,19 @@ WW3DErrorType MeshModelClass::Load_W3D(ChunkLoadClass & cload)
 	// Configure the load sequence for prelighting.
 	if (context->Header.Attributes & W3D_MESH_FLAG_PRELIT_MASK) {
 
-		// Select from the available prelit materials based on current prelit lighting mode.
-		// If the model does not have the current prelit mode, select the next highest quality
-		// prelit material that is available.
-		switch (WW3D::Get_Prelit_Mode()) {
-
-			case WW3D::PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE:
-				if (context->Header.Attributes & W3D_MESH_FLAG_PRELIT_LIGHTMAP_MULTI_TEXTURE) {
-					context->PrelitChunkID = W3D_CHUNK_PRELIT_LIGHTMAP_MULTI_TEXTURE;
-					Set_Flag (PRELIT_LIGHTMAP_MULTI_TEXTURE, true);
-					break;
-				}
-				// Else fall thru...
-
-			case WW3D::PRELIT_MODE_LIGHTMAP_MULTI_PASS:
-				if (context->Header.Attributes & W3D_MESH_FLAG_PRELIT_LIGHTMAP_MULTI_PASS) {
-					context->PrelitChunkID = W3D_CHUNK_PRELIT_LIGHTMAP_MULTI_PASS;
-					Set_Flag (PRELIT_LIGHTMAP_MULTI_PASS, true);
-					break;
-				}
-				// Else fall thru...
-
-			case WW3D::PRELIT_MODE_VERTEX:
-				if (context->Header.Attributes & W3D_MESH_FLAG_PRELIT_VERTEX) {
-					context->PrelitChunkID = W3D_CHUNK_PRELIT_VERTEX;
-					Set_Flag (PRELIT_VERTEX, true);
-					break;
-				}
-				// Else fall thru...
-
-			default:
-
-				// This prelighting option MUST be available if none of the others are available.
-				WWASSERT (context->Header.Attributes & W3D_MESH_FLAG_PRELIT_UNLIT);
-				context->PrelitChunkID = W3D_CHUNK_PRELIT_UNLIT;
-				break;
+		// Runtime prelighting is authored asset data now, not a global renderer mode.
+		if (context->Header.Attributes & W3D_MESH_FLAG_PRELIT_LIGHTMAP_MULTI_TEXTURE) {
+			context->PrelitChunkID = W3D_CHUNK_PRELIT_LIGHTMAP_MULTI_TEXTURE;
+			Set_Flag (PRELIT_LIGHTMAP_MULTI_TEXTURE, true);
+		} else if (context->Header.Attributes & W3D_MESH_FLAG_PRELIT_LIGHTMAP_MULTI_PASS) {
+			context->PrelitChunkID = W3D_CHUNK_PRELIT_LIGHTMAP_MULTI_PASS;
+			Set_Flag (PRELIT_LIGHTMAP_MULTI_PASS, true);
+		} else if (context->Header.Attributes & W3D_MESH_FLAG_PRELIT_VERTEX) {
+			context->PrelitChunkID = W3D_CHUNK_PRELIT_VERTEX;
+			Set_Flag (PRELIT_VERTEX, true);
+		} else {
+			WWASSERT (context->Header.Attributes & W3D_MESH_FLAG_PRELIT_UNLIT);
+			context->PrelitChunkID = W3D_CHUNK_PRELIT_UNLIT;
 		}
 
 	} else {

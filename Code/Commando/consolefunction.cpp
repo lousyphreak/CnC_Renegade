@@ -847,22 +847,6 @@ public:
 	}
 };
 
-class ExposePrelitConsoleFunctionClass : public ConsoleFunctionClass {
-public:
-	virtual	const char * Get_Name( void )	{ return "expose_prelit"; }
-	virtual	const char * Get_Help( void )	{ return "EXPOSE_PRELIT - expose precalculated lighting on meshes."; }
-	virtual	void Activate( const char * input ) {
-
-		static char *_comment [2] = {
-			"Unexposed prelit meshes\n",
-			"Exposed	prelit meshes\n"
-		};
-
-		WW3D::Expose_Prelit (!WW3D::Expose_Prelit());
-		Print (_comment [WW3D::Expose_Prelit() ? 1 : 0]);
-	}
-};
-
 class PlayerPositionConsoleFunctionClass : public ConsoleFunctionClass {
 public:
 	virtual	const char * Get_Name( void )	{ return "player_position"; }
@@ -1398,11 +1382,10 @@ public:
 
       ConsoleFunctionManager::Parse_Input("Static_LOD_Budget 100");
 
-      ConsoleFunctionManager::Parse_Input("Shadow_Mode 0");
-
-      WW3D::Set_Prelit_Mode(WW3D::PRELIT_MODE_VERTEX);
-
-      //ConsoleFunctionManager::Parse_Input("Mesh_Draw_Mode 0");
+      if (COMBAT_SCENE) {
+			COMBAT_SCENE->Set_Shadows_Enabled(false);
+      }
+      Print("Shadows disabled.\n");
 
 		WW3D::Set_Texture_Reduction(1);
 		Print("Texture Resolution set to 1.\n");
@@ -4905,7 +4888,6 @@ void	ConsoleFunctionManager::Init( void )
 	FunctionList.Add( new DoStuffConsoleFunctionClass() );
 	FunctionList.Add( new DSAPOResetConsoleFunctionClass() );
 	FunctionList.Add( new EnableTriangleRenderConsoleFunctionClass() );
-	FunctionList.Add( new ExposePrelitConsoleFunctionClass() );
 	FunctionList.Add( new FlashTextureConsoleFunctionClass() );
 	FunctionList.Add( new FlyStarConsoleFunctionClass() );
 	FunctionList.Add( new FogRangeConsoleFunctionClass() );

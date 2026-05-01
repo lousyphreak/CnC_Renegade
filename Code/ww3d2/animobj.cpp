@@ -315,41 +315,6 @@ void Animatable3DObjClass::Render_Visibility(VisRenderInfoClass &)
 }
 
 /***********************************************************************************************
- * Animatable3DObjClass::Special_Render -- "special render" function for animatables           *
- *                                                                                             *
- * INPUT:                                                                                      *
- *                                                                                             *
- * OUTPUT:                                                                                     *
- *                                                                                             *
- * WARNINGS:                                                                                   *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *   12/10/98   GTH : Created.                                                                 *
- *=============================================================================================*/
-void Animatable3DObjClass::Special_Render(SpecialRenderInfoClass & rinfo)
-{
-	if (rinfo.RenderType == SpecialRenderInfoClass::RENDER_VIS) {
-		VisRenderInfoClass vis_rinfo(rinfo.Camera);
-		vis_rinfo.VisRasterizer = rinfo.VisRasterizer;
-		Render_Visibility(vis_rinfo);
-		return;
-	}
-
-	if (HTree == NULL) return;
-
-	if ( CurMotionMode == SINGLE_ANIM ) {
-		if ( ModeAnim.AnimMode != ANIM_MODE_MANUAL ) {
-			Single_Anim_Progress();
-		}
-	}
-
-	if (!Is_Hierarchy_Valid()) {
-		Update_Sub_Object_Transforms();
-	}
-}
-
-
-/***********************************************************************************************
  * Animatable3DObjClass::Set_Transform -- sets the transform and marks sub-objects as dirty    *
  *                                                                                             *
  * INPUT:                                                                                      *

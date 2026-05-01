@@ -202,15 +202,7 @@ protected:
 
 void	SkeletonSceneClass::Customized_Render(RenderInfoClass & rinfo)	
 { 
-	if (TestPass) {
-		rinfo.Push_Material_Pass(TestPass);
-	}
-
 	SimpleSceneClass::Customized_Render(rinfo);
-
-	if (TestPass) {
-		rinfo.Pop_Material_Pass();
-	}
 }
 
 // ----------------------------------------------------------------------------
@@ -261,9 +253,6 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	AssetManager->Load_3D_Assets("ShatterPlanes0.w3d");		// Shatter planes
 	WW3D::Init(hWnd);	
 
-//	WW3D::Set_Prelit_Mode(WW3D::PRELIT_MODE_VERTEX);
-	WW3D::Set_Prelit_Mode(WW3D::PRELIT_MODE_LIGHTMAP_MULTI_PASS);
-//	WW3D::Set_Prelit_Mode(WW3D::PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE);
 //	WW3D::Set_Collision_Box_Display_Mask(0xFF);
 	
 	if (WW3D::Set_Render_Device(-1,1024,768,16,1,true)!=WW3D_ERROR_OK) {
@@ -1342,8 +1331,6 @@ void Init_3D_Scene()
 #endif
 
 }
-
-
 
 
 

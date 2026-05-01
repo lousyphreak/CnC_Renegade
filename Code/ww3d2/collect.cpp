@@ -412,40 +412,6 @@ void CollectionClass::Render_Visibility(VisRenderInfoClass & rinfo)
 
 
 /***********************************************************************************************
- * CollectionClass::Special_Render -- passes the special render call to all sub-objects        *
- *                                                                                             *
- * INPUT:                                                                                      *
- *                                                                                             *
- * OUTPUT:                                                                                     *
- *                                                                                             *
- * WARNINGS:                                                                                   *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *   3/2/99     GTH : Created.                                                                 *
- *=============================================================================================*/
-void CollectionClass::Special_Render(SpecialRenderInfoClass & rinfo)
-{
-	if (Is_Not_Hidden_At_All() == false) {
-		return;
-	}
-
-	if (rinfo.RenderType == SpecialRenderInfoClass::RENDER_VIS) {
-		VisRenderInfoClass vis_rinfo(rinfo.Camera);
-		vis_rinfo.VisRasterizer = rinfo.VisRasterizer;
-		Render_Visibility(vis_rinfo);
-		return;
-	}
-
-	if (Are_Sub_Object_Transforms_Dirty()) {
-		Update_Sub_Object_Transforms();
-	}
-
-	for (int i=0; i<SubObjects.Count(); i++) {
-		SubObjects[i]->Special_Render(rinfo);
-	}
-}
-
-/***********************************************************************************************
  * CollectionClass::Set_Transform -- set the transform for this collection                     *
  *                                                                                             *
  * INPUT:                                                                                      *
@@ -1137,4 +1103,3 @@ PrototypeClass * CollectionLoaderClass::Load_W3D(ChunkLoadClass & cload)
 	
 	}
 }
-

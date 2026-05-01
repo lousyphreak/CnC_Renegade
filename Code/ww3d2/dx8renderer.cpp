@@ -269,40 +269,6 @@ static void Resolve_Registered_Draw_Textures(
 	const MeshClass & mesh,
 	TextureClass * applied_textures[MAX_TEXTURE_STAGES])
 {
-#ifdef WWDEBUG
-	if (WW3D::Expose_Prelit()) {
-		switch (mesh.Peek_Model()->Get_Flag(MeshGeometryClass::PRELIT_MASK)) {
-			case MeshGeometryClass::PRELIT_VERTEX:
-				for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
-					applied_textures[stage] = NULL;
-				}
-				return;
-
-			case MeshGeometryClass::PRELIT_LIGHTMAP_MULTI_PASS:
-				if (draw.Pass == static_cast<unsigned>(mesh.Peek_Model()->Get_Pass_Count() - 1)) {
-					for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
-						applied_textures[stage] = draw.Textures[stage];
-					}
-				} else {
-					for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
-						applied_textures[stage] = NULL;
-					}
-				}
-				return;
-
-			case MeshGeometryClass::PRELIT_LIGHTMAP_MULTI_TEXTURE:
-				applied_textures[0] = draw.Textures[0];
-				for (unsigned stage = 1; stage < MAX_TEXTURE_STAGES; ++stage) {
-					applied_textures[stage] = NULL;
-				}
-				return;
-
-			default:
-				break;
-		}
-	}
-#endif
-
 	for (unsigned stage = 0; stage < MAX_TEXTURE_STAGES; ++stage) {
 		applied_textures[stage] = draw.Textures[stage];
 	}
@@ -1996,58 +1962,6 @@ void DX8TextureCategoryClass::Render(VertexBufferClass *vertex_buffer, IndexBuff
 
 		TextureClass *applied_textures[MAX_TEXTURE_STAGES] = {};
 
-		#ifdef WWDEBUG	
-		// Debug rendering: if it exists, expose prelighting on this mesh by disabling all base textures.
-		if (WW3D::Expose_Prelit()) {
-			switch (mesh->Peek_Model()->Get_Flag (MeshGeometryClass::PRELIT_MASK)) {
-
-				unsigned i;
-
-				case MeshGeometryClass::PRELIT_VERTEX:
-					
-					// Disable texturing on all stages and passes.
-					for (i = 0; i < MAX_TEXTURE_STAGES; i++) {
-						DX8Wrapper::Set_Texture (i, NULL);
-						applied_textures[i] = NULL;
-					}
-					break;
-
-				case MeshGeometryClass::PRELIT_LIGHTMAP_MULTI_PASS:
-					
-					// Disable texturing on all but the last pass.
-					if (pass == mesh->Peek_Model()->Get_Pass_Count() - 1) {
-						for (i = 0; i < MAX_TEXTURE_STAGES; i++) {
-							DX8Wrapper::Set_Texture (i, Peek_Texture (i));
-							applied_textures[i] = Peek_Texture(i);
-						}
-					} else {
-						for (i = 0; i < MAX_TEXTURE_STAGES; i++) {
-							DX8Wrapper::Set_Texture (i, NULL);
-							applied_textures[i] = NULL;
-						}
-					}
-					break;
-
-				case MeshGeometryClass::PRELIT_LIGHTMAP_MULTI_TEXTURE:
-					
-					// Disable texturing on all but the zeroth stage of each pass.
-					DX8Wrapper::Set_Texture (0, Peek_Texture (0));
-					applied_textures[0] = Peek_Texture(0);
-					for (i = 1; i < MAX_TEXTURE_STAGES; i++) {
-						DX8Wrapper::Set_Texture (i, NULL);
-						applied_textures[i] = NULL;
-					}
-					break;
-
-				default:
-					for (i = 0; i < MAX_TEXTURE_STAGES; i++) {
-						DX8Wrapper::Set_Texture (i, Peek_Texture (i));
-						applied_textures[i] = Peek_Texture(i);
-					}
-					break;
-			}
-		} else
-		#endif
 		{
 			for (unsigned i = 0; i < MAX_TEXTURE_STAGES; ++i) {
 				applied_textures[i] = Peek_Texture(i);

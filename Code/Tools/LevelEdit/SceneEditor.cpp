@@ -170,12 +170,6 @@ void
 SceneEditorClass::Initialize (void)
 {
 	//
-	//	Load the lighting mode from the registry
-	//
-	int prelit_mode = theApp.GetProfileInt ("Config", "PrelitMode", WW3D::PRELIT_MODE_LIGHTMAP_MULTI_PASS);
-	WW3D::Set_Prelit_Mode ((WW3D::PrelitModeEnum)prelit_mode);
-
-	//
 	//	Initialize some misc variables
 	//
 	ParticleEmitterClass::Set_Default_Remove_On_Complete (false);
@@ -403,11 +397,6 @@ SceneEditorClass::Clone_Node (NodeClass *node)
 void
 SceneEditorClass::Reload_Lightmap_Models (void)
 {
-	//
-	//	Save the setting in the registry
-	//
-	theApp.WriteProfileInt ("Config", "PrelitMode", WW3D::Get_Prelit_Mode ());
-
 	//
 	//	Force free the assets...
 	//

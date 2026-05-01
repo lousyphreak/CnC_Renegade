@@ -241,7 +241,6 @@ GameInitMgrClass::Start_Game (const char *map_name, int teamChoice, uint32_t cla
 	//
 	//	Reset some rendering data
 	//
-	PhysicsSceneClass::Get_Instance()->Release_Projector_Resources ();
 	WW3D::_Invalidate_Mesh_Cache ();
 
 	//
@@ -1013,6 +1012,5 @@ void _reload_game_configuration_files(void)
 	ScriptManager::Shutdown();
 	ScriptManager::Init();
 }
-
 
 

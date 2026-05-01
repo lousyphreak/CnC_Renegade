@@ -1617,7 +1617,6 @@ PresetsFormClass::OnMake (void)
 		//	Repartition the scene if the user placed a terrain
 		//
 		if (preset->Get_Class_ID () == CLASSID_TERRAIN) {
-			::Get_Scene_Editor ()->Re_Partition_Static_Projectors ();
 			::Get_Scene_Editor ()->Re_Partition_Static_Lights ();
 			::Get_Scene_Editor ()->Re_Partition_Static_Objects ();			
 		}
@@ -3663,5 +3662,4 @@ PresetsFormClass::Sort_Items (uint32_t class_id)
 
 	return ;
 }
-
 

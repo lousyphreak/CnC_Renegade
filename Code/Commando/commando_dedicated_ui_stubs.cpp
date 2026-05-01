@@ -44,7 +44,7 @@ TextDisplayGameModeClass *TextDisplayGameModeClass::Instance = nullptr;
 #if defined(FREEDEDICATEDSERVER)
 const char *VALUE_NAME_DYN_LOD = "Dynamic_LOD_Budget";
 const char *VALUE_NAME_STATIC_LOD = "Static_LOD_Budget";
-const char *VALUE_NAME_SHADOW_MODE = "Shadow_Mode";
+extern const char *VALUE_NAME_SHADOWS_ENABLED;
 const char *VALUE_NAME_TEXTURE_RES = "Texture_Resolution";
 const char *VALUE_NAME_PARTICLE_DETAIL = "Particle_Detail";
 #endif

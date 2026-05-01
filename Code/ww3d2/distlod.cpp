@@ -553,32 +553,6 @@ void DistLODClass::Render_Visibility(VisRenderInfoClass & rinfo)
 
 
 /***********************************************************************************************
- * DistLODClass::Special_Render -- custom render function                                      *
- *                                                                                             *
- * INPUT:                                                                                      *
- *                                                                                             *
- * OUTPUT:                                                                                     *
- *                                                                                             *
- * WARNINGS:                                                                                   *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *   3/3/99     GTH : Created.                                                                 *
- *=============================================================================================*/
-void DistLODClass::Special_Render(SpecialRenderInfoClass & rinfo)
-{
-	if (rinfo.RenderType == SpecialRenderInfoClass::RENDER_VIS) {
-		VisRenderInfoClass vis_rinfo(rinfo.Camera);
-		vis_rinfo.VisRasterizer = rinfo.VisRasterizer;
-		Render_Visibility(vis_rinfo);
-		return;
-	}
-
-	Update_Lod(rinfo.Camera);
-	Lods[CurLod].Model->Special_Render(rinfo);
-}
-
-
-/***********************************************************************************************
  * DistLODCLass::Get_Num_Sub_Objects -- returns the number of subobjects (levels of detail)    *
  *                                                                                             *
  * INPUT:                                                                                      *

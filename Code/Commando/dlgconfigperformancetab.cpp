@@ -110,10 +110,9 @@ PERFORMANCE_SETTING _PerformanceLevels[MAX_PERFORMANCE_LEVELS][MAX_EXPERT_OPTION
 
 const char *VALUE_NAME_DYN_LOD			= "Dynamic_LOD_Budget";
 const char *VALUE_NAME_STATIC_LOD		= "Static_LOD_Budget";
-const char *VALUE_NAME_SHADOW_MODE		= "Shadow_Mode";
+extern const char *VALUE_NAME_SHADOWS_ENABLED;
 const char *VALUE_NAME_TEXTURE_RES		= "Texture_Resolution";
 const char *VALUE_NAME_PARTICLE_DETAIL	= "Particle_Detail";
-const char *VALUE_NAME_NPATCHES			= "NPatches";
 
 const int MAX_LOD_HIGH	= 10000;
 const int MAX_LOD_MED	= 5000;
@@ -296,8 +295,7 @@ DlgConfigPerformanceTabClass::Load_Values (void)
 		//
 		//	Read the values from the registry
 		//
-		int shadow_mode		= registry.Get_Int (VALUE_NAME_SHADOW_MODE, PhysicsSceneClass::SHADOW_MODE_HARDWARE);
-		shadow_mode = (shadow_mode == PhysicsSceneClass::SHADOW_MODE_NONE) ? PhysicsSceneClass::SHADOW_MODE_NONE : PhysicsSceneClass::SHADOW_MODE_HARDWARE;
+		const bool shadows_enabled = registry.Get_Bool(VALUE_NAME_SHADOWS_ENABLED,true);
 		int texture_red		= registry.Get_Int (VALUE_NAME_TEXTURE_RES, 0);
 		int particle_detail	= registry.Get_Int (VALUE_NAME_PARTICLE_DETAIL, 1);
 
@@ -316,7 +314,7 @@ DlgConfigPerformanceTabClass::Load_Values (void)
 		//
 		//	Set the slider's positions to reflect the loaded values
 		//
-		char_shadows_slider->Set_Pos ((shadow_mode == PhysicsSceneClass::SHADOW_MODE_NONE) ? 0 : 1);
+		char_shadows_slider->Set_Pos (shadows_enabled ? 1 : 0);
 		texture_slider->Set_Pos (max (2 - texture_red, 0));
 		surface_effect_slider->Set_Pos (surface_effect);
 		particle_slider->Set_Pos (particle_detail);
@@ -564,7 +562,7 @@ DlgConfigPerformanceTabClass::On_Apply (void)
 		//	Get the current settings from the dialog
 		//
 		int geometry_detail	= geometry_slider->Get_Pos ();
-		int shadow_mode		= (char_shadows_slider->Get_Pos () == 0) ? PhysicsSceneClass::SHADOW_MODE_NONE : PhysicsSceneClass::SHADOW_MODE_HARDWARE;
+		const bool shadows_enabled = (char_shadows_slider->Get_Pos () != 0);
 		int texture_red		= texture_slider->Get_Pos ();
 		int surface_effect	= surface_effect_slider->Get_Pos ();
 		int particle_detail	= particle_slider->Get_Pos ();
@@ -585,14 +583,9 @@ DlgConfigPerformanceTabClass::On_Apply (void)
 		//
 		registry.Set_Int (VALUE_NAME_DYN_LOD, lod_budget);
 		registry.Set_Int (VALUE_NAME_STATIC_LOD, lod_budget);
-		registry.Set_Int (VALUE_NAME_SHADOW_MODE,		shadow_mode);
+		registry.Set_Bool(VALUE_NAME_SHADOWS_ENABLED, shadows_enabled);
 		registry.Set_Int (VALUE_NAME_TEXTURE_RES,		max (2 - texture_red, 0));
 		registry.Set_Int (VALUE_NAME_PARTICLE_DETAIL, particle_detail);
-		registry.Delete_Value("Dynamic_Projectors");
-		registry.Delete_Value("Static_Projectors");
-		registry.Delete_Value(VALUE_NAME_NPATCHES);
-
-		// NPatches not supported, skip saving
 
 		//
 		//	Pass the values onto the game
@@ -602,9 +595,9 @@ DlgConfigPerformanceTabClass::On_Apply (void)
 		// changing the amount of render targets, as render target
 		// creation may have problems if the card is running low on
 		// texture memory!
-		if (COMBAT_SCENE->Get_Shadow_Mode()!=(PhysicsSceneClass::ShadowEnum)shadow_mode) {
+		if (COMBAT_SCENE->Are_Shadows_Enabled() != shadows_enabled) {
 			WW3D::_Invalidate_Textures();
-			COMBAT_SCENE->Set_Shadow_Mode ((PhysicsSceneClass::ShadowEnum)shadow_mode);
+			COMBAT_SCENE->Set_Shadows_Enabled(shadows_enabled);
 		}
 		WW3D::Set_Texture_Reduction (max (2 - texture_red, 0));
 		SurfaceEffectsManager::Set_Mode ((SurfaceEffectsManager::MODE)surface_effect);

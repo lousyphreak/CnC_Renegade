@@ -61,16 +61,12 @@ public:
 
 	/*
 	** Automatic initialization of a TexProjectClass.
-	** First set up your projection parameters with one of the Compute_xxx_Projection functinos, 
-	** Then call Compute_Texture.
+	** First set up your projection parameters with one of the Compute_xxx_Projection functions.
 	*/
 	bool						Compute_Perspective_Projection(PhysClass * obj,const Vector3 & lightpos,float nearz=-1.0f,float farz=-1.0f);
 	bool						Compute_Ortho_Projection(PhysClass * obj,const Vector3 & lightdir,float nearz=-1.0f,float farz=-1.0f);
-	bool						Compute_Texture(PhysClass * obj,bool additive_projection = false);
-
 
 };
 
 
 #endif
-

@@ -72,6 +72,7 @@ public:
 	virtual void					Timestep(float dt)											{ }; 
 	virtual void					Set_Model(RenderObjClass * model);
 	virtual void					Render_Vis_Meshes(RenderInfoClass & rinfo);
+	void								Render_Vis_Mesh_Material_Passes(RenderInfoClass & rinfo,MaterialPassClass * const * passes,int pass_count);
 		
 	/*
 	** Collision detection - all collideable objects provide the following collision detection
@@ -278,7 +279,6 @@ inline bool StaticPhysClass::Intersects(const OBBoxClass & obbox)
 
 
 #endif
-
 
 
 

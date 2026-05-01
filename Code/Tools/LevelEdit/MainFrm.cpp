@@ -3960,11 +3960,6 @@ CMainFrame::OnUpdateDisplayVisSectors (CCmdUI *pCmdUI)
 void
 CMainFrame::OnPrelitMultipass (void)
 {
-	if (WW3D::Get_Prelit_Mode () != WW3D::PRELIT_MODE_LIGHTMAP_MULTI_PASS) {
-		WW3D::Set_Prelit_Mode (WW3D::PRELIT_MODE_LIGHTMAP_MULTI_PASS);
-		::Get_Scene_Editor ()->Reload_Lightmap_Models ();
-	}
-
 	return ;
 }
 
@@ -3977,8 +3972,7 @@ CMainFrame::OnPrelitMultipass (void)
 void
 CMainFrame::OnUpdatePrelitMultipass (CCmdUI *pCmdUI) 
 {
-	bool enable = (WW3D::Get_Prelit_Mode () == WW3D::PRELIT_MODE_LIGHTMAP_MULTI_PASS);
-	pCmdUI->SetRadio (enable);
+	pCmdUI->SetRadio (false);
 	return ;
 }
 
@@ -3991,11 +3985,6 @@ CMainFrame::OnUpdatePrelitMultipass (CCmdUI *pCmdUI)
 void
 CMainFrame::OnPrelitMultitex (void) 
 {
-	if (WW3D::Get_Prelit_Mode () != WW3D::PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE) {
-		WW3D::Set_Prelit_Mode (WW3D::PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE);
-		::Get_Scene_Editor ()->Reload_Lightmap_Models ();
-	}
-
 	return ;
 }
 
@@ -4008,8 +3997,7 @@ CMainFrame::OnPrelitMultitex (void)
 void
 CMainFrame::OnUpdatePrelitMultitex (CCmdUI *pCmdUI) 
 {
-	bool enable = (WW3D::Get_Prelit_Mode () == WW3D::PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE);
-	pCmdUI->SetRadio (enable);
+	pCmdUI->SetRadio (true);
 	return ;
 }
 
@@ -4022,11 +4010,6 @@ CMainFrame::OnUpdatePrelitMultitex (CCmdUI *pCmdUI)
 void
 CMainFrame::OnPrelitVertex (void)
 {
-	if (WW3D::Get_Prelit_Mode () != WW3D::PRELIT_MODE_VERTEX) {
-		WW3D::Set_Prelit_Mode (WW3D::PRELIT_MODE_VERTEX);
-		::Get_Scene_Editor ()->Reload_Lightmap_Models ();
-	}
-
 	return ;
 }
 
@@ -4039,8 +4022,7 @@ CMainFrame::OnPrelitVertex (void)
 void
 CMainFrame::OnUpdatePrelitVertex (CCmdUI *pCmdUI) 
 {
-	bool enable = (WW3D::Get_Prelit_Mode () == WW3D::PRELIT_MODE_VERTEX);
-	pCmdUI->SetRadio (enable);
+	pCmdUI->SetRadio (false);
 	return ;
 }
 

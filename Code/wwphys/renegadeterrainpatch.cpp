@@ -318,15 +318,6 @@ RenegadeTerrainPatchClass::Render (RenderInfoClass &rinfo)
 		TerrainRenderBatchManagerClass::Render_Immediate_Patch(this, rinfo);
 	}
 
-	if (rinfo.Additional_Pass_Count() > 0) {
-		MaterialPassClass *passes[MAX_ADDITIONAL_MATERIAL_PASSES];
-		int pass_count = 0;
-		for (int i = 0; i < rinfo.Additional_Pass_Count() && pass_count < MAX_ADDITIONAL_MATERIAL_PASSES; ++i) {
-			passes[pass_count++] = rinfo.Peek_Additional_Pass(i);
-		}
-		TerrainRenderBatchManagerClass::Render_Immediate_Patch_Material_Passes(this, rinfo, passes, pass_count);
-	}
-
 	return ;
 }
 

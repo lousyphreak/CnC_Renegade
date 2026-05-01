@@ -295,6 +295,24 @@ void StaticPhysClass::Render_Vis_Meshes(RenderInfoClass & rinfo)
 	}
 }
 
+void StaticPhysClass::Render_Vis_Mesh_Material_Passes(RenderInfoClass & rinfo,MaterialPassClass * const * passes,int pass_count)
+{
+	if (Model == NULL || passes == NULL || pass_count <= 0) return;
+	
+	if (Model->Get_Collision_Type() & COLLISION_TYPE_VIS) { 
+
+		int is_hidden = Model->Is_Hidden();
+		int is_anim_hidden = Model->Is_Animation_Hidden();
+		Model->Set_Hidden(false);
+		Model->Set_Animation_Hidden(false);
+
+		Model->Render_Material_Passes(rinfo,passes,pass_count);
+
+		Model->Set_Hidden(is_hidden);
+		Model->Set_Animation_Hidden(is_anim_hidden);
+	}
+}
+
 
 /***********************************************************************************************
  * StaticPhysClass::Get_Bounding_Box -- Returns the bounding box of this object                *

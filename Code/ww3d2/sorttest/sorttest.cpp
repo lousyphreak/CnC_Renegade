@@ -98,20 +98,7 @@ protected:
 };
 void MatPassSceneClass::Customized_Render(RenderInfoClass &rinfo)
 {
-	if (mat_pass) {
-		rinfo.Push_Material_Pass(mat_pass);
-		bool hide_mesh = false;
-		int hide_flag = hide_mesh ? ((int)RenderInfoClass::RINFO_OVERRIDE_FORCE_SORTING |
-			(int)RenderInfoClass::RINFO_OVERRIDE_ADDITIONAL_PASSES_ONLY) : 0;
-		rinfo.Push_Override_Flags((RenderInfoClass::RINFO_OVERRIDE_FLAGS)	((int)rinfo.Current_Override_Flags() | hide_flag));
-	}
-
 	SimpleSceneClass::Customized_Render(rinfo);
-
-	if (mat_pass) {
-		rinfo.Pop_Override_Flags();
-		rinfo.Pop_Material_Pass();
-	}
 }
 
 
@@ -221,9 +208,6 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	WW3D::Enable_Munge_Sort_On_Load(true);
 	WW3D::Set_Texture_Thumbnail_Mode(WW3D::TEXTURE_THUMBNAIL_MODE_ON);
 
-//	WW3D::Set_Prelit_Mode(WW3D::PRELIT_MODE_VERTEX);
-	WW3D::Set_Prelit_Mode(WW3D::PRELIT_MODE_LIGHTMAP_MULTI_PASS);
-//	WW3D::Set_Prelit_Mode(WW3D::PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE);
 	WW3D::Set_Collision_Box_Display_Mask(0xFF);
 	
 	if (WW3D::Set_Render_Device(0,800,600,32,1,true)!=WW3D_ERROR_OK) {

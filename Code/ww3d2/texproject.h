@@ -54,7 +54,6 @@
 #include "projector.h"
 
 
-class ShadowRenderInfoClass;
 class RenderObjClass;
 class MaterialPassClass;
 class SurfaceClass;
@@ -157,8 +156,6 @@ public:
 	bool						Needs_Render_Target(void);
 	void						Set_Render_Target(TextureClass * render_target);
 	TextureClass *			Peek_Render_Target(void);
-
-	bool						Compute_Texture(RenderObjClass * model,ShadowRenderInfoClass * context);
 
 	/*
 	** Prep for rendering, called by the scene prior to usage.

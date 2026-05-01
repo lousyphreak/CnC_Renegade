@@ -198,9 +198,6 @@ VertexMaterialClass *								WW3D::DefaultDebugMaterial  = NULL;
 ShaderClass												WW3D::DefaultDebugShader(DEFAULT_DEBUG_SHADER_BITS);
 ShaderClass												WW3D::LightmapDebugShader(LIGHTMAP_DEBUG_SHADER_BITS);
 
-WW3D::PrelitModeEnum									WW3D::PrelitMode = PRELIT_MODE_LIGHTMAP_MULTI_TEXTURE;
-bool														WW3D::ExposePrelit = false;
-
 bool														WW3D::SnapshotActivated=false;
 bool														WW3D::ThumbnailEnabled=true;
 bool														WW3D::IsTexturingEnabled=true;

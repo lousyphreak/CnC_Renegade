@@ -52,8 +52,6 @@ RenderInfoClass::RenderInfoClass(CameraClass & cam) :
 	fog_scale(0.0f),
 	light_environment(0),
 	lighting_submission(0),
-	AdditionalMaterialPassCount(0),
-	RejectedMaterialPasses(0),
 	OverrideFlagLevel(0)
 { 
 	// Need to have one entry in the override flags stack, initialize it to default values.
@@ -62,45 +60,6 @@ RenderInfoClass::RenderInfoClass(CameraClass & cam) :
 
 RenderInfoClass::~RenderInfoClass(void)
 {
-}
-
-void RenderInfoClass::Push_Material_Pass(MaterialPassClass * matpass)
-{
-	// add to the end of the array
-	if (AdditionalMaterialPassCount<MAX_ADDITIONAL_MATERIAL_PASSES-1) {
-
-		if (matpass) {
-			matpass->Add_Ref();
-		}
-		AdditionalMaterialPassArray[AdditionalMaterialPassCount++]=matpass;
-	} else {
-		RejectedMaterialPasses++;
-	}
-}
-
-void RenderInfoClass::Pop_Material_Pass(void)
-{
-	if (RejectedMaterialPasses == 0) {
-		// remove from the end of the array
-		WWASSERT(AdditionalMaterialPassCount>0);
-		AdditionalMaterialPassCount--;
-		MaterialPassClass * mpass = AdditionalMaterialPassArray[AdditionalMaterialPassCount];
-		if (mpass != NULL) {
-			mpass->Release_Ref();
-		}
-	} else {
-		RejectedMaterialPasses--;
-	}
-}
-
-int RenderInfoClass::Additional_Pass_Count(void)
-{
-	return AdditionalMaterialPassCount;
-}
-
-MaterialPassClass * RenderInfoClass::Peek_Additional_Pass(int i)
-{
-	return AdditionalMaterialPassArray[i];
 }
 
 void RenderInfoClass::Push_Override_Flags(RINFO_OVERRIDE_FLAGS flg)
@@ -124,12 +83,6 @@ RenderInfoClass::RINFO_OVERRIDE_FLAGS & RenderInfoClass::Current_Override_Flags(
 
 
 
-/***********************************************************************************************
-**
-** SpecialRenderInfoClass Implementation
-**
-***********************************************************************************************/
-
 VisRenderInfoClass::VisRenderInfoClass(CameraClass & cam) :
 	RenderInfoClass(cam),
 	VisRasterizer(NULL)
@@ -137,27 +90,5 @@ VisRenderInfoClass::VisRenderInfoClass(CameraClass & cam) :
 }
 
 VisRenderInfoClass::~VisRenderInfoClass(void)
-{
-}
-
-ShadowRenderInfoClass::ShadowRenderInfoClass(CameraClass & cam) :
-	RenderInfoClass(cam),
-	BWRenderer(NULL)
-{
-}
-
-ShadowRenderInfoClass::~ShadowRenderInfoClass(void)
-{
-}
-
-SpecialRenderInfoClass::SpecialRenderInfoClass(CameraClass & cam,int render_type) :
-	RenderInfoClass(cam),
-	RenderType(render_type),
-	VisRasterizer(NULL),
-	BWRenderer(NULL)
-{
-}
-
-SpecialRenderInfoClass::~SpecialRenderInfoClass(void)
 {
 }

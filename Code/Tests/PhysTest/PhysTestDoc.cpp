@@ -97,7 +97,6 @@ void CPhysTestDoc::Init_Scene(void)
 	{
 		// Instantiate a new scene
 		Scene = NEW_REF(PhysicsSceneClass,());
-		Scene->Enable_Dynamic_Projectors(true);
 
 		// Were we successful in instantiating the scene object?
 		ASSERT(Scene);

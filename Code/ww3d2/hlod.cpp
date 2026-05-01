@@ -2202,49 +2202,6 @@ void HLodClass::Render_Visibility(VisRenderInfoClass & rinfo)
 
 
 /***********************************************************************************************
- * HLodClass::Special_Render -- Special_Render for HLod                                        *
- *                                                                                             *
- * INPUT:                                                                                      *
- *                                                                                             *
- * OUTPUT:                                                                                     *
- *                                                                                             *
- * WARNINGS:                                                                                   *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *   1/26/00    gth : Created.                                                                 *
- *=============================================================================================*/
-void HLodClass::Special_Render(SpecialRenderInfoClass & rinfo)
-{
-	int i;
-	if (Is_Not_Hidden_At_All() == false) {
-		return;
-	}
-
-	if (rinfo.RenderType == SpecialRenderInfoClass::RENDER_VIS) {
-		VisRenderInfoClass vis_rinfo(rinfo.Camera);
-		vis_rinfo.VisRasterizer = rinfo.VisRasterizer;
-		Render_Visibility(vis_rinfo);
-		return;
-	}
-
-	Animatable3DObjClass::Special_Render(rinfo);
-
-	int lod_index = CurLod;
-	if (rinfo.RenderType == SpecialRenderInfoClass::RENDER_SHADOW) {			// (gth) HACK HACK! yikes
-		lod_index = LodCount-1;
-	}
-
-	for (i = 0; i < Lod[lod_index].Count(); i++) {
-		Lod[lod_index][i].Model->Special_Render(rinfo);
-	}
-
-	for (i = 0; i < AdditionalModels.Count(); i++) {
-		AdditionalModels[i].Model->Special_Render(rinfo);
-	}
-}
-
-
-/***********************************************************************************************
  * HLodClass::Set_Transform -- Sets the transform                                              *
  *                                                                                             *
  * INPUT:                                                                                      *

@@ -695,16 +695,6 @@ void SphereRenderObjClass::Render_Visibility(VisRenderInfoClass & rinfo)
 	vis_render_sphere(rinfo,ObjSpaceCenter,ObjSpaceExtent);
 }
 
-void SphereRenderObjClass::Special_Render(SpecialRenderInfoClass & rinfo)
-{
-	if (rinfo.RenderType == SpecialRenderInfoClass::RENDER_VIS) {
-		VisRenderInfoClass vis_rinfo(rinfo.Camera);
-		vis_rinfo.VisRasterizer = rinfo.VisRasterizer;
-		Render_Visibility(vis_rinfo);
-	}
-}
-
-
 /***********************************************************************************************
  * SphereRenderObjClass::Set_Transform -- set the transform for this box                        *
  *                                                                                             *

@@ -70,9 +70,7 @@ class CameraClass;
 class SphereClass;
 class AABoxClass;
 class RenderInfoClass;
-class SpecialRenderInfoClass;
 class VisRenderInfoClass;
-class ShadowRenderInfoClass;
 class	IntersectionClass;
 class	IntersectionResultClass;
 class DecalGeneratorClass;
@@ -101,14 +99,8 @@ template<class T> class DynamicVectorClass;
 // Rendering: If the render object is in a scene that is rendered and is determined
 //		to be visible by that scene, it will receive a Render call.  The argument
 //		to the call will contain both the camera being used and the low level rendering
-//		interface.  In addition, the Special_Render function is for all "non-normal"
-//		types of rendering.  Some examples of this are: G-Buffer rendering (rendering
-//		object ID's), shadow rendering (just use black, etc) and whatever else we
-//		come up with.  Basically it will be a function with a big switch statement
-//		to handle all of these extra operations.  This means the main render code
-//		path is not cluttered with these checks while not forcing every object to
-//		implement millions of separate special render functions.  (Many objects just
-//		pass the render calls onto their sub-objects).
+//		interface.  Visibility and shadow work are extracted through explicit providers
+//		instead of a legacy catch-all special render callback.
 //
 //	VertexProcessors: Vertex processors are classes that are not actually 'rendered'
 //		They insert into the system an object that performs operations on all of
@@ -207,7 +199,6 @@ public:
 	// Render Object Interface - Rendering
 	//
 	// Render - this object should render its polygons.  Typically called from a SceneClass
-	// Special_Render - all special-case rendering goes here to avoid polluting the main render pipe (e.g. VIS)
 	// On_Frame_Update - render objects can register for an On_Frame_Update call; the scene will call this once 
 	//                   per frame if they do so.
 	// Restart - This interface is used to facilitate model recycling.  If a render object is "Restarted" it should
@@ -217,8 +208,6 @@ public:
 	virtual void					Render(RenderInfoClass & rinfo)											= 0;
 	virtual void					Render_Material_Passes(RenderInfoClass & rinfo,MaterialPassClass * const * passes,int pass_count)	{ }
 	virtual void					Render_Visibility(VisRenderInfoClass & rinfo)						{ }
-	virtual void					Render_Shadow(ShadowRenderInfoClass & rinfo)						{ }
-	virtual void					Special_Render(SpecialRenderInfoClass & rinfo)						{ }
 	virtual void					On_Frame_Update(void) 														{ }
 	virtual void					Restart(void)																	{ }	
 

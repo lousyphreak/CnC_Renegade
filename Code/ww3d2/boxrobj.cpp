@@ -735,16 +735,6 @@ void AABoxRenderObjClass::Render_Visibility(VisRenderInfoClass & rinfo)
 	vis_render_box(rinfo,ObjSpaceCenter,ObjSpaceExtent);
 }
 
-void AABoxRenderObjClass::Special_Render(SpecialRenderInfoClass & rinfo)
-{
-	if (rinfo.RenderType == SpecialRenderInfoClass::RENDER_VIS) {
-		VisRenderInfoClass vis_rinfo(rinfo.Camera);
-		vis_rinfo.VisRasterizer = rinfo.VisRasterizer;
-		Render_Visibility(vis_rinfo);
-	}
-}
-
-
 /***********************************************************************************************
  * AABoxRenderObjClass::Set_Transform -- set the transform for this box                        *
  *                                                                                             *
@@ -1123,16 +1113,6 @@ void OBBoxRenderObjClass::Render_Visibility(VisRenderInfoClass & rinfo)
 	rinfo.VisRasterizer->Set_Model_Transform(Transform);
 	vis_render_box(rinfo,ObjSpaceCenter,ObjSpaceExtent);
 }
-
-void OBBoxRenderObjClass::Special_Render(SpecialRenderInfoClass & rinfo)
-{
-	if (rinfo.RenderType == SpecialRenderInfoClass::RENDER_VIS) {
-		VisRenderInfoClass vis_rinfo(rinfo.Camera);
-		vis_rinfo.VisRasterizer = rinfo.VisRasterizer;
-		Render_Visibility(vis_rinfo);
-	}
-}
-
 
 /***********************************************************************************************
  * OBBoxRenderObjClass::Set_Transform -- set the transform for this box                        *

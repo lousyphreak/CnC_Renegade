@@ -79,7 +79,7 @@ public:
 	struct QueuedDrawTask
 	{
 		const TerrainRenderBatchPageClass *Page = NULL;
-		const TerrainRenderBatchPageClass::DrawRange *Range = NULL;
+		TerrainRenderBatchPageClass::DrawRange Range;
 		const WW3D::LightingSubmitDesc *Lighting = NULL;
 		WW3D::FixedFunctionStateDesc RenderState;
 		Matrix4 WorldTransform;

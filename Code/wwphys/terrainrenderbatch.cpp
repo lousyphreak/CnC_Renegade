@@ -43,35 +43,68 @@ uintptr_t Build_Terrain_Texture_Key(TextureClass * const *textures)
 	return key;
 }
 
+bool Terrain_Texture_Slots_Match(
+	const TerrainRenderBatchPageClass::DrawRange &lhs,
+	const TerrainRenderBatchPageClass::DrawRange &rhs)
+{
+	return lhs.Textures[0] == rhs.Textures[0] && lhs.Textures[1] == rhs.Textures[1];
+}
+
+bool Can_Merge_Terrain_Draw_Ranges(
+	const TerrainRenderBatchPageClass::DrawRange &lhs,
+	const TerrainRenderBatchPageClass::DrawRange &rhs)
+{
+	if (lhs.PassType != rhs.PassType ||
+		lhs.Material != rhs.Material ||
+		lhs.Shader.Get_Bits() != rhs.Shader.Get_Bits() ||
+		!Terrain_Texture_Slots_Match(lhs, rhs) ||
+		lhs.ReceiveShadows != rhs.ReceiveShadows ||
+		lhs.CastShadows != rhs.CastShadows)
+	{
+		return false;
+	}
+
+	const unsigned lhs_end_index = static_cast<unsigned>(lhs.StartIndex) + (static_cast<unsigned>(lhs.PolygonCount) * 3u);
+	const unsigned lhs_end_vertex = static_cast<unsigned>(lhs.MinVertexIndex) + static_cast<unsigned>(lhs.VertexCount);
+	return lhs_end_index == rhs.StartIndex && lhs_end_vertex == rhs.MinVertexIndex;
+}
+
+TerrainRenderBatchPageClass::DrawRange Merge_Terrain_Draw_Ranges(
+	const TerrainRenderBatchPageClass::DrawRange &lhs,
+	const TerrainRenderBatchPageClass::DrawRange &rhs)
+{
+	TerrainRenderBatchPageClass::DrawRange merged = lhs;
+	merged.PolygonCount = static_cast<unsigned short>(lhs.PolygonCount + rhs.PolygonCount);
+	merged.VertexCount = static_cast<unsigned short>((rhs.MinVertexIndex + rhs.VertexCount) - lhs.MinVertexIndex);
+	return merged;
+}
+
 bool Sort_Queued_Terrain_Draw_Task(
 	const TerrainRenderBatchManagerClass::QueuedDrawTask &lhs,
 	const TerrainRenderBatchManagerClass::QueuedDrawTask &rhs)
 {
-	const TerrainRenderBatchPageClass::DrawRange *lhs_range = lhs.Range;
-	const TerrainRenderBatchPageClass::DrawRange *rhs_range = rhs.Range;
-	if (lhs_range == NULL || rhs_range == NULL) {
-		return lhs_range < rhs_range;
+	const TerrainRenderBatchPageClass::DrawRange &lhs_range = lhs.Range;
+	const TerrainRenderBatchPageClass::DrawRange &rhs_range = rhs.Range;
+
+	if (lhs_range.PassType != rhs_range.PassType) {
+		return lhs_range.PassType < rhs_range.PassType;
+	}
+	if (lhs_range.Shader.Get_Bits() != rhs_range.Shader.Get_Bits()) {
+		return lhs_range.Shader.Get_Bits() < rhs_range.Shader.Get_Bits();
 	}
 
-	if (lhs_range->PassType != rhs_range->PassType) {
-		return lhs_range->PassType < rhs_range->PassType;
-	}
-	if (lhs_range->Shader.Get_Bits() != rhs_range->Shader.Get_Bits()) {
-		return lhs_range->Shader.Get_Bits() < rhs_range->Shader.Get_Bits();
-	}
-
-	const uintptr_t lhs_texture_key = Build_Terrain_Texture_Key(lhs_range->Textures);
-	const uintptr_t rhs_texture_key = Build_Terrain_Texture_Key(rhs_range->Textures);
+	const uintptr_t lhs_texture_key = Build_Terrain_Texture_Key(lhs_range.Textures);
+	const uintptr_t rhs_texture_key = Build_Terrain_Texture_Key(rhs_range.Textures);
 	if (lhs_texture_key != rhs_texture_key) {
 		return lhs_texture_key < rhs_texture_key;
 	}
-	if (lhs_range->Material != rhs_range->Material) {
-		return lhs_range->Material < rhs_range->Material;
+	if (lhs_range.Material != rhs_range.Material) {
+		return lhs_range.Material < rhs_range.Material;
 	}
 	if (lhs.Page != rhs.Page) {
 		return lhs.Page < rhs.Page;
 	}
-	return lhs_range->StartIndex < rhs_range->StartIndex;
+	return lhs_range.StartIndex < rhs_range.StartIndex;
 }
 }
 
@@ -162,12 +195,12 @@ void TerrainRenderBatchManagerClass::Reset()
 
 bool TerrainRenderBatchManagerClass::Submit_Draw_Task(const QueuedDrawTask &task)
 {
-	if (task.Page == NULL || task.Range == NULL) {
+	if (task.Page == NULL) {
 		return false;
 	}
 
 	const TerrainRenderBatchPageClass &page = *task.Page;
-	const TerrainRenderBatchPageClass::DrawRange &range = *task.Range;
+	const TerrainRenderBatchPageClass::DrawRange &range = task.Range;
 	if (!page.Is_Valid() || page.VertexBuffer == NULL || page.IndexBuffer == NULL || range.PolygonCount == 0 || range.VertexCount == 0) {
 		return true;
 	}
@@ -269,21 +302,35 @@ bool TerrainRenderBatchManagerClass::Queue_Patch(RenegadeTerrainPatchClass *patc
 
 	QueuedDraws.reserve(QueuedDraws.size() + page->DrawRanges.size());
 	for (std::vector<TerrainRenderBatchPageClass::DrawRange>::const_iterator it = page->DrawRanges.begin();
-		  it != page->DrawRanges.end();
-		  ++it)
+		  it != page->DrawRanges.end();)
 	{
 		if (it->PolygonCount == 0 || it->VertexCount == 0) {
+			++it;
 			continue;
+		}
+
+		TerrainRenderBatchPageClass::DrawRange merged_range = *it;
+		++it;
+		while (it != page->DrawRanges.end()) {
+			if (it->PolygonCount == 0 || it->VertexCount == 0) {
+				++it;
+				continue;
+			}
+			if (!Can_Merge_Terrain_Draw_Ranges(merged_range, *it)) {
+				break;
+			}
+			merged_range = Merge_Terrain_Draw_Ranges(merged_range, *it);
+			++it;
 		}
 
 		QueuedDrawTask task;
 		task.Page = page;
-		task.Range = &(*it);
+		task.Range = merged_range;
 		task.Lighting = rinfo.lighting_submission;
 		task.WorldTransform = world_transform;
 		task.ViewTransform = view_transform;
 		task.ProjectionTransform = projection_transform;
-		WW3D::Capture_Current_Fixed_Function_State(task.RenderState, it->Material);
+		WW3D::Capture_Current_Fixed_Function_State(task.RenderState, merged_range.Material);
 		QueuedDraws.push_back(task);
 	}
 
@@ -331,10 +378,28 @@ bool TerrainRenderBatchManagerClass::Render_Patch(RenegadeTerrainPatchClass *pat
 
 	bool ok = true;
 	for (std::vector<TerrainRenderBatchPageClass::DrawRange>::const_iterator it = page->DrawRanges.begin();
-		  it != page->DrawRanges.end();
-		  ++it)
+		  it != page->DrawRanges.end();)
 	{
-		ok = Submit_Draw(*page, *it, rinfo, NULL, NULL, NULL, it->ReceiveShadows) && ok;
+		if (it->PolygonCount == 0 || it->VertexCount == 0) {
+			++it;
+			continue;
+		}
+
+		TerrainRenderBatchPageClass::DrawRange merged_range = *it;
+		++it;
+		while (it != page->DrawRanges.end()) {
+			if (it->PolygonCount == 0 || it->VertexCount == 0) {
+				++it;
+				continue;
+			}
+			if (!Can_Merge_Terrain_Draw_Ranges(merged_range, *it)) {
+				break;
+			}
+			merged_range = Merge_Terrain_Draw_Ranges(merged_range, *it);
+			++it;
+		}
+
+		ok = Submit_Draw(*page, merged_range, rinfo, NULL, NULL, NULL, merged_range.ReceiveShadows) && ok;
 	}
 	return ok;
 }
@@ -362,6 +427,17 @@ bool TerrainRenderBatchManagerClass::Render_Patch_Material_Passes(
 		return false;
 	}
 
+	if (!page->Has_Draws()) {
+		return true;
+	}
+
+	TerrainRenderBatchPageClass::DrawRange full_page_range;
+	full_page_range.StartIndex = 0;
+	full_page_range.PolygonCount = static_cast<unsigned short>(page->IndexBuffer != NULL ? page->IndexBuffer->Get_Index_Count() / 3u : 0u);
+	full_page_range.MinVertexIndex = 0;
+	full_page_range.VertexCount = page->VertexBuffer != NULL ? page->VertexBuffer->Get_Vertex_Count() : 0;
+	full_page_range.ReceiveShadows = true;
+	full_page_range.CastShadows = false;
 	bool ok = true;
 	for (int pass_index = 0; pass_index < pass_count; ++pass_index) {
 		MaterialPassClass *matpass = passes[pass_index];
@@ -375,13 +451,7 @@ bool TerrainRenderBatchManagerClass::Render_Patch_Material_Passes(
 		};
 		ShaderClass shader = matpass->Peek_Shader();
 		const bool receive_shadows = shader.Get_Dst_Blend_Func() == ShaderClass::DSTBLEND_ZERO;
-
-		for (std::vector<TerrainRenderBatchPageClass::DrawRange>::const_iterator it = page->DrawRanges.begin();
-			  it != page->DrawRanges.end();
-			  ++it)
-		{
-			ok = Submit_Draw(*page, *it, rinfo, textures, matpass->Peek_Material(), &shader, receive_shadows) && ok;
-		}
+		ok = Submit_Draw(*page, full_page_range, rinfo, textures, matpass->Peek_Material(), &shader, receive_shadows) && ok;
 	}
 
 	return ok;

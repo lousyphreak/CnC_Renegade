@@ -357,11 +357,12 @@ DynamicIBAccessClass::WriteLockClass::~WriteLockClass()
 
 void DynamicIBAccessClass::Allocate_Render_Dynamic_Buffer()
 {
-	REF_PTR_SET(IndexBuffer, NEW_REF(
+	WWASSERT(IndexBuffer == nullptr);
+	IndexBuffer = NEW_REF(
 		RenderIndexBufferClass,
 		(std::max<unsigned short>(IndexCount, static_cast<unsigned short>(1)),
 		 RenderIndexBufferClass::USAGE_DEFAULT,
-		 BUFFER_TYPE_DYNAMIC_RENDER)));
+		 BUFFER_TYPE_DYNAMIC_RENDER));
 	IndexBufferOffset = 0;
 }
 

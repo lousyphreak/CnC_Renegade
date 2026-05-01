@@ -755,11 +755,12 @@ void DynamicVBAccessClass::Allocate_Sorting_Dynamic_Buffer()
 
 void DynamicVBAccessClass::Allocate_Render_Dynamic_Buffer()
 {
-	REF_PTR_SET(VertexBuffer, NEW_REF(RenderVertexBufferClass, (
+	WWASSERT(VertexBuffer == nullptr);
+	VertexBuffer = NEW_REF(RenderVertexBufferClass, (
 		dynamic_vertex_format,
 		std::max<unsigned short>(VertexCount, static_cast<unsigned short>(1)),
 		RenderVertexBufferClass::USAGE_DEFAULT,
-		BUFFER_TYPE_DYNAMIC_RENDER)));
+		BUFFER_TYPE_DYNAMIC_RENDER));
 	VertexBufferOffset = 0;
 }
 

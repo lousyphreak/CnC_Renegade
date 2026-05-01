@@ -4100,34 +4100,35 @@ bool Submit_Current_Draw(
             : render_state.shader.Get_Dst_Blend_Func() == ShaderClass::DSTBLEND_ZERO;
     const bool resolved_cast_shadows = use_explicit_shadow_flags ? cast_shadows : false;
 
-    TextureClass *textures[2] = {render_state.Textures[0], render_state.Textures[1]};
-    const unsigned fvf = render_state.vertex_buffer->Vertex_Format_Info().Get_Vertex_Format();
-    const bool has_normals = (fvf & VERTEX_FORMAT_FLAG_NORMAL) != 0u;
-    MaterialClassification classification = BgfxRenderer::Classify_Material(render_state.shader, render_state.material, has_normals);
     WW3D::FixedFunctionStateDesc fixed_function_state;
     WW3D::Capture_Current_Fixed_Function_State(fixed_function_state, render_state.material);
     WW3D::SubmitLightDesc captured_lights[WW3D::MAX_SUBMIT_LIGHTS];
     WW3D::LightingSubmitDesc captured_lighting;
     WW3D::Capture_Current_Lighting_Submission(captured_lighting, captured_lights, WW3D::MAX_SUBMIT_LIGHTS);
 
-    return Submit_Classified_Draw_Internal(
-        *render_state.vertex_buffer,
-        render_state.vba_offset,
-        *render_state.index_buffer,
-        render_state.iba_offset,
-        render_state.index_base_offset,
-        start_index, polygon_count,
-        min_vertex_index, vertex_count,
-        textures,
-        render_state.shader,
-        render_state.material,
-        classification,
-        resolved_receive_shadows,
-        resolved_cast_shadows,
-        render_state.world, render_state.view, projection,
-        strip,
-        &captured_lighting,
-        &fixed_function_state);
+    WW3D::FixedFunctionSubmitDesc submission;
+    submission.VertexBuffer = render_state.vertex_buffer;
+    submission.VertexBufferOffset = render_state.vba_offset;
+    submission.IndexBuffer = render_state.index_buffer;
+    submission.IndexBufferOffset = render_state.iba_offset;
+    submission.IndexBaseOffset = render_state.index_base_offset;
+    submission.StartIndex = start_index;
+    submission.PolygonCount = polygon_count;
+    submission.MinVertexIndex = min_vertex_index;
+    submission.VertexCount = vertex_count;
+    submission.Textures[0] = render_state.Textures[0];
+    submission.Textures[1] = render_state.Textures[1];
+    submission.Material = render_state.material;
+    submission.Shader = render_state.shader;
+    submission.WorldTransform = render_state.world;
+    submission.ViewTransform = render_state.view;
+    submission.ProjectionTransform = projection;
+    submission.Lighting = &captured_lighting;
+    submission.RenderState = &fixed_function_state;
+    submission.Strip = strip;
+    submission.ReceiveShadows = resolved_receive_shadows;
+    submission.CastShadows = resolved_cast_shadows;
+    return WW3D::Submit_Fixed_Function_Draw(submission);
 }
 } // anonymous namespace
 

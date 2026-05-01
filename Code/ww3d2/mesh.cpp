@@ -180,31 +180,29 @@ bool Submit_Fixed_Function_Draw(
 	const WW3D::LightingSubmitDesc * lighting,
 	const WW3D::FixedFunctionStateDesc * render_state)
 {
-	const unsigned fvf = vertex_buffer.Vertex_Format_Info().Get_Vertex_Format();
-	const bool has_normals = (fvf & VERTEX_FORMAT_FLAG_NORMAL) != 0u;
-	MaterialClassification classification = BgfxRenderer::Classify_Material(shader, material, has_normals);
-	return BgfxRenderer::Submit_Classified_Draw(
-		vertex_buffer,
-		vertex_buffer_offset,
-		index_buffer,
-		index_buffer_offset,
-		index_base_offset,
-		start_index,
-		polygon_count,
-		min_vertex_index,
-		vertex_count,
-		textures,
-		shader,
-		material,
-		classification,
-		receive_shadows,
-		cast_shadows,
-		world,
-		view,
-		projection,
-		strip,
-		lighting,
-		render_state);
+	WW3D::FixedFunctionSubmitDesc submission;
+	submission.VertexBuffer = &vertex_buffer;
+	submission.VertexBufferOffset = static_cast<unsigned short>(vertex_buffer_offset);
+	submission.IndexBuffer = &index_buffer;
+	submission.IndexBufferOffset = static_cast<unsigned short>(index_buffer_offset);
+	submission.IndexBaseOffset = static_cast<unsigned short>(index_base_offset);
+	submission.StartIndex = start_index;
+	submission.PolygonCount = polygon_count;
+	submission.MinVertexIndex = min_vertex_index;
+	submission.VertexCount = vertex_count;
+	submission.Textures[0] = textures[0];
+	submission.Textures[1] = textures[1];
+	submission.Material = const_cast<VertexMaterialClass *>(material);
+	submission.Shader = shader;
+	submission.WorldTransform = world;
+	submission.ViewTransform = view;
+	submission.ProjectionTransform = projection;
+	submission.Lighting = lighting;
+	submission.RenderState = render_state;
+	submission.Strip = strip;
+	submission.ReceiveShadows = receive_shadows;
+	submission.CastShadows = cast_shadows;
+	return WW3D::Submit_Fixed_Function_Draw(submission);
 }
 
 bool Submit_Polygon_Renderer_Fixed_Function(

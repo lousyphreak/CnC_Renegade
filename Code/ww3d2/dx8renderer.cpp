@@ -329,28 +329,31 @@ static bool Submit_Registered_Fixed_Function_Draw(
 	const WW3D::LightingSubmitDesc * lighting,
 	const WW3D::FixedFunctionStateDesc * render_state)
 {
-	return BgfxRenderer::Submit_Classified_Draw(
-		vertex_buffer,
-		vertex_buffer_offset,
-		index_buffer,
-		index_buffer_offset,
-		index_base_offset,
-		start_index,
-		polygon_count,
-		min_vertex_index,
-		vertex_count,
-		textures,
-		shader,
-		material,
-		classification,
-		receive_shadows,
-		cast_shadows,
-		world,
-		view,
-		projection,
-		strip,
-		lighting,
-		render_state);
+	(void)classification;
+
+	WW3D::FixedFunctionSubmitDesc submission;
+	submission.VertexBuffer = &vertex_buffer;
+	submission.VertexBufferOffset = static_cast<unsigned short>(vertex_buffer_offset);
+	submission.IndexBuffer = &index_buffer;
+	submission.IndexBufferOffset = static_cast<unsigned short>(index_buffer_offset);
+	submission.IndexBaseOffset = static_cast<unsigned short>(index_base_offset);
+	submission.StartIndex = start_index;
+	submission.PolygonCount = polygon_count;
+	submission.MinVertexIndex = min_vertex_index;
+	submission.VertexCount = vertex_count;
+	submission.Textures[0] = textures[0];
+	submission.Textures[1] = textures[1];
+	submission.Material = const_cast<VertexMaterialClass *>(material);
+	submission.Shader = shader;
+	submission.WorldTransform = world;
+	submission.ViewTransform = view;
+	submission.ProjectionTransform = projection;
+	submission.Lighting = lighting;
+	submission.RenderState = render_state;
+	submission.Strip = strip;
+	submission.ReceiveShadows = receive_shadows;
+	submission.CastShadows = cast_shadows;
+	return WW3D::Submit_Fixed_Function_Draw(submission);
 }
 
 RegisteredRigidMeshDraw::RegisteredRigidMeshDraw()
@@ -2054,28 +2057,31 @@ void DX8TextureCategoryClass::Render(VertexBufferClass *vertex_buffer, IndexBuff
 				WWASSERT(active_vertex_buffer != NULL);
 				WWASSERT(active_index_buffer != NULL);
 				if (active_vertex_buffer != NULL && active_index_buffer != NULL) {
-					const bool submitted = BgfxRenderer::Submit_Classified_Draw(
-						*active_vertex_buffer,
-						active_vertex_buffer_offset,
-						*active_index_buffer,
-						active_index_buffer_offset,
-						mesh->Get_Base_Vertex_Offset(),
-						static_cast<unsigned short>(renderer->Get_Index_Offset()),
-						static_cast<unsigned short>(renderer->Is_Strip() ? renderer->Get_Index_Count() - 2 : renderer->Get_Index_Count() / 3),
-						static_cast<unsigned short>(renderer->Get_Min_Vertex_Index()),
-						static_cast<unsigned short>(renderer->Get_Vertex_Index_Range()),
-						applied_textures,
-						Get_Shader(),
-						Peek_Material(),
-						classification,
-						receive_shadows,
-						cast_shadows,
-						world_matrix,
-						view_transform,
-						projection_transform,
-						renderer->Is_Strip(),
-						mesh->Get_Lighting_Submission(),
-						&fixed_function_state);
+					(void)classification;
+
+					WW3D::FixedFunctionSubmitDesc submission;
+					submission.VertexBuffer = active_vertex_buffer;
+					submission.VertexBufferOffset = static_cast<unsigned short>(active_vertex_buffer_offset);
+					submission.IndexBuffer = active_index_buffer;
+					submission.IndexBufferOffset = static_cast<unsigned short>(active_index_buffer_offset);
+					submission.IndexBaseOffset = static_cast<unsigned short>(mesh->Get_Base_Vertex_Offset());
+					submission.StartIndex = static_cast<unsigned short>(renderer->Get_Index_Offset());
+					submission.PolygonCount = static_cast<unsigned short>(renderer->Is_Strip() ? renderer->Get_Index_Count() - 2 : renderer->Get_Index_Count() / 3);
+					submission.MinVertexIndex = static_cast<unsigned short>(renderer->Get_Min_Vertex_Index());
+					submission.VertexCount = static_cast<unsigned short>(renderer->Get_Vertex_Index_Range());
+					submission.Textures[0] = applied_textures[0];
+					submission.Textures[1] = applied_textures[1];
+					submission.Material = Peek_Material();
+					submission.Shader = Get_Shader();
+					submission.WorldTransform = world_matrix;
+					submission.ViewTransform = view_transform;
+					submission.ProjectionTransform = projection_transform;
+					submission.Lighting = mesh->Get_Lighting_Submission();
+					submission.RenderState = &fixed_function_state;
+					submission.Strip = renderer->Is_Strip();
+					submission.ReceiveShadows = receive_shadows;
+					submission.CastShadows = cast_shadows;
+					const bool submitted = WW3D::Submit_Fixed_Function_Draw(submission);
 					WWASSERT(submitted);
 				}
 			}

@@ -74,6 +74,10 @@ struct OverlayYUVSubmitDesc
 class BgfxRenderer
 {
 public:
+    static void Reset_Requested_Renderer();
+    static bool Set_Requested_Renderer(const char *renderer_name);
+    static bgfx::RendererType::Enum Get_Requested_Renderer();
+    static const char *Get_Requested_Renderer_Name();
     static bool Init(void *window_handle, bool lite);
     static bool Configure_Window(void *window_handle, int width, int height, int bits, bool windowed, bool resize_window);
     static void Shutdown();

@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstdio>
+#include <cctype>
 #include <cstring>
 #include <cmath>
 #include <mutex>
@@ -88,6 +89,8 @@ Matrix4 BgfxRenderer::CurrentProjectionMatrix(true);
 
 namespace
 {
+bgfx::RendererType::Enum RequestedRenderer = bgfx::RendererType::Count;
+
 constexpr unsigned kUnsetRenderState = 0x12345678u;
 constexpr std::uint32_t MaxSubmitLights = WW3D::MAX_SUBMIT_LIGHTS;
 constexpr uint16_t SkinPaletteWidth = 1024;
@@ -115,6 +118,23 @@ struct CapturedMovieFrame
     bool YFlip = false;
     std::vector<uint8_t> Pixels;
     uint64_t Sequence = 0;
+};
+
+struct RendererDescriptor
+{
+    bgfx::RendererType::Enum Type;
+    const char *OptionName;
+    const char *DisplayName;
+};
+
+constexpr RendererDescriptor RendererDescriptors[] = {
+    {bgfx::RendererType::Direct3D11, "d3d11", "Direct3D11"},
+    {bgfx::RendererType::Direct3D12, "d3d12", "Direct3D12"},
+    {bgfx::RendererType::Metal, "metal", "Metal"},
+    {bgfx::RendererType::OpenGLES, "opengles", "OpenGLES"},
+    {bgfx::RendererType::OpenGL, "opengl", "OpenGL"},
+    {bgfx::RendererType::Vulkan, "vulkan", "Vulkan"},
+    {bgfx::RendererType::WebGPU, "webgpu", "WebGPU"},
 };
 
 struct BgfxOverlayVertex
@@ -197,6 +217,206 @@ bool CurrentSkinPaletteValid = false;
 std::vector<QueuedOverlaySubmission> OverlaySubmissionQueue;
 std::vector<BgfxOverlayVertex> OverlaySubmissionVertices;
 std::vector<std::uint16_t> OverlaySubmissionIndices;
+
+const RendererDescriptor *Find_Renderer_Descriptor(bgfx::RendererType::Enum renderer_type)
+{
+    for (const RendererDescriptor &descriptor : RendererDescriptors) {
+        if (descriptor.Type == renderer_type) {
+            return &descriptor;
+        }
+    }
+
+    return nullptr;
+}
+
+std::string Normalize_Renderer_Name(const char *renderer_name)
+{
+    std::string normalized;
+    if (renderer_name == nullptr) {
+        return normalized;
+    }
+
+    for (const unsigned char character : std::string(renderer_name)) {
+        if (std::isalnum(character) != 0) {
+            normalized.push_back(static_cast<char>(std::tolower(character)));
+        }
+    }
+
+    return normalized;
+}
+
+bool Try_Parse_Renderer_Name(const char *renderer_name, bgfx::RendererType::Enum &renderer_type)
+{
+    const std::string normalized = Normalize_Renderer_Name(renderer_name);
+    if (normalized.empty() || normalized == "auto" || normalized == "default") {
+        renderer_type = bgfx::RendererType::Count;
+        return true;
+    }
+
+    if (normalized == "d3d11" || normalized == "direct3d11" || normalized == "dx11" || normalized == "directx11") {
+        renderer_type = bgfx::RendererType::Direct3D11;
+        return true;
+    }
+
+    if (normalized == "d3d12" || normalized == "direct3d12" || normalized == "dx12" || normalized == "directx12") {
+        renderer_type = bgfx::RendererType::Direct3D12;
+        return true;
+    }
+
+    if (normalized == "metal") {
+        renderer_type = bgfx::RendererType::Metal;
+        return true;
+    }
+
+    if (normalized == "gles" || normalized == "opengles" || normalized == "gles3" || normalized == "opengles3") {
+        renderer_type = bgfx::RendererType::OpenGLES;
+        return true;
+    }
+
+    if (normalized == "gl" || normalized == "opengl") {
+        renderer_type = bgfx::RendererType::OpenGL;
+        return true;
+    }
+
+    if (normalized == "vk" || normalized == "vulkan") {
+        renderer_type = bgfx::RendererType::Vulkan;
+        return true;
+    }
+
+    if (normalized == "webgpu" || normalized == "wgpu") {
+        renderer_type = bgfx::RendererType::WebGPU;
+        return true;
+    }
+
+    return false;
+}
+
+enum class LinuxWindowSystem
+{
+    Unknown,
+    Wayland,
+    X11,
+};
+
+LinuxWindowSystem Detect_Linux_Window_System()
+{
+    if (const char *video_driver = SDL_GetCurrentVideoDriver(); video_driver != nullptr) {
+        if (std::strcmp(video_driver, "wayland") == 0) {
+            return LinuxWindowSystem::Wayland;
+        }
+
+        if (std::strcmp(video_driver, "x11") == 0) {
+            return LinuxWindowSystem::X11;
+        }
+    }
+
+    if (const char *wayland_display = SDL_getenv("WAYLAND_DISPLAY"); wayland_display != nullptr && wayland_display[0] != '\0') {
+        return LinuxWindowSystem::Wayland;
+    }
+
+    if (const char *session_type = SDL_getenv("XDG_SESSION_TYPE"); session_type != nullptr) {
+        if (std::strcmp(session_type, "wayland") == 0) {
+            return LinuxWindowSystem::Wayland;
+        }
+
+        if (std::strcmp(session_type, "x11") == 0) {
+            return LinuxWindowSystem::X11;
+        }
+    }
+
+    if (const char *display = SDL_getenv("DISPLAY"); display != nullptr && display[0] != '\0') {
+        return LinuxWindowSystem::X11;
+    }
+
+    return LinuxWindowSystem::Unknown;
+}
+
+bool Is_Renderer_Sensible_For_Platform(bgfx::RendererType::Enum renderer_type)
+{
+    const char *platform = SDL_GetPlatform();
+    if (platform == nullptr) {
+        platform = "";
+    }
+
+    if (std::strcmp(platform, "Emscripten") == 0) {
+        return renderer_type == bgfx::RendererType::OpenGLES
+            || renderer_type == bgfx::RendererType::WebGPU;
+    }
+
+    if (std::strcmp(platform, "Windows") == 0) {
+        return renderer_type == bgfx::RendererType::Direct3D11
+            || renderer_type == bgfx::RendererType::Direct3D12
+            || renderer_type == bgfx::RendererType::OpenGL
+            || renderer_type == bgfx::RendererType::Vulkan;
+    }
+
+    if (std::strcmp(platform, "Linux") == 0) {
+        switch (Detect_Linux_Window_System()) {
+        case LinuxWindowSystem::Wayland:
+            return renderer_type == bgfx::RendererType::OpenGL
+                || renderer_type == bgfx::RendererType::OpenGLES
+                || renderer_type == bgfx::RendererType::Vulkan;
+        case LinuxWindowSystem::X11:
+            return renderer_type == bgfx::RendererType::Vulkan;
+        case LinuxWindowSystem::Unknown:
+        default:
+            return renderer_type == bgfx::RendererType::Vulkan;
+        }
+    }
+
+    if (std::strcmp(platform, "macOS") == 0
+        || std::strcmp(platform, "Mac OS X") == 0
+        || std::strcmp(platform, "iOS") == 0
+        || std::strcmp(platform, "tvOS") == 0
+        || std::strcmp(platform, "visionOS") == 0) {
+        return renderer_type == bgfx::RendererType::Metal
+            || renderer_type == bgfx::RendererType::OpenGL;
+    }
+
+    return Find_Renderer_Descriptor(renderer_type) != nullptr;
+}
+
+std::vector<bgfx::RendererType::Enum> Get_Supported_Renderers()
+{
+    std::vector<bgfx::RendererType::Enum> supported_renderers;
+    bgfx::RendererType::Enum renderers[bgfx::RendererType::Count] = {};
+    const uint8_t renderer_count = bgfx::getSupportedRenderers(bgfx::RendererType::Count, renderers);
+    supported_renderers.reserve(renderer_count);
+
+    for (const RendererDescriptor &descriptor : RendererDescriptors) {
+        for (uint8_t renderer_index = 0; renderer_index < renderer_count; ++renderer_index) {
+            if (renderers[renderer_index] == descriptor.Type && Is_Renderer_Sensible_For_Platform(descriptor.Type)) {
+                supported_renderers.push_back(descriptor.Type);
+                break;
+            }
+        }
+    }
+
+    return supported_renderers;
+}
+
+bool Is_Renderer_Supported(bgfx::RendererType::Enum renderer_type)
+{
+    const std::vector<bgfx::RendererType::Enum> supported_renderers = Get_Supported_Renderers();
+    return std::find(supported_renderers.begin(), supported_renderers.end(), renderer_type) != supported_renderers.end();
+}
+
+std::string Join_Supported_Renderer_Names()
+{
+    std::string names = "auto";
+    const std::vector<bgfx::RendererType::Enum> supported_renderers = Get_Supported_Renderers();
+    for (const bgfx::RendererType::Enum renderer_type : supported_renderers) {
+        const RendererDescriptor *descriptor = Find_Renderer_Descriptor(renderer_type);
+        if (descriptor == nullptr) {
+            continue;
+        }
+
+        names += ", ";
+        names += descriptor->OptionName;
+    }
+
+    return names;
+}
 
 void Clear_Overlay_Submission_Queue();
 void Flush_Overlay_Submission_Queue();
@@ -1629,22 +1849,8 @@ bool Get_Render_Target_Depth_Format(bgfx::TextureFormat::Enum &depth_format)
 
 const char *Get_Renderer_Name(bgfx::RendererType::Enum renderer_type)
 {
-    switch (renderer_type) {
-    case bgfx::RendererType::Direct3D11:
-        return "Direct3D11";
-    case bgfx::RendererType::Direct3D12:
-        return "Direct3D12";
-    case bgfx::RendererType::Metal:
-        return "Metal";
-    case bgfx::RendererType::OpenGLES:
-        return "OpenGLES";
-    case bgfx::RendererType::OpenGL:
-        return "OpenGL";
-    case bgfx::RendererType::Vulkan:
-        return "Vulkan";
-    default:
-        return "auto";
-    }
+    const RendererDescriptor *descriptor = Find_Renderer_Descriptor(renderer_type);
+    return descriptor != nullptr ? descriptor->DisplayName : "auto";
 }
 
 bool Is_Runtime_Texture_Format_Supported(WW3DFormat format)
@@ -1679,11 +1885,89 @@ bool Is_Render_Target_Format_Supported(WW3DFormat format)
 
 bgfx::RendererType::Enum Choose_Preferred_Renderer(void)
 {
-#ifdef __EMSCRIPTEN__
-    return bgfx::RendererType::OpenGLES;
-#endif
+    const char *platform = SDL_GetPlatform();
+    if (platform != nullptr && std::strcmp(platform, "Emscripten") == 0 && Is_Renderer_Supported(bgfx::RendererType::OpenGLES)) {
+        return bgfx::RendererType::OpenGLES;
+    }
+
+    if (platform != nullptr && std::strcmp(platform, "Windows") == 0) {
+        static constexpr bgfx::RendererType::Enum kWindowsOrder[] = {
+            bgfx::RendererType::Direct3D11,
+            bgfx::RendererType::Direct3D12,
+            bgfx::RendererType::Vulkan,
+            bgfx::RendererType::OpenGL};
+        for (const bgfx::RendererType::Enum candidate : kWindowsOrder) {
+            if (Is_Renderer_Supported(candidate)) {
+                return candidate;
+            }
+        }
+    }
+
+    if (platform != nullptr && std::strcmp(platform, "Linux") == 0) {
+        static constexpr bgfx::RendererType::Enum kLinuxOrder[] = {
+            bgfx::RendererType::Vulkan,
+            bgfx::RendererType::OpenGL,
+            bgfx::RendererType::OpenGLES};
+        for (const bgfx::RendererType::Enum candidate : kLinuxOrder) {
+            if (Is_Renderer_Supported(candidate)) {
+                return candidate;
+            }
+        }
+    }
+
     return bgfx::RendererType::Count;
 }
+}
+
+void BgfxRenderer::Reset_Requested_Renderer()
+{
+    RequestedRenderer = bgfx::RendererType::Count;
+}
+
+bool BgfxRenderer::Set_Requested_Renderer(const char *renderer_name)
+{
+    bgfx::RendererType::Enum renderer_type = bgfx::RendererType::Count;
+    if (!Try_Parse_Renderer_Name(renderer_name, renderer_type)) {
+        const std::string supported_renderers = Join_Supported_Renderer_Names();
+        std::fprintf(stderr,
+            "Unsupported renderer '%s'. Available renderer options: %s\n",
+            renderer_name != nullptr ? renderer_name : "",
+            supported_renderers.c_str());
+        return false;
+    }
+
+    if (renderer_type != bgfx::RendererType::Count && !Is_Renderer_Sensible_For_Platform(renderer_type)) {
+        const std::string supported_renderers = Join_Supported_Renderer_Names();
+        std::fprintf(stderr,
+            "Renderer '%s' is not available on %s. Available renderer options: %s\n",
+            renderer_name != nullptr ? renderer_name : "",
+            SDL_GetPlatform(),
+            supported_renderers.c_str());
+        return false;
+    }
+
+    if (renderer_type != bgfx::RendererType::Count && !Is_Renderer_Supported(renderer_type)) {
+        const std::string supported_renderers = Join_Supported_Renderer_Names();
+        std::fprintf(stderr,
+            "Renderer '%s' is not compiled in for this build. Available renderer options: %s\n",
+            renderer_name != nullptr ? renderer_name : "",
+            supported_renderers.c_str());
+        return false;
+    }
+
+    RequestedRenderer = renderer_type;
+    return true;
+}
+
+bgfx::RendererType::Enum BgfxRenderer::Get_Requested_Renderer()
+{
+    return RequestedRenderer;
+}
+
+const char *BgfxRenderer::Get_Requested_Renderer_Name()
+{
+    const RendererDescriptor *descriptor = Find_Renderer_Descriptor(RequestedRenderer);
+    return descriptor != nullptr ? descriptor->OptionName : "auto";
 }
 
 bool BgfxRenderer::Init(void *window_handle, bool lite)
@@ -1714,29 +1998,49 @@ bool BgfxRenderer::Init(void *window_handle, bool lite)
     init.resolution.reset = Get_Reset_Flags();
 
     bool initialized = false;
-    const bgfx::RendererType::Enum preferred_renderer = Choose_Preferred_Renderer();
+    const char *video_driver = SDL_GetCurrentVideoDriver();
+    if (video_driver == nullptr) {
+        video_driver = "unknown";
+    }
+
+    const bgfx::RendererType::Enum requested_renderer = RequestedRenderer;
+    const bool explicit_renderer_request = requested_renderer != bgfx::RendererType::Count;
+    const bgfx::RendererType::Enum preferred_renderer = explicit_renderer_request
+        ? requested_renderer
+        : Choose_Preferred_Renderer();
     if (preferred_renderer != bgfx::RendererType::Count) {
-        WWDEBUG_SAY(("BgfxRenderer::Init preferring %s on SDL video driver '%s'\n",
+        WWDEBUG_SAY(("BgfxRenderer::Init %s %s on SDL platform '%s' video driver '%s'\n",
+            explicit_renderer_request ? "requesting" : "preferring",
             Get_Renderer_Name(preferred_renderer),
-            SDL_GetCurrentVideoDriver()));
+            SDL_GetPlatform(),
+            video_driver));
         init.type = preferred_renderer;
         initialized = bgfx::init(init);
-        if (!initialized) {
+        if (!initialized && !explicit_renderer_request) {
             WWDEBUG_SAY(("BgfxRenderer::Init preferred %s backend failed, falling back to auto selection\n",
                 Get_Renderer_Name(preferred_renderer)));
         }
     }
 
-    if (!initialized) {
+    if (!initialized && !explicit_renderer_request) {
         init.type = bgfx::RendererType::Count;
         initialized = bgfx::init(init);
     }
 
     if (!initialized) {
-        WWDEBUG_SAY(("BgfxRenderer::Init bgfx::init failed\n"));
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "BgfxRenderer::Init bgfx::init failed");
+        if (explicit_renderer_request) {
+            WWDEBUG_SAY(("BgfxRenderer::Init requested %s backend failed\n", Get_Renderer_Name(requested_renderer)));
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+                "BgfxRenderer::Init requested %s backend failed",
+                Get_Renderer_Name(requested_renderer));
+        } else {
+            WWDEBUG_SAY(("BgfxRenderer::Init bgfx::init failed\n"));
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "BgfxRenderer::Init bgfx::init failed");
+        }
         return false;
     }
+
+    WWDEBUG_SAY(("BgfxRenderer::Init initialized %s backend\n", Get_Renderer_Name(bgfx::getRendererType())));
 
     if (!Init_Render_Resources()) {
         WWDEBUG_SAY(("BgfxRenderer::Init failed to initialize renderer resources\n"));

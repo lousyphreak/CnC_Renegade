@@ -171,7 +171,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
 
     const std::string command_line = Build_Command_Line(argc, argv);
     if (!cUserOptions::Parse_Command_Line(command_line.c_str())) {
-        app->exit_code = EXIT_SUCCESS;
+        app->exit_code = EXIT_FAILURE;
         return Get_App_Result_From_Exit_Code(app->exit_code);
     }
 

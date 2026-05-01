@@ -18,6 +18,7 @@
 #include "init.h"
 #include "mainloop.h"
 #include "msgloop.h"
+#include "../ww3d2/bgfxrenderer.h"
 #include "../ww3d2/ww3d.h"
 #include "../wwui/dialogmgr.h"
 #include "renegade_build_config.h"
@@ -104,6 +105,51 @@ std::string Build_Command_Line(int argc, char **argv)
     }
 
     return command_line.str();
+}
+
+bool Is_Runtime_Platform(std::string_view platform_name)
+{
+    const char *platform = SDL_GetPlatform();
+    return platform != nullptr && platform_name == platform;
+}
+
+bool Is_Current_Video_Driver(std::string_view driver_name)
+{
+    const char *video_driver = SDL_GetCurrentVideoDriver();
+    return video_driver != nullptr && driver_name == video_driver;
+}
+
+void Configure_Renderer_Window_Properties(SDL_PropertiesID window_props)
+{
+    const bgfx::RendererType::Enum requested_renderer = BgfxRenderer::Get_Requested_Renderer();
+    std::cout << "  bgfx renderer request: " << BgfxRenderer::Get_Requested_Renderer_Name() << '\n';
+    SDL_SetHint(SDL_HINT_VIDEO_FORCE_EGL, "0");
+    if (requested_renderer == bgfx::RendererType::Count) {
+        return;
+    }
+
+    if (requested_renderer == bgfx::RendererType::Vulkan) {
+        SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_VULKAN_BOOLEAN, true);
+        return;
+    }
+
+    if (requested_renderer == bgfx::RendererType::Metal) {
+        SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_METAL_BOOLEAN, true);
+        return;
+    }
+
+    const bool needs_opengl_window = requested_renderer == bgfx::RendererType::OpenGL
+        || requested_renderer == bgfx::RendererType::OpenGLES;
+    if (needs_opengl_window
+        && !Is_Runtime_Platform("Emscripten")
+        && (!Is_Runtime_Platform("Linux") || !Is_Current_Video_Driver("wayland"))) {
+        // bgfx uses EGL on Linux, so X11 needs an EGL-compatible SDL visual.
+        // Wayland is the exception because bgfx creates its own wl_egl_window.
+        if (Is_Runtime_Platform("Linux") && Is_Current_Video_Driver("x11")) {
+            SDL_SetHint(SDL_HINT_VIDEO_FORCE_EGL, "1");
+        }
+        SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
+    }
 }
 
 SDL_Window *Get_Main_Window()
@@ -491,6 +537,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_HIDDEN_BOOLEAN, app->smoke_test);
     SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, !app->smoke_test);
     SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_EXTERNAL_GRAPHICS_CONTEXT_BOOLEAN, true);
+    Configure_Renderer_Window_Properties(window_props);
 #ifdef __EMSCRIPTEN__
     SDL_SetStringProperty(window_props, SDL_PROP_WINDOW_CREATE_EMSCRIPTEN_CANVAS_ID_STRING, "#canvas");
 #endif

@@ -47,39 +47,97 @@
 #include "gamespyadmin.h"
 #include "specialbuilds.h"
 #include "useroptions.h"
+#include "../ww3d2/bgfxrenderer.h"
 
 extern char DefaultRegistryModifier[1024];
+
+namespace
+{
+bool Matches_Renderer_Key(const char *argument, size_t key_length, const char *expected)
+{
+	return argument != NULL
+		&& expected != NULL
+		&& strlen(expected) == key_length
+		&& _strnicmp(argument, expected, key_length) == 0;
+}
+
+int Try_Parse_Renderer_Option(int argc, char *argv[], int argument_index)
+{
+	char *cmd = argv[argument_index];
+	if (cmd == NULL) {
+		return 0;
+	}
+
+	const char *value = NULL;
+	int consumed_arguments = 1;
+	char *equals = strchr(cmd, '=');
+	if (equals != NULL) {
+		const size_t key_length = static_cast<size_t>(equals - cmd);
+		if (
+			Matches_Renderer_Key(cmd, key_length, "--RENDERER") ||
+			Matches_Renderer_Key(cmd, key_length, "/RENDERER") ||
+			Matches_Renderer_Key(cmd, key_length, "RENDERER") ||
+			Matches_Renderer_Key(cmd, key_length, "--BGFX-RENDERER")
+		) {
+			value = equals + 1;
+		}
+	} else if (
+		_stricmp(cmd, "--RENDERER") == 0 ||
+		_stricmp(cmd, "/RENDERER") == 0 ||
+		_stricmp(cmd, "RENDERER") == 0 ||
+		_stricmp(cmd, "--BGFX-RENDERER") == 0
+	) {
+		if ((argument_index + 1) >= argc || argv[argument_index + 1] == NULL || argv[argument_index + 1][0] == '\0') {
+			fprintf(stderr, "Renderer option requires a backend name.\n");
+			return -1;
+		}
+
+		value = argv[argument_index + 1];
+		consumed_arguments = 2;
+	}
+
+	if (value == NULL) {
+		return 0;
+	}
+
+	if (!BgfxRenderer::Set_Requested_Renderer(value)) {
+		return -1;
+	}
+
+	return consumed_arguments;
+}
+}
 
 //
 // Class statics
 //
-cRegistryBool cUserOptions::ShowNamesOnSoldier(					APPLICATION_SUB_KEY_NAME_NETOPTIONS, "ShowNamesOnSoldier",           true);
-cRegistryBool cUserOptions::SkipQuitConfirmDialog(				APPLICATION_SUB_KEY_NAME_OPTIONS,	"SkipQuitConfirmDialog",			false);
-cRegistryBool cUserOptions::SkipIngameQuitConfirmDialog(		APPLICATION_SUB_KEY_NAME_OPTIONS,	"SkipIngameQuitConfirmDialog",	false);
-cRegistryBool cUserOptions::CameraLockedToTurret(				APPLICATION_SUB_KEY_NAME_OPTIONS,	"CameraLockedToTurret",				false);
-cRegistryBool cUserOptions::PermitDiagLogging(					APPLICATION_SUB_KEY_NAME_OPTIONS,	"PermitDiagLogging",					true);
+	cRegistryBool cUserOptions::ShowNamesOnSoldier(					APPLICATION_SUB_KEY_NAME_NETOPTIONS, "ShowNamesOnSoldier",           true);
+	cRegistryBool cUserOptions::SkipQuitConfirmDialog(				APPLICATION_SUB_KEY_NAME_OPTIONS,	"SkipQuitConfirmDialog",			false);
+	cRegistryBool cUserOptions::SkipIngameQuitConfirmDialog(		APPLICATION_SUB_KEY_NAME_OPTIONS,	"SkipIngameQuitConfirmDialog",	false);
+	cRegistryBool cUserOptions::CameraLockedToTurret(				APPLICATION_SUB_KEY_NAME_OPTIONS,	"CameraLockedToTurret",				false);
+	cRegistryBool cUserOptions::PermitDiagLogging(					APPLICATION_SUB_KEY_NAME_OPTIONS,	"PermitDiagLogging",					true);
 
-cRegistryInt cUserOptions::Sku(										APPLICATION_SUB_KEY_NAME,				 "SKU",									RENEGADE_BASE_SKU);
+	cRegistryInt cUserOptions::Sku(										APPLICATION_SUB_KEY_NAME,				 "SKU",									RENEGADE_BASE_SKU);
 
-cRegistryInt cUserOptions::BandwidthType(							APPLICATION_SUB_KEY_NAME_NETOPTIONS, "BandwidthType",						BANDWIDTH_AUTO);
-cRegistryInt cUserOptions::BandwidthBps(							APPLICATION_SUB_KEY_NAME_NETOPTIONS, "BandwidthBps",						33600);
+	cRegistryInt cUserOptions::BandwidthType(							APPLICATION_SUB_KEY_NAME_NETOPTIONS, "BandwidthType",						BANDWIDTH_AUTO);
+	cRegistryInt cUserOptions::BandwidthBps(							APPLICATION_SUB_KEY_NAME_NETOPTIONS, "BandwidthBps",						33600);
 
-cRegistryInt		cUserOptions::GameSpyBandwidthType(			APPLICATION_SUB_KEY_NAME_GAMESPY,	 "GameSpyBandwidthType",			BANDWIDTH_AUTO);
-cRegistryInt		cUserOptions::PreferredGameSpyNic(			APPLICATION_SUB_KEY_NAME_GAMESPY,    "PreferredGameSpyNic",				0);
-cRegistryString	cUserOptions::GameSpyNickname(				APPLICATION_SUB_KEY_NAME_GAMESPY,	 "GameSpyNickname",					"");
-cRegistryInt		cUserOptions::GameSpyQueryPort(			APPLICATION_SUB_KEY_NAME_GAMESPY,    "GameSpyQueryPort",				25300);
-cRegistryInt		cUserOptions::GameSpyGamePort(			APPLICATION_SUB_KEY_NAME_GAMESPY,    "GameSpyGamePort",				4848);
-cRegistryInt		cUserOptions::SplashCount(			APPLICATION_SUB_KEY_NAME_GAMESPY,    "SplashCount",				0);
-cRegistryBool		cUserOptions::DoneClientBandwidthTest(			APPLICATION_SUB_KEY_NAME_GAMESPY,    "DoneClientBandwidthTest",				false);
+	cRegistryInt		cUserOptions::GameSpyBandwidthType(			APPLICATION_SUB_KEY_NAME_GAMESPY,	 "GameSpyBandwidthType",			BANDWIDTH_AUTO);
+	cRegistryInt		cUserOptions::PreferredGameSpyNic(			APPLICATION_SUB_KEY_NAME_GAMESPY,    "PreferredGameSpyNic",				0);
+	cRegistryString	cUserOptions::GameSpyNickname(				APPLICATION_SUB_KEY_NAME_GAMESPY,	 "GameSpyNickname",					"");
+	cRegistryInt		cUserOptions::GameSpyQueryPort(			APPLICATION_SUB_KEY_NAME_GAMESPY,    "GameSpyQueryPort",				25300);
+	cRegistryInt		cUserOptions::GameSpyGamePort(			APPLICATION_SUB_KEY_NAME_GAMESPY,    "GameSpyGamePort",				4848);
+	cRegistryInt		cUserOptions::SplashCount(			APPLICATION_SUB_KEY_NAME_GAMESPY,    "SplashCount",				0);
+	cRegistryBool		cUserOptions::DoneClientBandwidthTest(			APPLICATION_SUB_KEY_NAME_GAMESPY,    "DoneClientBandwidthTest",				false);
 
 
-cRegistryInt cUserOptions::PreferredLanNic(						APPLICATION_SUB_KEY_NAME_NETOPTIONS, "PreferredLanNic",					0);
-cRegistryInt cUserOptions::NetUpdateRate(							APPLICATION_SUB_KEY_NAME_NETOPTIONS, "NetUpdateRate",						10);
-cRegistryFloat cUserOptions::ClientHintFactor(					APPLICATION_SUB_KEY_NAME_NETOPTIONS, "ClientHintFactor",					10.0f);
-cRegistryFloat cUserOptions::MaxFacingPenalty(					APPLICATION_SUB_KEY_NAME_NETOPTIONS, "MaxFacingPenalty",					0.3f);
-cRegistryFloat cUserOptions::IrrelevancePenalty(				APPLICATION_SUB_KEY_NAME_NETOPTIONS, "IrrelevancePenalty",				0.2f);
+	cRegistryInt cUserOptions::PreferredLanNic(						APPLICATION_SUB_KEY_NAME_NETOPTIONS, "PreferredLanNic",					0);
+	cRegistryInt cUserOptions::NetUpdateRate(							APPLICATION_SUB_KEY_NAME_NETOPTIONS, "NetUpdateRate",						10);
+	cRegistryFloat cUserOptions::ClientHintFactor(					APPLICATION_SUB_KEY_NAME_NETOPTIONS, "ClientHintFactor",					10.0f);
+	cRegistryFloat cUserOptions::MaxFacingPenalty(					APPLICATION_SUB_KEY_NAME_NETOPTIONS, "MaxFacingPenalty",					0.3f);
+	cRegistryFloat cUserOptions::IrrelevancePenalty(				APPLICATION_SUB_KEY_NAME_NETOPTIONS, "IrrelevancePenalty",				0.2f);
 
-cRegistryInt cUserOptions::ResultsLogNumber(						APPLICATION_SUB_KEY_NAME_NETOPTIONS, "ResultsLogNumber",					1);
+	cRegistryInt cUserOptions::ResultsLogNumber(						APPLICATION_SUB_KEY_NAME_NETOPTIONS, "ResultsLogNumber",					1);
 
 //-----------------------------------------------------------------------------
 bool cUserOptions::Parse_Command_Line(LPCSTR command)
@@ -87,6 +145,7 @@ bool cUserOptions::Parse_Command_Line(LPCSTR command)
 	WWASSERT(command != NULL);
 
 	bool retcode = true;
+	BgfxRenderer::Reset_Requested_Renderer();
 
 	//
 	// Convert to argv & argc for convenience.
@@ -116,6 +175,16 @@ bool cUserOptions::Parse_Command_Line(LPCSTR command)
 
 	char *cmd;
 	for (int i=1 ; i<argc ; i++) {
+		const int renderer_option_result = Try_Parse_Renderer_Option(argc, argv, i);
+		if (renderer_option_result < 0) {
+			retcode = false;
+			break;
+		}
+		if (renderer_option_result > 0) {
+			i += renderer_option_result - 1;
+			continue;
+		}
+
 		cmd = strupr(argv[i]);
 
 		// Look for ip override.

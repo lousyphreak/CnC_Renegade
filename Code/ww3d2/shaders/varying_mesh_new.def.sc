@@ -12,3 +12,6 @@ float v_fogFactor : TEXCOORD2 = 0.0;
 vec3 v_worldPos   : TEXCOORD3 = vec3(0.0, 0.0, 0.0);
 float v_viewDepth : TEXCOORD4 = 0.0;
 vec3 v_worldNormal : TEXCOORD5 = vec3(0.0, 0.0, 1.0);
+vec3 v_shadowProj0 : TEXCOORD6 = vec3(0.0, 0.0, 0.0);
+vec3 v_shadowProj1 : TEXCOORD7 = vec3(0.0, 0.0, 0.0);
+vec3 v_shadowProj2 : TEXCOORD8 = vec3(0.0, 0.0, 0.0);

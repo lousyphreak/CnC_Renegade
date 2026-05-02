@@ -140,6 +140,18 @@ endif()
 set(RENEGADE_BGFX_TOOL_UTILS "${bgfx_cmake_SOURCE_DIR}/cmake/bgfxToolUtils.cmake")
 file(READ "${RENEGADE_BGFX_TOOL_UTILS}" _renegade_bgfx_tool_utils)
 string(REPLACE "$<IF:$<CONFIG:Debug>:0,3>" "$<IF:$<CONFIG:Debug>,0,3>" _renegade_bgfx_tool_utils_patched "${_renegade_bgfx_tool_utils}")
+string(REPLACE
+    "set(multiValueArgs SHADERS INCLUDE_DIRS DEFINES)"
+    "set(multiValueArgs SHADERS INCLUDE_DIRS DEFINES DEPENDS)"
+    _renegade_bgfx_tool_utils_patched
+    "${_renegade_bgfx_tool_utils_patched}"
+)
+string(REPLACE
+    "DEPENDS \${ARGS_VARYING_DEF}"
+    "DEPENDS \${ARGS_VARYING_DEF} \${ARGS_DEPENDS}"
+    _renegade_bgfx_tool_utils_patched
+    "${_renegade_bgfx_tool_utils_patched}"
+)
 if(NOT _renegade_bgfx_tool_utils STREQUAL _renegade_bgfx_tool_utils_patched)
     file(WRITE "${RENEGADE_BGFX_TOOL_UTILS}" "${_renegade_bgfx_tool_utils_patched}")
 endif()

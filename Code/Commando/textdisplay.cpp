@@ -274,6 +274,7 @@ void 	TextDisplayGameModeClass::Render()
 
 	// Display
 	Display->Reset();
+	Display->Set_Location(Vector2(0.0f, y));
 
 	// Cache the lines that are rendered
 	RendererLines.Reset_Active();

@@ -284,6 +284,8 @@ public:
 	static	void	Console_Disable()	{ ConsoleMode = false; }
 	static	int	Console_Get_Key();
 	static	void	Console_Add_Key( int key );
+	static	void	Request_Begin_Console()	{ PendingBeginConsole = true; }
+	static	bool	Consume_Begin_Console_Request();
 	static	bool	Is_Console_Enabled( void )	{ return ConsoleMode; }
 	static	bool	Is_Shooter_Mode_Enabled( void );
 	static	void	Flush_Queue()		{ QueueHead = QueueTail = QueueSize = 0; }
@@ -362,6 +364,7 @@ private:
 	static	int	QueueHead;
 	static	int	QueueTail;
 	static	int	QueueSize;
+	static	bool	PendingBeginConsole;
 	static	bool	DamageIndicatorsEnabled;
 
 	static	float	FunctionValue[ INPUT_FUNCTION_COUNT ];

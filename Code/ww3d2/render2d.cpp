@@ -638,6 +638,7 @@ Render2DTextClass::Render2DTextClass(Font3DInstanceClass *font) :
 	IsClippedEnabled(false)
 {
 	Set_Coordinate_Range( RectClass( -320, -240, 320, 240 ) );
+	OverlayState.AlphaMaskTexture = true;
 	Set_Font( font );
 	
 	Reset();

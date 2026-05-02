@@ -27,6 +27,7 @@
 #include "useroptions.h"
 #include "win.h"
 #include "wwperfmon.h"
+#include "../compat/dinput.h"
 
 // disable leak detection
 #ifdef __cplusplus
@@ -456,6 +457,30 @@ bool Handle_System_Key_Event(const SDL_Event &event)
     return false;
 }
 
+bool Handle_Console_Key_Event(const SDL_Event &event)
+{
+    if (event.type != SDL_EVENT_KEY_DOWN || event.key.repeat || Input::Is_Console_Enabled()) {
+        return false;
+    }
+
+    const int primary = Input::Get_Primary_Key_For_Function(INPUT_FUNCTION_BEGIN_CONSOLE);
+    const int secondary = Input::Get_Secondary_Key_For_Function(INPUT_FUNCTION_BEGIN_CONSOLE);
+    const SDL_Scancode scancode = event.key.scancode;
+    const bool matches_primary =
+        (scancode == SDL_SCANCODE_F8 && primary == DIK_F8) ||
+        (scancode == SDL_SCANCODE_GRAVE && primary == DIK_GRAVE);
+    const bool matches_secondary =
+        (scancode == SDL_SCANCODE_F8 && secondary == DIK_F8) ||
+        (scancode == SDL_SCANCODE_GRAVE && secondary == DIK_GRAVE);
+
+    if (!matches_primary && !matches_secondary) {
+        return false;
+    }
+
+    Input::Request_Begin_Console();
+    return true;
+}
+
 bool Handle_Main_Loop_Event(SDL_Event &event)
 {
     if (event.type == SDL_EVENT_QUIT || event.type == SDL_EVENT_TERMINATING) {
@@ -475,6 +500,7 @@ bool Handle_Main_Loop_Event(SDL_Event &event)
         return true;
     }
 
+    Handle_Console_Key_Event(event);
     Dispatch_Runtime_Event(event);
 
     return true;

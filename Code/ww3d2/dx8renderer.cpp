@@ -2666,7 +2666,7 @@ bool DX8MeshRendererClass::Render_Registered_Material_Passes(
 		const VertexMaterialClass * pass_material = pass->Peek_Material();
 		const MaterialClassification classification =
 			BgfxRenderer::Classify_Material(pass_shader,pass_material,has_normals);
-		const bool receive_shadows = pass_shader.Get_Dst_Blend_Func() == ShaderClass::DSTBLEND_ZERO;
+		const bool receive_shadows = Mesh_Pass_Should_Receive_Shadows(*mesh,pass_index,pass_shader,false);
 		Matrix4 world_matrix(mesh->Get_Transform());
 		WW3D::FixedFunctionStateDesc fixed_function_state;
 		WW3D::Capture_Current_Fixed_Function_State(fixed_function_state,pass_material);

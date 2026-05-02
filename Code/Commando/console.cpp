@@ -108,6 +108,14 @@
 static bool profile_log_active;
 static StringClass* profile_log_names;
 
+namespace
+{
+constexpr float CONSOLE_BOX_PADDING = 8.0f;
+constexpr uint32_t CONSOLE_BORDER_COLOR = RGBA_TO_INT32(255, 255, 255, 160);
+constexpr uint32_t CONSOLE_BACKGROUND_COLOR = RGBA_TO_INT32(0, 0, 0, 176);
+constexpr uint32_t CONSOLE_HELP_COLOR = 0xFF00FFFF;
+}
+
 //
 // ConsoleGameModeClass statics
 //
@@ -141,6 +149,22 @@ void 	ConsoleGameModeClass::Init()
 	Load_Registry_Keys();
 
 	ProfileIterator = NULL;
+
+	if (!ConsoleBox.Is_Exclusive()) {
+		WWASSERT(WW3DAssetManager::Get_Instance() != NULL);
+		ConsoleFont = WW3DAssetManager::Get_Instance()->Get_Font3DInstance("FONT8x8.TGA");
+		if (ConsoleFont != NULL) {
+			SET_REF_OWNER(ConsoleFont);
+			ConsoleBackdropRenderer = new Render2DClass();
+			ConsoleBackdropRenderer->Set_Coordinate_Range(Render2DClass::Get_Screen_Resolution());
+			ConsoleBackdropRenderer->Enable_Texturing(false);
+
+			ConsoleTextRenderer = new Render2DTextClass(ConsoleFont);
+			ConsoleTextRenderer->Set_Coordinate_Range(Render2DClass::Get_Screen_Resolution());
+		} else {
+			WWDEBUG_SAY(("ConsoleGameModeClass::Init: FONT8x8.TGA unavailable, disabling console overlay\n"));
+		}
+	}
 }
 
 /*
@@ -153,6 +177,14 @@ void 	ConsoleGameModeClass::Shutdown()
 	WWASSERT( ConsoleGameModeClass::Instance == this );
 
 	ConsoleGameModeClass::Instance = NULL;
+
+	delete ConsoleTextRenderer;
+	ConsoleTextRenderer = NULL;
+
+	delete ConsoleBackdropRenderer;
+	ConsoleBackdropRenderer = NULL;
+
+	REF_PTR_RELEASE(ConsoleFont);
 
 	ConsoleFunctionManager::Shutdown();
 }
@@ -216,11 +248,11 @@ void 	ConsoleGameModeClass::Think()
 
 // HACK: Disable console in ATI demo
 //#ifndef ATI_DEMO_HACK
-		if (Input::Get_State(INPUT_FUNCTION_BEGIN_CONSOLE)) {
+		if (Input::Get_State(INPUT_FUNCTION_BEGIN_CONSOLE) || Input::Consume_Begin_Console_Request()) {
          enable_console = true;
          ConsoleInputType = INPUT_FUNCTION_BEGIN_CONSOLE;
          strcpy(InputLine, "Command >");
-      }
+       }
 //#endif
 
       if (enable_console) {
@@ -340,8 +372,8 @@ WWPROFILE( "Input Active" );
 
 		if (Get_Text_Display()) {
 			WWASSERT( Get_Text_Display() );
-			Get_Text_Display()->Set_Input_Text( mess );
-			Get_Text_Display()->Set_Help_Text( HelpLine );
+			Get_Text_Display()->Set_Input_Text( "" );
+			Get_Text_Display()->Set_Help_Text( "" );
 		}
 
 	} else {
@@ -353,7 +385,7 @@ WWPROFILE( "Input Active" );
 			Get_Text_Display()->Set_Help_Text( "" );
 		}
 
-	}
+}
 
 	/****************************************************************************************
 	**
@@ -1156,6 +1188,51 @@ WWPROFILE( "Input Active" );
 	Update_Memory_Log();
 }
 
+void ConsoleGameModeClass::Render()
+{
+	if (!InputActive || ConsoleTextRenderer == NULL || ConsoleBackdropRenderer == NULL || ConsoleFont == NULL) {
+		return;
+	}
+
+	const RectClass &screen = Render2DClass::Get_Screen_Resolution();
+	if (screen.Width() <= 0.0f || screen.Height() <= 0.0f) {
+		return;
+	}
+
+	char prompt[MAX_INPUT_LINE_LENGTH + 4];
+	std::snprintf(
+		prompt,
+		sizeof(prompt),
+		"%s%s\n",
+		InputLine,
+		((static_cast<int>(TimeManager::Get_Seconds() * 4.0f) & 1) != 0) ? "|" : "");
+
+	const float scaled_margin = screen.Width() * LeftMargin;
+	const float outer_margin = scaled_margin > 8.0f ? scaled_margin : 8.0f;
+	const float text_left = outer_margin + CONSOLE_BOX_PADDING;
+	const float text_top = outer_margin + CONSOLE_BOX_PADDING;
+	const float line_height = ConsoleFont->Char_Height();
+	const float line_count = HelpLine[0] != 0 ? 2.0f : 1.0f;
+	const RectClass panel(
+		outer_margin,
+		outer_margin,
+		screen.Right - outer_margin,
+		outer_margin + (CONSOLE_BOX_PADDING * 2.0f) + (line_height * line_count));
+
+	ConsoleBackdropRenderer->Reset();
+	ConsoleBackdropRenderer->Add_Rect(panel, 1.0f, CONSOLE_BORDER_COLOR, CONSOLE_BACKGROUND_COLOR);
+	ConsoleBackdropRenderer->Render();
+
+	ConsoleTextRenderer->Reset();
+	ConsoleTextRenderer->Set_Location(Vector2(text_left, text_top));
+	ConsoleTextRenderer->Set_Wrapping_Width(panel.Width() - (CONSOLE_BOX_PADDING * 2.0f));
+	ConsoleTextRenderer->Draw_Text(prompt, VRGB_TO_INT32(COLOR_CONSOLE_TEXT));
+	if (HelpLine[0] != 0) {
+		ConsoleTextRenderer->Draw_Text(HelpLine, CONSOLE_HELP_COLOR);
+	}
+	ConsoleTextRenderer->Render();
+}
+
 /*
 **
 */
@@ -1712,9 +1789,6 @@ void	ConsoleGameModeClass::Update_Memory_Log( void )
 
 	StatisticsDisplayManager::Set_Stat( "memory", memory_string, 0xffffffff );
 }
-
-
-
 
 
 

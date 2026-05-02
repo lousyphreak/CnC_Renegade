@@ -1,4 +1,4 @@
-$input v_color0, v_texcoord0, v_texcoord1, v_fogFactor, v_worldPos, v_viewDepth, v_worldNormal
+$input v_color0, v_texcoord0, v_texcoord1, v_fogFactor, v_worldPos, v_viewDepth, v_worldNormal, v_shadowProj0, v_shadowProj1, v_shadowProj2
 
 #include <bgfx_shader.sh>
 #include "mesh_common.sh"
@@ -172,11 +172,50 @@ void main()
         ApplyColorOp(u_meshFragConfig.y, current, tex1),
         ApplyAlphaOp(u_meshFragConfig2.x, current.a, tex1));
 
-    // Apply shadow
-    float shadow = ComputeShadow(v_worldPos, v_worldNormal, v_viewDepth);
-    current.rgb *= shadow;
-
-    ApplyFog(current.rgb, u_meshFragConfig2.y, v_fogFactor, u_meshFogColor.rgb);
+    // Apply shadow attenuation, with optional debug visualization.
+    highp vec4 shadowInfo = EvaluateShadowReceiver(v_shadowProj0, v_shadowProj1, v_shadowProj2,
+        v_worldNormal, v_viewDepth);
+    if (u_shadowReceiverDebug.w > 0.0) {
+        // Diagnostic mode. shadowInfo.w = state code:
+        //   0 = shadow receive disabled, 1 = beyond cascades, 2 = atlas-out, 3 = success.
+        // For the success path, shadowInfo carries:
+        //   .x = sampledDepth (atlas)   .y = biasedReceiverDepth   .z = unbiasedReceiverDepth
+        if (shadowInfo.w < 0.5) {
+            current.rgb = vec3(1.0, 0.0, 0.0);
+        } else if (shadowInfo.w < 1.5) {
+            current.rgb = vec3(1.0, 0.5, 0.0);
+        } else if (shadowInfo.w < 2.5) {
+            current.rgb = vec3(1.0, 0.0, 1.0);
+        } else {
+            highp float sampledDepth = shadowInfo.x;
+            highp float biasedReceiver = shadowInfo.y;
+            highp float unbiasedReceiver = shadowInfo.z;
+            // Compare both the biased and unbiased receiver depth against the atlas:
+            //   biased shadowed    -> step(sampledDepth, biasedReceiver) > 0.5
+            //   unbiased shadowed  -> step(sampledDepth, unbiasedReceiver) > 0.5
+            // RED   = currently shadowed (both fail) -> what we want for casters
+            // GREEN = bias is hiding the shadow (unbiased shadowed but biased lit)
+            // BLUE  = lit (no caster at this UV)
+            // YELLOW = special: receiver depth is suspiciously close to 0 (likely
+            //         indicates light-source distance miscomputation).
+            highp float biasedShadowed = step(sampledDepth + 1.0e-5, biasedReceiver);
+            highp float unbiasedShadowed = step(sampledDepth + 1.0e-5, unbiasedReceiver);
+            highp float receiverNearZero = step(unbiasedReceiver, 0.02);
+            highp vec3 dbg = vec3(0.0, 0.0, 1.0); // default lit = blue
+            if (biasedShadowed > 0.5) {
+                dbg = vec3(1.0, 0.0, 0.0); // currently shadowed = red
+            } else if (unbiasedShadowed > 0.5) {
+                dbg = vec3(0.0, 1.0, 0.0); // bias hides shadow = green
+            }
+            if (receiverNearZero > 0.5) {
+                dbg = mix(dbg, vec3(1.0, 1.0, 0.0), 0.6); // overlay yellow when receiver~0
+            }
+            current.rgb = dbg;
+        }
+    } else {
+        current.rgb *= shadowInfo.x;
+        ApplyFog(current.rgb, u_meshFragConfig2.y, v_fogFactor, u_meshFogColor.rgb);
+    }
 
     if (u_meshFragConfig.z >= 0.0) {
         if (current.a < u_meshFragConfig.z) {

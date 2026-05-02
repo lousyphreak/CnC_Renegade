@@ -148,7 +148,7 @@ public:
     static void Destroy_Program(bgfx::ProgramHandle &program);
     static uint64_t Build_Render_State(const ShaderClass &shader, unsigned cull_mode = D3DCULL_CW);
     static void Apply_Render_State(const ShaderClass &shader, unsigned cull_mode = D3DCULL_CW, uint64_t extra_state = 0u);
-    static void Apply_Overlay_Config(bool has_texture);
+    static void Apply_Overlay_Config(bool has_texture, bool alpha_mask_texture);
     static bool Submit_Overlay(const WW3D::OverlaySubmitDesc &submission);
     static bool Submit_YUV_Overlay(const OverlayYUVSubmitDesc &submission);
 

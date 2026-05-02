@@ -3130,7 +3130,7 @@ void Flush_Overlay_Submission_Queue()
             }
 
             bgfx::setTexture(0, BgfxRenderer::Get_Texture0_Uniform(), texture, sampler_flags);
-            BgfxRenderer::Apply_Overlay_Config(queued.HasTexture);
+            BgfxRenderer::Apply_Overlay_Config(queued.HasTexture, queued.State.AlphaMaskTexture);
             bgfx::setState(Build_Overlay_Render_State(queued.State));
             bgfx::setStencil(Build_Stencil_State());
             bgfx::submit(OverlayViewId, overlay_program);
@@ -3142,9 +3142,14 @@ void Flush_Overlay_Submission_Queue()
 }
 }
 
-void BgfxRenderer::Apply_Overlay_Config(bool has_texture)
+void BgfxRenderer::Apply_Overlay_Config(bool has_texture, bool alpha_mask_texture)
 {
-    float overlay_config[4] = {has_texture ? 1.0f : 0.0f, 0.0f, 0.0f, 0.0f};
+    float overlay_config[4] = {
+        has_texture ? 1.0f : 0.0f,
+        alpha_mask_texture ? 1.0f : 0.0f,
+        0.0f,
+        0.0f
+    };
     bgfx::setUniform(OverlayConfigUniform, overlay_config);
 }
 

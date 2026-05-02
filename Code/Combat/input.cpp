@@ -629,6 +629,7 @@ int	Input::Queue[ Input::QUEUE_MAX ];
 int	Input::QueueHead;
 int	Input::QueueTail;
 int	Input::QueueSize;
+bool	Input::PendingBeginConsole = false;
 float	Input::FunctionValue[ INPUT_FUNCTION_COUNT ];
 float	Input::FunctionClamp[ INPUT_FUNCTION_COUNT ];
 int	Input::FunctionPrimaryKeys[ INPUT_FUNCTION_COUNT ];
@@ -651,6 +652,7 @@ void	Input::Init(bool use_dinput)
 {
 	ConsoleMode	= false;
 	MenuMode		= false;
+	PendingBeginConsole = false;
 	if (use_dinput) {
 		DirectInput::Init();
 	}
@@ -991,6 +993,18 @@ int	Input::Console_Get_Key()
 		return key;
 	}
 	return 0;
+}
+
+bool Input::Consume_Begin_Console_Request()
+{
+	if (MenuMode || ConsoleMode || CombatManager::Is_Loading_Level()) {
+		PendingBeginConsole = false;
+		return false;
+	}
+
+	const bool requested = PendingBeginConsole;
+	PendingBeginConsole = false;
+	return requested;
 }
 
 void	Input::Console_Add_Key( int key )

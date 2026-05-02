@@ -50,9 +50,14 @@ public:
     static constexpr int DEFAULT_CASCADE_SIZE = 2048;
     static constexpr float DEFAULT_SHADOW_DISTANCE = 200.0f;
     static constexpr float DEFAULT_SHADOW_INTENSITY = 0.3f;
-    static constexpr float DEFAULT_DEPTH_BIAS = 0.0005f;
-    static constexpr float DEFAULT_NORMAL_BIAS = 0.5f;
+    // The explicit receiver depth bias is kept at zero by default. The shader
+    // derives a small texel-sized receiver floor from the cascade footprint and
+    // combines it with a slope-scaled normal bias so the result stays stable
+    // across backends without over-biasing terrain on emscripten/WebGL.
+    static constexpr float DEFAULT_DEPTH_BIAS = 0.0f;
+    static constexpr float DEFAULT_NORMAL_BIAS = 10.0f;
     static constexpr float CASCADE_SPLIT_LAMBDA = 0.75f;
+    static constexpr float RECEIVER_DEBUG_DRAW_ENABLED_VALUE = 1.0f;
 
     static bool Init(int cascade_size = DEFAULT_CASCADE_SIZE);
     static void Shutdown();
@@ -72,6 +77,9 @@ public:
 
     static void Set_Enabled(bool enabled) { Enabled = enabled; }
     static bool Is_Enabled() { return Enabled && Initted; }
+
+    static void Set_Receiver_Debug_Enabled(bool enabled) { ReceiverDistanceDebugEnabled = enabled; }
+    static bool Is_Receiver_Debug_Enabled() { return ReceiverDistanceDebugEnabled; }
 
     /**
     ** Compute cascade view-projection matrices for the current frame.
@@ -157,6 +165,7 @@ private:
     static float ShadowIntensity;
     static float DepthBias;
     static float NormalBias;
+    static bool ReceiverDistanceDebugEnabled;
 
     // Atlas: single depth texture with 3 cascades side-by-side
     static bgfx::TextureHandle ShadowAtlasTexture;
@@ -172,6 +181,8 @@ private:
     static bgfx::UniformHandle ShadowCascadeSplitsUniform;
     static bgfx::UniformHandle ShadowCascadeTexelSizeUniform;
     static bgfx::UniformHandle ShadowConfigUniform;
+    static bgfx::UniformHandle ShadowLightDirectionUniform;
+    static bgfx::UniformHandle ShadowReceiverDebugUniform;
 
     // Per-frame computed data
     static Matrix4 LightView[NUM_CASCADES];
@@ -179,6 +190,8 @@ private:
     static Matrix4 ShadowTextureMatrix[NUM_CASCADES];
     static float CascadeSplits[NUM_CASCADES + 1];
     static float CascadeWorldTexelSize[NUM_CASCADES];
+    static float CascadeDepthRange[NUM_CASCADES];
+    static Vector3 LightDirection;
     static OBBoxClass CascadeCullBoxes[NUM_CASCADES];
     static bool CascadeCullBoxValid[NUM_CASCADES];
 

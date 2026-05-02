@@ -39,6 +39,7 @@ float ShadowMapManager::ShadowDistance = DEFAULT_SHADOW_DISTANCE;
 float ShadowMapManager::ShadowIntensity = DEFAULT_SHADOW_INTENSITY;
 float ShadowMapManager::DepthBias = DEFAULT_DEPTH_BIAS;
 float ShadowMapManager::NormalBias = DEFAULT_NORMAL_BIAS;
+bool ShadowMapManager::ReceiverDistanceDebugEnabled = false;
 
 bgfx::TextureHandle ShadowMapManager::ShadowAtlasTexture = BGFX_INVALID_HANDLE;
 bgfx::FrameBufferHandle ShadowMapManager::ShadowAtlasFramebuffer = BGFX_INVALID_HANDLE;
@@ -49,18 +50,34 @@ bgfx::UniformHandle ShadowMapManager::ShadowLightViewProjUniform = BGFX_INVALID_
 bgfx::UniformHandle ShadowMapManager::ShadowCascadeSplitsUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle ShadowMapManager::ShadowCascadeTexelSizeUniform = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle ShadowMapManager::ShadowConfigUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle ShadowMapManager::ShadowLightDirectionUniform = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle ShadowMapManager::ShadowReceiverDebugUniform = BGFX_INVALID_HANDLE;
 
 Matrix4 ShadowMapManager::LightView[NUM_CASCADES] = {Matrix4(true), Matrix4(true), Matrix4(true)};
 Matrix4 ShadowMapManager::LightProjection[NUM_CASCADES] = {Matrix4(true), Matrix4(true), Matrix4(true)};
 Matrix4 ShadowMapManager::ShadowTextureMatrix[NUM_CASCADES] = {Matrix4(true), Matrix4(true), Matrix4(true)};
 float ShadowMapManager::CascadeSplits[NUM_CASCADES + 1] = {0.0f, 0.0f, 0.0f, 0.0f};
 float ShadowMapManager::CascadeWorldTexelSize[NUM_CASCADES] = {0.0f, 0.0f, 0.0f};
+float ShadowMapManager::CascadeDepthRange[NUM_CASCADES] = {0.0f, 0.0f, 0.0f};
+Vector3 ShadowMapManager::LightDirection(0.0f, 0.0f, -1.0f);
 OBBoxClass ShadowMapManager::CascadeCullBoxes[NUM_CASCADES];
 bool ShadowMapManager::CascadeCullBoxValid[NUM_CASCADES] = {false, false, false};
 uint16_t ShadowMapManager::ShadowViewIds[NUM_CASCADES] = {0, 0, 0};
 
 namespace
 {
+
+const char *Get_Shadow_Depth_Format_Name(bgfx::TextureFormat::Enum format)
+{
+    switch (format) {
+        case bgfx::TextureFormat::D16: return "D16";
+        case bgfx::TextureFormat::D24: return "D24";
+        case bgfx::TextureFormat::D24S8: return "D24S8";
+        case bgfx::TextureFormat::D32: return "D32";
+        case bgfx::TextureFormat::D32F: return "D32F";
+        default: return "unknown";
+    }
+}
 
 Matrix4 Build_Shadow_Crop_Matrix(int cascade_index)
 {
@@ -98,21 +115,39 @@ Matrix4 Build_Shadow_Render_Projection(const Matrix4 &projection)
 // Find a suitable depth format for the shadow map that supports sampling
 bgfx::TextureFormat::Enum Find_Shadow_Depth_Format()
 {
-    // Prefer D16 for shadow maps - sufficient precision and widely supported for sampling
-    static constexpr bgfx::TextureFormat::Enum candidates[] = {
-        bgfx::TextureFormat::D16,
-        bgfx::TextureFormat::D24,
-        bgfx::TextureFormat::D32,
-        bgfx::TextureFormat::D32F,
-        bgfx::TextureFormat::D24S8,
-    };
-
     const bgfx::Caps *caps = bgfx::getCaps();
     if (caps == nullptr) {
         return bgfx::TextureFormat::Count;
     }
 
-    for (auto fmt : candidates) {
+    const bgfx::RendererType::Enum renderer_type = bgfx::getRendererType();
+    // Terrain receivers are much more sensitive to sampled depth precision than
+    // dynamic meshes. On WebGL/OpenGLES, preferring D16 collapses blocker-gap
+    // measurements on large terrain receivers, so always prefer the highest
+    // precision depth format that is renderable and sampleable.
+    static constexpr bgfx::TextureFormat::Enum high_precision_candidates[] = {
+        bgfx::TextureFormat::D32F,
+        bgfx::TextureFormat::D32,
+        bgfx::TextureFormat::D24,
+        bgfx::TextureFormat::D24S8,
+        bgfx::TextureFormat::D16,
+    };
+    static constexpr bgfx::TextureFormat::Enum compatibility_candidates[] = {
+        bgfx::TextureFormat::D32,
+        bgfx::TextureFormat::D24,
+        bgfx::TextureFormat::D24S8,
+        bgfx::TextureFormat::D16,
+        bgfx::TextureFormat::D32F,
+    };
+    const bgfx::TextureFormat::Enum *candidates =
+        renderer_type == bgfx::RendererType::OpenGLES ? high_precision_candidates : compatibility_candidates;
+    const size_t candidate_count =
+        renderer_type == bgfx::RendererType::OpenGLES
+            ? (sizeof(high_precision_candidates) / sizeof(high_precision_candidates[0]))
+            : (sizeof(compatibility_candidates) / sizeof(compatibility_candidates[0]));
+
+    for (size_t index = 0; index < candidate_count; ++index) {
+        const bgfx::TextureFormat::Enum fmt = candidates[index];
         uint32_t flags = caps->formats[fmt];
         // Need both framebuffer and sampling support
         if ((flags & BGFX_CAPS_FORMAT_TEXTURE_FRAMEBUFFER) != 0 &&
@@ -175,6 +210,8 @@ bool ShadowMapManager::Init(int cascade_size)
     ShadowCascadeSplitsUniform = bgfx::createUniform("u_shadowCascadeSplits", bgfx::UniformType::Vec4);
     ShadowCascadeTexelSizeUniform = bgfx::createUniform("u_shadowCascadeTexelSize", bgfx::UniformType::Vec4);
     ShadowConfigUniform = bgfx::createUniform("u_shadowConfig", bgfx::UniformType::Vec4);
+    ShadowLightDirectionUniform = bgfx::createUniform("u_shadowLightDirection", bgfx::UniformType::Vec4);
+    ShadowReceiverDebugUniform = bgfx::createUniform("u_shadowReceiverDebug", bgfx::UniformType::Vec4);
 
     // Load shadow depth shader
     ShadowProgram = BgfxRenderer::Load_Program("vs_shadow", "fs_shadow");
@@ -191,8 +228,10 @@ bool ShadowMapManager::Init(int cascade_size)
     }
 
     Initted = true;
-    WWDEBUG_SAY(("ShadowMapManager: Initialized with %dx%d atlas (%d cascades of %d)\n",
-                 atlas_width, atlas_height, NUM_CASCADES, CascadeSize));
+    WWDEBUG_SAY(("ShadowMapManager: Initialized with %dx%d atlas (%d cascades of %d), depth format %s on %s\n",
+                 atlas_width, atlas_height, NUM_CASCADES, CascadeSize,
+                 Get_Shadow_Depth_Format_Name(depth_format),
+                 bgfx::getRendererName(bgfx::getRendererType())));
     return true;
 }
 
@@ -212,6 +251,8 @@ void ShadowMapManager::Shutdown()
     }
 
     destroy_uniform(ShadowConfigUniform);
+    destroy_uniform(ShadowLightDirectionUniform);
+    destroy_uniform(ShadowReceiverDebugUniform);
     destroy_uniform(ShadowCascadeTexelSizeUniform);
     destroy_uniform(ShadowCascadeSplitsUniform);
     destroy_uniform(ShadowLightViewProjUniform);
@@ -228,6 +269,7 @@ void ShadowMapManager::Shutdown()
     }
 
     for (int cascade = 0; cascade < NUM_CASCADES; ++cascade) {
+        CascadeDepthRange[cascade] = 0.0f;
         CascadeCullBoxValid[cascade] = false;
     }
 
@@ -269,19 +311,20 @@ void ShadowMapManager::Compute_Light_Matrices(const CameraClass &camera, const V
     float near_clip, camera_far_clip;
     camera.Get_Clip_Planes(near_clip, camera_far_clip);
 
-        Vector3 light_forward = sun_direction;
-        light_forward.Normalize();
+    Vector3 light_forward = sun_direction;
+    light_forward.Normalize();
+    LightDirection = light_forward;
 
-        // Build light coordinate axes (constant for all cascades)
-        Vector3 light_up(0.0f, 0.0f, 1.0f);
-        if (std::fabs(Vector3::Dot_Product(light_forward, light_up)) > 0.99f) {
-            light_up = Vector3(0.0f, 1.0f, 0.0f);
-        }
-        Vector3 light_right;
-        Vector3::Cross_Product(light_up, light_forward, &light_right);
-        light_right.Normalize();
-        Vector3::Cross_Product(light_forward, light_right, &light_up);
-        light_up.Normalize();
+    // Build light coordinate axes (constant for all cascades)
+    Vector3 light_up(0.0f, 0.0f, 1.0f);
+    if (std::fabs(Vector3::Dot_Product(light_forward, light_up)) > 0.99f) {
+        light_up = Vector3(0.0f, 1.0f, 0.0f);
+    }
+    Vector3 light_right;
+    Vector3::Cross_Product(light_up, light_forward, &light_right);
+    light_right.Normalize();
+    Vector3::Cross_Product(light_forward, light_right, &light_up);
+    light_up.Normalize();
 
     for (int cascade = 0; cascade < NUM_CASCADES; ++cascade) {
         float split_near = CascadeSplits[cascade];
@@ -375,6 +418,7 @@ void ShadowMapManager::Compute_Light_Matrices(const CameraClass &camera, const V
             LightProjection[cascade] = Matrix4(true);
             ShadowTextureMatrix[cascade] = Matrix4(true);
             CascadeWorldTexelSize[cascade] = 0.0f;
+            CascadeDepthRange[cascade] = 0.0f;
             CascadeCullBoxValid[cascade] = false;
             continue;
         }
@@ -387,6 +431,7 @@ void ShadowMapManager::Compute_Light_Matrices(const CameraClass &camera, const V
         LightProjection[cascade] = render_projection;
         ShadowTextureMatrix[cascade] = Build_Shadow_Crop_Matrix(cascade) * render_projection * light_view;
         CascadeWorldTexelSize[cascade] = texel_size;
+        CascadeDepthRange[cascade] = z_far - z_near;
 
         const Vector3 light_depth_axis = -light_forward;
         const float depth_center = 0.5f * (min_z + max_z);
@@ -536,6 +581,26 @@ void ShadowMapManager::Bind_Shadow_Uniforms(bool receive_shadows)
         NormalBias
     };
     bgfx::setUniform(ShadowCascadeTexelSizeUniform, cascade_texel_size);
+
+    if (bgfx::isValid(ShadowLightDirectionUniform)) {
+        float light_direction[4] = {
+            LightDirection.X,
+            LightDirection.Y,
+            LightDirection.Z,
+            0.0f
+        };
+        bgfx::setUniform(ShadowLightDirectionUniform, light_direction);
+    }
+
+    if (bgfx::isValid(ShadowReceiverDebugUniform)) {
+        float receiver_debug[4] = {
+            CascadeDepthRange[0],
+            CascadeDepthRange[1],
+            CascadeDepthRange[2],
+            ReceiverDistanceDebugEnabled ? RECEIVER_DEBUG_DRAW_ENABLED_VALUE : 0.0f
+        };
+        bgfx::setUniform(ShadowReceiverDebugUniform, receiver_debug);
+    }
 
     bgfx::setTexture(2, ShadowMapSampler, ShadowAtlasTexture,
                      BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP |

@@ -1,8 +1,9 @@
 $input a_position, a_normal, a_color0, a_texcoord0, a_texcoord1, a_texcoord2
-$output v_color0, v_texcoord0, v_texcoord1, v_fogFactor, v_worldPos, v_viewDepth, v_worldNormal
+$output v_color0, v_texcoord0, v_texcoord1, v_fogFactor, v_worldPos, v_viewDepth, v_worldNormal, v_shadowProj0, v_shadowProj1, v_shadowProj2
 
 #include <bgfx_shader.sh>
 #include "skin_common.sh"
+#include "shadow_vs.sh"
 
 uniform vec4 u_meshFogConfig;
 
@@ -20,6 +21,7 @@ void main()
 
     v_worldPos = mul(u_model[0], skinnedPosition4).xyz;
     v_worldNormal = normalize(mul(u_model[0], vec4(skinnedNormal, 0.0)).xyz);
+    ComputeShadowProjections(v_worldPos, v_shadowProj0, v_shadowProj1, v_shadowProj2);
     vec3 viewPos = mul(u_modelView, skinnedPosition4).xyz;
     v_viewDepth = -viewPos.z;
 

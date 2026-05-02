@@ -127,6 +127,12 @@ function(renegade_configure_emscripten_target target_name)
     target_link_options("${target_name}" PRIVATE
         "SHELL:--preload-file ${_renegade_emscripten_ww3d2_shader_dir}@/generated/bgfx-shaders"
     )
+    get_target_property(_renegade_emscripten_ww3d2_shader_outputs ww3d2 RENEGADE_SHADER_OUTPUTS)
+    if(_renegade_emscripten_ww3d2_shader_outputs)
+        set_property(TARGET "${target_name}" APPEND PROPERTY LINK_DEPENDS
+            ${_renegade_emscripten_ww3d2_shader_outputs}
+        )
+    endif()
 
     set(EMSCRIPTEN_SHELL_FILE "${CMAKE_SOURCE_DIR}/shell.html")
     target_link_options("${target_name}" PRIVATE "--shell-file" "${EMSCRIPTEN_SHELL_FILE}")

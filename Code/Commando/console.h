@@ -53,6 +53,9 @@
 
 
 class WWProfileIterator;
+class Font3DInstanceClass;
+class Render2DClass;
+class Render2DTextClass;
 
 
 
@@ -68,7 +71,7 @@ public:
 	virtual	void	Init();		 	// called when the mode is activated
 	virtual	void 	Shutdown(); 	// called when the mode is deactivated
 	virtual	void 	Think();			// called each time through the main loop
-	virtual	void 	Render() {}		// called each time through the main loop
+	virtual	void 	Render();		// called each time through the main loop
 
 	void 		Parse_Input( char * string );
 	//void 		Toggle_FPS( void )	{ FPSActive = !FPSActive; }
@@ -124,6 +127,9 @@ private:
    uint32_t ConsoleInputType;
    int   PromptLength;
    static const float LeftMargin;
+	Font3DInstanceClass * ConsoleFont = NULL;
+	Render2DClass * ConsoleBackdropRenderer = NULL;
+	Render2DTextClass * ConsoleTextRenderer = NULL;
 
 	static ConsoleGameModeClass * Instance;
 };

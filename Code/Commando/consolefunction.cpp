@@ -48,6 +48,7 @@
 #include "weaponmanager.h"
 #include "cnetwork.h"
 #include "ww3d.h"
+#include "shadowmap.h"
 #include "miscutil.h"
 #include "smartgameobj.h"
 #include "weapons.h"
@@ -3183,6 +3184,34 @@ public:
 
 #endif // WWDEBUG, development only commands
 
+class ShadowReceiverDebugConsoleFunctionClass : public ConsoleFunctionClass
+{
+	virtual	const char * Get_Name( void )	{ return "shadow_receiver_debug"; }
+	virtual	const char * Get_Alias( void )	{ return "srdbg"; }
+	virtual	const char * Get_Help( void )	{ return "SHADOW_RECEIVER_DEBUG [on|off] - toggles the shadow receiver debug draw mode."; }
+	virtual	void Activate( const char * input )
+	{
+		bool enabled = ShadowMapManager::Is_Receiver_Debug_Enabled();
+		if (::stricmp(input, "on") == 0) {
+			enabled = true;
+		} else if (::stricmp(input, "off") == 0) {
+			enabled = false;
+		} else if (input[0] != '\0') {
+			Print(Get_Help());
+			return;
+		} else {
+			enabled = !enabled;
+		}
+
+		ShadowMapManager::Set_Receiver_Debug_Enabled(enabled);
+		RegistryClass registry(APPLICATION_SUB_KEY_NAME_SYSTEM_SETTINGS);
+		if (registry.Is_Valid()) {
+			registry.Set_Bool("Shadow_Receiver_Distance_Debug", enabled);
+		}
+		Print("Shadow receiver debug is %s\n", enabled ? "ON" : "OFF");
+	}
+};
+
 class SetBandwidthBudgetOutConsoleFunctionClass : public ConsoleFunctionClass {
 public:
    virtual	const char * Get_Name( void )		{ return "set_bw_budget_out"; }
@@ -5057,6 +5086,7 @@ void	ConsoleFunctionManager::Init( void )
 	FunctionList.Add( new EditVehicleConsoleFunctionClass() );
 	FunctionList.Add( new NetUpdateRateConsoleFunctionClass() );
 	FunctionList.Add( new ClientPhysicsOptimizationConsoleFunctionClass() );
+	FunctionList.Add( new ShadowReceiverDebugConsoleFunctionClass() );
 #ifndef FREEDEDICATEDSERVER
 	FunctionList.Add( new FPSConsoleFunctionClass() );		// Steve W wanted this.
 #endif //FREEDEDICATEDSERVER

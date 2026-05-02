@@ -46,6 +46,7 @@
 #include "phys.h"
 #include "surfaceeffects.h"
 #include "dlgconfigvideotab.h"
+#include "shadowmap.h"
 #include	"wwstring.h"
 
 
@@ -55,6 +56,7 @@
 DynamicVectorClass<SystemSettingEntry *>	SystemSettings::SettingList;
 
 const char *VALUE_NAME_SHADOWS_ENABLED = "Shadows_Enabled";
+const char *VALUE_NAME_SHADOW_RECEIVER_DISTANCE_DEBUG = "Shadow_Receiver_Distance_Debug";
 
 namespace
 {
@@ -473,6 +475,16 @@ public:
 
 /***********************************************************************************************/
 
+class	SystemSettingEntryShadowReceiverDistanceDebug : public SystemSettingEntryBool {
+public:
+	const char * Get_Name( void )	{ return VALUE_NAME_SHADOW_RECEIVER_DISTANCE_DEBUG; }
+	const char * Get_Help( void )	{ return "SHADOW_RECEIVER_DISTANCE_DEBUG - toggles the shadow receiver debug draw mode."; }
+	virtual bool Get_Bool( void )	{ return ShadowMapManager::Is_Receiver_Debug_Enabled(); }
+	virtual void Set_Bool( bool state ) { ShadowMapManager::Set_Receiver_Debug_Enabled(state); }
+};
+
+/***********************************************************************************************/
+
 class	SystemSettingEntrySurfaceEffectDetail: public SystemSettingEntryEnum {
 public:
 	const char * Get_Name( void )	{ return "Surface_Effect_Detail"; }
@@ -527,6 +539,7 @@ void SystemSettings::Init( void )
 	Add_Setting( new SystemSettingEntryDynamicLODBudget );
 	Add_Setting( new SystemSettingEntryStaticLODBudget );
 	Add_Setting( new SystemSettingEntryShadowsEnabled );
+	Add_Setting( new SystemSettingEntryShadowReceiverDistanceDebug );
 
 //	Add_Setting( new SystemSettingEntryTextureCompressionMode );
 	Add_Setting( new SystemSettingEntryTextureFilterMode );

@@ -154,6 +154,7 @@ public:
 
 	struct OverlayStateDesc {
 		bool Texturing = true;
+		bool AlphaMaskTexture = false;
 		bool ColorWrite = true;
 		bool DepthWrite = false;
 		ShaderClass::DepthCompareType DepthCompare = ShaderClass::PASS_ALWAYS;

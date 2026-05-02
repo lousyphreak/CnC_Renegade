@@ -372,7 +372,19 @@ uint32_t ChunkIO_Read_WideString(ChunkLoadClass & cload, uint32_t byte_count, Wi
 **
 */
 #define READ_WWSTRING_CHUNK(cload,id,var)		\
-	case (id):	cload.Read(var.Get_Buffer(cload.Cur_Chunk_Length()),cload.Cur_Chunk_Length()); break;	\
+	case (id):	{																								\
+		const int wwstring_chunk_length = static_cast<int>(cload.Cur_Chunk_Length());			\
+		if (wwstring_chunk_length <= 0) {																\
+			var = "";																						\
+		} else {																								\
+			StringClass wwstring_loaded(wwstring_chunk_length + 1, true);							\
+			TCHAR *wwstring_buffer = wwstring_loaded.Get_Buffer(wwstring_chunk_length + 1);	\
+			cload.Read(wwstring_buffer, wwstring_chunk_length);										\
+			wwstring_buffer[wwstring_chunk_length] = 0;												\
+			var = wwstring_buffer;																		\
+		}																										\
+		break;																								\
+	}																											\
 
 #define READ_WIDESTRING_CHUNK(cload,id,var)		\
 	case (id):	ChunkIO_Read_WideString(cload, cload.Cur_Chunk_Length(), var); break;	\
@@ -448,7 +460,19 @@ uint32_t ChunkIO_Read_WideString(ChunkLoadClass & cload, uint32_t byte_count, Wi
 	case (id):	WWASSERT(cload.Cur_Micro_Chunk_Length() <= size); cload.Read(var,cload.Cur_Micro_Chunk_Length()); break;	\
 
 #define READ_MICRO_CHUNK_WWSTRING(cload,id,var)		\
-	case (id):	cload.Read(var.Get_Buffer(cload.Cur_Micro_Chunk_Length()),cload.Cur_Micro_Chunk_Length()); break;	\
+	case (id):	{																										\
+		const int wwstring_chunk_length = static_cast<int>(cload.Cur_Micro_Chunk_Length());				\
+		if (wwstring_chunk_length <= 0) {																		\
+			var = "";																								\
+		} else {																										\
+			StringClass wwstring_loaded(wwstring_chunk_length + 1, true);										\
+			TCHAR *wwstring_buffer = wwstring_loaded.Get_Buffer(wwstring_chunk_length + 1);				\
+			cload.Read(wwstring_buffer, wwstring_chunk_length);													\
+			wwstring_buffer[wwstring_chunk_length] = 0;															\
+			var = wwstring_buffer;																				\
+		}																												\
+		break;																										\
+	}																													\
 
 #define READ_MICRO_CHUNK_WIDESTRING(cload,id,var)		\
 	case (id):	ChunkIO_Read_WideString(cload, cload.Cur_Micro_Chunk_Length(), var); break;	\
@@ -460,7 +484,18 @@ uint32_t ChunkIO_Read_WideString(ChunkLoadClass & cload, uint32_t byte_count, Wi
 	ChunkIO_Read_Value(cload, var); \
 
 #define LOAD_MICRO_CHUNK_WWSTRING(cload,var)		\
-	cload.Read(var.Get_Buffer(cload.Cur_Micro_Chunk_Length()),cload.Cur_Micro_Chunk_Length());	\
+	{																											\
+		const int wwstring_chunk_length = static_cast<int>(cload.Cur_Micro_Chunk_Length());			\
+		if (wwstring_chunk_length <= 0) {																	\
+			var = "";																						\
+		} else {																								\
+			StringClass wwstring_loaded(wwstring_chunk_length + 1, true);							\
+			TCHAR *wwstring_buffer = wwstring_loaded.Get_Buffer(wwstring_chunk_length + 1);	\
+			cload.Read(wwstring_buffer, wwstring_chunk_length);										\
+			wwstring_buffer[wwstring_chunk_length] = 0;												\
+			var = wwstring_buffer;																		\
+		}																										\
+	}																											\
 
 #define LOAD_MICRO_CHUNK_WIDESTRING(cload,var)		\
 	ChunkIO_Read_WideString(cload, cload.Cur_Micro_Chunk_Length(), var);	\

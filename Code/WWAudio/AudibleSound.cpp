@@ -1806,9 +1806,7 @@ AudibleSoundDefinitionClass::Load_Variables (ChunkLoadClass &cload)
 			READ_MICRO_CHUNK (cload, VARID_MAX_VOL,					m_MaxVolRadius)
 			READ_MICRO_CHUNK (cload, VARID_TYPE,						m_Type)
 			READ_MICRO_CHUNK (cload, VARID_IS3D,						m_Is3D)
-			case VARID_FILENAME:
-				cload.Read(m_Filename.Get_Buffer(cload.Cur_Micro_Chunk_Length()), cload.Cur_Micro_Chunk_Length());
-				break;
+			READ_MICRO_CHUNK_WWSTRING (cload, VARID_FILENAME, m_Filename)
 			READ_MICRO_CHUNK_WWSTRING (cload, VARID_DISPLAY_TEXT,	m_DisplayText)
 			READ_MICRO_CHUNK (cload, VARID_LOGICAL_MASK,				m_LogicalTypeMask)
 			READ_MICRO_CHUNK (cload, VARID_LOGICAL_DELAY,			m_LogicalNotifyDelay)

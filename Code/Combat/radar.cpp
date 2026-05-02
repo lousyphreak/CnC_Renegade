@@ -97,6 +97,30 @@ static	const RectClass &	Scale_UV( const RectClass & uv, float texture_size )
 	return new_uv;
 }
 
+namespace
+{
+constexpr float kRadarReferenceWidth = 800.0f;
+constexpr float kRadarReferenceHeight = 600.0f;
+
+float Get_Radar_Scale()
+{
+	const Vector2 layout_scale = StyleMgrClass::Get_Layout_Scale(kRadarReferenceWidth, kRadarReferenceHeight);
+	return WWMath::Max(WWMath::Min(layout_scale.X, layout_scale.Y), 0.0001f);
+}
+
+Vector2 Scale_Radar_Vector(const Vector2 &value, float scale)
+{
+	return value * scale;
+}
+
+RectClass Scale_Radar_Rect(const RectClass &value, float scale)
+{
+	RectClass scaled = value;
+	scaled.Scale(scale);
+	return scaled;
+}
+}
+
 
 void	RadarManager::Set_Hidden( bool onoff )	
 { 
@@ -310,29 +334,33 @@ bool	RadarManager::Load( ChunkLoadClass &cload )
 
 Vector2	OldRadarCenter(0.0f,0.0f);
 Vector2	RadarCenter(0.0f,0.0f);
+float	OldRadarScale = 1.0f;
+float	RadarScale = 1.0f;
 float	RadarIntensity;
 uint32_t	RadarColor;
 
 float	RadarManager::Add_Blip( const Vector3 & pos, int shape_type, int color_type, float intensity, bool bracket, bool altitude_fade ) 
 {
 	if ( shape_type != BLIP_SHAPE_TYPE_NONE ) {
+		const float radar_fade_stop = RADAR_FADE_STOP * RadarScale;
+		const float radar_fade_start = RADAR_FADE_START * RadarScale;
 
 		Vector3	screen = RadarTM * pos;
-		screen *= RADAR_RADIUS;
+		screen *= (RADAR_RADIUS * RadarScale);
 		screen *= 0.01f;	//			screen *= ZoomFactor;
 		screen.Z = 0;
 
 		float dist = screen.Length();
 
 		if ( shape_type == BLIP_SHAPE_TYPE_OBJECTIVE ) {
-			if ( dist >= RADAR_FADE_STOP ) {
+			if ( dist >= radar_fade_stop ) {
 				screen.Normalize();
-				screen *= RADAR_FADE_STOP;
-				dist = RADAR_FADE_STOP;
+				screen *= radar_fade_stop;
+				dist = radar_fade_stop;
 			}
 		}
 
-		if ( dist <= RADAR_FADE_STOP ) 
+		if ( dist <= radar_fade_stop ) 
 		{
 #if 0
 			// Find blip bearing
@@ -346,7 +374,7 @@ float	RadarManager::Add_Blip( const Vector3 & pos, int shape_type, int color_typ
 			intensity = 1.0;		// Always Ping
 #endif
 
-			float alpha = 1.0f - ((dist - RADAR_FADE_START) / (RADAR_FADE_STOP - RADAR_FADE_START) );
+			float alpha = 1.0f - ((dist - radar_fade_start) / (radar_fade_stop - radar_fade_start) );
 			alpha = WWMath::Clamp( alpha, 0, 1 );
 			if ( shape_type == BLIP_SHAPE_TYPE_OBJECTIVE ) {
 				alpha = 1;
@@ -361,12 +389,13 @@ float	RadarManager::Add_Blip( const Vector3 & pos, int shape_type, int color_typ
 			color &= 0x00FFFFFF;
 			color |= (uint32_t)(RadarIntensity * color_alpha * 255) << 24;
 			if ( Renderer ) {
-				RectClass	blip( -BLIP_SIZE, -BLIP_SIZE, BLIP_SIZE, BLIP_SIZE );
+				const float blip_size = BLIP_SIZE * RadarScale;
+				RectClass	blip( -blip_size, -blip_size, blip_size, blip_size );
 				if ( altitude_fade ) {
 					blip.Scale_Relative_Center( 0.66f );
 				}
    				blip += Vector2( -screen.X, screen.Y );
-   				blip += RadarCenter + RADAR_CENTER_TWEAK;
+   				blip += RadarCenter + Scale_Radar_Vector(RADAR_CENTER_TWEAK, RadarScale);
 				RectClass uv = BlipUV[ shape_type ];
 				Renderer->Add_Quad( blip, uv, color );
 
@@ -392,6 +421,8 @@ void	RadarManager::Update( const Matrix3D & player_tm, const Vector2 & center )
 
 	OldRadarCenter=RadarCenter;
 	RadarCenter = center;
+	OldRadarScale = RadarScale;
+	RadarScale = Get_Radar_Scale();
 
 	RadarTM = player_tm;
 	RadarTM.Pre_Rotate_Z( DEG_TO_RAD( -90 ) );
@@ -423,10 +454,11 @@ void	RadarManager::Update( const Matrix3D & player_tm, const Vector2 & center )
 	draw = uv;
 	draw.Right = draw.Left + uv.Height();
 	draw.Bottom = draw.Top + uv.Width();
+	draw = Scale_Radar_Rect(draw, RadarScale);
 	uv.Scale( INFO_UV_SCALE );
-	draw += center + RADAR_RINGS_L_OFFSET - draw.Upper_Left();
+	draw += center + Scale_Radar_Vector(RADAR_RINGS_L_OFFSET, RadarScale) - draw.Upper_Left();
 	Renderer->Add_Quad( draw.Lower_Left(), draw.Lower_Right(), draw.Upper_Left(), draw.Upper_Right(), uv, RadarColor );
-	draw += center + RADAR_RINGS_R_OFFSET - draw.Upper_Left();
+	draw += center + Scale_Radar_Vector(RADAR_RINGS_R_OFFSET, RadarScale) - draw.Upper_Left();
 	Renderer->Add_Quad_Backfaced( draw.Lower_Right(), draw.Lower_Left(), draw.Upper_Right(), draw.Upper_Left(), uv, RadarColor );
 
 #if 0
@@ -470,33 +502,26 @@ void	RadarManager::Update( const Matrix3D & player_tm, const Vector2 & center )
 						IDS_HUD_COMPASS_S, IDS_HUD_COMPASS_SW, IDS_HUD_COMPASS_W, IDS_HUD_COMPASS_NW };
 
 	// If the renderer object for this particular radar direction hasn't been created, create it now...
-	if (!CompassRenderers[CurrentCompassRendererIndex]) {
-		CompassRenderers[CurrentCompassRendererIndex]=new Render2DSentenceClass();
+	Render2DSentenceClass *&compass_renderer = CompassRenderers[CurrentCompassRendererIndex];
+	const bool compass_layout_changed =
+		(RadarCenter != OldRadarCenter) || (WWMath::Fabs(RadarScale - OldRadarScale) > 0.001f);
+	const bool needs_compass_rebuild = (compass_renderer == NULL) || compass_layout_changed;
+	if (compass_renderer == NULL) {
+		compass_renderer = new Render2DSentenceClass();
+	}
+	if (needs_compass_rebuild) {
 		FontCharsClass *font = StyleMgrClass::Peek_Font( StyleMgrClass::FONT_INGAME_TXT );
-		CompassRenderers[CurrentCompassRendererIndex]->Set_Font( font );
-		CompassRenderers[CurrentCompassRendererIndex]->Reset();
-		CompassRenderers[CurrentCompassRendererIndex]->Build_Sentence(TRANSLATE(dir[CurrentCompassRendererIndex]));
-		Vector2 text_size=CompassRenderers[CurrentCompassRendererIndex]->Get_Text_Extents(TRANSLATE(dir[CurrentCompassRendererIndex]));
+		compass_renderer->Set_Font( font );
+		compass_renderer->Reset();
+		compass_renderer->Build_Sentence(TRANSLATE(dir[CurrentCompassRendererIndex]));
+		Vector2 text_size=compass_renderer->Get_Text_Extents(TRANSLATE(dir[CurrentCompassRendererIndex]));
 
-		Vector2 pos = center + COMPASS_OFFSET - (text_size * 0.5f);
+		Vector2 pos = center + Scale_Radar_Vector(COMPASS_OFFSET, RadarScale) - (text_size * 0.5f);
 		pos.X = (int)pos.X;
 		pos.Y = (int)pos.Y;
-		CompassRenderers[CurrentCompassRendererIndex]->Set_Location( pos );
+		compass_renderer->Set_Location( pos );
 
-		CompassRenderers[CurrentCompassRendererIndex]->Draw_Sentence();
-	}
-	else {
-		// If the radar center has moved (which should never happen unless the screen size changes)
-		if (RadarCenter!=OldRadarCenter) {	
-			CompassRenderers[CurrentCompassRendererIndex]->Reset();
-			CompassRenderers[CurrentCompassRendererIndex]->Build_Sentence( TRANSLATE(dir[CurrentCompassRendererIndex]));
-			Vector2 text_size=CompassRenderers[CurrentCompassRendererIndex]->Get_Text_Extents(TRANSLATE(dir[CurrentCompassRendererIndex]));
-			Vector2 pos = center + COMPASS_OFFSET - (text_size * 0.5f);
-			pos.X = (int)pos.X;
-			pos.Y = (int)pos.Y;
-			CompassRenderers[CurrentCompassRendererIndex]->Set_Location( pos );
-			CompassRenderers[CurrentCompassRendererIndex]->Draw_Sentence();
-		}
+		compass_renderer->Draw_Sentence();
 	}
 
 #endif

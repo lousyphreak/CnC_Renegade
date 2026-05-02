@@ -80,6 +80,7 @@ public:
 	void	On_Frame_Update (void);
 	void	Set_Type (TYPE type);
 	bool	Is_Complete (void)					{ return (CurrentFrame >= TargetFrame); }
+	static void Update_Menu_Entry_Positions (RenderObjClass *model, CameraClass *camera, DialogBaseClass *dialog);
 
 	//
 	//	Configuration
@@ -115,4 +116,3 @@ private:
 
 
 #endif //__MAIN_MENU_TRANSITION_H
-

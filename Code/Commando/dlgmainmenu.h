@@ -77,6 +77,7 @@ public:
 	//	Notifications
 	//
 	void			On_Command (int ctrl_id, int mesage_id, uint32_t param);
+	void			Render (void);
 
 	//
 	//	Transition support

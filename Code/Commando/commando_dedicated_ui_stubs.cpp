@@ -391,6 +391,11 @@ void MainMenuDialogClass::On_Command(int, int, uint32_t)
 {
 }
 
+void MainMenuDialogClass::Render(void)
+{
+    MenuDialogClass::Render();
+}
+
 DialogTransitionClass *MainMenuDialogClass::Get_Transition_In(DialogBaseClass *)
 {
     return nullptr;

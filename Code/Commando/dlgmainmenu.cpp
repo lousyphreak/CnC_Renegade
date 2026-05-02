@@ -48,6 +48,7 @@
 #include "mesh.h"
 #include "meshgeometry.h"
 #include "dialogmgr.h"
+#include "camera.h"
 #include "gameinitmgr.h"
 #include "dialogcontrol.h"
 #include "specialbuilds.h"
@@ -61,6 +62,7 @@
 #include "string_ids.h"
 #include "gamespyadmin.h"
 #include "menu_dialog_subset.h"
+#include "render2d.h"
 
 namespace {
 
@@ -181,6 +183,19 @@ MainMenuDialogClass::On_Menu_Activate (bool onoff)
 	}
 
 	MenuDialogClass::On_Menu_Activate (onoff);
+	return ;
+}
+
+
+void
+MainMenuDialogClass::Render (void)
+{
+	MenuBackDropClass *backdrop = Get_BackDrop ();
+	if (backdrop != NULL) {
+		MainMenuTransitionClass::Update_Menu_Entry_Positions (TitleTransModel, backdrop->Peek_Camera (), this);
+	}
+
+	MenuDialogClass::Render ();
 	return ;
 }
 

@@ -207,9 +207,17 @@ MainMenuTransitionClass::On_Frame_Update (void)
 void
 MainMenuTransitionClass::Update_Controls (void)
 {
+	Update_Menu_Entry_Positions (Model, Camera, Dialog);
+	return ;
+}
+
+
+void
+MainMenuTransitionClass::Update_Menu_Entry_Positions (RenderObjClass *model, CameraClass *camera, DialogBaseClass *dialog)
+{
 	const int ENTRIES = 6;
 
-	const int ControlIDArray[ENTRIES] = 
+	const int ControlIDArray[ENTRIES] =
 	{
 		IDC_MENU_START_SP_GAME_BUTTON,
 		//C_MENU_START_SKIRMISH_GAME_BUTTON,
@@ -220,65 +228,38 @@ MainMenuTransitionClass::Update_Controls (void)
 		IDC_MENU_QUIT_BUTTON
 	};
 
-	if (Model == NULL || Camera == NULL || Dialog == NULL || Dialog->Is_Running () == false) {
-		CurrentFrame = TargetFrame;
+	if (model == NULL || camera == NULL || dialog == NULL || dialog->Is_Running () == false) {
 		return ;
 	}
 
-	//
-	//	Get the half dimensions of the screen
-	//
-	const RectClass screen_rect = StyleMgrClass::Get_Layout_Rect ();
-	float half_width		= screen_rect.Width () / 2.0F;
-	float half_height		= screen_rect.Height () / 2.0F;
+	const RectClass screen_rect = Render2DClass::Get_Screen_Resolution ();
+	const float half_width = screen_rect.Width () / 2.0F;
+	const float half_height = screen_rect.Height () / 2.0F;
 
-	//
-	//	Update the position of each control
-	//
 	for (int index = 0; index < ENTRIES; index ++) {
-
-		//
-		//	Get the current position of the bone
-		//
 		StringClass bone_name;
 		bone_name.Format ("IF_MMTF%d", index + 1);
-		const Matrix3D &tm = Model->Get_Bone_Transform (bone_name);		
+		const Matrix3D &tm = model->Get_Bone_Transform (bone_name);
 
-		//
-		//	Transform the position into screen space
-		//
 		Vector3 cam_space_pos (0, 0, 0);
-		Camera->Transform_To_View_Space (cam_space_pos, tm.Get_Translation ());
+		camera->Transform_To_View_Space (cam_space_pos, tm.Get_Translation ());
 
 		Vector3 new_pos (0, 0, 0);
-		Camera->Project_Camera_Space_Point (new_pos, cam_space_pos);
-		
-		//
-		//	Convert the normalized screen space position to pixel coordinates
-		//
+		camera->Project_Camera_Space_Point (new_pos, cam_space_pos);
 		new_pos.X = screen_rect.Left + (half_width * (new_pos.X + 1.0F));
 		new_pos.Y = screen_rect.Top + (half_height * (1.0F - new_pos.Y));
-
-		//
-		//	Move each control to the left of the bone a little
-		//
 		new_pos.X -= StyleMgrClass::Get_X_Scale () * 100.0F;
 
-		//
-		//	Move the dialog control
-		//
-		DialogControlClass *control	= Dialog->Get_Dlg_Item (ControlIDArray[index]);
+		DialogControlClass *control = dialog->Get_Dlg_Item (ControlIDArray[index]);
 		if (control == NULL) {
 			continue;
 		}
 
-		const RectClass &control_rect	= control->Get_Window_Rect ();
-		new_pos.Y							-= (control_rect.Height () / 2);
+		const RectClass &control_rect = control->Get_Window_Rect ();
+		new_pos.Y -= (control_rect.Height () / 2);
 		control->Set_Window_Pos (Vector2 (new_pos.X, new_pos.Y));
-		Dialog->Capture_Control_Layout (control);
+		dialog->Capture_Control_Layout (control);
 	}
-
-	return ;
 }
 
 

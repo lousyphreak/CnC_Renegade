@@ -84,6 +84,7 @@ set(COMMANDO_CLIENT_MENU_SOURCES
     dlgcncreference.cpp
     dlgcharacteroptions.cpp
     dlgcheatoptions.cpp
+    IngameQuitMessageBox.cpp
     dlgevabuildingstab.cpp
     dlgevacharacterstab.cpp
     dlgevadatatab.cpp

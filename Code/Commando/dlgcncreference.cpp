@@ -44,6 +44,7 @@
 #include "dialogcontrol.h"
 #include "dlghelpscreen.h"
 #include "gameinitmgr.h"
+#include "IngameQuitMessageBox.h"
 #include "suicideevent.h"
 #include "changeteamevent.h"
 #include "cstextobj.h"
@@ -347,6 +348,12 @@ CnCReferenceMenuClass::On_Menu_Activate (bool onoff)
 void
 CnCReferenceMenuClass::On_Frame_Update (void)
 {
+	if (PendingExitGame && DlgMsgBox::Get_Current_Count() == 0) {
+		PendingExitGame = false;
+		Exit_Game();
+		return ;
+	}
+
 	uint32_t time_now_ms = TIMEGETTIME();
 
 	//
@@ -413,7 +420,7 @@ CnCReferenceMenuClass::Prompt_User (void)
 	if (cUserOptions::SkipIngameQuitConfirmDialog.Is_True()) {
 		Exit_Game ();
 	} else {
-		DlgMsgBox::DoDialog (TRANSLATE (IDS_MENU_TEXT054), TRANSLATE (IDS_EXIT_GAME_VERIFICATION), DlgMsgBox::YesNo, this);	
+		IngameQuitMessageBoxClass::DoDialog(this);
 	}
 
 	return ;
@@ -437,13 +444,6 @@ CnCReferenceMenuClass::HandleNotification (DlgMsgBoxEvent &event)
 		case DlgMsgBoxEvent::No:
 		case DlgMsgBoxEvent::Okay:
 			PendingExitGame = false;
-			break;
-
-		case DlgMsgBoxEvent::Quitting:
-			if (PendingExitGame) {
-				PendingExitGame = false;
-				Exit_Game ();
-			}
 			break;
 
 		default:

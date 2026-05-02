@@ -50,6 +50,7 @@
 #include "dialogmgr.h"
 #include "gameinitmgr.h"
 #include "gametype.h"
+#include "IngameQuitMessageBox.h"
 #include "suicideevent.h"
 #include "changeteamevent.h"
 #include "cstextobj.h"
@@ -59,6 +60,7 @@
 #include "slavemaster.h"
 #include "string_ids.h"
 #include "translatedb.h"
+#include "useroptions.h"
 
 
 ////////////////////////////////////////////////////////////////
@@ -240,6 +242,25 @@ EVAEncyclopediaMenuClass::On_Command (int ctrl_id, int message_id, uint32_t para
 
 ////////////////////////////////////////////////////////////////
 //
+//	On_Frame_Update
+//
+////////////////////////////////////////////////////////////////
+void
+EVAEncyclopediaMenuClass::On_Frame_Update (void)
+{
+	if (PendingExitGame && DlgMsgBox::Get_Current_Count() == 0) {
+		PendingExitGame = false;
+		Exit_Game();
+		return ;
+	}
+
+	MenuDialogClass::On_Frame_Update();
+	return ;
+}
+
+
+////////////////////////////////////////////////////////////////
+//
 //	Display
 //
 ////////////////////////////////////////////////////////////////
@@ -277,7 +298,11 @@ EVAEncyclopediaMenuClass::Prompt_User (void)
 	//
 	//	Display the message box
 	//
-	DlgMsgBox::DoDialog (TRANSLATE (IDS_MENU_TEXT054), TRANSLATE (IDS_EXIT_GAME_VERIFICATION), DlgMsgBox::YesNo, this);	
+	if (cUserOptions::SkipIngameQuitConfirmDialog.Is_True()) {
+		Exit_Game();
+	} else {
+		IngameQuitMessageBoxClass::DoDialog(this);
+	}
 	return ;
 }
 
@@ -299,13 +324,6 @@ EVAEncyclopediaMenuClass::HandleNotification (DlgMsgBoxEvent &event)
 		case DlgMsgBoxEvent::No:
 		case DlgMsgBoxEvent::Okay:
 			PendingExitGame = false;
-			break;
-
-		case DlgMsgBoxEvent::Quitting:
-			if (PendingExitGame) {
-				PendingExitGame = false;
-				Exit_Game ();
-			}
 			break;
 
 		default:

@@ -12,6 +12,7 @@ set(WWLIB_SOURCES
     crc.cpp
     cstraw.cpp
     data.cpp
+    emscripten_asset_cache.cpp
     except_stub.cpp
     ffactory.cpp
     gcd_lcm.cpp

@@ -122,7 +122,11 @@ bool Is_Current_Video_Driver(std::string_view driver_name)
 
 void Configure_Renderer_Window_Properties(SDL_PropertiesID window_props)
 {
-    const bgfx::RendererType::Enum requested_renderer = BgfxRenderer::Get_Requested_Renderer();
+    bgfx::RendererType::Enum requested_renderer = BgfxRenderer::Get_Requested_Renderer();
+    if (requested_renderer == bgfx::RendererType::Count && Is_Runtime_Platform("Emscripten")) {
+        requested_renderer = bgfx::RendererType::OpenGLES;
+    }
+
     std::cout << "  bgfx renderer request: " << BgfxRenderer::Get_Requested_Renderer_Name() << '\n';
     SDL_SetHint(SDL_HINT_VIDEO_FORCE_EGL, "0");
     if (requested_renderer == bgfx::RendererType::Count) {
@@ -141,14 +145,23 @@ void Configure_Renderer_Window_Properties(SDL_PropertiesID window_props)
 
     const bool needs_opengl_window = requested_renderer == bgfx::RendererType::OpenGL
         || requested_renderer == bgfx::RendererType::OpenGLES;
-    if (needs_opengl_window
-        && !Is_Runtime_Platform("Emscripten")
-        && (!Is_Runtime_Platform("Linux") || !Is_Current_Video_Driver("wayland"))) {
+    if (needs_opengl_window) {
+        if (requested_renderer == bgfx::RendererType::OpenGLES && Is_Runtime_Platform("Emscripten")) {
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+        }
+
         // bgfx uses EGL on Linux, so X11 needs an EGL-compatible SDL visual.
         // Wayland is the exception because bgfx creates its own wl_egl_window.
+        if (Is_Runtime_Platform("Linux") && Is_Current_Video_Driver("wayland")) {
+            return;
+        }
+
         if (Is_Runtime_Platform("Linux") && Is_Current_Video_Driver("x11")) {
             SDL_SetHint(SDL_HINT_VIDEO_FORCE_EGL, "1");
         }
+
         SDL_SetBooleanProperty(window_props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
     }
 }

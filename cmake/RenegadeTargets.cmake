@@ -22,7 +22,8 @@ target_compile_definitions(renegade_project_options
         RENEGADE_WITH_BGFX_RENDERER=$<BOOL:${RENEGADE_WITH_BGFX_RENDERER}>
         RENEGADE_WITH_BANDTEST=$<BOOL:${RENEGADE_WITH_BANDTEST}>
         RENEGADE_WITH_SCONTROL=$<BOOL:${RENEGADE_WITH_SCONTROL}>
-)
+        RENEGADE_EMSCRIPTEN_LAZY_FETCH_GAME_DATA=$<BOOL:${RENEGADE_EMSCRIPTEN_LAZY_FETCH_GAME_DATA}>
+    )
 
 set(_renegade_requested_sanitizers)
 if(RENEGADE_ENABLE_ASAN)
@@ -103,10 +104,20 @@ function(renegade_configure_emscripten_target target_name)
     target_link_options("${target_name}" PRIVATE
         "SHELL:-sFORCE_FILESYSTEM=1"
         "SHELL:-sINITIAL_MEMORY=${_renegade_emscripten_initial_memory_bytes}"
+        "SHELL:-sSTACK_SIZE=${RENEGADE_EMSCRIPTEN_STACK_SIZE}"
         "SHELL:-sMIN_WEBGL_VERSION=2"
         "SHELL:-sMAX_WEBGL_VERSION=2"
         "SHELL:-sFULL_ES3=1"
     )
+
+    if(RENEGADE_EMSCRIPTEN_LAZY_FETCH_GAME_DATA)
+        target_link_options("${target_name}" PRIVATE
+            "SHELL:-sASYNCIFY"
+            "SHELL:-sASYNCIFY_STACK_SIZE=${RENEGADE_EMSCRIPTEN_ASYNCIFY_STACK_SIZE}"
+            "SHELL:-Wl,--export=emscripten_stack_get_end"
+            "SHELL:-lidbfs.js"
+        )
+    endif()
 
     if(RENEGADE_EMSCRIPTEN_ALLOW_MEMORY_GROWTH)
         math(EXPR _renegade_emscripten_maximum_memory_bytes "${RENEGADE_EMSCRIPTEN_MAXIMUM_MEMORY_MB} * 1024 * 1024")
@@ -138,7 +149,14 @@ function(renegade_configure_emscripten_target target_name)
     target_link_options("${target_name}" PRIVATE "--shell-file" "${EMSCRIPTEN_SHELL_FILE}")
     set_property(TARGET "${target_name}" APPEND PROPERTY LINK_DEPENDS "${EMSCRIPTEN_SHELL_FILE}")
 
-    if(NOT RENEGADE_EMSCRIPTEN_PACKAGE_GAME_DATA)
+    set(_renegade_emscripten_use_streaming ${RENEGADE_EMSCRIPTEN_LAZY_FETCH_GAME_DATA})
+    set(_renegade_emscripten_effective_package_game_data ${RENEGADE_EMSCRIPTEN_PACKAGE_GAME_DATA})
+    if(_renegade_emscripten_use_streaming AND RENEGADE_EMSCRIPTEN_PACKAGE_GAME_DATA)
+        message(STATUS "RENEGADE_EMSCRIPTEN_LAZY_FETCH_GAME_DATA is ON; skipping monolithic game-data preloading")
+        set(_renegade_emscripten_effective_package_game_data OFF)
+    endif()
+
+    if(NOT _renegade_emscripten_use_streaming AND NOT _renegade_emscripten_effective_package_game_data)
         return()
     endif()
 
@@ -153,15 +171,21 @@ function(renegade_configure_emscripten_target target_name)
             "RENEGADE_EMSCRIPTEN_DATA_ROOT='${RENEGADE_EMSCRIPTEN_DATA_ROOT}' is missing the Data directory expected by the runtime.")
     endif()
 
-    target_link_options("${target_name}" PRIVATE
-        "SHELL:--preload-file ${RENEGADE_EMSCRIPTEN_DATA_ROOT}/Data@/Data"
+    file(GLOB_RECURSE _renegade_emscripten_data_entries
+        LIST_DIRECTORIES false
+        RELATIVE "${RENEGADE_EMSCRIPTEN_DATA_ROOT}"
+        "${RENEGADE_EMSCRIPTEN_DATA_ROOT}/Data/*"
     )
+    set(_renegade_emscripten_streamable_files ${_renegade_emscripten_data_entries})
 
     foreach(_renegade_emscripten_optional_dir IN ITEMS HTML Internet)
         if(IS_DIRECTORY "${RENEGADE_EMSCRIPTEN_DATA_ROOT}/${_renegade_emscripten_optional_dir}")
-            target_link_options("${target_name}" PRIVATE
-                "SHELL:--preload-file ${RENEGADE_EMSCRIPTEN_DATA_ROOT}/${_renegade_emscripten_optional_dir}@/${_renegade_emscripten_optional_dir}"
+            file(GLOB_RECURSE _renegade_emscripten_optional_entries
+                LIST_DIRECTORIES false
+                RELATIVE "${RENEGADE_EMSCRIPTEN_DATA_ROOT}"
+                "${RENEGADE_EMSCRIPTEN_DATA_ROOT}/${_renegade_emscripten_optional_dir}/*"
             )
+            list(APPEND _renegade_emscripten_streamable_files ${_renegade_emscripten_optional_entries})
         endif()
     endforeach()
 
@@ -179,10 +203,91 @@ function(renegade_configure_emscripten_target target_name)
             continue()
         endif()
 
-        target_link_options("${target_name}" PRIVATE
-            "SHELL:--preload-file ${RENEGADE_EMSCRIPTEN_DATA_ROOT}/${_renegade_emscripten_root_file}@/${_renegade_emscripten_root_file}"
-        )
+        list(APPEND _renegade_emscripten_streamable_files "${_renegade_emscripten_root_file}")
     endforeach()
+
+    list(REMOVE_DUPLICATES _renegade_emscripten_streamable_files)
+    list(SORT _renegade_emscripten_streamable_files)
+
+    if(_renegade_emscripten_use_streaming)
+        set(_renegade_emscripten_asset_manifest "${PROJECT_BINARY_DIR}/renegade-assets-manifest.txt")
+        if(_renegade_emscripten_streamable_files)
+            list(JOIN _renegade_emscripten_streamable_files "\n" _renegade_emscripten_asset_manifest_content)
+            file(WRITE "${_renegade_emscripten_asset_manifest}" "${_renegade_emscripten_asset_manifest_content}\n")
+        else()
+            file(WRITE "${_renegade_emscripten_asset_manifest}" "")
+        endif()
+
+        set(_renegade_emscripten_asset_stage_dir "${PROJECT_BINARY_DIR}/bin/Renegade-assets")
+        file(MAKE_DIRECTORY "${_renegade_emscripten_asset_stage_dir}")
+        file(REMOVE_RECURSE "${_renegade_emscripten_asset_stage_dir}/Data")
+        file(CREATE_LINK
+            "${RENEGADE_EMSCRIPTEN_DATA_ROOT}/Data"
+            "${_renegade_emscripten_asset_stage_dir}/Data"
+            SYMBOLIC
+            COPY_ON_ERROR
+        )
+
+        foreach(_renegade_emscripten_optional_dir IN ITEMS HTML Internet)
+            if(IS_DIRECTORY "${RENEGADE_EMSCRIPTEN_DATA_ROOT}/${_renegade_emscripten_optional_dir}")
+                file(REMOVE_RECURSE "${_renegade_emscripten_asset_stage_dir}/${_renegade_emscripten_optional_dir}")
+                file(CREATE_LINK
+                    "${RENEGADE_EMSCRIPTEN_DATA_ROOT}/${_renegade_emscripten_optional_dir}"
+                    "${_renegade_emscripten_asset_stage_dir}/${_renegade_emscripten_optional_dir}"
+                    SYMBOLIC
+                    COPY_ON_ERROR
+                )
+            endif()
+        endforeach()
+
+        foreach(_renegade_emscripten_root_file IN LISTS _renegade_emscripten_root_files)
+            get_filename_component(_renegade_emscripten_root_ext "${_renegade_emscripten_root_file}" EXT)
+            string(TOLOWER "${_renegade_emscripten_root_ext}" _renegade_emscripten_root_ext_lower)
+            if(_renegade_emscripten_root_ext_lower MATCHES "^\\.(exe|dll|asi|m3d|bmp|ico|doc|xml|vdf)$")
+                continue()
+            endif()
+
+            file(REMOVE "${_renegade_emscripten_asset_stage_dir}/${_renegade_emscripten_root_file}")
+            file(CREATE_LINK
+                "${RENEGADE_EMSCRIPTEN_DATA_ROOT}/${_renegade_emscripten_root_file}"
+                "${_renegade_emscripten_asset_stage_dir}/${_renegade_emscripten_root_file}"
+                SYMBOLIC
+                COPY_ON_ERROR
+            )
+        endforeach()
+
+        target_link_options("${target_name}" PRIVATE
+            "SHELL:--preload-file ${_renegade_emscripten_asset_manifest}@/renegade-assets-manifest.txt"
+        )
+        set_property(TARGET "${target_name}" APPEND PROPERTY LINK_DEPENDS "${_renegade_emscripten_asset_manifest}")
+    endif()
+
+    if(_renegade_emscripten_effective_package_game_data)
+        target_link_options("${target_name}" PRIVATE
+            "SHELL:--preload-file ${RENEGADE_EMSCRIPTEN_DATA_ROOT}/Data@/Data"
+        )
+
+        foreach(_renegade_emscripten_optional_dir IN ITEMS HTML Internet)
+            if(IS_DIRECTORY "${RENEGADE_EMSCRIPTEN_DATA_ROOT}/${_renegade_emscripten_optional_dir}")
+                target_link_options("${target_name}" PRIVATE
+                    "SHELL:--preload-file ${RENEGADE_EMSCRIPTEN_DATA_ROOT}/${_renegade_emscripten_optional_dir}@/${_renegade_emscripten_optional_dir}"
+                )
+            endif()
+        endforeach()
+
+        foreach(_renegade_emscripten_root_file IN LISTS _renegade_emscripten_root_files)
+            get_filename_component(_renegade_emscripten_root_ext "${_renegade_emscripten_root_file}" EXT)
+            string(TOLOWER "${_renegade_emscripten_root_ext}" _renegade_emscripten_root_ext_lower)
+
+            if(_renegade_emscripten_root_ext_lower MATCHES "^\\.(exe|dll|asi|m3d|bmp|ico|doc|xml|vdf)$")
+                continue()
+            endif()
+
+            target_link_options("${target_name}" PRIVATE
+                "SHELL:--preload-file ${RENEGADE_EMSCRIPTEN_DATA_ROOT}/${_renegade_emscripten_root_file}@/${_renegade_emscripten_root_file}"
+            )
+        endforeach()
+    endif()
 
     foreach(_renegade_emscripten_runtime_dialog_source IN ITEMS
         "Code/Commando/chat.rc"

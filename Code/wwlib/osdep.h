@@ -74,6 +74,8 @@
 #include <strings.h>
 #include <unistd.h>
 
+#include "emscripten_asset_cache.h"
+
 #ifndef _UNIX
 #define _UNIX 1
 #endif
@@ -769,6 +771,10 @@ inline bool Get_Path_Info(const char * path, SDL_PathInfo * info)
         return false;
     }
 
+    if (renegade_emscripten_assets::Get_Synthetic_Path_Info(path, info)) {
+        return true;
+    }
+
     return SDL_GetPathInfo(path, info);
 }
 
@@ -812,8 +818,9 @@ inline bool Collect_Directory_Entries(const std::string & directory, std::vector
 
     entries.clear();
     DirectoryEnumerationContext context = { &entries };
-    if (!SDL_EnumerateDirectory(directory.c_str(), Collect_Directory_Entry, &context)) {
-        entries.clear();
+    const bool enumerated_local_directory = SDL_EnumerateDirectory(directory.c_str(), Collect_Directory_Entry, &context);
+    renegade_emscripten_assets::Append_Synthetic_Directory_Entries(directory, entries);
+    if (!enumerated_local_directory && entries.empty()) {
         return false;
     }
 
@@ -1034,6 +1041,13 @@ inline bool Resolve_Path_For_Mode(const char * filename, const char * mode, std:
 
 inline SDL_IOStream * Open_C_File(const char * filename, const char * mode)
 {
+    if (filename != nullptr) {
+        SDL_IOStream * stream = renegade_emscripten_assets::Open_File(Normalize_Path(filename), mode);
+        if (stream != nullptr) {
+            return stream;
+        }
+    }
+
     std::string resolved_path;
     if (!Resolve_Path_For_Mode(filename, mode, resolved_path)) {
         return nullptr;
@@ -1059,6 +1073,13 @@ inline SDL_IOStream * Open_C_File(const std::string & filename, const char * mod
 
 inline SDL_IOStream * Open_C_File_Read_Write(const char * filename)
 {
+    if (filename != nullptr) {
+        SDL_IOStream * stream = renegade_emscripten_assets::Open_File(Normalize_Path(filename), "rb+");
+        if (stream != nullptr) {
+            return stream;
+        }
+    }
+
     std::string resolved_path;
     if (Resolve_Existing_Path(filename, resolved_path)) {
         SDL_IOStream * file = SDL_IOFromFile(resolved_path.c_str(), "rb+");
@@ -1519,6 +1540,17 @@ inline int32_t TryEnterCriticalSection(CRITICAL_SECTION * critical_section)
 
 inline int DeleteFile(const char * filename)
 {
+    if (filename != nullptr) {
+        const std::string normalized = renegade_osdep::Normalize_Path(filename);
+        if (renegade_emscripten_assets::Remove_Path(normalized)) {
+            renegade_osdep::Invalidate_Path_Caches();
+            return TRUE;
+        }
+        if (renegade_emscripten_assets::Get_Synthetic_Path_Info(normalized, nullptr)) {
+            return FALSE;
+        }
+    }
+
     std::string resolved_path;
     if (!renegade_osdep::Resolve_Existing_Path(filename, resolved_path)) {
         return FALSE;
@@ -1536,6 +1568,17 @@ inline int MoveFile(const char * existing_filename, const char * new_filename)
 {
     if (existing_filename == nullptr || new_filename == nullptr) {
         errno = EINVAL;
+        return FALSE;
+    }
+
+    const std::string normalized_existing = renegade_osdep::Normalize_Path(existing_filename);
+    const std::string normalized_new = renegade_osdep::Normalize_Path(new_filename);
+    if (renegade_emscripten_assets::Rename_Path(normalized_existing, normalized_new)) {
+        renegade_osdep::Invalidate_Path_Caches();
+        return TRUE;
+    }
+    if (renegade_emscripten_assets::Get_Synthetic_Path_Info(normalized_existing, nullptr)) {
+        errno = ENOENT;
         return FALSE;
     }
 
@@ -1592,6 +1635,16 @@ inline int32_t CreateDirectory(const char * path, void *)
 {
     if (path == nullptr) {
         errno = EINVAL;
+        return FALSE;
+    }
+
+    const std::string normalized = renegade_osdep::Normalize_Path(path);
+    if (renegade_emscripten_assets::Create_Directory(normalized)) {
+        renegade_osdep::Invalidate_Path_Caches();
+        return TRUE;
+    }
+    if (renegade_emscripten_assets::Get_Synthetic_Path_Info(normalized, nullptr)) {
+        errno = EEXIST;
         return FALSE;
     }
 
@@ -1861,6 +1914,13 @@ inline void Add_Accelerator(HWND, HACCEL)
 
 inline uint32_t GetFileAttributes(const char * filename)
 {
+    if (filename != nullptr) {
+        uint32_t attributes = 0;
+        if (renegade_emscripten_assets::Get_File_Attributes(renegade_osdep::Normalize_Path(filename), attributes)) {
+            return attributes;
+        }
+    }
+
     std::string resolved_path;
     if (!renegade_osdep::Resolve_Existing_Path(filename, resolved_path)) {
         return INVALID_FILE_ATTRIBUTES;

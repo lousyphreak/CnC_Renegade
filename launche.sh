@@ -5,14 +5,17 @@ set -eu
 script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 build_dir="${script_dir}/build-em"
 cache_file="${build_dir}/CMakeCache.txt"
+server_script="${script_dir}/cmake/renegade_emscripten_http_server.py"
+port="${RENEGADE_EMSCRIPTEN_PORT:-8088}"
+url="http://127.0.0.1:${port}/Renegade.html"
 
 if ! command -v emcmake >/dev/null 2>&1; then
     echo "emcmake was not found in PATH." >&2
     exit 1
 fi
 
-if ! command -v emrun >/dev/null 2>&1; then
-    echo "emrun was not found in PATH." >&2
+if ! command -v python3 >/dev/null 2>&1; then
+    echo "python3 was not found in PATH." >&2
     exit 1
 fi
 
@@ -26,6 +29,7 @@ fi
 emcmake cmake -S "${script_dir}" -B "${build_dir}" \
     -DCMAKE_BUILD_TYPE=Debug \
     -DRENEGADE_EMSCRIPTEN_PACKAGE_GAME_DATA=ON \
+    -DRENEGADE_EMSCRIPTEN_LAZY_FETCH_GAME_DATA=ON \
     -DRENEGADE_EMSCRIPTEN_DATA_ROOT="${script_dir}/Renegade" \
     -DRENEGADE_EMSCRIPTEN_ALLOW_MEMORY_GROWTH=ON
 # emcmake cmake -S "${script_dir}" -B "${build_dir}" \
@@ -36,4 +40,17 @@ emcmake cmake -S "${script_dir}" -B "${build_dir}" \
 
 # cmake --build "${build_dir}" --target clean
 cmake --build "${build_dir}" -j20
-exec emrun --port 8088 "${build_dir}/bin/Renegade.html"
+
+if [ "${RENEGADE_EMSCRIPTEN_NO_BROWSER:-0}" != "1" ]; then
+    (
+        sleep 1
+        if command -v xdg-open >/dev/null 2>&1; then
+            xdg-open "${url}" >/dev/null 2>&1 || true
+        else
+            python3 -m webbrowser "${url}" >/dev/null 2>&1 || true
+        fi
+    ) &
+fi
+
+echo "Launching Renegade at ${url}"
+exec python3 "${server_script}" --directory "${build_dir}/bin" "${port}"

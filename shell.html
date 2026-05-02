@@ -7,7 +7,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Red Alert</title>
+    <title>Renegade</title>
     <style>
       :root {
         color-scheme: dark;
@@ -503,6 +503,15 @@
           printErr: function (text) {
             if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
             console.warn(text);
+          },
+          onAbort: function (reason) {
+            console.error('Renegade abort:', reason);
+            try {
+              if (typeof stackTrace === 'function') {
+                console.error(stackTrace());
+              }
+            } catch (e) {
+            }
           },
           setStatus: function (text) {
             setStatus(text);

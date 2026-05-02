@@ -287,6 +287,7 @@ int Game_Main_Loop_Shutdown(void)
 	time = TIMEGETTIME();
 	while (TIMEGETTIME() - time < servicetime) {
 		WWAudioClass::Get_Instance ()->On_Frame_Update (0);
+		Sleep(1);
 	}
 
 	Game_Shutdown();

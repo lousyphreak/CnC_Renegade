@@ -93,6 +93,23 @@
 
 static void _reload_game_configuration_files(void);
 
+namespace
+{
+	void Service_Audio_For_Duration(uint32_t duration_ms)
+	{
+		WWAudioClass *audio = WWAudioClass::Get_Instance();
+		if (audio == NULL || duration_ms == 0) {
+			return;
+		}
+
+		const uint32_t start_time = TIMEGETTIME();
+		do {
+			audio->On_Frame_Update(0);
+			Sleep(1);
+		} while (TIMEGETTIME() - start_time < duration_ms);
+	}
+}
+
 // Defines.
 #define PRE_SERVICE_TIME	1500 // Time in milliseconds.
 #define POST_SERVICE_TIME	 250 // Time in milliseconds.
@@ -127,8 +144,6 @@ bool GameInitMgrClass::Is_Game_In_Progress(void)
 void
 GameInitMgrClass::Start_Game (const char *map_name, int teamChoice, uint32_t clanID)
 {
-	uint32_t time;
-
 	WWASSERT(map_name != NULL);
    WWDEBUG_SAY (("GameInitMgrClass::Start_Game(%s)\n", map_name));
 
@@ -137,19 +152,13 @@ GameInitMgrClass::Start_Game (const char *map_name, int teamChoice, uint32_t cla
 	
 		// IML: First, allow a short period to process any outstanding sound effects that may have
 		// been started by the caller.
-		time = TIMEGETTIME();
-		while (TIMEGETTIME() - time < PRE_SERVICE_TIME) {
-			WWAudioClass::Get_Instance ()->On_Frame_Update (0);
-		}
+		Service_Audio_For_Duration(PRE_SERVICE_TIME);
 		
- 		// IML: Ensure that there are no sound effects lingering on any playlist. 
+  		// IML: Ensure that there are no sound effects lingering on any playlist. 
 		WWAudioClass::Get_Instance ()->Flush_Playlist();
 
 		// IML: Allow audio system to clean-up after flush.
-		time = TIMEGETTIME();
-		while (TIMEGETTIME() - time < POST_SERVICE_TIME) {
-			WWAudioClass::Get_Instance ()->On_Frame_Update (0);
-		}
+		Service_Audio_For_Duration(POST_SERVICE_TIME);
 	}
 
 	//
@@ -275,8 +284,6 @@ GameInitMgrClass::Start_Game (const char *map_name, int teamChoice, uint32_t cla
 void
 GameInitMgrClass::End_Game (void)
 {
-	uint32_t time;
-
 	WWDEBUG_SAY (("GameInitMgrClass::End_Game\n"));
 
 	// Do nothing if the game is not in progress.
@@ -289,19 +296,13 @@ GameInitMgrClass::End_Game (void)
 
 		// IML: Allow a short period to process any outstanding sound effects that may have
 		// been started by the caller.
-		time = TIMEGETTIME();
-		while (TIMEGETTIME() - time < PRE_SERVICE_TIME) {
-			WWAudioClass::Get_Instance ()->On_Frame_Update (0);
-		}
+		Service_Audio_For_Duration(PRE_SERVICE_TIME);
 
 		// IML: Ensure that there are no sound effects lingering on any playlist. 
 		WWAudioClass::Get_Instance ()->Flush_Playlist();
 
 		// IML: Allow audio system to clean-up after flush.
-		time = TIMEGETTIME();
-		while (TIMEGETTIME() - time < POST_SERVICE_TIME) {
-			WWAudioClass::Get_Instance ()->On_Frame_Update (0);
-		}
+		Service_Audio_For_Duration(POST_SERVICE_TIME);
 	}
 
 #ifndef MULTIPLAYERDEMO
@@ -605,6 +606,7 @@ GameInitMgrClass::Start_Client_Server (void)
 			if (TIMEGETTIME() - time > 20*1000) {
 				break;
 			}
+			Sleep(1);
 		} while (!cNetwork::PClientConnection->Is_Established ());
 		WWDEBUG_SAY(("AFTER GameInitMgrClass::Start_Client_Server tight update loop\n"));
 	}
@@ -1012,5 +1014,3 @@ void _reload_game_configuration_files(void)
 	ScriptManager::Shutdown();
 	ScriptManager::Init();
 }
-
-

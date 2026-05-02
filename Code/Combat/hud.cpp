@@ -742,20 +742,20 @@ static	void	HUD_Help_Text_Render( void )
 	//
 	if ( is_empty == false ) {
 		HUDHelpTextRenderer->Reset_Polys();
+		HUDHelpTextExtents = HUDHelpTextRenderer->Get_Text_Extents (string);
 
 		//
 		//	Render the text above the reticle
 		//
-		Vector2 reticle_offset = COMBAT_CAMERA->Get_Camera_Target_2D_Offset();
-
-		const RectClass &screen_rect = Render2DClass::Get_Screen_Resolution();
-		float x_pos = screen_rect.Center ().X - (HUDHelpTextExtents.X * 0.5F);
-		float y_pos = screen_rect.Center ().Y - (HUDHelpTextExtents.Y);
-		y_pos -= (RETICLE_HEIGHT * screen_rect.Height () * 0.25F);
+		const RectClass layout_rect = Get_HUD_Layout_Rect();
+		float x_pos = layout_rect.Center ().X - (HUDHelpTextExtents.X * 0.5F);
+		float y_pos = layout_rect.Center ().Y - (HUDHelpTextExtents.Y);
+		y_pos -= (RETICLE_HEIGHT * layout_rect.Height () * 0.25F);
+		const float shadow_offset = WWMath::Max(Scale_HUD_Value(1.0f), 1.0f);
 
 		HUDHelpTextRenderer->Set_Location( Vector2( x_pos, y_pos ) );
 		HUDHelpTextRenderer->Draw_Sentence( RGB_TO_INT32 (0, 0, 0) );
-		HUDHelpTextRenderer->Set_Location( Vector2( x_pos-1, y_pos-1 ) );
+		HUDHelpTextRenderer->Set_Location( Vector2( x_pos - shadow_offset, y_pos - shadow_offset ) );
 		HUDHelpTextRenderer->Draw_Sentence( VRGB_TO_INT32 (HUDInfo::Get_HUD_Help_Text_Color ()) );
 
 		//
@@ -1809,7 +1809,7 @@ static	void	Target_Update( void )
 			WideStringClass str(0,true);
 			str.Convert_From( info );
 			InfoDebugRenderer->Build_Sentence( str );
-			InfoDebugRenderer->Set_Location( Vector2( 520, 240 ) );
+			InfoDebugRenderer->Set_Location( Get_HUD_Layout_Rect().Upper_Left() + Scale_HUD_Vector( Vector2( 520.0f, 240.0f ) ) );
 //			InfoDebugRenderer->Set_Base_Location( Vector2( 520, 240 ) );
 			InfoDebugRenderer->Draw_Sentence();
 		}

@@ -45,8 +45,20 @@
 #include "combat.h"
 #include "ccamera.h"
 #include "render2dsentence.h"
+#include "stylemgr.h"
 #include "wwmemlog.h"
 #include "ConsoleMode.h"
+
+namespace
+{
+constexpr float kTextDisplayReferenceHeight = 600.0f;
+RectClass CachedTextDisplayLayoutRect(0, 0, 0, 0);
+
+float Get_Text_Display_Scale()
+{
+	return StyleMgrClass::Get_Layout_Rect().Height() / kTextDisplayReferenceHeight;
+}
+}
 
 /*
 ** TextDisplayLine
@@ -78,9 +90,13 @@ void	TextDisplayGameModeClass::Init()
    	WWASSERT(Font != NULL);
 		SET_REF_OWNER( Font );
 		MonoFont = WW3DAssetManager::Get_Instance()->Get_Font3DInstance( "FONT8x8.TGA" );
-   	WWASSERT(MonoFont != NULL);
+    	WWASSERT(MonoFont != NULL);
 		SET_REF_OWNER( MonoFont );
 		MonoFont->Set_Mono_Spaced();
+		CachedTextDisplayLayoutRect = StyleMgrClass::Get_Layout_Rect();
+		const float text_scale = Get_Text_Display_Scale();
+		Font->Set_Scale(text_scale);
+		MonoFont->Set_Scale(text_scale);
 
 
 		// Update Instance
@@ -215,6 +231,19 @@ void 	TextDisplayGameModeClass::Render()
 
 	if (Font == NULL) {
 		return;
+	}
+
+	const RectClass layout_rect = StyleMgrClass::Get_Layout_Rect();
+	if (layout_rect != CachedTextDisplayLayoutRect) {
+		CachedTextDisplayLayoutRect = layout_rect;
+		const float text_scale = Get_Text_Display_Scale();
+		Font->Set_Scale(text_scale);
+		MonoFont->Set_Scale(text_scale);
+		TextChanged = true;
+		VerboseTextChanged = true;
+		RendererLines.Reset_Active();
+		RendererColors.Reset_Active();
+		DisplayY = 0.0f;
 	}
 
 	// Verbose help first

@@ -18,8 +18,10 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <algorithm>
 #include <cstddef>
 #include <cctype>
+#include <vector>
 #include "always.h"
 #include <wwdebug.h>
 #include "viseme.h"
@@ -117,6 +119,19 @@ struct VisemeTableReferenceItem
 
 #define NUM_VISEME_REFERENCES	26								// 'a' - 'z'
 static VisemeTableReferenceItem VisemeReferenceTable[NUM_VISEME_REFERENCES];
+static constexpr std::size_t VISEME_LOOKBEHIND_PADDING = 2;
+static constexpr std::size_t VISEME_RULE_LOOKAHEAD_PADDING = 5;
+
+static std::size_t Get_Max_Viseme_Lookup_Length()
+{
+	std::size_t max_length = 0;
+
+	for (const VisemeTableItem &item : gsVisemeTable) {
+		max_length = std::max(max_length, strlen(item.LetterCombination));
+	}
+
+	return max_length;
+}
 
 //======================================================================================
 static int CompareVisemeTableItems( const void *arg1, const void *arg2 )
@@ -168,14 +183,18 @@ int VisemeManager::Get_Visemes(const char *word, int *visemelist, int maxvisemes
 	int i;
 	int offset;
 	int num_visemes = 0;
-	char local_buf[128];
+	const std::size_t word_length = strlen(word);
+	const std::size_t suffix_padding = std::max(Get_Max_Viseme_Lookup_Length(), VISEME_RULE_LOOKAHEAD_PADDING);
+	std::vector<char> local_buf(word_length + VISEME_LOOKBEHIND_PADDING + suffix_padding + 1, '\0');
 
-	// make a local copy of the word in lower case
-	strncpy(local_buf, word, sizeof(local_buf)-1);
-	local_buf[sizeof(local_buf)-1] = 0;
-	viseme_lowercase_in_place(local_buf);
+	// The letter handlers rely on a couple of bytes of look-behind and several
+	// bytes of look-ahead. Copy the full phrase and pad both sides with NULs so
+	// the legacy pointer arithmetic stays in-bounds.
+	char *local_word = local_buf.data() + VISEME_LOOKBEHIND_PADDING;
+	memcpy(local_word, word, word_length);
+	viseme_lowercase_in_place(local_word);
 
-	const char *pchar = local_buf;
+	const char *pchar = local_word;
 	while ( *pchar ) {
 		// check for tabled viseme combinations
 		offset = Lookup(pchar, word, viseme);

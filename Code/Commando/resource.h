@@ -2,6 +2,14 @@
 // Microsoft Developer Studio generated include file.
 // Used by chat.rc
 //
+#ifndef IDYES
+#define IDYES                          6
+#endif
+
+#ifndef IDNO
+#define IDNO                           7
+#endif
+
 #define IDD_CDVERIFY                    1
 #define IDC_INVITE_BUDDY_BUTTON         3
 #define IDC_PAGE_BUTTON                 4

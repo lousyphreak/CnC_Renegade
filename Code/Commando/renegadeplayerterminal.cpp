@@ -40,11 +40,13 @@
 #include "playertype.h"
 #include "renegadedialogmgr.h"
 #include "resource.h"
+#include "wwhack.h"
 
 
 //////////////////////////////////////////////////////////////////////
 //	Global variables
 //////////////////////////////////////////////////////////////////////
+DECLARE_FORCE_LINK(RenegadePlayerTerminal);
 static RenegadePlayerTerminalClass	_ThePlayerTerminal;
 
 

@@ -23,7 +23,9 @@
 #include "popupdialog.h"
 #include "wwstring.h"
 
+#if defined(FREEDEDICATEDSERVER)
 int DlgMsgBox::CurrentCount = 0;
+#endif
 #if defined(FREEDEDICATEDSERVER)
 int DlgConfigVideoTabClass::GammaLevel = GAMMA_SLIDER_DEFAULT;
 int DlgConfigVideoTabClass::BrightnessLevel = BRIGHTNESS_SLIDER_DEFAULT;
@@ -35,7 +37,9 @@ LoadSPGameMenuClass *LoadSPGameMenuClass::_TheInstance = nullptr;
 MainMenuDialogClass *MainMenuDialogClass::_TheInstance = nullptr;
 bool MainMenuDialogClass::Animated = false;
 #endif
+#if defined(FREEDEDICATEDSERVER)
 bool CNCPurchaseMainMenuClass::SecretsEnabled = false;
+#endif
 float RadioCommandDisplayClass::DisplayTimer = 0.0f;
 bool RadioCommandDisplayClass::IsDisplayed = false;
 TextWindowClass *RadioCommandDisplayClass::TextWindow = nullptr;
@@ -68,6 +72,7 @@ void CDVerifyClass::Display_UI(Observer<CDVerifyEvent> *)
 {
 }
 
+#if defined(FREEDEDICATEDSERVER)
 DlgMsgBox::DlgMsgBox() : PopupDialogClass(0), mUserData(0)
 {
 }
@@ -83,6 +88,7 @@ bool DlgMsgBox::DoDialog(int, int, DlgMsgBox::Type, Observer<DlgMsgBoxEvent> *, 
 {
     return false;
 }
+#endif
 
 bool DlgMPConnectionRefused::DoDialog(const WCHAR *, bool)
 {
@@ -219,6 +225,7 @@ cGameChannel *cGameChannelList::Find_Channel(const WideStringClass &)
     return nullptr;
 }
 
+#if defined(FREEDEDICATEDSERVER)
 void DlgMsgBox::SetResourceType(DlgMsgBox::Type)
 {
 }
@@ -231,6 +238,7 @@ void DlgMsgBox::End_Dialog(void)
 void DlgMsgBox::On_Command(int, int, uint32_t)
 {
 }
+#endif
 
 CNCServerInfoDialogClass::CNCServerInfoDialogClass(void) : MenuDialogClass(0)
 {
@@ -256,6 +264,7 @@ CNCBattleInfoDialogClass::~CNCBattleInfoDialogClass(void) = default;
 void CNCBattleInfoDialogClass::On_Init_Dialog(void) {}
 void CNCBattleInfoDialogClass::On_Frame_Update(void) {}
 
+#if defined(FREEDEDICATEDSERVER)
 MPIngameChatPopupClass::MPIngameChatPopupClass(void)
     : PopupDialogClass(0),
       DefaultType(TEXT_MESSAGE_PUBLIC),
@@ -267,6 +276,7 @@ MPIngameChatPopupClass::~MPIngameChatPopupClass(void) = default;
 void MPIngameChatPopupClass::On_Init_Dialog(void) {}
 void MPIngameChatPopupClass::On_Command(int, int, uint32_t) {}
 void MPIngameChatPopupClass::Render(void) {}
+#endif
 
 #if defined(FREEDEDICATEDSERVER)
 void LoadSPGameMenuClass::Set_Game_Rank(const char *, int)

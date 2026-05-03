@@ -35,6 +35,8 @@ extern "C"
 #endif
 const char* __asan_default_options() { return "detect_leaks=0"; }
 
+extern void _Force_Link_RenegadePlayerTerminal(void);
+
 namespace {
 
 struct CommandoAppState {
@@ -71,6 +73,11 @@ void PrintCommandoBanner()
         << "  bgfx renderer enabled: " << RENEGADE_WITH_BGFX_RENDERER << '\n'
         << "  combat input backend: SDL3\n"
         << "  commando slice: " << Renegade_Commando_Bootstrap_Summary() << '\n';
+}
+
+void Force_Link_Client_UI()
+{
+    _Force_Link_RenegadePlayerTerminal();
 }
 
 void Set_Working_Directory_From_Executable(char **argv)
@@ -534,6 +541,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     app->smoke_test = HasArgument(argc, argv, "--headless-smoke");
 
     PrintCommandoBanner();
+    Force_Link_Client_UI();
 
     Set_Working_Directory_From_Executable(argv);
 

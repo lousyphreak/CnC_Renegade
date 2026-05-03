@@ -81,7 +81,10 @@ set(COMMANDO_EXECUTABLE_SOURCES
 )
 
 set(COMMANDO_CLIENT_MENU_SOURCES
+    DlgMessageBox.cpp
     dlgcncreference.cpp
+    dlgcncpurchasemainmenu.cpp
+    dlgcncpurchasemenu.cpp
     dlgcharacteroptions.cpp
     dlgcheatoptions.cpp
     IngameQuitMessageBox.cpp
@@ -105,9 +108,11 @@ set(COMMANDO_CLIENT_MENU_SOURCES
     dlgcontrolslisttab.cpp
     dlgcredits.cpp
     dlgmovieoptions.cpp
+    dlgmpingamechat.cpp
     dlgpreviewoptions.cpp
     dlgsavegame.cpp
     dlgtechoptions.cpp
+    renegadeplayerterminal.cpp
 )
 
 set(COMMANDO_SOURCES ${COMMANDO_SHARED_SOURCES})

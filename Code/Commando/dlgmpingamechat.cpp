@@ -494,7 +494,7 @@ MPChatChildDialogClass::Complete_Player_Name (const WCHAR *typed_name, WideStrin
 		//
 		//	Is this the best match so far?
 		//
-		if (::wcsnicmp (player_name, typed_name, typed_len) == 0) {
+		if (::_wcsnicmp (player_name, typed_name, typed_len) == 0) {
 			if (	completed_name.Get_Length () == 0 ||
 					::wcsicmp (player_name, completed_name) < 0)
 			{

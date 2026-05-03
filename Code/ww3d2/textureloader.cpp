@@ -44,6 +44,47 @@ bool TextureLoader::TextureLoadSuspended;
 
 #define USE_MANAGED_TEXTURES
 
+static bool Is_Supported_Tga_Source_Format(WW3DFormat format)
+{
+	switch (format) {
+		case WW3D_FORMAT_R8G8B8:
+		case WW3D_FORMAT_A8R8G8B8:
+		case WW3D_FORMAT_X8R8G8B8:
+		case WW3D_FORMAT_A1R5G5B5:
+		case WW3D_FORMAT_A4R4G4B4:
+		case WW3D_FORMAT_R5G6B5:
+		case WW3D_FORMAT_A8:
+		case WW3D_FORMAT_P8:
+		case WW3D_FORMAT_L8:
+			return true;
+		default:
+			return false;
+	}
+}
+
+static void Log_Unsupported_Tga_Format(const char *filename, WW3DFormat format)
+{
+	StringClass format_name(32, true);
+	Get_WW3D_Format_Name(format, format_name);
+	WWDEBUG_SAY(("Unsupported TGA format used in %s - source format is %s\n", filename, format_name.Peek_Buffer()));
+}
+
+static bool Tga_Source_Requires_Conversion(
+	WW3DFormat format,
+	unsigned src_width,
+	unsigned src_height,
+	unsigned dest_width,
+	unsigned dest_height)
+{
+	return format == WW3D_FORMAT_A1R5G5B5
+		|| format == WW3D_FORMAT_R5G6B5
+		|| format == WW3D_FORMAT_A4R4G4B4
+		|| format == WW3D_FORMAT_P8
+		|| format == WW3D_FORMAT_L8
+		|| src_width != dest_width
+		|| src_height != dest_height;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // 
 // TextureLoadTaskListClass implementation
@@ -439,6 +480,10 @@ SurfaceClass* TextureLoader::Load_Surface_Immediate(
 	WW3DFormat src_format,dest_format;
 	unsigned src_bpp=0;
 	Get_WW3D_Format(dest_format,src_format,src_bpp,targa);
+	if (!Is_Supported_Tga_Source_Format(src_format)) {
+		Log_Unsupported_Tga_Format(filename, src_format);
+		return MissingTexture::_Create_Missing_Surface_Instance();
+	}
 
 	if (texture_format!=WW3D_FORMAT_UNKNOWN) {
 		dest_format=texture_format;
@@ -451,7 +496,7 @@ SurfaceClass* TextureLoader::Load_Surface_Immediate(
 	unsigned src_width=targa.Header.Width;
 	unsigned src_height=targa.Header.Height;
 
-	// NOTE: We load the palette but we do not yet support paletted textures!
+	// Indexed, grayscale, and lower-precision TGAs are converted before upload.
 	uint8 palette[256*4];
 	targa.SetPalette(palette);
 	if (TARGA_ERROR_HANDLER(targa.Load(filename, TGAF_IMAGE, false),filename)) return MissingTexture::_Create_Missing_Surface_Instance();
@@ -460,8 +505,7 @@ SurfaceClass* TextureLoader::Load_Surface_Immediate(
 
 	// No paletted destination format allowed
 	unsigned char* converted_surface=NULL;
-	if (src_format==WW3D_FORMAT_A1R5G5B5 || src_format==WW3D_FORMAT_R5G6B5 || src_format==WW3D_FORMAT_A4R4G4B4 ||
-		src_format==WW3D_FORMAT_P8 || src_format==WW3D_FORMAT_L8 || src_width!=width || src_height!=height) {
+	if (Tga_Source_Requires_Conversion(src_format, src_width, src_height, width, height)) {
 		converted_surface=new unsigned char[width*height*4];
 		dest_format=Get_Valid_Texture_Format(WW3D_FORMAT_A8R8G8B8,false);
 		BitmapHandlerClass::Copy_Image(
@@ -1367,10 +1411,9 @@ bool TextureLoadTaskClass::Begin_Uncompressed_Load(void)
 	WW3DFormat dest_format=src_format;
 	dest_format=Get_Valid_Texture_Format(dest_format,false);	// No compressed destination format if reading from targa...
 
-	if (	src_format != WW3D_FORMAT_A8R8G8B8 
-		&&	src_format != WW3D_FORMAT_R8G8B8 
-		&&	src_format != WW3D_FORMAT_X8R8G8B8) {
-		WWDEBUG_SAY(("Invalid TGA format used in %s - only 24 and 32 bit formats should be used!\n", Texture->Get_Full_Path().Peek_Buffer()));
+	if (!Is_Supported_Tga_Source_Format(src_format)) {
+		Log_Unsupported_Tga_Format(Texture->Get_Full_Path().Peek_Buffer(), src_format);
+		return false;
 	}
 
 	// Destination size will be the next power of two square from the larger width and height...
@@ -1472,7 +1515,10 @@ bool TextureLoadTaskClass::Load_Uncompressed_Mipmap(void)
 	WW3DFormat dest_format;
 	unsigned int src_bpp = 0;
 	Get_WW3D_Format(dest_format,src_format,src_bpp,targa);
-	if (src_format==WW3D_FORMAT_UNKNOWN) return false;
+	if (!Is_Supported_Tga_Source_Format(src_format)) {
+		Log_Unsupported_Tga_Format(Texture->Get_Full_Path().Peek_Buffer(), src_format);
+		return false;
+	}
 
 	dest_format = Get_Format();	// Texture can be requested in different format than the most obvious from the TGA
 
@@ -1484,7 +1530,7 @@ bool TextureLoadTaskClass::Load_Uncompressed_Mipmap(void)
 	unsigned int width		= Get_Width();
 	unsigned int height		= Get_Height();
 
-	// NOTE: We load the palette but we do not yet support paletted textures!
+	// Indexed, grayscale, and lower-precision TGAs are converted before upload.
 	if (TARGA_ERROR_HANDLER(targa.Load(Texture->Get_Full_Path(), TGAF_IMAGE, false), Texture->Get_Full_Path())) {
 		return false;
 	}
@@ -1493,13 +1539,7 @@ bool TextureLoadTaskClass::Load_Uncompressed_Mipmap(void)
 	unsigned char * converted_surface	= NULL;
 
 	// No paletted format allowed when generating mipmaps
-	if (	src_format	== WW3D_FORMAT_A1R5G5B5 
-		|| src_format	== WW3D_FORMAT_R5G6B5 
-		|| src_format	== WW3D_FORMAT_A4R4G4B4 
-		||	src_format	== WW3D_FORMAT_P8 
-		|| src_format	== WW3D_FORMAT_L8 
-		|| src_width	!= width 
-		|| src_height	!= height) {
+	if (Tga_Source_Requires_Conversion(src_format, src_width, src_height, width, height)) {
 
 		converted_surface = new unsigned char[width*height*4];
 		dest_format = Get_Valid_Texture_Format(WW3D_FORMAT_A8R8G8B8, false);

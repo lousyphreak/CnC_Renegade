@@ -850,7 +850,6 @@ AudibleSoundClass::Free_Miles_Handle (void)
 
 	// Do we have a valid sample handle from miles?
 	if (m_SoundHandle != NULL) {
-
 		//
 		// Release our hold on this handle
 		//

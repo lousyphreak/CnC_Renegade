@@ -258,6 +258,7 @@ class AudibleSoundClass : public SoundSceneObjClass
 		virtual Vector3		Get_Position (void) const							{ return m_Transform.Get_Translation (); }
 
 		virtual void			Set_Listener_Transform (const Matrix3D &tm)	{ m_ListenerTransform = tm; }
+		virtual Matrix3D		Get_Listener_Transform (void) const				{ return m_ListenerTransform; }
 		virtual void			Set_Transform (const Matrix3D &transform);
 		virtual Matrix3D		Get_Transform (void) const							{ return m_Transform; }
 

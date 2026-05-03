@@ -123,6 +123,55 @@ WWAudioClass::Is_OK_To_Give_Handle (const AudibleSoundClass &sound_obj)
 	return is_ok;
 }
 
+__inline bool
+Is_Spatially_Prioritized_Sound (const AudibleSoundClass &sound_obj)
+{
+	SOUND_CLASSID class_id = sound_obj.Get_Class_ID ();
+	return (class_id == CLASSID_3D) ||
+			 (class_id == CLASSID_PSEUDO3D);
+}
+
+__inline bool
+Is_Protected_2D_Sound_Type (AudibleSoundClass::SOUND_TYPE type)
+{
+	return (type == AudibleSoundClass::TYPE_DIALOG) ||
+			 (type == AudibleSoundClass::TYPE_CINEMATIC);
+}
+
+__inline float
+Estimate_Spatial_Runtime_Priority (const AudibleSoundClass &sound_obj)
+{
+	float radius = sound_obj.Get_DropOff_Radius ();
+	if (radius <= 0.0F) {
+		return sound_obj.Get_Runtime_Priority ();
+	}
+
+	Vector3 listener_pos = sound_obj.Get_Listener_Transform ().Get_Translation ();
+	Vector3 sound_pos = sound_obj.Get_Position ();
+	float distance = (sound_pos - listener_pos).Quick_Length ();
+	float priority = (distance > 0.0F) ? (1.0F - (distance / radius)) : 1.0F;
+
+	return WWMath::Clamp (priority, 0.0F, 1.0F);
+}
+
+__inline float
+Get_Handle_Priority (const AudibleSoundClass &sound_obj)
+{
+	float priority = sound_obj.Get_Priority ();
+	if (Is_Spatially_Prioritized_Sound (sound_obj)) {
+		float runtime_priority = Estimate_Spatial_Runtime_Priority (sound_obj);
+		priority = (priority * 0.35F) + (runtime_priority * 0.65F);
+	}
+
+	if (sound_obj.Get_Type () == AudibleSoundClass::TYPE_DIALOG ||
+		 sound_obj.Get_Type () == AudibleSoundClass::TYPE_CINEMATIC)
+	{
+		priority += 0.20F;
+	}
+
+	return WWMath::Clamp (priority, 0.0F, 1.0F);
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -1642,8 +1691,8 @@ WWAudioClass::Get_2D_Sample (const AudibleSoundClass &sound_obj)
 
 	MMSLockClass lock;
 
-	float lowest_priority					= sound_obj.Get_Priority ();
-	float lowest_runtime_priority			= sound_obj.Get_Runtime_Priority ();
+	AudibleSoundClass::SOUND_TYPE requesting_type = sound_obj.Get_Type ();
+	float lowest_priority					= Get_Handle_Priority (sound_obj);
 	AudibleSoundClass *lowest_pri_sound = NULL;
 	HSAMPLE lowest_pri_sample				= NULL;
 	HSAMPLE free_sample						= (HSAMPLE)INVALID_MILES_HANDLE;
@@ -1657,28 +1706,31 @@ WWAudioClass::Get_2D_Sample (const AudibleSoundClass &sound_obj)
 		if (sample != NULL) {
 
 			// Get a pointer to the object that is currently using this sample
-			AudibleSoundClass *sound_obj = (AudibleSoundClass *)::AIL_sample_user_data (sample, INFO_OBJECT_PTR);
-			if (sound_obj == NULL) {
+			AudibleSoundClass *playing_sound = (AudibleSoundClass *)::AIL_sample_user_data (sample, INFO_OBJECT_PTR);
+			if (playing_sound == NULL) {
 
 				// Return this sample handle to the caller
 				free_sample = sample;
 				found = true;
 			} else {
+				if (Is_Protected_2D_Sound_Type (playing_sound->Get_Type ()) &&
+					 !Is_Protected_2D_Sound_Type (requesting_type))
+				{
+					continue;
+				}
 
 				//
-				//	Determine if this sound's priority is lesser then the sound we want to play.
-				// This is done by comparing both the designer-specified priority and the current
-				// runtime priority (which is calculated by distance to the listener).
+				//	Determine if this sound's effective handle priority is lower than the
+				// sound we want to play. Spatial sounds incorporate estimated audibility
+				// so nearby pseudo-3D/dialog lines can displace distant or effectively
+				// silent sounds immediately instead of waiting for a later scene update.
 				//
-				float priority				= sound_obj->Get_Priority ();
-				float runtime_priority	= sound_obj->Get_Runtime_Priority ();
-				if (	(priority < lowest_priority) ||
-						(priority == lowest_priority && runtime_priority <= lowest_runtime_priority))
+				float priority = Get_Handle_Priority (*playing_sound);
+				if (priority < lowest_priority)
 				{
 					lowest_priority			= priority;
-					lowest_pri_sound			= sound_obj;
+					lowest_pri_sound			= playing_sound;
 					lowest_pri_sample			= sample;
-					lowest_runtime_priority = runtime_priority;
 				}
 			}
 		}
@@ -1710,8 +1762,7 @@ WWAudioClass::Get_3D_Sample (const Sound3DClass &sound_obj)
 
 	MMSLockClass lock;
 
-	float lowest_priority					= sound_obj.Get_Priority ();
-	float lowest_runtime_priority			= sound_obj.Get_Runtime_Priority ();
+	float lowest_priority					= Get_Handle_Priority (sound_obj);
 	AudibleSoundClass *lowest_pri_sound = NULL;
 	H3DSAMPLE lowest_pri_sample			= NULL;
 	H3DSAMPLE free_sample					= (H3DSAMPLE)INVALID_MILES_HANDLE;
@@ -1726,8 +1777,8 @@ WWAudioClass::Get_3D_Sample (const Sound3DClass &sound_obj)
 		if (sample != NULL) {
 
 			// Get a pointer to the object that is currently using this sample
-			AudibleSoundClass *sound_obj = (AudibleSoundClass *)::AIL_3D_object_user_data (sample, INFO_OBJECT_PTR);
-			if (sound_obj == NULL) {
+			AudibleSoundClass *playing_sound = (AudibleSoundClass *)::AIL_3D_object_user_data (sample, INFO_OBJECT_PTR);
+			if (playing_sound == NULL) {
 
 				// Return this sample handle to the caller
 				free_sample = sample;
@@ -1739,15 +1790,12 @@ WWAudioClass::Get_3D_Sample (const Sound3DClass &sound_obj)
 				// This is done by comparing both the designer-specified priority and the current
 				// runtime priority (which is calculated by distance to the listener).
 				//
-				float priority				= sound_obj->Get_Priority ();
-				float runtime_priority	= sound_obj->Get_Runtime_Priority ();
-				if (	(priority < lowest_priority) ||
-						(priority == lowest_priority && runtime_priority <= lowest_runtime_priority))
+				float priority				= Get_Handle_Priority (*playing_sound);
+				if (priority < lowest_priority)
 				{
 					lowest_priority			= priority;
-					lowest_pri_sound			= sound_obj;
+					lowest_pri_sound			= playing_sound;
 					lowest_pri_sample			= sample;
-					lowest_runtime_priority = runtime_priority;
 				}
 			}
 		}

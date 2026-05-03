@@ -3451,14 +3451,15 @@ float SoldierGameObj::Say_Dynamic_Dialogue
 				//	Either play the sound at the speaker's location
 				// or just play it as a 2D sample.
 				//
-				if ( speaker != NULL ) {
+				if ( speaker != NULL && speech->Get_Class_ID () != CLASSID_2D ) {
 					speech->Set_Transform( speaker->Get_Transform() );
 					speech->Add_To_Scene();
 					display_text = (speech->Is_Sound_Culled() == false);
 				} else {
-					
 					//
-					//	Play the sound
+					//	Keep authored 2D dialogue as true 2D playback even when there is a
+					//	speaker object. Routing it through the scene makes it subject to
+					//	spatial culling, which can truncate radio/tutorial lines prematurely.
 					//
 					speech->Play();
 				}

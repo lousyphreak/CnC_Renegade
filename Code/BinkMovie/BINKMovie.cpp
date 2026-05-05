@@ -404,10 +404,7 @@ BINKMovieClass::~BINKMovieClass()
 	}
 #else
 	auto destroy_texture = [](bgfx::TextureHandle &handle) {
-		if (bgfx::isValid(handle) && BgfxRenderer::Is_Initted()) {
-			bgfx::destroy(handle);
-		}
-		handle = BGFX_INVALID_HANDLE;
+		BgfxRenderer::Destroy_Texture_Handle(handle);
 	};
 	destroy_texture(MovieTextures.LumaTexture);
 	destroy_texture(MovieTextures.ChromaTexture);

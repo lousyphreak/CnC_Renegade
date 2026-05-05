@@ -161,13 +161,13 @@ struct QueuedOverlaySubmission
 	std::uint32_t IndexOffset = 0;
 	std::uint32_t IndexCount = 0;
 	TextureClass *Texture = nullptr;
+    TextureClass *FrameBufferTexture = nullptr;
 	WW3D::OverlayStateDesc State;
 	bool HasTexture = false;
 	bgfx::TextureHandle LumaTexture = BGFX_INVALID_HANDLE;
     bgfx::TextureHandle ChromaTexture = BGFX_INVALID_HANDLE;
     std::uint32_t SamplerFlags = 0;
     bool FullRangeVideo = false;
-    bgfx::FrameBufferHandle FrameBuffer = BGFX_INVALID_HANDLE;
     std::uint32_t TargetWidth = 0;
     std::uint32_t TargetHeight = 0;
 };
@@ -192,7 +192,7 @@ uint32_t PendingViewportX = 0;
 uint32_t PendingViewportY = 0;
 uint32_t PendingViewportWidth = 0;
 uint32_t PendingViewportHeight = 0;
-bgfx::FrameBufferHandle CurrentFrameBuffer = BGFX_INVALID_HANDLE;
+TextureClass *CurrentRenderTargetTexture = nullptr;
 std::vector<ViewTransformState> ConfiguredViews;
 std::mutex MovieCaptureMutex;
 bool MovieCaptureActive = false;
@@ -217,6 +217,73 @@ bool CurrentSkinPaletteValid = false;
 std::vector<QueuedOverlaySubmission> OverlaySubmissionQueue;
 std::vector<BgfxOverlayVertex> OverlaySubmissionVertices;
 std::vector<std::uint16_t> OverlaySubmissionIndices;
+std::vector<bgfx::TextureHandle> DeferredTextureDestroys;
+
+void Release_Texture_Reference(TextureClass *&texture)
+{
+    if (texture != nullptr) {
+        texture->Release_Ref();
+        texture = nullptr;
+    }
+}
+
+bgfx::FrameBufferHandle Resolve_Frame_Buffer(TextureClass *texture)
+{
+    if (texture == nullptr) {
+        return BGFX_INVALID_HANDLE;
+    }
+
+    return texture->Get_Bgfx_Frame_Buffer();
+}
+
+bgfx::FrameBufferHandle Get_Current_Frame_Buffer()
+{
+    return Resolve_Frame_Buffer(CurrentRenderTargetTexture);
+}
+
+uint16_t Get_Current_Frame_Buffer_Index()
+{
+    const bgfx::FrameBufferHandle frame_buffer = Get_Current_Frame_Buffer();
+    return bgfx::isValid(frame_buffer) ? frame_buffer.idx : InvalidFrameBufferIndex;
+}
+
+void Set_Current_Render_Target(TextureClass *texture)
+{
+    if (texture == CurrentRenderTargetTexture) {
+        return;
+    }
+
+    if (texture != nullptr) {
+        texture->Add_Ref();
+    }
+
+    Release_Texture_Reference(CurrentRenderTargetTexture);
+    CurrentRenderTargetTexture = texture;
+}
+
+void Capture_Current_Render_Target(QueuedOverlaySubmission &queued)
+{
+    queued.FrameBufferTexture = CurrentRenderTargetTexture;
+    if (queued.FrameBufferTexture != nullptr) {
+        queued.FrameBufferTexture->Add_Ref();
+    }
+}
+
+void Destroy_Deferred_Texture_Handles()
+{
+    if (!BgfxRenderer::Is_Initted()) {
+        DeferredTextureDestroys.clear();
+        return;
+    }
+
+    for (bgfx::TextureHandle handle : DeferredTextureDestroys) {
+        if (bgfx::isValid(handle)) {
+            bgfx::destroy(handle);
+        }
+    }
+
+    DeferredTextureDestroys.clear();
+}
 
 const RendererDescriptor *Find_Renderer_Descriptor(bgfx::RendererType::Enum renderer_type)
 {
@@ -539,7 +606,7 @@ uint16_t Acquire_View()
     const uint16_t view_id = NextDynamicViewId++;
     WWPerfMonClass::Record_Scene_View_Allocation();
     bgfx::setViewMode(view_id, bgfx::ViewMode::Sequential);
-    bgfx::setViewFrameBuffer(view_id, CurrentFrameBuffer);
+    bgfx::setViewFrameBuffer(view_id, Get_Current_Frame_Buffer());
     bgfx::setViewRect(
         view_id,
         static_cast<uint16_t>(PendingViewportX),
@@ -555,7 +622,7 @@ uint16_t Configure_View(const Matrix4 &view, const Matrix4 &projection)
     for (const ViewTransformState &configured_view : ConfiguredViews) {
         if (Matrices_Are_Equal(configured_view.View, view) &&
             Matrices_Are_Equal(configured_view.Projection, projection) &&
-            configured_view.FrameBufferIndex == CurrentFrameBuffer.idx &&
+            configured_view.FrameBufferIndex == Get_Current_Frame_Buffer_Index() &&
             configured_view.ViewportX == PendingViewportX &&
             configured_view.ViewportY == PendingViewportY &&
             configured_view.ViewportWidth == PendingViewportWidth &&
@@ -572,7 +639,7 @@ uint16_t Configure_View(const Matrix4 &view, const Matrix4 &projection)
     ConfiguredViews.push_back({
         view,
         projection,
-        CurrentFrameBuffer.idx,
+        Get_Current_Frame_Buffer_Index(),
         static_cast<uint16_t>(PendingViewportX),
         static_cast<uint16_t>(PendingViewportY),
         static_cast<uint16_t>(PendingViewportWidth),
@@ -2049,7 +2116,7 @@ bool BgfxRenderer::Init(void *window_handle, bool lite)
         return false;
     }
 
-    CurrentFrameBuffer = BGFX_INVALID_HANDLE;
+    Set_Current_Render_Target(nullptr);
     ActiveWidth = Width;
     ActiveHeight = Height;
     Reset_Frame_State(ActiveWidth, ActiveHeight);
@@ -2116,6 +2183,8 @@ void BgfxRenderer::Shutdown()
     }
 
     Clear_Overlay_Submission_Queue();
+    Set_Current_Render_Target(nullptr);
+    Destroy_Deferred_Texture_Handles();
     Shutdown_Render_Resources();
     bgfx::shutdown();
     Width = 0;
@@ -2132,7 +2201,6 @@ void BgfxRenderer::Shutdown()
     AutoScreenshotDelayMs = 0;
     AutoScreenshotStartTicks = 0;
     AutoScreenshotPath.clear();
-    CurrentFrameBuffer = BGFX_INVALID_HANDLE;
     Reset_Frame_State(0, 0);
 }
 
@@ -2149,10 +2217,11 @@ bool BgfxRenderer::Reset()
 void BgfxRenderer::Apply_Reset_State()
 {
     Clear_Overlay_Submission_Queue();
+    Set_Current_Render_Target(nullptr);
+    Destroy_Deferred_Texture_Handles();
     bgfx::reset(Width, Height, Get_Reset_Flags());
     ActiveWidth = Width;
     ActiveHeight = Height;
-    CurrentFrameBuffer = BGFX_INVALID_HANDLE;
     bgfx::setViewFrameBuffer(OverlayViewId, BGFX_INVALID_HANDLE);
     Reset_Frame_State(ActiveWidth, ActiveHeight);
 }
@@ -2203,7 +2272,7 @@ bool BgfxRenderer::Set_Render_Target(TextureClass &texture)
 
     ActiveWidth = static_cast<uint32_t>(texture.Get_Width());
     ActiveHeight = static_cast<uint32_t>(texture.Get_Height());
-    CurrentFrameBuffer = frame_buffer;
+    Set_Current_Render_Target(&texture);
     bgfx::setViewFrameBuffer(OverlayViewId, frame_buffer);
     bgfx::setViewRect(OverlayViewId, 0, 0, static_cast<uint16_t>(ActiveWidth), static_cast<uint16_t>(ActiveHeight));
     Reset_Default_Viewport(ActiveWidth, ActiveHeight);
@@ -2256,7 +2325,7 @@ void BgfxRenderer::Reset_Render_Target()
 
     ActiveWidth = Width;
     ActiveHeight = Height;
-    CurrentFrameBuffer = BGFX_INVALID_HANDLE;
+    Set_Current_Render_Target(nullptr);
     bgfx::setViewFrameBuffer(OverlayViewId, BGFX_INVALID_HANDLE);
     bgfx::setViewRect(OverlayViewId, 0, 0, static_cast<uint16_t>(Width), static_cast<uint16_t>(Height));
     Reset_Default_Viewport(ActiveWidth, ActiveHeight);
@@ -2265,7 +2334,7 @@ void BgfxRenderer::Reset_Render_Target()
 
 bool BgfxRenderer::Has_Render_Target()
 {
-    return IsInitted && bgfx::isValid(CurrentFrameBuffer);
+    return IsInitted && CurrentRenderTargetTexture != nullptr && bgfx::isValid(Get_Current_Frame_Buffer());
 }
 
 void BgfxRenderer::Set_Camera(const Matrix3D &view, const Matrix4 &projection)
@@ -2285,7 +2354,7 @@ void BgfxRenderer::Prepare_Overlay_View()
         return;
     }
 
-    Prepare_Overlay_View_For_Target(CurrentFrameBuffer, ActiveWidth, ActiveHeight);
+    Prepare_Overlay_View_For_Target(Get_Current_Frame_Buffer(), ActiveWidth, ActiveHeight);
 }
 
 void BgfxRenderer::End_Frame()
@@ -2298,6 +2367,7 @@ void BgfxRenderer::End_Frame()
     Maybe_Request_Auto_Screenshot();
     bgfx::frame();
     Clear_Overlay_Submission_Queue();
+    Destroy_Deferred_Texture_Handles();
     const bgfx::Stats *stats = bgfx::getStats();
     if (stats != nullptr) {
         const auto ticks_to_ms = [](int64_t ticks, int64_t frequency) -> double {
@@ -3046,10 +3116,8 @@ void Clear_Overlay_Submission_Queue()
     for (std::vector<QueuedOverlaySubmission>::iterator it = OverlaySubmissionQueue.begin();
          it != OverlaySubmissionQueue.end();
          ++it) {
-        if (it->Texture != nullptr) {
-            it->Texture->Release_Ref();
-            it->Texture = nullptr;
-        }
+        Release_Texture_Reference(it->Texture);
+        Release_Texture_Reference(it->FrameBufferTexture);
     }
     OverlaySubmissionQueue.clear();
     OverlaySubmissionVertices.clear();
@@ -3086,6 +3154,11 @@ void Flush_Overlay_Submission_Queue()
             continue;
         }
 
+        const bgfx::FrameBufferHandle frame_buffer = Resolve_Frame_Buffer(queued.FrameBufferTexture);
+        if (queued.FrameBufferTexture != nullptr && !bgfx::isValid(frame_buffer)) {
+            continue;
+        }
+
         const BgfxOverlayVertex *queued_vertices =
             OverlaySubmissionVertices.data() + queued.VertexOffset;
         const std::uint16_t *queued_indices =
@@ -3102,7 +3175,7 @@ void Flush_Overlay_Submission_Queue()
             continue;
         }
 
-        Prepare_Overlay_View_For_Target(queued.FrameBuffer, queued.TargetWidth, queued.TargetHeight);
+        Prepare_Overlay_View_For_Target(frame_buffer, queued.TargetWidth, queued.TargetHeight);
         if (is_yuv) {
             bgfx::setTexture(0, BgfxRenderer::Get_Texture0_Uniform(), queued.LumaTexture, queued.SamplerFlags);
             bgfx::setTexture(1, BgfxRenderer::Get_Texture1_Uniform(), queued.ChromaTexture, queued.SamplerFlags);
@@ -3183,7 +3256,7 @@ bool BgfxRenderer::Submit_Overlay(const WW3D::OverlaySubmitDesc &submission)
     }
     queued.State = submission.State;
     queued.HasTexture = submission.HasTexture;
-    queued.FrameBuffer = CurrentFrameBuffer;
+    Capture_Current_Render_Target(queued);
     queued.TargetWidth = ActiveWidth;
     queued.TargetHeight = ActiveHeight;
     OverlaySubmissionQueue.push_back(queued);
@@ -3220,11 +3293,24 @@ bool BgfxRenderer::Submit_YUV_Overlay(const OverlayYUVSubmitDesc &submission)
     queued.ChromaTexture = submission.ChromaTexture;
     queued.SamplerFlags = submission.SamplerFlags;
     queued.FullRangeVideo = submission.FullRangeVideo;
-    queued.FrameBuffer = CurrentFrameBuffer;
+    Capture_Current_Render_Target(queued);
     queued.TargetWidth = ActiveWidth;
     queued.TargetHeight = ActiveHeight;
     OverlaySubmissionQueue.push_back(queued);
     return true;
+}
+
+void BgfxRenderer::Destroy_Texture_Handle(bgfx::TextureHandle &handle)
+{
+    if (!bgfx::isValid(handle)) {
+        return;
+    }
+
+    if (Is_Initted()) {
+        DeferredTextureDestroys.push_back(handle);
+    }
+
+    handle = BGFX_INVALID_HANDLE;
 }
 
 namespace
@@ -4584,7 +4670,7 @@ void BgfxRenderer::Apply_Clear(bool clear_color, bool clear_depth, float red, fl
 
     const uint16_t clear_view_id = Acquire_View();
     bgfx::setViewClear(clear_view_id, clear_flags, clear_rgba, 1.0f, 0);
-    bgfx::setViewFrameBuffer(clear_view_id, CurrentFrameBuffer);
+    bgfx::setViewFrameBuffer(clear_view_id, Get_Current_Frame_Buffer());
     bgfx::setViewRect(
         clear_view_id,
         static_cast<uint16_t>(PendingViewportX),

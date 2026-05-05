@@ -151,6 +151,7 @@ public:
     static void Apply_Overlay_Config(bool has_texture, bool alpha_mask_texture);
     static bool Submit_Overlay(const WW3D::OverlaySubmitDesc &submission);
     static bool Submit_YUV_Overlay(const OverlayYUVSubmitDesc &submission);
+    static void Destroy_Texture_Handle(bgfx::TextureHandle &handle);
 
     // Material classification and direct draw submission
     static MaterialClassification Classify_Material(const ShaderClass &shader, const VertexMaterialClass *material, bool has_normals);

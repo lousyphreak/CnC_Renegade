@@ -2392,9 +2392,103 @@ inline int _vsnprintf(char * buffer, std::size_t count, const char * format, std
     return std::vsnprintf(buffer, count, format, args);
 }
 
+inline std::wstring Convert_Windows_Wide_Format_String(const wchar_t * format)
+{
+    if (format == nullptr) {
+        return std::wstring();
+    }
+
+    std::wstring converted;
+    converted.reserve(std::wcslen(format) + 8);
+
+    const wchar_t * cursor = format;
+    while (*cursor != L'\0') {
+        if (*cursor != L'%') {
+            converted += *cursor++;
+            continue;
+        }
+
+        converted += *cursor++;
+        if (*cursor == L'%') {
+            converted += *cursor++;
+            continue;
+        }
+
+        while (*cursor == L'-' || *cursor == L'+' || *cursor == L' ' || *cursor == L'#' || *cursor == L'0' || *cursor == L'\'') {
+            converted += *cursor++;
+        }
+
+        if (*cursor == L'*') {
+            converted += *cursor++;
+        } else {
+            while (*cursor >= L'0' && *cursor <= L'9') {
+                converted += *cursor++;
+            }
+        }
+
+        if (*cursor == L'.') {
+            converted += *cursor++;
+            if (*cursor == L'*') {
+                converted += *cursor++;
+            } else {
+                while (*cursor >= L'0' && *cursor <= L'9') {
+                    converted += *cursor++;
+                }
+            }
+        }
+
+        const std::size_t length_start = converted.size();
+        if (*cursor == L'h' || *cursor == L'l') {
+            const wchar_t length = *cursor++;
+            converted += length;
+            if (*cursor == length) {
+                converted += *cursor++;
+            }
+        } else if (*cursor == L'j' || *cursor == L'z' || *cursor == L't' || *cursor == L'L' || *cursor == L'w') {
+            converted += *cursor++;
+        } else if (*cursor == L'I') {
+            converted += *cursor++;
+            while (*cursor >= L'0' && *cursor <= L'9') {
+                converted += *cursor++;
+            }
+        }
+
+        if (*cursor == L'\0') {
+            break;
+        }
+
+        const wchar_t specifier = *cursor++;
+        if (specifier == L's' || specifier == L'S') {
+            const bool has_string_length_modifier =
+                (converted.size() > length_start) &&
+                (converted[length_start] == L'h' || converted[length_start] == L'l');
+            if (specifier == L's' && !has_string_length_modifier) {
+                converted += L'l';
+            }
+            converted += L's';
+            continue;
+        }
+
+        converted += specifier;
+    }
+
+    return converted;
+}
+
 inline int _vsnwprintf(wchar_t * buffer, std::size_t count, const wchar_t * format, std::va_list args)
 {
-    return std::vswprintf(buffer, count, format, args);
+    const std::wstring converted_format = Convert_Windows_Wide_Format_String(format);
+    return std::vswprintf(buffer, count, converted_format.c_str(), args);
+}
+
+template <std::size_t Count>
+inline int swprintf(wchar_t (&buffer)[Count], const wchar_t * format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    const int result = _vsnwprintf(buffer, Count, format, args);
+    va_end(args);
+    return result;
 }
 
 inline int WideCharToMultiByte(

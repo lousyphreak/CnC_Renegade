@@ -924,6 +924,8 @@ const char *Get_Shader_Profile_Directory()
         return "glsl";
     case bgfx::RendererType::Vulkan:
         return "spirv";
+    case bgfx::RendererType::WebGPU:
+        return "wgsl";
     default:
         return "spirv";
     }

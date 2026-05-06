@@ -2,7 +2,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 
-#include <filesystem>
+#include <cctype>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -46,6 +46,92 @@ bool HasArgument(int argc, char **argv, std::string_view needle)
     return false;
 }
 
+constexpr std::string_view kGameDataDirectorySwitches[] = {
+    "--game-data-directory",
+    "--game-data-dir",
+    "--gamedata-directory",
+    "/GAMEDATADIRECTORY",
+    "GAMEDATADIRECTORY",
+};
+
+char ToLowerAscii(char ch)
+{
+    return static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+}
+
+bool EqualsIgnoreCase(std::string_view lhs, std::string_view rhs)
+{
+    if (lhs.size() != rhs.size()) {
+        return false;
+    }
+
+    for (std::size_t i = 0; i < lhs.size(); ++i) {
+        if (ToLowerAscii(lhs[i]) != ToLowerAscii(rhs[i])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool StartsWithIgnoreCase(std::string_view value, std::string_view prefix)
+{
+    return value.size() >= prefix.size() && EqualsIgnoreCase(value.substr(0, prefix.size()), prefix);
+}
+
+int ConsumeGameDataDirectoryArgument(int argc, char **argv, int argument_index, std::string &value)
+{
+    if (argv == nullptr || argument_index <= 0 || argument_index >= argc || argv[argument_index] == nullptr) {
+        return 0;
+    }
+
+    const std::string_view argument(argv[argument_index]);
+    for (const std::string_view option : kGameDataDirectorySwitches) {
+        if (EqualsIgnoreCase(argument, option)) {
+            if ((argument_index + 1) >= argc || argv[argument_index + 1] == nullptr || argv[argument_index + 1][0] == '\0') {
+                std::cerr << "Game data directory option requires a folder path.\n";
+                return -1;
+            }
+
+            value = argv[argument_index + 1];
+            return 2;
+        }
+
+        if (argument.size() > option.size() && argument[option.size()] == '=' && StartsWithIgnoreCase(argument, option)) {
+            value.assign(argument.substr(option.size() + 1));
+            if (value.empty()) {
+                std::cerr << "Game data directory option requires a folder path.\n";
+                return -1;
+            }
+
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+bool ParseGameDataDirectoryArguments(int argc, char **argv)
+{
+    cUserOptions::Set_Game_Data_Directory(NULL);
+
+    for (int i = 1; i < argc; ++i) {
+        std::string value;
+        const int consumed_arguments = ConsumeGameDataDirectoryArgument(argc, argv, i, value);
+        if (consumed_arguments < 0) {
+            return false;
+        }
+        if (consumed_arguments == 0) {
+            continue;
+        }
+
+        cUserOptions::Set_Game_Data_Directory(value.c_str());
+        i += consumed_arguments - 1;
+    }
+
+    return true;
+}
+
 void PrintDedicatedBanner()
 {
     std::cout
@@ -60,22 +146,6 @@ void PrintDedicatedBanner()
         << "  commando slice: " << Renegade_Commando_Bootstrap_Summary() << '\n'
         << "  SDL runtime platform: " << SDL_GetPlatform() << '\n'
         << "  video/audio init: skipped for dedicated mode\n";
-}
-
-void Set_Working_Directory_From_Executable(char **argv)
-{
-    if (argv == nullptr || argv[0] == nullptr || argv[0][0] == '\0') {
-        return;
-    }
-
-    std::error_code error;
-    const std::filesystem::path executable_path = std::filesystem::weakly_canonical(argv[0], error);
-    const std::filesystem::path working_directory = error ? std::filesystem::path(argv[0]).parent_path() : executable_path.parent_path();
-    if (working_directory.empty()) {
-        return;
-    }
-
-    std::filesystem::current_path(working_directory, error);
 }
 
 bool StartsWithServerConfigPrefix(const std::string &argument)
@@ -115,6 +185,13 @@ std::string Build_Command_Line(int argc, char **argv)
     std::ostringstream command_line;
 
     for (int i = 1; i < argc; ++i) {
+        std::string ignored_game_data_path;
+        const int consumed_game_data_arguments = ConsumeGameDataDirectoryArgument(argc, argv, i, ignored_game_data_path);
+        if (consumed_game_data_arguments > 0) {
+            i += consumed_game_data_arguments - 1;
+            continue;
+        }
+
         if (argv[i] == nullptr || argv[i][0] == '\0') {
             continue;
         }
@@ -165,7 +242,10 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
 
     PrintDedicatedBanner();
 
-    Set_Working_Directory_From_Executable(argv);
+    if (!ParseGameDataDirectoryArguments(argc, argv)) {
+        app->exit_code = EXIT_FAILURE;
+        return Get_App_Result_From_Exit_Code(app->exit_code);
+    }
 
     SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
 

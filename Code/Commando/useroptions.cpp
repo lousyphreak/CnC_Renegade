@@ -49,10 +49,14 @@
 #include "useroptions.h"
 #include "../ww3d2/bgfxrenderer.h"
 
+#include <string>
+
 extern char DefaultRegistryModifier[1024];
 
 namespace
 {
+std::string GameDataDirectory;
+
 bool Matches_Renderer_Key(const char *argument, size_t key_length, const char *expected)
 {
 	return argument != NULL
@@ -385,6 +389,20 @@ bool cUserOptions::Parse_Command_Line(LPCSTR command)
 
 	// Return true if command line options scanned OK.
 	return(retcode);
+}
+
+
+//-----------------------------------------------------------------------------
+void cUserOptions::Set_Game_Data_Directory(const char *directory)
+{
+	GameDataDirectory = (directory != NULL) ? directory : "";
+}
+
+
+//-----------------------------------------------------------------------------
+const char *cUserOptions::Get_Game_Data_Directory(void)
+{
+	return GameDataDirectory.empty() ? NULL : GameDataDirectory.c_str();
 }
 
 

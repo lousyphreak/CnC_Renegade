@@ -113,6 +113,14 @@
 #include "specialbuilds.h"
 #include "renegadecheatmgr.h"
 
+#include <SDL3/SDL.h>
+
+#include <cstdio>
+#include <cctype>
+#include <string>
+#include <string_view>
+#include <vector>
+
 extern const char *VALUE_NAME_TEXTURE_FILTER_MODE;
 
 /*
@@ -139,6 +147,210 @@ const char *	DATA_SUBDIRECTORY			= "DATA\\";
 const char *	SAVE_SUBDIRECTORY			= "DATA\\SAVE\\";
 const char *	CONFIG_SUBDIRECTORY		= "DATA\\CONFIG\\";
 const char *	MOVIES_SUBDIRECTORY		= "DATA\\MOVIES\\";
+
+namespace
+{
+struct GameDataSearchCandidate
+{
+	const char *Label = NULL;
+	std::string Path;
+};
+
+struct GameDataDirectories
+{
+	bool Found = false;
+	std::string SourceLabel;
+	std::string Root;
+	std::string Data;
+	std::string Save;
+	std::string Config;
+	std::string Movies;
+	std::string RootMixPattern;
+	std::string DataMixPattern;
+};
+
+char To_Lower_ASCII(char ch)
+{
+	return static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+}
+
+bool Equals_Ignore_Case(std::string_view lhs, std::string_view rhs)
+{
+	if (lhs.size() != rhs.size()) {
+		return false;
+	}
+
+	for (std::size_t index = 0; index < lhs.size(); ++index) {
+		if (To_Lower_ASCII(lhs[index]) != To_Lower_ASCII(rhs[index])) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+std::string Ensure_Trailing_Path_Separator(std::string path)
+{
+	if (!path.empty() && !renegade_osdep::Is_Path_Separator(path[path.size() - 1])) {
+		path += '/';
+	}
+
+	return path;
+}
+
+std::string Resolve_Existing_Or_Normalized_Path(const std::string &path)
+{
+	std::string resolved_path;
+	if (renegade_osdep::Resolve_Existing_Path(path.c_str(), resolved_path)) {
+		return renegade_osdep::Trim_Trailing_Path_Separators(resolved_path);
+	}
+
+	return renegade_osdep::Trim_Trailing_Path_Separators(renegade_osdep::Normalize_Path(path.c_str()));
+}
+
+std::string Current_Working_Directory_Path(void)
+{
+	char *current_directory = SDL_GetCurrentDirectory();
+	if (current_directory == NULL || current_directory[0] == 0) {
+		if (current_directory != NULL) {
+			SDL_free(current_directory);
+		}
+
+		return Resolve_Existing_Or_Normalized_Path(".");
+	}
+
+	std::string path = Resolve_Existing_Or_Normalized_Path(current_directory);
+	SDL_free(current_directory);
+	return path;
+}
+
+std::string Executable_Directory_Path(void)
+{
+	char path[MAX_PATH] = { 0 };
+	if (::GetModuleFileName(NULL, path, sizeof(path)) == 0 || path[0] == 0) {
+		return std::string();
+	}
+
+	return Resolve_Existing_Or_Normalized_Path(renegade_osdep::Get_Parent_Path(path).c_str());
+}
+
+bool Has_Core_Data_Files(const std::string &root_path)
+{
+	const std::string data_path = renegade_osdep::Join_Path(root_path, "Data");
+	return renegade_osdep::Path_Exists(renegade_osdep::Join_Path(data_path, "Always2.dat"))
+		&& renegade_osdep::Path_Exists(renegade_osdep::Join_Path(data_path, "always.dbs"))
+		&& renegade_osdep::Path_Exists(renegade_osdep::Join_Path(data_path, "always.dat"));
+}
+
+bool Has_Data_Directory(const std::string &root_path)
+{
+	return renegade_osdep::Path_Is_Directory(renegade_osdep::Join_Path(root_path, "Data"));
+}
+
+void Populate_Game_Data_Directories(const std::string &root_path, const char *source_label, GameDataDirectories &directories)
+{
+	const std::string resolved_root = Resolve_Existing_Or_Normalized_Path(root_path);
+	const std::string resolved_data = Resolve_Existing_Or_Normalized_Path(renegade_osdep::Join_Path(resolved_root, "Data"));
+	const std::string resolved_save = Resolve_Existing_Or_Normalized_Path(renegade_osdep::Join_Path(resolved_data, "Save"));
+	const std::string resolved_config = Resolve_Existing_Or_Normalized_Path(renegade_osdep::Join_Path(resolved_data, "Config"));
+	const std::string resolved_movies = Resolve_Existing_Or_Normalized_Path(renegade_osdep::Join_Path(resolved_data, "Movies"));
+
+	directories.SourceLabel = (source_label != NULL) ? source_label : "";
+	directories.Root = Ensure_Trailing_Path_Separator(resolved_root);
+	directories.Data = Ensure_Trailing_Path_Separator(resolved_data);
+	directories.Save = Ensure_Trailing_Path_Separator(resolved_save);
+	directories.Config = Ensure_Trailing_Path_Separator(resolved_config);
+	directories.Movies = Ensure_Trailing_Path_Separator(resolved_movies);
+	directories.RootMixPattern = renegade_osdep::Join_Path(resolved_root, "*.mix");
+	directories.DataMixPattern = renegade_osdep::Join_Path(resolved_data, "*.mix");
+}
+
+void Append_Search_Candidate(std::vector<GameDataSearchCandidate> &candidates, const char *label, const std::string &path)
+{
+	if (path.empty()) {
+		return;
+	}
+
+	const std::string normalized_path = Resolve_Existing_Or_Normalized_Path(path);
+	for (const GameDataSearchCandidate &candidate : candidates) {
+		if (candidate.Path == normalized_path) {
+			return;
+		}
+	}
+
+	GameDataSearchCandidate candidate;
+	candidate.Label = label;
+	candidate.Path = normalized_path;
+	candidates.push_back(candidate);
+}
+
+void Append_Root_Candidate(std::vector<std::string> &root_candidates, const std::string &path)
+{
+	if (path.empty()) {
+		return;
+	}
+
+	const std::string normalized_path = Resolve_Existing_Or_Normalized_Path(path);
+	for (const std::string &candidate : root_candidates) {
+		if (candidate == normalized_path) {
+			return;
+		}
+	}
+
+	root_candidates.push_back(normalized_path);
+}
+
+GameDataDirectories Resolve_Game_Data_Directories(void)
+{
+	std::vector<GameDataSearchCandidate> candidates;
+	if (const char *command_line_directory = cUserOptions::Get_Game_Data_Directory();
+		command_line_directory != NULL && command_line_directory[0] != 0) {
+		Append_Search_Candidate(candidates, "command-line switch", command_line_directory);
+	}
+	Append_Search_Candidate(candidates, "current working directory", Current_Working_Directory_Path());
+	Append_Search_Candidate(candidates, "executable directory", Executable_Directory_Path());
+
+	for (const GameDataSearchCandidate &candidate : candidates) {
+		std::vector<std::string> root_candidates;
+		Append_Root_Candidate(root_candidates, candidate.Path);
+		if (Equals_Ignore_Case(renegade_osdep::Get_Filename_Part(candidate.Path), "Data")) {
+			Append_Root_Candidate(root_candidates, renegade_osdep::Get_Parent_Path(candidate.Path));
+		}
+
+		for (const std::string &root_candidate : root_candidates) {
+			if (!Has_Data_Directory(root_candidate) || !Has_Core_Data_Files(root_candidate)) {
+				continue;
+			}
+
+			GameDataDirectories directories;
+			directories.Found = true;
+			Populate_Game_Data_Directories(root_candidate, candidate.Label, directories);
+			std::printf("Game data root: %s (%s)\n", directories.Root.c_str(), directories.SourceLabel.c_str());
+			return directories;
+		}
+	}
+
+	GameDataDirectories fallback_directories;
+	if (!candidates.empty()) {
+		Populate_Game_Data_Directories(candidates.front().Path, candidates.front().Label, fallback_directories);
+	} else {
+		Populate_Game_Data_Directories(Current_Working_Directory_Path(), "current working directory", fallback_directories);
+	}
+
+	std::fprintf(stderr, "Game data root not found; searched in this order:\n");
+	for (const GameDataSearchCandidate &candidate : candidates) {
+		std::fprintf(stderr, "  %s: %s\n", candidate.Label, candidate.Path.c_str());
+	}
+	std::fprintf(stderr, "Falling back to: %s\n", fallback_directories.Root.c_str());
+	return fallback_directories;
+}
+
+const GameDataDirectories &Get_Game_Data_Directories(void)
+{
+	static const GameDataDirectories directories = Resolve_Game_Data_Directories();
+	return directories;
+}
+}
 
 
 #define	STRINGS_FILENAME					"STRINGS.TDB"
@@ -534,45 +746,30 @@ bool Load_Renegade_Conversation_Database(void)
 */
 void	Construct_Directory_Structure(void)
 {
-	//
-	//	Lookup the path of the executable
-	//
-	char path[MAX_PATH] = { 0 };
-	::GetModuleFileName (NULL, path, sizeof (path));
-
-	//
-	//	Strip off the filename
-	//
-	char *filename = ::strrchr (path, '\\');
-	if (filename != NULL) {
-		filename[1] = 0;
-	}
-
-	StringClass data_dir(path,true);
-	data_dir += "data";
-
-	StringClass save_dir(data_dir + "\\save",true);
-	StringClass config_dir(data_dir + "\\config",true);
+	const GameDataDirectories &directories = Get_Game_Data_Directories();
+	const std::string data_dir = renegade_osdep::Trim_Trailing_Path_Separators(directories.Data);
+	const std::string save_dir = renegade_osdep::Trim_Trailing_Path_Separators(directories.Save);
+	const std::string config_dir = renegade_osdep::Trim_Trailing_Path_Separators(directories.Config);
 
 	//
 	//	Create the data directory if necessary
 	//
-	if (GetFileAttributes (data_dir) == 0xFFFFFFFF) {
-		::CreateDirectory (data_dir, NULL);
+	if (GetFileAttributes (data_dir.c_str()) == 0xFFFFFFFF) {
+		::CreateDirectory (data_dir.c_str(), NULL);
 	}
 
 	//
 	//	Create the save directory if necessary
 	//
-	if (GetFileAttributes (save_dir) == 0xFFFFFFFF) {
-		::CreateDirectory (save_dir, NULL);
+	if (GetFileAttributes (save_dir.c_str()) == 0xFFFFFFFF) {
+		::CreateDirectory (save_dir.c_str(), NULL);
 	}
 
 	//
 	//	Create the config directory if necessary
 	//
-	if (GetFileAttributes (config_dir) == 0xFFFFFFFF) {
-		::CreateDirectory (config_dir, NULL);
+	if (GetFileAttributes (config_dir.c_str()) == 0xFFFFFFFF) {
+		::CreateDirectory (config_dir.c_str(), NULL);
 	}
 
 
@@ -847,18 +1044,20 @@ bool Game_Init(void)
 
 	Get_Version_Number(NULL, NULL);
 
+	const GameDataDirectories &game_data_directories = Get_Game_Data_Directories();
+
 	// setup Writing Factory
-	RenegadeWritingFileFactory.Set_Sub_Directory( DATA_SUBDIRECTORY );
+	RenegadeWritingFileFactory.Set_Sub_Directory( game_data_directories.Data.c_str() );
 	_TheWritingFileFactory = &RenegadeWritingFileFactory;
 
-	RenegadeBaseFileFactory.Set_Sub_Directory( DATA_SUBDIRECTORY );
-	RenegadeBaseFileFactory.Append_Sub_Directory( SAVE_SUBDIRECTORY );
-	RenegadeBaseFileFactory.Append_Sub_Directory( CONFIG_SUBDIRECTORY );
-	RenegadeRootFileFactory.Set_Sub_Directory( "" );
+	RenegadeBaseFileFactory.Set_Sub_Directory( game_data_directories.Data.c_str() );
+	RenegadeBaseFileFactory.Append_Sub_Directory( game_data_directories.Save.c_str() );
+	RenegadeBaseFileFactory.Append_Sub_Directory( game_data_directories.Config.c_str() );
+	RenegadeRootFileFactory.Set_Sub_Directory( game_data_directories.Root.c_str() );
 
-	_TheSimpleFileFactory->Set_Sub_Directory( DATA_SUBDIRECTORY );
-	_TheSimpleFileFactory->Append_Sub_Directory( SAVE_SUBDIRECTORY );
-	_TheSimpleFileFactory->Append_Sub_Directory( CONFIG_SUBDIRECTORY );
+	_TheSimpleFileFactory->Set_Sub_Directory( game_data_directories.Data.c_str() );
+	_TheSimpleFileFactory->Append_Sub_Directory( game_data_directories.Save.c_str() );
+	_TheSimpleFileFactory->Append_Sub_Directory( game_data_directories.Config.c_str() );
 
 	_TheSimpleFileFactory->Set_Strip_Path( true );
 
@@ -871,8 +1070,8 @@ bool Game_Init(void)
 	//
 	//	Search for all mix files in the data directory
 	//
-	Add_Mix_File_Factories(_RenegadeFileFactory, &RenegadeBaseFileFactory, "data\\*.mix");
-	Add_Mix_File_Factories(_RenegadeFileFactory, &RenegadeRootFileFactory, "*.mix");
+	Add_Mix_File_Factories(_RenegadeFileFactory, &RenegadeBaseFileFactory, game_data_directories.DataMixPattern.c_str());
+	Add_Mix_File_Factories(_RenegadeFileFactory, &RenegadeRootFileFactory, game_data_directories.RootMixPattern.c_str());
 
 	_TheFileFactory = &_RenegadeFileFactory;
 

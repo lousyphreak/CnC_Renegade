@@ -2,12 +2,6 @@ cmake_minimum_required(VERSION 3.25)
 
 project(Renegade VERSION 0.1.0 LANGUAGES C CXX)
 
-include(FetchContent)
-
-if(POLICY CMP0169)
-    cmake_policy(SET CMP0169 OLD)
-endif()
-
 # temporary disable all warnings until the code is cleaned up
 add_definitions(-w)
 
@@ -20,8 +14,8 @@ include(RenegadeTargets)
 set(RENEGADE_SDL3_VERSION "release-3.4.2")
 set(RENEGADE_SDL3_SUBMODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/SDL")
 set(RENEGADE_SDL3_MIXER_SUBMODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/SDL_mixer")
+set(RENEGADE_BGFX_CMAKE_SUBMODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/bgfx.cmake")
 set(RENEGADE_BOOTSTRAP_PLATFORM "Linux x64")
-set(RENEGADE_BGFX_CMAKE_TAG "v1.142.9197-527" CACHE STRING "Pinned bgfx.cmake release tag")
 
 if(NOT EXISTS "${RENEGADE_SDL3_SUBMODULE_PATH}/CMakeLists.txt")
     message(FATAL_ERROR
@@ -36,6 +30,16 @@ endif()
 if(RENEGADE_AUDIO_BACKEND STREQUAL "SDL_MIXER" AND NOT EXISTS "${RENEGADE_SDL3_MIXER_SUBMODULE_PATH}/CMakeLists.txt")
     message(FATAL_ERROR
         "SDL_mixer submodule was not found at ${RENEGADE_SDL3_MIXER_SUBMODULE_PATH}. "
+        "Run 'git submodule update --init --recursive' before configuring.")
+endif()
+
+if(NOT EXISTS "${RENEGADE_BGFX_CMAKE_SUBMODULE_PATH}/CMakeLists.txt"
+    OR NOT EXISTS "${RENEGADE_BGFX_CMAKE_SUBMODULE_PATH}/bgfx/src/bgfx.cpp"
+    OR NOT EXISTS "${RENEGADE_BGFX_CMAKE_SUBMODULE_PATH}/bimg/src/image.cpp"
+    OR NOT EXISTS "${RENEGADE_BGFX_CMAKE_SUBMODULE_PATH}/bx/include/bx/bx.h")
+    message(FATAL_ERROR
+        "bgfx.cmake submodule was not found at ${RENEGADE_BGFX_CMAKE_SUBMODULE_PATH}, "
+        "or its nested submodules are missing. "
         "Run 'git submodule update --init --recursive' before configuring.")
 endif()
 
@@ -124,51 +128,18 @@ set(BGFX_CONFIG_MAX_TEXTURES 65535)
 set(BGFX_CONFIG_MAX_VERTEX_BUFFERS 65535)
 set(BGFX_CONFIG_MAX_INDEX_BUFFERS 65535)
 
-FetchContent_Declare(
-    bgfx_cmake
-    GIT_REPOSITORY https://github.com/bkaradzic/bgfx.cmake.git
-    GIT_TAG ${RENEGADE_BGFX_CMAKE_TAG}
-    GIT_SHALLOW TRUE
-    GIT_PROGRESS TRUE
-    GIT_SUBMODULES_RECURSE TRUE
-)
-FetchContent_GetProperties(bgfx_cmake)
-if(NOT bgfx_cmake_POPULATED)
-    FetchContent_Populate(bgfx_cmake)
-endif()
-
-set(RENEGADE_BGFX_TOOL_UTILS "${bgfx_cmake_SOURCE_DIR}/cmake/bgfxToolUtils.cmake")
-file(READ "${RENEGADE_BGFX_TOOL_UTILS}" _renegade_bgfx_tool_utils)
-string(REPLACE "$<IF:$<CONFIG:Debug>:0,3>" "$<IF:$<CONFIG:Debug>,0,3>" _renegade_bgfx_tool_utils_patched "${_renegade_bgfx_tool_utils}")
-string(REPLACE
-    "set(multiValueArgs SHADERS INCLUDE_DIRS DEFINES)"
-    "set(multiValueArgs SHADERS INCLUDE_DIRS DEFINES DEPENDS)"
-    _renegade_bgfx_tool_utils_patched
-    "${_renegade_bgfx_tool_utils_patched}"
-)
-string(REPLACE
-    "DEPENDS \${ARGS_VARYING_DEF}"
-    "DEPENDS \${ARGS_VARYING_DEF} \${ARGS_DEPENDS}"
-    _renegade_bgfx_tool_utils_patched
-    "${_renegade_bgfx_tool_utils_patched}"
-)
-if(NOT _renegade_bgfx_tool_utils STREQUAL _renegade_bgfx_tool_utils_patched)
-    file(WRITE "${RENEGADE_BGFX_TOOL_UTILS}" "${_renegade_bgfx_tool_utils_patched}")
-endif()
-
-set(RENEGADE_BGFX_BIMG_CMAKE "${bgfx_cmake_SOURCE_DIR}/cmake/bimg/CMakeLists.txt")
-file(READ "${RENEGADE_BGFX_BIMG_CMAKE}" _renegade_bgfx_bimg_cmake)
-string(REPLACE
-    "include(bimg_decode.cmake)\ninclude(bimg_encode.cmake)\n\nif(BGFX_BUILD_TOOLS_TEXTURE)\n\tinclude(texturec.cmake)\nendif()"
-    "include(bimg_decode.cmake)\n\nif(BGFX_BUILD_TOOLS_TEXTURE)\n\tinclude(bimg_encode.cmake)\n\tinclude(texturec.cmake)\nendif()"
-    _renegade_bgfx_bimg_cmake_patched
-    "${_renegade_bgfx_bimg_cmake}"
-)
-if(NOT _renegade_bgfx_bimg_cmake STREQUAL _renegade_bgfx_bimg_cmake_patched)
-    file(WRITE "${RENEGADE_BGFX_BIMG_CMAKE}" "${_renegade_bgfx_bimg_cmake_patched}")
-endif()
+get_filename_component(RENEGADE_BGFX_CMAKE_SOURCE_ROOT "${RENEGADE_BGFX_CMAKE_SUBMODULE_PATH}" REALPATH)
+set(bgfx_cmake_SOURCE_DIR "${RENEGADE_BGFX_CMAKE_SOURCE_ROOT}")
+set(bgfx_cmake_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/bgfx.cmake-build")
 
 add_subdirectory("${bgfx_cmake_SOURCE_DIR}" "${bgfx_cmake_BINARY_DIR}")
+
+if(NOT BGFX_BUILD_TOOLS_TEXTURE AND TARGET bimg_encode)
+    set_target_properties(bimg_encode PROPERTIES
+        EXCLUDE_FROM_ALL TRUE
+        EXCLUDE_FROM_DEFAULT_BUILD TRUE
+    )
+endif()
 
 if(TARGET glsl-optimizer)
     target_compile_definitions(glsl-optimizer PRIVATE _GNU_SOURCE)
@@ -183,6 +154,6 @@ if(EMSCRIPTEN AND TARGET shaderc)
     )
 endif()
 
-include("${bgfx_cmake_SOURCE_DIR}/cmake/bgfxToolUtils.cmake")
+include(RenegadeBgfxShaders)
 
 add_subdirectory(Code)

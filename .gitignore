@@ -60,3 +60,5 @@ IDL_*.loc
 
 /Renegade/
 log.txt
+/dbuild.sh
+/k8s/

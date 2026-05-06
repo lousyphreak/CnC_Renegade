@@ -52,6 +52,16 @@ The current Linux bring-up version of `renegade_dedicated` enables the dedicated
 To build the public release build of Level Edit, modify the LevelEdit project settings and add `PUBLIC_EDITOR_VER` to the preprocessor defines.
 
 
+## Emscripten Docker image
+
+A multi-stage [Dockerfile](Dockerfile) is available for the web build.
+
+- `docker build --target engine -t renegade-web:engine .` builds the Emscripten engine bundle without shipping the game data. Provide the data tree at runtime by mounting it at `/usr/share/nginx/html/Renegade-assets`.
+- `docker build --target with-data -t renegade-web:with-data .` bakes the game data into a separate layer before the engine bundle so engine rebuilds keep that larger layer cached.
+- Optional HTTP basic auth is configured with `HTTP_BASIC_AUTH_USERNAME` and `HTTP_BASIC_AUTH_PASSWORD`. Set `HTTP_BASIC_AUTH_REALM` to override the browser prompt text.
+- Example Kubernetes deployment resources live under `k8s/ea-games/`, and `./dbuild.sh` mirrors the Red Alert flow by building the `with-data` image, pushing `thegitea.lousy.ddnss.org/lousy/renegade-web:latest`, and restarting the `renegade-web` deployment.
+
+
 ## Known Issues
 
 The “Debug” configuration of the “Commando” project (the Renegade main project) will sometimes fail to link the final executable. This is due to Windows Defender incorrectly detecting RenegadeD.exe containing a virus (possibly due to the embedded browser code). Excluding the output `/Run/` folder found in the root of this repository in Windows Defender should resolve this for you.

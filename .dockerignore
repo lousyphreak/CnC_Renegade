@@ -1,0 +1,8 @@
+.git
+build/
+build-em/
+build-emr/
+build-rel/
+build-win/
+temp/
+log.txt

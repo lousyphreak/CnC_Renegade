@@ -1,6 +1,7 @@
 #include "menu_dialog_subset.h"
 
 #include "campaign.h"
+#include "combat.h"
 #include "dialogcontrol.h"
 #include "dialogmgr.h"
 #include "gameinitmgr.h"
@@ -60,12 +61,11 @@ void ClientStartSPGameDialogClass::On_Command(int ctrl_id, int message_id, uint3
 	if (ctrl_id == IDC_MENU_START_TUTORIAL_BUTTON) {
 		const char *tutorial_map_name = "M00_Tutorial.mix";
 		const int tutorial_load_menu_number = 90;
+		const int difficulty = CombatManager::Get_Difficulty_Level();
 
-		cGod::Reset_Inventory();
-		CampaignManager::Reset();
 		CampaignManager::Select_Backdrop_Number(tutorial_load_menu_number);
 		GameInitMgrClass::Initialize_SP();
-		GameInitMgrClass::Start_Game(tutorial_map_name, -1, 0);
+		CampaignManager::Replay_Level(tutorial_map_name, difficulty);
 	} else {
 		CampaignManager::Select_Backdrop_Number(0);
 	}

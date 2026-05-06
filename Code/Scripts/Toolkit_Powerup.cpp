@@ -152,7 +152,7 @@ DECLARE_SCRIPT(M00_Soldier_Powerup_Grant, "")
 			if ( powerup == NULL && star_health_percent > 0.75f ) {
 				const char * weapon_powerup = Soldier_Powerup_Table[index][1];
 				if ( weapon_powerup != NULL && weapon_powerup[0] != 0 ) {
-					Commands->Debug_Message( "Soldier_Powerup_Grant: Star's Health > 75%%  Dropping soldier's weapon %s\n", weapon_powerup );
+					Commands->Debug_Message( "Soldier_Powerup_Grant: Star's Health above 75 percent. Dropping soldier's weapon %s\n", weapon_powerup );
 					powerup = Commands->Create_Object ( weapon_powerup, spawn_spot );
 				}
 			}

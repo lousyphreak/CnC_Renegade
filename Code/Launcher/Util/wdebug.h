@@ -70,7 +70,8 @@ extern Sem4 DebugLibSemaphore;
 {\
   char     timebuf[40]; \
   time_t   clock=time(NULL); \
-  cftime(timebuf,"%D %T",&clock); \
+  struct tm *timeinfo = localtime(&clock); \
+  if (timeinfo != NULL) strftime(timebuf, sizeof(timebuf), "%m/%d/%y %H:%M:%S", timeinfo); else timebuf[0] = 0; \
   DebugLibSemaphore.Wait(); \
   if (MsgManager::infoStream()) \
     (*(MsgManager::infoStream())) << "INF " << timebuf << " [" << \
@@ -83,7 +84,8 @@ extern Sem4 DebugLibSemaphore;
 {\
   char     timebuf[40]; \
   time_t   clock=time(NULL); \
-  cftime(timebuf,"%D %T",&clock); \
+  struct tm *timeinfo = localtime(&clock); \
+  if (timeinfo != NULL) strftime(timebuf, sizeof(timebuf), "%m/%d/%y %H:%M:%S", timeinfo); else timebuf[0] = 0; \
   DebugLibSemaphore.Wait(); \
   if (MsgManager::warnStream()) \
     (*(MsgManager::warnStream())) << "WRN " << timebuf << " [" << \
@@ -96,7 +98,8 @@ extern Sem4 DebugLibSemaphore;
 {\
   char     timebuf[40]; \
   time_t   clock=time(NULL); \
-  cftime(timebuf,"%D %T",&clock); \
+  struct tm *timeinfo = localtime(&clock); \
+  if (timeinfo != NULL) strftime(timebuf, sizeof(timebuf), "%m/%d/%y %H:%M:%S", timeinfo); else timebuf[0] = 0; \
   DebugLibSemaphore.Wait(); \
   if (MsgManager::errorStream()) \
     (*(MsgManager::errorStream())) << "ERR " << timebuf << " [" << \

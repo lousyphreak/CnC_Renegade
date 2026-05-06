@@ -1048,15 +1048,14 @@ StartSPGameDialogClass::On_Command (int ctrl_id, int message_id, uint32_t param)
 	if (ctrl_id == IDC_MENU_START_TUTORIAL_BUTTON) {		
 		const char *TUTORIAL_MAP_NAME = "M00_Tutorial.mix";
 		#define	TUTORIAL_LOAD_MENU_NUMBER		90
+		int difficulty = CombatManager::Get_Difficulty_Level();
 
 		//
 		//	Simply load the map
 		//
-		cGod::Reset_Inventory();
-		CampaignManager::Reset();
 		CampaignManager::Select_Backdrop_Number( TUTORIAL_LOAD_MENU_NUMBER );
 		GameInitMgrClass::Initialize_SP ();
-		GameInitMgrClass::Start_Game (TUTORIAL_MAP_NAME, -1, 0);
+		CampaignManager::Replay_Level( TUTORIAL_MAP_NAME, difficulty );
 	} else {
 		CampaignManager::Select_Backdrop_Number( 0 );	// Use default load number
 	}

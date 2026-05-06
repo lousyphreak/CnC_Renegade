@@ -219,9 +219,16 @@ float Engine_Units_To_SDL_Meters(float value)
 
 void Apply_Pan_To_Gains(int pan, MIX_StereoGains &gains)
 {
-    const float normalized_pan = Clamp01(static_cast<float>(pan) / 127.0f);
-    gains.left = Clamp01(1.0f - normalized_pan);
-    gains.right = Clamp01(normalized_pan);
+    const float clamped_pan = std::clamp(static_cast<float>(pan), 0.0f, 127.0f);
+    constexpr float kCenterPan = 64.0f;
+
+    if (clamped_pan <= kCenterPan) {
+        gains.left = 1.0f;
+        gains.right = Clamp01(clamped_pan / kCenterPan);
+    } else {
+        gains.left = Clamp01((127.0f - clamped_pan) / (127.0f - kCenterPan));
+        gains.right = 1.0f;
+    }
 }
 
 float Compute_3D_Distance_Gain(const BackendSample *sample, float distance_meters)
@@ -402,6 +409,8 @@ MIX_Audio *Load_Audio_No_Copy(const void *data, size_t bytes)
     return audio;
 }
 
+SDL_IOStream *Create_IO_From_Callbacks(const char *filename);
+
 bool Populate_Audio_Metadata(MIX_Audio *audio, SDL_AudioSpec *format, int *duration_ms)
 {
     if (audio == nullptr) {
@@ -423,6 +432,33 @@ bool Populate_Audio_Metadata(MIX_Audio *audio, SDL_AudioSpec *format, int *durat
         }
     }
 
+    return true;
+}
+
+bool Load_Audio_From_Callbacks(const char *filename, MIX_Audio **audio, SDL_AudioSpec *format, int *duration_ms)
+{
+    if ((filename == nullptr) || (audio == nullptr)) {
+        Set_Last_Error("invalid stream filename");
+        return false;
+    }
+
+    SDL_IOStream *io = Create_IO_From_Callbacks(filename);
+    if (io == nullptr) {
+        return false;
+    }
+
+    MIX_Audio *loaded_audio = MIX_LoadAudio_IO(g_mixer, io, false, true);
+    if (loaded_audio == nullptr) {
+        Set_Last_Error_From_SDL();
+        return false;
+    }
+
+    if (!Populate_Audio_Metadata(loaded_audio, format, duration_ms)) {
+        MIX_DestroyAudio(loaded_audio);
+        return false;
+    }
+
+    *audio = loaded_audio;
     return true;
 }
 
@@ -564,40 +600,26 @@ bool Populate_Stream_Metadata(const char *filename, BackendStream *stream)
         return false;
     }
 
-    SDL_IOStream *io = Create_IO_From_Callbacks(filename);
-    if (io == nullptr) {
-        return false;
-    }
-
-    MIX_Audio *audio = MIX_LoadAudio_IO(g_mixer, io, false, true);
-    if (audio == nullptr) {
-        Set_Last_Error_From_SDL();
-        return false;
-    }
-
-    const bool ok = Populate_Audio_Metadata(audio, &stream->format, &stream->duration_ms);
+    MIX_Audio *audio = nullptr;
+    const bool ok = Load_Audio_From_Callbacks(filename, &audio, &stream->format, &stream->duration_ms);
     if (ok) {
         stream->original_rate = stream->format.freq;
         stream->playback_rate = stream->original_rate;
     }
-    MIX_DestroyAudio(audio);
+    if (audio != nullptr) {
+        MIX_DestroyAudio(audio);
+    }
     return ok;
 }
 
-bool Fallback_Stream_To_Loaded_Audio(BackendStream *stream)
+bool Attach_Loaded_Stream_Audio(BackendStream *stream)
 {
     if ((stream == nullptr) || (stream->track == nullptr) || stream->name.empty()) {
         return false;
     }
 
-    SDL_IOStream *io = Create_IO_From_Callbacks(stream->name.c_str());
-    if (io == nullptr) {
-        return false;
-    }
-
-    MIX_Audio *audio = MIX_LoadAudio_IO(g_mixer, io, false, true);
-    if (audio == nullptr) {
-        Set_Last_Error_From_SDL();
+    MIX_Audio *audio = nullptr;
+    if (!Load_Audio_From_Callbacks(stream->name.c_str(), &audio, &stream->format, &stream->duration_ms)) {
         return false;
     }
 
@@ -612,14 +634,34 @@ bool Fallback_Stream_To_Loaded_Audio(BackendStream *stream)
     }
     stream->audio = audio;
 
-    if (Populate_Audio_Metadata(audio, &stream->format, &stream->duration_ms)) {
-        stream->original_rate = stream->format.freq;
-        stream->playback_rate = stream->original_rate;
+    stream->original_rate = stream->format.freq;
+    stream->playback_rate = stream->original_rate;
+    Apply_Stream_State(stream);
+    return true;
+}
+
+bool Fallback_Stream_To_Loaded_Audio(BackendStream *stream)
+{
+    if (!Attach_Loaded_Stream_Audio(stream)) {
+        return false;
     }
 
-    Apply_Stream_State(stream);
     WWDEBUG_SAY(("WWAudio: Falling back to preloaded track input for %s\r\n", stream->name.c_str()));
     return true;
+}
+
+S32 Track_Loops_Left(MIX_Track *track)
+{
+    if (track == nullptr) {
+        return 0;
+    }
+
+    if (MIX_TrackPlaying(track) || MIX_TrackPaused(track)) {
+        const int loops = MIX_GetTrackLoops(track);
+        return (loops < 0) ? -1 : (loops + 1);
+    }
+
+    return 0;
 }
 
 bool Parse_Wave_Info(const void *data, size_t data_len, AILSOUNDINFO *info, uint32_t *duration_ms)
@@ -821,7 +863,12 @@ void AIL_start_sample(HSAMPLE sample)
 
     SDL_PropertiesID props = SDL_CreateProperties();
     SDL_SetNumberProperty(props, MIX_PROP_PLAY_LOOPS_NUMBER, backend->loop_count == 0 ? -1 : static_cast<Sint64>(std::max<int>(static_cast<int>(backend->loop_count) - 1, 0)));
-    MIX_PlayTrack(backend->track, props);
+    if (!MIX_PlayTrack(backend->track, props)) {
+        Set_Last_Error_From_SDL();
+        WWDEBUG_SAY(("WWAudio: Failed to start sample (%s)\r\n", g_last_error.c_str()));
+        SDL_DestroyProperties(props);
+        return;
+    }
     SDL_DestroyProperties(props);
     backend->paused = false;
     Apply_Sample_State(backend);
@@ -924,11 +971,32 @@ void AIL_sample_ms_position(HSAMPLE sample, S32 *len, S32 *pos)
     }
 
     if (len != nullptr) {
-        *len = static_cast<S32>(Track_Length_To_MS(backend->track));
+        *len = static_cast<S32>(backend->duration_ms > 0 ? backend->duration_ms : Track_Length_To_MS(backend->track));
     }
     if (pos != nullptr) {
         *pos = static_cast<S32>(Track_Position_To_MS(backend->track));
     }
+}
+
+bool AIL_sample_is_playing(HSAMPLE sample)
+{
+    std::lock_guard<std::recursive_mutex> guard(g_audio_mutex);
+    auto *backend = static_cast<BackendSample *>(sample);
+    return ((backend != nullptr) && (backend->track != nullptr)) ? MIX_TrackPlaying(backend->track) : false;
+}
+
+bool AIL_sample_is_paused(HSAMPLE sample)
+{
+    std::lock_guard<std::recursive_mutex> guard(g_audio_mutex);
+    auto *backend = static_cast<BackendSample *>(sample);
+    return ((backend != nullptr) && (backend->track != nullptr)) ? MIX_TrackPaused(backend->track) : false;
+}
+
+S32 AIL_sample_loops_left(HSAMPLE sample)
+{
+    std::lock_guard<std::recursive_mutex> guard(g_audio_mutex);
+    auto *backend = static_cast<BackendSample *>(sample);
+    return ((backend != nullptr) && (backend->track != nullptr)) ? Track_Loops_Left(backend->track) : 0;
 }
 
 void AIL_set_sample_user_data(HSAMPLE sample, S32 index, uintptr_t value)
@@ -1062,7 +1130,28 @@ U32 AIL_3D_sample_length(H3DSAMPLE sample)
     if ((backend == nullptr) || (backend->track == nullptr)) {
         return 0;
     }
+
+    if (backend->duration_ms > 0) {
+        const Sint64 frames = MIX_TrackMSToFrames(backend->track, backend->duration_ms);
+        return (frames >= 0) ? Frames_To_Bytes(frames, backend->format) : 0;
+    }
+
     return Frames_To_Bytes(MIX_GetTrackPlaybackPosition(backend->track) + MIX_GetTrackRemaining(backend->track), backend->format);
+}
+
+bool AIL_3D_sample_is_playing(H3DSAMPLE sample)
+{
+    return AIL_sample_is_playing(sample);
+}
+
+bool AIL_3D_sample_is_paused(H3DSAMPLE sample)
+{
+    return AIL_sample_is_paused(sample);
+}
+
+S32 AIL_3D_sample_loops_left(H3DSAMPLE sample)
+{
+    return AIL_sample_loops_left(sample);
 }
 
 void AIL_set_3D_object_user_data(H3DSAMPLE sample, S32 index, uintptr_t value)
@@ -1151,19 +1240,21 @@ HSTREAM AIL_open_stream_by_sample(HDIGDRIVER, HSAMPLE sample, char const *filena
         return nullptr;
     }
 
-    SDL_IOStream *io = Create_IO_From_Callbacks(filename);
-    if (io == nullptr) {
-        Destroy_Stream(stream);
-        return nullptr;
-    }
+    if (!Attach_Loaded_Stream_Audio(stream)) {
+        SDL_IOStream *io = Create_IO_From_Callbacks(filename);
+        if (io == nullptr) {
+            Destroy_Stream(stream);
+            return nullptr;
+        }
 
-    if (!MIX_SetTrackIOStream(stream->track, io, true)) {
-        Set_Last_Error_From_SDL();
-        Destroy_Stream(stream);
-        return nullptr;
-    }
+        if (!MIX_SetTrackIOStream(stream->track, io, true)) {
+            Set_Last_Error_From_SDL();
+            Destroy_Stream(stream);
+            return nullptr;
+        }
 
-    Populate_Stream_Metadata(filename, stream);
+        Populate_Stream_Metadata(filename, stream);
+    }
     Apply_Stream_State(stream);
     return stream;
 }
@@ -1295,6 +1386,27 @@ void AIL_stream_ms_position(HSTREAM stream, S32 *len, S32 *pos)
     if (pos != nullptr) {
         *pos = static_cast<S32>(Track_Position_To_MS(backend->track));
     }
+}
+
+bool AIL_stream_is_playing(HSTREAM stream)
+{
+    std::lock_guard<std::recursive_mutex> guard(g_audio_mutex);
+    auto *backend = static_cast<BackendStream *>(stream);
+    return ((backend != nullptr) && (backend->track != nullptr)) ? MIX_TrackPlaying(backend->track) : false;
+}
+
+bool AIL_stream_is_paused(HSTREAM stream)
+{
+    std::lock_guard<std::recursive_mutex> guard(g_audio_mutex);
+    auto *backend = static_cast<BackendStream *>(stream);
+    return ((backend != nullptr) && (backend->track != nullptr)) ? MIX_TrackPaused(backend->track) : false;
+}
+
+S32 AIL_stream_loops_left(HSTREAM stream)
+{
+    std::lock_guard<std::recursive_mutex> guard(g_audio_mutex);
+    auto *backend = static_cast<BackendStream *>(stream);
+    return ((backend != nullptr) && (backend->track != nullptr)) ? Track_Loops_Left(backend->track) : 0;
 }
 
 S32 AIL_stream_playback_rate(HSTREAM stream)

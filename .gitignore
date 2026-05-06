@@ -62,3 +62,5 @@ IDL_*.loc
 log.txt
 /dbuild.sh
 /k8s/
+commands.txt
+_logfile.txt

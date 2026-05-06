@@ -247,7 +247,7 @@ SoundStreamHandleClass::Get_Sample_Loop_Count (void)
 	U32 retval = 0;
 
 	if (StreamHandle != (HSTREAM)INVALID_MILES_HANDLE) {
-		::AIL_stream_loop_count (StreamHandle);
+		retval = ::AIL_stream_loop_count (StreamHandle);
 	}
 
 	return retval;
@@ -350,6 +350,42 @@ SoundStreamHandleClass::Set_Sample_Playback_Rate (S32 rate)
 	}
 
 	return ;
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//
+//	Is_Sample_Playing
+//
+//////////////////////////////////////////////////////////////////////
+bool
+SoundStreamHandleClass::Is_Sample_Playing (void)
+{
+	return (StreamHandle != (HSTREAM)INVALID_MILES_HANDLE) ? (::AIL_stream_is_playing (StreamHandle) != 0) : false;
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//
+//	Is_Sample_Paused
+//
+//////////////////////////////////////////////////////////////////////
+bool
+SoundStreamHandleClass::Is_Sample_Paused (void)
+{
+	return (StreamHandle != (HSTREAM)INVALID_MILES_HANDLE) ? (::AIL_stream_is_paused (StreamHandle) != 0) : false;
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//
+//	Get_Sample_Loops_Left
+//
+//////////////////////////////////////////////////////////////////////
+S32
+SoundStreamHandleClass::Get_Sample_Loops_Left (void)
+{
+	return (StreamHandle != (HSTREAM)INVALID_MILES_HANDLE) ? ::AIL_stream_loops_left (StreamHandle) : 0;
 }
 
 

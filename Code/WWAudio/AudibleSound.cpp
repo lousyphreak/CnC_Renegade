@@ -555,7 +555,15 @@ AudibleSoundClass::Pause (void)
 		// Update our current position so we can resume at the correct
 		// location
 		//
-		m_CurrentPosition = TIMEGETTIME () - m_Timestamp;
+		if (m_SoundHandle != NULL) {
+			Update_Play_Position ();
+		} else {
+			m_CurrentPosition = TIMEGETTIME () - m_Timestamp;
+		}
+
+		if (m_State != STATE_PLAYING) {
+			return false;
+		}
 
 		//
 		//	Get rid of our play-handle (this will stop the sound)
@@ -1168,23 +1176,49 @@ AudibleSoundClass::On_Frame_Update (uint32_t milliseconds)
 void
 AudibleSoundClass::Update_Play_Position (void)
 {
-	// Determine the current offset from the beginning of the sound buffer.
+	if (m_SoundHandle != NULL) {
+		S32 backend_length = 0;
+		S32 backend_position = 0;
+		m_SoundHandle->Get_Sample_MS_Position (&backend_length, &backend_position);
+
+		if (backend_length > 0) {
+			m_Length = backend_length;
+			m_CurrentPosition = max (backend_position, 0);
+			m_CurrentPosition = min (m_CurrentPosition, m_Length);
+			m_Timestamp = TIMEGETTIME () - m_CurrentPosition;
+
+			const S32 loops_left = m_SoundHandle->Get_Sample_Loops_Left ();
+			if (m_LoopCount == INFINITE_LOOPS || loops_left == INFINITE_LOOPS) {
+				m_LoopsLeft = INFINITE_LOOPS;
+			} else if (loops_left >= 0) {
+				m_LoopsLeft = loops_left;
+			}
+
+			if (m_SoundHandle->Is_Sample_Playing () || m_SoundHandle->Is_Sample_Paused ()) {
+				return ;
+			}
+
+			if (m_LoopCount != INFINITE_LOOPS) {
+				m_LoopsLeft = 0;
+			}
+			On_Loop_End ();
+			return ;
+		}
+	}
+
+	// Fall back to timestamp-based tracking while a sound is virtualized or
+	// before a freshly allocated handle has been initialized.
 	uint32_t play_time = TIMEGETTIME () - m_Timestamp;
 	m_CurrentPosition = play_time;
 
-	// Have we gone past the end of a sounds play-time?
 	if ((m_CurrentPosition > m_Length) && (m_Length > 0)) {
-
-		// Normalize our position and timestamp information
 		m_CurrentPosition = m_CurrentPosition % m_Length;
 		m_Timestamp = TIMEGETTIME () - m_CurrentPosition;
 
-		// Decrement our count of remaining loops (if necessary)
 		if (m_LoopCount != INFINITE_LOOPS) {
 			m_LoopsLeft -= (play_time / m_Length);
 		}
 
-		// Trigger the 'end loop' event
 		On_Loop_End ();
 	}
 

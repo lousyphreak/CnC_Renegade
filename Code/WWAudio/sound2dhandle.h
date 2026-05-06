@@ -96,6 +96,9 @@ public:
 	uintptr_t					Get_Sample_User_Data (S32 i);
 	S32							Get_Sample_Playback_Rate (void);
 	void							Set_Sample_Playback_Rate (S32 rate);
+	bool							Is_Sample_Playing (void);
+	bool							Is_Sample_Paused (void);
+	S32							Get_Sample_Loops_Left (void);
 	
 protected:
 	

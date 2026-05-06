@@ -86,6 +86,9 @@ public:
 	void							Get_Sample_MS_Position (S32 *len, S32 *pos)	{ }
 	S32							Get_Sample_Playback_Rate (void)					{ return 0; }
 	void							Set_Sample_Playback_Rate (S32 rate)				{ }
+	bool							Is_Sample_Playing (void)							{ return false; }
+	bool							Is_Sample_Paused (void)							{ return false; }
+	S32							Get_Sample_Loops_Left (void)						{ return 0; }
 	
 protected:
 	

@@ -262,12 +262,7 @@ void
 Sound3DHandleClass::Set_Sample_MS_Position (U32 ms)
 {
 	if (SampleHandle != (H3DSAMPLE)INVALID_MILES_HANDLE) {
-
-		WWASSERT (Buffer != NULL);
-		U32 bytes_per_sec = (Buffer->Get_Rate () * Buffer->Get_Bits ()) >> 3;
-		U32 bytes = (ms * bytes_per_sec) / 1000;
-		bytes += (bytes & 1);
-		::AIL_set_3D_sample_offset (SampleHandle, bytes);
+		::AIL_set_sample_ms_position (SampleHandle, ms);
 	}
 
 	return ;
@@ -283,21 +278,7 @@ void
 Sound3DHandleClass::Get_Sample_MS_Position (S32 *len, S32 *pos)
 {
 	if (SampleHandle != (H3DSAMPLE)INVALID_MILES_HANDLE) {
-
-		WWASSERT (Buffer != NULL);
-		if (pos != NULL) {
-			U32 bytes = ::AIL_3D_sample_offset (SampleHandle);
-			U32 bytes_per_sec = (Buffer->Get_Rate () * Buffer->Get_Bits ()) >> 3;
-			U32 ms = (bytes * 1000) / bytes_per_sec;
-			(*pos) = ms;
-		}
-
-		if (len != NULL) {
-			U32 bytes = ::AIL_3D_sample_length (SampleHandle);
-			U32 bytes_per_sec = (Buffer->Get_Rate () * Buffer->Get_Bits ()) >> 3;
-			U32 ms = (bytes * 1000) / bytes_per_sec;
-			(*len) = ms;
-		}
+		::AIL_sample_ms_position (SampleHandle, len, pos);
 	}
 
 	return ;
@@ -368,6 +349,42 @@ Sound3DHandleClass::Set_Sample_Playback_Rate (S32 rate)
 	}
 
 	return ;
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//
+//	Is_Sample_Playing
+//
+//////////////////////////////////////////////////////////////////////
+bool
+Sound3DHandleClass::Is_Sample_Playing (void)
+{
+	return (SampleHandle != (H3DSAMPLE)INVALID_MILES_HANDLE) ? (::AIL_3D_sample_is_playing (SampleHandle) != 0) : false;
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//
+//	Is_Sample_Paused
+//
+//////////////////////////////////////////////////////////////////////
+bool
+Sound3DHandleClass::Is_Sample_Paused (void)
+{
+	return (SampleHandle != (H3DSAMPLE)INVALID_MILES_HANDLE) ? (::AIL_3D_sample_is_paused (SampleHandle) != 0) : false;
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//
+//	Get_Sample_Loops_Left
+//
+//////////////////////////////////////////////////////////////////////
+S32
+Sound3DHandleClass::Get_Sample_Loops_Left (void)
+{
+	return (SampleHandle != (H3DSAMPLE)INVALID_MILES_HANDLE) ? ::AIL_3D_sample_loops_left (SampleHandle) : 0;
 }
 
 

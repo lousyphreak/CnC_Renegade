@@ -114,6 +114,9 @@ public:
 	virtual uintptr_t	Get_Sample_User_Data (S32 i) = 0;
 	virtual S32		Get_Sample_Playback_Rate (void) = 0;
 	virtual void	Set_Sample_Playback_Rate (S32 rate) = 0;
+	virtual bool		Is_Sample_Playing (void) = 0;
+	virtual bool		Is_Sample_Paused (void) = 0;
+	virtual S32		Get_Sample_Loops_Left (void) = 0;
 	
 protected:
 	

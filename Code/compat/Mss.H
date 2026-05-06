@@ -159,6 +159,9 @@ void AIL_set_sample_loop_count(HSAMPLE sample, U32 count);
 U32 AIL_sample_loop_count(HSAMPLE sample);
 void AIL_set_sample_ms_position(HSAMPLE sample, U32 ms);
 void AIL_sample_ms_position(HSAMPLE sample, S32 *len, S32 *pos);
+bool AIL_sample_is_playing(HSAMPLE sample);
+bool AIL_sample_is_paused(HSAMPLE sample);
+S32 AIL_sample_loops_left(HSAMPLE sample);
 void AIL_set_sample_user_data(HSAMPLE sample, S32 index, uintptr_t value);
 uintptr_t AIL_sample_user_data(HSAMPLE sample, S32 index);
 S32 AIL_sample_playback_rate(HSAMPLE sample);
@@ -180,6 +183,9 @@ U32 AIL_3D_sample_loop_count(H3DSAMPLE sample);
 void AIL_set_3D_sample_offset(H3DSAMPLE sample, U32 bytes);
 U32 AIL_3D_sample_offset(H3DSAMPLE sample);
 U32 AIL_3D_sample_length(H3DSAMPLE sample);
+bool AIL_3D_sample_is_playing(H3DSAMPLE sample);
+bool AIL_3D_sample_is_paused(H3DSAMPLE sample);
+S32 AIL_3D_sample_loops_left(H3DSAMPLE sample);
 void AIL_set_3D_object_user_data(H3DSAMPLE sample, S32 index, uintptr_t value);
 uintptr_t AIL_3D_object_user_data(H3DSAMPLE sample, S32 index);
 S32 AIL_3D_sample_playback_rate(H3DSAMPLE sample);
@@ -205,6 +211,9 @@ void AIL_set_stream_loop_count(HSTREAM stream, U32 count);
 U32 AIL_stream_loop_count(HSTREAM stream);
 void AIL_set_stream_ms_position(HSTREAM stream, U32 ms);
 void AIL_stream_ms_position(HSTREAM stream, S32 *len, S32 *pos);
+bool AIL_stream_is_playing(HSTREAM stream);
+bool AIL_stream_is_paused(HSTREAM stream);
+S32 AIL_stream_loops_left(HSTREAM stream);
 S32 AIL_stream_playback_rate(HSTREAM stream);
 void AIL_set_stream_playback_rate(HSTREAM stream, S32 rate);
 
@@ -246,6 +255,9 @@ inline void AIL_set_sample_loop_count(HSAMPLE, U32) {}
 inline U32 AIL_sample_loop_count(HSAMPLE) { return 0; }
 inline void AIL_set_sample_ms_position(HSAMPLE, U32) {}
 inline void AIL_sample_ms_position(HSAMPLE, S32 *, S32 *) {}
+inline bool AIL_sample_is_playing(HSAMPLE) { return false; }
+inline bool AIL_sample_is_paused(HSAMPLE) { return false; }
+inline S32 AIL_sample_loops_left(HSAMPLE) { return 0; }
 inline void AIL_set_sample_user_data(HSAMPLE, S32, uintptr_t) {}
 inline uintptr_t AIL_sample_user_data(HSAMPLE, S32) { return 0; }
 inline S32 AIL_sample_playback_rate(HSAMPLE) { return 0; }
@@ -266,6 +278,9 @@ inline U32 AIL_3D_sample_loop_count(H3DSAMPLE) { return 0; }
 inline void AIL_set_3D_sample_offset(H3DSAMPLE, U32) {}
 inline U32 AIL_3D_sample_offset(H3DSAMPLE) { return 0; }
 inline U32 AIL_3D_sample_length(H3DSAMPLE) { return 0; }
+inline bool AIL_3D_sample_is_playing(H3DSAMPLE) { return false; }
+inline bool AIL_3D_sample_is_paused(H3DSAMPLE) { return false; }
+inline S32 AIL_3D_sample_loops_left(H3DSAMPLE) { return 0; }
 inline void AIL_set_3D_object_user_data(H3DSAMPLE, S32, uintptr_t) {}
 inline uintptr_t AIL_3D_object_user_data(H3DSAMPLE, S32) { return 0; }
 inline S32 AIL_3D_sample_playback_rate(H3DSAMPLE) { return 0; }
@@ -290,6 +305,9 @@ inline void AIL_set_stream_loop_count(HSTREAM, U32) {}
 inline U32 AIL_stream_loop_count(HSTREAM) { return 0; }
 inline void AIL_set_stream_ms_position(HSTREAM, U32) {}
 inline void AIL_stream_ms_position(HSTREAM, S32 *, S32 *) {}
+inline bool AIL_stream_is_playing(HSTREAM) { return false; }
+inline bool AIL_stream_is_paused(HSTREAM) { return false; }
+inline S32 AIL_stream_loops_left(HSTREAM) { return 0; }
 inline S32 AIL_stream_playback_rate(HSTREAM) { return 0; }
 inline void AIL_set_stream_playback_rate(HSTREAM, S32) {}
 inline H3DPOBJECT AIL_3D_open_listener(HPROVIDER) { return nullptr; }

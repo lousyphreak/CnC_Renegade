@@ -1972,8 +1972,8 @@ bgfx::RendererType::Enum Choose_Preferred_Renderer(void)
 
     if (platform != nullptr && std::strcmp(platform, "Linux") == 0) {
         static constexpr bgfx::RendererType::Enum kLinuxOrder[] = {
-            bgfx::RendererType::Vulkan,
             bgfx::RendererType::OpenGL,
+            bgfx::RendererType::Vulkan,
             bgfx::RendererType::OpenGLES};
         for (const bgfx::RendererType::Enum candidate : kLinuxOrder) {
             if (Is_Renderer_Supported(candidate)) {

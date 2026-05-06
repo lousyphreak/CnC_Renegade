@@ -1429,6 +1429,18 @@ Clip_Point (Vector3 *point, const AABoxClass &box)
 
 			if( PathSolver == NULL) {
 				if( Path != NULL ) {
+					//
+					//	A degenerate solved path can collapse to "complete" even when
+					// the unit is still away from the requested move target.  Fall
+					// back to direct movement instead of reporting a false arrival.
+					//
+					if (Path->Get_State () == PathClass::STATE_PATH_COMPLETE) {
+						float dist_to_goal = Get_Distance_From_Goal ();
+						if (dist_to_goal > Action->Get_Parameters().MoveArrivedDistance) {
+							Release_Path ();
+							return Beeline ();
+						}
+					}
 
 					//
 					//	Move along the path we found

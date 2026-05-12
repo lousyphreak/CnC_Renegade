@@ -226,10 +226,10 @@ bool Is_Renlog_Path(const std::string & folded_request_path)
         && Ends_With(folded_request_path, ".txt");
 }
 
-bool Is_Local_User_Data_Request_Path(const std::string & canonical_request_path)
+std::string Canonicalize_Local_User_Data_Request_Path(const std::string & canonical_request_path)
 {
     if (canonical_request_path.empty()) {
-        return false;
+        return {};
     }
 
     const std::string folded_request_path = Fold_Path(canonical_request_path);
@@ -245,17 +245,35 @@ bool Is_Local_User_Data_Request_Path(const std::string & canonical_request_path)
         || folded_request_path == "gameres.dat"
         || folded_request_path == "perf_log.txt"
         || folded_request_path == "profile_log.txt") {
-        return true;
+        return folded_request_path;
     }
 
     if (Is_Renlog_Path(folded_request_path)) {
-        return true;
+        return folded_request_path;
     }
 
-    return folded_request_path == "save"
-        || folded_request_path == "data/save"
-        || Starts_With(folded_request_path, "save/")
-        || Starts_With(folded_request_path, "data/save/");
+    if (folded_request_path == "save" || folded_request_path == "data/save") {
+        return "data/save";
+    }
+
+    if (Starts_With(folded_request_path, "save/")) {
+        return Append_Path_Component("data", folded_request_path);
+    }
+
+    if (Starts_With(folded_request_path, "data/save/")) {
+        return folded_request_path;
+    }
+
+    if (folded_request_path.find('/') == std::string::npos && Ends_With(folded_request_path, ".sav")) {
+        return Append_Path_Component("data/save", folded_request_path);
+    }
+
+    return {};
+}
+
+bool Is_Local_User_Data_Request_Path(const std::string & canonical_request_path)
+{
+    return !Canonicalize_Local_User_Data_Request_Path(canonical_request_path).empty();
 }
 
 bool Should_Seed_Local_User_Data_Request_Path(const std::string &)
@@ -406,7 +424,9 @@ std::string Asset_Cache_Path(const std::string & canonical_relative_path)
 
 std::string User_Cache_Path(const std::string & canonical_relative_path)
 {
-    return Append_Path_Component(kRenegadeEmscriptenUserCacheRoot, Directory_Key(canonical_relative_path));
+    const std::string canonical_user_data_path = Canonicalize_Local_User_Data_Request_Path(canonical_relative_path);
+    const std::string &path_key = canonical_user_data_path.empty() ? canonical_relative_path : canonical_user_data_path;
+    return Append_Path_Component(kRenegadeEmscriptenUserCacheRoot, Directory_Key(path_key));
 }
 
 bool Resolve_Manifest_File(const std::string & canonical_request_path, std::string & canonical_remote_path)

@@ -62,6 +62,78 @@
 #include <stdlib.h>
 #include "specialbuilds.h"
 
+namespace
+{
+const char *Find_Last_Save_Path_Separator(const char *path)
+{
+	if (path == NULL) {
+		return NULL;
+	}
+
+	const char *backslash = ::strrchr(path, '\\');
+	const char *slash = ::strrchr(path, '/');
+
+	if (backslash == NULL) {
+		return slash;
+	}
+
+	if (slash == NULL) {
+		return backslash;
+	}
+
+	return (backslash > slash) ? backslash : slash;
+}
+
+bool Try_Get_Read_File(const char *filename, FileClass *&file, StringClass *resolved_filename = NULL)
+{
+	file = NULL;
+	if (_TheFileFactory == NULL || filename == NULL || filename[0] == 0) {
+		return false;
+	}
+
+	FileClass *candidate = _TheFileFactory->Get_File(filename);
+	if (candidate != NULL) {
+		if (candidate->Is_Available()) {
+			file = candidate;
+			if (resolved_filename != NULL) {
+				*resolved_filename = filename;
+			}
+			return true;
+		}
+
+		_TheFileFactory->Return_File(candidate);
+	}
+
+	return false;
+}
+
+bool Resolve_Savegame_File_For_Read(const char *filename, FileClass *&file, StringClass *resolved_filename = NULL)
+{
+	if (Try_Get_Read_File(filename, file, resolved_filename)) {
+		return true;
+	}
+
+	const char *base_name = filename;
+	const char *separator = Find_Last_Save_Path_Separator(filename);
+	if (separator != NULL && separator[1] != 0) {
+		base_name = separator + 1;
+		if (Try_Get_Read_File(base_name, file, resolved_filename)) {
+			return true;
+		}
+	}
+
+	StringClass save_path("save\\", true);
+	save_path += base_name;
+	if (Try_Get_Read_File(save_path, file, resolved_filename)) {
+		return true;
+	}
+
+	StringClass data_save_path("data\\save\\", true);
+	data_save_path += base_name;
+	return Try_Get_Read_File(data_save_path, file, resolved_filename);
+}
+}
+
 /*
 **
 */
@@ -244,9 +316,19 @@ void	SaveGameManager::Load_Game( const char * filename )
 	Debug_Say(( "Load Game %s\n", filename ));
 	CurrentGameFilename = filename;
 
-	FileClass * file = _TheFileFactory->Get_File( filename );
-	WWASSERT( file );
-	file->Open( FileClass::READ );
+	FileClass * file = NULL;
+	StringClass resolved_filename(0, true);
+	if (!Resolve_Savegame_File_For_Read(filename, file, &resolved_filename)) {
+		WWDEBUG_SAY(("Load Game failed to find %s\n", filename != NULL ? filename : "(null)"));
+		return;
+	}
+
+	CurrentGameFilename = resolved_filename;
+	if (!file->Open( FileClass::READ )) {
+		_TheFileFactory->Return_File(file);
+		WWDEBUG_SAY(("Load Game failed to open %s\n", resolved_filename.Peek_Buffer()));
+		return;
+	}
 	ChunkLoadClass cload(file);
 
 	WWLOG_INTERMEDIATE("Open file");
@@ -371,9 +453,17 @@ bool SaveGameManager::Peek_Description
 	//
 	//	Open the file as a chunk
 	//
-	FileClass * file = _TheFileFactory->Get_File(filename);
-	WWASSERT(file != NULL);
-	file->Open(FileClass::READ);
+	FileClass * file = NULL;
+	if (!Resolve_Savegame_File_For_Read(filename, file)) {
+		WWDEBUG_SAY(("Peek_Description failed to find %s\n", filename != NULL ? filename : "(null)"));
+		return false;
+	}
+
+	if (!file->Open(FileClass::READ)) {
+		_TheFileFactory->Return_File(file);
+		WWDEBUG_SAY(("Peek_Description failed to open %s\n", filename != NULL ? filename : "(null)"));
+		return false;
+	}
 	ChunkLoadClass cload(file);
 
 	bool retval			= false;
@@ -434,9 +524,17 @@ bool SaveGameManager::Peek_Map_Name( const char * filename, StringClass &map_nam
 	//
 	//	Open the file as a chunk
 	//
-	FileClass * file = _TheFileFactory->Get_File(filename);
-	WWASSERT(file != NULL);
-	file->Open(FileClass::READ);
+	FileClass * file = NULL;
+	if (!Resolve_Savegame_File_For_Read(filename, file)) {
+		WWDEBUG_SAY(("Peek_Map_Name failed to find %s\n", filename != NULL ? filename : "(null)"));
+		return false;
+	}
+
+	if (!file->Open(FileClass::READ)) {
+		_TheFileFactory->Return_File(file);
+		WWDEBUG_SAY(("Peek_Map_Name failed to open %s\n", filename != NULL ? filename : "(null)"));
+		return false;
+	}
 	ChunkLoadClass cload(file);
 
 	bool retval = false;

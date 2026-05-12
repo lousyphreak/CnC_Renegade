@@ -251,8 +251,8 @@ void Populate_Game_Data_Directories(const std::string &root_path, const char *so
 {
 	const std::string resolved_root = Resolve_Existing_Or_Normalized_Path(root_path);
 	const std::string resolved_data = Resolve_Existing_Or_Normalized_Path(renegade_osdep::Join_Path(resolved_root, "Data"));
-	const std::string resolved_save = Resolve_Existing_Or_Normalized_Path(renegade_osdep::Join_Path(resolved_data, "Save"));
-	const std::string resolved_config = Resolve_Existing_Or_Normalized_Path(renegade_osdep::Join_Path(resolved_data, "Config"));
+	const std::string resolved_save = Resolve_Existing_Or_Normalized_Path(renegade_osdep::Join_Path(resolved_data, "save"));
+	const std::string resolved_config = Resolve_Existing_Or_Normalized_Path(renegade_osdep::Join_Path(resolved_data, "config"));
 	const std::string resolved_movies = Resolve_Existing_Or_Normalized_Path(renegade_osdep::Join_Path(resolved_data, "Movies"));
 
 	directories.SourceLabel = (source_label != NULL) ? source_label : "";

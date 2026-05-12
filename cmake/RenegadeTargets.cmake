@@ -176,7 +176,32 @@ function(renegade_configure_emscripten_target target_name)
         RELATIVE "${RENEGADE_EMSCRIPTEN_DATA_ROOT}"
         "${RENEGADE_EMSCRIPTEN_DATA_ROOT}/Data/*"
     )
+    list(FILTER _renegade_emscripten_data_entries EXCLUDE REGEX "^Data/(save|config)(/|$)")
     set(_renegade_emscripten_streamable_files ${_renegade_emscripten_data_entries})
+
+    set(_renegade_emscripten_data_stage_root "${PROJECT_BINARY_DIR}/renegade-emscripten-stage")
+    set(_renegade_emscripten_data_stage_dir "${_renegade_emscripten_data_stage_root}/Data")
+    file(REMOVE_RECURSE "${_renegade_emscripten_data_stage_dir}")
+    file(MAKE_DIRECTORY "${_renegade_emscripten_data_stage_dir}")
+
+    file(GLOB _renegade_emscripten_data_children
+        LIST_DIRECTORIES true
+        RELATIVE "${RENEGADE_EMSCRIPTEN_DATA_ROOT}/Data"
+        "${RENEGADE_EMSCRIPTEN_DATA_ROOT}/Data/*"
+    )
+    foreach(_renegade_emscripten_data_child IN LISTS _renegade_emscripten_data_children)
+        string(TOLOWER "${_renegade_emscripten_data_child}" _renegade_emscripten_data_child_lower)
+        if(_renegade_emscripten_data_child_lower STREQUAL "save" OR _renegade_emscripten_data_child_lower STREQUAL "config")
+            continue()
+        endif()
+
+        file(CREATE_LINK
+            "${RENEGADE_EMSCRIPTEN_DATA_ROOT}/Data/${_renegade_emscripten_data_child}"
+            "${_renegade_emscripten_data_stage_dir}/${_renegade_emscripten_data_child}"
+            SYMBOLIC
+            COPY_ON_ERROR
+        )
+    endforeach()
 
     foreach(_renegade_emscripten_optional_dir IN ITEMS HTML Internet)
         if(IS_DIRECTORY "${RENEGADE_EMSCRIPTEN_DATA_ROOT}/${_renegade_emscripten_optional_dir}")
@@ -222,7 +247,7 @@ function(renegade_configure_emscripten_target target_name)
         file(MAKE_DIRECTORY "${_renegade_emscripten_asset_stage_dir}")
         file(REMOVE_RECURSE "${_renegade_emscripten_asset_stage_dir}/Data")
         file(CREATE_LINK
-            "${RENEGADE_EMSCRIPTEN_DATA_ROOT}/Data"
+            "${_renegade_emscripten_data_stage_dir}"
             "${_renegade_emscripten_asset_stage_dir}/Data"
             SYMBOLIC
             COPY_ON_ERROR
@@ -264,7 +289,7 @@ function(renegade_configure_emscripten_target target_name)
 
     if(_renegade_emscripten_effective_package_game_data)
         target_link_options("${target_name}" PRIVATE
-            "SHELL:--preload-file ${RENEGADE_EMSCRIPTEN_DATA_ROOT}/Data@/Data"
+            "SHELL:--preload-file ${_renegade_emscripten_data_stage_dir}@/Data"
         )
 
         foreach(_renegade_emscripten_optional_dir IN ITEMS HTML Internet)

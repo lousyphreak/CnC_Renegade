@@ -114,6 +114,136 @@ void Report_Error(const char *format, ...)
 	va_end(args);
 }
 
+class SeekableFileReader
+{
+public:
+	~SeekableFileReader()
+	{
+		Close();
+	}
+
+	bool Open(const char *filename)
+	{
+		Close();
+
+		if (filename == nullptr || filename[0] == '\0' || _TheFileFactory == nullptr) {
+			return false;
+		}
+
+		File = _TheFileFactory->Get_File(filename);
+		if (File == nullptr) {
+			return false;
+		}
+
+		if (!File->Is_Available()) {
+			Close();
+			return false;
+		}
+
+		if (!File->Is_Open() && File->Open(FileClass::READ) == 0) {
+			Close();
+			return false;
+		}
+
+		FileSize = File->Size();
+		if (FileSize <= 0) {
+			Close();
+			return false;
+		}
+
+		return true;
+	}
+
+	void Close()
+	{
+		if (File != nullptr) {
+			if (File->Is_Open()) {
+				File->Close();
+			}
+			_TheFileFactory->Return_File(File);
+			File = nullptr;
+		}
+		FileSize = 0;
+	}
+
+	int Size() const
+	{
+		return FileSize;
+	}
+
+	bool Read_At(uint32_t offset, void *buffer, size_t size)
+	{
+		if (size == 0U) {
+			return true;
+		}
+		if (File == nullptr || buffer == nullptr || FileSize <= 0) {
+			return false;
+		}
+
+		const uint64_t file_size = static_cast<uint64_t>(FileSize);
+		if (static_cast<uint64_t>(offset) > file_size || size > (file_size - static_cast<uint64_t>(offset))) {
+			return false;
+		}
+
+		if (File->Seek(static_cast<int>(offset), SEEK_SET) < 0) {
+			return false;
+		}
+
+		auto *output = static_cast<uint8_t *>(buffer);
+		size_t remaining = size;
+		while (remaining > 0U) {
+			const int chunk_size = static_cast<int>(std::min<size_t>(remaining, static_cast<size_t>(std::numeric_limits<int>::max())));
+			const int bytes_read = File->Read(output, chunk_size);
+			if (bytes_read != chunk_size) {
+				return false;
+			}
+
+			output += chunk_size;
+			remaining -= static_cast<size_t>(chunk_size);
+		}
+
+		return true;
+	}
+
+	bool Read_Bytes(uint32_t offset, size_t size, std::vector<uint8_t> &buffer)
+	{
+		buffer.clear();
+		buffer.resize(size);
+		if (size == 0U) {
+			return true;
+		}
+		if (!Read_At(offset, buffer.data(), size)) {
+			buffer.clear();
+			return false;
+		}
+		return true;
+	}
+
+	bool Read_U16(uint32_t offset, uint16_t &value)
+	{
+		uint8_t bytes[2] = {};
+		if (!Read_At(offset, bytes, sizeof(bytes))) {
+			return false;
+		}
+		value = Read_LE16(bytes);
+		return true;
+	}
+
+	bool Read_U32(uint32_t offset, uint32_t &value)
+	{
+		uint8_t bytes[4] = {};
+		if (!Read_At(offset, bytes, sizeof(bytes))) {
+			return false;
+		}
+		value = Read_LE32(bytes);
+		return true;
+	}
+
+private:
+	FileClass *File = nullptr;
+	int FileSize = 0;
+};
+
 float Int_As_Float(uint32_t value)
 {
 	float result = 0.0f;
@@ -2514,14 +2644,19 @@ struct AudioTrack
 class PlayerState
 {
 public:
-	PlayerState(BINK *owner, std::vector<uint8_t> file_data)
-		: Owner(owner), FileData(std::move(file_data))
+	explicit PlayerState(BINK *owner)
+		: Owner(owner)
 	{
 	}
 
 	bool Initialize(const char *filename)
 	{
 		Filename = filename != nullptr ? filename : "";
+		if (!File.Open(Filename.c_str())) {
+			Report_Error("unable to open Bink file %s", Filename.c_str());
+			return false;
+		}
+
 		return Parse_Header() && Open_Audio_Streams();
 	}
 
@@ -2610,16 +2745,24 @@ public:
 private:
 	bool Parse_Header()
 	{
-		if (FileData.size() < 44U) {
+		const uint32_t physical_file_size = static_cast<uint32_t>(File.Size());
+		if (physical_file_size < 44U) {
 			Report_Error("Bink file is too small: %s", Filename.c_str());
 			return false;
 		}
 
-		size_t header_offset = 0U;
-		uint32_t tag = Read_LE32(FileData.data());
+		uint32_t header_offset = 0U;
+		uint32_t tag = 0U;
+		if (!File.Read_U32(0U, tag)) {
+			Report_Error("failed reading Bink header from %s", Filename.c_str());
+			return false;
+		}
+
 		if (tag == Make_Tag('S', 'M', 'U', 'S')) {
-			while (header_offset + 4U <= FileData.size()) {
-				tag = Read_LE32(FileData.data() + header_offset);
+			while (header_offset + 4U <= physical_file_size) {
+				if (!File.Read_U32(header_offset, tag)) {
+					return false;
+				}
 				if ((tag & 0x00FFFFFFU) == Make_Tag('B', 'I', 'K', '\0')) {
 					break;
 				}
@@ -2627,12 +2770,18 @@ private:
 			}
 		}
 
-		if (header_offset + 44U > FileData.size()) {
+		if (header_offset + 44U > physical_file_size) {
 			Report_Error("unable to locate Bink header in %s", Filename.c_str());
 			return false;
 		}
 
-		CodecTag = Read_LE32(FileData.data() + header_offset);
+		std::array<uint8_t, 44> header{};
+		if (!File.Read_At(header_offset, header.data(), header.size())) {
+			Report_Error("failed reading Bink header from %s", Filename.c_str());
+			return false;
+		}
+
+		CodecTag = Read_LE32(header.data());
 		const uint32_t signature = CodecTag & 0x00FFFFFFU;
 		const int revision = static_cast<int>(CodecTag >> 24);
 		if (signature != Make_Tag('B', 'I', 'K', '\0') ||
@@ -2641,49 +2790,64 @@ private:
 			return false;
 		}
 
-		const uint8_t *header = FileData.data() + header_offset;
-		const uint32_t file_size = Read_LE32(header + 4) + 8U;
-		const uint32_t frame_count = Read_LE32(header + 8);
-		Owner->Width = Read_LE32(header + 20);
-		Owner->Height = Read_LE32(header + 24);
-		Owner->FrameRate = Read_LE32(header + 28);
-		Owner->FrameRateDiv = Read_LE32(header + 32);
-		VideoFlags = Read_LE32(header + 36);
-		const uint32_t audio_track_count = Read_LE32(header + 40);
+		LogicalFileSize = Read_LE32(header.data() + 4) + 8U;
+		if (LogicalFileSize == 0U || LogicalFileSize > physical_file_size) {
+			Report_Error("invalid Bink file size in %s", Filename.c_str());
+			return false;
+		}
+
+		const uint32_t frame_count = Read_LE32(header.data() + 8);
+		Owner->Width = Read_LE32(header.data() + 20);
+		Owner->Height = Read_LE32(header.data() + 24);
+		Owner->FrameRate = Read_LE32(header.data() + 28);
+		Owner->FrameRateDiv = Read_LE32(header.data() + 32);
+		VideoFlags = Read_LE32(header.data() + 36);
+		const uint32_t audio_track_count = Read_LE32(header.data() + 40);
 
 		if (Owner->Width == 0U || Owner->Height == 0U || Owner->FrameRate == 0U || Owner->FrameRateDiv == 0U || frame_count == 0U) {
 			Report_Error("invalid Bink header in %s", Filename.c_str());
 			return false;
 		}
 
-		size_t offset = header_offset + 44U;
+		uint32_t offset = header_offset + 44U;
 		if (revision == 'k') {
 			offset += 4U;
+		}
+
+		if (offset > LogicalFileSize) {
+			return false;
 		}
 
 		std::vector<int> sample_rates(audio_track_count);
 		std::vector<uint16_t> audio_flags(audio_track_count);
 		if (audio_track_count > 0U) {
+			if (audio_track_count > (LogicalFileSize - offset) / 12U) {
+				return false;
+			}
+
 			offset += static_cast<size_t>(audio_track_count) * 4U;
-			if (offset > FileData.size()) {
+			if (offset > LogicalFileSize) {
 				return false;
 			}
 
 			for (uint32_t track = 0; track < audio_track_count; ++track) {
-				if (offset + 4U > FileData.size()) {
+				uint16_t sample_rate = 0;
+				uint16_t flags = 0;
+				if (!File.Read_U16(offset, sample_rate) || !File.Read_U16(offset + 2U, flags)) {
 					return false;
 				}
-				sample_rates[track] = Read_LE16(FileData.data() + offset);
-				audio_flags[track] = Read_LE16(FileData.data() + offset + 2U);
+				sample_rates[track] = sample_rate;
+				audio_flags[track] = flags;
 				offset += 4U;
 			}
 
 			AudioTracks.resize(audio_track_count);
 			for (uint32_t track = 0; track < audio_track_count; ++track) {
-				if (offset + 4U > FileData.size()) {
+				uint32_t track_id = 0U;
+				if (!File.Read_U32(offset, track_id)) {
 					return false;
 				}
-				AudioTracks[track].id = Read_LE32(FileData.data() + offset);
+				AudioTracks[track].id = track_id;
 				AudioTracks[track].sample_rate = sample_rates[track];
 				AudioTracks[track].channels = (audio_flags[track] & BINK_AUD_STEREO) != 0U ? 2 : 1;
 				AudioTracks[track].use_dct = (audio_flags[track] & BINK_AUD_USEDCT) != 0U;
@@ -2691,32 +2855,34 @@ private:
 			}
 		}
 
-		if (offset + 4U > FileData.size()) {
+		if (frame_count > (LogicalFileSize - offset) / 4U) {
 			return false;
 		}
 
 		FrameTable.resize(frame_count);
-		uint32_t next_position = Read_LE32(FileData.data() + offset);
+		uint32_t next_position = 0U;
+		if (!File.Read_U32(offset, next_position)) {
+			return false;
+		}
 		offset += 4U;
 		bool next_keyframe = true;
 		for (uint32_t frame = 0; frame < frame_count; ++frame) {
 			uint32_t position = next_position;
 			const bool keyframe = next_keyframe;
 			if (frame == frame_count - 1U) {
-				next_position = file_size;
+				next_position = LogicalFileSize;
 				next_keyframe = false;
 			} else {
-				if (offset + 4U > FileData.size()) {
+				if (!File.Read_U32(offset, next_position)) {
 					return false;
 				}
-				next_position = Read_LE32(FileData.data() + offset);
 				offset += 4U;
 				next_keyframe = (next_position & 1U) != 0U;
 			}
 
 			position &= ~1U;
 			next_position &= ~1U;
-			if (next_position <= position || next_position > FileData.size()) {
+			if (next_position <= position || next_position > LogicalFileSize) {
 				return false;
 			}
 
@@ -2786,11 +2952,15 @@ private:
 		}
 
 		const FrameIndexEntry &entry = FrameTable[CurrentFrame];
-		if (static_cast<size_t>(entry.position + entry.size) > FileData.size()) {
+		if (entry.position > LogicalFileSize || entry.size > (LogicalFileSize - entry.position)) {
 			return false;
 		}
 
-		const uint8_t *cursor = FileData.data() + entry.position;
+		if (!File.Read_Bytes(entry.position, entry.size, FrameBuffer)) {
+			return false;
+		}
+
+		const uint8_t *cursor = FrameBuffer.data();
 		uint32_t remaining = entry.size;
 		for (size_t track_index = 0; track_index < AudioTracks.size(); ++track_index) {
 			if (remaining < 4U) {
@@ -2817,7 +2987,8 @@ private:
 
 	BINK *Owner = nullptr;
 	std::string Filename;
-	std::vector<uint8_t> FileData;
+	SeekableFileReader File;
+	uint32_t LogicalFileSize = 0U;
 	uint32_t CodecTag = 0U;
 	uint32_t VideoFlags = 0U;
 	uint32_t CurrentFrame = 0U;
@@ -2825,6 +2996,7 @@ private:
 	bool Started = false;
 	bool FrameLoaded = false;
 	bool FrameDecoded = false;
+	std::vector<uint8_t> FrameBuffer;
 	std::vector<FrameIndexEntry> FrameTable;
 	std::vector<AudioTrack> AudioTracks;
 	std::vector<std::vector<uint8_t>> AudioPackets;
@@ -2837,46 +3009,6 @@ PlayerState *Get_Player_State(HBINK bink)
 	return (bink != nullptr) ? static_cast<PlayerState *>(bink->Internal) : nullptr;
 }
 
-std::vector<uint8_t> Load_File(const char *filename)
-{
-	if (filename == nullptr || filename[0] == '\0' || _TheFileFactory == nullptr) {
-		return {};
-	}
-
-	FileClass *file = _TheFileFactory->Get_File(filename);
-	if (file == nullptr) {
-		return {};
-	}
-
-	std::vector<uint8_t> data;
-	if (!file->Is_Available()) {
-		_TheFileFactory->Return_File(file);
-		return data;
-	}
-
-	if (!file->Is_Open() && file->Open(FileClass::READ) == 0) {
-		_TheFileFactory->Return_File(file);
-		return data;
-	}
-
-	const int size = file->Size();
-	if (size <= 0) {
-		file->Close();
-		_TheFileFactory->Return_File(file);
-		return data;
-	}
-
-	data.resize(static_cast<size_t>(size));
-	const int bytes_read = file->Read(data.data(), size);
-	file->Close();
-	_TheFileFactory->Return_File(file);
-	if (bytes_read != size) {
-		data.clear();
-	}
-
-	return data;
-}
-
 } // namespace
 
 namespace FFBink
@@ -2886,14 +3018,8 @@ HBINK Open_Bink_Handle(const char *filename, uint32_t flags)
 {
 	(void)flags;
 
-	const std::vector<uint8_t> file_data = Load_File(filename);
-	if (file_data.empty()) {
-		Report_Error("unable to open Bink file %s", filename != nullptr ? filename : "(null)");
-		return nullptr;
-	}
-
 	auto *bink = new BINK{};
-	auto player = std::make_unique<PlayerState>(bink, file_data);
+	auto player = std::make_unique<PlayerState>(bink);
 	if (!player->Initialize(filename)) {
 		delete bink;
 		return nullptr;

@@ -770,6 +770,20 @@ bool WWAudio_Get_Audio_Info_From_Memory(const void *data, size_t data_len, AILSO
     return true;
 }
 
+bool WWAudio_Get_Wave_Info_From_Memory(const void *data, size_t data_len, AILSOUNDINFO *info, uint32_t *duration_ms)
+{
+    if ((data == nullptr) || (data_len == 0) || (info == nullptr)) {
+        return false;
+    }
+
+    std::memset(info, 0, sizeof(*info));
+    if (duration_ms != nullptr) {
+        *duration_ms = 0;
+    }
+
+    return Parse_Wave_Info(data, data_len, info, duration_ms);
+}
+
 void AIL_lock(void)
 {
     g_audio_mutex.lock();

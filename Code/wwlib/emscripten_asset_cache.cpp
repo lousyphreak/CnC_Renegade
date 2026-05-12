@@ -1967,8 +1967,11 @@ SDL_IOStream * Open_File(const std::string & normalized_path, const char * mode)
         return nullptr;
     }
 
-    if (allow_fetch && Is_Read_Only_Open_Mode(mode) && Is_Mix_Asset_Path(canonical_remote_path) && !Path_Exists_Raw(asset_cache_path)) {
-        return Open_Range_Stream(canonical_remote_path);
+    if (allow_fetch && Is_Read_Only_Open_Mode(mode) && !Path_Exists_Raw(asset_cache_path)) {
+        SDL_IOStream * range_stream = Open_Range_Stream(canonical_remote_path);
+        if (range_stream != nullptr) {
+            return range_stream;
+        }
     }
 
     if (allow_fetch && !Path_Exists_Raw(asset_cache_path) && !Ensure_Remote_Asset_Cached(asset_cache_path, canonical_remote_path)) {

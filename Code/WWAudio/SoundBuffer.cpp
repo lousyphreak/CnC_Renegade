@@ -93,6 +93,24 @@ bool Read_File_Contents(FileClass &file, std::vector<uint8_t> &buffer, int repor
 
 	return (!buffer.empty ());
 }
+
+bool Read_File_Prefix(FileClass &file, std::vector<uint8_t> &buffer, size_t max_bytes)
+{
+	buffer.clear();
+	if (max_bytes == 0) {
+		return true;
+	}
+
+	buffer.resize(max_bytes);
+	const int bytes_read = file.Read(buffer.data(), static_cast<int>(max_bytes));
+	if (bytes_read < 0) {
+		buffer.clear();
+		return false;
+	}
+
+	buffer.resize(bytes_read);
+	return !buffer.empty();
+}
 }
 
 
@@ -375,7 +393,17 @@ bool
 StreamSoundBufferClass::Load_From_File (const char *filename)
 {
 	WWPROFILE ("StreamSoundBufferClass::Load_From_File");
-	return true;
+
+	bool retval = false;
+	if (filename != NULL) {
+		FileClass *file = _TheFileFactory->Get_File (filename);
+		if (file != NULL) {
+			retval = Load_From_File (*file);
+			_TheFileFactory->Return_File (file);
+		}
+	}
+
+	return retval;
 }
 
 
@@ -394,24 +422,44 @@ StreamSoundBufferClass::Load_From_File (FileClass &file)
 	// Start from scratch
 	Free_Buffer ();
 	Set_Filename (file.File_Name ());
+	m_Length = 0;
+	m_Duration = 0;
+	m_Rate = 0;
+	m_Bits = 0;
+	m_Channels = 0;
+	m_Type = WAVE_FORMAT_IMA_ADPCM;
 
-	// Open the file if necessary
+	const int reported_size = file.Size ();
+	if (reported_size > 0) {
+		m_Length = reported_size;
+	}
+
+	AILSOUNDINFO info = {};
 	bool we_opened = false;
 	if (file.Is_Open () == false) {
 		we_opened = (file.Open () == TRUE);
 	}
 
-	const int reported_size = file.Size ();
-	m_Length = (reported_size > 0) ? reported_size : 0;
+	if (file.Is_Open ()) {
+		const int original_position = file.Tell ();
+		if (file.Seek (0, SEEK_SET) >= 0) {
+			std::vector<uint8_t> probe;
+			const size_t probe_size = static_cast<size_t>((reported_size > 0) ? min (reported_size, 64 * 1024) : 64 * 1024);
+			if (Read_File_Prefix (file, probe, probe_size) &&
+				WWAudio_Get_Wave_Info_From_Memory (probe.data (), probe.size (), &info, &m_Duration))
+			{
+				m_Type = info.format;
+				m_Rate = info.rate;
+				m_Bits = info.bits;
+				m_Channels = info.channels;
+			}
+		}
 
-	if (reported_size > 0) {
-		std::vector<uint8_t> buffer;
-		if (Read_File_Contents(file, buffer, reported_size) && !buffer.empty()) {
-			Determine_Stats(buffer.data());
+		if (original_position >= 0) {
+			file.Seek (original_position, SEEK_SET);
 		}
 	}
 
-	// Close the file if necessary
 	if (we_opened) {
 		file.Close ();
 	}
